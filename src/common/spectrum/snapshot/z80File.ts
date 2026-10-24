@@ -280,7 +280,11 @@ export function parseZ80File(bytes: Uint8Array): SpectrumSnapshot {
   const paged = isPagedSnapshotMachine(machine);
   // --- In a Timex mode bytes 35 and 36 are the last OUTs to $F4 and $FF, not $7FFD and Interface 1
   const timexMode = isTimexSnapshotMachine(machine);
-  if (interface1 || (!timexMode && bytes[36] === 0xff)) peripherals.interface1 = true;
+  if (interface1 || (!timexMode && bytes[36] === 0xff)) {
+    peripherals.interface1 = true;
+    // --- A .z80 says only whether the interface was there and its ROM paged; never its cartridges
+    peripherals.if1 = { paged: !timexMode && bytes[36] === 0xff, drives: 2, microdrives: [] };
+  }
   if (mgt) peripherals.mgt = true;
 
   header.unshift(

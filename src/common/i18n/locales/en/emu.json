@@ -464,6 +464,18 @@
       "file": "The disk file's name"
     }
   },
+  "emu.snapshot.noMicrodrive": "The machine has no Microdrive {drive} for {file}",
+  "@emu.snapshot.noMicrodrive": {
+    "context": "Warning after loading a snapshot: a Microdrive cartridge the snapshot uses cannot be inserted, because the machine has no Interface 1 or the UI has no such drive. Microdrive is a product name.",
+    "placeholders": {
+      "drive": "The drive number, 1-8",
+      "file": "The cartridge (.mdr) file's name"
+    }
+  },
+  "emu.snapshot.divMmcDisconnected": "The snapshot uses an Interface 1, so the DivMMC is disconnected: the two cannot be connected at once",
+  "@emu.snapshot.divMmcDisconnected": {
+    "context": "Warning after loading a snapshot taken with a ZX Interface 1: Klive connects the Interface 1, which removes the DivMMC (both answer the same port). Interface 1 and DivMMC are product names."
+  },
   "emu.snapshot.needs48k": "The snapshot needs 48K of RAM, but the project's machine is a ZX Spectrum 16K",
   "@emu.snapshot.needs48k": {
     "context": "Error of loading a 48K snapshot while a project keeps the machine a 16K model."
@@ -608,6 +620,14 @@
     "placeholders": {
       "drive": "The drive letter, A or B (never translated)",
       "file": "The disk file's name"
+    }
+  },
+  "emu.machineState.microdrive": "The cartridge in Microdrive {drive} is the one in the state ({file}); it is detached from that file, so the machine's writes are not saved to it. Insert a cartridge to attach one again",
+  "@emu.machineState.microdrive": {
+    "context": "Note after loading a machine state: the Microdrive cartridge comes from the state and is not written back to its file. Microdrive is a product name.",
+    "placeholders": {
+      "drive": "The drive number, 1 or 2",
+      "file": "The cartridge (.mdr) file's name"
     }
   },
   "emu.machineState.noQuickSave": "No state has been quick-saved for this machine",

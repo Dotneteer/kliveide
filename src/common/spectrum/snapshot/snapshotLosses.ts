@@ -38,5 +38,17 @@ export function commonLosses(s: SpectrumSnapshot, format: "sna" | "z80"): string
         : t("media.snapshot.loss.z80Beta128")
     );
   }
+  // --- The Interface 1 (`.plans/MICRODRIVE_PLAN.md` Phase 5): a .z80 names it and its paging, a .sna
+  // --- nothing; neither holds the cartridges or a ROM other than the standard one
+  const if1 = s.peripherals.if1;
+  if (format === "sna" && (s.peripherals.interface1 || if1)) {
+    losses.push(t(if1?.paged ? "media.snapshot.loss.snaInterface1Paged" : "media.snapshot.loss.snaInterface1"));
+  }
+  if (if1?.microdrives.length) {
+    losses.push(t("media.snapshot.loss.microdrives", { format, count: if1.microdrives.length }));
+  }
+  if (format === "z80" && if1?.customRom) {
+    losses.push(t("media.snapshot.loss.z80Interface1Rom"));
+  }
   return losses;
 }

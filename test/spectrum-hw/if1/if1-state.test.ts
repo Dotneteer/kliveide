@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { formattedMdr, runBasic, screenLines, sp48WithInterface1 } from "./if1TestSupport";
+import { formattedMdr, installProgram, runBasic, screenLines, sp48WithInterface1 } from "./if1TestSupport";
 
 /*
  * The Interface 1 across the core's own bookkeeping (`.plans/MICRODRIVE_PLAN.md` Phase 2.7-2.8):
@@ -50,4 +50,62 @@ describe("Interface 1 and the machine's state", () => {
     expect(s.cartridge(0)).toEqual(first.mdr);
     expect(s.tacts()).toBe(first.tacts);
   }, 120_000);
+});
+
+describe("Interface 1 in snapshots (`.plans/MICRODRIVE_PLAN.md` Phase 5)", () => {
+  it.each(["szx", "z80"] as const)("a .%s taken with the ROM paged in comes back paged in", async (format) => {
+    const s = (await sp48WithInterface1()).insertCartridge(0, formattedMdr());
+    runBasic(s, `10 CAT 1`, 40);
+    expect(s.interface1().paged).toBe(true);
+    const captured = s.captureSnapshot();
+    expect(captured.peripherals.if1).toMatchObject({ paged: true, drives: 2 });
+    expect(captured.peripherals.if1?.microdrives).toEqual([
+      expect.objectContaining({ drive: 0, running: true, fileName: undefined })
+    ]);
+    // --- The shipped ROM is the standard one: nothing to embed
+    expect(captured.peripherals.if1?.customRom).toBeUndefined();
+    const { bytes } = s.saveSnapshot(format);
+
+    const target = await sp48WithInterface1();
+    expect(target.interface1().paged).toBe(false);
+    target.loadSnapshot(`x.${format}`, bytes);
+    expect(target.interface1().paged).toBe(true);
+    expect(target.machine.pc).toBe(captured.cpu.pc);
+  }, 120_000);
+
+  it("a capture with the ROM paged out says so, with no cartridge", async () => {
+    const s = await sp48WithInterface1();
+    s.runFrames(10);
+    expect(s.captureSnapshot().peripherals.if1).toMatchObject({ paged: false, microdrives: [] });
+  }, 60_000);
+});
+
+describe("Interface 1 in RZX recordings (`.plans/MICRODRIVE_PLAN.md` Phase 5)", () => {
+  it("a CAT recorded with a cartridge plays back to the same screen without one", async () => {
+    const s = (await sp48WithInterface1()).insertCartridge(0, formattedMdr());
+    // --- The program goes into memory before the recording, which sees only what the CPU does
+    installProgram(s, `10 CAT 1`);
+    // --- A frame can end between a prefix and its opcode, where no snapshot can start: try the next
+    for (let attempt = 0; ; attempt++) {
+      s.runFrames(1);
+      try {
+        s.startRzxRecording({ autosaveFrames: 0 });
+        break;
+      } catch (err) {
+        if (attempt > 20) throw err;
+      }
+    }
+    s.typeKeys([["R"], ["Enter"]]);
+    s.runFrames(800);
+    const recorded = screenLines(s);
+    expect(recorded).toEqual(["TEST", "127", "0 OK, 10:1"]);
+    const rzxFile = s.stopRzxRecording();
+
+    // --- Playback reads the ports from the recording: the drives rest, no cartridge is needed
+    const p = await sp48WithInterface1();
+    p.playRzx(rzxFile);
+    const stop = p.runRzx({ maxFrames: 2000 });
+    expect(stop, stop.message).toMatchObject({ kind: "ended" });
+    expect(screenLines(p)).toEqual(recorded);
+  }, 180_000);
 });

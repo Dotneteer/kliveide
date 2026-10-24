@@ -175,6 +175,7 @@ class EmuApiImpl {
     _mode: SpectrumSnapshotLoadMode,
     _options?: SpectrumSnapshotLoadOptions & {
       disks?: { drive: number; fileName: string; contents: Uint8Array }[];
+      microdrives?: { drive: number; fileName: string; contents: Uint8Array }[];
     }
   ): Promise<SpectrumSnapshotLoadResult> {
     return Promise.reject(new Error(NO_PROXY_ERROR));

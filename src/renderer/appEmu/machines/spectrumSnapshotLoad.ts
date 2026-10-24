@@ -7,7 +7,8 @@
  *     a model the snapshot cannot run on, is rebuilt; with `keepModel` (a project is open, D7) a
  *     model of the right type is kept, with a warning.
  *  3. Media first (trap 12): `restoreState` re-attaches the stored media, so a `.szx` file's
- *     embedded tape and its linked disks (read by the IDE) go into the media store before it.
+ *     embedded tape and its linked disks and Microdrive cartridges (read by the IDE) go into the
+ *     media store before it.
  *  4. Restore the state through `IMachineController.restoreState`, which leaves the machine Paused.
  *  5. Then, by mode: run, or debug, stopping at the snapshot's PC before that instruction runs.
  *
@@ -30,8 +31,11 @@ import {
   mapSpectrumSnapshotToKlive,
   type SpectrumSnapshotMapping
 } from "@common/spectrum/snapshot/spectrumSnapshotMapping";
+import { hasInterface1, isInterface1Machine } from "@common/machines/interface1";
 import {
   MC_DISK_SUPPORT,
+  MC_DIVMMC,
+  MC_INTERFACE1,
   MC_MEM_SIZE,
   MC_SCREEN_FREQ,
   MI_SPECTRUM_128,
@@ -66,6 +70,8 @@ export type SpectrumSnapshotLoadPorts = {
   setTape(fileName: string, contents: Uint8Array): Promise<void>;
   /** Inserts a disk image into a drive (0 = A, 1 = B) */
   setDisk(drive: number, fileName: string, contents: Uint8Array): Promise<void>;
+  /** Inserts a cartridge into a Microdrive (0 = 1, 1 = 2), the file then taking the guest's writes */
+  setMicrodrive?(drive: number, fileName: string, contents: Uint8Array): Promise<void>;
 };
 
 /** A disk the IDE read for a `.szx` file's DSK block */
@@ -94,7 +100,10 @@ export async function loadSpectrumSnapshot(
   fileName: string,
   bytes: Uint8Array,
   mode: SpectrumSnapshotLoadMode,
-  options: SpectrumSnapshotLoadOptions & { disks?: SpectrumSnapshotDiskFile[] } = {}
+  options: SpectrumSnapshotLoadOptions & {
+    disks?: SpectrumSnapshotDiskFile[];
+    microdrives?: SpectrumSnapshotDiskFile[];
+  } = {}
 ): Promise<SpectrumSnapshotLoadResult> {
   // --- 1. Parse and map
   const snapshot = parseSpectrumSnapshot(fileName, bytes);
@@ -141,6 +150,15 @@ export async function loadSpectrumSnapshot(
       continue;
     }
     await ports.setDisk(disk.drive, disk.fileName, disk.contents);
+  }
+  // --- The Interface 1's cartridges (`.szx` MDRV), into the two drives the UI has
+  const if1 = hasInterface1(fit.machineId, fit.modelId, fit.config);
+  for (const cartridge of options.microdrives ?? []) {
+    if (!if1 || cartridge.drive >= 2 || !ports.setMicrodrive) {
+      warnings.push(t("emu.snapshot.noMicrodrive", { drive: cartridge.drive + 1, file: cartridge.fileName }));
+      continue;
+    }
+    await ports.setMicrodrive(cartridge.drive, cartridge.fileName, cartridge.contents);
   }
 
   // --- 4. Restore the state, Paused
@@ -236,13 +254,41 @@ export function fitSpectrumMachine(
   mapping: SpectrumSnapshotMapping,
   snapshot: SpectrumSnapshot,
   keepModel: boolean
-): {
+): SpectrumMachineFit {
+  return fitInterface1(fitMachineType(current, mapping, snapshot, keepModel), snapshot);
+}
+
+type SpectrumMachineFit = {
   rebuild: boolean;
   machineId: string;
   modelId: string | undefined;
   config: MachineConfigSet;
   warnings: string[];
-} {
+};
+
+/**
+ * A snapshot taken with an Interface 1 connects it (`.plans/MICRODRIVE_PLAN.md` Phase 5), on a
+ * machine that can have one, and so disconnects the DivMMC (Q4). One without it leaves the
+ * interface as it is: its ROM is paged out, and the machine runs as without it.
+ */
+function fitInterface1(fit: SpectrumMachineFit, snapshot: SpectrumSnapshot): SpectrumMachineFit {
+  if (!snapshot.peripherals.interface1 || !isInterface1Machine(fit.machineId, fit.modelId, fit.config)) return fit;
+  if (fit.config[MC_INTERFACE1]) return fit;
+  const config: MachineConfigSet = { ...fit.config, [MC_INTERFACE1]: true };
+  const warnings = [...fit.warnings];
+  if (config[MC_DIVMMC]) {
+    delete config[MC_DIVMMC];
+    warnings.push(t("emu.snapshot.divMmcDisconnected"));
+  }
+  return { ...fit, rebuild: true, config, warnings };
+}
+
+function fitMachineType(
+  current: { machineId?: string; modelId?: string; config?: MachineConfigSet },
+  mapping: SpectrumSnapshotMapping,
+  snapshot: SpectrumSnapshot,
+  keepModel: boolean
+): SpectrumMachineFit {
   const machineId = mapping.machineId!;
   const warnings: string[] = [];
   const sameMachine = current.machineId === machineId;

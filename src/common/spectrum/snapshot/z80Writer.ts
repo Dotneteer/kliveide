@@ -7,7 +7,8 @@
  * follows as `{ length: u16, page: u8, data }`, compressed unless that does not make it shorter
  * (`length = $FFFF`: 16384 raw bytes).
  *
- * `.z80` has no NTSC 48K and no +3e, keeps no EI delay, and records no media.
+ * `.z80` has no NTSC 48K and no +3e, keeps no EI delay, and records no media. The Interface 1 is
+ * hardware mode 1 or 5 and byte 36 ($FF: its ROM is paged); its cartridges are lost.
  */
 
 import {
@@ -32,18 +33,21 @@ function hardwareMode(
   machine: SnapshotMachineKind,
   losses: string[]
 ): { mode: number; modified: boolean } {
+  // --- Modes 1 (48K) and 5 (128K) add the Interface 1 (`.plans/MICRODRIVE_PLAN.md` Phase 5)
+  const if1 = !!s.peripherals.interface1;
   switch (machine) {
     case "16k":
-      return { mode: 0, modified: true };
+      return { mode: if1 ? 1 : 0, modified: true };
     case "48k":
-      return { mode: 0, modified: false };
+      return { mode: if1 ? 1 : 0, modified: false };
     case "48k-ntsc":
       losses.push(t("media.snapshot.loss.z80Ntsc"));
-      return { mode: 0, modified: false };
+      return { mode: if1 ? 1 : 0, modified: false };
     case "128k":
-      return { mode: 4, modified: false };
+      return { mode: if1 ? 5 : 4, modified: false };
     case "plus2":
-      return { mode: 12, modified: false };
+      // --- No v3 mode names a +2 with an Interface 1: the 128K's, with the "modified hardware" bit
+      return if1 ? { mode: 5, modified: true } : { mode: 12, modified: false };
     case "plus2a":
       return { mode: 13, modified: false };
     case "plus3":
@@ -137,7 +141,7 @@ export function writeZ80File(s: SpectrumSnapshot): SnapshotWriteResult {
     // --- A Timex mode: the last OUTs to $F4 and $FF in place of $7FFD and Interface 1
     out.byte(mode, (s.timex?.portF4 ?? 0) & 0xff, (s.timex?.portFf ?? 0) & 0xff);
   } else {
-    out.byte(mode, paged ? (s.paging?.port7ffd ?? 0) : 0, 0 /* Interface 1 ROM not paged */);
+    out.byte(mode, paged ? (s.paging?.port7ffd ?? 0) : 0, s.peripherals.if1?.paged ? 0xff : 0 /* Interface 1 ROM paged */);
   }
   out.byte((modified ? 0x80 : 0) | (ay48 ? 0x04 : 0) | 0x03 /* R and LDIR emulation on */);
   if (paged || ay48) {

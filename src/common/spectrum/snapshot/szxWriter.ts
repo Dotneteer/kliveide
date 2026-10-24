@@ -15,6 +15,8 @@
  *   +3    drive count and motor (+3 models with drives)
  *   DSK   one per inserted disk, as a link to the disk file (the spec has no embedded disks yet)
  *   TAPE  the tape, as a link to its file; embedded (zlib) only when it has no file (D17)
+ *   IF1   the Interface 1: paging, drive count, a custom ROM (zlib) when it is not the standard one
+ *   MDRV  one per inserted cartridge, as a link to its .mdr; `wDrivePos` is the head's slot
  */
 
 import { zlibSync } from "fflate";
@@ -206,6 +208,45 @@ export function writeSzxFile(
         new SnapshotBytes()
           .dword(disk.writeProtected ? 0x04 : 0x00)
           .byte(disk.drive, disk.cylinder, disk.diskType)
+          .bytes(name)
+          .toArray()
+      );
+    }
+  }
+
+  // --- IF1 and MDRV: the Interface 1, before its cartridges (zx-state); each cartridge is a link to its file
+  const if1 = s.peripherals.if1;
+  if (if1) {
+    const rom = if1.customRom;
+    const packed = rom ? zlibSync(rom) : undefined;
+    const flags = 0x01 /* enabled */ | (packed ? 0x02 : 0) | (if1.paged ? 0x04 : 0);
+    block(
+      out,
+      "IF1",
+      new SnapshotBytes()
+        .word(flags)
+        .byte(Math.max(1, Math.min(8, if1.drives)))
+        .fill(3)
+        .fill(32)
+        .word(rom?.length ?? 0)
+        .bytes(packed ?? new Uint8Array(0))
+        .toArray()
+    );
+    for (const cartridge of if1.microdrives) {
+      if (!cartridge.fileName) {
+        losses.push(t("media.snapshot.loss.szxMicrodriveNoFile", { drive: cartridge.drive + 1 }));
+        continue;
+      }
+      const name = latin1Bytes(cartridge.fileName);
+      block(
+        out,
+        "MDRV",
+        new SnapshotBytes()
+          .word(0x00)
+          .byte(cartridge.drive + 1, cartridge.running ? 1 : 0)
+          .word(cartridge.position & 0xffff)
+          .word(cartridge.preamble & 0xffff)
+          .dword(name.length)
           .bytes(name)
           .toArray()
       );

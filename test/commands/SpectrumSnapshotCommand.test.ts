@@ -123,7 +123,7 @@ describe("zx-snapshot command", () => {
     ] as const)("loads with %o in %s mode", async (options, mode, done) => {
       const { context, loadSpectrumSnapshot } = contextFor();
       const result = await new SpectrumSnapshotCommand().execute(context, { file: " /p/a.sna ", ...options } as any);
-      expect(loadSpectrumSnapshot).toHaveBeenCalledWith("/p/a.sna", SNA48, mode, { keepModel: false, disks: [] });
+      expect(loadSpectrumSnapshot).toHaveBeenCalledWith("/p/a.sna", SNA48, mode, { keepModel: false, disks: [], microdrives: [] });
       expect(result).toEqual({ success: true, finalMessage: `SNA snapshot /p/a.sna loaded, ${done} PC $8123.` });
     });
 
@@ -141,7 +141,7 @@ describe("zx-snapshot command", () => {
     it("keeps the project's model when a project is open", async () => {
       const { context, loadSpectrumSnapshot } = contextFor({ machineId: MI_SPECTRUM_48, isKliveProject: true });
       await new SpectrumSnapshotCommand().execute(context, { file: "/p/a.sna" } as any);
-      expect(loadSpectrumSnapshot.mock.calls[0][3]).toEqual({ keepModel: true, disks: [] });
+      expect(loadSpectrumSnapshot.mock.calls[0][3]).toEqual({ keepModel: true, disks: [], microdrives: [] });
     });
 
     it("refuses a snapshot for another machine than the project's, without loading", async () => {

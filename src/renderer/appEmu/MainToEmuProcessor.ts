@@ -17,7 +17,7 @@ import { Store } from "@state/redux-light";
 import { TapeDataBlock } from "@common/structs/TapeDataBlock";
 import type { ISpectrumPsgDevice } from "@emu/machines/zxSpectrum/ISpectrumPsgDevice";
 import { isZ88IdeMachine } from "@emu/machines/z88/IZ88IdeMachine";
-import { MEDIA_DISK_A, MEDIA_MICRODRIVES, MEDIA_DISK_B, MEDIA_DOCK, MEDIA_SD_CARD, MEDIA_TAPE } from "@common/structs/project-const";
+import { MEDIA_DISK_A, MEDIA_MICRODRIVES, MEDIA_MICRODRIVE_1, MEDIA_MICRODRIVE_2, MEDIA_DISK_B, MEDIA_DOCK, MEDIA_SD_CARD, MEDIA_TAPE } from "@common/structs/project-const";
 import { dockBankOf, parseDckFile } from "@common/timex/dckFile";
 import { isZx8081ProgramFileName, parseZxProgramFile } from "@emu/machines/zx8081/ZxPFile";
 import { ht1080zTapeErrorKey, isHt1080zTapeFor, parseHt1080zTapeFile } from "@emu/machines/ht1080z/Ht1080zTapeFile";
@@ -69,7 +69,8 @@ import { IMemorySection } from "@abstractions/MemorySection";
 import type { RecordingManager } from "./recording/RecordingManager";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { openRendererDialog } from "@renderer/controls/overlay/dialogRequestBridge";
-import { setMachineConfigAction, setQuickStateAvailableAction } from "@state/actions";
+import { setMachineConfigAction, setMediaAction, setQuickStateAvailableAction } from "@state/actions";
+import { mdrShape } from "@emu/machines/microdrive/mdrImage";
 import { loadZ88Snapshot } from "./machines/z88SnapshotLoad";
 import { loadSpectrumSnapshot } from "./machines/spectrumSnapshotLoad";
 import { saveSpectrumSnapshot } from "./machines/spectrumSnapshotSave";
@@ -402,6 +403,7 @@ class EmuMessageProcessor {
     mode: SpectrumSnapshotLoadMode,
     options: SpectrumSnapshotLoadOptions & {
       disks?: { drive: number; fileName: string; contents: Uint8Array }[];
+      microdrives?: { drive: number; fileName: string; contents: Uint8Array }[];
     } = {}
   ): Promise<SpectrumSnapshotLoadResult> {
     const store = getCachedStore();
@@ -412,7 +414,8 @@ class EmuMessageProcessor {
         setMachineType: (machineId, modelId, config) =>
           this.machineService.setMachineType(machineId, modelId, config),
         setTape: (file, bytes) => this.setTapeFile(file, bytes, false, true),
-        setDisk: (drive, file, bytes) => this.setDiskFile(drive, file, bytes, false, true)
+        setDisk: (drive, file, bytes) => this.setDiskFile(drive, file, bytes, false, true),
+        setMicrodrive: (drive, file, bytes) => this.insertLinkedMicrodrive(drive, file, bytes)
       },
       fileName,
       contents,
@@ -514,6 +517,10 @@ class EmuMessageProcessor {
           diskFiles: [
             mediaStore.getMedia(MEDIA_DISK_A)?.mediaFile,
             mediaStore.getMedia(MEDIA_DISK_B)?.mediaFile
+          ],
+          microdriveFiles: [
+            mediaStore.getMedia(MEDIA_MICRODRIVE_1)?.mediaFile,
+            mediaStore.getMedia(MEDIA_MICRODRIVE_2)?.mediaFile
           ]
         }),
         getEmulatorState: () => store.getState()?.emulatorState ?? {}
@@ -536,7 +543,9 @@ class EmuMessageProcessor {
       getMediaFiles: () => ({
         [MEDIA_TAPE]: mediaStore.getMedia(MEDIA_TAPE)?.mediaFile,
         [MEDIA_DISK_A]: mediaStore.getMedia(MEDIA_DISK_A)?.mediaFile,
-        [MEDIA_DISK_B]: mediaStore.getMedia(MEDIA_DISK_B)?.mediaFile
+        [MEDIA_DISK_B]: mediaStore.getMedia(MEDIA_DISK_B)?.mediaFile,
+        [MEDIA_MICRODRIVE_1]: mediaStore.getMedia(MEDIA_MICRODRIVE_1)?.mediaFile,
+        [MEDIA_MICRODRIVE_2]: mediaStore.getMedia(MEDIA_MICRODRIVE_2)?.mediaFile
       })
     };
   }
@@ -726,6 +735,22 @@ class EmuMessageProcessor {
   }
 
   /** A Microdrive cartridge in or out (`.plans/MICRODRIVE_PLAN.md`): as a disk, through the media store */
+  /**
+   * A cartridge a snapshot links (`.szx` MDRV): the main process records it as the drive's file, so
+   * the guest's writes reach it, as a cartridge the user inserts does
+   */
+  private async insertLinkedMicrodrive(drive: number, file: string, contents: Uint8Array): Promise<void> {
+    let writeProtected = false;
+    try {
+      writeProtected = mdrShape(contents).writeProtected;
+    } catch {
+      // --- Not a cartridge: the machine ejects it, and the media strip says so
+    }
+    getCachedStore().dispatch(setMediaAction(MEDIA_MICRODRIVES[drive], { diskFile: file, writeProtected }), "emu");
+    this.setMicrodriveWriteProtection(drive, writeProtected);
+    await this.setMicrodriveFile(drive, file, contents);
+  }
+
   async setMicrodriveFile(drive: number, file?: string, contents?: Uint8Array) {
     const controller = this.machineService.getMachineController();
     // --- New media act on the present (REVERSE_DEBUGGING_PLAN D12)

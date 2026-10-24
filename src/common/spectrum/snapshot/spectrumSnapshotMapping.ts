@@ -148,7 +148,14 @@ export function mapSpectrumSnapshotToKlive(snapshot: SpectrumSnapshot): Spectrum
   if (snapshot.ay?.on48k) {
     warnings.push(t("media.snapshot.warning.ayOn48k"));
   }
-  if (p.interface1) warnings.push(t("media.snapshot.warning.interface1"));
+  // --- The Interface 1 is the 16K/48K's and the 128K/+2's (`.plans/MICRODRIVE_PLAN.md` Q2), not the Pentagon's
+  if (p.interface1) {
+    if (target.machineId === MI_SPECTRUM_128 && machine !== "pentagon") {
+      modelIds = ["sp128", ...modelIds.filter((m) => m !== "sp128")];
+    } else if (target.machineId !== MI_SPECTRUM_48) {
+      warnings.push(t("media.snapshot.warning.interface1"));
+    }
+  }
   if (p.mgt) warnings.push(t("media.snapshot.warning.mgt"));
   // --- The Beta 128 (TR-DOS) is the Pentagon's: such a snapshot opens on it
   if (p.trdosPaged || p.beta128) {

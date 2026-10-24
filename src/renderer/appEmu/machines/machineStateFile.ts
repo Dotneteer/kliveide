@@ -39,7 +39,14 @@ import { machineRegistry, resolveModelId } from "@common/machines/machine-regist
 import { readKliveStateFile, writeKliveStateFile } from "@common/machineState/kliveStateFile";
 import { stateMismatch } from "@emu/machines/state/wasmStateImage";
 import { writeSpectrumSnapshot } from "@common/spectrum/snapshot/writeSpectrumSnapshot";
-import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_SD_CARD, MEDIA_TAPE } from "@common/structs/project-const";
+import {
+  MEDIA_DISK_A,
+  MEDIA_DISK_B,
+  MEDIA_MICRODRIVE_1,
+  MEDIA_MICRODRIVE_2,
+  MEDIA_SD_CARD,
+  MEDIA_TAPE
+} from "@common/structs/project-const";
 import { loadSpectrumSnapshot } from "./spectrumSnapshotLoad";
 import { t } from "@common/i18n/i18n";
 
@@ -166,7 +173,8 @@ export function captureKliveStateFile(
     try {
       const snapshot = machine.captureSnapshotState({
         tapeFile: mediaFiles[MEDIA_TAPE],
-        diskFiles: [mediaFiles[MEDIA_DISK_A], mediaFiles[MEDIA_DISK_B]]
+        diskFiles: [mediaFiles[MEDIA_DISK_A], mediaFiles[MEDIA_DISK_B]],
+        microdriveFiles: [mediaFiles[MEDIA_MICRODRIVE_1], mediaFiles[MEDIA_MICRODRIVE_2]]
       });
       szx = writeSpectrumSnapshot(snapshot, "szx", {
         name: "Klive IDE",
@@ -179,7 +187,7 @@ export function captureKliveStateFile(
     }
   }
 
-  const media: KliveStateMedia[] = [MEDIA_TAPE, MEDIA_DISK_A, MEDIA_DISK_B]
+  const media: KliveStateMedia[] = [MEDIA_TAPE, MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_MICRODRIVE_1, MEDIA_MICRODRIVE_2]
     .filter((id) => mediaFiles[id])
     .map((id) => ({ id, fileName: mediaFiles[id] }));
   if (options.sdCard) media.push({ ...options.sdCard, id: MEDIA_SD_CARD });
@@ -331,6 +339,11 @@ export async function loadMachineStateFile(
     if (m.id === MEDIA_DISK_A || m.id === MEDIA_DISK_B) {
       warnings.push(
         t("emu.machineState.disk", { drive: m.id === MEDIA_DISK_A ? "A" : "B", file: m.fileName })
+      );
+    }
+    if (m.id === MEDIA_MICRODRIVE_1 || m.id === MEDIA_MICRODRIVE_2) {
+      warnings.push(
+        t("emu.machineState.microdrive", { drive: m.id === MEDIA_MICRODRIVE_1 ? 1 : 2, file: m.fileName })
       );
     }
   }

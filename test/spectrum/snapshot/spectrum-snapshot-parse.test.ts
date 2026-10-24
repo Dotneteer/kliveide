@@ -208,10 +208,12 @@ describe(".z80", () => {
     const s = parseZ80File(buildZ80(t, { version: 3, hwMode: 1, ay48: true, issue2: true }));
     expect(s.ay?.on48k).toBe(true);
     expect(s.peripherals.interface1).toBe(true);
+    expect(s.peripherals.if1).toEqual({ paged: false, drives: 2, microdrives: [] });
     expect(s.peripherals.issue2).toBe(true);
     const w = mapSpectrumSnapshotToKlive(s).warnings.join("\n");
     expect(w).toMatch(/AY chip on a 48K/);
-    expect(w).toMatch(/Interface 1/);
+    // --- Klive's 48K has the Interface 1 (`.plans/MICRODRIVE_PLAN.md` Phase 5): no warning
+    expect(w).not.toMatch(/Interface 1/);
     expect(w).toMatch(/Issue 2/);
   });
 

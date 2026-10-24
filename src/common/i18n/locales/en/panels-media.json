@@ -1828,6 +1828,33 @@
       "drives": "Number of drives"
     }
   },
+  "panels.spectrum.interface1": "Interface 1:",
+  "@panels.spectrum.interface1": {
+    "context": "Label in the ZX Spectrum snapshot viewer (.sna/.z80/.szx)'s file section: the ZX Interface 1 (a product name).",
+    "maxChars": 16
+  },
+  "panels.spectrum.interface1Paged": "ROM paged in, {drives, plural, one {# Microdrive} other {# Microdrives}}",
+  "@panels.spectrum.interface1Paged": {
+    "context": "Value of the 'Interface 1' row in the ZX Spectrum snapshot viewer: its ROM is paged in over the Spectrum's. Microdrive is a product name.",
+    "placeholders": {
+      "drives": "Number of Microdrives attached"
+    }
+  },
+  "panels.spectrum.interface1NotPaged": "ROM paged out, {drives, plural, one {# Microdrive} other {# Microdrives}}",
+  "@panels.spectrum.interface1NotPaged": {
+    "context": "Value of the 'Interface 1' row in the ZX Spectrum snapshot viewer: its ROM is not paged in. Microdrive is a product name.",
+    "placeholders": {
+      "drives": "Number of Microdrives attached"
+    }
+  },
+  "panels.spectrum.microdrive": "Microdrive {drive}:",
+  "@panels.spectrum.microdrive": {
+    "context": "Label in the ZX Spectrum snapshot viewer (.sna/.z80/.szx)'s file section: the cartridge in a Microdrive (a product name).",
+    "maxChars": 16,
+    "placeholders": {
+      "drive": "The drive number, 1-8"
+    }
+  },
   "panels.spectrum.drive": "Drive {drive}:",
   "@panels.spectrum.drive": {
     "context": "Label in the ZX Spectrum snapshot viewer (.sna/.z80/.szx)'s file section: a +3 disk drive.",

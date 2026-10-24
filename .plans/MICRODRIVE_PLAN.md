@@ -1,6 +1,6 @@
 # ZX Interface 1 and Microdrives on the 48K and 128K (G9.6)
 
-Status: 🚧 **in progress**. Phases 0–4 done (2026-10-24, see their "As built" notes). Decisions Q1–Q8 were
+Status: 🚧 **in progress**. Phases 0–5 done (2026-10-24, see their "As built" notes). Decisions Q1–Q8 were
 taken by the author on 2026-10-24 (§8).
 Base plan: [CLOSING_THE_GAPS_PLAN.md](CLOSING_THE_GAPS_PLAN.md), §G9 (a new row, **G9.6**, size L).
 Research: [`_input/microdrive/`](../_input/microdrive/README.md). Every fact in this plan comes from
@@ -606,7 +606,7 @@ research file and section it checks:
   - The tape trap does not fire at `$056C` inside the paged IF1 ROM. A control proves it fires with
     the interface off.
 
-### Phase 5 — snapshots and state (S–M)
+### Phase 5 — snapshots and state (S–M) ✅
 1. **`.z80`:**
    - read modes 1 (48K + IF1), 4 in v2 / 5 in v3 (128K + IF1), with byte 37 bit 7 (16K / +2);
      byte 36 `$FF` restores the IF1 paged;
@@ -630,6 +630,50 @@ research file and section it checks:
    from the recording). Writes during playback never reach the user's file.
 6. Tests: `test/spectrum/snapshot/*` (the existing `peripherals.interface1` parse tests now
    restore), `machine-state-flow.test.ts`, RZX determinism.
+
+**As built (Phase 5, 2026-10-24):**
+- **The model.** `peripherals.if1` (`SnapshotInterface1`: `paged`, `drives`, `customRom`,
+  `microdrives`), next to the old `interface1` flag, which stays as "the interface was there".
+- **`.z80`.**
+  - Read: modes 1, 4 (v2) and 5 (v3), with the modified bit, give `if1` with `paged` from byte 36.
+  - Write: mode 1 for the 16K/48K, mode 5 for the 128K, and mode 5 with the modified bit for the +2.
+    Byte 36 is `$FF` while paged.
+  - The cartridges and a custom ROM are declared losses. A page-1 block (an IF1 ROM) still only
+    warns.
+- **`.szx`.**
+  - `IF1` and `MDRV` are read and written; neither is in the "not restored" list any more.
+  - A custom ROM is embedded zlib-compressed. The standard v2 ROM (by CRC) gives `wRomSize` 0.
+  - An `IF1` block with the enabled bit off records no interface. An `MDRV` without an `IF1` block
+    still implies one.
+  - A cartridge without a file is a loss.
+- **`wDrivePos`.** No foreign file was found, so Klive writes the head's **slot index** and does
+  not restore it (§9). The ROM re-finds its place from the headers. The motor and select state are
+  not in the block either, so a snapshot taken mid-transfer does not resume the transfer.
+- **`.sna`.** "does not record the Interface 1", or the "ROM was paged in" variant, plus the
+  cartridges, all as losses.
+- **The mapping.** No warning on the 48K family or the 128K/+2; the 128K prefers `sp128` over the
+  Pentagon. Other targets warn that only those machines have one.
+- **The loader.**
+  - `fitSpectrumMachine` connects the IF1 (`MC_INTERFACE1`) and drops the DivMMC with a warning.
+  - A snapshot without the IF1 leaves a connected interface alone.
+  - The IDE command reads `MDRV`'s files like the disks (`diskCandidates`). A missing file is a
+    warning.
+  - The emulator inserts the cartridges through the main store (`insertLinkedMicrodrive`), so the
+    guest's writes reach the file. A drive beyond 2, or a machine without the IF1, warns.
+- **Capture and restore.**
+  - Capture reads the paging, the ROM edition, and the inserted drives with their motor and slot.
+    The cartridges' file names come from the media store (`microdriveFiles`).
+  - Restore calls `If1SetPaged` after the reset.
+- **Klive state files** list the two cartridges in `MEDI`. Loading one says the cartridge is
+  detached (`emu.machineState.microdrive`).
+- **The viewer** shows the interface's row and one row per cartridge.
+- **RZX.** A CAT recorded with a cartridge plays back to the same screen on a machine with no
+  cartridge (`if1-state.test.ts`). A test must put its program into memory before recording, since
+  a poke behind the recorder desyncs any playback.
+- **Tests:**
+  - `test/spectrum/snapshot/spectrum-snapshot-if1.test.ts`;
+  - the flow test (connect, insert, paging);
+  - `if1-state.test.ts` (`.szx`/`.z80` paged round trips on the real core, RZX).
 
 ### Phase 6 — documentation and roadmap (S)
 1. `docs/content/en/guides/emulator/microdrives.mdx`, modelled on `trdos-disks.mdx`: connect the IF1,
@@ -718,7 +762,7 @@ Sources are the research files in `_input/microdrive/`, which carry the citation
 | FORMAT on a 100-slot tape (v2) | the last 100 sectors written survive (100 down to 1); CAT: 49K (98 usable) | recorded in Phase 2 |
 | CAT "K free", fresh 254-slot cartridge (v2) | 126 | **confirmed** in Phase 1 (`if1-rom.test.ts`) |
 | CAT "K free", fresh 254-slot cartridge | 126 (v2) / 127 (v1) (derived) | **record in Phase 2** (v1 only with a user ROM) |
-| `.szx` `wDrivePos` | Klive: byte offset within the 543-byte slot image, clamped to 16 bits | spec says "position within the file" but the field is a WORD; **check a foreign file** |
+| `.szx` `wDrivePos` | Klive: the head's slot index (0-253); written, read into the model, not restored | spec says "position within the file" but the field is a WORD; no foreign file found (Phase 5) |
 | ROM editions | v1 CRC32 `e72a12ae`, v2 `bb66dd1e` (SHA-1 `5cfb6bca…3a127c08`, the shipped file); `CLOSE #0: PRINT PEEK 23729` → 0 / 80 | MAME hashes; Carri; the shipped file checked in Phase 0 |
 | Paging-address bytes | `$0008` `2A 5D 5C` and `$1708` `23` in the IF1 ROM, `sp48.rom` and `sp128-1.rom`; `$0700` `C9` (IF1) vs `71` (48K); `$0038` `FB C9`, `$0066` `ED 45` in the IF1 ROM | checked by `if1-rom-image.test.ts` |
 | 128K ROM 0 | never fetches from `$0008`/`$1708` | `_input/Spectrum128_ROM0.asm` (Paul Farrow's notes) |

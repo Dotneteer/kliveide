@@ -19,6 +19,8 @@ import {
   readWord,
   type SnapshotBetaDisk,
   type SnapshotChunkInfo,
+  type SnapshotInterface1,
+  type SnapshotMicrodrive,
   type SnapshotMachine,
   type SpectrumSnapshot,
   type SpectrumSnapshotPeripherals,
@@ -92,15 +94,15 @@ const KNOWN_BLOCKS = new Set([
   "ROM",
   "B128",
   "BDSK",
+  "IF1",
+  "MDRV",
   "SCLD",
   "DOCK"
 ]);
 
 /** Readable names of the blocks Klive skips, for the warnings */
 const SKIPPED_BLOCK_NAMES: Record<string, string> = {
-  IF1: "Interface 1",
   IF2R: "Interface 2 ROM cartridge",
-  MDRV: "Microdrive",
   MFCE: "Multiface",
   ZXPR: "ZX Printer",
   PLSD: "Plus D",
@@ -153,7 +155,7 @@ function readString(bytes: Uint8Array, offset: number, maxLength: number): strin
 /** Inflates a zlib stream, naming the block on failure */
 function inflate(
   data: Uint8Array,
-  part: "ramPage" | "disk" | "betaDisk" | "tape" | "dockPage",
+  part: "ramPage" | "disk" | "betaDisk" | "tape" | "dockPage" | "if1Rom" | "microdrive",
   index?: number | string
 ): Uint8Array {
   try {
@@ -401,6 +403,57 @@ export function parseSzxFile(bytes: Uint8Array): SpectrumSnapshot {
         }
         peripherals.beta128 ??= { drives: 2, paged: false, system: 0, track: 0, sector: 1, data: 0, status: 0, disks: [] };
         peripherals.beta128.disks.push(disk);
+        break;
+      }
+      case "IF1": {
+        // --- wFlags, chNumMicrodrives, 3 + 32 reserved bytes, wRomSize, then a custom ROM (zx-state)
+        need(40);
+        const flags = readWord(data, 0);
+        const romSize = readWord(data, 38);
+        const if1: SnapshotInterface1 = {
+          paged: (flags & 0x04) !== 0,
+          drives: Math.max(1, Math.min(8, data[2] || 1)),
+          microdrives: peripherals.if1?.microdrives ?? []
+        };
+        if (romSize) {
+          const payload = data.subarray(40);
+          const rom = flags & 0x02 ? inflate(payload, "if1Rom") : payload.slice();
+          if (rom.length !== romSize) {
+            warnings.push(t("media.snapshot.warning.szxIf1RomSize", { size: rom.length, expected: romSize }));
+          }
+          if1.customRom = rom;
+        }
+        // --- A block with the interface switched off records an Interface 1 that is not there
+        if (flags & 0x01) {
+          peripherals.interface1 = true;
+          peripherals.if1 = if1;
+        }
+        break;
+      }
+      case "MDRV": {
+        // --- wFlags, chDriveNum (1-8), fDriveRunning, wDrivePos, wPreamble, dwUncompressedSize, chData
+        need(12);
+        const flags = readWord(data, 0);
+        const length = readDword(data, 8);
+        const payload = data.subarray(12);
+        const cartridge: SnapshotMicrodrive = {
+          drive: Math.max(0, Math.min(7, data[2] - 1)),
+          running: data[3] !== 0,
+          position: readWord(data, 4),
+          preamble: readWord(data, 6)
+        };
+        if (flags & 0x02) {
+          // --- Reserved by the spec ("not implemented"); read it anyway if a writer uses it
+          cartridge.embedded = flags & 0x01 ? inflate(payload, "microdrive", data[2]) : payload.slice();
+        } else {
+          cartridge.fileName = readString(payload, 0, Math.min(length, payload.length));
+        }
+        // --- The spec puts IF1 first; a cartridge without it still says the interface was there
+        if (!peripherals.if1) {
+          peripherals.interface1 = true;
+          peripherals.if1 = { paged: false, drives: 8, microdrives: [] };
+        }
+        peripherals.if1.microdrives.push(cartridge);
         break;
       }
       case "TAPE": {

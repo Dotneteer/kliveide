@@ -22,10 +22,14 @@ import {
   type SnapshotBetaDisk,
   type SnapshotDisk,
   type SnapshotMachineKind,
+  type SnapshotMicrodrive,
   type SpectrumSnapshot,
   snapshotBankCount
 } from "@common/spectrum/snapshot/spectrumSnapshot";
 import { SnapshotRefusedError } from "@common/spectrum/snapshot/snapshotBytes";
+import { Interface1Support } from "@emu/machines/zxSpectrum/if1/if1CoreBridge";
+import { checkInterface1Rom } from "@emu/machines/zxSpectrum/if1/if1Rom";
+import { UI_MICRODRIVES } from "@emu/machines/zxSpectrum/if1/Interface1MachineSupport";
 import { t } from "@common/i18n/i18n";
 
 /** The core exports the capture uses, by their name without the prefix */
@@ -60,6 +64,8 @@ export type SpectrumSnapshotCaptureMedia = {
   tapeFile?: string;
   /** The disk files in drives A and B */
   diskFiles?: (string | undefined)[];
+  /** The cartridge files in Microdrives 1 and 2 */
+  microdriveFiles?: (string | undefined)[];
 };
 
 /**
@@ -227,6 +233,34 @@ export function captureSpectrumSnapshot(
       disks
     };
     if (paged) snapshot.peripherals.trdosPaged = true;
+  }
+
+  // --- The Interface 1: its paging, a ROM other than the standard one, the cartridges linked to their files
+  if (core.prefix !== "spp3e") {
+    const if1 = new Interface1Support(core.prefix, { getIf1Runtime: () => ({ exports: core.exports }) });
+    if (if1.available && if1.state().present) {
+      const rom = if1.rom();
+      const check = rom ? checkInterface1Rom(rom) : undefined;
+      const microdrives: SnapshotMicrodrive[] = [];
+      for (let drive = 0; drive < UI_MICRODRIVES; drive++) {
+        const info = if1.drive(drive);
+        if (!info.inserted) continue;
+        microdrives.push({
+          drive,
+          running: info.motorOn,
+          position: info.slot,
+          preamble: 0,
+          fileName: media.microdriveFiles?.[drive]
+        });
+      }
+      snapshot.peripherals.interface1 = true;
+      snapshot.peripherals.if1 = {
+        paged: if1.state().paged,
+        drives: UI_MICRODRIVES,
+        ...(rom && check?.ok && check.edition !== "v2" ? { customRom: rom.slice() } : {}),
+        microdrives
+      };
+    }
   }
 
   // --- The tape in the deck
