@@ -1,7 +1,8 @@
+/* The same steps as `DialogRow`: label to control `--space-2`, control to its error `--space-1_5` */
 .field {
   display: flex;
   flex-direction: column;
-  gap: var(--space-1_5);
+  gap: var(--space-2);
 }
 
 /* M1: absolute, never `rem`. All three were `0.875rem` off the 16px root. */
@@ -24,4 +25,6 @@
 .error {
   color: var(--status-error);
   font-size: var(--font-size-100);
+  /* The field's gap less one step: the message sits closer to the field than the label does */
+  margin-top: calc(var(--space-1_5) - var(--space-2));
 }

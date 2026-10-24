@@ -855,9 +855,17 @@ two even rows, aligned in a grid, never a free wrap that leaves one orphan.
 
 ## A Dialog Row Is Spaced Once
 
+**A dialog field has three steps, set once in the shared primitives and nowhere else:** label to
+control `--space-2` (8px; `DialogRow`'s gap, its `rows` gap for a prompt line stacked over its field,
+and `DialogField`'s gap), control to its error `--space-1_5` (6px; `TextInput`'s `.error` margin,
+`DialogField`'s error pulled up by `calc(var(--space-1_5) - var(--space-2))`), and row to row
+`--space-4` (16px, the form). The error sits closer to its field than the label does, so both read
+as the field's; at the old 6px/0px the prompt and the message sat on the field's border (Rename, New
+File). A `rows` row had no gap at all. `DialogRow.test.tsx` holds all three.
+
 Inside a `DialogForm`, the form body's gap (`--space-4`) is what separates one `DialogRow` from the
 next; `DialogRow`'s own top margin (`--space-3`) is for rows stacked without a form, and the form
-cancels it. Both applying put rows 28px apart against 6px between a label and its control, and
+cancels it. Both applying put rows 28px apart against the label-to-control gap, and
 every field read as floating on its own. The same goes for a wrapper around a control: it carries
 no padding of its own, because the row already spaces it - the 8px a dropdown wrapper added above
 and below doubled the gap again. When a dialog looks too airy, measure the computed margins and
@@ -866,7 +874,8 @@ gaps before adding or removing any: the excess is almost always two layers spaci
 ## A Hint Under A Field Needs Its Own Top Margin
 
 `TextInput` carries no bottom margin — `DialogRow` owns the gap between a label and its field, and
-the control's own block margins were removed so the two would stop fighting. The consequence is
+the control's own block margins were removed so the two would stop fighting. Its own error line is
+the exception: it carries its `--space-1_5` top margin itself. The consequence is
 easy to miss when adding a field: **anything placed directly beneath a field sits on it**, and an
 explanatory line that touches the box it explains reads as part of the control rather than as a note
 about it.

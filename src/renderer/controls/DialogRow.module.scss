@@ -1,7 +1,13 @@
+/*
+ * A field's spacing, the same in every dialog: label to control `--space-2` (8px), control to its
+ * error `--space-1_5` (6px, `TextInput`), one row to the next `--space-4` (16px, `DialogForm`). At
+ * 6px and 0px the label and the message sat on the field's border; the steps keep the label and the
+ * message visibly the field's, and the rows visibly apart.
+ */
 .dialogRow {
   display: flex;
   flex-direction: column;
-  gap: var(--space-1_5);
+  gap: var(--space-2);
   padding: 0;
 }
 
@@ -28,6 +34,12 @@
   min-width: 0;
 }
 
+/*
+ * A row whose children stack (`rows`): a prompt line over its field (Rename, New File, the label
+ * dialogs), or two fields. They are spaced as a labelled row's label and control are, by the same
+ * `--space-2`; with no gap the prompt sat on the field's border.
+ */
 .rows {
   flex-direction: column;
+  gap: var(--space-2);
 }
