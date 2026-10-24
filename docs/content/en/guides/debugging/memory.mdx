@@ -1,60 +1,81 @@
 ---
-description: "You can view the contents of the memory with the View | Machine Views | Memory menu command that displays the contents of the full 64K memory addressable by Z80:"
+description: "Browse and edit the machine's memory, one bank or the whole 64K, see which bytes ran or changed on the heat map, and open any address as graphics."
 ---
 
-import { Callout } from 'nextra/components'
+import { Callout, Steps } from 'nextra/components'
 
-# Displaying the Memory Contents
+# The Memory View
 
-You can view the contents of the memory with the **View | Machine Views | Memory** menu command that displays the contents of the full 64K memory addressable by Z80:
+The **Memory** view shows the machine's memory as a hex dump with characters beside it. Use it to
+check what your program wrote, to look into a bank that is not paged in, to change a byte while the
+machine is paused, and, with code coverage on, to see which bytes were executed, read or written.
 
-<ClickableImage src="/images/working-with-ide/mem-view.png" width={512} />
+<Shot
+  src="guides/debugging/memory/memory-view.webp"
+  alt="The Memory view with its toolbar: Decimal, View, Chars, Bank, Heat, Go To and Show as graphics"
+  caption="The Memory view and its toolbar."
+  width={760}
+/>
 
-While the ZX Spectrum 48K does not support paging, other models do. When you use them, you can choose to show only the contents of a particular bank:
+## Open it
 
-<ClickableImage src="/images/working-with-ide/banked-mem-view.png" width={512} />
+Choose **View › Machine Views › Memory**, or click **Show Memory Panel** on the IDE toolbar. The
+view opens as a document in the IDE; the same items close it again.
 
-Some models (such as ZX Spectrum Next or Cambridge Z88) offer you many banks to choose from:
+## The toolbar
 
-<ClickableImage src="/images/working-with-ide/next-mem-view.png" width={512} />
+- **Decimal**: show addresses and bytes in decimal instead of hexadecimal (off by default).
+- **View**: the layout: **8B / 1 col** (8 bytes a row), **8B / 2 col** (two 8-byte sections side by
+  side, the default) or **16B / 1 col**.
+- **Chars**: show each byte's character beside the dump (on by default). Hovering a byte outlines
+  its character.
+- **Bank**: show the bank label in front of each address (on by default; only on machines that
+  page memory).
+- **Heat**: colour the bytes by how they were used since coverage started: **Executed**, **Read**,
+  **Written** or **All**, or **Off**. It appears on machines that record coverage; turn coverage on
+  with **Debug › Code Coverage**. See [Code coverage and the heat map](/en/guides/analysis/code-coverage/).
+- **Go To**: type an address and press <kbd>Enter</kbd>. The view scrolls there and the byte at that
+  address flashes for a few seconds. Type decimal in decimal mode, hexadecimal otherwise.
+- **Show as graphics**: open the [Graphics Finder](/en/guides/analysis/graphics-finder/) at the
+  address at the top of the view, to look for sprites and fonts.
 
-## Display Options
+Hover a byte to see its value in hexadecimal, decimal and binary.
 
-The Memory View provides several options to display and navigate the memory contents:
-- **Decimal**: Turns on or off the decimal display (off, by default). When turned on, memory addresses and content are displayed with decimal numbers; otherwise, they are hexadecimal.
-- **View**: A dropdown menu to select the memory layout display mode:
-  - **8B / 1 col**: Display 8 bytes per row in a single column (one dump section).
-  - **8B / 2 col**: Display 8 bytes per row in two columns (two dump sections side by side). This is the default mode.
-  - **16B / 1 col**: Display 16 bytes per row in a single column.
-- **Chars**: This toggles the display of the character view for a particular memory section (on, by default). When enabled, each byte's character representation is shown alongside the hex dump. Hovering over a byte in the hex area highlights the corresponding character in the character section with a border.
-- **Bank**: This option (on, by default) allows you to turn the display of bank labels on or off in front of memory addresses. This option is available only for models that support memory paging.
-- **Go To**: Type an address into this box and press Enter to jump to the particular address. Though memory sections are aligned to 8-byte boundaries when jumping to a new address, the designated address's content flashes for about 3 seconds to let you identify the jump target. In decimal mode, you can type decimal addresses; otherwise, use hexadecimal addresses.
+## Look at one bank
 
-## Banked Memory Views
+On machines that page memory, a second toolbar row has a **64K View** switch. On (the default), the
+view shows the 64K the CPU sees now, with the current paging. Off, choose a ROM page or RAM bank in
+the **Selected bank** chooser: the view shows that partition even when it is not paged in. The
+partition names are listed [below](#machine-specific-memory-partitions).
 
-A new switch, **64K View**, is displayed in the second header row when your model supports memory paging. It is turned on by default, and the current 64K memory (according to the current memory page settings) is displayed. When you turn this option off, you can choose the bank to display (ROM pages or RAM banks, depending on the machine type) from the **Select bank** dropdown. The Memory View will display only the contents of that memory even if that segment is not paged in.
+## Change a byte
 
-## Edit Memory Content
+<Steps>
 
-When you hover the mouse over a memory address that represents RAM, you can edit its content by right-clicking it:
+### Right-click the byte
 
-<ClickableImage src="/images/working-with-ide/edit-memory.png" width={256} />
+Right-click a RAM byte in the dump. The **Set Memory Content** dialog opens for that address.
 
-You can specify the new value with decimal numbers, hexadecimal numbers (use the `$` prefix), or binary numbers (use the `%` prefix). You can use spaces to group digits; the IDE will remove them.
+### Enter the value
 
-If the specified value cannot be parsed, a red border marks the invalid state. Clicking the **Set** button or pressing Enter will set the contents to the specified value.
+Type a decimal number, a hexadecimal one with `$`, or a binary one with `%`; spaces between digits
+are ignored. Choose the **Content size**, 1 to 4 bytes. The value is written least significant
+byte first; tick **Big-endian write** to write the most significant byte first.
 
-With this dialog, you can write 1, 2, 3, or 4 consecutive bytes into the memory (select the size from the dropdown). The given value is entered as a little-endian value (LSB first). However, checking the **Big-endian write** flag stores the MSB first. This flag is available only for 2, 3, and 4-byte values.
+### Click Set
 
-<Callout type="info" emoji="💡">
-Writing into the memory can be done while the machine is running. In this case, the machine may overwrite the modified value you set with this dialog! If necessary, pause the machine before setting the content of a particular memory address.
+Click **Set** or press <kbd>Enter</kbd>. A ROM address cannot be written; the dialog says so.
+
+</Steps>
+
+<Callout type="info">
+Memory can be written while the machine runs, but the program may overwrite the value at once:
+pause it first. Writing also works while the machine is stopped, which is useful on machines whose
+memory survives switching off, such as the Cambridge Z88. While you stand in the past with reverse
+debugging on, an edit asks to [take over](/en/guides/debugging/reverse-debugging/#taking-over) first.
 </Callout>
 
-<Callout type="info" emoji="💡">
-Though it seems unlogical, this command allows you to write memory contents while the machine is stopped. This feature may benefit several machines (such as Z88) with flash drives used as the operational memory.
-</Callout>
-
-## Machine-Specific Memory Partitions
+## Machine-specific memory partitions
 
 Every partition has one **name** and one **description**. The name is what identifies it: it is what
 the bank column shows, what a breakpoint is listed under, and what the `bp-*` commands accept in a
@@ -117,3 +138,10 @@ names on this machine. A name has to mean one thing.
 Earlier versions called the alternate ROMs `Q0` and `Q1`. Those spellings are still accepted by
 `bp-set` and friends, so existing scripts keep working, but the IDE now shows `X0` and `X1`.
 </Callout>
+
+## Related
+
+- [The Disassembly view](/en/guides/debugging/disassembly/)
+- [Code coverage and the heat map](/en/guides/analysis/code-coverage/)
+- [The Graphics Finder](/en/guides/analysis/graphics-finder/)
+- [Breakpoints](/en/guides/debugging/breakpoints/): partition-qualified and bank-relative addresses

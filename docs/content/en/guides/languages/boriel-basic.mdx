@@ -1,0 +1,113 @@
+---
+description: "Install the Boriel BASIC 2 compiler that comes with Klive, switch your BASIC programs to it, and build, run and debug them, including banked programs made of modules."
+---
+
+import { Callout, Steps } from 'nextra/components'
+
+# Boriel BASIC
+
+Klive builds ZX BASIC programs with its own compiler, [Klive BASIC](/en/guides/languages/klive-basic/),
+unless you choose **Boriel BASIC 2** (`zxbc`), the compiler of the ZX BASIC language's author. Klive
+comes with it (version 2.0.0-beta25, redistributed with its author's permission) and installs it for
+you. Use it when you want Boriel BASIC 2's own features, such as modules, or to compare the two
+compilers.
+
+*Applies to: ZX Spectrum 48K, 128K, +2A/+3, +2E/+3E, Timex, Scorpion and ZX Spectrum Next.*
+
+## Set up Boriel BASIC
+
+<Steps>
+
+### Install it
+
+The first time Klive starts, it offers to install Boriel BASIC in the `zxbasic2` folder of your home
+folder. Choose **Install**, pick another folder with **Browse...**, or choose **Not now**.
+
+To install it later, open **Settings › Integrations** and click **Configure...** next to
+**Boriel BASIC**. The same dialog accepts an installation you already have (**Use an existing
+installation...**), and offers **Repair**, **Update** or **Reinstall** when an installation is broken
+or older than the one that comes with Klive. Its **In use** row shows the installation Klive uses and
+whether it works.
+
+### Choose it as the compiler
+
+Pick **Boriel BASIC** in **Settings › Integrations › Compiler for BASIC programs**, tick **Use Boriel
+BASIC to build BASIC programs** in the Boriel BASIC dialog, or type:
+
+```
+set zxbasic.compiler boriel
+```
+
+`set zxbasic.compiler klive` switches back. A project can keep its own choice in its settings
+(`set -p zxbasic.compiler boriel`); then the Settings row and the dialog's checkbox change the
+project's choice.
+
+### Build and run
+
+Build, run and debug as with Klive BASIC. While a BASIC file is open, the status bar names the
+compiler that builds it; click the name to open the Boriel BASIC dialog.
+
+</Steps>
+
+Projects and templates are the same for both compilers. The build options in the source header
+([Build options in the source](/en/guides/languages/klive-basic/#build-options-in-the-source)) are
+translated to `zxbc`'s options; the few that only Klive BASIC understands (`asm-dialect klive`,
+`debug-info`, the `codebank-*` options and others) produce a warning and are ignored.
+
+<Callout type="warning">
+`CODEBANK` is Klive BASIC syntax, and Boriel BASIC does not compile it. The ZX Spectrum Next's
+**zx-basic** template uses it, so build that template with Klive BASIC, or move its banked code into a
+module (see below). A Boriel BASIC build that fails on `CODEBANK` says so at the `CODEBANK` line.
+</Callout>
+
+## Modules and banked code
+
+Boriel BASIC 2 programs can `USE` modules: a `MODULE name` … `END MODULE` file in the program's folder
+(or in a folder of the `include-path` option), whose `PUBLIC` routines the program calls as
+`name.Routine(...)`.
+
+On the ZX Spectrum 128K and the Next, add `'@split-modules` to the header to put each module into a
+RAM bank of its own, so a program can be larger than the memory below `$C000`:
+
+```zxbasic
+'@split-modules
+USE tiles
+USE music
+
+tiles.Draw(3)
+```
+
+A call into another bank is written as any other call; the compiler pages the bank in and back out.
+Klive runs and debugs such a program as any other: breakpoints in a module stop only in their own bank,
+the call stack and Step Into, Over and Out work through the calls between banks, and a stop in a
+module opens its file.
+
+- On the ZX Spectrum 128K, exporting such a program as a TAP or TZX file saves the tape `zxbc` writes,
+  whose loader pages the banks in as the program expects; load it from 128 BASIC or the Tape Loader.
+  Klive's own loader options (a BASIC loader, a border, a screen) do not apply to it.
+- On the 48K the option has no effect, because there are no banks to use; Klive warns about it.
+- Klive BASIC accepts the option and ignores it, with a warning: it banks code with `CODEBANK`.
+
+## What works, and the limits
+
+- **Machines:** the ZX Spectrum 48K, 128K and +3, the Timex and Scorpion machines, and the ZX
+  Spectrum Next, whose programs run from the `.nex` file `zxbc` writes.
+- **Errors and warnings** appear in the Build output and in the editor. They mark the whole line,
+  because `zxbc` reports no column.
+- **Source-level debugging** works on every machine Boriel BASIC builds for: breakpoints, statement
+  stepping, the call stack and the Variables panel read the debug information `zxbc` writes.
+  Exporting a Next program as a NEX file writes the same `.nex.kbasic-debug.json` file as Klive BASIC
+  does, for `nex-run -d`. Not shown yet: a `FASTCALL` routine's parameter, and the contents of an
+  array whose bounds are not constant.
+- **The editor** knows no symbols with Boriel BASIC: keyword help, keyword and library completion,
+  signature help for built-ins, folding and block highlights still work, but hovers on your own
+  names, go to definition and rename need Klive BASIC.
+- **Background checks** use `zxbc --parse-only`, which is quick and writes no files
+  ([Background compilation](/en/guides/projects/background-compilation/)).
+
+## Related
+
+- [Klive BASIC](/en/guides/languages/klive-basic/)
+- [Call stack and variables](/en/guides/debugging/call-stack-variables/)
+- [Klive BASIC language reference](/en/reference/klive-basic/)
+- [Settings](/en/guides/customizing/settings/)

@@ -12,9 +12,9 @@ z88dk is not part of Klive: it is a large toolkit (about 400 MB installed). Kliv
 
 ## Setting up z88dk
 
-Open **Settings › Integrations** (see [Settings](/en/guides/ide/settings)) and click **Configure...** next to **z88dk**, or type `z88dk-setup` in the Command window. A C build that finds no z88dk says so in the Build output, with a **Set up z88dk...** link that opens the same dialog.
+Open **Settings › Integrations** (see [Settings](/en/guides/customizing/settings/)) and click **Configure...** next to **z88dk**, or type `z88dk-setup` in the Command window. A C build that finds no z88dk says so in the Build output, with a **Set up z88dk...** link that opens the same dialog.
 
-The **z88dk Integration** dialog works like the [SJASMPLUS one](/en/guides/languages/sjasmplus): the **In use** block re-tests the configured installation every time the dialog opens, the **To apply** block shows what you are setting up, and **Apply** saves it only after its test passed. The test compiles a one-line C program for the ZX Spectrum, which proves that the compiler, its libraries and its configuration all work, not only that the program starts.
+The **z88dk Integration** dialog works like the [SJASMPLUS one](/en/guides/languages/sjasmplus/): the **In use** block re-tests the configured installation every time the dialog opens, the **To apply** block shows what you are setting up, and **Apply** saves it only after its test passed. The test compiles a one-line C program for the ZX Spectrum, which proves that the compiler, its libraries and its configuration all work, not only that the program starts.
 
 The **Source** row offers two ways in:
 
@@ -31,7 +31,7 @@ Like the other integrations, the setup can go into your user settings or, with a
 
 ## Projects
 
-Create a project with the `z88-dk` template (see [Project templates](/en/guides/projects/project-templates)). It exists for every machine of the ZX Spectrum family (the 48K, the 128K and the Pentagon 128, the +2A/+3/+2E/+3E, the Timex models, the Scorpion and the ZX Spectrum Next) and for the ZX81, the ZX80 and the Cambridge Z88. Its build root is `code/main.c`; the Spectrum version is:
+Create a project with the `z88-dk` template (see [Project templates](/en/guides/projects/project-templates/)). It exists for every machine of the ZX Spectrum family (the 48K, the 128K and the Pentagon 128, the +2A/+3/+2E/+3E, the Timex models, the Scorpion and the ZX Spectrum Next) and for the ZX81, the ZX80 and the Cambridge Z88. Its build root is `code/main.c`; the Spectrum version is:
 
 ```c
 #include <stdio.h>
@@ -150,6 +150,6 @@ z88dk's own `#pragma output` lines in your source keep working.
 
 - `z88dk-setup` opens the z88dk Integration dialog.
 - `z88dk-reset <folder>` stores an installation folder without testing it (for scripts); with no argument it removes the z88dk settings.
-- [`klive build`](/en/reference/command-line) builds a C project without the IDE. It finds z88dk through `--z88dk <folder>`, then the `Z88DK` environment variable, then the project's setting, then the usual folders.
+- [`klive build`](/en/reference/command-line/) builds a C project without the IDE. It finds z88dk through `--z88dk <folder>`, then the `Z88DK` environment variable, then the project's setting, then the usual folders.
 
-The `Z88dk.compile` function of [build scripts](/en/reference/klive-script) is still available for custom builds.
+The `Z88dk.compile` function of [build scripts](/en/reference/klive-script/) is still available for custom builds.

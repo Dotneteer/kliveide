@@ -1,18 +1,16 @@
 export default {
-  "run-debug": "Running and debugging",
+  "run-debug": "Running, pausing and stepping",
   "breakpoints": "Breakpoints",
+  "breakpoint-conditions": "Conditions, hit counts and logpoints",
+  "source-comment-breakpoints": "Breakpoints from source comments",
   "watch": "Watch expressions",
+  "call-stack-variables": "Call Stack and Variables",
+  "machine-state-panels": "Machine-state panels",
   "memory": "The Memory view",
   "disassembly": "The Disassembly view",
-  "cpu": "The CPU view",
-  "ula": "The ULA view",
-  "system-vars": "System variables",
-  "basic-listing": "The BASIC listing",
-  "instant-screen": "The Instant Screen",
-  "beam-position": "The beam position",
+  "paused-screen": "The paused screen",
   "measure-t-states": "Measuring T-states",
   "execution-history": "The execution history",
   "reverse-debugging": "Reverse debugging",
-  "debug-recordings": "Debug recordings",
-  "advanced-debugging": "Advanced debugging"
+  "debug-recordings": "Debug recordings"
 };

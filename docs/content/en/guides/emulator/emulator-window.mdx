@@ -1,0 +1,121 @@
+---
+description: "Find your way around the emulator window: its toolbar, status bar and media strip, the speed and sound controls, its View menu items, keeping it on top, and how it works with the IDE window."
+---
+
+import { Callout } from 'nextra/components'
+
+# The emulator window
+
+Klive has two windows: the **emulator**, which shows the running machine, and the **IDE**, where you
+edit, build and debug. This page covers the emulator window: its toolbar, its status bar, the parts
+you can show or hide, and how it shares the screen with the IDE.
+
+<Shot
+  src="guides/emulator/emulator-window/window.webp"
+  alt="The emulator window running a ZX Spectrum 48K that lists a short BASIC program: the toolbar above the screen, the status bar below it with the machine name and the media strip"
+  caption="The emulator window: toolbar, screen and status bar"
+  markers={["toolbar", "screen", "media", "machine"]}
+  width={760}
+/>
+
+1. The toolbar: run, pause and step the machine, and switch the emulator's options.
+2. The emulated screen, here listing a short BASIC program.
+3. The media strip: the tape, disks or cartridges in the machine.
+4. The machine and its clock speed, in the status bar.
+
+## The two windows
+
+The emulator and the IDE are separate windows, so you can put them on different monitors.
+
+- **The first time** you start Klive, only the emulator window appears, with a welcome dialog.
+  Choose **View › Show IDE** to open the IDE window.
+- **Closing the IDE window** only hides it; **View › Show IDE** brings it back. Turn on
+  **Settings › General › Close the emulator when the IDE is closed** to quit Klive with the IDE
+  instead. Closing the emulator window always quits Klive.
+- Klive remembers where both windows were, and whether the IDE was showing, and restores them the
+  next time it starts.
+- With **Settings › General › Open the last project at startup** on (the default), Klive opens the
+  project you used last, and opening a project opens its build root file.
+
+## The toolbar
+
+The emulator toolbar has these buttons, from left to right. Point at a button to see its tooltip.
+
+| Button | What it does |
+| --- | --- |
+| **Run Machine** (F5) | Starts the machine. Its arrow (**Choose start mode**) switches the button to **Debug Machine** (<kbd>Ctrl</kbd>+<kbd>F5</kbd>), which starts it with breakpoints armed. While paused, it continues. |
+| **Pause**, **Stop**, **Restart** | <kbd>Shift</kbd>+<kbd>F5</kbd>, <kbd>F4</kbd>, <kbd>Shift</kbd>+<kbd>F4</kbd>. |
+| **Step Into**, **Step Over**, **Step Out** | Step a paused machine. See [Running and debugging](/en/guides/debugging/run-debug/). |
+| **Stay on top** (pin) | Keeps the emulator window above other windows (see below). |
+| **Turn on/off instant screen** | Shows the screen memory as it is now while paused. See [The paused screen](/en/guides/debugging/paused-screen/). |
+| **Show/Hide the beam position while paused** | Marks where the beam was. Machines with a raster beam only. |
+| **Capture the mouse** | ZX Spectrum Next only; <kbd>Esc</kbd> releases it. See [Keyboard, joysticks and mouse](/en/guides/emulator/keyboard/#the-mouse). |
+| **Show/Hide keyboard** | The [virtual keyboard](/en/guides/emulator/keyboard/). |
+| **Mute sound** / **Unmute sound** | Its arrow (**Sound level**) picks **Mute**, **Low**, **Medium**, **High** or **Highest**. |
+| **Fast LOAD mode** (rocket), **Rewind the tape** | Machines with a tape. See [Tapes](/en/guides/media/tapes/). |
+| **Start video recording** | Its arrow (**Recordings**) starts the IDE + Emulator recording and opens the recording settings. See [Recording the screen](/en/guides/emulator/screen-recording/). |
+
+## The status bar
+
+The status bar shows, from left to right:
+
+- **Performance info**: the last and average frame time in milliseconds, the frame count, and the
+  program counter (`PC:`).
+- An **RZX badge** (**PLAY**, **REC** or **VIDEO**) while an [RZX recording](/en/guides/media/rzx-recordings/)
+  plays, records or renders.
+- **The machine's name**: click it to open the Select machine dialog. See
+  [Choosing a machine](/en/guides/emulator/choosing-a-machine/).
+- **The clock frequency** in MHz: click it to choose a speed. This is the same list as
+  **Machine › Speed**: **Normal**, then 2x up to 24x. Machines with a fixed clock show the frequency
+  without a menu.
+
+Right-click the status bar for its menu:
+
+| Item | What it does |
+| --- | --- |
+| **Show Performance Info** | Shows or hides the frame figures and `PC`. |
+| **Show Media Information** | Shows or hides the media strip (ZX Spectrum models, Timex, Scorpion, HT-1080Z). |
+| **Show the Layers Strip** | ZX Spectrum Next: the [Layers strip](/en/guides/next/layers/). |
+| **Hide Status Bar** | Hides the status bar; **View › Status Bar** shows it again. |
+| **Emulator Settings...** | Opens the **Emulator** page of the Settings. |
+
+### The media strip
+
+On the ZX Spectrum models, the Timex machines, the Scorpion and the HT-1080Z, a strip under the
+screen shows the media in use: the tape, the disks in the drives, the Microdrive cartridges or the
+Timex cartridge, each with its file name. The Cambridge Z88 shows its card slots there instead; see
+[The Cambridge Z88](/en/guides/machines/cambridge-z88/#slots-and-cards).
+
+## Speed and sound
+
+- **Machine › Speed** runs the machine faster than the real one: **Normal**, 2x, 4x and so on up to
+  24x. The status bar's MHz label opens the same list.
+- **Machine › Sound** sets the volume: **Mute**, **Low**, **Medium**, **High** or **Highest**. The
+  toolbar's sound button mutes and unmutes; its arrow sets the level.
+
+## The View menu
+
+While the emulator window has the focus, the **View** menu has these items for it:
+
+- **Toolbar**, **Status Bar** and **Virtual Keyboard** show or hide those parts.
+- **Fit Window to Screen** shrinks the window around the machine's picture at the zoom step it shows
+  now; **Fit Window to Screen at 1x** makes it as small as the machine allows.
+- **Zoom** (**Actual Size**, **Zoom In**, **Zoom Out**) zooms the window's contents, and
+  **Toggle Full Screen** (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>F9</kbd>) fills the screen.
+- **Show IDE** appears while the IDE window is hidden.
+
+The screen always fits its window. **Settings › Emulator › Zoom steps** chooses whether it snaps to
+whole steps (1x, 2x, 3x), half steps or quarter steps. The same page has the **Scanline effect**.
+
+## Keeping the emulator on top
+
+The emulator window stays above other windows by default, so it does not disappear behind the IDE.
+Turn this off or on with the **Stay on top** pin on the toolbar, which shows its state, or with
+**Settings › Emulator › Keep the emulator on top**. Both change the same setting.
+
+## Related
+
+- [Meet the emulator](/en/get-started/meet-the-emulator/): a first tour
+- [Choosing a machine](/en/guides/emulator/choosing-a-machine/)
+- [Keyboard, joysticks and mouse](/en/guides/emulator/keyboard/)
+- [Settings](/en/guides/customizing/settings/)

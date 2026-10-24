@@ -53,6 +53,20 @@ function resolves(sitePath) {
   });
 }
 
+/** The URL a built file is served at: `a/b/index.html` -> `/a/b/`, `a/c.html` -> `/a/c`. */
+function servedUrl(page, basePath) {
+  const url = page.endsWith("/index.html")
+    ? page.slice(0, -"index.html".length)
+    : page.replace(/\.html$/, "");
+  return basePath + url;
+}
+
+/** Resolves a relative href against a site-absolute page URL, keeping the fragment. */
+function resolveRelative(href, pageUrl) {
+  const u = new URL(href, `http://site${pageUrl}`);
+  return u.pathname + u.hash;
+}
+
 function checkDocsLinks({ verbose = false } = {}) {
   if (!existsSync(outDir)) {
     throw new Error(`No build output at ${outDir}. Run 'npm run doc:build' first.`);
@@ -72,9 +86,13 @@ function checkDocsLinks({ verbose = false } = {}) {
       const raw = m[1];
       // Skip external, protocol-relative, anchors, and non-http schemes
       if (/^(https?:)?\/\//.test(raw) || /^(#|mailto:|data:|tel:|javascript:)/.test(raw)) continue;
-      if (!raw.startsWith("/")) continue; // relative links are rare here; skip rather than guess
-      if (basePath && !raw.startsWith(basePath + "/") && raw !== basePath) continue;
-      const sitePath = basePath ? raw.slice(basePath.length) || "/" : raw;
+      // A relative href resolves against the URL the page is served at, as a browser does:
+      // `en/guides/ide/navigation/index.html` is served as `.../navigation/` (trailingSlash),
+      // so `./memory` there means `.../navigation/memory/`, not a sibling page. These went
+      // unchecked until 2026-10 and hid 21 links broken by the move into `guides/`.
+      const target = raw.startsWith("/") ? raw : resolveRelative(raw, servedUrl(page, basePath));
+      if (basePath && !target.startsWith(basePath + "/") && target !== basePath) continue;
+      const sitePath = basePath ? target.slice(basePath.length) || "/" : target;
       checked += 1;
       if (!resolves(sitePath)) {
         if (!broken.has(raw)) broken.set(raw, new Set());

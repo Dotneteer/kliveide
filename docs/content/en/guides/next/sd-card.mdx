@@ -1,0 +1,96 @@
+---
+description: "Use the ZX Spectrum Next's SD card image: where it is, how to switch or reset it, and how to copy files to and from it with ncp."
+---
+
+import { Callout, Steps } from 'nextra/components'
+
+# The Next's SD Card
+
+The ZX Spectrum Next boots NextZXOS from its SD card, and everything a Next program loads at run time
+(NEX files, screens, data, its own saved files) is on that card too. In Klive the card is an image
+file on your computer. This page shows where the image is, how to use another one, and how to move
+files between it and your computer.
+
+*Applies to: ZX Spectrum Next.*
+
+## The default card
+
+On first use Klive copies a ready-made card with NextZXOS on it to `Klive/ks2.cim` in your home
+folder (`~/Klive/ks2.cim` on macOS and Linux). In portable mode it is in the `Klive` folder of the
+portable data folder instead. The Next uses this image until you select another, and every change the
+emulated machine makes to the card (a file NextZXOS saves, say) is written to it.
+
+When the Next starts, it boots NextZXOS from the card, as the real machine does.
+
+## Switching or resetting the card
+
+The **Machine › SD Card** menu has three items, available while the machine is **stopped**:
+
+| Item | What it does |
+|---|---|
+| **Select Image...** | Uses another `.cim` image as the Next's card. Klive remembers the choice. |
+| **Use the Default Image** | Goes back to `ks2.cim` in the Klive folder. |
+| **Reset the Default Image...** | Replaces the default image with a fresh copy of the one Klive ships, after asking. Every change made to the default card is lost. |
+
+<Callout type="warning">
+Reset the default image only when you mean to: it deletes everything programs or you have put on the
+default card. Keep files you care about on your computer and copy them in with `ncp`.
+</Callout>
+
+## Copying files with `ncp`
+
+The `ncp` command (alias `next-copy`) copies one file between your computer and the card:
+
+<Steps>
+
+### Stop the machine
+
+`ncp` refuses to run while the machine is running or paused, because the emulator reads and writes
+the same image file.
+
+### Copy to the card
+
+```
+ncp to "build/game.nex" "/games/game.nex"
+ncp to "build/game.nex" "/games/"
+```
+
+A target ending in `/` is a folder: the file keeps its name. Missing folders are created. If the file
+already exists on the card, Klive asks before replacing it.
+
+### Copy from the card
+
+```
+ncp from "/games/hiscore.dat" "./hiscore.dat"
+```
+
+### Start the machine
+
+NextZXOS sees the new files the next time it reads the card.
+
+</Steps>
+
+Without `-cim`, `ncp` works on the current Next's card, so the current machine must be the ZX
+Spectrum Next. With `-cim <file>` it works on any `.cim` image, whatever machine is selected:
+
+```
+ncp to "./assets/title.scr" "/assets/" -cim "./test-card.cim"
+```
+
+You rarely need `ncp` to run a NEX file: `nex-run`, the Explorer's **Run NEX file** and building a
+project that produces a NEX copy the file into the card's `_klive` folder for you and start it. See
+[Running and inspecting NEX files](/en/guides/next/nex-files/).
+
+## Browsing the card
+
+To see the whole card, add or extract many files at once, or make a new card image, open the `.cim`
+file in the [Disk Explorer](/en/guides/media/disk-explorer/). It reads the card's FAT16 and FAT32 file
+systems with their long file names and folders, and it can also open raw `.img` and `.hdf`
+hard-disk images.
+
+## Related
+
+- [Running and inspecting NEX files](/en/guides/next/nex-files/)
+- [The Disk Explorer](/en/guides/media/disk-explorer/)
+- [Disks and SD cards tutorial](/en/guides/media/disks-tutorial/)
+- [`ncp` in the command reference](/en/reference/commands#ncp)

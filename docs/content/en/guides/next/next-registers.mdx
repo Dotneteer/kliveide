@@ -1,0 +1,108 @@
+---
+description: "Read the ZX Spectrum Next's registers, memory paging and palettes while your program runs, in the Next Registers, Next Memory Mapping and Next Palettes side-bar panels."
+---
+
+import { Steps } from 'nextra/components'
+
+# Next Registers, Memory Mapping and Palettes
+
+Most of the ZX Spectrum Next's behaviour lives in its Next Registers (NextRegs), its MMU slots and
+its four palettes, and a program cannot read much of it back reliably. Three side-bar panels show
+that state while the machine runs or is paused: **Next Registers**, **Next Memory Mapping** and
+**Next Palettes**. Use them to answer "what speed is the CPU at", "which bank is in slot 3" and
+"which palette is Layer 2 drawing with".
+
+*Applies to: ZX Spectrum Next.*
+
+## Opening the panels
+
+<Steps>
+
+### Select the Next
+
+The panels appear only while the ZX Spectrum Next is the current machine.
+
+### Open the activity
+
+**Next Registers** and **Next Memory Mapping** are in the **Debug** activity, beside the **Copper**
+panel. **Next Palettes** is in the **Machine info** activity.
+
+### Expand the panel
+
+Click the panel's header. The panels refresh as the machine runs, and show the exact state whenever
+it is paused.
+
+</Steps>
+
+## The Next Registers panel
+
+<Shot src="guides/next/next-registers/nextreg-panel.webp" alt="The Next Registers side-bar panel while the ZX Spectrum Next runs, listing registers with their values" caption="The Next Registers panel: one row per register, the last written value before the arrow." width={320} />
+
+The first row, **Last Reg Index:**, is the register most recently selected through port `$243B`. Below
+it, one row per register:
+
+- `Reg 07:` names the register by its number.
+- `03 →` (in the secondary colour) is the **last value written** to the register, shown once it has
+  been written. Many Next registers are asymmetric: a write requests something and a read reports
+  what took effect, so the two values can differ.
+- The last column is the register's **current value**.
+
+Hover a row for the register's documented name and description, and both values in hexadecimal,
+decimal and binary. Registers whose bit fields are documented have a chevron: click the row to
+expand it into one line per field, with a flag shown as a filled or empty circle and a multi-bit
+field as its value, followed by what it means. Hover a field for its bits and value.
+
+The same register names appear wherever Klive mentions a NextReg: the
+[Copper List](/en/guides/next/copper/) decodes its `MOVE` instructions with them, and a
+[NextReg write breakpoint](/en/guides/next/next-breakpoints/) names the register it stopped on.
+
+## The Next Memory Mapping panel
+
+<Shot src="guides/next/next-registers/memory-mapping.webp" alt="The Next Memory Mapping side-bar panel showing the paging ports and the eight 8K pages" caption="The Next Memory Mapping panel: the paging registers, then the eight 8K pages of the Z80 address space." width={320} />
+
+| Row | Shows |
+|---|---|
+| **All RAM:** | The four banks of the +3-style all-RAM mode, or `Off`. |
+| **Current ROM:** | The selected ROM. |
+| **Current Bank:** | The selected 16K bank of the 128K-style paging. |
+| `Port 7FFD:`, `Port 1FFD:`, `Port DFFD:`, `Port EFF7:` | The paging ports' last values. |
+| `Port L2:` | The Layer 2 port, `$123B`. |
+| `Port Timex:` | The Timex port. |
+| `DivMMC:` | The DivMMC control register. |
+| `DivMMC In:` | Whether the DivMMC's memory is paged in. |
+| `Page 0:` to `Page 7:` | The eight 8K slots of the address space, `$0000` to `$E000`. |
+
+A page row shows four numbers: the 8K bank and the 16K bank in that slot (`--` for a ROM page,
+which has no 16K bank), then the read and write offsets into physical memory. Hover the row to have
+each one named. When a NEX file was started with `nex-run` in this session, the tooltip also says
+which of the file's banks the slot holds; see [NEX files](/en/guides/next/nex-files/).
+
+## The Next Palettes panel
+
+The Next has a palette for each of four devices: **ULA**, **Layer 2**, **Sprites** and **Tilemap**,
+and each device has two banks of 256 colours. The panel has one row per device, with a thumbnail of
+its palette and a pair of buttons for the **First palette** and the **Second palette**.
+
+- By default a device shows the bank the machine is **drawing with now** (selected by NextReg `$43`,
+  or `$6B` for the tilemap). The live bank's button is marked; hover it to see which register bit
+  selects it.
+- Click the other button to pin that bank and compare the two. The live mark stays on the bank the
+  hardware uses, so you can see when the program flips it.
+- Expand a device to see its palette as a grid. The sprite and tilemap palettes mark their
+  transparency index.
+
+To edit a palette file rather than read the machine's, use the
+[palette editor](/en/guides/next/sprite-palette-editors/).
+
+## While stepping through history
+
+When you step back with the [execution history](/en/guides/debugging/execution-history/), the Next
+Registers and Next Memory Mapping panels keep showing the present and say so in a banner (*The Next
+registers show the present, not history step 12*).
+
+## Related
+
+- [Machine-state panels](/en/guides/debugging/machine-state-panels/)
+- [The Copper view](/en/guides/next/copper/)
+- [Next breakpoints](/en/guides/next/next-breakpoints/)
+- [Why does my Next picture look wrong?](/en/guides/next/picture-troubleshooting/)

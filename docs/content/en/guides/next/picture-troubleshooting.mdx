@@ -1,0 +1,80 @@
+---
+description: "Find out why a ZX Spectrum Next picture looks wrong: which layer drew the pixel, and which inspector shows the cause."
+---
+
+import { Callout, Steps } from 'nextra/components'
+
+# Why Does My Next Picture Look Wrong?
+
+A wrong ZX Spectrum Next picture rarely says where it went wrong. The pixel you see is the winner of
+four layers, a priority mode, a palette and maybe a Copper split, and the registers behind it cannot
+be read back by your program. This page is a short route through Klive's tools: first find which
+layer drew the pixel, then open the view that shows that layer's state.
+
+*Applies to: ZX Spectrum Next.*
+
+## Start with the layer
+
+<Steps>
+
+### Pause where the picture is wrong
+
+Run the program to the frame that shows the problem and pause it. Every tool below shows the exact
+state of a paused machine.
+
+### Turn on the Layers strip
+
+Turn on **Settings › Emulator › Show the Layers strip**, or right-click the emulator's status bar and
+choose the strip. The strip lists the layers in their priority order, top first.
+
+### Probe the pixel
+
+Click the strip's crosshair button and point at the wrong pixel. The probe names the layer that drew
+it and **the rule that made it win**: the layer order, the Layer 2 priority bit, stencil, a blend or
+the fallback colour. Click the pixel to open the inspector of the layer that owns it.
+
+### Hide and solo
+
+Click a layer's chip to hide it, or **S** to show it alone over a checkerboard. If the problem goes
+away when one layer is hidden, that layer is the one to look at.
+
+</Steps>
+
+[Video layers](/en/guides/next/layers/) describes the strip, the probe and the Layers document in full.
+
+## What to look for, by symptom
+
+| What you see | Look in | What to check |
+|---|---|---|
+| A layer is missing entirely | [Layers document](/en/guides/next/layers/) | The layer's card: switched off by the program, an empty clip window, every pixel transparent, or hidden in Klive (the on-screen pill says so). |
+| Layers are stacked in the wrong order | [Layers strip](/en/guides/next/layers/) | The priority mode before the chips (`SLU`, `LSU`, ...) and NextReg `$15`; under a Copper split the probe shows the mode for that line. |
+| A sprite is missing or in the wrong place | [Sprite Inspector](/en/guides/next/sprite-inspector/) | The **note** column: visible bit clear, anchor not visible, outside the clip window, pattern all transparent, a stale fifth attribute byte. The sprite-space map shows where each sprite really is. |
+| A sprite has the wrong shape or colours | [Sprite Inspector](/en/guides/next/sprite-inspector/), Patterns view | The pattern number, the 4-bit/8-bit reading of the slot (a slot read both ways is almost always a bug), the palette offset. |
+| Tiles are garbage, or the ULA screen is corrupted | [Tilemap Inspector](/en/guides/next/tilemap-inspector/) | The diagnostics: the map or the tile definitions overlapping the ULA screen or each other, a table wrapping in bank 7, attribute-less mode with a two-byte map, 512-tile mode taking attribute bit 0. |
+| The Layer 2 picture tears, flickers or shows the old frame | [Layer 2 Inspector](/en/guides/next/layer2-inspector/) | The **Displayed**, **Shadow** and **Write window** sources: writes going to the displayed bank, `$12` and `$13` equal, a write window mapped to the wrong 16K. |
+| Layer 2 shows nothing, or only part of it | [Layer 2 Inspector](/en/guides/next/layer2-inspector/) | Banks past 2 MB, an empty clip window, every visible pixel transparent, a scroll reading past the layer. |
+| Colours are wrong on one layer | [Next Palettes](/en/guides/next/next-registers/#the-next-palettes-panel) | Which of the device's two palettes is live (NextReg `$43`, or `$6B` for the tilemap), and the colour at the index the pixel uses. |
+| A colour you expected to be transparent is drawn | [Next Palettes](/en/guides/next/next-registers/#the-next-palettes-panel) and the probe | The global transparency colour (`$14`) against the pixel's actual colour, and the sprite and tilemap transparency indexes. |
+| The picture changes part-way down the screen | [Copper view](/en/guides/next/copper/) | The Copper list's `MOVE`s and the raster ruler: which line each `WAIT` acts on, and `WAIT`s marked as never matching. |
+| Something rewrote a register and you do not know what | [Next breakpoints](/en/guides/next/next-breakpoints/) | Set a NextReg write breakpoint on the register (`bp-set nr:$15`), or a sprite attribute breakpoint on the sprite. |
+
+<Callout type="info">
+Hiding a layer in Klive changes only what the emulator shows, never what the machine does. A
+forgotten toggle can look like a bug in your program: while any layer is hidden or soloed, a pill on
+the screen says so.
+</Callout>
+
+## When the registers are the question
+
+Many picture bugs are one wrong register write. The
+[Next Registers panel](/en/guides/next/next-registers/) shows every NextReg's current and last
+written value, decoded bit by bit, and the Next Memory Mapping panel shows which banks are paged where,
+which matters when your code writes Layer 2 or the tilemap through the address space.
+
+## Related
+
+- [Video layers](/en/guides/next/layers/)
+- [The Sprite Inspector](/en/guides/next/sprite-inspector/)
+- [The Tilemap Inspector](/en/guides/next/tilemap-inspector/)
+- [The Layer 2 Inspector](/en/guides/next/layer2-inspector/)
+- [The Copper view](/en/guides/next/copper/)

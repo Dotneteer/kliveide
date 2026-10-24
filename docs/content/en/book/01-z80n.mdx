@@ -53,7 +53,7 @@ When the CPU encounters a `0xDD` or `0xFD` prefix, it updates an internal prefix
 
 ## Interrupts: Maskable and Not
 
-The Z80 has two interrupt pins: `/INT` (maskable) and `/NMI` (non-maskable). They are both ways to tap the CPU on the shoulder, but one is polite and one has already opened the door. This section gives you the CPU-level basics; the full Next interrupt system gets its own chapter in [Interrupts: IM1, IM2, and the Next's Multi-Source Interrupt System](./04-interrupts.mdx).
+The Z80 has two interrupt pins: `/INT` (maskable) and `/NMI` (non-maskable). They are both ways to tap the CPU on the shoulder, but one is polite and one has already opened the door. This section gives you the CPU-level basics; the full Next interrupt system gets its own chapter in [Interrupts: IM1, IM2, and the Next's Multi-Source Interrupt System](/en/book/04-interrupts/).
 
 ### Maskable Interrupts (INT)
 
@@ -71,7 +71,7 @@ The Z80 checks for `/INT` at the end of each completed instruction — never mid
 | **IM 1** | Always jump to `0x0038`. Simple and predictable. |
 | **IM 2** | Build a 16-bit pointer from the `I` register (high byte) and a byte from the peripheral device (low byte). Read the actual handler address from that memory location. |
 
-In practice, the ZX Spectrum runs almost exclusively in IM 1 or IM 2. IM 2 is particularly clever: you load `I` with the high byte of a jump table somewhere in RAM, and each peripheral device's interrupt points to a different handler through that table. The ZX Spectrum Next uses IM 2 so different hardware components, such as [DMA](./06-zxndma.mdx), sprites, and frame events, can each have their own handler instead of all crowding around `0x0038`.
+In practice, the ZX Spectrum runs almost exclusively in IM 1 or IM 2. IM 2 is particularly clever: you load `I` with the high byte of a jump table somewhere in RAM, and each peripheral device's interrupt points to a different handler through that table. The ZX Spectrum Next uses IM 2 so different hardware components, such as [DMA](/en/book/06-zxndma/), sprites, and frame events, can each have their own handler instead of all crowding around `0x0038`.
 
 > **The EI backlog**: A subtle behavior that trips up plenty of low-level code — after executing `EI`, interrupts are only enabled *after* the next instruction completes. This means `EI` / `RET` (the classic interrupt handler epilogue) processes no interrupt between those two instructions.
 
@@ -180,7 +180,7 @@ IN A,(C)        ; Read from port 0x7FFE
 
 The block I/O instructions (`INI`, `OUTI`, `INIR`, `OTIR`, etc.) also use `BC` as the full port address.
 
-Why does this matter? Because the ZX Spectrum's ULA is decoded on port `0xFE`, but the ULA only checks the lower address bit, not all 8 or 16. Most original Spectrum hardware decodes only the lower bits of the address bus. On the ZX Spectrum Next, hardware devices sometimes decode more bits, so your code needs to use the full port address intentionally. Get it wrong and some ports will sit there like you knocked on the neighbor's door. The next chapter, [Talking to the Hardware: I/O Ports and NextRegs](./02-io-and-nextregs.mdx), builds directly on this.
+Why does this matter? Because the ZX Spectrum's ULA is decoded on port `0xFE`, but the ULA only checks the lower address bit, not all 8 or 16. Most original Spectrum hardware decodes only the lower bits of the address bus. On the ZX Spectrum Next, hardware devices sometimes decode more bits, so your code needs to use the full port address intentionally. Get it wrong and some ports will sit there like you knocked on the neighbor's door. The next chapter, [Talking to the Hardware: I/O Ports and NextRegs](/en/book/02-io-and-nextregs/), builds directly on this.
 
 ## Block Instructions
 
@@ -640,7 +640,7 @@ NEXTREG 0x41,A       ; Write A to NextReg 0x41 (palette value register)
 NextReg registers control everything specific to the Next: layer priorities, palette entries, memory mapping, sprite visibility, DMA configuration, clock speed, copper timing. `NEXTREG` is the instruction you reach for in virtually all Next hardware setup code. It is the short hallway to the control room.
 
 <Callout type="info" emoji="💡">
-The next chapter, [Talking to the Hardware: I/O Ports and NextRegs](./02-io-and-nextregs.mdx), covers NextRegs in detail.
+The next chapter, [Talking to the Hardware: I/O Ports and NextRegs](/en/book/02-io-and-nextregs/), covers NextRegs in detail.
 </Callout>
 
 ### Indirect Jump
@@ -697,6 +697,6 @@ This is a hardware-facing instruction for page-switched environments. It allows 
 
 You now have the CPU vocabulary the rest of the book leans on: registers, instruction timing, I/O addressing, interrupt modes, and the Z80N extensions. From here, the natural path is:
 
-- **[Talking to the Hardware: I/O Ports and NextRegs](./02-io-and-nextregs.mdx)** — turns the I/O address rules and `NEXTREG` instruction into practical hardware configuration.
-- **[Memory Architecture: ROM, RAM, Banks, and the MMU](./03-memory.mdx)** — explains where all those pointers, pages, and screen buffers actually land in the Next's 2 MB address space.
-- **[Interrupts: IM1, IM2, and the Next's Multi-Source Interrupt System](./04-interrupts.mdx)** — expands the short interrupt overview here into the model you will use for frame timing, line effects, CTC ticks, DMA completion, and UART input.
+- **[Talking to the Hardware: I/O Ports and NextRegs](/en/book/02-io-and-nextregs/)** — turns the I/O address rules and `NEXTREG` instruction into practical hardware configuration.
+- **[Memory Architecture: ROM, RAM, Banks, and the MMU](/en/book/03-memory/)** — explains where all those pointers, pages, and screen buffers actually land in the Next's 2 MB address space.
+- **[Interrupts: IM1, IM2, and the Next's Multi-Source Interrupt System](/en/book/04-interrupts/)** — expands the short interrupt overview here into the model you will use for frame timing, line effects, CTC ticks, DMA completion, and UART input.

@@ -7,7 +7,7 @@ import { Callout } from 'nextra/components'
 # Code Coverage and the Heat Map
 
 <Callout type="info">
-This is one of Klive's [advanced debugging features](/en/guides/debugging/advanced-debugging), which are on by
+This is one of Klive's [advanced debugging features](/en/guides/customizing/advanced-debugging/), which are on by
 default; if you turned them off, run `set -u features.advancedDebugging 1` in the IDE, then restart Klive.
 </Callout>
 
@@ -25,7 +25,7 @@ the ZX80 and ZX81, and the HT-1080Z.
 
 ## Turning it on
 
-Use **Debug → Code Coverage**, or the command:
+Use **Debug › Code Coverage**, or the command:
 
 ```
 coverage on
@@ -33,10 +33,10 @@ coverage on
 
 Coverage is not tied to debugging: it counts at full speed as well as while you step, so "which code
 did the game actually use?" has an answer. It stays on for the rest of the session - across machine
-switches - until you turn it off with **Debug → Code Coverage** again or `coverage off`. Turning it
+switches - until you turn it off with **Debug › Code Coverage** again or `coverage off`. Turning it
 off keeps what it recorded.
 
-**Debug → Reset Coverage** (or `coverage reset`, or `covr`) clears everything. Coverage also starts
+**Debug › Reset Coverage** (or `coverage reset`, or `covr`) clears everything. Coverage also starts
 over:
 
 - when the machine starts from Stopped (Settings › Debugging › *Clear coverage when the machine
@@ -60,6 +60,8 @@ A narrow strip between the line numbers and the text marks every source line tha
 | Hollow bar | The line produced code that never ran. |
 | Nothing | The line produced no code (a comment, a label, a data directive). |
 
+<Shot src="guides/analysis/code-coverage/editor-strip.webp" alt="The editor with the coverage strip beside the line numbers, marking lines that ran fully, partly or not at all" caption="The coverage strip in the editor." width={760} />
+
 Hover over the strip to see how many times the line ran. Settings › Debugging › *Tint covered source
 lines* also gives covered lines a tinted background.
 
@@ -80,6 +82,8 @@ The memory view's toolbar has a **Heat** selector:
 | **Read** | Bytes the program read, by how often. |
 | **Written** | Bytes the program wrote, by how often. |
 | **All** | Each byte in the colour of its busiest kind of access. |
+
+<Shot src="guides/analysis/code-coverage/memory-heat.webp" alt="The Memory view with heat cells shading bytes by how often they were executed, read or written" caption="The heat map in the Memory view." width={760} />
 
 The shade has five steps on a logarithmic scale, from "touched once" to "the busiest byte in view",
 so a loop that ran a million times and a routine that ran once are both visible. Hover over a byte for
@@ -124,7 +128,7 @@ bytes show as code (and, once the ROM prints to them, as self-modified).
 
 ## Reverse debugging and coverage
 
-Stepping back and forward with [reverse debugging](/en/guides/debugging/reverse-debugging) replays the
+Stepping back and forward with [reverse debugging](/en/guides/debugging/reverse-debugging/) replays the
 machine, and a replay never counts: the coverage always describes the run that really happened.
 **Take over here** keeps the counts of the abandoned future, because those instructions really ran;
 `coverage status` says how many there were until the next reset.
@@ -157,3 +161,10 @@ coverage load <file>
 
 merges a `.kcov` file into the current coverage, so several runs add up. The file must come from a
 machine with the same memory layout.
+
+## Related
+
+- [The profiler](/en/guides/analysis/profiler/)
+- [Detecting code and data](/en/guides/analysis/detecting-code-data/)
+- [Unit tests](/en/guides/testing/unit-tests/)
+- [Klive on the command line and in CI](/en/guides/testing/command-line/)

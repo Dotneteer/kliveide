@@ -14,13 +14,13 @@ moment, the write window mapped to the wrong 16K, the column-major wide modes, a
 transparency colour &mdash; and none of it is visible on the screen. The **Layer 2 Inspector** shows
 the banks as the hardware decodes them, and where your writes are going.
 
-It is available on the ZX Spectrum Next only.
+*Applies to: ZX Spectrum Next.*
 
 ![The Layer 2 Inspector: a 320×256 layer with its five banks outlined, a transparent band, and a pixel decoded in the rail](/images/working-with-ide/layer2-inspector.png)
 
 ## Opening It
 
-Use **View → Machine Views → Layer 2 Inspector**, or the command:
+Use **View › Machine Views › Layer 2 Inspector**, or the command:
 
 ```
 show-layer2           ; the displayed banks
@@ -160,3 +160,10 @@ included &mdash; without side effects, so opening it never changes the machine.
 apart, so the toolbar switches between them. A file 512 bytes longer starts with a palette (two bytes
 an entry, in NextReg `$44` order); without one the picture uses the Next's default Layer 2 palette,
 and the toolbar says which. **Banks** outlines the 16K banks the picture fills.
+
+## Related
+
+- [Video layers](/en/guides/next/layers/)
+- [Sprite and palette editors](/en/guides/next/sprite-palette-editors/)
+- [Next Registers, memory mapping and palettes](/en/guides/next/next-registers/)
+- [Why does my Next picture look wrong?](/en/guides/next/picture-troubleshooting/)

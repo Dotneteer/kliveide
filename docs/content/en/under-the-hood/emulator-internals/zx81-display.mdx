@@ -2108,5 +2108,5 @@ the ROM's.
 | How can a ZX81 show a bitmap? | RAM sees the CPU's own refresh address `I × 256 + R`, so with I pointing at RAM, 32 `NOP`s draw 32 bytes of RAM. A hand-timed 207 T-state loop, hooked in through IX, draws 192 such lines. |
 | How does the display survive 64K of RAM? | Opcode fetches above `$8000` are answered from the RAM 32K lower, so the display file's "echo" still leads back to it. |
 
-To try the machine itself, see [Using the ZX81 and ZX80](/en/guides/emulator/zx81-zx80) and
+To try the machine itself, see [Using the ZX81 and ZX80](/en/guides/machines/zx81-zx80/) and
 [Machine Types](/en/reference/machine-types).

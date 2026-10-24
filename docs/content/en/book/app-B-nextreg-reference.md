@@ -10,7 +10,7 @@ Think of NextRegs as the control panel for the FPGA. Want full-color graphics? T
 
 This reference organizes registers by what you can *do* with them, not just what number they are. Flipping through a register list sorted by address is about as useful as reading a dictionary to find a recipe. Instead, each section here covers a specific capability and explains which registers you need to achieve it.
 
-> How to access NextRegs via ports `0x243B`/`0x253B` and the `nextreg` instruction is covered in the [Talking to the Hardware: I/O Ports and NextRegs](./02-io-and-nextregs.mdx) chapter.
+> How to access NextRegs via ports `0x243B`/`0x253B` and the `nextreg` instruction is covered in the [Talking to the Hardware: I/O Ports and NextRegs](/en/book/02-io-and-nextregs/) chapter.
 
 ## What's in Here
 

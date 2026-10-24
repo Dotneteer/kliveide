@@ -1,36 +1,84 @@
 ---
-description: "Task-oriented guides to Klive IDE: the emulator, the IDE, projects, languages, debugging, the ZX Spectrum Next tools, analysis, and testing."
+description: "Task-oriented guides to Klive IDE: find the page for what you want to do, from loading a tape to profiling a ZX Spectrum Next program."
 ---
 
 import { Cards } from 'nextra/components'
 
 # Guides
 
-These guides explain one task at a time. If you are new to Klive, start with [Get Started](/en/get-started/) and come back here when you need the details.
+Each guide explains one task. If you are new to Klive, start with [Get Started](/en/get-started/); it takes you from installing Klive to debugging your first program. Come back here when you need the details.
+
+## I want to…
+
+| I want to… | Read |
+|---|---|
+| pick a machine or model to emulate | [Choosing a machine](/en/guides/emulator/choosing-a-machine/) |
+| arrange the emulator and IDE windows | [The emulator window](/en/guides/emulator/emulator-window/) |
+| type on the emulated keyboard, or use a joystick or mouse | [Keyboard, joysticks and mouse](/en/guides/emulator/keyboard/) |
+| use my own ROM | [Custom ROMs](/en/guides/emulator/custom-roms/) |
+| record a video of the screen | [Recording the screen](/en/guides/emulator/screen-recording/) |
+| load a tape, or find what my program saved | [Tapes](/en/guides/media/tapes/) |
+| load or save a snapshot | [ZX Spectrum snapshots](/en/guides/media/snapshots/), [machine state files](/en/guides/media/machine-state/) |
+| work with floppy and hard-disk images | [Tutorial: working with disks](/en/guides/media/disks-tutorial/), [the Disk Explorer](/en/guides/media/disk-explorer/) |
+| use the ZX81, ZX80, HT-1080Z, Z88, Timex or Scorpion | [The ZX81 and ZX80](/en/guides/machines/zx81-zx80/), [the HT-1080Z](/en/guides/machines/ht1080z/), [the Cambridge Z88](/en/guides/machines/cambridge-z88/), [Timex and Scorpion](/en/guides/machines/timex-scorpion/) |
+| start a new project | [Creating a project](/en/guides/projects/creating-projects/), [project templates](/en/guides/projects/project-templates/) |
+| add my own steps to the build | [The build system](/en/guides/projects/build-system/) |
+| turn my program into a tape, disk or NEX file | [Exporting your program](/en/guides/projects/exporting-code/) |
+| do things faster by typing commands | [The command prompt](/en/guides/editing/command-prompt/) |
+| write Z80 assembly | [Klive Z80 assembler](/en/guides/languages/klive-z80-assembler/) |
+| write in BASIC | [Klive BASIC](/en/guides/languages/klive-basic/), [Boriel BASIC](/en/guides/languages/boriel-basic/) |
+| write in C, Pascal, or sjasmplus assembly | [z88dk](/en/guides/languages/z88dk/), [PASTA/80](/en/guides/languages/pasta80/), [sjasmplus](/en/guides/languages/sjasmplus/) |
+| step through my program | [Running, pausing and stepping](/en/guides/debugging/run-debug/) |
+| stop only when something is true | [Breakpoints](/en/guides/debugging/breakpoints/), [conditions, hit counts and logpoints](/en/guides/debugging/breakpoint-conditions/) |
+| see where my BASIC or C program is, and its variables | [Call Stack and Variables](/en/guides/debugging/call-stack-variables/) |
+| see registers, memory and the disassembly | [Machine-state panels](/en/guides/debugging/machine-state-panels/), [the Memory view](/en/guides/debugging/memory/), [the Disassembly view](/en/guides/debugging/disassembly/) |
+| go back in time to find a bug | [Reverse debugging](/en/guides/debugging/reverse-debugging/), [the execution history](/en/guides/debugging/execution-history/) |
+| count the T-states a routine takes | [Measuring T-states](/en/guides/debugging/measure-t-states/), [the profiler](/en/guides/analysis/profiler/) |
+| debug a NEX file | [Running and inspecting NEX files](/en/guides/next/nex-files/), [Next breakpoints](/en/guides/next/next-breakpoints/) |
+| read the Next's registers, memory mapping and palettes | [Next registers, memory mapping and palettes](/en/guides/next/next-registers/) |
+| find out why my Next picture looks wrong | [Why does my Next picture look wrong?](/en/guides/next/picture-troubleshooting/), [video layers](/en/guides/next/layers/), the [sprite](/en/guides/next/sprite-inspector/), [tilemap](/en/guides/next/tilemap-inspector/) and [Layer 2](/en/guides/next/layer2-inspector/) inspectors, [the Copper view](/en/guides/next/copper/) |
+| draw sprites and edit palettes for the Next | [Sprite and palette editors](/en/guides/next/sprite-palette-editors/) |
+| use the Next's SD card and NextZXOS | [The SD card](/en/guides/next/sd-card/) |
+| take apart a program I did not write | [Detecting code and data](/en/guides/analysis/detecting-code-data/), [annotating a disassembly](/en/guides/analysis/annotations/), [exporting a disassembly as source](/en/guides/analysis/exporting-source/) |
+| see which code ran, and how often | [Code coverage and the heat map](/en/guides/analysis/code-coverage/) |
+| test my Z80 code automatically | [Unit tests](/en/guides/testing/unit-tests/), [Klive on the command line and in CI](/en/guides/testing/command-line/) |
+| control Klive from a script | [Automation](/en/guides/testing/automation/) |
+| change Klive's language, theme or shortcuts | [Settings](/en/guides/customizing/settings/), [the display language](/en/guides/customizing/language/), [keyboard shortcuts](/en/guides/customizing/shortcuts/) |
+
+## All guides
 
 <Cards num={2}>
-  <Cards.Card title="The Emulator" href="/en/guides/emulator/keyboard/" arrow>
-    The keyboard, files, snapshots and machine states, recordings, disks, custom ROMs, the ZX81 and the Z88.
+  <Cards.Card title="The Emulator" href="/en/guides/emulator/choosing-a-machine/" arrow>
+    Choosing a machine, the emulator window, the keyboard, custom ROMs and recording the screen.
   </Cards.Card>
-  <Cards.Card title="The IDE" href="/en/guides/ide/project-explorer/" arrow>
-    The Project Explorer, the editor, navigation, interactive commands, shortcuts and settings.
+  <Cards.Card title="Tapes, Disks and Snapshots" href="/en/guides/media/tapes/" arrow>
+    Tapes, snapshots, machine states, RZX recordings, disks and Microdrives.
+  </Cards.Card>
+  <Cards.Card title="Other Machines" href="/en/guides/machines/zx81-zx80/" arrow>
+    The ZX81 and ZX80, the HT-1080Z, the Cambridge Z88, and the Timex and Scorpion machines.
   </Cards.Card>
   <Cards.Card title="Projects and Building" href="/en/guides/projects/creating-projects/" arrow>
-    Creating projects, templates, the build system, and exporting your code to tape, NEX and more.
+    Projects, templates, file types, the build system and exporting your program.
   </Cards.Card>
-  <Cards.Card title="Languages and Toolchains" href="/en/guides/languages/zx-basic/" arrow>
-    ZX BASIC with Klive BASIC or Boriel BASIC, sjasmplus, and PASTA/80.
+  <Cards.Card title="Editing Code" href="/en/guides/editing/editor/" arrow>
+    The editor, navigation and the command prompt.
+  </Cards.Card>
+  <Cards.Card title="Languages and Toolchains" href="/en/guides/languages/klive-z80-assembler/" arrow>
+    The Klive Z80 assembler, Klive BASIC, Boriel BASIC, sjasmplus, z88dk and PASTA/80.
   </Cards.Card>
   <Cards.Card title="Debugging" href="/en/guides/debugging/run-debug/" arrow>
-    Breakpoints, watches, the memory, disassembly, CPU and ULA views, the execution history and reverse debugging.
+    Stepping, breakpoints, watches, the call stack and variables, the machine-state panels, memory and disassembly, and going back in time.
   </Cards.Card>
-  <Cards.Card title="ZX Spectrum Next Tools" href="/en/guides/next/copper/" arrow>
-    The Copper view, the sprite, tilemap and Layer 2 inspectors, and video layers.
+  <Cards.Card title="ZX Spectrum Next" href="/en/guides/next/nex-files/" arrow>
+    NEX files, registers and palettes, Next breakpoints, the Copper view, the inspectors and layers, the sprite and palette editors, and the SD card.
   </Cards.Card>
   <Cards.Card title="Analysis and Reverse Engineering" href="/en/guides/analysis/code-coverage/" arrow>
-    Code coverage, the profiler, code and data detection, the Graphics Finder, SkoolKit, and exporting source.
+    Code coverage, the profiler, code and data detection, annotations, the Graphics Finder and SkoolKit.
   </Cards.Card>
   <Cards.Card title="Testing and Automation" href="/en/guides/testing/unit-tests/" arrow>
     Unit tests in the IDE and in CI, and driving Klive from scripts.
+  </Cards.Card>
+  <Cards.Card title="Customizing Klive" href="/en/guides/customizing/settings/" arrow>
+    Settings, the display language, shortcuts, syntax colours and diagnostics.
   </Cards.Card>
 </Cards>

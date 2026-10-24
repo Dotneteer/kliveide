@@ -1,0 +1,102 @@
+---
+description: "Write Z80 assembly with Klive's built-in assembler: no installation, editor help from hovers to rename, and source-level debugging on every Z80 machine Klive emulates."
+---
+
+import { Callout } from 'nextra/components'
+
+# Klive Z80 Assembler
+
+The Klive Z80 Assembler is built into the IDE, so a new project can be built and run at once, with
+nothing to install. It assembles the Z80 instruction set (with the ZX Spectrum Next's extended
+instructions), and adds macros, structs, modules, conditional assembly and pragmas for banked memory,
+NEX files and machine-specific output. Because it is Klive's own, it gives the editor and the
+debugger everything they need.
+
+## Writing a program
+
+Assembly files use the `.kz80.asm` extension (and `.asm`, unless a project maps `.asm` to another
+language; see [File types](/en/guides/projects/file-types/)). The `default` template of every machine
+is a Klive Z80 assembly project: create one as [Creating a project](/en/guides/projects/creating-projects/)
+describes, and press Run.
+
+```z80klive
+    .model Spectrum48
+    .org #8000
+
+Start:
+    ld a,2          ; red
+    out (#fe),a     ; set the border
+    ret
+```
+
+### Telling the assembler the target: `.model`
+
+`.model` says which machine the code is for: `Spectrum48`, `Spectrum128`, `SpectrumP3`, `Next`,
+`ZX80`, `ZX81` or `HT1080Z`. Run and Debug then start that machine, or that mode of it, and the
+assembler applies the model's rules: `.bank` on the banked models, a NEX file on the Next, a `1 REM`
+program on the ZX80 and ZX81. Without `.model`, the code is assembled for the machine running in the
+emulator. `#ifmod` and `#ifnmod` let one source file assemble differently per model. See
+[The MODEL pragma](/en/reference/z80-assembler/pragmas#the-model-pragma).
+
+### The language
+
+[The Z80 Assembler reference](/en/reference/z80-assembler/) describes the language in full; the
+parts you reach for first:
+
+- [Directives](/en/reference/z80-assembler/directives/), for `#include`, `#define` and
+  conditional assembly
+- [Pragmas](/en/reference/z80-assembler/pragmas/), such as `.org`, `.defb`, `.bank` and `.model`
+- [Macros](/en/reference/z80-assembler/macros/), [Structs](/en/reference/z80-assembler/structs/) and
+  [Modules](/en/reference/z80-assembler/modules/)
+- Machine-specific pages: [ZX Spectrum Next](/en/reference/z80-assembler/zx-next/),
+  [ZX80 and ZX81](/en/reference/z80-assembler/zx80-zx81/), [HT-1080Z](/en/reference/z80-assembler/ht1080z/)
+
+## Editor features
+
+The editor's help comes from the assembler itself, which compiles the project in the background
+while you type ([Background compilation](/en/guides/projects/background-compilation/)). It works
+across `#include`d files.
+
+- **Hover** an instruction to see its T-states, a register or symbol to see what it is, and any line
+  that emits code to see its **address** and its **bytes** (for example `$8000` and `21 00 40`).
+  Lines that emit nothing, such as labels and `.equ`, show no address.
+- **Hover a macro call** to see the macro's body, with each parameter as `{{name}}`.
+- **Go to Definition** (<kbd>F12</kbd>, or <kbd>Cmd</kbd>/<kbd>Ctrl</kbd>+click) jumps to a label,
+  macro, struct or constant. On an `#include` line it opens the file.
+- **Find All References** (<kbd>Shift</kbd>+<kbd>F12</kbd>) lists a symbol's uses.
+- **Rename** (<kbd>F2</kbd>) renames a label, macro, struct, variable or `.equ` constant in every file
+  of the project, respecting module scopes.
+- **Completion** offers instructions, pragmas (after `.`) and directives (after `#`).
+- **Outline** (<kbd>Cmd</kbd>/<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>O</kbd>) lists the file's symbols.
+- **Semantic colouring** gives labels, macros, structs, `.equ` constants, variables and macro
+  parameters colours of their own, a moment after you stop typing. See
+  [Syntax colors](/en/guides/customizing/syntax-colors/).
+- **Folding and block highlights** cover `.macro`/`.endm`, `.loop`/`.endl`, `.repeat`/`.until`,
+  `.while`/`.endw`, `.for`/`.next`, `.proc`/`.endp`, `.struct`/`.ends`, `.if`/`.endif`,
+  `.module`/`.endmodule` and `#if`/`#ifdef`/`#ifndef`/`#endif`. With the cursor on an opening or
+  closing keyword, both ends of the block are highlighted.
+- **Colour swatches** appear beside the arguments of `attr()`, `ink()` and `paper()`, showing the
+  ZX Spectrum colour each one evaluates to. Click a swatch to pick another colour; Klive writes the
+  nearest palette index into your source.
+- **Errors and warnings** are underlined while you type when **Settings › Editor › Compile in the
+  background** is on; otherwise they appear when you build.
+
+## Debugging
+
+The assembler records which source line produced each byte, so a debug session works on your source:
+set breakpoints in the gutter, see the execution point in the editor, and step through the code
+line by line. Breakpoints can carry conditions and hit counts, and a comment in the source can set
+one. See [Running and debugging](/en/guides/debugging/run-debug/) and
+[Breakpoints](/en/guides/debugging/breakpoints/).
+
+<Callout type="info">
+The assembler also runs from your terminal: [`klive build`](/en/reference/command-line/) builds a
+project without the IDE.
+</Callout>
+
+## Related
+
+- [Z80 Assembler reference](/en/reference/z80-assembler/)
+- [Project templates](/en/guides/projects/project-templates/)
+- [Exporting your program](/en/guides/projects/exporting-code/)
+- [Source-comment breakpoints](/en/guides/debugging/source-comment-breakpoints/)

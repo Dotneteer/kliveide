@@ -1,0 +1,137 @@
+---
+description: "Write logpoints, assertions and memory watchpoints as DeZog-style comments in your assembly source, so they live with the code they check."
+---
+
+import { Callout } from 'nextra/components'
+
+# Breakpoints from Source Comments
+
+Some breakpoints belong with the code rather than with the debugging session: a message logged
+every time a routine runs, a check that a register is in range, a watch on a buffer that must not
+be overwritten. Klive reads [DeZog](https://github.com/maziac/DeZog)'s comment conventions for
+these, so you write them as `LOGPOINT`, `ASSERTION` and `WPMEM` comments and every build turns them
+into breakpoints. A DeZog-annotated project works unchanged.
+
+*Applies to: the Klive Z80 assembler and sjasmplus (with the `SLDOPT` line below).*
+
+## LOGPOINT comments
+
+A `LOGPOINT` comment logs a message to the **Log** pane each time execution reaches its line, and
+the program runs on:
+
+```z80klive
+DrawSprite:
+    ld a,(hl)        ; LOGPOINT [SPRITES] Status=${A:hex8}, Counter=${b@(sprite.counter)}
+```
+
+It fires **before** that instruction runs; a comment on a line of its own, or after a label alone,
+fires at the next instruction. The keyword is case-sensitive. Each expansion of a macro holding one
+gets its own logpoint, and comments in an `IF` branch that is not assembled are ignored. A leading
+`[NAME]` is the message's [group](/en/guides/debugging/breakpoint-conditions/#groups).
+
+### DeZog's expression notation
+
+The comments use DeZog's notation, which differs from Klive's own
+[conditions](/en/guides/debugging/breakpoint-conditions/#conditions-and-hit-counts):
+
+- `${expression}` or `${expression:format}`; every other character, a lone `$` or `{` included,
+  is literal text. The formats are those of [logpoint messages](/en/guides/debugging/breakpoint-conditions/#the-message).
+- Registers (`A`, `HL`, `IXL`, `AF'` …), labels with their full dotted name (`sprite.counter`), and
+  memory reads `b@(address)` (a byte) and `w@(address)` (a word). Parentheses alone only group:
+  `(HL)` is HL, not memory.
+- Numbers as `31`, `0x1F` or `1Fh`.
+- C's operators and precedence: comparisons bind tighter than `&`, so `A & 0x0F == 3` means
+  `A & (0x0F == 3)`. `*`, `/` and `%` work on whole numbers.
+- `${Remote.tStates}`, `${Remote.cpuFrequency}` and `${Remote.slots}`. Division drops the fraction,
+  so `${Remote.cpuFrequency/1000000}MHz` prints `3MHz` for a 3.5 MHz machine.
+
+## ASSERTION and WPMEM comments
+
+The other two DeZog comments stop the machine rather than log.
+
+### ASSERTION
+
+An `ASSERTION` stops the machine when its expression is **false**:
+
+```z80klive
+    ld a,c          ; ASSERTION a < 7
+    ; ASSERTION hl != 0 && b@(hl) == 0x20
+    ld (hl),a
+```
+
+On an instruction's line it is checked **before** that instruction runs, so the first one checks
+A before `ld a,c` changes it. On a line of its own it is checked before the next instruction. A bare
+`ASSERTION` always stops. A later `;` ends the expression, so the rest of the comment can explain
+it. The expression uses the DeZog notation above, with **C precedence**: `A & 0x80 == 0` means
+`A & (0x80 == 0)`. The Breakpoints panel shows the expression as you wrote it; its tooltip and
+`bp-list` show how Klive reads it, with every operation in parentheses.
+
+When an assertion stops the machine, the Emulator output pane says which one, with the values it
+read:
+
+```
+ASSERTION failed at main.asm:42: a < 7  (a=$07)
+```
+
+### WPMEM
+
+A `WPMEM` comment is a memory watchpoint:
+
+```z80klive
+fill_colors:  ; WPMEM, 5, w
+    .defs 5
+    ; WPMEM 0x0000, 0x4000, w
+```
+
+Its arguments are `WPMEM [address [, length [, access]]]`. Without an address it watches the
+comment line's own address (in that line's bank); note the comma straight after `WPMEM` when you
+give a length but no address. The length is in bytes and defaults to 1; the access is `r`, `w` or
+`rw`, the default. The address and length may use labels and arithmetic, but nothing that reads the
+machine. A stop is reported as, for example,
+`WPMEM write at $8002 (fill_colors+2) by PC $8123, main.asm:40`.
+
+## Building with sjasmplus
+
+sjasmplus leaves the comments out of its debug data unless your source has this line:
+
+```z80klive
+    SLDOPT COMMENT WPMEM, LOGPOINT, ASSERTION
+```
+
+Klive warns when a source has `LOGPOINT`, `ASSERTION` or `WPMEM` comments but the build delivered
+none of that kind, and names this line; it never adds it for you. sjasmplus exports **end-of-line**
+comments only. Its builds also give conditions and logpoints their labels, written with their full
+dotted name (`module.main.local`).
+
+## Managing comment breakpoints
+
+These breakpoints belong to the build. They are not saved with the project, each successful build
+replaces them (a failed build keeps the previous ones), and you change one by editing the comment
+and building again. A comment that cannot be read is a build **warning** with its file and line,
+never an error.
+
+They cannot be deleted from the IDE &mdash; remove the comment instead &mdash; but they can be
+**disabled**: click the mark in the editor margin, or use **Disable LOGPOINT**, **Disable
+ASSERTION** or **Disable WPMEM** in the row's menu in the Breakpoints panel. A disabled comment stays
+disabled across rebuilds while it stays on its line, until Klive restarts. Right-clicking the mark or
+the row also offers **Show in Disassembly**, listing every address when a macro expanded the comment
+more than once. Hovering an assertion's mark names the instruction it guards.
+
+In the margin a `LOGPOINT` comment is drawn as a hollow diamond with a dot. The Breakpoints panel
+lists the comments in its **LOGPOINT comments**, **ASSERTION comments** and **WPMEM comments**
+sections. The checkbox on the **ASSERTION comments** and **WPMEM comments** headers switches that
+kind on or off for the project, the same as [`as-en`](/en/reference/commands/#as-en) and
+[`wp-en`](/en/reference/commands/#wp-en). Both are on by default (DeZog starts with them off), and
+the first assertion stop reminds you how to switch them off.
+
+<Callout type="info">
+A `WPMEM` watchpoint also shows on the [Watch](/en/guides/debugging/watch/#watchpoints) panel's row
+for the bytes it covers.
+</Callout>
+
+## Related
+
+- [Conditions, hit counts and logpoints](/en/guides/debugging/breakpoint-conditions/)
+- [Breakpoints](/en/guides/debugging/breakpoints/)
+- [sjasmplus](/en/guides/languages/sjasmplus/)
+- [`bp-set` in the command reference](/en/reference/commands/#bp-set)

@@ -97,6 +97,12 @@ module.exports = {
       fs.mkdirSync(path.dirname(graphicsShot), { recursive: true });
       await shotOf(klive.ide, klive.ide.locator('[class*="_graphicsView_"]').first().locator("xpath=.."), graphicsShot);
       console.log(`  ✓ ${path.relative(process.cwd(), graphicsShot)}`);
+      // --- The Guides' graphics finder page
+      const graphicsSel = await klive.ide.evaluate(() => {
+        document.querySelector('[class*="_graphicsView_"]').parentElement.setAttribute("data-shot", "graphics");
+        return '[data-shot="graphics"]';
+      });
+      await klive.shot(graphicsSel, "en/guides/analysis/graphics-finder/graphics-finder.webp", { displayWidth: 760 });
 
       // --- Detection: propose, then apply to the project's annotations
       await klive.cmd("cls", 500);
@@ -107,7 +113,16 @@ module.exports = {
       // --- The dialog, from the Debug menu as a user opens it (`display-dialog` is not interactive)
       let clicked = false;
       for (let i = 0; i < 30 && !clicked; i++) {
-        // --- The app rebuilds its menu after state changes: poll for the item
+        // --- The app rebuilds its menu after state changes: poll for the item. On macOS the menu has
+        // --- its submenus only while a Klive window is focused (doc-shots guide): focus the IDE first
+        await klive.app.evaluate(({ app, BrowserWindow }) => {
+          const win = BrowserWindow.getAllWindows().find((w) => w.webContents.getURL().includes("?ide"));
+          if (win && !win.isFocused()) {
+            app.focus({ steal: true });
+            win.show();
+            win.focus();
+          }
+        });
         clicked = await klive.app.evaluate(({ Menu }) => {
           const item = Menu.getApplicationMenu()?.getMenuItemById("detect_code_data");
           if (!item || !item.enabled) return false;
@@ -129,6 +144,7 @@ module.exports = {
       const dialogShot = path.join(IMAGES, "working-with-ide", "detect-code-data.png");
       await shotOf(klive.ide, klive.ide.locator('[role="dialog"]').first(), dialogShot);
       console.log(`  ✓ ${path.relative(process.cwd(), dialogShot)}`);
+      await klive.shot('[role="dialog"]', "en/guides/analysis/detecting-code-data/detect-dialog.webp", { displayWidth: 560 });
       await klive.ide.keyboard.press("Escape");
       await klive.sleep(800);
       await klive.cmd("cls", 500);
@@ -142,7 +158,7 @@ module.exports = {
       await klive.cmd(`export-asm "${asmPath}" $7c00 $7cff`, 4000);
       out = await outputText(klive.ide);
       console.log("  export ·", out.replace(/\s+/g, " ").slice(0, 300));
-      if (!/Byte-identical: yes/.test(out)) fail("The export is not byte-identical", out);
+      if (!/Byte-identical: yes|assembles to the same bytes/.test(out)) fail("The export is not byte-identical", out);
       if (!fs.existsSync(asmPath)) fail("export-asm wrote no file", asmPath);
       const exportShot = path.join(IMAGES, "working-with-ide", "export-source.png");
       await shotOf(klive.ide, klive.ide.locator('[class*="_commandPanel_"]').first(), exportShot);

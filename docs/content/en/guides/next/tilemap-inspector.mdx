@@ -15,13 +15,15 @@ Inspector** shows the map and its definitions as the hardware decodes them.
 
 It is one document with two linked views: **Map** (the 40×32 or 80×32 map) and **Tiles** (the 256 or
 512 definitions). Select a cell and the inspector shows its tile; select a tile and every cell that
-uses it is outlined on the map. It is available on the ZX Spectrum Next only.
+uses it is outlined on the map.
+
+*Applies to: ZX Spectrum Next.*
 
 ![The Tilemap Inspector: the whole map with the screen's view outlined, the tile sheet, and a cell whose tile is rotated and mirrored](/images/working-with-ide/tilemap-inspector.png)
 
 ## Opening It
 
-Use **View → Machine Views → Tilemap Inspector**, or one of the commands:
+Use **View › Machine Views › Tilemap Inspector**, or one of the commands:
 
 ```
 show-tilemap          ; the Map view
@@ -31,7 +33,7 @@ show-tiles 40         ; the Tiles view, with tile 40 selected
 
 ## The Layout
 
-Like the [Sprite Inspector](/en/guides/next/sprite-inspector), the document arranges itself by its
+Like the [Sprite Inspector](/en/guides/next/sprite-inspector/), the document arranges itself by its
 own width:
 
 - **Narrow**: **Map** and **Tiles** are tabs, and the inspector is a band under them.
@@ -150,3 +152,9 @@ window, all of its pixels are transparent, or it is below the ULA.
 
 For a **tile**: the tile large, its bytes, and the cells that use it &mdash; click one to select it on
 the map.
+
+## Related
+
+- [Video layers](/en/guides/next/layers/)
+- [Next Registers, memory mapping and palettes](/en/guides/next/next-registers/)
+- [Why does my Next picture look wrong?](/en/guides/next/picture-troubleshooting/)

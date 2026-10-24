@@ -120,6 +120,9 @@ module.exports = {
     const stripText = await strip.innerText();
     if (!stripText.includes("(no cartridge)")) throw new Error(`Microdrive 2's card is missing: ${stripText}`);
     await strip.screenshot({ path: path.join(out, "microdrives-strip.png") });
+    // --- The Guides' Microdrives page (`guides/media/microdrives`)
+    await emu.mouse.move(5, 300);
+    await klive.shot('[class*="_mediaTools_"]', "en/guides/media/microdrives/media-strip.webp", { displayWidth: 640, page: emu });
 
     // --- 3. 128 BASIC: CAT 1 runs the motor
     await klive.ide.bringToFront();
@@ -133,6 +136,7 @@ module.exports = {
     await waitFor(async () => (await emu.locator("#themeRoot").innerText().catch(() => "")).length > 0, "the emulator");
     await klive.sleep(10000);
     await emu.locator("#themeRoot").screenshot({ path: path.join(out, "microdrives-cat.png") });
+    await klive.shot("canvas", "en/guides/media/microdrives/cat.webp", { displayWidth: 520, page: emu });
 
     // --- 4. SAVE * from 128 BASIC reaches the file
     await type(emu, ["Enter"]);

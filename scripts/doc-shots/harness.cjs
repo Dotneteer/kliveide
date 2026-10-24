@@ -222,13 +222,27 @@ async function launchKlive({
    * `{ page, selector, x, y }` to measure in another window (the EMU window).
    *
    * `page` captures another window instead of the IDE (pass `klive.emu()`).
+   *
+   * `crop` (`{ x, y, width, height }`, CSS pixels relative to the element) captures only that part
+   * of the element, through a page clip; markers are then measured against the cropped box.
    */
-  async function shot(selector, relPath, { displayWidth, markers, page = ide } = {}) {
+  async function shot(selector, relPath, { displayWidth, markers, page = ide, crop } = {}) {
     if (lang) relPath = path.join(lang, relPath);
     const target = path.join(IMAGES, relPath);
     fs.mkdirSync(path.dirname(target), { recursive: true });
     const element = page.locator(selector).first();
-    const buffer = await element.screenshot();
+    let clip;
+    if (crop) {
+      const ebox = await element.boundingBox();
+      if (!ebox) throw new Error(`Nothing to crop for ${relPath}`);
+      clip = {
+        x: ebox.x + (crop.x ?? 0),
+        y: ebox.y + (crop.y ?? 0),
+        width: Math.min(crop.width ?? ebox.width, ebox.width - (crop.x ?? 0)),
+        height: Math.min(crop.height ?? ebox.height, ebox.height - (crop.y ?? 0))
+      };
+    }
+    const buffer = clip ? await page.screenshot({ clip }) : await element.screenshot();
     const sharp = loadSharp();
     let pipeline = sharp(buffer);
     if (displayWidth) pipeline = pipeline.resize({ width: displayWidth * 2 });
@@ -240,7 +254,7 @@ async function launchKlive({
 
     const sidecar = `${target}.json`;
     if (markers) {
-      const box = await element.boundingBox();
+      const box = clip ?? (await element.boundingBox());
       const points = {};
       for (const [name, spec] of Object.entries(markers)) {
         const m = typeof spec === "string" ? { selector: spec } : spec;

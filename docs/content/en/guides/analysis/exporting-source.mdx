@@ -1,20 +1,22 @@
 ---
-description: "Export an annotated range or bank as Klive Z80 assembly that reassembles to exactly the same bytes."
+description: "Export an annotated disassembly, a range or a bank as Klive Z80 assembly that reassembles to exactly the same bytes."
 ---
 
 import { Callout } from 'nextra/components'
 
-# Exporting Source
+# Exporting a Disassembly as Source
 
 Once a program is annotated, you can turn it into **source code**: Klive Z80 assembly with your
-labels, comments and data regions, that reassembles to exactly the bytes it came from.
+labels, comments and data regions, that reassembles to exactly the bytes it came from. This is for programs you are reverse engineering;
+to write your own compiled program to a tape, snapshot or NEX file, see
+[Exporting your program](/en/guides/projects/exporting-code/).
 
 Click the **Export as source** button (the file icon) in the header of the Disassembly view or of a
 bank document, or choose **Debug › Export Disassembly as Source...**. The Disassembly view and the
 menu export the RAM of the 64K view (`$4000`–`$FFFF`) under the current paging; a bank document
 exports its bank. The tools button's **Export as Source...** does the same, and **Export as Source**
 on a named graphic exports the graphic. To export a whole ROM, use **Export as source...** in the
-[ROM annotation editor](/en/guides/debugging/disassembly).
+[ROM annotation editor](/en/guides/analysis/annotations/#editing-a-roms-annotations).
 
 ## Where the files go
 
@@ -74,3 +76,10 @@ A 128K bank is assembled into its bank with `.model Spectrum128` and `.bank`; a 
 <Callout type="info">
 The export is always written in Klive's own assembly dialect.
 </Callout>
+
+## Related
+
+- [Annotating a disassembly](/en/guides/analysis/annotations/)
+- [SkoolKit files](/en/guides/analysis/skoolkit/)
+- [Exporting your program](/en/guides/projects/exporting-code/)
+- [`export-asm` in the command reference](/en/reference/commands#export-asm)

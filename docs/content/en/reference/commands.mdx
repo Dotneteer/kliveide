@@ -74,17 +74,17 @@ The `address-spec` parameter can be
   `nr:$07` &mdash; meaning "stop when Next Register `$07` is written". This is the one breakpoint
   that does not name a place: it watches a machine event, so it has no address, no partition and no
   disassembly. Add `=` and a value to break only on that value, and `/` and a mask to compare only
-  some of its bits, as in `nr:$07=$03/$0f`. See [NextReg Write Breakpoints](/en/guides/debugging/breakpoints#nextreg-write-breakpoints);
+  some of its bits, as in `nr:$07=$03/$0f`. See [NextReg Write Breakpoints](/en/guides/next/next-breakpoints/#nextreg-write-breakpoints-zx-spectrum-next);
 - a **Copper instruction** on the ZX Spectrum Next (`cu:` then a Copper list index, `$000`-`$3FF`),
   for example, `cu:$00B` &mdash; meaning "stop when the Copper completes list instruction `$00B`": a
   `MOVE` when it is issued, a `WAIT` when its condition is satisfied. Like `nr:`, it has no address
-  and no partition. See [Copper Breakpoints](/en/guides/debugging/breakpoints#copper-breakpoints-zx-spectrum-next);
+  and no partition. See [Copper Breakpoints](/en/guides/next/next-breakpoints/#copper-breakpoints-zx-spectrum-next);
 - a **sprite attribute write** on the ZX Spectrum Next (`sp:` then a sprite, `$00`-`$7F`), for
   example, `sp:$0C` &mdash; meaning "stop when an attribute byte of sprite `$0C` is written", through
   port `$57` or the `$35`-`$39`/`$75`-`$79` NextReg mirrors, by the CPU, the DMA or the Copper. Add
   `-attr` and a list of attribute bytes (`0`-`4`) to watch only those, as in `sp:$0C -attr 0,1` or
   `-attr 0-3`. Like `cu:`, it has no address and no partition. See
-  [Sprite Attribute Breakpoints](/en/guides/debugging/breakpoints#sprite-attribute-breakpoints-zx-spectrum-next);
+  [Sprite Attribute Breakpoints](/en/guides/next/next-breakpoints/#sprite-attribute-breakpoints-zx-spectrum-next);
 - a **watch symbol** (`WS:` then a build symbol), for example, `WS:score -w -len 2` &mdash; a memory
   breakpoint anchored to the symbol rather than to an address, so a rebuild that moves the symbol
   moves the watched bytes, and it does not stop while the build has no such symbol. This is what
@@ -175,17 +175,17 @@ The `address-spec` parameter can be
   `nr:$07` &mdash; meaning "stop when Next Register `$07` is written". This is the one breakpoint
   that does not name a place: it watches a machine event, so it has no address, no partition and no
   disassembly. Add `=` and a value to break only on that value, and `/` and a mask to compare only
-  some of its bits, as in `nr:$07=$03/$0f`. See [NextReg Write Breakpoints](/en/guides/debugging/breakpoints#nextreg-write-breakpoints);
+  some of its bits, as in `nr:$07=$03/$0f`. See [NextReg Write Breakpoints](/en/guides/next/next-breakpoints/#nextreg-write-breakpoints-zx-spectrum-next);
 - a **Copper instruction** on the ZX Spectrum Next (`cu:` then a Copper list index, `$000`-`$3FF`),
   for example, `cu:$00B` &mdash; meaning "stop when the Copper completes list instruction `$00B`": a
   `MOVE` when it is issued, a `WAIT` when its condition is satisfied. Like `nr:`, it has no address
-  and no partition. See [Copper Breakpoints](/en/guides/debugging/breakpoints#copper-breakpoints-zx-spectrum-next);
+  and no partition. See [Copper Breakpoints](/en/guides/next/next-breakpoints/#copper-breakpoints-zx-spectrum-next);
 - a **sprite attribute write** on the ZX Spectrum Next (`sp:` then a sprite, `$00`-`$7F`), for
   example, `sp:$0C` &mdash; meaning "stop when an attribute byte of sprite `$0C` is written", through
   port `$57` or the `$35`-`$39`/`$75`-`$79` NextReg mirrors, by the CPU, the DMA or the Copper. Add
   `-attr` and a list of attribute bytes (`0`-`4`) to watch only those, as in `sp:$0C -attr 0,1` or
   `-attr 0-3`. Like `cu:`, it has no address and no partition. See
-  [Sprite Attribute Breakpoints](/en/guides/debugging/breakpoints#sprite-attribute-breakpoints-zx-spectrum-next);
+  [Sprite Attribute Breakpoints](/en/guides/next/next-breakpoints/#sprite-attribute-breakpoints-zx-spectrum-next);
 - or a source code line specification, for example, `[code/code.kz80.asm]:12`
 
 The `-d` option disables the breakpoint.
@@ -223,7 +223,7 @@ reads and `-o` I/O writes. With none of them, the breakpoint is an execution bre
   breakpoint again. See [One-Shot Breakpoints](/en/guides/debugging/breakpoints#one-shot-breakpoints).
 - `-log "<message>"` makes the breakpoint a **logpoint**: instead of stopping, it writes the
   message to the Log pane and continues. Write the message in double quotes (`\"` and `\\` inside
-  it), before `-if`. See [Logpoints](/en/guides/debugging/breakpoints#logpoints) for the message
+  it), before `-if`. See [Logpoints](/en/guides/debugging/breakpoint-conditions/#logpoints) for the message
   syntax. Errors are reported with a caret, as for a condition.
 - `-hit <spec>` sets a **hit count** rule: `10` (or `=10`) stops on the 10th hit only, `>10` after
   it, `>=10` from it on, `<10` before it, `<=10` up to it, and `*10` on every 10th hit. The number
@@ -232,7 +232,7 @@ reads and `-o` I/O writes. With none of them, the breakpoint is an execution bre
   **last** option, because everything after it to the end of the line is the condition, taken
   verbatim &mdash; no quoting needed. A condition that is one double-quoted string is unquoted, so
   `-if "A == 1"` works too. See
-  [Conditions and Hit Counts](/en/guides/debugging/breakpoints#conditions-and-hit-counts) for the
+  [Conditions and Hit Counts](/en/guides/debugging/breakpoint-conditions/#conditions-and-hit-counts) for the
   language.
 
 `bp-set` states the whole breakpoint: setting one that already exists replaces its condition, hit
@@ -273,7 +273,7 @@ The `address-spec` parameter can be
   that pages banks in and out. Not available on the ZX80 and ZX81, which have no banks, nor for the
   `-i` and `-o` (I/O) breakpoint types, which watch a port rather than memory;
 - an **annotation label** in a bank (the bank, a colon, then the label), for example, `07:MainLoop`
-  &mdash; a breakpoint anchored to a label of the [active annotation set](/en/guides/debugging/disassembly#annotations-on-every-machine),
+  &mdash; a breakpoint anchored to a label of the [active annotation set](/en/guides/analysis/annotations/#annotations-on-every-machine),
   which follows the label when it moves and is kept in that annotation file;
 - a **ROM label** (`ROM:` then the name), for example, `ROM:SA_BYTES` &mdash; the address of a label
   of the paged ROM's annotations, scoped to that ROM page on a machine that pages ROMs;
@@ -281,17 +281,17 @@ The `address-spec` parameter can be
   `nr:$07` &mdash; meaning "stop when Next Register `$07` is written". This is the one breakpoint
   that does not name a place: it watches a machine event, so it has no address, no partition and no
   disassembly. Add `=` and a value to break only on that value, and `/` and a mask to compare only
-  some of its bits, as in `nr:$07=$03/$0f`. See [NextReg Write Breakpoints](/en/guides/debugging/breakpoints#nextreg-write-breakpoints);
+  some of its bits, as in `nr:$07=$03/$0f`. See [NextReg Write Breakpoints](/en/guides/next/next-breakpoints/#nextreg-write-breakpoints-zx-spectrum-next);
 - a **Copper instruction** on the ZX Spectrum Next (`cu:` then a Copper list index, `$000`-`$3FF`),
   for example, `cu:$00B` &mdash; meaning "stop when the Copper completes list instruction `$00B`": a
   `MOVE` when it is issued, a `WAIT` when its condition is satisfied. Like `nr:`, it has no address
-  and no partition. See [Copper Breakpoints](/en/guides/debugging/breakpoints#copper-breakpoints-zx-spectrum-next);
+  and no partition. See [Copper Breakpoints](/en/guides/next/next-breakpoints/#copper-breakpoints-zx-spectrum-next);
 - a **sprite attribute write** on the ZX Spectrum Next (`sp:` then a sprite, `$00`-`$7F`), for
   example, `sp:$0C` &mdash; meaning "stop when an attribute byte of sprite `$0C` is written", through
   port `$57` or the `$35`-`$39`/`$75`-`$79` NextReg mirrors, by the CPU, the DMA or the Copper. Add
   `-attr` and a list of attribute bytes (`0`-`4`) to watch only those, as in `sp:$0C -attr 0,1` or
   `-attr 0-3`. Like `cu:`, it has no address and no partition. See
-  [Sprite Attribute Breakpoints](/en/guides/debugging/breakpoints#sprite-attribute-breakpoints-zx-spectrum-next);
+  [Sprite Attribute Breakpoints](/en/guides/next/next-breakpoints/#sprite-attribute-breakpoints-zx-spectrum-next);
 - a **watch symbol** (`WS:` then a build symbol, with `-r` or `-w`), for example, `WS:score -w -len 2`,
   as described under [`bp-del`](#bp-del);
 - or a source code line specification, for example, `[code/code.kz80.asm]:12`
@@ -345,7 +345,7 @@ Available aliases: `ase`
 
 Without `-d` it switches them on, with `-d` off. They are on by default; the setting is saved with
 the project and takes effect at once, without a rebuild. See
-[ASSERTION and WPMEM comments](/en/guides/debugging/breakpoints#dezog-assertion-and-wpmem-comments).
+[ASSERTION and WPMEM comments](/en/guides/debugging/source-comment-breakpoints/#assertion-and-wpmem-comments).
 
 ## `wp-en`
 
@@ -432,7 +432,7 @@ These are the arguments of the command:
 ## `disk`
 
 This command lists and changes the files of a disk image: a `.dsk` (+3DOS), a `.trd` or a `.scl`
-(TR-DOS), or an `.mdr` (a Microdrive cartridge). It does what the [Disk Explorer](/en/guides/emulator/disk-explorer) does; a disk in the
+(TR-DOS), or an `.mdr` (a Microdrive cartridge). It does what the [Disk Explorer](/en/guides/media/disk-explorer/) does; a disk in the
 running machine's drive is paused, written and put back.
 
 ```
@@ -582,9 +582,9 @@ These are the input arguments and options:
   - `tzx`: TZX file format
   - `tap`: TAP file format
   - `nex`: ZX Spectrum Next NEX file
-  - `dsk`: a ZX Spectrum +3 disk that boots the program: its `DISK` loader runs from the +3's Loader menu ([details](/en/guides/emulator/disk-explorer#exporting-a-program-to-a-disk))
+  - `dsk`: a ZX Spectrum +3 disk that boots the program: its `DISK` loader runs from the +3's Loader menu ([details](/en/guides/media/disk-explorer/#exporting-a-program-to-a-disk))
   - `trd`: a TR-DOS disk that boots the program: its `boot` loader runs when TR-DOS boots the disk
-  - `mdr`: a Microdrive cartridge that boots the program: the Interface 1 runs its `run` loader on `RUN` ([details](/en/guides/emulator/microdrives#booting-a-cartridge))
+  - `mdr`: a Microdrive cartridge that boots the program: the Interface 1 runs its `run` loader on `RUN` ([details](/en/guides/media/microdrives/#booting-a-cartridge))
   - `p`: ZX81 program file (the default for ZX81 code); only `-as` applies to it
   - `o`: ZX80 program file (the default for ZX80 code); none of the other options apply to it
 - `-as`: Autostart the exported code after loading it (on a `.p` file: the program runs itself once loaded)
@@ -678,11 +678,11 @@ The `projectFile` argument is a project file name. When you specify the name, us
 
 You can specify an optional `line` and `column` argument to jump to the specified location within the file.
 
-With the `-r` option, the jump is remembered in the [navigation history](/en/guides/ide/navigation), so `nav-back` can return to where you were. `reason` is what the history list shows as the cause of the jump: `definition`, `outputLink`, `breakpoint`, `memoryGoTo`, `disassemblyGoTo`, `nexLabel`, `nexBank`, `z88Bank`, `tabSwitch`, `explorer` or `command`. Without `-r`, the jump is not remembered.
+With the `-r` option, the jump is remembered in the [navigation history](/en/guides/editing/navigation/), so `nav-back` can return to where you were. `reason` is what the history list shows as the cause of the jump: `definition`, `outputLink`, `breakpoint`, `memoryGoTo`, `disassemblyGoTo`, `nexLabel`, `nexBank`, `z88Bank`, `tabSwitch`, `explorer` or `command`. Without `-r`, the jump is not remembered.
 
 ## `nav-back`
 
-This command goes back to the previous place in the [navigation history](/en/guides/ide/navigation), like the **Back** toolbar button.
+This command goes back to the previous place in the [navigation history](/en/guides/editing/navigation/), like the **Back** toolbar button.
 
 ```
 nav-back
@@ -694,7 +694,7 @@ When there is nowhere to go back to, the command says so and does nothing else.
 
 ## `nav-forward`
 
-This command goes forward to the next place in the [navigation history](/en/guides/ide/navigation), like the **Forward** toolbar button.
+This command goes forward to the next place in the [navigation history](/en/guides/editing/navigation/), like the **Forward** toolbar button.
 
 ```
 nav-forward
@@ -704,7 +704,7 @@ Available aliases: `nf`
 
 ## `nav-history`
 
-This command lists the [navigation history](/en/guides/ide/navigation), newest place first. `>` marks where you are; each line shows the document, the position in it, and the reason the place was remembered.
+This command lists the [navigation history](/en/guides/editing/navigation/), newest place first. `>` marks where you are; each line shows the document, the position in it, and the reason the place was remembered.
 
 ```
 nav-history
@@ -714,7 +714,7 @@ Available aliases: `nh`
 
 ## `nav-clear`
 
-This command empties the [navigation history](/en/guides/ide/navigation).
+This command empties the [navigation history](/en/guides/editing/navigation/).
 
 ```
 nav-clear
@@ -826,7 +826,7 @@ project's model for a snapshot of the same type. Disks a `.szx` file links are r
 
 The same actions are available from the Explorer's context menu on a snapshot file, from the buttons
 in a snapshot's document tab, from **File &rarr; Open File...**, and by dropping the
-file onto the Emulator window. See [Using ZX Spectrum Snapshots](./howto/spectrum-snapshots) for
+file onto the Emulator window. See [Using ZX Spectrum Snapshots](/en/guides/media/snapshots/) for
 what Klive can load.
 
 ```text
@@ -851,7 +851,7 @@ load back differently. An existing file is replaced only with `-f`.
 
 The machine must be running or paused. A running machine is paused for the capture and runs on
 afterwards; a paused one stays paused. **File &rarr; Save Snapshot...** does the same after asking for a file. See
-[Using ZX Spectrum Snapshots](./howto/spectrum-snapshots#saving-a-snapshot) for what each format
+[Using ZX Spectrum Snapshots](/en/guides/media/snapshots/#saving-a-snapshot) for what each format
 keeps.
 
 ```text
@@ -874,7 +874,7 @@ The recording decides the machine, as a snapshot does (see [`zx-snapshot`](#zx-s
 `-d`, the machine starts in debug mode and stops at the recording's first instruction; breakpoints
 and stepping work while it plays. `-s` starts at a segment (an embedded snapshot), counted from 1.
 When the recording ends the machine pauses; a desync pauses it at the instruction that desynced. See
-[Playing and Recording RZX Files](./howto/rzx-recordings).
+[Playing and Recording RZX Files](/en/guides/media/rzx-recordings/).
 
 ```text
 zx-rzx "recordings/game.rzx"
@@ -952,7 +952,7 @@ Available aliases: `ssave`
 It works for every machine Klive emulates in its own cores (ZX Spectrum 48K, 128K, +2E/+3E, ZX
 Spectrum Next, Cambridge Z88, ZX80, ZX81). The machine must be running or paused; a running machine
 runs on afterwards. An existing file is replaced only with `-f`. See
-[Saving and Restoring the Machine State](./howto/machine-state).
+[Saving and Restoring the Machine State](/en/guides/media/machine-state/).
 
 ```text
 state-save "states/before-boss.kls"
@@ -1002,7 +1002,7 @@ project for another machine is open. The real-time clock is advanced by the time
 on disk.
 
 The same actions are available from the Explorer's context menu on a `.z88` file, and from the
-buttons in a `.z88` file's document tab. See [Using Z88 Snapshots](./howto/z88-snapshots) for what
+buttons in a `.z88` file's document tab. See [Using Z88 Snapshots](/en/guides/media/z88-snapshots/) for what
 Klive can load.
 
 ```text
@@ -1023,7 +1023,7 @@ Available aliases: `tapeload`
 
 With no option, the tape is only inserted, as **Machine | Tape | Insert Tape...** does; inserting the tape already in the deck rewinds it. `-r` then resets the machine and starts the tape loading: it types `LOAD ""` on a 48K and chooses the Tape Loader (Loader on a +2A/+3) from a 128K's start-up menu. `-d` does the same with your breakpoints armed. `-e` loads an HT-1080Z machine-code tape (a `SYSTEM` `.cas` or a `.cmd`) under the debugger and stops at the program's start address, with a one-time breakpoint that is not saved with the project. A relative path is taken from the project folder.
 
-The command works on the ZX Spectrum 48K, 128K and +2/+3 only. It is what the tape viewer's buttons and the Explorer's context menu on a tape file run; see [Loading from Tape](./getting-started/tapes).
+The command works on the ZX Spectrum 48K, 128K and +2/+3 only. It is what the tape viewer's buttons and the Explorer's context menu on a tape file run; see [Loading from Tape](/en/get-started/load-from-tape/).
 
 ```text
 tape-load "tapes/game.tzx"
@@ -1051,7 +1051,7 @@ Pentagon, Scorpion, Timex, ZX80 and ZX81.
   time its bank is paged elsewhere. Klive reads the current memory mapping to work out which bank
   that is. For a launched NEX, it refuses a bank the file does not contain.
 - An address in **ROM** gets a label in *your* annotations of that ROM, kept apart from the ROM
-  annotations Klive ships (see [ROM annotations](/en/guides/debugging/disassembly#rom-annotations)).
+  annotations Klive ships (see [ROM annotations](/en/guides/analysis/annotations/#rom-annotations)).
 
 The machine must be **paused**, unless you give an address: a running machine's program counter has
 moved on by the time the command reads it, so "where we are" would name an arbitrary instruction.
@@ -1115,7 +1115,7 @@ shipped labels apply to its bytes.
 ## `rom-ann-new`
 
 Makes a working copy of a ROM's annotations and opens it in the ROM annotation editor. See
-[Editing a ROM's annotations](./working-with-ide/disassembly#editing-a-roms-annotations).
+[Editing a ROM's annotations](/en/guides/analysis/annotations/#editing-a-roms-annotations).
 
 ```
 rom-ann-new <rom> [-page <n>]
@@ -1187,7 +1187,7 @@ rom-ann-provenance <rom>|<file.rom.dis> <offset> label|line|region observed|manu
 ## `ann-detect`
 
 Detects code and data from code coverage and proposes regions for the active annotations. See
-[Detecting Code and Data](./working-with-ide/detecting-code-data).
+[Detecting Code and Data](/en/guides/analysis/detecting-code-data/).
 
 ```
 ann-detect [<bank>|rom|all] [-mode fill|replace|clear] [-reach] [-text] [-words]
@@ -1204,7 +1204,7 @@ Available aliases: `detect`
 ## `gfx`
 
 Opens the graphics finder over the paused machine, optionally at an address. See
-[The Graphics Finder](./working-with-ide/graphics-finder).
+[The Graphics Finder](/en/guides/analysis/graphics-finder/).
 
 ```
 gfx [<address>] [-w <width>] [-h <height>] [-layout linear|cells|columns|screen] [-bank <n>]
@@ -1217,7 +1217,7 @@ Available aliases: `show-graphics`
 ## `export-asm`
 
 Exports an annotated range of the 64K view, or a bank, as Klive Z80 source that reassembles to the
-same bytes, and verifies it. See [Exporting Source](./working-with-ide/exporting-source).
+same bytes, and verifies it. See [Exporting Source](/en/guides/analysis/exporting-source/).
 
 ```
 export-asm <file> [<from> <to>] [-bank <n>] [-skip data|gap] [-dialect klive] [-open]
@@ -1229,7 +1229,7 @@ bytes.
 ## `skool-import`
 
 Imports a SkoolKit skool or control file into the active annotations, checking its instructions
-against the machine's bytes. See [SkoolKit Files](./working-with-ide/skoolkit).
+against the machine's bytes. See [SkoolKit Files](/en/guides/analysis/skoolkit/).
 
 ```
 skool-import <file> [-ctl] [-mode fill|replace] [-apply]
@@ -1251,11 +1251,11 @@ This project creates a new Klive project and optionally opens it.
 newp <machine-id> <project-name> [<template>] [-p <project-folder>] [-o]
 ```
 
-The `machine-id`  argument specifies the ID of the machine and an optional model. When you specify the machine and model type, use a colon to separate the machine ID from the model ID. For example, use `sp48` for the basic ZX Spectrum 48K model and `sp48:ntsc` to use the NTSC version of ZX Spectrum 48K. See the [Machine Types](./machine-types) article for these IDs.
+The `machine-id`  argument specifies the ID of the machine and an optional model. When you specify the machine and model type, use a colon to separate the machine ID from the model ID. For example, use `sp48` for the basic ZX Spectrum 48K model and `sp48:ntsc` to use the NTSC version of ZX Spectrum 48K. See the [Machine Types](/en/reference/machine-types/) article for these IDs.
 
 The `project-name` argument defines the project's name. Unless the optional `project-folder` parameter is specified, the new project is created in the `KliveProjects` folder within your user folder.
 
-Klive may support multiple project templates for a particular machine type (it provides a default template for each). If you want a specific template, specify its name in the `template` argument. See the [Project Templates](./project-templates) article for more information about available templates.
+Klive may support multiple project templates for a particular machine type (it provides a default template for each). If you want a specific template, specify its name in the `template` argument. See the [Project Templates](/en/guides/projects/project-templates/) article for more information about available templates.
 
 By default, the IDE creates a new project but does not open it. However, if you add the `-o` option, the new project will be immediately opened.
 
@@ -1429,7 +1429,7 @@ Available aliases: `sjasmpr`
 
 Klive stores the SjasmPlus settings in the `Klive.setting` file. If you want to change this path for a particular project (perhaps you want to test with another SjasmPlus version), use the `-p` switch to save this setting into the currently open project.
 
-You can also configure SJASMPLUS from the graphical dialog available at **Settings > Integrations > SjasmPlus > Configure...** (see [Settings](/en/guides/ide/settings)).
+You can also configure SJASMPLUS from the graphical dialog available at **Settings > Integrations > SjasmPlus > Configure...** (see [Settings](/en/guides/customizing/settings/)).
 
 ## `set`
 
@@ -1868,7 +1868,7 @@ test-init
 ## `test-junit`
 
 Use this command to write the last [unit-test](/en/guides/testing/unit-tests) run's results as JUnit
-XML, the file `klive test --junit` writes in CI ([Unit Tests on the Command Line](/en/guides/testing/unit-tests-cli)).
+XML, the file `klive test --junit` writes in CI ([Unit Tests on the Command Line](/en/guides/testing/command-line/)).
 The Testing activity's **Export results as JUnit...** context-menu item runs it.
 
 ```
@@ -2002,7 +2002,7 @@ The **View → Machine Views → Layers** menu item runs `show-layers`.
 
 ## `beam`
 
-Use this command to show or hide the [beam position](/en/guides/debugging/beam-position) on the paused
+Use this command to show or hide the [beam position](/en/guides/debugging/paused-screen/) on the paused
 emulator screen: where the raster is, and which part of the picture is left from the previous frame.
 
 ```

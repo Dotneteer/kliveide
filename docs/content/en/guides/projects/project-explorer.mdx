@@ -1,0 +1,133 @@
+---
+description: "Browse, open, create, rename, exclude and delete your project's files in the Project Explorer, and see which editor or viewer opens each file type."
+---
+
+import { Callout } from 'nextra/components'
+
+# The Project Explorer
+
+The **Project Explorer** shows the files and folders of the open project. Use it to open files, to
+create, rename and delete them, to choose the build root, and to load tapes and other media into
+the machine. Klive opens each file in the editor or viewer that fits its type.
+
+## Opening the Explorer
+
+Click **Explorer** in the activity bar. The side bar is on the left by default; to move it to the
+right, turn on **Settings › Appearance › Sidebar on the right**, or right-click the activity bar and
+choose **Move Sidebar to the Right**.
+
+With no folder open, the Explorer offers **Open Folder** and **Create a Klive Project**. Above the
+tree, the **Open Editors** panel, collapsed at first, lists the documents you have open; its badge
+shows how many.
+
+## Working with the tree
+
+<Shot
+  src="guides/projects/project-explorer/tree.webp"
+  alt="The Project Explorer of a ZX Spectrum 48K project named MyGame: the code, gfx and tapes folders expanded, the build root code.kz80.asm marked with the build icon and open in the editor"
+  caption="A project in the Explorer: the home icon marks the project folder, the build icon the build root"
+  width={760}
+/>
+
+- **Click a file** to open it. A folder expands and collapses when you click it.
+- **Keyboard:** <kbd>↑</kbd> and <kbd>↓</kbd> move through the tree, <kbd>Space</kbd> opens a file or
+  expands a folder, <kbd>Delete</kbd> deletes the selected item.
+- **Drag a file** onto the [Disk Explorer](/en/guides/media/disk-explorer/) to add it to a disk image.
+- The root folder of a Klive project shows a home icon, and the build root a build icon after its
+  name.
+
+## The context menu
+
+Right-click a file or folder:
+
+<Shot
+  src="guides/projects/project-explorer/folder-menu.webp"
+  alt="The context menu of the code folder: New file, New folder, Expand all, Collapse all, Reveal in Finder, Rename, Exclude and Delete"
+  caption="The context menu of a folder"
+  width={420}
+/>
+
+| Item | Shown for | Does |
+| --- | --- | --- |
+| **Refresh** | The root folder | Reads the folder again from disk. |
+| **New file...**, **New folder...** | Folders | Creates an item in the folder. |
+| **Expand all**, **Collapse all** | Folders | Opens or closes every folder below. |
+| **Reveal in Finder** (macOS) / **Reveal in File Explorer** (Windows) | Every item | Shows the item in your system's file manager. |
+| **Rename...** | Every item except the root and `klive.project` | Renames the item. Rename a file to change the extension, and with it the editor that opens it. |
+| **Exclude** | Every item except the root and `klive.project`, in a Klive project | Hides the item from the Explorer. |
+| **Delete** | Every item except the root and `klive.project` | Deletes the item from disk, after you confirm. It does not go to the trash. |
+| **Promote to Build Root** / **Demote from Build Root** | Source files, in a Klive project | Makes the file the [build root](/en/guides/projects/creating-projects/#the-build-root), or stops it being one. |
+
+Some file types add items of their own. Tapes (`.tap`, `.tzx`) offer to load and run, insert, or
+load and debug the tape, on the machines that can play them; see
+[Tapes](/en/guides/media/tapes/). ZX80 and ZX81 program files, HT-1080Z tapes, NEX files, Z88
+snapshots and `.ksx` scripts have their own items too.
+
+<Shot
+  src="guides/projects/project-explorer/tape-menu.webp"
+  alt="The context menu of hello.tap: the common items, then Load and run tape, Insert tape and Load and debug tape"
+  caption="A tape file adds its own items below the common ones"
+  width={420}
+/>
+
+## Excluded items
+
+Excluded files and folders are hidden from the tree but stay on disk. The button at the right of the
+project's root folder opens the **Excluded Items** dialog, where you can bring them back. The list is
+saved in the project.
+
+## What opens where
+
+Klive decides by the file name; the first matching rule wins.
+
+**Source code** opens in the code editor, with the language's colouring and features. The extensions
+and their compilers are in [File types](/en/guides/projects/file-types/): `.kz80.asm`, `.asm`,
+`.zxbas`, `.bas`, `.sjasm`, `.c`, `.h`, `.pas`, `.zxb.asm`, `.6510.asm`, `.ksx`, plus `.lua` and
+`.dis`.
+
+**Text:** `.txt`, and SkoolKit's `.skool` and `.ctl`, open in the text editor.
+
+**Media and machine files** open in their own viewers:
+
+| Extensions | Opens in |
+| --- | --- |
+| `.tap`, `.tzx` | The tape viewer ([Tapes](/en/guides/media/tapes/)) |
+| `.p`, `.81`, `.o`, `.80` | The ZX81/ZX80 program viewer ([ZX81 and ZX80](/en/guides/machines/zx81-zx80/)) |
+| `.cas`, `.cmd`, tokenised `.bas` | The HT-1080Z tape viewer ([HT-1080Z](/en/guides/machines/ht1080z/)) |
+| `.dsk`, `.trd`, `.scl`, `.mdr` | The [Disk Explorer](/en/guides/media/disk-explorer/) |
+| `.img`, `.hdf`, `.cim` | The hard-disk and SD card explorer ([Disk Explorer](/en/guides/media/disk-explorer/)) |
+| `.sna`, `.z80`, `.szx` | The snapshot viewer ([Snapshots](/en/guides/media/snapshots/)) |
+| `.z88` | The Z88 snapshot viewer ([Z88 snapshots](/en/guides/media/z88-snapshots/)) |
+| `.rzx` | The RZX viewer ([RZX recordings](/en/guides/media/rzx-recordings/)) |
+| `.kls` | The machine state viewer ([Machine state files](/en/guides/media/machine-state/)) |
+| `.klr` | The debug recording viewer ([Debug recordings](/en/guides/debugging/debug-recordings/)) |
+| `.nex` | The NEX viewer ([NEX files](/en/guides/next/nex-files/)) |
+| `.rom.dis` | The ROM annotation editor ([Annotations](/en/guides/analysis/annotations/)) |
+| `.scr` | The ZX Spectrum screen viewer |
+| `.shc`, `.shr`, `.slr` | The ZX Spectrum Next screen viewers |
+| `.sl2`, `.nxi` | The Layer 2 picture viewers ([Layer 2 picture files](/en/guides/next/layer2-inspector/#layer-2-picture-files)) |
+| `.pal`, `.npl` | The palette editor ([Sprite and palette editors](/en/guides/next/sprite-palette-editors/)) |
+| `.spr` | The sprite editor ([Sprite and palette editors](/en/guides/next/sprite-palette-editors/)) |
+| `.vid` | The video viewer |
+| `.bin`, `.rom` | The binary dump viewer |
+| `.png`, `.jpg`, `.jpeg`, `.gif`, `.bmp`, `.webp`, `.svg`, `.ico`, `.tiff`, `.tif` | The image viewer |
+
+The **binary dump viewer** shows the bytes in hexadecimal with their characters beside them, with a
+**Go To** address box. The **image viewer** offers **Original size** (with zoom buttons), **Fit Width**
+and **Fit Page**, and you can drag a large image to pan it.
+
+**Any other file** is checked when you first open it: valid UTF-8 text opens in the text editor,
+anything else in the binary dump viewer. Klive remembers the result, and the Explorer's icon, until
+you close the project.
+
+<Callout type="info">
+To make Klive treat your own extensions (such as `.z80`) as a source language, see
+[Use your own extensions](/en/guides/projects/file-types/#use-your-own-extensions).
+</Callout>
+
+## Related
+
+- [Creating a project](/en/guides/projects/creating-projects/)
+- [File types](/en/guides/projects/file-types/)
+- [The editor](/en/guides/editing/editor/)
+- [Navigating back and forward](/en/guides/editing/navigation/)

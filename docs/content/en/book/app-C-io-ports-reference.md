@@ -10,7 +10,7 @@ The ZX Spectrum Next has somewhere north of fifty distinct port addresses. Not c
 
 This reference organizes them by what they *do*, not by address order. The address table at the top of each section tells you what to `IN`/`OUT`, and the explanation tells you why.
 
-> The fundamentals of how Z80 I/O addressing works — partial decoding, the `X` notation, and port aliasing — are covered in the [Talking to the Hardware: I/O Ports and NextRegs](./02-io-and-nextregs.mdx) chapter.
+> The fundamentals of how Z80 I/O addressing works — partial decoding, the `X` notation, and port aliasing — are covered in the [Talking to the Hardware: I/O Ports and NextRegs](/en/book/02-io-and-nextregs/) chapter.
 
 ## Port Enable/Disable: The Master Switch Panel
 
@@ -194,7 +194,7 @@ The most important pair of ports on the machine. Everything that doesn't have it
 - **`0x243B`** — Register select: write the NextReg number you want to access
 - **`0x253B`** — Register value: read or write the selected register's data
 
-See [Appendix B: NextReg Reference](app-B-nextreg-reference.md) for the full register documentation. The `nextreg` Z80N instruction wraps this two-port sequence into a single opcode — but reads still require the explicit port sequence.
+See [Appendix B: NextReg Reference](/en/book/app-B-nextreg-reference/) for the full register documentation. The `nextreg` Z80N instruction wraps this two-port sequence into a single opcode — but reads still require the explicit port sequence.
 
 ---
 

@@ -8,24 +8,26 @@ import { Callout } from 'nextra/components'
 
 A disassembler cannot tell code from data by looking at the bytes: a table of numbers decodes into
 plausible instructions, and a routine that is only reached through a jump table looks like data.
-Klive answers the question from what the program actually *did*. With [code coverage](./code-coverage)
+Klive answers the question from what the program actually *did*. With [code coverage](/en/guides/analysis/code-coverage/)
 on, the emulator records, for every byte of every bank, whether it was fetched as code, read or
-written. **Detection** turns that record into regions of your [annotations](./disassembly): code is
+written. **Detection** turns that record into regions of your [annotations](/en/guides/analysis/annotations/): code is
 disassembled, data is listed as `.defb`, `.defw` or `.defm`.
 
 <Callout type="info">
-Detection reads code coverage, one of Klive's [advanced debugging features](/en/guides/debugging/advanced-debugging).
+Detection reads code coverage, one of Klive's [advanced debugging features](/en/guides/customizing/advanced-debugging/).
 It works on every machine whose memory Klive can annotate: the ZX Spectrum 48K, 128K, +2A/+3, Next,
 the Pentagon, the Scorpion, the Timex machines, the ZX80 and the ZX81.
 </Callout>
 
 ## Running it
 
-1. Turn coverage on (**Debug → Code Coverage**, or `coverage on`) and run the program. Play through
+1. Turn coverage on (**Debug › Code Coverage**, or `coverage on`) and run the program. Play through
    as much of it as you can: detection only knows about code that ran. You can merge several runs
    with `coverage load`.
 2. Pause the machine.
-3. Open **Debug → Detect Code and Data...**, or the tools button on the Disassembly view's toolbar.
+3. Open **Debug › Detect Code and Data...**, or the tools button on the Disassembly view's toolbar.
+
+<Shot src="guides/analysis/detecting-code-data/detect-dialog.webp" alt="The Detect code and data dialog listing banks with their code, data and unknown bytes" caption="The Detect code and data dialog." width={560} />
 
 The dialog lists one row per bank: how much of it is code, data and still unknown, how many
 changes it proposes, and how many of *your* regions it disagrees with. **Show** lists the warnings —
@@ -72,3 +74,10 @@ session; **Clear detected regions** (`-mode clear`) removes every detected regio
 `ann-detect rom` writes to the ROM's *working copy* only, so it needs one: make it with
 [`rom-ann-new`](/en/reference/commands#rom-ann-new). The ROM annotations Klive ships are never changed.
 </Callout>
+
+## Related
+
+- [Code coverage and the heat map](/en/guides/analysis/code-coverage/)
+- [Annotating a disassembly](/en/guides/analysis/annotations/)
+- [The Disassembly view](/en/guides/debugging/disassembly/)
+- [`ann-detect` in the command reference](/en/reference/commands#ann-detect)

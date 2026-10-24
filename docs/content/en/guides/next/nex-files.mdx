@@ -1,0 +1,170 @@
+---
+description: "Run or debug any .nex file, browse its banks in the NEX viewer, pop a bank out to read it live, set breakpoints in it and annotate it."
+---
+
+import { Callout, Steps } from 'nextra/components'
+
+# Running and Inspecting NEX Files
+
+A `.nex` file is how ZX Spectrum Next programs are distributed. Klive runs any NEX file, whether you
+built it or not, and opens it in a viewer that lists its banks. Any bank can be popped out into its
+own document, where you read it as bytes or disassembly, set breakpoints in it, see what the program
+changed and annotate it.
+
+*Applies to: ZX Spectrum Next.*
+
+## Running a NEX file
+
+A NEX is a program that runs under NextZXOS, so Klive does not inject it into memory. It copies the
+file to the emulated SD card, into the `_klive` folder, boots NextZXOS and types `.nexload` with the
+file's path, exactly as you would on the real machine.
+
+<Steps>
+
+### Switch to the ZX Spectrum Next
+
+The run commands are disabled on every other machine.
+
+### Start the file
+
+Right-click the `.nex` file in the Explorer, or open it and use the buttons in its document tab:
+
+| Explorer menu | Tab button | What it does |
+|---|---|---|
+| **Run NEX file** | **Run this NEX file** | Runs the program. |
+| **Debug NEX file** | **Debug this NEX file** | Runs it with your breakpoints armed. |
+| **Debug NEX file (break at entry point)** | **Debug this NEX file, breaking at its entry point** | Stops on the program's first instruction, with the entry bank paged in. |
+
+### Or use the command
+
+```
+nex-run game.nex          ; run
+nex-run game.nex -d       ; debug
+nex-run game.nex -e       ; debug, stopping at the entry point (-e implies -d)
+```
+
+</Steps>
+
+Breaking at the entry point is the place to start with a NEX you did not write: the entry point is
+the one address the file itself names. If the file has a source-level debug sidecar written by the
+same build (`<name>.nex.kbasic-debug.json`), a debug run also steps through the program's source.
+
+Building a project whose output is a NEX file (`.savenex` in the Klive assembler) runs through the
+same path; see [Running and debugging](/en/guides/debugging/run-debug/).
+
+## The NEX viewer
+
+Opening a `.nex` file shows its header and its banks.
+
+<Shot src="guides/next/nex-files/nex-viewer.webp" alt="A NEX file open in the NEX viewer, its header attributes above and its banks listed below" caption="The NEX viewer: the header attributes, then the banks with the selected bank's details." width={760} />
+
+- **Header attributes** groups the header's fields: **File** (version, required RAM, the 16K banks to
+  load, the required core), **Entry** (`PC`, `SP` and the entry bank), **Loading** and
+  **Loading Screen Blocks**. The viewer also checks the header and reports problems such as an entry
+  bank the file does not contain, an entry point or stack in ROM, or a core newer than the emulated
+  one.
+- The palette and loading screens (Layer 2, ULA, LoRes, Timex HiRes and HiCol) the file carries are
+  shown under their own headings. A screen's icon opens its bytes as a dump, and the Layer 2 screen
+  can open as its own document.
+- **Banks** lists the file's banks with their total size. The filter shows **All**, **Non-empty** or
+  **Annotated** banks. A row shows the bank number, marks for the bank the program counter and the
+  stack pointer point into, the bank's breakpoint count (hover it for the breakdown by type), its
+  comment, and a bar of its content mix once regions are recorded.
+- Selecting a bank shows its details beside the list: its size, breakpoints, the address it is listed
+  at, its content mix, its comment and its labels.
+
+## Popping a bank out
+
+Pop a bank out from its row's icon, by double-clicking the row, or by selecting it and pressing
+`Enter`. The bank opens in its own document in one of three views: **Memory**, **Disassembly** or
+**Sprites** (the Sprites view needs the annotation file). The document remembers the view you last
+used for that bank.
+
+The header's **Bank** readout says where the bank is right now: `at $8000` when it is paged into the
+Z80 address space, `not paged in` when it is not, and `at $8000 · PC` when the program counter is
+inside it. Hover it for the 8K slot numbers.
+
+### Live bank contents
+
+While a ZX Spectrum Next is running, a popped-out bank shows the bank **as the machine holds it
+now**, in both views. The toolbar counts the bytes that differ from the file (**12 changed**; hover
+it for the percentage), and each changed byte is marked. With no machine running, the bank
+shows the bytes the file holds.
+
+That difference is often what you are looking for: self-modifying code, a routine that decompressed
+itself over its packed data, or a bank a stray write damaged. It works for every bank of the file,
+including banks the program has paged out, because the bytes are read from the machine's RAM rather
+than through the address space.
+
+### Following the program counter
+
+While the machine is **paused** and the program counter is inside the bank, its disassembly
+highlights the current instruction, the same way the
+[Disassembly view](/en/guides/debugging/disassembly/) does. The button beside **Go To** scrolls to
+it. Both work only while paused with the PC in this bank: a running machine's PC has moved on by the
+time it is read, and a bank the processor is not in has no row to go to.
+
+### Disassembly aligned to the program counter
+
+Disassembling a bank from its first byte is a guess about where instructions begin: one data byte
+decoded as an opcode shifts every boundary below it. A paused Z80 sits between instructions, so the
+program counter is the one offset where the alignment is known. While paused with the PC in the bank,
+the listing is cut there and decoded again, so the rows from the PC on are the instructions that will
+actually run.
+
+A listing that was already aligned at the PC is left as it was, so stepping through ordinary code
+does not reshuffle it. Where the old alignment was wrong, the instruction straddling the PC overlaps
+the row below it: that overlap is the disagreement between the two decodes, shown rather than hidden.
+Regions you marked as bytes, words or skip are never cut.
+
+## Breakpoints in a bank
+
+In a popped-out bank's **Disassembly** view, click the breakpoint margin beside a line to set a
+**bank-relative** breakpoint at that line's offset. It fires wherever the bank is paged when the
+program runs. The bank list inside the viewer has no margin to click.
+
+<Callout type="info">
+A bank-relative breakpoint fires only while its bank is paged in. A breakpoint can look inert simply
+because the program has that bank paged out right now; the **Bank** readout tells you. A paged-out
+bank keeps its breakpoints, and they fire as soon as it comes back.
+</Callout>
+
+These breakpoints are stored in the file's `.nex.dis` sidecar rather than in the project, so they
+survive a restart with no project open, and each NEX file keeps its own. The Next's hardware
+breakpoints (NextReg writes, Copper instructions, sprite attributes) are described in
+[Next breakpoints](/en/guides/next/next-breakpoints/).
+
+## Annotating a NEX file
+
+Labels, comments and data regions for a NEX file live in its annotation file, `<name>.nex.dis`, beside
+it. When there is none, the viewer says **No annotation file attached.**; click **Click to create
+one!** to make it. Running the file with `nex-run` also makes this file the active annotation set,
+so the live Disassembly view names addresses from it.
+
+In a popped-out bank's disassembly, right-click a row for the **Annotations** menu:
+
+- **Add/Edit Global Label...** names a 16-bit address in every bank; **Add/Edit Local Label...**
+  names an address inside this bank only, so two banks can each have their own `Start`.
+- **Assign Operand Label...** makes an operand show a label's name.
+- **Synopsis Comment...**, **End-of-Line Comment...** and **Bank Comment...** add comments. A bank
+  comment also shows in the viewer's bank list (right-click a bank row for **Bank Comment...** and
+  **Clear Bank Comment**).
+- **Mark As Disassembly**, **Mark As Bytes**, **Mark As Words**, **Mark As Text**, **Mark As Bit-7
+  Text (.defc)**, **Mark As Fill (.fillb)**, **Mark As Skip**, **Mark As Copper** and **Mark As DMA**
+  set how a range is listed; **Clear Row Annotations** removes them.
+- **Manage Labels...** opens the **Labels** dialog: every label, filtered by scope, sorted by address,
+  name or reference count, with **Add Global Label** and **Add Bank Label**.
+- **Manage Regions...** opens the **Regions** dialog: the bank's regions with **Edit**, **Split** and
+  **Revert**, a box to find the region covering an address, and **Add Region**.
+- **Go to Definition** and **Go to References** navigate by label.
+
+[Annotating a disassembly](/en/guides/analysis/annotations/) explains labels, comments, regions and
+their byte formats in full.
+
+## Related
+
+- [Next breakpoints](/en/guides/next/next-breakpoints/)
+- [Next Registers, memory mapping and palettes](/en/guides/next/next-registers/)
+- [Annotating a disassembly](/en/guides/analysis/annotations/)
+- [The Next's SD card](/en/guides/next/sd-card/)
+- [`nex-run` in the command reference](/en/reference/commands#nex-run)

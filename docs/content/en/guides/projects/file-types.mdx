@@ -1,0 +1,95 @@
+---
+description: "Which source file extensions Klive knows, which compiler builds each one, where source-level debugging works, and how to associate your own extensions with a language."
+---
+
+import { Callout, Steps } from 'nextra/components'
+
+# File types
+
+Klive picks the language of a source file, and so its editor colouring and its compiler, by the file
+extension. This page lists the languages Klive knows and what each one supports, and shows how to
+make Klive treat your own extensions, such as `.asm` or `.z80`, as one of them.
+
+## Source languages
+
+| Language (ID) | Extensions | Built by | Build root | Source breakpoints and stepping |
+| --- | --- | --- | --- | --- |
+| Klive Z80 Assembler (`kz80-asm`) | `.kz80.asm`, `.asm` | The built-in [Klive Z80 Assembler](/en/guides/languages/klive-z80-assembler/) | Yes | Yes |
+| ZX BASIC (`zxbas`) | `.zxbas`, `.bas` | [Klive BASIC](/en/guides/languages/klive-basic/), built in, or [Boriel BASIC](/en/guides/languages/boriel-basic/) | Yes | Yes, statement by statement, with both compilers |
+| sjasmplus (`sjasmp`) | `.sjasm` | [sjasmplus](/en/guides/languages/sjasmplus/), installed separately | Yes | Yes |
+| C (`c`) | `.c`, `.h` | [z88dk](/en/guides/languages/z88dk/), installed separately | `.c` only | Yes (with z88dk's sccz80 compiler) |
+| PASTA/80 Pascal (`pasta80`) | `.pas` | [PASTA/80](/en/guides/languages/pasta80/), installed separately | Yes | No breakpoints in the editor |
+| ZXB assembler (`zxbasm`) | `.zxb.asm` | – | – | No |
+| 6510 assembler (`6510-asm`) | `.6510.asm` | – | – | – |
+| Klive script (`ksx`) | `.ksx` | Runs as a [Klive script](/en/reference/klive-script/) | No | No |
+
+- A `.bas` file that holds a tokenised HT-1080Z program, not BASIC source, opens in the
+  [HT-1080Z tape viewer](/en/guides/machines/ht1080z/) instead, and cannot be a build root.
+- `.zxb.asm` files get colouring only: they are the assembly dialect of Boriel's tools, and Klive has
+  no build for them on their own. `ASM` blocks inside a BASIC program are compiled with the program.
+- The 6510 assembler files belong to the experimental Commodore 64 machine; Klive gives them editor
+  colouring.
+- `build.ksx` in the project root is the project's [build script](/en/guides/projects/build-system/);
+  other `.ksx` files are scripts you run yourself.
+- `klive.project` opens read-only.
+
+The source files above offer **Promote to Build Root** in the Project Explorer; promote only a file that one of the listed compilers builds.
+
+## Use your own extensions
+
+Each language's extensions can be changed with the `languages.<language-id>` setting. Its value lists
+the extensions, separated by `|`, each starting with a dot.
+
+<Steps>
+
+### Set the extensions
+
+At the [command prompt](/en/guides/editing/command-prompt/), type, for example:
+
+```
+set languages.kz80-asm ".asm|.kasm"
+```
+
+With a project open, [`set`](/en/reference/commands#set) saves the setting in the project; add `-u`
+to save it in your user settings for every project.
+
+### Rename the files
+
+Give your source files the new extension with **Rename...** in the Project Explorer.
+
+### Reopen the project and set the build root
+
+Close the project and open it again, so the Explorer picks up the new association, then promote
+the renamed file with **Promote to Build Root** if it is not the build root yet.
+
+</Steps>
+
+The setting is stored like this in `klive.project`:
+
+```json
+{
+  "settings": {
+    "languages": {
+      "kz80-asm": ".asm|.kasm"
+    }
+  }
+}
+```
+
+Klive compares the whole extension after the file name's first dot, so `.asm` matches `code.asm`
+but not `code.kz80.asm`. An extension in the setting wins over the built-in ones: the `sjasmplus`
+template, for example, sets `"sjasmp": ".asm|.sjasm"`, so its `code.asm` is built by sjasmplus, not
+by the Klive Z80 Assembler that owns `.asm` by default.
+
+## Other files
+
+Everything else opens in a viewer or editor of its own (tapes, snapshots, disk images, pictures,
+palettes and more), or as text or a hex dump. [The Project Explorer](/en/guides/projects/project-explorer/#what-opens-where)
+lists them.
+
+## Related
+
+- [The Project Explorer](/en/guides/projects/project-explorer/)
+- [Project templates](/en/guides/projects/project-templates/)
+- [The build system](/en/guides/projects/build-system/)
+- [Settings](/en/guides/customizing/settings/)

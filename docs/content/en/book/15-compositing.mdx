@@ -17,7 +17,7 @@ By this point we have ULA, LoRes, Layer 2, the Tilemap, and 128 sprites. Each ch
 Topics:
 
 - **The priority register.** NextReg `$15` and its seven priority modes: SLU, LSU, SUL, LUS, USL, ULS, and the special "tilemap-over-everything" mode in conjunction with NextReg `$68`. We walk every mode with a diagram.
-- **Per-pixel priority.** The priority bit in palette entries (introduced in [Palettes](./09-palettes.mdx)) lets a single palette colour push itself to the top of the stack per pixel — invaluable for foreground objects on a Layer 2 background.
+- **Per-pixel priority.** The priority bit in palette entries (introduced in [Palettes](/en/book/09-palettes/)) lets a single palette colour push itself to the top of the stack per pixel — invaluable for foreground objects on a Layer 2 background.
 - **Transparency.** Two transparency colours: the global one in NextReg `$14`, and the per-layer ones (`$4A` for sprite/tilemap-specific). The pixel value that gets treated as "see through" — usually `$E3` for sprites, configurable everywhere.
 - **ULA disable.** NextReg `$68` — turn the ULA off entirely so Tilemap can take its place at the bottom of the stack.
 - **Sprite-vs-everything.** The sprite layer is a single composite that then plugs into the priority chain — sprites have an internal "lower number wins" rule.

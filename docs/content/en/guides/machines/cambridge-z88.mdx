@@ -1,0 +1,138 @@
+---
+description: "Run the Cambridge Z88 in Klive: pick an OZ version, insert RAM, EPROM and Flash cards in its slots, type on its keyboard, set its LCD size, and debug it with the BLINK panel."
+---
+
+import { Callout, Steps } from 'nextra/components'
+
+# The Cambridge Z88
+
+The Cambridge Z88 is Sir Clive Sinclair's 1987 portable: a Z80 with the OZ operating system in ROM,
+a 640-pixel-wide LCD, and three slots for RAM, EPROM and Flash cards. This page covers choosing a
+model, managing the cards, typing, the LCD, and debugging. To continue from a snapshot saved by the
+OZvm emulator, see [Cambridge Z88 snapshots](/en/guides/media/z88-snapshots/).
+
+<Shot
+  src="guides/machines/cambridge-z88/z88-index.webp"
+  alt="The emulator window of a Cambridge Z88 (OZ v5.0B Int.) booted to OZ's Index, with the applications list on the LCD and the four slots below it"
+  caption="A Cambridge Z88 (OZ v5.0B Int.) at OZ's Index, with its slots below the LCD"
+  width={760}
+/>
+
+## Models
+
+Choose a model with **Machine › Machine Type** or **Select machine…** (see
+[Choosing a machine](/en/guides/emulator/choosing-a-machine/)). The models differ in the OZ version
+in slot 0, the internal RAM, and the keyboard layout they start with:
+
+| Model | Slot 0 | Internal RAM |
+| --- | --- | --- |
+| Cambridge Z88 (OZ v5.0B Int.) | 512K AMD Flash | 512K |
+| Cambridge Z88 (OZ v4.7 Int.) | 512K AMD Flash | 512K |
+| Cambridge Z88 (OZ v4.0 UK) | 128K ROM | 128K |
+| Cambridge Z88 (OZ v4.01 SE/FI) | 128K ROM, Swedish/Finnish keyboard | 128K |
+| Cambridge Z88 (OZ v3.0 UK) | 128K ROM | 32K |
+| OZ v3.23 IT, v3.26 FR, v3.19 ES, v3.21 DK, v3.18 DE | The national ROMs | |
+
+The OZ ROMs ship with Klive. [Machine types](/en/reference/machine-types/#cambridge-z88) lists the model
+IDs.
+
+## Slots and cards
+
+The Z88's slots show in a strip under its screen, one panel per slot:
+
+- **Slot 0** shows the internal RAM and the ROM (or Flash) that holds OZ.
+- **Slots 1–3** show the card in each slot, its size and type, or that the slot is empty. An
+  asterisk marks a pristine (blank) card.
+
+Each panel has small buttons: insert a card into an empty slot, eject a card, and, on slot 0, change the internal RAM or replace the ROM.
+
+### Insert a card
+
+<Steps>
+
+### Click the insert button
+
+Click the insert button on an empty slot's panel. Klive signals the Z88 that the slot's flap opened,
+as the real machine does, and opens **Insert Z88 Card - Slot** *n*.
+
+### Choose the card type
+
+Pick a **Card type**: a RAM card (32K to 1M), a UV EPROM (32K, 128K or 256K), an Intel Flash
+(28F004S5 512K, 28F008S5 1M) or an AMD Flash (29F040B 512K, 29F080B 1M).
+
+### Use a file or a blank card
+
+Select a card file (an EPROM or ROM image) to put its content on the card, or keep
+**Use pristine card** for an empty one. A file of a size the slot does not allow is refused.
+
+</Steps>
+
+The eject button asks *Are you sure you want to remove card from Slot* *n*? before it takes a card out.
+
+### Internal RAM and the ROM
+
+The button on slot 0's RAM line opens **Change Z88 RAM size**: **32K**, **128K** or **512K**.
+Changing it stops the machine. Slot 0's ROM line has buttons to replace the ROM with another image or
+to eject a ROM you inserted.
+
+<Callout type="info" emoji="💡">
+The IDE's **Run** and **Debug** cannot put a program into a Z88's memory: OZ owns the memory and its
+paging. Put your program on a card image and insert the card.
+</Callout>
+
+## The keyboard
+
+The Z88's keys map to your keyboard like this:
+
+| Your key | Z88 key |
+| --- | --- |
+| <kbd>Ctrl</kbd> (either) | ◇ (Diamond) |
+| Left <kbd>Alt</kbd> | □ (Square) |
+| <kbd>F1</kbd>, <kbd>F2</kbd>, <kbd>F3</kbd> | HELP, INDEX, MENU (the context-menu key is MENU too) |
+| <kbd>Esc</kbd> | ESC |
+| <kbd>Backspace</kbd> | DEL |
+| <kbd>Caps Lock</kbd> or <kbd>F7</kbd> | CAPS LOCK |
+| <kbd>F6</kbd> | Both SHIFT keys |
+| <kbd>Home</kbd>, <kbd>End</kbd> | ◇ with ← and → |
+| <kbd>Page Up</kbd>, <kbd>Page Down</kbd> | Right SHIFT with ↑ and ↓ |
+
+The [virtual keyboard](/en/guides/emulator/keyboard/#the-virtual-keyboard) shows the Z88's keys.
+Both it and the machine follow **Settings › Machine › Keyboard layout**: **British & American**,
+**Spanish**, **French**, **Italian**, **German**, **Danish & Norwegian** or **Swedish & Finnish**.
+
+## The LCD
+
+**Settings › Machine › LCD resolution** sets the screen size: **640 x 64** (the real Z88's), **640 x 256**,
+**640 x 320** or **640 x 480**. Changing
+it restarts the machine. **View › Fit Window to Screen** shrinks the emulator window around the LCD.
+
+## The Cambridge Z88 menu
+
+**Machine › Cambridge Z88** has the machine's hardware actions:
+
+- **Soft Reset**: the reset button, which keeps the memory.
+- **Hard Reset**: sets the machine up again, with the configured ROM and cards.
+- **Press Both SHIFT Keys**: presses the two SHIFT keys together (<kbd>F6</kbd> does the same).
+- **Raise Battery Low Signal**: tells OZ its batteries are low.
+
+**Help › Cambridge Z88 Resources** links to the Z88 user guide, the developers' notes, the BBC BASIC
+guide, the OZ source code and other resources.
+
+## Debugging
+
+Breakpoints, stepping, the memory and disassembly views, the execution history, reverse debugging,
+code coverage and the profiler work on the Z88 as on the other machines. The disassembly decodes the
+OZ system call after each `RST 20h`. The **BLINK** panel on the Debug side bar shows the BLINK chip's
+registers: the command and interrupt registers, the segment registers that page banks into the four
+address ranges, the screen and font bases (with the bank and offset they point at), the timers and
+the keyboard lines. Point at a register to see what it does.
+
+You can save the Z88's complete state with **File › Save Machine State...**; see
+[Machine state files](/en/guides/media/machine-state/).
+
+## Related
+
+- [Cambridge Z88 snapshots](/en/guides/media/z88-snapshots/)
+- [Machine types](/en/reference/machine-types/#cambridge-z88)
+- [z88dk (C)](/en/guides/languages/z88dk/)
+- [Keyboard, joysticks and mouse](/en/guides/emulator/keyboard/)

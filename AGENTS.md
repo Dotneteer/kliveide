@@ -101,6 +101,13 @@ React 19 + Next 16.
   `docs/.env.production`, `/preview/<branch>` for previews), never a hardcoded
   path and never keyed off `NODE_ENV`.
 
+- **Guides screenshots are generated, never hand-captured**: the `guides-*` recipes in
+  `scripts/doc-shots/recipes/` write `docs/public/images/en/guides/<group>/<page>/*.webp`, shown with
+  `<Shot>`. `doc:check:guide-images` fails on the pre-redesign images. The structure and page standard
+  are `.plans/GUIDES_OVERHAUL_PLAN.md` (§2, §3).
+- **Links in `docs/content/` are absolute** (`/en/guides/...`): pages are served with a trailing slash,
+  so a relative `./sibling` link resolves *under* the page; `doc:check:links` now resolves and fails them.
+
 - **Screenshots can be generated rather than hand-captured.** `scripts/doc-shots/` launches
   Klive under Playwright's Electron driver, drives it through the IDE's own command prompt,
   and captures element-scoped PNGs — no manual cropping, no window chrome. Output stages to

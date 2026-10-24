@@ -19,11 +19,11 @@ This is a debugging view only. It changes what the emulator shows, never what th
 registers stay as the program set them, and sprite collision and "too many sprites" (port `$303B`) are
 computed exactly as before.
 
-It is available on the ZX Spectrum Next only.
+*Applies to: ZX Spectrum Next.*
 
 ## The Layers Strip
 
-Turn on **Settings → Emulator → Show the Layers strip** (or right-click the emulator's status bar and
+Turn on **Settings › Emulator › Show the Layers strip** (or right-click the emulator's status bar and
 choose the Layers strip), or toggle a layer with the `layers` command, and a strip appears under the
 screen:
 
@@ -42,7 +42,7 @@ screen:
 - **All** shows every layer again.
 - **×** closes the strip: it first returns to the composite picture &mdash; every layer shown, no
   solo, no transparency marking, the clip windows and the probe off &mdash; then hides the strip.
-  **Settings → Emulator → Show the Layers strip**, or the status bar's right-click menu, brings it back.
+  **Settings › Emulator › Show the Layers strip**, or the status bar's right-click menu, brings it back.
 
 While any layer is hidden or soloed, or transparency is marked, a pill on the screen says so &mdash;
 `Layers: sprites hidden` &mdash; so a forgotten toggle is never mistaken for a bug in your program.
@@ -78,13 +78,13 @@ The probe shows:
 - whether the pixel was drawn this frame or is left from the last one (past the beam).
 
 When a layer is hidden, the probe also says what the machine itself shows there. Clicking the pixel
-opens the inspector that owns it: the [Sprite Inspector](/en/guides/next/sprite-inspector), the
-[Tilemap Inspector](/en/guides/next/tilemap-inspector) or the
-[Layer 2 Inspector](/en/guides/next/layer2-inspector).
+opens the inspector that owns it: the [Sprite Inspector](/en/guides/next/sprite-inspector/), the
+[Tilemap Inspector](/en/guides/next/tilemap-inspector/) or the
+[Layer 2 Inspector](/en/guides/next/layer2-inspector/).
 
 ## The Layers Document
 
-**View → Machine Views → Layers**, or the `show-layers` command, opens a document with the
+**View › Machine Views › Layers**, or the `show-layers` command, opens a document with the
 static picture:
 
 ![The Layers document: the priority stack, and a card per layer with its picture, state and clip window](/images/working-with-ide/layers-document.png)
@@ -120,3 +120,11 @@ two places. In **stencil** mode (`$68` bit 0) the ULA shows only where the tilem
 the tilemap hides the ULA too, while switching the tilemap off ends stencil mode. And a hidden tile
 keeps its "below the ULA" bit, which still decides where the ULA goes in the blend modes.
 </Callout>
+
+## Related
+
+- [Why does my Next picture look wrong?](/en/guides/next/picture-troubleshooting/)
+- [The Sprite Inspector](/en/guides/next/sprite-inspector/)
+- [The Tilemap Inspector](/en/guides/next/tilemap-inspector/)
+- [The Layer 2 Inspector](/en/guides/next/layer2-inspector/)
+- [The Copper view](/en/guides/next/copper/)

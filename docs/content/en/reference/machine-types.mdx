@@ -8,17 +8,14 @@ This document summarizes the machines and models available in Klive IDE.
 
 ## Choosing a machine
 
-The **Machine | Machine Type** menu lists only your *favourite* models, followed by **Select machine…** (**Cmd+Shift+M** on macOS, **Ctrl+Shift+M** on Windows and Linux). If the machine you are running is not a favourite, the menu still shows it, ticked, below the favourites.
-
-**Select machine…** opens a dialog with every model Klive emulates:
-
-- The left side lists the machine types; open one to see its models. The filter box at the top matches names and hardware facts, so typing `128K`, `NTSC`, `disk` or `OZ` narrows the list.
-- Selecting a model shows its hardware details on the right: CPU and clock, ROM and RAM, the screen (resolution, colours, the visible area with its border), frame timing, sound devices, storage and input.
-- **Switch to …** (or double-clicking a model, or pressing **Enter**) switches the emulator to it.
-
-The dialog also edits the menu. Click the star next to a model, or **Add to Machine type menu** above its details, to make it a favourite. The **Favourites** section at the top lists them in menu order: drag them, or use the arrow buttons (**Alt+↑** / **Alt+↓**), to reorder them, and use the separator button to put a menu separator after an item. **Save** keeps the changes; **Restore default favourites** brings back the original list. Favourites belong to you, not to a project.
+Switch machines from **Machine › Machine Type** or the **Select machine…** dialog
+(<kbd>Cmd</kbd>/<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>M</kbd>). [Choosing a machine](/en/guides/emulator/choosing-a-machine/)
+explains the dialog, editing the favourites, and where each machine's own menus and settings appear.
+The sections below list every machine and model with its ID.
 
 ## ZX Spectrum 48K
+
+Sinclair's 1982 home computer, the machine most Spectrum software was written for: a Z80 at 3.5 MHz, Sinclair BASIC in a 16K ROM, and 48K of RAM.
 
 Machine ID: `sp48`
 
@@ -34,12 +31,14 @@ explains both.
 
 The 16K, the 48K and the 128K (not the Pentagon) take the **ZX Interface 1** with two Microdrives,
 or the **DivMMC**, under **Machine › Interfaces**. See
-[The Interface 1 and Microdrives](/en/guides/emulator/microdrives).
+[The Interface 1 and Microdrives](/en/guides/media/microdrives/).
 
 The 48K's, the 128K's and the +2A/+3's timing is checked against the community's test programs, whose expected
 results come from real machines: see [How Klive's Accuracy Is Tested](/en/under-the-hood/emulator-internals/spectrum-accuracy/).
 
 ## ZX Spectrum 128K
+
+The 1985 successor of the 48K, with 128K of paged RAM, a second ROM with the 128 BASIC editor and its start menu, and an AY-3-8912 sound chip; the Pentagon 128 clone is a model of it.
 
 Machine ID: `sp128`
 
@@ -58,8 +57,8 @@ files work the same on both.
 
 The Pentagon has the **Beta 128 disk interface**: two drives (A and B) that take TR-DOS disk images
 (`.trd` and `.scl`), and TR-DOS itself. Klive cannot ship the TR-DOS ROM, so you name your own copy
-under **Settings > Machine > TR-DOS ROM**; until you do, the Pentagon runs without its disks. See
-[Using TR-DOS Disks on the Pentagon 128](/en/guides/emulator/trdos-disks).
+under **Settings › Machine > TR-DOS ROM**; until you do, the Pentagon runs without its disks. See
+[Using TR-DOS Disks on the Pentagon 128](/en/guides/media/trdos-disks/).
 
 A `.z80` or `.szx` snapshot of a Pentagon 128 opens on the Pentagon model. A 128K snapshot opens on
 the 128K model, unless your project already uses the Pentagon: a 128K `.sna` file does not say
@@ -67,6 +66,8 @@ which of the two machines it came from. A snapshot saved from the Pentagon is wr
 128.
 
 ## ZX Spectrum +2A/+3/+2E/+3E
+
+Amstrad's Spectrums: the +2A with a built-in tape recorder and the +3 with a 3-inch floppy drive, plus the +2E/+3E, the same hardware with modern ROMs that add hard disks and SD cards.
 
 Machine ID: `spp3e`
 
@@ -100,11 +101,15 @@ and the warning goes. A snapshot saved from a +2A or +3 model is written as a +2
 
 ## ZX Spectrum Next
 
+The FPGA-based successor of the Spectrum: compatible with the 48K, 128K and +3, with a faster Z80N, far more memory, Layer 2, tilemaps, hardware sprites, the Copper and a DMA.
+
 Machine ID: `zxnext`
 
 Available models: the original ZX Spectrum Next (KS2).
 
 ## Timex TC2048/TC2068/TS2068
+
+Timex's versions of the Spectrum, sold in Portugal and, as the TS2068, in the United States, with extra screen modes and, on the 2068s, a cartridge port and a sound chip.
 
 Machine ID: `timex`
 
@@ -143,8 +148,8 @@ The CPU runs at the SCLD's 3.528 MHz. The TC2048 and TC2068 keep the 48K's frame
   strip shows it. The machine restarts, because its ROM looks for a cartridge when it starts.
 - Ports `$FE`, `$F4`, `$F5`, `$F6` and `$FF` are decoded on their full low byte.
 
-**ROMs.** Klive cannot ship Timex's ROMs. Name your own copy under **Settings > Machine** (the
-**TC2048 ROM**, **TC2068 ROM** or **TS2068 ROM** option, shown while that model runs): the TC2048's is 16K; a 2068's is one 24K file, its 16K HOME ROM
+**ROMs.** Klive cannot ship Timex's ROMs. Name your own copy under **Settings › Machine** (the
+**Timex ROM** option, shown while a Timex model runs): the TC2048's is 16K; a 2068's is one 24K file, its 16K HOME ROM
 followed by its 8K EXROM. Until you do, the machine boots the Sinclair 48K ROM (a 2068 then has no
 EXROM). Klive knows the TS2068 ROM (CRC-32 `48004230`): with it, running and debugging code, and
 loading tapes from the IDE, use its own main loop and tape routines. With a 2068 ROM Klive has not
@@ -158,6 +163,8 @@ screen mode, its chunk map and the 2068s' AY; a `.szx` also keeps the cartridge'
 machine saved as `.sna` loads as a 48K, and Klive names what it loses.
 
 ## Scorpion ZS-256
+
+A Russian Spectrum 128 clone with 256K of RAM and a built-in TR-DOS disk interface.
 
 Machine ID: `scorpion`
 
@@ -174,13 +181,13 @@ The Scorpion runs on the ZX Spectrum 128K's core, and adds:
 - **Four ROMs**: the 128K editor, 48K BASIC, the service monitor and TR-DOS. The memory and
   disassembly views and the breakpoints name them `R0`-`R3`, and the banks `B0`-`B15`.
 - **The Beta 128 disk interface**, built in, with two drives (`.trd` and `.scl` disks), as on the
-  Pentagon 128 - see [Using TR-DOS Disks on the Pentagon 128](/en/guides/emulator/trdos-disks).
+  Pentagon 128 - see [Using TR-DOS Disks on the Pentagon 128](/en/guides/media/trdos-disks/).
 - **Timing**: 3.5 MHz, the 48K's frame (224 T-states by 312 lines, 69,888 T-states), and no memory or
   I/O contention. Unattached ports read the floating bus.
 
-**ROMs.** Klive cannot ship the Scorpion's 64K ROM. Name your own copy under **Settings > Machine >
-Scorpion ROM**. Until you do, the Scorpion boots the ZX Spectrum 128K's ROMs, the service monitor's page reads
-`$FF`, and TR-DOS comes from the TR-DOS ROM you name under **Settings > Machine > TR-DOS ROM**. With the 128K
+**ROMs.** Klive cannot ship the Scorpion's 64K ROM. Name your own copy under **Settings › Machine ›
+Scorpion ZS-256 ROM**. Until you do, the Scorpion boots the ZX Spectrum 128K's ROMs, the service monitor's page reads
+`$FF`, and TR-DOS comes from the TR-DOS ROM you name under **Settings › Machine > TR-DOS ROM**. With the 128K
 ROMs, running and debugging code, the Tape Loader and booting a disk work as on the 128K and the
 Pentagon. With the Scorpion's own ROM the machine runs, but the IDE cannot start a program, a tape or
 a disk in its editor, which Klive does not know; load them by hand.
@@ -190,6 +197,8 @@ a disk in its editor, which Klive does not know; load them by hand.
 `$1FFD` is in use.
 
 ## Cambridge Z88
+
+Sir Clive Sinclair's 1987 A4-sized portable: a Z80 running the OZ operating system from ROM, with a 640-pixel-wide LCD and three card slots.
 
 Machine ID: `z88`
 
@@ -206,9 +215,11 @@ Available models:
 - `OZ318DE`: Cambridge Z88 (OZ v3.18 DE)
 
 Klive can open, run and debug Z88 snapshots saved by the OZvm emulator; see
-[Using Z88 Snapshots](./howto/z88-snapshots).
+[Using Z88 Snapshots](/en/guides/media/z88-snapshots/).
 
 ## Sinclair ZX81
+
+Sinclair's 1981 low-cost computer: a Z80 at 3.25 MHz, BASIC in an 8K ROM, 1K of RAM, and a black-and-white picture that the CPU itself helps to draw.
 
 Machine ID: `zx81`
 
@@ -219,9 +230,11 @@ Available models:
 - `zx81-16k-us`: The US machine (Timex Sinclair 1000), NTSC, with 16K RAM.
 - `zx81-1k-us`: The US machine with 1K RAM.
 
-See [Using the ZX81 and ZX80](./howto/zx81).
+See [Using the ZX81 and ZX80](/en/guides/machines/zx81-zx80/).
 
 ## Sinclair ZX80
+
+Sinclair's first computer, the ZX81's 1980 predecessor: BASIC in a 4K ROM, 1K of RAM, and a screen that goes blank while a program runs.
 
 Machine ID: `zx80`
 
@@ -232,6 +245,8 @@ Available models:
 
 ## HT-1080Z
 
+A Hungarian school computer of the early 1980s, compatible with the Tandy TRS-80 Model I, with Level II BASIC in ROM.
+
 Machine ID: `ht1080z`
 
 Available models:
@@ -241,5 +256,5 @@ Available models:
   mathematical signs, and an AY-3-8910 sound chip.
 - `ht1080z-s1-48k`, `ht1080z-s2-48k`: Series I and Series II with 48K RAM.
 
-See [Using the HT-1080Z](/en/guides/emulator/ht1080z).
+See [Using the HT-1080Z](/en/guides/machines/ht1080z/).
 

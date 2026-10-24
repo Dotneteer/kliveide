@@ -1,24 +1,30 @@
 ---
-description: "Klive IDE supports SJASMPLUS out-of-the-box, provided you installed the SjasmPlus Z80 assembler utility on your machine."
+description: "Set up the sjasmplus assembler from Klive, then edit, build, run and debug sjasmplus programs on the ZX Spectrum machines."
 ---
 
 import { Callout } from 'nextra/components'
 
-# SJASMPLUS Integration
+# sjasmplus
 
-Klive IDE supports SJASMPLUS out-of-the-box, provided you installed the SjasmPlus Z80 assembler utility on your machine. After setting up SjasmPlus integration, you can use Klive IDE to edit, run, and debug programs created with this assembler.
+[sjasmplus](https://github.com/z00m128/sjasmplus) is a popular Z80 cross-assembler. Klive builds,
+runs and debugs sjasmplus programs once you have told it where the assembler is: breakpoints and the
+execution point work in your sjasmplus source, as they do for Klive's own assembler.
 
-<Callout type="warning" emoji="💡">
-Running and debugging SjasmPlus-compiled code is tested only with the ZX Spectrum 48K model.
-</Callout>
+*Applies to: ZX Spectrum 48K, 128K, +2A/+3, +2E/+3E, Timex and Scorpion (the `sjasmplus` template),
+and the ZX Spectrum Next.*
 
-As Klive IDE does not know where to find the SjasmPlus compiler on your machine, you must set it up before using it.
+sjasmplus is not part of Klive: install it, or let Klive download it, before you use it.
 
 ## Setting up SJASMPLUS
 
-Visit the GitHub page of [SjasmPlus](https://github.com/z00m128/sjasmplus) for details about this excellent Z80 assembler.
+Open **Settings › Integrations** (see [Settings](/en/guides/customizing/settings/)) and click **Configure...** next to SjasmPlus to display the **SJASMPLUS Integration** dialog.
 
-Open **Settings > Integrations** (see [Settings](/en/guides/ide/settings)) and click **Configure...** next to SjasmPlus to display the **SJASMPLUS Integration** dialog. This is the recommended way to set up the assembler: it tests the executable before saving it, so a setup that the dialog accepts is one that Klive can actually compile with.
+<Shot
+  src="guides/languages/sjasmplus/integration-dialog.webp"
+  alt="The SJASMPLUS Integration dialog with its In use block, the setup controls and the To apply block"
+  caption="The SJASMPLUS Integration dialog"
+  width={560}
+/> This is the recommended way to set up the assembler: it tests the executable before saving it, so a setup that the dialog accepts is one that Klive can actually compile with.
 
 The dialog is built around two summary blocks, with the setup controls between them:
 
@@ -33,9 +39,9 @@ The block reports the outcome like this:
 
 | Display | Meaning |
 |---------|---------|
-| No badge, `Configured` | The test is still running. |
-| ✔ Green check, `Configured` | The configured executable passed its test — the integration works. |
-| ⚠ Red warning, `Not working` | The configured executable is missing or failed, with the reason next to it (for example, `Path does not exist: ...`). |
+| `Configured`, no badge | The test is still running. |
+| `Configured`, with the **SJASMPLUS is set up** badge | The configured executable passed its test: the integration works. |
+| `Not working`, with the **SJASMPLUS is not usable** badge | The configured executable is missing or failed, with the reason next to it (for example, `Path does not exist: ...`). |
 
 <Callout type="warning" emoji="💡">
 A `Not working` state means Klive cannot assemble SJASMPLUS sources until you fix it. If the folder simply moved back, press `Test again`; otherwise set up the executable at its new location, as described below.
@@ -74,28 +80,49 @@ When you test an executable that is not the configured one, the **In use** block
 
 ## Command-line setup
 
-The IDE also provides the `sjasmp-reset` command (or shorter, `sjasmpr`) to connect Klive with SjasmPlus from the Command window:
+The `sjasmp-reset` command (alias `sjasmpr`) connects Klive with SjasmPlus from the
+[command prompt](/en/guides/editing/command-prompt/):
 
-<ClickableImage src="/images/working-with-ide/sjasmp-reset.png" width={770} />
+```
+sjasmp-reset <full path of the SjasmPlus installation folder> [-p]
+```
 
 The command expects a single parameter: the path of the SjasmPlus installation folder. When Klive invokes the assembler, the SjasmPlus executable name is added to this path.
 
 Unlike the dialog, this command stores the path without testing it. Open the integration dialog afterwards if you want to confirm that the folder really holds a working assembler.
 
 <Callout type="info" emoji="💡">
-Klive stores the SjasmPlus settings in the `Klive.setting` file. If you want to change this path for a particular project (perhaps you want to test with another SjasmPlus version), use the `-p` switch to save this setting into the currently open project.
+The command saves the path in your user settings. To use another SjasmPlus for one project (to test
+another version, for example), add `-p` to save it in the open project. Without a path, the command
+removes the SjasmPlus settings.
 </Callout>
 
 ## Using SJASMPLUS
 
-After setting up the SjasmPlus integration, you can create Klive projects with the `sjasmplus` template: 
+Create a project with the `sjasmplus` template (**File › New Project...**). Its build root is
+`code/code.asm`, which starts with a `device` line for its machine (`device zxspectrum128` on the
+128K, for example).
 
-<ClickableImage src="/images/working-with-ide/new-sjasmp-project.png" width={512} />
+**Which files sjasmplus builds.** sjasmplus owns the `.sjasm` extension. `.asm` belongs to the
+[Klive Z80 Assembler](/en/guides/languages/klive-z80-assembler/) by default, so the template's project
+settings map both `.asm` and `.sjasm` to sjasmplus:
 
-This template creates a project with a `code.asm` file as the build root and associates the `.asm` and `.sjasm` file extensions with the SjasmPlus compiler.
+```json
+"settings": { "languages": { "sjasmp": ".asm|.sjasm" } }
+```
 
-If you start with an existing project, you can create source code files with the `.sjasm` extension and promote them to build roots. Such a file will leverage the SjasmPlus compiler.
+In any other project, name your files `.sjasm`, or add the same setting with
+`set languages.sjasmp ".asm|.sjasm"` ([File types](/en/guides/projects/file-types/#use-your-own-extensions)),
+then promote the main file to the build root.
 
-When you run the SjasmPlus code in the default Klive project template, you can see the result in the Emulator window:
+**The target machine.** Klive takes the machine from the source's `device` directive:
+`zxspectrum48` (or `zxspectrum16`), `zxspectrum128` (the +3 when the project runs on the +2E/+3E),
+or `zxspectrumnext`. Without one, the code is built for the machine the emulator runs. On the 128K,
++3 and Next, breakpoints know which memory bank they belong to.
 
-<ClickableImage src="/images/working-with-ide/running-sjasmp-code.png" width={480} />
+## Related
+
+- [Project templates](/en/guides/projects/project-templates/)
+- [File types](/en/guides/projects/file-types/)
+- [PASTA/80](/en/guides/languages/pasta80/), which uses sjasmplus as its assembler
+- [Settings](/en/guides/customizing/settings/)

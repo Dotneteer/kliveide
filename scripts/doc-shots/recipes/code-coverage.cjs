@@ -102,6 +102,16 @@ module.exports = {
       fs.mkdirSync(path.dirname(editorShot), { recursive: true });
       await klive.ide.locator('[class*="monaco-editor"]').first().screenshot({ path: editorShot });
       console.log(`  ✓ ${path.relative(process.cwd(), editorShot)}`);
+      // --- The Guides' code coverage page: the strip and the first 22 lines
+      await klive.ide.mouse.move(5, 300);
+      await klive.shot(".monaco-editor", "en/guides/analysis/code-coverage/editor-strip.webp", {
+        displayWidth: 760,
+        crop: { x: 0, y: 0, width: 760, height: 22 * 24 },
+        markers: {
+          covered: { selector: '[class*="_coverageCovered_"]' },
+          uncovered: { selector: '[class*="_coverageUncovered_"]' }
+        }
+      });
 
       await klive.cmd("cls", 500);
       await klive.cmd("coverage status", 1200);
@@ -141,6 +151,15 @@ module.exports = {
       const memoryShot = path.join(IMAGES, "working-with-ide", "code-coverage-heat.png");
       await klive.ide.screenshot({ path: memoryShot });
       console.log(`  ✓ ${path.relative(process.cwd(), memoryShot)}`);
+      // --- The program's own bytes, rather than the ROM's interrupt handler at the top
+      await klive.cmd("show-memory $8000", 2000);
+      await klive.cmd("cls", 400);
+      await klive.ide.mouse.move(5, 300);
+      await klive.shot('[class*="_documentArea_"], [class*="_documentsContainer_"]', "en/guides/analysis/code-coverage/memory-heat.webp", {
+        displayWidth: 760,
+        crop: { x: 0, y: 0, height: 300 },
+        markers: { heat: { selector: '[class*="_heatCell_"]' } }
+      });
 
       await klive.cmd("memory-heat off", 500);
       await klive.cmd("coverage off", 500);

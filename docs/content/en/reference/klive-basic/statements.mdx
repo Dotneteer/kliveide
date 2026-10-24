@@ -528,4 +528,4 @@ On the ZX Spectrum Next, the routines and data inside a `CODEBANK` block live in
 
 `#pragma codebank = n` puts the code that follows into bank *n*; bank 0 is resident memory. `FARPTR name` gives a `ULong` that holds a bank-local variable's bank in bits 16 to 23 and its address in bits 0 to 15. The `farmem.bas` library reads and writes data through such values; see [Standard library](/en/reference/klive-basic/standard-library/#farmembas).
 
-The compiler reports, among others, a bank larger than its window, a direct `GOTO`, `jp` or `call` between banks, and a reference into a bank from outside it. The user guide describes the build side: [Banked code on the ZX Spectrum Next](/en/guides/languages/zx-basic/#banked-code-on-the-zx-spectrum-next-codebank).
+The compiler reports, among others, a bank larger than its window, a direct `GOTO`, `jp` or `call` between banks, and a reference into a bank from outside it. The user guide describes the build side: [Banked code on the ZX Spectrum Next](/en/guides/languages/klive-basic/#banked-code-on-the-zx-spectrum-next-codebank).
