@@ -18,6 +18,8 @@ const emu = {
 
 vi.mock("@main/main-store", () => ({ mainStore: { getState: () => state } }));
 vi.mock("@messaging/MainToEmuMessenger", () => ({ getEmuApi: () => emu }));
+const ide = { diskImageChanged: vi.fn(async () => {}) };
+vi.mock("@messaging/MainToIdeMessenger", () => ({ getIdeApi: () => ide }));
 
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import {
@@ -39,6 +41,7 @@ beforeEach(() => {
   emu.issueMachineCommand.mockClear();
   emu.setDiskFile.mockClear();
   emu.setMicrodriveFile.mockClear();
+  ide.diskImageChanged.mockClear();
   resetDiskImageBackups();
 });
 
@@ -51,6 +54,12 @@ describe("disk image edits", () => {
     expect(new Uint8Array(fs.readFileSync(`${disk}.bak`))).toEqual(new Uint8Array([1, 2, 3]));
     expect(emu.issueMachineCommand).not.toHaveBeenCalled();
     expect(emu.setDiskFile).not.toHaveBeenCalled();
+  });
+
+  it("tells the IDE the image changed, so an open Disk Explorer reloads (a `disk add` from the prompt)", async () => {
+    const start = await beginDiskImageEdit(disk);
+    await commitDiskImageEdit(disk, new Uint8Array([4]), start);
+    expect(ide.diskImageChanged).toHaveBeenCalledWith(disk);
   });
 
   it("pauses a running machine with the cartridge in Microdrive 2, re-inserts it and runs on", async () => {

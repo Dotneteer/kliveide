@@ -4,6 +4,7 @@ import path from "path";
 import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_MICRODRIVES } from "@common/structs/project-const";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { getEmuApi } from "@messaging/MainToEmuMessenger";
+import { getIdeApi } from "@messaging/MainToIdeMessenger";
 import { mainStore } from "./main-store";
 
 /*
@@ -17,7 +18,7 @@ import { mainStore } from "./main-store";
  *    file read next already holds them: the edit starts from the disk as the machine left it.
  * 2. `commitDiskImageEdit` - the new bytes go to a file beside the image, renamed over it, so a
  *    failed write leaves the old disk; the first edit of an image in a session keeps a `.bak` of it.
- *    A mounted disk (or Microdrive cartridge) is inserted again (the core reloads it, the head where it was) and a machine the
+ *    Every open document showing the image reloads. A mounted disk (or Microdrive cartridge) is inserted again (the core reloads it, the head where it was) and a machine the
  *    edit paused runs on.
  */
 
@@ -85,6 +86,11 @@ export async function commitDiskImageEdit (
     if (start.microdrive !== undefined) {
       await getEmuApi().setMicrodriveFile(start.microdrive, filePath, contents);
     }
+    // --- Every open view of the image reloads, whoever made the edit: a `disk add` from the command
+    // --- prompt left an open Disk Explorer showing the old files
+    void getIdeApi()
+      .diskImageChanged(filePath)
+      .catch(() => {});
   } finally {
     if (start.resume) {
       await getEmuApi().issueMachineCommand(start.debug ? "debug" : "start");
