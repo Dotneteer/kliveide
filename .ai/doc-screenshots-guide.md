@@ -333,6 +333,10 @@ Eleven recipes; the rest of the pages were deliberately left ungenerated.
   (<kbd>Enter</kbd> in the EMU window), the file the +3 saved appearing in the explorer, the Layout
   view, an SD card image and Settings › Machine's esxDOS row. Rerun it after any change to the
   disk UI; it waits for each state's text before photographing it.
+- `recipes/readme.cjs` — the project README's `readme/klive-ide.webp`: the IDE with
+  `readme-demo.kz80.asm` open and the EMU window running it, **composed into one image with
+  sharp** (two windows cannot be captured in one shot). Leave the Commands pane in front: after
+  `outp build` the prompt is gone, so a later `klive.cmd` times out.
 - `recipes/scripting.cjs` — `scripting/script-output-pane.png`. The worked template.
 - `recipes/disassembly.cjs` — `working-with-ide/disass-branch-verdicts.png`. Adds three
   techniques worth reusing:
