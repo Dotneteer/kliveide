@@ -3068,3 +3068,13 @@ drift. Change a neutral or the default accent in the app, and the site changes w
 - **A screenshot's callouts are HTML, never pixels:** `<Shot markers>` draws numbered badges from
   the harness's sidecar, and the numbered list under the figure is styled like the badges, so the
   text translates with the page.
+
+## A Short Dump Section Is As Wide As A Full One
+
+`MemoryDumpSection`'s hex column was `width: fit-content`, so the last section of a dump whose length
+is not a multiple of 8 (a 543-byte Microdrive record, a 31-byte file) was narrower than the ones
+above it and pulled its character column left out of line. The column now has a minimum of a full
+eight-byte section in `ch` (`calc(8 * 3ch - 1ch)`, `4ch` per byte in decimal), with
+`box-sizing: content-box` so its transparent border does not eat into the minimum. **Anything that
+maps a pointer to a byte from the box's width must then divide by the full section's characters**
+(`fullSectionChars`), not by the text's length, or hovering a short section picks the wrong byte.

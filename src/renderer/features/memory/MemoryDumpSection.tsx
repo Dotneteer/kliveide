@@ -317,7 +317,7 @@ const HexValuesComponent = ({
       return;
     }
 
-    onHoverChange?.(getByteIndexAtOffset(x, rect.width, hexString.length, decimalView, hexParts.length));
+    onHoverChange?.(getByteIndexAtOffset(x, rect.width, Math.max(hexString.length, fullSectionChars(decimalView)), decimalView, hexParts.length));
   }, [decimalView, hexParts.length, hexString.length, onHoverChange]);
 
   const handleMouseLeave = useCallback(() => {
@@ -335,7 +335,7 @@ const HexValuesComponent = ({
 
     const rect = containerRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left;
-    const foundIndex = getByteIndexAtOffset(x, rect.width, hexString.length, decimalView, hexParts.length);
+    const foundIndex = getByteIndexAtOffset(x, rect.width, Math.max(hexString.length, fullSectionChars(decimalView)), decimalView, hexParts.length);
 
     if (foundIndex !== null) {
       editClicked(address + foundIndex);
@@ -455,7 +455,7 @@ const HexValuesComponent = ({
   return (
     <div
       ref={containerRef}
-      className={styles.hexValues}
+      className={classnames(styles.hexValues, { [styles.decimal]: decimalView })}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       onMouseOut={handleMouseOut}
@@ -605,6 +605,14 @@ export function buildByteTooltipCache(charset: Record<number, CharDescriptor>): 
       `${valueInfo.v ? valueInfo.v + " " : ""}${description}`;
   }
   return tooltipCache;
+}
+
+/**
+ * The characters of a full eight-byte section (`XX` and a space each, less the last space): the
+ * hex column's minimum width in `ch` (`.hexValues`), so a short section's box is as wide as this
+ */
+export function fullSectionChars(decimalView: boolean | undefined): number {
+  return 8 * ((decimalView ? 3 : 2) + 1) - 1;
 }
 
 export function getByteIndexAtOffset(
