@@ -17,8 +17,8 @@ supersedes, keep no history (that is `PROVENANCE.md`'s job).
 - **The +2A/+3 ROM 3s ship at level 2** (2026-10-20): `spp3-41-3.rom.dis` inherits `sp128-1` and
   `sp48`; `spp3-40-3.rom.dis` (also the +3E's ROM 3, the same bytes) and `spp3-41es-3.rom.dis` inherit
   `spp3-41-3` first. On the +3, FLAGS bit 4 is "+3 BASIC", not 128 BASIC.
-- **The ZX Spectrum Next's ROMs are next** (`.plans/NEXT_ROM_ANNOTATIONS_PLAN.md`, state in
-  `.plans/NEXT_ROM_ANNOTATIONS_HANDOFF.md`; the mapping and merge scripts are in `tools/`): one working copy per
+- **Every ZX Spectrum Next ROM ships at level 2** (2026-10-21; the mapping and merge scripts are in
+  `tools/`): one working copy per
   ROM file with a bank per page (`enNextZX.rom.dis` holds pages 0-3); give the tools `PAGE=<n>`. The
   author follows the work by opening the working copy (`rom-ann-open enNextZX.rom -page 3`): write
   it back after every step, since the IDE re-reads it on each change.
