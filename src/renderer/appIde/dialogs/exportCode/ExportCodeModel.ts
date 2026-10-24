@@ -50,6 +50,9 @@ export const DSK_FORMAT = "dsk";
 export const TRD_FORMAT = "trd";
 const DSK_OPTION: SelectOption = labelled({ value: DSK_FORMAT, labelKey: "dialog.exportCode.format.dsk" });
 const TRD_OPTION: SelectOption = labelled({ value: TRD_FORMAT, labelKey: "dialog.exportCode.format.trd" });
+// --- A Microdrive cartridge on the machines that can have an Interface 1 (`.plans/MICRODRIVE_PLAN.md` Q7)
+export const MDR_FORMAT = "mdr";
+const MDR_OPTION: SelectOption = labelled({ value: MDR_FORMAT, labelKey: "dialog.exportCode.format.mdr" });
 
 /** The formats the running machine's code exports as */
 export function formatOptionsFor(machineId: string | undefined): SelectOption[] {
@@ -57,7 +60,9 @@ export function formatOptionsFor(machineId: string | undefined): SelectOption[] 
   if (machineId === "zx80") return ZX80_FORMAT_OPTIONS;
   if (machineId === "ht1080z") return HT1080Z_FORMAT_OPTIONS;
   if (machineId === "spp3e") return [...FORMAT_OPTIONS, DSK_OPTION];
-  if (machineId === "sp128" || machineId === "scorpion") return [...FORMAT_OPTIONS, TRD_OPTION];
+  if (machineId === "sp128") return [...FORMAT_OPTIONS, TRD_OPTION, MDR_OPTION];
+  if (machineId === "scorpion") return [...FORMAT_OPTIONS, TRD_OPTION];
+  if (machineId === "sp48") return [...FORMAT_OPTIONS, MDR_OPTION];
   return FORMAT_OPTIONS;
 }
 

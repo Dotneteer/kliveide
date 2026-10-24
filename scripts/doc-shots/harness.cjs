@@ -89,6 +89,11 @@ async function launchKlive({
    * [...] } }`, which lists a machine in the Machine type menu). Unset, none.
    */
   globalSettings = {},
+  /**
+   * Top-level entries of the seeded settings file - the machine a session starts on (`machineId`,
+   * `modelId`, `config`) and its media (`media`), as a saved session restores them
+   */
+  sessionSettings = {},
   /*
    * The answer to the Boriel BASIC setup offer, as the settings file records it. The default declines
    * every version, so no offer covers the windows a recipe drives; `null` seeds nothing, so a run
@@ -123,6 +128,7 @@ async function launchKlive({
         theme,
         ...(accent ? { accent } : {}),
         windowStates: { showIdeOnStartup: true },
+        ...sessionSettings,
         ...(userSettings ? { userSettings } : {}),
         globalSettings: {
           ideViewOptions: {

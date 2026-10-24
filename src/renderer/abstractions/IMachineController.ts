@@ -271,6 +271,8 @@ export interface IMachineController {
    */
   runTapeLoad(debug: boolean): Promise<void>;
   runDiskBoot(debug: boolean): Promise<void>;
+  /** Resets and boots the cartridge in Microdrive 1 (the Microdrive Loader) */
+  runMicrodriveBoot(debug: boolean): Promise<void>;
 
   /**
    * Stops the machine and runs a ready-made flow (start, queued keys) on it: a Z88 card application
@@ -324,5 +326,7 @@ export type FrameCompletedArgs = {
   savedFileInfo?: SavedFileInfo;
   diskAChanges?: SectorChanges;
   diskBChanges?: SectorChanges;
+  /** Microdrive 1 and 2's written slots (`.plans/MICRODRIVE_PLAN.md`), keyed by slot */
+  microdriveChanges?: (SectorChanges | undefined)[];
   clockMultiplier?: number;
 };

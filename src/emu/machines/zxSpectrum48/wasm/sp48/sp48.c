@@ -334,14 +334,29 @@ static uint32_t normalizeClockMultiplier(uint32_t value);
  * the DivMMC is mapped its view replaces those bytes and `sp48RomShadow` keeps the ROM.
  */
 static uint8_t sp48RomShadow[0x4000u];
-static void sp48DivMmcRemapped(void);
+static void sp48RomSlotRemapped(void);
+/*
+ * The Interface 1 (`zx-spectrum-if1.c`; .plans/MICRODRIVE_PLAN.md): the 48K's only, not the Timex
+ * build's - the host connects it (`sp48If1SetPresent`). While its ROM is paged, its view replaces the
+ * ROM's bytes in `sp48Memory`, as the DivMMC's does; the host never connects both.
+ */
+static uint8_t sp48RzxPlaying(void);
+#define ZXIF1_PREFIX sp48
+#define ZXIF1_NOW() sp48Tacts
+#define ZXIF1_TACTS_PER_MS() \
+  ((double)sp48BaseClockFrequency * (double)(sp48ClockMultiplier == 0u ? 1u : sp48ClockMultiplier) / 1000.0)
+#define ZXIF1_FRAME_END() (sp48NextFrameStartTact + sp48TactsInCurrentFrame)
+#define ZXIF1_REMAPPED() sp48RomSlotRemapped()
+#define ZXIF1_RZX_PLAYING() (sp48RzxPlaying() != 0u)
+#include "../../../zxSpectrum/wasm/common/zx-spectrum-if1.c"
 #define ZXDC_PREFIX sp48
 #define ZXDC_ROM3_PRESENT() 1
 #define ZXDC_TACTS sp48Tacts
-#define ZXDC_REMAPPED() sp48DivMmcRemapped()
+#define ZXDC_REMAPPED() sp48RomSlotRemapped()
 #include "../../../zxSpectrum/wasm/common/zx-spectrum-divmmc-classic.c"
-static void sp48DivMmcRemapped(void) {
-  const uint8_t *source = zxdcMapped != 0u ? zxdcView : sp48RomShadow;
+/* $0000-$3FFF of the flat memory: the DivMMC's view, the Interface 1's, or the ROM */
+static void sp48RomSlotRemapped(void) {
+  const uint8_t *source = zxdcMapped != 0u ? zxdcView : zxIf1Paged != 0u ? zxIf1View : sp48RomShadow;
   for (uint32_t i = 0u; i < 0x4000u; i++) sp48Memory[i] = source[i];
 }
 #else
@@ -355,6 +370,13 @@ static void sp48DivMmcRemapped(void) {
 #define zxdcReset(hard) ((void)0)
 #define zxdcWrite(address, value) 0u
 #define zxdcMapped 0u
+/* ... and no Interface 1 */
+#define ZXIF1_BEFORE_OPCODE_FETCH(pc) ((void)0)
+#define ZXIF1_AFTER_OPCODE_FETCH(pc) ((void)0)
+#define zxIf1Paged 0u
+#define zxIf1Frozen() 0u
+#define zxIf1Reset() ((void)0)
+#define zxIf1ShiftTactOrigin(by) ((void)(by))
 #endif
 #include "sp48-memory.c"
 #include "../../../zxSpectrum/wasm/common/zx-spectrum-ula.c"
@@ -383,9 +405,20 @@ static void SP48_CPU_NOINLINE sp48CpuDelayPortAccess(uint32_t address);
 static void SP48_CPU_NOINLINE sp48CpuDelayMemoryRead(uint32_t address);
 static void SP48_CPU_NOINLINE sp48CpuDelayAddressBusAccess(uint32_t address);
 
-/* The DivMMC's entry points, its delayed mapping and RETN (none in the Timex build) */
-#define Z80_BEFORE_OPCODE_FETCH() ZXDC_BEFORE_OPCODE_FETCH(cpu.pc)
-#define Z80_AFTER_OPCODE_FETCH() ZXDC_AFTER_OPCODE_FETCH()
+static void SP48_CPU_NOINLINE sp48CpuDelayPortRead(uint32_t address);
+static void SP48_CPU_NOINLINE sp48CpuDelayPortWrite(uint32_t address);
+
+/* The DivMMC's entry points, its delayed mapping and RETN; the Interface 1's paging (none in the Timex build) */
+#define Z80_BEFORE_OPCODE_FETCH() \
+  do { \
+    ZXDC_BEFORE_OPCODE_FETCH(cpu.pc); \
+    ZXIF1_BEFORE_OPCODE_FETCH(cpu.pc); \
+  } while (0)
+#define Z80_AFTER_OPCODE_FETCH() \
+  do { \
+    ZXDC_AFTER_OPCODE_FETCH(); \
+    ZXIF1_AFTER_OPCODE_FETCH(cpu.pc); \
+  } while (0)
 #define Z80_AFTER_RETN() ZXDC_AFTER_RETN(cpu.opCode)
 #define Z80_EXTERNAL_BUS 1
 #define Z80_MEMORY_PTR() sp48CpuMemoryPtr()
@@ -403,8 +436,8 @@ static void SP48_CPU_NOINLINE sp48CpuDelayAddressBusAccess(uint32_t address);
 #ifndef SP48_SCLD
 #define Z80_DELAY_REFRESH_BUS_ACCESS(address) ((void)(address))
 #endif
-#define Z80_DELAY_PORT_READ(address) sp48CpuDelayPortAccess((uint32_t)(address))
-#define Z80_DELAY_PORT_WRITE(address) sp48CpuDelayPortAccess((uint32_t)(address))
+#define Z80_DELAY_PORT_READ(address) sp48CpuDelayPortRead((uint32_t)(address))
+#define Z80_DELAY_PORT_WRITE(address) sp48CpuDelayPortWrite((uint32_t)(address))
 /* RZX (`zx-spectrum-rzx.c`): the fetch counter counts every refresh but the INT acknowledge's */
 static inline void rzxCountFetch(void);
 static inline void rzxIntAck(void);
@@ -512,6 +545,35 @@ static void SP48_CPU_NOINLINE sp48CpuDelayPortAccess(uint32_t address) {
   }
 }
 
+#ifndef SP48_SCLD
+static uint8_t sp48RzxPlaying(void) {
+  return rzxMode == RZX_MODE_PLAY ? 1u : 0u;
+}
+
+/* WAIT: the Interface 1 holds the CPU, in steps the beeper's sampling can follow */
+static void sp48If1Stall(uint32_t tacts) {
+  while (tacts > 0u) {
+    const uint32_t step = tacts < 16u ? tacts : 16u;
+    sp48CpuTactPlusN(step);
+    tacts -= step;
+  }
+}
+#endif
+
+static void SP48_CPU_NOINLINE sp48CpuDelayPortRead(uint32_t address) {
+  sp48CpuDelayPortAccess(address);
+#ifndef SP48_SCLD
+  if (ZXIF1_UNLIKELY(zxIf1Present != 0u)) sp48If1Stall(zxIf1PortWait(address, 0u));
+#endif
+}
+
+static void SP48_CPU_NOINLINE sp48CpuDelayPortWrite(uint32_t address) {
+  sp48CpuDelayPortAccess(address);
+#ifndef SP48_SCLD
+  if (ZXIF1_UNLIKELY(zxIf1Present != 0u)) sp48If1Stall(zxIf1PortWait(address, 1u));
+#endif
+}
+
 static void SP48_CPU_NOINLINE sp48CpuDelayMemoryRead(uint32_t address) {
   if (SP48_CONTENDED_MEMORY(address)) {
     sp48CpuApplyContention();
@@ -559,16 +621,24 @@ static void SP48_CPU_NOINLINE sp48CpuDelayAddressBusAccess(uint32_t address) {
 #define SP48_PORT_READ_NON_FE(address) scldReadNonFePort(address)
 #define SP48_PORT_WRITE_NON_FE(address, value) scldWriteNonFePort((address), (value))
 #else
-/* The DivMMC's ports, else the floating bus */
+/* The DivMMC's ports, the Interface 1's, else the floating bus (the host never connects both) */
 #define SP48_PORT_READ_NON_FE(address) \
-  (zxdcIsPort(address) != 0u ? zxdcReadPort(address) : sp48ReadFloatingBus())
+  (zxdcIsPort(address) != 0u ? zxdcReadPort(address) \
+    : zxIf1IsPort(address) != 0u ? zxIf1ReadPort(address) : sp48ReadFloatingBus())
 #define SP48_PORT_WRITE_NON_FE(address, value) \
-  do { if (zxdcIsPort(address) != 0u) zxdcWritePort((address), (value)); } while (0)
+  do { \
+    if (zxdcIsPort(address) != 0u) zxdcWritePort((address), (value)); \
+    else if (zxIf1IsPort(address) != 0u) zxIf1WritePort((address), (value)); \
+  } while (0)
 #endif
 #include "../../../zxSpectrum/wasm/common/zx-spectrum-ports.c"
 #define SP48_EXTERNAL_TACT(tact) ((uint32_t)((tact) + sp48TactEpoch))
 /* The fast-load trap writes RAM without an IN, so it is off while RZX plays or records (trap 3) */
 #define SP48_TAPE_FAST_LOAD_BLOCKED() (rzxMode != RZX_MODE_OFF)
+#ifndef SP48_SCLD
+/* LD-BYTES and SA-BYTES are the 48K ROM's only while the Interface 1's ROM is not paged over them */
+#define SP48_TAPE_TRAP_ACTIVE() (zxIf1Paged == 0u)
+#endif
 #include "../../../zxSpectrum/wasm/common/zx-spectrum-tape.c"
 
 // ----------------------------------------------------------------------------
@@ -647,6 +717,7 @@ static void sp48ShiftTactOrigin(int64_t amount) {
   sp48TapeStartTact -= by;
   sp48TapeLastModeChangeTact -= by;
   sp48TapeSaveLastMicBitTact -= by;
+  zxIf1ShiftTactOrigin(by);
 #ifdef SP48_SCLD
   sp128PsgNextClockTact -= by;
   sp128PsgLastAccumulationTact -= byDouble;
@@ -713,6 +784,7 @@ void sp48Reset(void) {
   resetPsg();
 #endif
   zxdcReset(0u);
+  zxIf1Reset();
   renderUlaDisplay();
 }
 
@@ -775,6 +847,24 @@ uint32_t sp48GetUlaFetchDelay(void) {
 #define Z80_DEBUG_LOOP_STOP() ZXDC_HOST_WAITING()
 #include "../../../../z80/wasm/z80-debug-loop.c"
 
+#ifndef SP48_SCLD
+/*
+ * The CPU frozen by the Interface 1's WAIT past the frame's end (or for good: the "IN 0 crash"):
+ * time passes, the picture and the sound go on, nothing runs.
+ */
+static void sp48If1RunFrozen(void) {
+  const uint32_t frameEnd = sp48NextFrameStartTact + sp48TactsInCurrentFrame;
+  const uint32_t target = zxIf1FrozenTarget(frameEnd);
+  while ((int32_t)(target - sp48Tacts) > 0) {
+    const uint32_t left = target - sp48Tacts;
+    sp48Tacts += left < 16u ? left : 16u;
+    setNextAudioSample();
+  }
+  sp48FrameCompleted = sp48Tacts >= frameEnd ? 1u : 0u;
+  completeMachineFrame();
+}
+#endif
+
 uint32_t sp48ExecuteInstruction(void) {
 #ifndef Z80_BENCH_STRIP_DEBUG
   if (rzxMode == RZX_MODE_PLAY) {
@@ -784,6 +874,12 @@ uint32_t sp48ExecuteInstruction(void) {
   if (sp48FrameCompleted != 0u) {
     beginMachineFrame();
   }
+#ifndef SP48_SCLD
+  if (zxIf1Frozen()) {
+    sp48If1RunFrozen();
+    return 0u;
+  }
+#endif
 
 #ifndef Z80_BENCH_STRIP_DEBUG
   if (sp48CaptureBusEvents != 0u) {
@@ -1114,8 +1210,8 @@ uint32_t sp48GetDiagnosticFlags(void) {
 // with this machine's side-effect-free peek (the IDE's view of memory), its frame position in
 // T-states (never an absolute tact: the counter is rebased, trap T4) and its context.
 //
-// The 48K/16K context (`sp48Context.ts` decodes it): 0 the model (0 16K, 1 48K); the rest zero.
-// There is no paging: the 48K's `getPartition` names no partition anywhere.
+// The 48K/16K context (`sp48Context.ts` decodes it): 0 the model (0 16K, 1 48K); 1 the Interface 1's
+// ROM paged in (0/1); the rest zero. Without the Interface 1 there is no paging.
 //
 // The Timex context (`timexContext.ts`), from `timexRebuildChunkMap`'s inputs and result, not its
 // pointers: 0 port $F4 (which chunks are external), 1 port $FF (bit 7: the EXROM bank, not the
@@ -1136,6 +1232,8 @@ static inline void sp48HistoryContext(uint32_t kind, uint8_t *out) {
   out[4] = sp48HistoryModel;
 #else
   out[0] = sp48HistoryModel;
+  /* 1: the Interface 1's ROM is paged in (.plans/MICRODRIVE_PLAN.md) */
+  out[1] = zxIf1Paged;
 #endif
 }
 
@@ -1182,7 +1280,9 @@ static inline int32_t sp48ProfilePhys(uint32_t address, uint32_t write) {
 #else
 #define Z80_PROFILE_FLAG_BYTES 0x10000u
 #define Z80_PROFILE_POOL_PAGES 8u
-#define Z80_PROFILE_PHYS_READ(address) ((int32_t)((address) & 0xffffu))
+/* The Interface 1's ROM, while paged, is not the 48K ROM: it maps nowhere rather than to its addresses */
+#define Z80_PROFILE_PHYS_READ(address) \
+  (zxIf1Paged != 0u && ((address) & 0xffffu) < 0x4000u ? -1 : (int32_t)((address) & 0xffffu))
 #define Z80_PROFILE_PHYS_WRITE(address) (((address) & 0xffffu) >= 0x4000u ? (int32_t)((address) & 0xffffu) : -1)
 #endif
 #define Z80_PROFILE_FRAME_TICKS() cpu.tacts

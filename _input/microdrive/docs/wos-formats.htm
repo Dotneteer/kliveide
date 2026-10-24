@@ -1,0 +1,457 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>Emulator File Formats</title>
+	<meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
+<link href="../styles/cssFAQ.css" title="CSSFAQStyle" id="CSSFAQStyle" type="text/css" rel="stylesheet" media="screen" />
+<link href="../styles/cssFAQPrint.css" title="CSSFAQStylePrint" id="CSSFAQStylePrint" type="text/css" rel="stylesheet" media="print" />
+</head>
+<body>
+<!-- Title -->
+<div id="pageHeader" class="pageHeader"><h1>comp.sys.sinclair FAQ</h1></div>
+<!-- End Title -->
+<br />
+<!-- Context Bar -->
+<div class="siteNavigation">
+<a title="SinclairFAQ [on master site]" href="http://www.sinclairfaq.com/">SinclairFAQ</a> &raquo;
+<a title="comp.sys.sinclair FAQ" href="../index.html">c.s.s FAQ</a> |
+<a title="Documentation" href="../resources/documents.htm">Documents</a> |
+<a title="Essential Sites" href="../essential.htm">Essential Sites</a> |
+<a title="Emulators" href="../emulators/emulators.htm">Emulators</a> |
+<a title="Reference" href="../reference/reference.htm">Reference</a> |
+<a title="Links" href="../resources/links.htm">Links</a> |
+<a title="Resources" href="../resources/resources.htm">Resources</a> |
+<a title="Help" href="../help.htm">Help</a>
+</div>
+<!-- End Context Bar -->
+<br />
+	<table id="Content" cellspacing="1" cellpadding="1" width="100%" border="0">
+		<tr>
+			<td width="75" colspan="1" rowspan="1" />
+			<td>
+	<table id="SectionTitle" cellspacing="1" cellpadding="1" width="95%" align="center" border="0">
+		<tr>
+			<td class="sectionTitle">File Formats</td></tr>
+	</table>
+	<table id="SectionContent" cellspacing="1" cellpadding="1" width="95%" align="center" border="0">
+		<tr>
+			<td class="bodyTable">
+<!-- Upper Navigation Bar -->
+<div class="pageNavigation">|
+	<a href="#Disk">Disk</a> |
+	<a href="#Tape">Tape</a> |
+	<a href="#File">Snapshot</a> |
+	<a href="#Emulator">Emulator-specific</a> |
+	<a href="#Miscellaneous">Other / Miscellaneous</a> |</div>
+<!-- End Upper Navigation Bar -->
+<!-- Tape Formats -->
+			<p><a id="Tape"><strong>Tape File Formats:</strong></a><br />
+				Files stored in one of the following formats can be used to reproduce exact (or near-perfect) duplicates of the original source tape. For this reason,
+				they are generally preferred to 'snapshot' files, although they are slightly less well supported. Additional information regarding the intended
+				hardware type (for example) can often be encoded with files of this type, and custom loading systems are both reliably and accurately preserved.</p>
+				<ul>
+<!-- TAP -->
+					<li><a id="TAP"><strong>TAP Format</strong></a><br />
+						The .tap files contain blocks of tape-saved data. All blocks start with two bytes specifying how many bytes will follow (not counting the two length bytes).
+						Then raw tape data follows, including the flag and checksum bytes. Note that it is possible to join .tap files by simply stringing them together, for example COPY /B FILE1.TAP + FILE2.TAP ALL.TAP</p><br /><br />
+<!-- End TAP -->
+<!-- TZX -->
+			<li><a id="TZX"><strong>TZX Format</strong></a> v1.13<br />
+				TZX is the 'preferred' format for emulation since it can be used to replicate the original tape
+				content exactly. Tapes can be reproduced using a variety of <a href="../resources/utilities.htm">utilities</a>.
+				The .tzx format was originally developed by Tomaz Kac (now maintained by Martijn van der Heide) to allow the storage of games with
+				non-standard loaders in a format much smaller than .voc files. Although originally designed for use with Spectrum compatible computers
+				only, it can also be used to reproduce tapes for the Amstrad CPC, Commodore 64, Enterprise, Jupiter ACE and SAM Coupe. It is also
+				possible, in theory only since no utilities exist that allow it, save cassette images as .tzx files for use with a ZX81. An extremely
+				detailed specification for the .tzx format is available in .txt and HTML formats is available
+				<a href="http://www.worldofspectrum.org/TZXformat.html">here</a>.<br /><br />
+				See the <a href="http://tzxvault.retrogames.com/">TZX Vault</a> entry for a large number of files in .tzx format
+				(also accessible via <a href="../resources/ftp.htm">FTP</a>)<br /><br /></li>
+<!-- End Tape Formats -->
+		</ul>
+<!-- Snapshot Formats -->
+		<p><a id="File"><strong>Snapshot File Formats:</strong></a><br />
+			Snapshot files represent the contents of the system memory at a particular moment in time. As a result of this, they can be loaded
+			into an emulator almost instantaneously, but cannot normally be used to recreate the original tape. Please note that the
+			<a href="z80format.htm">.z80 format</a> is now located on a different page.</p>
+			<ul>
+<!-- SLT -->
+				<li><a id="SLT"><strong>SLT Format</strong></a><br />
+				The level loader trap has one annoying disadvantage; lots of extra files lying around for each game.
+				The super level loader was developed by Damien Burke to replace this multi-file format with a single snapshot file
+				containing all the level data files. It has been designed in co-operation with James McKay (x128), Gerton Lunter (Z80),
+				Rui Ribeiro (WSpecEm) and Darren Salt (helping with Z80Em), and is quite widely supported. The format was designed
+				with future expansion in mind;
+<pre>            Size   Description
+   ------------------------------------------------------------------------
+            varies bytes  Z80 snapshot (version 2+)
+            3      bytes  Three null bytes (compatibility; see below)
+            3      bytes  "SLT" (signature)
+   ---- the following blocks make up a table to access the data files -----
+            2      word   data type (0 = end of table, 1 = level data)
+            2      word   data identifier (for type 1 this is level number)
+            4      long   data length
+            2      word   data type (0 = end of table, 1 = level data)
+            2      word   data identifier (for type 1 this is level number)
+            4      long   data length
+            ... and so on
+   ---- the following blocks are the data files themselves ----------------
+            varies bytes data
+            varies bytes data
+            ... and so on
+   ------------------------------------------------------------------------</pre>
+				The three null bytes after the end of the snapshot are for compatibility reasons; older versions of Z80 would crash if the
+				extra data was just appended to the snapshot. With these three null bytes, they just complain about an error in the snapshot
+				file instead (this presumes you have renamed the .slt file to .z80 and attempted to load it into an older emulator)<br /><br />
+				After the "SLT" signature, there is a table of data types and sizes. Currently, only data types 0 (end of table) and 1 (level data) are
+				supported; if other values are encountered, that data block should be ignored by the emulator.<br /><br />
+				To read a level data file using .slt, the emulator should find the correct entry in the table (type = 1, identifier matching the
+				A register when the ED/FB instruction was encountered), get its size from the table and calculate its position from the total
+				of sizes of data blocks previous to the required one, added to the position of the end of the table. For example, to load level 2 from
+				a .slt snapshot with this table:
+<pre>   Position  Size  Value  Description
+   ------------------------------------------------------------------------
+   40000     2     1      data type = level data
+   40002     2     1      data identifier = level 1
+   40004     4     256    data length = 256 bytes
+   40008     2     1      data type = level data
+   40010     2     2      data identifier = level 2
+   40012     4     128    data length = 128 bytes
+   40016     2     0      data type = end of table
+   40018     2     *      data identifier = unused (may as well be zero)
+   40020     4     *      data length =  unused (may as well be zero)
+   40024     256   *      data block for level 1
+   40280     128   *      data block for level 2
+   ------------------------------------------------------------------------
+   (* = could be anything)</pre>
+					So, the size of level 2 is 128 bytes, and its located at the end of the table (40024) + the length of all previous blocks
+					(just 256 here) = 40280.<br /><br />
+					Level data is packed in the same way as z80 snapshot memory banks are.<br /><br />
+					The trainspotter award seekers of you may wonder why a whole word is used for the data identifier;
+					after all, this is the level number and is held in the A register, so could be just a byte. For level data, correct.
+					But future expansion is better served by a word. For the same reasons, the data length is held as a long word
+					instead of just a word; level data will never exceed 64Kb (indeed, could not even be as much as 48Kb), but future
+					data types may do so. One example; embedding a scan of a game's inlay card in the file is possible, and that file
+					could easily exceed 64Kb.<br /><br /></li>
+<!-- End SLT -->
+<!-- SNA -->
+				<li><a id="SNA"><strong>SNA Format</strong></a><br />
+				This format is one of the most well-supported of all snapshot formats, but has a drawback:<br /><br />
+				As the program counter is pushed onto the stack so that a RETN instruction can restart the program, 2 bytes of memory
+				are overwritten. This will usually not matter; the game (or whatever) will have stack space that can be used for this.
+				However, if this space is all in use when the snap is made, memory below the stack space will be corrupted. According
+				to Rui Ribeiro, the effects of this can sometimes be avoided by replacing the corrupted bytes with zeros; e.g. take the PC
+				from the, stack pointer, replace that word with 0000 and then increment SP. This worked with snapshots of Batman,
+				Bounder and others which had been saved at critical points. Theoretically, this problem could cause a complete crash on a
+				real Spectrum if the stack pointer happened to be at address 16384; the push would try and write to the ROM.<br /><br />
+				When the registers have been loaded, a RETN command is required to start the program. IFF2 is short for interrupt flip-flop 2,
+				and for all practical purposes is the interrupt-enabled flag. Set means enabled.
+<pre>   Offset   Size   Description
+   ------------------------------------------------------------------------
+   0        1      byte   I
+   1        8      word   HL',DE',BC',AF'
+   9        10     word   HL,DE,BC,IY,IX
+   19       1      byte   Interrupt (bit 2 contains IFF2, 1=EI/0=DI)
+   20       1      byte   R
+   21       4      words  AF,SP
+   25       1      byte   IntMode (0=IM0/1=IM1/2=IM2)
+   26       1      byte   BorderColor (0..7, not used by Spectrum 1.7)
+   27       49152  bytes  RAM dump 16384..65535
+   ------------------------------------------------------------------------
+   Total: 49179 bytes</pre>
+				The 128K version of the .sna format is the same as above, with extensions to include the extra memory banks of the
+				128K/+2 machines, and fixes the problem with the PC being pushed onto the stack - now it is located in an extra variable
+				in the file (and is not pushed onto the stack at all). The first 49179 bytes of the snapshot are otherwise exactly as described
+				above, so the full description is:
+<pre>   Offset   Size   Description
+   ------------------------------------------------------------------------
+   0        27     bytes  SNA header (see above)
+   27       16Kb   bytes  RAM bank 5 \
+   16411    16Kb   bytes  RAM bank 2  } - as standard 48Kb SNA file
+   32795    16Kb   bytes  RAM bank n / (currently paged bank)
+   49179    2      word   PC
+   49181    1      byte   port 0x7ffd setting
+   49182    1      byte   TR-DOS rom paged (1) or not (0)
+   49183    16Kb   bytes  remaining RAM banks in ascending order
+   ...
+   ------------------------------------------------------------------------
+   Total: 131103 or 147487 bytes</pre>
+				The third RAM bank saved is always the one currently paged, even if this is page 5 or 2 - in this case, the bank is actually
+				included twice. The remaining RAM banks are saved in ascending order - e.g. if RAM bank 4 is paged in, the snapshot is made up
+				of banks 5, 2 and 4 to start with, and banks 0, 1, 3, 6 and 7 afterwards. If RAM bank 5 is paged in, the snapshot is made up of
+				banks 5, 2 and 5 again, followed by banks 0, 1, 3, 4, 6 and 7.<br /><br /></li>
+<!-- End SNA -->
+<!-- SLT -->
+				<li><a id="Z80"><strong>Z80</strong></a><br />
+					The <a href="z80format.htm">.z80 Format</a> is now documented on a different page.</li>
+			</ul>
+<!-- End Snapshot Formats -->
+<!-- Disk Formats -->
+			<p><a id="Disk"><strong>Disk File Formats:</strong></a><br />
+				There are relatively few disk formats in common use by modern emulators, with .dsk and .trd being the most popular. Virtually all
+				modern emulators support one (often both) or more of the following:</p>
+			<ul>
+<!-- DSK -->
+					<li><a id="DSK"><strong>DSK / Extended DSK Format</strong></a><br />
+						The extended DSK image is a file designed to describe copy-protected floppy disk software. The format was defined by Marco Vieth, Ulrich
+						Doewich and Kevin Thacker with the full specification available from the <a href="http://andercheran.aiind.upv.es/~amstrad/docs/extdsk.html">
+						Unofficial Amstrad WWW Resource</a>.<br /><br /></li>
+<!-- End DSK -->
+<!-- FDI -->
+					<li><a id="FDI"><strong>FDI Format</strong></a><br />
+						Supported by various <a title="Emulators" href="../emulators/emulators.htm">emulators</a>, including
+						<a href="../emulators/windows.htm#SPIN">SPIN</a>. Note that this entry was translated from UKV Spectrum Debugger's documentation by
+						<a href="mailto:Mac_Buster@mail.ru.no.remove.this">Mac Buster</a>.
+<pre>   Offset   Field size    Description  
+
+    0x00       0x03       Text "FDI"
+    0x03       0x01       Write protection (0: write enabled; 1: disabled)
+    0x04       0x02       Number of cylinders
+    0x06       0x02       Number of heads
+    0x08       0x02       Offset of disk description
+    0x0A       0x02       Data offset
+    0x0C       0x02       Length of additional information in header. (UKV
+                          uses 00)
+    0x0E       (x)        Additional information; length is specified in the
+                          previous field.
+    0x0E+(x)              Track headers area. This section contains all
+                          information on the disk format. This area must
+                          contain at least "Number of cylinders"*"Number of
+                          heads" headers. The headers are stored in the
+                          sequence Cyl 0 Head 0; Cyl 0 Head 1; Cyl 1 Head 0
+                          etc.
+   (Description offset)   A description of the disk terminated with 0x00 can
+                          be placed here; the MAKEFDI utility (supplied by
+                          UKV) allows for up to 64 characters, including
+                          the terminating null.
+   (Data offset)          The actual disk data. The size and sequence depends
+                          on the disk format.</pre>
+						Track Header Format:
+<pre>   Offset   Field size    Description
+
+    0x00       0x04       Track offset: the offset of the track data, relative
+                          to the data offset defined above.
+    0x04       0x02       (Always 0x0000)
+    0x06       0x01       Number of sectors on this track.
+    0x07   (Sectors*7)    Sector infomation:
+                          Bytes 00-03 give the cylinder number, head number,
+			  sector size (00: 128 bytes; 01: 256; 02: 512; 03:
+                          1024; 04: 4096) and sector number respectively.
+                          Byte 04 contains the flags:
+   		            Bits 0-5 are CRC marks: if the CRC was correct for
+   			    a sector size 128,256,512,1024 or 4096, then the
+			    respective bit will be set. If all bits are 0 then
+                            there was a CRC error when this sector was
+                            written.
+		            Bit 6 is always 0.
+		            Bit 7 is 0 for normal data, or 1 for deleted data.
+		          Bytes 05-06 give the sector offset, relative to
+		          (data offset+track offset)			 
+   7*(Sectors+1)          Track header length</pre>
+					Note that UKV 1.2 does not use the flag byte.<br /><br /></li>
+<!-- End FDI -->
+<!-- TRD -->
+					<li><a id="TRD"><strong>TRD Format</strong></a><!-- - <span class="itemPending">Pending</span> --><br />
+						See the <a href="http://www.worldofspectrum.org/trdos.html">TR-DOS page</a> on the World of
+						Spectrum site for several TR-DOS conversion utilities.<br /><br /></li>
+<!-- End TRD -->
+<!-- IMG -->
+					<li><a id="IMG"><strong>IMG Format</strong></a><br />
+						This is just a simple dump of a Disciple/+D disk, in the order:<br /><br />
+						<ul>
+							<li><strong>Side</strong>: 0    <strong>Track</strong>: 0</li>
+							<li>...</li>
+							<li><strong>Side</strong>: 0    <strong>Track</strong>: 79</li>
+							<li></li>
+							<li><strong>Side</strong>: 1    <strong>Track</strong>: 0</li>
+							<li>...</li>
+							<li><strong>Side</strong>: 1    <strong>Track</strong>: 79<br /><br /></li>
+						</ul></li>
+<!-- End IMG -->
+<!-- MGT -->
+					<li><a id="MGT"><strong>MGT Format</strong></a><br />
+						Again, this is just a simple dump of a Disciple/+D disk, in the order:<br /><br />
+						<ul>
+							<li><strong>Side</strong>: 0    <strong>Track</strong>: 0</li>
+							<li><strong>Side</strong>: 1    <strong>Track</strong>: 0</li>
+							<li><strong>Side</strong>: 0    <strong>Track</strong>: 1</li>
+							<li>...</li>
+							<li><strong>Side</strong>: 0    <strong>Track</strong>: 79</li>
+							<li><strong>Side</strong>: 1    <strong>Track</strong>: 79<br /><br /></li>
+						</ul></li>
+<!-- End MGT -->
+				</ul>
+<!-- End Disk Formats -->
+<!-- Emulator-Specific Formats -->
+			<p><a id="Emulator"><strong>Emulator-specific Formats:</strong></a><br />
+				The following formats are (currently) tied to individual emulators, and provide specific features or make special allowances for the
+				emulator in question. Few of these formats are well documented by their authors, so providing accurate specifications
+				can be difficult; Warajevo DCK and Spectaculator SZX are noteworthy exceptions.</p>
+			<ul>
+<!-- SZX -->
+				<li><p><a id="SZX"><strong>SZX Format</strong> v1.1</a></p>
+				<p>The SZX Format is used by <a href="../emulators/windows.htm#Spectaculator">Spectaculator</a> to save the entire state of the machine at a particular time, including the hardware
+				configuration, including the state of the virtual cassette recorder. This format was developed by Jonathan Needle, and is
+				<a href="http://www.spectaculator.com/docs/zx-state/intro.shtml">fully documented</a> on the Spectaculator web site.</p></li>
+<!-- End SZX -->
+<!-- DCK -->
+				<li><p><a id="DCK"><strong>DCK Format</strong></a></p>
+					<p>Used by Warajevo, and now supported by others, .dck files keep information about memory content of various Timex memory
+					expansions, and information which chunks of extra memory are RAM chunks and which chunks are ROM chunks. The <a href="http://www.worldofspectrum.org/warajevo/Fformats.html#dck">full specification</a> can be found as part of the <a href="http://www.worldofspectrum.org/warajevo/">Warajevo home page</a>.</p></li>
+<!-- End DCK -->
+			</ul>
+<!-- End Emulator-Specific Formats -->
+<!-- Miscellaneous -->
+			<p><a id="Miscellaneous"><strong>Other/Miscellaneous Formats:</strong></a><br />
+				The formats used to store Microdrive cartridge images, loading screens/titles and to capture emulator input for later playback are
+				documented below, with links to more detailed specifications where available. Of the formats listed, only .scr and .pok are very widely
+				supported across multiple platforms, although .rzx is becoming increasingly popular. The .mdr format is supported by
+				<a href="../emulators/windows.htm#Spectaculator">Spectaculator</a> v4.0 and above,
+				<a href="../emulators/msdos.htm">RealSpec</a> and
+				<a href="../emulators/unix.htm">XZX-Pro</a>, plus others.</p>
+			<ul>
+<!-- AIR -->
+					<li><p><a id="AIR"><strong>AIR Format</strong></a></p>
+						<p>An input-recording format used by the RealSpec emulator. Developed by
+						<a href="mailto:aleykeprt@bigfoot.com.remove.this">Aley Keprt</a>, the specification for the .air format is closed,
+						so no technical details are available. Predecessor to <a href="#RZX">.rzx</a>.</p></li>
+<!-- End AIR -->
+<!-- HDF -->
+					<li><p><a id="HDF"><strong>HDF Format</strong></a></p>
+						<p>An image of an IDE hard disk, used by <a href="../emulators/msdos.htm">RealSpec</a> and <a href="../emulators/unix.htm">Fuse</a>. The <a href="http://www.ramsoft.bbk.org/tech/rs-hdf.txt">full specification</a> is available from the RamSoft website.</p></li>
+<!-- End HDF -->
+<!-- MDR -->
+					<li><p><a id="MDR"><strong>MDR Format</strong></a></p>
+						<p>ZX Microdrive cartridge file format. The following information is adapted from documentation supplied with Carlo Delhez' Spectrum emulator
+						(Spectator - this emulator is no longer maintained by the author) for the Sinclair QL. It can also be found in the 'Spectrum Microdrive Book'
+						by Dr. Ian Logan (co-author of the 'Complete Spectrum ROM Disassembly', and author of the Microdrive software.)</p>
+						<p>A cartridge file contains 254 'sectors' of 543 bytes each, and a final byte flag which is non-zero is the cartridge is write protected,
+						so the total length is 137923 bytes. On the cartridge tape, after a GAP of some time the
+						<a href="peripherals.htm#Interfaces">ZX Interface I</a> writes 10 zeros and 2 FF bytes (the preamble), and then a fifteen byte
+						header-block-with-checksum. After another GAP, it writes a preamble again, with a 15-byte record-descriptor-with-checksum
+						(which has a structure very much like the header block), immediately followed by the data block of 512 bytes, and a final checksum
+						of those 512 bytes. The preamble is used by the <a href="peripherals.htm#Interfaces">ZX Interface I</a> hardware to
+						synchronise, and is not explicitly used by the software. The preamble is not saved to the microdrive file:</p>
+<pre>    Offset Length Name    Contents
+    ------------------------------
+      0      1   HDFLAG   Value 1, to indicate header block  *See note.
+      1      1   HDNUMB   sector number (values 254 down to 1)
+      2      2            not used (and of undetermined value)
+      4     10   HDNAME   microdrive cartridge name (blank padded)
+     14      1   HDCHK    header checksum (of first 14 bytes)
+
+     15      1   RECFLG   - bit 0: always 0 to indicate record block
+                          - bit 1: set for the EOF block
+                          - bit 2: reset for a PRINT file
+                          - bits 3-7: not used (value 0)
+                          
+     16      1   RECNUM   data block sequence number (value starts at 0)
+     17      2   RECLEN   data block length (&lt;=512, LSB first)
+     19     10   RECNAM   filename (blank padded)
+     29      1   DESCHK   record descriptor checksum (of previous 14 bytes)
+     30    512            data block
+    542      1   DCHK     data block checksum (of all 512 bytes of data
+                          block, even when not all bytes are used)
+    ---------
+    254 times</pre>
+						<p>(Actually, this information is 'transparent' to the emulator. All it does is store 2 times 254 blocks in the .mdr file as it is OUTed, alternatingly of length
+						15 and 528 bytes. The emulator does check checksums, see below; the other fields are dealt with by the emulated Interface I software.)</p>
+						<p>A used record block is either an EOF block (bit 1 of RECFLG is 1) or contains 512 bytes of data (RECLEN=512, i.e. bit 1 of MSB is 1). An empty record
+						block has a zero in bit 1 of RECFLG and also RECLEN=0. An unusable block (as determined by the FORMAT command) is an EOF block with RECLEN=0.</p>
+						<p>The three checksums are calculated by adding all the bytes together modulo 255; this will never produce a checksum of 255. Possibly, this is the value
+						that is read by the <a href="peripherals.htm#Interfaces">ZX Interface I</a> if there's no or bad data on the tape.</p>
+						<p>In normal operation, all first-fifteen-byte blocks of each header or record block will have the right checksum. If the checksum is incorrect, the block will
+						be treated as a GAP. For instance, if you type OUT 239,0 on a normal Spectrum with <a href="peripherals.htm#Interfaces">ZX Interface I</a>,
+						the microdrive motor starts running and the cartridge will be erased completely in 7 seconds. CAT 1 will respond with 'microdrive not ready'.</p>
+						<p>Warajevo uses basically the same format, but ignores the 'read-only' final byte (it obtains this information from the file attributes), and also the files do
+						not have to contain all 254 sectors.</p>
+						<p><u>Note</u>: This is not <em>strictly</em> correct; it is not set to 1 - only bit 0 is set which would give the value 1 if the location previously held 0 or 1. Also,
+						please be aware that if you format if you FORMAT cartridges after the NEW command, then the channel is created in an area where the bytes have been
+						set to zero. If you FORMAT cartridges with a BASIC program in memory then the channel is created where the BASIC was and so these bits and bytes
+						show through.</p></li>
+<!-- End MDR -->
+<!-- POK -->
+					<li><p><a id="POK"><strong>POK Format</strong></a> v1.20</p>
+						<p>The .pok file format is a proprietary format designed for use with <a href="../resources/utilities.htm#SGD">SGD</a> (from version 1.20)
+						and was originally used to POKE snapshots prior to launching an emulator to play the specific game. This mechanism works on snapshots only.</p>
+						<p>Each trainer contains one or more POKEs (sometimes a game check needs more than one poke to acquire a result). All trainers for a game are written
+						after each other. The first character in a line of the file determines the content of the line;</p>
+						<ul>
+							<li>'N' means: this is the Next trainer,</li>
+							<li>'Y' means: this is the last line of the file (the rest of the file is ignored).</li>
+						</ul>
+						<p>After the 'N' follows the name/description of this specific trainer. This string may be up to 30 characters. There is no space between the 'N' and the string.
+						The following lines, up to the next 'N' or 'Z' hold the POKEs to be applied for this specific trainer. Again, the first character determines the content;</p>
+						<ul>
+							<li>'M' means: this is not the last POKE (More)</li>
+							<li>'Z' means: this is the last POKE</li>
+						</ul>
+						<p>The POKE line has the format:</p>
+						<ul>
+							<li>lbbb aaaaa vvv ooo</li>
+						</ul>
+						<p>Where l determines the content, bbb is the bank, aaaaa is the address to be poked with value vvv and ooo is the original value of aaaaa. All values are decimal,
+						and separated by one or more spaces, apart from between l and bbb; however, the bank value is never larger than 8, so you will always see 2 spaces in front of
+						the bank. The field bank field is built from;</p>
+						<ul>
+							<li>bit 0-2 : bank value</li>
+							<li>bit 3 : ignore bank (1=yes, always set for 48K games)</li>
+						</ul>
+						<p>If the field [value] is in range 0-255, this is the value to be POKEd. If it is 256, a requester should pop up where the user can enter a value.</p>
+						<p>The 'original' field holds the original value at the address. It is used to remove a POKE. Normally, when applying a POKE, the original value can be read
+						from the address. Sometimes however, games as found on the internet are already POKEd, so the original value can not be read. If this field is filled
+						in (non-0) you still have the possibility to remove the trainer. (This format cannot handle the possibility that the original value was 0).</p></li>
+				
+<!-- End POK -->
+<!-- RZX -->
+					<li><p><a id="RZX"><strong>RZX Format</strong></a></p>
+						<p>An input-recording format. The <a href="http://www.rzxarchive.co.uk/">RZX Archive</a> contains an increasing number of .rzx files
+						which can be downloaded and replayed using any <a title="Emulators" href="../emulators/emulators.htm">emulator</a> that supports
+						this format. The full .rzx format specification is available from <a href="http://www.ramsoft.bbk.org/rzx.html">Ramsoft</a>.</p></li>
+<!-- End RZX -->
+<!-- SCR -->
+					<li><p><a id="SCR"><strong>SCR Format</strong></a></p>
+						<p>These files are Spectrum screen dumps, and are simply the 6912 bytes of pixel and attribute data found at address 16384,
+						stored on disk in exactly the same way as they are stored in memory.</p>
+						<p>The Spectrum screen is split into four areas; top third, mid third, bottom third and attributes (colours). The thirds each
+						consist of 2048 bytes and the attribute area is 768 bytes (32 characters wide x 24 lines). So the first 6144 bytes are the actual
+						pixel data and the remainder decides what two colours are used in each8x8 square.</p>
+						<p>Each third of the screen is laid out unusually; the first 32 bytes are the pixels for the top row of the first character line, then the
+						next 32 bytes are the pixels for the top row of the second character line and so on until you reach the ninth load of 32 bytes, which is
+						the second row of the first character line. Next 32 bytes is the second row of the second character line, and so on. It's hard to
+						explain, so the best thing to do is see for yourself; write a program to POKE data to 16384 up and see how the bytes fill in on the screen.</p>
+						<p>In addition to the above, <a href="../emulators/windows.htm">vbSpec</a>, <a href="../resources/utilities.htm">BMP2SCR Pro</a>, and
+						<a href="../emulators/unix.htm">Fuse</a> extend the .scr specification in the following ways:</p>
+						<ul>
+							<li>A 12288 byte .SCR file contains a Timex hi-colour screen.<br />
+								The first 6144 bytes are a dump from address 16384, and the second 6144 bytes are a dump from 22528.<br /><br /></li>
+							<li>A 12289 byte .SCR file contains a Timex hi-res screen.<br />
+								The first 6144 bytes are a dump from address 16384, and the second 6144 bytes are a dump from 22528,
+								the last byte contains the hi-res colour information that was dumped from port 255.</li>
+						</ul>
+					</li>
+<!-- End SCR -->
+				</ul>
+				<div class="pageNavigation">| special thanks to <a href="mailto:fredm@spamcop.net.remove.this">Fredrick Meunier</a> for providing updated information for this section |</div>
+<!-- End Miscellaneous  -->
+<!-- Lower Navigation Bar -->
+<div class="pageNavigation">|
+	<a href="#Disk">Disk</a> |
+	<a href="#Tape">Tape</a> |
+	<a href="#File">Snapshot</a> |
+	<a href="#Emulator">Emulator-specific</a> |
+	<a href="#Miscellaneous">Other / Miscellaneous</a> |</div>
+<!-- End Lower Navigation Bar -->
+			</td>
+		</tr>
+	</table></td>
+			<td width="75" /></tr>
+	</table>
+<!-- Copyright Notice -->
+<div class="pageFooter">$Id: formats.htm,v 1.13 2005/09/18 22:26:17 pak21 Exp $<br />
+Please read the
+	<a title="Copyright Notice and Distribution Policy" href="../distributions.htm">Copyright Notice</a> for distribution policies, and the
+	<a title="Contributors" href="../credits.htm">Credits</a> page for a list of contributors.</div>
+<!-- End Copyright Notice -->
+</body>
+</html>

@@ -42,3 +42,10 @@ The **Reset** button is only enabled when a custom ROM is currently active.
 ## How the ROM Path Is Stored
 
 The ROM file path is saved in the `config` section of the Klive project file (`.klive`) under the `sp48RomFile` key. As long as the file exists at that path when the project is reopened, the custom ROM will be used automatically — no extra steps required.
+
+## The Interface 1 ROM
+
+The [Interface 1](/en/guides/emulator/microdrives) has its own 8K ROM, separate from the
+Spectrum's. Klive ships its second edition. To run another one, such as the first edition, name an
+8,192-byte file in **Settings › Machine › Interface 1 ROM**; clear it to go back to the shipped ROM.
+This is a Klive setting, not a project setting, and it works on the 48K and the 128K alike.

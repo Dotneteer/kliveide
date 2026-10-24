@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>zx-state header &mdash; The zx-state File Format 1.5 (c4287de) documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=8ebcc553" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=951b99ce"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="copyright" title="Copyright" href="copyright.html" />
+    <link rel="next" title="ZXSTBLOCK header" href="block.html" />
+    <link rel="prev" title="Basic information" href="basic_info.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            The zx-state File Format
+          </a>
+              <div class="version">
+                1.5
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="intro.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="copyright.html">Copyrights and acknowledgements</a></li>
+<li class="toctree-l1"><a class="reference internal" href="version.html">Revision history</a></li>
+<li class="toctree-l1"><a class="reference internal" href="basic_info.html">Basic information</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">zx-state header</a></li>
+<li class="toctree-l1"><a class="reference internal" href="block.html">ZXSTBLOCK header</a></li>
+<li class="toctree-l1"><a class="reference internal" href="block_types.html">Block types</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">The zx-state File Format</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">zx-state header</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="zx-state-header">
+<h1>zx-state header</h1>
+<p>The zx-state header appears right at the start of a <strong>zx-state</strong>
+(<strong>.szx</strong>) file.</p>
+<p>It is used to identify the version of the file and to specify which
+model of ZX Spectrum (or clone) the file refers to.</p>
+<p>Following the zx-state header is an <strong>optional</strong>
+<a class="reference internal" href="creator.html"><span class="doc">ZXSTCREATOR</span></a> creator information block.</p>
+<p>Following that are the <a class="reference internal" href="z80regs.html"><span class="doc">ZXSTZ80REGS</span></a> and
+<a class="reference internal" href="specregs.html"><span class="doc">ZXSTSPECREGS</span></a> blocks followed by zero or more
+additional blocks representing the current state of the emulated
+Spectrum.</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="c1">// Machine identifiers</span>
+<span class="cp">#define ZXSTMID_16K          0</span>
+<span class="cp">#define ZXSTMID_48K          1</span>
+<span class="cp">#define ZXSTMID_128K         2</span>
+<span class="cp">#define ZXSTMID_PLUS2        3</span>
+<span class="cp">#define ZXSTMID_PLUS2A       4</span>
+<span class="cp">#define ZXSTMID_PLUS3        5</span>
+<span class="cp">#define ZXSTMID_PLUS3E       6</span>
+<span class="cp">#define ZXSTMID_PENTAGON128  7</span>
+<span class="cp">#define ZXSTMID_TC2048       8</span>
+<span class="cp">#define ZXSTMID_TC2068       9</span>
+<span class="cp">#define ZXSTMID_SCORPION     10</span>
+<span class="cp">#define ZXSTMID_SE           11</span>
+<span class="cp">#define ZXSTMID_TS2068       12</span>
+<span class="cp">#define ZXSTMID_PENTAGON512  13</span>
+<span class="cp">#define ZXSTMID_PENTAGON1024 14</span>
+<span class="cp">#define ZXSTMID_NTSC48K      15</span>
+<span class="cp">#define ZXSTMID_128KE        16</span>
+
+<span class="c1">// Flags (chFlags)</span>
+<span class="cp">#define ZXSTMF_ALTERNATETIMINGS 1</span>
+
+<span class="k">typedef</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">_tagZXSTHEADER</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="n">DWORD</span><span class="w"> </span><span class="n">dwMagic</span><span class="p">;</span>
+<span class="w">  </span><span class="n">BYTE</span><span class="w">  </span><span class="n">chMajorVersion</span><span class="p">;</span>
+<span class="w">  </span><span class="n">BYTE</span><span class="w">  </span><span class="n">chMinorVersion</span><span class="p">;</span>
+<span class="w">  </span><span class="n">BYTE</span><span class="w">  </span><span class="n">chMachineId</span><span class="p">;</span>
+<span class="w">  </span><span class="n">BYTE</span><span class="w">  </span><span class="n">chFlags</span><span class="p">;</span>
+<span class="p">}</span><span class="w"> </span><span class="n">ZXSTHEADER</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">LPZXSTHEADER</span><span class="p">;</span>
+</pre></div>
+</div>
+<section id="members">
+<h2>Members</h2>
+<dl>
+<dt>dwMagic</dt><dd><p>Byte sequence of 'Z', 'X', 'S', 'T' to identify the file as a
+zx-state file.</p>
+</dd>
+<dt>chMajorVersion</dt><dd><p>Major version number of the file format. Currently <strong>1</strong>.</p>
+</dd>
+<dt>chMinorVersion</dt><dd><p>Minor version number of the file format. Currently <strong>4</strong>.</p>
+</dd>
+<dt>chMachineId</dt><dd><p>The model of ZX Spectrum (or clone) to switch to when loading the
+file. This is one of:</p>
+<table class="table is-bordered is-fullwidth docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Value</p></th>
+<th class="head"><p>Meaning</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>ZXSTMID_16K</p></td>
+<td><p>16k ZX Spectrum</p></td>
+</tr>
+<tr class="row-odd"><td><p>ZXSTMID_48K</p></td>
+<td><p>48k ZX Spectrum or ZX Spectrum+</p></td>
+</tr>
+<tr class="row-even"><td><p>ZXSTMID_128K</p></td>
+<td><p>ZX Spectrum 128</p></td>
+</tr>
+<tr class="row-odd"><td><p>ZXSTMID_PLUS2</p></td>
+<td><p>ZX Spectrum +2</p></td>
+</tr>
+<tr class="row-even"><td><p>ZXSTMID_PLUS2A</p></td>
+<td><p>ZX Spectrum +2A/+2B</p></td>
+</tr>
+<tr class="row-odd"><td><p>ZXSTMID_PLUS3</p></td>
+<td><p>ZX Spectrum +3</p></td>
+</tr>
+<tr class="row-even"><td><p>ZXSTMID_PLUS3E</p></td>
+<td><p>ZX Spectrum +3e</p></td>
+</tr>
+<tr class="row-odd"><td><p>ZXSTMID_PENTAGON128</p></td>
+<td><p>Pentagon 128</p></td>
+</tr>
+<tr class="row-even"><td><p>ZXSTMID_TC2048</p></td>
+<td><p>Timex Sinclair TC2048</p></td>
+</tr>
+<tr class="row-odd"><td><p>ZXSTMID_TC2068</p></td>
+<td><p>Timex Sinclair TC2068</p></td>
+</tr>
+<tr class="row-even"><td><p>ZXSTMID_SCORPION</p></td>
+<td><p>Scorpion ZS-256</p></td>
+</tr>
+<tr class="row-odd"><td><p>ZXSTMID_SE</p></td>
+<td><p>ZX Spectrum SE</p></td>
+</tr>
+<tr class="row-even"><td><p>ZXSTMID_TS2068</p></td>
+<td><p>Timex Sinclair TS2068</p></td>
+</tr>
+<tr class="row-odd"><td><p>ZXSTMID_PENTAGON512</p></td>
+<td><p>Pentagon 512</p></td>
+</tr>
+<tr class="row-even"><td><p>ZXSTMID_PENTAGON1204</p></td>
+<td><p>Pentagon 1024</p></td>
+</tr>
+<tr class="row-odd"><td><p>ZXSTMID_NTSC48K</p></td>
+<td><p>48k ZX Spectrum (NTSC)</p></td>
+</tr>
+<tr class="row-even"><td><p>ZXSTMID_128Ke</p></td>
+<td><p>ZX Spectrum 128Ke</p></td>
+</tr>
+</tbody>
+</table>
+</dd>
+<dt>chFlags</dt><dd><p>Various flags. This can currently only be:</p>
+<table class="table is-bordered is-fullwidth docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Flag</p></th>
+<th class="head"><p>Meaning</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>ZXSTMF_ALTERNATETIMINGS</p></td>
+<td><p>If set, the emulated Spectrum
+uses alternate timings (one cycle
+later than normal timings). If
+reset, the emulated Spectrum uses
+standard timings.
+This flag is only applicable for
+the <strong>ZXSTMID_16K</strong>,
+<strong>ZXSTMID_48K</strong> and
+<strong>ZXSTMID_128K</strong> models.</p></td>
+</tr>
+</tbody>
+</table>
+</dd>
+</dl>
+</section>
+<section id="revision-history">
+<h2>Revision history</h2>
+<blockquote>
+<div><p>Available since <a class="reference internal" href="version.html"><span class="doc">version 1.0</span></a></p>
+<p>ZXSTMID_NTSC48K and ZXSTMID_128Ke were added in <a class="reference internal" href="version.html"><span class="doc">version
+1.4</span></a></p>
+<p>ZXSTMF_ALTERNATETIMINGS was added in <a class="reference internal" href="version.html"><span class="doc">version 1.4</span></a></p>
+</div></blockquote>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="basic_info.html" class="btn btn-neutral float-left" title="Basic information" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="block.html" class="btn btn-neutral float-right" title="ZXSTBLOCK header" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; <a href="copyright.html">Copyright</a> 2001-2025, Jonathan Needle. All rights reserved. Revision c4287de.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(false);
+      });
+  </script> 
+
+</body>
+</html>

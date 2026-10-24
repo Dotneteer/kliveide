@@ -16,6 +16,7 @@
  *  5. The frame position: after the reset the frame starts at tact 0, so the tact counter is it.
  *  6. The CPU, through the exports: the wrappers' IFF/IM setters only change the TypeScript mirror
  *     (trap 2). HALT and the EI delay come last.
+ *     The Beta 128's registers and the Interface 1's paging follow.
  *  7. The whole screen is drawn from the loaded RAM, so a debug stop that runs no frame still shows
  *     the snapshot's picture (trap 8).
  *
@@ -143,6 +144,13 @@ export function restoreSpectrumSnapshot(core: SpectrumSnapshotCore, snapshot: Sp
       for (const disk of beta.disks) call("BetaSetDriveCylinder", disk.drive, disk.cylinder);
     }
     call("BetaSetPaged", snapshot.peripherals.trdosPaged || beta?.paged ? 1 : 0);
+  }
+
+  // --- 7b. The Interface 1's paging (`.z80` byte 36, `.szx` IF1). The reset paged it out; the
+  // --- cartridges arrive through the media store, as the disks do (`.plans/MICRODRIVE_PLAN.md` Phase 5)
+  const if1 = snapshot.peripherals.if1;
+  if (if1 && typeof all[core.prefix + "If1GetPresent"] === "function" && call("If1GetPresent") !== 0) {
+    call("If1SetPaged", if1.paged ? 1 : 0);
   }
 
   // --- 8. The picture

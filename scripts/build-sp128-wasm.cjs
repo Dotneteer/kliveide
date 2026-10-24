@@ -11,6 +11,7 @@ const {
 } = require("./wasm-layout.cjs");
 const { RZX_VOLATILE_SYMBOLS, rzxExports } = require("./rzx-core-exports.cjs");
 const { divMmcClassicExports } = require("./divmmc-classic-exports.cjs");
+const { if1Exports } = require("./if1-exports.cjs");
 const { cpuExports, debugLoopExports, debugLoopVolatileSymbols, Z80_ACCESS_LOG_VOLATILE_SYMBOLS } = require("./z80-cpu-exports.cjs");
 const { Z80_CONDITION_EXPORTS, Z80_CONDITION_VOLATILE_SYMBOLS } = require("./z80-condition-exports.cjs");
 const { Z80_HISTORY_EXPORTS, Z80_HISTORY_VOLATILE_SYMBOLS } = require("./z80-history-exports.cjs");
@@ -273,13 +274,16 @@ const productionExports = [
 const buildModes = {
   production: {
     output: productionOutput,
-    exports: productionExports,
+    // --- The Interface 1 and its Microdrives (MICRODRIVE_PLAN), outside `productionExports` as on
+    // --- the 48K, so a benchmark reference built from older sources still links
+    exports: [...productionExports, ...if1Exports("sp128")],
     sources: [source],
     // --- 9 MB since the Scorpion ZS-256 (256K RAM, the service ROM) joined the core
     // --- 13 MB: the 4 MB execution-history ring (EXECUTION_HISTORY_ALL_CORES_PLAN D2, D3)
     // --- 21 MB: the access profile's 320 KB of flags and its 40-page (7.5 MB) counter pool, which
     // --- covers all physical memory (CODE_COVERAGE_AND_HEAT_MAP_PLAN D5, T6)
-    initialMemory: 21 * 1024 * 1024
+    // --- 23 MB: the Interface 1's eight Microdrive images, 1.3 MB (MICRODRIVE_PLAN M9)
+    initialMemory: 23 * 1024 * 1024
   }
 };
 

@@ -855,9 +855,17 @@ two even rows, aligned in a grid, never a free wrap that leaves one orphan.
 
 ## A Dialog Row Is Spaced Once
 
+**A dialog field has three steps, set once in the shared primitives and nowhere else:** label to
+control `--space-2` (8px; `DialogRow`'s gap, its `rows` gap for a prompt line stacked over its field,
+and `DialogField`'s gap), control to its error `--space-1_5` (6px; `TextInput`'s `.error` margin,
+`DialogField`'s error pulled up by `calc(var(--space-1_5) - var(--space-2))`), and row to row
+`--space-4` (16px, the form). The error sits closer to its field than the label does, so both read
+as the field's; at the old 6px/0px the prompt and the message sat on the field's border (Rename, New
+File). A `rows` row had no gap at all. `DialogRow.test.tsx` holds all three.
+
 Inside a `DialogForm`, the form body's gap (`--space-4`) is what separates one `DialogRow` from the
 next; `DialogRow`'s own top margin (`--space-3`) is for rows stacked without a form, and the form
-cancels it. Both applying put rows 28px apart against 6px between a label and its control, and
+cancels it. Both applying put rows 28px apart against the label-to-control gap, and
 every field read as floating on its own. The same goes for a wrapper around a control: it carries
 no padding of its own, because the row already spaces it - the 8px a dropdown wrapper added above
 and below doubled the gap again. When a dialog looks too airy, measure the computed margins and
@@ -866,7 +874,8 @@ gaps before adding or removing any: the excess is almost always two layers spaci
 ## A Hint Under A Field Needs Its Own Top Margin
 
 `TextInput` carries no bottom margin — `DialogRow` owns the gap between a label and its field, and
-the control's own block margins were removed so the two would stop fighting. The consequence is
+the control's own block margins were removed so the two would stop fighting. Its own error line is
+the exception: it carries its `--space-1_5` top margin itself. The consequence is
 easy to miss when adding a field: **anything placed directly beneath a field sits on it**, and an
 explanatory line that touches the box it explains reads as part of the control rather than as a note
 about it.
@@ -2762,9 +2771,14 @@ Two things follow for any later change here:
   `--bgcolor-display`, `--font-size-50`, the file or size in `--color-display-hilite`, an empty slot
   in dimmed `--color-display`, and insert/eject/replace as the 14px `@upload` / `@eject` / `@replace`
   images at the right (eject left of insert). A media card is a single line: the medium is named by
-  its icon (`cassette-tape`; `floppy` plus the drive letter; `chip` for the Timex 2068's cartridge),
-  not a caption. The letter badge is for disk drives only: a medium that is the only one of its kind
-  shows its icon alone (deriving the badge from the card's title put a stray "e" after the cartridge).
+  its icon (`cassette-tape`; `floppy` plus the drive letter; `microdrive` plus the drive number;
+  `chip` for the Timex 2068's cartridge), not a caption. The badge is for numbered or lettered drives
+  only: a medium that is the only one of its kind shows its icon alone (deriving the badge from the
+  card's title put a stray "e" after the cartridge).
+- **A drive that is working shows it in its icon, not with a new element.** A Microdrive card's icon
+  turns `--color-display-hilite` while the emulated machine runs that drive's motor, and its tooltip
+  says so. The card keeps its single line and its geometry: no spinner, no extra badge competing
+  with the write-protect lock.
 - **A file name truncates at its start, not its end** — the end and the extension are what tell
   files apart. `direction: rtl` + `text-overflow: ellipsis` on the box puts the ellipsis on the left;
   the name goes inside a `<bdi>` so its own text stays left to right (without it, trailing brackets
@@ -3054,3 +3068,13 @@ drift. Change a neutral or the default accent in the app, and the site changes w
 - **A screenshot's callouts are HTML, never pixels:** `<Shot markers>` draws numbered badges from
   the harness's sidecar, and the numbered list under the figure is styled like the badges, so the
   text translates with the page.
+
+## A Short Dump Section Is As Wide As A Full One
+
+`MemoryDumpSection`'s hex column was `width: fit-content`, so the last section of a dump whose length
+is not a multiple of 8 (a 543-byte Microdrive record, a 31-byte file) was narrower than the ones
+above it and pulled its character column left out of line. The column now has a minimum of a full
+eight-byte section in `ch` (`calc(8 * 3ch - 1ch)`, `4ch` per byte in decimal), with
+`box-sizing: content-box` so its transparent border does not eat into the minimum. **Anything that
+maps a pointer to a byte from the box's width must then divide by the full section's characters**
+(`fullSectionChars`), not by the text's length, or hovering a short section picks the wrong byte.

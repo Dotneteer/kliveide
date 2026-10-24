@@ -145,8 +145,10 @@ export type SpectrumSnapshotPeripherals = {
   issue2?: boolean;
   /** The joystick the file says was emulated */
   joystick?: string;
-  /** Interface 1 was present (or its ROM paged) */
+  /** Interface 1 was present (or its ROM paged); `if1` has its state when the file records it */
   interface1?: boolean;
+  /** The Interface 1 and its Microdrives (`.plans/MICRODRIVE_PLAN.md` Phase 5) */
+  if1?: SnapshotInterface1;
   /** An M.G.T. (Disciple/Plus D) interface was present */
   mgt?: boolean;
   /** A Multiface ROM was paged */
@@ -161,6 +163,36 @@ export type SpectrumSnapshotPeripherals = {
   plus3?: { drives: number; motorOn: boolean; disks: SnapshotDisk[] };
   /** The cassette recorder */
   tape?: SnapshotTape;
+};
+
+/** A cartridge in a Microdrive (`.szx` MDRV block) */
+export type SnapshotMicrodrive = {
+  /** 0-7: Microdrive 1-8 */
+  drive: number;
+  /** The motor is running */
+  running: boolean;
+  /**
+   * Where the head is. zx-state says "within the file" in a 16-bit word, which cannot reach the end
+   * of a 254-slot cartridge; Klive writes the head's slot (543-byte block) and does not restore it.
+   */
+  position: number;
+  /** Preamble bytes still to skip */
+  preamble: number;
+  /** The linked `.mdr` file */
+  fileName?: string;
+  /** An embedded image (the spec reserves it; no writer produces it) */
+  embedded?: Uint8Array;
+};
+
+/** The ZX Interface 1 (`.z80` hardware modes 1 and 5 and byte 36, `.szx` IF1 block) */
+export type SnapshotInterface1 = {
+  /** Its ROM is paged in over $0000-$3FFF */
+  paged: boolean;
+  /** Microdrives attached, 1-8 */
+  drives: number;
+  /** A ROM other than the standard second edition */
+  customRom?: Uint8Array;
+  microdrives: SnapshotMicrodrive[];
 };
 
 /** A disk in a Beta 128 drive (`.szx` BDSK block) */

@@ -976,6 +976,14 @@
       "drive": "The drive letter: A or B"
     }
   },
+  "commands.snapshot.cartridgeNotFound": "The cartridge {cartridge} the snapshot links was not found; Microdrive {drive} is left as it is",
+  "@commands.snapshot.cartridgeNotFound": {
+    "context": "Output of the 'zx-snapshot' IDE command (loads a ZX Spectrum .sna/.z80/.szx snapshot), in the command output pane. A warning: the .szx snapshot refers to a Microdrive cartridge (.mdr) file by name. Microdrive is a product name.",
+    "placeholders": {
+      "cartridge": "The cartridge's file name",
+      "drive": "The drive number, 1-8"
+    }
+  },
   "commands.snapshot.loadFailed": "Could not load {file}: {error}",
   "@commands.snapshot.loadFailed": {
     "context": "Output of the 'zx-snapshot' IDE command (loads a ZX Spectrum .sna/.z80/.szx snapshot), in the command output pane.",

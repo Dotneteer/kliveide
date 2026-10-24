@@ -175,6 +175,7 @@ class EmuApiImpl {
     _mode: SpectrumSnapshotLoadMode,
     _options?: SpectrumSnapshotLoadOptions & {
       disks?: { drive: number; fileName: string; contents: Uint8Array }[];
+      microdrives?: { drive: number; fileName: string; contents: Uint8Array }[];
     }
   ): Promise<SpectrumSnapshotLoadResult> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
@@ -367,6 +368,24 @@ class EmuApiImpl {
   }
 
   /**
+   * Puts a cartridge (an `.mdr`'s bytes) into Microdrive 1 (0) or 2 (1), or ejects it (no contents)
+   * (`.plans/MICRODRIVE_PLAN.md`)
+   */
+  async setMicrodriveFile(_drive: number, _file?: string, _contents?: Uint8Array): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /** Sets a Microdrive cartridge's write protection */
+  async setMicrodriveWriteProtection(_drive: number, _protect: boolean): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /** A Microdrive's cartridge as an `.mdr`, with the guest's writes; undefined without one */
+  async getMicrodriveImage(_drive: number): Promise<Uint8Array | undefined> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
    * The Pentagon's TR-DOS disk in a drive as a `.trd` image, with the guest's writes (to save an
    * `.scl` disk, which is never written back); undefined without a Beta 128 or a disk
    */
@@ -487,6 +506,11 @@ class EmuApiImpl {
    * @param _debug Arm the breakpoints once the keystrokes are typed
    */
   async startDiskBoot(_debug: boolean): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /** Resets the machine and boots the cartridge in Microdrive 1 (`.plans/MICRODRIVE_PLAN.md` 4.3) */
+  async startMicrodriveBoot(_debug: boolean): Promise<void> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 

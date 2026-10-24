@@ -951,6 +951,17 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     isReadOnly: true,
     openPermanent: true
   })),
+  // --- Microdrive cartridges (`.plans/MICRODRIVE_PLAN.md` Phase 3): the same explorer, one row of sectors
+  {
+    matchType: "ends" as const,
+    pattern: ".mdr",
+    ignoreCase: true,
+    editor: DISK_EXPLORER,
+    icon: "microdrive",
+    isBinary: true,
+    isReadOnly: true,
+    openPermanent: true
+  },
   // --- Hard-disk images and SD cards (C2): gigabytes, so the document holds none of the file
   // --- (`noContent`); the explorer asks the main process for the folder and the file it shows
   ...[".img", ".hdf", ".cim"].map((pattern) => ({

@@ -58,6 +58,18 @@
   width: fit-content;
   border: 1px solid transparent;
   z-index: 1;
+  /*
+   * Never narrower than a full section of eight bytes (`XX` and a space each, less the last space),
+   * so a short last section - a 543-byte Microdrive record, any length not a multiple of 8 - keeps
+   * its character column under the ones above it. `content-box`: the transparent border must not
+   * eat into the minimum.
+   */
+  box-sizing: content-box;
+  min-width: calc(8 * 3ch - 1ch);
+
+  &.decimal {
+    min-width: calc(8 * 4ch - 1ch);
+  }
 }
 
 /*

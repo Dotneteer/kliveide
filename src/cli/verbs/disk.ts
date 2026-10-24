@@ -8,6 +8,7 @@ import { DiskFsError } from "@common/diskfs/types";
 import { isHardDiskImage } from "@common/diskfs/hardDisk";
 import { BLANK_DSK_TYPES, createBlankDsk, isBlankDskType } from "@emu/machines/disk/blank-dsk";
 import { createBlankTrd } from "@emu/machines/disk/trd/trdImage";
+import { createMdrOfType, isMdrCartridgeType } from "@emu/machines/microdrive/mdrImage";
 import {
   copyHostFolderToHardDisk,
   createHardDiskImage,
@@ -39,9 +40,11 @@ Actions:
   rm <image> <disk-file>               Delete a file
   mv <image> <disk-file> <new-name>    Rename a file
   compact <image>                      Lay a TR-DOS disk's files down without the deleted ones
-  new <image> <type>                   A blank disk: ${BLANK_DSK_TYPES.join(", ")}, trd80ds, trd40ds, trd80ss, trd40ss
+  new <image> <type>                   A blank disk: ${BLANK_DSK_TYPES.join(", ")}, trd80ds, trd40ds, trd80ss, trd40ss;
+                                       a Microdrive cartridge: mdr (formatted), mdrblank (for FORMAT)
 
-Images: .dsk (+3DOS), .trd and .scl (TR-DOS). A changed image keeps a .bak of the original.
+Images: .dsk (+3DOS), .trd and .scl (TR-DOS), .mdr (Microdrive). A changed image keeps a .bak of the
+original.
 
 Hard-disk images and SD cards - .img, .hdf, .cim - with a FAT16 or FAT32 file system:
   new <image> fat16|fat32 <MB> [--label <text>] [--whole]
@@ -106,7 +109,13 @@ export async function runDiskVerb (argv: string[], io: CliIo): Promise<number> {
     switch (action) {
       case "new": {
         const type = need(arg1, "a disk type");
-        const bytes = isBlankDskType(type) ? createBlankDsk(type) : TRD_TYPES[type] ? createBlankTrd(TRD_TYPES[type], path.parse(image).name.slice(0, 8)) : undefined;
+        const bytes = isBlankDskType(type)
+          ? createBlankDsk(type)
+          : TRD_TYPES[type]
+            ? createBlankTrd(TRD_TYPES[type], path.parse(image).name.slice(0, 8))
+            : isMdrCartridgeType(type)
+              ? createMdrOfType(type, path.parse(image).name)
+              : undefined;
         if (!bytes) throw usageError(`Unknown disk type '${type}'.`);
         if (fs.existsSync(image)) throw new CliError(`${image} already exists.`, EXIT_FAILED);
         fs.writeFileSync(image, bytes);

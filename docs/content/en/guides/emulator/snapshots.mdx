@@ -75,8 +75,10 @@ The warnings are there because the machine differs from the one the snapshot was
 +2E and +3E use the +E ROMs, not Amstrad's, so a program that calls into the ROM at a
 version-specific address may behave differently. Klive's +2A and +3 models boot the Amstrad ROMs,
 so a +2A or +3 snapshot loaded on one of them gets no such warning. Klive also warns when the snapshot uses something
-it does not emulate &mdash; an AY chip on a 48K, Interface 1, an M.G.T. interface, TR-DOS, the Issue
-2 keyboard, the alternate ULA timings, or a custom ROM.
+it does not emulate &mdash; an AY chip on a 48K, an M.G.T. interface, TR-DOS, the Issue
+2 keyboard, the alternate ULA timings, or a custom ROM. A snapshot taken with the
+[Interface 1](/en/guides/emulator/microdrives) connects it on the 48K and the 128K (disconnecting
+the DivMMC) and pages its ROM in when the snapshot says so; other machines warn that they do not have one.
 
 <Callout type="warning" emoji="⚠️">
 With a project open, Klive does not switch the project's machine type behind your back: a snapshot
@@ -86,8 +88,10 @@ with a warning when the snapshot prefers another one (for example a +3 snapshot 
 
 ## Disks and tapes in `.szx` files
 
-A `.szx` file can name the disks in the +3's drives. Klive looks for each disk where the file says,
-then beside the snapshot, and inserts the ones it finds; a missing disk is reported. An embedded
+A `.szx` file can name the disks in the +3's drives and the cartridges in the Microdrives. Klive looks
+for each file where the snapshot says, then beside the snapshot, and inserts the ones it finds; a
+missing one is reported. A `.z80` keeps the Interface 1 and whether its ROM was paged in, but not
+its cartridges; a `.sna` keeps neither, and saving one says so. An embedded
 `.tap` or `.tzx` tape is put into the tape deck.
 
 ## Things to know

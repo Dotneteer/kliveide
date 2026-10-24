@@ -166,14 +166,15 @@ describe("the application menu", () => {
       "Speed",
       "Sound",
       "Tape",
-      "SD Card",
+      "Interfaces",
       "Input",
       "ZX Spectrum 48K",
       "Record"
     ]);
     expect(labels(submenu(machine, "Tape"))).toEqual(["Rewind", "Insert Tape...", "Eject", "Fast load"]);
-    // --- The DivMMC (DISK_IMAGES_AND_FILE_SYSTEMS_PLAN C5): off until connected
-    expect(labels(submenu(machine, "SD Card"))).toEqual(["DivMMC Interface"]);
+    // --- The DivMMC (DISK_IMAGES_AND_FILE_SYSTEMS_PLAN C5) and the Interface 1 (MICRODRIVE_PLAN): off
+    // --- until one is connected
+    expect(labels(submenu(machine, "Interfaces"))).toEqual(["DivMMC Interface", "Interface 1"]);
     // --- The ULA's snow and late timing (`.plans/SPECTRUM_ULA_ACCURACY_PLAN.md` Phases 4, 5)
     expect(labels(submenu(machine, "ZX Spectrum 48K"))).toEqual(["Snow Effect", "Late ULA Timing"]);
     expect(labels(submenu(machine, "Record"))).toEqual([
@@ -196,6 +197,29 @@ describe("the application menu", () => {
     expect(disks).toContain("Create Disk File...");
     expect(disks).not.toContain("Floppy Disks");
     expect(labels(machine)).not.toContain("TR-DOS ROM");
+  });
+
+  it("puts the connected Interface 1's Microdrives in Machine › Interfaces", () => {
+    buildMenu("sp48");
+    env.state.emulatorState.config = { interface1: true };
+    env.state.media = { microdrive1: { diskFile: "/c/games.mdr", writeProtected: true } };
+    const machine = menu(createMenuTemplate(createMenuContext(window, window)), "Machine");
+    expect(labels(submenu(machine, "Interfaces"))).toEqual([
+      "DivMMC Interface",
+      "Interface 1",
+      "Fast Microdrive",
+      "Boot Cartridge in Microdrive 1",
+      "Change Cartridge in Microdrive 1...",
+      "New Blank Cartridge in Microdrive 1...",
+      "Save Cartridge in Microdrive 1 As...",
+      "Eject Microdrive 1",
+      "Write Protect Microdrive 1",
+      "Insert Cartridge into Microdrive 2...",
+      "New Blank Cartridge in Microdrive 2...",
+      "Write Protect Microdrive 2"
+    ]);
+    // --- The Pentagon has neither interface
+    expect(labels(menu(buildMenu("sp128", pentagonModelId()), "Machine"))).not.toContain("Interfaces");
   });
 
   it("gives the Next its SD card, input and hardware submenus, and Step Copper in Debug", () => {

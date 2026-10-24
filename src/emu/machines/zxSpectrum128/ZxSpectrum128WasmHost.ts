@@ -25,7 +25,7 @@ import { WasmFloatingBusDevice, WasmSpectrumPsgDevice } from "../zxSpectrum/Wasm
 
 import { menuTapeLoadFlow } from "../tapeLoadFlows";
 import { getSp128Timing, type Sp128Timing } from "./sp128Timings";
-import { MC_DISK_SUPPORT, MC_DIVMMC, MC_SP128_TIMING } from "@common/machines/constants";
+import { MC_DISK_SUPPORT, MC_DIVMMC, MC_INTERFACE1, MC_SP128_TIMING } from "@common/machines/constants";
 import { divMmcPartitionLabels } from "../zxSpectrum/divmmc/divMmcCoreBridge";
 
 /**
@@ -68,6 +68,14 @@ export abstract class ZxSpectrum128WasmHost extends ZxSpectrumBase {
    */
   get divMmcModel(): boolean {
     return this.timing.id === "sp128" && !!this.config?.[MC_DIVMMC];
+  }
+
+  /**
+   * The model has a ZX Interface 1 (`MC_INTERFACE1`, MICRODRIVE_PLAN Q2): the 128K's own timing only,
+   * never with the DivMMC (Q4)
+   */
+  get interface1Model(): boolean {
+    return this.timing.id === "sp128" && !!this.config?.[MC_INTERFACE1] && !this.divMmcModel;
   }
 
   constructor(_modelInfo?: MachineModel, config?: MachineConfigSet) {
@@ -140,6 +148,7 @@ export abstract class ZxSpectrum128WasmHost extends ZxSpectrumBase {
   }
 
   parsePartitionLabel(label: string): number | undefined {
+    if (this.interface1Model && label.trim().toUpperCase() === "IF") return IF1_PARTITION;
     return parseSpectrumPartitionLabel(label, this.romPageCount);
   }
 
@@ -147,6 +156,7 @@ export abstract class ZxSpectrum128WasmHost extends ZxSpectrumBase {
     return {
       ...(this.divMmcModel ? divMmcPartitionLabels() : {}),
       ...(this.beta128Model ? { [-3]: "R2" } : {}),
+      ...(this.interface1Model ? { [IF1_PARTITION]: "IF" } : {}),
       [-2]: "R1",
       [-1]: "R0",
       0: "B0",
@@ -163,6 +173,7 @@ export abstract class ZxSpectrum128WasmHost extends ZxSpectrumBase {
   getPartitionDescriptions(): Record<number, string> {
     const descriptions = buildSpectrumPartitionDescriptions(2);
     if (this.beta128Model) descriptions[-3] = "TR-DOS ROM";
+    if (this.interface1Model) descriptions[IF1_PARTITION] = "Interface 1 ROM";
     return descriptions;
   }
 
@@ -243,6 +254,9 @@ export abstract class ZxSpectrum128WasmHost extends ZxSpectrumBase {
   protected abstract writePsgIndex(index: number): void;
   protected abstract writePsgValue(value: number): void;
 }
+
+/** The Interface 1's ROM as a partition while it is paged in (`sp128GetCurrentPartition`, MICRODRIVE_PLAN) */
+export const IF1_PARTITION = -4;
 
 /**
  * Descriptions for a Spectrum-family machine: `R0` -> "ROM 0", `B0` -> "Bank 0".

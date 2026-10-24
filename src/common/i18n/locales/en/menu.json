@@ -815,32 +815,100 @@
   },
   "menu.divMmc.connect": "DivMMC Interface",
   "@menu.divMmc.connect": {
-    "context": "Checkbox, an item of the Machine › SD Card submenu on the ZX Spectrum 48K, 128K and +2A/+3, where the DivMMC interface (an SD card interface that runs the esxDOS operating system) is set up: connects the DivMMC to the machine, which restarts. Usually left untranslated.",
+    "context": "Checkbox, an item of the Machine › Interfaces submenu (ZX Spectrum 48K and 128K) or the Machine › SD Card submenu (+2A/+3), where the DivMMC interface (an SD card interface that runs the esxDOS operating system) is set up: connects the DivMMC to the machine, which restarts. Usually left untranslated.",
     "maxChars": 40
   },
   "menu.divMmc.selectRom": "Select the esxDOS ROM...",
   "@menu.divMmc.selectRom": {
-    "context": "Menu item, an item of the Machine › SD Card submenu on the ZX Spectrum 48K, 128K and +2A/+3, where the DivMMC interface (an SD card interface that runs the esxDOS operating system) is set up: names the 8K esxDOS ROM file, which Klive cannot ship.",
+    "context": "Menu item, an item of the Machine › Interfaces submenu (ZX Spectrum 48K and 128K) or the Machine › SD Card submenu (+2A/+3), where the DivMMC interface (an SD card interface that runs the esxDOS operating system) is set up: names the 8K esxDOS ROM file, which Klive cannot ship.",
     "maxChars": 40
   },
   "menu.divMmc.changeRom": "Change the esxDOS ROM...",
   "@menu.divMmc.changeRom": {
-    "context": "Menu item, an item of the Machine › SD Card submenu on the ZX Spectrum 48K, 128K and +2A/+3, where the DivMMC interface (an SD card interface that runs the esxDOS operating system) is set up: names another esxDOS ROM file.",
+    "context": "Menu item, an item of the Machine › Interfaces submenu (ZX Spectrum 48K and 128K) or the Machine › SD Card submenu (+2A/+3), where the DivMMC interface (an SD card interface that runs the esxDOS operating system) is set up: names another esxDOS ROM file.",
     "maxChars": 40
   },
   "menu.divMmc.selectImage": "Select SD Card Image...",
   "@menu.divMmc.selectImage": {
-    "context": "Menu item, an item of the Machine › SD Card submenu on the ZX Spectrum 48K, 128K and +2A/+3, where the DivMMC interface (an SD card interface that runs the esxDOS operating system) is set up: picks the SD card image file (.img, .hdf or .cim).",
+    "context": "Menu item, an item of the Machine › Interfaces submenu (ZX Spectrum 48K and 128K) or the Machine › SD Card submenu (+2A/+3), where the DivMMC interface (an SD card interface that runs the esxDOS operating system) is set up: picks the SD card image file (.img, .hdf or .cim).",
     "maxChars": 40
   },
   "menu.divMmc.useDefaultImage": "Use the Default SD Card",
   "@menu.divMmc.useDefaultImage": {
-    "context": "Menu item, an item of the Machine › SD Card submenu on the ZX Spectrum 48K, 128K and +2A/+3, where the DivMMC interface (an SD card interface that runs the esxDOS operating system) is set up: goes back to Klive's default SD card image.",
+    "context": "Menu item, an item of the Machine › Interfaces submenu (ZX Spectrum 48K and 128K) or the Machine › SD Card submenu (+2A/+3), where the DivMMC interface (an SD card interface that runs the esxDOS operating system) is set up: goes back to Klive's default SD card image.",
     "maxChars": 40
   },
   "menu.divMmc.nmi": "Press the NMI Button",
   "@menu.divMmc.nmi": {
-    "context": "Menu item, an item of the Machine › SD Card submenu on the ZX Spectrum 48K, 128K and +2A/+3, where the DivMMC interface (an SD card interface that runs the esxDOS operating system) is set up: presses the DivMMC's NMI button, which opens esxDOS's NMI menu. NMI: non-maskable interrupt, usually left untranslated.",
+    "context": "Menu item, an item of the Machine › Interfaces submenu (ZX Spectrum 48K and 128K) or the Machine › SD Card submenu (+2A/+3), where the DivMMC interface (an SD card interface that runs the esxDOS operating system) is set up: presses the DivMMC's NMI button, which opens esxDOS's NMI menu. NMI: non-maskable interrupt, usually left untranslated.",
     "maxChars": 40
+  },
+  "menu.machine.device.interfaces": "Interfaces",
+  "@menu.machine.device.interfaces": {
+    "context": "Machine menu (ZX Spectrum 48K and 128K): submenu of the add-on interfaces that plug into the edge connector - the DivMMC (an SD card interface) and the ZX Interface 1 with its Microdrives (small tape-loop cartridge drives); one of them at a time.",
+    "maxChars": 30
+  },
+  "menu.if1.connect": "Interface 1",
+  "@menu.if1.connect": {
+    "context": "Checkbox, the first item of Machine › Microdrives on the ZX Spectrum 48K and 128K: connects the ZX Interface 1 (Sinclair's add-on that drives Microdrives), which restarts the machine. A product name; usually left untranslated.",
+    "maxChars": 40
+  },
+  "menu.if1.fast": "Fast Microdrive",
+  "@menu.if1.fast": {
+    "context": "Checkbox, Machine › Microdrives: while a Microdrive's motor runs, the emulator runs as fast as it can, so cartridge operations take less waiting; the emulated timing is unchanged.",
+    "maxChars": 40
+  },
+  "menu.if1.insert": "Insert Cartridge into Microdrive {drive}...",
+  "@menu.if1.insert": {
+    "context": "Machine › Microdrives: opens a file dialog to put an '.mdr' cartridge image into a Microdrive. The trailing '...' means the item opens a dialog; keep it.",
+    "placeholders": {
+      "drive": "Microdrive number, shown verbatim: '1' or '2'"
+    },
+    "maxChars": 60
+  },
+  "menu.if1.change": "Change Cartridge in Microdrive {drive}...",
+  "@menu.if1.change": {
+    "context": "Machine › Microdrives: as 'Insert Cartridge', when the drive already holds one. Keep the '...'.",
+    "placeholders": {
+      "drive": "Microdrive number, shown verbatim: '1' or '2'"
+    },
+    "maxChars": 60
+  },
+  "menu.if1.newBlank": "New Blank Cartridge in Microdrive {drive}...",
+  "@menu.if1.newBlank": {
+    "context": "Machine › Microdrives: asks for a file name, creates an unformatted '.mdr' cartridge there (the emulated machine's FORMAT command prepares it) and puts it into the drive. Keep the '...'.",
+    "placeholders": {
+      "drive": "Microdrive number, shown verbatim: '1' or '2'"
+    },
+    "maxChars": 60
+  },
+  "menu.if1.saveAs": "Save Cartridge in Microdrive {drive} As...",
+  "@menu.if1.saveAs": {
+    "context": "Machine › Microdrives: saves the cartridge in a drive, as the emulated machine left it, to a new '.mdr' file. Keep the '...'.",
+    "placeholders": {
+      "drive": "Microdrive number, shown verbatim: '1' or '2'"
+    },
+    "maxChars": 60
+  },
+  "menu.if1.eject": "Eject Microdrive {drive}",
+  "@menu.if1.eject": {
+    "context": "Machine › Microdrives: takes the cartridge out of a drive.",
+    "placeholders": {
+      "drive": "Microdrive number, shown verbatim: '1' or '2'"
+    },
+    "maxChars": 40
+  },
+  "menu.if1.writeProtect": "Write Protect Microdrive {drive}",
+  "@menu.if1.writeProtect": {
+    "context": "Checkbox, Machine › Microdrives: the cartridge's write-protect tab; while it is on, the emulated machine cannot write the cartridge.",
+    "placeholders": {
+      "drive": "Microdrive number, shown verbatim: '1' or '2'"
+    },
+    "maxChars": 40
+  },
+  "menu.if1.boot": "Boot Cartridge in Microdrive 1",
+  "@menu.if1.boot": {
+    "context": "Machine › Interfaces (ZX Spectrum 48K and 128K, Interface 1 connected): resets the machine and types RUN, which makes the Interface 1 load and run the program called 'run' from the cartridge in Microdrive 1.",
+    "maxChars": 50
   }
 }

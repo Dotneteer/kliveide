@@ -1,6 +1,7 @@
 import { resolveHomeFilePath } from "../../main/projects";
 import { createBlankTrd, type TrdGeometry } from "@emu/machines/disk/trd/trdImage";
 import { createBlankDsk, isBlankDskType } from "@emu/machines/disk/blank-dsk";
+import { createMdrOfType, isMdrCartridgeType } from "@emu/machines/microdrive/mdrImage";
 import fs from "fs";
 import path from "path";
 import os from "os";
@@ -23,6 +24,9 @@ export function createDiskFile (
   if (trdGeometry) {
     // --- A blank, TR-DOS-formatted disk for the Pentagon's Beta 128
     contents = createBlankTrd(trdGeometry, path.parse(filename).name.slice(0, 8));
+  } else if (isMdrCartridgeType(diskFormat)) {
+    // --- A Microdrive cartridge for the Interface 1: formatted, or blank for the ROM's FORMAT
+    contents = createMdrOfType(diskFormat, path.parse(filename).name);
   } else if (isBlankDskType(diskFormat)) {
     // --- A blank, +3DOS-formatted DSK for the +3 (`blank-dsk.ts`)
     contents = createBlankDsk(diskFormat);
@@ -32,7 +36,7 @@ export function createDiskFile (
   const fileExt = path.extname(filename);
   foldername = foldername ? resolveHomeFilePath(foldername) : os.homedir();
   if (!fileExt) {
-    filename += trdGeometry ? ".trd" : ".dsk";
+    filename += trdGeometry ? ".trd" : isMdrCartridgeType(diskFormat) ? ".mdr" : ".dsk";
   }
   if (!fs.existsSync(foldername)) {
     fs.mkdirSync(foldername, { recursive: true });

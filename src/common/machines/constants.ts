@@ -97,6 +97,11 @@ export const MC_HT_MODEL = "htModel";
  * user names (`SETTING_EMU_ESXDOS_ROM`) from the SD card the SD card menu names.
  */
 export const MC_DIVMMC = "divMmc";
+/**
+ * The 48K and the 128K (its own timing): a ZX Interface 1 is connected, with its Microdrives
+ * (`.plans/MICRODRIVE_PLAN.md`). Never together with the DivMMC: both decode port $E7 (Q4).
+ */
+export const MC_INTERFACE1 = "interface1";
 
 // Available machine config keys
 export const MF_TAPE_SUPPORT = "tapeSupport";

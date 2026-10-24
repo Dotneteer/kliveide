@@ -21,6 +21,7 @@ import {
   MI_SPECTRUM_128,
   MI_SPECTRUM_3E,
   MI_SPECTRUM_48,
+  MC_INTERFACE1,
   MI_Z88
 } from "@common/machines/constants";
 import { parseSpectrumSnapshot } from "@common/spectrum/snapshot/parseSpectrumSnapshot";
@@ -69,6 +70,9 @@ class FakeEmulator {
     },
     setDisk: async (drive, file) => {
       this.events.push(`disk${drive}:${file}`);
+    },
+    setMicrodrive: async (drive, file) => {
+      this.events.push(`microdrive${drive}:${file}`);
     }
   };
 
@@ -367,6 +371,26 @@ describe("loading through the controller", () => {
     await plusE.until(MachineControllerState.Paused);
     expect(onPlusE.modelId).toBe("fdd1");
     expect(onPlusE.warnings.join()).toMatch(/\+E ROMs instead of the Amstrad ones/);
+  });
+
+  it("connects the Interface 1, inserts the linked cartridge and restores the paging (MICRODRIVE_PLAN Phase 5)", async () => {
+    const emu = await emulator(MI_SPECTRUM_48, "pal");
+    const if1 = new Array(40).fill(0);
+    if1[0] = 0x01 | 0x04; // --- enabled, paged
+    if1[2] = 2;
+    const bytes = buildSzx(state48(), { machineId: 1, extra: [szxBlock("IF1", if1)] });
+    const result = await loadSpectrumSnapshot(emu.ports, "a.szx", bytes, "debug", {
+      microdrives: [
+        { drive: 0, fileName: "games.mdr", contents: new Uint8Array(543 * 10 + 1) },
+        { drive: 4, fileName: "five.mdr", contents: new Uint8Array(543 * 10 + 1) }
+      ]
+    });
+    await emu.until(MachineControllerState.Paused);
+    expect(result.rebuilt).toBe(true);
+    expect(emu.rebuilds.at(-1)?.config[MC_INTERFACE1]).toBe(true);
+    expect(emu.events.filter((e) => e.startsWith("microdrive"))).toEqual(["microdrive0:games.mdr"]);
+    expect(result.warnings.join()).toMatch(/no Microdrive 5 for five\.mdr/);
+    expect((emu.machine as any).if1.bridge.state().paged).toBe(true);
   });
 
   it("warns about a disk for a drive the machine lacks", async () => {

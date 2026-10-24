@@ -204,6 +204,17 @@ describe("CreateDiskFileCommand", () => {
       );
     });
 
+    it("puts a Microdrive cartridge into the project's cartridges folder when -p is set", async () => {
+      context = createMockContextWithProject("/test/project") as MockIdeCommandContext;
+      const mockMainApi = context.mainApi as any;
+      mockMainApi.createDiskFile = vi.fn().mockResolvedValue("/test/project/cartridges/games.mdr");
+
+      const result = await command.execute(context, { diskType: "mdr", diskName: "games", "-p": true });
+
+      expect(result.success).toBe(true);
+      expect(mockMainApi.createDiskFile).toHaveBeenCalledWith("/test/project/cartridges", "games", "mdr");
+    });
+
     it("should return success with created disk path", async () => {
       // Arrange
       const mockMainApi = context.mainApi as any;

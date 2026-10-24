@@ -121,6 +121,7 @@
 /en/guides/emulator/ht1080z/index.html
 /en/guides/emulator/keyboard/index.html
 /en/guides/emulator/machine-state/index.html
+/en/guides/emulator/microdrives/index.html
 /en/guides/emulator/rzx-recordings/index.html
 /en/guides/emulator/saving-files/index.html
 /en/guides/emulator/screen-recording/index.html

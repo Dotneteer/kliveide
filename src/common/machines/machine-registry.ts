@@ -40,7 +40,7 @@ import {
   MI_HT1080Z,
   MC_HT_MODEL
 } from "./constants";
-import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_DOCK, MEDIA_TAPE } from "@common/structs/project-const";
+import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_DOCK, MEDIA_MICRODRIVE_1, MEDIA_MICRODRIVE_2, MEDIA_TAPE } from "@common/structs/project-const";
 import { Ht1080zChars, type Ht1080zCharSetId, ht1080zCharsFor, Zx80Chars, Zx81Chars, ZxNextChars, ZxSpectrumChars } from "./char-codes";
 import { DisassemblyOptions, MemorySection } from "@renderer/appIde/disassemblers/common-types";
 import { Z80Disassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z80-disassembler";
@@ -344,7 +344,8 @@ export const machineRegistry: MachineInfo[] = [
         }
       }
     ],
-    mediaIds: [MEDIA_TAPE],
+    // --- The Interface 1's Microdrives (`MC_INTERFACE1`, MICRODRIVE_PLAN)
+    mediaIds: [MEDIA_TAPE, MEDIA_MICRODRIVE_1, MEDIA_MICRODRIVE_2],
     toolInfo: {
       [CT_DISASSEMBLER]: (
         memorySections: MemorySection[],
@@ -375,7 +376,8 @@ export const machineRegistry: MachineInfo[] = [
       [MF_PROFILE]: true
     },
     // --- The disks are the Pentagon's Beta 128 (the model's `MC_DISK_SUPPORT`; the 128K has none)
-    mediaIds: [MEDIA_TAPE, MEDIA_DISK_A, MEDIA_DISK_B],
+    // --- ... and the 128K's Interface 1 Microdrives (`MC_INTERFACE1`, MICRODRIVE_PLAN)
+    mediaIds: [MEDIA_TAPE, MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_MICRODRIVE_1, MEDIA_MICRODRIVE_2],
     // --- The 128K and the Pentagon 128: one core, the timing is model config
     models: SP128_MODELS,
     toolInfo: {

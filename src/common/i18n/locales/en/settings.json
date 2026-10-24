@@ -1029,5 +1029,13 @@
   "settings.machine.esxDosRom.description": "The DivMMC stays off without it. Changing it restarts the machine",
   "@settings.machine.esxDosRom.description": {
     "context": "Help text under the setting 'esxDOS ROM' (Settings dialog, Machine page). Wraps over several lines."
+  },
+  "settings.machine.if1Rom.title": "Interface 1 ROM",
+  "@settings.machine.if1Rom.title": {
+    "context": "Settings dialog, Machine page, 'ROM' group: label of a file setting (shows the chosen file's name, with buttons beside it). Its help text: 'Empty: the second edition Klive ships...'"
+  },
+  "settings.machine.if1Rom.description": "Empty: the second-edition ROM Klive ships. Changing it restarts the machine",
+  "@settings.machine.if1Rom.description": {
+    "context": "Help text under the setting 'Interface 1 ROM' (Settings dialog, Machine page): an 8K ROM file to use instead of the shipped one, for example the first edition. Wraps over several lines."
   }
 }

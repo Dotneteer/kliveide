@@ -3,7 +3,7 @@ import fs from "fs";
 import { app, dialog, type BrowserWindow } from "electron";
 
 import type { MachineMenuItem, MachineMenuRenderer } from "@common/machines/info-types";
-import { MC_DIVMMC } from "@common/machines/constants";
+import { MC_DIVMMC, MC_INTERFACE1 } from "@common/machines/constants";
 import { hasDivMmc, isDivMmcMachine } from "@common/machines/divMmc";
 import { getModelConfig } from "@common/machines/machine-registry";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
@@ -94,12 +94,19 @@ export async function setDivMmcConnected(on: boolean): Promise<void> {
   const modelId = emulatorState?.modelId;
   if (!machineId || !isDivMmcMachine(machineId, modelId, emulatorState?.config)) return;
   const config = { ...(emulatorState?.config ?? getModelConfig(machineId, modelId) ?? {}) };
-  if (on) config[MC_DIVMMC] = true;
-  else delete config[MC_DIVMMC];
+  // --- The Interface 1 answers port $E7 too: it goes, saying so (MICRODRIVE_PLAN Q4)
+  const hadInterface1 = !!config[MC_INTERFACE1];
+  if (on) {
+    config[MC_DIVMMC] = true;
+    delete config[MC_INTERFACE1];
+  } else delete config[MC_DIVMMC];
   await setMachineType(machineId, modelId, config);
   mainStore.dispatch(incMenuVersionAction());
   await saveKliveProject();
   await logEmuEvent(on ? "DivMMC connected" : "DivMMC disconnected");
+  if (on && hadInterface1) {
+    await dialog.showMessageBox({ type: "info", title: t("messages.if1.exclusiveTitle"), message: t("messages.if1.if1Disconnected") });
+  }
 }
 
 /** Asks for the SD card image the DivMMC reads (the media slot the Next's card uses too) */

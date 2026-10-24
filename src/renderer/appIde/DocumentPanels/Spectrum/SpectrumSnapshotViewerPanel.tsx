@@ -728,6 +728,26 @@ const FileSection = ({ ctx, info }: SectionProps) => {
           />
         </Row>
       ))}
+      {p.if1 && (
+        <Row>
+          <LabeledText
+            label={t("panels.spectrum.interface1")}
+            labelWidth={LABEL_WIDTH}
+            value={t(p.if1.paged ? "panels.spectrum.interface1Paged" : "panels.spectrum.interface1NotPaged", {
+              drives: p.if1.drives
+            })}
+          />
+        </Row>
+      )}
+      {p.if1?.microdrives.map((cartridge, index) => (
+        <Row key={`m${index}`}>
+          <LabeledText
+            label={t("panels.spectrum.microdrive", { drive: cartridge.drive + 1 })}
+            labelWidth={LABEL_WIDTH}
+            value={cartridge.fileName ?? t("panels.spectrum.embeddedImage")}
+          />
+        </Row>
+      ))}
       {snapshot.chunks?.map((chunk, index) => (
         <Row key={`c${index}`}>
           <LabeledText

@@ -1,4 +1,6 @@
 import type { HistoryRecord } from "@common/history/historyRecord";
+import type { Interface1DriveState, Interface1State, Interface1Support } from "@emu/machines/zxSpectrum/if1/if1CoreBridge";
+import { connectInterface1, insertCartridge, interface1Of, type HarnessCartridge } from "../interface1Support";
 import type { ExecutionHistoryInfo } from "@common/history/historyTypes";
 import { historyFromOf, historyInfoOf, historyOf } from "../historySupport";
 import { createHash } from "node:crypto";
@@ -66,8 +68,8 @@ export type RunLimit = { maxFrames?: number };
 const ROM_CHARSET = 0x3d00;
 
 class HarnessSp128Machine extends ZxSpectrum128WasmV2Machine {
-  constructor(model?: MachineModel, private readonly trdosRomImage?: Uint8Array) {
-    super(model, { ...(model?.config ?? {}) }, {
+  constructor(model?: MachineModel, private readonly trdosRomImage?: Uint8Array, config: MachineConfigSet = {}) {
+    super(model, { ...(model?.config ?? {}), ...config }, {
       artifactName: "harness-sp128-machine-v2.wasm",
       readArtifact: async () => readFileSync(sp128Output)
     });
@@ -80,7 +82,9 @@ class HarnessSp128Machine extends ZxSpectrum128WasmV2Machine {
     return this.trdosRomImage;
   }
 
-  protected override async loadRomFromResource(_romName: string, page = 0): Promise<Uint8Array> {
+  protected override async loadRomFromResource(romName: string, page = 0): Promise<Uint8Array> {
+    // --- The Interface 1's shipped ROM (`if1-2`) is a file of its own
+    if (romName.startsWith("if1")) return new Uint8Array(readFileSync(join(ROM_DIR, `${romName}.rom`)));
     return new Uint8Array(readFileSync(join(ROM_DIR, `sp128-${page}.rom`)));
   }
 }
@@ -135,7 +139,9 @@ class HarnessSp48Machine extends ZxSpectrum48WasmV2Machine {
     });
   }
 
-  protected override async loadRomFromResource(): Promise<Uint8Array> {
+  protected override async loadRomFromResource(romName = ""): Promise<Uint8Array> {
+    // --- The Interface 1's shipped ROM (`if1-2`) is a file of its own
+    if (romName.startsWith("if1")) return new Uint8Array(readFileSync(join(ROM_DIR, `${romName}.rom`)));
     return new Uint8Array(readFileSync(join(ROM_DIR, "sp48.rom")));
   }
 }
@@ -170,7 +176,7 @@ export async function createHarnessSpectrumMachine(
       buildSp128Wasm();
       built.sp128 = true;
     }
-    machine = new HarnessSp128Machine(getSp128Model(modelId) ?? info);
+    machine = new HarnessSp128Machine(getSp128Model(modelId) ?? info, undefined, config);
   }
   await machine.setup();
   machine.hardReset();
@@ -499,6 +505,42 @@ export class Sp128TestSession {
     this.insertTape(parsed.blocks, { fastLoad });
     this.runFlow(flow);
     return this;
+  }
+
+  private if1?: Interface1Support;
+
+  private get interface1Support(): Interface1Support {
+    if (this.model !== "sp128") throw new Error("The Interface 1 is on the 128K model only");
+    this.if1 ??= interface1Of("sp128", this.machine as { wasmV2Runtime?: { exports: object } });
+    return this.if1;
+  }
+
+  /** Connects the Interface 1 with a ROM (the shipped v2 by default); no reset (see interface1Support.ts) */
+  connectInterface1(rom?: Uint8Array): this {
+    connectInterface1(this.interface1Support, rom);
+    return this;
+  }
+
+  /** Puts an .mdr (or `{ blank: slots }`) into drive 0-7; `writeProtected` overrides its last byte */
+  insertCartridge(drive: number, cartridge: HarnessCartridge, writeProtected?: boolean): this {
+    insertCartridge(this.interface1Support, drive, cartridge, writeProtected);
+    return this;
+  }
+
+  /** The interface's state, with every drive's */
+  interface1(): Interface1State & { drives: Interface1DriveState[] } {
+    const support = this.interface1Support;
+    return { ...support.state(), drives: Array.from({ length: 8 }, (_, d) => support.drive(d)) };
+  }
+
+  /** Drive `drive`'s cartridge as an .mdr, as the guest left it */
+  cartridge(drive: number): Uint8Array | undefined {
+    return this.interface1Support.cartridge(drive);
+  }
+
+  /** The bridge itself, for what the methods above do not cover (slot signal, dirty slots) */
+  get interface1Bridge(): Interface1Support {
+    return this.interface1Support;
   }
 
   /** Inserts a `.dsk` image in drive A (0) or B (1) as the IDE does; +2A/+3/+3E only */

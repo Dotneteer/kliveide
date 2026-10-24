@@ -181,6 +181,8 @@ const JOURNALED = new RegExp(
       "Fdc",
       "Dock",
       "DivMmc",
+      // --- The Interface 1 (`zx-spectrum-if1.c`): connect, ROM, paging, cartridges, write-back
+      "If1",
       "Dma",
       "Sprite",
       "UartPeer",

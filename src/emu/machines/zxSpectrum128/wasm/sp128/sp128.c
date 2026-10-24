@@ -358,6 +358,21 @@ static void sp128DivMmcRemapped(void);
 #define ZXDC_TACTS sp128Tacts
 #define ZXDC_REMAPPED() sp128DivMmcRemapped()
 #include "../../../zxSpectrum/wasm/common/zx-spectrum-divmmc-classic.c"
+/*
+ * The Interface 1 (`zx-spectrum-if1.c`; .plans/MICRODRIVE_PLAN.md): the 128K model only - the host
+ * connects it (`sp128If1SetPresent`), never with the DivMMC. Its ROM takes the ROM slot whichever
+ * 128K ROM is selected: the hardware decodes the fetch address alone.
+ */
+static void sp128If1Remapped(void);
+static uint8_t sp128RzxPlaying(void);
+#define ZXIF1_PREFIX sp128
+#define ZXIF1_NOW() sp128Tacts
+#define ZXIF1_TACTS_PER_MS() \
+  (sp128BaseClockFrequency * (double)(sp128ClockMultiplier == 0u ? 1u : sp128ClockMultiplier) / 1000.0)
+#define ZXIF1_FRAME_END() (sp128NextFrameStartTact + sp128TactsInCurrentFrame)
+#define ZXIF1_REMAPPED() sp128If1Remapped()
+#define ZXIF1_RZX_PLAYING() (sp128RzxPlaying() != 0u)
+#include "../../../zxSpectrum/wasm/common/zx-spectrum-if1.c"
 static uint32_t sp128CommonTapeGetEarBit(void);
 static void sp128CommonTapeProcessMicBit(uint32_t micBit);
 
@@ -372,6 +387,8 @@ static void SP128_CPU_NOINLINE applyContentionDelay(void);
 static void SP128_CPU_NOINLINE sp128DelayMemoryAccess(uint32_t address);
 static void SP128_CPU_NOINLINE sp128CpuDelayAddressBusAccess(uint32_t address);
 static void SP128_CPU_NOINLINE sp128DelayPortAccess(uint32_t address);
+static void SP128_CPU_NOINLINE sp128CpuDelayPortRead(uint32_t address);
+static void SP128_CPU_NOINLINE sp128CpuDelayPortWrite(uint32_t address);
 
 static uint32_t ramBankOffset(uint32_t bank) {
   return (bank & 0x0fu) * 0x4000u;
@@ -777,6 +794,7 @@ static void rebuildMemorySlotMap(void) {
   const uint8_t ramAtZero = sp128Scorpion != 0u && (sp128Port1ffd & 0x01u) != 0u;
   const uint8_t serviceRom = sp128Scorpion != 0u && (sp128Port1ffd & 0x02u) != 0u;
   sp128MemorySlotBase[0] = zxdcMapped != 0u ? zxdcView
+    : zxIf1Paged != 0u ? zxIf1View
     : ramAtZero != 0u ? &sp128Ram[ramBankOffset(0u)]
     : serviceRom != 0u ? &sp128Rom[romBankOffset(2u)]
     : beta128Paged != 0u ? sp128TrdosRom
@@ -803,6 +821,13 @@ static void rebuildFlatRomSlot(void) {
 
 /* The DivMMC mapped in or out, or its banks changed: its view is the ROM slot while mapped */
 static void sp128DivMmcRemapped(void) {
+  if (sp128MemorySlotMapInitialized == 0u) return;
+  rebuildMemorySlotMap();
+  rebuildFlatRomSlot();
+}
+
+/* The Interface 1 paged its ROM in or out */
+static void sp128If1Remapped(void) {
   if (sp128MemorySlotMapInitialized == 0u) return;
   rebuildMemorySlotMap();
   rebuildFlatRomSlot();
@@ -944,8 +969,8 @@ static uint32_t sp128CpuReadPort(uint32_t address);
 #define Z80_DELAY_ADDRESS_BUS_ACCESS(address) sp128CpuDelayAddressBusAccess((uint32_t)(address))
 /* The ULA cannot stop the CPU in a refresh (z80.c) */
 #define Z80_DELAY_REFRESH_BUS_ACCESS(address) ((void)(address))
-#define Z80_DELAY_PORT_READ(address) sp128DelayPortAccess((uint32_t)(address))
-#define Z80_DELAY_PORT_WRITE(address) sp128DelayPortAccess((uint32_t)(address))
+#define Z80_DELAY_PORT_READ(address) sp128CpuDelayPortRead((uint32_t)(address))
+#define Z80_DELAY_PORT_WRITE(address) sp128CpuDelayPortWrite((uint32_t)(address))
 /* RZX (`zx-spectrum-rzx.c`): the fetch counter counts every refresh but the INT acknowledge's */
 static inline void rzxCountFetch(void);
 static inline void rzxIntAck(void);
@@ -975,9 +1000,15 @@ static inline void rzxIntAck(void);
   do { \
     sp128BetaBeforeFetch(cpu.pc); \
     ZXDC_BEFORE_OPCODE_FETCH(cpu.pc); \
+    ZXIF1_BEFORE_OPCODE_FETCH(cpu.pc); \
   } while (0)
-/* The DivMMC's delayed entry points map after the M1; RETN unmaps it */
-#define Z80_AFTER_OPCODE_FETCH() ZXDC_AFTER_OPCODE_FETCH()
+/* The DivMMC's delayed entry points map after the M1; RETN unmaps it. The Interface 1 pages out
+   after the fetch at $0700 */
+#define Z80_AFTER_OPCODE_FETCH() \
+  do { \
+    ZXDC_AFTER_OPCODE_FETCH(); \
+    ZXIF1_AFTER_OPCODE_FETCH(cpu.pc); \
+  } while (0)
 #define Z80_AFTER_RETN() ZXDC_AFTER_RETN(cpu.opCode)
 static inline void sp128BetaBeforeFetch(uint16_t pc) {
   if (beta128Enabled == 0u) return;
@@ -1175,6 +1206,8 @@ static uint32_t sp128CpuReadPort(uint32_t address) {
 #define sp48TapeDataPtr sp128CommonTapeDataPtr
 /* The fast-load trap writes RAM without an IN, so it is off while RZX plays or records (trap 3) */
 #define SP48_TAPE_FAST_LOAD_BLOCKED() (rzxMode != RZX_MODE_OFF)
+/* LD-BYTES and SA-BYTES are the ROM's only while the Interface 1's ROM is not paged over them */
+#define SP48_TAPE_TRAP_ACTIVE() (zxIf1Paged == 0u)
 #include "../../../zxSpectrum/wasm/common/zx-spectrum-tape.c"
 #undef SP48_TAPE_FAST_LOAD_BLOCKED
 #undef sp48TapeDataPtr
@@ -1277,6 +1310,29 @@ static void SP128_CPU_NOINLINE sp128DelayPortAccess(uint32_t address) {
   }
 }
 
+static uint8_t sp128RzxPlaying(void) {
+  return rzxMode == RZX_MODE_PLAY ? 1u : 0u;
+}
+
+/* WAIT: the Interface 1 holds the CPU, in steps the beeper's sampling can follow */
+static void sp128If1Stall(uint32_t tacts) {
+  while (tacts > 0u) {
+    const uint32_t step = tacts < 16u ? tacts : 16u;
+    tactPlusN128(step);
+    tacts -= step;
+  }
+}
+
+static void SP128_CPU_NOINLINE sp128CpuDelayPortRead(uint32_t address) {
+  sp128DelayPortAccess(address);
+  if (ZXIF1_UNLIKELY(zxIf1Present != 0u)) sp128If1Stall(zxIf1PortWait(address, 0u));
+}
+
+static void SP128_CPU_NOINLINE sp128CpuDelayPortWrite(uint32_t address) {
+  sp128DelayPortAccess(address);
+  if (ZXIF1_UNLIKELY(zxIf1Present != 0u)) sp128If1Stall(zxIf1PortWait(address, 1u));
+}
+
 #undef SP128_CPU_NOINLINE
 
 static uint32_t normalizeClockMultiplier(uint32_t value) {
@@ -1348,6 +1404,7 @@ static void sp128ShiftTactOrigin(int64_t amount) {
   sp128PsgNextClockTact -= by;
   sp128PsgLastAccumulationTact -= byDouble;
   beta128ShiftTactOrigin(by);
+  zxIf1ShiftTactOrigin(by);
 }
 
 /* Test hook: as if `amount` tacts passed with nothing happening (see `sp48TestAdvanceTacts`) */
@@ -1457,6 +1514,7 @@ void sp128Reset(void) {
   sp128CommonResetKeyboard();
   beta128Reset();
   zxdcReset(0u);
+  zxIf1Reset();
   sp128CommonResetAudio();
   rebuildFlatMemory();
   sp128UlaRenderDisplay();
@@ -1491,6 +1549,22 @@ void sp128HardReset(uint32_t timing, uint32_t beta128) {
 #define Z80_DEBUG_LOOP_STOP() ZXDC_HOST_WAITING()
 #include "../../../../z80/wasm/z80-debug-loop.c"
 
+/*
+ * The CPU frozen by the Interface 1's WAIT past the frame's end (or for good: the "IN 0 crash"):
+ * time passes, the picture and the sound go on, nothing runs.
+ */
+static void sp128If1RunFrozen(void) {
+  const uint32_t frameEnd = sp128NextFrameStartTact + sp128TactsInCurrentFrame;
+  const uint32_t target = zxIf1FrozenTarget(frameEnd);
+  while ((int32_t)(target - sp128Tacts) > 0) {
+    const uint32_t left = target - sp128Tacts;
+    sp128Tacts += left < 16u ? left : 16u;
+    sp128CommonSetNextAudioSample();
+  }
+  sp128FrameCompleted = sp128Tacts >= frameEnd ? 1u : 0u;
+  completeMachineFrame();
+}
+
 uint32_t sp128ExecuteInstruction(void) {
 #ifndef Z80_BENCH_STRIP_DEBUG
   if (rzxMode == RZX_MODE_PLAY) {
@@ -1499,6 +1573,10 @@ uint32_t sp128ExecuteInstruction(void) {
 #endif
   if (sp128FrameCompleted != 0u) {
     beginMachineFrame();
+  }
+  if (zxIf1Frozen()) {
+    sp128If1RunFrozen();
+    return 0u;
   }
 
 #ifndef Z80_BENCH_STRIP_DEBUG
@@ -1559,7 +1637,7 @@ void sp128UploadRomByte(uint32_t rom, uint32_t offset, uint32_t value) {
     sp128RomChecksum =
       ((sp128RomChecksum << 5u) | (sp128RomChecksum >> 27u)) ^ ((uint8_t)value + offset + (rom << 14u));
     sp128Rom[romBankOffset(rom) + offset] = (uint8_t)value;
-    if (rom == sp128SelectedRom && beta128Paged == 0u && zxdcMapped == 0u) {
+    if (rom == sp128SelectedRom && beta128Paged == 0u && zxdcMapped == 0u && zxIf1Paged == 0u) {
       sp128Memory[offset] = (uint8_t)value;
     }
   }
@@ -1640,6 +1718,9 @@ static uint32_t sp128ReadNonFePort(uint32_t address) {
   if (zxdcIsPort(address) != 0u) {
     return zxdcReadPort(address);
   }
+  if (zxIf1IsPort(address) != 0u) {
+    return zxIf1ReadPort(address);
+  }
   if (beta128Paged != 0u && beta128IsPort(address)) {
     return beta128ReadPort(address);
   }
@@ -1672,6 +1753,10 @@ static void sp128WriteScorpion1ffd(uint32_t value) {
 static void sp128WriteNonFePort(uint32_t address, uint32_t value) {
   if (zxdcIsPort(address) != 0u) {
     zxdcWritePort(address, value);
+    return;
+  }
+  if (zxIf1IsPort(address) != 0u) {
+    zxIf1WritePort(address, value);
     return;
   }
   if (beta128Paged != 0u && beta128IsPort(address)) {
@@ -2358,8 +2443,9 @@ uint32_t sp128GetCurrentPartition(uint32_t slot) {
         if (beta128Paged != 0u) return 0xfffffffcu;
         return sp128SelectedRom == 0u ? 0xffffffffu : 0xfffffffeu;
       }
-      /* The TR-DOS ROM is partition -3 ("R2") while the Beta 128 pages it in */
+      /* The TR-DOS ROM is partition -3 ("R2") while the Beta 128 pages it in, the Interface 1's -4 */
       if (beta128Paged != 0u) return 0xfffffffdu;
+      if (zxIf1Paged != 0u) return 0xfffffffcu;
       return sp128SelectedRom == 0u ? 0xffffffffu : 0xfffffffeu;
     case 1u:
       return 5u;
@@ -2569,7 +2655,8 @@ static uint32_t condSp128PeekPartition(int32_t partition, uint32_t address) {
 //
 // The context (`sp128Context.ts` decodes it), shared by the 128K, the Pentagon and the Scorpion:
 //   0    port $7FFD   1 the selected ROM   2 the selected RAM bank (bit 3: the Scorpion's banks 8-15)
-//   3    bit 0 the Beta 128 has TR-DOS paged in, bit 1 paging is locked ($7FFD bit 5)
+//   3    bit 0 the Beta 128 has TR-DOS paged in, bit 1 paging is locked ($7FFD bit 5), bit 2 the
+//        Interface 1 has its ROM paged in
 //   4    the timing profile (0 128K, 1 Pentagon, 2 Scorpion)   5 the Scorpion's port $1FFD
 //   8-11 the partition of each 16K slot, as `getPartition` names it (`sp128GetCurrentPartition`),
 //        a signed byte: the ROMs -1..-4, the RAM banks 0-15
@@ -2580,7 +2667,8 @@ static inline void sp128HistoryContext(uint32_t kind, uint8_t *out) {
   out[0] = sp128Port7ffd;
   out[1] = sp128SelectedRom;
   out[2] = sp128SelectedBank;
-  out[3] = (uint8_t)((beta128Paged != 0u ? 0x01u : 0u) | (sp128PagingEnabled == 0u ? 0x02u : 0u));
+  out[3] = (uint8_t)((beta128Paged != 0u ? 0x01u : 0u) | (sp128PagingEnabled == 0u ? 0x02u : 0u)
+    | (zxIf1Paged != 0u ? 0x04u : 0u));
   out[4] = (uint8_t)sp128Timing;
   out[5] = sp128Port1ffd;
   out[6] = 0u;

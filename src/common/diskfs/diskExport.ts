@@ -3,6 +3,8 @@ import { createBlankDsk } from "@emu/machines/disk/blank-dsk";
 import { createBlankTrd } from "@emu/machines/disk/trd/trdImage";
 import { Plus3DosFileSystem } from "./plus3dos";
 import { TrdosFileSystem } from "./trdos";
+import { MicrodriveFileSystem } from "./mdrfs";
+import { createFormattedMdr } from "@emu/machines/microdrive/mdrImage";
 import { DiskFsError, type DiskFileSystem } from "./types";
 import { diskFileName } from "./importFiles";
 
@@ -17,6 +19,9 @@ import { diskFileName } from "./importFiles";
  * - TR-DOS: `boot`, which TR-DOS runs from a boot - each load a TR-DOS command line of its own,
  *   `RANDOMIZE USR 15619: REM : LOAD "name"CODE` (the Beta 128 manual's BASIC entry), since the
  *   command takes the rest of its line.
+ * - A Microdrive cartridge (`.plans/MICRODRIVE_PLAN.md` 4.4): `run`, which RUN with no program loads
+ *   from Microdrive 1 (the Microdrive Loader) - `10 [CLEAR n:] [BORDER b:] LOAD *"m";1;"name"CODE: ...
+ *   RANDOMIZE USR entry`.
  *
  * Banked (128K paging) segments are not exported to disk: their loader would have to page the
  * banks, which the tape export does and this does not yet.
@@ -37,7 +42,7 @@ export type DiskExportProgram = {
   screen?: Uint8Array;
 };
 
-export function buildExportDisk (format: "dsk" | "trd", program: DiskExportProgram): Uint8Array {
+export function buildExportDisk (format: "dsk" | "trd" | "mdr", program: DiskExportProgram): Uint8Array {
   if (program.segments.some((s) => s.bank !== undefined)) {
     throw new DiskFsError("unsupported", "Banked code cannot be exported to a disk yet; export a tape instead.");
   }
@@ -45,7 +50,11 @@ export function buildExportDisk (format: "dsk" | "trd", program: DiskExportProgr
   if (segments.length === 0) throw new DiskFsError("unsupported", "The program has no code to put on a disk.");
 
   const fs: DiskFileSystem =
-    format === "dsk" ? new Plus3DosFileSystem(createBlankDsk("sse")) : new TrdosFileSystem(createBlankTrd({ cylinders: 80, sides: 2 }, program.name.slice(0, 8)));
+    format === "dsk"
+      ? new Plus3DosFileSystem(createBlankDsk("sse"))
+      : format === "mdr"
+        ? new MicrodriveFileSystem(createFormattedMdr(program.name.replace(/\.[^.]*$/, "").slice(0, 10) || "code"))
+        : new TrdosFileSystem(createBlankTrd({ cylinders: 80, sides: 2 }, program.name.slice(0, 8)));
   const system = fs.system;
   const stem = program.name.replace(/\.[^.]*$/, "") || "code";
 
@@ -64,12 +73,16 @@ export function buildExportDisk (format: "dsk" | "trd", program: DiskExportProgr
   const head: string[] = [];
   if (program.clear) head.push(`CLEAR ${Math.min(...segments.map((s) => s.startAddress)) - 1}`);
   if (program.border !== undefined) head.push(`BORDER ${program.border & 7}`);
-  const loads = [...(screenName ? [screenName] : []), ...names].map((n) => `LOAD ${quoted(n)}CODE`);
+  const loads = [...(screenName ? [screenName] : []), ...names].map((n) =>
+    system === "microdrive" ? `LOAD *"m";1;${quoted(n)}CODE` : `LOAD ${quoted(n)}CODE`
+  );
   const run = `RANDOMIZE USR ${program.entryAddress}`;
 
   const lines: number[][] = [];
   if (system === "+3dos") {
     lines.push(tokenizeStatementText([...head, ...loads, run].join(": "), { plus128: true }));
+  } else if (system === "microdrive") {
+    lines.push(tokenizeStatementText([...head, ...loads, run].join(": ")));
   } else {
     if (head.length) lines.push(tokenizeStatementText(head.join(": ")));
     // --- `RANDOMIZE USR 15619: REM :` then the TR-DOS command, as the editor stores it after a REM:
@@ -86,7 +99,7 @@ export function buildExportDisk (format: "dsk" | "trd", program: DiskExportProgr
   });
   const loader = Uint8Array.from(program48);
   fs.write({
-    name: system === "+3dos" ? "DISK" : "boot.B",
+    name: system === "+3dos" ? "DISK" : system === "microdrive" ? "run" : "boot.B",
     kind: "basic",
     data: loader,
     start: 10,

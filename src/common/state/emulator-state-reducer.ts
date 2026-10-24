@@ -106,6 +106,12 @@ export function emulatorStateReducer(
         clockMultiplier: payload?.numValue
       };
 
+    case "SET_MICRODRIVE_MOTORS":
+      return {
+        ...state,
+        microdriveMotors: payload?.numValue
+      };
+
     case "SET_AUDIO_SAMPLE_RATE":
       return {
         ...state,

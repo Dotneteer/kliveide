@@ -2,6 +2,7 @@ import type { DiskInformation } from "@emu/machines/disk/DiskInformation";
 import { readDiskData } from "@emu/machines/disk/disk-readers";
 import { DiskImageError } from "@emu/machines/disk/DiskImageError";
 import { TRD_SECTOR_SIZE, TRD_SECTORS_PER_TRACK } from "@emu/machines/disk/trd/trdImage";
+import { MDR_SLOT_SIZE, readMdrSector } from "@emu/machines/microdrive/mdrImage";
 import { diskImageKind, openDiskFileSystem, type DiskImageKind } from "@common/diskfs/open";
 import { TrdosFileSystem } from "@common/diskfs/trdos";
 import {
@@ -9,6 +10,7 @@ import {
   type DiskFileEntry,
   type DiskFileSystem,
   type DiskFsInfo,
+  type DiskFsKind,
   type DiskSectorRole
 } from "@common/diskfs/types";
 
@@ -48,7 +50,7 @@ export type DiskExplorerModel = {
   fileName: string;
   /** The file system's info, when the disk has one Klive reads */
   info?: DiskFsInfo;
-  system?: "+3dos" | "trdos" | "fat";
+  system?: DiskFsKind;
   /** Why the disk's files cannot be shown (an unformatted disk, for example) */
   fsError?: DiskFsError;
   files: DiskFileEntry[];
@@ -116,6 +118,39 @@ export function analyzeDiskImage (bytes: Uint8Array, fileName: string): DiskExpl
         };
       })
     }));
+    return model;
+  }
+
+  // --- A Microdrive cartridge: one "track", its slots in tape order; R is the header's sector number
+  if (kind === "mdr") {
+    const slots = Math.floor(bytes.length / MDR_SLOT_SIZE);
+    model.cylinders = 1;
+    model.tracks = [
+      {
+        trackIndex: 0,
+        cylinder: 0,
+        side: 0,
+        unformatted: !fs,
+        sectors: Array.from({ length: slots }, (_, i) => {
+          const sector = readMdrSector(bytes, i);
+          const at = i * MDR_SLOT_SIZE;
+          return {
+            sectorIndex: i,
+            c: 0,
+            h: 0,
+            r: sector.number ?? 0,
+            n: 2,
+            // --- A block that fails its checksum reads as a CRC error
+            st1: sector.state === "unformatted" ? 0x20 : 0,
+            st2: 0,
+            length: MDR_SLOT_SIZE,
+            copies: 1,
+            role: roles.get(i) ?? unused,
+            data: bytes.subarray(at, at + MDR_SLOT_SIZE)
+          };
+        })
+      }
+    ];
     return model;
   }
 

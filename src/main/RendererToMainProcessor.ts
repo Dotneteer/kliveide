@@ -52,7 +52,7 @@ import { KLIVE_GITHUB_PAGES } from "./menus/help-menu";
 import { checkZ88SlotFile } from "./machine-menus/z88-menus";
 import { displaySaveFileDialog } from "./save-file-dialog";
 import {
-  MEDIA_DISK_A,
+  MEDIA_DISK_A, MEDIA_MICRODRIVES,
   MEDIA_DISK_B,
   MEDIA_SD_CARD,
   MEDIA_TAPE,
@@ -61,7 +61,8 @@ import {
 import { readDiskData } from "@emu/machines/disk/disk-readers";
 import { DSK_WHOLE_IMAGE_KEY, dskSectorWrites } from "@emu/machines/disk/disk-changes";
 import { createDiskFile } from "@common/utils/create-disk-file";
-import { defaultDiskFolder } from "./disk-folders";
+import { MDR_SLOT_SIZE } from "@emu/machines/microdrive/mdrImage";
+import { defaultDiskFolder, defaultFolderForDiskType } from "./disk-folders";
 import { beginDiskImageEdit, cancelDiskImageEdit, commitDiskImageEdit } from "./disk-image-edit";
 import { createHardDiskImage, hardDiskFileClusters, queryHardDisk, readHardDiskFile } from "./hard-disk-images";
 import { copyFolderToHardDiskSafely, editHardDiskSafely } from "./hard-disk-edit";
@@ -333,8 +334,9 @@ class MainMessageProcessor {
   }
 
   createDiskFile(diskFolder: string, filename: string, diskType: string) {
-    // --- No folder named: the project's `disks` folder, or `Klive/Disks`
-    return createDiskFile(diskFolder || defaultDiskFolder(), filename, diskType);
+    // --- No folder named: the project's `disks` folder, or `Klive/Disks` (`cartridges` and
+    // --- `Klive/Cartridges` for a Microdrive cartridge)
+    return createDiskFile(diskFolder || defaultFolderForDiskType(diskType), filename, diskType);
   }
 
   async beginDiskImageEdit(filePath: string) {
@@ -1168,6 +1170,13 @@ class MainMessageProcessor {
    * @param diskIndex The index of the disk to save.
    * @param changes The sector changes to write.
    */
+  async saveMicrodriveChanges(drive: number, changes: SectorChanges) {
+    const response = saveMicrodriveChanges(drive, changes);
+    const file = mainStore.getState().media?.[MEDIA_MICRODRIVES[drive]]?.diskFile;
+    if (typeof file === "string") void getIdeApi().diskImageChanged(file).catch(() => {});
+    return response;
+  }
+
   async saveDiskChanges(diskIndex: number, changes: SectorChanges) {
     const response = saveDiskChanges(diskIndex, changes);
     // --- An open Disk Explorer shows the disk as the machine left it
@@ -1646,6 +1655,23 @@ function resolveMessagePath(inputPath: string, resolveIn?: string): string {
 }
 
 // --- Save disk changes to their corresponding disk file
+/** A Microdrive cartridge's written slots, each at `slot * 543` of its `.mdr` file */
+function saveMicrodriveChanges(drive: number, changes: SectorChanges): ResponseMessage {
+  const file = mainStore.getState().media?.[MEDIA_MICRODRIVES[drive]]?.diskFile;
+  if (!file) return errorResponse(`No cartridge file found for Microdrive ${drive + 1}`);
+  try {
+    const handle = fs.openSync(file, "r+");
+    try {
+      for (const [slot, data] of changes) fs.writeSync(handle, data, 0, data.length, slot * MDR_SLOT_SIZE);
+    } finally {
+      fs.closeSync(handle);
+    }
+  } catch (err) {
+    return errorResponse(`Saving Microdrive changes failed: ${err.message}`);
+  }
+  return defaultResponse();
+}
+
 function saveDiskChanges(diskIndex: number, changes: SectorChanges): ResponseMessage {
   // --- Get the disk file from the store
   const diskFile = mainStore.getState().media?.[diskIndex ? MEDIA_DISK_B : MEDIA_DISK_A]?.diskFile;

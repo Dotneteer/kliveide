@@ -1,0 +1,2156 @@
+libspectrum 1.6.4
+=================
+
+libspectrum is a fairly simple library designed to make the handling
+of various ZX Spectrum emulator-related file formats easy.  So far it
+handles:
+
+* Snapshots: .z80, .szx, .sna (all read/write), .zxs, .sp., .snp and
+  +D snapshots (read only).
+* Tape images: .tzx, .tap, .spc, .sta and .ltp (read/write) and
+  .pzx, Warajevo .tap, Z80Em and CSW version 1 (read only). 
+* Input recordings: .rzx (read/write).
+* Disk images: .dsk (both plain and extended), .d40, .d80, .fdi, .img, .mgt,
+  .opd, .sad, .scl, .td0, .trd and .udi (identification only).
+* Timex cartridges: .dck (read only).
+* IDE hard disk images: .hdf (read/write).
+* Microdrive cartridge images: .mdr (read/write).
+
+There are also some subsidiary functions which may be generally useful
+for Spectrum-related utilities.
+
+General conventions
+===================
+
+Naming conventions:
+
+*_alloc: give us a new object
+*_free:  we're done with this object
+*_read:  restore object from serialised form
+*_write: serialise object
+
+Calling conventions:
+
+* In general, all output parameters (those which may be changed by
+  the function) should be before all input parameters
+
+Library capabilities
+====================
+
+If the library supports zlib compression (as is used, for instance in
+SZX snapshots), then then the constant
+LIBSPECTRUM_SUPPORTS_ZLIB_COMPRESSION will be defined and non-zero. If
+the library does not support zlib compression, then the constant will
+not be defined.
+
+Bzip2 compression is similarly covered by LIBSPECTRUM_SUPPORTS_BZ2_COMPRESSION.
+
+WAV file support is covered by LIBSPECTRUM_SUPPORTS_WAV.
+LIBSPECTRUM_SUPPORTS_AUDIOFILE remains defined as a deprecated compatibility
+alias for older code, but new code should use LIBSPECTRUM_SUPPORTS_WAV.
+
+Compression helpers
+===================
+
+libspectrum_error
+libspectrum_zlib_inflate( const libspectrum_byte *gzptr, size_t gzlength,
+                          libspectrum_byte **outptr, size_t *outlength )
+
+Inflate the zlib-compressed data in `gzptr' and return the uncompressed
+buffer and length in `*outptr' and `*outlength'. The returned buffer is
+allocated by libspectrum and should be released with `libspectrum_free'
+when it is no longer needed.
+
+libspectrum_error
+libspectrum_zlib_compress( const libspectrum_byte *data, size_t length,
+                           libspectrum_byte **gzptr, size_t *gzlength )
+
+Compress the `length' bytes at `data' with zlib and return the compressed
+buffer and length in `*gzptr' and `*gzlength'. The returned buffer is
+allocated by libspectrum and should be released with `libspectrum_free'
+when it is no longer needed.
+
+Defined types
+=============
+
+libspectrum defines eight standard types which may be of use:
+
+libspectrum_byte		An unsigned 8-bit integer
+libspectrum_signed_byte		A signed 8-bit integer
+libspectrum_word		An unsigned 16-bit integer
+libspectrum_signed_word		A signed 16-bit integer
+libspectrum_dword		An unsigned 32-bit integer
+libspectrum_signed_dword	A signed 32-bit integer
+libspectrum_qword		An unsigned 64-bit integer
+libspectrum_signed_qword	A signed 64-bit integer
+
+Initialisation etc
+==================
+
+libspectrum_error libspectrum_init( void )
+
+This routine must be called before any other libspectrum routines,
+other than `libspectrum_version', `libspectrum_check_version' and
+`libspectrum_mem_set_vtable' to initialise the library. If it isn't
+called, undefined behaviour may result.
+
+void libspectrum_end( void )
+
+Release any global resources allocated by libspectrum. This should be
+called once the calling program has finished using the library.
+
+const char *libspectrum_version( void )
+
+This routine returns the version of libspectrum in use, in a "x.y.z.a"
+format.
+
+const char *libspectrum_gcrypt_version( void )
+
+This routine returns the version of libgcrypt being used by
+libspectrum, or NULL if an appropriate version of libgcrypt is not
+available.
+
+int libspectrum_check_version( const char *version )
+
+This routine checks whether the version of libspectrum is at least
+`version', which should be specified in an "x.y.z.a" format. It
+returns non-zero if the libspectrum version in use is at least
+`version' or zero if it is not.
+
+Memory handling
+===============
+
+By default, libspectrum will use the standard library's malloc(),
+calloc(), realloc() and free() for memory handling, but wrapped so that
+they are "strong" (they will either succeed or abort the program). It is
+possible to replace these with custom allocation routines if you wish.
+
+typedef void* (*libspectrum_malloc_fn_t)( size_t size );
+typedef void* (*libspectrum_calloc_fn_t)( size_t nmemb, size_t size );
+typedef void* (*libspectrum_realloc_fn_t)( void *ptr, size_t size );
+typedef void (*libspectrum_free_fn_t)( void *ptr );
+
+typedef struct libspectrum_mem_vtable_t {
+  libspectrum_malloc_fn_t malloc;
+  libspectrum_calloc_fn_t calloc;
+  libspectrum_realloc_fn_t realloc;
+  libspectrum_free_fn_t free;
+} libspectrum_mem_vtable_t;
+
+void libspectrum_mem_set_vtable( libspectrum_mem_vtable_t *table )
+
+Set the memory handling routines to be those specified by `table'. This
+function may *not* be called after libspectrum_init() has been called.
+Note that libspectrum will ensure that the memory allocators are still
+strong, and will abort the program if any of the allocators returns
+NULL.
+
+void* libspectrum_malloc( size_t size )
+void* libspectrum_malloc_n( size_t nmemb, size_t size )
+void* libspectrum_malloc0_n( size_t nmemb, size_t size )
+void* libspectrum_realloc( void *ptr, size_t size )
+void* libspectrum_realloc_n( void *ptr, size_t nmemb, size_t size )
+void libspectrum_free( void *ptr )
+
+These are libspectrum's strong memory allocation wrappers. They use the
+currently configured allocation vtable, and will abort the program if an
+allocation fails rather than returning NULL. `libspectrum_malloc0_n'
+returns zeroed memory.
+
+#define libspectrum_new( type, count )
+#define libspectrum_new0( type, count )
+#define libspectrum_renew( type, mem, count )
+
+These convenience macros wrap `libspectrum_malloc_n',
+`libspectrum_malloc0_n' and `libspectrum_realloc_n' respectively while
+also casting the result to `type *'. `libspectrum_new0' returns zeroed
+memory.
+
+Error handling
+==============
+
+All libspectrum functions signal errors in two ways: by returning an
+non-zero error code of type `libspectrum_error' and by calling
+`libspectrum_error_function'.  The `libspectrum_error' enum can take the
+following values:
+
+LIBSPECTRUM_ERROR_NONE		No error; guaranteed to have value 0
+LIBSPECTRUM_ERROR_WARNING	A warning, rather than a real error
+LIBSPECTRUM_ERROR_MEMORY	Out of memory
+LIBSPECTRUM_ERROR_UNKNOWN	Data not recognised
+LIBSPECTRUM_ERROR_CORRUPT	Invalid data
+LIBSPECTRUM_ERROR_SIGNATURE	File does not have the right signature
+LIBSPECTRUM_ERROR_SLT		Ugly kludge used to indicate that a .z80
+				file contains .slt data
+LIBSPECTRUM_ERROR_INVALID	An invalid parameter was supplied to a
+				function
+LIBSPECTRUM_ERROR_MISSING_ZLIB	zlib support is unavailable or disabled
+LIBSPECTRUM_ERROR_LOGIC		An internal logic error has occurred;
+				should never be seen
+
+`libspectrum_error_function' is an object of type
+`libspectrum_error_function_t':
+
+libspectrum_error (*libspectrum_error_function_t)(
+  libspectrum_error error, const char *format, va_list ap
+)
+
+On error, `libspectrum_error_function' will be called, with `error'
+being one of the standard codes, and `format' and `ap' are the standard
+arguments suitable for passing to one of the v*printf functions to
+create a text message giving more details on the error. If
+`libspectrum_error_function' is not set by the user code,
+`libspectrum_default_error_function' will be used: this simply outputs
+the message to stderr, prefixed with "libspectrum error: " and ending
+with a newline.  (Additionally, it will call abort() if the error was of
+type LIBSPECTRUM_ERROR_LOGIC, but that shouldn't happen...)
+
+libspectrum_error
+libspectrum_default_error_function( libspectrum_error error,
+                                    const char *format, va_list ap )
+
+The default implementation of `libspectrum_error_function'. Most callers
+will not need to invoke this directly, but it can be useful from a custom
+error handler which wants to preserve the standard formatting.
+
+General functions
+=================
+
+Functions which don't relate directly to one file type or another.
+
+libspectrum_error
+libspectrum_zx_string_to_utf8( char *buffer, size_t length,
+                               const libspectrum_byte *src, size_t src_length )
+
+Convert a ZX Spectrum encoded string to UTF-8 in caller-provided `buffer'.
+Trailing spaces are stripped. Printable ASCII characters are copied as
+is except for `\\', which is escaped as `\\\\'. Spectrum-specific
+characters are converted to readable UTF-8 or textual equivalents:
+`^' becomes an up-arrow, '`' becomes a pound sign, character 127 becomes
+copyright, graphics characters become Unicode block elements, user-defined
+graphics become `\\a' to `\\s', and keyword tokens expand to
+their BASIC text. `buffer' must have room for at least nine times
+`src_length', plus one byte for the terminating NUL; the extra space allows
+for expanded BASIC keyword tokens. `LIBSPECTRUM_ERROR_INVALID' is returned
+if an argument is invalid or `buffer' is too short.
+
+Machine types and capabilities
+------------------------------
+
+In some places (notably in the `libspectrum_snap' structure),
+libspectrum needs to identify the Spectrum variant in use. This is done
+with the `libspectrum_machine' enum, which can take the following
+values:
+
+LIBSPECTRUM_MACHINE_16		16K Spectrum
+LIBSPECTRUM_MACHINE_48		48K Spectrum
+LIBSPECTRUM_MACHINE_48_NTSC     NTSC version of 48K Spectrum
+LIBSPECTRUM_MACHINE_128		(Original) 128K Spectrum
+LIBSPECTRUM_MACHINE_128E	Spectrum 128Ke
+LIBSPECTRUM_MACHINE_PLUS2	Spectrum +2 (the grey one)
+LIBSPECTRUM_MACHINE_PLUS2A	Spectrum +2A (the black one)
+LIBSPECTRUM_MACHINE_PLUS3	Spectrum +3
+LIBSPECTRUM_MACHINE_PLUS3E	Spectrum +3e
+LIBSPECTRUM_MACHINE_TC2048	Timex TC2048
+LIBSPECTRUM_MACHINE_TC2068	Timex TC2068
+LIBSPECTRUM_MACHINE_TS2068	Timex TS2068
+LIBSPECTRUM_MACHINE_PENT	Pentagon 128
+LIBSPECTRUM_MACHINE_PENT512	Pentagon 512
+LIBSPECTRUM_MACHINE_PENT1024	Pentagon 1024
+LIBSPECTRUM_MACHINE_SCORP	Scorpion ZS 256
+LIBSPECTRUM_MACHINE_SE		Spectrum SE
+
+The `libspectrum_machine_name' function:
+
+const char* libspectrum_machine_name( libspectrum_machine type )
+
+will return a text string giving the name of the machine (or "unknown"
+if it doesn't recognise the type). This string is statically allocated
+and so should not be modified by user code in any way.
+
+The `libspectrum_machine_capabilities' function:
+
+int libspectrum_machine_capabilities( libspectrum_machine type )
+
+will tell you which features a given `libspectrum_machine' has. It
+returns a bitwise OR of the following constants:
+
+LIBSPECTRUM_MACHINE_CAPABILITY_128_MEMORY
+  This machine has 128K of memory accessible as on the 128K machine.
+
+LIBSPECTRUM_MACHINE_CAPABILITY_AY
+  This machine has an AY-3-8912 sound chip (as in the 128K and later
+  machines).
+
+LIBSPECTRUM_MACHINE_CAPABILITY_BEEPER
+  This machine has a one-bit beeper, as found on the Spectrum 16K/48K
+  and Timex TC2048/TC2068/TS2068, but not the Spectrum 128K.
+
+LIBSPECTRUM_MACHINE_CAPABILITY_EVEN_M1
+  Processor M1 cycles on this machine always start on even tstate
+  counts.
+
+LIBSPECTRUM_MACHINE_CAPABILITY_KEMPSTON_JOYSTICK
+  This machine has built-in Kempston joystick ports as on the TC2048.
+
+LIBSPECTRUM_MACHINE_CAPABILITY_NTSC
+  This machine has an NTSC video output.
+
+LIBSPECTRUM_MACHINE_CAPABILITY_PENT1024_MEMORY
+  This machine has 1024K of memory accessible as on the Pentagon 1024.
+
+LIBSPECTRUM_MACHINE_CAPABILITY_PENT512_MEMORY
+  This machine has 512K of memory accessible as on the Pentagon 512.
+
+LIBSPECTRUM_MACHINE_CAPABILITY_PLUS3_MEMORY
+  This machine can change into all-RAM configurations as the +2A/+3.
+
+LIBSPECTRUM_MACHINE_CAPABILITY_PLUS3_DISK
+  This machine has a disk drive similar to that on the +3.
+
+LIBSPECTRUM_MACHINE_CAPABILITY_SCORP_MEMORY
+  This machine has memory paging capabilities like those found on the
+  Scorpion ZS 256.
+
+LIBSPECTRUM_MACHINE_CAPABILITY_SE_MEMORY
+  This machine has memory paging capabilities like those found on the
+  Spectrum SE.
+
+LIBSPECTRUM_MACHINE_CAPABILITY_SINCLAIR_JOYSTICK
+  This machine has built-in Sinclair joystick ports as on the +2/+2A/+3.
+
+LIBSPECTRUM_MACHINE_CAPABILITY_TIMEX_DOCK
+  This machine has a `dock' (cartridge port) similar to that found on
+  the TC2068.
+
+LIBSPECTRUM_MACHINE_CAPABILITY_TIMEX_MEMORY
+  This machine has memory paging capabilities similar to that of the
+  TC2048 and TC2068.
+
+LIBSPECTRUM_MACHINE_CAPABILITY_TIMEX_VIDEO
+  This machine has additional video modes as found on the TC2048 and
+  TC2068.
+
+LIBSPECTRUM_MACHINE_CAPABILITY_TRDOS_DISK
+  This machine has a disk drive similar to a TR-DOS device
+
+File identification
+-------------------
+
+The `libspectrum_identify_file_raw' function will, if given a file's
+contents and optionally its filename, will make a `best guess' as to
+what sort of file it is:
+
+libspectrum_error
+libspectrum_identify_file_raw( libspectrum_id_t *type, const char *filename,
+			       const unsigned char *buffer, size_t length )
+
+`filename' should be the name of the file to be identified, or NULL if
+it is unknown. `buffer' and `length' are the contents and length of the
+file respectively.
+
+The type of file will be returned in the `type' parameter, and can take
+the following values:
+
+LIBSPECTRUM_ID_UNKNOWN		Couldn't identify this file
+
+LIBSPECTRUM_ID_AUX_POK		A .pok poke file
+
+LIBSPECTRUM_ID_CARTRIDGE_DCK	A .dck Timex dock image
+LIBSPECTRUM_ID_CARTRIDGE_IF2	A .rom Interface 2 cartridge
+
+LIBSPECTRUM_ID_COMPRESSED_BZ2	A bzip2 compressed file
+LIBSPECTRUM_ID_COMPRESSED_GZ	A gzip compressed file
+LIBSPECTRUM_ID_COMPRESSED_ZIP	A zip compressed file
+
+LIBSPECTRUM_ID_DISK_D80		A .d80 or .d40 Didaktik 80/40 disk file
+LIBSPECTRUM_ID_DISK_DSK		A .dsk +3 disk file
+LIBSPECTRUM_ID_DISK_CPC		A plain .dsk +3 disk file
+LIBSPECTRUM_ID_DISK_ECPC	An extended .dsk +3 disk file
+LIBSPECTRUM_ID_DISK_FDI		A .fdi generic disk file
+LIBSPECTRUM_ID_DISK_IMG		A .img DISCiPLE/+D disk file
+LIBSPECTRUM_ID_DISK_MGT		A .mgt DISCiPLE/+D disk file
+LIBSPECTRUM_ID_DISK_OPD		A .opd or .opu Opus Discovery disk file
+LIBSPECTRUM_ID_DISK_SAD		A .sad generic disk file
+LIBSPECTRUM_ID_DISK_SCL		A .scl TRDOS disk file
+LIBSPECTRUM_ID_DISK_TRD		A .trd TRDOS disk file
+LIBSPECTRUM_ID_DISK_TD0		A .td0 generic disk file
+LIBSPECTRUM_ID_DISK_UDI		A .udi generic disk file
+
+LIBSPECTRUM_ID_HARDDISK_HDF	A .hdf IDE hard disk image
+
+LIBSPECTRUM_ID_MICRODRIVE_MDR	A .mdf microdrive cartridge
+
+LIBSPECTRUM_ID_RECORDING_RZX	A .rzx input recording
+
+LIBSPECTRUM_ID_SNAPSHOT_PLUSD   A +D snapshot
+LIBSPECTRUM_ID_SNAPSHOT_SNA     A .sna snapshot
+LIBSPECTRUM_ID_SNAPSHOT_SNP     A .snp snapshot
+LIBSPECTRUM_ID_SNAPSHOT_SP      A .sp snapshot
+LIBSPECTRUM_ID_SNAPSHOT_SZX     A .szx snapshot (as used by Spectaculator)
+LIBSPECTRUM_ID_SNAPSHOT_Z80	A .z80 snapshot
+LIBSPECTRUM_ID_SNAPSHOT_ZXS	A .zxs snapshot (as used by zx32)
+LIBSPECTRUM_ID_SNAPSHOT_DSNAP   A .S snapshot (as used by D40/D80)
+
+LIBSPECTRUM_ID_TAPE_CSW		A .csw tape image
+LIBSPECTRUM_ID_TAPE_TAP		A `normal' (Z80-style) .tap tape image
+LIBSPECTRUM_ID_TAPE_TZX		A .tzx tape image
+LIBSPECTRUM_ID_TAPE_WARAJEVO	A Warajevo-style .tap tape image
+LIBSPECTRUM_ID_TAPE_Z80EM	A Z80Em tape image
+LIBSPECTRUM_ID_TAPE_SPC		An SP-style .spc tape image
+LIBSPECTRUM_ID_TAPE_STA		A Speculator-style .sta tape image
+LIBSPECTRUM_ID_TAPE_LTP		A Nuclear ZX-style .ltp tape image
+LIBSPECTRUM_ID_TAPE_PZX		A .pzx tape image
+
+Versions of libspectrum previous to 0.5.0 used LIBSPECTRUM_ID_DISK_DSK
+for both plain and extended .dsk images, but this is now deprecated in
+favour of the more specific LIBSPECTRUM_ID_DISK_CPC and
+LIBSPECTRUM_ID_DISK_ECPC.
+
+`libspectrum_identify_file_raw' looks for defined signatures in the
+file as well as the extension of the filename and a couple of
+heuristics in its attempts to identify the file. It's not perfect
+(especially when given files with the wrong extension), but it should
+work in most cases.
+
+When dealing with compressed files, you are probably interested in the
+data after it has been decompressed rather the original file. This can
+be accomplished with the `libspectrum_identify_file' function:
+
+libspectrum_error
+libspectrum_identify_file( libspectrum_id_t *type, const char *filename,
+			   const unsigned char *buffer, size_t length )
+
+The parameters are the same as for `libspectrum_identify_file_raw'.
+
+What in many cases may be more useful than the specific type of the
+file is whether the file is a snapshot, a tape image or whatever. This
+can be done with the `libspectrum_identify_class' function:
+
+libspectrum_error libspectrum_identify_class( libspectrum_class_t *class,
+                                              libspectrum_id_t type )
+
+which returns the type of file represented by the `type' parameter in
+`*class'. The available values are:
+
+LIBSPECTRUM_CLASS_UNKNOWN		An unknown file type
+
+LIBSPECTRUM_CLASS_AUXILIARY		An auxiliary file
+LIBSPECTRUM_CLASS_CARTRIDGE_TIMEX	A Timex dock cartridge
+LIBSPECTRUM_CLASS_CARTRIDGE_IF2		An Interface 2 cartridge
+LIBSPECTRUM_CLASS_DISK_DIDAKTIK	A Didaktik 80/40 disk image
+LIBSPECTRUM_CLASS_DISK_GENERIC		A generic disk image
+LIBSPECTRUM_CLASS_DISK_OPUS		An Opus Discovery disk image
+LIBSPECTRUM_CLASS_DISK_PLUSD		A DISCiPLE/+D disk image
+LIBSPECTRUM_CLASS_DISK_PLUS3		A +3 disk image
+LIBSPECTRUM_CLASS_DISK_TRDOS		A TRDOS disk image
+LIBSPECTRUM_CLASS_HARDDISK		An IDE hard disk image
+LIBSPECTRUM_CLASS_MICRODRIVE		A microdrive cartridge
+LIBSPECTRUM_CLASS_RECORDING		An input recording
+LIBSPECTRUM_CLASS_SNAPSHOT		A snapshot
+LIBSPECTRUM_CLASS_TAPE			A tape image
+
+One final routine, `libspectrum_identify_file_with_class',
+
+libspectrum_error
+libspectrum_identify_file_with_class(
+  libspectrum_id_t *type, libspectrum_class_t *libspectrum_class,
+  const char *filename, const unsigned char *buffer, size_t length )
+
+simply combines the calls to `libspectrum_identify_file' and
+`libspectrum_identify_class', returning the file type in `*type' and
+the file class in `*class'.
+
+Buffer helpers
+--------------
+
+`libspectrum_buffer' is an opaque growable byte buffer used by parts of
+the library and also exposed for callers that need the same append-style
+serialisation support.
+
+libspectrum_buffer* libspectrum_buffer_alloc( void )
+void libspectrum_buffer_reallocate( libspectrum_buffer *buffer, size_t new_size )
+void libspectrum_buffer_free( libspectrum_buffer *buffer )
+
+Allocate, resize or free a buffer. Newly allocated buffers start empty.
+
+int libspectrum_buffer_is_empty( const libspectrum_buffer *buffer )
+int libspectrum_buffer_is_not_empty( const libspectrum_buffer *buffer )
+
+Return whether the buffer currently contains any data.
+
+void libspectrum_buffer_write_byte( libspectrum_buffer *buffer,
+                                    libspectrum_byte data )
+void libspectrum_buffer_write_word( libspectrum_buffer *buffer,
+                                    libspectrum_word data )
+void libspectrum_buffer_write_dword( libspectrum_buffer *buffer,
+                                     libspectrum_dword data )
+void libspectrum_buffer_write_buffer( libspectrum_buffer *dest,
+                                      const libspectrum_buffer *src )
+void libspectrum_buffer_write( libspectrum_buffer *buffer, const void *data,
+                               size_t size )
+void libspectrum_buffer_set( libspectrum_buffer *buffer,
+                             libspectrum_byte value, size_t size )
+
+Append a byte, word, dword, another buffer, arbitrary data or repeated
+bytes to `buffer'. The word and dword helpers serialise values in little-
+endian form.
+
+size_t libspectrum_buffer_get_data_size( const libspectrum_buffer *buffer )
+libspectrum_byte* libspectrum_buffer_get_data( const libspectrum_buffer *buffer )
+void libspectrum_buffer_clear( libspectrum_buffer *buffer )
+
+Return the number of bytes currently stored in `buffer', access its data,
+or reset it to the empty state.
+
+void libspectrum_buffer_append( libspectrum_byte **buffer, size_t *length,
+                                libspectrum_byte **ptr,
+                                const libspectrum_buffer *src )
+
+Append the contents of `src' to the raw output buffer identified by
+`buffer', `length' and `ptr', growing that buffer if needed.
+
+Machine timings
+---------------
+
+The `libspectrum_machine_timings_*' functions give information about
+the speed and various timings constants used by the machines. Some of
+these timings are almost certainly wrong; if you have any corrections,
+please send them in. Each of the functions takes one of the
+LIBSPECTRUM_MACHINE_* constants listed above and returns a timing for
+that machine.
+
+libspectrum_dword
+libspectrum_timings_processor_speed( libspectrum_machine machine )
+libspectrum_dword
+libspectrum_timings_ay_speed( libspectrum_machine machine )
+
+The speed in Hz of the main processor and of the AY clock.
+
+libspectrum_word
+libspectrum_timings_left_border( libspectrum_machine machine )
+libspectrum_word
+libspectrum_timings_horizontal_screen( libspectrum_machine machine )
+libspectrum_word
+libspectrum_timings_right_border( libspectrum_machine machine )
+libspectrum_word
+libspectrum_timings_horizontal_retrace( libspectrum_machine machine )
+
+The length in tstates of the different parts of one scanline.
+
+libspectrum_word
+libspectrum_timings_tstates_per_line( libspectrum_machine machine )
+
+The sum of the previous four numbers.
+
+libspectrum_word
+libspectrum_timings_top_border( libspectrum_machine machine )
+libspectrum_word
+libspectrum_timings_vertical_screen( libspectrum_machine machine )
+libspectrum_word
+libspectrum_timings_bottom_border( libspectrum_machine machine )
+libspectrum_word
+libspectrum_timings_vertical_retrace( libspectrum_machine machine )
+
+The number of scanlines in the different parts of the screen.
+
+libspectrum_word
+libspectrum_timings_lines_per_frame( libspectrum_machine machine )
+
+The sum of the previous four numbers.
+
+libspectrum_dword
+libspectrum_timings_tstates_per_frame( libspectrum_machine machine )
+
+tstates_per_line * lines_per_frame.
+
+libspectrum_word
+libspectrum_timings_top_left_pixel( libspectrum_machine machine )
+
+How many tstates after interrupt is the top-left pixel of the screen
+displayed.
+
+libspectrum_word
+libspectrum_timings_interrupt_length( libspectrum_machine machine )
+
+How about t-states the machine holds /INT low for on a maskable
+interrupt.
+
+Creator information
+-------------------
+
+Some formats (.szx snapshots and .rzx input recordings) allow
+utilities to store some information regarding the creator of the file.
+libspectrum provides a `libspectrum_creator' structure to store this
+information.
+
+libspectrum_creator* libspectrum_creator_alloc( void )
+
+Allocate a new `libspectrum_creator' structure.
+
+libspectrum_error libspectrum_creator_free( libspectrum_creator *creator )
+
+Free the memory used by a `libspectrum_creator' structure.
+
+libspectrum_error
+libspectrum_creator_set_program( libspectrum_creator *creator,
+				 const char *program )
+const libspectrum_byte*
+libspectrum_creator_program( libspectrum_creator *creator )
+
+Set and retrieve the name of the program which created this file.
+
+libspectrum_error libspectrum_creator_set_major( libspectrum_creator *creator,
+						 libspectrum_word major )
+libspectrum_word
+libspectrum_creator_major( libspectrum_creator *creator )
+
+Set and retrieve the major version number of the program which created
+this file.
+
+libspectrum_error libspectrum_creator_set_minor( libspectrum_creator *creator,
+						 libspectrum_word minor )
+libspectrum_word
+libspectrum_creator_minor( libspectrum_creator *creator )
+
+Set and retrieve the minor version number of the program which created
+this file.
+
+libspectrum_error
+libspectrum_creator_set_competition_code( libspectrum_creator *creator,
+					  libspectrum_dword competition_code )
+libspectrum_dword
+libspectrum_creator_competition_code( libspectrum_creator *creator )
+
+Set and retrieve the `competition code' of the program which created
+this file. The competition code can be used for on-line tournaments to
+determine that a certain file was made after a specific code was
+released. If you don't understand the previous, you almost certainly
+don't need to worry about it!
+
+libspectrum_error
+libspectrum_creator_set_custom( libspectrum_creator *creator,
+                                libspectrum_byte *data, size_t length )
+libspectrum_byte* libspectrum_creator_custom( libspectrum_creator *creator )
+size_t libspectrum_creator_custom_length( libspectrum_creator *creator )
+
+Set and retrieve the (arbitrary) custom data from the program which
+created this file.
+
+Snapshot functions
+==================
+
+Functions for dealing with snapshot files. These act on an opaque
+`libspectrum_snap' structure, which can be accessed via the following
+routines:
+
+libspectrum_snap* libspectrum_snap_alloc( void )
+
+Allocate a new libspectrum_snap structure.
+
+libspectrum_error libspectrum_snap_free( libspectrum_snap *snap )
+
+Release a structure allocated with `libspectrum_snap_alloc'.
+
+There is a family of functions which can be used to retrieve and set
+the properties of a snapshot. The `retrieve' functions have the form
+
+<type> libspectrum_snap_<name>( libspectrum_snap *snap )
+
+which retrieves the value of the property <name>, while the `set'
+functions have the form
+
+void libspectrum_snap_set_<name>( libspectrum_snap *snap, <type> new_value )
+
+which sets the value of <name> to `new_value'. For array properties,
+the retrieval function has the form
+
+<type> libspectrum_snap_<name>( libspectrum_snap *snap, int idx )
+
+which retrieves the <name>[`idx'] and the set function has the form
+
+void libspectrum_snap_set_<name>( libspectrum_snap *snap,
+				  int idx, <type> new_value )
+
+which sets <name>[`idx'].
+
+The available properties (along with their types) are:
+
+* libspectrum_machine machine
+
+* libspectrum_byte a
+* libspectrum_byte f
+* libspectrum_word bc
+* libspectrum_word de
+* libspectrum_word hl
+* libspectrum_byte a_
+* libspectrum_byte f_
+* libspectrum_word bc_
+* libspectrum_word de_
+* libspectrum_word hl_
+* libspectrum_word ix
+* libspectrum_word iy
+* libspectrum_byte i
+* libspectrum_byte r
+* libspectrum_word sp
+* libspectrum_word pc
+* libspectrum_word memptr
+* libspectrum_byte iff1
+* libspectrum_byte iff2
+* libspectrum_byte im
+
+* libspectrum_dword tstates
+
+* int halted
+* int last_instruction_ei
+* int last_instruction_set_f
+
+* libspectrum_byte out_ula
+
+* libspectrum_byte out_128_memoryport
+* libspectrum_byte out_plus3_memoryport
+
+* libspectrum_byte out_ay_registerport
+* libspectrum_byte ay_registers[16]
+
+* libspectrum_byte out_scld_hsr
+* libspectrum_byte out_scld_dec
+
+* int interface1_active
+* int interface1_paged
+* int interface1_drive_count
+* int interface1_custom_rom
+* libspectrum_byte* interface1_rom[1]
+* size_t interface1_rom_length[1]
+
+* int beta_active
+* int beta_paged
+* int beta_autoboot
+* int beta_drive_count
+* int beta_custom_rom
+* int beta_direction
+* libspectrum_byte beta_system
+* libspectrum_byte beta_track
+* libspectrum_byte beta_sector
+* libspectrum_byte beta_data
+* libspectrum_byte beta_status
+* libspectrum_byte* beta_rom[1]
+
+* int plusd_active
+* int plusd_paged
+* int plusd_drive_count
+* int plusd_custom_rom
+* int plusd_direction
+* libspectrum_byte plusd_control
+* libspectrum_byte plusd_track
+* libspectrum_byte plusd_sector
+* libspectrum_byte plusd_data
+* libspectrum_byte plusd_status
+* libspectrum_byte* plusd_rom[1]
+* libspectrum_byte* plusd_ram[1]
+
+* int opus_active
+* int opus_paged
+* int opus_drive_count
+* int opus_custom_rom
+* int opus_direction
+* libspectrum_byte opus_track
+* libspectrum_byte opus_sector
+* libspectrum_byte opus_data
+* libspectrum_byte opus_status
+* libspectrum_byte opus_data_reg_a
+* libspectrum_byte opus_data_dir_a
+* libspectrum_byte opus_control_a
+* libspectrum_byte opus_data_reg_b
+* libspectrum_byte opus_data_dir_b
+* libspectrum_byte opus_control_b
+* libspectrum_byte* opus_rom[1]
+* libspectrum_byte* opus_ram[1]
+
+* int custom_rom
+* size_t custom_rom_pages
+* libspectrum_byte* roms[1]
+* size_t rom_length[1]
+
+* libspectrum_byte* pages[8]
+
+* libspectrum_byte* slt[256]
+* size_t slt_length[256]
+* libspectrum_byte* slt_screen
+* int slt_screen_level
+
+* int zxatasp_active
+* int zxatasp_upload
+* int zxatasp_writeprotect
+* libspectrum_byte zxatasp_port_a
+* libspectrum_byte zxatasp_port_b
+* libspectrum_byte zxatasp_port_c
+* libspectrum_byte zxatasp_control
+* size_t zxatasp_pages
+* size_t zxatasp_current_page
+* libspectrum_byte* zxatasp_ram[32]
+
+* int zxcf_active
+* int zxcf_upload
+* libspectrum_byte zxcf_memctl
+* size_t zxcf_pages
+* libspectrum_byte* zxcf_ram[64]
+
+* int interface2_active
+* libspectrum_byte* interface2_rom[1]
+
+* int dock_active
+* libspectrum_byte exrom_ram[8]
+* libspectrum_byte* exrom_cart[8]
+* libspectrum_byte dock_ram[8]
+* libspectrum_byte* dock_cart[8]
+
+* int issue2
+
+* size_t joystick_active_count
+* libspectrum_joystick joystick_list[ SNAPSHOT_JOYSTICKS ]
+* int joystick_inputs[ SNAPSHOT_JOYSTICKS ]
+
+* int kempston_mouse_active
+
+* int simpleide_active
+
+* int divide_active
+* int divide_eprom_writeprotect
+* int divide_paged
+* libspectrum_byte divide_control
+* size_t divide_pages
+* libspectrum_byte* divide_eprom[1]
+* libspectrum_byte* divide_ram[4]
+
+* int fuller_box_active
+
+* int melodik_active
+
+* int specdrum_active
+* libspectrum_signed_byte specdrum_dac
+
+* int spectranet_active
+* int spectranet_paged
+* int spectranet_paged_via_io
+* int spectranet_nmi_flipflop
+* int spectranet_programmable_trap_active
+* int spectranet_programmable_trap_msb
+* int spectranet_all_traps_disabled
+* int spectranet_rst8_trap_disabled
+* int spectranet_deny_downstream_a15
+* int spectranet_page_a
+* int spectranet_page_b
+* libspectrum_word spectranet_programmable_trap
+* libspectrum_byte* spectranet_w5100[1]
+* libspectrum_byte* spectranet_flash[1]
+* libspectrum_byte* spectranet_ram[1]
+
+* int late_timings
+
+* int zx_printer_active
+
+* int usource_active
+* int usource_paged
+* int usource_custom_rom
+* libspectrum_byte* usource_rom[1]
+* size_t usource_rom_length[1]
+
+* int uspeech_active
+* int uspeech_paged
+
+* int disciple_active
+* int disciple_paged
+* int disciple_inhibit_button
+* int disciple_drive_count
+* int disciple_custom_rom
+* int disciple_direction
+* libspectrum_byte disciple_control
+* libspectrum_byte disciple_track
+* libspectrum_byte disciple_sector
+* libspectrum_byte disciple_data
+* libspectrum_byte disciple_status
+* libspectrum_byte* disciple_rom[1]
+* size_t disciple_rom_length[1]
+* libspectrum_byte* disciple_ram[1]
+
+* int didaktik80_active;
+* int didaktik80_paged;
+* int didaktik80_drive_count;
+* int didaktik80_custom_rom;
+* int didaktik80_direction;
+* libspectrum_byte didaktik80_aux;
+* libspectrum_byte didaktik80_track;
+* libspectrum_byte didaktik80_sector;
+* libspectrum_byte didaktik80_data;
+* libspectrum_byte didaktik80_status;
+* libspectrum_byte* didaktik80_rom[1];
+* size_t didaktik80_rom_length[1];
+* libspectrum_byte* didaktik80_ram[1];
+
+* int covox_active
+* libspectrum_byte covox_dac
+
+* int multiface_active;
+* int multiface_paged;
+* int multiface_model_one;
+* int multiface_model_128;
+* int multiface_model_3;
+* int multiface_disabled;
+* int multiface_software_lockout;
+* int multiface_red_button_disabled;
+* libspectrum_byte* multiface_ram[1];
+* size_t multiface_ram_length[1];
+
+Most of those should be fairly self-explanatory; those which may not
+be are:
+
+* `a_', `f_', `bc_', `de_' and `hl_' functions represent the A', F',
+  BC', DE' and HL' registers.
+
+* For 48K snaps, 0x4000 to 0x7fff is stored in `pages[5]', 0x8000 to
+  0xbfff in `pages[2]' and 0xc000 to 0xffff in `pages[0]' (This is
+  equivalent to the default mapping on the 128K machines).
+
+* `last_instruction_ei' being non-zero signals that the opcode
+  previously executed was an EI and thus interrupts should not be
+  accepted at this point, but will be after the next opcode.
+
+* `last_instruction_set_f' being non-zero signals that the opcode
+  previously executed affected the F register.
+
+* `out_plus3_memoryport' should also be used to save the state of
+  the Scorpion's secondary memory control port (0x1ffd).
+
+* `late_timings' being non-zero signals that the emulated Spectrum
+  should use timings 1 t-state later than usual as in some machines
+  that have warmed up.
+
+* `zx_printer_active' being non-zero signals that the emulated Spectrum
+  has a ZX Printer connected.
+
+* The `beta_*' functions represent the Betadisk
+  interface. `beta_paged' is non-zero if the Betadisk ROM is currently
+  paged in between 0x0000 and 0x3fff and `beta_direction' is non-zero
+  if the current seek direction is towards higher cylinders
+  (rimwards). The other `beta_*' functions represent the current
+  values of the Betadisk interface registers.
+
+* The `zxatasp_*' and `zxcf_*' functions give the state of the ZXATASP
+  and ZXCF interfaces. `zxatasp_pages' and `zxcf_pages' give the
+  number of 16K RAM pages attached to the
+  interface. `zxatasp_current_page' gives the page which is currently
+  paged in via the ZXATASP, or 255 if no page is currently selected.
+
+* `exrom_ram' and `dock_ram' are non-zero if the corresponding 8K page
+  of the Timex EXROM or DOCK are writable.
+
+* The `spectranet_*' functions represent the Spectranet interface.
+
+* `joystick_active_count' is the number of joysticks connected to the emulated
+  Spectrum. `joystick_list' gives the type of the joysticks and
+  `joystick_inputs' gives the corresponding connections to the real machines
+  keyboard and joysticks.
+
+  The available joystick types are defined by the libspectrum_joystick
+  enum, which can take the following values:
+
+  LIBSPECTRUM_JOYSTICK_NONE		No joystick connected
+
+  LIBSPECTRUM_JOYSTICK_CURSOR		Cursor joystick
+  LIBSPECTRUM_JOYSTICK_KEMPSTON		Kempston joystick
+  LIBSPECTRUM_JOYSTICK_SINCLAIR_1	Sinclair joystick 1
+  LIBSPECTRUM_JOYSTICK_SINCLAIR_2	Sinclair joystick 2
+  LIBSPECTRUM_JOYSTICK_TIMEX_1		Timex joystick 1
+  LIBSPECTRUM_JOYSTICK_TIMEX_2		Timex joystick 2
+  LIBSPECTRUM_JOYSTICK_FULLER		Fuller joystick
+
+  const char* libspectrum_joystick_name( libspectrum_joystick type )
+
+  Return a statically allocated string containing the name of the
+  joystick type, or "unknown" if it is not recognised.
+
+  The joystick input values can be any of:
+
+  LIBSPECTRUM_JOYSTICK_INPUT_NONE	Not connected
+  LIBSPECTRUM_JOYSTICK_INPUT_KEYBOARD	Input from the real keyboard
+  LIBSPECTRUM_JOYSTICK_INPUT_JOYSTICK_1	Input from real joystick 1
+  LIBSPECTRUM_JOYSTICK_INPUT_JOYSTICK_2	Input from real joystick 2
+
+With all those housekeeping routines out of the way, there are two
+main workhorses of the snapshot routines:
+
+libspectrum_error
+libspectrum_snap_read( libspectrum_snap *snap, const libspectrum_byte *buffer,
+                       size_t length, libspectrum_id_t type,
+                       const char *filename )
+
+Take the snapshot of type `type' of `length' bytes starting at
+`buffer' and convert it to a `libspectrum_snap' structure. If `type'
+is `LIBSPECTRUM_ID_UNKNOWN', guess the file format via
+`libspectrum_identify_file'; `filename' is used only to help with the
+identification process and can be set to NULL (or anything else) if
+`type' is not `LIBSPECTRUM_ID_UNKNOWN'. Snapshots compressed with
+bzip2 or gzip will be automatically and transparently decompressed.
+
+libspectrum_error
+libspectrum_snap_write( libspectrum_byte **buffer, size_t *length,
+			int *out_flags, libspectrum_snap *snap,
+	 		libspectrum_id_t type, libspectrum_creator *creator,
+			int in_flags )
+
+Take the snapshot in `snap' and serialise it into `*buffer' as a
+snapshot of `type'. On entry, '*buffer' is assumed to be allocated
+'*length' bytes, and will grow if necessary; if '*length' is zero,
+'*buffer' can be uninitialised on entry. `in_flags' can be used
+specify minor changes to the snapshot; currently there are two
+options:
+
+LIBSPECTRUM_FLAG_SNAPSHOT_NO_COMPRESSION
+  This flag specifies that the snapshot should not be compressed for
+  formats where it would normally be (.z80 and .szx).
+
+LIBSPECTRUM_FLAG_SNAPSHOT_ALWAYS_COMPRESS
+  This flag specifies that all the snapshot components should be
+  compressed for formats which would normally use some uncompressed
+  components when the file size would end up smaller. This is useful
+  for compatibility with programs that have problems with
+  uncompressed .z80 files, but also works with .szx snapshots.
+
+`out_flags' will return the logical OR of some extra information from the
+serialisation:
+
+LIBSPECTRUM_FLAG_SNAPSHOT_MINOR_INFO_LOSS
+  A small amount of information was lost in serialisation. The
+  resultant snapshot may not work correctly.
+
+LIBSPECTRUM_FLAG_SNAPSHOT_MAJOR_INFO_LOSS
+  A large amount of information was lost in serialisation. It is
+  highly likely that the resultant snapshot won't work.
+
+`creator' gives the information which will be written into the
+snapshot to specify the creator of the file. This can be NULL, in
+which case no information will be written. Currently, only the .szx
+format will make any use of this information.
+
+The only formats for which serialisation is supported are .sna, .szx, .s
+and .z80.
+
+Tape functions
+==============
+
+libspectrum uses the opaque `libspectrum_tape' structure to represent
+a tape image. Essentially, a `libspectrum_tape' is a list of tape
+blocks, which are of the `libspectrum_tape_block' type detailed below.
+
+The routines for dealing with tapes are:
+
+libspectrum_tape* libspectrum_tape_alloc( void )
+
+Allocate a new libspectrum_tape object.
+
+libspectrum_error libspectrum_tape_free( libspectrum_tape *tape )
+
+Free the memory used by a libspectrum_tape objects;
+
+libspectrum_error libspectrum_tape_clear( libspectrum_tape *tape )
+
+Free the memory used by the blocks in a libspectrum_tape object, but
+not the object itself; useful if you're about to read a new tape into
+a current object.
+
+libspectrum_error
+libspectrum_tape_read( libspectrum_tape *tape, const libspectrum_byte *buffer,
+                       size_t length, libspectrum_id_t type,
+                       const char *filename )
+
+Take the tape image of type `type' of `length' bytes starting at
+`buffer' and convert it to a `libspectrum_tape' structure. If `type'
+is `LIBSPECTRUM_ID_UNKNOWN', guess the file format via
+`libspectrum_identify_file'; `filename' is generally used only to help
+with the identification process and can be set to NULL (or anything
+else) if `type' is not `LIBSPECTRUM_ID_UNKNOWN' unless the tape is a
+WAV file where the underlying audiofile library will reread the
+file and will not use the buffer. Tape images compressed with
+bzip2 or gzip will be automatically and transparently decompressed.
+
+libspectrum_error
+libspectrum_tape_write( libspectrum_byte **buffer, size_t *length,
+			libspectrum_tape *tape, libspectrum_id_t type )
+
+Take the snapshot in `tape and serialise it as a `type' format file
+into `*buffer'. On entry, '*buffer' is assumed to be allocated
+'*length' bytes, and will grow if necessary; if '*length' is zero,
+'*buffer' can be uninitialised on entry.
+
+libspectrum_error libspectrum_tape_get_next_edge( libspectrum_dword *tstates,
+						  int *flags,
+						  libspectrum_tape *tape )
+
+This is the main workhorse function of the tape routines and will
+return in `tstates' the number of tstates until the next edge should
+occur from `tape'. `flags' will be set to the bitwise or of the
+following:
+
+LIBSPECTRUM_TAPE_FLAGS_BLOCK	The current block ends with this edge
+LIBSPECTRUM_TAPE_FLAGS_STOP	User code should stop playing the tape
+				after this edge
+LIBSPECTRUM_TAPE_FLAGS_STOP48   User code should stop playing the tape
+				after this edge if it was emulating a
+				48K machine. The desired behaviour for
+				things like the TC2048 is undefined in
+				the .tzx format :-(
+LIBSPECTRUM_TAPE_FLAGS_LEVEL_LOW The input signal from the tape should be
+				 forced low at this edge
+LIBSPECTRUM_TAPE_FLAGS_LEVEL_HIGH The input signal from the tape should be
+				  forced high at this edge
+LIBSPECTRUM_TAPE_FLAGS_NO_EDGE	This "edge" isn't really an edge and doesn't
+				change the input signal from the tape.
+LIBSPECTRUM_TAPE_FLAGS_LENGTH_SHORT This edge is a "short" edge; used
+				    for loader acceleration
+LIBSPECTRUM_TAPE_FLAGS_LENGTH_LONG This edge is a "long" edge; again
+                                   used for loader acceleration
+LIBSPECTRUM_TAPE_FLAGS_TAPE	The current tape ends with this edge
+
+int libspectrum_tape_present( libspectrum_tape *tape )
+
+Returns non-zero if `tape' currently contains a tape image and zero
+otherwise.
+
+size_t libspectrum_tape_count( const libspectrum_tape *tape )
+
+Return the total number of blocks in `tape'. An empty tape has zero blocks.
+The valid indices for `libspectrum_tape_nth_block' range from zero to one
+less than this value; the value itself is the position immediately after the
+final block.
+
+libspectrum_error libspectrum_tape_position( int *n, libspectrum_tape *tape )
+
+Return in `n' the position of the current block on the tape. The first
+block is block 0, the second block 1, etc.
+
+libspectrum_error libspectrum_tape_nth_block( libspectrum_tape *tape, int n )
+
+Set the current block on the tape to be the `n'th block and initialise
+it. Again, the first block on the tape is block 0.
+
+void
+libspectrum_tape_append_block( libspectrum_tape *tape,
+                               libspectrum_tape_block *block )
+
+Append `block' to `tape'.
+
+void
+libspectrum_tape_remove_block( libspectrum_tape *tape,
+			       libspectrum_tape_iterator it )
+
+Remove the block pointed to by `it' (see the "Tape iterators" section)
+from the tape.
+
+libspectrum_error
+libspectrum_tape_insert_block( libspectrum_tape *tape,
+			       libspectrum_tape_block *block,
+			       size_t position )
+
+Insert `block' into `tape` in position `position', where position 0
+would make the new block the first block on the tape.
+
+libspectrum_tape_block*
+libspectrum_tape_current_block( libspectrum_tape *tape )
+
+Get the currently active block on the tape.
+
+libspectrum_tape_block*
+libspectrum_tape_peek_next_block( libspectrum_tape *tape )
+
+Get the next block on the tape, but don't move the tape along or
+initialise the block.
+
+libspectrum_tape_block LIBSPECTRUM_API *
+libspectrum_tape_peek_last_block( libspectrum_tape *tape )
+
+Get the last block on the tape, but don't move the tape along or
+initialise the block.
+
+libspectrum_tape_block*
+libspectrum_tape_select_next_block( libspectrum_tape *tape )
+
+Move the tape along so it points to the next block, initialise that
+block and return it.
+
+Tape iterators
+--------------
+
+In some circumstances, a program may wish to look through all the
+blocks in a tape, but not actually change the state of the tape at
+all. This can be done with a `libspectrum_tape_iterator'.
+
+There are two routines for dealing with iterators:
+
+libspectrum_tape_block*
+libspectrum_tape_iterator_init( libspectrum_tape_iterator *iterator,
+				libspectrum_tape *tape )
+
+Initialise `iterator' to point to the first block of `tape' and return
+that block. Returns NULL if the tape has no blocks.
+
+libspectrum_tape_block*
+libspectrum_tape_iterator_next( libspectrum_tape_iterator *iterator )
+
+Make the already initialised `iterator' point to the next block of
+`tape' and return that block (or NULL if there are no more blocks).
+
+libspectrum_tape_block *
+libspectrum_tape_iterator_peek_next( libspectrum_tape_iterator iterator )
+
+Make the already initialised `iterator' return the next block of
+`tape' (or NULL if there are no more blocks). The position of the `iterator'
+is not modified.
+
+Tape blocks
+-----------
+
+libspectrum_tape_block*
+libspectrum_tape_iterator_current( libspectrum_tape_iterator iterator )
+
+Return the block currently pointed to by `iterator'.
+
+The block format used by libspectrum is very similar to that used by
+the TZX format itself; see http://www.worldofspectrum.org/TZXformat.html
+
+The block types supported by libspectrum (along with their block ID in
+the TZX format) are the following:
+
+LIBSPECTRUM_TAPE_BLOCK_ROM		0x10
+LIBSPECTRUM_TAPE_BLOCK_TURBO		0x11
+LIBSPECTRUM_TAPE_BLOCK_PURE_TONE	0x12
+LIBSPECTRUM_TAPE_BLOCK_PULSES		0x13
+LIBSPECTRUM_TAPE_BLOCK_PURE_DATA	0x14
+LIBSPECTRUM_TAPE_BLOCK_RAW_DATA		0x15
+
+LIBSPECTRUM_TAPE_BLOCK_GENERALISED_DATA 0x19
+
+LIBSPECTRUM_TAPE_BLOCK_PAUSE		0x20
+LIBSPECTRUM_TAPE_BLOCK_GROUP_START	0x21
+LIBSPECTRUM_TAPE_BLOCK_GROUP_END	0x22
+LIBSPECTRUM_TAPE_BLOCK_JUMP		0x23
+LIBSPECTRUM_TAPE_BLOCK_LOOP_START	0x24
+LIBSPECTRUM_TAPE_BLOCK_LOOP_END		0x25
+
+LIBSPECTRUM_TAPE_BLOCK_SELECT		0x28
+
+LIBSPECTRUM_TAPE_BLOCK_STOP48		0x2a
+LIBSPECTRUM_TAPE_BLOCK_SET_SIGNAL_LEVEL	0x2b
+
+LIBSPECTRUM_TAPE_BLOCK_COMMENT		0x30
+LIBSPECTRUM_TAPE_BLOCK_MESSAGE		0x31
+LIBSPECTRUM_TAPE_BLOCK_ARCHIVE_INFO	0x32
+LIBSPECTRUM_TAPE_BLOCK_HARDWARE		0x33
+
+LIBSPECTRUM_TAPE_BLOCK_CUSTOM		0x35
+
+LIBSPECTRUM_TAPE_BLOCK_CONCAT		0x5a
+
+The following blocks are not defined in the TZX format
+
+LIBSPECTRUM_TAPE_BLOCK_RLE_PULSE	A run-length encoded list of pulses
+
+The following two blocks are defined in the PZX format
+
+LIBSPECTRUM_TAPE_BLOCK_PULSE_SEQUENCE   A run-length encoded list of pulses
+					with polarity specified
+LIBSPECTRUM_TAPE_BLOCK_DATA_BLOCK       A block of data without pilot or sync
+					pulses with bit encoding and polarity
+					specified
+
+These values are defined in the `libspectrum_tape_type' enumeration.
+The `concatenation' block (0x5a) is recognised on input, but just
+skipped; hence it will never appear in a libspectrum_tape_block.
+
+The basic routines for dealing with tape blocks are:
+
+libspectrum_tape_block*
+libspectrum_tape_block_alloc( libspectrum_tape_type type )
+
+Allocate a new tape block of `type'.
+
+libspectrum_error libspectrum_tape_block_free( libspectrum_tape_block *block )
+
+Free a tape block.
+
+libspectrum_tape_type
+libspectrum_tape_block_type( libspectrum_tape_block *block )
+
+Return the type of `block'.
+
+libspectrum_error
+libspectrum_tape_block_set_type( libspectrum_tape_block *block,
+				 libspectrum_tape_type type )
+
+Set the type of `block' to `type'.
+
+libspectrum_error libspectrum_tape_block_init( libspectrum_tape_block *block )
+
+Initialise `block' such that it is ready for playback (with
+`libspectrum_tape_get_next_edge').
+
+libspectrum_error
+libspectrum_tape_block_description( char *buffer, size_t length,
+				    libspectrum_tape_block *block )
+
+Copy into `buffer' (which has been allocated at least `length' bytes by
+the user code) a text description of the type of `block'.
+
+Similar to the snapshot structure, there is a large family of routines
+for setting and retrieving the parameters of individual block types.
+For tape blocks, this becomes more complicated still as different
+block types possess different parameters. If a `set' function is
+called for a parameter which is not relevant to the current block
+type, an error will be printed and LIBSPECTRUM_ERROR_INVALID returned.
+For the `get' functions, an error will be printed and an undefined
+value returned.
+
+int
+libspectrum_tape_block_metadata( libspectrum_tape_block *block )
+
+Returns 1 if the block consists solely of metadata (comments, etc.) or
+0 if it contains real data.
+
+libspectrum_dword
+libspectrum_tape_block_length( libspectrum_tape_block *block )
+
+Returns the length (in tstates) of this block
+
+The `get' and `set' functions follow the same pattern as for the
+snapshot routines: the `get' functions are like
+
+<type> libspectrum_tape_block_<name>( libspectrum_tape_block *block )
+
+or
+
+<type> libspectrum_tape_block_<name>( libspectrum_tape_block *block,
+	                              size_t index )
+
+for array values and the `set' functions like
+
+libspectrum_error
+libspectrum_tape_block_set_<name>( libspectrum_tape_block *block,
+				   <type> new_value )
+
+or
+
+libspectrum_error
+libspectrum_tape_block_set_<name>( libspectrum_tape_block *block,
+				   size_t index, <type> new_value )
+
+The parameters, their types, and the LIBSPECTRUM_TAPE_BLOCK_* types
+for which it is relevant are:
+
+libspectrum_dword bit_length		RAW_DATA
+
+libspectrum_dword bit0_length		PURE_DATA
+					TURBO
+
+libspectrum_dword bit1_length		PURE_DATA
+					TURBO
+
+size_t bits_in_last_byte		PURE_DATA
+					RAW_DATA
+					TURBO
+					DATA_BLOCK
+
+size_t count				PURE_TONE
+					PULSES
+					LOOP_START
+					SELECT
+					ARCHIVE_INFO
+					HARDWARE
+					PULSE_SEQUENCE
+					DATA_BLOCK
+
+libspectrum_byte* data			CUSTOM
+					PURE_DATA
+					RAW_DATA
+					ROM
+					TURBO
+					DATA_BLOCK
+
+size_t data_length			CUSTOM
+					PURE_DATA
+					RAW_DATA
+					ROM
+					TURBO
+					DATA_BLOCK
+
+libspectrum_tape_generalised_data_symbol_table
+data_table				GENERALISED_DATA
+
+int ids[]				ARCHIVE_INFO
+					HARDWARE
+
+int offset				JUMP
+
+int offsets[]				SELECT
+
+libspectrum_dword pause			GENERALISED_DATA
+					MESSAGE
+					PAUSE
+					PURE_DATA
+					RAW_DATA
+					ROM
+					TURBO
+
+libspectrum_dword pause_tstates		GENERALISED_DATA
+					MESSAGE
+					PAUSE
+					PURE_DATA
+					RAW_DATA
+					ROM
+					TURBO
+
+libspectrum_dword pilot_length		TURBO
+
+size_t pilot_pulses			TURBO
+
+libspectrum_word pilot_repeats		GENERALISED_DATA
+
+libspectrum_word pilot_symbols		GENERALISED_DATA
+
+libspectrum_tape_generalised_data_symbol_table
+pilot_table				GENERALISED_DATA
+
+libspectrum_dword pulse_length		LENGTH
+
+libspectrum_dword pulse_lengths[]	PULSES
+					PULSE_SEQUENCE
+
+libspectrum_dword pulse_repeats[]	PULSE_SEQUENCE
+
+libspectrum_dword sync1_length		TURBO
+
+libspectrum_dword sync2_length		TURBO
+
+libspectrum_dword tail_length		DATA_BLOCK
+
+char* text				GROUP_START
+					COMMENT
+					MESSAGE
+					CUSTOM
+
+char* texts[]				ARCHIVE_INFO
+					SELECT
+
+int types[]				HARDWARE
+
+int values[]				HARDWARE
+
+int level				DATA_BLOCK
+					PAUSE
+					SET_SIGNAL_LEVEL
+
+libspectrum_byte bit0_pulse_count	DATA_BLOCK
+
+libspectrum_byte bit1_pulse_count	DATA_BLOCK
+
+libspectrum_word bit0_pulses[]		DATA_BLOCK
+
+libspectrum_word bit1_pulses[]		DATA_BLOCK
+
+There is one further parameter which can be accessed for PURE_DATA,
+RAW_DATA, ROM and TURBO blocks, which is `libspectrum_tape_state_type
+state'. This determines the part of the block which is currently being
+played, and can have the following values:
+
+LIBSPECTRUM_TAPE_STATE_INVALID  /* Should never be seen */
+
+LIBSPECTRUM_TAPE_STATE_PILOT 	/* Pilot pulses */
+LIBSPECTRUM_TAPE_STATE_SYNC1 	/* First sync pulse */
+LIBSPECTRUM_TAPE_STATE_SYNC2 	/* Second sync pulse */
+LIBSPECTRUM_TAPE_STATE_DATA1 	/* First edge of a data bit */
+LIBSPECTRUM_TAPE_STATE_DATA2 	/* Second edge of a data bit */
+LIBSPECTRUM_TAPE_STATE_TAIL 	/* The tail pause following the last data bit */
+LIBSPECTRUM_TAPE_STATE_PAUSE 	/* The pause at the end of a block */
+
+Setting this value to anything other than
+`LIBSPECTRUM_TAPE_STATE_PAUSE' will produce undefined results.
+Exposing this parameter is an ugly hack needed by Fuse to allow for
+flash-loading of tape blocks, and setting it should not be used unless
+absolutely necessary.
+
+libspectrum_tape_state_type
+libspectrum_tape_state( libspectrum_tape *tape )
+
+Return the current playback state of the active block.
+
+libspectrum_error
+libspectrum_tape_set_state( libspectrum_tape *tape,
+                            libspectrum_tape_state_type state )
+
+Set the current playback state of the active block. This is only valid
+for block types that expose a mutable playback state.
+
+The libspectrum_tape_generalised_data_symbol_table is an opaque data
+structure which represents the "symbol table" used in the TZX
+generalised data block (ID 0x19). It can be accessed with the
+following routines:
+
+libspectrum_dword
+libspectrum_tape_generalised_data_symbol_table_symbols_in_block(
+  const libspectrum_tape_generalised_data_symbol_table *table )
+libspectrum_byte
+libspectrum_tape_generalised_data_symbol_table_max_pulses(
+  const libspectrum_tape_generalised_data_symbol_table *table )
+libspectrum_word
+libspectrum_tape_generalised_data_symbol_table_symbols_in_table
+ (const libspectrum_tape_generalised_data_symbol_table *table )
+libspectrum_tape_generalised_data_symbol*
+libspectrum_tape_generalised_data_symbol_table_symbol(
+  const libspectrum_tape_generalised_data_symbol_table *table, size_t which )
+
+The libspectrum_tape_generalised_data_symbol represents one of the
+symbols used in the generalised data block and can be accessed with
+the following routines:
+
+libspectrum_tape_generalised_data_symbol_edge_type
+libspectrum_tape_generalised_data_symbol_type(
+  const libspectrum_tape_generalised_data_symbol *symbol )
+libspectrum_word
+libspectrum_tape_generalised_data_symbol_pulse(
+  const libspectrum_tape_generalised_data_symbol *symbol, size_t which )
+
+The following edge types are available:
+
+  LIBSPECTRUM_TAPE_GENERALISED_DATA_SYMBOL_EDGE		Invert signal polarity
+  LIBSPECTRUM_TAPE_GENERALISED_DATA_SYMBOL_NO_EDGE	No polarity change
+  LIBSPECTRUM_TAPE_GENERALISED_DATA_SYMBOL_LOW		Set signal low
+  LIBSPECTRUM_TAPE_GENERALISED_DATA_SYMBOL_HIGH		Set signal high
+
+Input recording functions
+=========================
+
+All input recording routines are accessed through the opaque
+`libspectrum_rzx' structure.
+
+libspectrum_rzx* libspectrum_rzx_alloc( void )
+
+Allocate a new input recording object.
+
+libspectrum_error libspectrum_rzx_free( libspectrum_rzx *rzx )
+
+Free the memory used by an input recording object as allocated by
+`libspectrum_rzx_alloc'.
+
+void
+libspectrum_rzx_start_input( libspectrum_rzx *rzx, libspectrum_dword tstates )
+
+Start an input recording block in the object.
+
+libspectrum_error libspectrum_rzx_stop_input( libspectrum_rzx *rzx )
+
+Stop the current input recording block.
+
+libspectrum_error
+libspectrum_rzx_add_snap( libspectrum_rzx *rzx, libspectrum_snap *snap,
+			  int automatic )
+
+Add `snap' to the input recording at this point. `automatic' can be used
+to indicate whether this block was automatically added by the calling
+program (non-zero) or explicitly requested by the user (zero) and then
+fetched with libspectrum_rzx_iterator_snap_is_automatic() (see below).
+
+libspectrum_error
+libspectrum_rzx_rollback( libspectrum_rzx *rzx, libspectrum_snap **snap )
+
+Return the input recording to the state it was at which the last
+snapshot was inserted. That state is set up in `snap'.
+
+libspectrum_error
+libspectrum_rzx_rollback_to( libspectrum_rzx *rzx, libspectrum_snap **snap,
+                             size_t which )
+
+Return the input recording to the state it was at which the <n>th
+snapshot was inserted, where n is specified by `which'. That state is
+set up in `snap'.
+
+libspectrum_error libspectrum_rzx_store_frame( libspectrum_rzx *rzx,
+					       size_t instructions,
+					       size_t count,
+					       libspectrum_byte *in_bytes )
+
+Add a frame to `rzx' in which `instructions' opcodes where fetched,
+and `count' bytes, specified in `in_bytes', were read from the IO
+ports.
+
+libspectrum_error libspectrum_rzx_start_playback( libspectrum_rzx *rzx )
+
+Prepare to start playback of the input recording `rzx'.
+
+libspectrum_error libspectrum_rzx_playback_frame( libspectrum_rzx *rzx,
+                                                  int *finished,
+						  libspectrum_snap **snap )
+
+Move onto the next frame of playback from the input recording
+`rzx'. If the last frame has now been played, `*finished' will be
+non-zero, otherwise it will be zero. If a snap is present in the input
+recording before the next frame, this will be returned in `*snap',
+otherwise `*snap' will be NULL.
+
+If the correct number of bytes were not read from `rzx' during the
+frame via `libspectrum_rzx_playback', an error will be given.
+
+libspectrum_error libspectrum_rzx_playback( libspectrum_rzx *rzx,
+                                            libspectrum_byte *byte )
+
+Return in `*byte' the next byte to be read from the IO ports from the
+current frame of `rzx'.
+
+size_t libspectrum_rzx_tstates( libspectrum_rzx *rzx )
+
+Return the 'starting tstates' field of `rzx'.
+
+size_t libspectrum_rzx_set_tstates( libspectrum_rzx *rzx, size_t tstates )
+
+Set (and return the new value of) the 'starting tstates' field of `rzx'.
+
+size_t libspectrum_rzx_instructions( libspectrum_rzx *rzx )
+
+Return the number of opcode fetches to be performed during the current
+frame of `rzx'.
+
+libspectrum_dword libspectrum_rzx_get_keyid( libspectrum_rzx *rzx )
+
+Return the key ID from the start-of-signature block in `rzx', or zero if
+the recording is unsigned.
+
+libspectrum_error
+libspectrum_rzx_get_signature( libspectrum_rzx *rzx,
+                               libspectrum_signature *signature )
+
+Extract the signature metadata from `rzx' into `*signature'. This is
+useful after `libspectrum_rzx_read' when the caller wants to verify the
+recording's digital signature.
+
+libspectrum_error
+libspectrum_rzx_read( libspectrum_rzx *rzx, const libspectrum_byte *buffer,
+		      const size_t length )
+
+Given a .rzx file of `length' bytes starting at `buffer', extract the
+input recording data into `rzx'. Embedded snapshots are retained within
+the recording and can be inspected via the RZX iterator functions.
+Files compressed with bzip2 or gzip will be automatically and
+transparently decompressed.
+
+libspectrum_error
+libspectrum_rzx_write( libspectrum_byte **buffer, size_t *length,
+		       libspectrum_rzx *rzx,
+		       libspectrum_id_t snap_format, libspectrum_creator *creator,
+		       int compress, libspectrum_rzx_dsa_key *key )
+
+Given input recording data in `rzx', create a .rzx file in `*buffer'.
+Before the call, `*buffer' should be allocated at least `*length' bytes
+(or `*length' can be zero). After the call, `*length' contains the
+length of the .rzx file.
+
+`snap format' specifies the format for the embedded snap. This can be
+any of the formats supported by `libspectrum_snap_write' or
+LIBSPECTRUM_ID_UNKNOWN, in which case the snap will be embedded as a
+.z80 file, _unless_ that would result in major information loss, in
+which case a .szx file will be embedded instead.
+
+`creator' contains the creator information which should be written
+into the RZX file. If `key' is non-NULL, the RZX file will be
+digitally signed using the specified DSA key; see below for more
+details.
+
+void
+libspectrum_rzx_insert_snap( libspectrum_rzx *rzx, libspectrum_snap *snap,
+			     int where )
+
+Insert `snap' into the RZX recording in position `where'. A `where' value of
+zero is the first block in the file, before any current content.
+
+void
+libspectrum_rzx_iterator_delete( libspectrum_rzx *rzx,
+				 libspectrum_rzx_iterator *it )
+
+Delete the block pointed to by `it' from the RZX file `rzx'.
+
+libspectrum_snap*
+libspectrum_rzx_iterator_get_snap( libspectrum_rzx_iterator it )
+
+Get the snapshot pointed to by `it'. If `it' does not point to a snapshot,
+NULL is returned.
+
+int
+libspectrum_rzx_iterator_snap_is_automatic( libspectrum_rzx_iterator it )
+
+Returns non-zero if `it' points to a snap which has its "automatic" flag
+(see libspectrum_rzx_add_snap()) set to true, or false if it doesn't (or
+if `it' doesn't point to a snapshot).
+
+Input recording iterators
+-------------------------
+
+As with tapes, iterators are available to allow an application to
+examine the structure of an input recording file.
+
+Such an iterator is initialised via
+
+libspectrum_rzx_iterator libspectrum_rzx_iterator_begin( libspectrum_rzx *rzx )
+
+and moved to the next block via
+
+libspectrum_rzx_iterator
+libspectrum_rzx_iterator_next( libspectrum_rzx_iterator it )
+
+The final block can be obtained directly with
+
+libspectrum_rzx_iterator libspectrum_rzx_iterator_last( libspectrum_rzx *rzx )
+
+The type of block pointed to by the iterator can be obtained via the
+
+libspectrum_rzx_block_id
+libspectrum_rzx_iterator_get_type( libspectrum_rzx_iterator it )
+
+function. The return value will be one of:
+
+  LIBSPECTRUM_RZX_CREATOR_BLOCK		Creator information
+  LIBSPECTRUM_RZX_SIGN_START_BLOCK	Start of signed information
+  LIBSPECTRUM_RZX_SIGN_END_BLOCK	End of signed information
+  LIBSPECTRUM_RZX_SNAPSHOT_BLOCK	Snapshot
+  LIBSPECTRUM_RZX_INPUT_BLOCK		Input recording block
+
+If the iterator is pointing to a block of type LIBSPECTRUM_RZX_INPUT_BLOCK,
+then the function
+
+size_t libspectrum_rzx_iterator_get_frames( libspectrum_rzx_iterator it )
+
+can be used to obtain the number of frames stored in the block.
+
+libspectrum_error libspectrum_rzx_finalise( libspectrum_rzx *rzx )
+
+Finalise a recording before writing it out by deleting intermediate
+snapshot blocks and merging adjacent input blocks where possible.
+
+Digital signatures in RZX files
+-------------------------------
+
+One use of input recording files is to allow a `best Spectrum games
+player' tournament to be held: everybody records themselves playing a
+game, sends in input recordings of themselves doing this, and then
+everyone can see who is the best player. When using an emulator, it is
+obviously rather easy to cheat at this by using snapshots, slowing
+down the emulator and all sorts of other ways. Fundamentally, there's
+no way round this problem except by running the emulator on trusted
+hardware, which is a whole different kettle of fish.
+
+One such `best player' tournament, the Speccy Tour 2003 (see
+http://www.speccy.org/SpeccyTour03/ ) required that for an emulator to
+be `allowable' for the Tour, it must implement a `competition mode' in
+which snapshot saving etc is forbidden and must then `prove' that the
+RZX file was made in competition mode by digitally signing the RZX
+file. This is clearly still insecure as the key must be present in the
+emulator to allow it to sign files, but that's what the organisers
+wanted, so it's implemented in libspectrum. What information you wish
+to draw from the presence or absence of a digital signature on an RZX
+file is entirely up to you.
+
+The digital signature routines use libgcrypt to provide the necessary
+support. If this is not present when libspectrum is compiled, the
+signature routines will not available.
+
+If you're not aware of the DSA algorithm, the rest of this section
+probably won't make much sense to you; go and read a good cryptography
+textbook :-)
+
+To sign an RZX file, all that is required is a DSA key. libspectrum
+uses a `libspectrum_rzx_dsa_key' structure to represent this:
+
+typedef struct libspectrum_rzx_dsa_key {
+
+  const char *p, *q, *g, *y, *x;
+
+} libspectrum_rzx_dsa_key;
+
+Each of the fields is one of the standard DSA parameters, stored as a
+hex string with the MSB first. `x' should be set to NULL for a public
+key.
+
+When a digitally signed RZX file is read, the signature information can
+be extracted with `libspectrum_rzx_get_signature' into a
+`libspectrum_signature' structure:
+
+typedef struct libspectrum_signature {
+
+  const libspectrum_byte *start; ptrdiff_t length;
+
+} libspectrum_signature;
+
+The key ID is available separately via `libspectrum_rzx_get_keyid'.
+`start' points to the signed data, which is `length' bytes long. If
+libgcrypt is available, the implementation also stores the signature MPI
+values in the structure.
+
+To verify a signature, simply call `libspectrum_verify_signature':
+
+libspectrum_error
+libspectrum_verify_signature( libspectrum_signature *signature,
+			      libspectrum_rzx_dsa_key *key )
+
+This will return LIBSPECTRUM_ERROR_NONE if the signature is valid or
+LIBSPECTRUM_ERROR_SIGNATURE if it is invalid.
+
+Once you're done with a signature, `libspectrum_signature_free' will
+release the memory it was using:
+
+libspectrum_error
+libspectrum_signature_free( libspectrum_signature *signature )
+
+Note this will not free the data pointed to by `start'.
+
+Microdrive handling functions
+=============================
+
+Constants
+---------
+
+These are all #defines.
+
+LIBSPECTRUM_MICRODRIVE_BLOCK_MAX
+
+The maximum number of blocks which can be on a microdrive (254).
+
+LIBSPECTRUM_MICRODRIVE_HEAD_LEN
+
+The length in bytes of the header for a microdrive block in bytes
+(15).
+
+LIBSPECTRUM_MICRODRIVE_DATA_LEN
+
+The length in bytes of the data for a microdrive block (512).
+
+LIBSPECTRUM_MICRODRIVE_BLOCK_LEN
+
+The total length in bytes of a microdrive block (2 *
+LIBSPECTRUM_MICRODRIVE_HEAD_LEN + LIBSPECTRUM_MICRODRIVE_DATA_LEN + 1 =
+543).
+
+LIBSPECTRUM_MICRODRIVE_CARTRIDGE_LENGTH
+
+The maximum length in bytes of a microdrive cartridge
+(LIBSPECTRUM_MICRODRIVE_BLOCK_MAX * LIBSPECTRUM_MICRODRIVE_BLOCK_LEN =
+137922).
+
+Routines
+--------
+
+Routines for handling images of microdrive cartridges. As usual, these
+are accessed through an opaque structure, libspectrum_microdrive.
+
+libspectrum_microdrive*
+libspectrum_microdrive_alloc( void )
+
+Allocate a microdrive structure.
+
+libspectrum_error
+libspectrum_microdrive_free( libspectrum_microdrive *microdrive )
+
+Free a microdrive structure.
+
+libspectrum_byte
+libspectrum_microdrive_data( const libspectrum_microdrive *microdrive,
+                             size_t which )
+void
+libspectrum_microdrive_set_data( libspectrum_microdrive *microdrive,
+                                 size_t which, libspectrum_byte data )
+
+Return or set (respectively) the byte of data at offset `which' into
+the cartridge.
+
+libspectrum_byte
+libspectrum_microdrive_write_protect( const libspectrum_microdrive *microdrive )
+void
+libspectrum_microdrive_set_write_protect( libspectrum_microdrive *microdrive,
+                                          int write_protect )
+
+Return or set the state of the write protect tab of the microdrive.
+
+libspectrum_byte
+libspectrum_microdrive_cartridge_len( const libspectrum_microdrive *microdrive )
+
+void
+libspectrum_microdrive_set_cartridge_len( libspectrum_microdrive *microdrive,
+                                          libspectrum_byte len )
+
+Return or set the length in bytes of the cartridge in the drive.
+
+int
+libspectrum_microdrive_checksum( libspectrum_microdrive *microdrive,
+                                 libspectrum_byte which )
+
+Check whether the checksum for the <n>th block on the microdrive is
+correct, where <n> is specified by `which'.
+
+.mdr file handling
+------------------
+
+libspectrum_error
+libspectrum_microdrive_mdr_read( libspectrum_microdrive *microdrive,
+                                 libspectrum_byte *buffer, size_t length )
+void
+libspectrum_microdrive_mdr_write( const libspectrum_microdrive *microdrive,
+                                  libspectrum_byte **buffer, size_t *length )
+
+Read and write an image of a microdrive cartridge to a .mdr file.
+
+Timex dock/exrom handling functions
+===================================
+
+The Timex TS2068 and TC2068 featured a cartridge port (the `dock') for
+which a few pieces of software were made available. The Warajevo
+emulator includes support for this feature, and uses the `.dck'
+extension for images of these cartridges. Documentation on this format
+is available at
+http://www.worldofspectrum.org/warajevo/Fformats.html#dck
+
+Each .dck file can hold multiple 64Kb RAM banks, which are stored in a
+`libspectrum_dck' structure:
+
+typedef struct libspectrum_dck {
+  libspectrum_dck_block *dck[256];
+} libspectrum_dck;
+
+Each 64Kb bank is stored in a `libspectrum_dck_block' structure:
+
+typedef struct libspectrum_dck_block {
+  libspectrum_dck_bank bank;
+  libspectrum_dck_page_type access[8];
+  libspectrum_byte *pages[8];
+} libspectrum_dck_block;
+
+The `bank' field specifies which type of memory this bank represents,
+and takes one of the following values:
+
+LIBSPECTRUM_DCK_BANK_DOCK	The dock
+LIBSPECTRUM_DCK_BANK_EXROM	The EXROM
+LIBSPECTRUM_DCK_BANK_HOME	The normal memory space
+
+The `access' field gives the type of memory stored in each 8Kb page
+within the 64 Kb bank, and take be:
+
+LIBSPECTRUM_DCK_PAGE_NULL	Not present in this bank
+LIBSPECTRUM_DCK_PAGE_RAM_EMPTY  Uninitialised RAM
+LIBSPECTRUM_DCK_PAGE_ROM	ROM
+LIBSPECTRUM_DCK_PAGE_RAM	Initialised RAM
+
+Any ROM or initialised RAM banks are in the `pages' field.
+
+The actual routines for handling dock files:
+
+libspectrum_dck* libspectrum_dck_alloc( void )
+
+Allocate a dock structure.
+
+libspectrum_error libspectrum_dck_free( libspectrum_dck *dck, int keep_pages )
+
+Free a dock structure; if `keep_pages' is non-zero, any memory
+allocated to the structure will not be freed and can then be used by
+the calling program. Do remember to free it when you're finished with it!
+
+libspectrum_error
+libspectrum_dck_read( libspectrum_dck *dck, const libspectrum_byte *buffer,
+                      size_t length )
+
+Read in a dock structure from the `length' byte long `buffer'. Images
+compressed with bzip2 or gzip will be automatically and transparently
+decompressed.
+
+libspectrum_error
+libspectrum_dck_read2( libspectrum_dck *dck, const libspectrum_byte *buffer,
+                       size_t length, const char *filename )
+
+As `libspectrum_dck_read', but also takes `filename' so that compressed
+inputs can be identified using the original name when necessary.
+
+IDE hard disk images
+====================
+
+Libspectrum contains various routines for handling IDE hard disk
+images. Due to the (potential) large size of these files, hard disk
+images are not handled entirely in memory as are the other file types,
+but require a real file.
+
+libspectrum_ide_channel*
+libspectrum_ide_alloc( libspectrum_ide_databus databus )
+
+Allocate a new IDE channel in `*chn' of type `databus'. `databus' can
+take the following values:
+
+LIBSPECTRUM_IDE_DATA8
+  A simple 8-bit interface which accesses only the low byte of each
+  word on the hard disk.
+
+LIBSPECTRUM_IDE_DATA16
+  A full 16-bit interface which can access all data on the hard disk.
+
+LIBSPECTRUM_IDE_DATA16_BYTESWAP
+  A full 16-bit interface which accesses the data in byte-swapped
+  order.
+
+LIBSPECTRUM_IDE_DATA16_DATA2
+  A full 16-bit interface which returns the high byte of each word in
+  the secondary data register.
+
+libspectrum_error
+libspectrum_ide_free( libspectrum_ide_channel *chn )
+
+Deallocate the IDE channel in `chn'.
+
+libspectrum_error
+libspectrum_ide_insert( libspectrum_ide_channel *chn,
+			libspectrum_ide_unit unit,
+			const char *filename )
+
+Cause the IDE hard disk image in `filename' to be attached to `unit'
+of the IDE channel `chn'. `unit' can take the following values:
+
+LIBSPECTRUM_IDE_MASTER	  The IDE master unit
+LIBSPECTRUM_IDE_SLAVE	  The IDE slave unit
+
+libspectrum_error
+libspectrum_ide_commit( libspectrum_ide_channel *chn,
+			libspectrum_ide_unit unit )
+
+Cause any changes made to the image attached to `unit' of `chn' to be
+written back to the image.
+
+int
+libspectrum_ide_dirty( libspectrum_ide_channel *chn,
+		      libspectrum_ide_unit unit )
+
+Return non-zero if the image attached to `unit' has uncommitted cached
+changes waiting to be written back.
+
+libspectrum_error
+libspectrum_ide_eject( libspectrum_ide_channel *chn,
+		       libspectrum_ide_unit unit )
+
+Cause the image attached to `unit' of `chn' to be detached. Note that
+any changes made to the image will be lost unless
+`libspectrum_ide_commit' is called first.
+
+libspectrum_error
+libspectrum_ide_reset( libspectrum_ide_channel *chn )
+
+Reset the IDE channel `chn'.
+
+libspectrum_byte
+libspectrum_ide_read( libspectrum_ide_channel *chn,
+		      libspectrum_ide_register reg )
+
+Returns the current value of register `reg' of the IDE channel
+`chn'. `reg' can take the following values:
+
+LIBSPECTRUM_IDE_REGISTER_DATA
+LIBSPECTRUM_IDE_REGISTER_ERROR_FEATURE
+LIBSPECTRUM_IDE_REGISTER_SECTOR_COUNT
+LIBSPECTRUM_IDE_REGISTER_SECTOR
+LIBSPECTRUM_IDE_REGISTER_CYLINDER_LOW
+LIBSPECTRUM_IDE_REGISTER_CYLINDER_HIGH
+LIBSPECTRUM_IDE_REGISTER_HEAD_DRIVE
+LIBSPECTRUM_IDE_REGISTER_COMMAND_STATUS
+LIBSPECTRUM_IDE_REGISTER_DATA2
+
+The correspondence between these names and the actual IDE registers is
+hopefully obvious; LIBSPECTRUM_IDE_REGISTER_DATA2 refers to the
+secondary data register.
+
+void
+libspectrum_ide_write( libspectrum_ide_channel *chn,
+		       libspectrum_ide_register reg, libspectrum_byte data )
+
+Write `data' to register `reg' of the IDE channel `chn'.
+
+MMC / SD card images
+====================
+
+Libspectrum contains various routines for handling MMC / SD card images. Due
+to the (potential) large size of these files, hard disk images are not handled
+entirely in memory as are the other file types, but require a real file.
+
+Libspectrum re-uses the existing HDF file format for MMC / SD card images, and
+emulates all cards as an SDHC card in SPI mode.
+
+libspectrum_mmc_card*
+libspectrum_mmc_alloc( void )
+
+Allocate a new MMC card image.
+
+void
+libspectrum_mmc_free( libspectrum_mmc_card *card )
+
+Deallocate the MMC card image in `card'.
+
+libspectrum_error
+libspectrum_mmc_insert( libspectrum_mmc_card *card, const char *filename );
+
+Cause the MMC / SD card image in `filename' to be attached to `card'.
+
+void
+libspectrum_mmc_commit( libspectrum_mmc_card *card )
+
+Cause any changes made to the image attached to `card' to be written back to
+the image.
+
+void
+libspectrum_mmc_eject( libspectrum_mmc_card *card )
+
+Cause the image attached to `card' to be detached. Note that any changes made
+to the image will be lost unless `libspectrum_mmc_commit' is called first.
+
+void
+libspectrum_mmc_reset( libspectrum_mmc_card *card )
+
+Reset the card `card'.
+
+int
+libspectrum_mmc_dirty( libspectrum_mmc_card *card )
+
+Returns non-zero if any changes have been made to `card' since
+`libspectrum_mmc_commit' was last called (or when the image was first loaded).
+
+libspectrum_byte
+libspectrum_mmc_read( libspectrum_mmc_card *card )
+
+Read the next byte from the SPI bus for `card'.
+
+void
+libspectrum_mmc_write( libspectrum_mmc_card *card, libspectrum_byte data )
+
+Write the byte `data` to the SPI bus for `card'.
+
+Thread Safety
+=============
+
+libspectrum uses either glib or a libspectrum-supplied alternative as part of
+the implementation of several internal data structures - notably in tape and
+hard disk handling.
+
+When glib is in use, the glib documentation[1] describes the threading support
+as follows:
+
+  GLib itself is internally completely thread-safe (all global data is
+  automatically locked), but individual data structure instances are not
+  automatically locked for performance reasons. For example, you must coordinate
+  accesses to the same GHashTable from multiple threads.
+
+When the glib replacement is in use, there are two modes of thread safety:
+
+1. If the C11 header stdatomic.h is not available there is no locking of data
+    structures, and libspectrum should be considered to not be thread-safe
+    modifying any data structures
+2. If the C11 header stdatomic.h is available the global data used in allocating
+    the list and hash table data structures are locked when changes are being
+    made but individual data structure instances are not automatically locked.
+
+[1] <https://developer.gnome.org/glib/stable/glib-Threads.html>

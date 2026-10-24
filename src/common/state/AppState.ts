@@ -243,6 +243,8 @@ export type EmulatorState = {
   soundMuted?: boolean;
   savedSoundLevel?: number;
   clockMultiplier?: number;
+  /** The Interface 1's running Microdrive motors: bit n is drive n + 1 */
+  microdriveMotors?: number;
   audioSampleRate?: number;
   breakpointsVersion: number;
   /** Bumped when breakpoint hit counters moved; see `incBreakpointHitsVersionAction`. */

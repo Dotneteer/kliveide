@@ -148,6 +148,12 @@ export const setClockMultiplierAction: ActionCreator = (numValue: number) => ({
   payload: { numValue }
 });
 
+/** The Interface 1's running Microdrive motors, bit n drive n + 1 (`.plans/MICRODRIVE_PLAN.md`) */
+export const setMicrodriveMotorsAction: ActionCreator = (numValue: number) => ({
+  type: "SET_MICRODRIVE_MOTORS",
+  payload: { numValue }
+});
+
 export const setAudioSampleRateAction: ActionCreator = (numValue: number) => ({
   type: "SET_AUDIO_SAMPLE_RATE",
   payload: { numValue }

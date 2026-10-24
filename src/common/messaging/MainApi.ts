@@ -66,6 +66,8 @@ export type DiskImageEditStart = {
   contents: Uint8Array;
   /** The drive the image is in (0: A, 1: B), if any */
   drive?: number;
+  /** The Microdrive the cartridge is in (0: 1, 1: 2), if any */
+  microdrive?: number;
   /** The machine was running and the edit paused it */
   resume?: boolean;
   /** It was running under the debugger */
@@ -776,6 +778,15 @@ class MainApiImpl {
    * @param _changes The sector changes to write.
    */
   async saveDiskChanges(_diskIndex: number, _changes: SectorChanges): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Writes the slots the guest changed into Microdrive `drive`'s `.mdr` file (`.plans/MICRODRIVE_PLAN.md`)
+   * @param _drive Microdrive 1 (0) or 2 (1)
+   * @param _changes The changed slots, keyed by slot, 543 bytes each
+   */
+  async saveMicrodriveChanges(_drive: number, _changes: SectorChanges): Promise<void> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 

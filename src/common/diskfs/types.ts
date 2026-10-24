@@ -73,7 +73,7 @@ export type NewDiskFile = {
 
 /** The file system as a whole */
 export type DiskFsInfo = {
-  /** "+3DOS" or "TR-DOS" */
+  /** "+3DOS", "TR-DOS", "FAT16"/"FAT32" or "Microdrive" */
   system: string;
   /** The format, e.g. "+3 (173K)", "CPC data", "PCW/+3 double-sided" */
   format: string;
@@ -116,8 +116,11 @@ export class DiskFsError extends Error {
   }
 }
 
+/** The file systems the layer knows */
+export type DiskFsKind = "+3dos" | "trdos" | "fat" | "microdrive";
+
 export interface DiskFileSystem {
-  readonly system: "+3dos" | "trdos" | "fat";
+  readonly system: DiskFsKind;
   info(): DiskFsInfo;
   /** The files, in catalogue order; deleted ones too when asked; on FAT, those of a folder */
   list(options?: { deleted?: boolean; dir?: string }): DiskFileEntry[];

@@ -5,6 +5,7 @@ export default {
   "machine-state": "Saving the machine state",
   "rzx-recordings": "RZX recordings",
   "trdos-disks": "TR-DOS disks (Pentagon 128)",
+  "microdrives": "The Interface 1 and Microdrives",
   "disks-tutorial": "Tutorial: working with disks",
   "disk-explorer": "Disk images and the Disk Explorer",
   "custom-rom": "A custom ROM on the 48K",

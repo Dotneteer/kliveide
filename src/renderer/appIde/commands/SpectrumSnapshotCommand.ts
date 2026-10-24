@@ -141,9 +141,27 @@ export class SpectrumSnapshotCommand extends IdeCommandBase<SpectrumSnapshotComm
       }
     }
 
+    // --- Linked Microdrive cartridges (`.szx` MDRV)
+    const microdrives: { drive: number; fileName: string; contents: Uint8Array }[] = [];
+    for (const cartridge of snapshot.peripherals.if1?.microdrives ?? []) {
+      if (cartridge.embedded) {
+        diskWarnings.push(t("commands.snapshot.cartridgeNotFound", { cartridge: "(embedded)", drive: cartridge.drive + 1 }));
+        continue;
+      }
+      if (!cartridge.fileName) continue;
+      const read = await readFirst(context, diskCandidates(file, cartridge.fileName));
+      if (read) {
+        microdrives.push({ drive: cartridge.drive, fileName: read.path, contents: read.bytes });
+      } else {
+        diskWarnings.push(
+          t("commands.snapshot.cartridgeNotFound", { cartridge: cartridge.fileName, drive: cartridge.drive + 1 })
+        );
+      }
+    }
+
     let result: Awaited<ReturnType<typeof context.emuApi.loadSpectrumSnapshot>>;
     try {
-      result = await context.emuApi.loadSpectrumSnapshot(file, bytes, mode, { keepModel, disks });
+      result = await context.emuApi.loadSpectrumSnapshot(file, bytes, mode, { keepModel, disks, microdrives });
     } catch (err) {
       return commandError(t("commands.snapshot.loadFailed", { file, error: messageOf(err) }));
     }

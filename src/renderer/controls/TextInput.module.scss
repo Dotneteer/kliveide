@@ -90,11 +90,17 @@
   }
 }
 
-/* `--status-error`, not the non-semantic ANSI table — see the note in `DialogField.module.scss`. */
+/*
+ * `--status-error`, not the non-semantic ANSI table — see the note in `DialogField.module.scss`.
+ *
+ * The message belongs to the field above it, so it sits closer to it than the field sits to its
+ * label (`--space-1_5` against `--space-2`, `DialogRow.module.scss`), but never on its border: with
+ * no margin it touched the red edge and read as part of the box.
+ */
 .error {
   color: var(--status-error);
   font-size: var(--font-size-100);
   line-height: 1.25;
-  margin-top: 0;
+  margin-top: var(--space-1_5);
   width: 100%;
 }

@@ -163,7 +163,7 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
     return t("commands.compile.export.description");
   }
   readonly usage =
-    "expc filename [-n name] [-f tap|tzx|hex|nex|dsk|trd|p|o|cmd|cas|epr] [-as] [-p] [-c] [-b border] [-sb] [-addr address] [-scr screenfile]";
+    "expc filename [-n name] [-f tap|tzx|hex|nex|dsk|trd|mdr|p|o|cmd|cas|epr] [-as] [-p] [-c] [-b border] [-sb] [-addr address] [-scr screenfile]";
 
   readonly argumentInfo: CommandArgumentInfo = {
     mandatory: [{ name: "filename" }],
@@ -298,8 +298,9 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
     }
 
     // --- A bootable disk (`.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md` B6): the code files and a
-    // --- BASIC loader the machine's own boot runs - `DISK` on a +3, `boot` under TR-DOS
-    if (args["-f"] === "dsk" || args["-f"] === "trd") {
+    // --- BASIC loader the machine's own boot runs - `DISK` on a +3, `boot` under TR-DOS, `run` on a
+    // --- Microdrive cartridge (MICRODRIVE_PLAN 4.4)
+    if (args["-f"] === "dsk" || args["-f"] === "trd" || args["-f"] === "mdr") {
       const screen =
         screenFileType === 1
           ? scrContent
@@ -1262,7 +1263,7 @@ async function exportZ88dkArtefact(
 /** With no `-f`: the export file's extension, else the one native file the build has (a +3's `.dsk`). */
 function defaultZ88dkExportFormat(artefacts: Record<string, string>, filename: string): string | undefined {
   const ext = /\.([A-Za-z0-9]+)$/.exec(filename ?? "")?.[1]?.toLowerCase();
-  if (ext && ["tap", "tzx", "hex", "nex", "p", "o", "dsk", "trd", "epr"].includes(ext)) return ext;
+  if (ext && ["tap", "tzx", "hex", "nex", "p", "o", "dsk", "trd", "mdr", "epr"].includes(ext)) return ext;
   const own = Object.keys(artefacts);
   return own.length === 1 ? own[0].toLowerCase() : undefined;
 }

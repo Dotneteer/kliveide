@@ -43,8 +43,10 @@ describe("DialogRow", () => {
       "utf8"
     );
 
-    // --- The gap inside a row stays: it is what binds a label to its control.
-    expect(sheet).toMatch(/\.dialogRow\s*\{[^}]*gap:\s*var\(--space-1_5\)/);
+    // --- The gap inside a row stays: it is what binds a label to its control. 8px, and the same for
+    // --- a row whose children stack (a prompt line over its field: Rename, New File)
+    expect(sheet).toMatch(/\.dialogRow\s*\{[^}]*gap:\s*var\(--space-2\)/);
+    expect(sheet).toMatch(/\.rows\s*\{[^}]*gap:\s*var\(--space-2\)/);
 
     /*
      * A *top* margin on all but the first. A bottom margin on every row would add space above the
@@ -55,5 +57,13 @@ describe("DialogRow", () => {
     expect(sheet).toMatch(/\.dialogRow:not\(:first-child\)\s*\{[^}]*margin-top:\s*var\(--space-3\)/);
     expect(sheet).not.toMatch(/\.dialogRow\s*\+\s*\.dialogRow/);
     expect(sheet).not.toMatch(/margin-bottom/);
+  });
+
+  it("puts a field's error under it, closer than its label, never on its border", () => {
+    const input = readFileSync(join(process.cwd(), "src/renderer/controls/TextInput.module.scss"), "utf8");
+    expect(input).toMatch(/\.error\s*\{[^}]*margin-top:\s*var\(--space-1_5\)/);
+    const field = readFileSync(join(process.cwd(), "src/renderer/controls/DialogField.module.scss"), "utf8");
+    expect(field).toMatch(/\.field\s*\{[^}]*gap:\s*var\(--space-2\)/);
+    expect(field).toMatch(/\.error\s*\{[^}]*margin-top:\s*calc\(var\(--space-1_5\) - var\(--space-2\)\)/);
   });
 });

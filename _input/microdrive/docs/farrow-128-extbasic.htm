@@ -1,0 +1,429 @@
+<!doctype html public "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+
+  <head>
+    <title>Spectrum 128 Extended BASIC - Method of Operation</title>
+    <link rel="stylesheet" href="Spectrum128ExtendedBASIC.css" type="text/css">
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+    <meta name="keywords"    content="Sinclair,Spectrum 128,Extended BASIC">
+    <meta name="author"      content="Paul Farrow">
+    <meta name="description" content="Describes a mechanism for extending Sinclair ZX Spectrum 128 BASIC.">
+    <meta name="copyright"   content="(c)1987-2009 Paul Farrow">
+  </head>
+
+<!-- ************************************************** -->
+
+  <body onload="Init()">
+
+<!-- SCRIPTS -->
+
+    <script type="text/javascript">
+<!--
+
+    var DefaultMenuID='MC_Mn1';
+
+//------ INITIALISE
+
+    function Init()
+    {
+      emailE="feedback@fruitcake.plus.com?subject=Spectrum 128 Extended BASIC (do not modify this subject)";
+      emailO='onmouseover="self.status=' + "'Send Feedback Via Email';return true;" + '" onmouseout="self.status=' + "''" + '";';
+      document.getElementById('email').innerHTML='<a id="email" class="Footer" href="mailto:' + emailE + '" ' + emailO + '>Contact Me</' + 'a>';
+    }
+
+//------ SET AN ELEMENT'S IMAGE
+
+    function UpdateImage(MenuID, NewColour)
+    {
+      document.getElementById(MenuID).className=NewColour;
+    }
+
+//------   CLEAR DEFAULT HIGHLIGHTED MENU ITEM
+
+    function ClearDefaultMenu(MenuID)
+    {
+      if(MenuID != DefaultMenuID)
+        UpdateImage(DefaultMenuID, 'White');
+    }
+
+//-->
+    </script>
+
+<!-- ************************************************** -->
+
+  <div id="header">
+
+<!-- PAGE HEADER -->
+
+    <table class="Banner" width="100%" border="0" cellspacing="0" cellpadding="0">
+    <tr>
+      <td><img src="Images/Titles/Spectrum128TitleBar.gif" width="232" height="22" align="left" alt=""></td>
+      <td width="100%"><img src="Images/Titles/Spectrum128Bar.gif" width="100%" height="22" align="right" alt=""></td>
+      <td><img src="Images/Titles/SpectrumLogo.gif" width="109" height="22" align="right" alt=""></td>
+    </tr>
+    </table>
+
+  </div>
+
+<!-- ************************************************** -->
+
+  <div id="content">
+
+    <p id="PageTop" align="center">
+    Use the Spectrum&nbsp;128 style menu below to navigate to the various sections detailing the Extended BASIC mechanism.
+    </p>
+
+    <table align="center" cellspacing="0" cellpadding="0" border="0">
+
+    <tr><td>
+      <img src="Images/Menus/Main/MainMenu_Title.gif" border="0" height="16px" width="384px" alt="128 Extended BASIC Main Menu Title"><br>
+    </td></tr>
+
+    <tr><td id="MC_Mn1" class="Cyan">
+      <a href="Spectrum128ExtendedBASIC.htm"
+            onmouseover="UpdateImage('MC_Mn1', 'Cyan'); ClearDefaultMenu('MC_Mn1'); self.status='To Section: Method of Operation';return true"
+            onmouseout ="UpdateImage('MC_Mn1', 'White'); UpdateImage(DefaultMenuID, 'Cyan'); self.status=''">
+        <img name="ImgMC_Mn1" id="ImgMC_Mn1" src="Images/Menus/Main/MainMenu_1.gif" border="0" height="16px" width="384px" alt="Method of Operation"><br>
+      </a>
+    </td></tr>
+
+    <tr><td id="MC_Mn2" class="White">
+      <a href="Spectrum128ExtendedBASIC2.htm"
+            onmouseover="UpdateImage('MC_Mn2', 'Cyan'); ClearDefaultMenu('MC_Mn2'); self.status='To Section: Extension Framework';return true"
+            onmouseout ="UpdateImage('MC_Mn2', 'White'); UpdateImage(DefaultMenuID, 'Cyan'); self.status=''">
+        <img name="ImgMC_Mn2" id="ImgMC_Mn2" src="Images/Menus/Main/MainMenu_2.gif" border="0" height="16px" width="384px" alt="Extension Framework"><br>
+      </a>
+    </td></tr>
+
+    <tr><td id="MC_Mn3" class="White">
+      <a href="Spectrum128ExtendedBASIC3.htm"
+            onmouseover="UpdateImage('MC_Mn3', 'Cyan'); ClearDefaultMenu('MC_Mn3'); self.status='To Section: Example Commands';return true"
+            onmouseout ="UpdateImage('MC_Mn3', 'White'); UpdateImage(DefaultMenuID, 'Cyan'); self.status=''">
+        <img name="ImgMC_Mn3" id="ImgMC_Mn3" src="Images/Menus/Main/MainMenu_3.gif" border="0" height="16px" width="384px" alt="Example Commands"><br>
+      </a>
+    </td></tr>
+
+    <tr><td><img src="Images/Menus/Main/MainMenu_Bottom.gif" border="0" height="16px" width="384px" alt=""><br>
+    </td></tr>
+
+    </table>
+
+    <p>
+    </p>
+
+<!-- PAGE TEXT -->
+
+<!-- ************************************************** -->
+
+    <br>
+    <table border="0" cellspacing="0" cellpadding="0">
+    <tr class="Title"><td><img src="Images/Graphics/DummySpace3.gif" width="1" height="3" border="0" alt=""></td></tr>
+    <tr><td><img src="Images/Graphics/DummySpace5.gif" width="1" height="5" border="0" alt=""></td></tr>
+    <tr>
+      <td class="Title">Method of Operation</td>
+    </tr>
+    <tr><td><img src="Images/Graphics/DummySpace5.gif" width="1" height="5" border="0" alt=""></td></tr>
+    <tr class="Title"><td><img src="Images/Graphics/DummySpace3.gif" width="1" height="3" border="0" alt=""></td></tr>
+    </table>
+
+    <p>
+    This extended BASIC mechanism exploits the method used by the Editor ROM (ROM&nbsp;0) to produce a standard Spectrum error
+    report. When an error report is generated by ROM&nbsp;0, an error handler routine is called. In the UK Spectrum 128, this is
+    located at $05AC (in other models it is located elsewhere). This routine filters off the new 128 specific error codes
+    and these are then handled locally within ROM&nbsp;0 to produce the error message. To produce the range of standard Spectrum
+    error reports, ROM&nbsp;0 delegates this task to ROM&nbsp;1 (the BASIC ROM). As well as switching to ROM&nbsp;1, it is also necessary to
+    switch back from RAM bank 7 (which holds all of the new Editor workspace variables) to RAM bank 0 (which is the normal
+    RAM bank used by programs). Switching of RAM banks is performed directly within the error handler routine. Switching of
+    ROMs is achieved by stacking the address of a RST&nbsp;08H instruction held within the new system variable <i>RAMRST</i> (located in the
+    old ZX Printer buffer) and then calling the <i>SWAP</i> routine (also located within the ZX Printer buffer). Before making the
+    switch, the error code is stored in the byte following the RST&nbsp;08H instruction, in new system variable <i>RAMERR</i>. Once the
+    <i>SWAP</i> routine has completed, the return will be to the RST&nbsp;08H instruction. By overwriting the RST&nbsp;08H instruction with a
+    jump instruction of some kind, it is possible to direct control to a user program and hence intercept all such errors.
+    </p>
+
+    <p>
+    Note that the method presented here to extend BASIC is intended to investigate the feasibility of the approach described above.
+    However, it does (as will be described) impose limitations which other approaches do not suffer from. However, many of command parsing
+    techniques will be applicable whichever method is used to extend BASIC, even if via the ZX&nbsp;Interface&nbsp;1, and so these webpages
+    should be read with that in mind.
+    </p>
+
+    <p>
+    There are no suitable single byte instructions that can be used to replace the RST&nbsp;08H instruction. Using a JR
+    instruction is not possible since the jump destination will depend upon the error code in <i>RAMERR</i> and this will always be
+    within the new system variables, which must not be modified. The only solution is to use a JP instruction. The <i>RAMERR</i>
+    location then holds the low byte of the destination address. The high byte is held within system variable <i>BAUD</i>. It is
+    therefore necessary to overwrite <i>BAUD</i> such that the JP instruction directs control to a suitable location that can hold the
+    extended BASIC parser. This means that any of the RS232 routines within ROM&nbsp;0 cannot be used whilst the extended BASIC parser
+    is active. This is not a major drawback since the extended BASIC parser can be temporarily disabled whilst RS232 commands are
+    used (which requires restoring <i>BAUD</i>) and then re-enabled afterwards (thereby setting <i>BAUD</i> again for use by the parser).
+    </p>
+
+    <p>
+    The <i>RAMRST</i> routine is called by ROM&nbsp;0 for a variety of errors and so this means that the low byte of the JP destination
+    address could be any one of 256 different locations. An error trap block is therefore required which in its most simplest
+    form contains 255 NOP instructions. This allows all destination addresses to drop down to a common intercept routine. The
+    nature of the error can then be determined from the contents of <i>RAMERR</i>. The efficiency of this mechanism can be improved
+    since not all error codes are used by ROM&nbsp;0 with the <i>RAMRST</i> routine. Therefore only a specific subset needs to be
+    trapped. This still spans the same address range since the error codes range from $FF to $1C, but at least the unused
+    space can be used to hold other extended BASIC routines. The range of error codes used with <i>RAMRST</i> are:
+    </p>
+
+    <table class="Data" align="center" cellspacing="0" cellpadding="5" border="0">
+    <tr><td class="DataPrCenter"> Code </td><td colspan="2" class="DataPr"> Error Report </td></tr>
+    <tr><td class="DataBkCenter"> $00 </td><td class="DataBkBorderTBL"> 0 </td><td class="DataBkBorderTBR"> OK                    </td></tr>
+    <tr><td class="DataBkCenter"> $01 </td><td class="DataBkBorderTBL"> 2 </td><td class="DataBkBorderTBR"> Variable not found    </td></tr>
+    <tr><td class="DataBkCenter"> $03 </td><td class="DataBkBorderTBL"> 4 </td><td class="DataBkBorderTBR"> Out of memory         </td></tr>
+    <tr><td class="DataBkCenter"> $06 </td><td class="DataBkBorderTBL"> 7 </td><td class="DataBkBorderTBR"> RETURN without GO SUB </td></tr>
+    <tr><td class="DataBkCenter"> $07 </td><td class="DataBkBorderTBL"> 8 </td><td class="DataBkBorderTBR"> End of file           </td></tr>
+    <tr><td class="DataBkCenter"> $0B </td><td class="DataBkBorderTBL"> C </td><td class="DataBkBorderTBR"> Nonsense in BASIC     </td></tr>
+    <tr><td class="DataBkCenter"> $0D </td><td class="DataBkBorderTBL"> E </td><td class="DataBkBorderTBR"> Out of Data           </td></tr>
+    <tr><td class="DataBkCenter"> $0E </td><td class="DataBkBorderTBL"> F </td><td class="DataBkBorderTBR"> Invalid file name     </td></tr>
+    <tr><td class="DataBkCenter"> $14 </td><td class="DataBkBorderTBL"> L </td><td class="DataBkBorderTBR"> Break into program    </td></tr>
+    <tr><td class="DataBkCenter"> $15 </td><td class="DataBkBorderTBL"> M </td><td class="DataBkBorderTBR"> Ramtop no good        </td></tr>
+    <tr><td class="DataBkCenter"> $16 </td><td class="DataBkBorderTBL"> N </td><td class="DataBkBorderTBR"> Statement lost        </td></tr>
+    <tr><td class="DataBkCenter"> $19 </td><td class="DataBkBorderTBL"> Q </td><td class="DataBkBorderTBR"> Parameter error       </td></tr>
+    <tr><td class="DataBkCenter"> $1C </td><td class="DataBkBorderTBL"> a </td><td class="DataBkBorderTBR"> MERGE error           </td></tr>
+    </table>
+
+    <p>
+    Most of these only occur in special circumstances for particular commands, and hence are not that useful to intercept.
+    The really useful error code is "C&nbsp;Nonsense&nbsp;in&nbsp;BASIC" since this is produced when invalid syntax is found. Not all syntax
+    errors can be trapped but the ones that can provide plenty of scope for adding new commands, and in a neat way - there is no
+    need to use an asterisk, etc, as is often required when extending BASIC using the facilities of the ZX&nbsp;Interface&nbsp;1. Note that
+    due to a bug in ROM&nbsp;0, error code $1C "a&nbsp;MERGE&nbsp;error" is incorrectly sent to ROM&nbsp;1 for handling.
+    </p>
+
+    <p>
+    To keep as much free space available for BASIC programs as possible, the extended BASIC mechanism must use as little
+    conventional RAM as possible. The bulk of the extended BASIC parser can therefore be stored in one of the additional RAM banks. RAM
+    bank 7 cannot be used since it already holds the RAM disk catalogue and workspace variables. The other RAM banks form the
+    RAM disk and so can hold files. Fortunately, the amount of free space left in the RAM disk is stored in new system variable
+    <i>SFSPACE</i>, and so overwriting this with a lower amount reserves space at the end of the RAM disk for exclusive use by the extended
+    BASIC parser. In total, the RAM disk can occupy up to 72K, with the last 8K of this sharing the space that the catalogue uses
+    (providing there are no clashes). To reserve 8K of space exclusively for the extended BASIC parser means limiting the RAM disk to
+    56K. The catalogue then has exclusive use of the 8K space in RAM bank 7, and the extended BASIC parser the 8K below this in RAM
+    bank 6.
+    </p>
+
+    <p>
+    Once control has passed to the parser within RAM bank 6, the parser needs a way of accessing any other RAM bank, and any ROM.
+    To achieve this, a set of paging routines is required and these must be located within RAM bank 5 or RAM bank 2, since these
+    are available no matter which RAM bank or ROM is paged in. The most convenient position for these paging routines is between the
+    standard system variables and the channel information area. This is the same area where the additional system variables introduced
+    when using the ZX&nbsp;Interface&nbsp;1 are placed. The ZX&nbsp;Interface&nbsp;1 will insert its system variables if it detects that
+    the channel information area is at its default address. By installing the extended BASIC mechanism, this will not be the case and as
+    a result the ZX&nbsp;Interface&nbsp;1 interprets this to mean that its new system variables have previously been set up here and so
+    will never set them up itself. To overcome this, the extended BASIC parser can install the default ZX&nbsp;Interface&nbsp;1
+    system variables followed by its new paging routines.
+    </p>
+
+    <br>
+
+    <table cellspacing="0" cellpadding="0" border="0">
+    <tr><td class="Gray"><img src="Images/Graphics/DummySpace2.gif" width="1" height="2" border="0" alt=""></td></tr>
+    <tr><td><img src="Images/Graphics/DummySpace5.gif" width="1" height="5" border="0" alt=""></td></tr>
+    <tr>
+      <td class="SubTitle">Memory Map</td>
+    </tr>
+    <tr><td><img src="Images/Graphics/DummySpace5.gif" width="1" height="5" border="0" alt=""></td></tr>
+    <tr><td class="Gray"><img src="Images/Graphics/DummySpace2.gif" width="1" height="2" border="0" alt=""></td></tr>
+    </table>
+
+    <p>
+    The extended BASIC parser resides within four areas of RAM:
+    </p>
+
+    <ul>
+      <li>A modification of the 128 system variable <i>RAMRST</i>, replacing the RST&nbsp;08H instruction with a JP instruction.</li>
+      <li>An error trap block at the end of conventional RAM that intercepts any of the possible JP destinations from <i>RAMRST</i>.</li>
+      <li>For error "C&nbsp;Nonsense&nbsp;in&nbsp;BASIC", control is passed to the extended BASIC parser which resides in RAM bank 6.</li>
+      <li>Paging routines inserted where the channel information normally resides are used to coordinate the switching between the two ROMs
+          and the RAM banks when executing commands.</li>
+    </ul>
+
+    <table class="BkBorder" align="center">
+    <tr><td class="DataBk">
+      <img src="Images/Diagrams/ExtendedBASICMemoryMap.gif" width="900" height="466" alt="Extended BASIC Memory Map"><br>
+    </td></tr>
+    </table>
+
+    <br>
+    <br>
+
+    <table cellspacing="0" cellpadding="0" border="0">
+    <tr><td class="Gray"><img src="Images/Graphics/DummySpace2.gif" width="1" height="2" border="0" alt=""></td></tr>
+    <tr><td><img src="Images/Graphics/DummySpace5.gif" width="1" height="5" border="0" alt=""></td></tr>
+    <tr>
+      <td class="SubTitle">Extended BASIC Parser</td>
+    </tr>
+    <tr><td><img src="Images/Graphics/DummySpace5.gif" width="1" height="5" border="0" alt=""></td></tr>
+    <tr><td class="Gray"><img src="Images/Graphics/DummySpace2.gif" width="1" height="2" border="0" alt=""></td></tr>
+    </table>
+
+    <p>
+    The extended BASIC mechanism can only be used to intercept certain types of syntax error. These are when:
+    </p>
+
+    <ul>
+    <li>The word at the beginning of a BASIC line that does not form a valid command keyword.</li>
+    <li>The characters following the commands <b>CAT</b>, <b>ERASE</b> and <b>FORMAT</b> do not form valid 128&nbsp;BASIC commands.</li>
+    </ul>
+
+    <p>
+    The first method is the more powerful of the two since it means any new command keyword can be constructed. For example, it is possible
+    to add a <b>SCROLL</b> command and for this to appear within the BASIC program just like any other command keyword. However, when
+    entering new keywords for immediate execution, the 128&nbsp;BASIC interpreter will attempt to evaluate the text as a variable
+    and hence will produce error message "2&nbsp;Variable&nbsp;not&nbsp;found". To overcome this, a symbol, such as '&amp;', can be
+    designated to precede all new commands, i.e. <b>&amp;SCROLL</b> would be equivalent to <b>SCROLL</b> but would also work as an immediate
+    execution command. Note that it is possible to have embedded spaces within new command keywords, e.g. <b>TO&nbsp;UPPER</b>, and also
+    to have keywords that are a subset of other keywords, e.g. <b>TRIM</b> and <b>TRIM&nbsp;LEFT</b>. It is down to the extended BASIC
+    parser to support these.
+    </p>
+
+    <p>
+    In addition, it is also possible to extend a few existing BASIC commands. For example, it is possible to reproduce the
+    ZX&nbsp;Interface&nbsp;1 command <b>CLS&nbsp;#</b> which restores the permanent colours and clears the screen. The extended BASIC parser would
+    intercept the syntax error caused by the <b>#</b>. It can then process the new characters and accept the command as valid.
+    At run time, the <b>CLS</b> command would be identified and the standard CLS command handler within ROM&nbsp;1 automatically called to
+    process the command. This command handler clears the screen and then returns to the statement processing loop without checking
+    whether further characters follow in the BASIC line. It does not need to perform such a check since this would have been done
+    at syntax checking time, and the line rejected if it is invalid. The processing loop detects the rogue <b>#</b> and raises a
+    syntax error. The extended BASIC parser would then be invoked and directs control to the new CLS command handler. This command handler
+    routine would then perform the restoration of the permanent colours and clear the screen with these colours. Therefore, both ROM&nbsp;1
+    and the extended BASIC parser process the <b>CLS</b> command. The ability to extend standard BASIC commands can only really be done
+    with commands where a syntax error is raised immediately after the keyword. If the syntax error occurs later in the BASIC line then
+    it becomes very difficult to determine the preceding characters of the command. For example, the <b>BEEP</b> command could be extended
+    to accept a third parameter which defines a repetition count, e.g. <b>BEEP&nbsp;<i>n</i>,&nbsp;<i>m</i>,&nbsp;<i>repeat</i></b>. The extended
+    BASIC parser would get invoked with the error marker pointing at the '<b>, repeat</b>' part of the command. It would be necessary for the
+    extended BASIC parser to scan backwards through the command characters to determine that it was indeed a <b>BEEP</b> command. Since
+    parameters can be formed from variable length expressions, this becomes a very difficult task. As a result, there are very few standard
+    BASIC commands that can realistically, or sensibly, be extended.
+    </p>
+
+    <p>
+    It is the responsibility of the extended BASIC parser to handle the case of new commands, converting the typed commands to upper case
+    if required. It might also handle spaces, skipping over surplus and inserting leading or trailing spaces as (and if) required. If the
+    parser ensures that there is a trailing space, then it should prevent doing this if the last character of the command is a '#' since
+    this is used by the Spectrum system to denote a stream and hence is to be immediately followed by a numeric value.
+    </p>
+
+    <p>
+    It is not possible to create new functions using the extended BASIC mechanism. Functions can either be created using the
+    standard <b>DEF&nbsp;FN</b> command, or alternatively new commands can be constructed that set a variable and then this variable
+    can be tested using a standard <b>IF</b> command.
+    </p>
+
+    <p>
+    Due to a bug within ROM&nbsp;0, inserting a BASIC line (consisting of new or existing commands) which ends with a trailing space will cause
+    the cursor to move to the last row containing a BASIC statement or, if there are no lines below, then the cursor will jump to the bottom
+    of the screen. This bug is caused by the ROM&nbsp;0 mechanism that aims to remove duplicate spaces between two keywords. When it encounters the
+    first space, it makes a note of it in the workspace variable at $FD84 within RAM bank 7 and will only insert the space if the following
+    character is not a token with a leading space. However, if the end of the line is found after the first space then the ROM neglects to write
+    out the trailing space. Note that this bug does not apply to the Spanish Spectrum&nbsp;128 since it uses a different 128&nbsp;BASIC editor to
+    the other 128K models.
+    </p>
+
+<!-- ************************************************** -->
+
+  </div>
+
+  <div id="footer">
+
+<!-- RETURN BUTTONS -->
+
+    <hr>
+
+    <table width="100%" cellspacing="10" cellpadding="0" border="0">
+    <tr>
+    <td width="1%" height="51px" class="Black">
+      <a href="#PageTop"><img src="Images/Keys/Other/UpArrowKey.gif" onmouseover="self.status='To Menu'; return true;" onmouseout="self.status=''" alt="To 128 Extended BASIC Menu" width="51px" height="51px" border="0"></a>
+    </td>
+    <td class="Table">
+      <a href="#PageTop" onmouseover="self.status='To Menu'; return true;" onmouseout="self.status=''">To Top Of Page<br></a>
+    </td>
+    <td width="1%" height="51px" class="Black">
+      <a href="Spectrum128ExtendedBASIC2.htm"><img src="Images/Keys/Other/DownArrowKey.gif" onmouseover="self.status='To Next Section: Extension Framework'; return true;" onmouseout="self.status=''" alt="To Next Section" width="51px" height="51px" border="0"></a>
+    </td>
+    <td class="Table">
+      <a href="Spectrum128ExtendedBASIC2.htm" onmouseover="self.status='To Next Section: Extension Framework'; return true;" onmouseout="self.status=''">To Next Section</a>
+    </td>
+    <td class="TableR">
+      <a href="../Spectrum128_ResourceCentre.htm" onmouseover="self.status='To Spectrum 128 Resource Centre'; return true;" onmouseout="self.status=''">Spectrum&nbsp;128 Resource Centre</a>
+    </td>
+    <td width="1%" height="51px" class="Black">
+      <a href="../Spectrum128_ResourceCentre.htm"> <img src="Images/Keys/Other/LeftArrowKey.gif" onmouseover="self.status='To Spectrum 128 Resource Centre'; return true;" onmouseout="self.status=''" alt="Spectrum 128 Resource Centre" width="51px" height="51px" border="0"> </a>
+    </td>
+    </tr>
+    </table>
+
+<!-- PAGE FOOTER -->
+
+    <table class="Banner" width="100%" border="0" cellspacing="0" cellpadding="0">
+    <tr>
+      <td width="100%"><img src="Images/Titles/Spectrum128Bar.gif" width="100%" height="22" align="right" alt=""></td>
+      <td><img src="Images/Titles/SpectrumLogo.gif" width="109" height="22" align="right" alt=""></td>
+    </tr>
+    </table>
+
+  </div>
+
+  <div id="mainmenu">
+
+    <table width="100%" cellspacing="0" cellpadding="0" border="0">
+    <tr valign="top">
+      <td align="center" height="52"><img src="Images/Titles/SinclairLogo.gif" width="147" height="52" border="0" alt=""></td>
+    </tr>
+    <tr><td height="13"></td></tr>
+    <tr valign="top">
+      <td align="center" height="13"><img src="Images/Titles/Spectrum128Subject.gif" width="150" height="43" border="0" alt=""></td>
+    </tr>
+    <tr><td height="22"></td></tr>
+    </table>
+
+    <table class="Menu" width="100%" cellspacing="9" cellpadding="0" border="0" align="center">
+    <tr>
+      <td><td height="22"><a class="MenuSel" href="Spectrum128ExtendedBASIC.htm" onmouseover="self.status='Method of Operation';return true;" onmouseout="self.status=''">Method of Operation</a></td>
+    </tr>
+    <tr>
+      <td><td height="22"><a class="Menu" href="Spectrum128ExtendedBASIC2.htm" onmouseover="self.status='Extension Framework';return true;" onmouseout="self.status=''">Extension Framework</a></td>
+    </tr>
+    <tr>
+      <td><td height="22"><a class="Menu" href="Spectrum128ExtendedBASIC3.htm" onmouseover="self.status='Example Commands';return true;" onmouseout="self.status=''">Example Commands</a></td>
+    </tr>
+    </table>
+
+  </div>
+
+  <div id="disclaimer">
+
+    <table class="Menu" width="100%" cellspacing="0" cellpadding="0" border="0" align="center">
+    <tr><td height="34"><hr></td></tr>
+    <tr>
+      <td height="22" align="center"><a class="Menu" href="../../Sinclair_ResourceCentre.htm" onmouseover="self.status='To ZX Resource Centre';return true;" onmouseout="self.status=''">ZX Resource Centre</a></td>
+    </tr>
+    <tr>
+      <td height="34"><hr></td>
+    </tr>
+    <tr><td height="14"></td></tr>
+    </table>
+
+    <table class="Footer" width="100%" cellspacing="0" cellpadding="0" border="0">
+    <tr valign="bottom">
+      <td align="left"><div id="email" class="Footer">Contact Me</div></td>
+      <td rowspan="2" align="right"><img src="Images/Titles/Spectrum128Logo.gif" width="47" height="26" border="0" alt=""></td>
+    </tr>
+    <tr valign="bottom">
+      <td align="left"><a class="Footer" href="Spectrum128ExtendedBASICDisclaimer.htm"
+            onmouseover = "self.status='View copyright information';return true;"
+            onmouseout = "self.status=''">Disclaimer</a>
+      </td>
+    </tr>
+    </table>
+
+  </div>
+
+  </body>
+
+</html>

@@ -56,7 +56,7 @@ export type KliveStateHeader = {
 
 /** A medium the machine had when the state was saved */
 export type KliveStateMedia = {
-  /** The media id (`MEDIA_TAPE`, `MEDIA_DISK_A`, `MEDIA_DISK_B`, `MEDIA_SD_CARD`) */
+  /** The media id (`MEDIA_TAPE`, `MEDIA_DISK_A`, `MEDIA_DISK_B`, `MEDIA_MICRODRIVE_1/2`, `MEDIA_SD_CARD`) */
   id: string;
   /** The file it came from */
   fileName?: string;

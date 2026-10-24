@@ -79,6 +79,15 @@ For information on obtaining a commercial license, please contact John Grant.
 This notice must be retained.
 ```
 
+## The ZX Interface 1 ROM
+
+`src/public/roms/if1-2.rom` (shipped as `roms/if1-2.rom`) is the second edition of the Sinclair ZX
+Interface 1's 8K ROM, unmodified. It is not covered by the MIT licence above, nor by Klive's own, nor
+by Amstrad's permission for the Spectrum ROMs: its rights stayed with Sinclair Research Ltd. No
+explicit permission to redistribute it is known: it is included because emulators and distributions
+have published it openly for decades, and it will be removed on request from a rights holder. The
+details are kept beside it in `if1-roms-readme.txt`.
+
 ## The HT-1080Z ROMs
 
 `src/public/roms/ht1080z-s1*.rom`, `ht1080z-s2*.rom` and `ht1080z-s64*.rom` (shipped under `roms/`)

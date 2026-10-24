@@ -66,6 +66,22 @@ describe("Spectrum media strip", () => {
     expect(cards[2].writeProtected).toBeUndefined();
   });
 
+  it("adds the Interface 1's two Microdrives, with write protection and the running motor", () => {
+    const cards = describeSpectrumMedia(
+      { tape: "", microdrive1: { diskFile: "/c/games.mdr", writeProtected: true }, microdrive2: {} },
+      0,
+      false,
+      { motors: 0x01 }
+    );
+    expect(cards.map((c) => [c.mediaId, c.title, c.driveLetter, c.fileName, c.writeProtected, c.motorOn])).toEqual([
+      ["tape", "Tape", undefined, undefined, undefined, undefined],
+      ["microdrive1", "Microdrive 1", "1", "games.mdr", true, true],
+      ["microdrive2", "Microdrive 2", "2", undefined, undefined, false]
+    ]);
+    expect(cards[2].emptyText).toBe("(no cartridge)");
+    expect(describeSpectrumMedia({ microdrive1: { diskFile: "/c/games.mdr" } }, 0).map((c) => c.mediaId)).toEqual(["tape"]);
+  });
+
   it("shows only drive A on a one-drive +3E", () => {
     expect(describeSpectrumMedia({}, 1).map((c) => c.title)).toEqual(["Tape", "Drive A"]);
   });

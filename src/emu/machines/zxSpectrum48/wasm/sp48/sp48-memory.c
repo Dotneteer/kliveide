@@ -118,7 +118,7 @@ void sp48UploadRomByte(uint32_t offset, uint32_t value) {
 #ifndef SP48_SCLD
     sp48RomShadow[offset] = (uint8_t)value;
 #endif
-    if (zxdcMapped == 0u) sp48Memory[offset] = (uint8_t)value;
+    if (zxdcMapped == 0u && zxIf1Paged == 0u) sp48Memory[offset] = (uint8_t)value;
     if (offset == 0u) {
       sp48RomUploadCount = 0u;
       sp48RomChecksum = 0u;

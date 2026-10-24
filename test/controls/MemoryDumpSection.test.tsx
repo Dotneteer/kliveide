@@ -69,6 +69,23 @@ describe("MemoryDumpSection", () => {
     expect(getByteIndexAtOffset(5, 0, 23, false, 8)).toBeNull();
   });
 
+  it("keeps a short section a full section wide, so its characters line up (Disk Explorer sectors)", async () => {
+    mockIdeCommands();
+    const { MemoryDumpSection, fullSectionChars, getByteIndexAtOffset } = await import(
+      "@renderer/features/memory/MemoryDumpSection"
+    );
+    expect(fullSectionChars(false)).toBe(23);
+    expect(fullSectionChars(true)).toBe(31);
+    // --- Seven bytes in a 23ch box at 10px per ch: the seventh byte is still at 18ch
+    expect(getByteIndexAtOffset(185, 230, fullSectionChars(false), false, 7)).toBe(6);
+    expect(getByteIndexAtOffset(215, 230, fullSectionChars(false), false, 7)).toBeNull();
+
+    const { getByText } = render(
+      <MemoryDumpSection address={0} bytes={[1, 2, 3]} decimalView={true} charDump={true} lastJumpAddress={-1} />
+    );
+    expect(getByText("001 002 003").className).toMatch(/decimal/);
+  });
+
   it("renders byte snapshots without measuring hidden DOM text", async () => {
     mockIdeCommands();
     const appendChild = vi.spyOn(document.body, "appendChild");
@@ -209,9 +226,10 @@ describe("MemoryDumpSection", () => {
       y: 0,
       left: 0,
       top: 0,
-      right: 50,
+      // --- A short section's box is a full section wide (23ch, `.hexValues`' minimum): 10px per ch
+      right: 230,
       bottom: 16,
-      width: 50,
+      width: 230,
       height: 16,
       toJSON: () => ({})
     });
@@ -241,9 +259,10 @@ describe("MemoryDumpSection", () => {
       y: 0,
       left: 0,
       top: 0,
-      right: 50,
+      // --- A short section's box is a full section wide (23ch, `.hexValues`' minimum): 10px per ch
+      right: 230,
       bottom: 16,
-      width: 50,
+      width: 230,
       height: 16,
       toJSON: () => ({})
     });

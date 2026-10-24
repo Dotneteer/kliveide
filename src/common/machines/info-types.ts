@@ -188,7 +188,7 @@ export type CharDescriptor = {
 /**
  * The device submenus of the Machine menu, in their display order
  */
-export const MACHINE_DEVICE_MENUS = ["tape", "program", "disks", "cartridge", "sdCard", "input"] as const;
+export const MACHINE_DEVICE_MENUS = ["tape", "program", "disks", "cartridge", "sdCard", "interfaces", "input"] as const;
 export type MachineDeviceMenuId = (typeof MACHINE_DEVICE_MENUS)[number];
 
 /** The label of each device submenu */
@@ -200,6 +200,7 @@ export const MACHINE_DEVICE_MENU_LABELS: Readonly<Record<MachineDeviceMenuId, st
     disks: "menu.machine.device.disks",
     cartridge: "menu.machine.device.cartridge",
     sdCard: "menu.machine.device.sdCard",
+    interfaces: "menu.machine.device.interfaces",
     input: "menu.machine.device.input"
   });
 

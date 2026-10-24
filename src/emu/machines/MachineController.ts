@@ -42,6 +42,7 @@ import { LiteEvent } from "@emu/utils/lite-event";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { MessengerBase } from "@messaging/MessengerBase";
 import {
+  setMicrodriveMotorsAction,
   setDebuggingAction,
   setRzxStateAction,
   incBreakpointHitsVersionAction,
@@ -58,11 +59,14 @@ import {
   DISK_A_CHANGES,
   DISK_A_WP,
   DISK_B_CHANGES,
+  MICRODRIVE_1_WP,
+  MICRODRIVE_2_WP,
+  MICRODRIVE_CHANGES,
   DISK_B_WP,
   FAST_LOAD,
   SAVED_TO_TAPE
 } from "./machine-props";
-import { MEDIA_DISK_A, MEDIA_DISK_B } from "@common/structs/project-const";
+import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_MICRODRIVE_1, MEDIA_MICRODRIVE_2 } from "@common/structs/project-const";
 import { delay } from "@renderer/utils/timing";
 import { machineRegistry } from "@common/machines/machine-registry";
 import { mediaStore } from "./media/media-info";
@@ -87,6 +91,7 @@ import type { ProfileStatus } from "@common/profile/profileTypes";
 import { incProfileVersionAction, setProfilingAction } from "@common/state/actions";
 import {
   SETTING_EMU_FAST_LOAD,
+  SETTING_EMU_FAST_MICRODRIVE,
   SETTING_EMU_PROFILE_COUNTERS,
   SETTING_EMU_PROFILE_RESET_AFTER_INJECTION,
   SETTING_EMU_PROFILE_RESET_ON_START,
@@ -152,7 +157,9 @@ class MachineOperationCanceledError extends Error {
  */
 const DISK_WRITE_PROTECTION_PROPS: Record<string, string> = {
   [MEDIA_DISK_A]: DISK_A_WP,
-  [MEDIA_DISK_B]: DISK_B_WP
+  [MEDIA_DISK_B]: DISK_B_WP,
+  [MEDIA_MICRODRIVE_1]: MICRODRIVE_1_WP,
+  [MEDIA_MICRODRIVE_2]: MICRODRIVE_2_WP
 };
 
 /**
@@ -1017,6 +1024,18 @@ export class MachineController implements IMachineController {
     await this.executeInjectionFlow(flow, undefined, debug, operationRevision);
   }
 
+  /** Resets and boots the cartridge in Microdrive 1 through the Interface 1 (MICRODRIVE_PLAN 4.3) */
+  async runMicrodriveBoot(debug: boolean): Promise<void> {
+    const flow = this.machine.getMicrodriveBootFlow?.();
+    if (!flow) {
+      throw new Error("This machine has no Interface 1 to boot a Microdrive cartridge.");
+    }
+    const operationRevision = this.beginMachineOperation();
+    await this.stop(operationRevision);
+    this.assertMachineOperationIsCurrent(operationRevision);
+    await this.executeInjectionFlow(flow, undefined, debug, operationRevision);
+  }
+
   /**
    * Stops the machine and runs a ready-made flow on it (a Z88 card application: `z88AppFlow.ts`).
    * @param debug Arm the breakpoints once the flow has run
@@ -1823,7 +1842,7 @@ export class MachineController implements IMachineController {
       this._timeline?.noteHostFile(savedFileInfo.name);
     }
     const diskChanges = this.collectPendingMediaChanges();
-    if (savedFileInfo || diskChanges.diskAChanges || diskChanges.diskBChanges) {
+    if (savedFileInfo || diskChanges.diskAChanges || diskChanges.diskBChanges || diskChanges.microdriveChanges) {
       this.frameCompleted.fire({
         fullFrame: false,
         savedFileInfo,
@@ -2035,6 +2054,7 @@ export class MachineController implements IMachineController {
         let savedFileInfo: SavedFileInfo;
         let diskAChanges: SectorChanges;
         let diskBChanges: SectorChanges;
+        let microdriveChanges: (SectorChanges | undefined)[] | undefined;
 
         // --- Handle frame completion events (none of them while a replay runs, D13)
         if (frameCompleted && !this.suppressingSideEffects) {
@@ -2050,6 +2070,7 @@ export class MachineController implements IMachineController {
           const diskChanges = this.collectPendingMediaChanges();
           diskAChanges = diskChanges.diskAChanges;
           diskBChanges = diskChanges.diskBChanges;
+          microdriveChanges = diskChanges.microdriveChanges;
         }
 
         // --- A keyframe, when one is due (D5)
@@ -2061,6 +2082,7 @@ export class MachineController implements IMachineController {
           savedFileInfo,
           diskAChanges,
           diskBChanges,
+          microdriveChanges,
           clockMultiplier: this.machine.clockMultiplier
         });
 
@@ -2144,13 +2166,15 @@ export class MachineController implements IMachineController {
 
         // --- Wait for the next frame in case of normal termination
         if (frameCompleted) {
+          // --- A fast Microdrive runs unthrottled while a motor runs (MICRODRIVE_PLAN §3 M6)
+          const fastMicrodrive = this.trackMicrodriveMotors();
           // --- Calculate the time to wait before the next machine frame starts
           if (this.machine.frames % this.machine.uiFrameFrequency === 0) {
             // --- Send recording data (and any other pre-delay work) before sleeping
             if (this.beforeFrameDelay) {
               await this.beforeFrameDelay();
             }
-            if (this.unthrottled) {
+            if (this.unthrottled || fastMicrodrive) {
               // --- Render to video (D18): no delay, but the event loop gets a turn now and then
               if (this.frameStats.frameCount % 50 === 0) await delay(0);
               nextFrameTime = performance.now() + nextFrameGap;
@@ -2295,7 +2319,7 @@ export class MachineController implements IMachineController {
    */
   private emitPendingMediaChanges(): void {
     const diskChanges = this.collectPendingMediaChanges();
-    if (diskChanges.diskAChanges || diskChanges.diskBChanges) {
+    if (diskChanges.diskAChanges || diskChanges.diskBChanges || diskChanges.microdriveChanges) {
       this.frameCompleted.fire({
         fullFrame: false,
         ...diskChanges,
@@ -2304,12 +2328,29 @@ export class MachineController implements IMachineController {
     }
   }
 
+  /** The Microdrive motors last reported to the store */
+  private _microdriveMotors = 0;
+
+  /**
+   * Reports the Interface 1's running motors to the store when they change (the media strip shows
+   * them), and says whether the frame loop should run unthrottled: a fast Microdrive with a motor
+   * running. Emulated time is unchanged, so the ROM sees real timing (MICRODRIVE_PLAN §3 M6).
+   */
+  private trackMicrodriveMotors(): boolean {
+    const motors = (this.machine as { microdriveMotors?: number }).microdriveMotors ?? 0;
+    if (motors !== this._microdriveMotors) {
+      this._microdriveMotors = motors;
+      this.store?.dispatch(setMicrodriveMotorsAction(motors), "emu");
+    }
+    return motors !== 0 && !!this.store && !!getGlobalSetting(this.store, SETTING_EMU_FAST_MICRODRIVE);
+  }
+
   /**
    * Collects pending media changes and clears the machine properties holding them.
    */
   private collectPendingMediaChanges(): Pick<
     FrameCompletedArgs,
-    "diskAChanges" | "diskBChanges"
+    "diskAChanges" | "diskBChanges" | "microdriveChanges"
   > {
     const machineWithMediaFlush = this.machine as IAnyMachine & {
       flushDiskChanges?: () => void;
@@ -2331,7 +2372,12 @@ export class MachineController implements IMachineController {
       this.machine.setMachineProperty(DISK_B_CHANGES);
     }
 
-    return { diskAChanges, diskBChanges };
+    const microdriveChanges = this.machine.getMachineProperty(MICRODRIVE_CHANGES) as (SectorChanges | undefined)[] | undefined;
+    if (microdriveChanges) {
+      this.machine.setMachineProperty(MICRODRIVE_CHANGES);
+    }
+
+    return { diskAChanges, diskBChanges, microdriveChanges };
   }
 
   /** Set when the Emulator pane has said where logpoint output goes, once per debug session. */
