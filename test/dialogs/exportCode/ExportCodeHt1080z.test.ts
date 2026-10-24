@@ -38,5 +38,8 @@ describe("disk export formats (DISK_IMAGES_AND_FILE_SYSTEMS_PLAN B6)", () => {
     expect(formatOptionsFor("sp128").map((o) => o.value)).toContain("trd");
     expect(formatOptionsFor("scorpion").map((o) => o.value)).toContain("trd");
     expect(formatOptionsFor("sp48").map((o) => o.value)).not.toContain("dsk");
+    expect(formatOptionsFor("sp48").map((o) => o.value)).toContain("mdr");
+    expect(formatOptionsFor("sp128").map((o) => o.value)).toContain("mdr");
+    expect(formatOptionsFor("scorpion").map((o) => o.value)).not.toContain("mdr");
   });
 });

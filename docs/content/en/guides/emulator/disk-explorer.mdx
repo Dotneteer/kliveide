@@ -1,5 +1,5 @@
 ---
-description: "The Disk Explorer opens .dsk, .trd and .scl disk images and .img, .hdf and .cim SD cards: list, preview, add, extract, rename and delete their files, and see how the disk is laid out. The DivMMC brings esxDOS SD cards to the 48K, 128K and +3."
+description: "The Disk Explorer opens .dsk, .trd and .scl disk images, .mdr Microdrive cartridges and .img, .hdf and .cim SD cards: list, preview, add, extract, rename and delete their files, and see how the disk is laid out. The DivMMC brings esxDOS SD cards to the 48K, 128K and +3."
 ---
 
 import { Callout } from 'nextra/components'
@@ -7,8 +7,9 @@ import { Callout } from 'nextra/components'
 # Disk images and the Disk Explorer
 
 Klive opens a disk image as its **files**. Double-click a `.dsk` (a ZX Spectrum +3 disk, with the
-+3DOS file system), a `.trd` or a `.scl` (TR-DOS disks, for the Pentagon 128 and the Scorpion) in
-the project explorer, and the **Disk Explorer** shows what is on it: the file names, what each file
++3DOS file system), a `.trd` or a `.scl` (TR-DOS disks, for the Pentagon 128 and the Scorpion), or
+an `.mdr` (a [Microdrive cartridge](/en/guides/emulator/microdrives), for the Interface 1) in the
+project explorer, and the **Disk Explorer** shows what is on it: the file names, what each file
 is, its size and load address, and a preview.
 
 <ClickableImage src="/images/disk-explorer/files.png" width={720} />
@@ -86,6 +87,9 @@ marked.
 On a `.dsk`, the **Surface** switch shows the image as the disk stores it: every track's header
 and sectors, and the raw track as laid on the disk.
 
+A Microdrive cartridge has no tracks: its layout is one row of up to 254 sectors of 512 bytes, in
+the order they pass the head, each named by its sector number.
+
 A TR-DOS disk has 16 sectors of 256 bytes on every track. Its header strip also shows the disk's
 label:
 
@@ -138,8 +142,10 @@ Scorpion, which have the Beta 128):
 
 1. Klive cannot ship esxDOS. Get it from its authors and name its 8K ROM in **Settings › Machine ›
    esxDOS ROM**.
-2. Turn on **Machine › SD Card › DivMMC Interface**. The machine restarts with the interface.
-3. **Machine › SD Card › Select SD Card Image** names the card: an `.img`, `.hdf` or `.cim` with a
+2. Turn on **DivMMC Interface**: under **Machine › Interfaces** on the 48K and the 128K (where it
+   shares the menu with the Interface 1, which it disconnects), under **Machine › SD Card** on the
+   +2A/+3. The machine restarts with the interface.
+3. **Select SD Card Image** in the same menu names the card: an `.img`, `.hdf` or `.cim` with a
    FAT16 or FAT32 file system and esxDOS's `BIN`, `SYS` and `TMP` folders on it. You can prepare one
    in the Disk Explorer.
 
@@ -176,10 +182,12 @@ Without a running Klive, `klive disk` takes the same actions on the image file d
 
 **Export Code** (or `expc ... -f dsk` / `-f trd`) puts a compiled program on a new disk that boots
 it. A `.dsk` holds a BASIC loader named `DISK`, which the +3's **Loader** menu runs. A `.trd` holds a
-loader named `boot`, which TR-DOS runs when the disk boots. The loader loads the code files (and a
+loader named `boot`, which TR-DOS runs when the disk boots. An `.mdr` (`-f mdr`, on the 48K and the
+128K) is a formatted Microdrive cartridge with a loader named `run`, which the Interface 1 runs when
+you [boot the cartridge](/en/guides/emulator/microdrives#booting-a-cartridge). The loader loads the code files (and a
 loading screen, if you give one) and starts the program; **CLEAR** and the border colour work as
 they do for a tape.
 
 <Callout type="warning">
-A program that uses the 128K memory banks cannot be exported to a disk yet: export it as a tape.
+A program that uses the 128K memory banks cannot be exported to a disk or a cartridge yet: export it as a tape.
 </Callout>

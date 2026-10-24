@@ -1,6 +1,6 @@
 # ZX Interface 1 and Microdrives on the 48K and 128K (G9.6)
 
-Status: 🚧 **in progress**. Phases 0–5 done (2026-10-24, see their "As built" notes). Decisions Q1–Q8 were
+Status: ✅ **done** (2026-10-24). Every phase has an "As built" note. Decisions Q1–Q8 were
 taken by the author on 2026-10-24 (§8).
 Base plan: [CLOSING_THE_GAPS_PLAN.md](CLOSING_THE_GAPS_PLAN.md), §G9 (a new row, **G9.6**, size L).
 Research: [`_input/microdrive/`](../_input/microdrive/README.md). Every fact in this plan comes from
@@ -675,7 +675,7 @@ research file and section it checks:
   - the flow test (connect, insert, paging);
   - `if1-state.test.ts` (`.szx`/`.z80` paged round trips on the real core, RZX).
 
-### Phase 6 — documentation and roadmap (S)
+### Phase 6 — documentation and roadmap (S) ✅
 1. `docs/content/en/guides/emulator/microdrives.mdx`, modelled on `trdos-disks.mdx`: connect the IF1,
    insert or create a cartridge, FORMAT, CAT, SAVE/LOAD, boot, fast mode, write-back, write protect,
    the "IN 0" hang. Also update `machine-types.mdx`, `snapshots.mdx` (Interface 1 now emulated),
@@ -686,6 +686,27 @@ research file and section it checks:
 3. `.ai/ui-theming-intent-and-lessons.md` for any styling rule the cards or menus taught.
 4. The changeset (`npm run change -- --type feature --text "**Interface 1 and Microdrives** ..."`).
 5. `npm run doc:build && npm run doc:check`.
+
+**As built (Phase 6, 2026-10-24):**
+- **Docs.**
+  - New page: `guides/emulator/microdrives.mdx` (connect, cartridges, BASIC, boot, fast mode,
+    things to know, snapshots), in the emulator guides' navigation after TR-DOS.
+  - Updated: `machine-types.mdx` (Machine › Interfaces), `snapshots.mdx` (the IF1 is emulated; `.szx`
+    links cartridges), `disk-explorer.mdx` (`.mdr`, its one-row layout, `-f mdr`, and the DivMMC's
+    menu now under Interfaces on the 48K/128K), `custom-rom.mdx` (the IF1 ROM setting), and the
+    `crd`, `disk` and `expc` references. The route golden gained the page.
+  - **Not done:**
+    - `whats-new.mdx` is generated from the CHANGELOG, so the changeset reaches it.
+    - The book's I/O ports appendix is the Next's, which has no Interface 1.
+    - No screenshots: the doc-shots recipe captures them, but none is published.
+- **A Phase 4 gap closed.** The Export Code dialog offers "Microdrive cartridge (.mdr)" on the 48K
+  and the 128K; only `expc -f mdr` did before.
+- **Roadmap.**
+  - G9.6 row ✅ in `CLOSING_THE_GAPS_PLAN.md`.
+  - The tape/disk row (§2) and W9 (§4) in `LANDING_PAGE_COMPETITIVE_ANALYSIS.md`.
+- **No theming note.** Phase 6 changed no style, and Phase 3's icon rule is already recorded.
+- **The changeset** is a feature, with a highlight.
+- **Checks:** `doc:build` and `doc:check`, the fast tiers, and `test:slow`.
 
 ## 6. Verification
 

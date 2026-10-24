@@ -1857,6 +1857,7 @@ export type MessageKey =
   | "dialog.exportCode.format.hex"
   | "dialog.exportCode.format.ht1080zCas"
   | "dialog.exportCode.format.ht1080zCmd"
+  | "dialog.exportCode.format.mdr"
   | "dialog.exportCode.format.tap"
   | "dialog.exportCode.format.trd"
   | "dialog.exportCode.format.tzx"

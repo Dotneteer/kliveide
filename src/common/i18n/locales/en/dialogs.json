@@ -2427,6 +2427,11 @@
     "context": "Option of the Export Code dialog's format dropdown: a +3DOS disk image with the code and a BASIC loader named DISK, which the +3's Loader menu runs. Keep '+3', '.dsk' and 'Loader' as they are.",
     "maxChars": 44
   },
+  "dialog.exportCode.format.mdr": "Microdrive cartridge (.mdr), booted by RUN",
+  "@dialog.exportCode.format.mdr": {
+    "context": "Option of the Export Code dialog's format dropdown: a ZX Microdrive cartridge image with the code and a BASIC loader named run, which the Interface 1 loads when RUN is typed with no program. Keep 'Microdrive', '.mdr' and 'RUN'.",
+    "maxChars": 44
+  },
   "dialog.exportCode.format.trd": "TR-DOS disk (.trd), booted by TR-DOS",
   "@dialog.exportCode.format.trd": {
     "context": "Option of the Export Code dialog's format dropdown: a TR-DOS disk image with the code and a BASIC loader named boot, which TR-DOS runs when the disk boots. Keep 'TR-DOS' and '.trd'.",

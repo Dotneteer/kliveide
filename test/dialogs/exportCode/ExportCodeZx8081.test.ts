@@ -24,7 +24,8 @@ describe("Export dialog on the ZX80/ZX81", () => {
   it("offers formats by machine", () => {
     expect(formatOptionsFor("zx81").map((o) => o.value)).toEqual(["p", "hex"]);
     expect(formatOptionsFor("zx80").map((o) => o.value)).toEqual(["o", "p", "hex"]);
-    expect(formatOptionsFor("sp48")).toBe(FORMAT_OPTIONS);
+    // --- The 48K adds a Microdrive cartridge (`.plans/MICRODRIVE_PLAN.md` Q7)
+    expect(formatOptionsFor("sp48").map((o) => o.value)).toEqual([...FORMAT_OPTIONS.map((o) => o.value), "mdr"]);
   });
 
   it("replaces a saved Spectrum format with the machine's own", () => {
