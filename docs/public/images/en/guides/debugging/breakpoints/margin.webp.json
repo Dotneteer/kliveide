@@ -1,0 +1,22 @@
+{
+  "width": 1240,
+  "height": 1182,
+  "markers": {
+    "logpoint": {
+      "x": 2.2,
+      "y": 33.8
+    },
+    "conditional": {
+      "x": 2.2,
+      "y": 56.3
+    },
+    "breakpoint": {
+      "x": 2.2,
+      "y": 74.3
+    },
+    "oneshot": {
+      "x": 2.2,
+      "y": 92.2
+    }
+  }
+}

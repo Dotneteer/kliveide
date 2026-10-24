@@ -1,0 +1,27 @@
+---
+description: "Turn on the developer tools to read the emulator's and the IDE's console log when you troubleshoot Klive or report a bug."
+---
+
+# Diagnostics
+
+The emulator and IDE windows write a console log with warnings and errors that help troubleshoot Klive
+and fix bugs. To read it, turn on the developer tools: run this command in the IDE's
+[command prompt](/en/guides/editing/command-prompt/), then restart Klive:
+
+```text
+set -u devTools.allow 1
+```
+
+After the restart, **View › Toggle Developer Tools** (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>I</kbd>) shows or hides the developer tools of the focused window (similar to Chrome). The **Console** tab displays the diagnostics messages, including warnings and errors.
+
+You can turn off the console log by executing this command in the IDE window:
+
+```text
+set -u devTools.allow 0
+```
+
+You should restart Klive after changing the setting.
+## Related
+
+- [The advanced debugging switch](/en/guides/customizing/advanced-debugging/)
+- [`set`](/en/reference/commands#set) command

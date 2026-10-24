@@ -24,13 +24,13 @@ Topics:
 - **Enabling Layer 2.** NextReg `$15` (priority bits) and `$69` (display enable plus paging shortcut for the 16 KB write window at `$0000`–`$3FFF`).
 - **Scrolling.** NextRegs `$16` (X-scroll low), `$17` (Y-scroll), and `$71` (X-scroll high bit for 320/640 modes).
 - **The clipping window.** NextRegs `$18`–`$1B` — Layer 2 only renders inside this rectangle, which is also what makes split-screen and HUD overlays cheap.
-- **Priority over ULA.** The seven priority modes from NextReg `$15`, the per-pixel priority bit (from [Palettes](./09-palettes.mdx)), and the transparency colour (NextReg `$14`).
+- **Priority over ULA.** The seven priority modes from NextReg `$15`, the per-pixel priority bit (from [Palettes](/en/book/09-palettes/)), and the transparency colour (NextReg `$14`).
 
 ## What you should know first
 
-- [Memory Architecture](./03-memory.mdx) — Layer 2 lives in pageable RAM.
-- [Interrupts](./04-interrupts.mdx) — needed for the line-interrupt split-screen exercise.
-- [Palettes](./09-palettes.mdx).
+- [Memory Architecture](/en/book/03-memory/) — Layer 2 lives in pageable RAM.
+- [Interrupts](/en/book/04-interrupts/) — needed for the line-interrupt split-screen exercise.
+- [Palettes](/en/book/09-palettes/).
 
 ## Planned exercises
 

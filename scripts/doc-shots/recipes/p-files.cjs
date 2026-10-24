@@ -63,6 +63,11 @@ module.exports = {
         throw new Error(`The display file was not drawn: ${JSON.stringify(picture)}`);
       }
       await klive.shot(VIEWER, "zx81/p-file-viewer.png", { displayWidth: 900 });
+      // --- `VIEWER` also matches an outer wrapper that takes in the tool area: the document area instead
+      await klive.shot('[class*="_documentArea_"], [class*="_documentsContainer_"]', "en/guides/machines/zx81-zx80/p-file-viewer.webp", {
+        displayWidth: 760,
+        crop: { x: 0, y: 0, height: 480 }
+      });
 
       // --- The program as a ZX81 listing, through the details' button
       await klive.ide.locator('[role="option"][data-key="program"]').first().click();
@@ -80,6 +85,10 @@ module.exports = {
       }
       await klive.shot('[class*="_documentArea_"], [class*="_documentsContainer_"]', "zx81/p-file-listing.png", {
         displayWidth: 900
+      });
+      await klive.shot('[class*="_documentArea_"], [class*="_documentsContainer_"]', "en/guides/machines/zx81-zx80/p-file-listing.webp", {
+        displayWidth: 760,
+        crop: { x: 0, y: 0, height: 240 }
       });
 
       // --- A self-starting program names its line in the summary

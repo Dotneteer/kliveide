@@ -333,6 +333,42 @@ Eleven recipes; the rest of the pages were deliberately left ungenerated.
   (<kbd>Enter</kbd> in the EMU window), the file the +3 saved appearing in the explorer, the Layout
   view, an SD card image and Settings › Machine's esxDOS row. Rerun it after any change to the
   disk UI; it waits for each state's text before photographing it.
+- `recipes/guides-*.cjs` — the Guides' WebP shots (`images/en/guides/...`, `.plans/GUIDES_OVERHAUL_PLAN.md`
+  Phase 2): `guides-emulator` (EMU window, 48K/128K keyboards), `guides-media` (snapshot and RZX viewers,
+  both files made in the recipe by `zx-snapshot-save` and `zx-rzx-record`/`zx-rzx-stop`), `guides-debugging`
+  (breakpoints set on source lines with `bp-set [file]:line ...`, the Breakpoint dialog from the margin's
+  context menu, Log pane, Watch, machine-state panels, memory, disassembly, `? bp`), `guides-basic` (Klive
+  BASIC paused in a SUB), `guides-projects`, `guides-dialogs` (Settings; the SjasmPlus dialog through
+  Settings › Integrations › Configure, because `display-dialog` refuses to run interactively), `guides-next`
+  (Copper, NextReg/memory-mapping panels, NEX viewer). `microdrives`, `p-files`, `code-coverage` and
+  `reverse-engineering` also emit their Guides WebPs. Shared helpers live outside `recipes/` (run.cjs treats
+  every file there as a recipe): `guides-helpers.cjs` and `guides-helpers-shot.cjs` (`step` keeps going
+  after one failed shot and saves window pictures to `.doc-shots/debug/`; `tag` marks an element without a
+  class for capture; `panelShot` crops a side-bar panel to its last row). Lessons: **`shot()` takes `crop`**
+  (`{ x, y, width, height }` in CSS px of the element) for a tight crop without a wrapper; **clicking the
+  selected activity hides the side bar** (check `aria-selected` first); **`outp <pane>` removes the prompt**
+  until the Commands tab is clicked again; **a file written into an open project may never reach the project
+  tree**, even after `close`/`open` (write it while the project is closed); and Monaco's glyph decorations have
+  no stable selector, so a marker on a breakpoint glyph points at a 1px pin placed over the glyph margin.
+  Publish by copying `.doc-shots/en/guides` over `docs/public/images/en/`: running the adapted older recipes
+  with `DOC_SHOTS_OUT` would also overwrite their legacy PNGs.
+  `guides-mouse` photographs the Next's toolbar with the mouse capture button; it starts on the Next
+  through `sessionSettings` and types nothing. **`sessionSettings` needs a `modelId` that the machine
+  has**: without one the app takes the 48K's `"pal"`, and the session starts on a machine type it does
+  not know (the Next's model is `standard`; its menu item is `machine_zxnext_standard`). Capturing the
+  mouse is off by default (`emuOptions.mouseCapture`), which shows the button disabled.
+  More single-purpose recipes: `guides-z88` (OZ v5.0B at the Index), `guides-timex` (a TS2068 listing a
+  short program, and Settings › Machine's **Timex ROM** row), `guides-scorpion`, `guides-explorer` (the
+  Project Explorer tree and two context menus), `guides-editing` (a label hover, the navigation history
+  list, an inline error). Each starts on the machine it photographs and does nothing else: a recipe that
+  first replays another machine's session is slow to iterate and photographs the wrong thing when a step
+  fails. **A Playwright click on a hidden element waits forever here** (no default timeout), which looks
+  like a hung app: give clicks a `timeout`. Folders of a reopened project come back expanded, so clicking
+  one collapses it.
+  **Every Guides image comes from a recipe**, and `doc:check:guide-images` fails on the screenshots taken
+  before the Sept 2026 redesign. **Before a release, re-run the `guides-*` recipes** into `.doc-shots/` and
+  compare them with the published ones: a shot that differs is a page whose picture (and maybe text) a UI
+  change made stale.
 - `recipes/readme.cjs` — the project README's `readme/klive-ide.webp`: the IDE with
   `readme-demo.kz80.asm` open and the EMU window running it, **composed into one image with
   sharp** (two windows cannot be captured in one shot). Leave the Commands pane in front: after

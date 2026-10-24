@@ -1,57 +1,146 @@
 ---
-description: "When your code is ready to be tested on actual hardware or with another emulator, you can export it with the Build | Export code menu command."
+description: "Export your compiled program as a tape, program file, disk or cartridge image that loads on the real machine or in another emulator, with an optional BASIC loader."
 ---
 
-import exportDialog1 from '../../../../public/images/working-with-ide/export-dialog-1.png'
-import exportDialog2 from '../../../../public/images/working-with-ide/export-dialog-2.png'
+import { Callout, Steps } from 'nextra/components'
 
-# Exporting Code
+# Exporting your program
 
-When your code is ready to be tested on actual hardware or with another emulator, you can export it with the **Build | Export code** menu command. This command pops up a dialog:
+When your program is ready to run outside the IDE, on real hardware or in another emulator, export
+it. Klive compiles the build root and writes a file in a format the machine can load: a tape, a
+ZX80/ZX81 program file, a bootable disk, a Microdrive cartridge or a NEX file. For a ZX Spectrum tape
+or disk, Klive can add a BASIC loader that loads and starts your code.
 
-<ClickableImage src="/images/working-with-ide/export-dialog-1.png" width={384} />
+This page is about exporting the compiled program. To turn a disassembly into source code, see
+[Exporting a disassembly as source](/en/guides/analysis/exporting-source/).
 
-## The Export Dialog
+## Export with the dialog
 
-Before exporting the code, you can specify several parameters:
-- **Export format**. You can select one of these file formats from the dropdown to export your code:
-  - **`TAP format`: Standard `.tap` file format
-  - **`TZX format`: Standard `.tzx` file format
-  - **`Intel HEX format`: Standard text file format you can use with classic tools (e.g., EPROM burners).
-- **Export folder**. An optional folder to save the exported file. If you do not specify this folder, the IDE will save the exported file into the `KliveExports` folder under your home directory.
-- **Export file name**. The filename for the export is mandatory. If you do not specify a file name extension, Klive will add it according to the selected export format.
-- **Program name**. The name to add to the tape file header. If you leave it empty, the export infers the program name from the export file name.
-- **Create BASIC loader**. (This option is not available with Intel HEX format.) If you check this option, the export creates a BASIC loader for your code; otherwise, it creates a simple file you can load as a port of your custom loader.
+<Steps>
 
-If you are about to export the code with a BASIC loader, you can set other options:
+### Open the Export Code dialog
 
-<ClickableImage src="/images/working-with-ide/export-dialog-2.png" width={384} />
+Choose **Build › Export code...**. (The menu item runs the `exportCode` function of `build.ksx`; see
+[The build system](/en/guides/projects/build-system/).)
 
+### Choose the format
 
-- **Add CLEAR**. Adds a `CLEAR` statement to the loader.
-- **Add PAUSE 0**. Adds a PAUSE 0 statement to the loader. When your code has been completely loaded, it waits for a keypress before running.
-- **Use a single code block**. If this option is checked, your separate code segments (according to their `ORG` directives) are merged in a single block, gaps filled with zeros. Otherwise, the export creates a separate code file for each code block.
-- **Set border color**. You can specify a color for the border during the load operation (while loading the app's code files).
-- **Screen file**. You can optionally add a screen file for your code. The IDE accepts these formats:
-  - A `.tap` or `.tzx` file that is created when saving a screen (with the `SAVE "<name>" SCREEN$` command)
-  - A standard 6912 bytes long `.scr` file with the raw screen contents.
-  - A standard 7040 bytes long `.scr` file with 128 bytes +3DOS header and the raw screen contents. Klive does not test the +3DOS header; it just uses the raw screen bytes.
-- **Code start address**. The IDE infers the code start address from your code (according to the ORG, XORG, ENT, or XENT pragmas), so you can leave this field empty. However, you can specify another start address by typing a decimal value here. This address cannot point to the ROM; it must be between 16384 and 65535.
+Pick the **Export format**. The list depends on the machine the project runs on; see
+[Formats by machine](#formats-by-machine).
 
-## The BASIC Loader
+### Name the file
 
-According to your options, Klive generates a BASIC loader for the ZX Spectrum 48K/128K/+2/+3 models. This loader ensures that other files (screen, code) are loaded in the correct order (and the right memory location).
+Type the **Export file name**. Without an extension, Klive adds the format's. **Export folder** is
+optional: without it, the file goes into the `KliveExports` folder of your home folder.
+**Program name** is the name in the tape header; when it is empty, Klive uses the file name.
 
-The ZX Spectrum 128K models and above support memory paging, and you can compile multi-bank code with the `BANK` pragma. When your code uses multiple banks, the loader ensures they are loaded into the appropriate bank.
+### Set the loader options
 
-With the following steps, you can examine the structure of the loader:
+For a tape or disk, leave **Create BASIC loader** ticked to get a loader that loads and starts your
+code, and set its options (see [The BASIC loader](#the-basic-loader)).
 
-1. Turn off the **fast LOAD mode** in the emulator toolbar (with the rocket icon).
-2. Load the exported file. When the first block is loaded, pause the machine.
-3. You can view the code with the **View | Machine Views | BASIC Listing** menu command.
+### Export
 
-## Overriding the Current Tape File
+Click **Export**. Klive compiles the program first; if the compile fails, nothing is exported and the
+errors are in the Build output.
 
-You can set the current tape file with the **Machine | Tape | Insert Tape...** menu command. This command loads the selected file and sends it to the emulator.
+</Steps>
 
-When you export a file in the IDE and overwrite the currently selected tape file, the emulator will still use the contents of the previously selected tape file, as the file update does not send the new file contents to the emulator. However, the emulator picks up the updated file when you click the **rewind** button in the toolbar (or use the **Machine | Rewind tape** menu function).
+<Shot
+  src="get-started/export-dialog.webp"
+  alt="The Export Code dialog filled in for a TZX file with a BASIC loader"
+  caption="The Export Code dialog, exporting a TZX file with a BASIC loader"
+  width={620}
+/>
+
+The dialog remembers its values for the next export.
+
+## Formats by machine
+
+| Machine | Formats in the dialog |
+| --- | --- |
+| ZX Spectrum 48K | **TAP format**, **TZX format**, **Intel HEX format**, **Microdrive cartridge (.mdr), booted by RUN** |
+| ZX Spectrum 128K (and the Pentagon 128) | TAP, TZX, Intel HEX, **TR-DOS disk (.trd), booted by TR-DOS**, Microdrive cartridge |
+| ZX Spectrum +2E/+3E (and the +2A/+3) | TAP, TZX, Intel HEX, **+3 disk (.dsk), booted by the Loader** |
+| Scorpion ZS-256 | TAP, TZX, Intel HEX, TR-DOS disk |
+| Timex, ZX Spectrum Next | TAP, TZX, Intel HEX |
+| ZX81 | **ZX81 program (.p)**, Intel HEX |
+| ZX80 | **ZX80 program (.o)**, ZX81 program (for a ZX80 with the 8K ROM), Intel HEX |
+| HT-1080Z | **HT-1080Z program (.cmd)**, **HT-1080Z tape (.cas)**, Intel HEX |
+
+- **TAP** and **TZX** are ZX Spectrum tape files. **Intel HEX** is a text file of the raw bytes, for
+  EPROM programmers and other tools; it has no loader.
+- A **.dsk**, **.trd** or **.mdr** export is a bootable image: the +3's Loader, TR-DOS or `RUN` on an
+  Interface 1 starts the program. [Working with disks](/en/guides/media/disks-tutorial/) and
+  [Microdrives](/en/guides/media/microdrives/) show them at work.
+- A **.p** or **.o** file holds the program as a BASIC program with the code in a `1 REM` line. On a
+  ZX81 program, the checkbox reads **Run the program when loaded**. A ZX80 program has no such
+  option. See [ZX81 and ZX80](/en/guides/machines/zx81-zx80/).
+- An HT-1080Z **.cmd** loads with `SYSTEM` and carries its start address; a **.cas** is a `SYSTEM`
+  tape. See [HT-1080Z](/en/guides/machines/ht1080z/).
+
+### ZX Spectrum Next: NEX files
+
+A ZX Spectrum Next program written with `.model next` exports as a `.nex` file. Run and Debug already
+build one and have NextZXOS load it. To write one yourself, use the `.savenex` pragma in your source
+or the `expc` command with `-f nex`, for example `expc "game.nex" -f nex`. See
+[NEX files](/en/guides/next/nex-files/) and [ZX Spectrum Next development](/en/reference/z80-assembler/zx-next/).
+
+A Klive BASIC or Boriel BASIC program exported as a NEX file also gets a
+`<name>.nex.kbasic-debug.json` file beside it, so `nex-run <file> -d` can debug it at source level.
+
+### C programs (z88dk)
+
+For a project whose build root is a `.c` file, Export copies the file z88dk itself wrote for the
+format (`.tap`, `.dsk`, `.p`, `.o`, or `.epr` on the Cambridge Z88), so you get exactly what z88dk
+built. The BASIC loader options do not apply and are ignored with a warning. Intel HEX still comes
+from Klive. See [z88dk (C)](/en/guides/languages/z88dk/).
+
+## The BASIC loader
+
+With **Create BASIC loader** ticked, a ZX Spectrum export starts with a BASIC program that loads the
+rest of the file in the right order and to the right addresses, then starts your code. On the 128K
+and later models, code compiled into several banks (with the `.bank` pragma) is loaded into its
+banks. The options:
+
+| Option | What it does |
+| --- | --- |
+| **Add CLEAR** | Adds a `CLEAR` statement to the loader, so BASIC keeps out of the code's memory. |
+| **Add PAUSE 0** | Waits for a key press after loading, before starting the code. |
+| **Use a single code block** | Saves all code segments (one per `.org`) as one block, the gaps filled with zeros. Otherwise each segment is a block of its own. |
+| **Set border color** | The border colour while the code loads; **None** leaves it alone. |
+| **Screen file** | A loading screen: a `.tap` or `.tzx` with a `SCREEN$` block, a 6912-byte `.scr` file, or a 7040-byte `.scr` with a +3DOS header (the header is skipped). |
+| **Code start address** | Where the code starts, as a decimal number between 16384 and 65535. Leave it empty to use the program's entry point (from `.org`, `.xorg`, `.ent` or `.xent`). |
+
+Without a loader, the export holds only the code blocks, for your own loader to load.
+
+<Callout type="info">
+To look at a loader, turn off fast loading in the emulator, load the exported file, pause the machine
+after the first block and open **View › Machine Views › BASIC Listing**
+([BASIC listing](/en/guides/analysis/basic-listing/)).
+</Callout>
+
+## Export from the command prompt
+
+The dialog builds an [`expc`](/en/reference/commands#expc) command and runs it. You can type the same
+command at the [command prompt](/en/guides/editing/command-prompt/) or call it from a build function:
+
+```
+expc filename [-n name] [-f tap|tzx|hex|nex|dsk|trd|mdr|p|o|cmd|cas|epr] [-as] [-p] [-c] [-b border] [-sb] [-addr address] [-scr screenfile]
+```
+
+`-as` adds the BASIC loader (on a ZX81 program: run when loaded), `-p` adds PAUSE 0, `-c` adds
+CLEAR, `-b` sets the border colour (0-7), `-sb` makes a single code block, `-addr` sets the start
+address and `-scr` adds a loading screen.
+
+## Exporting over the inserted tape
+
+When you export over the tape file that is inserted in the machine, the machine keeps playing the
+old contents until you rewind the tape with **Machine › Tape › Rewind**.
+
+## Related
+
+- [The build system](/en/guides/projects/build-system/)
+- [Tapes](/en/guides/media/tapes/)
+- [Exporting a disassembly as source](/en/guides/analysis/exporting-source/)
+- [`expc` in IDE commands](/en/reference/commands#expc)

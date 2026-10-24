@@ -1,0 +1,14 @@
+{
+  "width": 1520,
+  "height": 1056,
+  "markers": {
+    "covered": {
+      "x": 9.1,
+      "y": 20.5
+    },
+    "uncovered": {
+      "x": 9.1,
+      "y": 75
+    }
+  }
+}

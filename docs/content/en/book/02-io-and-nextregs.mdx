@@ -8,9 +8,9 @@ import { Callout } from 'nextra/components'
 
 Before you can write a single line of useful Z80 code on the ZX Spectrum Next, you need to understand how Z80 programs talk to hardware. It's not magic — it's two I/O instructions (`IN` and `OUT`), one pair of 16-bit port addresses, and a register map. Master these three things and every system chapter that follows opens up naturally.
 
-This chapter covers the fundamentals. First, how the Z80's I/O bus actually works and why the Next's port addresses look the way they do. Then, NextRegs — the FPGA's control panel, accessible through two dedicated ports, that gives you access to everything the Next adds beyond the original Spectrum. If you want the CPU-side background first, see [Z80N: The Next's Z80 CPU](./01-z80n.mdx).
+This chapter covers the fundamentals. First, how the Z80's I/O bus actually works and why the Next's port addresses look the way they do. Then, NextRegs — the FPGA's control panel, accessible through two dedicated ports, that gives you access to everything the Next adds beyond the original Spectrum. If you want the CPU-side background first, see [Z80N: The Next's Z80 CPU](/en/book/01-z80n/).
 
-By the time you reach the end of this chapter you'll have the vocabulary to read any hardware reference and decode any port address. The next chapter ([Memory Architecture: ROM, RAM, Banks, and the MMU](./03-memory.mdx)) builds directly on the NextRegs you'll meet here.
+By the time you reach the end of this chapter you'll have the vocabulary to read any hardware reference and decode any port address. The next chapter ([Memory Architecture: ROM, RAM, Banks, and the MMU](/en/book/03-memory/)) builds directly on the NextRegs you'll meet here.
 
 ## How Z80 I/O Addressing Works
 
@@ -119,7 +119,7 @@ Write
 Try the `IoDemo.Write` example.
 </Callout>
 
-The full I/O port listing and port enable/disable controls are covered in [Appendix C: I/O Ports Reference](./app-C-io-ports-reference.md).
+The full I/O port listing and port enable/disable controls are covered in [Appendix C: I/O Ports Reference](/en/book/app-C-io-ports-reference/).
 
 ## NextRegs: The Hardware Control Panel
 
@@ -147,7 +147,7 @@ ld a,$02       ; value: 14 MHz
 out (c),a
 ```
 
-The [Z80N instruction set](./01-z80n.mdx) adds two faster alternatives that fold the select and write into a single instruction:
+The [Z80N instruction set](/en/book/01-z80n/) adds two faster alternatives that fold the select and write into a single instruction:
 
 ```z80klive
 nextreg $07,$02   ; select register 0x07 and write 0x02 in one shot
@@ -168,11 +168,11 @@ inc b          ; point to the value port
 in a,(c)       ; read the current value into A
 ```
 
-The select port (`0x243B`) remembers the last written register number, so if you've just written to a register via the port method, you can skip the select step and read straight from `0x253B`. Don't rely on this across [interrupt](./04-interrupts.mdx) boundaries though—an ISR that touches NextRegs will clobber the selection.
+The select port (`0x243B`) remembers the last written register number, so if you've just written to a register via the port method, you can skip the select step and read straight from `0x253B`. Don't rely on this across [interrupt](/en/book/04-interrupts/) boundaries though—an ISR that touches NextRegs will clobber the selection.
 
 > **Reset behavior**: Every register has a defined reset state. Hard reset (power-on, F1, or writing `0x02` with bit 1) restores everything to factory defaults. Soft reset (F4 key or writing `0x02` with bit 0) restores a slightly different subset—some hardware settings survive a soft reset, others don't. Register descriptions note which applies.
 
-The complete NextReg reference, organized by functional area, is in [Appendix B: NextReg Reference](./app-B-nextreg-reference.md).
+The complete NextReg reference, organized by functional area, is in [Appendix B: NextReg Reference](/en/book/app-B-nextreg-reference/).
 
 #### NextReg Example: Write and Read Back
 
@@ -241,6 +241,6 @@ Try the `NextRegDemo.Write` example.
 
 You now have the two primitives every later chapter relies on: I/O ports and NextRegs. From here, the natural progression is:
 
-- **[Memory Architecture: ROM, RAM, Banks, and the MMU](./03-memory.mdx)** — the MMU is configured entirely through NextRegs `$50`–`$57`, so this is the immediate next step.
-- **[Interrupts: IM1, IM2, and the Next's Multi-Source Interrupt System](./04-interrupts.mdx)** — the Next's hardware IM2 controller lives in NextRegs `$C0`–`$C8`.
-- **[The CTC: Counter/Timer Circuit](./05-ctc.mdx)** — uses plain I/O ports `$183B`–`$1B3B` and, optionally, the IM2 mechanism from the [Interrupts](./04-interrupts.mdx) chapter.
+- **[Memory Architecture: ROM, RAM, Banks, and the MMU](/en/book/03-memory/)** — the MMU is configured entirely through NextRegs `$50`–`$57`, so this is the immediate next step.
+- **[Interrupts: IM1, IM2, and the Next's Multi-Source Interrupt System](/en/book/04-interrupts/)** — the Next's hardware IM2 controller lives in NextRegs `$C0`–`$C8`.
+- **[The CTC: Counter/Timer Circuit](/en/book/05-ctc/)** — uses plain I/O ports `$183B`–`$1B3B` and, optionally, the IM2 mechanism from the [Interrupts](/en/book/04-interrupts/) chapter.

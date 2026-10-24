@@ -1,9 +1,135 @@
 ---
-description: "Klive IDE has a scripting system with a JavaScript-like syntax. When you create files with the ."
+description: "Change what Compile, Run, Debug and Export do, and add your own commands to the Build menu, by editing the project's build.ksx script."
 ---
 
-# The Build System
+import { Callout, Steps } from 'nextra/components'
 
-Klive IDE has a scripting system with a JavaScript-like syntax. When you create files with the `.ksx` extension, the IDE considers them script files and allows you to run them.
+# The build system
 
-_TBD_
+Every Klive project has a `build.ksx` file in its root folder: a [Klive script](/en/reference/klive-script/)
+whose exported functions are the project's build commands. The build bar and the **Build** menu run
+these functions. Edit them to change how your program is built, or add functions to put your own
+commands, such as "build and copy to the SD card", into the **Build** menu.
+
+## The default build file
+
+The templates create this `build.ksx`:
+
+```javascript
+export function buildCode() {
+  $command("klive.compile")
+}
+
+export function injectCode() {
+  $command("klive.inject")
+}
+
+export function runCode() {
+  $command("klive.run")
+}
+
+export function debugCode() {
+  $command("klive.debug")
+}
+
+export function exportCode() {
+  $command("display-dialog export")
+}
+```
+
+Each function runs one [IDE command](/en/reference/commands/) with `$command`. If your project has
+no `build.ksx` (projects created before Klive v0.32.0), create a file with this content in the
+project's root folder, next to `klive.project`, and close and reopen the project.
+
+## The predefined functions
+
+Five function names have a fixed place in the IDE. The build bar's buttons run the first four, and
+the **Build** menu lists them under these names:
+
+| Function | **Build** menu item | Build bar button | Default command |
+| --- | --- | --- | --- |
+| `buildCode` | **Build project** | **Compile code** | `klive.compile` |
+| `injectCode` | **Inject code into the machine** | **Inject code into the virtual machine** | `klive.inject` |
+| `runCode` | **Run** | **Inject code and start the virtual machine** | `klive.run` |
+| `debugCode` | **Debug** | **Inject code and start debugging** | `klive.debug` |
+| `exportCode` | **Export code...** | – | `display-dialog export`, the [Export Code dialog](/en/guides/projects/exporting-code/) |
+
+A function you delete disappears from the **Build** menu, and its build bar button reports that the
+function is missing.
+
+## Add a command to the Build menu
+
+Every other exported function of `build.ksx` becomes a **Build** menu item too.
+
+<Steps>
+
+### Write the function
+
+Open `build.ksx` and add an exported function. Its first statement can be a string literal: that is
+the menu item's label. Without one, the menu shows the function's name.
+
+```javascript
+export function buildAndExport() {
+  "Build and export a TAP file"
+  $command("klive.compile")
+  $command('expc "game.tap" -f tap -as')
+}
+
+export function exportTzx() {
+  "|Export a TZX file"
+  $command('expc "game.tzx" -f tzx -as')
+}
+```
+
+A label that starts with `|` puts a separator line above the item; the `|` is not shown.
+
+### Save the file
+
+Klive reads `build.ksx` again whenever you save it, and updates the **Build** menu.
+
+### Run it
+
+Choose your item from the **Build** menu. The function runs as a script; its output goes to the
+**Script Output** pane of the Output tab.
+
+</Steps>
+
+You can also run any build function from the [command prompt](/en/guides/editing/command-prompt/)
+with [`run-build-function`](/en/reference/commands#run-build-function) (alias `rbf`), for example
+`rbf buildAndExport`.
+
+## What a build function can use
+
+A build function is ordinary Klive script code, so it can use variables, loops, conditions and the
+script packages. The most useful parts for builds are:
+
+- **`$command(text)`** runs an IDE command, exactly as if you typed it at the command prompt. Every
+  command in [IDE commands](/en/reference/commands/) works, including `expc` to export, `nex-run` to
+  run a NEX file, `outp` to show an output pane and `set` to change a setting.
+- **`Z88dk.compile(filename, options, target)`** runs z88dk's `zcc` on a C file, for a build that
+  needs more than the [z88dk integration](/en/guides/languages/z88dk/) does on its own. `target` is a
+  `zcc` target such as `zx`.
+- **`Output.log(...)`**, `Output.info(...)`, `Output.warn(...)`, `Output.error(...)` and
+  `Output.success(...)` write messages to the script's output.
+- **`delay(ms)`** waits the given number of milliseconds.
+
+[Scripting syntax](/en/reference/klive-script/syntax/) describes the language itself.
+
+## The script output
+
+Each run of a build function is a script run. Its messages appear in the **Script Output** pane of the
+Output tab (`outp scripting`), and the build bar's **Show script output** button opens the output of
+the last function the bar ran as a document. The **Scripting** activity in the activity bar lists
+the recent script runs, build functions included.
+
+<Callout type="info">
+The compiler's own messages (errors, warnings, the result of a build) go to the **Build** pane, not
+to the Script Output pane. When a build function fails, Klive switches to the Build pane.
+</Callout>
+
+## Related
+
+- [Creating a project](/en/guides/projects/creating-projects/)
+- [Exporting your program](/en/guides/projects/exporting-code/)
+- [Scripting overview](/en/reference/klive-script/)
+- [IDE commands](/en/reference/commands/)

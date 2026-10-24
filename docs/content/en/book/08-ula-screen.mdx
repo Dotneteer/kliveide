@@ -12,7 +12,7 @@ That screen is not elegant in the modern sense. Its bitmap is interleaved. Its c
 
 The Next keeps the ULA alive as a real layer in the video system. It can be scrolled in hardware, clipped, mixed with the Tilemap and Layer 2, and upgraded through ULANext or ULA+. So this chapter starts with the 1982 rules, then shows how the Next lets you bend them without forgetting where the screen came from.
 
-> **What this chapter assumes.** You should already know the basics of ports and NextRegs from [I/O Ports and NextRegs](./02-io-and-nextregs.mdx), and you should be comfortable with Bank 5 and the MMU mapping from [Memory Architecture](./03-memory.mdx). The line-timed border discussion will make more sense after [Interrupts](./04-interrupts.mdx), but the ordinary border port is simple enough to use right away.
+> **What this chapter assumes.** You should already know the basics of ports and NextRegs from [I/O Ports and NextRegs](/en/book/02-io-and-nextregs/), and you should be comfortable with Bank 5 and the MMU mapping from [Memory Architecture](/en/book/03-memory/). The line-timed border discussion will make more sense after [Interrupts](/en/book/04-interrupts/), but the ordinary border port is simple enough to use right away.
 
 ## The Shape of the ULA Screen
 
@@ -38,7 +38,7 @@ This is why drawing a white player over a blue wall can suddenly make the wall w
 
 In the normal 48K/128K screen, the ULA reads its display from **Bank 5**, visible to the Z80 at `$4000`–`$7FFF` after reset. In MMU language, that is pages 10 and 11 mapped into slots 2 and 3.
 
-The 128K machines added a second display file in **Bank 7**. The Next preserves that too. Port `$7FFD` bit 3 selects which screen the ULA displays. [Memory Architecture](./03-memory.mdx) covers the legacy paging ports in detail, including why `$7FFD` is write-only and how the Next mirrors its state through NextRegs.
+The 128K machines added a second display file in **Bank 7**. The Next preserves that too. Port `$7FFD` bit 3 selects which screen the ULA displays. [Memory Architecture](/en/book/03-memory/) covers the legacy paging ports in detail, including why `$7FFD` is write-only and how the Next mirrors its state through NextRegs.
 
 | `$7FFD` bit 3 | Displayed Screen |
 |---------------|------------------|
@@ -606,7 +606,7 @@ The Spectrum ROM contains an 8×8 character font, and many classic examples copy
 
 There is a big Next caveat: this only works when the expected Spectrum ROM is paged into the bottom 16 KB. In a NEX program, or after NextZXOS has arranged memory for your application, that is often not true. Treat direct ROM-font access as a legacy technique, not as your default text system.
 
-For this book's examples, the safer route is the helper pattern introduced in [Flying Start](./flying-start.mdx): use a small printer such as `Display.PrintText`, which sends characters through the Next's ROM printing path with `RST $10` and supports Klive's string escape sequences for `AT`, `INK`, `PAPER`, and friends.
+For this book's examples, the safer route is the helper pattern introduced in [Flying Start](/en/book/flying-start/): use a small printer such as `Display.PrintText`, which sends characters through the Next's ROM printing path with `RST $10` and supports Klive's string escape sequences for `AT`, `INK`, `PAPER`, and friends.
 
 ```z80klive
 Display.PrintText(Message)
@@ -705,7 +705,7 @@ SetBorder:
 
 The border is not part of the 256×192 bitmap. It is the area around it, generated directly by the ULA. That makes it extremely cheap to change and extremely sensitive to timing. A classic loading screen or demo effect changes the border colour at precise moments while the beam is drawing the frame.
 
-On the original Spectrum, that meant cycle-counted loops. On the Next, you also have line interrupts and the [Copper](./14-copper.mdx), so border bars do not have to consume the whole CPU. The aesthetic is old; the tooling is much kinder.
+On the original Spectrum, that meant cycle-counted loops. On the Next, you also have line interrupts and the [Copper](/en/book/14-copper/), so border bars do not have to consume the whole CPU. The aesthetic is old; the tooling is much kinder.
 
 ## Hardware Scrolling the ULA
 
@@ -733,11 +733,11 @@ UpdateUlaScroll:
 
 This is a very Next-ish upgrade: the memory layout remains the old layout, but the display path gains a modern convenience. You can keep using `$4000` bitmap routines while the hardware handles smooth motion.
 
-The ULA and LoRes layer also has a clip window, controlled through NextReg `$1A` with the clip index reset in `$1C`. We will revisit clipping properly in [Compositing](./15-compositing.mdx), where it matters for mixing layers. For now, know that the ULA can be windowed like the newer layers.
+The ULA and LoRes layer also has a clip window, controlled through NextReg `$1A` with the clip index reset in `$1C`. We will revisit clipping properly in [Compositing](/en/book/15-compositing/), where it matters for mixing layers. For now, know that the ULA can be windowed like the newer layers.
 
 ## Standard ULA Colours and the Next Palette System
 
-In standard mode, the ULA behaves like a Spectrum: 8 base colours, `BRIGHT`, `FLASH`, and a 3-bit border colour. Internally on the Next, those colours still pass through the palette hardware described in [Palettes and Colour on the Next](./09-palettes.mdx). That means you can redefine what "blue" or "bright yellow" looks like without changing the attribute bytes.
+In standard mode, the ULA behaves like a Spectrum: 8 base colours, `BRIGHT`, `FLASH`, and a 3-bit border colour. Internally on the Next, those colours still pass through the palette hardware described in [Palettes and Colour on the Next](/en/book/09-palettes/). That means you can redefine what "blue" or "bright yellow" looks like without changing the attribute bytes.
 
 For ordinary ULA palette use, the important palette indices are:
 
@@ -895,7 +895,7 @@ SetUlaPlusColour:
     ret
 ```
 
-You can also enable ULA+ with NextReg `$68` bit 3, but the ports matter because existing ULA+ software uses them. The Next's port-enable registers can disable the ULA+ ports for compatibility; see [Appendix C](./app-C-io-ports-reference.md) if you are running software that expects those ports not to exist.
+You can also enable ULA+ with NextReg `$68` bit 3, but the ports matter because existing ULA+ software uses them. The Next's port-enable registers can disable the ULA+ ports for compatibility; see [Appendix C](/en/book/app-C-io-ports-reference/) if you are running software that expects those ports not to exist.
 
 ### ULANext vs ULA+
 
@@ -973,8 +973,8 @@ It is only a few dozen bytes of code, and it gives you a screen that every Spect
 
 ## Where Next
 
-The natural next stop is [Palettes and Colour on the Next](./09-palettes.mdx), because ULANext, ULA+, LoRes, Layer 2, Tilemap, and Sprites all rely on the same palette machinery once you look under the surface.
+The natural next stop is [Palettes and Colour on the Next](/en/book/09-palettes/), because ULANext, ULA+, LoRes, Layer 2, Tilemap, and Sprites all rely on the same palette machinery once you look under the surface.
 
-After that, [LoRes Mode](./10-lores.mdx) shows the closest alternative to the standard ULA screen: same memory neighborhood, much richer per-pixel colour, lower resolution. [Layer 2](./11-layer2.mdx), [The Tilemap](./12-tilemap.mdx), and [Hardware Sprites](./13-sprites.mdx) then build outward into the Next's modern video system.
+After that, [LoRes Mode](/en/book/10-lores/) shows the closest alternative to the standard ULA screen: same memory neighborhood, much richer per-pixel colour, lower resolution. [Layer 2](/en/book/11-layer2/), [The Tilemap](/en/book/12-tilemap/), and [Hardware Sprites](/en/book/13-sprites/) then build outward into the Next's modern video system.
 
-For timing tricks, keep [Interrupts](./04-interrupts.mdx) and [The Copper](./14-copper.mdx) nearby. The border still loves precise timing; the Next simply gives you better ways to provide it.
+For timing tricks, keep [Interrupts](/en/book/04-interrupts/) and [The Copper](/en/book/14-copper/) nearby. The border still loves precise timing; the Next simply gives you better ways to provide it.

@@ -2,7 +2,7 @@
 description: "The ZX Spectrum Next's Copper: its live state in the Debug activity, the Copper List with its raster ruler, Copper breakpoints and stepping."
 ---
 
-import { Callout } from 'nextra/components'
+import { Callout, Steps } from 'nextra/components'
 
 # The Copper View
 
@@ -13,7 +13,36 @@ and its mistakes show only as a wrong picture. Klive shows you that program, whe
 it, and where in the frame each instruction acts.
 
 There are two views of the same state: a compact **Copper** panel in the Debug activity, and the
-full **Copper List** document. Both are available on the ZX Spectrum Next only.
+full **Copper List** document.
+
+*Applies to: ZX Spectrum Next.*
+
+## Checking a Copper list
+
+<Steps>
+
+### Run to the frame
+
+Run the program until the effect should be on screen, then pause it.
+
+### Open the Copper List
+
+Use **View › Machine Views › Copper List**, the Copper panel's **Open Copper List** link, or
+`show-copper`. Check the list's summary first: a missing `HALT` or a `WAIT` that never matches is
+flagged there.
+
+### Find where it acts
+
+The raster ruler at the right shows the line of every `WAIT`. Click a tick to select its instruction;
+the meaning column says which register each `MOVE` writes and with what value.
+
+### Stop on the instruction
+
+Click the gutter of the row to set a Copper breakpoint, or right-click it and choose **Run to here**.
+The machine stops when the Copper completes that instruction, and the Next Registers panel and the
+paused screen show its effect. **Step Copper** moves on one Copper instruction at a time.
+
+</Steps>
 
 ## The Copper Panel
 
@@ -40,12 +69,14 @@ stale. A hard reset clears it.
 
 ## The Copper List
 
-Open it with the panel's link, **View → Machine Views → Copper List**, or the command:
+Open it with the panel's link, **View › Machine Views › Copper List**, or the command:
 
 ```
 show-copper
 show-copper $00B      ; and reveal list index $00B
 ```
+
+<Shot src="guides/next/copper/copper-view.webp" alt="The Copper List document with decoded Copper instructions and the raster ruler at the right" caption="The Copper List: one row per instruction, and the raster ruler showing where in the frame each WAIT acts." width={760} />
 
 Every row is one list instruction:
 
@@ -106,12 +137,12 @@ the Copper completes this instruction, without leaving a breakpoint behind), and
 
 `bp-set cu:$00B` stops the machine when the Copper completes list instruction `$00B`: a `MOVE` when
 it is issued, a `WAIT` when it is satisfied. See
-[Copper Breakpoints](/en/guides/debugging/breakpoints#copper-breakpoints-zx-spectrum-next) for the
+[Copper Breakpoints](/en/guides/next/next-breakpoints/#copper-breakpoints-zx-spectrum-next) for the
 details, including why the Copper may already be past the instruction when the machine stops.
 
 ## Stepping The Copper
 
-**Step Copper** (the toolbar button, **Debug → Step Copper**, or `step-copper`) runs the machine
+**Step Copper** (the toolbar button, **Debug › Step Copper**, or `step-copper`) runs the machine
 until the Copper completes its next instruction, whatever its index, and stops at the end of that
 Z80 instruction.
 
@@ -120,3 +151,10 @@ Several Copper instructions can complete during one Z80 instruction &mdash; two 
 28 MHz ticks apart. Step Copper stops on the first of them; the Copper's PC may show that it has
 already completed the next one too.
 </Callout>
+
+## Related
+
+- [Next breakpoints](/en/guides/next/next-breakpoints/)
+- [Next Registers, memory mapping and palettes](/en/guides/next/next-registers/)
+- [Why does my Next picture look wrong?](/en/guides/next/picture-troubleshooting/)
+- [The `.copper` pragma](/en/reference/z80-assembler/zx-next-copper)

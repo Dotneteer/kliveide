@@ -1,44 +1,38 @@
 ---
-description: "Background compilation is an optional feature that keeps the compiler running quietly while you write code."
+description: "Klive compiles your project quietly while you type, so the editor's hovers, colours and navigation follow your code; one setting adds inline error markers."
 ---
 
 import { Callout } from 'nextra/components';
 
-# Using Background Compilation
+# Background Compilation
 
-Background compilation is an optional feature that keeps the compiler running quietly while you write code. Whenever you pause typing, Klive recompiles your source file in the background and uses the result to power the editor's live feedback.
+While you type, Klive compiles your project in the background and uses the result to drive the editor's live features. You do not have to turn anything on for this. The **Compile in the background** setting only adds inline error markers, and the same background check for the external toolchains.
 
-## Enabling the feature
+## What happens while you type
 
-Background compilation is **off by default**. Turn it on in the [Settings](/en/guides/ide/settings) dialog:
+When you stop typing for about 1.2 seconds, Klive compiles the project quietly. Nothing is written to disk. When the compile finishes:
 
-**Settings → Editor → Background compile**
+- **Editor intelligence** is refreshed: hover information, go to definition, find references and rename work with the latest symbols.
+- **Semantic colours** are refreshed: labels, macros, structs and constants are coloured by their role.
+- **Inline errors** are shown, if **Compile in the background** is on (see below). Errors and warnings are underlined in the editor and marked in the scrollbar's overview ruler, and hovering an underline shows the message.
 
-The setting is saved globally with the IDE (not per-project), so it applies to every project you open.
+## What gets compiled
+
+- In a Klive project, Klive compiles the project's **build root**, whichever file you are editing. An error in an included file is reported at its own line.
+- An open `.zxbas` file is also checked on its own when Klive BASIC is the BASIC compiler, so editing a BASIC file the build root does not include still gets the editor's help.
+- A folder that is not a Klive project is not compiled.
+
+To make a file the build root, right-click it in the [Project Explorer](/en/guides/projects/project-explorer/) and choose **Promote to Build Root**.
+
+## The setting
+
+**Settings › Editor › Compile in the background** is off by default. It is saved with the IDE, so it applies to every project. When it is on:
+
+- errors and warnings are shown inline, as described above;
+- the external toolchains, such as [sjasmplus](/en/guides/languages/sjasmplus/), are compiled in the background too.
+
+The built-in compilers always compile in the background, whatever the setting says. These are the Klive Z80 Assembler and Klive BASIC, plus Boriel BASIC, whose check (`zxbc --parse-only`) is cheap and writes no files.
 
 <Callout type="info" emoji="💡">
-If you find the editor feels sluggish on large projects, try turning background compilation off. The setting can be toggled at any time without restarting.
+If an external toolchain makes the editor feel slow on a large project, turn the setting off. The built-in compilers keep the editor's intelligence working without it.
 </Callout>
-
-## How it works
-
-Background compilation is **lazy**: it does not run on every keystroke. Instead, it waits until you have stopped typing for about **1.2 seconds**, then silently compiles your file in a worker thread so the editor stays responsive.
-
-Each time a background compile finishes:
-
-- **Inline error diagnostics** are updated — errors and warnings appear as red/yellow underlines directly in the editor. Hover over an underlined token to read the message. Error positions are also reflected in the scrollbar overview ruler and the minimap.
-- **Semantic token colors** are refreshed — identifiers, labels, macros, structs, and `.equ` constants are re-coloured according to the compiler's current understanding of their role.
-- **Editor intelligence** (hover info, go-to-definition, rename symbol, etc.) is updated with the latest compilation data.
-
-## What file gets compiled
-
-Background compilation always targets the **promoted build root** — the source file that is currently open and has been marked as the project's build root. If the currently active file is not a build root, no background compilation is triggered.
-
-<Callout type="info" emoji="💡">
-To designate a file as the build root, right-click it in the Project Explorer and choose **Set as build root**.
-</Callout>
-
-## Tips
-
-- **Slow machines or large files**: increase the debounce window by raising the **Quick Suggestion Delay** in **Settings → Editor**. While this setting primarily affects autocomplete, a longer pause before suggestions also reduces the rate at which the background compiler fires.
-- **Temporary files**: background compilation does not produce any output files on disk — it runs entirely in memory.

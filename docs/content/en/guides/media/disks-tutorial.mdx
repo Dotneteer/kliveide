@@ -1,0 +1,338 @@
+---
+description: "A hands-on tour of Klive's disk tools: make a ZX Spectrum +3 boot disk from a BASIC program and a loading screen, run it, watch the +3 write to it, look at its sectors, and build an SD card for the DivMMC."
+---
+
+import { Callout, Steps } from 'nextra/components'
+
+# Tutorial: working with disks
+
+This tutorial walks through Klive's disk tools with one small project. You will make a **ZX
+Spectrum +3 boot disk** from a BASIC program and a loading screen, boot it in the emulator, watch the
++3 save a file onto it, look at where that file sits on the disk, and finally put everything on an
+**SD card image** for the DivMMC. Every picture below was taken by doing exactly these steps.
+
+## The tools at a glance
+
+| Tool | Where | What it is for |
+| --- | --- | --- |
+| **Disk Explorer** | Double-click a disk image in the project explorer | See and change a disk's files: preview, add, save, rename, delete, attributes |
+| **Layout view** | The grid button in the Disk Explorer's header | Every track and sector of a floppy, or a hard disk's areas and clusters |
+| **`disk` command** | The IDE's command prompt, scripts, automation | Make disks and change their files with typed commands |
+| **`klive disk`** | Your terminal, without Klive running | The same actions on image files, for scripts and builds |
+| **Machine › Disks** | The menu, the emulator's media strip | Insert, eject and write-protect disks in the machine's drives |
+| **Export Code** | `expc ... -f dsk` / `-f trd` | Turn a compiled program into a disk that boots it |
+| **Machine › Interfaces** / **Machine › SD Card** | The menu (Interfaces on the 48K and 128K; SD Card on the +3E) | Connect a DivMMC and choose its SD card |
+
+The disk formats are the ZX Spectrum +3's `.dsk` (+3DOS), TR-DOS's `.trd` and `.scl` (the Pentagon
+and the Scorpion), and the hard-disk images `.img`, `.hdf` and `.cim` (FAT16 and FAT32, for the
+DivMMC and the ZX Spectrum Next). [Disk images and the Disk Explorer](/en/guides/media/disk-explorer/) is the
+reference for all of them; this page shows them at work.
+
+## 1. Make a boot disk for the +3
+
+<Steps>
+
+### Create a +3 project
+
+Create a new Klive project for the **ZX Spectrum +3 (1 FDD)**. The examples below call it
+`DiskTutorial`; the disk tools work in any project, and on files outside one too.
+
+### Write the program
+
+Save this BASIC program as **`hello.bas`** in the project folder. It loads a picture from the disk,
+prints a line over it, and saves the whole screen back onto the disk as a new file:
+
+```zxbasic
+10 BORDER 0: PAPER 0: INK 7: CLS
+20 LOAD "title.scr" SCREEN$
+30 PRINT AT 21,0; INK 6;"Hello from drive A!"
+40 SAVE "copy.scr" SCREEN$
+50 PRINT AT 21,0; INK 4;"Saved COPY.SCR      "
+```
+
+Put a loading screen beside it as **`title.scr`**: any 6,912-byte ZX Spectrum screen file will do.
+
+### Create a blank disk
+
+Choose **Machine › Disks › Create Disk File...**. The dialog asks for three things:
+
+- **Disk type**: the format. On the +3 the choices are CPC disks: *Single-sided CPC (180K)* is the
+  +3's own format (173K for files once formatted), the *ECPC* ones are the same disks as extended
+  DSK images, and the double-sided and 80-track ones are for a second drive. On the Pentagon and the
+  Scorpion the dialog offers TR-DOS disks instead.
+- **Disk file folder**: where the disk goes. It starts at the open project's **`disks`** folder
+  (Klive makes the folder when it writes the disk), or at **`Klive/Disks`** in your home folder when
+  no project is open. Type another folder or browse for one to put the disk elsewhere.
+- **Disk file name**: `game` is enough; Klive adds `.dsk` (`.trd` for a TR-DOS disk).
+
+</Steps>
+
+<Shot
+  src="disks-tutorial/create-disk-dialog.webp"
+  alt="The Create a new disk file dialog: Single-sided CPC (180K), the folder /Users/.../KliveProjects/DiskTutorial/disks with its note, and the file name game"
+  figure="1"
+  caption="A blank disk, into the project's disks folder"
+  width={560}
+/>
+
+Click **Create**. Klive writes a blank, formatted `disks/game.dsk`, and the project explorer shows
+it. At the command prompt, `crd ss game` does the same without the dialog (with no folder named,
+it uses the same default), and so does `disk new disks/game.dsk ss`.
+
+<Steps>
+
+### Put the files on the disk
+
+Type these commands at the IDE's command prompt (the **Commands** tab of the tool panel):
+
+```
+disk add disks/game.dsk hello.bas DISK -start 10
+disk add disks/game.dsk title.scr
+disk ls disks/game.dsk
+```
+
+- `disk add` turns `hello.bas` into a tokenised BASIC program. Calling it **`DISK`** matters: the
+  +3's **Loader** menu loads the program of that name. `-start 10` makes it run from line 10 once
+  it is loaded.
+- A `.scr` file goes on the disk as a screen: code at 16384, which `LOAD ... SCREEN$` reads.
+- `disk ls` lists the disk. Each `disk add` answers with what it put on the disk
+  (*1 file added to the disk.*, *title.scr added to the disk.*).
+
+</Steps>
+
+<Shot
+  src="disks-tutorial/commands.webp"
+  alt="The Commands pane after disk ls disks/game.dsk: DISK, a BASIC program with auto-run line 10, and TITLE.SCR, a 6912-byte code file at 16384"
+  figure="2"
+  caption="disk ls: the disk's two files"
+  width={720}
+/>
+
+Files can also go on a disk without typing: drag them onto the Disk Explorer. A file added by
+dragging has no auto-run line, though; use `disk add ... -start` when the Loader must run it.
+
+## 2. Look inside the disk
+
+Double-click **`game.dsk`** in the project's `disks` folder. The **Disk Explorer** lists its files, and
+selecting one shows what it holds:
+
+<Shot
+  src="disks-tutorial/explorer-listing.webp"
+  alt="The Disk Explorer with DISK selected: its size, auto-run line 10, its attributes and its BASIC listing"
+  figure="3"
+  caption="A BASIC program on the disk"
+  markers={["program", "autorun", "listing"]}
+  width={720}
+/>
+
+1. The selected file, with its kind, size and start: for BASIC, the auto-run line.
+2. The **Auto-run line** you set with `-start`.
+3. The program's **listing**, decoded from the tokenised bytes on the disk.
+
+Select **TITLE.SCR** and the preview shows it as the screen it is:
+
+<Shot
+  src="disks-tutorial/explorer-screen.webp"
+  alt="The Disk Explorer with TITLE.SCR selected, previewed as a ZX Spectrum screen"
+  figure="4"
+  caption="A 6,912-byte code file at 16384 is a screen"
+  width={720}
+/>
+
+The header's buttons change the disk: **Add** (+), **Save** the selected file to your computer,
+**Rename**, **Delete**, and **Show deleted** files. The buttons above a preview open the file as a
+memory view or, for code, as disassembly.
+
+## 3. Boot the disk
+
+<Steps>
+
+### Insert the disk
+
+Choose **Machine › Disks › Insert Disk into Drive A...** and pick `disks/game.dsk`, or use the drive's
+button in the emulator's media strip. The Disk Explorer now says **In drive A**.
+
+### Allow writes
+
+<Callout type="info">
+A disk goes into the drive **write-protected**, so a program cannot change it by accident. This
+program saves a file, so clear **Machine › Disks › Write Protect Drive A** first. Otherwise the +3
+stops at line 40 with *Disk is write protected*.
+</Callout>
+
+### Start the machine and choose Loader
+
+Start the machine and press <kbd>Enter</kbd> on **Loader** in the +3's menu. The +3 loads `DISK`
+from drive A and runs it. The program loads the screen, prints its line and saves the screen as
+`COPY.SCR`:
+
+</Steps>
+
+<Shot
+  src="disks-tutorial/plus3-running.webp"
+  alt="The emulator showing the loading screen, 'Saved COPY.SCR' and 0 OK, 50:1, with game.dsk in drive A in the media strip"
+  figure="5"
+  caption="The +3 ran the program from drive A"
+  width={640}
+/>
+
+## 4. See what the +3 wrote
+
+When the machine writes to the disk, Klive writes the changed sectors back to `disks/game.dsk` and the open
+Disk Explorer shows the change a moment later. `COPY.SCR` is there, and its preview is the screen
+the +3 saved, with the line the program printed:
+
+<Shot
+  src="disks-tutorial/explorer-written.webp"
+  alt="The Disk Explorer, In drive A, with a third file COPY.SCR selected and previewed"
+  figure="6"
+  caption="The file the +3 saved, on the disk"
+  markers={["drive", "written"]}
+  width={720}
+/>
+
+1. **In drive A**: this disk is in the running machine's drive.
+2. **COPY.SCR**, written by the +3's own `SAVE`.
+
+You can change a disk while it is in the drive, too. Klive pauses the machine, writes the disk,
+puts it back in the drive and lets the machine run on.
+
+## 5. Find the file's sectors
+
+Select `COPY.SCR` and click **Show the file's sectors** above its preview. The **Layout** view
+shows the disk as its tracks and sectors, coloured by what they hold, with the first sector of the
+file selected:
+
+<Shot
+  src="disks-tutorial/layout.webp"
+  alt="The Layout view: track 0 is the system track, track 1 starts with the directory, and the files fill tracks 1 to 4; the selected sector starts with the PLUS3DOS header"
+  figure="7"
+  caption="Track by track: the system track, the directory, the files"
+  width={720}
+/>
+
+The sector's details say where it is (cylinder, side, sector and its ID), what it holds, and its
+bytes. Here they start with `PLUS3DOS`: the header +3DOS writes in front of every file. Select
+another sector to see its bytes, and click a file's name to go back to the file.
+
+## 6. Make an SD card for the DivMMC
+
+The **DivMMC** is an SD card interface for the 48K, the 128K and the +2A/+3. Its **esxDOS** operating
+system loads `.tap`, `.sna`, `.scr` and other files straight from a FAT card. Klive makes and fills
+such cards:
+
+```
+disk new card.img fat16 64
+disk add card.img card/GAMES
+disk add card.img card/title.scr
+```
+
+`disk new` makes a 64 MB FAT16 card (`fat32` and other sizes work too). Adding a **folder**
+copies it with everything in it. Here `card/GAMES` holds a copy of `game.dsk`. Files go onto the
+card **as they are**, under their own long names.
+
+### Which format: `.img`, `.hdf` or `.cim`?
+
+The extension you give `disk new` picks the image format. All three hold the same FAT16 or FAT32
+card. Every disk tool on this page works with each of them, and so does the DivMMC. They differ in
+how the card is stored in the file:
+
+| | `.img` | `.hdf` | `.cim` |
+| --- | --- | --- | --- |
+| **What it is** | The card's sectors, byte for byte, from the first to the last | The same sectors after a short RAMsoft header that describes the drive | The same sectors, with the unused ones left out (Klive's own format) |
+| **File size** | The card's full size from the start: a 64 MB card is a 64 MB file | The card's full size, plus the header | Grows with what is on the card: a new 64 MB card is a 1.1 MB file |
+| **Card sizes** | Any | Any | 64 MB to 16 GB |
+| **Other programs** | The common format: other emulators read it, your computer can mount it, and SD card writers copy it to a real card | Read by Spectrum emulators that take hard-disk images | Klive only |
+| **Used for** | Cards you share or put on real hardware | Exchanging disks with other emulators | The ZX Spectrum Next's card (`ks2.cim`), and large cards that are mostly empty |
+
+That is the whole difference between a `.cim` and an `.img`: the `.cim` simply omits the unused
+sectors. The card is the same, sector for sector, but a sector nothing has been written to takes no
+room in the file. An all-but-empty 16 GB card therefore costs a few megabytes of disk space instead
+of 16 GB, and the file grows as you fill the card. The price is that only Klive can open it: to use
+a card outside Klive, make it as an `.img`.
+
+<Callout type="info">
+Moving files from one format to another is a matter of copying them: open both images in the Disk
+Explorer, **Save** a file from one to your computer and drop it onto the other, or `disk get` it
+from one and `disk add` it to the other.
+</Callout>
+
+Double-click `card.img` to browse it:
+
+<Shot
+  src="disks-tutorial/card-files.webp"
+  alt="The Disk Explorer on card.img: FAT16, a GAMES folder and title.scr previewed as a screen"
+  figure="8"
+  caption="An SD card image: folders, long names, previews"
+  width={720}
+/>
+
+Double-click a folder to open it; **Up** goes back. **New folder**, **Add**, **Save**, **Rename**
+and **Delete** work as on a floppy. The **Layout** view of a card shows the volume's areas (the
+reserved sectors, the FATs, the root folder and the data) and a map of the clusters in use, with the
+selected file's clusters outlined:
+
+<Shot
+  src="disks-tutorial/card-layout.webp"
+  alt="The Layout view of the card: the Reserved, FAT, Root folder and Data areas, and the cluster map"
+  figure="9"
+  caption="The card's volume and its clusters"
+  width={720}
+/>
+
+To run esxDOS on the card:
+
+<Steps>
+
+### Name your esxDOS ROM
+
+Klive cannot ship esxDOS: get it from its authors. In **Settings › Machine**, **esxDOS ROM** takes
+its 8K ROM file.
+
+<Shot
+  src="disks-tutorial/esxdos-setting.webp"
+  alt="Settings, Machine page: the esxDOS ROM row with Browse and Forget"
+  figure="10"
+  caption="The esxDOS ROM setting"
+  width={640}
+/>
+
+### Connect the DivMMC and choose the card
+
+Turn on **Machine › SD Card › DivMMC Interface** (the machine restarts with it), then choose the
+card with **Machine › SD Card › Select SD Card Image...**. For esxDOS to boot, the card needs
+esxDOS's own `BIN`, `SYS` and `TMP` folders: drop them onto the card in the Disk Explorer.
+
+### Use the dot commands
+
+esxDOS starts with the machine. Its dot commands then work as on the real interface: `.ls`, `.cd
+GAMES`, `.tapein`, `.snapload`. **Machine › SD Card › Press the NMI Button** opens esxDOS's NMI
+menu.
+
+</Steps>
+
+## 7. The same from your terminal
+
+`klive disk` does all of this on image files without starting Klive, so a build script can make a
+disk or a card:
+
+```bash
+klive disk new game.dsk sse
+klive disk add game.dsk hello.bas DISK --start 10
+klive disk add game.dsk title.scr
+klive disk ls game.dsk
+klive disk new card.img fat16 64
+klive disk add card.img GAMES
+klive disk ls card.img GAMES --json
+```
+
+`klive disk --help` lists every action. A changed floppy image keeps a `.bak` of the original; a
+hard-disk image is changed in place. See [the command line](/en/reference/command-line/).
+
+## Where next
+
+- [Disk images and the Disk Explorer](/en/guides/media/disk-explorer/): every button, the import rules, the
+  Surface view, exporting a program to a disk.
+- [TR-DOS disks](/en/guides/media/trdos-disks/): the Beta 128 interface of the Pentagon 128 and the Scorpion,
+  and its `.trd`/`.scl` disks, which the same Disk Explorer opens.
+- [Custom ROMs](/en/guides/emulator/custom-roms/): the esxDOS ROM and the other ROMs Klive cannot ship.

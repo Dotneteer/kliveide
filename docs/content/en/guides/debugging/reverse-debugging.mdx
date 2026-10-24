@@ -7,7 +7,7 @@ import { Callout } from 'nextra/components'
 # Reverse Debugging
 
 <Callout type="info">
-This is one of Klive's [advanced debugging features](/en/guides/debugging/advanced-debugging), which are on by
+This is one of Klive's [advanced debugging features](/en/guides/customizing/advanced-debugging/), which are on by
 default; if you turned them off, run `set -u features.advancedDebugging 1` in the IDE, then restart Klive.
 </Callout>
 
@@ -23,23 +23,46 @@ and ZX81, and the HT-1080Z. It is on by default in every debug session (**Start 
 does not record.
 </Callout>
 
-## How it works
-
-While a debug session runs, Klive keeps **keyframes** - copies of the machine taken every fraction
-of a second, sharing everything that did not change - and a **journal** of every input the machine
-received: keys, joysticks, the mouse, tapes, disks, memory edits, the SD card's data. To go back,
-Klive restores the keyframe before the point you want and replays the journal up to the exact
-instruction. The replay checks itself against the recorded run as it goes.
-
 How far back you can go is the **reverse range**. With the default memory budget it is minutes of
 machine time on the ZX Spectrum and usually several minutes on the Next; the status bar's tooltip
-and the Execution History's header show it.
+and the Execution History's header show it. How Klive does it &mdash; keyframes and a journal of the
+machine's inputs, replayed to the exact instruction &mdash; is explained in
+[Reverse debugging under the hood](/en/under-the-hood/emulator-internals/reverse-debugging/).
+
+## The stepping-back commands
+
+Pause a debug session, then use these from the toolbar, the **Debug** menu or the keyboard:
+
+| Command | Where | macOS | Windows and Linux | Goes to |
+| --- | --- | --- | --- | --- |
+| **Step Back** | toolbar, Debug menu | <kbd>Option</kbd>+<kbd>F12</kbd> | <kbd>Alt</kbd>+<kbd>F11</kbd> | the previous instruction |
+| **Step Forward** | toolbar, Debug menu | <kbd>Option</kbd>+<kbd>Shift</kbd>+<kbd>F10</kbd> | <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>F10</kbd> | the next one, and after the newest, the present |
+| **Reverse Step Over** | Debug menu | <kbd>Option</kbd>+<kbd>F10</kbd> | <kbd>Alt</kbd>+<kbd>F10</kbd> | as Step Back, but a call that returned is passed over to the `CALL` itself |
+| **Reverse Step Out** | Debug menu | <kbd>Option</kbd>+<kbd>Shift</kbd>+<kbd>F12</kbd> | <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>F11</kbd> | the call (or interrupt) that entered the current routine |
+| **Reverse Continue** | Debug menu | <kbd>Option</kbd>+<kbd>F5</kbd> | <kbd>Alt</kbd>+<kbd>F5</kbd> | the previous point where a breakpoint would have stopped |
+| **Return to Present** | toolbar, Debug menu, status bar | | | the live machine |
+
+On Linux the keys use <kbd>Ctrl</kbd>+<kbd>Alt</kbd> instead of <kbd>Alt</kbd>. Every key is a
+setting (`shortcuts.stepBack`, `shortcuts.stepBackOver`, `shortcuts.stepBackOut`,
+`shortcuts.reverseContinue`, `shortcuts.stepForward`); see
+[Keyboard shortcuts](/en/guides/customizing/shortcuts/). Selecting a row of the
+[Execution History](/en/guides/debugging/execution-history/) also moves there, and moving selects
+the row.
+
+![Reverse Step Over: the CPU panel shows history step −6, the disassembly outlines the CALL](/images/working-with-ide/step-back-over.png)
+
+- **Interrupts.** Interrupt and NMI rows are not stops: stepping back from an interrupt routine's
+  first instruction lands on the instruction that was interrupted, and the CPU panel says the
+  routine was entered by an interrupt. When the Execution History folds interrupt service, Step Back
+  and Step Forward pass over a whole service in one step. Reverse Step Over and Out always do.
+- **Source stepping.** With source stepping on (Klive BASIC and the other
+  [source-level languages](/en/guides/debugging/call-stack-variables/)), Step Back, Step Forward and
+  Reverse Step Over and Out move by statements, as the forward steps do.
+- Stepping back stops at the start of the recorded range and says so; it never wraps.
 
 ## Going back
 
-The [step-back commands](/en/guides/debugging/execution-history#stepping-back) - Step Back, Reverse
-Step Over, Reverse Step Out, Reverse Continue, selecting a row of the Execution History - now move
-the machine itself. Memory, Watch, the ULA and Next panels, the screen and the bytes in the
+The stepping-back commands move the machine itself. Memory, Watch, the ULA and Next panels, the screen and the bytes in the
 disassembly all show the past; there is no "memory shows the present" band.
 
 The status bar says where you are:
@@ -82,7 +105,7 @@ present.
 
 ## Reverse Continue
 
-**Reverse Continue** (`Alt+F5`) goes back to the last point where a breakpoint would have stopped
+**Reverse Continue** goes back to the last point where a breakpoint would have stopped
 the machine - and because the machine is really there, **every breakpoint kind works**: conditions
 that read memory or ports, memory and I/O breakpoints, and the Next's NextReg and Copper breakpoints.
 A memory-write breakpoint becomes a **reverse watchpoint**: *where did this byte last
@@ -94,7 +117,7 @@ quickly. A long search shows its progress in the status bar; click it, or run
 
 ## Settings
 
-On the **Debugging** page of [Settings](/en/guides/ide/settings):
+On the **Debugging** page of [Settings](/en/guides/customizing/settings/):
 
 - **Reverse debugging** turns it on or off for the next debug session. Off, stepping back shows the
   recorded registers only, with memory at the present (the history works as it did before).
@@ -114,7 +137,7 @@ On the **Debugging** page of [Settings](/en/guides/ide/settings):
 
 **Debug &rarr; Save Debug Recording...** writes the whole timeline to a `.klr` file, and **Open Debug
 Recording...** brings it back - on this computer or another - paused where it was saved, with its
-whole past to step back through. See [Saving and Opening Debug Recordings](/en/guides/debugging/debug-recordings).
+whole past to step back through. See [Saving and Opening Debug Recordings](/en/guides/debugging/debug-recordings/).
 
 ## Commands
 
@@ -125,5 +148,13 @@ reverse-continue      ; back to the previous breakpoint hit (rcont)
 reverse-continue-cancel ; stop a running Reverse Continue search (rcancel)
 ```
 
-See also [The Execution History](/en/guides/debugging/execution-history) and the
-[command reference](/en/reference/commands#history-take-over).
+Each stepping-back command has a command-prompt form: `step-back` (`stb`), `step-forward` (`stf`),
+`step-back-over` (`stbo`), `step-back-out` (`stbu`) and `history-present` (`hpres`).
+
+## Related
+
+- [The execution history](/en/guides/debugging/execution-history/)
+- [Saving and opening debug recordings](/en/guides/debugging/debug-recordings/)
+- [Running, pausing and stepping](/en/guides/debugging/run-debug/)
+- [Reverse debugging under the hood](/en/under-the-hood/emulator-internals/reverse-debugging/)
+- [`history-take-over` in the command reference](/en/reference/commands/#history-take-over)

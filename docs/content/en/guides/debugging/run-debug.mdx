@@ -1,64 +1,178 @@
 ---
-description: "Klive displays a toolbar at the top of the screen in the Emulator window and another in the IDE window."
+description: "Start, pause, stop and restart the machine, and step through your program by source statement or by Z80 instruction, forwards and backwards."
 ---
 
-import { Callout } from 'nextra/components'
+import { Callout, Steps } from 'nextra/components'
 
-# Running and Debugging code
+# Running, Pausing and Stepping
 
-Klive displays a toolbar at the top of the screen in the Emulator window and another in the IDE window. They have the same functionality: they control the emulated machine. The toolbar contains some emulator and IDE-specific functions; however, the machine control commands use the same components.
+This page covers every command that controls a debug session: starting and pausing the machine,
+the three step commands and their source-level variants, running to a line, and stepping back. If
+you have never used the debugger, start with [Debug your program](/en/get-started/debug-your-program/),
+which walks through a first session; this page is the full reference for what that tutorial
+introduces.
 
-This screen shows these controls in the emulator:
+<Shot
+  src="guides/debugging/run-debug/toolbar-paused.webp"
+  alt="The IDE toolbar while a debug session is paused: start, pause and continue, stop and restart, the step buttons and the history buttons"
+  caption="The IDE toolbar while the machine is paused."
+  width={760}
+/>
 
-<ClickableImage src="/images/working-with-ide/emu-toolbar-startup.png" width={512} />
+## Start, pause, stop and restart
 
-Move the mouse over a particular control; it displays a tooltip to let you know its function.
+The emulator window and the IDE window each have a toolbar with the same machine controls. Hover a
+button to see its name and shortcut.
 
-The leftmost button starts the machine in the selected mode (running with or without debugging). The dropdown next to the start button lets you select this mode:
+- **Start** is a split button. The arrow beside it (**Choose start mode**) switches between
+  running and debugging. In the IDE with a project open the choices are **Run Project** and
+  **Debug Project**: they build the project, inject the code into the machine and start it. In the
+  emulator window they are **Run Machine** and **Debug Machine**, which start the machine itself.
+  Breakpoints stop the machine only in a debug run.
+- **Pause** stops the machine at the current instruction. The panels of the **Debug** activity then
+  show its state.
+- **Continue** is a split button too: **Continue** goes on in normal mode, **Continue Debugging**
+  in debug mode. It follows the mode the machine was started in.
+- **Stop** switches the machine off. Its memory and state can still be inspected afterwards.
+- **Restart** stops the machine and starts it again. In the IDE with a project open it rebuilds and
+  reruns your program, in the same mode as before.
 
-<ClickableImage src="/images/working-with-ide/select-start-mode.png" width={256} />
+The same commands are in the menus: **Machine › Start**, **Pause**, **Stop** and **Restart**, and
+**Debug › Start with Debugging**.
 
-<Callout type="info" emoji="💡">
-The IDE displays **Run Project (F5)** and **Debug Project (Ctrl+F5)** options.
+<Steps>
+
+### Start a debug session
+
+Set a breakpoint (click the margin beside a line), then click **Debug Project** or press
+<kbd>Ctrl</kbd>+<kbd>F5</kbd>. The machine runs until it reaches the breakpoint.
+
+### Look around
+
+The highlighted line in the editor is the instruction or statement that runs **next**. Open the
+**Debug** activity for the CPU registers, the call stack, watches and breakpoints.
+
+### Step, or continue
+
+Use the step commands below, or press <kbd>F5</kbd> to run on to the next breakpoint.
+
+</Steps>
+
+## The step commands
+
+**Step Into**, **Step Over** and **Step Out** are available while the machine is paused, from the
+toolbar, the **Debug** menu and the keyboard.
+
+| Command | What it does at the Z80 level |
+| --- | --- |
+| **Step Into** | Runs one instruction. On a `CALL` or `RST`, stops at the first instruction of the routine. |
+| **Step Over** | Runs one instruction. A `CALL`, an `RST` or a block instruction such as `LDIR` runs completely, and the machine stops at the instruction after it. |
+| **Step Out** | Runs until the current routine returns to its caller. |
+
+A breakpoint reached during a step ends the step there.
+
+### Source statements or Z80 instructions
+
+When the program was built with source-level debug information &mdash; [Klive BASIC](/en/guides/languages/klive-basic/),
+[Boriel BASIC](/en/guides/languages/boriel-basic/), or C built with
+[z88dk](/en/guides/languages/z88dk/)'s sccz80 &mdash; the IDE toolbar shows two more buttons:
+
+- The **step-mode toggle** decides what the step buttons step. Its tooltip says which mode is on:
+  *Stepping source statements* or *Stepping Z80 instructions*; click it to switch. Source mode is
+  the default.
+- **Step Over Line** (<kbd>Shift</kbd>+<kbd>F10</kbd>) runs every statement of the current source
+  line and stops at the next line. It works in source mode only.
+
+In source mode the step commands move by statements:
+
+- **Step Into** stops at the next statement at any depth: the first statement of a called SUB,
+  FUNCTION, GOSUB subroutine or C function, or the next statement here. Code without statements
+  (the runtime, compiler glue, machine code) runs through.
+- **Step Over** stops at the next statement of the current routine; calls run completely.
+- **Step Out** runs until the routine returns and stops at the **return point** in the caller's
+  statement, so you see where control came back. In the main program it is disabled.
+
+With **Just My Code** on (**Settings › Debugging**, the default), the steps also run through the
+standard library. Details, and the Call Stack and Variables panels that go with source stepping,
+are in [Call Stack and Variables](/en/guides/debugging/call-stack-variables/).
+
+### Step Into Target
+
+When the current statement calls more than one routine, the **Step Into** button gets a drop-down
+(**Step Into Target**) listing them in evaluation order, as **Step Into** *name*. Choose one to run
+the others through and stop at the first statement of that routine. The editor's context menu
+offers the same items while paused on such a statement.
+
+## Run to Cursor
+
+To run to a place without leaving a breakpoint behind:
+
+- In the editor, right-click a line and choose **Run to Cursor**. It needs a build of the file.
+- In the [Disassembly view](/en/guides/debugging/disassembly/), hold <kbd>Ctrl</kbd>
+  (<kbd>Cmd</kbd> on macOS) and click the breakpoint gutter of a row, or right-click the row and
+  choose **Run to Here**.
+- In the command prompt, use [`run-to`](/en/reference/commands/#run-to) with an address.
+
+A paused machine continues in debug mode; a stopped machine starts. The temporary breakpoint is
+removed as soon as it is reached and is never saved with the project. A machine running in normal
+mode has to be paused first.
+
+## Stepping back
+
+On machines that record an execution history, the toolbar ends with three more buttons:
+**Step Back**, **Step Forward** and **Return to the present**. Step Back moves one instruction (or
+statement) into the recorded past; with [reverse debugging](/en/guides/debugging/reverse-debugging/),
+on by default, the whole machine goes there. Step Forward moves toward the present, and **Return
+to the present** goes straight back to the live machine. The **Debug** menu adds **Reverse Step
+Over**, **Reverse Step Out** and **Reverse Continue**; all of them are described in
+[Reverse debugging](/en/guides/debugging/reverse-debugging/#the-stepping-back-commands).
+
+While the debugger stands in the past, the tooltips of Step Into, Step Over, Step Out and Continue
+end with *resumes from the present*.
+
+## Keyboard shortcuts
+
+| Command | macOS | Windows and Linux |
+| --- | --- | --- |
+| Start / Continue | <kbd>F5</kbd> | <kbd>F5</kbd> |
+| Start with Debugging / Continue Debugging | <kbd>Ctrl</kbd>+<kbd>F5</kbd> | <kbd>Ctrl</kbd>+<kbd>F5</kbd> |
+| Pause | <kbd>Shift</kbd>+<kbd>F5</kbd> | <kbd>Shift</kbd>+<kbd>F5</kbd> |
+| Stop | <kbd>F4</kbd> | <kbd>F4</kbd> |
+| Restart | <kbd>Shift</kbd>+<kbd>F4</kbd> | <kbd>Shift</kbd>+<kbd>F4</kbd> |
+| Step Into | <kbd>F12</kbd> | <kbd>F11</kbd> |
+| Step Over | <kbd>F10</kbd> | <kbd>F10</kbd> |
+| Step Out | <kbd>Shift</kbd>+<kbd>F12</kbd> | <kbd>Shift</kbd>+<kbd>F11</kbd> |
+| Step Over Line | <kbd>Shift</kbd>+<kbd>F10</kbd> | <kbd>Shift</kbd>+<kbd>F10</kbd> |
+| Step Back | <kbd>Option</kbd>+<kbd>F12</kbd> | <kbd>Alt</kbd>+<kbd>F11</kbd> |
+| Step Forward | <kbd>Option</kbd>+<kbd>Shift</kbd>+<kbd>F10</kbd> | <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>F10</kbd> |
+| Reverse Step Over | <kbd>Option</kbd>+<kbd>F10</kbd> | <kbd>Alt</kbd>+<kbd>F10</kbd> |
+| Reverse Step Out | <kbd>Option</kbd>+<kbd>Shift</kbd>+<kbd>F12</kbd> | <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>F11</kbd> |
+| Reverse Continue | <kbd>Option</kbd>+<kbd>F5</kbd> | <kbd>Alt</kbd>+<kbd>F5</kbd> |
+
+<Callout type="info">
+On Linux the reverse keys use <kbd>Ctrl</kbd>+<kbd>Alt</kbd> instead of <kbd>Alt</kbd>, because
+GNOME uses several <kbd>Alt</kbd>+function-key combinations itself. Step Into is <kbd>F12</kbd> on
+macOS because <kbd>F11</kbd> shows the desktop there. The step and reverse keys can be changed: see
+[Keyboard shortcuts](/en/guides/customizing/shortcuts/).
 </Callout>
 
-Starting the machine has a different meaning for the Emulator and IDE windows. 
-- In the emulator, you start the machine and let it run.
-- With its toolbar control in the IDE, you can start the machine only when a project is loaded. This start not only starts the emulated machine but also injects the compiled code into it and jumps to its entry point (or invokes it, depending on compilation options).
+The commands also have command-prompt forms: `em-start`, `em-debug`, `em-pause`, `em-stop`,
+`em-restart`, `em-sti` (Step Into), `em-sto` (Step Over) and `em-out` (Step Out). See the
+[command reference](/en/reference/commands/#em-start).
 
-Klive provides views (memory, disassembly, BASIC listing, and many more) that allow you to examine the machine's state.
-
-When the machine is running, you can use any of the windows to control it (pause, stop, or restart)
-
-<ClickableImage src="/images/working-with-ide/machine-running.png" width={512} />
-
-- **Pause**: Klive pauses the machine at the current execution point. Soon, you will learn what you can do with the machine in this mode.
-- **Stop**: This stops the machine (like turning off the hardware). Though the machine is stopped, you can still examine its memory contents and state when turning it off.
-- **Restart**: This function stops the machine and then starts it again. When you restart the machine in the IDE with a project loaded, it restarts your code and not just the machine.
-
-<ClickableImage src="/images/working-with-ide/machine-paused.png" width={512} />
-
-In the paused state of a machine, you can use these actions:
-- **Continue**. Go on running the machine.
-- **Stop**. *(As described above)*
-- **Restart**. *(As described above)*
-- **Step into**. Execute the subsequent CPU instruction and pause the machine again.
-- **Step over**. Execute the subsequent CPU instruction entirely. If it is a `CALL` or `RST` instruction, a block operation (like `LDIR`), the IDE pauses again at the instruction following the current execution point.
-- **Step out**. If you are within a subroutine, this function stops when the subroutine returns to its caller. Please note that this function only works if subroutine calls are completed by some of the `RET` instructions, not stack manipulation and jump statements.
-
-While the machine is paused, you can change between the run/debug execution modes with the dropdown.
-
-## Running a NEX File Directly
+## Running a NEX file directly
 
 On the ZX Spectrum Next, **Run Project** and **Debug Project** build the project and launch the NEX
-file the build produces. A `.nex` file that Klive did not build &mdash; downloaded, produced by
-another assembler, or left over from an earlier build &mdash; can be launched on its own:
+file the build produces. A `.nex` file that Klive did not build can be launched on its own, with no
+project: right-click it in the [Project Explorer](/en/guides/projects/project-explorer/) and choose
+**Run NEX file** or **Debug NEX file**, use the buttons of its NEX viewer tab, or run
+[`nex-run`](/en/reference/commands/#nex-run). The current machine must be the ZX Spectrum Next. See
+[Running and inspecting NEX files](/en/guides/next/nex-files/#running-a-nex-file).
 
-- right-click it in the [Project Explorer](./project-explorer) and choose **Run NEX file** or
-  **Debug NEX file**;
-- or use the **Run** / **Debug** buttons in the file's document tab while the NEX viewer has it
-  open;
-- or run the [`nex-run`](../commands-reference#nex-run) command.
+## Related
 
-This needs no project at all, so a single NEX file can be opened and debugged by itself. It does
-require the current machine to be the ZX Spectrum Next, since NextZXOS is what loads a NEX.
+- [Breakpoints](/en/guides/debugging/breakpoints/)
+- [Call Stack and Variables](/en/guides/debugging/call-stack-variables/)
+- [Reverse debugging](/en/guides/debugging/reverse-debugging/)
+- [Keyboard shortcuts](/en/guides/customizing/shortcuts/)
+- [Command reference](/en/reference/commands/)

@@ -1,16 +1,20 @@
 ---
-description: "Klive makes it easy to measure the number of T-states (clock cycles) that a piece of code consumes."
+description: "Measure how many T-states (clock cycles) a piece of code takes, with two breakpoints and the CPU panel's TSP value."
 ---
 
-import { Callout } from 'nextra/components'
+import { Steps } from 'nextra/components'
 
 # Measuring T-States
 
-Klive makes it easy to measure the number of T-states (clock cycles) that a piece of code consumes. When you open the [CPU panel](../working-with-ide/cpu), it displays a value, **TSP**, which stands for *T-states elapsed since the last pause*. Whenever your paused machine continues the code execution (debugging), the next time it gets paused, this value displays the number of T-states used since the last pause.
+When you optimise a routine, you want to know what it costs in T-states, the CPU's clock cycles.
+The simplest measurement takes two breakpoints and the **TSP** value of the
+[Z80 CPU panel](/en/guides/debugging/machine-state-panels/#z80-cpu): *T-states since the last start
+after a pause*. Every time the paused machine continues, TSP starts counting from zero, so when it
+stops again, TSP is the cost of what ran in between.
 
-## Example
+## Measure between two breakpoints
 
-Take a look at the following code (use the ZX Spectrum 48K model):
+Take this program for the ZX Spectrum 48K:
 
 ```z80klive
 Start:
@@ -41,26 +45,45 @@ Message:
     .db 0x00         ; terminate
 ```
 
-Add two breakpoints to the lines marked with **(START)** and **(END)**. Now, run the code in the debugger. When the code execution stops at the first breakpoint, **(START)**, check **TSP** at the CPU panel:
+<Steps>
 
-<ClickableImage src="/images/howto/tstate-1.png" width={256} />
+### Set two breakpoints
 
-Click continue and let your code access the second breakpoint, **(END)**. The **TSP** value shows the number of T-states that have elapsed since continuing from **(START)**:
+Set one on the line marked **(START)** and one on the line marked **(END)**.
 
-<ClickableImage src="/images/howto/tstate-2.png" width={256} />
+### Run to the first
 
-<Callout type="info" emoji="💡">
-Now you can see how many T-states your code consumes between two breakpoints. This feature is handy when you want to optimize your code for speed.
-</Callout>
+Start a debug run (<kbd>Ctrl</kbd>+<kbd>F5</kbd>). The machine stops at **(START)**. Open the
+**Z80 CPU** panel of the **Debug** activity.
 
-## Conditions Influencing T-States
+### Continue to the second
 
-There are some things you should consider when measuring the number of T-States:
+Press <kbd>F5</kbd>. When the machine stops at **(END)**, **TSP** shows the T-states the code took
+from **(START)** to **(END)**; **CLK** still shows the total since the machine started.
 
-**1. Memory contention**
+</Steps>
 
-The ZX Spectrum 48K model's CPU and ULA contend for memory access to the $4000-$7fff address range when reading or writing information. The ULA may block the CPU for a few states. So, when your code runs, it may display a bit different **TSP** values for each run due to memory contention.
+The same works with steps: after a Step Over, TSP is the cost of that one instruction, or of the
+whole call it stepped over.
 
-**2. Interrupts**
+## What affects the count
 
-If your code takes more than 20 milliseconds to run, an interrupt request is likely. In this case, the interrupt handler's T-states are also summed up to the **TSP** value.
+**Memory contention.** On the ZX Spectrum 48K the CPU and the ULA share the memory at `$4000`-`$7FFF`, and the ULA can hold the CPU for a few T-states. Code that touches that range can show a slightly different TSP on each run. The [ULA & I/O panel](/en/guides/debugging/machine-state-panels/#ula--io)'s `LCO` shows how many T-states were lost to contention since the last pause.
+
+**Interrupts.** The frame interrupt arrives every 20 milliseconds (about 69,888 T-states on the 48K). If it arrives while your code runs, the interrupt handler's T-states are counted in TSP too. Disable interrupts around the code (`di` ... `ei`) to measure it alone.
+
+## Other ways to see timing
+
+- In the [Disassembly view](/en/guides/debugging/disassembly/#the-execution-point-readout), the row
+  at the execution point says how many T-states its instruction will really take, which for a
+  conditional branch depends on whether it is taken.
+- The [Execution History](/en/guides/debugging/execution-history/)'s **Time** column gives the
+  position in the frame at which each recorded instruction started.
+- For whole routines over a longer run, the [profiler](/en/guides/analysis/profiler/) measures where
+  the time goes, per routine and per call.
+
+## Related
+
+- [Machine-state panels](/en/guides/debugging/machine-state-panels/)
+- [The profiler](/en/guides/analysis/profiler/)
+- [ZX Spectrum accuracy](/en/under-the-hood/emulator-internals/spectrum-accuracy/)

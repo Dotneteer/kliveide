@@ -6,9 +6,9 @@ import { Callout } from 'nextra/components'
 
 # Interrupts: IM1, IM2, and the Next's Multi-Source Interrupt System
 
-So far in this book the CPU has been firmly in charge. It executes one instruction, then the next, and decides for itself when to read a port or rewrite an MMU register. From this chapter onward, that picture changes. The ULA wants to tell you a frame finished. A [CTC](./05-ctc.mdx) channel wants to tell you a microsecond budget elapsed. A [UART](./20-uart.mdx) has a byte ready. The [DMA controller](./06-zxndma.mdx) has finished a transfer. Each of these is an *interrupt* — a hardware signal that yanks the CPU away from whatever it was doing and runs your handler instead.
+So far in this book the CPU has been firmly in charge. It executes one instruction, then the next, and decides for itself when to read a port or rewrite an MMU register. From this chapter onward, that picture changes. The ULA wants to tell you a frame finished. A [CTC](/en/book/05-ctc/) channel wants to tell you a microsecond budget elapsed. A [UART](/en/book/20-uart/) has a byte ready. The [DMA controller](/en/book/06-zxndma/) has finished a transfer. Each of these is an *interrupt* — a hardware signal that yanks the CPU away from whatever it was doing and runs your handler instead.
 
-This chapter pays the conceptual cost once, so every later chapter — [CTC](./05-ctc.mdx), line-interrupt palette tricks, [DMA](./06-zxndma.mdx) completion, [UART](./20-uart.mdx) receive, even the [Copper](./14-copper.mdx) — can lean on the same vocabulary. We'll cover the three Z80 interrupt modes, the role of the `I` and `R` registers introduced in [Z80N: The Next's Z80 CPU](./01-z80n.mdx), and the Next's hardware-driven IM2 controller that turns the classic vector table into a deterministic, multi-source dispatch system.
+This chapter pays the conceptual cost once, so every later chapter — [CTC](/en/book/05-ctc/), line-interrupt palette tricks, [DMA](/en/book/06-zxndma/) completion, [UART](/en/book/20-uart/) receive, even the [Copper](/en/book/14-copper/) — can lean on the same vocabulary. We'll cover the three Z80 interrupt modes, the role of the `I` and `R` registers introduced in [Z80N: The Next's Z80 CPU](/en/book/01-z80n/), and the Next's hardware-driven IM2 controller that turns the classic vector table into a deterministic, multi-source dispatch system.
 
 Once you understand the dispatch model, the same machinery serves every interrupt source on the machine.
 
@@ -31,7 +31,7 @@ Unlike `/NMI`, **`/INT` is level-sensitive**. The CPU doesn't latch a pulse; it 
 1. **The signal must still be low at the sample point.** A very short pulse (shorter than one instruction) can go unnoticed. Hardware designers therefore keep `/INT` asserted until the CPU acknowledges.
 2. **If the signal stays low after the handler finishes, the interrupt fires again immediately.** As soon as `EI` re-enables interrupts, the CPU samples `/INT`, finds it still low, and dives back into the ISR — over and over, until the stack overflows. This is why clearing the interrupt source *before* executing `EI` is not a style preference; it is a hard requirement.
 
-On the Next, the exact latch depends on the interrupt mode. In legacy pulse mode, the readable pending bits in [NextReg](./02-io-and-nextregs.mdx) `$C8`/`$C9`/`$CA` are the things you clear by writing `1`s. In hardware IM2 mode, each source also has a daisy-chain request/in-service state: acknowledge moves the winning source into service, and `RETI` releases it. Clearing the readable status bit is still useful, but `RETI` is what tells the hardware IM2 chain that the current ISR has finished.
+On the Next, the exact latch depends on the interrupt mode. In legacy pulse mode, the readable pending bits in [NextReg](/en/book/02-io-and-nextregs/) `$C8`/`$C9`/`$CA` are the things you clear by writing `1`s. In hardware IM2 mode, each source also has a daisy-chain request/in-service state: acknowledge moves the winning source into service, and `RETI` releases it. Clearing the readable status bit is still useful, but `RETI` is what tells the hardware IM2 chain that the current ISR has finished.
 
 The two flags that govern maskable interrupts are:
 
@@ -212,7 +212,7 @@ A few things worth noticing:
 
 - **`$22` and `$C4` overlap, but the ULA bit changes sense.** NR `$22` bit 1 (line enable) aliases NR `$C4` bit 1. NR `$22` bit 2 is ULA *disable* (1 = disabled), while NR `$C4` bit 0 is ULA *enable* (1 = enabled). Either NextReg can control the same underlying state, but `$C4` is clearer when you are enabling interrupt sources.
 - **The status registers are write-1-to-clear.** Reading returns the pending bits; writing a `1` to a bit clears that bit's pending state. Writing a `0` has no effect. This is a common pattern in interrupt controllers — it lets multiple writers race-free reset only the bits they care about.
-- **The DMA enables (`$CC`–`$CE`) are independent of the CPU enables.** They control which interrupts can yank the DMA controller out of a transfer (more in [zxnDMA](./06-zxndma.mdx)).
+- **The DMA enables (`$CC`–`$CE`) are independent of the CPU enables.** They control which interrupts can yank the DMA controller out of a transfer (more in [zxnDMA](/en/book/06-zxndma/)).
 
 ## The Interrupt Sources
 
@@ -220,11 +220,11 @@ A quick tour of what can interrupt you. Each gets its own chapter later; here we
 
 - **ULA frame** — the classic 50 Hz (or 60 Hz, depending on display timing) end-of-frame pulse. Fires at the start of vertical retrace. The Spectrum's heartbeat: keyboard scanning, time-of-day counters, AY tracker ticks, anything that wants "once per frame" behaviour.
 
-- **Line interrupt** — a programmable scanline trigger. Set the target line in NR `$22`/`$23`, enable the source, and the FPGA fires `/INT` at the start of that line. This is the foundation of mid-frame palette swaps, raster bars, and split-screen effects (see [Layer 2](./11-layer2.mdx) and [Palettes](./09-palettes.mdx)).
+- **Line interrupt** — a programmable scanline trigger. Set the target line in NR `$22`/`$23`, enable the source, and the FPGA fires `/INT` at the start of that line. This is the foundation of mid-frame palette swaps, raster bars, and split-screen effects (see [Layer 2](/en/book/11-layer2/) and [Palettes](/en/book/09-palettes/)).
 
-- **CTC channels 0–3** — the four counter/timer channels covered in detail in [The CTC](./05-ctc.mdx). Each can fire when its 8-bit countdown hits zero. Common uses: fixed-rate timers, audio sample clocks, timeout watchdogs.
+- **CTC channels 0–3** — the four counter/timer channels covered in detail in [The CTC](/en/book/05-ctc/). Each can fire when its 8-bit countdown hits zero. Common uses: fixed-rate timers, audio sample clocks, timeout watchdogs.
 
-- **UART Rx (UART 0 and UART 1)** — fires when the receive FIFO has data. UART 0 is typically the ESP Wi-Fi link; UART 1 is general-purpose serial. See [The UART and the ESP](./20-uart.mdx).
+- **UART Rx (UART 0 and UART 1)** — fires when the receive FIFO has data. UART 0 is typically the ESP Wi-Fi link; UART 1 is general-purpose serial. See [The UART and the ESP](/en/book/20-uart/).
 
 - **UART Tx (UART 0 and UART 1)** — fires when the transmit FIFO can accept more data. Used for high-throughput serial output.
 
@@ -570,9 +570,9 @@ For the rest of the book we treat NMI as "the firmware's problem" and focus on `
 
 Interrupts are the connecting tissue for nearly every later chapter. With the IM2 setup pattern in your toolbox, the following chapters can each focus on what makes their hardware interesting and just say "enable the source in NR `$C5` and provide an ISR":
 
-- **[The CTC](./05-ctc.mdx)** — uses CTC channel interrupts to drive periodic ticks. Builds directly on the priority table from this chapter.
-- **[zxnDMA](./06-zxndma.mdx)** — the DMA-end interrupt, plus the `$CC`/`$CD`/`$CE` mirror NextRegs that let you decide which interrupts are allowed to interrupt a DMA in progress.
-- **[Layer 2](./11-layer2.mdx)** and the rest of the video chapters — every one of them assumes you can install a frame or line interrupt without ceremony. Now you can.
-- **[The UART and the ESP](./20-uart.mdx)** and **[The Real-Time Clock and I²C](./21-rtc-i2c.mdx)** — both are interrupt-driven in any non-trivial use.
+- **[The CTC](/en/book/05-ctc/)** — uses CTC channel interrupts to drive periodic ticks. Builds directly on the priority table from this chapter.
+- **[zxnDMA](/en/book/06-zxndma/)** — the DMA-end interrupt, plus the `$CC`/`$CD`/`$CE` mirror NextRegs that let you decide which interrupts are allowed to interrupt a DMA in progress.
+- **[Layer 2](/en/book/11-layer2/)** and the rest of the video chapters — every one of them assumes you can install a frame or line interrupt without ceremony. Now you can.
+- **[The UART and the ESP](/en/book/20-uart/)** and **[The Real-Time Clock and I²C](/en/book/21-rtc-i2c/)** — both are interrupt-driven in any non-trivial use.
 
 If the priority table feels abstract right now, that's expected: we've only enabled two sources so far. By the end of the CTC chapter you'll have wired in four, and the dispatch model will feel like second nature.

@@ -1,0 +1,105 @@
+---
+description: "Edit source code in Klive's Monaco-based editor: the standard editing keys, the language features Klive adds, and the Settings › Editor preferences."
+---
+
+import { Callout } from 'nextra/components'
+
+# The editor
+
+Klive edits source code with Monaco, the editor of Visual Studio Code, so the editing keys you know
+from VS Code work here too. On top of it, Klive adds language features for its languages: hovers,
+go to definition, rename, error markers and colouring that follows what the compiler understood. This
+page covers the editing basics and the editor's preferences.
+
+## Editing basics
+
+| Action | macOS | Windows and Linux |
+| --- | --- | --- |
+| Find / replace | <kbd>Cmd</kbd>+<kbd>F</kbd> / <kbd>Cmd</kbd>+<kbd>Opt</kbd>+<kbd>F</kbd> | <kbd>Ctrl</kbd>+<kbd>F</kbd> / <kbd>Ctrl</kbd>+<kbd>H</kbd> |
+| Go to line | <kbd>Ctrl</kbd>+<kbd>G</kbd> | <kbd>Ctrl</kbd>+<kbd>G</kbd> |
+| Select the next occurrence | <kbd>Cmd</kbd>+<kbd>D</kbd> | <kbd>Ctrl</kbd>+<kbd>D</kbd> |
+| Add a cursor above / below | <kbd>Opt</kbd>+<kbd>Cmd</kbd>+<kbd>↑</kbd> / <kbd>↓</kbd> | <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>↑</kbd> / <kbd>↓</kbd> |
+| Add a cursor with the mouse | <kbd>Opt</kbd>+click | <kbd>Alt</kbd>+click |
+| Fold / unfold the block | <kbd>Cmd</kbd>+<kbd>Opt</kbd>+<kbd>[</kbd> / <kbd>]</kbd> | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>[</kbd> / <kbd>]</kbd> |
+| Undo / redo | <kbd>Cmd</kbd>+<kbd>Z</kbd> / <kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> | <kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Y</kbd> |
+| Editor command palette | <kbd>F1</kbd> | <kbd>F1</kbd> |
+
+- **The command palette** (<kbd>F1</kbd>) lists Monaco's editor actions, such as *Fold All* or
+  *Change All Occurrences*. Klive's own commands are typed at the
+  [command prompt](/en/guides/editing/command-prompt/) instead.
+- **The minimap** at the right edge is a zoomed-out view of the file; click it to jump. It and the
+  scrollbar mark the lines with errors and warnings.
+- **Folding**: the arrows in the gutter fold and unfold blocks.
+- **Brackets and quotes** close automatically, the matching bracket is highlighted, and new lines are
+  indented.
+- Each file keeps its own undo history while you switch between tabs.
+
+## Language features
+
+What Klive adds depends on the language of the file (see [File types](/en/guides/projects/file-types/)):
+
+- **Klive Z80 assembly** and **Klive BASIC** have the most: hovers with symbol information, go to
+  definition (<kbd>F12</kbd>), find references, rename (<kbd>F2</kbd>), semantic colouring, block
+  folding and inline errors. See [Klive Z80 Assembler](/en/guides/languages/klive-z80-assembler/#editor-features)
+  and [Klive BASIC](/en/guides/languages/klive-basic/#editing-zx-basic).
+- **C, sjasmplus and BASIC with Boriel BASIC** get colouring, breakpoints in the gutter and the
+  compiler's errors.
+- Every source language can show breakpoints in the gutter and the execution point while you debug,
+  where its compiler gives Klive the line information
+  ([Breakpoints](/en/guides/debugging/breakpoints/)).
+
+<Shot
+  src="guides/editing/editor/hover.webp"
+  alt="The hover on the label Delay in Klive Z80 assembly: the label, the file and line it is defined in, and the address and bytes of the instruction"
+  caption="Hovering a label shows where it is defined and the bytes the line assembles to"
+  width={560}
+/>
+
+The live features come from [background compilation](/en/guides/projects/background-compilation/):
+Klive compiles the project quietly a moment after you stop typing. With **Settings › Editor ›
+Compile in the background** on, errors are underlined in the editor, with the message beside the line
+and in the hover:
+
+<Shot
+  src="guides/editing/editor/error.webp"
+  alt="A mistyped label, Dleay, underlined in the editor, with the message Identifier 'Dleay' is not defined yet beside the line and in the hover"
+  caption="An inline error from background compilation"
+  width={620}
+/>
+
+**Go to definition** and opening an `#include` file are remembered as jumps, so
+<kbd>Ctrl</kbd>+<kbd>-</kbd> (macOS) or <kbd>Alt</kbd>+<kbd>←</kbd> (Windows and Linux) takes you
+back. See [Navigating back and forward](/en/guides/editing/navigation/).
+
+## Editor preferences
+
+Set the editor's preferences on the **Editor** page of **Settings** (**Klive › Settings...**, <kbd>Cmd</kbd>+<kbd>,</kbd>, on macOS;
+**File › Settings...** on Windows and Linux; see [Settings](/en/guides/customizing/settings/)). They are saved with the IDE, so they apply to every
+project.
+
+| Setting | What it does | Default |
+| --- | --- | --- |
+| **Font family** | The editor's monospace font; the choices depend on your system. | – |
+| **Font size** | The editor's font size. | – |
+| **Render whitespace** | Shows spaces and tabs: **None**, **All but single spaces between words**, **Inside the selection** or **All**. | None |
+| **Tab size** | The width of a tab, in spaces. | 4 |
+| **Insert spaces instead of tabs** | <kbd>Tab</kbd> inserts spaces rather than a tab character. | On |
+| **Detect indentation** | Takes the tab size and the spaces-or-tabs choice from the file's content, overriding the two settings above. | On |
+| **Enable autocomplete** | Offers completions while you type. | Off |
+| **Quick suggestion delay** | How long the editor waits before offering completions, from **Instantaneous** to **Longest (1 s)**. | Short (100 ms) |
+| **Highlight the selection's other occurrences** | Marks the other places where the selected text appears. | On |
+| **Highlight the symbol's occurrences** | Marks the other uses of the symbol under the cursor, without selecting it. | On |
+| **Compile in the background** | Shows errors inline while you type, and compiles the external toolchains in the background too. See [Background compilation](/en/guides/projects/background-compilation/). | Off |
+
+<Callout type="info">
+The colours of the editor's tokens follow the theme and its accent. To change them, see
+[Syntax colors](/en/guides/customizing/syntax-colors/).
+</Callout>
+
+## Related
+
+- [Klive Z80 Assembler](/en/guides/languages/klive-z80-assembler/)
+- [Navigating back and forward](/en/guides/editing/navigation/)
+- [The command prompt](/en/guides/editing/command-prompt/)
+- [Settings](/en/guides/customizing/settings/)
+- [Syntax colors](/en/guides/customizing/syntax-colors/)

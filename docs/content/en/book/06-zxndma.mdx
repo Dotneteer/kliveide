@@ -6,13 +6,13 @@ import { Callout } from 'nextra/components'
 
 # The zxnDMA: Moving Data Without the CPU
 
-Somewhere around the third time you write a `LDIR` loop to fill screen memory, you start wondering: isn't there a better way? The Z80's block transfer instructions are fine for small jobs, but when you need to move kilobytes of data at full speed — loading [sprite](./13-sprites.mdx) patterns, filling [Layer 2](./11-layer2.mdx) banks, streaming samples to the [DAC](./18-dac.mdx) — those 21 T-states per byte add up fast. At 3.5 MHz, copying a single 16KB memory bank with `LDIR` takes over 96 milliseconds. That's nearly six frames of dead CPU time.
+Somewhere around the third time you write a `LDIR` loop to fill screen memory, you start wondering: isn't there a better way? The Z80's block transfer instructions are fine for small jobs, but when you need to move kilobytes of data at full speed — loading [sprite](/en/book/13-sprites/) patterns, filling [Layer 2](/en/book/11-layer2/) banks, streaming samples to the [DAC](/en/book/18-dac/) — those 21 T-states per byte add up fast. At 3.5 MHz, copying a single 16KB memory bank with `LDIR` takes over 96 milliseconds. That's nearly six frames of dead CPU time.
 
 The ZX Spectrum Next has a built-in DMA controller that solves this problem. The **zxnDMA** — loosely based on the Zilog Z80 DMA chip but simplified and extended for the Next — can transfer data between any combination of memory and I/O ports, completely independently of the CPU. Think of it as a small moving company inside the FPGA: you give it the addresses, tell it how many boxes to shift, and it hauls bytes while the Z80 stops carrying furniture one byte at a time.
 
 We'll start with the concepts, work through the register structure, build up to practical transfer sequences, and finish with real-world patterns for sprite loading, memory filling, and audio streaming. Once the pattern clicks, a DMA transfer stops feeling like a ritual and starts looking like a compact little shipping order.
 
-> **What this chapter assumes.** You should already be comfortable with `OUT`, `OTIR`, and port-based hardware from [I/O Ports and NextRegs](./02-io-and-nextregs.mdx). The timed-transfer sections also lean on the [CTC](./05-ctc.mdx), and the sprite/audio examples make more sense once you've skimmed [Sprites](./13-sprites.mdx) and [DAC Audio](./18-dac.mdx).
+> **What this chapter assumes.** You should already be comfortable with `OUT`, `OTIR`, and port-based hardware from [I/O Ports and NextRegs](/en/book/02-io-and-nextregs/). The timed-transfer sections also lean on the [CTC](/en/book/05-ctc/), and the sprite/audio examples make more sense once you've skimmed [Sprites](/en/book/13-sprites/) and [DAC Audio](/en/book/18-dac/).
 
 ## What the DMA Actually Does
 
@@ -602,7 +602,7 @@ You can find a demonstration of using the DMA for copying in the `DmaDemo.Simple
 
 ## Demo: Comparing LDIR and zxnDMA
 
-Let's put numbers on the feeling. This demo copies the same 2 KB screen-memory block twice: first with `LDIR`, then with zxnDMA. Both measurements use the CTC timing helper from [Chapter 5](./05-ctc.mdx): `Timing.SetupCtc16`, `Timing.StartMeasure`, and `Timing.GetMeasuredCounter`.
+Let's put numbers on the feeling. This demo copies the same 2 KB screen-memory block twice: first with `LDIR`, then with zxnDMA. Both measurements use the CTC timing helper from [Chapter 5](/en/book/05-ctc/): `Timing.SetupCtc16`, `Timing.StartMeasure`, and `Timing.GetMeasuredCounter`.
 
 The block lives in the ULA pixel area, so the demo does not reserve a large private source and two large destination buffers. It uses `$4000..$47FF` as the source, `$4800..$4FFF` as the `LDIR` destination, and `$5000..$57FF` as the DMA destination. Because those addresses are visible screen memory, the demo measures first, clears the pixel area, and only then prints the results.
 
@@ -1392,7 +1392,7 @@ The key insight is `wr1 memory, fixed`: Port A holds the address of `FillByte` a
 
 ### Loading Sprites via DMA
 
-Sprite pattern data needs to get from main memory into the Next's sprite pattern RAM. The sprite hardware is accessed through I/O ports — you select a pattern slot via port `0x303B`, then write pixel data to port `0x5B`. Each sprite pattern is 256 bytes (16×16 pixels, 8 bits per pixel). The full sprite memory model and pattern-slot workflow are covered in the [Sprites](./13-sprites.mdx) chapter.
+Sprite pattern data needs to get from main memory into the Next's sprite pattern RAM. The sprite hardware is accessed through I/O ports — you select a pattern slot via port `0x303B`, then write pixel data to port `0x5B`. Each sprite pattern is 256 bytes (16×16 pixels, 8 bits per pixel). The full sprite memory model and pattern-slot workflow are covered in the [Sprites](/en/book/13-sprites/) chapter.
 
 ```z80klive
 ; DMA program table — source address and length patched per call
@@ -1434,7 +1434,7 @@ The sprite hardware auto-increments its internal write pointer each time you wri
 
 ### Audio Transfers
 
-Audio is one of the most important uses for burst DMA, but the full discussion belongs with DAC setup, sample formats, routing, and buffer management. This chapter gives you the DMA building blocks; the [DAC and Sample Playback](./18-dac.mdx) chapter applies them to real sample playback.
+Audio is one of the most important uses for burst DMA, but the full discussion belongs with DAC setup, sample formats, routing, and buffer management. This chapter gives you the DMA building blocks; the [DAC and Sample Playback](/en/book/18-dac/) chapter applies them to real sample playback.
 
 For orientation, the two audio-shaped DMA choices are:
 
@@ -1637,6 +1637,6 @@ The zxnDMA may look intimidating at first — seven register groups, follow byte
 
 ## Where Next
 
-- [The CTC: Counter/Timer Circuit](./05-ctc.mdx) gives you the timing side of CTC-triggered DMA, including the counter modes used for precise pacing.
-- [Sprites](./13-sprites.mdx), [Layer 2](./11-layer2.mdx), and [DAC Audio](./18-dac.mdx) are natural places to use DMA once the byte-shuffling machinery feels familiar.
-- [I/O Ports and NextRegs](./02-io-and-nextregs.mdx) and [Appendix C: I/O Ports Reference](./app-C-io-ports-reference.md) are the maps to keep open when a transfer targets hardware ports instead of memory.
+- [The CTC: Counter/Timer Circuit](/en/book/05-ctc/) gives you the timing side of CTC-triggered DMA, including the counter modes used for precise pacing.
+- [Sprites](/en/book/13-sprites/), [Layer 2](/en/book/11-layer2/), and [DAC Audio](/en/book/18-dac/) are natural places to use DMA once the byte-shuffling machinery feels familiar.
+- [I/O Ports and NextRegs](/en/book/02-io-and-nextregs/) and [Appendix C: I/O Ports Reference](/en/book/app-C-io-ports-reference/) are the maps to keep open when a transfer targets hardware ports instead of memory.

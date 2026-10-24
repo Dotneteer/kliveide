@@ -1,6 +1,8 @@
 export default {
-  "zx-basic": "ZX BASIC",
+  "klive-z80-assembler": "Klive Z80 Assembler",
+  "klive-basic": "Klive BASIC",
+  "boriel-basic": "Boriel BASIC",
   "sjasmplus": "sjasmplus",
-  "pasta80": "PASTA/80",
-  "z88dk": "z88dk (C)"
+  "z88dk": "z88dk (C)",
+  "pasta80": "PASTA/80"
 };

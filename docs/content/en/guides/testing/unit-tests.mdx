@@ -161,7 +161,7 @@ where a build starts through a `.nex` file, run the tests instead; the runner su
 records [code coverage](/en/guides/analysis/code-coverage) while the tests run and puts the result into
 the emulator's coverage when the run ends: the editor then shows the lines the tests executed, and
 `coverage status` and `coverage export` report and export it. Coverage is an
-[advanced debugging feature](/en/guides/debugging/advanced-debugging).
+[advanced debugging feature](/en/guides/customizing/advanced-debugging/).
 
 ## Configuration
 
@@ -242,7 +242,7 @@ See the [Commands Reference](/en/reference/commands#test-list).
 ## Tests in CI
 
 `klive test` runs the same tests from a terminal or a CI job, without the IDE, and writes JUnit and
-LCOV files for the CI's dashboards. See [Unit Tests on the Command Line](/en/guides/testing/unit-tests-cli).
+LCOV files for the CI's dashboards. See [Unit Tests on the Command Line](/en/guides/testing/command-line/).
 
 ## Coming from DeZog
 
@@ -254,4 +254,4 @@ LCOV files for the CI's dashboards. See [Unit Tests on the Command Line](/en/gui
   busy.
 - Klive reports each test's T-states, and runs tests on a machine of their own, so a run never
   disturbs the emulator.
-- DeZog's tests run only inside VS Code; Klive's also run [in CI](/en/guides/testing/unit-tests-cli).
+- DeZog's tests run only inside VS Code; Klive's also run [in CI](/en/guides/testing/command-line/).

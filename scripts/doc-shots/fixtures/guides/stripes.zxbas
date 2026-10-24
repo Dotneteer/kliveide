@@ -1,0 +1,21 @@
+' Colour stripes - the program behind the Guides' snapshot and RZX shots.
+' It draws eight paper stripes, then counts frames at the top of the screen.
+
+DIM i AS UBYTE
+DIM frames AS UINTEGER = 0
+
+BORDER 1
+PAPER 7
+INK 0
+CLS
+FOR i = 0 TO 7
+    PAPER i
+    PRINT AT i * 2 + 3, 4; "                        "
+NEXT i
+PAPER 7
+PRINT AT 20, 6; "Klive snapshot demo"
+DO
+    frames = frames + 1
+    PRINT AT 1, 4; "Frames: "; frames
+    PAUSE 1
+LOOP

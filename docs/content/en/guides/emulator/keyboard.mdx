@@ -1,75 +1,179 @@
 ---
-description: "You can use the computer's physical keyboard or a virtual keyboard to emulate keystrokes."
+description: "Type on the emulated machine with your keyboard or its virtual keyboard, remap keys, drive joysticks from the keyboard or a gamepad, and use the ZX Spectrum Next's mouse."
 ---
 
-import { Callout } from 'nextra/components'
- 
-# Using the Keyboard
+import { Callout, Steps } from 'nextra/components'
 
-You can use the computer's physical keyboard or a virtual keyboard to emulate keystrokes. To let the Emulator process the computer's keyboard, the Emulator should have the focus. When you change the current window to the Emulator with your machine's keys or click it with the mouse, it is ready to receive keystrokes.
+# Keyboard, joysticks and mouse
 
-Of course, you should start the machine and wait while it reaches its main execution cycles and starts watching for keys.
+The emulated machine reads your computer's keyboard, so you can type on it as on the real one. This
+page covers the virtual keyboard that shows the machine's own keys, changing which host key presses
+which machine key, the joysticks of the Next and the Timex machines, and the Next's mouse.
 
-## Using the Virtual Keyboard
+## Typing on your keyboard
 
-If you do not find it easy to use the computer's physical keyboard, you can use the virtual keyboard. You can display (or hide) it with one of these actions:
+The machine reads the keyboard while the emulator window has the focus: click its screen, or switch
+to the window. Start the machine first and let it reach its prompt; a machine that is still booting
+does not scan its keys.
 
-- Click the **View | Virtual Keyboard** menu command while in the Emulator window
-- Click the **Keyboard** icon in the Emulator's toolbar
+Each machine maps your keys to its own in the way its users expect: on the ZX Spectrum, for
+example, either <kbd>Shift</kbd> is CAPS SHIFT and the right <kbd>Alt</kbd> is SYMBOL SHIFT. The
+pages of the other machines list their mappings: [The ZX81 and ZX80](/en/guides/machines/zx81-zx80/#typing),
+[The HT-1080Z](/en/guides/machines/ht1080z/#typing) and [The Cambridge Z88](/en/guides/machines/cambridge-z88/#the-keyboard).
 
-When the keyboard is to show, Klive displays it according to the selected machine's type. These figures show the ZX Spectrum 48K keyboard and the ZX Spectrum 128L/+2E/+3E keyboard.
+## The virtual keyboard
 
-<ClickableImage src="/images/getting-started/sp48-keyboard.png" width={650} />
+Show or hide the virtual keyboard with the **Show/Hide keyboard** button on the emulator toolbar,
+or with **View › Virtual Keyboard** while the emulator window has the focus. It shows the keyboard
+of the running machine:
 
-<ClickableImage src="/images/getting-started/sp128-keyboard.png" alt="ZX Spectrum 128 Keyboard" width={650} />
+| Machine | Keyboard |
+| --- | --- |
+| ZX Spectrum 48K and 16K, Timex TC2048/TC2068/TS2068 | The 48K's 40 keys and their legends |
+| ZX Spectrum 128K, Pentagon 128, +2A/+3/+2E/+3E, Scorpion | The 128K's keyboard |
+| ZX Spectrum Next | The Next's keyboard |
+| Sinclair ZX81, and the ZX80 with the 8K ROM | The ZX81's keyboard |
+| Sinclair ZX80 | The ZX80's own keyboard |
+| HT-1080Z | The HT-1080Z's keyboard, with its model's characters |
+| Cambridge Z88 | The Z88's keyboard, in the layout set in **Settings › Machine › Keyboard layout** |
 
-<Callout type="info" emoji="💡">
-Klive also has custom keyboards for the Cambridge Z88 and the ZX Spectrum Next computers.
-</Callout>
-
-To press a key, move the mouse over the particular virtual key and click it. If you keep the mouse button down, it's just like keeping the button pressed. Releasing the mouse button behaves as you released the real key.
-
-When you move the button slowly over a particular key, it will highlight the part of the button with the symbol shift-related and extended mode-related keys. When you click the mouse, it will automatically "press" the symbol shift or extended mode keys. 
-
-You can use both the left and right mouse buttons. However, when using the right mouse button with normal keys, it behaves as if you pressed the **CAPS SHIFT** key simultaneously.
-
-This table shows a few examples:
-
-| Example | Description
-|-|:-|
-| <ClickableImage src="/images/getting-started/main-key.png" alt="Main Key" width={64} /> | The click will display `INPUT` (`i`) when you use the left mouse button or `INPUT` (`I`) with the right mouse button, depending on the current ZX Spectrum cursor mode. |
-| <ClickableImage src="/images/getting-started/symbol-key.png" alt="Symbol Key" width={64} /> | The click will result in `AT` regardless of which mouse button you click. |
-| <ClickableImage src="/images/getting-started/above-key.png" alt="Above Key" width={64} /> | The click will show `CODE` regardless of which mouse button you click. |
-| <ClickableImage src="/images/getting-started/below-key.png" alt="Below Key" width={64} /> | The click will display `IN` regardless of which mouse button you click. |
-| <ClickableImage src="/images/getting-started/glyph-key.png" alt="Glyph Key" width={64} /> | The click will display a glyph with its top-left corner set if you click the left mouse button and the inverse of that glyph when you use the right mouse button. |
-
-## Resizing the Virtual Keyboard
-
-When you move the mouse to the top border of the virtual keyboard, a sizing splitter bar appears:
-
-<ClickableImage 
-  src="/images/getting-started/sizing-start.png"
-  alt="Sizing Start" 
-  width={550}
+<Shot
+  src="guides/emulator/keyboard/sp48-keyboard.webp"
+  alt="The emulator window with the ZX Spectrum 48K virtual keyboard below the screen"
+  caption="The ZX Spectrum 48K keyboard"
+  width={760}
 />
 
-Hold down the mouse key while over the splitter, and move it. As you move, Klive changes the keyboard size and resizes the emulator display accordingly:
-
-<ClickableImage 
-  src="/images/getting-started/sizing-end.png"
-  alt="Sizing End" 
-  width={550}
+<Shot
+  src="guides/emulator/keyboard/sp128-keyboard.webp"
+  alt="The emulator window with the ZX Spectrum 128K virtual keyboard below the screen"
+  caption="The ZX Spectrum 128K keyboard"
+  width={760}
 />
 
-When you reach the desired size, release the mouse button.
+### Pressing keys
 
-## Known Issues with the Virtual Keyboard
+Click a key to press it. Holding the mouse button down holds the key, and releasing it releases the
+key. On the ZX Spectrum keyboards:
 
-Klive uses some cheats with the glyphs over the numeric buttons. It emulates that you press the **GRAPHICS** button to turn on the graphics mode, then emulates the keypress, after that releases the key, and then emulates **GRAPHICS** again. While keeping the key pressed (the mouse button is held down) works for other keys, this behavior is ignored for glyphs.
+- **The main legend** (a letter or a digit) types what that key types in the current cursor mode.
+  With the right mouse button, CAPS SHIFT is pressed with it: the left button on the I key gives
+  `INPUT` or `i`, the right button `INPUT` or `I`.
+- **A legend printed on the key in red** (such as `AT` on I) presses SYMBOL SHIFT with the key,
+  whichever mouse button you use.
+- **A legend above the key** (such as `CODE`) or **below it** (such as `IN`) enters extended mode
+  and types that keyword, whichever button you use.
+- **A block graphic on a digit key** types that graphic with the left button and its inverse with
+  the right button.
 
-If you click a glyph button several times repeatedly, the ZX Spectrum OS may not process the emulation of **GRAPHICS** quickly enough, and thus, the editor does not get out of the graphics mode. 
+Move the mouse slowly over a key to see which part of it is highlighted: that is what a click
+types.
 
 <Callout type="info" emoji="💡">
-This is a difficult issue to manage. There is currently no fix for it. Please be patient and type a bit slower when you're about to use glyphs.
+To type a block graphic, Klive presses GRAPHICS, the key, and GRAPHICS again. Holding the button
+down does not repeat a graphic, and clicking graphics very quickly can leave the editor in graphics
+mode. Click them a little slower.
 </Callout>
- 
+
+### Resizing the keyboard
+
+Point at the top edge of the virtual keyboard until the splitter appears, then drag it. The screen
+shrinks or grows to make room. Klive remembers the height for each machine.
+
+## Remapping keys
+
+A **key mapping file** changes which host key presses which ZX Spectrum key. It is a JSON file
+with the `.keymap` extension. Each property names a host key by its
+[`KeyboardEvent.code`](https://developer.mozilla.org/en-US/docs/Web/API/UI_Events/Keyboard_event_code_values)
+and gives one Spectrum key, or two pressed together. With `"$merge": true` the file changes only the
+keys it lists and keeps the default mapping for the rest:
+
+```json
+{
+  "$merge": true,
+  "Quote": ["SShift", "P"],
+  "Backquote": "CShift"
+}
+```
+
+The Spectrum keys are `CShift`, `SShift`, `Enter`, `Space`, the letters `A` to `Z` and the digits
+`N0` to `N9`.
+
+<Steps>
+
+### Open the Input settings
+
+Choose **Machine › Input › Input Settings...**, which opens the **Input** page of the
+[Settings](/en/guides/customizing/settings/).
+
+### Choose the file
+
+Next to **Key mapping file**, click **Browse...** and pick your `.keymap` file. The mapping applies
+at once; a file with a mistake in it is refused with the reason.
+
+</Steps>
+
+**Reset** on the same row returns to the default mapping.
+
+## Joysticks
+
+The **ZX Spectrum Next** and the **Timex** machines have joystick ports. Each joystick is driven by
+the host keyboard, a gamepad, or nothing.
+
+| Machine | Joysticks | Menu |
+| --- | --- | --- |
+| ZX Spectrum Next | Joystick 1 (left) and Joystick 2 (right) | **Machine › Input › Joystick** |
+| Timex TC2048 | The built-in Kempston port, driven by joystick 1's bindings | **Machine › Input › Kempston Joystick** |
+| Timex TC2068, TS2068 | Two joysticks, read through the AY chip | **Machine › Input › Joysticks** |
+
+Each joystick's **Driven by** submenu chooses **Host keyboard**, **Host gamepad** or
+**Not connected**.
+
+On the Next, a joystick's **Set machine mode** submenu picks what the machine sees on that port:
+**Sinclair 2 (keys 1-5)**, **Kempston 1 (port $1F)**, **Cursor / Protek**, **Sinclair 1 (keys 6-0)**,
+**Kempston 2 (port $37)**, **MD 1 (port $1F)**, **MD 2 (port $37)** or **User-defined (joymap)**. The
+mode is NextReg `$05`, so NextZXOS may set it again when it starts.
+
+### Joystick bindings
+
+**Configure bindings...** in the joystick submenu (or **Configure...** next to **Joystick bindings**
+on the **Input** settings page) opens the **Joystick bindings** dialog. For each joystick, choose what
+drives it, then click a pin (**Up**, **Down**, **Left**, **Right**, **Fire 1 (B)**, **Fire 2 (C)**, and
+the Mega Drive pad's extra buttons) and press the key for it. A key bound to a joystick no longer
+reaches the machine's keyboard, and the dialog says so. **Save** keeps the bindings; **Reset**
+brings back the defaults.
+
+## The mouse
+
+*Applies to: ZX Spectrum Next.*
+
+The Next has a Kempston mouse. Capturing is off by default: turn on **Machine › Input › Mouse ›
+Capture the mouse** (or the same option on the **Input** settings page) first; until then, the
+toolbar button is disabled.
+
+<Shot
+  src="guides/emulator/keyboard/mouse-capture.webp"
+  alt="The emulator toolbar of a running ZX Spectrum Next with the mouse captured: the mouse button is the only lit button"
+  caption="The mouse button, lit while the mouse is captured"
+  width={640}
+/>
+
+To drive the Next's mouse with yours, *capture* the mouse: click the
+**Capture the mouse** button on the emulator toolbar (between the screen buttons and the keyboard button: a crossed-out mouse, which turns into a lit, plain mouse while the mouse is captured), or press <kbd>Ctrl</kbd>+<kbd>M</kbd>
+(<kbd>Cmd</kbd>+<kbd>M</kbd> on macOS) with the emulator window focused. While the mouse is captured,
+your pointer is hidden and every movement goes to the machine. Press <kbd>Esc</kbd>, or the same
+shortcut, to release it.
+
+**Machine › Input › Mouse**, and the **Mouse** group of the **Input** settings page, have the options:
+
+- **Capture the mouse**: whether capturing is allowed at all (off by default).
+- **Show the captured pointer**: draw Klive's own pointer over the screen **Always**,
+  **Only while no program reads the mouse**, or **Never**.
+- **Sensitivity**: from **Very Slow (0.25x)** to **Fastest (2x)**. This is separate from the DPI
+  setting software can choose on the machine.
+
+## Related
+
+- [The emulator window](/en/guides/emulator/emulator-window/)
+- [Settings](/en/guides/customizing/settings/): the Input page
+- [Meet the emulator](/en/get-started/meet-the-emulator/): typing your first BASIC line

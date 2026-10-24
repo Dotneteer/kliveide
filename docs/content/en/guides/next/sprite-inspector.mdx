@@ -14,13 +14,15 @@ Inspector** shows them, decoded, next to the pattern memory they point into.
 
 It is one document with two linked views: **Sprites** (the 128 attribute slots) and **Patterns**
 (the 16K of pattern RAM). Select a sprite and its pattern is marked in the sheet; select a pattern
-and its users are highlighted in the table. It is available on the ZX Spectrum Next only.
+and its users are highlighted in the table.
+
+*Applies to: ZX Spectrum Next.*
 
 ![The Sprite Inspector, paused on a program with nine sprites](/images/working-with-ide/sprite-inspector.png)
 
 ## Opening It
 
-Use **View → Machine Views → Sprite Inspector**, or one of the commands:
+Use **View › Machine Views › Sprite Inspector**, or one of the commands:
 
 ```
 show-sprites          ; the Sprites view
@@ -86,7 +88,7 @@ sideways, so a row keeps its identity. The filter shows **Up to last visible** (
 | Column | Shows |
 |---|---|
 | **#** | The slot. A relative sprite carries `↳7`, the anchor it is attached to. |
-| **vis** | A green dot when the sprite is drawn; an amber ring when its own visible bit is set but its anchor is hidden; nothing when its bit is clear. |
+| **vis** | A filled dot when the sprite is drawn; a ring when its own visible bit is set but its anchor is hidden; nothing when its bit is clear. |
 | **pattern** | A thumbnail and the pattern number: `40` for an 8-bit sprite, `81` for a 4-bit one &mdash; the 4-bit numbering names 128-byte halves, so `81` is the high half of 256-byte slot 40. |
 | **x**, **y** | The **effective** position. A relative also shows its own offset, `Δ+16,+0`. |
 | **fmt**, **pal** | `8`, or `4·lo` / `4·hi` for a 4-bit sprite (which half of the slot it reads), and the palette offset (`+2` when it is added to the anchor's). |
@@ -120,7 +122,7 @@ The **note** column gives one short reason; the inspector spells out all of them
 Right-click a row to copy its attributes as `nextreg` instructions or as a `.db` line, or to show its
 pattern. Double-click the thumbnail to go to the pattern.
 
-The same menu sets a [sprite attribute breakpoint](/en/guides/debugging/breakpoints#sprite-attribute-breakpoints-zx-spectrum-next):
+The same menu sets a [sprite attribute breakpoint](/en/guides/next/next-breakpoints/#sprite-attribute-breakpoints-zx-spectrum-next):
 **Break on attribute write** stops whenever any attribute byte of the sprite is written &mdash;
 through port `$57` or the NextReg mirrors, by the CPU, the DMA or the Copper &mdash; and **Run until
 attribute write** does it once. A sprite with a breakpoint shows a dot before its number; the menu
@@ -193,3 +195,10 @@ that sprite.
 For a **pattern**: the pattern large, a hint about its content, and the sprites that use it &mdash;
 for a slot that is read both ways, the users of the other reading too. The header line gives its
 byte range in pattern RAM, and the map fills every sprite that uses it.
+
+## Related
+
+- [Next breakpoints](/en/guides/next/next-breakpoints/)
+- [Sprite and palette editors](/en/guides/next/sprite-palette-editors/)
+- [Video layers](/en/guides/next/layers/)
+- [Why does my Next picture look wrong?](/en/guides/next/picture-troubleshooting/)

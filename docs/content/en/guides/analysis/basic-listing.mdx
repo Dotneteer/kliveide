@@ -1,0 +1,57 @@
+---
+description: "List the BASIC program held in the running machine's memory, refreshed as it changes, on the ZX Spectrum, ZX80, ZX81 and HT-1080Z."
+---
+
+# The BASIC Listing
+
+The **BASIC Listing** view lists the BASIC program that is in the machine's memory right now, read
+straight from the BASIC program area. Use it to see what a loader or a game's BASIC part does, or to
+watch a program arrive while it loads from tape.
+
+*Applies to: ZX Spectrum models, ZX80, ZX81, HT-1080Z.*
+
+Open it with **View › Machine Views › BASIC Listing**. The menu item is a switch: choose it again to
+close the view.
+
+The view's toolbar has these controls:
+
+- **Refresh now** reads the listing again.
+- **Copy to clipboard** copies the listing as text.
+- **Auto Refresh:** (on by default) reads the listing periodically, even while a program is loading.
+- **Show Non-Printable:** (off by default) shows non-printable characters as their two-digit
+  hexadecimal code with a `$` prefix on a shaded background.
+- **Use ZX Spectrum font:** shows the listing in the ZX Spectrum's own font instead of Klive's
+  monospace font.
+
+When there is nothing to list, the view says why:
+
+- **Machine OS has not been initialized yet**: the machine is still booting.
+- **BASIC program area is empty**: there is no BASIC program.
+- `*** BASIC code corrupted or partially loaded ***`: unexpected data was found in the
+  program area, or the program is still loading. The message appears where the listing breaks off.
+
+## ZX81 and ZX80
+
+The view lists ZX81 and ZX80 programs too, each in its own format, and spaces the keywords the
+way the machine's own `LIST` does. A ZX80 with the 8K ROM upgrade is listed as a ZX81. On these
+machines the font switch is labelled **Use Sinclair font**.
+
+The ROMs list a line up to its NEW LINE character, so a NEW LINE stored inside a `REM` (machine-code
+loaders often have one) starts a new row, often with an odd line number such as `E393`. The view shows
+it the same way the machine's `LIST` does. A character `LIST` cannot print appears as `?`, or as its
+code when **Show non-printable** is on.
+
+## HT-1080Z
+
+On the HT-1080Z the view lists the Level II BASIC program the way the machine's own `LIST` does:
+keywords as stored, with no spaces added, `ELSE` and `'` without the colon BASIC keeps before them.
+It uses the model's own characters, so Series II's accented letters show as such, and on the /64 a
+backtick and a key show as the Hungarian or mathematical character they stand for. The font switch
+is not offered: the Sinclair fonts have no such characters. See
+[Using the HT-1080Z](/en/guides/machines/ht1080z/#debugging).
+
+## Related
+
+- [The Memory view](/en/guides/debugging/memory/)
+- [ZX80 and ZX81](/en/guides/machines/zx81-zx80/)
+- [Klive BASIC](/en/guides/languages/klive-basic/)

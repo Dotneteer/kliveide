@@ -12,7 +12,7 @@ The ZX Spectrum Next has a better answer: the **CTC** (Counter/Timer Circuit). I
 
 But the CTC isn't just a stopwatch. It's a full Zilog Z80 CTC with four independently programmable channels, each operating as either a timer or a counter. Channels can cascade through their ZC/TO (Zero Count / Time Out) outputs, extending timing range from microseconds to tens of milliseconds. And each channel can fire interrupts, which means you can build periodic tick systems, audio sample clocks, or timeout watchdogs — all in hardware.
 
-> **What this chapter assumes.** You should already be comfortable with `IN`/`OUT` and NextRegs ([I/O Ports and NextRegs](./02-io-and-nextregs.mdx)). The interrupt sections at the end build on the Z80's IM2 mode and the Next's hardware IM2 controller, both covered in [Interrupts](./04-interrupts.mdx).
+> **What this chapter assumes.** You should already be comfortable with `IN`/`OUT` and NextRegs ([I/O Ports and NextRegs](/en/book/02-io-and-nextregs/)). The interrupt sections at the end build on the Z80's IM2 mode and the Next's hardware IM2 controller, both covered in [Interrupts](/en/book/04-interrupts/).
 
 The following sections start with the fundamentals, build up to practical timing code, and finish with interrupt-driven patterns. If you only care about measuring code speed, start at "Measuring Execution Time"; the two sections after it cover longer timing windows and accuracy trade-offs. Understanding the underlying mechanics will help you troubleshoot the inevitable "why is my counter reading wrong?" moments.
 
@@ -676,7 +676,7 @@ When in doubt, **two channels at ÷16** is the right default. It covers every in
 
 Each CTC channel can generate an interrupt on its ZC/TO event. The Next's interrupt system routes CTC interrupts through the hardware IM2 mechanism, which is more flexible (and more convenient) than the classic Z80 IM2 daisy-chain.
 
-> **Heads-up.** This section assumes you've already read [Interrupts](./04-interrupts.mdx), which covers IM2, the I register, and the Next's hardware IM2 controller in detail. We only summarise here the parts specific to the CTC.
+> **Heads-up.** This section assumes you've already read [Interrupts](/en/book/04-interrupts/), which covers IM2, the I register, and the Next's hardware IM2 controller in detail. We only summarise here the parts specific to the CTC.
 
 ### The Next's Hardware IM2 Mode
 
@@ -966,7 +966,7 @@ This is powerful for audio streaming: set a CTC channel to fire at your sample r
     out (c),a
 ```
 
-The DMA must be configured separately with the transfer parameters — the CTC just provides the trigger signal. The [zxnDMA chapter](./06-zxndma.mdx) covers the full CTC-triggered DMA pattern, and the [DAC and Sample Playback chapter](./18-dac.mdx) shows how it's used for audio.
+The DMA must be configured separately with the transfer parameters — the CTC just provides the trigger signal. The [zxnDMA chapter](/en/book/06-zxndma/) covers the full CTC-triggered DMA pattern, and the [DAC and Sample Playback chapter](/en/book/18-dac/) shows how it's used for audio.
 
 ## ZC/TO Chaining in Detail
 
@@ -1030,6 +1030,6 @@ Why twice? If the channel was in the TIME_CONSTANT state (waiting for a time con
 
 ## Where Next
 
-- [The zxnDMA: Moving Data Without the CPU](./06-zxndma.mdx) uses the CTC as an external pacing source, which is especially handy for audio-style transfers where "roughly now" is not good enough.
-- [Interrupts](./04-interrupts.mdx) explains the IM2 machinery behind CTC interrupt handlers, vector tables, and the Next's hardware interrupt controller.
-- [I/O Ports and NextRegs](./02-io-and-nextregs.mdx) is worth keeping nearby whenever you configure CTC-related NextRegs or port-based peripherals.
+- [The zxnDMA: Moving Data Without the CPU](/en/book/06-zxndma/) uses the CTC as an external pacing source, which is especially handy for audio-style transfers where "roughly now" is not good enough.
+- [Interrupts](/en/book/04-interrupts/) explains the IM2 machinery behind CTC interrupt handlers, vector tables, and the Next's hardware interrupt controller.
+- [I/O Ports and NextRegs](/en/book/02-io-and-nextregs/) is worth keeping nearby whenever you configure CTC-related NextRegs or port-based peripherals.

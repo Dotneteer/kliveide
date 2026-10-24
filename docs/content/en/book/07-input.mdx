@@ -16,7 +16,7 @@ This chapter covers the input paths you will use most often:
 
 The goal is not to turn input into a grand theory. It is to make it boring in the best possible way: read the hardware, store a clean state, and let the rest of your program ask simple questions like "is fire down?" or "did Space go down this frame?"
 
-> **What this chapter assumes.** You should already be comfortable with Z80 I/O instructions from [I/O Ports and NextRegs](./02-io-and-nextregs.mdx). The frame-latched input pattern builds naturally on [Interrupts](./04-interrupts.mdx), but you can still use it from a regular main loop.
+> **What this chapter assumes.** You should already be comfortable with Z80 I/O instructions from [I/O Ports and NextRegs](/en/book/02-io-and-nextregs/). The frame-latched input pattern builds naturally on [Interrupts](/en/book/04-interrupts/), but you can still use it from a regular main loop.
 
 ## The Input Model
 
@@ -429,7 +429,7 @@ AddSignedDeltaToHL:
     ret
 ```
 
-You can use the same idea for a mouse cursor over [Layer 2](./11-layer2.mdx), [sprites](./13-sprites.mdx), or the [tilemap](./12-tilemap.mdx). The mouse provides motion; your display system decides what that motion means.
+You can use the same idea for a mouse cursor over [Layer 2](/en/book/11-layer2/), [sprites](/en/book/13-sprites/), or the [tilemap](/en/book/12-tilemap/). The mouse provides motion; your display system decides what that motion means.
 
 ### Buttons and Wheel
 
@@ -457,7 +457,7 @@ ReadMouseButtons:
 MouseButtons: .db 0
 ```
 
-Mouse DPI and left/right button reversal live in NextReg `$0A`; see [Appendix B](./app-B-nextreg-reference.md) for the bit table.
+Mouse DPI and left/right button reversal live in NextReg `$0A`; see [Appendix B](/en/book/app-B-nextreg-reference/) for the bit table.
 
 ## Latching Input Once per Frame
 
@@ -471,7 +471,7 @@ The pattern is:
 4. Compute `InputPressed` and `InputReleased`.
 5. During the frame, all game code reads those RAM bytes.
 
-If you already have a ULA frame interrupt from [Chapter 4](./04-interrupts.mdx), the ISR can set a flag and optionally perform the scan. Keep the ISR short; input scanning is cheap, but not free. A nice compromise is:
+If you already have a ULA frame interrupt from [Chapter 4](/en/book/04-interrupts/), the ISR can set a flag and optionally perform the scan. Keep the ISR short; input scanning is cheap, but not free. A nice compromise is:
 
 - ISR: increment frame counter, set `FrameReady = 1`
 - Main loop: wait for `FrameReady`, clear it, scan input, update game
@@ -553,7 +553,7 @@ This is the most useful abstraction in the chapter. The rest of the game should 
 
 ## Where Next
 
-- [I/O Ports and NextRegs](./02-io-and-nextregs.mdx) explains the port-address mechanics behind keyboard row selection and joystick reads.
-- [Interrupts](./04-interrupts.mdx) shows how to build the frame tick that makes latched input feel tidy and predictable.
-- [Sprites](./13-sprites.mdx), [Tilemap](./12-tilemap.mdx), and [Layer 2](./11-layer2.mdx) are natural places to use this input code for movement, cursors, and game controls.
-- [Appendix B: NextReg Reference](./app-B-nextreg-reference.md) and [Appendix C: I/O Ports Reference](./app-C-io-ports-reference.md) list the exact register and port details when you need the raw tables.
+- [I/O Ports and NextRegs](/en/book/02-io-and-nextregs/) explains the port-address mechanics behind keyboard row selection and joystick reads.
+- [Interrupts](/en/book/04-interrupts/) shows how to build the frame tick that makes latched input feel tidy and predictable.
+- [Sprites](/en/book/13-sprites/), [Tilemap](/en/book/12-tilemap/), and [Layer 2](/en/book/11-layer2/) are natural places to use this input code for movement, cursors, and game controls.
+- [Appendix B: NextReg Reference](/en/book/app-B-nextreg-reference/) and [Appendix C: I/O Ports Reference](/en/book/app-C-io-ports-reference/) list the exact register and port details when you need the raw tables.

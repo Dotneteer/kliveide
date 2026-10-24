@@ -29,7 +29,7 @@ When running the script, Klive displays a notification bar at the top of the cod
 
 As the script executes, it may display output, including information, errors, and warnings. All of these are displayed in a dedicated Output Pane below the code editor. The script execution keeps track of its output, so that you can see information from any script execution.
 
-If you use the `$log()` API in your script, you can output information to the Output Pane:
+Your script writes to the Output Pane through the `Output` object: `Output.log()`, `Output.info()`, `Output.warn()`, `Output.error()` and `Output.success()` write a message; `Output.write()` and `Output.writeLine()` write text, styled with `Output.color()`, `Output.bold()` and the other style functions:
 
 <ClickableImage src="/images/scripting/script-output-pane.png" width={795} />
 
@@ -37,14 +37,10 @@ If you use the `$log()` API in your script, you can output information to the Ou
 You can clear the content of the Output Pane with `Ctrl+L`.
 </Callout>
 
-## Execution Progress
-
-Sometimes, you may run a script that takes a long time to complete. Your script can display progress information with a progress bar and a descriptive text. Use the `$progress()` function:
-
-<ClickableImage src="/images/scripting/script-output-progress.png" width={795} />
+## Long-Running Scripts
 
 <Callout type="info" emoji="💡">
-If your script takes too long to complete or enters an infinite loop, the UI hangs too. Be mindful of your script's execution time and handle errors appropriately.
+If your script takes too long to complete or enters an infinite loop, the UI hangs too. Be mindful of your script's execution time and handle errors appropriately. `delay(ms)` waits without blocking.
 </Callout>
 
 ## Scripting History

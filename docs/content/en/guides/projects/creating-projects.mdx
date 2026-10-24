@@ -1,128 +1,145 @@
 ---
-description: "The IDE supports developing applications with a Klive project. With the File | Open folder command, you can open the contents of a particular folder and display it."
+description: "Create a Klive project for a machine and model from a template, find your way around its files, choose the build root, and build, run and debug it from the build bar."
 ---
 
-import { Callout } from 'nextra/components'
+import { Callout, Steps } from 'nextra/components'
 
-# Creating a Klive Project
+# Creating a project
 
-The IDE supports developing applications with a *Klive project*. With the **File | Open folder** command, you can open the contents of a particular folder and display it. The IDE considers folders with a well-formed `klive.project` file within them a *Klive project*.
+A *Klive project* is a folder that holds your source files together with a `klive.project` file and a
+`build.ksx` build script. Create one when you want to write a program: the project remembers the
+machine it targets, its build root and your breakpoints, and gives you one-click Compile, Run and
+Debug.
 
-<Callout type="info" emoji="💡">
-In Klive v0.32.0, a new file, `build.ksx`, was introduced to allow build process customization. At the end of this article, you will find a section about updating your old Klive projects to leverage the new build system.
-</Callout>
+## Create a project
 
-## The New Project Dialog
+<Steps>
 
-With the **File | New project** menu command, you can create a new Klive project:
+### Open the dialog
 
-<ClickableImage src="/images/getting-started/new-klive-project.png" width={502} />
+Choose **File › New Project...**, or click **Create a Klive Project** in the empty Explorer. The
+**Create a new Klive project** dialog opens.
 
-- You can select the machine type to use in the project (you can change it any time when the project is open).
-- The IDE offers you a few project templates depending on the machine type.
-- You can specify a root folder for your project directory. The new project will be a subfolder of the root. If you leave it empty, the new project goes into your user home's `KliveProjects` folder.
-- The project requires a name (`MyFirstKliveProject` in the figure above). 
+<Shot
+  src="get-started/new-project.webp"
+  alt="The Create a new Klive project dialog with a ZX Spectrum 48K machine type and the default template"
+  caption="The Create a new Klive project dialog"
+  width={620}
+/>
 
-When you click Create, the IDE creates the new project folder and opens it.
+### Choose the machine and model
 
-## The Project Structure
+Pick the **Machine type**. The list is grouped into **ZX Spectrum** (48K, 128K, +2E/+3E, Next),
+**Spectrum compatibles** (Timex, Scorpion) and **Other Z80 machines** (ZX81, ZX80, Cambridge Z88,
+HT-1080Z). When the machine has more than one model, choose it under **Model**: the dialog starts on
+the model that is running now, or else on your favourite model of that machine.
 
-A Klive project is a folder with a `klive.project` file in it. The file is a JSON file that describes the project's properties. The IDE creates the following structure for a new project:
+### Choose a template
 
-<ClickableImage src="/images/getting-started/project-in-explorer.png" width={248} />
+Pick a **Project Template**. The list shows the templates of the chosen machine; `default` is a Klive
+Z80 assembly project. [Project templates](/en/guides/projects/project-templates/) lists them all.
 
-The little home icon to the left of the root folder name (`MyFirstKliveProject`) indicates that the open folder is a Klive project. The last two files contain essential information related to the current project.
+### Name the project
 
-- `klive.project` is the file that stores project settings, including the machine type, IDE options, breakpoints, etc. Klive IDE does not allow editing it in its code editor.
-- `build.tsx` is a script file that executes within the IDE. It contains functions representing build commands.
+Type a **Project name**. **Project folder** is optional: the project is created as a subfolder of
+it, or of the `KliveProjects` folder in your home folder when you leave it empty.
 
-By changing the functions' body, you can customize the build (and create new build-related commands).
+### Create it
 
+Click **Create**. Klive creates the folder, opens it and switches the emulator to the project's
+machine and model.
 
-When you open a folder that is not a Klive project (does not have a valid `klive.project` file), you cannot see the home icon:
+</Steps>
 
-<ClickableImage src="/images/getting-started/non-klive-project.png" width={247} />
+You can also create a project from the [command prompt](/en/guides/editing/command-prompt/) with
+[`newp`](/en/reference/commands#newp), for example `newp sp48 MyGame default -o`.
 
-## The Build Root
+To open an existing project, choose **File › Open Folder...** or **File › Open Recent**. A folder
+without a valid `klive.project` file opens too, but as a plain folder: no build root, no build bar,
+no Build menu.
 
-When you develop your code, you may work with multiple files — Klive needs to know the main file to compile it to machine code. The *build root* designates this main file. When you create a new project, Klive automatically assigns a file as the build root. In the Explorer, the "combine" icon to the right of the file name indicates this:
+## What a project contains
 
-<ClickableImage src="/images/getting-started/build-root-sign.png" width={248} />
+A new project from the `default` template on the ZX Spectrum 48K looks like this:
 
-You can change the build root any time by right-clicking on a file and selecting the **Promote to Build Root** command.
-
-<ClickableImage src="/images/getting-started/promote-build-root.png" width={320} />
-
-<Callout type="info" emoji="💡">
-The Promote to Build Root command is available only for particular file types Klive supports.
-</Callout>
-
-## Build Root commands
-
-When you select the build root in the Explorer, the content of the file opens in the code editor, and it displays four icons at the right side of the document tab bar:
-
-<ClickableImage src="/images/getting-started/build-root-icons.png" width={675} />
-
-Each of these icons carries out a particular operation:
-
-| Icon | Operation |
-| ---- | --------- |
-| <ClickableImage src="/images/getting-started/compile.png" width={50} /> | This command compiles the project using the build root file as the main file. This operation lets you check whether your code is free from compilation errors. |
-| <ClickableImage src="/images/getting-started/inject.png" width={50} /> | This command compiles the project. If the compilation is successful, it immediately injects the binary code into the memory of the paused machine. After the operation, you can resume the machine and execute the code (for example, with the `RANDOMIZE USR(<address>)` command). |
-| <ClickableImage src="/images/getting-started/start.png" width={50} /> | With this command, you can start the compiled code. |
-| <ClickableImage src="/images/getting-started/debug.png" width={50} /> | With this command, you can start the compiled code in debug mode. |
-
-When you start the code, Klive executes several steps to ensure a one-click user experience to run or debug the code:
-
-1. The IDE compiles the code. If the compilation fails, no program is started.
-2. The IDE restarts the current machine on successful compilation and runs while its OS reaches the main execution cycle. At this point, the IDE may emulate keystrokes to lead the OS to a point where code execution is safe.
-3. Klive pauses the machine and injects the code into the memory.
-4. Klive sets the Program Counter (PC) register to the entry point of the injected code and resumes the machine.
-5. The injected code runs.
-
-## The Project File
-
-The `klive.project` file encapsulates information about the current project, including the machine type, UI settings, breakpoint, project state, and many others. While you work with the project, the IDE may update this file.
-
-The project file uses JSON format. When you click it in the Explorer, you can look at its content within the code editor. However, the IDE considers this file read-only; thus, it does not allow you to edit it directly. The little shield icon to the right of the filename indicates this read-only state.
-
-<ClickableImage src="/images/getting-started/klive-project-in-editor.png" width={675} />
-
-<Callout type="info" emoji="💡">
-Though you cannot edit this file with the IDE, you can modify it outside. Such modifications may lead to the loss of the project file if the IDE cannot parse `klive.project` while opening the project folder. If you ever decide to modify `klive.project` manually, make sure that particular project is not open in the IDE.
-</Callout>
-
-## Updating Old Projects
-
-If you created your Klive project before v0.32.0, you might have a project without a `build.ksx` file. After v0.4.0, these projects will not compile, inject, or run your code, as it needs the `build.ksx` file. Follow these steps to fix the issue:
-
-1. Open your project in Klive.
-2. With the **New file** context menu, add a new file to your project root folder. (It must be the same level as the `klive.project` file.)
-3. Type the following code into the `build.ksx` file:
-
-```javascript
-export function buildCode() {
-  $command("klive.compile")
-}
-
-export function injectCode() {
-  $command("klive.inject")
-}
-
-export function runCode() {
-  $command("klive.run")
-}
-
-export function debugCode() {
-  $command("klive.debug")
-}
-
-export function exportCode() {
-  $command("display-dialog export")
-}
+```
+MyGame/
+├─ code/
+│  └─ code.kz80.asm   the build root
+├─ build.ksx          the build functions
+└─ klive.project      the project's settings
 ```
 
-4. Close the project.
-5. Open the project again; Klive recognizes the `build.ksx` file and prepares the build functions accordingly.
-6. Now, you should be able to compile, inject, and run your code.
+<Shot
+  src="guides/projects/creating-projects/explorer-build-root.webp"
+  alt="The Project Explorer of a new ZX Spectrum 48K project, with the build root marked"
+  caption="A new project in the Project Explorer; the marker after code.kz80.asm shows the build root"
+  width={420}
+/>
 
+- **`klive.project`** stores the project's machine and model, its build root, breakpoints, project
+  settings and IDE state. Klive updates it while you work. It opens read-only in the editor.
+- **`build.ksx`** holds the functions behind Compile, Inject, Run, Debug and Export, and any build
+  commands you add. See [The build system](/en/guides/projects/build-system/).
+- **The source files** of the template.
+
+In the Project Explorer, a home icon in front of the root folder's name means the folder is a Klive
+project.
+
+<Callout type="warning">
+Do not edit `klive.project` while the project is open in Klive: Klive writes the file itself and
+overwrites your changes. If Klive cannot read the file when it opens the folder, the folder opens as
+a plain folder.
+</Callout>
+
+## The build root
+
+The *build root* is the main source file, the one Klive compiles; the files it includes are compiled
+with it. A project has one build root, which the template sets. The Explorer marks it with a build
+icon after the file name.
+
+To make another file the build root, right-click it in the Explorer and choose **Promote to Build
+Root**. The command appears only for source files (see
+[File types](/en/guides/projects/file-types/)). **Demote from Build Root** on the current build root
+leaves the project without one. Renaming the build root keeps it the build root.
+
+## Build, run and debug from the build bar
+
+When the build root is the active document, the build bar appears at the right end of the document
+tab bar:
+
+<Shot
+  src="guides/projects/creating-projects/build-bar.webp"
+  alt="The build buttons at the right of the document tab bar"
+  caption="The build bar over the build root"
+  width={520}
+/>
+
+| Button (tooltip) | `build.ksx` function | What it does |
+| --- | --- | --- |
+| **Compile code** | `buildCode` | Compiles the build root. Errors go to the Build output and the editor. |
+| **Inject code into the virtual machine** | `injectCode` | Compiles, then writes the code into the paused machine's memory. You resume the machine and start the code yourself, for example with `RANDOMIZE USR 32768`. Not shown on the ZX Spectrum Next, which loads a `.nex` file instead. |
+| **Inject code and start the virtual machine** | `runCode` | Compiles, restarts the machine, injects the code and runs it. |
+| **Inject code and start debugging** | `debugCode` | The same, in a debug session: breakpoints stop the program. See [Running and debugging](/en/guides/debugging/run-debug/). |
+| **Show script output** | – | Opens the output of the last build function the bar ran, as a document. |
+
+The buttons are disabled while a compile is running. Each one runs a function of `build.ksx`, so you
+can change what a button does by editing that function. The same functions, with **Export code...**,
+are in the **Build** menu.
+
+When you run or debug, Klive compiles the code (and stops if it fails), restarts the machine and
+lets its ROM reach a point where starting a program is safe, typing keys for it where needed. Then it
+pauses the machine, injects the code, sets the program counter to the entry point and resumes.
+
+<Callout type="info">
+Projects created before Klive v0.32.0 have no `build.ksx`, and the build bar does nothing for them.
+[The build system](/en/guides/projects/build-system/#the-default-build-file) shows the file to add.
+</Callout>
+
+## Related
+
+- [Project templates](/en/guides/projects/project-templates/)
+- [The Project Explorer](/en/guides/projects/project-explorer/)
+- [The build system](/en/guides/projects/build-system/)
+- [Exporting your program](/en/guides/projects/exporting-code/)
+- [Machine types](/en/reference/machine-types/)

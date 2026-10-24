@@ -7,7 +7,7 @@ import { Callout } from 'nextra/components'
 # The Profiler
 
 <Callout type="info">
-This is one of Klive's [advanced debugging features](/en/guides/debugging/advanced-debugging), which are on by
+This is one of Klive's [advanced debugging features](/en/guides/customizing/advanced-debugging/), which are on by
 default; if you turned them off, run `set -u features.advancedDebugging 1` in the IDE, then restart Klive.
 </Callout>
 
@@ -34,11 +34,11 @@ one switch: starting the profiler turns coverage on, and resetting one resets th
 A profile covers a **window**: from the moment you start it until you stop it. Inside that window
 the machine may run at full speed, pause, and step.
 
-1. **Debug → Start Profiling** resets the profile and starts a new window, with the call graph on.
+1. **Debug › Start Profiling** resets the profile and starts a new window, with the call graph on.
 2. Run the part of the program you want to measure.
-3. **Debug → Stop Profiling** freezes the data and opens the **Profiler** document.
+3. **Debug › Stop Profiling** freezes the data and opens the **Profiler** document.
 
-**Debug → Profiler** opens the document at any time. Its toolbar starts, stops, clears and exports
+**Debug › Profiler** opens the document at any time. Its toolbar starts, stops, clears and exports
 the profile too, and its **Call graph** switch decides whether the next start records the call graph.
 
 ### Profiling exactly one pass
@@ -195,3 +195,9 @@ callers in proportion to the time each spent in it.
 | `show-profiler` (`shprof`), `hide-profiler` | Open or close the Profiler document. |
 
 See the [commands reference](/en/reference/commands#profile) for the details.
+
+## Related
+
+- [Code coverage and the heat map](/en/guides/analysis/code-coverage/)
+- [Measuring T-states](/en/guides/debugging/measure-t-states/)
+- [The Call Stack and Variables panels](/en/guides/debugging/call-stack-variables/)

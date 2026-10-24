@@ -1,0 +1,106 @@
+---
+description: "See the default keys of Klive's debugging, navigation and recording shortcuts on macOS, Windows and Linux, and change them with the set command."
+---
+
+import { Callout, Steps } from 'nextra/components'
+
+# Keyboard shortcuts
+
+Klive's stepping, reverse-stepping, navigation, full-screen and recording shortcuts can be changed.
+This page lists their defaults on each platform and shows how to give an action another key.
+
+## The shortcuts you can change
+
+| Action | Setting | macOS | Windows | Linux |
+| --- | --- | --- | --- | --- |
+| Step Into | `shortcuts.stepInto` | <kbd>F12</kbd> | <kbd>F11</kbd> | <kbd>F11</kbd> |
+| Step Over | `shortcuts.stepOver` | <kbd>F10</kbd> | <kbd>F10</kbd> | <kbd>F10</kbd> |
+| Step Out | `shortcuts.stepOut` | <kbd>Shift</kbd>+<kbd>F12</kbd> | <kbd>Shift</kbd>+<kbd>F11</kbd> | <kbd>Shift</kbd>+<kbd>F11</kbd> |
+| Step Over Line | `shortcuts.stepOverLine` | <kbd>Shift</kbd>+<kbd>F10</kbd> | <kbd>Shift</kbd>+<kbd>F10</kbd> | <kbd>Shift</kbd>+<kbd>F10</kbd> |
+| Step Back | `shortcuts.stepBack` | <kbd>Option</kbd>+<kbd>F12</kbd> | <kbd>Alt</kbd>+<kbd>F11</kbd> | <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>F11</kbd> |
+| Step Forward | `shortcuts.stepForward` | <kbd>Option</kbd>+<kbd>Shift</kbd>+<kbd>F10</kbd> | <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>F10</kbd> | <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>F10</kbd> |
+| Reverse Step Over | `shortcuts.stepBackOver` | <kbd>Option</kbd>+<kbd>F10</kbd> | <kbd>Alt</kbd>+<kbd>F10</kbd> | <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>F10</kbd> |
+| Reverse Step Out | `shortcuts.stepBackOut` | <kbd>Option</kbd>+<kbd>Shift</kbd>+<kbd>F12</kbd> | <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>F11</kbd> | <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>F11</kbd> |
+| Reverse Continue | `shortcuts.reverseContinue` | <kbd>Option</kbd>+<kbd>F5</kbd> | <kbd>Alt</kbd>+<kbd>F5</kbd> | <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>F5</kbd> |
+| Go Back | `shortcuts.navigateBack` | <kbd>Control</kbd>+<kbd>-</kbd> | <kbd>Alt</kbd>+<kbd>←</kbd> | <kbd>Alt</kbd>+<kbd>←</kbd> |
+| Go Forward | `shortcuts.navigateForward` | <kbd>Control</kbd>+<kbd>Shift</kbd>+<kbd>-</kbd> | <kbd>Alt</kbd>+<kbd>→</kbd> | <kbd>Alt</kbd>+<kbd>→</kbd> |
+| Toggle Full Screen | `shortcuts.fullScreen` | <kbd>Control</kbd>+<kbd>Shift</kbd>+<kbd>F9</kbd> | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>F9</kbd> | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>F9</kbd> |
+| Start/stop IDE + Emulator recording | `shortcuts.recordIdeEmu` | <kbd>Control</kbd>+<kbd>Shift</kbd>+<kbd>F7</kbd> | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>F7</kbd> | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>F7</kbd> |
+
+Step Into is <kbd>F12</kbd> on macOS because the system uses <kbd>F11</kbd> for Show Desktop. On Linux
+the reverse-stepping keys add <kbd>Ctrl</kbd>, because GNOME uses <kbd>Alt</kbd> with several
+function keys for window actions. The menus show the keys in effect.
+
+## Change a shortcut
+
+<Steps>
+
+### Open the command prompt
+
+In the IDE window, open the **Command** pane. See [The command prompt](/en/guides/editing/command-prompt/).
+
+### Set the key
+
+Run `set -u` with the setting from the table and the new key:
+
+```text
+set -u shortcuts.stepInto "F7"
+```
+
+The `-u` option stores it in your user settings, so it applies to every project.
+
+### Restart Klive
+
+The menus may pick the key up at once, but restart Klive to be sure it is used everywhere.
+
+</Steps>
+
+To return to the default, run the same command without a key:
+
+```text
+set -u shortcuts.stepInto
+```
+
+## How to write a key
+
+A key is written as modifiers and a key joined with `+`, for example `"Alt+F7"` or
+`"CmdOrCtrl+Shift+R"`. Case does not matter.
+
+| Modifier | Windows and Linux | macOS |
+| --- | --- | --- |
+| `CmdOrCtrl` | <kbd>Ctrl</kbd> | <kbd>Cmd</kbd> |
+| `Ctrl` | <kbd>Ctrl</kbd> | <kbd>Control</kbd> |
+| `Cmd` | – | <kbd>Cmd</kbd> |
+| `Alt`, `Option` | <kbd>Alt</kbd> | <kbd>Option</kbd> |
+| `Shift` | <kbd>Shift</kbd> | <kbd>Shift</kbd> |
+
+Keys are the letters `A`–`Z`, the digits `0`–`9`, the function keys `F1`–`F24`, `Enter`,
+`Backspace`, `Delete`, `Esc`, `Tab`, `Space`, `Up`, `Down`, `Left`, `Right`, and punctuation such
+as `-`.
+
+<Callout type="info" emoji="💡">
+The code editor gives way to the stepping keys: when one of them is also an editor key, the stepping
+action wins. Your operating system may still take a key for itself, and then its own action wins.
+</Callout>
+
+## Fixed shortcuts
+
+These keys cannot be changed:
+
+| Action | macOS | Windows and Linux |
+| --- | --- | --- |
+| Start or continue (**Machine › Start**) | <kbd>F5</kbd> | <kbd>F5</kbd> |
+| Start with Debugging | <kbd>Ctrl</kbd>+<kbd>F5</kbd> | <kbd>Ctrl</kbd>+<kbd>F5</kbd> |
+| Pause | <kbd>Shift</kbd>+<kbd>F5</kbd> | <kbd>Shift</kbd>+<kbd>F5</kbd> |
+| Stop, Restart | <kbd>F4</kbd>, <kbd>Shift</kbd>+<kbd>F4</kbd> | <kbd>F4</kbd>, <kbd>Shift</kbd>+<kbd>F4</kbd> |
+| Select machine… | <kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>M</kbd> | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>M</kbd> |
+| Quick Save State, Quick Restore State | <kbd>Cmd</kbd>+<kbd>Option</kbd>+<kbd>S</kbd>, <kbd>Cmd</kbd>+<kbd>Option</kbd>+<kbd>L</kbd> | <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>S</kbd>, <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>L</kbd> |
+| Settings..., Open File... | <kbd>Cmd</kbd>+<kbd>,</kbd>, <kbd>Cmd</kbd>+<kbd>O</kbd> | – |
+| Capture or release the mouse (ZX Spectrum Next) | <kbd>Cmd</kbd>+<kbd>M</kbd> | <kbd>Ctrl</kbd>+<kbd>M</kbd> |
+
+## Related
+
+- [Running and debugging](/en/guides/debugging/run-debug/)
+- [Reverse debugging](/en/guides/debugging/reverse-debugging/)
+- [Navigation](/en/guides/editing/navigation/)
+- [`set`](/en/reference/commands#set) command

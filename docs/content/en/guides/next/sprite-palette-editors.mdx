@@ -1,0 +1,139 @@
+---
+description: "Draw ZX Spectrum Next sprites in the sprite editor, edit .pal and .npl palette files, and view Next picture files in the IDE."
+---
+
+import { Callout, Steps } from 'nextra/components'
+
+# Sprite and Palette Editors
+
+Klive edits the ZX Spectrum Next's sprite sheets and palette files in the IDE, and shows several of
+its picture formats. Open the file in the Explorer and it opens in the matching editor or viewer;
+changes are written back to the file as you make them.
+
+*Applies to: ZX Spectrum Next files; the editors work whatever machine is running.*
+
+## Which file opens what
+
+| Extension | Opens in | Edits |
+|---|---|---|
+| `.spr` | The sprite editor | Yes |
+| `.pal` | The palette editor | Yes |
+| `.npl` | The palette editor, with a transparency colour | Yes |
+| `.sl2`, `.nxi` | The Layer 2 picture viewer | No |
+| `.scr` | The ULA screen viewer | No |
+| `.nex` | The [NEX viewer](/en/guides/next/nex-files/), which shows the file's palette and loading screens | No |
+| `.shc`, `.shr`, `.slr`, `.vid` | A placeholder that says *Not implemented yet* | No |
+
+## The sprite editor
+
+A `.spr` file is a sheet of 16×16 sprites with one byte (8 bits) a pixel, 256 bytes each: the format
+the Next's pattern memory uses. The editor shows the sheet down one side, the selected sprite large in
+the middle, and a preview.
+
+<Steps>
+
+### Open the sheet
+
+Double-click the `.spr` file in the Explorer. An empty file starts with one blank sprite; a file
+whose length is not a whole number of sprites keeps its trailing bytes and says so.
+
+### Pick the colours
+
+The editor draws with the **Pen** colour and the **Fill** colour; **X** swaps them. Click a colour in
+the palette to make it the pen colour, right-click it to make it the fill colour. Dragging paints with
+the pen; right-dragging paints with the fill colour.
+
+### Draw
+
+Choose a tool from the tool rail: **Select** (`M`), **Pencil** (`P`), **Line** (`L`), **Rectangle**
+(`R`), filled rectangle (`Shift+R`), **Circle** (`E`), filled circle (`Shift+E`) and **Paint** (`F`).
+The rail also rotates the sprite clockwise or counter-clockwise and flips it horizontally or
+vertically.
+
+### Work with the sheet
+
+`[` and `]` select the previous and next sprite. The sheet's buttons add, duplicate, delete and move
+sprites, and show the sheet with or without a gap between the sprites. With the select tool, mark a
+region to cut, copy or clear pixels; without a selection, cut and copy take the whole sprite.
+
+</Steps>
+
+Every change is saved to the file shortly after you make it, and a closing tab never loses a pending
+write.
+
+| Action | Shortcut |
+|---|---|
+| Undo, redo | `Ctrl+Z`, `Ctrl+Shift+Z` (`Cmd` on macOS) |
+| Cut, copy, paste | `Ctrl+X`, `Ctrl+C`, `Ctrl+V` (`Cmd` on macOS); a pasted region floats until you place it |
+| Clear the selected region | `Delete` |
+| Zoom in, out, fit to the pane | `+`, `-`, `0` |
+
+The view buttons show the pixel grid, the **onion skin** (the previous sprite ghosted through the
+transparent pixels, for animation), and the transparency colour. **Play** runs the sheet as an
+animation at the speed you set in frames per second.
+
+### Which palette it draws with
+
+The editor colours the sprites with the sprite palette of the **running ZX Spectrum Next**, so they
+look as they will on screen; pick the **First sprite palette** or the **Second sprite palette**, and
+the one the machine draws with is marked as live. With no Next running, it falls back to a default
+ramp and says *No machine — default ramp*.
+
+### Patterns from a running program
+
+The [Sprite Inspector](/en/guides/next/sprite-inspector/) works the other way round. Its
+**Open in sprite editor** opens one pattern from the machine's pattern memory in a read-only sprite
+editor, and **Export pattern RAM as .spr** writes the whole pattern memory to a `.spr` file that you
+can then edit. The `export-patterns` command does the same from the command prompt.
+
+## The palette editor
+
+A `.pal` or `.npl` file holds the 256 entries of a Next palette, two bytes an entry, in 9-bit RGB333.
+An `.npl` file adds a transparency colour after them.
+
+<Steps>
+
+### Select a colour
+
+Click a palette entry, or move the selection with the arrow keys. The panel shows the entry's code and index
+(*Color $1C3 (42)*) and its levels on the **Red**, **Green** and **Blue** scales.
+
+### Change it
+
+Click a level on the **Red**, **Green** or **Blue** scale, or focus a scale and use the up and
+down arrows. Press `8` to use the 8-bit form of the palette or `9`
+for the full 9-bit form, and `Space` or `Enter` to toggle the entry's priority bit.
+
+### Set the transparency colour (`.npl` only)
+
+Press `T` to make the selected entry the **Transparency Color**, `C` to clear it.
+
+</Steps>
+
+**Undo** and **Redo** step through your changes, which are written to the file as you make them.
+`Tab` and `Shift+Tab` move the focus between the palette and the scales. The help strip at the bottom
+of the editor lists these keys.
+
+To see the palettes the machine is using right now rather than a file, open the
+[Next Palettes panel](/en/guides/next/next-registers/#the-next-palettes-panel).
+
+## Picture files
+
+- **`.scr`**: a 6,912-byte ULA screen, shown as the Spectrum displays it. **Display screen data dump**
+  opens its bytes as a dump. A file of any other length is reported as invalid.
+- **`.sl2`** and **`.nxi`**: a Layer 2 picture. The size gives the resolution, with a toggle between
+  320×256 and 640×256 where the size cannot tell them apart, and **Banks** outlines the 16K banks the
+  picture fills. See [Layer 2 picture files](/en/guides/next/layer2-inspector/#layer-2-picture-files).
+- **`.shc`** (Timex HiColor), **`.shr`** (Timex HiRes), **`.slr`** (LoRes) and **`.vid`**: these open,
+  but their viewers are not written yet.
+
+<Callout type="info">
+A NEX file's loading screens are shown by the NEX viewer itself, in all the formats a NEX can carry.
+</Callout>
+
+## Related
+
+- [The Sprite Inspector](/en/guides/next/sprite-inspector/)
+- [Next Registers, memory mapping and palettes](/en/guides/next/next-registers/)
+- [The Layer 2 Inspector](/en/guides/next/layer2-inspector/)
+- [File types](/en/guides/projects/file-types/)

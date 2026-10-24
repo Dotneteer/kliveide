@@ -25,7 +25,7 @@ klive ide mem '$5C00' 64
 ```
 
 Both drive the Klive you have open. To run a program **without** the IDE, on a machine of its own in
-a CI job, use [`klive run`](/en/guides/testing/unit-tests-cli#klive-run): it builds the project or
+a CI job, use [`klive run`](/en/guides/testing/command-line/#klive-run): it builds the project or
 loads a tape, snapshot or NEX file, runs it until a condition, and writes screenshots, memory dumps
 and registers.
 
@@ -98,7 +98,7 @@ which only you can read.
 test. Every verb takes `--json` for machine-readable output.
 
 <Callout type="info">
-[Getting the `klive` command](/en/guides/testing/unit-tests-cli#getting-the-klive-command) says how to
+[Getting the `klive` command](/en/guides/testing/command-line/#getting-the-klive-command) says how to
 put it on your PATH. A development build runs it with Klive's own Electron binary in Node mode:
 `ELECTRON_RUN_AS_NODE=1 npx electron out/main/cli.js ide status`. The protocol below needs no
 launcher at all.
@@ -360,3 +360,10 @@ memory = call("memory.read", address=0x8000, length=5)
 print(base64.b64decode(memory["data"]).decode("latin-1"))
 sock.close()
 ```
+
+## Related
+
+- [Klive on the command line and in CI](/en/guides/testing/command-line/)
+- [The command prompt](/en/guides/editing/command-prompt/)
+- [The `klive` command line (reference)](/en/reference/command-line/)
+- [Commands reference](/en/reference/commands)

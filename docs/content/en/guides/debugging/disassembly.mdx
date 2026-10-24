@@ -1,45 +1,69 @@
 ---
-description: "You can view the disassembly of the memory with the View | Machine Views | Disassembly menu command:"
+description: "Read the machine's memory as Z80 instructions, follow the execution point, set breakpoints in the gutter and see how conditional branches will go."
 ---
 
 import { Callout } from 'nextra/components'
 
 # The Disassembly View
 
-You can view the disassembly of the memory with the **View | Machine Views | Disassembly** menu command:
+The **Disassembly** view shows memory as Z80 instructions, around the execution point or across
+the whole address space. Use it to see the code that actually runs &mdash; ROM routines, code your
+program generated, a program loaded from tape &mdash; to set breakpoints where there is no source,
+and to see which way each conditional branch will go.
 
-<ClickableImage src="/images/working-with-ide/disass-view.png" width={512} />
+<Shot
+  src="guides/debugging/disassembly/disassembly-view.webp"
+  alt="The Disassembly view paused at the execution point, with the breakpoint gutter, addresses, bytes, T-states, branch marks and instructions"
+  caption="The Disassembly view, paused at the execution point."
+  width={760}
+/>
 
-Besides viewing the disassembly, you can add breakpoints by clicking with the right mouse button to the left of the line address (see address line `0007`):
+## Open it
 
-<ClickableImage src="/images/working-with-ide/disassembly-breakpoint-message.png" width={512} />
+Choose **View › Machine Views › Disassembly**, or click **Show Disassembly Panel** on the IDE
+toolbar.
 
-When you click an existing breakpoint with the right mouse button, the IDE removes it.
+With **Follow PC** on (the default), the view disassembles about 1024 bytes from the program
+counter and follows it as you step. Turn it off to disassemble the whole memory, or one bank.
 
-<Callout type="info" emoji="💡">
-Currently, you can only add execution breakpoints to the Disassembly view. With interactive [commands](/en/reference/commands) (see the ones starting with `bp-`), you can create memory and I/O operations breakpoints.
-</Callout>
+## Breakpoints in the gutter
 
-By default, when you display the disassembly, it uses the current value of the PC (Program Counter) register and disassembles up to 1024 bytes of code.
+The narrow gutter left of each address holds the row's breakpoint:
 
-Turn off the **Follow PC** option to disassemble the entire memory (or a selected bank). With this option turned off, models supporting memory paging display a second row of options:
+| Gesture | Does |
+| --- | --- |
+| Right-click | Adds an execution breakpoint, or removes the one there |
+| Double-click a breakpoint | Opens the breakpoint dialog, where you can change its **Type** to memory read or write, I/O, and the rest, and add a condition |
+| <kbd>Shift</kbd>+click | Adds a one-shot breakpoint, or toggles one-shot |
+| <kbd>Ctrl</kbd>+click (<kbd>Cmd</kbd>+click on macOS) | Runs to this row |
 
-<ClickableImage src="/images/working-with-ide/banked-disass-view.png" width={512} />
+Hover the gutter to see these gestures in a tooltip. Right-clicking elsewhere on a row opens a menu
+with the same actions by name &mdash; **Add Breakpoint** / **Remove Breakpoint**, **Add One-Shot
+Breakpoint**, **Run to Here** and **Edit Breakpoint...** &mdash; followed by the annotation entries
+(**Label...**, **End-of-Line Comment...** and others), which are described in
+[Annotating a disassembly and ROMs](/en/guides/analysis/annotations/). Breakpoints of any type can
+also be set in the [Breakpoints panel](/en/guides/debugging/breakpoints/#the-breakpoints-panel) or
+with [`bp-set`](/en/reference/commands/#bp-set).
 
-## Display Options
+## The toolbar
 
-The Disassembly View provides a few options to display and navigate the memory contents:
-- **Decimal**: Turns on or off the decimal display (off, by default). When turned off, memory addresses, opcodes, and instructions are displayed with decimal numbers; otherwise, they are hexadecimal.
-- **Sys vars**: Names 16-bit data addresses after the machine's system variables (on, by default). See [System Variable Names](#system-variable-names) below.
-- **ROM labels**: Shows the ROM's annotations &mdash; its labels, comments and data regions (on, by default). It appears when the machine's ROM has annotations. See [ROM annotations](#rom-annotations) below.
-- **Ram**: This option (on, by default) allows you to disassemble the RAM's contents.
-- **Screen**: This option (off, by default) lets you disassemble the screen memory's ($4000-$5AFF) contents.
-- **Bank**: This option (on, by default) allows you to turn the display of bank labels on or off in front of memory addresses. This option is available only for models that support memory paging.
-- **Go To**: Type an address into this box and press Enter to jump to the particular address. If the particular address is not at a disassembled instruction's boundary, it will settle at the next instruction. In decimal mode, you can type decimal addresses; otherwise, use hexadecimal addresses.
+- **Decimal**: show addresses, bytes and operands in decimal instead of hexadecimal (off by default).
+- **Sys vars**: name 16-bit data addresses after the machine's system variables (on by default).
+  See [System variable names](#system-variable-names).
+- **ROM labels**: show the ROM's annotations &mdash; its labels, comments and data regions (on by
+  default; shown when the machine's ROM has annotations). See
+  [ROM annotations](/en/guides/analysis/annotations/#rom-annotations).
+- **Follow PC**: follow the program counter, as above.
+- **RAM:** and **Screen:** (with Follow PC off): disassemble the RAM (on by default) and the screen
+  memory at `$4000`-`$5AFF` (off by default).
+- **Bank**: show the bank label in front of each address (machines that page memory).
+- **Go To**: type an address and press <kbd>Enter</kbd>. An address inside an instruction settles on
+  the next instruction.
 
-A little icon (up or down arrow) is before the **Go To** address box. Unless the machine is paused, this icon is disabled. When the machine is in a paused state, clicking the button jumps to the disassembly at the address pointed by the PC. The direction of the arrow indicates where the PC position can be found relative to the current view.
+The arrow button before **Go To** (**Go to the PC address**) is enabled while the machine is paused:
+it scrolls to the execution point, and its direction says whether that is above or below the view.
 
-## System Variable Names
+## System variable names
 
 Wherever an instruction loads or stores through a literal 16-bit address, and that address is one of
 the machine's system variables, the view prints the variable's name instead of the number:
@@ -51,7 +75,7 @@ ld sp,RAMTOP
 ld (CHANS),hl
 ```
 
-The names come from the same table the [System Variables](./system-vars) panel lists, so each machine
+The names come from the same table the [System Variables](/en/guides/debugging/machine-state-panels/) panel lists, so each machine
 contributes its own — the ZX Spectrum 48K, 128K and +3, the ZX Spectrum Next, the ZX81 and the
 ZX80 each have one.
 Names are spelled so an assembler would accept them: the ROM manuals print several with a space or a
@@ -72,7 +96,7 @@ The same naming appears in the disassembly of a popped-out `.NEX` bank, with its
 switch. There, a label you wrote yourself always wins: your label says something about *this*
 program, while a system variable name only states a fact about the machine.
 
-## Branch Verdicts
+## Branch verdicts
 
 While a machine is running or paused, the Disassembly View marks every conditional branch it can see
 with what that branch will do next, worked out from the CPU's current flags and registers. A narrow
@@ -101,8 +125,8 @@ it is a call either way — while a `JP` to the same address shows a plain arrow
 in a one-byte encoding, so it takes the hook too, and its readout says `calls $0008` rather than
 naming a direction.
 
-A taken branch is coloured; a fall-through is neutral grey. Falling through is not an error, so it is
-never marked in red — red and orange belong to breakpoints and to the execution point.
+A taken branch's mark is highlighted; a fall-through's is drawn plainly. Falling through is not an
+error, so it is never marked the way breakpoints and the execution point are.
 
 ### Certain and speculative marks
 
@@ -150,219 +174,25 @@ Three cases show a verdict but no destination, on purpose:
 While the machine is free-running rather than paused, the marks follow the CPU state as it is
 sampled, a few times a second. Pause or single-step for a verdict that stands still.
 
-## Annotations on Every Machine
+## Looking at one bank
 
-The Disassembly view is an *annotated* listing: rows carry names, synopsis comments above them,
-end-of-line comments beside them, and ranges marked as data list as data. The annotations are kept
-in a file beside the program they describe &mdash; `game.nex.dis`, `jetpac.z80.dis`, `game.p.dis`
-&mdash; and the one in use is the **active annotation set**. It is chosen for you when a program gets
-into the machine:
+On machines that page memory, a second toolbar row has a **64K View** switch. On (the default), the
+view disassembles the 64K the CPU sees now. Off, choose a ROM page or RAM bank in **Select bank**:
+the view disassembles that partition even when it is not paged in.
 
-- **`nex-run`** uses the `.NEX` file's annotations;
-- **`zx-snapshot`** uses `<snapshot>.dis`;
-- **`tape-load`** of a ZX80 or ZX81 program file uses `<file>.dis`;
-- **opening a project** uses `annotations.dis` in the project folder (or the file the project's
-  `annotations` setting names).
+The **Offset** chooser sets the address the bank is disassembled at, at one of the 8K page
+boundaries, so the addresses match where the code runs.
 
-The file does not have to exist: your first label or comment creates it. For anything else &mdash; a
-game loaded from a Spectrum tape, say &mdash; use [`ann-new`](/en/reference/commands#ann-new) or
-[`ann-open`](/en/reference/commands#ann-open); [`ann-info`](/en/reference/commands#ann-info) says which set
-is active.
+The bank column and the bank chooser use the partition names of
+[the Memory view](/en/guides/debugging/memory/#machine-specific-memory-partitions).
 
-Right-click a row to annotate it: **Label...**, **Synopsis Comment...**, **End-of-Line Comment...**,
-**Operand Label...**, **Mark As Code / Bytes / Words / Text / Skip**, **Mark As Fill (.fillb)** (runs of
-one repeated byte, such as padding, listed as `.fillb 1170,$FF`), **Mark As Bit-7 Text (.defc)** (every
-machine but the ZX80 and ZX81: strings whose last character has bit 7 set, listed as `.defc "TEXT"`),
-**Mark As Copper** and **Mark As DMA** (on the ZX Spectrum Next), **Go to Definition**, and **Go to References**. The same keys as in a popped-out `.NEX` bank work on
-the row you last clicked (`L` for a label, `C` for an end-of-line comment, `Shift+C` for a synopsis,
-`Shift+F12` for references). The label goes in
-the bank the row is in &mdash; it follows that bank wherever it is paged &mdash; and the
-[`label`](/en/reference/commands#label) command does the same from the command prompt.
+A ZX Spectrum Next bank can also be popped out into its own document, with live contents and
+breakpoints relative to the bank; see [Running and inspecting NEX files](/en/guides/next/nex-files/#popping-a-bank-out).
 
-**Go to References** lists the rows that name a label: one entry for the row's own label and one for
-each label its operands name (`KEY_LEFT: call AT_LINE_START` offers both). The list shows each row's
-address, its instruction (a `.defw` row of a jump table counts too) and the label above it &mdash; the
-routine or table it sits in. **Go To** closes the list and scrolls there. Only the bank or ROM page
-the row is in is searched. The **Refs** column of the Labels list counts the same rows, so a label
-showing 3 there lists 3 here.
+## Related
 
-A row shows one name. Where the address has several &mdash; a label from your last build, one from
-the annotations, one from the ROM's &mdash; the build's wins, and the label's tooltip names where it
-came from and lists the others. The same names appear in the Execution History, the Call Stack
-(`MAIN+12`: the routine a return address is in), the Profiler's routines and the `dis` command.
-
-On the ZX80 and ZX81, memory appears at more than one address (the 16K RAM again at `$8000` and
-`$C000`, the ROM again at `$2000`). A label is kept for the byte, not the address, so it shows at every
-mirror, and a mirror row says `(mirror of $4082)`.
-
-### ROM annotations
-
-Calls into the ROM read by name: `call SA_BYTES` rather than `call $04C2`. Klive ships annotations
-for its ROMs, written for Klive, and finds them by the ROM's *bytes* rather than by which ROM slot is
-paged: a copy of the 48K ROM loaded from your own file gets them too, and on a ROM Klive does not know
-(a modified 48K ROM, say) they apply wherever its bytes still match. ROM labels are set in italics so
-your own stand out.
-
-The 48K ROM's annotations are complete (completeness level 2): every call and jump target has a
-label, every labelled routine has a synopsis saying what it does, takes and returns, and the lines
-whose purpose is not obvious carry a comment. The 128K's ROM 1 is complete too: it takes the 48K
-ROM's annotations wherever its bytes match and adds its own for the routines the 128K changed and
-the code it added. The 128K's editor ROM (ROM 0) is complete as well: its menus, the full-screen
-editor, the RAM disk, PLAY, the RS232 and tape commands are all labelled, described and commented.
-So are the 48K BASIC ROMs (ROM 3) of the +2A and +3, in the v4.0, v4.1 and Spanish versions (the +3E
-shares v4.0's): they take the 128K's annotations where their bytes match and describe what Amstrad
-changed, such as the disk motor's time-out and the Spanish messages. The +3's disk operating
-system ROM (ROM 2, +3DOS) is complete too, in the same three versions: its jump table, the files and
-directory, the sector cache, the floppy controller driver and the built-in disk test. The +2E and
-+3E share v4.0's ROM 3, and their ROM 2 is annotated as well, including its hard disk driver,
-partitions and drive letters. The +3's editor ROM (ROM 0) and syntax ROM (ROM 1) are complete in all four
-versions (v4.0, v4.1, Spanish and +3E), the +3E's with its window, memory and file channels and
-its commands for partitions and streams. The ZX Spectrum Next's ROMs are complete as well: the four
-pages of NextZXOS (the system ROM with its start-up menu, Browser and window channels; NextBASIC's
-command ROM; the DOS ROM with its IDEDOS and +3DOS-style jump tables and the SD card driver; and the
-48K BASIC page NextZXOS extends), the alternate ROM with NextBASIC's editor and its graphics, sound
-and file commands, the DivMMC ROM's file system and the Multiface ROM's NMI menu; the `enNextLG.rom`
-variant shares them. In these ROMs the disassembly lists the address after each call into another
-ROM as a `.defw`, and the error code after each error call as a `.defb`. The other ROMs' annotations
-are still sparse.
-
-Use `bp-set ROM:<name>` to break at a ROM label, and `ROM:<name>` in a breakpoint condition.
-
-#### Editing a ROM's annotations
-
-A ROM's annotations are edited in a **working copy**, never in the shipped file. Make one with
-[`rom-ann-new`](/en/reference/commands#rom-ann-new), or with **Start Editing ROM Annotations...** on a
-ROM row's context menu:
-
-```text
-rom-ann-new sp48.rom
-```
-
-For a ROM Klive ships, the working copy is an exact copy of its shipped annotations, kept in Klive's
-home folder as `RomAnnotations/sp48.rom.dis`, where it survives an update. For your own ROM file it is
-`<file>.dis` beside it. Once it exists, it **replaces** the shipped annotations for that ROM: you can
-rename, change or remove any shipped label, comment or region, and only the working copy is shown.
-Without a working copy, the shipped annotations are shown and a ROM row cannot be edited.
-
-Opening a working copy &mdash; from **Open ROM Annotations** on a ROM row, with
-[`rom-ann-open`](/en/reference/commands#rom-ann-open), or by opening the `.rom.dis` file &mdash; shows
-the **ROM annotation editor**. It finds the ROM by its bytes and shows two panes: on the left,
-everything about the file; on the right, its pages, one row each with the ROM's name and CRC, its
-size, its labels, how many targets still need one (**To label**) and its completeness level. The
-row's disassembly icon opens a page with everything a NEX bank has: select rows, right-click for the annotation menu, or use the
-shortcuts (`L` label, `C` end-of-line comment, `Shift+C` synopsis, `O` operand label, `M`/`R` manage
-labels/regions, `B` bank comment). No machine needs to be running. If no ROM matches the file, the
-editor says so and shows nothing else. With a working copy in place, ROM rows of the live view are
-editable too, and every edit shows wherever ROM names appear.
-
-A shipped annotation file opens **Read-only**; **Make working copy** copies it to your own folder
-and opens the copy to edit. The editor's **Ready** chip says whether the file passes every check a
-shipped annotation file must pass (the same as
-[`rom-ann-check`](/en/reference/commands#rom-ann-check)). **New entries are recorded as** chooses
-whether what you add is `observed` (worked out from the bytes) or `manual` (an interface fact from a
-manual); [`rom-ann-provenance`](/en/reference/commands#rom-ann-provenance) changes an existing entry.
-
-**To label** is the to-do list of completeness level 1, which needs a label on every `CALL`, `JP`,
-`RST`, `JR` and `DJNZ` target reached from code. It counts the targets that still have none, and its
-**next $xxxx** link opens the disassembly at the next one; each click moves on to the following
-target. A page with none left shows *none*.
-
-Rest the pointer on a completeness level &mdash; the **Ready** chip, *records level*, the
-**Completeness** column head or a page's level meter &mdash; and a card explains the three levels,
-marks the ones reached and the next one, and counts what is still missing: the targets without a
-label and the labels without a synopsis.
-
-**Export as source…** writes the whole ROM as one Klive Z80 assembly file, with your labels and
-comments, then assembles it and says whether it gives back the ROM byte for byte (the same as
-[`rom-ann-export`](/en/reference/commands#rom-ann-export)). **Open** opens the file it wrote.
-
-<Callout type="info">
-A working copy is written in exactly the format of Klive's own ROM annotation files. When it is
-ready, it can be copied into `src/public/roms/` of a Klive checkout unchanged.
-</Callout>
-
-## Banked Disassembly Views
-
-When your model supports memory paging, a new switch, **64K View**, is displayed in the second header row. It is turned on by default, and the current 64K memory (according to the current memory page settings) is displayed. When you turn this option off, you can choose the bank to display (ROM pages or RAM banks, depending on the machine type) from the **Select bank** dropdown. The Disassembly View will display only the disassembled contents of that segment, even if that segment is not paged in.
-
-The **Offset** dropdown lets you select a disassembly offset from one of the 8K page boundaries. This selection may help set a disassembly base address to emulate the page's location.
-
-## Popped-Out `.NEX` Banks
-
-A bank of a `.NEX` file opened as its own document shows the same disassembly listing, with a toolbar
-of its own. Beside the **Go To** box is a button that scrolls the listing to the **program counter**,
-the same way the arrow does in the Disassembly View.
-
-It is available only when the machine is **paused** *and* the program counter is currently inside
-this bank. Both halves matter, and neither is fussiness:
-
-- A running machine's program counter has moved on by the time it is read, so the row it scrolled to
-  would be an arbitrary instruction rather than the one about to execute.
-- A pop-out shows one 16K bank. The program spends most of its time in other banks, and a bank the
-  processor is not in has no row to go to at all &mdash; so the button is off far more often here
-  than in the Disassembly View, and that is the honest answer rather than a fault.
-
-The header's **Bank** readout tells you which case you are in: it ends with `· PC` exactly when the
-program counter is in this bank. The button lands on the row carrying the execution-point marker,
-which follows the listing's own numbering &mdash; so it is right even when the **Offset** dropdown
-lists the bank at an address it is not paged at.
-
-### Byte formats
-
-When you mark a range as **Bytes**, the region dialog also asks how to write it:
-
-- **4 bytes, hex** (the default): `.defb $3C, $42, $81, $FF`
-- **2 bytes, hex**: two values to a row
-- **1 byte, hex**: one value to a row
-- **1 byte, binary**: one value to a row with all eight bits, `.defb %00111100` &mdash; handy for
-  bitmaps, masks and flag tables
-
-The dialog opens on the format the range already has, and the **Manage Regions** list shows any format
-other than the default beside the type. Binary rows stay binary when you switch the listing to decimal,
-and they export to source that the Klive assembler reads back.
-
-### Copper Lists and DMA Programs
-
-When a `.NEX` file has an annotation file, you can tell the listing what a range of a bank holds. The
-**Annotations** menu and the region dialogs offer **Disassembly**, **Bytes**, **Words**, **Skip**, and
-two kinds for ZX Spectrum Next hardware programs:
-
-- **Copper** lists the range as a Copper list, one `.copper` instruction per two-byte word, with what
-  each instruction does in the comment column. The range must have an even number of bytes.
-- **DMA** lists the range as a zxnDMA program &mdash; the bytes a program sends to port `$6B` &mdash;
-  one `.dma` command per row.
-
-The rows use the same [`.copper`](/en/reference/z80-assembler/zx-next-copper) and
-[`.dma`](/en/reference/z80-assembler/zx-next-dma) pragmas the assembler accepts, and every row assembles back to the
-exact bytes it shows:
-
-```z80klive
-    .copper wait 96, 3              ; line 96 · x 24
-    .copper move $41, $E0           ; Palette Value (8 bit) ← $E0
-    .copper halt                    ; halt until the next restart
-    .dma reset                      ; WR6: reset
-    .dma wr0 a_to_b, transfer, $4000, $0020
-    .dma wr4 continuous, $4800      ; WR4: continuous mode, port B $4800
-```
-
-A DMA range is read the way the DMA reads it: the bits of each command byte decide how many bytes
-follow. A command the pragma cannot spell is shown as `.dma cmd` or `.defb`, with its meaning in the
-comment, and a command cut off by the end of the range says how many bytes it still expects. A label
-on an address or a length inside a command splits it into the
-[runtime-patching form](/en/reference/z80-assembler/zx-next-dma#runtime-patching-pattern), with the labelled field
-as a `.defw` row of its own.
-
-<Callout type="info">
-`$00` is a valid DMA command, so a range that runs into zero-filled memory lists many
-`.dma wr2 memory, decrement` rows. When a DMA range ends in a long run of zeros, the region dialogs
-offer to trim it.
-</Callout>
-
-The annotation file stores both kinds as byte regions with a `decode` key, so an older Klive opens the
-file and shows these ranges as plain `.defb` rows.
-
-## Machine-Specific Memory Partitions
-
-The bank column and the bank chooser name partitions exactly as the rest of the IDE does. See
-[Machine-Specific Memory Partitions](./memory#machine-specific-memory-partitions) in the Memory View
-for the names each machine uses.
+- [Breakpoints](/en/guides/debugging/breakpoints/)
+- [Annotating a disassembly and ROMs](/en/guides/analysis/annotations/)
+- [Exporting a disassembly as source](/en/guides/analysis/exporting-source/)
+- [The Memory view](/en/guides/debugging/memory/)
+- [The debugger loop](/en/under-the-hood/emulator-internals/debugger-loop/)

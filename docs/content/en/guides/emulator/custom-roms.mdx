@@ -1,0 +1,91 @@
+---
+description: "Run a ZX Spectrum 48K on a ROM of your choice, and name the ROMs Klive cannot ship: TR-DOS, esxDOS, the Timex and Scorpion ROMs, or another Interface 1 ROM."
+---
+
+import { Callout, Steps } from 'nextra/components'
+
+# Custom ROMs
+
+Klive ships the ROMs of most machines it emulates, but a few it is not allowed to distribute, and
+sometimes you want to test against a patched, diagnostic or alternative ROM. Every ROM file you can
+choose is on the **Machine** page of the Settings, which shows the options of the running machine
+only.
+
+## Choose a ROM
+
+<Steps>
+
+### Switch to the machine
+
+Start the machine the ROM is for (see [Choosing a machine](/en/guides/emulator/choosing-a-machine/)).
+The ROM options appear only while their machine runs.
+
+### Open Settings › Machine
+
+Open the [Settings](/en/guides/customizing/settings/) (**Klive › Settings...**, <kbd>Cmd</kbd>+<kbd>,</kbd>,
+on macOS; **File › Settings...** on Windows and Linux) and choose the **Machine** page. Its **ROM**
+group lists the ROMs of the running machine, each with the file in use.
+
+### Browse for the file
+
+Click **Browse...** next to the ROM and pick the file. Klive offers `.rom` and `.bin` files, and any
+other file through **All Files**. A file of the wrong size is refused with a message that says the
+size it needs.
+
+</Steps>
+
+Choosing a ROM, or removing one, restarts the machine.
+
+## The ROMs you can choose
+
+| Option | Machine | Size | Without it |
+| --- | --- | --- | --- |
+| **ZX Spectrum 48K ROM** | ZX Spectrum 48K (all models) | 16,384 bytes | The built-in 48K ROM |
+| **TR-DOS ROM** | Pentagon 128, Scorpion ZS-256 | 16,384 bytes | The disk drives stay off |
+| **esxDOS ROM** | ZX Spectrum 16K, 48K, 128K, +2A/+3/+2E/+3E | 8,192 bytes | The DivMMC stays off |
+| **Interface 1 ROM** | ZX Spectrum 16K, 48K, 128K, with the Interface 1 connected | 8,192 bytes | The second-edition ROM Klive ships |
+| **Timex ROM** | Timex TC2048, TC2068, TS2068 | 16K for the TC2048; 24K for a 2068 (the 16K HOME ROM followed by the 8K EXROM) | The Sinclair 48K ROM; a 2068 has no EXROM |
+| **Scorpion ZS-256 ROM** | Scorpion ZS-256 | 64K (four 16K pages) | The 128K ROMs, with TR-DOS from the TR-DOS ROM option |
+
+The **Timex ROM** row names the ROM of the model that runs: each of the three models keeps its own
+file.
+
+<Callout type="warning" emoji="⚠️">
+Klive cannot ship the TR-DOS, esxDOS, Timex and Scorpion ROMs: their rights holders are unknown or
+have not given permission. Use your own copies.
+</Callout>
+
+## Go back to the original
+
+- For the **ZX Spectrum 48K ROM**, click **Reset**. Klive asks *Are you sure you want to reset to the
+  default ZX Spectrum 48 ROM?*; confirm with **Yes**. The button is enabled only while a custom ROM is
+  in use.
+- For the others, click **Forget**. The machine goes back to what the table above says.
+
+## Where the choice is stored
+
+- **The ZX Spectrum 48K ROM belongs to the project.** Klive stores its path in the `config` section of
+  the project file, `klive.project`, under the `sp48RomFile` key, and uses it again whenever you open
+  the project, as long as the file is still there.
+- **The other ROMs are Klive settings**, not project settings: you name them once, and every project
+  uses them.
+
+## Machines with a known ROM
+
+With some machines, the IDE starts programs and tapes by driving the ROM's own editor, so it must know
+the ROM:
+
+- A **2068** ROM other than the known TS2068 one runs, but the IDE cannot start a program or a tape in
+  it.
+- With the **Scorpion's** own ROM, the IDE cannot start a program, a tape or a disk in its editor; load
+  them by hand. With the 128K ROMs (no Scorpion ROM named) they work as on the 128K.
+
+[Machine types](/en/reference/machine-types/) has the details of each machine.
+
+## Related
+
+- [Timex and Scorpion](/en/guides/machines/timex-scorpion/)
+- [TR-DOS disks](/en/guides/media/trdos-disks/)
+- [The Interface 1 and Microdrives](/en/guides/media/microdrives/)
+- [Tutorial: working with disks](/en/guides/media/disks-tutorial/): naming the esxDOS ROM for the DivMMC
+- [Settings](/en/guides/customizing/settings/)

@@ -29,8 +29,8 @@ A machine's models share its templates: the Pentagon 128 is a model of the ZX Sp
 
 | Template | Language | Build root | Needs |
 | --- | --- | --- | --- |
-| `default` | Klive Z80 assembly | `code/code.kz80.asm` (`code/code.z88.asm` on the Z88) | Nothing: the assembler is built in. |
-| `zx-basic` | ZX BASIC | `code/program.zxbas` | Nothing: Klive BASIC is built in. [ZX BASIC](/en/guides/languages/zx-basic/) explains the options and how to use Boriel BASIC instead. |
+| `default` | Klive Z80 assembly | `code/code.kz80.asm` (on the Z88, `code/code.z88.asm`, not set as the build root) | Nothing: the assembler is built in. |
+| `zx-basic` | ZX BASIC | `code/program.zxbas` | Nothing: Klive BASIC is built in. [Klive BASIC](/en/guides/languages/klive-basic/) explains the options; [Boriel BASIC](/en/guides/languages/boriel-basic/) how to build with zxbc instead. |
 | `sjasmplus` | sjasmplus assembly | `code/code.asm` | sjasmplus, set up as [sjasmplus](/en/guides/languages/sjasmplus/) describes. |
 | `pasta-80` | Pascal | `main.pas` | The PASTA/80 compiler, set up as [PASTA/80](/en/guides/languages/pasta80/) describes. |
 | `z88-dk` | C | `code/main.c` | z88dk, set up as [z88dk (C)](/en/guides/languages/z88dk/) describes. |
@@ -59,3 +59,9 @@ Every project has the same structure:
 - the source files of the template.
 
 [Creating a project](/en/guides/projects/creating-projects/) explains the project file, the build root, and the build bar.
+
+## Related
+
+- [Creating a project](/en/guides/projects/creating-projects/)
+- [File types](/en/guides/projects/file-types/)
+- [Machine types](/en/reference/machine-types/)

@@ -1,15 +1,19 @@
 ---
-description: "Klive IDE supports PASTA/80 out-of-the-box, provided you have the PASTA/80 Pascal compiler installed on your machine."
+description: "Set up the PASTA/80 Pascal compiler with Klive, then build and run ZX Spectrum Pascal programs from a Klive project."
 ---
 
 import { Callout } from 'nextra/components'
 
-# PASTA/80 Integration
+# PASTA/80
 
-Klive IDE supports **PASTA/80** out-of-the-box, provided you have the PASTA/80 Pascal compiler installed on your machine. After setting up the integration, you can use Klive IDE to edit, compile, run, and debug ZX Spectrum Pascal programs written for PASTA/80.
+**PASTA/80** is a Pascal compiler (Turbo Pascal 3.0 dialect) for Z80 machines. Once you have told
+Klive where it is, Klive builds `.pas` files with it and runs the result on the emulated machine.
+
+*Applies to: ZX Spectrum 48K, 128K, +2A/+3, +2E/+3E, Timex, Scorpion (the `pasta-80` template), and the
+ZX Spectrum Next.*
 
 <Callout type="warning" emoji="⚠️">
-PASTA/80 uses **SjasmPlus** as its assembler backend. You must install and configure SjasmPlus in Klive **before** setting up PASTA/80. See the [SJASMPLUS Integration](./sjasmp) page for instructions.
+PASTA/80 uses **SjasmPlus** as its assembler backend. You must install and configure SjasmPlus in Klive **before** setting up PASTA/80. See the [SJASMPLUS Integration](/en/guides/languages/sjasmplus/) page for instructions.
 </Callout>
 
 ## Prerequisites
@@ -20,27 +24,26 @@ PASTA/80 does not assemble the generated Z80 code itself — it delegates that s
 
 ### 2. Configure SjasmPlus in Klive
 
-Run the `sjasmp-reset` command (alias `sjasmpr`) from the Klive Command window, passing the SjasmPlus **installation folder**:
-
-```
-sjasmp-reset <full path to the SjasmPlus installation folder>
-```
-
-For example:
+Set up SjasmPlus with the **SJASMPLUS Integration** dialog (**Settings › Integrations**, **Configure...**
+next to **SjasmPlus**), or with the `sjasmp-reset` command (alias `sjasmpr`) at the
+[command prompt](/en/guides/editing/command-prompt/), passing the SjasmPlus **installation folder**:
 
 ```
 sjasmp-reset /usr/local/bin
 ```
 
-Klive will append the `sjasmplus` executable name to this path automatically.
+Klive appends the `sjasmplus` executable name to this path. [sjasmplus](/en/guides/languages/sjasmplus/)
+describes both ways.
 
 ### 3. Install PASTA/80
 
-Visit the [PASTA/80 releases page](https://github.com/pleumann/aoj) to download the compiler for your platform. After installing it, note the full path to the `pasta80` (or `pasta`) executable.
+Install PASTA/80 as its own documentation describes, and note the folder that holds its `pasta`
+executable.
 
 ## Setting up PASTA/80 in Klive
 
-With SjasmPlus already configured, run the `pasta80-reset` command (alias `p80r`) from the Command window:
+With SjasmPlus already configured, run the `pasta80-reset` command (alias `p80r`) at the command
+prompt, passing the folder that holds the `pasta` executable:
 
 ```
 pasta80-reset <full path to the pasta80 installation folder>
@@ -52,18 +55,18 @@ For example:
 pasta80-reset /usr/local/bin
 ```
 
-Klive stores only the **installation folder**; the `pasta` executable name is added automatically.
+Klive stores only the folder; it adds the executable name, `pasta`, when it runs the compiler.
 
 The command will:
 
 1. Verify that SjasmPlus is configured (and stop with an error if it is not).
-2. Store the pasta80 installation folder in `Klive.setting`.
+2. Store the PASTA/80 folder in your user settings (or, with `-p`, in the project).
 3. Check whether `~/.pasta80.cfg` exists:
    - If **not**, it creates a minimal `~/.pasta80.cfg` containing the correct `assembler` path pointing to your SjasmPlus executable and prints a confirmation message.
    - If it **does exist**, it reads the `assembler` setting and warns you if it does not match the SjasmPlus path that Klive has configured.
 
 <Callout type="info" emoji="💡">
-Klive stores PASTA/80 settings in the `Klive.setting` file. Use the `-p` switch to save the setting into the currently open project instead of globally:
+The command saves the folder in your user settings. Use the `-p` switch to save the setting into the currently open project instead of globally:
 
 ```
 pasta80-reset /usr/local/bin -p
@@ -78,34 +81,39 @@ pasta80-reset
 
 ## Compiler settings
 
-The following settings control PASTA/80 compilation. You can read or change them with the `set` / `setl` commands or by editing `Klive.setting` directly.
+These settings control PASTA/80 compilation. Change them with the [`set`](/en/reference/commands#set)
+command (add `-p` to keep a value in the project only), for example `set pasta80.opt true`.
 
 | Setting key | Type | Description |
 |-------------|------|-------------|
-| `pasta80.installFolder` | string | Full path to the PASTA/80 installation folder (the `pasta` executable must be inside it) |
-| `pasta80.target` | string | Compilation target — see table below (default: `zx48`) |
-| `pasta80.opt` | boolean | Enable peephole optimiser (`--opt`) |
-| `pasta80.dep` | boolean | Enable dependency (smart-link) analysis — strips unused units (`--dep`) |
-| `pasta80.ovr` | boolean | Enable bank-switched overlays — requires `zx128` or `zxnext` (`--ovr`) |
-| `pasta80.release` | boolean | Disable `Assert` and `Debug` breakpoint code (`--release`) |
+| `pasta80.installFolder` | string | The folder that holds the `pasta` executable (`pasta80-reset` sets it) |
+| `pasta80.opt` | boolean | Enable the peephole optimiser (`--opt`) |
+| `pasta80.dep` | boolean | Enable dependency (smart-link) analysis, which strips unused code (`--dep`) |
+| `pasta80.ovr` | boolean | Enable bank-switched overlays (`--ovr`); always on for the 128K target |
+| `pasta80.release` | boolean | Leave out `Assert` and `Debug` breakpoint code (`--release`) |
 
-### Supported targets within Klive IDE
+### The target follows the machine
 
-| `pasta80.target` value | Description | Load address |
-|------------------------|-------------|-------------|
-| `zx48` *(default)* | ZX Spectrum 48K | `$8000` (32768) |
-| `zx128` | ZX Spectrum 128K | `$8000` (32768) |
-| `zxnext` | ZX Spectrum Next | `$8000` (32768) |
+Klive picks PASTA/80's target from the machine the project runs on; there is no setting for it.
+
+| Machine | Target | Load address |
+|---------|--------|-------------|
+| ZX Spectrum 128K, +2A/+3, +2E/+3E | `zx128` (with overlays) | `$8000` (32768) |
+| ZX Spectrum Next | `zxnext` | `$8000` (32768) |
+| Any other machine | `zx48` | `$8000` (32768) |
+
+The 16K Spectrum is refused: PASTA/80 code starts at `$8000`, beyond its memory.
 
 <Callout type="info" emoji="💡">
-When `--ovr` (overlays) is active the addressable limit is reduced: `$C000` for `zx128` and `$E000` for `zxnext`.
+With overlays the addressable limit is lower: `$C000` for `zx128` and `$E000` for `zxnext`.
 </Callout>
 
 ## Using PASTA/80
 
-After completing the setup, create a Klive project and add `.pas` source files. Promote a `.pas` file to the **build root** to designate pasta80 as the compiler for that file.
+After completing the setup, create a project with the `pasta-80` template; its build root is
+`main.pas`. In any other project, add a `.pas` file and promote it to the **build root**.
 
-When you build, pasta80 compiles the Pascal source to a raw binary and Klive injects it into the emulator at the target's load address (the entry point is always the first byte of the binary — a `jp __init` instruction generated by the runtime).
+When you build, PASTA/80 compiles the Pascal source to a raw binary and Klive injects it into the emulator at the target's load address (the entry point is always the first byte of the binary — a `jp __init` instruction generated by the runtime).
 
 ## Troubleshooting
 
@@ -115,3 +123,14 @@ When you build, pasta80 compiles the Pascal source to a raw binary and Klive inj
 | *"sjasmplus: command not found"* during compilation | SjasmPlus is not on `PATH` and `~/.pasta80.cfg` is missing or wrong | Check `~/.pasta80.cfg`; the `assembler` key must point to the full path of the `sjasmplus` executable |
 | *"pasta80 did not produce an output binary"* | Compilation errors — check the Build output pane | Fix the errors shown in the output pane |
 | Warning about mismatched `assembler` path | `~/.pasta80.cfg` was edited manually and differs from Klive's SjasmPlus setting | Update `~/.pasta80.cfg` or re-run `sjasmp-reset` to align the paths |
+
+<Callout type="info">
+The editor colours Pascal source, but it has no breakpoints for `.pas` files. To follow a running
+program, pause it and use the [Disassembly view](/en/guides/debugging/disassembly/).
+</Callout>
+
+## Related
+
+- [sjasmplus](/en/guides/languages/sjasmplus/)
+- [Project templates](/en/guides/projects/project-templates/)
+- [File types](/en/guides/projects/file-types/)
