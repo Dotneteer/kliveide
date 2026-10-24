@@ -1,0 +1,22 @@
+{
+  "width": 1520,
+  "height": 88,
+  "markers": {
+    "continue": {
+      "x": 29.5,
+      "y": 50
+    },
+    "stepinto": {
+      "x": 51,
+      "y": 50
+    },
+    "stepover": {
+      "x": 55.8,
+      "y": 50
+    },
+    "stepout": {
+      "x": 60.6,
+      "y": 50
+    }
+  }
+}

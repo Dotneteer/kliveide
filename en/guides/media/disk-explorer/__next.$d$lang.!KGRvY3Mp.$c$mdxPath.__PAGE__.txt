@@ -1,0 +1,289 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T26a0,---
+description: "The Disk Explorer opens .dsk, .trd and .scl disk images, .mdr Microdrive cartridges and .img, .hdf and .cim SD cards: list, preview, add, extract, rename and delete their files, and see how the disk is laid out. The DivMMC brings esxDOS SD cards to the 48K, 128K and +3."
+---
+
+import { Callout } from 'nextra/components'
+
+# Disk images and the Disk Explorer
+
+Klive opens a disk image as its **files**. Double-click a `.dsk` (a ZX Spectrum +3 disk, with the
++3DOS file system), a `.trd` or a `.scl` (TR-DOS disks, for the Pentagon 128 and the Scorpion), or
+an `.mdr` (a [Microdrive cartridge](/en/guides/media/microdrives/), for the Interface 1) in the
+project explorer, and the **Disk Explorer** shows what is on it: the file names, what each file
+is, its size and load address, and a preview.
+
+<ClickableImage src="/images/disk-explorer/files.png" width={720} />
+
+<Callout type="info">
+New to Klive's disks? [Tutorial: working with disks](/en/guides/media/disks-tutorial/) makes a +3
+boot disk and an SD card step by step, with a picture of every step.
+</Callout>
+
+## Looking at a file
+
+Select a file to see its details beside the list:
+
+- a **BASIC** program shows its listing and its auto-run line;
+- a 6,912-byte **code** file loaded at 16384 shows as the screen it is;
+- other code and headerless files show as bytes.
+
+The buttons above the preview open the file as a memory view, or, for code, as **disassembly** at
+its load address.
+
+On a +3DOS disk you can also set a file's **Read-only**, **System** and **Archive** attributes. The
+list shows them in the **Attr.** column, and the **User** column shows the file's user area.
+
+## Changing the disk
+
+The buttons in the header strip change the disk:
+
+| Button | What it does |
+| --- | --- |
+| **Add** (+) | Puts host files on the disk |
+| **Save** | Saves the selected file to the host |
+| **Rename** | Renames the selected file |
+| **Delete** | Deletes the selected file |
+| **Compact** | (TR-DOS only) Lays the files down again without the deleted ones, as TR-DOS's `MOVE` does |
+| **Show deleted** | Lists deleted files too, struck through |
+
+You can also **drag files** onto the explorer, from the project explorer or from your file manager.
+What a file becomes on the disk depends on its kind:
+
+- a **`.tap`** puts every file on the tape on the disk, with the header's name, kind and addresses;
+- a **`.scr`** becomes a screen (code at 16384);
+- a **`.bas`** text file is tokenised into a BASIC program;
+- anything else becomes code, at the address Klive asks for (32768 suggested).
+
+Names are made to fit the disk: +3DOS takes up to 8 characters, a dot and 3 more (upper case), and
+TR-DOS takes up to 8 characters and a type letter.
+
+<Callout type="info">
+Klive writes the changed disk next to the file and renames it over the original, so a failed write
+never leaves half a disk. The first change in a session keeps the original as **`<name>.bak`**.
+</Callout>
+
+### Disks in the machine's drive
+
+The explorer shows **In drive A** (or B) when the disk is in one of the emulated machine's drives.
+You can still change it: a running machine pauses, Klive writes the disk and puts it back in the
+drive, and the machine runs on. When the machine itself writes to the disk (a `SAVE`, a `FORMAT`),
+the open explorer shows the change a moment later.
+
+## The disk's layout
+
+The **Layout** button shows the disk as its tracks and sectors. Each square is one sector, coloured
+by what it holds: the system tracks, the directory, a file, free space, or space the file system
+never uses. Hover over a square to see the sector's ID and what it holds. A square with an outline
+is a sector the disk image marks as unusual: a CRC error, a deleted data mark, or a **weak sector**
+(the image keeps several versions of it, and the real disk read differently each time).
+
+<ClickableImage src="/images/disk-explorer/layout.png" width={720} />
+
+Select a sector to see its position, its ID (C, H, R, N), its status bytes, what it holds and its
+bytes. When it belongs to a file, the file's name takes you back to the file. The **Show the file's
+sectors** button in a file's preview does the opposite: it opens the layout with that file's sectors
+marked.
+
+On a `.dsk`, the **Surface** switch shows the image as the disk stores it: every track's header
+and sectors, and the raw track as laid on the disk.
+
+A Microdrive cartridge has no tracks: its layout is one row of up to 254 sectors of 512 bytes, in
+the order they pass the head, each named by its sector number.
+
+A TR-DOS disk has 16 sectors of 256 bytes on every track. Its header strip also shows the disk's
+label:
+
+<ClickableImage src="/images/disk-explorer/trdos.png" width={720} />
+
+## Hard-disk images and SD cards
+
+The Disk Explorer also opens **hard-disk images**: a raw `.img`, a RAMsoft `.hdf` and Klive's own
+`.cim` (the ZX Spectrum Next's SD card). Klive reads their **FAT16** and **FAT32** file systems, with
+long file names and folders. A card can be gigabytes, so the explorer reads only the folder and the
+file it shows.
+
+<ClickableImage src="/images/disk-explorer/hard-disk.png" width={720} />
+
+- Double-click a folder to open it; **Up** goes back to the folder above. **New folder** makes one.
+- **Add**, **Save**, **Rename**, **Delete** and dragging files work as on a floppy, but files go on
+  the card **as they are**, under their own names: esxDOS and NextZXOS load a `.tap`, a `.sna` or
+  a `.scr` straight from the card. Drop a **folder** to copy it with everything in it.
+- A card with several partitions shows a **partition picker** in the header.
+- Attributes show as **R**ead-only, **S**ystem, **H**idden and **A**rchive.
+
+The **Layout** view shows the volume's areas - the reserved sectors, the FATs, the root folder and
+the data - and a map of its clusters in use. The selected file's clusters are outlined.
+
+<ClickableImage src="/images/disk-explorer/hard-disk-layout.png" width={720} />
+
+<Callout type="info">
+Klive changes a hard-disk image **in place**, without a `.bak` copy. When the image is the running
+machine's SD card, the machine pauses while Klive writes it.
+</Callout>
+
+Make a new card with the `disk` command - `disk new card.img fat16 64` (or `fat32`, with the size in
+MB) - then drop the folders you want on it. The extension picks the format:
+
+- **`.img`**: the card's sectors byte for byte, full size from the start, readable by other
+  emulators and your computer, and copyable to a real SD card;
+- **`.hdf`**: the same sectors after a RAMsoft header, for emulators that take hard-disk images;
+- **`.cim`**: the same sectors as an `.img`, with the unused ones simply omitted, so the file grows
+  as the card fills. It is Klive's own format (the Next's card is one), takes 64 MB to 16 GB, and
+  only Klive reads it.
+
+[Which format: `.img`, `.hdf` or `.cim`?](/en/guides/media/disks-tutorial/#which-format-img-hdf-or-cim)
+in the tutorial compares them.
+
+### The DivMMC
+
+The **DivMMC** is an SD card interface for the ZX Spectrum 48K, 128K and +2A/+3, which runs the
+**esxDOS** operating system. Klive emulates it on these machines (not on the Pentagon or the
+Scorpion, which have the Beta 128):
+
+1. Klive cannot ship esxDOS. Get it from its authors and name its 8K ROM in **Settings › Machine ›
+   esxDOS ROM**.
+2. Turn on **DivMMC Interface**: under **Machine › Interfaces** on the 48K and the 128K (where it
+   shares the menu with the Interface 1, which it disconnects), under **Machine › SD Card** on the
+   +2A/+3. The machine restarts with the interface.
+3. **Select SD Card Image** in the same menu names the card: an `.img`, `.hdf` or `.cim` with a
+   FAT16 or FAT32 file system and esxDOS's `BIN`, `SYS` and `TMP` folders on it. You can prepare one
+   in the Disk Explorer.
+
+esxDOS's dot commands then work as on the real interface (`.ls`, `.cd`, `.tapein`, `.snapload`).
+**Press the NMI Button** in the same menu opens esxDOS's NMI menu. While the debugger shows memory,
+the interface's ROM and RAM banks appear as the partitions `DR` and `D0`-`DF`.
+
+## From the command prompt
+
+The `disk` command does the same from the IDE's command prompt, from scripts and from
+[automation](/en/guides/testing/automation/) (`klive ide cmd "disk ls game.dsk"`):
+
+```
+disk ls game.dsk
+disk add game.dsk loader.bas
+disk add game.dsk code.bin -start 24000
+disk get game.dsk GAME.BIN game.bin
+disk mv game.dsk GAME.BIN MAIN.BIN
+disk rm game.dsk NOTES.TXT
+disk compact magazine.trd
+disk new blank.dsk dse80
+disk new card.img fat16 64
+disk mkdir card.img games/arcade
+disk add card.img mygames games
+disk ls card.img games
+```
+
+On a hard-disk image, `add` copies a file or a whole folder, and `ls` lists a folder.
+
+Without a running Klive, `klive disk` takes the same actions on the image file directly; see
+[the command line](/en/reference/command-line/).
+
+## Exporting a program to a disk
+
+**Export Code** (or `expc ... -f dsk` / `-f trd`) puts a compiled program on a new disk that boots
+it. A `.dsk` holds a BASIC loader named `DISK`, which the +3's **Loader** menu runs. A `.trd` holds a
+loader named `boot`, which TR-DOS runs when the disk boots. An `.mdr` (`-f mdr`, on the 48K and the
+128K) is a formatted Microdrive cartridge with a loader named `run`, which the Interface 1 runs when
+you [boot the cartridge](/en/guides/media/microdrives/#booting-a-cartridge). The loader loads the code files (and a
+loading screen, if you give one) and starts the program; **CLEAR** and the border colour work as
+they do for a tape.
+
+<Callout type="warning">
+A program that uses the 128K memory banks cannot be exported to a disk or a cartridge yet: export it as a tape.
+</Callout>
+
+## Related
+
+- [Tutorial: working with disks](/en/guides/media/disks-tutorial/)
+- [TR-DOS disks](/en/guides/media/trdos-disks/)
+- [The Interface 1 and Microdrives](/en/guides/media/microdrives/)
+- [Exporting your program](/en/guides/projects/exporting-code/)a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Looking at a file","id":"looking-at-a-file","depth":2},{"value":"Changing the disk","id":"changing-the-disk","depth":2},{"value":"Disks in the machine’s drive","id":"disks-in-the-machines-drive","depth":3},{"value":"The disk’s layout","id":"the-disks-layout","depth":2},{"value":"Hard-disk images and SD cards","id":"hard-disk-images-and-sd-cards","depth":2},{"value":"The DivMMC","id":"the-divmmc","depth":3},{"value":"From the command prompt","id":"from-the-command-prompt","depth":2},{"value":"Exporting a program to a disk","id":"exporting-a-program-to-a-disk","depth":2},{"value":"Related","id":"related","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"The Disk Explorer opens .dsk, .trd and .scl disk images, .mdr Microdrive cartridges and .img, .hdf and .cim SD cards: list, preview, add, extract, rename and delete their files, and see how the disk is laid out. The DivMMC brings esxDOS SD cards to the 48K, 128K and +3.","title":"Disk images and the Disk Explorer","filePath":"content/en/guides/media/disk-explorer.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"guides/media/disk-explorer","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Disk images and the Disk Explorer - Klive IDE"}],["$","meta","1",{"name":"description","content":"The Disk Explorer opens .dsk, .trd and .scl disk images, .mdr Microdrive cartridges and .img, .hdf and .cim SD cards: list, preview, add, extract, rename and delete their files, and see how the disk is laid out. The DivMMC brings esxDOS SD cards to the 48K, 128K and +3."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/guides/media/disk-explorer/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"zVHxHPHeqBTYxgv92WAup"}
+20:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+21:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+4e:I[484,[],"OutletBoundary"]
+:HL["/images/disk-explorer/files.png","image"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Disk images and the Disk Explorer","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Klive opens a disk image as its ",["$","strong",null,{"children":"files"}],". Double-click a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".dsk"}]," (a ZX Spectrum +3 disk, with the\n+3DOS file system), a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".trd"}]," or a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".scl"}]," (TR-DOS disks, for the Pentagon 128 and the Scorpion), or\nan ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".mdr"}]," (a ",["$","$L20",null,{"href":"/en/guides/media/microdrives/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Microdrive cartridge"}],", for the Interface 1) in the\nproject explorer, and the ",["$","strong",null,{"children":"Disk Explorer"}]," shows what is on it: the file names, what each file\nis, its size and load address, and a preview."]}],"\n",["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/images/disk-explorer/files.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/images/disk-explorer/files.png","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":720,"height":"auto"}}]}]}],"\n",["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":["$","svg",null,{"viewBox":"0 0 16 16","fill":"currentColor","height":".8em","className":"x:mt-[.3em]","children":["$","path",null,{"d":"M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"}]}]}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["New to Klive’s disks? ",["$","$L20",null,{"href":"/en/guides/media/disks-tutorial/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Tutorial: working with disks"}]," makes a +3\nboot disk and an SD card step by step, with a picture of every step."]}]}]]}],"\n",["$","h2",null,{"id":"looking-at-a-file","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Looking at a file",["$","$L21",null,{"id":"looking-at-a-file"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Select a file to see its details beside the list:"}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["a ",["$","strong",null,{"children":"BASIC"}]," program shows its listing and its auto-run line;"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["a 6,912-byte ",["$","strong",null,{"children":"code"}]," file loaded at 16384 shows as the screen it is;"]}],"\n","$L22","\n"]}],"\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41","\n","$L42","\n","$L43","\n","$L44","\n","$L45","\n","$L46","\n","$L47","\n","$L48","\n","$L49","\n","$L4a","\n","$L4b","\n","$L4c","\n","$L4d"]]}]
+15:["$","$L4e",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@4f"}]}]
+1f:true
+50:"ToggleWordWrapButton"
+51:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$50"]
+52:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+:HL["/images/disk-explorer/layout.png","image"]
+:HL["/images/disk-explorer/trdos.png","image"]
+:HL["/images/disk-explorer/hard-disk.png","image"]
+:HL["/images/disk-explorer/hard-disk-layout.png","image"]
+9:300
+22:["$","li",null,{"className":"x:my-[.5em]","children":"other code and headerless files show as bytes."}]
+23:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The buttons above the preview open the file as a memory view, or, for code, as ",["$","strong",null,{"children":"disassembly"}]," at\nits load address."]}]
+24:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["On a +3DOS disk you can also set a file’s ",["$","strong",null,{"children":"Read-only"}],", ",["$","strong",null,{"children":"System"}]," and ",["$","strong",null,{"children":"Archive"}]," attributes. The\nlist shows them in the ",["$","strong",null,{"children":"Attr."}]," column, and the ",["$","strong",null,{"children":"User"}]," column shows the file’s user area."]}]
+25:["$","h2",null,{"id":"changing-the-disk","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Changing the disk",["$","$L21",null,{"id":"changing-the-disk"}]]}]
+26:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The buttons in the header strip change the disk:"}]
+27:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"Button","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"What it does","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":[["$","strong",null,{"children":"Add"}]," (+)"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Puts host files on the disk","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"Save"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Saves the selected file to the host","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"Rename"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Renames the selected file","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"Delete"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Deletes the selected file","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"Compact"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["(TR-DOS only) Lays the files down again without the deleted ones, as TR-DOS’s ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"MOVE"}]," does"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"Show deleted"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Lists deleted files too, struck through","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}]]}]
+28:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["You can also ",["$","strong",null,{"children":"drag files"}]," onto the explorer, from the project explorer or from your file manager.\nWhat a file becomes on the disk depends on its kind:"]}]
+29:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["a ",["$","strong",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":".tap"}]}]," puts every file on the tape on the disk, with the header’s name, kind and addresses;"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["a ",["$","strong",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":".scr"}]}]," becomes a screen (code at 16384);"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["a ",["$","strong",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":".bas"}]}]," text file is tokenised into a BASIC program;"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"anything else becomes code, at the address Klive asks for (32768 suggested)."}],"\n"]}]
+2a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Names are made to fit the disk: +3DOS takes up to 8 characters, a dot and 3 more (upper case), and\nTR-DOS takes up to 8 characters and a type letter."}]
+2b:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$14:props:children:1:6:props:children:0:props:style","data-pagefind-ignore":"all","children":"$14:props:children:1:6:props:children:0:props:children"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Klive writes the changed disk next to the file and renames it over the original, so a failed write\nnever leaves half a disk. The first change in a session keeps the original as ",["$","strong",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"<name>.bak"}]}],"."]}]}]]}]
+2c:["$","h3",null,{"id":"disks-in-the-machines-drive","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Disks in the machine’s drive",["$","$L21",null,{"id":"disks-in-the-machines-drive"}]]}]
+2d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The explorer shows ",["$","strong",null,{"children":"In drive A"}]," (or B) when the disk is in one of the emulated machine’s drives.\nYou can still change it: a running machine pauses, Klive writes the disk and puts it back in the\ndrive, and the machine runs on. When the machine itself writes to the disk (a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"SAVE"}],", a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"FORMAT"}],"),\nthe open explorer shows the change a moment later."]}]
+2e:["$","h2",null,{"id":"the-disks-layout","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The disk’s layout",["$","$L21",null,{"id":"the-disks-layout"}]]}]
+2f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ",["$","strong",null,{"children":"Layout"}]," button shows the disk as its tracks and sectors. Each square is one sector, coloured\nby what it holds: the system tracks, the directory, a file, free space, or space the file system\nnever uses. Hover over a square to see the sector’s ID and what it holds. A square with an outline\nis a sector the disk image marks as unusual: a CRC error, a deleted data mark, or a ",["$","strong",null,{"children":"weak sector"}],"\n(the image keeps several versions of it, and the real disk read differently each time)."]}]
+30:["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/images/disk-explorer/layout.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/images/disk-explorer/layout.png","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":720,"height":"auto"}}]}]}]
+31:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Select a sector to see its position, its ID (C, H, R, N), its status bytes, what it holds and its\nbytes. When it belongs to a file, the file’s name takes you back to the file. The ",["$","strong",null,{"children":"Show the file’s\nsectors"}]," button in a file’s preview does the opposite: it opens the layout with that file’s sectors\nmarked."]}]
+32:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["On a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".dsk"}],", the ",["$","strong",null,{"children":"Surface"}]," switch shows the image as the disk stores it: every track’s header\nand sectors, and the raw track as laid on the disk."]}]
+33:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A Microdrive cartridge has no tracks: its layout is one row of up to 254 sectors of 512 bytes, in\nthe order they pass the head, each named by its sector number."}]
+34:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A TR-DOS disk has 16 sectors of 256 bytes on every track. Its header strip also shows the disk’s\nlabel:"}]
+35:["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/images/disk-explorer/trdos.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/images/disk-explorer/trdos.png","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":720,"height":"auto"}}]}]}]
+36:["$","h2",null,{"id":"hard-disk-images-and-sd-cards","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Hard-disk images and SD cards",["$","$L21",null,{"id":"hard-disk-images-and-sd-cards"}]]}]
+37:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The Disk Explorer also opens ",["$","strong",null,{"children":"hard-disk images"}],": a raw ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".img"}],", a RAMsoft ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".hdf"}]," and Klive’s own\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".cim"}]," (the ZX Spectrum Next’s SD card). Klive reads their ",["$","strong",null,{"children":"FAT16"}]," and ",["$","strong",null,{"children":"FAT32"}]," file systems, with\nlong file names and folders. A card can be gigabytes, so the explorer reads only the folder and the\nfile it shows."]}]
+38:["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/images/disk-explorer/hard-disk.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/images/disk-explorer/hard-disk.png","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":720,"height":"auto"}}]}]}]
+39:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["Double-click a folder to open it; ",["$","strong",null,{"children":"Up"}]," goes back to the folder above. ",["$","strong",null,{"children":"New folder"}]," makes one."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Add"}],", ",["$","strong",null,{"children":"Save"}],", ",["$","strong",null,{"children":"Rename"}],", ",["$","strong",null,{"children":"Delete"}]," and dragging files work as on a floppy, but files go on\nthe card ",["$","strong",null,{"children":"as they are"}],", under their own names: esxDOS and NextZXOS load a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".tap"}],", a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".sna"}]," or\na ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".scr"}]," straight from the card. Drop a ",["$","strong",null,{"children":"folder"}]," to copy it with everything in it."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["A card with several partitions shows a ",["$","strong",null,{"children":"partition picker"}]," in the header."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["Attributes show as ",["$","strong",null,{"children":"R"}],"ead-only, ",["$","strong",null,{"children":"S"}],"ystem, ",["$","strong",null,{"children":"H"}],"idden and ",["$","strong",null,{"children":"A"}],"rchive."]}],"\n"]}]
+3a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ",["$","strong",null,{"children":"Layout"}]," view shows the volume’s areas - the reserved sectors, the FATs, the root folder and\nthe data - and a map of its clusters in use. The selected file’s clusters are outlined."]}]
+3b:["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/images/disk-explorer/hard-disk-layout.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/images/disk-explorer/hard-disk-layout.png","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":720,"height":"auto"}}]}]}]
+3c:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$14:props:children:1:6:props:children:0:props:style","data-pagefind-ignore":"all","children":"$14:props:children:1:6:props:children:0:props:children"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Klive changes a hard-disk image ",["$","strong",null,{"children":"in place"}],", without a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".bak"}]," copy. When the image is the running\nmachine’s SD card, the machine pauses while Klive writes it."]}]}]]}]
+3d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Make a new card with the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"disk"}]," command - ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"disk new card.img fat16 64"}]," (or ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"fat32"}],", with the size in\nMB) - then drop the folders you want on it. The extension picks the format:"]}]
+3e:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":".img"}]}],": the card’s sectors byte for byte, full size from the start, readable by other\nemulators and your computer, and copyable to a real SD card;"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":".hdf"}]}],": the same sectors after a RAMsoft header, for emulators that take hard-disk images;"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":".cim"}]}],": the same sectors as an ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".img"}],", with the unused ones simply omitted, so the file grows\nas the card fills. It is Klive’s own format (the Next’s card is one), takes 64 MB to 16 GB, and\nonly Klive reads it."]}],"\n"]}]
+3f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","$L20",null,{"href":"/en/guides/media/disks-tutorial/#which-format-img-hdf-or-cim","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["Which format: ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".img"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".hdf"}]," or ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".cim"}],"?"]}],"\nin the tutorial compares them."]}]
+40:["$","h3",null,{"id":"the-divmmc","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["The DivMMC",["$","$L21",null,{"id":"the-divmmc"}]]}]
+41:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ",["$","strong",null,{"children":"DivMMC"}]," is an SD card interface for the ZX Spectrum 48K, 128K and +2A/+3, which runs the\n",["$","strong",null,{"children":"esxDOS"}]," operating system. Klive emulates it on these machines (not on the Pentagon or the\nScorpion, which have the Beta 128):"]}]
+42:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["Klive cannot ship esxDOS. Get it from its authors and name its 8K ROM in ",["$","strong",null,{"children":"Settings › Machine ›\nesxDOS ROM"}],"."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["Turn on ",["$","strong",null,{"children":"DivMMC Interface"}],": under ",["$","strong",null,{"children":"Machine › Interfaces"}]," on the 48K and the 128K (where it\nshares the menu with the Interface 1, which it disconnects), under ",["$","strong",null,{"children":"Machine › SD Card"}]," on the\n+2A/+3. The machine restarts with the interface."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Select SD Card Image"}]," in the same menu names the card: an ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".img"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".hdf"}]," or ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".cim"}]," with a\nFAT16 or FAT32 file system and esxDOS’s ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"BIN"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"SYS"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"TMP"}]," folders on it. You can prepare one\nin the Disk Explorer."]}],"\n"]}]
+43:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["esxDOS’s dot commands then work as on the real interface (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".ls"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".cd"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".tapein"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".snapload"}],").\n",["$","strong",null,{"children":"Press the NMI Button"}]," in the same menu opens esxDOS’s NMI menu. While the debugger shows memory,\nthe interface’s ROM and RAM banks appear as the partitions ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"DR"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"D0"}],"-",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"DF"}],"."]}]
+44:["$","h2",null,{"id":"from-the-command-prompt","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["From the command prompt",["$","$L21",null,{"id":"from-the-command-prompt"}]]}]
+45:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"disk"}]," command does the same from the IDE’s command prompt, from scripts and from\n",["$","$L20",null,{"href":"/en/guides/testing/automation/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"automation"}]," (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"klive ide cmd \"disk ls game.dsk\""}],"):"]}]
+46:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L51",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L52",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"disk ls game.dsk"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"disk add game.dsk loader.bas"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"disk add game.dsk code.bin -start 24000"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"disk get game.dsk GAME.BIN game.bin"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"disk mv game.dsk GAME.BIN MAIN.BIN"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"disk rm game.dsk NOTES.TXT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"disk compact magazine.trd"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"disk new blank.dsk dse80"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"disk new card.img fat16 64"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"disk mkdir card.img games/arcade"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"disk add card.img mygames games"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"disk ls card.img games"}]}]]}]]}]]}]
+47:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["On a hard-disk image, ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"add"}]," copies a file or a whole folder, and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"ls"}]," lists a folder."]}]
+48:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Without a running Klive, ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"klive disk"}]," takes the same actions on the image file directly; see\n",["$","$L20",null,{"href":"/en/reference/command-line/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"the command line"}],"."]}]
+49:["$","h2",null,{"id":"exporting-a-program-to-a-disk","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Exporting a program to a disk",["$","$L21",null,{"id":"exporting-a-program-to-a-disk"}]]}]
+4a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Export Code"}]," (or ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"expc ... -f dsk"}]," / ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"-f trd"}],") puts a compiled program on a new disk that boots\nit. A ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".dsk"}]," holds a BASIC loader named ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"DISK"}],", which the +3’s ",["$","strong",null,{"children":"Loader"}]," menu runs. A ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".trd"}]," holds a\nloader named ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"boot"}],", which TR-DOS runs when the disk boots. An ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".mdr"}]," (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"-f mdr"}],", on the 48K and the\n128K) is a formatted Microdrive cartridge with a loader named ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"run"}],", which the Interface 1 runs when\nyou ",["$","$L20",null,{"href":"/en/guides/media/microdrives/#booting-a-cartridge","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"boot the cartridge"}],". The loader loads the code files (and a\nloading screen, if you give one) and starts the program; ",["$","strong",null,{"children":"CLEAR"}]," and the border colour work as\nthey do for a tape."]}]
+4b:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-yellow-50 x:dark:bg-yellow-700/30 x:text-yellow-700 x:dark:text-yellow-500 x:border-yellow-700","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$14:props:children:1:6:props:children:0:props:style","data-pagefind-ignore":"all","children":["$","svg",null,{"viewBox":"0 0 16 16","fill":"currentColor","height":".8em","className":"x:mt-[.3em]","children":["$","path",null,{"d":"M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575Zm1.763.707a.25.25 0 0 0-.44 0L1.698 13.132a.25.25 0 0 0 .22.368h12.164a.25.25 0 0 0 .22-.368Zm.53 3.996v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"}]}]}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A program that uses the 128K memory banks cannot be exported to a disk or a cartridge yet: export it as a tape."}]}]]}]
+4c:["$","h2",null,{"id":"related","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Related",["$","$L21",null,{"id":"related"}]]}]
+4d:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L20",null,{"href":"/en/guides/media/disks-tutorial/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Tutorial: working with disks"}]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L20",null,{"href":"/en/guides/media/trdos-disks/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"TR-DOS disks"}]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L20",null,{"href":"/en/guides/media/microdrives/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"The Interface 1 and Microdrives"}]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L20",null,{"href":"/en/guides/projects/exporting-code/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Exporting your program"}]}],"\n"]}]
+4f:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

@@ -4,7 +4,7 @@
 b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
 c:"static/chunks/500-fc3b64d9ff4a32a7.js"
 d:"static/chunks/436-2e7c1075bb484b2c.js"
-e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-882a1bb790cd477f.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
 f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
 10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
 11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
@@ -17,119 +17,240 @@ f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
 8:X
 8:C
 9:X
-12:T11d2,---
-description: "You can use the computer's physical keyboard or a virtual keyboard to emulate keystrokes."
+12:T2038,---
+description: "Type on the emulated machine with your keyboard or its virtual keyboard, remap keys, drive joysticks from the keyboard or a gamepad, and use the ZX Spectrum Next's mouse."
 ---
 
-import { Callout } from 'nextra/components'
- 
-# Using the Keyboard
+import { Callout, Steps } from 'nextra/components'
 
-You can use the computer's physical keyboard or a virtual keyboard to emulate keystrokes. To let the Emulator process the computer's keyboard, the Emulator should have the focus. When you change the current window to the Emulator with your machine's keys or click it with the mouse, it is ready to receive keystrokes.
+# Keyboard, joysticks and mouse
 
-Of course, you should start the machine and wait while it reaches its main execution cycles and starts watching for keys.
+The emulated machine reads your computer's keyboard, so you can type on it as on the real one. This
+page covers the virtual keyboard that shows the machine's own keys, changing which host key presses
+which machine key, the joysticks of the Next and the Timex machines, and the Next's mouse.
 
-## Using the Virtual Keyboard
+## Typing on your keyboard
 
-If you do not find it easy to use the computer's physical keyboard, you can use the virtual keyboard. You can display (or hide) it with one of these actions:
+The machine reads the keyboard while the emulator window has the focus: click its screen, or switch
+to the window. Start the machine first and let it reach its prompt; a machine that is still booting
+does not scan its keys.
 
-- Click the **View | Virtual Keyboard** menu command while in the Emulator window
-- Click the **Keyboard** icon in the Emulator's toolbar
+Each machine maps your keys to its own in the way its users expect: on the ZX Spectrum, for
+example, either <kbd>Shift</kbd> is CAPS SHIFT and the right <kbd>Alt</kbd> is SYMBOL SHIFT. The
+pages of the other machines list their mappings: [The ZX81 and ZX80](/en/guides/machines/zx81-zx80/#typing),
+[The HT-1080Z](/en/guides/machines/ht1080z/#typing) and [The Cambridge Z88](/en/guides/machines/cambridge-z88/#the-keyboard).
 
-When the keyboard is to show, Klive displays it according to the selected machine's type. These figures show the ZX Spectrum 48K keyboard and the ZX Spectrum 128L/+2E/+3E keyboard.
+## The virtual keyboard
 
-<ClickableImage src="/images/getting-started/sp48-keyboard.png" width={650} />
+Show or hide the virtual keyboard with the **Show/Hide keyboard** button on the emulator toolbar,
+or with **View › Virtual Keyboard** while the emulator window has the focus. It shows the keyboard
+of the running machine:
 
-<ClickableImage src="/images/getting-started/sp128-keyboard.png" alt="ZX Spectrum 128 Keyboard" width={650} />
+| Machine | Keyboard |
+| --- | --- |
+| ZX Spectrum 48K and 16K, Timex TC2048/TC2068/TS2068 | The 48K's 40 keys and their legends |
+| ZX Spectrum 128K, Pentagon 128, +2A/+3/+2E/+3E, Scorpion | The 128K's keyboard |
+| ZX Spectrum Next | The Next's keyboard |
+| Sinclair ZX81, and the ZX80 with the 8K ROM | The ZX81's keyboard |
+| Sinclair ZX80 | The ZX80's own keyboard |
+| HT-1080Z | The HT-1080Z's keyboard, with its model's characters |
+| Cambridge Z88 | The Z88's keyboard, in the layout set in **Settings › Machine › Keyboard layout** |
+
+<Shot
+  src="guides/emulator/keyboard/sp48-keyboard.webp"
+  alt="The emulator window with the ZX Spectrum 48K virtual keyboard below the screen"
+  caption="The ZX Spectrum 48K keyboard"
+  width={760}
+/>
+
+<Shot
+  src="guides/emulator/keyboard/sp128-keyboard.webp"
+  alt="The emulator window with the ZX Spectrum 128K virtual keyboard below the screen"
+  caption="The ZX Spectrum 128K keyboard"
+  width={760}
+/>
+
+### Pressing keys
+
+Click a key to press it. Holding the mouse button down holds the key, and releasing it releases the
+key. On the ZX Spectrum keyboards:
+
+- **The main legend** (a letter or a digit) types what that key types in the current cursor mode.
+  With the right mouse button, CAPS SHIFT is pressed with it: the left button on the I key gives
+  `INPUT` or `i`, the right button `INPUT` or `I`.
+- **A legend printed on the key in red** (such as `AT` on I) presses SYMBOL SHIFT with the key,
+  whichever mouse button you use.
+- **A legend above the key** (such as `CODE`) or **below it** (such as `IN`) enters extended mode
+  and types that keyword, whichever button you use.
+- **A block graphic on a digit key** types that graphic with the left button and its inverse with
+  the right button.
+
+Move the mouse slowly over a key to see which part of it is highlighted: that is what a click
+types.
 
 <Callout type="info" emoji="💡">
-Klive also has custom keyboards for the Cambridge Z88 and the ZX Spectrum Next computers.
+To type a block graphic, Klive presses GRAPHICS, the key, and GRAPHICS again. Holding the button
+down does not repeat a graphic, and clicking graphics very quickly can leave the editor in graphics
+mode. Click them a little slower.
 </Callout>
 
-To press a key, move the mouse over the particular virtual key and click it. If you keep the mouse button down, it's just like keeping the button pressed. Releasing the mouse button behaves as you released the real key.
+### Resizing the keyboard
 
-When you move the button slowly over a particular key, it will highlight the part of the button with the symbol shift-related and extended mode-related keys. When you click the mouse, it will automatically "press" the symbol shift or extended mode keys. 
+Point at the top edge of the virtual keyboard until the splitter appears, then drag it. The screen
+shrinks or grows to make room. Klive remembers the height for each machine.
 
-You can use both the left and right mouse buttons. However, when using the right mouse button with normal keys, it behaves as if you pressed the **CAPS SHIFT** key simultaneously.
+## Remapping keys
 
-This table shows a few examples:
+A **key mapping file** changes which host key presses which ZX Spectrum key. It is a JSON file
+with the `.keymap` extension. Each property names a host key by its
+[`KeyboardEvent.code`](https://developer.mozilla.org/en-US/docs/Web/API/UI_Events/Keyboard_event_code_values)
+and gives one Spectrum key, or two pressed together. With `"$merge": true` the file changes only the
+keys it lists and keeps the default mapping for the rest:
 
-| Example | Description
-|-|:-|
-| <ClickableImage src="/images/getting-started/main-key.png" alt="Main Key" width={64} /> | The click will display `INPUT` (`i`) when you use the left mouse button or `INPUT` (`I`) with the right mouse button, depending on the current ZX Spectrum cursor mode. |
-| <ClickableImage src="/images/getting-started/symbol-key.png" alt="Symbol Key" width={64} /> | The click will result in `AT` regardless of which mouse button you click. |
-| <ClickableImage src="/images/getting-started/above-key.png" alt="Above Key" width={64} /> | The click will show `CODE` regardless of which mouse button you click. |
-| <ClickableImage src="/images/getting-started/below-key.png" alt="Below Key" width={64} /> | The click will display `IN` regardless of which mouse button you click. |
-| <ClickableImage src="/images/getting-started/glyph-key.png" alt="Glyph Key" width={64} /> | The click will display a glyph with its top-left corner set if you click the left mouse button and the inverse of that glyph when you use the right mouse button. |
+```json
+{
+  "$merge": true,
+  "Quote": ["SShift", "P"],
+  "Backquote": "CShift"
+}
+```
 
-## Resizing the Virtual Keyboard
+The Spectrum keys are `CShift`, `SShift`, `Enter`, `Space`, the letters `A` to `Z` and the digits
+`N0` to `N9`.
 
-When you move the mouse to the top border of the virtual keyboard, a sizing splitter bar appears:
+<Steps>
 
-<ClickableImage 
-  src="/images/getting-started/sizing-start.png"
-  alt="Sizing Start" 
-  width={550}
+### Open the Input settings
+
+Choose **Machine › Input › Input Settings...**, which opens the **Input** page of the
+[Settings](/en/guides/customizing/settings/).
+
+### Choose the file
+
+Next to **Key mapping file**, click **Browse...** and pick your `.keymap` file. The mapping applies
+at once; a file with a mistake in it is refused with the reason.
+
+</Steps>
+
+**Reset** on the same row returns to the default mapping.
+
+## Joysticks
+
+The **ZX Spectrum Next** and the **Timex** machines have joystick ports. Each joystick is driven by
+the host keyboard, a gamepad, or nothing.
+
+| Machine | Joysticks | Menu |
+| --- | --- | --- |
+| ZX Spectrum Next | Joystick 1 (left) and Joystick 2 (right) | **Machine › Input › Joystick** |
+| Timex TC2048 | The built-in Kempston port, driven by joystick 1's bindings | **Machine › Input › Kempston Joystick** |
+| Timex TC2068, TS2068 | Two joysticks, read through the AY chip | **Machine › Input › Joysticks** |
+
+Each joystick's **Driven by** submenu chooses **Host keyboard**, **Host gamepad** or
+**Not connected**.
+
+On the Next, a joystick's **Set machine mode** submenu picks what the machine sees on that port:
+**Sinclair 2 (keys 1-5)**, **Kempston 1 (port $1F)**, **Cursor / Protek**, **Sinclair 1 (keys 6-0)**,
+**Kempston 2 (port $37)**, **MD 1 (port $1F)**, **MD 2 (port $37)** or **User-defined (joymap)**. The
+mode is NextReg `$05`, so NextZXOS may set it again when it starts.
+
+### Joystick bindings
+
+**Configure bindings...** in the joystick submenu (or **Configure...** next to **Joystick bindings**
+on the **Input** settings page) opens the **Joystick bindings** dialog. For each joystick, choose what
+drives it, then click a pin (**Up**, **Down**, **Left**, **Right**, **Fire 1 (B)**, **Fire 2 (C)**, and
+the Mega Drive pad's extra buttons) and press the key for it. A key bound to a joystick no longer
+reaches the machine's keyboard, and the dialog says so. **Save** keeps the bindings; **Reset**
+brings back the defaults.
+
+## The mouse
+
+*Applies to: ZX Spectrum Next.*
+
+The Next has a Kempston mouse. Capturing is off by default: turn on **Machine › Input › Mouse ›
+Capture the mouse** (or the same option on the **Input** settings page) first; until then, the
+toolbar button is disabled.
+
+<Shot
+  src="guides/emulator/keyboard/mouse-capture.webp"
+  alt="The emulator toolbar of a running ZX Spectrum Next with the mouse captured: the mouse button is the only lit button"
+  caption="The mouse button, lit while the mouse is captured"
+  width={640}
 />
 
-Hold down the mouse key while over the splitter, and move it. As you move, Klive changes the keyboard size and resizes the emulator display accordingly:
+To drive the Next's mouse with yours, *capture* the mouse: click the
+**Capture the mouse** button on the emulator toolbar (between the screen buttons and the keyboard button: a crossed-out mouse, which turns into a lit, plain mouse while the mouse is captured), or press <kbd>Ctrl</kbd>+<kbd>M</kbd>
+(<kbd>Cmd</kbd>+<kbd>M</kbd> on macOS) with the emulator window focused. While the mouse is captured,
+your pointer is hidden and every movement goes to the machine. Press <kbd>Esc</kbd>, or the same
+shortcut, to release it.
 
-<ClickableImage 
-  src="/images/getting-started/sizing-end.png"
-  alt="Sizing End" 
-  width={550}
-/>
+**Machine › Input › Mouse**, and the **Mouse** group of the **Input** settings page, have the options:
 
-When you reach the desired size, release the mouse button.
+- **Capture the mouse**: whether capturing is allowed at all (off by default).
+- **Show the captured pointer**: draw Klive's own pointer over the screen **Always**,
+  **Only while no program reads the mouse**, or **Never**.
+- **Sensitivity**: from **Very Slow (0.25x)** to **Fastest (2x)**. This is separate from the DPI
+  setting software can choose on the machine.
 
-## Known Issues with the Virtual Keyboard
+## Related
 
-Klive uses some cheats with the glyphs over the numeric buttons. It emulates that you press the **GRAPHICS** button to turn on the graphics mode, then emulates the keypress, after that releases the key, and then emulates **GRAPHICS** again. While keeping the key pressed (the mouse button is held down) works for other keys, this behavior is ignored for glyphs.
-
-If you click a glyph button several times repeatedly, the ZX Spectrum OS may not process the emulation of **GRAPHICS** quickly enough, and thus, the editor does not get out of the graphics mode. 
-
-<Callout type="info" emoji="💡">
-This is a difficult issue to manage. There is currently no fix for it. Please be patient and type a bit slower when you're about to use glyphs.
-</Callout>a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Using the Virtual Keyboard","id":"using-the-virtual-keyboard","depth":2},{"value":"Resizing the Virtual Keyboard","id":"resizing-the-virtual-keyboard","depth":2},{"value":"Known Issues with the Virtual Keyboard","id":"known-issues-with-the-virtual-keyboard","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"You can use the computer's physical keyboard or a virtual keyboard to emulate keystrokes.","title":"Using the Keyboard","filePath":"content/en/guides/emulator/keyboard.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+- [The emulator window](/en/guides/emulator/emulator-window/)
+- [Settings](/en/guides/customizing/settings/): the Input page
+- [Meet the emulator](/en/get-started/meet-the-emulator/): typing your first BASIC linea:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Typing on your keyboard","id":"typing-on-your-keyboard","depth":2},{"value":"The virtual keyboard","id":"the-virtual-keyboard","depth":2},{"value":"Pressing keys","id":"pressing-keys","depth":3},{"value":"Resizing the keyboard","id":"resizing-the-keyboard","depth":3},{"value":"Remapping keys","id":"remapping-keys","depth":2},{"value":"Open the Input settings","id":"open-the-input-settings","depth":3},{"value":"Choose the file","id":"choose-the-file","depth":3},{"value":"Joysticks","id":"joysticks","depth":2},{"value":"Joystick bindings","id":"joystick-bindings","depth":3},{"value":"The mouse","id":"the-mouse","depth":2},{"value":"Related","id":"related","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"Type on the emulated machine with your keyboard or its virtual keyboard, remap keys, drive joysticks from the keyboard or a gamepad, and use the ZX Spectrum Next's mouse.","title":"Keyboard, joysticks and mouse","filePath":"content/en/guides/emulator/keyboard.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
 3:[["children",{"s":{"n":"mdxPath","t":"c","k":"guides/emulator/keyboard","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
 2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
 1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
-0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Using the Keyboard - Klive IDE"}],["$","meta","1",{"name":"description","content":"You can use the computer's physical keyboard or a virtual keyboard to emulate keystrokes."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/guides/emulator/keyboard/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"oBuJsOlDLcFRCGmWypZ5U"}
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Keyboard, joysticks and mouse - Klive IDE"}],["$","meta","1",{"name":"description","content":"Type on the emulated machine with your keyboard or its virtual keyboard, remap keys, drive joysticks from the keyboard or a gamepad, and use the ZX Spectrum Next's mouse."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/guides/emulator/keyboard/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"zVHxHPHeqBTYxgv92WAup"}
 20:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
-2f:I[484,[],"OutletBoundary"]
-:HL["/images/getting-started/sp48-keyboard.png","image"]
-:HL["/images/getting-started/sp128-keyboard.png","image"]
+21:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+48:I[484,[],"OutletBoundary"]
 13:["$","div",null,{"id":"nextra-skip-nav"}]
-14:["$","main",null,{"data-pagefind-body":true,"children":[false,[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Using the Keyboard","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You can use the computer’s physical keyboard or a virtual keyboard to emulate keystrokes. To let the Emulator process the computer’s keyboard, the Emulator should have the focus. When you change the current window to the Emulator with your machine’s keys or click it with the mouse, it is ready to receive keystrokes."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Of course, you should start the machine and wait while it reaches its main execution cycles and starts watching for keys."}],"\n",["$","h2",null,{"id":"using-the-virtual-keyboard","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Using the Virtual Keyboard",["$","$L20",null,{"id":"using-the-virtual-keyboard"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If you do not find it easy to use the computer’s physical keyboard, you can use the virtual keyboard. You can display (or hide) it with one of these actions:"}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["Click the ",["$","strong",null,{"children":"View | Virtual Keyboard"}]," menu command while in the Emulator window"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["Click the ",["$","strong",null,{"children":"Keyboard"}]," icon in the Emulator’s toolbar"]}],"\n"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When the keyboard is to show, Klive displays it according to the selected machine’s type. These figures show the ZX Spectrum 48K keyboard and the ZX Spectrum 128L/+2E/+3E keyboard."}],"\n",["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/images/getting-started/sp48-keyboard.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/images/getting-started/sp48-keyboard.png","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":650,"height":"auto"}}]}]}],"\n",["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/images/getting-started/sp128-keyboard.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/images/getting-started/sp128-keyboard.png","alt":"ZX Spectrum 128 Keyboard","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":650,"height":"auto"}}]}]}],"\n",["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":"💡"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Klive also has custom keyboards for the Cambridge Z88 and the ZX Spectrum Next computers."}]}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"To press a key, move the mouse over the particular virtual key and click it. If you keep the mouse button down, it’s just like keeping the button pressed. Releasing the mouse button behaves as you released the real key."}],"\n","$L21","\n","$L22","\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e"]]}]
-15:["$","$L2f",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@30"}]}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Keyboard, joysticks and mouse","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The emulated machine reads your computer’s keyboard, so you can type on it as on the real one. This\npage covers the virtual keyboard that shows the machine’s own keys, changing which host key presses\nwhich machine key, the joysticks of the Next and the Timex machines, and the Next’s mouse."}],"\n",["$","h2",null,{"id":"typing-on-your-keyboard","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Typing on your keyboard",["$","$L20",null,{"id":"typing-on-your-keyboard"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The machine reads the keyboard while the emulator window has the focus: click its screen, or switch\nto the window. Start the machine first and let it reach its prompt; a machine that is still booting\ndoes not scan its keys."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Each machine maps your keys to its own in the way its users expect: on the ZX Spectrum, for\nexample, either ",["$","kbd",null,{"children":"Shift"}]," is CAPS SHIFT and the right ",["$","kbd",null,{"children":"Alt"}]," is SYMBOL SHIFT. The\npages of the other machines list their mappings: ",["$","$L21",null,{"href":"/en/guides/machines/zx81-zx80/#typing","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"The ZX81 and ZX80"}],",\n",["$","$L21",null,{"href":"/en/guides/machines/ht1080z/#typing","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"The HT-1080Z"}]," and ",["$","$L21",null,{"href":"/en/guides/machines/cambridge-z88/#the-keyboard","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"The Cambridge Z88"}],"."]}],"\n",["$","h2",null,{"id":"the-virtual-keyboard","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The virtual keyboard",["$","$L20",null,{"id":"the-virtual-keyboard"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Show or hide the virtual keyboard with the ",["$","strong",null,{"children":"Show/Hide keyboard"}]," button on the emulator toolbar,\nor with ",["$","strong",null,{"children":"View › Virtual Keyboard"}]," while the emulator window has the focus. It shows the keyboard\nof the running machine:"]}],"\n",["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"Machine","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Keyboard","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":"ZX Spectrum 48K and 16K, Timex TC2048/TC2068/TS2068","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],"$L22"],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],"$L23","$L24","$L25","$L26","$L27","$L28"]}]]}],"\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41","\n","$L42","\n","$L43","\n","$L44","\n","$L45","\n","$L46","\n","$L47"]]}]
+15:["$","$L48",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@49"}]}]
 1f:true
-:HL["/images/getting-started/main-key.png","image"]
-:HL["/images/getting-started/symbol-key.png","image"]
-:HL["/images/getting-started/above-key.png","image"]
-:HL["/images/getting-started/sizing-start.png","image"]
-:HL["/images/getting-started/sizing-end.png","image"]
+4a:"ToggleWordWrapButton"
+4b:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$4a"]
+4c:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
 9:300
-21:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When you move the button slowly over a particular key, it will highlight the part of the button with the symbol shift-related and extended mode-related keys. When you click the mouse, it will automatically “press” the symbol shift or extended mode keys."}]
-22:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["You can use both the left and right mouse buttons. However, when using the right mouse button with normal keys, it behaves as if you pressed the ",["$","strong",null,{"children":"CAPS SHIFT"}]," key simultaneously."]}]
-23:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This table shows a few examples:"}]
-24:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"Example","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"style":{"textAlign":"left"},"children":"Description","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/images/getting-started/main-key.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/images/getting-started/main-key.png","alt":"Main Key","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":64,"height":"auto"}}]}]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"style":{"textAlign":"left"},"children":["The click will display ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"INPUT"}]," (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"i"}],") when you use the left mouse button or ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"INPUT"}]," (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"I"}],") with the right mouse button, depending on the current ZX Spectrum cursor mode."],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/images/getting-started/symbol-key.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/images/getting-started/symbol-key.png","alt":"Symbol Key","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":64,"height":"auto"}}]}]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"style":{"textAlign":"left"},"children":["The click will result in ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"AT"}]," regardless of which mouse button you click."],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/images/getting-started/above-key.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/images/getting-started/above-key.png","alt":"Above Key","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":64,"height":"auto"}}]}]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"style":{"textAlign":"left"},"children":["The click will show ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"CODE"}]," regardless of which mouse button you click."],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/images/getting-started/below-key.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":"$L31"}]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],"$L32"],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],"$L33"]}]]}]
-25:["$","h2",null,{"id":"resizing-the-virtual-keyboard","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Resizing the Virtual Keyboard",["$","$L20",null,{"id":"resizing-the-virtual-keyboard"}]]}]
-26:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When you move the mouse to the top border of the virtual keyboard, a sizing splitter bar appears:"}]
-27:["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/images/getting-started/sizing-start.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/images/getting-started/sizing-start.png","alt":"Sizing Start","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":550,"height":"auto"}}]}]}]
-28:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Hold down the mouse key while over the splitter, and move it. As you move, Klive changes the keyboard size and resizes the emulator display accordingly:"}]
-29:["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/images/getting-started/sizing-end.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/images/getting-started/sizing-end.png","alt":"Sizing End","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":550,"height":"auto"}}]}]}]
-2a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When you reach the desired size, release the mouse button."}]
-2b:["$","h2",null,{"id":"known-issues-with-the-virtual-keyboard","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Known Issues with the Virtual Keyboard",["$","$L20",null,{"id":"known-issues-with-the-virtual-keyboard"}]]}]
-2c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Klive uses some cheats with the glyphs over the numeric buttons. It emulates that you press the ",["$","strong",null,{"children":"GRAPHICS"}]," button to turn on the graphics mode, then emulates the keypress, after that releases the key, and then emulates ",["$","strong",null,{"children":"GRAPHICS"}]," again. While keeping the key pressed (the mouse button is held down) works for other keys, this behavior is ignored for glyphs."]}]
-2d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["If you click a glyph button several times repeatedly, the ZX Spectrum OS may not process the emulation of ",["$","strong",null,{"children":"GRAPHICS"}]," quickly enough, and thus, the editor does not get out of the graphics mode."]}]
-2e:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$14:props:children:1:18:props:children:0:props:style","data-pagefind-ignore":"all","children":"💡"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This is a difficult issue to manage. There is currently no fix for it. Please be patient and type a bit slower when you’re about to use glyphs."}]}]]}]
-30:null
-:HL["/images/getting-started/below-key.png","image"]
-:HL["/images/getting-started/glyph-key.png","image"]
+22:["$","td",null,{"children":"The 48K’s 40 keys and their legends","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
+23:["$","tr",null,{"children":[["$","td",null,{"children":"ZX Spectrum 128K, Pentagon 128, +2A/+3/+2E/+3E, Scorpion","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The 128K’s keyboard","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+24:["$","tr",null,{"children":[["$","td",null,{"children":"ZX Spectrum Next","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The Next’s keyboard","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+25:["$","tr",null,{"children":[["$","td",null,{"children":"Sinclair ZX81, and the ZX80 with the 8K ROM","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The ZX81’s keyboard","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+26:["$","tr",null,{"children":[["$","td",null,{"children":"Sinclair ZX80","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The ZX80’s own keyboard","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+27:["$","tr",null,{"children":[["$","td",null,{"children":"HT-1080Z","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The HT-1080Z’s keyboard, with its model’s characters","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+28:["$","tr",null,{"children":[["$","td",null,{"children":"Cambridge Z88","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["The Z88’s keyboard, in the layout set in ",["$","strong",null,{"children":"Settings › Machine › Keyboard layout"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+29:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"760px"},"children":[["$","figcaption",null,{"className":"Shot_label__LxtzD","children":["$undefined",["$","span",null,{"children":"The ZX Spectrum 48K keyboard"}]]}],["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/guides/emulator/keyboard/sp48-keyboard.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/guides/emulator/keyboard/sp48-keyboard.webp","alt":"The emulator window with the ZX Spectrum 48K virtual keyboard below the screen","loading":"lazy","decoding":"async"}],[]]}]]}]
+2a:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"760px"},"children":[["$","figcaption",null,{"className":"Shot_label__LxtzD","children":["$undefined",["$","span",null,{"children":"The ZX Spectrum 128K keyboard"}]]}],["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/guides/emulator/keyboard/sp128-keyboard.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/guides/emulator/keyboard/sp128-keyboard.webp","alt":"The emulator window with the ZX Spectrum 128K virtual keyboard below the screen","loading":"lazy","decoding":"async"}],[]]}]]}]
+2b:["$","h3",null,{"id":"pressing-keys","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Pressing keys",["$","$L20",null,{"id":"pressing-keys"}]]}]
+2c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Click a key to press it. Holding the mouse button down holds the key, and releasing it releases the\nkey. On the ZX Spectrum keyboards:"}]
+2d:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"The main legend"}]," (a letter or a digit) types what that key types in the current cursor mode.\nWith the right mouse button, CAPS SHIFT is pressed with it: the left button on the I key gives\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"INPUT"}]," or ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"i"}],", the right button ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"INPUT"}]," or ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"I"}],"."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"A legend printed on the key in red"}]," (such as ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"AT"}]," on I) presses SYMBOL SHIFT with the key,\nwhichever mouse button you use."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"A legend above the key"}]," (such as ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"CODE"}],") or ",["$","strong",null,{"children":"below it"}]," (such as ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"IN"}],") enters extended mode\nand types that keyword, whichever button you use."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"A block graphic on a digit key"}]," types that graphic with the left button and its inverse with\nthe right button."]}],"\n"]}]
+2e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Move the mouse slowly over a key to see which part of it is highlighted: that is what a click\ntypes."}]
+2f:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":"💡"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"To type a block graphic, Klive presses GRAPHICS, the key, and GRAPHICS again. Holding the button\ndown does not repeat a graphic, and clicking graphics very quickly can leave the editor in graphics\nmode. Click them a little slower."}]}]]}]
+30:["$","h3",null,{"id":"resizing-the-keyboard","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Resizing the keyboard",["$","$L20",null,{"id":"resizing-the-keyboard"}]]}]
+31:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Point at the top edge of the virtual keyboard until the splitter appears, then drag it. The screen\nshrinks or grows to make room. Klive remembers the height for each machine."}]
+32:["$","h2",null,{"id":"remapping-keys","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Remapping keys",["$","$L20",null,{"id":"remapping-keys"}]]}]
+33:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A ",["$","strong",null,{"children":"key mapping file"}]," changes which host key presses which ZX Spectrum key. It is a JSON file\nwith the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".keymap"}]," extension. Each property names a host key by its\n",["$","a",null,{"href":"https://developer.mozilla.org/en-US/docs/Web/API/UI_Events/Keyboard_event_code_values","target":"_blank","rel":"noreferrer","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"KeyboardEvent.code"}],false]}],"\nand gives one Spectrum key, or two pressed together. With ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"\"$merge\": true"}]," the file changes only the\nkeys it lists and keeps the default mapping for the rest:"]}]
+34:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L4b",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L4c",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"style":{"color":"#A4A4A4"},"children":"{"}]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#FF6B35"},"children":"  \"$merge\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":": true,"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#FF6B35"},"children":"  \"Quote\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":": ["}],["$","span",null,{"style":{"color":"#FF6B35"},"children":"\"SShift\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":", "}],["$","span",null,{"style":{"color":"#FF6B35"},"children":"\"P\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"],"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#FF6B35"},"children":"  \"Backquote\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":": "}],["$","span",null,{"style":{"color":"#FF6B35"},"children":"\"CShift\""}]]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#A4A4A4"},"children":"}"}]}]]}]]}]]}]
+35:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The Spectrum keys are ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"CShift"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"SShift"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Enter"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Space"}],", the letters ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"A"}]," to ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Z"}]," and the digits\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"N0"}]," to ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"N9"}],"."]}]
+36:["$","div",null,{"className":"nextra-steps x:ms-4 x:mb-12 x:border-s x:border-gray-200 x:ps-6 x:dark:border-neutral-800","style":{"--counter-id":"_S_1_"},"children":[["$","h3",null,{"id":"open-the-input-settings","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Open the Input settings",["$","$L20",null,{"id":"open-the-input-settings"}]]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Choose ",["$","strong",null,{"children":"Machine › Input › Input Settings…"}],", which opens the ",["$","strong",null,{"children":"Input"}]," page of the\n",["$","$L21",null,{"href":"/en/guides/customizing/settings/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Settings"}],"."]}],["$","h3",null,{"id":"choose-the-file","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Choose the file",["$","$L20",null,{"id":"choose-the-file"}]]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Next to ",["$","strong",null,{"children":"Key mapping file"}],", click ",["$","strong",null,{"children":"Browse…"}]," and pick your ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".keymap"}]," file. The mapping applies\nat once; a file with a mistake in it is refused with the reason."]}]]}]
+37:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Reset"}]," on the same row returns to the default mapping."]}]
+38:["$","h2",null,{"id":"joysticks","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Joysticks",["$","$L20",null,{"id":"joysticks"}]]}]
+39:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ",["$","strong",null,{"children":"ZX Spectrum Next"}]," and the ",["$","strong",null,{"children":"Timex"}]," machines have joystick ports. Each joystick is driven by\nthe host keyboard, a gamepad, or nothing."]}]
+3a:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"Machine","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Joysticks","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Menu","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":"ZX Spectrum Next","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Joystick 1 (left) and Joystick 2 (right)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","strong",null,{"children":"Machine › Input › Joystick"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"Timex TC2048","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The built-in Kempston port, driven by joystick 1’s bindings","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","strong",null,{"children":"Machine › Input › Kempston Joystick"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"Timex TC2068, TS2068","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Two joysticks, read through the AY chip","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","strong",null,{"children":"Machine › Input › Joysticks"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}]]}]
+3b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Each joystick’s ",["$","strong",null,{"children":"Driven by"}]," submenu chooses ",["$","strong",null,{"children":"Host keyboard"}],", ",["$","strong",null,{"children":"Host gamepad"}]," or\n",["$","strong",null,{"children":"Not connected"}],"."]}]
+3c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["On the Next, a joystick’s ",["$","strong",null,{"children":"Set machine mode"}]," submenu picks what the machine sees on that port:\n",["$","strong",null,{"children":"Sinclair 2 (keys 1-5)"}],", ",["$","strong",null,{"children":"Kempston 1 (port $1F)"}],", ",["$","strong",null,{"children":"Cursor / Protek"}],", ",["$","strong",null,{"children":"Sinclair 1 (keys 6-0)"}],",\n",["$","strong",null,{"children":"Kempston 2 (port $37)"}],", ",["$","strong",null,{"children":"MD 1 (port $1F)"}],", ",["$","strong",null,{"children":"MD 2 (port $37)"}]," or ",["$","strong",null,{"children":"User-defined (joymap)"}],". The\nmode is NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$05"}],", so NextZXOS may set it again when it starts."]}]
+3d:["$","h3",null,{"id":"joystick-bindings","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Joystick bindings",["$","$L20",null,{"id":"joystick-bindings"}]]}]
+3e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Configure bindings…"}]," in the joystick submenu (or ",["$","strong",null,{"children":"Configure…"}]," next to ",["$","strong",null,{"children":"Joystick bindings"}],"\non the ",["$","strong",null,{"children":"Input"}]," settings page) opens the ",["$","strong",null,{"children":"Joystick bindings"}]," dialog. For each joystick, choose what\ndrives it, then click a pin (",["$","strong",null,{"children":"Up"}],", ",["$","strong",null,{"children":"Down"}],", ",["$","strong",null,{"children":"Left"}],", ",["$","strong",null,{"children":"Right"}],", ",["$","strong",null,{"children":"Fire 1 (B)"}],", ",["$","strong",null,{"children":"Fire 2 (C)"}],", and\nthe Mega Drive pad’s extra buttons) and press the key for it. A key bound to a joystick no longer\nreaches the machine’s keyboard, and the dialog says so. ",["$","strong",null,{"children":"Save"}]," keeps the bindings; ",["$","strong",null,{"children":"Reset"}],"\nbrings back the defaults."]}]
+3f:["$","h2",null,{"id":"the-mouse","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The mouse",["$","$L20",null,{"id":"the-mouse"}]]}]
+40:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","em",null,{"children":"Applies to: ZX Spectrum Next."}]}]
+41:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The Next has a Kempston mouse. Capturing is off by default: turn on ",["$","strong",null,{"children":"Machine › Input › Mouse ›\nCapture the mouse"}]," (or the same option on the ",["$","strong",null,{"children":"Input"}]," settings page) first; until then, the\ntoolbar button is disabled."]}]
+42:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":[["$","figcaption",null,{"className":"Shot_label__LxtzD","children":["$undefined",["$","span",null,{"children":"The mouse button, lit while the mouse is captured"}]]}],["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/guides/emulator/keyboard/mouse-capture.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/guides/emulator/keyboard/mouse-capture.webp","alt":"The emulator toolbar of a running ZX Spectrum Next with the mouse captured: the mouse button is the only lit button","loading":"lazy","decoding":"async"}],[]]}]]}]
+43:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["To drive the Next’s mouse with yours, ",["$","em",null,{"children":"capture"}]," the mouse: click the\n",["$","strong",null,{"children":"Capture the mouse"}]," button on the emulator toolbar (between the screen buttons and the keyboard button: a crossed-out mouse, which turns into a lit, plain mouse while the mouse is captured), or press ",["$","kbd",null,{"children":"Ctrl"}],"+",["$","kbd",null,{"children":"M"}],"\n(",["$","kbd",null,{"children":"Cmd"}],"+",["$","kbd",null,{"children":"M"}]," on macOS) with the emulator window focused. While the mouse is captured,\nyour pointer is hidden and every movement goes to the machine. Press ",["$","kbd",null,{"children":"Esc"}],", or the same\nshortcut, to release it."]}]
+44:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Machine › Input › Mouse"}],", and the ",["$","strong",null,{"children":"Mouse"}]," group of the ",["$","strong",null,{"children":"Input"}]," settings page, have the options:"]}]
+45:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Capture the mouse"}],": whether capturing is allowed at all (off by default)."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Show the captured pointer"}],": draw Klive’s own pointer over the screen ",["$","strong",null,{"children":"Always"}],",\n",["$","strong",null,{"children":"Only while no program reads the mouse"}],", or ",["$","strong",null,{"children":"Never"}],"."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Sensitivity"}],": from ",["$","strong",null,{"children":"Very Slow (0.25x)"}]," to ",["$","strong",null,{"children":"Fastest (2x)"}],". This is separate from the DPI\nsetting software can choose on the machine."]}],"\n"]}]
+46:["$","h2",null,{"id":"related","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Related",["$","$L20",null,{"id":"related"}]]}]
+47:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L21",null,{"href":"/en/guides/emulator/emulator-window/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"The emulator window"}]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","$L21",null,{"href":"/en/guides/customizing/settings/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Settings"}],": the Input page"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","$L21",null,{"href":"/en/get-started/meet-the-emulator/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Meet the emulator"}],": typing your first BASIC line"]}],"\n"]}]
+49:null
 9:C
-31:["$","img",null,{"src":"/images/getting-started/below-key.png","alt":"Below Key","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":64,"height":"auto"}}]
-32:["$","td",null,{"style":{"textAlign":"left"},"children":["The click will display ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"IN"}]," regardless of which mouse button you click."],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
-33:["$","tr",null,{"children":[["$","td",null,{"children":["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/images/getting-started/glyph-key.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/images/getting-started/glyph-key.png","alt":"Glyph Key","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":64,"height":"auto"}}]}]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"style":{"textAlign":"left"},"children":"The click will display a glyph with its top-left corner set if you click the left mouse button and the inverse of that glyph when you use the right mouse button.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
 1e:0
 7:"$undefined"
 1d:"$undefined"

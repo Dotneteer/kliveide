@@ -4,7 +4,7 @@
 b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
 c:"static/chunks/500-fc3b64d9ff4a32a7.js"
 d:"static/chunks/436-2e7c1075bb484b2c.js"
-e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-882a1bb790cd477f.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
 f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
 10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
 11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
@@ -17,7 +17,7 @@ f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
 8:X
 8:C
 9:X
-12:Tab5,---
+12:Tac5,---
 description: "Layer 2 is what the original Spectrum should have been. A linear bitmap, one byte per pixel, every pixel independently coloured from a 256-entry palette."
 ---
 
@@ -43,13 +43,13 @@ Topics:
 - **Enabling Layer 2.** NextReg `$15` (priority bits) and `$69` (display enable plus paging shortcut for the 16 KB write window at `$0000`–`$3FFF`).
 - **Scrolling.** NextRegs `$16` (X-scroll low), `$17` (Y-scroll), and `$71` (X-scroll high bit for 320/640 modes).
 - **The clipping window.** NextRegs `$18`–`$1B` — Layer 2 only renders inside this rectangle, which is also what makes split-screen and HUD overlays cheap.
-- **Priority over ULA.** The seven priority modes from NextReg `$15`, the per-pixel priority bit (from [Palettes](./09-palettes.mdx)), and the transparency colour (NextReg `$14`).
+- **Priority over ULA.** The seven priority modes from NextReg `$15`, the per-pixel priority bit (from [Palettes](/en/book/09-palettes/)), and the transparency colour (NextReg `$14`).
 
 ## What you should know first
 
-- [Memory Architecture](./03-memory.mdx) — Layer 2 lives in pageable RAM.
-- [Interrupts](./04-interrupts.mdx) — needed for the line-interrupt split-screen exercise.
-- [Palettes](./09-palettes.mdx).
+- [Memory Architecture](/en/book/03-memory/) — Layer 2 lives in pageable RAM.
+- [Interrupts](/en/book/04-interrupts/) — needed for the line-interrupt split-screen exercise.
+- [Palettes](/en/book/09-palettes/).
 
 ## Planned exercises
 
@@ -60,7 +60,7 @@ Topics:
 3:[["children",{"s":{"n":"mdxPath","t":"c","k":"book/11-layer2","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
 2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
 1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
-0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Layer 2: True-Colour Bitmap - Klive IDE"}],["$","meta","1",{"name":"description","content":"Layer 2 is what the original Spectrum should have been. A linear bitmap, one byte per pixel, every pixel independently coloured from a 256-entry palette."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/book/11-layer2/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"oBuJsOlDLcFRCGmWypZ5U"}
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Layer 2: True-Colour Bitmap - Klive IDE"}],["$","meta","1",{"name":"description","content":"Layer 2 is what the original Spectrum should have been. A linear bitmap, one byte per pixel, every pixel independently coloured from a 256-entry palette."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/book/11-layer2/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"zVHxHPHeqBTYxgv92WAup"}
 20:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
 26:I[484,[],"OutletBoundary"]
 13:["$","div",null,{"id":"nextra-skip-nav"}]
@@ -69,9 +69,9 @@ Topics:
 1f:true
 28:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
 9:300
-21:["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Priority over ULA."}]," The seven priority modes from NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$15"}],", the per-pixel priority bit (from ",["$","$L28",null,{"href":"./09-palettes","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Palettes"}],"), and the transparency colour (NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$14"}],")."]}]
+21:["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Priority over ULA."}]," The seven priority modes from NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$15"}],", the per-pixel priority bit (from ",["$","$L28",null,{"href":"/en/book/09-palettes/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Palettes"}],"), and the transparency colour (NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$14"}],")."]}]
 22:["$","h2",null,{"id":"what-you-should-know-first","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["What you should know first",["$","$L20",null,{"id":"what-you-should-know-first"}]]}]
-23:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","$L28",null,{"href":"./03-memory","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Memory Architecture"}]," — Layer 2 lives in pageable RAM."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","$L28",null,{"href":"./04-interrupts","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Interrupts"}]," — needed for the line-interrupt split-screen exercise."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","$L28",null,{"href":"./09-palettes","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Palettes"}],"."]}],"\n"]}]
+23:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","$L28",null,{"href":"/en/book/03-memory/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Memory Architecture"}]," — Layer 2 lives in pageable RAM."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","$L28",null,{"href":"/en/book/04-interrupts/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Interrupts"}]," — needed for the line-interrupt split-screen exercise."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","$L28",null,{"href":"/en/book/09-palettes/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Palettes"}],"."]}],"\n"]}]
 24:["$","h2",null,{"id":"planned-exercises","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Planned exercises",["$","$L20",null,{"id":"planned-exercises"}]]}]
 25:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Image viewer."}]," Load a 256×192 Layer 2 image from the example pack and display it."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"DMA back-buffer update."}]," Copy a rectangular or page-sized block from regular RAM into a Layer 2 memory page using zxnDMA. Start with a coarse transfer, such as copying an 8 KB chunk, before later evolving into rectangle-oriented updates. The visible result should be an immediate change in the Layer 2 image after enabling DMA, and the explanation should make clear which memory page is mapped for the destination."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Smooth scroller."}]," A pre-drawn 512-pixel-wide Layer 2 image that scrolls horizontally using NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$16"}],"."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Top/bottom split."}]," Use the line interrupt to swap palettes mid-screen — sky on top, ground below — without changing pixel data."]}],"\n"]}]
 27:null

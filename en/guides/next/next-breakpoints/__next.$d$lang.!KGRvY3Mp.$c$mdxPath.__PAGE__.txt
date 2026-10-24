@@ -1,0 +1,300 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T253b,---
+description: "Stop the ZX Spectrum Next when a Next Register is written, when the Copper completes an instruction, or when a sprite's attributes change."
+---
+
+import { Callout } from 'nextra/components'
+
+# Next Breakpoints
+
+Besides the breakpoints every machine has (see [Breakpoints](/en/guides/debugging/breakpoints/)),
+the ZX Spectrum Next can stop on events of its own hardware. Use them when the question is *who
+changed this* rather than *what runs here*: who switched the CPU speed, which Copper instruction
+changed the palette, what moved sprite 12.
+
+*Applies to: ZX Spectrum Next.*
+
+| To stop when... | Type | Command | Also from |
+|---|---|---|---|
+| a Next Register is written | **NextReg write** | `bp-set nr:$07` | the Breakpoint dialog |
+| the Copper completes a list instruction | **Copper instruction** | `bp-set cu:$00B` | the Copper List's gutter, a `.copper` source line |
+| an attribute byte of a sprite is written | **Sprite attribute write** | `bp-set sp:$0C` | the Sprite Inspector's row menu |
+
+The types are offered by the [Breakpoint dialog](/en/guides/debugging/breakpoints/) as well. Hit
+counts, conditions, logpoints and one-shots work on all three, as on any other breakpoint.
+
+## NextReg Write Breakpoints (ZX Spectrum Next)
+
+Every other breakpoint names a **place** &mdash; an address, an offset in a bank, a source line. A
+NextReg write breakpoint names an **event**: stop when a particular Next Register is written.
+
+```
+bp-set nr:$07
+```
+
+The Next's registers are where the machine's behaviour actually lives: the CPU speed, the MMU slots,
+the Layer 2 base, sprite control, the interrupt configuration. When something writes one of them
+unexpectedly, the alternatives are an I/O write breakpoint on port `$253B`, which fires on *every*
+NextReg write in the system including NextZXOS's own, or reading the disassembly until you spot the
+`NEXTREG` instruction. Neither works well on a `.nex` file you did not write.
+
+The breakpoint catches a write from the CPU whichever way it arrives: through port `$253B`, through
+the `NEXTREG` instructions, or from a DMA transfer the program set up.
+
+### Breaking On One Value
+
+Add `=` and a value to break only when that value is written, and `/` and a mask to compare only some
+of the bits:
+
+```
+bp-set nr:$07=$03        ; only when $07 is set to $03
+bp-set nr:$07=$03/$0f    ; only when its low nibble becomes $3
+```
+
+The value is part of the breakpoint's identity, so `nr:$07` and `nr:$07=$03` are two breakpoints and
+both can be set at once. The same thing can be typed as options &mdash; `bp-set nr:$07 -v $03 -m $0f`
+&mdash; which is what the [Breakpoint Dialog](/en/guides/debugging/breakpoints/) writes for you.
+
+### Copper Writes
+
+By default only CPU writes break. A copper list runs every frame, so a breakpoint that fired on its
+writes would stop the machine constantly. Add `-c` when the copper is what you are chasing:
+
+```
+bp-set nr:$40 -c
+```
+
+The row and its tooltip say which of the two the breakpoint is watching. Writes performed by a reset
+or by Klive's own display hotkeys are never reported.
+
+### What You See When It Fires
+
+<Callout type="warning">
+**The machine stops *after* the instruction that wrote the register, not before it.** A Z80
+instruction cannot be interrupted part-way, and several NextReg writes can happen inside one of them
+&mdash; a DMA burst to `$253B`, or a busy copper list &mdash; so a breakpoint that tried to withhold
+the write would have to drop or duplicate some of them.
+
+Nothing is lost by this. The breakpoint reports the value the register held **and** the value just
+written, so the row reads `$00 → $03`: you see both sides of the change rather than only the one a
+stop-before would have shown.
+</Callout>
+
+The Breakpoints view shows the register's documented name beside its key, and the old and new values
+once the machine has stopped on it. The output pane says the same thing in words:
+
+```
+NextReg breakpoint: $07 (CPU speed) $00 -> $03 at PC=$8005
+```
+
+The row and the message both name **where the write came from** — the address of the instruction
+that did it, and the partition that address was paged from. On a Next the same address means
+different code depending on what is paged there, so the address alone does not identify the
+instruction.
+
+### Breaking On A Reset
+
+Writing NextReg `$02` asks the machine to reset: bit 0 for a soft reset, bit 1 for a hard one. That
+makes `nr:$02` the most useful breakpoint of the lot and the one with the most to go wrong, because
+a reset discards exactly the two things you set the breakpoint to find out.
+
+```
+bp-set nr:$02
+```
+
+Klive stops **before carrying the reset out**. The machine is still standing where the write
+happened: the program counter, the MMU slots and every other register are as the program left them,
+and the Memory view shows the paging that was in force. The reset is performed when you resume.
+
+<Callout type="info">
+This is the one place where a NextReg breakpoint changes *when* the machine does something, rather
+than only watching. Without a breakpoint on `$02`, or with one that is disabled, the reset happens
+exactly as it always did.
+</Callout>
+
+These breakpoints are stored in the project, not in a `.nex.dis` sidecar: they watch a hardware
+register, so they mean the same thing whichever NEX file is loaded.
+
+## Copper Breakpoints (ZX Spectrum Next)
+
+A Copper breakpoint names another event: **the Copper completes an instruction of its list**. The
+list holds 1024 instructions, so the breakpoint names a list index, `$000` to `$3FF`:
+
+```
+bp-set cu:$00B
+```
+
+- A `MOVE` (or a `NOP`) fires when the Copper issues it.
+- A `WAIT` fires when its condition is **satisfied** &mdash; when the raster reaches the line and
+  position it waits for &mdash; not when the Copper arrives at it. That is the moment that matters:
+  "the beam has reached line 96".
+- The `HALT` (`WAIT 511,63`) never completes, so a breakpoint on it never fires.
+
+Hit counts, conditions, logpoints and one-shots work as on any other breakpoint. A list that runs
+once per frame passes each instruction once per frame, so `-hit` counts frames:
+
+```
+bp-set cu:$00B -hit 50      ; the 50th frame
+bp-set cu:$00B -once        ; once, then the breakpoint is removed
+```
+
+In a condition, `ADDR` is the list index and `VAL` is the 16-bit instruction word, so
+`-if VAL != $BE78` stops only when the CPU has patched the instruction.
+
+<Callout type="warning">
+**The Copper runs on to the end of the Z80 instruction.** The Copper executes at 28 MHz, locked to the
+beam, and the machine can only stop between Z80 instructions. By the time it stops, the Copper may
+have completed several more instructions. The stop message, the Breakpoints view and the
+[Copper List](/en/guides/next/copper/) therefore report the **hit** &mdash; the instruction and the
+beam position where it completed &mdash; separately from where the Copper is now.
+</Callout>
+
+```
+Copper breakpoint: $002 WAIT 96, 8 satisfied at line 96, hc 76 (x 64); CPU at $8019 in 05
+```
+
+You can set a Copper breakpoint from the Copper List's gutter, from the **Copper instruction** type
+of the [Breakpoint Dialog](/en/guides/debugging/breakpoints/), or by clicking the margin of a `.copper` source
+line while the program runs: Klive finds where that line's instruction sits in the Copper's memory
+and sets the breakpoint on that index.
+
+## Sprite Attribute Breakpoints (ZX Spectrum Next)
+
+A sprite attribute breakpoint stops when **an attribute byte of a sprite is written**. It names the
+sprite, `$00` to `$7F`:
+
+```
+bp-set sp:$0C
+```
+
+It catches every way the hardware stores an attribute byte:
+
+- port `$57`, written by the CPU (`OUT`, `OTIR`) or by the DMA;
+- the NextReg mirrors `$35`-`$39` and `$75`-`$79` on the sprite `$34` selects, written by the CPU
+  (`NEXTREG`, port `$253B`), the DMA or the Copper.
+
+Selecting a sprite (`$303B`, `$34`) is not a write. A four-byte sprite (attribute 3, bit 6 clear) skips
+its fifth byte without writing it, so a breakpoint on attribute 4 does not fire for it.
+
+To watch only some of the five bytes, add `-attr` with a list. Attributes 0 and 1 hold X and Y, so
+this stops only when sprite 12 moves:
+
+```
+bp-set sp:$0C -attr 0,1
+bp-set sp:$0C -attr 0-3 -hit 10
+```
+
+Hit counts, conditions, logpoints and one-shots work as on any other breakpoint. In a condition,
+`ADDR` is the attribute byte (`0`-`4`) and `VAL` is the value written, so
+`-if ADDR == 3 && (VAL & $80) == 0` stops when the sprite is made invisible.
+
+The machine stops after the instruction during which the byte was written, and the stop message
+reports the byte's previous and new values and who wrote it:
+
+```
+Sprite breakpoint: sprite $0C attr 0 (X) $00 -> $40 through port $57, written at $800C in 05
+Sprite breakpoint: sprite $14 attr 3 (visible, pattern) $00 -> $C0 by the Copper, with the CPU at $8026
+```
+
+You can set a sprite attribute breakpoint from the [Sprite Inspector](/en/guides/next/sprite-inspector/):
+right-click a sprite and choose **Break on attribute write**, or **Run until attribute write** for a
+one-shot. The **Sprite attribute write** type of the [Breakpoint Dialog](/en/guides/debugging/breakpoints/) has
+a checkbox for each attribute byte.
+
+## Related
+
+- [Breakpoints](/en/guides/debugging/breakpoints/)
+- [Breakpoint conditions and logpoints](/en/guides/debugging/breakpoint-conditions/)
+- [The Copper view](/en/guides/next/copper/)
+- [The Sprite Inspector](/en/guides/next/sprite-inspector/)
+- [`bp-set` in the command reference](/en/reference/commands#bp-set)a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"NextReg Write Breakpoints (ZX Spectrum Next)","id":"nextreg-write-breakpoints-zx-spectrum-next","depth":2},{"value":"Breaking On One Value","id":"breaking-on-one-value","depth":3},{"value":"Copper Writes","id":"copper-writes","depth":3},{"value":"What You See When It Fires","id":"what-you-see-when-it-fires","depth":3},{"value":"Breaking On A Reset","id":"breaking-on-a-reset","depth":3},{"value":"Copper Breakpoints (ZX Spectrum Next)","id":"copper-breakpoints-zx-spectrum-next","depth":2},{"value":"Sprite Attribute Breakpoints (ZX Spectrum Next)","id":"sprite-attribute-breakpoints-zx-spectrum-next","depth":2},{"value":"Related","id":"related","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"Stop the ZX Spectrum Next when a Next Register is written, when the Copper completes an instruction, or when a sprite's attributes change.","title":"Next Breakpoints","filePath":"content/en/guides/next/next-breakpoints.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"guides/next/next-breakpoints","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Next Breakpoints - Klive IDE"}],["$","meta","1",{"name":"description","content":"Stop the ZX Spectrum Next when a Next Register is written, when the Copper completes an instruction, or when a sprite's attributes change."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/guides/next/next-breakpoints/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"zVHxHPHeqBTYxgv92WAup"}
+20:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+54:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Next Breakpoints","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Besides the breakpoints every machine has (see ",["$","$L20",null,{"href":"/en/guides/debugging/breakpoints/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Breakpoints"}],"),\nthe ZX Spectrum Next can stop on events of its own hardware. Use them when the question is ",["$","em",null,{"children":"who\nchanged this"}]," rather than ",["$","em",null,{"children":"what runs here"}],": who switched the CPU speed, which Copper instruction\nchanged the palette, what moved sprite 12."]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","em",null,{"children":"Applies to: ZX Spectrum Next."}]}],"\n",["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"To stop when…","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Type","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Command","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Also from","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":"a Next Register is written","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","strong",null,{"children":"NextReg write"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"bp-set nr:$07"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"the Breakpoint dialog","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"the Copper completes a list instruction","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","strong",null,{"children":"Copper instruction"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"bp-set cu:$00B"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["the Copper List’s gutter, a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".copper"}]," source line"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"an attribute byte of a sprite is written","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","strong",null,{"children":"Sprite attribute write"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],"$L21","$L22"],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}]]}],"\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41","\n","$L42","\n","$L43","\n","$L44","\n","$L45","\n","$L46","\n","$L47","\n","$L48","\n","$L49","\n","$L4a","\n","$L4b","\n","$L4c","\n","$L4d","\n","$L4e","\n","$L4f","\n","$L50","\n","$L51","\n","$L52","\n","$L53"]]}]
+15:["$","$L54",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@55"}]}]
+1f:true
+56:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+57:"ToggleWordWrapButton"
+58:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$57"]
+59:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+9:300
+21:["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"bp-set sp:$0C"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
+22:["$","td",null,{"children":"the Sprite Inspector’s row menu","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
+23:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The types are offered by the ",["$","$L20",null,{"href":"/en/guides/debugging/breakpoints/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Breakpoint dialog"}]," as well. Hit\ncounts, conditions, logpoints and one-shots work on all three, as on any other breakpoint."]}]
+24:["$","h2",null,{"id":"nextreg-write-breakpoints-zx-spectrum-next","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["NextReg Write Breakpoints (ZX Spectrum Next)",["$","$L56",null,{"id":"nextreg-write-breakpoints-zx-spectrum-next"}]]}]
+25:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Every other breakpoint names a ",["$","strong",null,{"children":"place"}]," — an address, an offset in a bank, a source line. A\nNextReg write breakpoint names an ",["$","strong",null,{"children":"event"}],": stop when a particular Next Register is written."]}]
+26:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L58",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L59",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"bp-set nr:$07"}]}]}]]}]]}]
+27:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The Next’s registers are where the machine’s behaviour actually lives: the CPU speed, the MMU slots,\nthe Layer 2 base, sprite control, the interrupt configuration. When something writes one of them\nunexpectedly, the alternatives are an I/O write breakpoint on port ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$253B"}],", which fires on ",["$","em",null,{"children":"every"}],"\nNextReg write in the system including NextZXOS’s own, or reading the disassembly until you spot the\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"NEXTREG"}]," instruction. Neither works well on a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".nex"}]," file you did not write."]}]
+28:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The breakpoint catches a write from the CPU whichever way it arrives: through port ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$253B"}],", through\nthe ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"NEXTREG"}]," instructions, or from a DMA transfer the program set up."]}]
+29:["$","h3",null,{"id":"breaking-on-one-value","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Breaking On One Value",["$","$L56",null,{"id":"breaking-on-one-value"}]]}]
+2a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Add ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"="}]," and a value to break only when that value is written, and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"/"}]," and a mask to compare only some\nof the bits:"]}]
+2b:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L58",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L59",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"bp-set nr:$07=$03        ; only when $07 is set to $03"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"bp-set nr:$07=$03/$0f    ; only when its low nibble becomes $3"}]}]]}]]}]]}]
+2c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The value is part of the breakpoint’s identity, so ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"nr:$07"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"nr:$07=$03"}]," are two breakpoints and\nboth can be set at once. The same thing can be typed as options — ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"bp-set nr:$07 -v $03 -m $0f"}],"\n— which is what the ",["$","$L20",null,{"href":"/en/guides/debugging/breakpoints/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Breakpoint Dialog"}]," writes for you."]}]
+2d:["$","h3",null,{"id":"copper-writes","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Copper Writes",["$","$L56",null,{"id":"copper-writes"}]]}]
+2e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["By default only CPU writes break. A copper list runs every frame, so a breakpoint that fired on its\nwrites would stop the machine constantly. Add ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"-c"}]," when the copper is what you are chasing:"]}]
+2f:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L58",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L59",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"bp-set nr:$40 -c"}]}]}]]}]]}]
+30:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The row and its tooltip say which of the two the breakpoint is watching. Writes performed by a reset\nor by Klive’s own display hotkeys are never reported."}]
+31:["$","h3",null,{"id":"what-you-see-when-it-fires","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["What You See When It Fires",["$","$L56",null,{"id":"what-you-see-when-it-fires"}]]}]
+32:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-yellow-50 x:dark:bg-yellow-700/30 x:text-yellow-700 x:dark:text-yellow-500 x:border-yellow-700","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":["$","svg",null,{"viewBox":"0 0 16 16","fill":"currentColor","height":".8em","className":"x:mt-[.3em]","children":["$","path",null,{"d":"M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575Zm1.763.707a.25.25 0 0 0-.44 0L1.698 13.132a.25.25 0 0 0 .22.368h12.164a.25.25 0 0 0 .22-.368Zm.53 3.996v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"}]}]}],["$","div",null,{"className":"x:w-full x:min-w-0","children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":["The machine stops ",["$","em",null,{"children":"after"}]," the instruction that wrote the register, not before it."]}]," A Z80\ninstruction cannot be interrupted part-way, and several NextReg writes can happen inside one of them\n— a DMA burst to ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$253B"}],", or a busy copper list — so a breakpoint that tried to withhold\nthe write would have to drop or duplicate some of them."]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Nothing is lost by this. The breakpoint reports the value the register held ",["$","strong",null,{"children":"and"}]," the value just\nwritten, so the row reads ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$00 → $03"}],": you see both sides of the change rather than only the one a\nstop-before would have shown."]}]]}]]}]
+33:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The Breakpoints view shows the register’s documented name beside its key, and the old and new values\nonce the machine has stopped on it. The output pane says the same thing in words:"}]
+34:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L58",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L59",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"NextReg breakpoint: $07 (CPU speed) $00 -> $03 at PC=$8005"}]}]}]]}]]}]
+35:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The row and the message both name ",["$","strong",null,{"children":"where the write came from"}]," — the address of the instruction\nthat did it, and the partition that address was paged from. On a Next the same address means\ndifferent code depending on what is paged there, so the address alone does not identify the\ninstruction."]}]
+36:["$","h3",null,{"id":"breaking-on-a-reset","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Breaking On A Reset",["$","$L56",null,{"id":"breaking-on-a-reset"}]]}]
+37:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Writing NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$02"}]," asks the machine to reset: bit 0 for a soft reset, bit 1 for a hard one. That\nmakes ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"nr:$02"}]," the most useful breakpoint of the lot and the one with the most to go wrong, because\na reset discards exactly the two things you set the breakpoint to find out."]}]
+38:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L58",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L59",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"bp-set nr:$02"}]}]}]]}]]}]
+39:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Klive stops ",["$","strong",null,{"children":"before carrying the reset out"}],". The machine is still standing where the write\nhappened: the program counter, the MMU slots and every other register are as the program left them,\nand the Memory view shows the paging that was in force. The reset is performed when you resume."]}]
+3a:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$32:props:children:0:props:style","data-pagefind-ignore":"all","children":["$","svg",null,{"viewBox":"0 0 16 16","fill":"currentColor","height":".8em","className":"x:mt-[.3em]","children":["$","path",null,{"d":"M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"}]}]}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["This is the one place where a NextReg breakpoint changes ",["$","em",null,{"children":"when"}]," the machine does something, rather\nthan only watching. Without a breakpoint on ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$02"}],", or with one that is disabled, the reset happens\nexactly as it always did."]}]}]]}]
+3b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["These breakpoints are stored in the project, not in a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".nex.dis"}]," sidecar: they watch a hardware\nregister, so they mean the same thing whichever NEX file is loaded."]}]
+3c:["$","h2",null,{"id":"copper-breakpoints-zx-spectrum-next","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Copper Breakpoints (ZX Spectrum Next)",["$","$L56",null,{"id":"copper-breakpoints-zx-spectrum-next"}]]}]
+3d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A Copper breakpoint names another event: ",["$","strong",null,{"children":"the Copper completes an instruction of its list"}],". The\nlist holds 1024 instructions, so the breakpoint names a list index, ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$000"}]," to ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$3FF"}],":"]}]
+3e:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L58",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L59",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"bp-set cu:$00B"}]}]}]]}]]}]
+3f:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["A ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"MOVE"}]," (or a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"NOP"}],") fires when the Copper issues it."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["A ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"WAIT"}]," fires when its condition is ",["$","strong",null,{"children":"satisfied"}]," — when the raster reaches the line and\nposition it waits for — not when the Copper arrives at it. That is the moment that matters:\n“the beam has reached line 96”."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["The ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"HALT"}]," (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"WAIT 511,63"}],") never completes, so a breakpoint on it never fires."]}],"\n"]}]
+40:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Hit counts, conditions, logpoints and one-shots work as on any other breakpoint. A list that runs\nonce per frame passes each instruction once per frame, so ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"-hit"}]," counts frames:"]}]
+41:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L58",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L59",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"bp-set cu:$00B -hit 50      ; the 50th frame"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"bp-set cu:$00B -once        ; once, then the breakpoint is removed"}]}]]}]]}]]}]
+42:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["In a condition, ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"ADDR"}]," is the list index and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"VAL"}]," is the 16-bit instruction word, so\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"-if VAL != $BE78"}]," stops only when the CPU has patched the instruction."]}]
+43:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-yellow-50 x:dark:bg-yellow-700/30 x:text-yellow-700 x:dark:text-yellow-500 x:border-yellow-700","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$32:props:children:0:props:style","data-pagefind-ignore":"all","children":"$32:props:children:0:props:children"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"The Copper runs on to the end of the Z80 instruction."}]," The Copper executes at 28 MHz, locked to the\nbeam, and the machine can only stop between Z80 instructions. By the time it stops, the Copper may\nhave completed several more instructions. The stop message, the Breakpoints view and the\n",["$","$L20",null,{"href":"/en/guides/next/copper/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Copper List"}]," therefore report the ",["$","strong",null,{"children":"hit"}]," — the instruction and the\nbeam position where it completed — separately from where the Copper is now."]}]}]]}]
+44:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L58",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L59",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"Copper breakpoint: $002 WAIT 96, 8 satisfied at line 96, hc 76 (x 64); CPU at $8019 in 05"}]}]}]]}]]}]
+45:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["You can set a Copper breakpoint from the Copper List’s gutter, from the ",["$","strong",null,{"children":"Copper instruction"}]," type\nof the ",["$","$L20",null,{"href":"/en/guides/debugging/breakpoints/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Breakpoint Dialog"}],", or by clicking the margin of a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".copper"}]," source\nline while the program runs: Klive finds where that line’s instruction sits in the Copper’s memory\nand sets the breakpoint on that index."]}]
+46:["$","h2",null,{"id":"sprite-attribute-breakpoints-zx-spectrum-next","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Sprite Attribute Breakpoints (ZX Spectrum Next)",["$","$L56",null,{"id":"sprite-attribute-breakpoints-zx-spectrum-next"}]]}]
+47:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A sprite attribute breakpoint stops when ",["$","strong",null,{"children":"an attribute byte of a sprite is written"}],". It names the\nsprite, ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$00"}]," to ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$7F"}],":"]}]
+48:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L58",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L59",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"bp-set sp:$0C"}]}]}]]}]]}]
+49:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"It catches every way the hardware stores an attribute byte:"}]
+4a:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["port ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$57"}],", written by the CPU (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"OUT"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"OTIR"}],") or by the DMA;"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["the NextReg mirrors ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$35"}],"-",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$39"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$75"}],"-",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$79"}]," on the sprite ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$34"}]," selects, written by the CPU\n(",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"NEXTREG"}],", port ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$253B"}],"), the DMA or the Copper."]}],"\n"]}]
+4b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Selecting a sprite (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$303B"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$34"}],") is not a write. A four-byte sprite (attribute 3, bit 6 clear) skips\nits fifth byte without writing it, so a breakpoint on attribute 4 does not fire for it."]}]
+4c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["To watch only some of the five bytes, add ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"-attr"}]," with a list. Attributes 0 and 1 hold X and Y, so\nthis stops only when sprite 12 moves:"]}]
+4d:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L58",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L59",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"bp-set sp:$0C -attr 0,1"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"bp-set sp:$0C -attr 0-3 -hit 10"}]}]]}]]}]]}]
+4e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Hit counts, conditions, logpoints and one-shots work as on any other breakpoint. In a condition,\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"ADDR"}]," is the attribute byte (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"0"}],"-",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"4"}],") and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"VAL"}]," is the value written, so\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"-if ADDR == 3 && (VAL & $80) == 0"}]," stops when the sprite is made invisible."]}]
+4f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The machine stops after the instruction during which the byte was written, and the stop message\nreports the byte’s previous and new values and who wrote it:"}]
+50:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L58",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L59",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"Sprite breakpoint: sprite $0C attr 0 (X) $00 -> $40 through port $57, written at $800C in 05"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Sprite breakpoint: sprite $14 attr 3 (visible, pattern) $00 -> $C0 by the Copper, with the CPU at $8026"}]}]]}]]}]]}]
+51:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["You can set a sprite attribute breakpoint from the ",["$","$L20",null,{"href":"/en/guides/next/sprite-inspector/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Sprite Inspector"}],":\nright-click a sprite and choose ",["$","strong",null,{"children":"Break on attribute write"}],", or ",["$","strong",null,{"children":"Run until attribute write"}]," for a\none-shot. The ",["$","strong",null,{"children":"Sprite attribute write"}]," type of the ",["$","$L20",null,{"href":"/en/guides/debugging/breakpoints/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Breakpoint Dialog"}]," has\na checkbox for each attribute byte."]}]
+52:["$","h2",null,{"id":"related","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Related",["$","$L56",null,{"id":"related"}]]}]
+53:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L20",null,{"href":"/en/guides/debugging/breakpoints/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Breakpoints"}]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L20",null,{"href":"/en/guides/debugging/breakpoint-conditions/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Breakpoint conditions and logpoints"}]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L20",null,{"href":"/en/guides/next/copper/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"The Copper view"}]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L20",null,{"href":"/en/guides/next/sprite-inspector/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"The Sprite Inspector"}]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L20",null,{"href":"/en/reference/commands#bp-set","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"bp-set"}]," in the command reference"]}]}],"\n"]}]
+55:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

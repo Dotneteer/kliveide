@@ -1,0 +1,203 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T1aff,---
+description: "Follow a paused program's calls in the Call Stack panel and read its variables, parameters and FUNCTION results in the Variables panel, for BASIC, C and assembly programs."
+---
+
+import { Callout, Steps } from 'nextra/components'
+
+# Call Stack and Variables
+
+When the machine is paused, the **Call Stack** panel answers *who called this code*, and the
+**Variables** panel shows the program's variables by name, with their types. For a program built
+with source-level debug information &mdash; Klive BASIC, Boriel BASIC, or C built with z88dk
+&mdash; both work at the level of your source: frames are SUBs, FUNCTIONs and C functions, and
+variables are decoded by type. For an assembly program the Call Stack shows the raw stack.
+
+<Shot
+  src="guides/debugging/call-stack-variables/klive-basic-paused.webp"
+  alt="A Klive BASIC program paused inside a SUB: the statement highlighted in the editor, the Call Stack panel with the SUB and the main program, and the Variables panel with locals and globals"
+  caption="A Klive BASIC program paused inside a SUB, with the Call Stack and Variables panels."
+  markers={["current", "callstack", "variables"]}
+  width={900}
+/>
+
+1. The statement that runs next.
+2. The Call Stack: the SUB and the line in the main program that called it.
+3. The Variables panel: the SUB's locals and the program's globals.
+
+## Debug a BASIC or C program at source level
+
+<Steps>
+
+### Build a debuggable program
+
+Source-level debug information comes with every [Klive BASIC](/en/guides/languages/klive-basic/)
+build, with [Boriel BASIC](/en/guides/languages/boriel-basic/), and with
+[z88dk](/en/guides/languages/z88dk/) debug builds that use the sccz80 compiler. SDCC builds carry
+no line information, so a C program built with SDCC is debugged in the disassembly only.
+
+### Stop in your program
+
+Set a breakpoint on a statement and start a debug run. The editor highlights the statement that
+runs next; on a line with several statements, only that statement.
+
+### Open the panels
+
+In the **Debug** activity, open **Call Stack** and **Variables**. Step with the source-level step
+commands (see [Running, pausing and stepping](/en/guides/debugging/run-debug/#source-statements-or-z80-instructions)):
+the panels follow each stop.
+
+</Steps>
+
+## The Call Stack panel
+
+### For a source-level program
+
+The panel lists one row per active call, the innermost first: the routine's name and the file and
+line it stands at. The bottom row is the main program.
+
+- **Click a row** to make it the selected frame. The editor moves to that frame's statement, and the
+  Variables panel shows that frame's parameters and locals.
+- **Run to this frame**, the button on an outer row (also in the row's context menu, beside **Go to
+  this frame**), runs until control is back in that frame and stops at the return point there. It is
+  Step Out repeated, done as one run.
+
+When the machine stops in code that has no statements &mdash; the runtime, or machine code &mdash;
+the top row reads *runtime code at* an address, or *runtime error:* and the error. Click it to
+expand the raw return addresses between the stack pointer and your innermost routine.
+
+### For any other program
+
+For assembly, and any program without source-level information, the panel shows the top 16 words
+of the stack, starting at SP: the row labelled **Top:** is the word SP points at, then `1:`, `2:`
+and so on. Each row shows where the word is stored, an arrow, and its value. When the value points
+into a routine of your build, the routine's name and offset follow (`MAIN+12`). Hover a row for the
+addresses in hexadecimal and decimal.
+
+These are raw stack words: a return address and a value the program pushed look the same.
+
+### While in the execution history
+
+When you step back into the [execution history](/en/guides/debugging/execution-history/), the
+memory above SP may already hold other data, so the panel rebuilds the frames from the recorded
+calls and returns instead. Each row says how the routine was entered (`CALL`, `RST`, an interrupt or
+an NMI), where it was called from and where it returns to. The frames are exact as far back as the
+history reaches; the last row says *earlier frames before recorded history* when there were more.
+
+## The Variables panel
+
+The Variables panel needs a program with source-level debug information and a paused machine. It
+has up to four sections:
+
+| Section | Shows |
+| --- | --- |
+| **Returned** | After a step out of a FUNCTION, or a step over a statement that called FUNCTIONs: the value each returned. |
+| **Locals —** *routine* | The parameters and local variables of the frame selected in the Call Stack panel. |
+| **Globals** | The program's global variables. |
+| **Watch** | BASIC expressions you add yourself. |
+
+Arrays and other compound values expand with the chevron beside them. The tooltip of a value gives its
+address (and its CODEBANK bank, for a banked variable).
+
+- **Change a value**: double-click a number, type the new value and press <kbd>Enter</kbd>
+  (<kbd>Esc</kbd> cancels). The value is checked against the variable's type. Strings and banked
+  variables cannot be edited. Changing a value while standing in the past [takes over](/en/guides/debugging/reverse-debugging/#taking-over)
+  there, after asking.
+- **Add a BASIC watch**: type an expression in the **Add watch** box at the bottom and press
+  <kbd>Enter</kbd>. The trash button on a watch row removes it.
+
+If the selected routine has not set up its frame yet (the machine stopped at its very first
+instruction), the Locals section says so.
+
+<Callout type="info">
+z88dk's C programs show scalar variables (`char`, `int`, `long`, signed and unsigned) and pointers.
+Banked functions, floats, structs and arrays are not described; the build output lists what was left
+out.
+</Callout>
+
+For the symbols of an assembly program, use the [Watch](/en/guides/debugging/watch/) panel.
+
+## Settings that affect source stepping
+
+On the **Debugging** page of [Settings](/en/guides/customizing/settings/):
+
+- **Just My Code** (on by default): source steps run through the standard library as they run
+  through the runtime. Off, stepping also stops in the library's statements. The command is
+  `em-jmc on|off`.
+- **Stop in interrupt handlers while stepping** (off by default): an interrupt handler taken during
+  a source step runs outside the step, unless this is on. Breakpoints in handlers always stop.
+- **Stop at runtime errors** (on by default): a debug run of a compiled BASIC program stops where it
+  raises an error, before the ROM prints the report, and shows the statement. The command is
+  `em-err on|off`.
+
+## Related
+
+- [Running, pausing and stepping](/en/guides/debugging/run-debug/)
+- [Klive BASIC](/en/guides/languages/klive-basic/)
+- [Boriel BASIC](/en/guides/languages/boriel-basic/)
+- [z88dk (C)](/en/guides/languages/z88dk/)
+- [Watch expressions](/en/guides/debugging/watch/)a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Debug a BASIC or C program at source level","id":"debug-a-basic-or-c-program-at-source-level","depth":2},{"value":"Build a debuggable program","id":"build-a-debuggable-program","depth":3},{"value":"Stop in your program","id":"stop-in-your-program","depth":3},{"value":"Open the panels","id":"open-the-panels","depth":3},{"value":"The Call Stack panel","id":"the-call-stack-panel","depth":2},{"value":"For a source-level program","id":"for-a-source-level-program","depth":3},{"value":"For any other program","id":"for-any-other-program","depth":3},{"value":"While in the execution history","id":"while-in-the-execution-history","depth":3},{"value":"The Variables panel","id":"the-variables-panel","depth":2},{"value":"Settings that affect source stepping","id":"settings-that-affect-source-stepping","depth":2},{"value":"Related","id":"related","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"Follow a paused program's calls in the Call Stack panel and read its variables, parameters and FUNCTION results in the Variables panel, for BASIC, C and assembly programs.","title":"Call Stack and Variables","filePath":"content/en/guides/debugging/call-stack-variables.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"guides/debugging/call-stack-variables","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Call Stack and Variables - Klive IDE"}],["$","meta","1",{"name":"description","content":"Follow a paused program's calls in the Call Stack panel and read its variables, parameters and FUNCTION results in the Variables panel, for BASIC, C and assembly programs."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/guides/debugging/call-stack-variables/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"zVHxHPHeqBTYxgv92WAup"}
+20:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+21:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+3e:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Call Stack and Variables","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["When the machine is paused, the ",["$","strong",null,{"children":"Call Stack"}]," panel answers ",["$","em",null,{"children":"who called this code"}],", and the\n",["$","strong",null,{"children":"Variables"}]," panel shows the program’s variables by name, with their types. For a program built\nwith source-level debug information — Klive BASIC, Boriel BASIC, or C built with z88dk\n— both work at the level of your source: frames are SUBs, FUNCTIONs and C functions, and\nvariables are decoded by type. For an assembly program the Call Stack shows the raw stack."]}],"\n",["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"900px"},"children":[["$","figcaption",null,{"className":"Shot_label__LxtzD","children":["$undefined",["$","span",null,{"children":"A Klive BASIC program paused inside a SUB, with the Call Stack and Variables panels."}]]}],["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/guides/debugging/call-stack-variables/klive-basic-paused.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/guides/debugging/call-stack-variables/klive-basic-paused.webp","alt":"A Klive BASIC program paused inside a SUB: the statement highlighted in the editor, the Call Stack panel with the SUB and the main program, and the Variables panel with locals and globals","loading":"lazy","decoding":"async","width":1800,"height":1153}],[["$","span","0",{"className":"Shot_marker___4iE_","style":{"left":"40.8%","top":"33.7%"},"aria-label":"1","children":1}],["$","span","1",{"className":"Shot_marker___4iE_","style":{"left":"16.6%","top":"17.4%"},"aria-label":"2","children":2}],["$","span","2",{"className":"Shot_marker___4iE_","style":{"left":"16.6%","top":"58.4%"},"aria-label":"3","children":3}]]]}]]}],"\n",["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"The statement that runs next."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"The Call Stack: the SUB and the line in the main program that called it."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"The Variables panel: the SUB’s locals and the program’s globals."}],"\n"]}],"\n",["$","h2",null,{"id":"debug-a-basic-or-c-program-at-source-level","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Debug a BASIC or C program at source level",["$","$L20",null,{"id":"debug-a-basic-or-c-program-at-source-level"}]]}],"\n",["$","div",null,{"className":"nextra-steps x:ms-4 x:mb-12 x:border-s x:border-gray-200 x:ps-6 x:dark:border-neutral-800","style":{"--counter-id":"_S_1_"},"children":[["$","h3",null,{"id":"build-a-debuggable-program","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Build a debuggable program",["$","$L20",null,{"id":"build-a-debuggable-program"}]]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Source-level debug information comes with every ",["$","$L21",null,{"href":"/en/guides/languages/klive-basic/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Klive BASIC"}],"\nbuild, with ",["$","$L21",null,{"href":"/en/guides/languages/boriel-basic/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Boriel BASIC"}],", and with\n","$L22"," debug builds that use the sccz80 compiler. SDCC builds carry\nno line information, so a C program built with SDCC is debugged in the disassembly only."]}],"$L23","$L24","$L25","$L26"]}],"\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d"]]}]
+15:["$","$L3e",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@3f"}]}]
+1f:true
+9:300
+22:["$","$L21",null,{"href":"/en/guides/languages/z88dk/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"z88dk"}]
+23:["$","h3",null,{"id":"stop-in-your-program","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Stop in your program",["$","$L20",null,{"id":"stop-in-your-program"}]]}]
+24:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Set a breakpoint on a statement and start a debug run. The editor highlights the statement that\nruns next; on a line with several statements, only that statement."}]
+25:["$","h3",null,{"id":"open-the-panels","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Open the panels",["$","$L20",null,{"id":"open-the-panels"}]]}]
+26:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["In the ",["$","strong",null,{"children":"Debug"}]," activity, open ",["$","strong",null,{"children":"Call Stack"}]," and ",["$","strong",null,{"children":"Variables"}],". Step with the source-level step\ncommands (see ",["$","$L21",null,{"href":"/en/guides/debugging/run-debug/#source-statements-or-z80-instructions","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Running, pausing and stepping"}],"):\nthe panels follow each stop."]}]
+27:["$","h2",null,{"id":"the-call-stack-panel","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The Call Stack panel",["$","$L20",null,{"id":"the-call-stack-panel"}]]}]
+28:["$","h3",null,{"id":"for-a-source-level-program","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["For a source-level program",["$","$L20",null,{"id":"for-a-source-level-program"}]]}]
+29:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The panel lists one row per active call, the innermost first: the routine’s name and the file and\nline it stands at. The bottom row is the main program."}]
+2a:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Click a row"}]," to make it the selected frame. The editor moves to that frame’s statement, and the\nVariables panel shows that frame’s parameters and locals."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Run to this frame"}],", the button on an outer row (also in the row’s context menu, beside ",["$","strong",null,{"children":"Go to\nthis frame"}],"), runs until control is back in that frame and stops at the return point there. It is\nStep Out repeated, done as one run."]}],"\n"]}]
+2b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["When the machine stops in code that has no statements — the runtime, or machine code —\nthe top row reads ",["$","em",null,{"children":"runtime code at"}]," an address, or ",["$","em",null,{"children":"runtime error:"}]," and the error. Click it to\nexpand the raw return addresses between the stack pointer and your innermost routine."]}]
+2c:["$","h3",null,{"id":"for-any-other-program","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["For any other program",["$","$L20",null,{"id":"for-any-other-program"}]]}]
+2d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["For assembly, and any program without source-level information, the panel shows the top 16 words\nof the stack, starting at SP: the row labelled ",["$","strong",null,{"children":"Top:"}]," is the word SP points at, then ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"1:"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"2:"}],"\nand so on. Each row shows where the word is stored, an arrow, and its value. When the value points\ninto a routine of your build, the routine’s name and offset follow (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"MAIN+12"}],"). Hover a row for the\naddresses in hexadecimal and decimal."]}]
+2e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"These are raw stack words: a return address and a value the program pushed look the same."}]
+2f:["$","h3",null,{"id":"while-in-the-execution-history","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["While in the execution history",["$","$L20",null,{"id":"while-in-the-execution-history"}]]}]
+30:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["When you step back into the ",["$","$L21",null,{"href":"/en/guides/debugging/execution-history/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"execution history"}],", the\nmemory above SP may already hold other data, so the panel rebuilds the frames from the recorded\ncalls and returns instead. Each row says how the routine was entered (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"CALL"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"RST"}],", an interrupt or\nan NMI), where it was called from and where it returns to. The frames are exact as far back as the\nhistory reaches; the last row says ",["$","em",null,{"children":"earlier frames before recorded history"}]," when there were more."]}]
+31:["$","h2",null,{"id":"the-variables-panel","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The Variables panel",["$","$L20",null,{"id":"the-variables-panel"}]]}]
+32:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The Variables panel needs a program with source-level debug information and a paused machine. It\nhas up to four sections:"}]
+33:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"Section","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Shows","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"Returned"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"After a step out of a FUNCTION, or a step over a statement that called FUNCTIONs: the value each returned.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":[["$","strong",null,{"children":"Locals —"}]," ",["$","em",null,{"children":"routine"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The parameters and local variables of the frame selected in the Call Stack panel.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"Globals"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The program’s global variables.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"Watch"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"BASIC expressions you add yourself.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}]]}]
+34:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Arrays and other compound values expand with the chevron beside them. The tooltip of a value gives its\naddress (and its CODEBANK bank, for a banked variable)."}]
+35:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Change a value"}],": double-click a number, type the new value and press ",["$","kbd",null,{"children":"Enter"}],"\n(",["$","kbd",null,{"children":"Esc"}]," cancels). The value is checked against the variable’s type. Strings and banked\nvariables cannot be edited. Changing a value while standing in the past ",["$","$L21",null,{"href":"/en/guides/debugging/reverse-debugging/#taking-over","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"takes over"}],"\nthere, after asking."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Add a BASIC watch"}],": type an expression in the ",["$","strong",null,{"children":"Add watch"}]," box at the bottom and press\n",["$","kbd",null,{"children":"Enter"}],". The trash button on a watch row removes it."]}],"\n"]}]
+36:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If the selected routine has not set up its frame yet (the machine stopped at its very first\ninstruction), the Locals section says so."}]
+37:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":["$","svg",null,{"viewBox":"0 0 16 16","fill":"currentColor","height":".8em","className":"x:mt-[.3em]","children":["$","path",null,{"d":"M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"}]}]}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["z88dk’s C programs show scalar variables (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"char"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"int"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"long"}],", signed and unsigned) and pointers.\nBanked functions, floats, structs and arrays are not described; the build output lists what was left\nout."]}]}]]}]
+38:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["For the symbols of an assembly program, use the ",["$","$L21",null,{"href":"/en/guides/debugging/watch/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Watch"}]," panel."]}]
+39:["$","h2",null,{"id":"settings-that-affect-source-stepping","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Settings that affect source stepping",["$","$L20",null,{"id":"settings-that-affect-source-stepping"}]]}]
+3a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["On the ",["$","strong",null,{"children":"Debugging"}]," page of ",["$","$L21",null,{"href":"/en/guides/customizing/settings/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Settings"}],":"]}]
+3b:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Just My Code"}]," (on by default): source steps run through the standard library as they run\nthrough the runtime. Off, stepping also stops in the library’s statements. The command is\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"em-jmc on|off"}],"."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Stop in interrupt handlers while stepping"}]," (off by default): an interrupt handler taken during\na source step runs outside the step, unless this is on. Breakpoints in handlers always stop."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Stop at runtime errors"}]," (on by default): a debug run of a compiled BASIC program stops where it\nraises an error, before the ROM prints the report, and shows the statement. The command is\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"em-err on|off"}],"."]}],"\n"]}]
+3c:["$","h2",null,{"id":"related","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Related",["$","$L20",null,{"id":"related"}]]}]
+3d:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L21",null,{"href":"/en/guides/debugging/run-debug/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Running, pausing and stepping"}]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L21",null,{"href":"/en/guides/languages/klive-basic/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Klive BASIC"}]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L21",null,{"href":"/en/guides/languages/boriel-basic/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Boriel BASIC"}]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L21",null,{"href":"/en/guides/languages/z88dk/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"z88dk (C)"}]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L21",null,{"href":"/en/guides/debugging/watch/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Watch expressions"}]}],"\n"]}]
+3f:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

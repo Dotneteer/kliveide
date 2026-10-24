@@ -1,0 +1,335 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T36fc,---
+description: "Name addresses, comment code and mark data in a disassembly, keep the annotations beside the program, and edit the annotations of a ROM."
+---
+
+import { Callout, Steps } from 'nextra/components'
+
+# Annotating a Disassembly
+
+A disassembly becomes readable once its addresses have names, its routines have comments and its
+data is listed as data. Klive keeps these **annotations** in a file beside the program, shows them in
+the [Disassembly view](/en/guides/debugging/disassembly/) and everywhere else an address appears, and
+can export the annotated program as source. This page covers adding annotations, where they are kept,
+data regions, and the annotations Klive ships for the machines' ROMs.
+
+## Annotations on every machine
+
+Annotated rows carry names, synopsis comments above them and end-of-line comments beside them, and
+ranges marked as data list as data. The annotations are kept
+in a file beside the program they describe &mdash; `game.nex.dis`, `jetpac.z80.dis`, `game.p.dis`
+&mdash; and the one in use is the **active annotation set**. It is chosen for you when a program gets
+into the machine:
+
+- **`nex-run`** uses the `.NEX` file's annotations;
+- **`zx-snapshot`** uses `<snapshot>.dis`;
+- **`tape-load`** of a ZX80 or ZX81 program file uses `<file>.dis`;
+- **opening a project** uses `annotations.dis` in the project folder (or the file the project's
+  `annotations` setting names).
+
+The file does not have to exist: your first label or comment creates it. For anything else &mdash; a
+game loaded from a Spectrum tape, say &mdash; use [`ann-new`](/en/reference/commands#ann-new) or
+[`ann-open`](/en/reference/commands#ann-open); [`ann-info`](/en/reference/commands#ann-info) says which set
+is active.
+
+## Annotating a row
+
+<Steps>
+
+### Open the listing
+
+Open the [Disassembly view](/en/guides/debugging/disassembly/) while the machine is paused, or pop a
+bank out of a [NEX file](/en/guides/next/nex-files/).
+
+### Right-click the row
+
+The row menu offers the annotations below. A region's dialog lets you set where the range starts and
+ends.
+
+### Fill in the dialog
+
+Labels, comments and regions each have a dialog with a preview of the result. The first annotation
+creates the annotation file if it does not exist yet.
+
+</Steps>
+
+On a ROM row the entries edit the ROM's working copy (see
+[Editing a ROM's annotations](#editing-a-roms-annotations)). The row menu's entries are **Label...**, **Synopsis Comment...**, **End-of-Line Comment...**,
+**Operand Label...**, **Mark As Code / Bytes / Words / Text / Skip**, **Mark As Fill (.fillb)** (runs of
+one repeated byte, such as padding, listed as `.fillb 1170,$FF`), **Mark As Bit-7 Text (.defc)** (every
+machine but the ZX80 and ZX81: strings whose last character has bit 7 set, listed as `.defc "TEXT"`),
+**Mark As Copper** and **Mark As DMA** (on the ZX Spectrum Next), **Go to Definition**, and **Go to References**. The same keys as in a popped-out `.NEX` bank work on
+the row you last clicked (`L` for a label, `C` for an end-of-line comment, `Shift+C` for a synopsis,
+`Shift+F12` for references). The label goes in
+the bank the row is in &mdash; it follows that bank wherever it is paged &mdash; and the
+[`label`](/en/reference/commands#label) command does the same from the command prompt.
+
+## Labels and references
+
+**Go to References** lists the rows that name a label: one entry for the row's own label and one for
+each label its operands name (`KEY_LEFT: call AT_LINE_START` offers both). The list shows each row's
+address, its instruction (a `.defw` row of a jump table counts too) and the label above it &mdash; the
+routine or table it sits in. **Go To** closes the list and scrolls there. Only the bank or ROM page
+the row is in is searched. The **Refs** column of the Labels list counts the same rows, so a label
+showing 3 there lists 3 here.
+
+A row shows one name. Where the address has several &mdash; a label from your last build, one from
+the annotations, one from the ROM's &mdash; the build's wins, and the label's tooltip names where it
+came from and lists the others. The same names appear in the Execution History, the Call Stack
+(`MAIN+12`: the routine a return address is in), the Profiler's routines and the `dis` command.
+
+On the ZX80 and ZX81, memory appears at more than one address (the 16K RAM again at `$8000` and
+`$C000`, the ROM again at `$2000`). A label is kept for the byte, not the address, so it shows at every
+mirror, and a mirror row says `(mirror of $4082)`.
+
+## Data regions
+
+**Mark As Bytes**, **Mark As Words**, **Mark As Text** and the other region entries tell the listing
+that a range is data, so it lists `.defb`, `.defw` or `.defm` rows instead of nonsense instructions.
+**Mark As Skip** hides a range (the Spectrum's screen memory, say). To find data without marking it
+by hand, run [Detecting code and data](/en/guides/analysis/detecting-code-data/) on a program you have
+run with coverage on.
+
+### Byte formats
+
+When you mark a range as **Bytes**, the region dialog also asks how to write it:
+
+- **4 bytes, hex** (the default): `.defb $3C, $42, $81, $FF`
+- **2 bytes, hex**: two values to a row
+- **1 byte, hex**: one value to a row
+- **1 byte, binary**: one value to a row with all eight bits, `.defb %00111100` &mdash; handy for
+  bitmaps, masks and flag tables
+
+The dialog opens on the format the range already has, and the **Manage Regions** list shows any format
+other than the default beside the type. Binary rows stay binary when you switch the listing to decimal,
+and they export to source that the Klive assembler reads back.
+
+### Copper lists and DMA programs
+
+On the ZX Spectrum Next, the row menu (**Mark As Copper**, **Mark As DMA**) and the region dialogs
+offer two kinds of region for the Next's hardware programs, in the live Disassembly view and in a
+popped-out `.NEX` bank alike:
+
+- **Copper** lists the range as a Copper list, one `.copper` instruction per two-byte word, with what
+  each instruction does in the comment column. The range must have an even number of bytes.
+- **DMA** lists the range as a zxnDMA program &mdash; the bytes a program sends to port `$6B` &mdash;
+  one `.dma` command per row.
+
+The rows use the same [`.copper`](/en/reference/z80-assembler/zx-next-copper) and
+[`.dma`](/en/reference/z80-assembler/zx-next-dma) pragmas the assembler accepts, and every row assembles back to the
+exact bytes it shows:
+
+```z80klive
+    .copper wait 96, 3              ; line 96 · x 24
+    .copper move $41, $E0           ; Palette Value (8 bit) ← $E0
+    .copper halt                    ; halt until the next restart
+    .dma reset                      ; WR6: reset
+    .dma wr0 a_to_b, transfer, $4000, $0020
+    .dma wr4 continuous, $4800      ; WR4: continuous mode, port B $4800
+```
+
+A DMA range is read the way the DMA reads it: the bits of each command byte decide how many bytes
+follow. A command the pragma cannot spell is shown as `.dma cmd` or `.defb`, with its meaning in the
+comment, and a command cut off by the end of the range says how many bytes it still expects. A label
+on an address or a length inside a command splits it into the
+[runtime-patching form](/en/reference/z80-assembler/zx-next-dma#runtime-patching-pattern), with the labelled field
+as a `.defw` row of its own.
+
+<Callout type="info">
+`$00` is a valid DMA command, so a range that runs into zero-filled memory lists many
+`.dma wr2 memory, decrement` rows. When a DMA range ends in a long run of zeros, the region dialogs
+offer to trim it.
+</Callout>
+
+The annotation file stores both kinds as byte regions with a `decode` key, so an older Klive opens the
+file and shows these ranges as plain `.defb` rows.
+
+## ROM annotations
+
+Calls into the ROM read by name: `call SA_BYTES` rather than `call $04C2`. Klive ships annotations
+for its ROMs, written for Klive, and finds them by the ROM's *bytes* rather than by which ROM slot is
+paged: a copy of the 48K ROM loaded from your own file gets them too, and on a ROM Klive does not know
+(a modified 48K ROM, say) they apply wherever its bytes still match. ROM labels are set in italics so
+your own stand out.
+
+The 48K ROM's annotations are complete (completeness level 2): every call and jump target has a
+label, every labelled routine has a synopsis saying what it does, takes and returns, and the lines
+whose purpose is not obvious carry a comment. The 128K's ROM 1 is complete too: it takes the 48K
+ROM's annotations wherever its bytes match and adds its own for the routines the 128K changed and
+the code it added. The 128K's editor ROM (ROM 0) is complete as well: its menus, the full-screen
+editor, the RAM disk, PLAY, the RS232 and tape commands are all labelled, described and commented.
+So are the 48K BASIC ROMs (ROM 3) of the +2A and +3, in the v4.0, v4.1 and Spanish versions (the +3E
+shares v4.0's): they take the 128K's annotations where their bytes match and describe what Amstrad
+changed, such as the disk motor's time-out and the Spanish messages. The +3's disk operating
+system ROM (ROM 2, +3DOS) is complete too, in the same three versions: its jump table, the files and
+directory, the sector cache, the floppy controller driver and the built-in disk test. The +2E and
++3E share v4.0's ROM 3, and their ROM 2 is annotated as well, including its hard disk driver,
+partitions and drive letters. The +3's editor ROM (ROM 0) and syntax ROM (ROM 1) are complete in all four
+versions (v4.0, v4.1, Spanish and +3E), the +3E's with its window, memory and file channels and
+its commands for partitions and streams. The ZX Spectrum Next's ROMs are complete as well: the four
+pages of NextZXOS (the system ROM with its start-up menu, Browser and window channels; NextBASIC's
+command ROM; the DOS ROM with its IDEDOS and +3DOS-style jump tables and the SD card driver; and the
+48K BASIC page NextZXOS extends), the alternate ROM with NextBASIC's editor and its graphics, sound
+and file commands, the DivMMC ROM's file system and the Multiface ROM's NMI menu; the `enNextLG.rom`
+variant shares them. In these ROMs the disassembly lists the address after each call into another
+ROM as a `.defw`, and the error code after each error call as a `.defb`. The other ROMs' annotations
+are still sparse.
+
+Use `bp-set ROM:<name>` to break at a ROM label, and `ROM:<name>` in a breakpoint condition.
+
+### Editing a ROM's annotations
+
+A ROM's annotations are edited in a **working copy**, never in the shipped file. Make one with
+[`rom-ann-new`](/en/reference/commands#rom-ann-new), or with **Start Editing ROM Annotations...** on a
+ROM row's context menu:
+
+```text
+rom-ann-new sp48.rom
+```
+
+For a ROM Klive ships, the working copy is an exact copy of its shipped annotations, kept in Klive's
+home folder as `RomAnnotations/sp48.rom.dis`, where it survives an update. For your own ROM file it is
+`<file>.dis` beside it. Once it exists, it **replaces** the shipped annotations for that ROM: you can
+rename, change or remove any shipped label, comment or region, and only the working copy is shown.
+Without a working copy, the shipped annotations are shown and a ROM row cannot be edited.
+
+Opening a working copy &mdash; from **Open ROM Annotations** on a ROM row, with
+[`rom-ann-open`](/en/reference/commands#rom-ann-open), or by opening the `.rom.dis` file &mdash; shows
+the **ROM annotation editor**. It finds the ROM by its bytes and shows two panes: on the left,
+everything about the file; on the right, its pages, one row each with the ROM's name and CRC, its
+size, its labels, how many targets still need one (**To label**) and its completeness level. The
+row's disassembly icon opens a page with everything a NEX bank has: select rows, right-click for the annotation menu, or use the
+shortcuts (`L` label, `C` end-of-line comment, `Shift+C` synopsis, `O` operand label, `M`/`R` manage
+labels/regions, `B` bank comment). No machine needs to be running. If no ROM matches the file, the
+editor says so and shows nothing else. With a working copy in place, ROM rows of the live view are
+editable too, and every edit shows wherever ROM names appear.
+
+A shipped annotation file opens **Read-only**; **Make working copy** copies it to your own folder
+and opens the copy to edit. The editor's **Ready** chip says whether the file passes every check a
+shipped annotation file must pass (the same as
+[`rom-ann-check`](/en/reference/commands#rom-ann-check)). **New entries are recorded as** chooses
+whether what you add is `observed` (worked out from the bytes) or `manual` (an interface fact from a
+manual); [`rom-ann-provenance`](/en/reference/commands#rom-ann-provenance) changes an existing entry.
+
+**To label** is the to-do list of completeness level 1, which needs a label on every `CALL`, `JP`,
+`RST`, `JR` and `DJNZ` target reached from code. It counts the targets that still have none, and its
+**next $xxxx** link opens the disassembly at the next one; each click moves on to the following
+target. A page with none left shows *none*.
+
+Rest the pointer on a completeness level &mdash; the **Ready** chip, *records level*, the
+**Completeness** column head or a page's level meter &mdash; and a card explains the three levels,
+marks the ones reached and the next one, and counts what is still missing: the targets without a
+label and the labels without a synopsis.
+
+**Export as source…** writes the whole ROM as one Klive Z80 assembly file, with your labels and
+comments, then assembles it and says whether it gives back the ROM byte for byte (the same as
+[`rom-ann-export`](/en/reference/commands#rom-ann-export)). **Open** opens the file it wrote.
+
+<Callout type="info">
+A working copy is written in exactly the format of Klive's own ROM annotation files. When it is
+ready, it can be copied into `src/public/roms/` of a Klive checkout unchanged.
+</Callout>
+
+## Related
+
+- [The Disassembly view](/en/guides/debugging/disassembly/)
+- [Detecting code and data](/en/guides/analysis/detecting-code-data/)
+- [Exporting a disassembly as source](/en/guides/analysis/exporting-source/)
+- [SkoolKit files](/en/guides/analysis/skoolkit/)
+- [Annotation commands](/en/reference/commands#ann-new)a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Annotations on every machine","id":"annotations-on-every-machine","depth":2},{"value":"Annotating a row","id":"annotating-a-row","depth":2},{"value":"Open the listing","id":"open-the-listing","depth":3},{"value":"Right-click the row","id":"right-click-the-row","depth":3},{"value":"Fill in the dialog","id":"fill-in-the-dialog","depth":3},{"value":"Labels and references","id":"labels-and-references","depth":2},{"value":"Data regions","id":"data-regions","depth":2},{"value":"Byte formats","id":"byte-formats","depth":3},{"value":"Copper lists and DMA programs","id":"copper-lists-and-dma-programs","depth":3},{"value":"ROM annotations","id":"rom-annotations","depth":2},{"value":"Editing a ROM’s annotations","id":"editing-a-roms-annotations","depth":3},{"value":"Related","id":"related","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"Name addresses, comment code and mark data in a disassembly, keep the annotations beside the program, and edit the annotations of a ROM.","title":"Annotating a Disassembly","filePath":"content/en/guides/analysis/annotations.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"guides/analysis/annotations","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Annotating a Disassembly - Klive IDE"}],["$","meta","1",{"name":"description","content":"Name addresses, comment code and mark data in a disassembly, keep the annotations beside the program, and edit the annotations of a ROM."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/guides/analysis/annotations/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"zVHxHPHeqBTYxgv92WAup"}
+20:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+21:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+49:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Annotating a Disassembly","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A disassembly becomes readable once its addresses have names, its routines have comments and its\ndata is listed as data. Klive keeps these ",["$","strong",null,{"children":"annotations"}]," in a file beside the program, shows them in\nthe ",["$","$L20",null,{"href":"/en/guides/debugging/disassembly/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Disassembly view"}]," and everywhere else an address appears, and\ncan export the annotated program as source. This page covers adding annotations, where they are kept,\ndata regions, and the annotations Klive ships for the machines’ ROMs."]}],"\n",["$","h2",null,{"id":"annotations-on-every-machine","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Annotations on every machine",["$","$L21",null,{"id":"annotations-on-every-machine"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Annotated rows carry names, synopsis comments above them and end-of-line comments beside them, and\nranges marked as data list as data. The annotations are kept\nin a file beside the program they describe — ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"game.nex.dis"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"jetpac.z80.dis"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"game.p.dis"}],"\n— and the one in use is the ",["$","strong",null,{"children":"active annotation set"}],". It is chosen for you when a program gets\ninto the machine:"]}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"nex-run"}]}]," uses the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".NEX"}]," file’s annotations;"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"zx-snapshot"}]}]," uses ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"<snapshot>.dis"}],";"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"tape-load"}]}]," of a ZX80 or ZX81 program file uses ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"<file>.dis"}],";"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"opening a project"}]," uses ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"annotations.dis"}]," in the project folder (or the file the project’s\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"annotations"}]," setting names)."]}],"\n"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The file does not have to exist: your first label or comment creates it. For anything else — a\ngame loaded from a Spectrum tape, say — use ",["$","$L20",null,{"href":"/en/reference/commands#ann-new","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"ann-new"}]}]," or\n",["$","$L20",null,{"href":"/en/reference/commands#ann-open","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"$L22"}],"; ","$L23"," says which set\nis active."]}],"\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41","\n","$L42","\n","$L43","\n","$L44","\n","$L45","\n","$L46","\n","$L47","\n","$L48"]]}]
+15:["$","$L49",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@4a"}]}]
+1f:true
+4b:"ToggleWordWrapButton"
+4c:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$4b"]
+4d:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+9:300
+22:["$","code",null,{"className":"nextra-code","dir":"ltr","children":"ann-open"}]
+23:["$","$L20",null,{"href":"/en/reference/commands#ann-info","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"ann-info"}]}]
+24:["$","h2",null,{"id":"annotating-a-row","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Annotating a row",["$","$L21",null,{"id":"annotating-a-row"}]]}]
+25:["$","div",null,{"className":"nextra-steps x:ms-4 x:mb-12 x:border-s x:border-gray-200 x:ps-6 x:dark:border-neutral-800","style":{"--counter-id":"_S_1_"},"children":[["$","h3",null,{"id":"open-the-listing","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Open the listing",["$","$L21",null,{"id":"open-the-listing"}]]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Open the ",["$","$L20",null,{"href":"/en/guides/debugging/disassembly/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Disassembly view"}]," while the machine is paused, or pop a\nbank out of a ",["$","$L20",null,{"href":"/en/guides/next/nex-files/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"NEX file"}],"."]}],["$","h3",null,{"id":"right-click-the-row","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Right-click the row",["$","$L21",null,{"id":"right-click-the-row"}]]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The row menu offers the annotations below. A region’s dialog lets you set where the range starts and\nends."}],["$","h3",null,{"id":"fill-in-the-dialog","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Fill in the dialog",["$","$L21",null,{"id":"fill-in-the-dialog"}]]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Labels, comments and regions each have a dialog with a preview of the result. The first annotation\ncreates the annotation file if it does not exist yet."}]]}]
+26:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["On a ROM row the entries edit the ROM’s working copy (see\n",["$","a",null,{"href":"#editing-a-roms-annotations","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Editing a ROM’s annotations"}],"). The row menu’s entries are ",["$","strong",null,{"children":"Label…"}],", ",["$","strong",null,{"children":"Synopsis Comment…"}],", ",["$","strong",null,{"children":"End-of-Line Comment…"}],",\n",["$","strong",null,{"children":"Operand Label…"}],", ",["$","strong",null,{"children":"Mark As Code / Bytes / Words / Text / Skip"}],", ",["$","strong",null,{"children":"Mark As Fill (.fillb)"}]," (runs of\none repeated byte, such as padding, listed as ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".fillb 1170,$FF"}],"), ",["$","strong",null,{"children":"Mark As Bit-7 Text (.defc)"}]," (every\nmachine but the ZX80 and ZX81: strings whose last character has bit 7 set, listed as ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".defc \"TEXT\""}],"),\n",["$","strong",null,{"children":"Mark As Copper"}]," and ",["$","strong",null,{"children":"Mark As DMA"}]," (on the ZX Spectrum Next), ",["$","strong",null,{"children":"Go to Definition"}],", and ",["$","strong",null,{"children":"Go to References"}],". The same keys as in a popped-out ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".NEX"}]," bank work on\nthe row you last clicked (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"L"}]," for a label, ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"C"}]," for an end-of-line comment, ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Shift+C"}]," for a synopsis,\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Shift+F12"}]," for references). The label goes in\nthe bank the row is in — it follows that bank wherever it is paged — and the\n",["$","$L20",null,{"href":"/en/reference/commands#label","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"label"}]}]," command does the same from the command prompt."]}]
+27:["$","h2",null,{"id":"labels-and-references","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Labels and references",["$","$L21",null,{"id":"labels-and-references"}]]}]
+28:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Go to References"}]," lists the rows that name a label: one entry for the row’s own label and one for\neach label its operands name (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"KEY_LEFT: call AT_LINE_START"}]," offers both). The list shows each row’s\naddress, its instruction (a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".defw"}]," row of a jump table counts too) and the label above it — the\nroutine or table it sits in. ",["$","strong",null,{"children":"Go To"}]," closes the list and scrolls there. Only the bank or ROM page\nthe row is in is searched. The ",["$","strong",null,{"children":"Refs"}]," column of the Labels list counts the same rows, so a label\nshowing 3 there lists 3 here."]}]
+29:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A row shows one name. Where the address has several — a label from your last build, one from\nthe annotations, one from the ROM’s — the build’s wins, and the label’s tooltip names where it\ncame from and lists the others. The same names appear in the Execution History, the Call Stack\n(",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"MAIN+12"}],": the routine a return address is in), the Profiler’s routines and the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"dis"}]," command."]}]
+2a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["On the ZX80 and ZX81, memory appears at more than one address (the 16K RAM again at ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$8000"}]," and\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$C000"}],", the ROM again at ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$2000"}],"). A label is kept for the byte, not the address, so it shows at every\nmirror, and a mirror row says ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"(mirror of $4082)"}],"."]}]
+2b:["$","h2",null,{"id":"data-regions","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Data regions",["$","$L21",null,{"id":"data-regions"}]]}]
+2c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Mark As Bytes"}],", ",["$","strong",null,{"children":"Mark As Words"}],", ",["$","strong",null,{"children":"Mark As Text"}]," and the other region entries tell the listing\nthat a range is data, so it lists ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".defb"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".defw"}]," or ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".defm"}]," rows instead of nonsense instructions.\n",["$","strong",null,{"children":"Mark As Skip"}]," hides a range (the Spectrum’s screen memory, say). To find data without marking it\nby hand, run ",["$","$L20",null,{"href":"/en/guides/analysis/detecting-code-data/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Detecting code and data"}]," on a program you have\nrun with coverage on."]}]
+2d:["$","h3",null,{"id":"byte-formats","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Byte formats",["$","$L21",null,{"id":"byte-formats"}]]}]
+2e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["When you mark a range as ",["$","strong",null,{"children":"Bytes"}],", the region dialog also asks how to write it:"]}]
+2f:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"4 bytes, hex"}]," (the default): ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".defb $3C, $42, $81, $FF"}]]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"2 bytes, hex"}],": two values to a row"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"1 byte, hex"}],": one value to a row"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"1 byte, binary"}],": one value to a row with all eight bits, ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".defb %00111100"}]," — handy for\nbitmaps, masks and flag tables"]}],"\n"]}]
+30:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The dialog opens on the format the range already has, and the ",["$","strong",null,{"children":"Manage Regions"}]," list shows any format\nother than the default beside the type. Binary rows stay binary when you switch the listing to decimal,\nand they export to source that the Klive assembler reads back."]}]
+31:["$","h3",null,{"id":"copper-lists-and-dma-programs","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Copper lists and DMA programs",["$","$L21",null,{"id":"copper-lists-and-dma-programs"}]]}]
+32:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["On the ZX Spectrum Next, the row menu (",["$","strong",null,{"children":"Mark As Copper"}],", ",["$","strong",null,{"children":"Mark As DMA"}],") and the region dialogs\noffer two kinds of region for the Next’s hardware programs, in the live Disassembly view and in a\npopped-out ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".NEX"}]," bank alike:"]}]
+33:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Copper"}]," lists the range as a Copper list, one ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".copper"}]," instruction per two-byte word, with what\neach instruction does in the comment column. The range must have an even number of bytes."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"DMA"}]," lists the range as a zxnDMA program — the bytes a program sends to port ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$6B"}]," —\none ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".dma"}]," command per row."]}],"\n"]}]
+34:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The rows use the same ",["$","$L20",null,{"href":"/en/reference/z80-assembler/zx-next-copper","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":".copper"}]}]," and\n",["$","$L20",null,{"href":"/en/reference/z80-assembler/zx-next-dma","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":".dma"}]}]," pragmas the assembler accepts, and every row assembles back to the\nexact bytes it shows:"]}]
+35:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L4c",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L4d",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":"    .copper"}],["$","span",null,{"style":{"color":"#C586C0","fontWeight":"bold"},"children":" wait"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" 96"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":", "}],["$","span",null,{"style":{"color":"#4D8061"},"children":"3"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"              ; line 96 · x 24"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":"    .copper"}],["$","span",null,{"style":{"color":"#C586C0","fontWeight":"bold"},"children":" move"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" $41"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":", "}],["$","span",null,{"style":{"color":"#4D8061"},"children":"$$E0"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"           ; Palette Value (8 bit) ← $E0"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":"    .copper"}],["$","span",null,{"style":{"color":"#C586C0","fontWeight":"bold"},"children":" halt"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"                    ; halt until the next restart"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":"    .dma"}],["$","span",null,{"style":{"color":"#C586C0","fontWeight":"bold"},"children":" reset"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"                      ; WR6: reset"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":"    .dma"}],["$","span",null,{"style":{"color":"#C586C0","fontWeight":"bold"},"children":" wr0"}],["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":" a_to_b"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":", "}],["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"transfer"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":", "}],["$","span",null,{"style":{"color":"#4D8061"},"children":"$$4000"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":", "}],["$","span",null,{"style":{"color":"#4D8061"},"children":"$$0020"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":"    .dma"}],["$","span",null,{"style":{"color":"#C586C0","fontWeight":"bold"},"children":" wr4"}],["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":" continuous"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":", "}],["$","span",null,{"style":{"color":"#4D8061"},"children":"$$4800"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"      ; WR4: continuous mode, port B $4800"}]]}]]}]]}]]}]
+36:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A DMA range is read the way the DMA reads it: the bits of each command byte decide how many bytes\nfollow. A command the pragma cannot spell is shown as ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".dma cmd"}]," or ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".defb"}],", with its meaning in the\ncomment, and a command cut off by the end of the range says how many bytes it still expects. A label\non an address or a length inside a command splits it into the\n",["$","$L20",null,{"href":"/en/reference/z80-assembler/zx-next-dma#runtime-patching-pattern","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"runtime-patching form"}],", with the labelled field\nas a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".defw"}]," row of its own."]}]
+37:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":["$","svg",null,{"viewBox":"0 0 16 16","fill":"currentColor","height":".8em","className":"x:mt-[.3em]","children":["$","path",null,{"d":"M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"}]}]}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$00"}]," is a valid DMA command, so a range that runs into zero-filled memory lists many\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".dma wr2 memory, decrement"}]," rows. When a DMA range ends in a long run of zeros, the region dialogs\noffer to trim it."]}]}]]}]
+38:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The annotation file stores both kinds as byte regions with a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"decode"}]," key, so an older Klive opens the\nfile and shows these ranges as plain ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".defb"}]," rows."]}]
+39:["$","h2",null,{"id":"rom-annotations","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["ROM annotations",["$","$L21",null,{"id":"rom-annotations"}]]}]
+3a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Calls into the ROM read by name: ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"call SA_BYTES"}]," rather than ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"call $04C2"}],". Klive ships annotations\nfor its ROMs, written for Klive, and finds them by the ROM’s ",["$","em",null,{"children":"bytes"}]," rather than by which ROM slot is\npaged: a copy of the 48K ROM loaded from your own file gets them too, and on a ROM Klive does not know\n(a modified 48K ROM, say) they apply wherever its bytes still match. ROM labels are set in italics so\nyour own stand out."]}]
+4e:T764,The 48K ROM’s annotations are complete (completeness level 2): every call and jump target has a
+label, every labelled routine has a synopsis saying what it does, takes and returns, and the lines
+whose purpose is not obvious carry a comment. The 128K’s ROM 1 is complete too: it takes the 48K
+ROM’s annotations wherever its bytes match and adds its own for the routines the 128K changed and
+the code it added. The 128K’s editor ROM (ROM 0) is complete as well: its menus, the full-screen
+editor, the RAM disk, PLAY, the RS232 and tape commands are all labelled, described and commented.
+So are the 48K BASIC ROMs (ROM 3) of the +2A and +3, in the v4.0, v4.1 and Spanish versions (the +3E
+shares v4.0’s): they take the 128K’s annotations where their bytes match and describe what Amstrad
+changed, such as the disk motor’s time-out and the Spanish messages. The +3’s disk operating
+system ROM (ROM 2, +3DOS) is complete too, in the same three versions: its jump table, the files and
+directory, the sector cache, the floppy controller driver and the built-in disk test. The +2E and
++3E share v4.0’s ROM 3, and their ROM 2 is annotated as well, including its hard disk driver,
+partitions and drive letters. The +3’s editor ROM (ROM 0) and syntax ROM (ROM 1) are complete in all four
+versions (v4.0, v4.1, Spanish and +3E), the +3E’s with its window, memory and file channels and
+its commands for partitions and streams. The ZX Spectrum Next’s ROMs are complete as well: the four
+pages of NextZXOS (the system ROM with its start-up menu, Browser and window channels; NextBASIC’s
+command ROM; the DOS ROM with its IDEDOS and +3DOS-style jump tables and the SD card driver; and the
+48K BASIC page NextZXOS extends), the alternate ROM with NextBASIC’s editor and its graphics, sound
+and file commands, the DivMMC ROM’s file system and the Multiface ROM’s NMI menu; the 3b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$4e",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"enNextLG.rom"}],"\nvariant shares them. In these ROMs the disassembly lists the address after each call into another\nROM as a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".defw"}],", and the error code after each error call as a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".defb"}],". The other ROMs’ annotations\nare still sparse."]}]
+3c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Use ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"bp-set ROM:<name>"}]," to break at a ROM label, and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"ROM:<name>"}]," in a breakpoint condition."]}]
+3d:["$","h3",null,{"id":"editing-a-roms-annotations","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Editing a ROM’s annotations",["$","$L21",null,{"id":"editing-a-roms-annotations"}]]}]
+3e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A ROM’s annotations are edited in a ",["$","strong",null,{"children":"working copy"}],", never in the shipped file. Make one with\n",["$","$L20",null,{"href":"/en/reference/commands#rom-ann-new","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"rom-ann-new"}]}],", or with ",["$","strong",null,{"children":"Start Editing ROM Annotations…"}]," on a\nROM row’s context menu:"]}]
+3f:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L4c",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L4d",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"rom-ann-new sp48.rom"}]}]}]]}]]}]
+40:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["For a ROM Klive ships, the working copy is an exact copy of its shipped annotations, kept in Klive’s\nhome folder as ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"RomAnnotations/sp48.rom.dis"}],", where it survives an update. For your own ROM file it is\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"<file>.dis"}]," beside it. Once it exists, it ",["$","strong",null,{"children":"replaces"}]," the shipped annotations for that ROM: you can\nrename, change or remove any shipped label, comment or region, and only the working copy is shown.\nWithout a working copy, the shipped annotations are shown and a ROM row cannot be edited."]}]
+41:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Opening a working copy — from ",["$","strong",null,{"children":"Open ROM Annotations"}]," on a ROM row, with\n",["$","$L20",null,{"href":"/en/reference/commands#rom-ann-open","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"rom-ann-open"}]}],", or by opening the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".rom.dis"}]," file — shows\nthe ",["$","strong",null,{"children":"ROM annotation editor"}],". It finds the ROM by its bytes and shows two panes: on the left,\neverything about the file; on the right, its pages, one row each with the ROM’s name and CRC, its\nsize, its labels, how many targets still need one (",["$","strong",null,{"children":"To label"}],") and its completeness level. The\nrow’s disassembly icon opens a page with everything a NEX bank has: select rows, right-click for the annotation menu, or use the\nshortcuts (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"L"}]," label, ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"C"}]," end-of-line comment, ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Shift+C"}]," synopsis, ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"O"}]," operand label, ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"M"}],"/",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"R"}]," manage\nlabels/regions, ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"B"}]," bank comment). No machine needs to be running. If no ROM matches the file, the\neditor says so and shows nothing else. With a working copy in place, ROM rows of the live view are\neditable too, and every edit shows wherever ROM names appear."]}]
+42:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A shipped annotation file opens ",["$","strong",null,{"children":"Read-only"}],"; ",["$","strong",null,{"children":"Make working copy"}]," copies it to your own folder\nand opens the copy to edit. The editor’s ",["$","strong",null,{"children":"Ready"}]," chip says whether the file passes every check a\nshipped annotation file must pass (the same as\n",["$","$L20",null,{"href":"/en/reference/commands#rom-ann-check","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"rom-ann-check"}]}],"). ",["$","strong",null,{"children":"New entries are recorded as"}]," chooses\nwhether what you add is ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"observed"}]," (worked out from the bytes) or ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"manual"}]," (an interface fact from a\nmanual); ",["$","$L20",null,{"href":"/en/reference/commands#rom-ann-provenance","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"rom-ann-provenance"}]}]," changes an existing entry."]}]
+43:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"To label"}]," is the to-do list of completeness level 1, which needs a label on every ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"CALL"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"JP"}],",\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"RST"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"JR"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"DJNZ"}]," target reached from code. It counts the targets that still have none, and its\n",["$","strong",null,{"children":"next $xxxx"}]," link opens the disassembly at the next one; each click moves on to the following\ntarget. A page with none left shows ",["$","em",null,{"children":"none"}],"."]}]
+44:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Rest the pointer on a completeness level — the ",["$","strong",null,{"children":"Ready"}]," chip, ",["$","em",null,{"children":"records level"}],", the\n",["$","strong",null,{"children":"Completeness"}]," column head or a page’s level meter — and a card explains the three levels,\nmarks the ones reached and the next one, and counts what is still missing: the targets without a\nlabel and the labels without a synopsis."]}]
+45:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Export as source…"}]," writes the whole ROM as one Klive Z80 assembly file, with your labels and\ncomments, then assembles it and says whether it gives back the ROM byte for byte (the same as\n",["$","$L20",null,{"href":"/en/reference/commands#rom-ann-export","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"rom-ann-export"}]}],"). ",["$","strong",null,{"children":"Open"}]," opens the file it wrote."]}]
+46:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$37:props:children:0:props:style","data-pagefind-ignore":"all","children":"$37:props:children:0:props:children"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A working copy is written in exactly the format of Klive’s own ROM annotation files. When it is\nready, it can be copied into ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"src/public/roms/"}]," of a Klive checkout unchanged."]}]}]]}]
+47:["$","h2",null,{"id":"related","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Related",["$","$L21",null,{"id":"related"}]]}]
+48:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L20",null,{"href":"/en/guides/debugging/disassembly/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"The Disassembly view"}]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L20",null,{"href":"/en/guides/analysis/detecting-code-data/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Detecting code and data"}]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L20",null,{"href":"/en/guides/analysis/exporting-source/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Exporting a disassembly as source"}]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L20",null,{"href":"/en/guides/analysis/skoolkit/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"SkoolKit files"}]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L20",null,{"href":"/en/reference/commands#ann-new","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Annotation commands"}]}],"\n"]}]
+4a:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"
