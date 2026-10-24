@@ -1,0 +1,439 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-882a1bb790cd477f.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T383d,---
+description: "A hands-on tour of Klive's disk tools: make a ZX Spectrum +3 boot disk from a BASIC program and a loading screen, run it, watch the +3 write to it, look at its sectors, and build an SD card for the DivMMC."
+---
+
+import { Callout, Steps } from 'nextra/components'
+
+# Tutorial: working with disks
+
+This tutorial walks through Klive's disk tools with one small project. You will make a **ZX
+Spectrum +3 boot disk** from a BASIC program and a loading screen, boot it in the emulator, watch the
++3 save a file onto it, look at where that file sits on the disk, and finally put everything on an
+**SD card image** for the DivMMC. Every picture below was taken by doing exactly these steps.
+
+## The tools at a glance
+
+| Tool | Where | What it is for |
+| --- | --- | --- |
+| **Disk Explorer** | Double-click a disk image in the project explorer | See and change a disk's files: preview, add, save, rename, delete, attributes |
+| **Layout view** | The grid button in the Disk Explorer's header | Every track and sector of a floppy, or a hard disk's areas and clusters |
+| **`disk` command** | The IDE's command prompt, scripts, automation | Make disks and change their files with typed commands |
+| **`klive disk`** | Your terminal, without Klive running | The same actions on image files, for scripts and builds |
+| **Machine › Disks** | The menu, the emulator's media strip | Insert, eject and write-protect disks in the machine's drives |
+| **Export Code** | `expc ... -f dsk` / `-f trd` | Turn a compiled program into a disk that boots it |
+| **Machine › SD Card** | The menu (48K, 128K, +2A/+3) | Connect a DivMMC and choose its SD card |
+
+The disk formats are the ZX Spectrum +3's `.dsk` (+3DOS), TR-DOS's `.trd` and `.scl` (the Pentagon
+and the Scorpion), and the hard-disk images `.img`, `.hdf` and `.cim` (FAT16 and FAT32, for the
+DivMMC and the ZX Spectrum Next). [Disk images and the Disk Explorer](/en/guides/emulator/disk-explorer) is the
+reference for all of them; this page shows them at work.
+
+## 1. Make a boot disk for the +3
+
+<Steps>
+
+### Create a +3 project
+
+Create a new Klive project for the **ZX Spectrum +3 (1 FDD)**. The examples below call it
+`DiskTutorial`; the disk tools work in any project, and on files outside one too.
+
+### Write the program
+
+Save this BASIC program as **`hello.bas`** in the project folder. It loads a picture from the disk,
+prints a line over it, and saves the whole screen back onto the disk as a new file:
+
+```zxbasic
+10 BORDER 0: PAPER 0: INK 7: CLS
+20 LOAD "title.scr" SCREEN$
+30 PRINT AT 21,0; INK 6;"Hello from drive A!"
+40 SAVE "copy.scr" SCREEN$
+50 PRINT AT 21,0; INK 4;"Saved COPY.SCR      "
+```
+
+Put a loading screen beside it as **`title.scr`**: any 6,912-byte ZX Spectrum screen file will do.
+
+### Create a blank disk
+
+Choose **Machine › Disks › Create Disk File...**. The dialog asks for three things:
+
+- **Disk type**: the format. On the +3 the choices are CPC disks: *Single-sided CPC (180K)* is the
+  +3's own format (173K for files once formatted), the *ECPC* ones are the same disks as extended
+  DSK images, and the double-sided and 80-track ones are for a second drive. On the Pentagon and the
+  Scorpion the dialog offers TR-DOS disks instead.
+- **Disk file folder**: where the disk goes. It starts at the open project's **`disks`** folder
+  (Klive makes the folder when it writes the disk), or at **`Klive/Disks`** in your home folder when
+  no project is open. Type another folder or browse for one to put the disk elsewhere.
+- **Disk file name**: `game` is enough; Klive adds `.dsk` (`.trd` for a TR-DOS disk).
+
+</Steps>
+
+<Shot
+  src="disks-tutorial/create-disk-dialog.webp"
+  alt="The Create a new disk file dialog: Single-sided CPC (180K), the folder /Users/.../KliveProjects/DiskTutorial/disks with its note, and the file name game"
+  figure="1"
+  caption="A blank disk, into the project's disks folder"
+  width={560}
+/>
+
+Click **Create**. Klive writes a blank, formatted `disks/game.dsk`, and the project explorer shows
+it. At the command prompt, `crd ss game` does the same without the dialog (with no folder named,
+it uses the same default), and so does `disk new disks/game.dsk ss`.
+
+<Steps>
+
+### Put the files on the disk
+
+Type these commands at the IDE's command prompt (the **Commands** tab of the tool panel):
+
+```
+disk add disks/game.dsk hello.bas DISK -start 10
+disk add disks/game.dsk title.scr
+disk ls disks/game.dsk
+```
+
+- `disk add` turns `hello.bas` into a tokenised BASIC program. Calling it **`DISK`** matters: the
+  +3's **Loader** menu loads the program of that name. `-start 10` makes it run from line 10 once
+  it is loaded.
+- A `.scr` file goes on the disk as a screen: code at 16384, which `LOAD ... SCREEN$` reads.
+- `disk ls` lists the disk. Each `disk add` answers with what it put on the disk
+  (*1 file added to the disk.*, *title.scr added to the disk.*).
+
+</Steps>
+
+<Shot
+  src="disks-tutorial/commands.webp"
+  alt="The Commands pane after disk ls disks/game.dsk: DISK, a BASIC program with auto-run line 10, and TITLE.SCR, a 6912-byte code file at 16384"
+  figure="2"
+  caption="disk ls: the disk's two files"
+  width={720}
+/>
+
+Files can also go on a disk without typing: drag them onto the Disk Explorer. A file added by
+dragging has no auto-run line, though; use `disk add ... -start` when the Loader must run it.
+
+## 2. Look inside the disk
+
+Double-click **`game.dsk`** in the project's `disks` folder. The **Disk Explorer** lists its files, and
+selecting one shows what it holds:
+
+<Shot
+  src="disks-tutorial/explorer-listing.webp"
+  alt="The Disk Explorer with DISK selected: its size, auto-run line 10, its attributes and its BASIC listing"
+  figure="3"
+  caption="A BASIC program on the disk"
+  markers={["program", "autorun", "listing"]}
+  width={720}
+/>
+
+1. The selected file, with its kind, size and start: for BASIC, the auto-run line.
+2. The **Auto-run line** you set with `-start`.
+3. The program's **listing**, decoded from the tokenised bytes on the disk.
+
+Select **TITLE.SCR** and the preview shows it as the screen it is:
+
+<Shot
+  src="disks-tutorial/explorer-screen.webp"
+  alt="The Disk Explorer with TITLE.SCR selected, previewed as a ZX Spectrum screen"
+  figure="4"
+  caption="A 6,912-byte code file at 16384 is a screen"
+  width={720}
+/>
+
+The header's buttons change the disk: **Add** (+), **Save** the selected file to your computer,
+**Rename**, **Delete**, and **Show deleted** files. The buttons above a preview open the file as a
+memory view or, for code, as disassembly.
+
+## 3. Boot the disk
+
+<Steps>
+
+### Insert the disk
+
+Choose **Machine › Disks › Insert Disk into Drive A...** and pick `disks/game.dsk`, or use the drive's
+button in the emulator's media strip. The Disk Explorer now says **In drive A**.
+
+### Allow writes
+
+<Callout type="info">
+A disk goes into the drive **write-protected**, so a program cannot change it by accident. This
+program saves a file, so clear **Machine › Disks › Write Protect Drive A** first. Otherwise the +3
+stops at line 40 with *Disk is write protected*.
+</Callout>
+
+### Start the machine and choose Loader
+
+Start the machine and press <kbd>Enter</kbd> on **Loader** in the +3's menu. The +3 loads `DISK`
+from drive A and runs it. The program loads the screen, prints its line and saves the screen as
+`COPY.SCR`:
+
+</Steps>
+
+<Shot
+  src="disks-tutorial/plus3-running.webp"
+  alt="The emulator showing the loading screen, 'Saved COPY.SCR' and 0 OK, 50:1, with game.dsk in drive A in the media strip"
+  figure="5"
+  caption="The +3 ran the program from drive A"
+  width={640}
+/>
+
+## 4. See what the +3 wrote
+
+When the machine writes to the disk, Klive writes the changed sectors back to `disks/game.dsk` and the open
+Disk Explorer shows the change a moment later. `COPY.SCR` is there, and its preview is the screen
+the +3 saved, with the line the program printed:
+
+<Shot
+  src="disks-tutorial/explorer-written.webp"
+  alt="The Disk Explorer, In drive A, with a third file COPY.SCR selected and previewed"
+  figure="6"
+  caption="The file the +3 saved, on the disk"
+  markers={["drive", "written"]}
+  width={720}
+/>
+
+1. **In drive A**: this disk is in the running machine's drive.
+2. **COPY.SCR**, written by the +3's own `SAVE`.
+
+You can change a disk while it is in the drive, too. Klive pauses the machine, writes the disk,
+puts it back in the drive and lets the machine run on.
+
+## 5. Find the file's sectors
+
+Select `COPY.SCR` and click **Show the file's sectors** above its preview. The **Layout** view
+shows the disk as its tracks and sectors, coloured by what they hold, with the first sector of the
+file selected:
+
+<Shot
+  src="disks-tutorial/layout.webp"
+  alt="The Layout view: track 0 is the system track, track 1 starts with the directory, and the files fill tracks 1 to 4; the selected sector starts with the PLUS3DOS header"
+  figure="7"
+  caption="Track by track: the system track, the directory, the files"
+  width={720}
+/>
+
+The sector's details say where it is (cylinder, side, sector and its ID), what it holds, and its
+bytes. Here they start with `PLUS3DOS`: the header +3DOS writes in front of every file. Select
+another sector to see its bytes, and click a file's name to go back to the file.
+
+## 6. Make an SD card for the DivMMC
+
+The **DivMMC** is an SD card interface for the 48K, the 128K and the +2A/+3. Its **esxDOS** operating
+system loads `.tap`, `.sna`, `.scr` and other files straight from a FAT card. Klive makes and fills
+such cards:
+
+```
+disk new card.img fat16 64
+disk add card.img card/GAMES
+disk add card.img card/title.scr
+```
+
+`disk new` makes a 64 MB FAT16 card (`fat32` and other sizes work too). Adding a **folder**
+copies it with everything in it. Here `card/GAMES` holds a copy of `game.dsk`. Files go onto the
+card **as they are**, under their own long names.
+
+### Which format: `.img`, `.hdf` or `.cim`?
+
+The extension you give `disk new` picks the image format. All three hold the same FAT16 or FAT32
+card. Every disk tool on this page works with each of them, and so does the DivMMC. They differ in
+how the card is stored in the file:
+
+| | `.img` | `.hdf` | `.cim` |
+| --- | --- | --- | --- |
+| **What it is** | The card's sectors, byte for byte, from the first to the last | The same sectors after a short RAMsoft header that describes the drive | The same sectors, with the unused ones left out (Klive's own format) |
+| **File size** | The card's full size from the start: a 64 MB card is a 64 MB file | The card's full size, plus the header | Grows with what is on the card: a new 64 MB card is a 1.1 MB file |
+| **Card sizes** | Any | Any | 64 MB to 16 GB |
+| **Other programs** | The common format: other emulators read it, your computer can mount it, and SD card writers copy it to a real card | Read by Spectrum emulators that take hard-disk images | Klive only |
+| **Used for** | Cards you share or put on real hardware | Exchanging disks with other emulators | The ZX Spectrum Next's card (`ks2.cim`), and large cards that are mostly empty |
+
+That is the whole difference between a `.cim` and an `.img`: the `.cim` simply omits the unused
+sectors. The card is the same, sector for sector, but a sector nothing has been written to takes no
+room in the file. An all-but-empty 16 GB card therefore costs a few megabytes of disk space instead
+of 16 GB, and the file grows as you fill the card. The price is that only Klive can open it: to use
+a card outside Klive, make it as an `.img`.
+
+<Callout type="info">
+Moving files from one format to another is a matter of copying them: open both images in the Disk
+Explorer, **Save** a file from one to your computer and drop it onto the other, or `disk get` it
+from one and `disk add` it to the other.
+</Callout>
+
+Double-click `card.img` to browse it:
+
+<Shot
+  src="disks-tutorial/card-files.webp"
+  alt="The Disk Explorer on card.img: FAT16, a GAMES folder and title.scr previewed as a screen"
+  figure="8"
+  caption="An SD card image: folders, long names, previews"
+  width={720}
+/>
+
+Double-click a folder to open it; **Up** goes back. **New folder**, **Add**, **Save**, **Rename**
+and **Delete** work as on a floppy. The **Layout** view of a card shows the volume's areas (the
+reserved sectors, the FATs, the root folder and the data) and a map of the clusters in use, with the
+selected file's clusters outlined:
+
+<Shot
+  src="disks-tutorial/card-layout.webp"
+  alt="The Layout view of the card: the Reserved, FAT, Root folder and Data areas, and the cluster map"
+  figure="9"
+  caption="The card's volume and its clusters"
+  width={720}
+/>
+
+To run esxDOS on the card:
+
+<Steps>
+
+### Name your esxDOS ROM
+
+Klive cannot ship esxDOS: get it from its authors. In **Settings › Machine**, **esxDOS ROM** takes
+its 8K ROM file.
+
+<Shot
+  src="disks-tutorial/esxdos-setting.webp"
+  alt="Settings, Machine page: the esxDOS ROM row with Browse and Forget"
+  figure="10"
+  caption="The esxDOS ROM setting"
+  width={640}
+/>
+
+### Connect the DivMMC and choose the card
+
+Turn on **Machine › SD Card › DivMMC Interface** (the machine restarts with it), then choose the
+card with **Machine › SD Card › Select SD Card Image...**. For esxDOS to boot, the card needs
+esxDOS's own `BIN`, `SYS` and `TMP` folders: drop them onto the card in the Disk Explorer.
+
+### Use the dot commands
+
+esxDOS starts with the machine. Its dot commands then work as on the real interface: `.ls`, `.cd
+GAMES`, `.tapein`, `.snapload`. **Machine › SD Card › Press the NMI Button** opens esxDOS's NMI
+menu.
+
+</Steps>
+
+## 7. The same from your terminal
+
+`klive disk` does all of this on image files without starting Klive, so a build script can make a
+disk or a card:
+
+```bash
+klive disk new game.dsk sse
+klive disk add game.dsk hello.bas DISK --start 10
+klive disk add game.dsk title.scr
+klive disk ls game.dsk
+klive disk new card.img fat16 64
+klive disk add card.img GAMES
+klive disk ls card.img GAMES --json
+```
+
+`klive disk --help` lists every action. A changed floppy image keeps a `.bak` of the original; a
+hard-disk image is changed in place. See [the command line](/en/reference/command-line/).
+
+## Where next
+
+- [Disk images and the Disk Explorer](/en/guides/emulator/disk-explorer): every button, the import rules, the
+  Surface view, exporting a program to a disk.
+- [TR-DOS disks on the Pentagon 128](/en/guides/emulator/trdos-disks): the Beta 128 interface and `.trd`/`.scl`
+  disks, which the same Disk Explorer opens.a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"The tools at a glance","id":"the-tools-at-a-glance","depth":2},{"value":"1. Make a boot disk for the +3","id":"1-make-a-boot-disk-for-the-3","depth":2},{"value":"Create a +3 project","id":"create-a-3-project","depth":3},{"value":"Write the program","id":"write-the-program","depth":3},{"value":"Create a blank disk","id":"create-a-blank-disk","depth":3},{"value":"Put the files on the disk","id":"put-the-files-on-the-disk","depth":3},{"value":"2. Look inside the disk","id":"2-look-inside-the-disk","depth":2},{"value":"3. Boot the disk","id":"3-boot-the-disk","depth":2},{"value":"Insert the disk","id":"insert-the-disk","depth":3},{"value":"Allow writes","id":"allow-writes","depth":3},{"value":"Start the machine and choose Loader","id":"start-the-machine-and-choose-loader","depth":3},{"value":"4. See what the +3 wrote","id":"4-see-what-the-3-wrote","depth":2},{"value":"5. Find the file’s sectors","id":"5-find-the-files-sectors","depth":2},{"value":"6. Make an SD card for the DivMMC","id":"6-make-an-sd-card-for-the-divmmc","depth":2},{"value":[["$","$4",".0",{"children":["Which format: ",["$","code",".1",{"className":"nextra-code","dir":"ltr","children":".img"}],", ",["$","code",".3",{"className":"nextra-code","dir":"ltr","children":".hdf"}]," or ",["$","code",".5",{"className":"nextra-code","dir":"ltr","children":".cim"}],"?"]}]],"id":"which-format-img-hdf-or-cim","depth":3},{"value":"Name your esxDOS ROM","id":"name-your-esxdos-rom","depth":3},{"value":"Connect the DivMMC and choose the card","id":"connect-the-divmmc-and-choose-the-card","depth":3},{"value":"Use the dot commands","id":"use-the-dot-commands","depth":3},{"value":"7. The same from your terminal","id":"7-the-same-from-your-terminal","depth":2},{"value":"Where next","id":"where-next","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"A hands-on tour of Klive's disk tools: make a ZX Spectrum +3 boot disk from a BASIC program and a loading screen, run it, watch the +3 write to it, look at its sectors, and build an SD card for the DivMMC.","title":"Tutorial: working with disks","filePath":"content/en/guides/emulator/disks-tutorial.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"guides/emulator/disks-tutorial","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Tutorial: working with disks - Klive IDE"}],["$","meta","1",{"name":"description","content":"A hands-on tour of Klive's disk tools: make a ZX Spectrum +3 boot disk from a BASIC program and a loading screen, run it, watch the +3 write to it, look at its sectors, and build an SD card for the DivMMC."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/guides/emulator/disks-tutorial/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"T7NzD2XNU02eEtUBOepty"}
+20:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+55:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Tutorial: working with disks","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["This tutorial walks through Klive’s disk tools with one small project. You will make a ",["$","strong",null,{"children":"ZX\nSpectrum +3 boot disk"}]," from a BASIC program and a loading screen, boot it in the emulator, watch the\n+3 save a file onto it, look at where that file sits on the disk, and finally put everything on an\n",["$","strong",null,{"children":"SD card image"}]," for the DivMMC. Every picture below was taken by doing exactly these steps."]}],"\n",["$","h2",null,{"id":"the-tools-at-a-glance","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The tools at a glance",["$","$L20",null,{"id":"the-tools-at-a-glance"}]]}],"\n",["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"Tool","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Where","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"What it is for","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"Disk Explorer"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Double-click a disk image in the project explorer","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"See and change a disk’s files: preview, add, save, rename, delete, attributes","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"Layout view"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The grid button in the Disk Explorer’s header","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Every track and sector of a floppy, or a hard disk’s areas and clusters","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"disk"}]," command"]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The IDE’s command prompt, scripts, automation","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Make disks and change their files with typed commands","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],"$L21","$L22","$L23","$L24"]}]]}],"\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41","\n","$L42","\n","$L43","\n","$L44","\n","$L45","\n","$L46","\n","$L47","\n","$L48","\n","$L49","\n","$L4a","\n","$L4b","\n","$L4c","\n","$L4d","\n","$L4e","\n","$L4f","\n","$L50","\n","$L51","\n","$L52","\n","$L53","\n","$L54"]]}]
+15:["$","$L55",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@56"}]}]
+1f:true
+57:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+58:"ToggleWordWrapButton"
+59:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$58"]
+5a:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+9:300
+21:["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"klive disk"}]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Your terminal, without Klive running","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The same actions on image files, for scripts and builds","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+22:["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"Machine › Disks"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The menu, the emulator’s media strip","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Insert, eject and write-protect disks in the machine’s drives","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+23:["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"Export Code"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"expc ... -f dsk"}]," / ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"-f trd"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Turn a compiled program into a disk that boots it","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+24:["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"Machine › SD Card"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The menu (48K, 128K, +2A/+3)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Connect a DivMMC and choose its SD card","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+25:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The disk formats are the ZX Spectrum +3’s ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".dsk"}]," (+3DOS), TR-DOS’s ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".trd"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".scl"}]," (the Pentagon\nand the Scorpion), and the hard-disk images ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".img"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".hdf"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".cim"}]," (FAT16 and FAT32, for the\nDivMMC and the ZX Spectrum Next). ",["$","$L57",null,{"href":"/en/guides/emulator/disk-explorer","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Disk images and the Disk Explorer"}]," is the\nreference for all of them; this page shows them at work."]}]
+26:["$","h2",null,{"id":"1-make-a-boot-disk-for-the-3","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["1. Make a boot disk for the +3",["$","$L20",null,{"id":"1-make-a-boot-disk-for-the-3"}]]}]
+27:["$","div",null,{"className":"nextra-steps x:ms-4 x:mb-12 x:border-s x:border-gray-200 x:ps-6 x:dark:border-neutral-800","style":{"--counter-id":"_S_1_"},"children":[["$","h3",null,{"id":"create-a-3-project","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Create a +3 project",["$","$L20",null,{"id":"create-a-3-project"}]]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Create a new Klive project for the ",["$","strong",null,{"children":"ZX Spectrum +3 (1 FDD)"}],". The examples below call it\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"DiskTutorial"}],"; the disk tools work in any project, and on files outside one too."]}],["$","h3",null,{"id":"write-the-program","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Write the program",["$","$L20",null,{"id":"write-the-program"}]]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Save this BASIC program as ",["$","strong",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"hello.bas"}]}]," in the project folder. It loads a picture from the disk,\nprints a line over it, and saves the whole screen back onto the disk as a new file:"]}],["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L59",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L5a",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":[["$","span",null,{"style":{"color":"#4D8061"},"children":"10"}],["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":" BORDER"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" 0"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":": "}],["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"PAPER"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" 0"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":": "}],["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"INK"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" 7"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":": "}],["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"CLS"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#4D8061"},"children":"20"}],["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":" LOAD"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" \"title.scr\""}],["$","span",null,{"style":{"color":"#DCDCAA"},"children":" SCREEN$"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#4D8061"},"children":"30"}],["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":" PRINT"}],["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":" AT"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" 21"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"0"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"; "}],["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"INK"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" 6"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":";"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":"\"Hello from drive A!\""}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#4D8061"},"children":"40"}],"$L5b","$L5c","$L5d"]}],"\n","$L5e"]}]]}]]}],"$L5f","$L60","$L61","$L62"]}]
+28:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"560px"},"children":[["$","figcaption",null,{"className":"Shot_label__LxtzD","children":[["$","span",null,{"className":"Shot_number__1dPY0","children":["Fig. ","1"]}],["$","span",null,{"children":"A blank disk, into the project's disks folder"}]]}],["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/disks-tutorial/create-disk-dialog.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/disks-tutorial/create-disk-dialog.webp","alt":"The Create a new disk file dialog: Single-sided CPC (180K), the folder /Users/.../KliveProjects/DiskTutorial/disks with its note, and the file name game","loading":"lazy","decoding":"async"}],[]]}]]}]
+29:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Click ",["$","strong",null,{"children":"Create"}],". Klive writes a blank, formatted ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"disks/game.dsk"}],", and the project explorer shows\nit. At the command prompt, ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"crd ss game"}]," does the same without the dialog (with no folder named,\nit uses the same default), and so does ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"disk new disks/game.dsk ss"}],"."]}]
+2a:["$","div",null,{"className":"nextra-steps x:ms-4 x:mb-12 x:border-s x:border-gray-200 x:ps-6 x:dark:border-neutral-800","style":{"--counter-id":"_S_2_"},"children":[["$","h3",null,{"id":"put-the-files-on-the-disk","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Put the files on the disk",["$","$L20",null,{"id":"put-the-files-on-the-disk"}]]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Type these commands at the IDE’s command prompt (the ",["$","strong",null,{"children":"Commands"}]," tab of the tool panel):"]}],["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L59",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L5a",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"disk add disks/game.dsk hello.bas DISK -start 10"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"disk add disks/game.dsk title.scr"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"disk ls disks/game.dsk"}]}]]}]]}]]}],["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"disk add"}]," turns ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"hello.bas"}]," into a tokenised BASIC program. Calling it ",["$","strong",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"DISK"}]}]," matters: the\n+3’s ",["$","strong",null,{"children":"Loader"}]," menu loads the program of that name. ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"-start 10"}]," makes it run from line 10 once\nit is loaded."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["A ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".scr"}]," file goes on the disk as a screen: code at 16384, which ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"LOAD ... SCREEN$"}]," reads."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"disk ls"}]," lists the disk. Each ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"disk add"}]," answers with what it put on the disk\n(",["$","em",null,{"children":"1 file added to the disk."}],", ",["$","em",null,{"children":"title.scr added to the disk."}],")."]}],"\n"]}]]}]
+2b:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"720px"},"children":[["$","figcaption",null,{"className":"Shot_label__LxtzD","children":[["$","span",null,{"className":"Shot_number__1dPY0","children":["Fig. ","2"]}],["$","span",null,{"children":"disk ls: the disk's two files"}]]}],["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/disks-tutorial/commands.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/disks-tutorial/commands.webp","alt":"The Commands pane after disk ls disks/game.dsk: DISK, a BASIC program with auto-run line 10, and TITLE.SCR, a 6912-byte code file at 16384","loading":"lazy","decoding":"async"}],[]]}]]}]
+2c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Files can also go on a disk without typing: drag them onto the Disk Explorer. A file added by\ndragging has no auto-run line, though; use ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"disk add ... -start"}]," when the Loader must run it."]}]
+2d:["$","h2",null,{"id":"2-look-inside-the-disk","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["2. Look inside the disk",["$","$L20",null,{"id":"2-look-inside-the-disk"}]]}]
+2e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Double-click ",["$","strong",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"game.dsk"}]}]," in the project’s ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"disks"}]," folder. The ",["$","strong",null,{"children":"Disk Explorer"}]," lists its files, and\nselecting one shows what it holds:"]}]
+2f:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"720px"},"children":[["$","figcaption",null,{"className":"Shot_label__LxtzD","children":[["$","span",null,{"className":"Shot_number__1dPY0","children":["Fig. ","3"]}],["$","span",null,{"children":"A BASIC program on the disk"}]]}],["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/disks-tutorial/explorer-listing.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/disks-tutorial/explorer-listing.webp","alt":"The Disk Explorer with DISK selected: its size, auto-run line 10, its attributes and its BASIC listing","loading":"lazy","decoding":"async","width":1440,"height":794}],[["$","span","0",{"className":"Shot_marker___4iE_","style":{"left":"7.3%","top":"12%"},"aria-label":"1","children":1}],["$","span","1",{"className":"Shot_marker___4iE_","style":{"left":"59%","top":"20.6%"},"aria-label":"2","children":2}],["$","span","2",{"className":"Shot_marker___4iE_","style":{"left":"83.3%","top":"47.5%"},"aria-label":"3","children":3}]]]}]]}]
+30:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"The selected file, with its kind, size and start: for BASIC, the auto-run line."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["The ",["$","strong",null,{"children":"Auto-run line"}]," you set with ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"-start"}],"."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["The program’s ",["$","strong",null,{"children":"listing"}],", decoded from the tokenised bytes on the disk."]}],"\n"]}]
+31:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Select ",["$","strong",null,{"children":"TITLE.SCR"}]," and the preview shows it as the screen it is:"]}]
+32:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"720px"},"children":[["$","figcaption",null,{"className":"Shot_label__LxtzD","children":[["$","span",null,{"className":"Shot_number__1dPY0","children":["Fig. ","4"]}],["$","span",null,{"children":"A 6,912-byte code file at 16384 is a screen"}]]}],["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/disks-tutorial/explorer-screen.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/disks-tutorial/explorer-screen.webp","alt":"The Disk Explorer with TITLE.SCR selected, previewed as a ZX Spectrum screen","loading":"lazy","decoding":"async"}],[]]}]]}]
+33:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The header’s buttons change the disk: ",["$","strong",null,{"children":"Add"}]," (+), ",["$","strong",null,{"children":"Save"}]," the selected file to your computer,\n",["$","strong",null,{"children":"Rename"}],", ",["$","strong",null,{"children":"Delete"}],", and ",["$","strong",null,{"children":"Show deleted"}]," files. The buttons above a preview open the file as a\nmemory view or, for code, as disassembly."]}]
+34:["$","h2",null,{"id":"3-boot-the-disk","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["3. Boot the disk",["$","$L20",null,{"id":"3-boot-the-disk"}]]}]
+35:["$","div",null,{"className":"nextra-steps x:ms-4 x:mb-12 x:border-s x:border-gray-200 x:ps-6 x:dark:border-neutral-800","style":{"--counter-id":"_S_3_"},"children":[["$","h3",null,{"id":"insert-the-disk","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Insert the disk",["$","$L20",null,{"id":"insert-the-disk"}]]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Choose ",["$","strong",null,{"children":"Machine › Disks › Insert Disk into Drive A…"}]," and pick ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"disks/game.dsk"}],", or use the drive’s\nbutton in the emulator’s media strip. The Disk Explorer now says ",["$","strong",null,{"children":"In drive A"}],"."]}],["$","h3",null,{"id":"allow-writes","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Allow writes",["$","$L20",null,{"id":"allow-writes"}]]}],["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":["$","svg",null,{"viewBox":"0 0 16 16","fill":"currentColor","height":".8em","className":"x:mt-[.3em]","children":["$","path",null,{"d":"M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"}]}]}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A disk goes into the drive ",["$","strong",null,{"children":"write-protected"}],", so a program cannot change it by accident. This\nprogram saves a file, so clear ",["$","strong",null,{"children":"Machine › Disks › Write Protect Drive A"}]," first. Otherwise the +3\nstops at line 40 with ",["$","em",null,{"children":"Disk is write protected"}],"."]}]}]]}],["$","h3",null,{"id":"start-the-machine-and-choose-loader","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Start the machine and choose Loader",["$","$L20",null,{"id":"start-the-machine-and-choose-loader"}]]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Start the machine and press ",["$","kbd",null,{"children":"Enter"}]," on ",["$","strong",null,{"children":"Loader"}]," in the +3’s menu. The +3 loads ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"DISK"}],"\nfrom drive A and runs it. The program loads the screen, prints its line and saves the screen as\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"COPY.SCR"}],":"]}]]}]
+36:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":[["$","figcaption",null,{"className":"Shot_label__LxtzD","children":[["$","span",null,{"className":"Shot_number__1dPY0","children":["Fig. ","5"]}],["$","span",null,{"children":"The +3 ran the program from drive A"}]]}],["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/disks-tutorial/plus3-running.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/disks-tutorial/plus3-running.webp","alt":"The emulator showing the loading screen, 'Saved COPY.SCR' and 0 OK, 50:1, with game.dsk in drive A in the media strip","loading":"lazy","decoding":"async"}],[]]}]]}]
+37:["$","h2",null,{"id":"4-see-what-the-3-wrote","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["4. See what the +3 wrote",["$","$L20",null,{"id":"4-see-what-the-3-wrote"}]]}]
+38:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["When the machine writes to the disk, Klive writes the changed sectors back to ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"disks/game.dsk"}]," and the open\nDisk Explorer shows the change a moment later. ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"COPY.SCR"}]," is there, and its preview is the screen\nthe +3 saved, with the line the program printed:"]}]
+39:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"720px"},"children":[["$","figcaption",null,{"className":"Shot_label__LxtzD","children":[["$","span",null,{"className":"Shot_number__1dPY0","children":["Fig. ","6"]}],["$","span",null,{"children":"The file the +3 saved, on the disk"}]]}],["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/disks-tutorial/explorer-written.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/disks-tutorial/explorer-written.webp","alt":"The Disk Explorer, In drive A, with a third file COPY.SCR selected and previewed","loading":"lazy","decoding":"async","width":1440,"height":794}],[["$","span","0",{"className":"Shot_marker___4iE_","style":{"left":"36.3%","top":"2.7%"},"aria-label":"1","children":1}],["$","span","1",{"className":"Shot_marker___4iE_","style":{"left":"9.7%","top":"20.6%"},"aria-label":"2","children":2}]]]}]]}]
+3a:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"In drive A"}],": this disk is in the running machine’s drive."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"COPY.SCR"}],", written by the +3’s own ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"SAVE"}],"."]}],"\n"]}]
+3b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You can change a disk while it is in the drive, too. Klive pauses the machine, writes the disk,\nputs it back in the drive and lets the machine run on."}]
+3c:["$","h2",null,{"id":"5-find-the-files-sectors","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["5. Find the file’s sectors",["$","$L20",null,{"id":"5-find-the-files-sectors"}]]}]
+3d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Select ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"COPY.SCR"}]," and click ",["$","strong",null,{"children":"Show the file’s sectors"}]," above its preview. The ",["$","strong",null,{"children":"Layout"}]," view\nshows the disk as its tracks and sectors, coloured by what they hold, with the first sector of the\nfile selected:"]}]
+3e:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"720px"},"children":[["$","figcaption",null,{"className":"Shot_label__LxtzD","children":[["$","span",null,{"className":"Shot_number__1dPY0","children":["Fig. ","7"]}],["$","span",null,{"children":"Track by track: the system track, the directory, the files"}]]}],["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/disks-tutorial/layout.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/disks-tutorial/layout.webp","alt":"The Layout view: track 0 is the system track, track 1 starts with the directory, and the files fill tracks 1 to 4; the selected sector starts with the PLUS3DOS header","loading":"lazy","decoding":"async"}],[]]}]]}]
+3f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The sector’s details say where it is (cylinder, side, sector and its ID), what it holds, and its\nbytes. Here they start with ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"PLUS3DOS"}],": the header +3DOS writes in front of every file. Select\nanother sector to see its bytes, and click a file’s name to go back to the file."]}]
+40:["$","h2",null,{"id":"6-make-an-sd-card-for-the-divmmc","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["6. Make an SD card for the DivMMC",["$","$L20",null,{"id":"6-make-an-sd-card-for-the-divmmc"}]]}]
+41:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ",["$","strong",null,{"children":"DivMMC"}]," is an SD card interface for the 48K, the 128K and the +2A/+3. Its ",["$","strong",null,{"children":"esxDOS"}]," operating\nsystem loads ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".tap"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".sna"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".scr"}]," and other files straight from a FAT card. Klive makes and fills\nsuch cards:"]}]
+42:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L59",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L5a",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"disk new card.img fat16 64"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"disk add card.img card/GAMES"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"disk add card.img card/title.scr"}]}]]}]]}]]}]
+43:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"disk new"}]," makes a 64 MB FAT16 card (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"fat32"}]," and other sizes work too). Adding a ",["$","strong",null,{"children":"folder"}],"\ncopies it with everything in it. Here ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"card/GAMES"}]," holds a copy of ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"game.dsk"}],". Files go onto the\ncard ",["$","strong",null,{"children":"as they are"}],", under their own long names."]}]
+44:["$","h3",null,{"id":"which-format-img-hdf-or-cim","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":[["Which format: ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".img"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".hdf"}]," or ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".cim"}],"?"],["$","$L20",null,{"id":"which-format-img-hdf-or-cim"}]]}]
+45:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The extension you give ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"disk new"}]," picks the image format. All three hold the same FAT16 or FAT32\ncard. Every disk tool on this page works with each of them, and so does the DivMMC. They differ in\nhow the card is stored in the file:"]}]
+46:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":".img"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":".hdf"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":".cim"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"What it is"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The card’s sectors, byte for byte, from the first to the last","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The same sectors after a short RAMsoft header that describes the drive","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The same sectors, with the unused ones left out (Klive’s own format)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"File size"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The card’s full size from the start: a 64 MB card is a 64 MB file","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The card’s full size, plus the header","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Grows with what is on the card: a new 64 MB card is a 1.1 MB file","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"Card sizes"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Any","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Any","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"64 MB to 16 GB","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"Other programs"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The common format: other emulators read it, your computer can mount it, and SD card writers copy it to a real card","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Read by Spectrum emulators that take hard-disk images","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],"$L63"],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],"$L64"]}]]}]
+47:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["That is the whole difference between a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".cim"}]," and an ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".img"}],": the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".cim"}]," simply omits the unused\nsectors. The card is the same, sector for sector, but a sector nothing has been written to takes no\nroom in the file. An all-but-empty 16 GB card therefore costs a few megabytes of disk space instead\nof 16 GB, and the file grows as you fill the card. The price is that only Klive can open it: to use\na card outside Klive, make it as an ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".img"}],"."]}]
+48:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$35:props:children:3:props:children:0:props:style","data-pagefind-ignore":"all","children":"$35:props:children:3:props:children:0:props:children"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Moving files from one format to another is a matter of copying them: open both images in the Disk\nExplorer, ",["$","strong",null,{"children":"Save"}]," a file from one to your computer and drop it onto the other, or ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"disk get"}]," it\nfrom one and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"disk add"}]," it to the other."]}]}]]}]
+49:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Double-click ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"card.img"}]," to browse it:"]}]
+4a:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"720px"},"children":[["$","figcaption",null,{"className":"Shot_label__LxtzD","children":[["$","span",null,{"className":"Shot_number__1dPY0","children":["Fig. ","8"]}],["$","span",null,{"children":"An SD card image: folders, long names, previews"}]]}],["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/disks-tutorial/card-files.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/disks-tutorial/card-files.webp","alt":"The Disk Explorer on card.img: FAT16, a GAMES folder and title.scr previewed as a screen","loading":"lazy","decoding":"async"}],[]]}]]}]
+4b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Double-click a folder to open it; ",["$","strong",null,{"children":"Up"}]," goes back. ",["$","strong",null,{"children":"New folder"}],", ",["$","strong",null,{"children":"Add"}],", ",["$","strong",null,{"children":"Save"}],", ",["$","strong",null,{"children":"Rename"}],"\nand ",["$","strong",null,{"children":"Delete"}]," work as on a floppy. The ",["$","strong",null,{"children":"Layout"}]," view of a card shows the volume’s areas (the\nreserved sectors, the FATs, the root folder and the data) and a map of the clusters in use, with the\nselected file’s clusters outlined:"]}]
+4c:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"720px"},"children":[["$","figcaption",null,{"className":"Shot_label__LxtzD","children":[["$","span",null,{"className":"Shot_number__1dPY0","children":["Fig. ","9"]}],["$","span",null,{"children":"The card's volume and its clusters"}]]}],["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/disks-tutorial/card-layout.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/disks-tutorial/card-layout.webp","alt":"The Layout view of the card: the Reserved, FAT, Root folder and Data areas, and the cluster map","loading":"lazy","decoding":"async"}],[]]}]]}]
+4d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"To run esxDOS on the card:"}]
+4e:["$","div",null,{"className":"nextra-steps x:ms-4 x:mb-12 x:border-s x:border-gray-200 x:ps-6 x:dark:border-neutral-800","style":{"--counter-id":"_S_4_"},"children":[["$","h3",null,{"id":"name-your-esxdos-rom","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Name your esxDOS ROM",["$","$L20",null,{"id":"name-your-esxdos-rom"}]]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Klive cannot ship esxDOS: get it from its authors. In ",["$","strong",null,{"children":"Settings › Machine"}],", ",["$","strong",null,{"children":"esxDOS ROM"}]," takes\nits 8K ROM file."]}],["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":[["$","figcaption",null,{"className":"Shot_label__LxtzD","children":[["$","span",null,{"className":"Shot_number__1dPY0","children":["Fig. ","10"]}],["$","span",null,{"children":"The esxDOS ROM setting"}]]}],["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/disks-tutorial/esxdos-setting.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/disks-tutorial/esxdos-setting.webp","alt":"Settings, Machine page: the esxDOS ROM row with Browse and Forget","loading":"lazy","decoding":"async"}],[]]}]]}],["$","h3",null,{"id":"connect-the-divmmc-and-choose-the-card","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Connect the DivMMC and choose the card",["$","$L20",null,{"id":"connect-the-divmmc-and-choose-the-card"}]]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Turn on ",["$","strong",null,{"children":"Machine › SD Card › DivMMC Interface"}]," (the machine restarts with it), then choose the\ncard with ",["$","strong",null,{"children":"Machine › SD Card › Select SD Card Image…"}],". For esxDOS to boot, the card needs\nesxDOS’s own ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"BIN"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"SYS"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"TMP"}]," folders: drop them onto the card in the Disk Explorer."]}],["$","h3",null,{"id":"use-the-dot-commands","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Use the dot commands",["$","$L20",null,{"id":"use-the-dot-commands"}]]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["esxDOS starts with the machine. Its dot commands then work as on the real interface: ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".ls"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".cd GAMES"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".tapein"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".snapload"}],". ",["$","strong",null,{"children":"Machine › SD Card › Press the NMI Button"}]," opens esxDOS’s NMI\nmenu."]}]]}]
+4f:["$","h2",null,{"id":"7-the-same-from-your-terminal","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["7. The same from your terminal",["$","$L20",null,{"id":"7-the-same-from-your-terminal"}]]}]
+50:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"klive disk"}]," does all of this on image files without starting Klive, so a build script can make a\ndisk or a card:"]}]
+51:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L59",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L5a",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":[["$","span",null,{"style":{"color":"#FF8C42"},"children":"klive"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" disk"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" new"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" game.dsk"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" sse"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#FF8C42"},"children":"klive"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" disk"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" add"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" game.dsk"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" hello.bas"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" DISK"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" --start"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" 10"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#FF8C42"},"children":"klive"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" disk"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" add"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" game.dsk"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" title.scr"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#FF8C42"},"children":"klive"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" disk"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" ls"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" game.dsk"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#FF8C42"},"children":"klive"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" disk"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" new"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" card.img"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" fat16"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" 64"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#FF8C42"},"children":"klive"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" disk"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" add"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" card.img"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" GAMES"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#FF8C42"},"children":"klive"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" disk"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" ls"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" card.img"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" GAMES"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" --json"}]]}]]}]]}]]}]
+52:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"klive disk --help"}]," lists every action. A changed floppy image keeps a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".bak"}]," of the original; a\nhard-disk image is changed in place. See ",["$","$L57",null,{"href":"/en/reference/command-line/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"the command line"}],"."]}]
+53:["$","h2",null,{"id":"where-next","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Where next",["$","$L20",null,{"id":"where-next"}]]}]
+54:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","$L57",null,{"href":"/en/guides/emulator/disk-explorer","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Disk images and the Disk Explorer"}],": every button, the import rules, the\nSurface view, exporting a program to a disk."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","$L57",null,{"href":"/en/guides/emulator/trdos-disks","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"TR-DOS disks on the Pentagon 128"}],": the Beta 128 interface and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".trd"}],"/",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".scl"}],"\ndisks, which the same Disk Explorer opens."]}],"\n"]}]
+56:null
+9:C
+5b:["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":" SAVE"}]
+5c:["$","span",null,{"style":{"color":"#FF6B35"},"children":" \"copy.scr\""}]
+5d:["$","span",null,{"style":{"color":"#DCDCAA"},"children":" SCREEN$"}]
+5e:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#4D8061"},"children":"50"}],["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":" PRINT"}],["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":" AT"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" 21"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"0"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"; "}],["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"INK"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" 4"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":";"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":"\"Saved COPY.SCR      \""}]]}]
+5f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Put a loading screen beside it as ",["$","strong",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"title.scr"}]}],": any 6,912-byte ZX Spectrum screen file will do."]}]
+60:["$","h3",null,{"id":"create-a-blank-disk","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Create a blank disk",["$","$L20",null,{"id":"create-a-blank-disk"}]]}]
+61:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Choose ",["$","strong",null,{"children":"Machine › Disks › Create Disk File…"}],". The dialog asks for three things:"]}]
+62:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Disk type"}],": the format. On the +3 the choices are CPC disks: ",["$","em",null,{"children":"Single-sided CPC (180K)"}]," is the\n+3’s own format (173K for files once formatted), the ",["$","em",null,{"children":"ECPC"}]," ones are the same disks as extended\nDSK images, and the double-sided and 80-track ones are for a second drive. On the Pentagon and the\nScorpion the dialog offers TR-DOS disks instead."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Disk file folder"}],": where the disk goes. It starts at the open project’s ",["$","strong",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"disks"}]}]," folder\n(Klive makes the folder when it writes the disk), or at ",["$","strong",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Klive/Disks"}]}]," in your home folder when\nno project is open. Type another folder or browse for one to put the disk elsewhere."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Disk file name"}],": ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"game"}]," is enough; Klive adds ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".dsk"}]," (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".trd"}]," for a TR-DOS disk)."]}],"\n"]}]
+63:["$","td",null,{"children":"Klive only","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
+64:["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"Used for"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Cards you share or put on real hardware","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Exchanging disks with other emulators","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["The ZX Spectrum Next’s card (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"ks2.cim"}],"), and large cards that are mostly empty"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"
