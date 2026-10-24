@@ -1,4 +1,4 @@
-# zxbc 2.0.0-beta25: command line and diagnostics
+# zxbc 2.0.0-beta29: command line and diagnostics
 
 ## The command line Klive uses
 
@@ -22,7 +22,7 @@ and a timeout that kills the process.
   source's folder, then the include folders.
 - **`--split-modules` on zx48k is an argument error** (exit 2: "architecture 'zx48k' declares no
   banks to split into").
-- `--version` prints `zxbc 2.0.0-beta25` and exits 0. It takes about 1 s on a cold launch.
+- `--version` prints `zxbc 2.0.0-beta29` and exits 0. It takes about 1 s on a cold launch.
 - **`-d` takes no value. Only `--debug=FILE` sets the path.** `-d=FILE` is an argument error, and so is
   `-d FILE`, because the path is read as the program.
 - `--parse-only` checks the program, writes **no** files (it leaves earlier outputs untouched), and

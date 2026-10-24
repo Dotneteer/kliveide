@@ -97,8 +97,8 @@
 04::86C7: .core.__DIVI16A
 04::86CC: .core.__DIVI16B
 04::86D5: .core.__MODI16
-04::86DA: .core.__PRINTI16
-04::86E5: .core.__PRINTU16
+04::86EC: .core.__PRINTI16
+04::86F7: .core.__PRINTU16
 20::C000: ._big1.table
 20::C002: ._big1.table.__DATA__.__PTR__
 20::C008: ._big1.table.__DATA__

@@ -140,14 +140,14 @@ describe("tool-install archive extraction", () => {
     expect(() => extractArchive(write("kit.rar", Buffer.alloc(4)), out())).toThrow(/Unsupported/);
   });
 
-  // --- The real kit, when this checkout has fetched it (vendor/boriel-basic/README.md)
-  const realKit = path.resolve(
-    __dirname,
-    "../../vendor/boriel-basic/kits/boriel-basic-v2.0.0-beta25_arm64-macos.tar.gz"
-  );
+  // --- The real kit that vendor/boriel-basic/kit.json pins, when this checkout has fetched it
+  // --- (vendor/boriel-basic/README.md)
+  const vendorFolder = path.resolve(__dirname, "../../vendor/boriel-basic");
+  const pinned = JSON.parse(fs.readFileSync(path.join(vendorFolder, "kit.json"), "utf8"));
+  const realKit = path.join(vendorFolder, "kits", pinned.kits["darwin-arm64"].file);
   it.skipIf(!fs.existsSync(realKit))("extracts the Boriel BASIC kit with its nine executables", () => {
     const entries = extractArchive(realKit, out(), { stripComponents: 1, applyModes: true });
-    expect(entries).toHaveLength(750);
+    expect(entries).toHaveLength(754);
     const executables = entries.filter((e) => e.mode & 0o100).map((e) => e.path).sort();
     expect(executables).toEqual([
       "arch/zx81sd/tools/build_sd81",

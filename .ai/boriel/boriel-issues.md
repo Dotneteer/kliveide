@@ -1,4 +1,7 @@
-# Issues to report to Boriel (zxbc 2.0.0-beta25)
+# Issues to report to Boriel (zxbc 2.0.0-beta25, re-checked on beta29)
+
+Items 3, 11 and 12 are **fixed in 2.0.0-beta29** (seen in the regenerated fixtures, 2026-10-24).
+Items 2, 4, 5 and 9 still show in the beta29 fixtures; the others were not re-run.
 
 Each item was found during Klive's Phase B0. Each has a minimal program, Klive's own, that
 reproduces it. The project author decides what to send.
@@ -18,7 +21,7 @@ reproduces it. The project author decides what to send.
    only for `ASM` bodies, a diagnostic would help.
 2. **The `.dbg` gives FASTCALL parameters a frame location** (`{ at: "frame", ixOffset: 5 }`)
    although the routine has no frame. A debugger reading IX + 5 shows garbage.
-3. **`endAddress` crosses routine boundaries.** The last statement of a routine ends at the next
+3. *(Fixed in beta29.)* **`endAddress` crosses routine boundaries.** The last statement of a routine ends at the next
    statement in address order, so it covers its own epilogue and the next routine's prologue.
    Ending at the routine's epilogue start would be exact.
 4. **Code with no statement is absorbed by the previous statement in `addressToStatement`:**
@@ -45,9 +48,9 @@ reproduces it. The project author decides what to send.
     5867 bytes for one small Next program), so a `.nex` built without the flag next to a `.bin`
     built with it holds other code than the `.dbg` describes. Every breakpoint missed on the Next
     until Klive passed the flag to the `.nex` run too. Debug information should not change the code.
-11. **A FUNCTION whose body is only `RETURN expr`** gets a zero-length statement
+11. *(Fixed in beta29.)* **A FUNCTION whose body is only `RETURN expr`** gets a zero-length statement
     (`startAddress == endAddress`), and the previous statement's range covers the routine's prologue.
-12. **A modular build records every statement as the main program's** (`callableIndex: 0`), module
+12. *(Fixed in beta29.)* **A modular build records every statement as the main program's** (`callableIndex: 0`), module
     routines' statements included. A debugger cannot tell which routine a statement belongs to.
 13. **`USE` searches the cwd, not the source's folder**, unless `-m` is given.
 14. **Diagnostics have no column**, and argument errors go to stderr even with `-e`.

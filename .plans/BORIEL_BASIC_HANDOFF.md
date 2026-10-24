@@ -78,7 +78,10 @@ emulator's.
 ## Next steps, in order
 
 0. **New versions and `.dbg` format changes** are tracked by `.plans/BORIEL_BASIC_UPDATE_TRACKING_PLAN.md`
-   (proposed). `2.0.0-beta26` was already published on 2026-10-14; that plan's U6 is the upgrade.
+   (proposed, not built). The pin moved from beta25 to **`2.0.0-beta29`** on 2026-10-24 by hand, without
+   that plan's tooling: kits fetched twice and hashed, layout compared, fixtures regenerated, the
+   Boriel tests and `boriel-ide-check.cjs` re-run. What changed is in `.ai/boriel/README.md`,
+   "Version history".
 
 1. **Unverified platforms.** The x86_64 Linux and Windows kits have never been run. Unchecked on
    Windows: Windows `;` as the `-I` separator (`boriel-options.ts`), and skipping the 34.5 MB of

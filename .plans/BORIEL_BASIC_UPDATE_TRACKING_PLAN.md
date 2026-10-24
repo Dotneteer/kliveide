@@ -391,6 +391,11 @@ Running it locally works too: the same two commands. A Claude Code scheduled tas
 
 ## 9. Phase U6 — first use: beta25 → beta26
 
+> **Overtaken (2026-10-24):** the pin moved straight from beta25 to `2.0.0-beta29` by hand, before
+> U0-U5 existed (`.ai/boriel/README.md`, "Version history"). That run is the first data point on how
+> much a beta step changes: three `.dbg` quirks fixed, no schema change. U6 now applies to the next
+> version after beta29.
+
 This is the acceptance test for U0-U5, because beta26 is already published (§1.1):
 
 1. The release check reports beta26 as **ready**, with the seven sizes from §1.1.

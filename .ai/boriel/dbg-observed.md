@@ -1,4 +1,4 @@
-# The `.dbg` file and run-time layouts, as observed (zxbc 2.0.0-beta25)
+# The `.dbg` file and run-time layouts, as observed (zxbc 2.0.0-beta25, re-checked on beta29)
 
 The published format is at <https://zxbasic.readthedocs.io/en/v2.0/debug_format/>. This file records
 what the compiler **actually writes**, checked by running the programs on Klive's real 48K harness.
@@ -32,12 +32,16 @@ what the compiler **actually writes**, checked by running the programs on Klive'
 
 ## What the adapter must correct (observed; most verified)
 
+Items marked **fixed in beta29** no longer show in the pinned kit's output. The adapter keeps their
+corrections: they change nothing on beta29 files, and a user may point Klive at an older zxbc.
+
 1. **Statement indexes are not dense.** A statement the optimiser removes (an assignment to a
    variable never read) vanishes, leaving a gap in `index`. The array is also **not sorted**.
    Re-index to positions and remap `callSites[].statementIndex`.
 2. **`endAddress` runs into the next routine.** It is the next statement's start in address order,
    so the last statement of a routine spans its epilogue, and often the next routine's prologue.
    Clamp it to the owning frame's `epilogueStart`, or to the next callable's `startAddress`.
+   **Fixed in beta29:** a routine's last statement ends exactly at its frame's `epilogueStart`.
 3. **Code with no statement maps to the previous statement.** Prologues, epilogues and a dynamic
    `DIM d(k)` (about 360 bytes of run-time code, with no statement record) fall inside the previous
    entry of `addressToStatement`, which can belong to another routine. Insert `-1` (glue) entries at
@@ -78,12 +82,13 @@ what the compiler **actually writes**, checked by running the programs on Klive'
     zxnext), and the previous statement in address order runs over the routine's prologue. The
     start is right (the body's first instruction), so a breakpoint there fires; the adapter gives
     the statement the range up to the epilogue (correction 2) and clamps the other at the routine's
-    start.
+    start. **Fixed in beta29:** the `RETURN` now spans `bodyStart` up to `epilogueStart`.
 
 15. **A modular build gives every statement `callableIndex: 0`** (the main program), module
     routines' statements included (verified, B5). The owner is the routine whose frame range
     (`startAddress` up to the epilogue and exits) holds the statement's address, in the same raw
     partition. Without this, a routine's last statement ran to the next routine.
+    **Fixed in beta29:** module routines' statements carry their own `callableIndex`.
 
 All of these corrections live in `src/main/boriel-integration/dbg-adapter.ts`; the fixtures in
 `test/boriel/fixtures/` and `test/boriel/dbg-adapter.test.ts` pin each one.

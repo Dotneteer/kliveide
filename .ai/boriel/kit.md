@@ -1,10 +1,11 @@
-# The Boriel BASIC 2.0.0-beta25 setup kits
+# The Boriel BASIC 2.0.0-beta29 setup kits
 
 ## Downloads and hashes
 
 The kits are public: `https://files.boriel-basic.net/v2/<file>`. The URL is recorded in each file's
-`kMDItemWhereFroms`. The sizes served on 2026-10-17 equal the copies Boriel sent, so CI can fetch
-by pinned URL and verify the SHA-256; the archives need not be committed.
+`kMDItemWhereFroms`. Boriel publishes no checksums. The beta25 sizes served on 2026-10-17 equalled
+the copies Boriel sent; the beta29 kits were downloaded twice on 2026-10-24 and both copies hashed
+the same. CI fetches by pinned URL and verifies the SHA-256, so the archives need not be committed.
 
 In the source tree the kits live in **`vendor/boriel-basic/`**. `kit.json` there is the
 authoritative copy of the table below (keys are `process.platform`-`process.arch`), and the
@@ -12,18 +13,18 @@ archives sit in the git-ignored `kits/` (see that folder's `README.md`).
 
 | File | Bytes | SHA-256 | Klive installer |
 | --- | --- | --- | --- |
-| `boriel-basic-v2.0.0-beta25_arm64-macos.tar.gz` | 3069013 | `41c225e078b0811a36b043ab4afa8f66be0156d865fef243c40c1397407e523f` | mac arm64 |
-| `boriel-basic-v2.0.0-beta25_x86_64-macos.tar.gz` | 3374038 | `528b6c18ec25478203bbdc4df9905979c3d608d081f0252c2ab3d2aa5a450465` | mac x64 |
-| `boriel-basic-v2.0.0-beta25_x86_64-linux.tar.gz` | 3391237 | `07914d463118917e3e45fe188f70646073f236711b9e06cc157a278252331546` | linux x64 |
-| `boriel-basic-v2.0.0-beta25_arm64-linux.tar.gz` | 3241916 | `e7f8b2f965017de6b25c481b3fa28bb4f775134590ba240c44317194be19f4eb` | linux arm64 |
-| `boriel-basic-v2.0.0-beta25_x86_64-win.zip` | 13697031 | `ee797b323f778c29a238b3225fc74be8146c44cb1cdf4702410547da6c5a321d` | win x64 |
-| `boriel-basic-v2.0.0-beta25_arm64-win.zip` | 13046014 | `5c99a4de4abc84b8a56d076e7554d1da376717a5ce6d0213f100a0735c0092ae` | none (no win arm64 build) |
-| `boriel-basic-v2.0.0-beta25_armv6-linux.tar.gz` | 3696098 | `897273b25199a0b7907cdc59e6b14503333a0cb316585433b767b3705112fc9b` | none (no armv7l build) |
+| `boriel-basic-v2.0.0-beta29_arm64-macos.tar.gz` | 3064810 | `4c940c0e9dd1aae743da6e459ff4837988dccbbb89e0455ddf9e4d4060a746b5` | mac arm64 |
+| `boriel-basic-v2.0.0-beta29_x86_64-macos.tar.gz` | 3326978 | `b535260213e5389a5344f4a163d3278ef4b0d1150cb7007ec799d300318916e2` | mac x64 |
+| `boriel-basic-v2.0.0-beta29_x86_64-linux.tar.gz` | 3409272 | `a9833bc9027c03b2cede88d5a304fee4356b89e40ba77946de55036b6d4c4e69` | linux x64 |
+| `boriel-basic-v2.0.0-beta29_arm64-linux.tar.gz` | 3286878 | `e23484b96d654889ec7c35d8b8c3ad5bcabc58da1a99492619c8e3a21c04660e` | linux arm64 |
+| `boriel-basic-v2.0.0-beta29_x86_64-win.zip` | 13718211 | `60e43ae8c7d819605b3e62c9af2c69dded636bf58b7f9791594a503b6ec512f2` | win x64 |
+| `boriel-basic-v2.0.0-beta29_arm64-win.zip` | 13116287 | `90a783822388e14a0f6b8c3339fff92b949b25258fe151ce32006927707108dc` | none (no win arm64 build) |
+| `boriel-basic-v2.0.0-beta29_armv6-linux.tar.gz` | 3661441 | `ab19cb0f3c242084636447083ab387bcb1636aafed98b87bca59b6945efb8f97` | none (no armv7l build) |
 
 ## Layout
 
-- One top-level folder, `boriel-basic-v2.0.0-beta25_<arch>-<os>/`. Strip it on extraction.
-- 750 files (Windows: 759), no symlinks, longest path 95 characters. Tarballs use the GNU
+- One top-level folder, `boriel-basic-v<version>_<arch>-<os>/`. Strip it on extraction.
+- 754 files (Windows: 763; beta25 had 750 and 759), no symlinks, longest path 95 characters. Tarballs use the GNU
   `ustar  ` magic.
 - **Nine executables:**
   - root: `zxbc`, `zxbasm`, `zxbpp`;

@@ -97,8 +97,8 @@
 04::867D: .core.__DIVI16A
 04::8682: .core.__DIVI16B
 04::868B: .core.__MODI16
-04::8690: .core.__PRINTI16
-04::869B: .core.__PRINTU16
+04::86A2: .core.__PRINTI16
+04::86AD: .core.__PRINTU16
 20::C000: ._edge.t
 20::C002: ._edge.t.__DATA__.__PTR__
 20::C008: ._edge.t.__DATA__

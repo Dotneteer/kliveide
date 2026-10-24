@@ -225,7 +225,8 @@ describe("Boriel BASIC setup", () => {
 describe("Boriel BASIC setup with the real kit", () => {
   const appPath = path.resolve(__dirname, "../..");
   const location = borielKitLocation(false, "", appPath);
-  const available = locateBundledKit(location).kit.kind === "available";
+  const bundled = locateBundledKit(location).kit;
+  const available = bundled.kind === "available";
   let home: string;
   beforeEach(() => {
     home = fs.mkdtempSync(path.join(os.tmpdir(), "klive-boriel-real-"));
@@ -242,6 +243,7 @@ describe("Boriel BASIC setup with the real kit", () => {
       settings: { readSetting: () => undefined },
       setupRecord: undefined
     });
-    expect(result).toMatchObject({ kind: "installed", version: "2.0.0-beta25" });
+    // --- The pinned version, as vendor/boriel-basic/kit.json names it
+    expect(result).toMatchObject({ kind: "installed", version: available ? bundled.version : "" });
   }, 60_000);
 });

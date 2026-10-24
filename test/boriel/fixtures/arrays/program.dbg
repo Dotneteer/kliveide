@@ -2,8 +2,8 @@
   "format": "zx-source-debug",
   "version": 1,
   "architecture": "zx48k",
-  "binaryLength": 7961,
-  "binaryChecksum": 3856098379,
+  "binaryLength": 8032,
+  "binaryChecksum": 3539003561,
   "sourceLevelDebug": {
     "language": "basic",
     "files": [
@@ -138,7 +138,7 @@
         "endLine": 33,
         "endColumn": 0,
         "startAddress": 37797,
-        "endAddress": 37851,
+        "endAddress": 37802,
         "kind": "normal",
         "callableIndex": 2,
         "callTargets": []
@@ -190,7 +190,7 @@
         "endLine": 15,
         "endColumn": 16,
         "startAddress": 37938,
-        "endAddress": 38361,
+        "endAddress": 37958,
         "kind": "normal",
         "callableIndex": 0,
         "callTargets": []
@@ -216,7 +216,7 @@
         "endLine": 21,
         "endColumn": 14,
         "startAddress": 38377,
-        "endAddress": 38377,
+        "endAddress": 38401,
         "kind": "normal",
         "callableIndex": 1,
         "callTargets": []

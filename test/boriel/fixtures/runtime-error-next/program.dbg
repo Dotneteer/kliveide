@@ -60,7 +60,7 @@
         "endLine": 6,
         "endColumn": 0,
         "startAddress": 32829,
-        "endAddress": 32829,
+        "endAddress": 32834,
         "kind": "normal",
         "callableIndex": 0,
         "callTargets": []

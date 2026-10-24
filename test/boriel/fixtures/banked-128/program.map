@@ -122,5 +122,5 @@
 02::865C: .core.__DIVI16A
 02::8661: .core.__DIVI16B
 02::866A: .core.__MODI16
-02::866F: .core.__PRINTI16
-02::867A: .core.__PRINTU16
+02::8681: .core.__PRINTI16
+02::868C: .core.__PRINTU16
