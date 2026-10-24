@@ -61,6 +61,7 @@ import {
 import { readDiskData } from "@emu/machines/disk/disk-readers";
 import { DSK_WHOLE_IMAGE_KEY, dskSectorWrites } from "@emu/machines/disk/disk-changes";
 import { createDiskFile } from "@common/utils/create-disk-file";
+import { defaultDiskFolder } from "./disk-folders";
 import { beginDiskImageEdit, cancelDiskImageEdit, commitDiskImageEdit } from "./disk-image-edit";
 import { createHardDiskImage, hardDiskFileClusters, queryHardDisk, readHardDiskFile } from "./hard-disk-images";
 import { copyFolderToHardDiskSafely, editHardDiskSafely } from "./hard-disk-edit";
@@ -326,8 +327,14 @@ class MainMessageProcessor {
    * @param filename The name of the disk file.
    * @param diskType The type of disk to create.
    */
+  /** `MainApi.getDefaultDiskFolder` */
+  getDefaultDiskFolder() {
+    return defaultDiskFolder();
+  }
+
   createDiskFile(diskFolder: string, filename: string, diskType: string) {
-    return createDiskFile(diskFolder, filename, diskType);
+    // --- No folder named: the project's `disks` folder, or `Klive/Disks`
+    return createDiskFile(diskFolder || defaultDiskFolder(), filename, diskType);
   }
 
   async beginDiskImageEdit(filePath: string) {

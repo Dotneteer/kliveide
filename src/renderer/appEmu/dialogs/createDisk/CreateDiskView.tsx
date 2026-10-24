@@ -43,21 +43,24 @@ export const CreateDiskView = ({ vm, dispatch }: CreateDiskViewProps) => {
         </div>
       </DialogRow>
       <DialogRow label={t("dialog.createDisk.folder.label")}>
-        <TextInput
-          value={vm.folder.value}
-          error={vm.folder.error}
-          autoFocus={true}
-          buttonIcon="folder"
-          buttonTitle={t("dialog.createDisk.folder.browseTooltip")}
-          // --- The controller owns the picker, so browse reports the click and
-          // --- resolves empty; the chosen folder arrives back through the view
-          // --- model rather than through TextInput's own onChange.
-          browse={async () => {
-            dispatch({ type: "selectFolderRequested" });
-            return undefined;
-          }}
-          onChange={(folder) => dispatch({ type: "folderEdited", folder })}
-        />
+        <div className={styles.fieldWithHint}>
+          <TextInput
+            value={vm.folder.value}
+            error={vm.folder.error}
+            autoFocus={true}
+            buttonIcon="folder"
+            buttonTitle={t("dialog.createDisk.folder.browseTooltip")}
+            // --- The controller owns the picker, so browse reports the click and
+            // --- resolves empty; the chosen folder arrives back through the view
+            // --- model rather than through TextInput's own onChange.
+            browse={async () => {
+              dispatch({ type: "selectFolderRequested" });
+              return undefined;
+            }}
+            onChange={(folder) => dispatch({ type: "folderEdited", folder })}
+          />
+          <div className={styles.hint}>{t("dialog.createDisk.folder.hint")}</div>
+        </div>
       </DialogRow>
       <DialogRow label={t("dialog.createDisk.filename.label")}>
         <TextInput

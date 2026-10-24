@@ -35,12 +35,12 @@ describe("klive disk", () => {
       return { code, ...x };
     };
     expect((await run("new", "game.dsk", "sse")).code).toBe(0);
-    expect((await run("add", "game.dsk", "hello.bas")).code).toBe(0);
+    expect((await run("add", "game.dsk", "hello.bas", "--start", "10")).code).toBe(0);
     expect((await run("add", "game.dsk", "code.bin", "--start", "40000")).code).toBe(0);
     expect((await run("mv", "game.dsk", "CODE.BIN", "MAIN.BIN")).code).toBe(0);
     const ls = await run("ls", "game.dsk", "--json");
     expect(JSON.parse(ls.out.join("\n")).map((f: { name: string; start?: number }) => [f.name, f.start])).toEqual([
-      ["HELLO", undefined],
+      ["HELLO", 10],
       ["MAIN.BIN", 40000]
     ]);
     expect((await run("get", "game.dsk", "MAIN.BIN", "out.bin")).code).toBe(0);

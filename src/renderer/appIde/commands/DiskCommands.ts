@@ -47,7 +47,7 @@ export class DiskCommand extends IdeCommandBase<DiskArgs> {
   readonly usage = [
     "disk ls <image> [-d]",
     "disk info <image>",
-    "disk add <image> <host-file> [-start <address>]",
+    "disk add <image> <host-file> [<name>] [-start <address-or-line>]",
     "disk get <image> <disk-file> <host-file>",
     "disk rm <image> <disk-file>",
     "disk mv <image> <disk-file> <new-name>",
@@ -152,12 +152,13 @@ export class DiskCommand extends IdeCommandBase<DiskArgs> {
         case "add": {
           const host = resolve(args.arg1!);
           const fs = openDiskFileSystem(await context.mainApi.readBinaryFile(image), image);
-          if (args.arg2) {
-            // --- Under the name given (one file)
+          if (args.arg2 || (args["-start"] !== undefined && /\.bas$/i.test(host))) {
+            // --- Under the name given (one file), or a BASIC program with its auto-run line
             const files = hostFileToDiskFiles(host, await context.mainApi.readBinaryFile(host), {
               system: fs.system,
-              codeStart: args["-start"]
-            }).map((f, i) => (i === 0 ? { ...f, name: args.arg2! } : f));
+              codeStart: args["-start"],
+              autoRun: args["-start"]
+            }).map((f, i) => (i === 0 && args.arg2 ? { ...f, name: args.arg2 } : f));
             return done(await runDiskEdit(ports, image, { kind: "add", files }), t("commands.disk.added", { count: files.length }));
           }
           return done(await addHostFiles(ports, image, fs.system, fs.list(), [host]), t("commands.disk.addedFile", { file: args.arg1! }));

@@ -1760,6 +1760,7 @@ export type MessageKey =
   | "dialog.createDisk.error.title"
   | "dialog.createDisk.filename.label"
   | "dialog.createDisk.folder.browseTooltip"
+  | "dialog.createDisk.folder.hint"
   | "dialog.createDisk.folder.label"
   | "dialog.createDisk.selectPlaceholder"
   | "dialog.createDisk.title"

@@ -424,8 +424,8 @@ These are the arguments of the command:
   - `trd80ss`: TR-DOS, 80 tracks, single-sided (320K)
   - `trd40ss`: TR-DOS, 40 tracks, single-sided (160K)
 - `disk-name`: The name of the disk file (the `.dsk` or `.trd` extension is added automatically)
-- `disk-folder`: An optional folder in which the new disk file is created. The folder must exist.
-- `-p`: Creates the disk file within the currently opened project folder (under `disks`).
+- `disk-folder`: An optional folder in which the new disk file is created; Klive makes it if it does not exist. Without one, the disk goes into the open project's `disks` folder, or into `Klive/Disks` in your home folder when no project is open (the Create Disk File dialog starts there too).
+- `-p`: Creates the disk file within the currently opened project folder (under `disks`); a `disk-folder` given with it is a folder inside `disks`.
 
 ## `disk`
 

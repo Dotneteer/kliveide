@@ -2,3 +2,19 @@
   display: flex;
   padding: 8px 0;
 }
+
+/* The folder field and its note, stacked: `DialogRow` lays its children out side by side, which put
+   the note beside the field and squeezed the field */
+.fieldWithHint {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* Where the disk goes unless the user names a folder: a note under the field, clear of it */
+.hint {
+  margin-top: var(--space-1_5);
+  color: var(--color-secondary-label);
+  font-size: var(--font-size-100);
+}

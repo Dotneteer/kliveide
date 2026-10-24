@@ -107,7 +107,8 @@ export function fakeCreateDiskPorts(
         service.createDiskFile ??
           (async (folder: string, filename: string) => `${folder}/${filename}`)
       ),
-      notify: vi.fn(service.notify ?? (async () => undefined))
+      notify: vi.fn(service.notify ?? (async () => undefined)),
+      defaultFolder: vi.fn(service.defaultFolder ?? (async () => "/home/me/Klive/Disks"))
     }
   };
 }

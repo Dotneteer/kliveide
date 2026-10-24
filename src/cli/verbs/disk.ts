@@ -31,9 +31,10 @@ export const DISK_HELP = `Usage: klive disk <action> <image> [<arguments>] [--js
 Actions:
   ls <image> [--deleted]               List the files
   info <image>                         The file system and its free space
-  add <image> <host-file> [<name>] [--start <address>]
+  add <image> <host-file> [<name>] [--start <address-or-line>]
                                        Put a file on the disk (.tap: its files; .scr: a SCREEN$;
-                                       .bas: tokenised BASIC; anything else: CODE at --start)
+                                       .bas: tokenised BASIC, auto-run from line --start;
+                                       anything else: CODE at --start)
   get <image> <disk-file> <host-file>  Save a file from the disk
   rm <image> <disk-file>               Delete a file
   mv <image> <disk-file> <new-name>    Rename a file
@@ -134,7 +135,7 @@ export async function runDiskVerb (argv: string[], io: CliIo): Promise<number> {
         const host = path.resolve(io.cwd, need(arg1, "a host file"));
         const bytes = read();
         const system = openDiskFileSystem(bytes, image).system;
-        let files = hostFileToDiskFiles(host, new Uint8Array(fs.readFileSync(host)), { system, codeStart: start });
+        let files = hostFileToDiskFiles(host, new Uint8Array(fs.readFileSync(host)), { system, codeStart: start, autoRun: start });
         if (arg2) files = files.map((f, i) => (i === 0 ? { ...f, name: arg2 } : f));
         save(applyDiskEdit(bytes, image, { kind: "add", files }));
         io.out(json ? JSON.stringify({ added: files.map((f) => f.name) }) : `Added ${files.map((f) => f.name).join(", ")}`);

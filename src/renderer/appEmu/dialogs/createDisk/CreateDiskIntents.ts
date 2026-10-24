@@ -8,6 +8,8 @@ import type { CreateDiskEnvironment } from "./CreateDiskModel";
 export type CreateDiskIntent =
   // --- The validation rules behind the dialog changed while it was open.
   | { type: "environmentChanged"; env: CreateDiskEnvironment }
+  // --- The dialog opened: it proposes the default folder
+  | { type: "opened" }
   | { type: "diskTypeSelected"; diskType: string }
   | { type: "folderEdited"; folder: string }
   | { type: "filenameEdited"; filename: string }

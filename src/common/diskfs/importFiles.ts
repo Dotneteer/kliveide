@@ -8,7 +8,8 @@ import type { DiskFileKind, NewDiskFile } from "./types";
  * - `.tap`: every file on the tape, with its header's kind, name and parameters; a headerless block
  *   becomes CODE named after the tape.
  * - `.scr` (6912 bytes): a `SCREEN$` - CODE at 16384.
- * - `.bas`: BASIC text, tokenised.
+ * - `.bas`: BASIC text, tokenised; `autoRun` gives it an auto-run line (the +3's Loader and TR-DOS's
+ *   boot run it).
  * - anything else: CODE at the address given (32768 by default).
  *
  * The names are made to fit the disk: +3DOS takes 8 characters, a dot and 3 (letters, digits and a
@@ -25,6 +26,8 @@ export type ImportOptions = {
   system: "+3dos" | "trdos" | "fat";
   /** Accept the 128K keywords in `.bas` text */
   plus128?: boolean;
+  /** A `.bas` program's auto-run line (none by default) */
+  autoRun?: number;
 };
 
 const SCREEN_SIZE = 6912;
@@ -48,7 +51,7 @@ export function hostFileToDiskFiles (fileName: string, bytes: Uint8Array, option
   }
   if (extension === "bas") {
     const program = tokenizeBasicProgram(new TextDecoder().decode(bytes), { plus128: options.plus128 });
-    return [{ name: named(stem, "", "basic"), kind: "basic", data: program, variablesOffset: program.length }];
+    return [{ name: named(stem, "", "basic"), kind: "basic", data: program, variablesOffset: program.length, start: options.autoRun }];
   }
   return [{ name: named(stem, extension, "code"), kind: "code", data: bytes, start: options.codeStart ?? 32768 }];
 }

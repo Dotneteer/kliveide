@@ -44,6 +44,13 @@ export class CreateDiskController extends UiController<
         this.emit({ type: "envReplaced", env: intent.env });
         return;
 
+      case "opened": {
+        // --- A failure leaves the field empty for the user to fill, as before
+        const folder = await this.ports.service.defaultFolder().catch(() => "");
+        this.emit({ type: "defaultFolderResolved", folder });
+        return;
+      }
+
       case "diskTypeSelected":
         this.emit({ type: "diskTypeChanged", diskType: intent.diskType });
         return;

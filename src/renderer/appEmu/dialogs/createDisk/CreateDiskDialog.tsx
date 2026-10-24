@@ -65,6 +65,7 @@ export const CreateDiskDialog = ({ onClose, onCreate }: Props) => {
       service: {
         createDiskFile: (folder, filename, diskType) =>
           mainApi.createDiskFile(folder, filename, diskType),
+        defaultFolder: () => mainApi.getDefaultDiskFolder(),
         notify: (type, title, message) => mainApi.displayMessageBox(type, title, message)
       }
     }),
@@ -77,6 +78,11 @@ export const CreateDiskDialog = ({ onClose, onCreate }: Props) => {
   useEffect(() => {
     void controller.dispatch({ type: "environmentChanged", env });
   }, [controller, env]);
+
+  // --- The project's `disks` folder, or `Klive/Disks`, until the user names another
+  useEffect(() => {
+    void controller.dispatch({ type: "opened" });
+  }, [controller]);
 
   return (
     <Modal

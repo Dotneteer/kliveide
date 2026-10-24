@@ -115,6 +115,15 @@ of a machine through the same session and compares them:
 
 - **The EMU window is a second `Page`.** `app.windows().find(w => w.url().includes("?emu"))`. Show
   and focus it through `app.evaluate` on its `BrowserWindow` before sending keys; the harness hides it.
+- **On macOS a menu item exists only while a Klive window is the focused window of the active app.**
+  The app fills the submenus in for the focused window (`app-menu.ts`'s `templateTransform`); when
+  neither is focused - Playwright's driving does not keep the app frontmost - the menu is the bare
+  top-level bar (8 items) and `getMenuItemById` finds nothing, so a recipe fails *sometimes*. Before a
+  menu click, `app.focus({ steal: true })`, then `show()`/`focus()` the window
+  (`recipes/disks-tutorial.cjs`'s `menu`).
+- **A native file dialog can be answered**: `app.evaluate(({ dialog }, file) => { dialog.showOpenDialog
+  = async () => ({ canceled: false, filePaths: [file] }) }, path)`, then click the menu item that opens
+  it (Machine › Disks › Insert Disk, in the disks tutorial).
 - **Choose a machine or model through the application menu**, not the dialogs:
   `Menu.getApplicationMenu().getMenuItemById("machine_z88_OZ50-wasm").click()` inside
   `app.evaluate`. Machine-specific items (`z88_reset`, `z88_battery_low`, ...) are there too; set-once
@@ -307,6 +316,15 @@ Eleven recipes; the rest of the pages were deliberately left ungenerated.
   spaces as `&nbsp;`**, so match it with `\s`, not a space; and the harness's new
   **`ideViewOptions` window option** seeds a global IDE view setting (`profilerInlays`), which
   `set -u` cannot reach.
+- `recipes/disk-explorer.cjs` — the `disk-explorer/*.png` shots: a +3 and a TR-DOS disk from
+  `fixtures/disks/`, and a FAT16 card the `disk` command makes and fills.
+- `recipes/disks-tutorial.cjs` — the nine `en/disks-tutorial/*.webp` shots of
+  `guides/emulator/disks-tutorial.mdx`, taken by following the tutorial: `disk new`/`disk add` a +3
+  disk (it generates the loading screen from the 48K ROM's font), the explorer, the disk inserted
+  through the stubbed file dialog, write protection cleared, the +3 booted through its Loader
+  (<kbd>Enter</kbd> in the EMU window), the file the +3 saved appearing in the explorer, the Layout
+  view, an SD card image and Settings › Machine's esxDOS row. Rerun it after any change to the
+  disk UI; it waits for each state's text before photographing it.
 - `recipes/scripting.cjs` — `scripting/script-output-pane.png`. The worked template.
 - `recipes/disassembly.cjs` — `working-with-ide/disass-branch-verdicts.png`. Adds three
   techniques worth reusing:

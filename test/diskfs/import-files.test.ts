@@ -26,6 +26,12 @@ describe("host files as disk files", () => {
     const [file] = hostFileToDiskFiles("hello.bas", new TextEncoder().encode("10 PRINT 42\n"), { system: "trdos" });
     expect(file).toMatchObject({ name: "hello.B", kind: "basic", variablesOffset: 14 });
     expect(file.data).toEqual(PRINT_42);
+    expect(file.start).toBeUndefined();
+  });
+
+  it("gives a .bas the auto-run line asked for", () => {
+    const [file] = hostFileToDiskFiles("hello.bas", new TextEncoder().encode("10 PRINT 42\n"), { system: "+3dos", autoRun: 10 });
+    expect(file).toMatchObject({ name: "HELLO", kind: "basic", start: 10 });
   });
 
   it("puts any other file as CODE at the address asked for", () => {

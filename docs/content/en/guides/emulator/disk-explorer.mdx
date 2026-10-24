@@ -13,6 +13,11 @@ is, its size and load address, and a preview.
 
 <ClickableImage src="/images/disk-explorer/files.png" width={720} />
 
+<Callout type="info">
+New to Klive's disks? [Tutorial: working with disks](/en/guides/emulator/disks-tutorial) makes a +3
+boot disk and an SD card step by step, with a picture of every step.
+</Callout>
+
 ## Looking at a file
 
 Select a file to see its details beside the list:
@@ -113,7 +118,17 @@ machine's SD card, the machine pauses while Klive writes it.
 </Callout>
 
 Make a new card with the `disk` command - `disk new card.img fat16 64` (or `fat32`, with the size in
-MB) - then drop the folders you want on it.
+MB) - then drop the folders you want on it. The extension picks the format:
+
+- **`.img`**: the card's sectors byte for byte, full size from the start, readable by other
+  emulators and your computer, and copyable to a real SD card;
+- **`.hdf`**: the same sectors after a RAMsoft header, for emulators that take hard-disk images;
+- **`.cim`**: the same sectors as an `.img`, with the unused ones simply omitted, so the file grows
+  as the card fills. It is Klive's own format (the Next's card is one), takes 64 MB to 16 GB, and
+  only Klive reads it.
+
+[Which format: `.img`, `.hdf` or `.cim`?](/en/guides/emulator/disks-tutorial#which-format-img-hdf-or-cim)
+in the tutorial compares them.
 
 ### The DivMMC
 

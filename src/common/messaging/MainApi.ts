@@ -123,7 +123,15 @@ class MainApiImpl {
   }
 
   /**
-   * Creates a new disk file of the specified type in the given folder.
+   * Where a new disk image goes unless the user names a folder: the open project's `disks` folder,
+   * or `Klive/Disks` in Klive's home folder
+   */
+  async getDefaultDiskFolder(): Promise<string> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Creates a new disk file of the specified type in the given folder (empty: the default folder).
    * @param _diskFolder The folder to create the disk in.
    * @param _filename The name of the disk file.
    * @param _diskType The type of disk to create.

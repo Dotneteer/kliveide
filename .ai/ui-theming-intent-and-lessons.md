@@ -871,6 +871,12 @@ easy to miss when adding a field: **anything placed directly beneath a field sit
 explanatory line that touches the box it explains reads as part of the control rather than as a note
 about it.
 
+**`DialogRow` lays its children out side by side**, so a field and its note given to it as two
+children end up next to each other, the note squeezing the field until its value is cut off. Wrap
+the pair in one column (`display: flex; flex-direction: column; flex: 1 1 auto; min-width: 0`) and
+give the note its top margin there - the Create Disk File dialog's folder note
+(`CreateDiskDialog.module.scss`, `.fieldWithHint`).
+
 ## A `min-width` Is A Column, Not A Gap
 
 `.bpLabel` used one `min-width: 9ch` to do two jobs — line the keys up into a column, *and* keep the
