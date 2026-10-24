@@ -35,6 +35,9 @@ import { reloadAnnotationSessionFromDisk } from "./annotations/annotationSession
  * Provides methods for output, script output, panel visibility, command execution, and project structure.
  * All public methods validate input and are safe for IPC exposure.
  */
+/** Disk image reloads waiting for the machine's writes to settle, by path */
+const diskImageReloads = new Map<string, ReturnType<typeof setTimeout>>();
+
 class IdeMessageProcessor {
   /**
    * Constructs the IdeMessageProcessor.
@@ -269,6 +272,32 @@ class IdeMessageProcessor {
     if (typeof filePath !== "string") return;
     // --- Input validated
     await reloadAnnotationSessionFromDisk(filePath, this.projectService);
+  }
+
+  /**
+   * The machine wrote to a disk image file: every open document showing it reloads (a Disk
+   * Explorer). A SAVE writes for many frames in a row, so the reload waits for a quiet moment.
+   * @param filePath The image's absolute path
+   */
+  async diskImageChanged(filePath: string) {
+    // Input validation
+    if (typeof filePath !== "string" || !filePath) return;
+    // --- Input validated
+    const pending = diskImageReloads.get(filePath);
+    if (pending) clearTimeout(pending);
+    diskImageReloads.set(
+      filePath,
+      setTimeout(() => {
+        diskImageReloads.delete(filePath);
+        const normalized = filePath.replace(/\\/g, "/");
+        for (const hub of this.projectService.getDocumentHubServiceInstances()) {
+          for (const doc of hub.getOpenDocuments()) {
+            const docPath = (doc.node?.fullPath ?? doc.path ?? doc.id)?.replace(/\\/g, "/");
+            if (docPath === normalized) void hub.reloadDocument(doc.id);
+          }
+        }
+      }, 400)
+    );
   }
 
   /**

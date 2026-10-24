@@ -1,4 +1,5 @@
 import classnames from "classnames";
+import { PROJECT_FILE_DRAG_MIME } from "./projectFileDrag";
 import type { FocusEvent, MouseEvent, ReactNode } from "react";
 import { ITreeNode } from "@abstractions/ITreeNode";
 import { ProjectNode } from "@abstractions/ProjectNode";
@@ -93,6 +94,14 @@ export function ExplorerProjectItem({
       }}
       onClick={onActivate}
       onDoubleClick={onDoubleClick}
+      // --- A file can be dragged onto a drop target (the Disk Explorer adds it to the disk)
+      draggable={!isFolder}
+      onDragStart={(e) => {
+        if (isFolder || !node.data.fullPath) return;
+        e.dataTransfer.setData(PROJECT_FILE_DRAG_MIME, node.data.fullPath);
+        e.dataTransfer.setData("text/plain", node.data.name);
+        e.dataTransfer.effectAllowed = "copy";
+      }}
     >
       {renderIndentGuides(node.level)}
       <div className={styles.indent} style={{ width: (node.level + 1) * NODE_INDENT }}></div>

@@ -59,6 +59,17 @@ export type ZxNextStorageCopyResult = {
  * This class defines the shape of the main process API that can be called from
  * the Emu and Ide processes. The methods are called through a JavaScript proxy.
  */
+/** What `beginDiskImageEdit` hands back */
+export type DiskImageEditStart = {
+  contents: Uint8Array;
+  /** The drive the image is in (0: A, 1: B), if any */
+  drive?: number;
+  /** The machine was running and the edit paused it */
+  resume?: boolean;
+  /** It was running under the debugger */
+  debug?: boolean;
+};
+
 class MainApiImpl {
   /**
    * Reads a text file from disk and returns its contents as a string.
@@ -116,6 +127,38 @@ class MainApiImpl {
    * @param _diskType The type of disk to create.
    */
   async createDiskFile(_diskFolder: string, _filename: string, _diskType: string): Promise<string> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Starts an edit of a disk image file (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, D4): a machine
+   * running with the image in a drive is paused, and the file's current bytes come back.
+   * @param _filePath The image's full path
+   */
+  async beginDiskImageEdit(_filePath: string): Promise<DiskImageEditStart> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Finishes an edit: the bytes replace the file (written beside it and renamed over; the session's
+   * first edit keeps a `.bak`), a mounted disk is inserted again, and a paused machine runs on.
+   * @param _filePath The image's full path
+   * @param _contents The edited image
+   * @param _start What `beginDiskImageEdit` returned (its contents left out)
+   */
+  async commitDiskImageEdit(
+    _filePath: string,
+    _contents: Uint8Array,
+    _start?: Omit<DiskImageEditStart, "contents">
+  ): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Abandons an edit (it failed): a machine `beginDiskImageEdit` paused runs on
+   * @param _start What `beginDiskImageEdit` returned (its contents left out)
+   */
+  async cancelDiskImageEdit(_start?: Omit<DiskImageEditStart, "contents">): Promise<void> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 

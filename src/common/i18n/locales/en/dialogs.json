@@ -2422,6 +2422,16 @@
     "context": "Option in the Export format dropdown of the Export Code dialog. Intel HEX is a file format name; keep it.",
     "maxChars": 22
   },
+  "dialog.exportCode.format.dsk": "+3 disk (.dsk), booted by the Loader",
+  "@dialog.exportCode.format.dsk": {
+    "context": "Option of the Export Code dialog's format dropdown: a +3DOS disk image with the code and a BASIC loader named DISK, which the +3's Loader menu runs. Keep '+3', '.dsk' and 'Loader' as they are.",
+    "maxChars": 44
+  },
+  "dialog.exportCode.format.trd": "TR-DOS disk (.trd), booted by TR-DOS",
+  "@dialog.exportCode.format.trd": {
+    "context": "Option of the Export Code dialog's format dropdown: a TR-DOS disk image with the code and a BASIC loader named boot, which TR-DOS runs when the disk boots. Keep 'TR-DOS' and '.trd'.",
+    "maxChars": 44
+  },
   "dialog.exportCode.format.ht1080zCmd": "HT-1080Z program (.cmd)",
   "@dialog.exportCode.format.ht1080zCmd": {
     "context": "Export Code dialog, a choice in the Format list: a machine-code load module for the HT-1080Z (a Hungarian school computer, a TRS-80 Model I relative). .cmd is a file extension: keep it.",

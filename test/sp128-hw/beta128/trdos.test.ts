@@ -37,14 +37,20 @@ const line = (number: number, body: number[]) => {
   const content = [...body, 0x0d];
   return [number >> 8, number & 0xff, content.length & 0xff, content.length >> 8, ...content];
 };
+/**
+ * A TR-DOS command line: `RANDOMIZE USR 15619: REM : <command>`. The ROM checks a line's syntax only
+ * up to REM, so the command's numbers are digits alone, without the hidden 5-byte form `num` adds;
+ * TR-DOS reads the text itself and reports "Nonsense in BASIC" at a $0E
+ */
+const digits = (value: number) => Array.from(String(value), (c) => c.charCodeAt(0));
 const trdos = (command: number[]) => [T.RANDOMIZE, T.USR, ...num(15619), 0x3a, T.REM, 0x3a, ...command];
 
 const DATA = Uint8Array.from({ length: 300 }, (_, i) => (i * 11 + 3) & 0xff);
 
 const BOOT = new Uint8Array([
   ...line(10, [T.POKE, ...num(40000), 0x2c, ...num(42)]),
-  ...line(20, trdos([T.LOAD, ...str("data"), T.CODE, ...num(50000)])),
-  ...line(30, trdos([T.SAVE, ...str("out"), T.CODE, ...num(40000), 0x2c, ...num(16)])),
+  ...line(20, trdos([T.LOAD, ...str("data"), T.CODE, ...digits(50000)])),
+  ...line(30, trdos([T.SAVE, ...str("out"), T.CODE, ...digits(40000), 0x2c, ...digits(16)])),
   ...line(40, [T.POKE, ...num(40001), 0x2c, ...num(7)])
 ]);
 
@@ -82,11 +88,12 @@ describe.skipIf(!rom)("TR-DOS on the Pentagon (KLIVE_TRDOS_ROM)", () => {
   it("pages TR-DOS in as partition R2 while it runs", async () => {
     const s = await createSp128Session("pentagon", { trdosRom: rom });
     s.insertDisk(0, fixtureDisk());
-    s.runFlow(trdosDiskBootFlow().slice(0, -2), { checkRom: true, maxFrames: 1500 });
-    // --- At the TR-DOS prompt the CPU idles in the TR-DOS ROM (or the 48K ROM it calls)
+    // --- At its prompt TR-DOS waits for a key in the 48K ROM, paged out; it is paged in while it
+    // --- runs a command - here the RUN that boots the disk
+    s.runFlow(trdosDiskBootFlow(), { checkRom: true, maxFrames: 1500 });
     let seenPaged = false;
-    for (let i = 0; i < 200 && !seenPaged; i++) {
-      s.step(50);
+    for (let i = 0; i < 2_000_000 && !seenPaged; i++) {
+      s.step(1);
       seenPaged = s.beta128().paged;
     }
     expect(seenPaged).toBe(true);

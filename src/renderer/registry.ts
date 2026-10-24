@@ -9,7 +9,7 @@ import {
   TAPE_BLOCK_VIEWER,
   HT1080Z_TAPE_VIEWER,
   P_FILE_VIEWER,
-  DSK_VIEWER,
+  DISK_EXPLORER,
   NEX_VIEWER,
   ROM_ANNOTATION_EDITOR,
   Z88_SNAPSHOT_VIEWER,
@@ -100,7 +100,7 @@ import { createPFileViewerPanel } from "./appIde/DocumentPanels/PFile/PFileViewe
 import { readPFileRegion } from "./appIde/DocumentPanels/PFile/pFileDocument";
 import { PsgPanel } from "./appIde/SideBarPanels/PsgPanel";
 import { NecUpd765Panel } from "./appIde/SideBarPanels/NecUpd765Panel";
-import { createDskViewerPanel } from "./appIde/DocumentPanels/DskViewerPanel";
+import { createDiskExplorerPanel } from "./appIde/DocumentPanels/DiskExplorer/DiskExplorerPanel";
 import {
   MC_DISK_SUPPORT,
   MF_BLINK,
@@ -569,9 +569,11 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
     navigation: fileDocumentNavigationAdapter
   },
   {
-    id: DSK_VIEWER,
-    renderer: createDskViewerPanel,
-    icon: "floppy"
+    id: DISK_EXPLORER,
+    renderer: createDiskExplorerPanel,
+    icon: "floppy",
+    // --- A file pops out as memory or disassembly, and Go Back must return here
+    navigation: fileDocumentNavigationAdapter
   },
   {
     // --- A ROM sidecar: its pages, matched to the ROM by CRC, open as editable bank documents
@@ -929,15 +931,18 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     documentTabRenderer: programLaunchCommandBarRenderer,
     contextMenuInfo: getProgramLaunchContextMenuInfo
   },
-  {
-    matchType: "ends",
-    pattern: ".dsk",
-    editor: DSK_VIEWER,
+  // --- Disk images in the Disk Explorer (`.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md` B4): the
+  // --- explorer edits the file through the main process, so the document itself stays read-only
+  ...[".dsk", ".trd", ".scl"].map((pattern) => ({
+    matchType: "ends" as const,
+    pattern,
+    ignoreCase: true,
+    editor: DISK_EXPLORER,
     icon: "floppy",
     isBinary: true,
     isReadOnly: true,
     openPermanent: true
-  },
+  })),
   /*
    * SkoolKit files (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §6.4): plain text in the editor;
    * `skool-import` reads them. `.ctl` is registered only as text, because the extension is generic.

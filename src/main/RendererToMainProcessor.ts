@@ -61,6 +61,8 @@ import {
 import { readDiskData } from "@emu/machines/disk/disk-readers";
 import { DSK_WHOLE_IMAGE_KEY, dskSectorWrites } from "@emu/machines/disk/disk-changes";
 import { createDiskFile } from "@common/utils/create-disk-file";
+import { beginDiskImageEdit, cancelDiskImageEdit, commitDiskImageEdit } from "./disk-image-edit";
+import type { DiskImageEditStart } from "@common/messaging/MainApi";
 import { mainScriptManager } from "./ksx-runner/MainScriptManager";
 import { collectedBuildTasks } from "./build";
 import { Dispatch } from "react";
@@ -323,6 +325,26 @@ class MainMessageProcessor {
    */
   createDiskFile(diskFolder: string, filename: string, diskType: string) {
     return createDiskFile(diskFolder, filename, diskType);
+  }
+
+  async beginDiskImageEdit(filePath: string) {
+    // Input validation
+    if (typeof filePath !== "string" || !filePath) throw new Error("A disk image path is required");
+    // --- Input validated
+    return beginDiskImageEdit(filePath);
+  }
+
+  async commitDiskImageEdit(filePath: string, contents: Uint8Array, start?: Omit<DiskImageEditStart, "contents">) {
+    // Input validation
+    if (typeof filePath !== "string" || !filePath) throw new Error("A disk image path is required");
+    if (!(contents instanceof Uint8Array)) throw new Error("The disk image must be bytes");
+    // --- Input validated
+    await commitDiskImageEdit(filePath, contents, start ?? {});
+  }
+
+  async cancelDiskImageEdit(start?: Omit<DiskImageEditStart, "contents">) {
+    // --- Nothing to validate beyond the flags, read as booleans
+    await cancelDiskImageEdit({ resume: !!start?.resume, debug: !!start?.debug });
   }
 
   /**
@@ -1092,7 +1114,11 @@ class MainMessageProcessor {
    * @param changes The sector changes to write.
    */
   async saveDiskChanges(diskIndex: number, changes: SectorChanges) {
-    return saveDiskChanges(diskIndex, changes);
+    const response = saveDiskChanges(diskIndex, changes);
+    // --- An open Disk Explorer shows the disk as the machine left it
+    const diskFile = mainStore.getState().media?.[diskIndex ? MEDIA_DISK_B : MEDIA_DISK_A]?.diskFile;
+    if (typeof diskFile === "string") void getIdeApi().diskImageChanged(diskFile).catch(() => {});
+    return response;
   }
 
   /**

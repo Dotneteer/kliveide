@@ -2850,8 +2850,11 @@ uint32_t spp3eDiskFinishUpload(uint32_t drive) {
   diskDrive->sectorsUsed = spp3eDiskUploadSectors;
   diskDrive->rotation = 0u;
   diskDrive->weakCounter = 0u;
-  diskDrive->currentCylinder = 0u;
-  diskDrive->track0Mark = 1u;
+  /* A disk put in the drive does not move the head (the IDE re-inserts an edited disk mid-session) */
+  if (diskDrive->currentCylinder >= diskDrive->maxCylinders) {
+    diskDrive->currentCylinder = (uint8_t)(diskDrive->maxCylinders - 1u);
+  }
+  diskDrive->track0Mark = diskDrive->currentCylinder == 0u ? 1u : 0u;
   diskDrive->currentHead = diskDrive->hasTwoHeads != 0u ? diskDrive->currentHead : 0u;
   diskDrive->headLoaded = diskDrive->selected != 0u && diskDrive->hasDiskLoaded != 0u ? 1u : 0u;
   diskDrive->revision++;

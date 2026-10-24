@@ -5,6 +5,7 @@ import { runIde } from "./verbs/ide";
 import { runBuildVerb } from "./verbs/build";
 import { runRunVerb } from "./verbs/run";
 import { asCliError, runTestVerb } from "./verbs/test";
+import { runDiskVerb } from "./verbs/disk";
 
 /*
  * The `klive` command line (`.plans/UNIT_TESTS_CLI_PLAN.md` D1–D3,
@@ -19,6 +20,7 @@ Verbs:
   test [<dir>]     Build the project and run its Z80 unit tests, headless: 'klive test --help'
   build [<dir>]    Compile the project's build root, headless: 'klive build --help'
   run [<dir|file>] Run a build or a file until it stops, headless: 'klive run --help'
+  disk <action>    List and edit the files of a .dsk, .trd or .scl image, headless: 'klive disk --help'
   ide <verb>       Drive a running Klive (build, run, debug, read memory, ...): 'klive ide help'
   help             This text
   --version        Klive's version
@@ -58,6 +60,8 @@ export async function runCli(argv: string[], io: CliIo): Promise<number> {
       return await headless(runBuildVerb, rest, io);
     case "run":
       return await headless(runRunVerb, rest, io);
+    case "disk":
+      return await headless(runDiskVerb, rest, io);
     default:
       io.err(`Unknown verb '${verb}'. Run 'klive help' for the list.`);
       return EXIT_USAGE;

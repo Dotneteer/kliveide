@@ -313,6 +313,88 @@
   "@commands.crd.description": {
     "context": "Description of the 'crd' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated."
   },
+  "commands.disk.description": "Lists and edits the files of a disk image (.dsk, .trd, .scl).",
+  "@commands.disk.description": {
+    "context": "Description of the 'disk' interactive command (it lists and edits the files of a .dsk, .trd or .scl disk image). Command and option names are never translated."
+  },
+  "commands.disk.useOneOf": "Use one of these: {choices}",
+  "@commands.disk.useOneOf": {
+    "context": "Validation error of the 'disk' interactive command (it lists and edits the files of a .dsk, .trd or .scl disk image). Command and option names are never translated.",
+    "placeholders": {
+      "choices": "The subcommands, comma-separated: ls, info, add, ..."
+    }
+  },
+  "commands.disk.missingArgument": "'disk {action}' needs more arguments; see 'help disk'.",
+  "@commands.disk.missingArgument": {
+    "context": "Validation error of the 'disk' interactive command (it lists and edits the files of a .dsk, .trd or .scl disk image). Command and option names are never translated.",
+    "placeholders": {
+      "action": "The subcommand, e.g. 'mv'"
+    }
+  },
+  "commands.disk.failed": "The disk could not be changed.",
+  "@commands.disk.failed": {
+    "context": "Error of the 'disk' interactive command (it lists and edits the files of a .dsk, .trd or .scl disk image). Command and option names are never translated. when an edit failed without a reason"
+  },
+  "commands.disk.created": "Disk created: {file}",
+  "@commands.disk.created": {
+    "context": "Result of 'disk new'",
+    "placeholders": {
+      "file": "The new image's path"
+    }
+  },
+  "commands.disk.summary": "{system} ({format}): {free}K free of {total}K, {files, plural, one {# file} other {# files}}",
+  "@commands.disk.summary": {
+    "context": "First line of 'disk ls' and 'disk info'",
+    "placeholders": {
+      "system": "+3DOS or TR-DOS",
+      "format": "The format, e.g. '+3' or '80 x 2'",
+      "free": "Free kilobytes",
+      "total": "Capacity in kilobytes",
+      "files": "How many files"
+    }
+  },
+  "commands.disk.added": "{count, plural, one {# file added to the disk.} other {# files added to the disk.}}",
+  "@commands.disk.added": {
+    "context": "Result of 'disk add'",
+    "placeholders": {
+      "count": "How many files were added"
+    }
+  },
+  "commands.disk.addedFile": "{file} added to the disk.",
+  "@commands.disk.addedFile": {
+    "context": "Result of 'disk add'",
+    "placeholders": {
+      "file": "The host file's name as typed"
+    }
+  },
+  "commands.disk.extracted": "{name} saved to {file} ({size} bytes).",
+  "@commands.disk.extracted": {
+    "context": "Result of 'disk get'",
+    "placeholders": {
+      "name": "The disk file's name",
+      "file": "The host file",
+      "size": "Bytes written"
+    }
+  },
+  "commands.disk.deleted": "{name} deleted from the disk.",
+  "@commands.disk.deleted": {
+    "context": "Result of 'disk rm'",
+    "placeholders": {
+      "name": "The disk file's name"
+    }
+  },
+  "commands.disk.renamed": "{name} renamed to {newName}.",
+  "@commands.disk.renamed": {
+    "context": "Result of 'disk mv'",
+    "placeholders": {
+      "name": "The old name",
+      "newName": "The new name"
+    }
+  },
+  "commands.disk.compacted": "The disk is compacted.",
+  "@commands.disk.compacted": {
+    "context": "Result of 'disk compact' (TR-DOS)"
+  },
   "commands.crd.invalidType": "Invalid disk type ''{type}''. Use one of these: {types}",
   "@commands.crd.invalidType": {
     "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Argument error of 'crd'.",
@@ -1697,5 +1779,9 @@
     "placeholders": {
       "message": "Error message"
     }
+  },
+  "commands.compile.diskExportBanked": "Banked code (128K paging) cannot be exported to a disk yet: export a tape instead.",
+  "@commands.compile.diskExportBanked": {
+    "context": "Error of the 'expc' command with -f dsk or -f trd when the program uses 128K memory banks, or has no code."
   }
 }

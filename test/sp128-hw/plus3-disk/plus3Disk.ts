@@ -68,3 +68,12 @@ export function programLine (s: Sp128TestSession, line: string): void {
   }
   s.typeText(`${line}\n`).runFrames(20);
 }
+
+/**
+ * What a program sees at an address: the +3 editor keeps bank 7 at $C000, so the top 16K is read
+ * from bank 0, where BASIC's `LOAD ... CODE` puts it
+ */
+export function memory (s: Sp128TestSession, address: number, length: number): number[] {
+  const top = s.bank(0);
+  return Array.from({ length }, (_, i) => (address + i < 0xc000 ? s.peek(address + i) : top[address + i - 0xc000]));
+}

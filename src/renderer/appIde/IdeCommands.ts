@@ -127,6 +127,7 @@ import {
   SettingCommand,
   SettingsDialogCommand
 } from "./commands/SettingCommands";
+import { DiskCommand } from "./commands/DiskCommands";
 import { CreateDiskFileCommand } from "./commands/CreateDiskFileCommand";
 import {
   CancelScriptCommand,
@@ -305,6 +306,7 @@ export function registerIdeCommands(cmdSrv: IIdeCommandService): void {
   cmdSrv.registerCommand(new MoveSettingsCommand());
 
   cmdSrv.registerCommand(new CreateDiskFileCommand());
+  cmdSrv.registerCommand(new DiskCommand());
 
   cmdSrv.registerCommand(new RunScriptCommand());
   cmdSrv.registerCommand(new RunBuildScriptCommand());

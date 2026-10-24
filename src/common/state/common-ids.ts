@@ -36,7 +36,8 @@ export const TAPE_BLOCK_VIEWER = "TapeBlockViewer";
 export const HT1080Z_TAPE_VIEWER = "Ht1080zTapeViewer";
 /** The ZX81 `.P` program file viewer */
 export const P_FILE_VIEWER = "PFileViewer";
-export const DSK_VIEWER = "DskViewer";
+/** The Disk Explorer: `.dsk`, `.trd` and `.scl` images (DISK_IMAGES_AND_FILE_SYSTEMS_PLAN B4) */
+export const DISK_EXPLORER = "DiskExplorer";
 export const NEX_VIEWER = "NexViewer";
 // --- A ROM sidecar opened for editing (`.plans/ROM_ANNOTATION_EDITING_PLAN.md` R4)
 export const ROM_ANNOTATION_EDITOR = "RomAnnotationEditor";

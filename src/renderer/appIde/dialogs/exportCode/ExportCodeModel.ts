@@ -44,11 +44,20 @@ export const HT1080Z_FORMAT_OPTIONS: SelectOption[] = [
 ];
 export const ZX80_FORMAT_OPTIONS: SelectOption[] = [ZX80_OPTION, ZX81_OPTION, HEX_OPTION];
 
+// --- A bootable disk (`.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md` B6): a +3DOS `.dsk` on the
+// --- +2A/+3, a TR-DOS `.trd` on the machines with a Beta 128 (the Pentagon, the Scorpion)
+export const DSK_FORMAT = "dsk";
+export const TRD_FORMAT = "trd";
+const DSK_OPTION: SelectOption = labelled({ value: DSK_FORMAT, labelKey: "dialog.exportCode.format.dsk" });
+const TRD_OPTION: SelectOption = labelled({ value: TRD_FORMAT, labelKey: "dialog.exportCode.format.trd" });
+
 /** The formats the running machine's code exports as */
 export function formatOptionsFor(machineId: string | undefined): SelectOption[] {
   if (machineId === "zx81") return ZX81_FORMAT_OPTIONS;
   if (machineId === "zx80") return ZX80_FORMAT_OPTIONS;
   if (machineId === "ht1080z") return HT1080Z_FORMAT_OPTIONS;
+  if (machineId === "spp3e") return [...FORMAT_OPTIONS, DSK_OPTION];
+  if (machineId === "sp128" || machineId === "scorpion") return [...FORMAT_OPTIONS, TRD_OPTION];
   return FORMAT_OPTIONS;
 }
 

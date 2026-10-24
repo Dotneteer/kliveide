@@ -1,8 +1,7 @@
 # Disk images and file systems: hardened DSK, a disk explorer, and DivMMC hard-disk images
 
-Status: ◐ **Part A done** (2026-10-23; main, unreleased) - A0–A4, all of it, at the author's request
-ahead of §7's order (§10 records what was built). Parts B and C not started. The author's
-decisions are in §9.
+Status: ◐ **Parts A and B done** (2026-10-23; main, unreleased) - A0–A4 (§10) and B0–B7 (§11).
+Part C not started. The author's decisions are in §9.
 Base plan: [CLOSING_THE_GAPS_PLAN.md](CLOSING_THE_GAPS_PLAN.md), §G9 (G9.5).
 Related: [BETA128_TRDOS_PLAN.md](BETA128_TRDOS_PLAN.md) (done; its "TRD/SCL catalogue viewer" was
 left undone, and Part B delivers it), [PLUS3_AMSTRAD_ROMS_PLAN.md](PLUS3_AMSTRAD_ROMS_PLAN.md)
@@ -588,4 +587,107 @@ orders. Everything below is on main, unreleased.
   to run it on in this session; it is a small slow-tier test to add.
 - No timing in the controller: transfers are immediate, as before.
 - No overrun, no index-pulse counting, no drive-type setting (Q3).
+
+## 11. As built: Part B (2026-10-23)
+
+**The file-system layer (B0).**
+- `src/common/diskfs/` is React-free and process-agnostic:
+  - `types.ts` (`DiskFileSystem`, `DiskFileEntry`, `DiskFsError` with codes)
+  - `plus3dos.ts`, `trdos.ts`
+  - `open.ts` (the factory by file name; an `.scl` written back as an `.scl`)
+  - `edit.ts` (`applyDiskEdit`, the pure edits)
+  - `importFiles.ts` (host files as disk files)
+  - `diskExport.ts`
+- The Disk Explorer, the `disk` command, `klive disk` and the export all use this one layer.
+
+**Deviation from D3.** A floppy image is edited in the renderer (or the CLI) by these pure functions.
+The main process only frames the edit:
+- `beginDiskImageEdit` finds the drive, pauses a running machine and reads the file fresh;
+- `commitDiskImageEdit` writes beside the image and renames it over, keeps one `.bak` per session,
+  re-inserts a mounted disk and resumes;
+- `cancelDiskImageEdit` resumes after a refused edit.
+
+A main-side `DiskImageService` that opens and lists images by sector is left to Part C, which needs
+it for gigabyte images. Floppies are small enough to edit whole.
+
+**D4 as built.**
+- Pausing the machine publishes its pending disk writes. The emulator sends them to main before it
+  answers the pause, on the same channel, so the file read next already holds them.
+- "Wait until the controller is idle" is not done. The pause comes at a frame boundary, and
+  re-inserting a disk now leaves the drive's head where it was (`spp3eDiskFinishUpload`): a disk swap
+  does not move the head. A command caught mid-transfer would continue on the new data.
+- The machine's own writes notify the IDE (`IdeApi.diskImageChanged`), which reloads every open
+  document of that file after 400 ms of quiet.
+- `test/main/disk-image-edit.test.ts` covers this. It was **not** exercised in the running app with a
+  mounted disk.
+
+**+3DOS (B1, B2).**
+- Written from Amstrad's description:
+  - the specification, the CPC formats read from their sector IDs, and an all-$E5 first byte as
+    the +3's own format;
+  - CP/M directory extents with 8- and 16-bit block pointers;
+  - the PLUS3DOS header with its checksum.
+- Unused tail bytes are written as $1A.
+- Oracle tests on the real +3 ROMs (`plus3dos-oracle.test.ts`):
+  - the +3 lists and loads what Klive writes on the 173K and 720K formats, a 20K file across two
+    extents included;
+  - the +3 sees a Klive delete and rename;
+  - Klive reads a program, a code block and an array the +3 saved.
+- `ltk.dsk`'s 124K free matches the +3's `CAT`.
+- A trap the tests found: above `$C000`, the +3 editor shows bank 7. A file loaded there is in bank
+  0 (`plus3Disk.ts`'s `memory`).
+
+**TR-DOS (B3).**
+- `TrdosFileSystem` adds:
+  - delete (mark $01, the counter);
+  - `compact` (rebuilding the disk from the live files, MOVE's result);
+  - rename, label, and `.scl` in and out.
+- A deleted entry shows as `?ld.C`: TR-DOS has overwritten the first letter.
+- **The TR-DOS oracle** was verified later on 2026-10-23, with the author's TR-DOS 5.03 ROM
+  (`KLIVE_TRDOS_ROM`): TR-DOS loads a file that compaction moved, and boots an exported `.trd`. The
+  Beta 128's own real-ROM test had failed on a fixture fault, not a Beta 128 one: a TR-DOS command
+  after `REM :` must hold its numbers as digits only (BETA128_TRDOS_PLAN §10). The disk export's
+  TR-DOS loader writes them that way.
+
+**The Disk Explorer (B4, B5).**
+- Files: `DocumentPanels/DiskExplorer/`
+  - `diskExplorerModel.ts` (the model: files, tracks, sector roles, previews)
+  - `diskExplorerActions.ts` (the flows behind ports, tested without React)
+  - `DiskExplorerPanel.tsx` (on `GenericFilePanel`)
+  - `CodeStartDialog.tsx`, `diskErrorText.ts`
+  - `DskSurfaceView.tsx`: the old `DskViewerPanel`, moved, behind the Layout view's Surface switch
+- Registered for `.dsk`, `.trd` and `.scl` (editor id `DISK_EXPLORER`).
+- Previews: BASIC listings (`decodeBasicProgram`), `SCREEN$` (`ScreenCanvas`) and hex, with memory
+  and disassembly pop-outs.
+- Edits: +3DOS attributes, add, extract, rename, delete, compact, and show deleted.
+- The project explorer's file rows became drag sources (`projectFileDrag.ts`, a MIME of their own).
+  The explorer also takes OS file drops.
+- A Spectrum BASIC tokenizer (`src/common/basic/spectrumBasicTokenizer.ts`) is the inverse of the
+  listing decoder: whole-word keywords, 5-byte numbers, REM and strings literal.
+- Checked in the running app through `scripts/doc-shots/recipes/disk-explorer.cjs`: the Files view,
+  the Layout view and a TR-DOS disk. Its fixture disks are in `scripts/doc-shots/fixtures/disks/`,
+  made by Klive.
+- Dragging a project `.bas` onto a disk was verified the same way: the file was added, the `.bak`
+  kept and the view reloaded.
+
+**Commands, export, CLI (B6).**
+- `disk ls|info|add|get|rm|mv|compact|new` (`DiskCommands.ts`) uses the edit pair.
+- **Deviation:** `add`/`get` instead of `cp` with `img:` prefixes, because two verbs read more
+  plainly than a prefix.
+- `expc -f dsk` / `-f trd` writes a bootable disk: code files, an optional screen, and a loader
+  (`DISK` on the +3, `boot` under TR-DOS, one `RANDOMIZE USR 15619: REM :` line per load).
+  - The Export Code dialog offers `.dsk` on the +2A/+3 and `.trd` on the 128K/Pentagon/Scorpion.
+  - The automation API's `project.export` takes both.
+  - Banked (128K) programs are refused: their loader would have to page.
+  - The +3 Loader boots an exported disk in `disk-export.test.ts`.
+- `klive disk` is the headless verb on image files, checked in the built CLI.
+
+**Docs (B7).**
+- `docs/content/en/guides/emulator/disk-explorer.mdx` with three generated screenshots.
+- The `disk` command and the `expc` formats in the commands reference.
+- `klive disk` in the command-line reference.
+- The project explorer's file-type table.
+- The docs goldens re-baselined.
+- The theming lessons gained the hex-dump inspector width, the unit-map colours and the
+  drop-target outline.
 

@@ -1,7 +1,8 @@
 # Beta 128 disk interface and TR-DOS on the Pentagon 128 (G9.1b)
 
-Status: ✅ **done** (2026-10-05; main, unreleased) — except running real TR-DOS, which needs a ROM
-Klive cannot ship (§10). See §10 for what was built and where it departs from the plan.
+Status: ✅ **done** (2026-10-05; main, unreleased). Real TR-DOS 5.03 verified on 2026-10-23, with the
+author's own ROM, which Klive cannot ship (§10). See §10 for what was built and where it departs from
+the plan.
 Base plan: [CLOSING_THE_GAPS_PLAN.md](CLOSING_THE_GAPS_PLAN.md), §G9 (G9.1b, size M–L).
 Builds on: [PENTAGON_128_PLAN.md](PENTAGON_128_PLAN.md) (G9.1, done).
 
@@ -265,7 +266,7 @@ specification, `ZXSTBETA128` / `ZXSTBETADISK` (spectaculator.com).
 |---|---|---|
 | WD1793 registers | `$1F` status (R) / command (W), `$3F` track, `$5F` sector, `$7F` data | [BK] |
 | System register (W, `$FF`) | bits 0–1 drive A–D; bit 2 controller reset, active low (pulse 0 then 1); bit 3 must be 1 (gates HLT); bit 4 side; bit 6 density, 1 = MFM | [BK] |
-| Side bit polarity | **open**: [BK] reads as "0 = first head"; to be decided by the ROM-gated test with a file on side 1 (one constant in the core) | [BK], TR-DOS |
+| Side bit polarity | **decided** (2026-10-23): side 1 when the bit is clear. TR-DOS 5.03 selects side 0 with $3C and loads a file from cylinder 0, side 1 with $2C (`BETA128_SIDE1_WHEN_BIT_CLEAR`) | [BK], TR-DOS |
 | Density bit | stored, **not enforced**: Klive models MFM only, and which value TR-DOS writes is not confirmed; enforcing the wrong one would make every disk unreadable | Klive choice |
 | System register (R, `$FF`) | bit 6 DRQ, bit 7 INTRQ; other bits not driven | [BK] |
 | Paging trap | TR-DOS ROM in on an M1 fetch from `$3D00–$3DFF`, out on an M1 fetch from `$4000–$FFFF`; on the 128K ROMs only while the 48K BASIC ROM (ROM 1) is selected, since ROM 0 runs code at `$3Dxx` | [BK]; the ROM 1 condition is plan §1 |
@@ -346,6 +347,22 @@ specification, `ZXSTBETA128` / `ZXSTBETADISK` (spectaculator.com).
   `LOAD`s a file from side 1 (deciding the side bit) and `SAVE`s one back, which must reach the `.trd`;
   and TR-DOS shows as partition R2 while it runs. They were not run here: the only TR-DOS ROMs on this
   machine are in other projects, which this session was not allowed to read.
+- **Run with the real ROM (2026-10-23).** With the author's TR-DOS 5.03 (the one Klive's settings
+  name), both tests failed. The WD1793, the paging and the Disk Loader were all right, and the side
+  bit's polarity was confirmed as built. Both faults were in the tests:
+  - **The command line's numbers.** The fixture wrote `RANDOMIZE USR 15619: REM : LOAD "data" CODE
+    50000` with the hidden 5-byte number form after `50000`. The 48K ROM checks a line's syntax only
+    up to REM, so a number after a REM is stored as digits alone. TR-DOS reads that text itself and
+    stopped with "C Nonsense in BASIC, 20:1". The fixture now writes digits, and Klive's tokenizer
+    has `noHiddenNumbers` for this (`spectrumBasicTokenizer.ts`, used by the disk export's TR-DOS
+    loader).
+  - **Where TR-DOS is paged in.** At its prompt TR-DOS waits for a key in the 48K ROM, paged out. The
+    R2 test now looks while it runs the boot.
+  - Also checked with the ROM: TR-DOS reads a disk the Disk Explorer compacted
+    (`trdos-fs.test.ts`), and boots a `.trd` Klive's disk export wrote (`disk-export.test.ts`).
+  - A trap for whoever traces the controller next: reading its state through the harness after every
+    instruction (`s.beta128()` advances the lazy controller) changed TR-DOS's timing enough to stall
+    it in a drive-detection seek. Log port writes instead.
 - **IDE check.** Scripted launch with a seeded setting and disk: the Pentagon shows both drives in the
   media strip with the `.trd` in A. The menu items could not be driven (the scripted instance's menus
   are empty in this environment, as in G9.1).

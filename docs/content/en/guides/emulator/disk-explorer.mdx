@@ -1,0 +1,118 @@
+---
+description: "The Disk Explorer opens .dsk, .trd and .scl disk images: list, preview, add, extract, rename and delete their files, and see every track and sector the disk holds."
+---
+
+import { Callout } from 'nextra/components'
+
+# Disk images and the Disk Explorer
+
+Klive opens a disk image as its **files**. Double-click a `.dsk` (a ZX Spectrum +3 disk, with the
++3DOS file system), a `.trd` or a `.scl` (TR-DOS disks, for the Pentagon 128 and the Scorpion) in
+the project explorer, and the **Disk Explorer** shows what is on it: the file names, what each file
+is, its size and load address, and a preview.
+
+<ClickableImage src="/images/disk-explorer/files.png" width={720} />
+
+## Looking at a file
+
+Select a file to see its details beside the list:
+
+- a **BASIC** program shows its listing and its auto-run line;
+- a 6,912-byte **code** file loaded at 16384 shows as the screen it is;
+- other code and headerless files show as bytes.
+
+The buttons above the preview open the file as a memory view, or, for code, as **disassembly** at
+its load address.
+
+On a +3DOS disk you can also set a file's **Read-only**, **System** and **Archive** attributes. The
+list shows them in the **Attr.** column, and the **User** column shows the file's user area.
+
+## Changing the disk
+
+The buttons in the header strip change the disk:
+
+| Button | What it does |
+| --- | --- |
+| **Add** (+) | Puts host files on the disk |
+| **Save** | Saves the selected file to the host |
+| **Rename** | Renames the selected file |
+| **Delete** | Deletes the selected file |
+| **Compact** | (TR-DOS only) Lays the files down again without the deleted ones, as TR-DOS's `MOVE` does |
+| **Show deleted** | Lists deleted files too, struck through |
+
+You can also **drag files** onto the explorer, from the project explorer or from your file manager.
+What a file becomes on the disk depends on its kind:
+
+- a **`.tap`** puts every file on the tape on the disk, with the header's name, kind and addresses;
+- a **`.scr`** becomes a screen (code at 16384);
+- a **`.bas`** text file is tokenised into a BASIC program;
+- anything else becomes code, at the address Klive asks for (32768 suggested).
+
+Names are made to fit the disk: +3DOS takes up to 8 characters, a dot and 3 more (upper case), and
+TR-DOS takes up to 8 characters and a type letter.
+
+<Callout type="info">
+Klive writes the changed disk next to the file and renames it over the original, so a failed write
+never leaves half a disk. The first change in a session keeps the original as **`<name>.bak`**.
+</Callout>
+
+### Disks in the machine's drive
+
+The explorer shows **In drive A** (or B) when the disk is in one of the emulated machine's drives.
+You can still change it: a running machine pauses, Klive writes the disk and puts it back in the
+drive, and the machine runs on. When the machine itself writes to the disk (a `SAVE`, a `FORMAT`),
+the open explorer shows the change a moment later.
+
+## The disk's layout
+
+The **Layout** button shows the disk as its tracks and sectors. Each square is one sector, coloured
+by what it holds: the system tracks, the directory, a file, free space, or space the file system
+never uses. Hover over a square to see the sector's ID and what it holds. A square with an outline
+is a sector the disk image marks as unusual: a CRC error, a deleted data mark, or a **weak sector**
+(the image keeps several versions of it, and the real disk read differently each time).
+
+<ClickableImage src="/images/disk-explorer/layout.png" width={720} />
+
+Select a sector to see its position, its ID (C, H, R, N), its status bytes, what it holds and its
+bytes. When it belongs to a file, the file's name takes you back to the file. The **Show the file's
+sectors** button in a file's preview does the opposite: it opens the layout with that file's sectors
+marked.
+
+On a `.dsk`, the **Surface** switch shows the image as the disk stores it: every track's header
+and sectors, and the raw track as laid on the disk.
+
+A TR-DOS disk has 16 sectors of 256 bytes on every track. Its header strip also shows the disk's
+label:
+
+<ClickableImage src="/images/disk-explorer/trdos.png" width={720} />
+
+## From the command prompt
+
+The `disk` command does the same from the IDE's command prompt, from scripts and from
+[automation](/en/guides/testing/automation/) (`klive ide cmd "disk ls game.dsk"`):
+
+```
+disk ls game.dsk
+disk add game.dsk loader.bas
+disk add game.dsk code.bin -start 24000
+disk get game.dsk GAME.BIN game.bin
+disk mv game.dsk GAME.BIN MAIN.BIN
+disk rm game.dsk NOTES.TXT
+disk compact magazine.trd
+disk new blank.dsk dse80
+```
+
+Without a running Klive, `klive disk` takes the same actions on the image file directly; see
+[the command line](/en/reference/command-line/).
+
+## Exporting a program to a disk
+
+**Export Code** (or `expc ... -f dsk` / `-f trd`) puts a compiled program on a new disk that boots
+it. A `.dsk` holds a BASIC loader named `DISK`, which the +3's **Loader** menu runs. A `.trd` holds a
+loader named `boot`, which TR-DOS runs when the disk boots. The loader loads the code files (and a
+loading screen, if you give one) and starts the program; **CLEAR** and the border colour work as
+they do for a tape.
+
+<Callout type="warning">
+A program that uses the 128K memory banks cannot be exported to a disk yet: export it as a tape.
+</Callout>

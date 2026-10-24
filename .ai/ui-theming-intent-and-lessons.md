@@ -1267,6 +1267,21 @@ list**, one row per part under its own `PanelHeader` with a count. Rules it sett
   (`--accent-solid` filled, `--border-strong` empty), `role="img"` with "Level n of 2".
 - **The parts' views are icon buttons at the row's end** (`logs` for disassembly, `binary` for
   memory, the toolbar's pair), titled with the view's name; text buttons there cost the columns.
+- **An inspector that holds a hex dump is `62ch`, not `34ch`.** `StaticMemoryView` lays 16 bytes,
+  their characters and two offsets in one row, which a `34ch` column cuts off. The Disk Explorer's
+  inspector is `62ch` and stacks below `110ch`; where the list's own content is narrow (its Layout
+  view's sector grid), the list column is `max-content` and the inspector takes the rest.
+- **A map of a medium's units colours each unit by what it holds**, as the Disk Explorer's sector
+  chips do: `--accent-solid` for the user's data (a file), `--accent-secondary-solid` for the
+  structure that indexes it (the directory), `--text-tertiary` for system areas, a hollow
+  `--surface-raised` square with a `--border-default` edge for free space, and a dashed
+  `--border-subtle` outline for space never used. A unit with something to notice (an error, a weak
+  sector) gets a `--status-warning` edge, the selected one a `--focus-ring` outline, and the
+  selected file's units `--accent-solid-hover` with an `--accent-text` edge. A legend above the map
+  names the colours; the chip's tooltip names the unit and what it holds.
+- **A document that takes dropped files outlines itself** while files are over it (a dashed
+  `--accent-border` outline inset by its width), so the drop target is the whole document, not a
+  small zone.
 
 ## A Heading Inside Panel Content Is `SectionHeader`, Not `PanelHeader`
 
