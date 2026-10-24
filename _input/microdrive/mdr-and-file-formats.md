@@ -210,8 +210,9 @@ RECFLG = 0x06 (bit 1 EOF + bit 2 SAVE-type)
 ```
 
 The same descriptor with RECFLG `0x04` (not last record) has DESCHK `BA`. A free sector's
-descriptor with all-zero fields except a space-padded name (`00 00 00 00 00 20 … 20`) has
-DESCHK `21`. All values computed with the verified `sum mod 255` rule.
+descriptor with all-zero fields except a space-padded name (`00 00 00 00 20 … 20`) has
+DESCHK `41` (10 × `$20` = 320, mod 255 = 65; an earlier version of this note said `21`, which
+`test/disk/mdr-image.test.ts` corrected). All values computed with the verified `sum mod 255` rule.
 
 ## 9. Other cartridge formats
 

@@ -1418,7 +1418,7 @@
   "@panels.doc.basic.corrupted": {
     "context": "Line written at the end of a BASIC listing (BASIC Listing panel, tape viewer) when the program's bytes stop making sense. Keep the asterisks."
   },
-  "panels.diskExplorer.error.unformatted": "This disk has no file system Klive can read: it is unformatted, or not a +3DOS or TR-DOS disk.",
+  "panels.diskExplorer.error.unformatted": "This disk has no file system Klive can read: it is unformatted, or not a +3DOS, TR-DOS or Microdrive disk.",
   "@panels.diskExplorer.error.unformatted": {
     "context": "Error banner in the Disk Explorer (the document that shows a .dsk, .trd or .scl disk image's files and sectors): shown instead of the file list when the disk has no readable file system."
   },
@@ -1436,7 +1436,7 @@
       "name": "A file name on the disk, e.g. 'GAME.BIN'"
     }
   },
-  "panels.diskExplorer.error.badName": "\"{name}\" is not a valid file name on this disk (+3DOS: up to 8 characters, a dot and 3; TR-DOS: up to 8 characters and a type letter).",
+  "panels.diskExplorer.error.badName": "\"{name}\" is not a valid file name on this disk (+3DOS: up to 8 characters, a dot and 3; TR-DOS: up to 8 characters and a type letter; Microdrive: 1 to 10 characters).",
   "@panels.diskExplorer.error.badName": {
     "context": "Error banner in the Disk Explorer (the document that shows a .dsk, .trd or .scl disk image's files and sectors): a file name the disk's file system refuses. +3DOS and TR-DOS are file-system names; keep them.",
     "placeholders": {

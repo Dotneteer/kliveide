@@ -52,7 +52,7 @@ export class DiskCommand extends IdeCommandBase<DiskArgs> {
     "disk rm <image> <disk-file>",
     "disk mv <image> <disk-file> <new-name>",
     "disk compact <image>",
-    "disk new <image> <ss|ds|sse|dse|dse80|trd80ds|trd40ds|trd80ss|trd40ss>",
+    "disk new <image> <ss|ds|sse|dse|dse80|trd80ds|trd40ds|trd80ss|trd40ss|mdr|mdrblank>",
     "disk new <image.img|.hdf|.cim> <fat16|fat32> <MB>",
     "disk ls <image.img|.hdf|.cim> [<folder>] [-d]",
     "disk add <image.img|.hdf|.cim> <host-file-or-folder> [<folder>]",

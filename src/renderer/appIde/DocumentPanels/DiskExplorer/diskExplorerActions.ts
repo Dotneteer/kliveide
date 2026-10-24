@@ -1,6 +1,6 @@
 import type { DiskImageEditStart } from "@common/messaging/MainApi";
 import { hostFileToDiskFiles } from "@common/diskfs/importFiles";
-import { DiskFsError, type DiskFileEntry } from "@common/diskfs/types";
+import { DiskFsError, type DiskFileEntry, type DiskFsKind } from "@common/diskfs/types";
 import { applyDiskEdit, readDiskFile, type DiskEdit } from "@common/diskfs/edit";
 
 /*
@@ -64,7 +64,7 @@ export async function runDiskEdit (ports: DiskExplorerPorts, filePath: string, e
 export async function addHostFiles (
   ports: DiskExplorerPorts,
   filePath: string,
-  system: "+3dos" | "trdos" | "fat",
+  system: DiskFsKind,
   existing: DiskFileEntry[],
   hostPaths?: string[]
 ): Promise<boolean> {

@@ -1,5 +1,5 @@
 import { tokenizeBasicProgram } from "@common/basic/spectrumBasicTokenizer";
-import type { DiskFileKind, NewDiskFile } from "./types";
+import type { DiskFileKind, DiskFsKind, NewDiskFile } from "./types";
 
 /*
  * Host files as disk files (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, B4): what a file dropped on
@@ -13,7 +13,7 @@ import type { DiskFileKind, NewDiskFile } from "./types";
  * - anything else: CODE at the address given (32768 by default).
  *
  * The names are made to fit the disk: +3DOS takes 8 characters, a dot and 3 (letters, digits and a
- * few signs, upper case); TR-DOS 8 characters and its type letter.
+ * few signs, upper case); TR-DOS 8 characters and its type letter; a Microdrive 10 characters.
  *
  * A FAT disk (an SD card) takes every file as it is, under its own name: esxDOS and NextZXOS load
  * `.tap`, `.scr` and the rest straight from the card.
@@ -23,7 +23,7 @@ export type ImportOptions = {
   /** Where headerless code loads */
   codeStart?: number;
   /** The disk's file system: names follow its rules */
-  system: "+3dos" | "trdos" | "fat";
+  system: DiskFsKind;
   /** Accept the 128K keywords in `.bas` text */
   plus128?: boolean;
   /** A `.bas` program's auto-run line (none by default) */
@@ -57,8 +57,10 @@ export function hostFileToDiskFiles (fileName: string, bytes: Uint8Array, option
 }
 
 /** A name that fits the file system */
-export function diskFileName (name: string, extension: string, kind: DiskFileKind, system: "+3dos" | "trdos" | "fat"): string {
+export function diskFileName (name: string, extension: string, kind: DiskFileKind, system: DiskFsKind): string {
   if (system === "fat") return extension ? `${name}.${extension}` : name;
+  // --- A Microdrive name: 1-10 characters, as typed; the extension has no place in it
+  if (system === "microdrive") return (name.trim() || "file").slice(0, 10);
   if (system === "trdos") {
     const base = (name.trim() || "file").slice(0, 8);
     const type = kind === "basic" ? "B" : kind === "code" ? "C" : kind === "raw" ? "#" : "D";

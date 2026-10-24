@@ -425,7 +425,8 @@ research file and section it checks:
    - Report free and bad sectors.
    - Create a blank (unformatted, all `$FF`) and a tool-formatted cartridge (§7 of
      `mdr-and-file-formats.md`).
-   - Unit tests with the worked hex example (`HDCHK $02`, `DESCHK $BC`/`$BA`/`$21`) and round trips.
+   - Unit tests with the worked hex example (`HDCHK $02`, `DESCHK $BC`/`$BA`/`$41` - the research's
+     `$21` was a sum error) and round trips.
 2. **`src/common/diskfs/mdrfs.ts`** — a `DiskFileSystem` for `.mdr`:
    - list, extract (with header), add (as `SAVE *` would write it, into free sectors), delete
      (descriptors set free, as ERASE does), rename;
