@@ -543,5 +543,10 @@
   "messages.if1.if1Disconnected": "The Interface 1 was disconnected: it and the DivMMC both answer port $E7, so only one of them can be connected.",
   "@messages.if1.if1Disconnected": {
     "context": "Information text after the user connected the DivMMC while the Interface 1 was connected. Keep '$E7' (a port number)."
+  },
+  "messages.if1.cannotBoot": "Cannot boot the cartridge",
+  "@messages.if1.cannotBoot": {
+    "context": "Title of the error box when Machine › Interfaces › Boot Cartridge in Microdrive 1 cannot run (for example, the Interface 1 has no ROM).",
+    "maxChars": 40
   }
 }

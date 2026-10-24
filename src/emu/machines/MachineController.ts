@@ -1024,6 +1024,18 @@ export class MachineController implements IMachineController {
     await this.executeInjectionFlow(flow, undefined, debug, operationRevision);
   }
 
+  /** Resets and boots the cartridge in Microdrive 1 through the Interface 1 (MICRODRIVE_PLAN 4.3) */
+  async runMicrodriveBoot(debug: boolean): Promise<void> {
+    const flow = this.machine.getMicrodriveBootFlow?.();
+    if (!flow) {
+      throw new Error("This machine has no Interface 1 to boot a Microdrive cartridge.");
+    }
+    const operationRevision = this.beginMachineOperation();
+    await this.stop(operationRevision);
+    this.assertMachineOperationIsCurrent(operationRevision);
+    await this.executeInjectionFlow(flow, undefined, debug, operationRevision);
+  }
+
   /**
    * Stops the machine and runs a ready-made flow on it (a Z88 card application: `z88AppFlow.ts`).
    * @param debug Arm the breakpoints once the flow has run

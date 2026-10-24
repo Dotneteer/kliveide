@@ -246,6 +246,8 @@ export interface IAnyMachine extends IAnyCpu, IMachineEventHandler {
    * `RUN`). Absent on a machine that cannot boot a disk this way.
    */
   getDiskBootFlow?(): CodeInjectionFlow;
+  /** The Interface 1's Microdrive Loader: RUN, which loads "run" from Microdrive 1 (MICRODRIVE_PLAN) */
+  getMicrodriveBootFlow?(): CodeInjectionFlow | undefined;
 
   /**
    * Injects the specified code into the ZX Spectrum machine

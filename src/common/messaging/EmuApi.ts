@@ -508,6 +508,11 @@ class EmuApiImpl {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 
+  /** Resets the machine and boots the cartridge in Microdrive 1 (`.plans/MICRODRIVE_PLAN.md` 4.3) */
+  async startMicrodriveBoot(_debug: boolean): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
   async startTapeLoad(_debug: boolean): Promise<void> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }

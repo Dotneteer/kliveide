@@ -62,6 +62,19 @@ export const interface1MenuRenderer: MachineMenuRenderer = (windowInfo, machine,
   ];
   if (!connected) return items;
   items.push(createBooleanSettingsMenu(SETTING_EMU_FAST_MICRODRIVE, { label: t("menu.if1.fast") }) as MachineMenuItem);
+  // --- The Microdrive Loader: RUN loads "run" from drive 1 (MICRODRIVE_PLAN 4.3)
+  items.push({
+    id: "if1_boot",
+    label: t("menu.if1.boot"),
+    enabled: !!state?.media?.[MEDIA_MICRODRIVES[0]]?.diskFile,
+    click: async () => {
+      try {
+        await getEmuApi().startMicrodriveBoot(false);
+      } catch (err) {
+        dialog.showErrorBox(t("messages.if1.cannotBoot"), (err as Error)?.message ?? String(err));
+      }
+    }
+  });
   for (let drive = 0; drive < MEDIA_MICRODRIVES.length; drive++) {
     const media = state?.media?.[MEDIA_MICRODRIVES[drive]] ?? {};
     const inserted = !!media.diskFile;

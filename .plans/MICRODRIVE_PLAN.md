@@ -1,6 +1,6 @@
 # ZX Interface 1 and Microdrives on the 48K and 128K (G9.6)
 
-Status: 🚧 **in progress**. Phases 0–3 done (2026-10-24, see their "As built" notes). Decisions Q1–Q8 were
+Status: 🚧 **in progress**. Phases 0–4 done (2026-10-24, see their "As built" notes). Decisions Q1–Q8 were
 taken by the author on 2026-10-24 (§8).
 Base plan: [CLOSING_THE_GAPS_PLAN.md](CLOSING_THE_GAPS_PLAN.md), §G9 (a new row, **G9.6**, size L).
 Research: [`_input/microdrive/`](../_input/microdrive/README.md). Every fact in this plan comes from
@@ -561,6 +561,50 @@ research file and section it checks:
      `$0000–$1FFF` or PROG = 23755.
 5. **Tape with the IF1:** `LOAD ""` with fast load on and off, and the tape trap not firing while
    the IF1 ROM is paged.
+
+**As built (2026-10-24).**
+- **Files on the real v2 ROM** (`test/spectrum-hw/if1/if1-rom-files.test.ts`, 13 tests, on a
+  tool-formatted cartridge):
+  - SAVE * of CODE and SCREEN$, with their headers (SCREEN$ takes 14 records), and LOAD * CODE at
+    another address;
+  - LOAD * of CODE as a program: "Wrong file type";
+  - SAVE * and LOAD * DATA of an array (name byte `$FF81`);
+  - VERIFY *, passing and then "Verification has failed";
+  - a PRINT # stream: OPEN #, PRINT #, CLOSE #, INPUT #, then MOVE to the screen; its bytes are
+    `hello\rworld\r` with no header;
+  - ERASE, after which CAT shows 127 again;
+  - the reports "File not found", "Invalid drive number", "Invalid name" (twice), "Invalid device
+    expression", "Writing to a 'read' file", "Stream already open" and "Microdrive full".
+
+  A SAVE * on a fresh cartridge takes about 475 frames (~10 s). ROM 1 is opt-in
+  (`KLIVE_IF1_V1_ROM`): no v1 file was available, so it was not run.
+- **A harness fix.** The 48K session's screen reader took its font from live memory, so it read
+  every cell as `?` while the IF1 ROM was paged. It now uses the 48K ROM file's font then.
+- **128K** (`if1-128k.test.ts`):
+  - CAT works from 48 BASIC.
+  - `1000 OPEN #4,"x"` in the 128 editor reports "Invalid device expression, 1000:" with the
+    statement number wrapped onto a line of its own: the overrun Farrow lists.
+  - **T9 settled:** RUN with no program auto-loads `run` on the 48K, from 48 BASIC and from 128
+    BASIC (the editor's RUN reaches the IF1 as 48K BASIC's does).
+- **The Microdrive Loader.**
+  - `src/emu/machines/zxSpectrum/if1/microdriveBootFlows.ts`:
+    - 48K: R, Enter at the main loop;
+    - 128K: the menu's 128 BASIC, then `run`. Its first letter waits 25 frames, because the editor
+      draws before it reads keys.
+  - `getMicrodriveBootFlow()` on both machines, only with the IF1 connected.
+  - `MachineController.runMicrodriveBoot`, `EmuApi.startMicrodriveBoot`.
+  - Menu item: Machine › Interfaces › **Boot Cartridge in Microdrive 1**.
+- **`expc -f mdr`.** `buildExportDisk("mdr")` writes the code files, an optional screen and a
+  one-line loader `run` (`LOAD *"m";1;"name"CODE: ... RANDOMIZE USR entry`) on a formatted cartridge
+  named after the program. The Loader boots it on the 48K and the 128K (`if1-export.test.ts`).
+  - **Not done:** a separate "Export and boot in Microdrive 1" command. Export, then Insert and
+    Boot Cartridge, do the same.
+- **The IDE's flows with the IF1** (`if1-flows.test.ts`), all unchanged:
+  - Injected code returns to a BASIC that still drives the Microdrives (PROG at 23813).
+  - The 128K's sp48 and sp128 injection flows reach their main loops.
+  - `LOAD ""` loads a tape with fast load on and off.
+  - The tape trap does not fire at `$056C` inside the paged IF1 ROM. A control proves it fires with
+    the interface off.
 
 ### Phase 5 — snapshots and state (S–M)
 1. **`.z80`:**

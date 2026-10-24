@@ -1128,6 +1128,14 @@ class EmuMessageProcessor {
     return controller.runDiskBoot(debug);
   }
 
+  startMicrodriveBoot(debug: boolean) {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    return controller.runMicrodriveBoot(debug);
+  }
+
   /**
    * Resolves breakpoints in the emulator.
    * @param breakpoints The breakpoints to resolve.

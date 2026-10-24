@@ -34,21 +34,25 @@ export function formattedMdr(name = "TEST", slots = 254): Uint8Array {
   return mdr;
 }
 
+/** What `installProgram` needs of a session: the 48K's, or the 128K's in 48 BASIC */
+type BasicMemory = { peekWord(address: number): number; poke(address: number, bytes: number | ArrayLike<number>): unknown };
+
 /** A BASIC program put where LOAD puts one, its system variables set, as if it had been typed */
-export function installProgram(s: Sp48TestSession, source: string): void {
+export function installProgram(s: BasicMemory, source: string): void {
   const program = tokenizeBasicProgram(source);
+  const word = (address: number, value: number) => s.poke(address, [value & 0xff, value >> 8]);
   const prog = s.peekWord(23635);
   s.poke(prog, program);
   const vars = prog + program.length;
   s.poke(vars, 0x80);
   const eLine = vars + 1;
   s.poke(eLine, [0x0d, 0x80]);
-  s.pokeWord(23627, vars);
-  s.pokeWord(23641, eLine);
-  s.pokeWord(23643, eLine);
-  s.pokeWord(23649, eLine + 2);
-  s.pokeWord(23651, eLine + 2);
-  s.pokeWord(23653, eLine + 2);
+  word(23627, vars);
+  word(23641, eLine);
+  word(23643, eLine);
+  word(23649, eLine + 2);
+  word(23651, eLine + 2);
+  word(23653, eLine + 2);
 }
 
 /** Installs a program, RUNs it, runs `frames` frames */

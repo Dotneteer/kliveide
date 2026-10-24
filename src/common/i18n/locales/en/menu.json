@@ -905,5 +905,10 @@
       "drive": "Microdrive number, shown verbatim: '1' or '2'"
     },
     "maxChars": 40
+  },
+  "menu.if1.boot": "Boot Cartridge in Microdrive 1",
+  "@menu.if1.boot": {
+    "context": "Machine › Interfaces (ZX Spectrum 48K and 128K, Interface 1 connected): resets the machine and types RUN, which makes the Interface 1 load and run the program called 'run' from the cartridge in Microdrive 1.",
+    "maxChars": 50
   }
 }

@@ -130,3 +130,19 @@ const RECORDED = {
   prog: 23813,
   shortTapeFreeK: 49
 };
+
+/*
+ * ROM 1, the first edition, which Klive does not ship: only with `KLIVE_IF1_V1_ROM=/path/to/if1-1.rom`.
+ * Its FORMAT lacks ROM 2's "the sector after a bad one is bad too" rule, so a perfect tape keeps
+ * sector 254 (the derived 127K, `mdr-and-file-formats.md` §7), and it leaves 23729 alone.
+ */
+const V1_ROM = process.env.KLIVE_IF1_V1_ROM;
+
+describe.skipIf(!V1_ROM)("Interface 1 ROM 1 (KLIVE_IF1_V1_ROM)", () => {
+  it("FORMAT and CAT; PEEK 23729 is 0", async () => {
+    const rom = new Uint8Array(require("node:fs").readFileSync(V1_ROM!));
+    const s = (await sp48WithInterface1(rom)).insertCartridge(0, { blank: 254 });
+    runBasic(s, `10 FORMAT "m";1;"TEST"\n20 CAT 1\n30 PRINT PEEK 23729`, 3500);
+    expect(screenLines(s)).toEqual(["TEST", "127", "0", "0 OK, 30:1"]);
+  }, 180_000);
+});

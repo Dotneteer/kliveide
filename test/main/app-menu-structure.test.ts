@@ -208,6 +208,7 @@ describe("the application menu", () => {
       "DivMMC Interface",
       "Interface 1",
       "Fast Microdrive",
+      "Boot Cartridge in Microdrive 1",
       "Change Cartridge in Microdrive 1...",
       "New Blank Cartridge in Microdrive 1...",
       "Save Cartridge in Microdrive 1 As...",

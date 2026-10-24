@@ -39,6 +39,8 @@ import { buildSp48Wasm, productionOutput } from "../../../scripts/build-sp48-was
 
 /** The real 48K BASIC ROM the app ships (`src/public/roms/sp48.rom`). */
 const ROM_PATH = join(__dirname, "../../../src/public/roms/sp48.rom");
+/** The 48K ROM's bytes: its font, when another ROM is paged over it */
+const SP48_ROM_FILE = new Uint8Array(readFileSync(ROM_PATH));
 
 /** First byte of the ROM character set (character 32, space). */
 const ROM_CHARSET = 0x3d00;
@@ -550,12 +552,14 @@ export class Sp48TestSession {
       const address = 0x4000 | ((row & 0x18) << 8) | (line << 8) | ((row & 0x07) << 5) | col;
       cell.push(this.peek(address));
     }
+    // --- While the Interface 1's ROM is paged over $0000-$3FFF, the font is the 48K ROM's, not memory's
+    const paged = !!this.if1 && this.if1.state().paged;
     for (let code = 32; code < 128; code++) {
       const base = ROM_CHARSET + (code - 32) * 8;
       let same = true;
       let inverse = true;
       for (let line = 0; line < 8; line++) {
-        const glyph = this.peek(base + line);
+        const glyph = paged ? SP48_ROM_FILE[base + line] : this.peek(base + line);
         if (cell[line] !== glyph) same = false;
         if (cell[line] !== (~glyph & 0xff)) inverse = false;
       }

@@ -34,7 +34,9 @@ import {
   ULA_SNOW
 } from "../machine-props";
 import { DivMmcSupport } from "../zxSpectrum/divmmc/divMmcCoreBridge";
+import type { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
 import { Interface1MachineSupport } from "../zxSpectrum/if1/Interface1MachineSupport";
+import { sp48MicrodriveBootFlow } from "../zxSpectrum/if1/microdriveBootFlows";
 import type { MessengerBase } from "@common/messaging/MessengerBase";
 import type { SdRevertResult, SdUndoEntry, SdUndoLog } from "@emu/machines/reverse/SdUndoLog";
 import { MC_MEM_SIZE, MC_SCREEN_FREQ, MC_SP48_ROM_FILE } from "@common/machines/constants";
@@ -596,6 +598,13 @@ export class ZxSpectrum48WasmV2Machine
   /** Sets a property without reacting to it (the Interface 1's write-back bookkeeping) */
   private setPropertyRaw(key: string, value?: unknown): void {
     super.setMachineProperty(key, value);
+  }
+
+  /** The Microdrive Loader, with the Interface 1 connected (MICRODRIVE_PLAN 4.3) */
+  getMicrodriveBootFlow(): CodeInjectionFlow | undefined {
+    if (this.if1.present) return sp48MicrodriveBootFlow();
+    if (this.interface1Model) throw new Error(this.if1.problem ?? "The Interface 1 is not connected.");
+    return undefined;
   }
 
   /** The running Microdrive motors, bit n drive n + 1 (the controller runs a fast Microdrive unthrottled) */
