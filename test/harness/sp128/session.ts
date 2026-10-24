@@ -68,8 +68,8 @@ export type RunLimit = { maxFrames?: number };
 const ROM_CHARSET = 0x3d00;
 
 class HarnessSp128Machine extends ZxSpectrum128WasmV2Machine {
-  constructor(model?: MachineModel, private readonly trdosRomImage?: Uint8Array) {
-    super(model, { ...(model?.config ?? {}) }, {
+  constructor(model?: MachineModel, private readonly trdosRomImage?: Uint8Array, config: MachineConfigSet = {}) {
+    super(model, { ...(model?.config ?? {}), ...config }, {
       artifactName: "harness-sp128-machine-v2.wasm",
       readArtifact: async () => readFileSync(sp128Output)
     });
@@ -82,7 +82,9 @@ class HarnessSp128Machine extends ZxSpectrum128WasmV2Machine {
     return this.trdosRomImage;
   }
 
-  protected override async loadRomFromResource(_romName: string, page = 0): Promise<Uint8Array> {
+  protected override async loadRomFromResource(romName: string, page = 0): Promise<Uint8Array> {
+    // --- The Interface 1's shipped ROM (`if1-2`) is a file of its own
+    if (romName.startsWith("if1")) return new Uint8Array(readFileSync(join(ROM_DIR, `${romName}.rom`)));
     return new Uint8Array(readFileSync(join(ROM_DIR, `sp128-${page}.rom`)));
   }
 }
@@ -137,7 +139,9 @@ class HarnessSp48Machine extends ZxSpectrum48WasmV2Machine {
     });
   }
 
-  protected override async loadRomFromResource(): Promise<Uint8Array> {
+  protected override async loadRomFromResource(romName = ""): Promise<Uint8Array> {
+    // --- The Interface 1's shipped ROM (`if1-2`) is a file of its own
+    if (romName.startsWith("if1")) return new Uint8Array(readFileSync(join(ROM_DIR, `${romName}.rom`)));
     return new Uint8Array(readFileSync(join(ROM_DIR, "sp48.rom")));
   }
 }
@@ -172,7 +176,7 @@ export async function createHarnessSpectrumMachine(
       buildSp128Wasm();
       built.sp128 = true;
     }
-    machine = new HarnessSp128Machine(getSp128Model(modelId) ?? info);
+    machine = new HarnessSp128Machine(getSp128Model(modelId) ?? info, undefined, config);
   }
   await machine.setup();
   machine.hardReset();

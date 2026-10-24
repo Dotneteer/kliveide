@@ -244,5 +244,10 @@
   "@common.filter.sdCardImages": {
     "context": "Filter name in a file dialog: SD card and hard-disk image files (.img, .hdf, .cim).",
     "maxChars": 40
+  },
+  "common.filter.mdrFiles": "Microdrive Cartridges",
+  "@common.filter.mdrFiles": {
+    "context": "Filter name in a file dialog: ZX Microdrive cartridge image files (.mdr).",
+    "maxChars": 40
   }
 }

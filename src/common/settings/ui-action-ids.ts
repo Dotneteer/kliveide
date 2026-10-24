@@ -33,6 +33,8 @@ export type UiActionId =
   | "rom:trdos:forget"
   | "rom:esxdos:select"
   | "rom:esxdos:forget"
+  | "rom:if1:select"
+  | "rom:if1:forget"
   | "rom:timex:select"
   | "rom:timex:forget"
   | "rom:scorpion:select"

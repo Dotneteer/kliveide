@@ -36,7 +36,8 @@ import {
   SAVED_TO_TAPE,
   TAPE_MODE,
   TRDOS_ROM_FILE,
-  ESXDOS_ROM_FILE
+  ESXDOS_ROM_FILE,
+  IF1_ROM_FILE
 } from "../machine-props";
 import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_TAPE } from "@common/structs/project-const";
 import type { SectorChanges } from "@emu/abstractions/IFloppyDiskDrive";
@@ -47,7 +48,7 @@ import { BinaryWriter } from "@utils/BinaryWriter";
 import { loadSp128WasmV2 } from "./wasm/Sp128WasmV2Loader";
 import { TzxHeader } from "../tape/TzxHeader";
 import { TzxStandardSpeedBlock } from "../tape/TzxStandardSpeedBlock";
-import { ZxSpectrum128WasmHost } from "./ZxSpectrum128WasmHost";
+import { IF1_PARTITION, ZxSpectrum128WasmHost } from "./ZxSpectrum128WasmHost";
 import { importAccessLog } from "../wasmAccessLog";
 import type { SpectrumSnapshot } from "@common/spectrum/snapshot/spectrumSnapshot";
 import { restoreSpectrumSnapshot } from "../zxSpectrum/spectrumSnapshotRestore";
@@ -67,6 +68,7 @@ import { spectrumWasmBeamPosition } from "../zxSpectrum/WasmSpectrumSupport";
 import type { BeamPosition } from "@common/utils/beamGeometry";
 import { writeCoreBytes } from "@emu/machines/reverse/coreMemoryWrites";
 import { DivMmcSupport } from "../zxSpectrum/divmmc/divMmcCoreBridge";
+import { Interface1MachineSupport } from "../zxSpectrum/if1/Interface1MachineSupport";
 import type { MessengerBase } from "@common/messaging/MessengerBase";
 import type { SdRevertResult, SdUndoEntry, SdUndoLog } from "@emu/machines/reverse/SdUndoLog";
 
@@ -215,6 +217,13 @@ export class ZxSpectrum128WasmV2Machine
   readonly divMmc = new DivMmcSupport("sp128", {
     getDivMmcRuntime: () => this.wasmV2Runtime,
     loadDivMmcRom: (path) => this.loadRomFromResource(path)
+  });
+  /** The ZX Interface 1 and its Microdrives (`.plans/MICRODRIVE_PLAN.md`): with `MC_INTERFACE1` */
+  readonly if1 = new Interface1MachineSupport("sp128", {
+    getIf1Runtime: () => this.wasmV2Runtime,
+    getMachineProperty: (key) => this.getMachineProperty(key),
+    setMachinePropertyRaw: (key, value) => this.setPropertyRaw(key, value),
+    loadRom: (path) => this.loadRomFromResource(path)
   });
   /** Why the Beta 128 is off on a model that has it (no ROM named, unreadable, wrong size) */
   trdosRomProblem?: string;
@@ -511,6 +520,8 @@ export class ZxSpectrum128WasmV2Machine
       // --- The interface resets with the machine: it boots esxDOS from the first fetch at $0000
       runtime.exports.sp128Reset();
     }
+    // --- The Interface 1 pages in at the first error restart; nothing to reset
+    await this.if1.connect(this.interface1Model, this.getMachineProperty(IF1_ROM_FILE) as string | undefined);
     this.syncAudioSampleRateToWasmV2(runtime);
     this.syncTargetClockMultiplierToWasmV2(runtime);
     this.syncTapeStateToWasmV2(runtime);
@@ -549,7 +560,18 @@ export class ZxSpectrum128WasmV2Machine
     if (runtime != null) {
       this.syncTapePropertyToWasmV2(runtime, key, value);
       this.syncBetaDiskPropertyToWasmV2(key, value);
+      this.if1.onProperty(key, value);
     }
+  }
+
+  /** Sets a property without reacting to it (the Interface 1's write-back bookkeeping) */
+  private setPropertyRaw(key: string, value?: unknown): void {
+    super.setMachineProperty(key, value);
+  }
+
+  /** The running Microdrive motors, bit n drive n + 1 (the controller runs a fast Microdrive unthrottled) */
+  get microdriveMotors(): number {
+    return this.if1.motors;
   }
 
   // ==============================================================================================
@@ -629,8 +651,9 @@ export class ZxSpectrum128WasmV2Machine
    * @returns true when there was a disk to write back
    */
   republishDisks(): boolean {
+    const microdrives = this.if1.republishAll();
     const published = this.beta128Disks?.republishAll();
-    if (!published) return false;
+    if (!published) return microdrives;
     this.mergeBetaDiskPublish(published);
     return true;
   }
@@ -692,6 +715,7 @@ export class ZxSpectrum128WasmV2Machine
     this.syncFrameCountersFromWasmV2(runtime);
     this.publishSavedTapeFromWasmV2(runtime);
     this.publishBetaDiskChanges();
+    this.if1.publish();
     // --- The DivMMC's SD card stopped the frame for a sector: the controller answers it, and the
     // --- frame goes on where it stopped
     this.frameCompleted = this.divMmc.syncFrameCommand() ? runtime.exports.sp128GetFrameCompleted() !== 0 : true;
@@ -737,6 +761,10 @@ export class ZxSpectrum128WasmV2Machine
     if (index === -3) {
       // --- The Beta 128's TR-DOS ROM (partition "R2")
       return this.trdosRom ?? new Uint8Array(0x4000);
+    }
+    if (index === IF1_PARTITION && this.interface1Model) {
+      // --- The Interface 1's 8K ROM, mirrored over the 16K slot as the CPU sees it (partition "IF")
+      return this.if1.romView();
     }
     if (index < 0) {
       const romIndex = index === -2 ? 1 : 0;
@@ -807,7 +835,8 @@ export class ZxSpectrum128WasmV2Machine
 
   override getSelectedRomPage(): number {
     const wasm = this.requireWasmV2Runtime().exports;
-    // --- While the Beta 128 pages TR-DOS in, it is ROM 2
+    // --- While the Beta 128 pages TR-DOS in, it is ROM 2; the Interface 1's ROM is partition -4, ROM 3
+    if (this.interface1Model && wasm.sp128If1GetPaged()) return 3;
     return wasm.sp128BetaGetPaged() ? 2 : wasm.sp128GetSelectedRom();
   }
 
@@ -1327,6 +1356,7 @@ export class ZxSpectrum128WasmV2Machine
     this.importWasmV2BusAccess(runtime);
     this.publishSavedTapeFromWasmV2(runtime);
     this.publishBetaDiskChanges();
+    this.if1.publish();
     this.executionContext.lastTerminationReason = termination;
     return termination;
   }
@@ -1535,6 +1565,7 @@ export class ZxSpectrum128WasmV2Machine
     this.emulatedKeyStrokes.length = 0;
     this.wasmV2SavedTapeRevision = runtime.exports.sp128TapeGetSavedRevision();
     this.beta128Disks?.followCoreRevision();
+    this.if1.followCoreRevision();
     this.frameCompleted = runtime.exports.sp128GetFrameCompleted() !== 0;
     this.syncFrameCountersFromWasmV2(runtime);
     this.syncCpuFromWasmV2(runtime);
@@ -1556,6 +1587,7 @@ export class ZxSpectrum128WasmV2Machine
     // --- What the core already holds must not be published again as new
     this.wasmV2SavedTapeRevision = runtime.exports.sp128TapeGetSavedRevision();
     this.beta128Disks?.afterStateLoad();
+    this.if1.afterStateLoad();
     this.syncFrameCountersFromWasmV2(runtime);
     this.syncCpuFromWasmV2(runtime);
   }

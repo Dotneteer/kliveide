@@ -13,7 +13,8 @@ import { mainStore } from "@main/main-store";
 import { saveKliveProject } from "@main/projects";
 import { logEmuEvent, setMachineType } from "@main/registeredMachines";
 import { dialog, BrowserWindow, app } from "electron";
-import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_DOCK, MEDIA_TAPE } from "@common/structs/project-const";
+import { MEDIA_DISK_A, MEDIA_MICRODRIVES, MEDIA_DISK_B, MEDIA_DOCK, MEDIA_TAPE } from "@common/structs/project-const";
+import { ejectMicrodrive, selectMicrodriveFile } from "./interface1-menus";
 import { ejectDock, selectDockFile } from "./timex-menus";
 import { CREATE_DISK_DIALOG } from "@messaging/dialog-ids";
 import { createBooleanSettingsMenu } from "@main/menus/menu-utils";
@@ -337,6 +338,8 @@ export async function selectMediaFile(browserWindow: BrowserWindow, mediaId: str
   } else if (mediaId === MEDIA_DISK_A || mediaId === MEDIA_DISK_B) {
     const index = mediaId === MEDIA_DISK_B ? 1 : 0;
     await setDiskFile(browserWindow, index, index ? "b" : "a");
+  } else if ((MEDIA_MICRODRIVES as readonly string[]).includes(mediaId)) {
+    await selectMicrodriveFile(browserWindow, MEDIA_MICRODRIVES.indexOf(mediaId as never));
   } else {
     return;
   }
@@ -356,6 +359,8 @@ export async function ejectMediaFile(mediaId: string): Promise<void> {
   } else if (mediaId === MEDIA_DISK_A || mediaId === MEDIA_DISK_B) {
     const index = mediaId === MEDIA_DISK_B ? 1 : 0;
     await ejectDiskFile(index, index ? "b" : "a");
+  } else if ((MEDIA_MICRODRIVES as readonly string[]).includes(mediaId)) {
+    await ejectMicrodrive(MEDIA_MICRODRIVES.indexOf(mediaId as never));
   } else {
     return;
   }

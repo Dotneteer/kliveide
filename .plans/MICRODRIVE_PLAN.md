@@ -1,6 +1,6 @@
 # ZX Interface 1 and Microdrives on the 48K and 128K (G9.6)
 
-Status: 🚧 **in progress**. Phases 0–2 done (2026-10-24, see their "As built" notes). Decisions Q1–Q8 were
+Status: 🚧 **in progress**. Phases 0–3 done (2026-10-24, see their "As built" notes). Decisions Q1–Q8 were
 taken by the author on 2026-10-24 (§8).
 Base plan: [CLOSING_THE_GAPS_PLAN.md](CLOSING_THE_GAPS_PLAN.md), §G9 (a new row, **G9.6**, size L).
 Research: [`_input/microdrive/`](../_input/microdrive/README.md). Every fact in this plan comes from
@@ -458,6 +458,77 @@ research file and section it checks:
 6. Hardware sheet (`hardware-specs.ts`) rows, i18n keys with translator context (`npm run i18n:keys`).
 7. **Tests:** unit tests for `mdrImage`/`mdrfs`, menu-state tests, media-strip description tests,
    write-back tests (as the Beta 128's).
+
+**As built (2026-10-24).**
+- **Format and file system.**
+  - `src/emu/machines/microdrive/mdrImage.ts` (unit tests in `test/disk/mdr-image.test.ts`) covers
+    shape, checksums, sectors, the catalogue, files with the ROM's 9-byte header,
+    write/erase/rename/label, and blank and tool-formatted cartridges. ROM 2's SAVE code settled the
+    header: HD_0D is PROG for a program. HD_0F is an array's name byte in the low byte, with $FF
+    above. HD_11 is $FFFF without LINE, because RES-VARS fills the area with $FF first.
+  - The worked example's free-sector checksum is **$41**. The formats note's $21 was a sum error,
+    and the note is corrected.
+  - `src/common/diskfs/mdrfs.ts` (`MicrodriveFileSystem`, system `microdrive`) is opened for `.mdr`
+    by `open.ts`. The Disk Explorer lists files and shows the slots as one track, R being the
+    sector number. `disk` and the CLI work on it. The "new disk" paths (`crd`, `disk new`,
+    `klive disk new`) take `mdr` (formatted) and `mdrblank`.
+- **Machines.**
+  - `src/emu/machines/zxSpectrum/if1/Interface1MachineSupport.ts`, shared by the 48K and 128K
+    machine classes, does the following:
+    - connects the interface from `MC_INTERFACE1` with `IF1_ROM_FILE` or the shipped `if1-2`, and
+      reports the edition and any `problem`;
+    - inserts the `MEDIA_MICRODRIVE_1/2` properties; re-sending the same bytes keeps the guest's
+      writes;
+    - puts written slots into `MICRODRIVE_CHANGES`, and drives detached by a state load into
+      `MICRODRIVE_UNSAVED`;
+    - backs `republishDisks()` after a fork and the core-revision follow after a replay.
+  - The DivMMC wins a config that names both (Q4).
+- **Write-back.**
+  - `MachineController` carries `microdriveChanges` in its frame events.
+  - `EmulatorPanel` patches the media store's copy in place, so it stays the same cartridge.
+  - `MainApi.saveMicrodriveChanges` writes each slot at `slot × 543` of the `.mdr`.
+- **Menu: Machine › Interfaces, not a Microdrives submenu.**
+  - A separate submenu put the 48K's Machine menu over the twelve first-level items its test
+    allows (MENU_REDESIGN_PLAN). The DivMMC and the Interface 1 are both edge-connector interfaces,
+    one at a time, so on the 48K and the 128K they share **Interfaces**: both switches first, then
+    the connected one's items.
+  - The Interface 1's items are Fast Microdrive and, per drive, Insert/Change, New Blank Cartridge,
+    Save Cartridge As, Eject and Write Protect.
+  - The +2A/+3E and the Next keep **SD Card**.
+  - Connecting one interface disconnects the other, with a message box.
+  - The ROM is a Settings › Machine row (`if1Rom`, browse/forget), not a menu item: set-once ROM
+    files live in Settings (`machine-menu-registry.ts`'s rule).
+  - Sessions restore the cartridges (`main/index.ts`). As with disks, opening a project does not.
+- **Fast Microdrive (M6).** The controller runs unthrottled while `microdriveMotors` ≠ 0 and the
+  setting is on. It also reports the motors to the store (`SET_MICRODRIVE_MOTORS`) when they
+  change. The audio is not muted while running fast.
+- **Media strip.**
+  - The Interface 1 adds two cards: the new `microdrive` icon and the drive number, "(no
+    cartridge)" when empty, and the write-protect lock.
+  - The icon turns `--color-display-hilite` while that drive's motor runs (rule recorded in
+    `.ai/ui-theming-intent-and-lessons.md`).
+  - Insert and eject go through the menu's own functions.
+- **Debugger.**
+  - On the 128K the paged ROM is partition **`IF`** (−4): labels, description, parse,
+    `getMemoryPartition` (the 8K mirrored to 16K), and ROM page 3 while paged.
+  - **The 48K stays partition-less**, as it is with the DivMMC mapped. Its memory views show the
+    IF1 ROM's bytes while it is paged, because the flat memory holds them.
+  - Profiling no longer credits IF1 code to the 48K ROM's addresses: the 48K maps it nowhere, and
+    the 128K never mapped it. Profiling the IF1 ROM itself is not done.
+- **Not done:**
+  - **Hardware-sheet rows.** The sheet lists each model's built-in media, and the DivMMC, also an
+    add-on, is not there either.
+  - **Checking the 48K ROM's annotations against the paged IF1 ROM.** Sidecars match a page by its
+    CRC, so the IF1 bytes should not pick up the 48K's, but this was not looked at in the running
+    IDE.
+- **Tests:** `test/spectrum-hw/if1/if1-machine.test.ts` (the machine side, nine tests), the media
+  strip and menu-structure tests, and the full fast tiers (26,081 tests).
+- **IDE check** (`scripts/doc-shots/recipes/microdrives.cjs`; the harness gained `sessionSettings`,
+  because the scripted instance's application menu is empty here):
+  1. A seeded session starts a 128K with the Interface 1 and a cartridge in Microdrive 1.
+  2. The strip shows both cards, and the icon tints during CAT.
+  3. `cat 1` in 128 BASIC prints `GAMES`, `127` and `0 OK, 0:1`.
+  4. `save *"m";1;"hi"` reports `0 OK` and its bytes reach the `.mdr` file on disk.
 
 ### Phase 4 — the real ROM end to end and the IDE flows (M)
 1. **On the shipped v2 ROM in the harness**, scripts T1–T12 of `test-material.md`, each expectation

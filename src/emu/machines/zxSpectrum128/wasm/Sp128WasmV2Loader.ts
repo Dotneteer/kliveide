@@ -4,6 +4,7 @@ import { Z80_HISTORY_CORE_EXPORTS, type Z80HistoryCoreExports } from "@emu/machi
 import { WASM_ACCESS_LOG_CAPACITY } from "../../wasmAccessLog";
 import { rzxCoreExportNames, type RzxCoreExports } from "../../zxSpectrum/rzx/rzxCoreBridge";
 import { divMmcCoreExportNames, type DivMmcCoreExports } from "../../zxSpectrum/divmmc/divMmcCoreBridge";
+import type { Interface1CoreExports } from "../../zxSpectrum/if1/if1CoreBridge";
 
 export const SP128_WASM_V2_ARTIFACT_NAME = "zx-spectrum128.wasm";
 export const SP128_WASM_V2_MEMORY_SIZE = 0x10000;
@@ -13,7 +14,7 @@ export const SP128_WASM_V2_KEYBOARD_LINE_COUNT = 8;
 
 export type Sp128WasmV2ExportFunction = (...args: number[]) => number;
 
-export type Sp128WasmV2Exports = WebAssembly.Exports & ConditionCoreExports & Z80HistoryCoreExports & RzxCoreExports<"sp128"> & DivMmcCoreExports<"sp128"> & {
+export type Sp128WasmV2Exports = WebAssembly.Exports & ConditionCoreExports & Z80HistoryCoreExports & RzxCoreExports<"sp128"> & DivMmcCoreExports<"sp128"> & Interface1CoreExports<"sp128"> & {
   memory: WebAssembly.Memory;
   sp128MemoryPtr: Sp128WasmV2ExportFunction;
   sp128RamPtr: Sp128WasmV2ExportFunction;

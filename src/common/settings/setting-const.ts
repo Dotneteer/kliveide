@@ -54,6 +54,8 @@ export const SETTING_EMU_ESXDOS_ROM = "emuOptions.esxDosRomFile";
  * the shipped `if1-2.rom`
  */
 export const SETTING_EMU_IF1_ROM = "emuOptions.interface1RomFile";
+/** Run unthrottled while a Microdrive's motor runs (`.plans/MICRODRIVE_PLAN.md` §3 M6, Q6): off */
+export const SETTING_EMU_FAST_MICRODRIVE = "emuOptions.fastMicrodrive";
 /** The TC2048 ROM file the Timex boots (`.plans/TIMEX_SCORPION_PLAN.md` P5): Klive cannot ship it */
 export const SETTING_EMU_TC2048_ROM = "emuOptions.tc2048RomFile";
 /** The TC2068's and TS2068's 24K ROM files (the HOME ROM, then the EXROM); Klive cannot ship them */

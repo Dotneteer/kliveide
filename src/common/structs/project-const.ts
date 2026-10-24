@@ -14,5 +14,9 @@ export const MEDIA_DISK_B = "diskB";
 export const MEDIA_SD_CARD = "sdCard";
 /** The Timex 2068s' cartridge (`.dck`) in the DOCK */
 export const MEDIA_DOCK = "dock";
+/** The Interface 1's Microdrives 1 and 2 (`.mdr` cartridges; `.plans/MICRODRIVE_PLAN.md`) */
+export const MEDIA_MICRODRIVE_1 = "microdrive1";
+export const MEDIA_MICRODRIVE_2 = "microdrive2";
+export const MEDIA_MICRODRIVES = [MEDIA_MICRODRIVE_1, MEDIA_MICRODRIVE_2] as const;
 
 export const LANGUAGE_SETTINGS = "languages";

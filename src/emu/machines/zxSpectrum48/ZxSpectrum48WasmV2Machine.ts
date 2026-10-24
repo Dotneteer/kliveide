@@ -26,6 +26,7 @@ import {
   AUDIO_SAMPLE_RATE,
   ESXDOS_ROM_FILE,
   FAST_LOAD,
+  IF1_ROM_FILE,
   REWIND_REQUESTED,
   SAVED_TO_TAPE,
   TAPE_MODE,
@@ -33,6 +34,7 @@ import {
   ULA_SNOW
 } from "../machine-props";
 import { DivMmcSupport } from "../zxSpectrum/divmmc/divMmcCoreBridge";
+import { Interface1MachineSupport } from "../zxSpectrum/if1/Interface1MachineSupport";
 import type { MessengerBase } from "@common/messaging/MessengerBase";
 import type { SdRevertResult, SdUndoEntry, SdUndoLog } from "@emu/machines/reverse/SdUndoLog";
 import { MC_MEM_SIZE, MC_SCREEN_FREQ, MC_SP48_ROM_FILE } from "@common/machines/constants";
@@ -195,6 +197,16 @@ export class ZxSpectrum48WasmV2Machine
   readonly divMmc = new DivMmcSupport("sp48", {
     getDivMmcRuntime: () => this.wasmV2Runtime,
     loadDivMmcRom: (path) => this.loadRomFromResource(path)
+  });
+  /**
+   * The ZX Interface 1 and its Microdrives (`.plans/MICRODRIVE_PLAN.md`): with `MC_INTERFACE1`,
+   * connected at setup. The Timex build of this core has none (`if1.available` is false there).
+   */
+  readonly if1 = new Interface1MachineSupport("sp48", {
+    getIf1Runtime: () => this.wasmV2Runtime,
+    getMachineProperty: (key) => this.getMachineProperty(key),
+    setMachinePropertyRaw: (key, value) => this.setPropertyRaw(key, value),
+    loadRom: (path) => this.loadRomFromResource(path)
   });
   /** The RZX session playing or recording on this machine (`.plans/RZX_PLAN.md` §4.3) */
   public rzxSession?: IRzxSession;
@@ -525,6 +537,8 @@ export class ZxSpectrum48WasmV2Machine
       // --- The interface resets with the machine: it boots esxDOS from the first fetch at $0000
       runtime.exports.sp48Reset();
     }
+    // --- The Interface 1 pages in at the first error restart; nothing to reset
+    await this.if1.connect(this.interface1Model, this.getMachineProperty(IF1_ROM_FILE) as string | undefined);
     this.syncAudioSampleRateToWasmV2(runtime);
     this.syncTargetClockMultiplierToWasmV2(runtime);
     this.syncTapeStateToWasmV2(runtime);
@@ -575,7 +589,26 @@ export class ZxSpectrum48WasmV2Machine
     const runtime = this.wasmV2Runtime;
     if (runtime != null) {
       this.syncTapePropertyToWasmV2(runtime, key, value);
+      this.if1.onProperty(key, value);
     }
+  }
+
+  /** Sets a property without reacting to it (the Interface 1's write-back bookkeeping) */
+  private setPropertyRaw(key: string, value?: unknown): void {
+    super.setMachineProperty(key, value);
+  }
+
+  /** The running Microdrive motors, bit n drive n + 1 (the controller runs a fast Microdrive unthrottled) */
+  get microdriveMotors(): number {
+    return this.if1.motors;
+  }
+
+  /**
+   * After a reverse-debugging fork (REVERSE_DEBUGGING_PLAN D13): every slot of the inserted
+   * cartridges goes to the write-back, so the `.mdr` files follow the restored ones
+   */
+  republishDisks(): boolean {
+    return this.if1.republishAll();
   }
 
   override executeMachineFrame(): FrameTerminationMode {
@@ -607,6 +640,7 @@ export class ZxSpectrum48WasmV2Machine
     this.wasmV2NormalFrames++;
     this.syncFrameCountersFromWasmV2(runtime);
     this.publishSavedTapeFromWasmV2(runtime);
+    this.if1.publish();
     // --- The DivMMC's SD card stopped the frame for a sector: the controller answers it
     this.frameCompleted = this.divMmc.syncFrameCommand() ? runtime.exports.sp48GetFrameCompleted() !== 0 : true;
     this.executionContext.lastTerminationReason = FrameTerminationMode.Normal;
@@ -1123,6 +1157,7 @@ export class ZxSpectrum48WasmV2Machine
     this.syncCpuFromWasmV2(runtime);
     this.importWasmV2BusAccess(runtime);
     this.publishSavedTapeFromWasmV2(runtime);
+    this.if1.publish();
     this.executionContext.lastTerminationReason = termination;
     return termination;
   }
@@ -1297,6 +1332,7 @@ export class ZxSpectrum48WasmV2Machine
     this.emulatedKeyStrokes.length = 0;
     // --- What the core already holds must not be published again as new
     this.wasmV2SavedTapeRevision = runtime.exports.sp48TapeGetSavedRevision();
+    this.if1.followCoreRevision();
     this.frameCompleted = runtime.exports.sp48GetFrameCompleted() !== 0;
     this.syncFrameCountersFromWasmV2(runtime);
     this.syncCpuFromWasmV2(runtime);
@@ -1317,6 +1353,7 @@ export class ZxSpectrum48WasmV2Machine
     this.invalidateWasmV2Sync();
     // --- What the core already holds must not be published again as new
     this.wasmV2SavedTapeRevision = runtime.exports.sp48TapeGetSavedRevision();
+    this.if1.afterStateLoad();
     this.syncFrameCountersFromWasmV2(runtime);
     this.syncCpuFromWasmV2(runtime);
   }

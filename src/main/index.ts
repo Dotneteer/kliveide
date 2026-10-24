@@ -62,7 +62,8 @@ import { scheduleBorielSetupOffer } from "./boriel-integration/boriel-main";
 import { getIdeApi, registerMainToIdeMessenger } from "@messaging/MainToIdeMessenger";
 import { createSettingsReader } from "@utils/SettingsReader";
 import { readAdvancedDebuggingSetting } from "@common/features/advancedDebugging";
-import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_DOCK, MEDIA_TAPE } from "@common/structs/project-const";
+import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_DOCK, MEDIA_MICRODRIVES, MEDIA_TAPE } from "@common/structs/project-const";
+import { setSelectedMicrodriveFile } from "./machine-menus/interface1-menus";
 
 import { invalidateMenuCache, setupMenu } from "./app-menu";
 import { createUiLanguageSync } from "./ui-language";
@@ -427,6 +428,13 @@ async function createAppWindows() {
       const diskBState = appSettings.media?.[MEDIA_DISK_B];
       if (diskBState?.diskFile) {
         await setSelectedDiskFile(1, diskBState.diskFile, diskBState.writeProtected ?? true);
+      }
+      // --- The Interface 1's Microdrives (MICRODRIVE_PLAN)
+      for (let drive = 0; drive < MEDIA_MICRODRIVES.length; drive++) {
+        const microdrive = appSettings.media?.[MEDIA_MICRODRIVES[drive]];
+        if (microdrive?.diskFile && fs.existsSync(microdrive.diskFile)) {
+          await setSelectedMicrodriveFile(drive, microdrive.diskFile, microdrive.writeProtected);
+        }
       }
       // --- A Timex 2068's cartridge
       const dockFile = appSettings.media?.[MEDIA_DOCK];

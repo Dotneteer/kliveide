@@ -74,6 +74,14 @@ file's `globalSettings`. The one needed so far: `{ emuOptions: { machineFavorite
 "zx80", modelId: "zx80-16k" }] } }` — the Machine type menu lists only favourites, so a recipe can
 select a ZX80 (`machine_zx80_zx80-16k`) only once it is one.
 
+**The machine a session starts on, and its media, go in through `sessionSettings`** - top-level
+entries of the seeded file, restored as a saved session is (`src/main/index.ts`): `{ machineId:
+"sp128", modelId: "sp128", config: { interface1: true }, media: { microdrive1: { diskFile, writeProtected:
+false } } }` (`recipes/microdrives.cjs`). Use it when the application menu cannot be driven: in some
+environments a scripted instance's menu stays the bare top-level bar however the window is focused,
+so `getMenuItemById` finds nothing (the Beta 128 and Microdrive IDE checks both met it). A media file
+named there must exist before launch - write it when the recipe module loads.
+
 Geometry that is not in settings is set through `app.evaluate` on the `BrowserWindow`:
 `setContentSize(1280, 820)`, `setPosition`, `focus()`, and `hide()` on the EMU window so it
 cannot overlap the IDE. Screenshots come out at the display's DPR — 2x on a retina Mac,

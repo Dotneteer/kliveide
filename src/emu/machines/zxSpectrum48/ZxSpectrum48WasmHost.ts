@@ -11,7 +11,7 @@ import { TapeDevice, TapeSaver } from "../tape/TapeDevice";
 import { SP48_MAIN_ENTRY, ZxSpectrumBase } from "../ZxSpectrumBase";
 import { sp48TapeLoadFlow } from "../tapeLoadFlows";
 import { toHexa4 } from "@renderer/appIde/services/ide-commands";
-import { MC_DIVMMC, MC_MEM_SIZE, MC_SCREEN_FREQ } from "@common/machines/constants";
+import { MC_DIVMMC, MC_INTERFACE1, MC_MEM_SIZE, MC_SCREEN_FREQ } from "@common/machines/constants";
 import { zxSpectrum48SysVars } from "./ZxSpectrum48SysVars";
 import { WasmFloatingBusDevice } from "../zxSpectrum/WasmSpectrumSupport";
 
@@ -76,6 +76,11 @@ export abstract class ZxSpectrum48WasmHost extends ZxSpectrumBase {
   /** The model has a DivMMC (`MC_DIVMMC`, DISK_IMAGES_AND_FILE_SYSTEMS_PLAN C5); it needs the user's esxDOS ROM */
   get divMmcModel(): boolean {
     return !!this.config?.[MC_DIVMMC];
+  }
+
+  /** The model has a ZX Interface 1 (`MC_INTERFACE1`, MICRODRIVE_PLAN); never with the DivMMC (Q4) */
+  get interface1Model(): boolean {
+    return !!this.config?.[MC_INTERFACE1] && !this.divMmcModel;
   }
 
   getMemoryPartition(_index: number): Uint8Array {

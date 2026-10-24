@@ -324,5 +324,7 @@ export type FrameCompletedArgs = {
   savedFileInfo?: SavedFileInfo;
   diskAChanges?: SectorChanges;
   diskBChanges?: SectorChanges;
+  /** Microdrive 1 and 2's written slots (`.plans/MICRODRIVE_PLAN.md`), keyed by slot */
+  microdriveChanges?: (SectorChanges | undefined)[];
   clockMultiplier?: number;
 };

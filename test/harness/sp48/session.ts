@@ -62,6 +62,8 @@ export type Sp48Program = {
   output: Awaited<ReturnType<Z80Assembler["compile"]>>;
 };
 
+const ROM_DIR_48 = join(__dirname, "../../../src/public/roms");
+
 class HarnessSp48Machine extends ZxSpectrum48WasmV2Machine {
   constructor(private readonly rom: Uint8Array) {
     super(undefined, {}, {
@@ -70,7 +72,9 @@ class HarnessSp48Machine extends ZxSpectrum48WasmV2Machine {
     });
   }
 
-  protected override async loadRomFromResource(): Promise<Uint8Array> {
+  protected override async loadRomFromResource(romName = ""): Promise<Uint8Array> {
+    // --- The Interface 1's shipped ROM (`if1-2`) is a file of its own
+    if (romName.startsWith("if1")) return new Uint8Array(readFileSync(join(ROM_DIR_48, `${romName}.rom`)));
     return this.rom;
   }
 }

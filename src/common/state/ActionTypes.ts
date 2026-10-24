@@ -40,6 +40,7 @@ export interface ActionTypes {
   INC_EMU_VIEW_VERSION: null;
   SET_SOUND_LEVEL: null;
   SET_CLOCK_MULTIPLIER: null;
+  SET_MICRODRIVE_MOTORS: null;
   SET_AUDIO_SAMPLE_RATE: null;
   SET_DISK_FILE: null;
   PROTECT_DISK: null;

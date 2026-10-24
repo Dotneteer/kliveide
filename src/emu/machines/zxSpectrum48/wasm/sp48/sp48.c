@@ -1280,7 +1280,9 @@ static inline int32_t sp48ProfilePhys(uint32_t address, uint32_t write) {
 #else
 #define Z80_PROFILE_FLAG_BYTES 0x10000u
 #define Z80_PROFILE_POOL_PAGES 8u
-#define Z80_PROFILE_PHYS_READ(address) ((int32_t)((address) & 0xffffu))
+/* The Interface 1's ROM, while paged, is not the 48K ROM: it maps nowhere rather than to its addresses */
+#define Z80_PROFILE_PHYS_READ(address) \
+  (zxIf1Paged != 0u && ((address) & 0xffffu) < 0x4000u ? -1 : (int32_t)((address) & 0xffffu))
 #define Z80_PROFILE_PHYS_WRITE(address) (((address) & 0xffffu) >= 0x4000u ? (int32_t)((address) & 0xffffu) : -1)
 #endif
 #define Z80_PROFILE_FRAME_TICKS() cpu.tacts

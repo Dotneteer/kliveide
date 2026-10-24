@@ -37,7 +37,8 @@ import { useBeamOverlay } from "./useBeamOverlay";
 import { beamOverlayPill } from "./beamOverlayModel";
 import { normalizeMousePointerDisplay } from "@common/settings/mouse-capture";
 import { renderMachineAudioFrame } from "./audioFrameRendering";
-import { MEDIA_DISK_A, MEDIA_DISK_B } from "@common/structs/project-const";
+import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_MICRODRIVES } from "@common/structs/project-const";
+import { MDR_SLOT_SIZE } from "@emu/machines/microdrive/mdrImage";
 import { applySectorChangesToDiskContents, DSK_WHOLE_IMAGE_KEY } from "@emu/machines/disk/disk-changes";
 import { mediaStore } from "@emu/machines/media/media-info";
 import { useT } from "@common/i18n/useT";
@@ -210,6 +211,22 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     }
   }, [mainApi]);
 
+  // --- Sends a Microdrive cartridge's written slots to the main process (`.plans/MICRODRIVE_PLAN.md`)
+  const saveMicrodriveChanges = useCallback(async (drive: number, changes: SectorChanges): Promise<void> => {
+    // --- The media store's copy is the machine's too: patched in place, it stays the same cartridge
+    const contents = mediaStore.getMedia(MEDIA_MICRODRIVES[drive])?.mediaContents;
+    if (contents instanceof Uint8Array) {
+      for (const [slot, data] of changes) {
+        if ((slot + 1) * MDR_SLOT_SIZE <= contents.length) contents.set(data, slot * MDR_SLOT_SIZE);
+      }
+    }
+    try {
+      await mainApi.saveMicrodriveChanges(drive, changes);
+    } catch (err) {
+      reportMessagingError(`Saving Microdrive changes failed: ${err.toString()}.`);
+    }
+  }, [mainApi]);
+
   // --- Sets the overlay for paused mode
   const setPauseOverlay = useCallback((): void => {
     const showInstant = getGlobalSetting(store, SETTING_EMU_SHOW_INSTANT_SCREEN);
@@ -375,6 +392,10 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
       saveDiskChanges(1, args.diskBChanges);
     }
 
+    args.microdriveChanges?.forEach((changes, drive) => {
+      if (changes) saveMicrodriveChanges(drive, changes);
+    });
+
     // --- This handler runs on every completed frame (about 50 times a second), while the clock
     // --- multiplier changes only when the user changes it. Re-dispatching the value the store
     // --- already holds would notify every subscriber in this window 50 times a second for nothing.
@@ -382,7 +403,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     if (args.clockMultiplier && args.clockMultiplier !== currentMultiplier) {
       store.dispatch(setClockMultiplierAction(args.clockMultiplier));
     }
-  }, [beeperRenderer, displayScreenData, mainApi, recordingManagerRef, saveDiskChanges, store]);
+  }, [beeperRenderer, displayScreenData, mainApi, recordingManagerRef, saveDiskChanges, saveMicrodriveChanges, store]);
 
   // --- Prepare the machine controller with event handlers
   const controller = useMachineController(

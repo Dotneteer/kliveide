@@ -3,7 +3,7 @@ import { AppServices } from "@renderer/abstractions/AppServices";
 import type { IAnyMachine } from "@renderer/abstractions/IAnyMachine";
 import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
 import { RenderingPhase } from "@renderer/abstractions/RenderingPhase";
-import { DISK_A_WP, DISK_B_WP, REWIND_REQUESTED } from "@emu/machines/machine-props";
+import { DISK_A_WP, MICRODRIVE_1_WP, MICRODRIVE_2_WP, DISK_B_WP, REWIND_REQUESTED } from "@emu/machines/machine-props";
 import { ZxSpectrumBase } from "@emu/machines/ZxSpectrumBase";
 import {
   RequestMessage,
@@ -17,7 +17,7 @@ import { Store } from "@state/redux-light";
 import { TapeDataBlock } from "@common/structs/TapeDataBlock";
 import type { ISpectrumPsgDevice } from "@emu/machines/zxSpectrum/ISpectrumPsgDevice";
 import { isZ88IdeMachine } from "@emu/machines/z88/IZ88IdeMachine";
-import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_DOCK, MEDIA_SD_CARD, MEDIA_TAPE } from "@common/structs/project-const";
+import { MEDIA_DISK_A, MEDIA_MICRODRIVES, MEDIA_DISK_B, MEDIA_DOCK, MEDIA_SD_CARD, MEDIA_TAPE } from "@common/structs/project-const";
 import { dockBankOf, parseDckFile } from "@common/timex/dckFile";
 import { isZx8081ProgramFileName, parseZxProgramFile } from "@emu/machines/zx8081/ZxPFile";
 import { ht1080zTapeErrorKey, isHt1080zTapeFor, parseHt1080zTapeFile } from "@emu/machines/ht1080z/Ht1080zTapeFile";
@@ -723,6 +723,29 @@ class EmuMessageProcessor {
       | { exportBetaDiskAsTrd?: (drive: number) => Uint8Array | undefined }
       | undefined;
     return machine?.exportBetaDiskAsTrd?.(index);
+  }
+
+  /** A Microdrive cartridge in or out (`.plans/MICRODRIVE_PLAN.md`): as a disk, through the media store */
+  async setMicrodriveFile(drive: number, file?: string, contents?: Uint8Array) {
+    const controller = this.machineService.getMachineController();
+    // --- New media act on the present (REVERSE_DEBUGGING_PLAN D12)
+    controller?.clearHistoryCursor?.();
+    await controller?.interruptRzx?.("diskChanged");
+    const mediaId = MEDIA_MICRODRIVES[drive];
+    mediaStore.addMedia({ id: mediaId, mediaFile: file, mediaContents: contents });
+    controller?.machine?.setMachineProperty(mediaId, contents ?? null);
+  }
+
+  setMicrodriveWriteProtection(drive: number, protect: boolean) {
+    mediaStore.addMedia({ id: MEDIA_MICRODRIVES[drive], writeProtected: protect });
+    this.machineService.getMachineController()?.machine?.setMachineProperty(drive ? MICRODRIVE_2_WP : MICRODRIVE_1_WP, protect);
+  }
+
+  getMicrodriveImage(drive: number): Uint8Array | undefined {
+    const machine = this.machineService.getMachineController()?.machine as
+      | { if1?: { cartridge(drive: number): Uint8Array | undefined } }
+      | undefined;
+    return machine?.if1?.cartridge(drive);
   }
 
   setDiskWriteProtection(index: number, protect: boolean) {

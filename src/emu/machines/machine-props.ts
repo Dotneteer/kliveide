@@ -13,6 +13,13 @@ export const TRDOS_ROM_FILE = "TrdosRomFile";
 export const ESXDOS_ROM_FILE = "EsxDosRomFile";
 /** A user Interface 1 ROM file's path, from the `SETTING_EMU_IF1_ROM` setting; absent means the shipped v2 ROM */
 export const IF1_ROM_FILE = "If1RomFile";
+/** Microdrive 1 / 2's write protection (`.plans/MICRODRIVE_PLAN.md` Phase 3) */
+export const MICRODRIVE_1_WP = "Microdrive1Wp";
+export const MICRODRIVE_2_WP = "Microdrive2Wp";
+/** The slots the guest wrote, per drive: `(SectorChanges | undefined)[]`, keyed by slot (543 bytes each) */
+export const MICRODRIVE_CHANGES = "MicrodriveChanges";
+/** Per drive: the guest wrote a cartridge that is not written back (it came with a Klive state) */
+export const MICRODRIVE_UNSAVED = "MicrodriveUnsaved";
 /** The TC2048 ROM file's path, from the `SETTING_EMU_TC2048_ROM` setting (`.plans/TIMEX_SCORPION_PLAN.md` P5) */
 export const TIMEX_ROM_FILE = "TimexRomFile";
 /** The TC2068's and TS2068's 24K ROM files, from `SETTING_EMU_TC2068_ROM` / `SETTING_EMU_TS2068_ROM` */

@@ -28,6 +28,7 @@ import {
   SETTING_EMU_TRDOS_ROM,
   SETTING_EMU_ESXDOS_ROM,
   SETTING_EMU_IF1_ROM,
+  SETTING_EMU_FAST_MICRODRIVE,
   SETTING_EMU_TC2048_ROM,
   SETTING_EMU_TC2068_ROM,
   SETTING_EMU_TS2068_ROM,
@@ -298,6 +299,17 @@ const settingDefinitions: Setting[] = [
       "ship it, so the DivMMC works once you name your own copy.",
     type: "string",
     defaultValue: "",
+    saveWithIde: true,
+    boundTo: "emu"
+  },
+  {
+    id: SETTING_EMU_FAST_MICRODRIVE,
+    title: "Fast Microdrive",
+    description:
+      "While a Microdrive's motor runs, the emulator runs as fast as it can. The emulated timing is " +
+      "unchanged, so the Interface 1 ROM works as at real speed.",
+    type: "boolean",
+    defaultValue: false,
     saveWithIde: true,
     boundTo: "emu"
   },

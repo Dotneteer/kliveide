@@ -780,6 +780,15 @@ class MainApiImpl {
   }
 
   /**
+   * Writes the slots the guest changed into Microdrive `drive`'s `.mdr` file (`.plans/MICRODRIVE_PLAN.md`)
+   * @param _drive Microdrive 1 (0) or 2 (1)
+   * @param _changes The changed slots, keyed by slot, 543 bytes each
+   */
+  async saveMicrodriveChanges(_drive: number, _changes: SectorChanges): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
    * Returns the list of template directories for a machine.
    * @param _machineId The machine type ID.
    */

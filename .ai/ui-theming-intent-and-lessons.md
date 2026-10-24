@@ -2762,9 +2762,14 @@ Two things follow for any later change here:
   `--bgcolor-display`, `--font-size-50`, the file or size in `--color-display-hilite`, an empty slot
   in dimmed `--color-display`, and insert/eject/replace as the 14px `@upload` / `@eject` / `@replace`
   images at the right (eject left of insert). A media card is a single line: the medium is named by
-  its icon (`cassette-tape`; `floppy` plus the drive letter; `chip` for the Timex 2068's cartridge),
-  not a caption. The letter badge is for disk drives only: a medium that is the only one of its kind
-  shows its icon alone (deriving the badge from the card's title put a stray "e" after the cartridge).
+  its icon (`cassette-tape`; `floppy` plus the drive letter; `microdrive` plus the drive number;
+  `chip` for the Timex 2068's cartridge), not a caption. The badge is for numbered or lettered drives
+  only: a medium that is the only one of its kind shows its icon alone (deriving the badge from the
+  card's title put a stray "e" after the cartridge).
+- **A drive that is working shows it in its icon, not with a new element.** A Microdrive card's icon
+  turns `--color-display-hilite` while the emulated machine runs that drive's motor, and its tooltip
+  says so. The card keeps its single line and its geometry: no spinner, no extra badge competing
+  with the write-protect lock.
 - **A file name truncates at its start, not its end** — the end and the extension are what tell
   files apart. `direction: rtl` + `text-overflow: ellipsis` on the box puts the ellipsis on the left;
   the name goes inside a `<bdi>` so its own text stays left to right (without it, trailing brackets

@@ -488,5 +488,60 @@
       "file": "The file's path",
       "size": "Its size in bytes"
     }
+  },
+  "messages.if1.selectCartridge": "Select a Microdrive cartridge",
+  "@messages.if1.selectCartridge": {
+    "context": "Title of the open-file dialog that picks an '.mdr' cartridge image for a Microdrive."
+  },
+  "messages.if1.newCartridge": "New blank Microdrive cartridge",
+  "@messages.if1.newCartridge": {
+    "context": "Title of the save-file dialog that names a new, unformatted '.mdr' cartridge image."
+  },
+  "messages.if1.saveCartridge": "Save the Microdrive cartridge",
+  "@messages.if1.saveCartridge": {
+    "context": "Title of the save-file dialog that saves the cartridge in a Microdrive as an '.mdr' file."
+  },
+  "messages.if1.readErrorTitle": "Cartridge file error",
+  "@messages.if1.readErrorTitle": {
+    "context": "Title of the error box shown when an '.mdr' file cannot be used.",
+    "maxChars": 40
+  },
+  "messages.if1.readError": "Klive cannot use {file} as a Microdrive cartridge: {error}",
+  "@messages.if1.readError": {
+    "context": "Error text when an '.mdr' cartridge file cannot be read or is not a cartridge image.",
+    "placeholders": {
+      "file": "A file path, shown verbatim",
+      "error": "The reason, shown verbatim (usually English)"
+    }
+  },
+  "messages.if1.selectRom": "Select an Interface 1 ROM (8K)",
+  "@messages.if1.selectRom": {
+    "context": "Title of the open-file dialog that picks an Interface 1 ROM to use instead of the one Klive ships."
+  },
+  "messages.if1.notRom": "Not an Interface 1 ROM",
+  "@messages.if1.notRom": {
+    "context": "Title of the error box when the picked file has the wrong size for an Interface 1 ROM.",
+    "maxChars": 40
+  },
+  "messages.if1.wrongSize": "{file} has {size} bytes; an Interface 1 ROM has 8192.",
+  "@messages.if1.wrongSize": {
+    "context": "Error text when the picked Interface 1 ROM file has the wrong size.",
+    "placeholders": {
+      "file": "A file path, shown verbatim",
+      "size": "The file's size in bytes"
+    }
+  },
+  "messages.if1.exclusiveTitle": "One interface at a time",
+  "@messages.if1.exclusiveTitle": {
+    "context": "Title of an information box: the ZX Interface 1 and the DivMMC cannot be connected together, so connecting one disconnected the other.",
+    "maxChars": 40
+  },
+  "messages.if1.divMmcDisconnected": "The DivMMC was disconnected: it and the Interface 1 both answer port $E7, so only one of them can be connected.",
+  "@messages.if1.divMmcDisconnected": {
+    "context": "Information text after the user connected the Interface 1 while the DivMMC was connected. Keep '$E7' (a port number)."
+  },
+  "messages.if1.if1Disconnected": "The Interface 1 was disconnected: it and the DivMMC both answer port $E7, so only one of them can be connected.",
+  "@messages.if1.if1Disconnected": {
+    "context": "Information text after the user connected the DivMMC while the Interface 1 was connected. Keep '$E7' (a port number)."
   }
 }

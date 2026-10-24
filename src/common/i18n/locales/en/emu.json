@@ -1018,5 +1018,25 @@
       "address": "A hexadecimal address",
       "lowest": "The lowest allowed hexadecimal address, $46E9"
     }
+  },
+  "emu.media.microdrive.title": "Microdrive {drive}",
+  "@emu.media.microdrive.title": {
+    "context": "ZX Spectrum media strip under the emulator screen: the name of a Microdrive card (the ZX Interface 1's tape-cartridge drives), shown as the tooltip and accessible name of its icon.",
+    "maxChars": 16,
+    "placeholders": {
+      "drive": "The drive number, 1 or 2 (never translated)"
+    }
+  },
+  "emu.media.microdrive.empty": "(no cartridge)",
+  "@emu.media.microdrive.empty": {
+    "context": "ZX Spectrum media strip: shown in place of the file name while a Microdrive is empty.",
+    "maxChars": 16
+  },
+  "emu.media.microdrive.running": "Microdrive {drive}: the motor is running",
+  "@emu.media.microdrive.running": {
+    "context": "ZX Spectrum media strip: tooltip of a Microdrive card's icon while the emulated machine has the drive's motor running.",
+    "placeholders": {
+      "drive": "The drive number, 1 or 2 (never translated)"
+    }
   }
 }

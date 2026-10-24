@@ -12,6 +12,35 @@ import { writeCoreBytes } from "@emu/machines/reverse/coreMemoryWrites";
 
 export type Interface1CorePrefix = "sp48" | "sp128";
 
+/** The export names without the core's prefix (`scripts/if1-exports.cjs` keeps the build side) */
+export const IF1_EXPORT_SUFFIXES = [
+  "If1SetPresent",
+  "If1GetPresent",
+  "If1RomPtr",
+  "If1RomUploaded",
+  "If1GetPaged",
+  "If1SetPaged",
+  "If1GetControl",
+  "If1GetSelect",
+  "If1GetFrozen",
+  "If1GetDriveCount",
+  "If1GetMaxSlots",
+  "If1DriveImagePtr",
+  "If1Insert",
+  "If1Eject",
+  "If1SetWriteProtected",
+  "If1GetDriveInfo",
+  "If1GetDirtyRevision",
+  "If1GetSlotDirty",
+  "If1ClearDirty",
+  "If1GetSlotSignal"
+] as const;
+
+/** The Interface 1 exports of a core with the given prefix */
+export type Interface1CoreExports<P extends string> = {
+  [K in (typeof IF1_EXPORT_SUFFIXES)[number] as `${P}${K}`]: (...args: number[]) => number;
+};
+
 export const IF1_DRIVES = 8;
 export const IF1_MAX_SLOTS = 254;
 export const IF1_SLOT_SIZE = 543;
@@ -96,6 +125,11 @@ export class Interface1Support {
     this.call("If1RomUploaded");
   }
 
+  /** The ROM in the core (8K) */
+  rom(): Uint8Array | undefined {
+    return this.bytesAt(this.call("If1RomPtr"), 0x2000);
+  }
+
   /** Connects the interface (with a ROM already uploaded) or disconnects it; the host resets after */
   setPresent(present: boolean): void {
     this.call("If1SetPresent", present ? 1 : 0);
@@ -104,6 +138,11 @@ export class Interface1Support {
   /** A snapshot's paging */
   setPaged(paged: boolean): void {
     this.call("If1SetPaged", paged ? 1 : 0);
+  }
+
+  /** The drives selected - their motors run - as one cheap read: bit n is drive n + 1 */
+  selectBits(): number {
+    return this.call("If1GetSelect") & 0xff;
   }
 
   state(): Interface1State {

@@ -1,4 +1,4 @@
-import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_DOCK, MEDIA_TAPE } from "@common/structs/project-const";
+import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_DOCK, MEDIA_MICRODRIVES, MEDIA_TAPE } from "@common/structs/project-const";
 import type { MediaState } from "@common/state/AppState";
 import { t } from "@common/i18n/i18n";
 
@@ -6,20 +6,22 @@ import { t } from "@common/i18n/i18n";
  * One card of the ZX Spectrum media strip under the emulator screen.
  */
 export type SpectrumMediaCard = {
-  /** The medium the card stands for: MEDIA_TAPE, MEDIA_DISK_A, MEDIA_DISK_B or MEDIA_DOCK */
+  /** The medium the card stands for: MEDIA_TAPE, MEDIA_DISK_A/B, MEDIA_DOCK or MEDIA_MICRODRIVE_1/2 */
   mediaId: string;
   /** The card's title, e.g. "Tape" or "Drive A" (translated) */
   title: string;
-  /** Disks only: the drive letter, which is hardware and never translated */
-  driveLetter?: "A" | "B";
+  /** Disks: the drive letter; Microdrives: the drive number - hardware, never translated */
+  driveLetter?: "A" | "B" | "1" | "2";
   /** The file name shown on the card; undefined when nothing is inserted */
   fileName?: string;
   /** The full path, for the tooltip; undefined when nothing is inserted */
   fullPath?: string;
   /** What to show when nothing is inserted */
   emptyText: string;
-  /** Disks only: whether the medium is write-protected */
+  /** Disks and Microdrives: whether the medium is write-protected */
   writeProtected?: boolean;
+  /** Microdrives only: the drive's motor is running */
+  motorOn?: boolean;
 };
 
 /**
@@ -33,7 +35,8 @@ export function mediaFileName(fullPath: string): string {
 
 /**
  * Describes the media strip's cards (their texts in the current display language; call it at render): always the tape, plus one card per floppy drive the model
- * has (the +3E's `diskSupport` config value: 0, 1 or 2), plus the cartridge on a Timex 2068.
+ * has (the +3E's `diskSupport` config value: 0, 1 or 2), plus the Interface 1's two Microdrives when
+ * it is connected, plus the cartridge on a Timex 2068.
  *
  * The media state is written by the main process (`zx-specrum-menus.ts`): the tape is a plain path
  * string ("" once ejected), a disk is `{ diskFile, writeProtected }` (`{}` once ejected).
@@ -41,7 +44,8 @@ export function mediaFileName(fullPath: string): string {
 export function describeSpectrumMedia(
   media: MediaState | undefined,
   diskDrives: number,
-  dock = false
+  dock = false,
+  microdrives?: { motors: number }
 ): SpectrumMediaCard[] {
   const cards: SpectrumMediaCard[] = [];
   const tapeFile = media?.[MEDIA_TAPE];
@@ -70,6 +74,27 @@ export function describeSpectrumMedia(
       fullPath: diskPath,
       emptyText: t("emu.media.drive.empty"),
       writeProtected: diskPath ? !!state.writeProtected : undefined
+    });
+  }
+  // --- The Interface 1's two Microdrives (`.plans/MICRODRIVE_PLAN.md`), as `{ diskFile, writeProtected }`
+  if (microdrives) {
+    MEDIA_MICRODRIVES.forEach((mediaId, i) => {
+      const state = media?.[mediaId];
+      const file =
+        state && typeof state === "object" && typeof state.diskFile === "string" && state.diskFile
+          ? (state.diskFile as string)
+          : undefined;
+      const drive = i ? "2" : "1";
+      cards.push({
+        mediaId,
+        title: t("emu.media.microdrive.title", { drive }),
+        driveLetter: drive,
+        fileName: file ? mediaFileName(file) : undefined,
+        fullPath: file,
+        emptyText: t("emu.media.microdrive.empty"),
+        writeProtected: file ? !!state.writeProtected : undefined,
+        motorOn: (microdrives.motors & (1 << i)) !== 0
+      });
     });
   }
   if (dock) {

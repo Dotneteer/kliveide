@@ -5,7 +5,8 @@ import { useMainApi } from "@renderer/core/MainApi";
 import { reportMessagingError } from "@renderer/reportError";
 import { useT } from "@common/i18n/useT";
 import { MC_DISK_SUPPORT, MI_TIMEX } from "@common/machines/constants";
-import { MEDIA_DOCK, MEDIA_TAPE } from "@common/structs/project-const";
+import { MEDIA_DOCK, MEDIA_MICRODRIVES, MEDIA_TAPE } from "@common/structs/project-const";
+import { hasInterface1 } from "@common/machines/interface1";
 import { getTimexModel } from "@emu/machines/timex/timexModels";
 import styles from "./SpectrumMediaToolArea.module.scss";
 import { describeSpectrumMedia, SpectrumMediaCard } from "./spectrumMedia";
@@ -28,7 +29,12 @@ export const SpectrumMediaToolArea = () => {
   const dock = useSelector(
     (s) => s.emulatorState?.machineId === MI_TIMEX && getTimexModel(s.emulatorState?.config).is2068
   );
-  const cards = describeSpectrumMedia(media, diskDrives as number, dock);
+  // --- The Interface 1's Microdrives, with their motors
+  const interface1 = useSelector((s) =>
+    hasInterface1(s.emulatorState?.machineId, s.emulatorState?.modelId, s.emulatorState?.config)
+  );
+  const motors = useSelector((s) => s.emulatorState?.microdriveMotors ?? 0);
+  const cards = describeSpectrumMedia(media, diskDrives as number, dock, interface1 ? { motors } : undefined);
   return (
     <div className={styles.mediaTools}>
       {cards.map((card) => (
@@ -42,7 +48,10 @@ const MediaCard = ({ card }: { card: SpectrumMediaCard }) => {
   const t = useT();
   const mainApi = useMainApi();
   const inserted = !!card.fileName;
-  const kind = card.mediaId === MEDIA_TAPE ? "tape" : card.mediaId === MEDIA_DOCK ? "cartridge" : "disk";
+  const microdrive = (MEDIA_MICRODRIVES as readonly string[]).includes(card.mediaId);
+  const kind =
+    card.mediaId === MEDIA_TAPE ? "tape" : card.mediaId === MEDIA_DOCK || microdrive ? "cartridge" : "disk";
+  const iconTitle = card.motorOn ? t("emu.media.microdrive.running", { drive: card.driveLetter ?? "" }) : card.title;
 
   const insert = async () => {
     try {
@@ -61,14 +70,22 @@ const MediaCard = ({ card }: { card: SpectrumMediaCard }) => {
 
   return (
     <div className={styles.mediaCard}>
-      <span className={styles.mediaIcon} title={card.title} aria-label={card.title}>
+      <span className={styles.mediaIcon} title={iconTitle} aria-label={iconTitle}>
         <Icon
-          iconName={card.mediaId === MEDIA_TAPE ? "cassette-tape" : card.mediaId === MEDIA_DOCK ? "chip" : "floppy"}
+          iconName={
+            card.mediaId === MEDIA_TAPE
+              ? "cassette-tape"
+              : card.mediaId === MEDIA_DOCK
+                ? "chip"
+                : microdrive
+                  ? "microdrive"
+                  : "floppy"
+          }
           width={14}
           height={14}
-          fill="--color-display"
+          fill={card.motorOn ? "--color-display-hilite" : "--color-display"}
         />
-        {/* --- The drive letter, on the disk cards only */}
+        {/* --- The drive letter (or Microdrive number), on the drive cards only */}
         {card.driveLetter && <span className={styles.driveLetter}>{card.driveLetter}</span>}
       </span>
       {/*
