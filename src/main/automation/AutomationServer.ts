@@ -431,15 +431,23 @@ export class AutomationServer {
       waitForMachine: (until, waitMs) => this.waitForMachine(connection, until, waitMs),
       publish: (event, eventParams) => this.publish(event, eventParams)
     };
+    // --- One deadline, two timers (the readiness wait's and the request's): whichever fires first,
+    // --- a request still waiting for readiness is answered "not-ready", never "timeout"
+    let waitingForReady = false;
+    const expired = () => (waitingForReady ? notReadyError() : timeoutError(request.method));
     const run = async () => {
-      if (definition.needsReady) await this.waitUntilReady(deadline);
+      if (definition.needsReady && !this.options.host.isReady()) {
+        waitingForReady = true;
+        await this.waitUntilReady(deadline);
+        waitingForReady = false;
+      }
       return await definition.handler(args, context);
     };
 
     try {
       const result = definition.queued
-        ? await this.enqueue(run, deadline, request.method)
-        : await withDeadline(run(), deadline, request.method);
+        ? await this.enqueue(run, deadline, request.method, expired)
+        : await withDeadline(run(), deadline, expired);
       logOutcome({ ok: true });
       this.respond(connection, id, result);
     } catch (err) {
@@ -454,16 +462,21 @@ export class AutomationServer {
    * Runs a task in the global queue (D14). The deadline counts from the request's arrival: a request
    * that times out while it waits never runs; one that times out while it runs releases the queue.
    */
-  private enqueue<T>(task: () => Promise<T>, deadline: number | undefined, method: string): Promise<T> {
+  private enqueue<T>(
+    task: () => Promise<T>,
+    deadline: number | undefined,
+    method: string,
+    expired: () => AutomationError
+  ): Promise<T> {
     return new Promise<T>((resolve, reject) => {
       this.queue = this.queue.then(async () => {
         if (deadline !== undefined && Date.now() >= deadline) {
-          reject(timeoutError(method));
+          reject(expired());
           return;
         }
         const work = task();
         try {
-          resolve(await withDeadline(work, deadline, method));
+          resolve(await withDeadline(work, deadline, expired));
         } catch (err) {
           reject(err);
           if (err instanceof AutomationError && err.data.kind === "timeout") {
@@ -493,7 +506,7 @@ export class AutomationServer {
       if (deadline !== undefined) {
         timer = setTimeout(() => {
           unsubscribe();
-          reject(automationError("not-ready", "Klive is still starting: the IDE is not ready yet."));
+          reject(notReadyError());
         }, Math.max(0, deadline - Date.now()));
       }
     });
@@ -650,10 +663,14 @@ function timeoutError(method: string): AutomationError {
   return automationError("timeout", `'${method}' did not finish within its timeout.`);
 }
 
-function withDeadline<T>(work: Promise<T>, deadline: number | undefined, method: string): Promise<T> {
+function notReadyError(): AutomationError {
+  return automationError("not-ready", "Klive is still starting: the IDE is not ready yet.");
+}
+
+function withDeadline<T>(work: Promise<T>, deadline: number | undefined, expired: () => AutomationError): Promise<T> {
   if (deadline === undefined) return work;
   return new Promise<T>((resolve, reject) => {
-    const timer = setTimeout(() => reject(timeoutError(method)), Math.max(0, deadline - Date.now()));
+    const timer = setTimeout(() => reject(expired()), Math.max(0, deadline - Date.now()));
     work.then(
       (value) => {
         clearTimeout(timer);

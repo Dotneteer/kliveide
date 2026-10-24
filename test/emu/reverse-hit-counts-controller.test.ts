@@ -113,8 +113,16 @@ describe("hit counts and reverse debugging", () => {
     const log = (timeline as any).hitLog as { position: TimelinePosition; key: string }[];
 
     // --- A transient keyframe exactly where a hit was logged: a navigation replay drops them every
-    // --- 2,000 records from 18,000 before its target (Timeline's defaults), so aim 18,000 past a hit
-    const target = log.filter((h) => h.key === key && h.position.sequence < present.sequence - 40_000).at(-1)!;
+    // --- 2,000 records from 18,000 before its target (Timeline's defaults), so aim 18,000 past a hit.
+    // --- That holds only if the replay's base is at least 20,000 records before the target: the
+    // --- lasting keyframes' spacing is calibrated by wall-clock time, so pick a hit no lasting
+    // --- keyframe sits near, wherever they happen to lie in this run.
+    const lasting = timeline.store.keyframes.filter((k) => !k.transient).map((k) => k.seed.position.sequence);
+    const clearOfKeyframes = (seq: number) => !lasting.some((k) => k > seq - 2_000 && k <= seq + 18_001);
+    const target = log
+      .filter((h) => h.key === key && h.position.sequence < present.sequence - 40_000 && clearOfKeyframes(h.position.sequence))
+      .at(-1)!;
+    expect(target, "a logged hit with no lasting keyframe near it").toBeDefined();
     expect(controller.navigateHistory({ toSequence: target.position.sequence + 18_001 }).moved).toBe(true);
     controller.navigateHistory("present");
     const aligned = timeline.store.keyframes.find((k) => k.transient && comparePositions(k.seed.position, target.position) === 0);
