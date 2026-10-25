@@ -2,6 +2,8 @@
 ; @summary  Permanent colours (INK, PAPER, FLASH, BRIGHT, INVERSE, OVER as statements) and BORDER.
 ; @exports  ColourPermanent, Border
 ; @requires print
+; @abi      ColourPermanent(c, a)
+; @abi      Border(a)
 ;
 ; A colour statement changes the colours every later PRINT starts from; a colour item inside a PRINT
 ; (print.kz80.asm's PrintColour) lasts to the end of that PRINT. The permanent colours are also

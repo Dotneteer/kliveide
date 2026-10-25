@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { DiagnosticBag } from "@main/kbasic/diagnostics";
 import { runFrontEnd } from "@main/kbasic/KBasicCompiler";
 import { defaultOptions, type KBasicOptions } from "@main/kbasic/options/options";
-import { runtimeBundle } from "@main/kbasic/runtime/generated/runtime-bundle";
+import { stdlibBundle } from "@main/kbasic/stdlib/generated/stdlib-bundle";
 
 import { runBasicNext } from "./next-kit";
 
@@ -91,7 +91,7 @@ describe("standard library", () => {
 
   describe("keys.bas", () => {
     it("has a scan code for every key", () => {
-      const text = runtimeBundle.stdlib.find((f) => f.name === "keys.bas")!.text;
+      const text = stdlibBundle.stdlib.find((f) => f.name === "keys.bas")!.text;
       const names = [...text.matchAll(/^CONST (KEY\w+) AS UInteger = 0([0-9A-F]{4})h$/gm)].map((m) => [m[1], Number.parseInt(m[2], 16)] as const);
       expect(names.length).toBe(40);
       const codes = new Map(names);
@@ -329,7 +329,7 @@ describe("standard library", () => {
     it("the 64-column font table is the one scripts/kbasic-font64.cjs designs", () => {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const font64 = require("../../../scripts/kbasic-font64.cjs");
-      const text = runtimeBundle.stdlib.find((f) => f.name === "print64.bas")!.text;
+      const text = stdlibBundle.stdlib.find((f) => f.name === "print64.bas")!.text;
       expect(text).toContain(font64.table(font64.pack()));
     });
 
@@ -430,7 +430,7 @@ describe("standard library", () => {
     });
 
     it("every library file compiles on its own", async () => {
-      for (const file of runtimeBundle.stdlib) {
+      for (const file of stdlibBundle.stdlib) {
         const { diagnostics } = front(`#include <${file.name}>\n`);
         expect(diagnostics.items.filter((d) => d.severity === "error"), file.name).toEqual([]);
       }

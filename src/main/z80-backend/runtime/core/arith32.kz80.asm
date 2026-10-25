@@ -1,6 +1,8 @@
 ; @module   arith32
 ; @summary  32-bit multiply, divide and modulo (Long and ULong).
 ; @exports  Mul32, DivU32, ModU32, DivI32, ModI32, AbsI32, SgnI32
+; @abi      AbsI32(dehl)
+; @abi      SgnI32(dehl)
 ;
 ; Every routine takes its left operand on the stack under the return address (pushed high word
 ; first, so the low word is on top) and its right operand in DE:HL (DE = the high word); it removes

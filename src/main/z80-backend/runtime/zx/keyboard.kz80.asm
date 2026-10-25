@@ -2,6 +2,8 @@
 ; @summary  The keyboard: INKEY$ and PAUSE, reading the key matrix directly (no ROM calls).
 ; @exports  Inkey, KeyScan, Pause
 ; @requires strcore
+; @abi      Pause(hl)
+; @abi      Inkey()
 ;
 ; The 40 keys are numbered as the matrix is read: half-row $FEFE first (CAPS SHIFT, Z, X, C, V), then
 ; $FDFE, $FBFE, ... $7FFE (SPACE, SYMBOL SHIFT, M, N, B), bit 0 first. A key gives the character

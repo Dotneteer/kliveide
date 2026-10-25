@@ -3,6 +3,9 @@
 ; @exports  FBinary, FMod, FCompare, FUnary, FFromU32, FFromI32, FToI32, FToText, FStr, FVal
 ; @exports  FText, FTextLen, FNormalise, FFromFixed, FToFixed, FStack, FFetch
 ; @requires rom, strcore
+; @abi      FUnary(aedcb, l)
+; @abi      FStr(aedcb)
+; @abi      FVal(hl, a)
 ;
 ; A Float is the ROM's five-byte number (runtime-abi.md §2.1), in registers as A = exponent, E, D, C,
 ; B = the mantissa (the sign in bit 7 of E). On the Z80 stack it takes six bytes: `push bc`,

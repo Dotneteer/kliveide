@@ -13,7 +13,7 @@ import {
   type VReg
 } from "../mir/mir";
 import { CodegenError } from "./lir";
-import { FLOAT_BINARY, FLOAT_COMPARE, FLOAT_REGS, LOAD_FLOAT_HL, PUSH_FLOAT, RUNTIME_ARGS, STORE_FLOAT_HL } from "./select0";
+import { FLOAT_BINARY, FLOAT_COMPARE, FLOAT_REGS, LOAD_FLOAT_HL, PUSH_FLOAT, STORE_FLOAT_HL } from "./select0";
 
 /**
  * Level-1 instruction selection (`.docs/kbasic-optimiser.md` §4.1, O8): expression trees instead of a
@@ -47,6 +47,8 @@ export type RunContext = {
   label: (sid: number, name: string) => void;
   local: () => string;
   rt: (name: string) => string;
+  /** The register contract of a runtime routine (select0's `contractOf`). */
+  argsOf: (name: string) => string[] | undefined;
 };
 
 /** What TreeGen writes to: lines tagged with the current statement id. */
@@ -57,6 +59,7 @@ type Sink = {
   label: (name: string) => void;
   local: () => string;
   rt: (name: string) => string;
+  argsOf: (name: string) => string[] | undefined;
   setSid: (sid: number) => void;
 };
 
@@ -67,7 +70,7 @@ const isSupportedType = (t: MType) => SUPPORTED_TYPES.has(t);
 
 /** Selects a run, or returns false (nothing emitted) when level 0 must. */
 export function selectRun(instrs: Instr[], term: Terminator | undefined, ctx: RunContext): boolean {
-  const plan = planRun(instrs, term, ctx.plainReturn);
+  const plan = planRun(instrs, term, ctx.plainReturn, ctx.argsOf);
   if (!plan) return false;
   const out: ({ kind: "line"; text: string; sid: number; site?: CallSite } | { kind: "label"; name: string; sid: number })[] = [];
   let sid = instrs[0]?.sid ?? term?.sid ?? -1;
@@ -82,6 +85,7 @@ export function selectRun(instrs: Instr[], term: Terminator | undefined, ctx: Ru
       runtime.push(name);
       return name;
     },
+    argsOf: ctx.argsOf,
     setSid: (s) => {
       sid = s;
     }
@@ -108,7 +112,12 @@ const decline = (): never => {
 };
 
 /** Checks the run's shape; gives each vreg's defining instruction and the roots in order. */
-function planRun(instrs: Instr[], term: Terminator | undefined, plainReturn: boolean): { defs: Map<number, Node>; roots: Instr[] } | undefined {
+function planRun(
+  instrs: Instr[],
+  term: Terminator | undefined,
+  plainReturn: boolean,
+  argsOf: (name: string) => string[] | undefined
+): { defs: Map<number, Node>; roots: Instr[] } | undefined {
   // --- An exit tiles when it passes its value in BC (width 16); one in A goes to level 0
   const tiledExit = term?.op === "exit" && term.width === 16;
   if (term && term.op !== "jmp" && term.op !== "br" && !tiledExit && !(term.op === "ret" && plainReturn && !term.value)) return undefined;
@@ -161,7 +170,7 @@ function planRun(instrs: Instr[], term: Terminator | undefined, plainReturn: boo
         break;
       case "rtcall": {
         if (i.dst) return undefined;
-        const regs = RUNTIME_ARGS[i.name];
+        const regs = argsOf(i.name);
         if (!regs || i.name.startsWith("inline.") || regs.length !== i.args.length || regs.includes("stack")) return undefined;
         break;
       }
@@ -598,10 +607,10 @@ class TreeGen {
   /**
    * A runtime call with at most one computed argument: that one is computed into its accumulator and
    * moved to the register the routine takes it in; the constants are loaded after it, into their
-   * own registers (the register contract of RUNTIME_ARGS never shares one).
+   * own registers (the runtime's register contract never shares one).
    */
   private runtimeCall(i: Extract<Instr, { op: "rtcall" }>): void {
-    const regs = RUNTIME_ARGS[i.name];
+    const regs = this.ctx.argsOf(i.name)!;
     const computed = i.args.map((a, k) => ({ a, k })).filter(({ a }) => this.constant(a) === undefined && a.kind === "vreg");
     if (computed.length > 1) return decline();
     for (const { a, k } of computed) {

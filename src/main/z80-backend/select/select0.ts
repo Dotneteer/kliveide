@@ -14,6 +14,7 @@ import {
   type Value,
   type VReg
 } from "../mir/mir";
+import { runtimeLibrary } from "../runtime/runtime-linker";
 import { CodegenError, instr, label, type LirLine } from "./lir";
 import { selectRun } from "./select1";
 
@@ -26,81 +27,33 @@ import { selectRun } from "./select1";
  *
  * Nothing stays on the stack across a statement entry (G4); a `stmt` marker checks it.
  */
-export function selectFunction(fn: MFunction, runtime: Set<string>, level = 0): LirLine[] {
-  return new Selector(fn, runtime, level).run();
+export function selectFunction(
+  fn: MFunction,
+  runtime: Set<string>,
+  level = 0,
+  contract: RuntimeContract = (routine) => runtimeLibrary().argumentsOf(routine)
+): LirLine[] {
+  return new Selector(fn, runtime, level, contract).run();
 }
 
-/** Which register each runtime routine takes each argument in (the modules' header comments). */
-export const RUNTIME_ARGS: Record<string, string[]> = {
-  "core.PrintU8": ["a"],
-  "core.PrintI8": ["a"],
-  "core.PrintU16": ["hl"],
-  "core.PrintI16": ["hl"],
-  "core.PrintU32": ["dehl"],
-  "core.PrintI32": ["dehl"],
-  "core.PrintFixed": ["dehl"],
-  "core.PrintStr": ["hl", "a"],
-  "core.PrintTab": ["a"],
-  "core.PrintAt": ["b", "c"],
-  "core.PrintColour": ["c", "a"],
-  "core.StrConcat": ["hl", "de", "a"],
-  "core.StrCompare": ["hl", "de", "a"],
-  "core.StrSlice": ["hl", "bc", "de", "a"],
-  "core.StrLength": ["hl", "a"],
-  "core.StrCode": ["hl", "a"],
-  "core.StrChr": ["a"],
-  "core.StrDup": ["hl"],
-  "core.StrStore": ["hl", "de"],
-  /** StrStore when the variable's address was computed before the value (a BYREF String). */
-  "core.StrStore!addressFirst": ["de", "hl"],
-  "core.Free": ["hl"],
-  "core.ArrayAlloc": ["hl"],
-  "core.ArrayFreeStrings": ["hl", "bc"],
-  "core.ArrayInit": ["hl", "de", "bc"],
-  "core.ArrayCopyStrings": ["hl", "de", "bc"],
-  /** "stack": the argument stays on the Z80 stack (the routine removes it); only leading arguments. */
-  "core.StrOverwrite": ["stack", "bc", "de", "hl", "a"],
-  "core.ArrayLBound": ["hl", "de"],
-  "core.ArrayUBound": ["hl", "de"],
-  "core.ColourPermanent": ["c", "a"],
-  "core.Border": ["a"],
-  "core.Pause": ["hl"],
-  "core.FUnary": ["aedcb", "l"],
-  "core.FStr": ["aedcb"],
-  "core.PrintFloat": ["aedcb"],
-  "core.FVal": ["hl", "a"],
-  "core.Rnd": [],
-  "core.Plot": ["c", "b"],
-  "core.TapeSave": ["hl", "a", "de", "bc"],
-  "core.TapeLoad": ["hl", "a", "de", "bc"],
-  "core.Beep": ["stack", "aedcb"],
-  "core.StopProgram": ["a"],
-  "core.CheckBreak": [],
-  "core.DrawLine": ["de", "hl"],
-  "core.Circle": ["d", "e", "c"],
-  "core.DataPutNumber": ["aedcb"],
-  "core.DataPutString": ["hl"],
-  "core.DataNumber": [],
-  "core.DataString": [],
-  "core.Usr": ["hl"],
-  "core.UsrString": ["hl", "a"],
-  "core.Randomize": ["dehl"],
-  "core.RandomizeFrames": [],
-  "core.AbsI8": ["a"],
-  "core.AbsI16": ["hl"],
-  "core.AbsI32": ["dehl"],
-  "core.SgnI8": ["a"],
-  "core.SgnI16": ["hl"],
-  "core.SgnI32": ["dehl"],
-  "core.Inkey": [],
-  /** Inline code, not a call: see INLINE. */
+/**
+ * The register contract of runtime routines: which register each argument of `core.X` (or of its
+ * `core.X!variant`) arrives in. It comes from the linked runtime packages' `@abi` header lines
+ * (`RuntimeLibrary.argumentsOf`); `"stack"`: the argument stays on the Z80 stack (the routine
+ * removes it; only leading arguments).
+ */
+export type RuntimeContract = (routine: string) => string[] | undefined;
+
+/** The `inline.X` pseudo-routines: code in place of a call (see INLINE), with their contract here. */
+export const INLINE_ARGS: Record<string, string[]> = {
   "inline.Out": ["bc", "a"],
-  "inline.In": ["bc"],
-  "core.PrintComma": [],
-  "core.PrintNewline": [],
-  "core.PrintReset": [],
-  "core.Cls": []
+  "inline.In": ["bc"]
 };
+
+/** The contract of a routine: the inline pseudo-routines', or the runtime's. */
+export function contractOf(contract: RuntimeContract, routine: string): string[] | undefined {
+  return INLINE_ARGS[routine] ?? contract(routine);
+}
 
 /** The code of the `inline.X` pseudo-routines, in place of a call (runtime-abi.md: IN/OUT inline). */
 const INLINE: Record<string, string[]> = {
@@ -123,7 +76,8 @@ class Selector {
   constructor(
     private readonly fn: MFunction,
     private readonly runtime: Set<string>,
-    private readonly level = 0
+    private readonly level = 0,
+    private readonly contract: RuntimeContract
   ) {}
 
   run(): LirLine[] {
@@ -186,7 +140,8 @@ class Selector {
       emitCall: (sid, text, site) => this.out.push(instr(text, sid, site)),
       label: (sid, name) => this.out.push(label(name, sid)),
       local: () => this.local(),
-      rt: (name) => this.rt(name)
+      rt: (name) => this.rt(name),
+      argsOf: (name) => contractOf(this.contract, name)
     });
   }
 
@@ -720,7 +675,7 @@ class Selector {
       if (dst) this.produce(dst);
       return;
     }
-    const regs = RUNTIME_ARGS[name];
+    const regs = contractOf(this.contract, name);
     if (!regs) throw new CodegenError(`No register contract for ${name}`);
     // --- "core.X!variant" is core.X with its arguments in another evaluation order
     const routine = name.split("!")[0];

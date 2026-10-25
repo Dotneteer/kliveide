@@ -3,6 +3,15 @@
 ; @exports  StrDup, StrConcat, StrStore, StrCompare, StrCopyChars
 ; @exports  StrSlice, StrLength, StrCode, StrOverwrite
 ; @requires heap, strcore
+; @abi      StrConcat(hl, de, a)
+; @abi      StrCompare(hl, de, a)
+; @abi      StrSlice(hl, bc, de, a)
+; @abi      StrLength(hl, a)
+; @abi      StrCode(hl, a)
+; @abi      StrDup(hl)
+; @abi      StrStore(hl, de)
+; @abi      StrStore!addressFirst(de, hl)
+; @abi      StrOverwrite(stack, bc, de, hl, a)
 ;
 ; The heap String itself - allocation, length, a one-character String - is `strcore`'s (the shared
 ; back end's core package), which every package may use.

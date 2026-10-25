@@ -2,6 +2,9 @@
 ; @summary  PLOT, DRAW (straight lines) and CIRCLE: Klive's own pixel routines.
 ; @exports  Plot, DrawLine, Circle
 ; @requires print, errors
+; @abi      Plot(c, b)
+; @abi      DrawLine(de, hl)
+; @abi      Circle(d, e, c)
 ;
 ; The screen is 256 x 192 pixels with (0,0) at the bottom left; all 192 rows are usable (the ROM
 ; keeps the bottom 16 for its editor). A pixel follows the current colours: OVER flips it, INVERSE

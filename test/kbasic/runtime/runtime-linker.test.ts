@@ -5,20 +5,20 @@ import { describe, expect, it } from "vitest";
 
 import { AssemblerOptions } from "@main/compiler-common/assembler-in-out";
 import { ExpressionValue } from "@main/compiler-common/expressions";
-import { runtimeBundle } from "@main/kbasic/runtime/generated/runtime-bundle";
-import {
-  resolveRuntimeModules,
-  RuntimeUnitCache,
-  runtimeInitialisers,
-  runtimeUnits
-} from "@main/kbasic/runtime/runtime-linker";
+import { kbasicPackage } from "@main/kbasic/runtime/generated/kbasic-package";
+import { RuntimeUnitCache, runtimeInitialisers, runtimeLibrary, runtimeUnits } from "@main/z80-backend/runtime/runtime-linker";
 import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
 import { Z80Assembler } from "@main/z80-compiler/z80-assembler";
 
 import { assembleRuntimeProgram } from "./runtime-kit";
 
+/** Klive BASIC's runtime: the back end's packages and its own. */
+const library = runtimeLibrary([kbasicPackage]);
+const resolveRuntimeModules = (labels: string[], modules?: string[]) => library.resolve(labels, modules);
+const allModules = library.packages.flatMap((p) => p.modules);
+
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const indexer = require("../../../scripts/kbasic-runtime-index.cjs");
+const indexer = require("../../../scripts/runtime-index.cjs");
 
 function options(defines: string[] = []): AssemblerOptions {
   const o = new AssemblerOptions();
@@ -62,7 +62,7 @@ describe("Klive BASIC runtime - linker", () => {
   });
 
   // --- banking (CODEBANK) is Next-only: it uses Z80N instructions and needs the compiler's layout
-  const classic = runtimeBundle.modules.filter((m) => m.name !== "banking");
+  const classic = allModules.filter((m) => m.name !== "banking");
   const codebank = { slot: 3, slots: 1, depth: 16, pages: [0, 30, 31] };
 
   it("assembles every module together without a clash", async () => {
@@ -73,17 +73,17 @@ describe("Klive BASIC runtime - linker", () => {
   });
 
   it("assembles every module with every option symbol defined", async () => {
-    const symbols = [...new Set(runtimeBundle.modules.flatMap((m) => m.symbols))];
+    const symbols = [...new Set(allModules.flatMap((m) => m.symbols))];
     const all = classic.flatMap((m) => m.exports);
     const { output } = await assembleRuntimeProgram({ uses: all, defines: symbols });
     expect(output.errors.filter((e) => !e.isWarning)).toEqual([]);
   });
 
   it("assembles every module, banking included, for the Next with a CODEBANK layout", async () => {
-    const all = runtimeBundle.modules.flatMap((m) => m.exports);
+    const all = allModules.flatMap((m) => m.exports);
     for (const slots of [1, 2]) {
       const { output, modules } = await assembleRuntimeProgram({ uses: all, next: true, layout: { codebank: { ...codebank, slots } } });
-      expect(modules.length).toBe(runtimeBundle.modules.length);
+      expect(modules.length).toBe(allModules.length);
       expect(output.errors.filter((e) => !e.isWarning)).toEqual([]);
     }
   });
@@ -139,11 +139,34 @@ describe("Klive BASIC runtime - bundle generator", () => {
     "    ret"
   ].join("\n");
 
-  it("the committed bundle is current", () => {
-    const { bundle, errors } = indexer.buildBundle();
+  it("the committed packages and library bundle are current", () => {
+    const { files, errors } = indexer.generated();
     expect(errors).toEqual([]);
-    const onDisk = fs.readFileSync(indexer.BUNDLE_FILE, "utf8").replace(/\r\n?/g, "\n");
-    expect(onDisk, "run `npm run kbasic:runtime`").toBe(indexer.renderBundle(bundle));
+    for (const f of files) {
+      const onDisk = fs.readFileSync(f.file, "utf8").replace(/\r\n?/g, "\n");
+      expect(onDisk, "run `npm run runtime:bundle`").toBe(f.text);
+    }
+  });
+
+  it("keeps a core module from requiring a language's module", () => {
+    const core = fixture({ "low.kz80.asm": "; @module low\n; @summary L.\n; @exports Low\n; @requires high\nLow:\n    ret" });
+    const lang = fixture({ "high.kz80.asm": "; @module high\n; @summary H.\n; @exports High\nHigh:\n    ret" });
+    const { errors } = indexer.buildPackages([
+      { name: "core", dir: core, may: ["core"] },
+      { name: "lang", dir: lang, may: ["core", "lang"] }
+    ]);
+    expect(errors.join("\n")).toMatch(/a core module may not require high, a module of package lang/);
+  });
+
+  it("reads the register contract and checks it", () => {
+    const abi = good.replace("; @symbols", "; @abi      Entry(hl, a)\n; @abi      Entry!swapped(a, hl)\n; @symbols");
+    const { bundle, errors } = indexer.buildBundle(fixture({ "good.kz80.asm": abi }), path.join(os.tmpdir(), "none"));
+    expect(errors).toEqual([]);
+    expect(bundle.modules[0].abi).toEqual({ Entry: ["hl", "a"], "Entry!swapped": ["a", "hl"] });
+    const wrong = good.replace("; @symbols", "; @abi      Ghost(q)\n; @symbols");
+    const { errors: problems } = indexer.buildBundle(fixture({ "good.kz80.asm": wrong }), path.join(os.tmpdir(), "none"));
+    expect(problems.join("\n")).toMatch(/Ghost is not exported/);
+    expect(problems.join("\n")).toMatch(/unknown register q/);
   });
 
   it("reads a module's header and normalises line ends", () => {

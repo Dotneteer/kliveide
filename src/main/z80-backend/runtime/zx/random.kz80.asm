@@ -2,6 +2,9 @@
 ; @summary  RND and RANDOMIZE: a 32-bit linear congruential generator.
 ; @exports  Rnd, Randomize, RandomizeFrames, RndSeed
 ; @requires float, arith32
+; @abi      Rnd()
+; @abi      Randomize(dehl)
+; @abi      RandomizeFrames()
 ;
 ; The state steps as state * 1664525 + 1013904223 (mod 2^32), which visits every 32-bit value once
 ; per period of 2^32 (the spec's RND). RND is the new state divided by 2^32: a Float in [0, 1).

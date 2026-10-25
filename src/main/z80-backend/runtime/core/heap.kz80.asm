@@ -4,6 +4,7 @@
 ; @requires errors
 ; @init     HeapInit
 ; @symbols  KB_CHECK_MEMORY
+; @abi      Free(hl)
 ;
 ; The heap is HeapSize bytes at HeapStart (both defined by the linker). Every block starts with a
 ; 2-byte size that includes those two bytes; a program sees the payload that follows. A free block

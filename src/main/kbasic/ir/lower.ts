@@ -1,6 +1,7 @@
 import { t as tr } from "@common/i18n/i18n";
 import type { StatementKind } from "@abstractions/CompilerInfo";
-import { runtimeBundle } from "../runtime/generated/runtime-bundle";
+import { runtimeLibrary } from "../../z80-backend/runtime/runtime-linker";
+import { kbasicPackage } from "../runtime/generated/kbasic-package";
 import type { DiagnosticBag, Span } from "../diagnostics";
 import type { AttrName } from "../syntax/ast";
 import type { AddressTarget, BoundArgument, BoundExpr, BoundProgram, BoundStatement } from "../semantics/bound";
@@ -56,7 +57,7 @@ export function lowerProgram(
 }
 
 /** The labels the runtime modules export (an asm block's `core.X` that is one links its module). */
-const RUNTIME_EXPORTS = new Set(runtimeBundle.modules.flatMap((m) => m.exports));
+const RUNTIME = runtimeLibrary([kbasicPackage]);
 
 /** The label of a BASIC label or line number. */
 export function labelName(label: LabelSymbol): string {
@@ -552,7 +553,7 @@ class Lowering {
         if (s === this.fastcallAsm) this.reloadFastcallParam();
         // --- A runtime label the block names links its module (the library's asm uses core.PrintCol...)
         for (const line of s.lines)
-          for (const m of line.text.matchAll(/\bcore\.([A-Za-z_]\w*)/g)) if (RUNTIME_EXPORTS.has(m[1])) this.rt(m[1]);
+          for (const m of line.text.matchAll(/\bcore\.([A-Za-z_]\w*)/g)) if (RUNTIME.exports(m[1])) this.rt(m[1]);
         this.emit({ op: "asm", lines: s.lines.map((l) => l.text), sid: this.sid });
         return;
       case "codebank":
@@ -1155,7 +1156,7 @@ class Lowering {
       this.module.codebankSpan ??= st.span;
       if (st.kind === "asm") {
         for (const line of st.lines)
-          for (const m of line.text.matchAll(/\bcore\.([A-Za-z_]\w*)/g)) if (RUNTIME_EXPORTS.has(m[1])) this.rt(m[1]);
+          for (const m of line.text.matchAll(/\bcore\.([A-Za-z_]\w*)/g)) if (RUNTIME.exports(m[1])) this.rt(m[1]);
         this.module.data.push({ kind: "raw", label: `__kbasm${this.labels++}`, lines: st.lines.map((l) => l.text), bank });
       } else if (st.kind === "label" && st.label.bank === bank) {
         this.module.data.push({ kind: "raw", label: labelName(st.label), lines: [], bank });

@@ -2,6 +2,10 @@
 ; @summary  8- and 16-bit multiply, divide and modulo.
 ; @exports  Mul8, DivModU8, DivModI8, Mul16, DivModU16, DivModI16
 ; @exports  AbsI8, AbsI16, SgnI8, SgnI16
+; @abi      AbsI8(a)
+; @abi      AbsI16(hl)
+; @abi      SgnI8(a)
+; @abi      SgnI16(hl)
 ;
 ; Operands follow runtime-abi.md §7: 8-bit in A and H, 16-bit in HL and DE. A product keeps its low
 ; 8 or 16 bits, the same for signed and unsigned operands. Signed division truncates towards zero

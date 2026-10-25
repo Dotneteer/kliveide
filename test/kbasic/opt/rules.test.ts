@@ -1,3 +1,5 @@
+import { kbasicPackage } from "@main/kbasic/runtime/generated/kbasic-package";
+import { runtimeLibrary } from "@main/z80-backend/runtime/runtime-linker";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -129,7 +131,8 @@ describe("the rules on the corpus", () => {
       const mir = lowerProgram(front.bound.program, front.bound.globals, diagnostics, (f) => isLibraryPath(front.sources.get(f).name));
       expect(verifyModule(mir, 1), file).toEqual([]);
       const runtime = new Set(mir.runtime);
-      const functions = mir.functions.map((fn) => selectFunction(fn, runtime, 1));
+      const library = runtimeLibrary([kbasicPackage]);
+      const functions = mir.functions.map((fn) => selectFunction(fn, runtime, 1, (r) => library.argumentsOf(r)));
       optimizeLir(mir, functions, { level: 1, target: "z80", onFire: (r) => fired.set(r, (fired.get(r) ?? 0) + 1) });
     }
     expect(RULES.map((r) => r.name).filter((r) => !fired.has(r))).toEqual([]);

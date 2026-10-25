@@ -2,6 +2,7 @@
 ; @summary  Heap Strings: allocation, length and a one-character String, for every package.
 ; @exports  StrAlloc, StrLen, StrChr
 ; @requires heap
+; @abi      StrChr(a)
 ;
 ; A String value is a pointer to a heap block [length:2][characters], or 0 for the empty string
 ; (runtime-abi.md §2.2). These are the routines any runtime package needs to make or read one - the

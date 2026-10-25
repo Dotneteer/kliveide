@@ -21,7 +21,8 @@ import { optimizeMir } from "../z80-backend/opt/mir-passes";
 import { moduleSemanticProblems, verifyModule } from "../z80-backend/opt/verify";
 import type { MModule } from "../z80-backend/mir/mir";
 import type { KBasicOptions } from "./options/options";
-import { prologueSource, resolveRuntimeModules, runtimeInitialisers, runtimeUnits } from "./runtime/runtime-linker";
+import { prologueSource, runtimeInitialisers, runtimeLibrary, runtimeUnits } from "../z80-backend/runtime/runtime-linker";
+import { kbasicPackage } from "./runtime/generated/kbasic-package";
 import type { BindResult } from "./semantics/binder";
 import { isLibraryPath } from "./stdlib";
 import type { SourceSet } from "./syntax/source";
@@ -80,7 +81,9 @@ export async function generateProgram(
   }
   let functions: LirLine[][] = [];
   try {
-    for (const fn of mir.functions) functions.push(fn.removed ? [] : selectFunction(fn, runtime, level));
+    // --- The register contract of the runtime routines: the linked packages' `@abi` lines
+    const library = runtimeLibrary([kbasicPackage]);
+    for (const fn of mir.functions) functions.push(fn.removed ? [] : selectFunction(fn, runtime, level, (r) => library.argumentsOf(r)));
     functions = optimizeLir(mir, functions, { level, target: options.target === "next" ? "z80n" : "z80" });
   } catch (e) {
     if (!(e instanceof CodegenError)) throw e;
@@ -106,7 +109,7 @@ export async function generateProgram(
   }
 
   // --- The Next's start stub reports errors through the errors module, which prints them
-  const modules = resolveRuntimeModules(runtime, options.target === "next" ? ["program", "errors", "print"] : ["program"]);
+  const modules = runtimeLibrary([kbasicPackage]).resolve(runtime, options.target === "next" ? ["program", "errors", "print"] : ["program"]);
   // --- Far memory (farmem.bas) links the far-call runtime without a bank of the program's own: it
   // --- still needs the window and the page table, and the Next
   if (!banking && modules.some((m) => m.name === "banking")) {

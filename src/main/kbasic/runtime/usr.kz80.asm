@@ -2,6 +2,8 @@
 ; @summary  USR: calling machine code, and the UDG address of a character.
 ; @exports  Usr, UsrString
 ; @requires strings
+; @abi      Usr(hl)
+; @abi      UsrString(hl, a)
 
 ; ------------------------------------------------------------------------------------------------
 ; USR address: calls the machine code at HL; its BC is the result. IX is kept for the caller.

@@ -2,6 +2,7 @@
 ; @summary  PRINT of a Float: the ROM's text of the number, through PrintChar.
 ; @exports  PrintFloat
 ; @requires float, print
+; @abi      PrintFloat(aedcb)
 ;
 ; Apart from the float module, so a program that never prints a Float links no printing with its
 ; Floats, and one that prints no Float links no Float arithmetic with its printing.

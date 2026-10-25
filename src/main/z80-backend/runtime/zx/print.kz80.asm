@@ -6,6 +6,21 @@
 ; @exports  PrintApplyAttr, PrintSave
 ; @requires heap, errors, rom
 ; @init     PrintInit
+; @abi      PrintU8(a)
+; @abi      PrintI8(a)
+; @abi      PrintU16(hl)
+; @abi      PrintI16(hl)
+; @abi      PrintU32(dehl)
+; @abi      PrintI32(dehl)
+; @abi      PrintFixed(dehl)
+; @abi      PrintStr(hl, a)
+; @abi      PrintTab(a)
+; @abi      PrintAt(b, c)
+; @abi      PrintColour(c, a)
+; @abi      PrintComma()
+; @abi      PrintNewline()
+; @abi      PrintReset()
+; @abi      Cls()
 ;
 ; Klive's own printing (plan §6.3): no ROM calls, all 24 rows. The cursor is PrintRow (0-24) and
 ; PrintCol (0-32; 32 means the line is full and the next character goes to the next line, so 32

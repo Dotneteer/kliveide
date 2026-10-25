@@ -2,6 +2,7 @@
 ; @summary  BEEP: Klive's own beeper loop, timed from the duration and pitch by the ROM calculator.
 ; @exports  Beep
 ; @requires float, rom, errors
+; @abi      Beep(stack, aedcb)
 ;
 ; BEEP duration, pitch: duration in seconds, pitch in semitones from middle C (261.63 Hz). The
 ; calculator turns them into the number of speaker toggles (2 * duration * frequency) and the delay

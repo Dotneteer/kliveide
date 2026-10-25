@@ -2,6 +2,7 @@
 ; @summary  Runtime error reports: the program stops with the ROM's familiar report.
 ; @exports  RaiseError, ReportError, CheckBreak
 ; @requires program, rom
+; @abi      CheckBreak()
 ;
 ; The report codes are the ROM's ERR_NR values, one less than the report's number or letter:
 ; 2 Subscript wrong, 3 Out of memory, 4 Out of screen, 5 Number too big, 9 Invalid argument,

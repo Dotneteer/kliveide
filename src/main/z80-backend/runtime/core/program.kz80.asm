@@ -2,6 +2,7 @@
 ; @summary  Program start-up state and END: what the prologue saves and END restores.
 ; @exports  End, EndHook, StopProgram, ProgramSP, SavedIY, SavedIX, SavedHL2
 ; @symbols  KB_HEADERLESS
+; @abi      StopProgram(a)
 ;
 ; The prologue the compiler emits (runtime-linker.ts, prologueSource) stores the caller's IY, IX,
 ; HL' and SP here, sets IY to $5C3A, calls the linked modules' initialisers and runs the main
