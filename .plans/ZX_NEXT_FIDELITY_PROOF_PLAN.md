@@ -840,6 +840,78 @@ on both machines; every probe now differs from the core only in F3-1's `$81` bit
 frame interrupt is taken during the counting loop, is 4 T later on the core. 48K and +3 timing match.
 128K differs from both in its 36-cycle pulse and in contending odd banks.
 
+**Fixed (2026-10-25, third batch): the remaining program-observable differences.** The 71 programs
+that still differed after run 3 were rerun on each fix (`still-1`: 46 of them already matched after
+the first two fixes). Each fix was checked against the simulated core's recorded results. Where the
+core was not rerun, Klive was replayed alone and compared with the core's stored results.
+
+| Finding | Fix | Evidence |
+|---|---|---|
+| **VT-002: the line counter after a timing change.** The core's `cvc` is a counter. It runs on across the frame end from the old frame's count and wraps only when it *equals* the new `c_max_vc`; it is reloaded at the display's first line (`zxula_timing.vhd` ~456-470). Klive computed it from the new timing at once. | Before the frame's reload, `$1E`/`$1F` (and the Copper's line) continue the previous frame's last value (`zxnext-copper.c`). | `fix-vt2`: 7 of 7 timings |
+| **F3-9: when the CPU takes the frame interrupt.** The T80 registers `INT_n` into `INT_s` one CPU clock before it decides, and `pulse_int_n` falls mid-HC one HC after the compare tact. So the CPU sees the pulse 2 HC plus one T before an instruction's end. Klive sampled 1 HC before it. | `zxnextCpuIntSampleTact` (`zxnext-cpu.c`) for the ULA and line pulses. | `probe-int`: 32 probes (group I, 8 NOP phases × 48K/128K/+3/Pentagon); Klive's stops equal the core's in all 32 |
+| **Pentagon: a spurious interrupt after a switch to Pentagon timing.** Klive let the Pentagon pulse "wrap in" from a previous frame that ran another timing and had no pulse at its end. | The pulse wraps in only from a frame that ran it (`zxnextUlaPulseActiveAt`, previous frame's start and length recorded at its end). | `probe-int` (the frame count), MEM-023 Pentagon |
+| **F3-5: CPU speed switches.** The core latches `cpu_speed` at the next idle CPU edge, one T-state on the old clock, and the `BUFGMUX_1`s hand over on the new clock's next edge, strictly after. Klive changed the speed at the write but its clock scale only at the next instruction. | A pending change takes one T at the old speed, then pauses to the new clock's next edge (`zxnextCpuTactPlusN`). | 18 speed probes (group S), every phase, 3.5 ↔ 28 MHz; the 28 NEXTREG probes (group N) at all four speeds |
+| **Floating bus: one HC early.** `floating_bus_r` loads on the *falling* CLK_7 edge (`zxula.vhd` ~308), so at a read's sample point it already holds the next tact's byte. | `zxnextUlaFloatingBusAtRead` reads tact + 1. | PORT-006 48K/128K and PORT-008: all 6,000 samples |
+| **DMA prescaler.** A prescaled byte holds the bus for ⌈32·p/scale⌉ + 3 clocks; Klive used + 2, and checked the timer one clock late in `WRITE_4`. | `zxnext-dma.c`. | DMA-009 at 3.5 and 28 MHz |
+| **DMA burst mode.** Per byte the core holds the CPU for 10 clocks: `WAITING_ACK`, 6 for the byte, the first `WAITING_CYCLES` clock (which raises `BUSRQ`) and the T80's 2. It re-requests so that the grant comes at an M-cycle end at or after READ_1 + exitClock + 4. A `BUSAK`/`BUSRQ` monitor on the core gave these numbers. | `zxnext-dma.c`. | DMA-009 burst, DMA-010 |
+| **NMI break-in into a DMA transfer.** `START_DMA` raises `BUSRQ` only on its own clock, and the T80 needs 2 more (the CPU is held for 3). The DivMMC releases its NMI hold at the `RETN`, so the delay ends with the `RETN`, not at the next opcode fetch. | `zxnext-dma.c`; `zxnextNmiAfterHoldRelease` (`zxnext-nmi.c`). | INT-026 (both) |
+| **A late bus request is granted after the next M1.** An enable written by the CPU (`BUSRQ` in the `OUT`'s T3) and the end of a DMA delay are seen during the next instruction's first M-cycle. Klive grants between instructions, so an instruction that is a single M-cycle runs first. | `dmaGrantAfterNextM1`, `zxnextCpuNextIsOneMCycle`. An enable from outside the CPU still starts at once. | INT-026 without break-in (`$C2` = $51) |
+
+- *Re-pinned:* `wasm-next-cpu`'s 28 MHz step test (the speed switch reaches the clock one T after
+  the write: `currentFrameTact` 37/41/42, was 42/46/47). `dma.test.ts`'s `timeEnable` measures past a
+  second `NOP`, as the transfer now starts after the instruction following the enable.
+- *Checked:* Next hardware and WASM tests 1,742/1,742; `npm run test:fast` 26,149 passed, 0 failed;
+  F1 **PASS** 115,854/115,854 (27.9 s); no new type errors.
+
+**Open after the third batch (recorded, not fixed):**
+- **DMA 2-clock cycle timing (PORT-002 ×2).** With the timing byte at 2 clocks, the core issues the
+  SRAM request in the read strobe's last 28 MHz clock. The data arrives after the DMA has latched, so
+  each byte written is the previous one (traced on the core; the testbench's SRAM controller has the
+  board's latency). The zxnext documentation's DMA example uses this timing. **The board should settle
+  it** before Klive copies the effect.
+- **UART-002, one point.** At 3.5 MHz the core's TX-empty threshold is 1 T earlier than Klive's at
+  prescaler 800, while at 7 MHz (UART-004) it equals Klive's. `IORQ`/`WR`/`RD` were measured at T2
+  start + 1 clock at both speeds; no single write or read offset satisfies both.
+- **COP-015:** a fixed 1 HC (4 T at 28 MHz) with the Copper writing every other tick; the CPU never
+  waits there, and the `$1F` sample point is not the cause.
+- **Layers T7: a testbench artefact.** The program writes `$4A` in a loop after the marker, and the
+  testbench reads the registers back with the core still running.
+- **F3-1** (`$81` bit 7) and the testbench limitations (SD card, RTC, expansion bus) are unchanged.
+
+#### F3 measured run 4 specification (recorded 2026-10-25 19:58, before the run)
+
+- *Programs:* the same 1,070 (`full-2/programs.jsonl`); **895 simulator runs, 1,232 frames**, in one run.
+- *Expected time:* run 3 measured 4.12 s per run at 10 jobs (774 runs in 3,192 s): **≈ 3,690 s (62 min)**,
+  limit 4,059 s. The 5-minute check uses `--expect 3690`.
+- *Pass criterion:* compared with run 3, no program gains a difference.
+
+**Measured run 4 (19:58–21:00) — complete, PASS against its criterion.**
+- *Time:* 895 of 895 runs in 3,674 s against 3,690 s expected; progress reported every 5 minutes.
+- *Results:* `test/vhdl/f3/results/full-4`. **875 of 893** compared programs differ only in `$81` bit 7
+  (run 3: 822; run 2: 728). **No program gained a difference**; 53 more lost theirs.
+- *Two more fixes after run 4*, then a targeted rerun (`final-1`: 68 runs, every program on the
+  DMA, NMI and interrupt paths plus the 18 left; 237 s against 290 s expected):
+  - **DMA-009 at 28 MHz:** the ULA interrupt status (`$20` bit 6, `$C8` bit 0) did not latch when the
+    8-HC pulse started and ended inside one DMA hold (a prescaled byte is 3,200 clocks). The capture
+    sampled only the tact after the hold (`zxnextCpuCaptureVideoInterruptsOver`).
+  - **INT-026 with break-in:** the T80 decides about NMI and INT at the `T_Res` where it takes the bus
+    back, so an NMI that arrived during the transfer is taken at once (return $8051). Klive sampled
+    before running the DMA; it now samples again after a hold.
+  - *Result:* both match. None of the other 52 programs changed.
+- *Checked after the last fixes:* Next hardware and WASM tests 1,742/1,742; `npm run test:fast`
+  26,149 passed, 0 failed; F1 **PASS** 115,854/115,854 (29.4 s); no new type errors.
+
+**Final state: 877 of 893 programs end in the same state as the simulated FPGA core**, except F3-1's `$81`
+bit 7. The 16 others:
+
+| Programs | Cause | Status |
+|---|---|---|
+| 9 SD card, 1 RTC (I2C-003) | testbench limitation: no card, no DS1307 | excluded |
+| 1 layers T7 | testbench artefact: the CPU runs on during the readback | excluded |
+| 2 PORT-002 | DMA 2-clock cycle: the core writes the previous byte (SRAM request too late) | **needs the board** |
+| 1 UART-002 | a sub-T TX-empty threshold at 3.5 MHz | open |
+| 1 COP-015 | 1 HC at 28 MHz with the Copper writing | open |
+
 F3-2 and F3-8 are both seen through an `IN`. Which side's `IN` samples when is part of the question.
 The probes measure what a program sees, so both stand as program-observable findings.
 

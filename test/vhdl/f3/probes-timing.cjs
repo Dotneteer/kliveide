@@ -28,6 +28,12 @@ function delay(t) {
   return [...extra, ...Array((t - extraT) / 4).fill("nop")];
 }
 
+/** A long exact delay: LD DE,n / DEC DE / LD A,D / OR E / JR NZ (26 T a pass, 21 the last), then delay() */
+function delayLong(t) {
+  const n = Math.floor((t - 9) / 26);
+  return [`ld de,${n}`, "dec de", "ld a,d", "or e", "jr nz,$-3", ...delay(t - (26 * n + 5))];
+}
+
 const programs = [];
 const add = (group, name, lines, extraSegments = "") =>
   programs.push({
@@ -82,6 +88,22 @@ for (let k = 0; k < 24; k++) {
   add("T", `CTC counter read at +${k} T`, [
     "nextreg $07,0", "ld bc,$183b", "ld a,$05", "out (c),a", "ld a,10", "out (c),a", ...delay(100 + k), "in a,(c)", "ld (Result),a"
   ], "Result: .defb 0");
+}
+
+// ---- I: when the CPU takes the frame interrupt. HALT syncs to frame 1's interrupt; a delay of one
+// ---- frame less 300 T plus k then runs NOPs, so frame 2's interrupt meets a NOP boundary that moves
+// ---- 1 T per program, and the handler's marker time gives the sampling threshold to the T-state.
+for (const [name, nr03, frameT] of [["+3", 0xb0, 311 * 228], ["128K", 0xa0, 311 * 228], ["48K", 0x90, 312 * 224], ["Pentagon", 0xc0, 320 * 224]]) {
+  for (let k = 0; k < 8; k++) {
+    add("I", `${name} frame interrupt taken, NOP phase ${k}`, [
+      `nextreg $03,${nr03}`, "ld a,$b0", "ld i,a", "im 2", "ld hl,$b000", "ld (hl),$b2", "ld de,$b001", "ld bc,$0100", "ldir",
+      "ld a,$c3", "ld ($b2b2),a", "ld hl,Handler", "ld ($b2b3),hl", "ei", "halt", "xor a", ...delayLong(frameT - 300 + k),
+      ...Array(200).fill("nop"), "jr $"
+    ], [
+      "Handler: push af", "        ld a,(Ticks)", "        inc a", "        ld (Ticks),a", "        cp 2", "        jr z,Done",
+      "        pop af", "        ei", "        reti", "Done:   nextreg $7f,$a5", "Stop2:  jr Stop2", "Ticks:  .defb 0"
+    ].join("\n"));
+  }
 }
 
 const only = process.argv[2];

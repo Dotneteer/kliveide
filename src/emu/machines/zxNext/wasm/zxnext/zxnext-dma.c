@@ -86,6 +86,13 @@ static uint64_t dmaReadyAt;
 // --- Bus.
 static uint8_t dmaBusRequested;
 static uint8_t dmaBusAcknowledged;
+/* A bus request the T80 sees only during the next instruction's first M-cycle: an enable from a CPU write
+   (BUSRQ comes in the I/O cycle's T3, too late for that M-cycle) or the end of a DMA delay (the NMI's
+   RETN). The grant comes at the end of that M1 (F3, INT-026 on the simulated core); Klive grants between
+   instructions, so an instruction that is all M1 runs first, and a longer one after the transfer. An
+   enable from outside the CPU (the host, a test harness) starts at once. */
+static uint8_t dmaGrantAfterNextM1;
+static uint8_t dmaWasDelayed;
 
 // --- Register sequencers.
 static uint8_t dmaWrSeq;
@@ -99,6 +106,8 @@ void zxnextDmaReset(void) {
   dmaCounter = 0;
   dmaBusRequested = 0;
   dmaBusAcknowledged = 0;
+  dmaGrantAfterNextM1 = 0;
+  dmaWasDelayed = 0;
   dmaWrSeq = DMA_WR_IDLE;
   dmaPortATiming = 1;
   dmaPortBTiming = 1;
@@ -198,6 +207,7 @@ static void zxnextDmaCommand(uint8_t d) {
       break;
     case 0x87u:
       dmaSeq = DMA_SEQ_START;
+      dmaGrantAfterNextM1 = zxnextCpuInInstruction;
       break;
     case 0x83u:
       zxnextDmaGoIdle();
@@ -419,18 +429,23 @@ static uint32_t zxnextDmaTransferByte(void) {
   dmaDest = zxnextDmaStepAddress(dmaDest, srcIsA ? dmaPortBAddrMode : dmaPortAAddrMode);
   dmaAtLeastOne = 1;
 
-  // --- TRANSFERING_WRITE_4: the timer has counted `clocks - 1` CPU clocks in 28 MHz units
+  // --- TRANSFERING_WRITE_4, the byte's last clock (`clocks - 1`, READ_1 being clock 0). READ_1 zeroes
+  // --- the timer and every later clock adds `scale`, so a clock j sees (j - 1) x scale (dma.vhd ~245-255)
   const uint32_t more = dmaCounter < dmaBlockLength;
-  if (dmaPrescaler > 0u && dmaPrescaler > (((clocks - 1u) * scale) >> 5)) {
-    // --- WAITING_CYCLES until timer / 32 >= prescaler
-    const uint32_t exitClock = (32u * dmaPrescaler + scale - 1u) / scale;
+  if (dmaPrescaler > 0u && dmaPrescaler > (((clocks - 2u) * scale) >> 5)) {
+    // --- WAITING_CYCLES until timer / 32 >= prescaler: the first clock j with (j - 1) x scale >= 32 x
+    // --- prescaler leaves it (measured on the simulated core: 403 clocks a byte for prescaler 100, F3)
+    const uint32_t exitClock = (32u * dmaPrescaler + scale - 1u) / scale + 1u;
     if (dmaTransferMode == DMA_MODE_BURST) {
-      // --- the bus is free while it waits; the byte's clocks are charged after this step
+      // --- the bus goes back at the end of the first waiting clock: the T80 samples BUSRQ and drops BUSAK
+      // --- two clocks later (t80n.vhd ~1640-1730), so the CPU stays held for those three. START_DMA lowers BUSRQ on
+      // --- the clock after the exit; the T80 registers it on the next and grants at an M-cycle end after
+      // --- that: from READ_1 + exitClock + 4 (measured on the simulated core, F3)
       dmaSeq = DMA_SEQ_BURST_WAIT;
       dmaBusRequested = 0;
       dmaBusAcknowledged = 0;
-      dmaReadyAt = zxnextDmaSysTact() + (uint64_t)(exitClock + 1u) * scale;
-      return clocks * scale;
+      dmaReadyAt = zxnextDmaSysTact() + (uint64_t)(exitClock + 4u) * scale;
+      return (clocks + 3u) * scale;
     }
     // --- held: WAITING_CYCLES, then WAITING_ACK (more) or FINISH_DMA
     const uint32_t held = exitClock + 2u;
@@ -439,9 +454,12 @@ static uint32_t zxnextDmaTransferByte(void) {
   }
   if (more) {
     if (zxnextDmaDelayed()) {
+      /* START_DMA raises BUSRQ at the end of its clock; the T80 samples it and drops BUSAK two clocks
+         later, so the CPU stays held for those three (as for a burst release; INT-026 on the simulated core) */
       dmaSeq = DMA_SEQ_START;
       dmaBusRequested = 0;
       dmaBusAcknowledged = 0;
+      return (clocks + 3u) * scale;
     }
     return clocks * scale;
   }
@@ -459,6 +477,14 @@ static uint32_t zxnextDmaStep(void) {
       if (zxnextDmaDelayed()) {
         dmaBusRequested = 0;
         dmaBusAcknowledged = 0;
+        dmaWasDelayed = 1u;
+        return 0;
+      }
+      if (dmaWasDelayed) {
+        /* the delay ended with the instruction before: START_DMA requests now, seen in the next M1 */
+        dmaWasDelayed = 0u;
+        dmaGrantAfterNextM1 = 1u;
+        dmaBusRequested = 1;
         return 0;
       }
       if (!dmaBusAcknowledged) {

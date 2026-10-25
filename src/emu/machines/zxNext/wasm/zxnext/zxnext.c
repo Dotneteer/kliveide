@@ -22,6 +22,10 @@ static uint32_t zxnextTimingDisplayYStart = 64u;
 static uint32_t zxnextTimingIntStart = 0x252u;
 /* INT pulse length in CPU cycles (zxnext.vhd ~1968-1990): 32 for 48K and +3, 36 for 128K and Pentagon */
 static uint32_t zxnextTimingIntPulseCycles = 32u;
+/* The previous frame's interrupt start and length in tacts, recorded at its end; 0 before the first
+   frame end (a pulse can wrap into a frame only from a frame that had one) */
+static uint32_t zxnextPrevFrameIntStart;
+static uint32_t zxnextPrevFrameTacts;
 /* The memory contention pattern of the raster (NextComposedScreenDevice.contentionTiming): 0 none, 1 48K, 2 128K, 3 +3 */
 static uint32_t zxnextTimingContention = 3u;
 #define ZXNEXT_RENDERING_TACTS_IN_FRAME (zxnextTimingTotalHc * zxnextTimingTotalVc)
@@ -162,6 +166,11 @@ static uint32_t contentionDelaySincePause;
 static uint8_t cpuProgrammedSpeed;
 static uint8_t cpuEffectiveSpeed;
 static uint32_t cpuTactScale;
+/* a CPU speed change waiting to reach the clock (zxnext-cpu.c zxnextCpuTactPlusN, F3-5) */
+static uint8_t zxnextCpuScalePending;
+static uint8_t zxnextCpuPendingScale;
+/* 1 while the CPU executes an instruction (zxnextCpuExecuteInstruction): a port write made then is the CPU's */
+static uint8_t zxnextCpuInInstruction;
 
 /*
  * The INT pulse length in HC ticks. zxnext.vhd ~1968-2000 counts the pulse on the CPU clock, so it lasts

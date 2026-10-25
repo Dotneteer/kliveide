@@ -99,6 +99,19 @@ static void zxnextNmiUpdateSources(void) {
   zxnextNmiActivateIfIdle();
 }
 
+/* S_NMI_HOLD ends as soon as the source's hold drops (zxnext.vhd ~2091-2096): a RETN releases the DivMMC
+   and Multiface holds, so the state passes through S_NMI_END and nmi_activated falls with the RETN, not at
+   the next opcode fetch - a DMA delayed by the NMI ($CC bit 7) resumes before the next instruction (F3,
+   INT-026 on the simulated core) */
+static void zxnextNmiAfterHoldRelease(void) {
+  if (nmiState != ZXNEXT_NMI_HOLD) return;
+  uint32_t hold = nmiSourceMf ? zxnextMultifaceNmiHold() : nmiSourceDivMmc ? zxDivMmcGetNmiHold() : 0u;
+  if (hold) return;
+  nmiSourceMf = 0u;
+  nmiSourceDivMmc = 0u;
+  nmiState = ZXNEXT_NMI_IDLE;
+}
+
 static void zxnextNmiBeforeOpcodeFetch(uint32_t pc) {
   if (zxnextNmiAcceptCause()) zxnextNmiUpdateSources();
   switch (nmiState) {

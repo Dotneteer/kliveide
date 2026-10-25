@@ -106,7 +106,7 @@ static uint32_t zxnextPortsRead(uint32_t address) {
     lastPortValue = zxnextPortsGroupEnabled(2, 0) && zxnextNextRegGetMachineTiming() == 3u ? zxnextPsgReadRegisterValue() : 0xffu;
   } else if ((normalized & 0xf003u) == 0x0001u && zxnextNextRegGetMachineTiming() == 3u && zxnextPortsGroupEnabled(0, 4)) {
     /* ~2545, 4497: the +3 floating bus; $FF while $7FFD is locked */
-    lastPortValue = zxnextMemoryPagingEnabled() ? zxnextUlaFloatingBus(currentFrameTact) : 0xffu;
+    lastPortValue = zxnextMemoryPagingEnabled() ? zxnextUlaFloatingBusAtRead() : 0xffu;
   } else if ((normalized & 0x00ffu) == 0x00ffu) {
     /* ~2769: the Timex register with $08 bit 2 and the port enabled; else the ULA floating bus in 48K
        and 128K timing (~4493), $FF otherwise */
@@ -115,7 +115,7 @@ static uint32_t zxnextPortsRead(uint32_t address) {
       lastPortValue = (portTimexValue & 0xbfu) | (ulaInterruptDisabled ? 0x40u : 0x00u);
     } else {
       uint32_t t = zxnextNextRegGetMachineTiming();
-      lastPortValue = (t == 1u || t == 2u) ? zxnextUlaFloatingBus(currentFrameTact) : 0xffu;
+      lastPortValue = (t == 1u || t == 2u) ? zxnextUlaFloatingBusAtRead() : 0xffu;
     }
   } else if ((normalized & 0x0001u) == 0) {
     lastPortValue = zxnextExpansionApplyToPortFeRead(normalized, zxnextUlaReadPortFe(normalized));
