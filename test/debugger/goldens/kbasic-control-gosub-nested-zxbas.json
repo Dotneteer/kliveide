@@ -1,0 +1,405 @@
+{
+ "language": "basic",
+ "files": [
+  {
+   "index": 0,
+   "filename": "/test/main.bas"
+  }
+ ],
+ "statements": [
+  {
+   "index": 0,
+   "fileIndex": 0,
+   "startLine": 3,
+   "startColumn": 0,
+   "endLine": 3,
+   "endColumn": 10,
+   "startAddress": 32795,
+   "endAddress": 32803,
+   "kind": "other",
+   "callableIndex": 0
+  },
+  {
+   "index": 1,
+   "fileIndex": 0,
+   "startLine": 4,
+   "startColumn": 0,
+   "endLine": 4,
+   "endColumn": 11,
+   "startAddress": 32803,
+   "endAddress": 32806,
+   "kind": "call",
+   "callableIndex": 0
+  },
+  {
+   "index": 2,
+   "fileIndex": 0,
+   "startLine": 5,
+   "startColumn": 0,
+   "endLine": 5,
+   "endColumn": 9,
+   "startAddress": 32806,
+   "endAddress": 32817,
+   "kind": "other",
+   "callableIndex": 0
+  },
+  {
+   "index": 3,
+   "fileIndex": 0,
+   "startLine": 6,
+   "startColumn": 0,
+   "endLine": 6,
+   "endColumn": 3,
+   "startAddress": 32817,
+   "endAddress": 32823,
+   "kind": "return",
+   "callableIndex": 0
+  },
+  {
+   "index": 4,
+   "fileIndex": 0,
+   "startLine": 8,
+   "startColumn": 2,
+   "endLine": 8,
+   "endColumn": 12,
+   "startAddress": 32823,
+   "endAddress": 32831,
+   "kind": "other",
+   "callableIndex": 0
+  },
+  {
+   "index": 5,
+   "fileIndex": 0,
+   "startLine": 9,
+   "startColumn": 2,
+   "endLine": 9,
+   "endColumn": 13,
+   "startAddress": 32831,
+   "endAddress": 32834,
+   "kind": "call",
+   "callableIndex": 0
+  },
+  {
+   "index": 6,
+   "fileIndex": 0,
+   "startLine": 10,
+   "startColumn": 2,
+   "endLine": 10,
+   "endColumn": 12,
+   "startAddress": 32834,
+   "endAddress": 32842,
+   "kind": "other",
+   "callableIndex": 0
+  },
+  {
+   "index": 7,
+   "fileIndex": 0,
+   "startLine": 11,
+   "startColumn": 2,
+   "endLine": 11,
+   "endColumn": 8,
+   "startAddress": 32842,
+   "endAddress": 32843,
+   "kind": "return",
+   "callableIndex": 0
+  },
+  {
+   "index": 8,
+   "fileIndex": 0,
+   "startLine": 13,
+   "startColumn": 2,
+   "endLine": 13,
+   "endColumn": 12,
+   "startAddress": 32843,
+   "endAddress": 32851,
+   "kind": "other",
+   "callableIndex": 0
+  },
+  {
+   "index": 9,
+   "fileIndex": 0,
+   "startLine": 14,
+   "startColumn": 2,
+   "endLine": 14,
+   "endColumn": 8,
+   "startAddress": 32851,
+   "endAddress": 32852,
+   "kind": "return",
+   "callableIndex": 0
+  }
+ ],
+ "callables": [
+  {
+   "index": 0,
+   "name": "main",
+   "kind": "entrypoint",
+   "fileIndex": 0,
+   "startLine": 3,
+   "endLine": 14,
+   "entryAddress": 32795,
+   "exitAddresses": [
+    32842,
+    32851
+   ],
+   "firstStatementIndex": 0,
+   "lastStatementIndex": 9
+  }
+ ],
+ "addressToStatement": [
+  [
+   0,
+   -1
+  ],
+  [
+   32795,
+   0
+  ],
+  [
+   32803,
+   1
+  ],
+  [
+   32806,
+   2
+  ],
+  [
+   32817,
+   3
+  ],
+  [
+   32823,
+   4
+  ],
+  [
+   32831,
+   5
+  ],
+  [
+   32834,
+   6
+  ],
+  [
+   32842,
+   7
+  ],
+  [
+   32843,
+   8
+  ],
+  [
+   32851,
+   9
+  ],
+  [
+   32852,
+   -1
+  ]
+ ],
+ "extensions": {
+  "variables": [],
+  "callSites": [
+   {
+    "returnAddress": 32806,
+    "statementIndex": 1,
+    "callerIndex": 0,
+    "kind": "gosub",
+    "moreCallsFollow": false,
+    "order": 0
+   },
+   {
+    "returnAddress": 32834,
+    "statementIndex": 5,
+    "callerIndex": 0,
+    "kind": "gosub",
+    "moreCallsFollow": false,
+    "order": 0
+   }
+  ],
+  "frames": [
+   {
+    "callableIndex": 0,
+    "convention": "entrypoint",
+    "startAddress": 32795,
+    "bodyStart": 32795,
+    "epilogueStart": 32858,
+    "endAddress": 32858
+   }
+  ],
+  "mainBaselineSymbol": 37679,
+  "labels": [
+   {
+    "name": "outer",
+    "address": 32823
+   },
+   {
+    "name": "inner",
+    "address": 32843
+   }
+  ],
+  "libraryFiles": [],
+  "runtimeSymbols": [
+   {
+    "name": "core.End",
+    "address": 37641
+   },
+   {
+    "name": "core.StopProgram",
+    "address": 37667
+   },
+   {
+    "name": "core.EndHook",
+    "address": 37676
+   },
+   {
+    "name": "core.ProgramSP",
+    "address": 37679
+   },
+   {
+    "name": "core.SavedIY",
+    "address": 37681
+   },
+   {
+    "name": "core.SavedIX",
+    "address": 37683
+   },
+   {
+    "name": "core.SavedHL2",
+    "address": 37685
+   },
+   {
+    "name": "core.RomCall",
+    "address": 37687
+   },
+   {
+    "name": "core.RomIn",
+    "address": 37727
+   },
+   {
+    "name": "core.RomOut",
+    "address": 37728
+   },
+   {
+    "name": "core.RomPeek",
+    "address": 37729
+   },
+   {
+    "name": "core.RaiseError",
+    "address": 37750
+   },
+   {
+    "name": "core.ReportError",
+    "address": 37776
+   },
+   {
+    "name": "core.CheckBreak",
+    "address": 37777
+   },
+   {
+    "name": "core.HeapInit",
+    "address": 37794
+   },
+   {
+    "name": "core.FreeList",
+    "address": 37829
+   },
+   {
+    "name": "core.Alloc",
+    "address": 37831
+   },
+   {
+    "name": "core.AllocFailed",
+    "address": 37918
+   },
+   {
+    "name": "core.Free",
+    "address": 37922
+   },
+   {
+    "name": "core.PrintInit",
+    "address": 38025
+   },
+   {
+    "name": "core.PrintReset",
+    "address": 38088
+   },
+   {
+    "name": "core.PrintRow",
+    "address": 38101
+   },
+   {
+    "name": "core.PrintCol",
+    "address": 38102
+   },
+   {
+    "name": "core.PrintChar",
+    "address": 38128
+   },
+   {
+    "name": "core.PrintApplyAttr",
+    "address": 38357
+   },
+   {
+    "name": "core.PrintNewline",
+    "address": 38479
+   },
+   {
+    "name": "core.PrintComma",
+    "address": 38584
+   },
+   {
+    "name": "core.PrintTab",
+    "address": 38610
+   },
+   {
+    "name": "core.PrintAt",
+    "address": 38631
+   },
+   {
+    "name": "core.PrintSave",
+    "address": 38655
+   },
+   {
+    "name": "core.PrintColour",
+    "address": 38700
+   },
+   {
+    "name": "core.PrintStr",
+    "address": 38834
+   },
+   {
+    "name": "core.PrintU8",
+    "address": 38867
+   },
+   {
+    "name": "core.PrintI8",
+    "address": 38872
+   },
+   {
+    "name": "core.PrintI16",
+    "address": 38876
+   },
+   {
+    "name": "core.PrintU16",
+    "address": 38893
+   },
+   {
+    "name": "core.PrintFixed",
+    "address": 38950
+   },
+   {
+    "name": "core.PrintI32",
+    "address": 39018
+   },
+   {
+    "name": "core.PrintU32",
+    "address": 39046
+   },
+   {
+    "name": "core.Cls",
+    "address": 39112
+   }
+  ],
+  "errorEntry": 37750,
+  "optimizationLevel": 0
+ }
+}
