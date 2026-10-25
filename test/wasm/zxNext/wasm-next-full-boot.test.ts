@@ -17,7 +17,8 @@ const POST_MILESTONE_FRAME_COUNT = 3;
 // --- The milestone the start-menu test pins (wasm-next-start-menu.test.ts): the values the TypeScript
 // --- and WASM cores agreed on at tag pre-zxnext-ts-removal-2026-09-19.
 const START_MENU_MILESTONE_PC = 0x0116;
-const START_MENU_MILESTONE_TACTS = 232;
+// --- 232 until NEXTREG got its bus-read M-cycles (F3-7; see wasm-next-start-menu.test.ts)
+const START_MENU_MILESTONE_TACTS = 277;
 
 describe("ZX Spectrum Next WASM full boot smoke", () => {
   it("continues from the deterministic NextZXOS milestone into bounded app-level frames", async () => {

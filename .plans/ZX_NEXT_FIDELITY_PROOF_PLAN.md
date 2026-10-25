@@ -695,6 +695,186 @@ The count is unchanged: **895** simulator runs out of 1,070 programs.
 | `dma/dma` | 6 | stop a few HC later in the VHDL |
 | 17 others | 1–5 each | `$C8` (11), `$C2` (7), `$4A`, `$20` |
 
+#### F3 triage (2026-10-25)
+
+Every group was checked in this order: a testbench artefact, a testbench limitation, or a
+difference between Klive and the core. Rerunning only the affected programs after each fix gives
+the evidence. Triage runs `triage-1`…`triage-5` and probe runs `probes-1`/`probes-2` (219 + 36 + 73
+executions) are under `test/vhdl/f3/results/`.
+
+**Testbench artefacts, fixed:**
+
+| Artefact | Fix | Effect |
+|---|---|---|
+| NextRegs read back with the clocks running (~25 HC late for `$22`) | Raster/interrupt registers read first; `$22` bit 7 taken from `pulse_int_n` at the stop itself | the `$22` group fell from 41 to 1 |
+| Klive's HC is the core's hc + 8 (`zxnextTimingSelect`); the start was aligned without it | First fetch at the core's line 310, hc 448 = Klive's line 0, HC 0 (release at 310/197); stop compared in Klive's coordinates; frame count fixed | "time" differences fell from 515 to 34 in the five timing files; video-timing to 1 |
+| The start code patched into ROM 0 stayed visible | The real ROM bytes are put back when the program starts | MEM-006/016/017/018 and L2-023 now match except `$81` |
+| The CPU clock switched by a plain multiplexer | Modelled as the board's three `BUFGMUX_1`s, which switch glitch-free | cpu-speed offsets changed but did not vanish (see below) |
+
+**Testbench limitations, excluded:**
+- *SD card* (SPI-001/003/007/012): the testbench has no card on the SPI pins and reads $FF. Klive
+  models a card. SPI-003 also never reaches the marker.
+- *I2C RTC* (I2C-003): there is no DS1307 on the testbench's I2C pins.
+- *Expansion bus* (SPD-005): no expansion bus is modelled.
+
+**Findings, program-observable (O2 against Klive):**
+
+| # | Finding | Evidence | Programs |
+|---|---|---|---|
+| F3-1 | NextReg `$81` bit 7 reads **1** on an idle bus: the core returns `i_BUS_ROMCS_n` raw (`zxnext.vhd` ~6072). Klive reads 0, following nextreg.txt ("1 if asserted"). Documentation against VHDL; **the board can settle it**. | every program | 893 |
+| F3-2 | A program's `IN` sees raster-derived state change **2 T-states earlier on Klive**: the line counter `$1F` (core T 37,221, Klive 37,219), the ULA interrupt flag `$22` bit 7 start (core 286, Klive 284) and end (core 317, Klive 316) | probes P1–P3 (sweeps of one IN, one T-state apart) | the residual −2 HC offsets in video, floating bus and midframe; the off-by-one line samples in VT-002 (7 programs); possibly UART-004's −3 HC (15) |
+| F3-3 | An NMI requested through NextReg `$02` is taken **one instruction later on Klive**. The core takes it right after the NEXTREG (`$C2`/`$C3` = $8015), Klive after one more NOP ($8016). | NMI-004/005, DIV-032 | 7 |
+
+**Probe round 2 settled the candidates** (`probes-3`, `probes-4`). The uncontended control matched to
+the HC, which proves the alignment is exact:
+
+| # | Finding | Evidence | Explains |
+|---|---|---|---|
+| F3-4 | **+3 contention runs 1 T later on Klive.** A contended `LD A,(HL)` / `LD (HL),A` on bank 7 steps at T 22,903 / 22,911 on the core and 22,904 / 22,912 on Klive; between steps the core finishes 1 T sooner (−2 HC) | 32 contended probes and 8 uncontended controls | contention −2…+8 HC; MEM-010 +52 HC over 16 K contended writes |
+| F3-5 | **CPU speed switches:** switching 3.5 → 28 MHz completes 1.5 T sooner on the core (−3 HC at every phase); switching 28 → 3.5 MHz completes 0.5–1.5 T later (+1…+3 HC). 400 NOPs at 28 MHz add nothing, from SRAM or block RAM, so the SRAM wait state matches. | 18 speed probes; the core side depends on the `BUFGMUX_1` model | cpu-speed −3…+5 HC; CTC-014 −5 HC |
+| F3-6 | **A DMA transfer costs 2 T more on the core**, a fixed amount: +4 HC at every length 1–256 and both phases. Per-byte timing matches. | 14 DMA probes | DMA-017 +4 HC; part of the DMA group |
+| F3-7 | **`NEXTREG reg,A` (`ED 92`) is 3 T short in Klive: 14 T instead of 17** (`t80n_mcode.vhd` ~1689: four M-cycles after the prefix; the Z80N documentation also says 17). `NEXTREG reg,n` is 20 T on both. | +6 HC per instruction at 3.5 MHz, +3 at 7, +1.5 at 14, linear from 1 to 64 instructions | COP-015 +77 HC; any NEXTREG-timed loop |
+| F3-8 | **The CTC counter, read by a program, is one count behind on Klive** (2 T at prescaler 16), reload included | 24 reads, one T-state apart | CTC-002 |
+
+F1 left `ED 91`/`ED 92` out because they act outside the CPU, so F3-7 was invisible to it.
+
+**Fixed (2026-10-25), each verified with its probe on both machines:**
+- **F3-7, NEXTREG timing (`z80.c`).** Both NEXTREGs now run their last two M-cycles as bus reads,
+  timed by `delayMemoryRead`: 3 T each, plus contention or the 28 MHz SRAM wait. The NextReg write
+  lands between them, where the T80N's microcode puts it. `NEXTREG reg,A` is 17 T (was 14). The
+  TypeScript `Z80NCpu` got the same 17 T.
+  - *Probes (`fix-sn`):* the difference no longer grows with the number of NEXTREGs at any speed.
+    At 3.5 MHz all 7 counts stop at exactly the core's time. At 7/14/28 MHz a constant −1/−2/−5 HC
+    remains, which is F3-5's speed switch at the start of each probe.
+  - *Re-pinned:* the NextZXOS boot trace in `wasm-next-start-menu`/`wasm-next-full-boot`
+    (`NEXTREG reg,A` 22 T and `reg,n` 26 T at 28 MHz from SRAM), and the first step of
+    `wasm-next-cpu`'s 28 MHz case (the speed-switch NEXTREG, 21 T). The TypeScript test
+    `test/z80/next-ops.test.ts` and its copy now expect 17.
+- **F3-3, NMI from `$02` (`zxnext-nmi.c`).** When an NMI source latches while idle, `/NMI` is asserted
+  at once and the Multiface/DivMMC button is pulsed (`zxnext.vhd` ~2049, ~2124-2126), instead of at
+  the next opcode fetch. All 7 NMI programs (NMI-004/005, DIV-032) now match the core except `$81`.
+- *Side effect on F3-5:* switching **up** to 28 MHz is now −5 HC (was −3); switching **down** is now
+  mostly exact (0/±1 HC, was +1…+3). F3-5 stays open.
+- *Checked after both fixes:* Next hardware and WASM tests 1,800/1,800; shared Z80 corpus
+  1,483/1,483; TypeScript CPU suite 5,518/5,518; F1 PASS (115,854/115,854); no new type errors.
+
+**Fixed (2026-10-25, second batch): F3-2, F3-8, F3-6, F3-4.** Each was verified with its probe group
+on both machines; every probe now differs from the core only in F3-1's `$81` bit 7.
+
+| # | Fix | Probe evidence (`test/vhdl/f3/results/`) |
+|---|---|---|
+| F3-2 | **Port cycles are split** (`zxnext-cpu.c`, hooks in `z80.c`): an `IN` samples 2 T into its 4 T I/O cycle and an `OUT` writes there, instead of at the end. **The ULA and line INT pulses are half a T-state shorter when they start mid-cycle** (`zxnextTimingIntPulseLengthAt`): the source registers its match on CLK_7, so `pulse_int_n` falls one HC later, and the count ends on a CPU rising edge, which falls on an even HC at 3.5 MHz. Measured with a monitor on the simulated core: 252 clk28 = **63 HC** for +3 timing (Klive had 64). Pentagon's pulse starts on an even HC and keeps its full length. | `fix-f3-2c` (P1, P2: 62 of 62), `fix-f3-2d` (P3: 26 of 26) |
+| F3-8 | **A CTC read returns the counter as it is when the CPU latches the data**, 2 T after Klive's sample point. The counter reaches the bus through a register clocked on every falling CPU edge (`zxnext.vhd` ~4075), not through the port mux's sample (`zxnextCtcPeekAhead`; the channel itself is not moved). With the `OUT` split, the channel also starts 2 T earlier. | `fix-f3-8`: 24 of 24 (A, F and RAM identical) |
+| F3-6 | **The DMA's bus hand-off is timed like the core's.** A monitor on `BUSAK`/`BUSRQ` for the 1-byte copy showed 1 clock from the grant to the first read (`WAITING_ACK` sees `BUSAK`), and 4 clocks from the last write clock to the CPU's next T1 (`FINISH_DMA`, then `IDLE` raises `BUSRQ`, the T80 samples it into `BusReq_s`, then it drops `BUSAK`). Klive charged 2 + 1; now 1 + 4 (`zxnext-dma.c`). | `fix-f3-6`: 14 of 14, lengths 1–256, both phases |
+| F3-4 | **+3 contention is decided at the end of T2.** 48K/128K stretch the clock at the start of the cycle (`o_cpu_contend`); +3 holds `WAIT_n`, which the T80 samples in T2 (`t80n.vhd` "TState = 2 and WAIT_n = '0'"). Klive now evaluates the +3 pattern 2 HC later. This moves the step 1 T earlier and makes each wait 1 T shorter, both as measured. | `fix-f3-4`: 40 of 40 (16 read and 16 write phases, 8 controls) |
+
+- *Not modelled (F3-6):* the core raises `BUSRQ` in the `OUT`'s T3, too late for that M-cycle, so
+  it grants the bus after the next instruction's M1. Klive grants it before the next instruction.
+  The totals agree; the order differs only inside a multi-M-cycle instruction.
+- *Re-pinned:* VT-007 (`test/zxnext-hw/video/video-timing.test.ts`) measured the pulse at whole
+  T-states and expected `pulseCycles`. The 6 non-Pentagon timings now expect `pulseCycles − 1`, the
+  core's 63 HC sampled at whole T-states (a `pulseMidCycle` flag per timing).
+- *Checked after the second batch:* Next hardware and WASM tests 1,742/1,742 (35/35 in
+  video-timing after the re-pin); `npm run test:fast` 26,149 passed, 0 failed; F1 **PASS**,
+  115,854/115,854, 0 mismatches (53 s: `build:check` ran alongside it); `npm run build:check` reports
+  no new type errors.
+
+#### F3 measured run 3 specification (recorded 2026-10-25 09:52, before the run)
+
+- *Programs:* the 1,070 of measured run 2 (`full-2/programs.jsonl`), unchanged.
+- *Count:* **895 simulator runs and 1,232 frames.** All 895 still reach the marker on Klive (`--plan-only`).
+  They run as 12 chunks of 75 (the last has 70), one after another, so progress is reported after each.
+- *Expected time:* run 2's rate is 36,720 job-seconds for 895 boots plus 1,232 frames. Counting a boot
+  as one frame, that is 17.3 s per frame-equivalent per job; the probe runs of the second batch fit it.
+  **Forecast: 2,127 frame-equivalents ÷ 10 jobs × 17.3 s ≈ 3,680 s (61 min).** Per chunk the forecast
+  is 261–381 s. The 10 % limit is applied to the running total after each chunk, and to each chunk by
+  `--expect`.
+- *Pass criterion:* compared with run 2, no program gains a difference, and the four fixed groups
+  lose theirs.
+- *Stop at chunk 1 (09:57):* the 5-minute check forecast 353 s against 299 s (+18 %), so the chunk
+  stopped with 60 of 75 runs done. **Revised expectation (recorded 09:58):** the measured factor is
+  1.18, so 20.4 s per frame-equivalent per job. The remainder is chunk 1's 15 runs plus chunks 2–12
+  (820 runs, 1,134 frames): **≈ 4,060 s (68 min)**. Each chunk's `--expect` is its frame-equivalents ×
+  2.04 s.
+- *Stop at chunk 2 (10:03):* chunk 1's 15 remaining runs plus chunk 2 (90 runs). The forecast was
+  426 s against 381 s (+12 %), and 61 of 90 were done. The frame-weighted model under-forecasts by
+  12–18 %. Measured: 121 runs in 600 s of phase 4, **5.0 s per run**.
+- *State at the stop (121 of 895 runs compared, 13.5 %):* **0 programs gained a difference** against run
+  2. 2 lost theirs, and 13 still differ: 10 cpu-speed (F3-5, open), 2 video-timing VT-002 at 48K timing
+  (a `$1E`/`$1F` sample one higher on Klive), and layers T7. The other 106 differ only in `$81`.
+  Results are in `full-3/c00`, `full-3/c01`. **Waiting for the author's decision on how to continue.**
+- *The author chose (10:05) to finish in one background run at 5.0 s per run:* the remaining 774
+  runs, expected 3,870 s.
+
+**Measured run 3 (2026-10-25, 10:05–10:58 for the remainder) — complete.**
+- *Time:* the remaining 774 runs took 3,192 s, 18 % under the 3,870 s expected. Progress was
+  reported every 5 minutes; the 5-minute check forecast 2,114 s and passed.
+- *Results:* `test/vhdl/f3/results/full-3/{c00,c01,rest}` (895 runs in all, 893 compared).
+
+| Result | Run 2 | Run 3 |
+|---|---|---|
+| Compared | 893 | 893 |
+| …differing only in `$81` bit 7 (F3-1) | 728 | **822** |
+| …with other differences | 165 | **71** |
+| Did not reach the marker in the VHDL (SPD-005, SPI-003: testbench limitations) | 2 | 2 |
+
+- **96 programs lost their differences:** video-timing 60, contention 12, nmi 5, paging-ports 4,
+  ctc 2, divmmc-entry-points 2, dma 2, layer2-paging 2, midframe-memory-write 2, and 1 each in
+  layer2, floating-bus, ide-state, mmu, alt-rom.
+- **2 programs gained a difference, both MEM-023 at 128K timing** (the uncontended baseline and the
+  bank 4 case: the core stops at line 2, HC 90, Klive at HC 82). **This is not from the fixes.**
+  Klive's stop is the same in runs 2 and 3, and so is the core's raw stop (hc 82). It also stays the
+  same with each fix switched off in turn (pulse length, +3 contention, port split, NMI). Run 2
+  compared the core's raw hc with Klive's HC, before triage found the +8 offset. Corrected, the core
+  is 8 HC (4 T) later, a difference that was always there. Recorded as candidate **F3-9** below.
+- **69 still differ (with the 2 above, 71):** cpu-speed 19 (F3-5), uart 16, sd-card 10 (no card:
+  limitation), video-timing 5 (VT-002: the 60 Hz and Pentagon line counters, `$E0` against `$F7`),
+  dma 4 (DMA-009/010, prescaled and burst), contention 4 (MEM-023 Pentagon by a whole frame,
+  MEM-023 at 7 MHz −3 HC), floating-bus 3 (PORT-006/008), port-enables 2 (PORT-002: one byte shift
+  of a DMA copy), interrupt-status-dma 2 (INT-026), and 1 each in layers (T7), i2c (no RTC:
+  limitation), copper (COP-015 +6 HC), ctc (CTC-014 +5 HC, probably F3-5's speed switch).
+- **Verdict against the pass criterion:** the four fixed groups lost their differences, and no
+  difference comes from the fixes. The two gains are a pre-existing difference, now visible.
+
+**New candidate F3-9 (needs a probe):** at 128K timing, MEM-023's stop, which is set by when the
+frame interrupt is taken during the counting loop, is 4 T later on the core. 48K and +3 timing match.
+128K differs from both in its 36-cycle pulse and in contending odd banks.
+
+F3-2 and F3-8 are both seen through an `IN`. Which side's `IN` samples when is part of the question.
+The probes measure what a program sees, so both stand as program-observable findings.
+
+**Still open after round 2:**
+- the DMA group's larger offsets (DMA-009/010: 44–404 HC, prescaled and burst modes);
+- IDE-001 palettes (27 lines);
+- layers T7 (−5 HC).
+
+**Candidates still open before round 2** (each needs a probe like P1–P3 before it counts):
+- *+3 contention:* MEM-010 is +52 HC after a 16 KB LDIR into bank 6; the contention group shows
+  −2…+8 HC.
+- *CPU speed switches:* cpu-speed is still −3…+5 HC, and SPD-002 differs by 68 HC in loop counts
+  (the 28 MHz SRAM wait state).
+- *DMA pacing and bus hand-back:* DMA-009/010/017, PORT-002, INT-026; 4–404 HC.
+- *Copper/CPU NextReg arbitration:* COP-015, +77 HC.
+- *CTC:* CTC-002/014.
+- *Single programs:* IDE-001 palettes (27 lines) and layers T7 (−5 HC).
+
+**Probe round 2 (recorded 2026-10-25, before running):**
+- *Programs:* `test/vhdl/f3/probes-timing.cjs` writes **124**:
+
+| Group | Probe | Programs |
+|---|---|---|
+| C | +3 contention: a read or write on bank 7 at 16 consecutive T-states in the paper; 8 reads on bank 2 as the control | 40 |
+| S | NEXTREG `$07` up and down at 8 phases each; 400 NOPs at 28 MHz from SRAM and from block RAM | 18 |
+| D | DMA-017's continuous copy at lengths 1–256, two start phases | 14 |
+| N | 1–64 × `NEXTREG $41,A` at each CPU speed | 28 |
+| T | CTC channel 0 counter, read by one `IN` at 24 consecutive T-states | 24 |
+
+- *Expected time:* ≈ 4 min of simulation, ≈ 5 min in all. The 5-minute rule applies (`--expect 240`).
+- *Outcome:* **stopped by the rule** at 5 minutes, with a 466 s forecast. The estimate again left out
+  the ~1-frame boot of every run (≈ 34 s per run at 10 jobs). 80 probes finished: C, S, D and 8 of N.
+- *The remaining 44* (N at 7/14/28 MHz, and T) were rerun at 08:21, **expected 210 s** (44 × 34 s ÷ 10,
+  plus start-up).
+
 Not every difference is a Klive bug. Each group is triaged against the testbench's own
 simplifications first:
 - the plain CPU clock mux on speed changes (the board's BUFGMUX switches glitch-free);

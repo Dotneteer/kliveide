@@ -361,12 +361,17 @@ static inline uint16_t zxnextDmaStepAddress(uint16_t address, uint8_t mode) {
 /*
  * FINISH_DMA: end of block; auto restart reloads and goes on - keeping the bus when it has it
  * (WAITING_ACK, one more clock) - otherwise the DMA goes idle. Returns the extra CPU clocks held.
+ *
+ * Going idle with the bus, the CPU waits 3 more clocks before its next T1: IDLE raises BUSRQ (dma.vhd),
+ * the T80 samples it into BusReq_s, and the next clock drops BUSAK and starts T1 (t80n.vhd ~1640-1730).
+ * Measured on the simulated core: 4 clocks from the last write clock to the CPU's T1 (F3-6).
  */
+#define DMA_BUS_RELEASE_CLOCKS 3u
 static uint32_t zxnextDmaFinish(uint32_t busHeld) {
   dmaEndOfBlockN = 0;
   if (!dmaAutoRestart) {
     zxnextDmaGoIdle();
-    return 0;
+    return busHeld ? DMA_BUS_RELEASE_CLOCKS : 0u;
   }
   zxnextDmaLoadAddresses();
   dmaCounter = zxnextDmaCounterStart();
@@ -460,9 +465,10 @@ static uint32_t zxnextDmaStep(void) {
         dmaBusRequested = 1;
         return 0;
       }
-      // --- START_DMA, WAITING_ACK
+      // --- WAITING_ACK: START_DMA raised BUSRQ while the CPU still ran; the clock after the grant
+      // --- sees BUSAK and starts the read (measured on the simulated core, F3-6)
       dmaSeq = DMA_SEQ_TRANSFER;
-      return 2u * zxnextDmaClockScale();
+      return 1u * zxnextDmaClockScale();
     case DMA_SEQ_TRANSFER:
       return zxnextDmaTransferByte();
     case DMA_SEQ_BURST_WAIT:

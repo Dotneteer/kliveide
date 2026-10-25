@@ -37,17 +37,19 @@ type Timing = {
   /** 7 MHz clocks from the line's cvc change (hc = c_min_hactive - 12) to the interrupt */
   intAfterLineChangeHc: number;
   pulseCycles: number;
+  /** The pulse falls mid-cycle (an odd HC): it is half a T-state short (VT-007) */
+  pulseMidCycle: boolean;
 };
 
 const TIMINGS: Timing[] = [
-  { name: "48K 50 Hz", nr03: 0x90, hz60: false, tactsPerLine: 224, lines: 312, intLine: 248, intAfterLineChangeHc: 0, pulseCycles: 32 },
-  { name: "48K 60 Hz", nr03: 0x90, hz60: true, tactsPerLine: 224, lines: 264, intLine: 224, intAfterLineChangeHc: 0, pulseCycles: 32 },
-  { name: "128K 50 Hz", nr03: 0xa0, hz60: false, tactsPerLine: 228, lines: 311, intLine: 248, intAfterLineChangeHc: 4, pulseCycles: 36 },
-  { name: "128K 60 Hz", nr03: 0xa0, hz60: true, tactsPerLine: 228, lines: 264, intLine: 224, intAfterLineChangeHc: 4, pulseCycles: 36 },
-  { name: "+3 50 Hz", nr03: 0xb0, hz60: false, tactsPerLine: 228, lines: 311, intLine: 248, intAfterLineChangeHc: 2, pulseCycles: 32 },
-  { name: "+3 60 Hz", nr03: 0xb0, hz60: true, tactsPerLine: 228, lines: 264, intLine: 224, intAfterLineChangeHc: 2, pulseCycles: 32 },
+  { name: "48K 50 Hz", nr03: 0x90, hz60: false, tactsPerLine: 224, lines: 312, intLine: 248, intAfterLineChangeHc: 0, pulseCycles: 32, pulseMidCycle: true },
+  { name: "48K 60 Hz", nr03: 0x90, hz60: true, tactsPerLine: 224, lines: 264, intLine: 224, intAfterLineChangeHc: 0, pulseCycles: 32, pulseMidCycle: true },
+  { name: "128K 50 Hz", nr03: 0xa0, hz60: false, tactsPerLine: 228, lines: 311, intLine: 248, intAfterLineChangeHc: 4, pulseCycles: 36, pulseMidCycle: true },
+  { name: "128K 60 Hz", nr03: 0xa0, hz60: true, tactsPerLine: 228, lines: 264, intLine: 224, intAfterLineChangeHc: 4, pulseCycles: 36, pulseMidCycle: true },
+  { name: "+3 50 Hz", nr03: 0xb0, hz60: false, tactsPerLine: 228, lines: 311, intLine: 248, intAfterLineChangeHc: 2, pulseCycles: 32, pulseMidCycle: true },
+  { name: "+3 60 Hz", nr03: 0xb0, hz60: true, tactsPerLine: 228, lines: 264, intLine: 224, intAfterLineChangeHc: 2, pulseCycles: 32, pulseMidCycle: true },
   // --- Pentagon: interrupt at vc 319, hc 439; the line changed at hc 116 of the same line
-  { name: "Pentagon", nr03: 0xc0, hz60: false, tactsPerLine: 224, lines: 320, intLine: 239, intAfterLineChangeHc: 323, pulseCycles: 36 }
+  { name: "Pentagon", nr03: 0xc0, hz60: false, tactsPerLine: 224, lines: 320, intLine: 239, intAfterLineChangeHc: 323, pulseCycles: 36, pulseMidCycle: false }
 ];
 
 /**
@@ -173,14 +175,17 @@ Stop:   jr Stop
       expect(Math.abs(measured - t.intAfterLineChangeHc / 2), `${measured} tacts`).toBeLessThanOrEqual(1);
     });
 
-    // --- VT-007: $22 bit 7 is the pulse; it lasts pulseCycles CPU cycles
+    // --- VT-007: $22 bit 7 is the pulse; it lasts pulseCycles CPU cycles. A pulse that falls on an odd
+    // --- HC starts mid-cycle and still ends on the last count's CPU edge, half a T-state short (63 HC
+    // --- for 32 cycles, measured on the simulated FPGA core: .plans/ZX_NEXT_FIDELITY_PROOF_PLAN.md,
+    // --- F3-2), which whole-T sampling sees as one T less. Only Pentagon's falls on an even HC.
     it(`VT-007: ${t.name} INT pulse lasts ${t.pulseCycles} tacts`, async () => {
       const s = await createSession();
       const intAt = await interruptAt(s, t);
       const pulse = async (d: number) => ((await probe(s, t, 0x22, d)) & 0x80) !== 0;
       const on = await threshold(intAt - 100, intAt + 16, pulse);
       const off = await threshold(on, on + 60, async (d) => !(await pulse(d)));
-      expect(off - on).toBe(t.pulseCycles);
+      expect(off - on).toBe(t.pulseCycles - (t.pulseMidCycle ? 1 : 0));
     });
   }
 

@@ -100,6 +100,8 @@ it("F3: replays the captured programs on Klive's Next core", async () => {
         if (addr === 0x40) b.splice(0, 4, 0xed, 0x91, 0x02, 0x01);
       };
       writeFileSync(join(init, "sram.txt"), blocks(mem, 0, 128, patchRom) + blocks(mem, RAM, MEM_TOP));
+      // --- ROM 0's real first 128 bytes, which the testbench puts back once the program has started
+      writeFileSync(join(init, "rom-restore.txt"), blocks(mem, 0, 128));
       writeFileSync(join(init, "bank5.txt"), sparse(mem, BANK5, 0x4000));
       writeFileSync(join(init, "bank7.txt"), sparse(mem, BANK7, 0x2000));
       writeFileSync(join(init, "entry.txt"), `${program.entry}\n`);

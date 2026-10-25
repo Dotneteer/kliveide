@@ -31,6 +31,10 @@ entity tb_next is
 end entity;
 
 architecture sim of tb_next is
+  function bit_int(b : std_logic) return integer is
+  begin
+    if b = '1' then return 1; elsif b = '0' then return 0; else return -1; end if;
+  end function;
   constant HALF_28 : time := 10 ns;
 
   signal clk_28, clk_28_n, clk_14, clk_7, clk_cpu : std_logic := '0';
@@ -59,10 +63,23 @@ begin
   -- is timed as if CLK_CPU's edges coincide with the 28 MHz clock's (BUFGMUX from the same MMCM).
   -- 3.5 MHz is CLK_3M5_CONT, a flop on CLK_7 that holds the clock high while the ULA contends
   -- (zxnext_top_issue4.vhd ~980-990).
+  -- The CPU clock goes through three BUFGMUX_1s on the board (zxnext_top_issue4.vhd ~990-1020),
+  -- which switch glitch-free: after the select changes, the output is held high from the old clock's
+  -- next rising edge until the new clock's next rising edge, and follows the new clock from then on.
   clocks : process
     variable p : integer := 0;
     variable cont : std_logic := '1';
     variable c28, c14, c7 : std_logic;
+    variable src : std_logic_vector(1 downto 0) := "00";  -- the clock the output follows
+    variable want : std_logic_vector(1 downto 0) := "00";
+    variable holding : boolean := false;                   -- held high, waiting for the new clock
+    variable prev : std_logic_vector(0 to 3) := "0000";    -- each source's level last step
+    variable now_c : std_logic_vector(0 to 3);
+    variable out_c : std_logic := '0';
+    function idx(s : std_logic_vector(1 downto 0)) return integer is
+    begin
+      return to_integer(unsigned(s));
+    end function;
   begin
     while running loop
       c28 := '1' when p mod 2 = 0 else '0';
@@ -73,13 +90,22 @@ begin
         elsif cpu_clk_lsb = '0' then cont := '1';
         end if;
       end if;
+      now_c := (0 => cont, 1 => c7, 2 => c14, 3 => c28);
+      if not is_x(cpu_speed) then want := cpu_speed; end if;
+      if not holding and want /= src then
+        -- wait for the old clock's rising edge, then hold high
+        if now_c(idx(src)) = '1' and prev(idx(src)) = '0' then holding := true; out_c := '1'; src := want;
+        else out_c := now_c(idx(src)); end if;
+      elsif holding then
+        -- held high until the new clock rises; from then on, follow it
+        if now_c(idx(src)) = '1' and prev(idx(src)) = '0' then holding := false; end if;
+        out_c := '1';
+      else
+        out_c := now_c(idx(src));
+      end if;
+      prev := now_c;
       clk_28 <= c28; clk_28_n <= not c28; clk_14 <= c14; clk_7 <= c7;
-      case cpu_speed is
-        when "00"   => clk_cpu <= cont;
-        when "01"   => clk_cpu <= c7;
-        when "10"   => clk_cpu <= c14;
-        when others => clk_cpu <= c28;
-      end case;
+      clk_cpu <= out_c;
       wait for HALF_28;
       p := (p + 1) mod 8;
     end loop;
@@ -193,6 +219,11 @@ begin
     -- Klive's line/HC are), not zxnext's hc/vc, which are the ULA's display-relative counts
     alias vc        is << signal .tb_next.dut.timing_mod.vc : unsigned(8 downto 0) >>;
     alias hc        is << signal .tb_next.dut.timing_mod.hc : unsigned(8 downto 0) >>;
+    -- $22 bit 7 is "not pulse_int_n" (zxnext.vhd ~5938): sampled at the stop itself, as Klive's
+    -- instant read sees it, because the read-mux readback below runs a few clocks later
+    alias pulse_int_n is << signal .tb_next.dut.pulse_int_n : std_logic >>;
+    alias max_hc    is << signal .tb_next.dut.timing_mod.c_max_hc : unsigned(8 downto 0) >>;
+    alias max_vc    is << signal .tb_next.dut.timing_mod.c_max_vc : unsigned(8 downto 0) >>;
   begin
     main : process
       file f : text;
@@ -202,10 +233,13 @@ begin
       variable clocks, cpu_clocks, marker_clock, marker_cpu : integer := 0;
       variable stop_pc, stop_a, stop_f, stop_sp : integer := -1;
       variable max_clocks : integer;
+      variable first : boolean;
       variable rel_vc, rel_hc : integer := -1;  -- release the firmware's soft reset at this raster point
       variable prev_hc : integer := -1;
       variable entry_vc, entry_hc, stop_vc, stop_hc, stop_cpu, stop_clocks : integer := -1;
       variable frames_run, prev_vc : integer := 0;
+      variable stop_int : integer := -1;
+      variable kh, kv, kf : integer;
       variable started, marker : boolean := false;
       variable soft_resets : integer := 0;
       variable prev_cpu : std_logic := '0';
@@ -264,6 +298,20 @@ begin
         if not started and soft_resets > 0 and m1_n = '0' and to_integer(unsigned(cpu_a)) = start_pc then
           started := true; clocks := 0; cpu_clocks := 0;
           entry_vc := to_integer(vc); entry_hc := to_integer(hc); prev_vc := entry_vc;
+          -- the start code in ROM 0's first bytes has done its job: put the real ROM back
+          file_open(st, f, "init/rom-restore.txt", read_mode);
+          if st = open_ok then
+            while not endfile(f) loop
+              readline(f, l);
+              next when l'length = 0;
+              read(l, addr);
+              for k in 0 to 63 loop read(l, v); sram(addr + k) := v; end loop;
+            end loop;
+            file_close(f);
+          end if;
+          -- the first fetch comes 8 hc before the core's frame wraps (Klive's HC = hc + 8), so that
+          -- wrap starts Klive's frame 0, not frame 1
+          if entry_vc /= 0 then frames_run := -1; end if;
           write(lmsg, string'("STARTED")); writeline(output, lmsg);
         end if;
         if started then
@@ -274,6 +322,7 @@ begin
           -- the stop: the first M1 after the marker's write (the next instruction's fetch)
           if marker and m1_n = '0' then
             stop_vc := to_integer(vc); stop_hc := to_integer(hc); stop_cpu := cpu_clocks; stop_clocks := clocks;
+            stop_int := 1 - bit_int(pulse_int_n);
             stop_pc := to_integer(unsigned(cpu_a));
             stop_a := to_integer(unsigned(cpu_acc)); stop_f := to_integer(unsigned(cpu_f));
             stop_sp := to_integer(cpu_sp);
@@ -323,17 +372,33 @@ begin
       write(l, string'("stop_cpu ") & integer'image(stop_cpu)); writeline(f, l);
       write(l, string'("stop_clocks ") & integer'image(stop_clocks)); writeline(f, l);
       write(l, string'("stop_frame ") & integer'image(frames_run)); writeline(f, l);
+      -- the stop in Klive's coordinates: Klive's HC is the core's hc + 8 (zxnext-nextreg.c,
+      -- zxnextTimingSelect), so its line and frame turn 8 HC before the core's
+      kh := stop_hc + 8; kv := stop_vc; kf := frames_run;
+      if kh > to_integer(max_hc) then
+        kh := kh - to_integer(max_hc) - 1; kv := kv + 1;
+        if kv > to_integer(max_vc) then kv := 0; kf := kf + 1; end if;
+      end if;
+      write(l, string'("stop_klive ") & integer'image(kf) & " " & integer'image(kv) & " " & integer'image(kh)); writeline(f, l);
+      write(l, string'("stop_int ") & integer'image(stop_int)); writeline(f, l);
       write(l, string'("pc ") & integer'image(stop_pc)); writeline(f, l);
       write(l, string'("a ") & integer'image(stop_a)); writeline(f, l);
       write(l, string'("f ") & integer'image(stop_f)); writeline(f, l);
       write(l, string'("sp ") & integer'image(stop_sp)); writeline(f, l);
-      for r in 0 to 255 loop
-        nr_reg <= force std_logic_vector(to_unsigned(r, 8));
-        wait until rising_edge(clk_28);
-        wait until rising_edge(clk_28);
-        wait until falling_edge(clk_28);
-        write(l, string'("nr ") & integer'image(r) & " " & integer'image(to_integer(unsigned(nr_rd))));
-        writeline(f, l);
+      -- The registers that change with the raster or the interrupts first: each read takes ~2.5
+      -- clocks of 28 MHz (under 1 HC), so they show the stop's moment, as Klive's instant reads do.
+      -- Then the rest, in order.
+      for pass in 0 to 1 loop
+        for r in 0 to 255 loop
+          first := r = 16#22# or r = 16#C8# or r = 16#C9# or r = 16#CA# or r = 16#1E# or r = 16#1F# or r = 16#20#;
+          next when (pass = 0) /= first;
+          nr_reg <= force std_logic_vector(to_unsigned(r, 8));
+          wait until rising_edge(clk_28);
+          wait until rising_edge(clk_28);
+          wait until falling_edge(clk_28);
+          write(l, string'("nr ") & integer'image(r) & " " & integer'image(to_integer(unsigned(nr_rd))));
+          writeline(f, l);
+        end loop;
       end loop;
       nr_reg <= release;
       file_close(f);

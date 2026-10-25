@@ -560,6 +560,24 @@ Z80_ALWAYS_INLINE void writeMemory(uint16_t address, uint8_t value) {
 }
 
 Z80_ALWAYS_INLINE uint8_t readPort(uint16_t address) {
+#ifdef Z80_DELAY_PORT_READ_TAIL
+  /* A core that samples the port partway through the I/O cycle splits the delay around the read:
+   * Z80_DELAY_PORT_READ is the part before the sample, Z80_DELAY_PORT_READ_TAIL the rest */
+  delayPortRead(address);
+#ifdef Z80_READ_PORT
+  uint8_t value = Z80_READ_PORT(address);
+#else
+  uint8_t value = cpu.portReadValue;
+#endif
+  Z80_DELAY_PORT_READ_TAIL(address);
+  if (Z80_CAPTURE_BUS_EVENTS()) {
+    cpu.lastPortAddress = address;
+    cpu.lastPortValue = value;
+    cpu.lastPortIsWrite = 0;
+    cpu.hasPortEvent = 1;
+  }
+  return value;
+#else
   delayPortRead(address);
 #ifdef Z80_READ_PORT
   uint8_t value = Z80_READ_PORT(address);
@@ -579,12 +597,17 @@ Z80_ALWAYS_INLINE uint8_t readPort(uint16_t address) {
   }
   return cpu.portReadValue;
 #endif
+#endif
 }
 
 Z80_ALWAYS_INLINE void writePort(uint16_t address, uint8_t value) {
   delayPortWrite(address);
 #ifdef Z80_WRITE_PORT
   Z80_WRITE_PORT(address, value);
+#endif
+#ifdef Z80_DELAY_PORT_WRITE_TAIL
+  /* A core whose devices take a port write partway through the I/O cycle splits the delay around it */
+  Z80_DELAY_PORT_WRITE_TAIL(address);
 #endif
   if (Z80_CAPTURE_BUS_EVENTS()) {
     cpu.lastPortAddress = address;
@@ -2251,17 +2274,29 @@ static void z80n90Outinb(void) {
   HL = (uint16_t)(HL + 1);
 }
 
+/*
+ * After their operands, both NEXTREGs run two more M-cycles that the T80N's microcode leaves as bus
+ * read cycles (no NoRead; t80n_mcode.vhd ~1667-1706), so they are timed as reads: 3 T each, plus
+ * contention or the 28 MHz SRAM wait state where the address has one. Nothing is read or logged. The
+ * NextReg write happens in the first of them (Z80N_command_o = NEXTREGW), so a write that changes the
+ * CPU speed ($07) affects only the second. F3's NEXTREG probes (test/vhdl/f3/probes-timing.cjs,
+ * group N) found the missing cycles and the extra wait at 28 MHz.
+ */
 static void z80n91NextregN(void) {
   uint8_t reg = fetchCodeByte();
   uint8_t value = fetchCodeByte();
+  delayMemoryRead(cpu.pc);
   tbBlueOut(reg, value);
-  tactPlusN(6);
+  delayMemoryRead(cpu.pc); /* 20 T in all */
 }
 
 static void z80n92NextregA(void) {
   uint8_t reg = fetchCodeByte();
+  /* 17 T in all (the Z80N documentation; t80n_mcode.vhd ~1689: four M-cycles after the ED prefix,
+   * 4 + 4 + 3 + 3 + 3). It was 14 T (3 internal T-states here), found by F3's NEXTREG probes. */
+  delayMemoryRead(cpu.pc);
   tbBlueOut(reg, A);
-  tactPlusN(3);
+  delayMemoryRead(cpu.pc);
 }
 
 static void z80n93Pixeldn(void) {

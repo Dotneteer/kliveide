@@ -170,6 +170,20 @@ static uint32_t cpuTactScale;
 static inline uint32_t zxnextTimingIntPulseLength(void) {
   return (zxnextTimingIntPulseCycles * 2u) >> (cpuEffectiveSpeed & 0x03u);
 }
+
+/*
+ * The pulse length for a pulse whose compare matches at frame tact `start`. The source registers the
+ * match on CLK_7 (zxula_timing.vhd int_ula / int_line), so pulse_int_n falls one HC later, and the count
+ * runs on CPU rising edges, which at 3.5 MHz fall on even HCs (Klive's HC = the core's + 8, the line
+ * lengths are even, so a frame tact has its HC's parity). A pulse falling on an odd HC starts mid-cycle
+ * and ends on the last count's edge, half a T-state short: 2 x cycles - 1 HC (F3-2, measured on the
+ * simulated core: 252 clk28 = 63 HC for +3 timing). At 7 MHz and up the CPU edges are 1 HC or closer,
+ * which the HC resolution does not see.
+ */
+static inline uint32_t zxnextTimingIntPulseLengthAt(uint32_t start) {
+  const uint32_t length = zxnextTimingIntPulseLength();
+  return ((cpuEffectiveSpeed & 0x03u) == 0u && (start & 1u) == 0u) ? length - 1u : length;
+}
 /* 1 while the CPU's data accesses go to the access log (z80.c): off in a fast frame unless tracing */
 static uint8_t zxnextCaptureBusEvents = 1u;
 static uint32_t zxnextTraceEnabled; /* defined in zxnext-trace.c */

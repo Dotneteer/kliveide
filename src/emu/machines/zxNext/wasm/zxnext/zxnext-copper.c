@@ -216,7 +216,7 @@ static uint32_t zxnextVideoLineIntActive(uint32_t frameTact) {
     if (start >= ZXNEXT_COPPER_RELOAD_TACT) return 0;
   }
   uint32_t elapsed = (frameTact + ZXNEXT_RENDERING_TACTS_IN_FRAME - start) % ZXNEXT_RENDERING_TACTS_IN_FRAME;
-  return elapsed < zxnextTimingIntPulseLength();
+  return elapsed < zxnextTimingIntPulseLengthAt(start);
 }
 
 static void zxnextCopperAdvanceTo(uint32_t frameTact) {

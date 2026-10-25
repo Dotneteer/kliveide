@@ -203,6 +203,20 @@ static void zxnextCtcAdvanceToSysClock(uint32_t currentSysClock) {
   }
 }
 
+/* The CTC clock (28 MHz) ticks per CPU T-state at the current speed */
+static inline uint32_t zxnextCtcClocksPerTact(void) {
+  return cpuTactScale;
+}
+
+/* A channel's counter `clocks` system clocks from now, without moving the channel. Only a running timer
+   moves on its own; a counter, or a channel that is not running, reads as it is. */
+static uint32_t zxnextCtcPeekAhead(ZxNextCtcChannel *ch, uint32_t clocks) {
+  if (ch->state != 3u || zxnextCtcIsCounterMode(ch)) return ch->count;
+  ZxNextCtcChannel copy = *ch;
+  zxnextCtcAdvanceChannelBySysClocks(&copy, clocks);
+  return copy.count;
+}
+
 void zxnextCtcReset(void) {
   for (uint32_t i = 0; i < 4; i++) {
     zxnextCtcChannels[i].state = 0;
@@ -291,8 +305,13 @@ uint32_t zxnextCtcReadPort(uint32_t port) {
   if (!zxnextCtcPortsEnabled()) return 0xffu;
   const uint32_t channel = zxnextCtcPortChannel(port);
   if (channel >= 4u) return 0x00u;
+  /* Port reads sample 2 T into the I/O cycle (zxnext-cpu.c), which suits the core's registered read
+     paths. The CTC's counter reaches the data bus combinationally (ctc_chan.vhd o_cpu_d <= t_count), so
+     the CPU sees it as it is when it latches the data at the end of the cycle, 2 T later: the counter
+     is read as of then (F3-8, test/vhdl/f3/probes-timing.cjs group T). Peeking ahead does not move the
+     channel's own clock. */
   zxnextCtcAdvanceToSysClock(frameTacts28);
-  return zxnextCtcChannel(channel)->count;
+  return zxnextCtcPeekAhead(zxnextCtcChannel(channel), 2u * zxnextCtcClocksPerTact());
 }
 
 void zxnextCtcWritePort(uint32_t port, uint32_t value) {

@@ -30,6 +30,10 @@ const stopAfter = Number(opt("--stop-after", 0));
 const planOnly = args.includes("--plan-only");
 /** The specification's expected phase-4 time (s); 5 minutes in, a forecast >10 % over it stops the run */
 const expectS = Number(opt("--expect", 0));
+/** --compare-only: redo phase 5 on an existing run folder (--out), e.g. after a comparison fix */
+const compareOnly = args.includes("--compare-only");
+/** results made before the testbench's frame-count fix (frames_run := -1 at an entry at line 310) */
+const legacyFrames = args.includes("--legacy-frames");
 const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
 const out = path.resolve(opt("--out", path.join(F3, "results", `${stamp}-${sample ? "sample" : "full"}`)));
 fs.mkdirSync(out, { recursive: true });
@@ -39,10 +43,11 @@ const VOLATILE_NR = new Set([0x1e, 0x1f]);
 /** Klive's deliberate identity: machine ID $08 ("emulator", not the board's $0A) and sub-version */
 const IDENTITY_NR = new Set([0x00, 0x0e]);
 /**
- * Where the testbench releases the firmware stand-in's soft reset (line, HC), so the program's first
- * fetch lands at line 0, HC 0, where Klive starts it. Calibrated with --calibrate.
+ * Where the testbench releases the firmware stand-in's soft reset (the core's raw vc, hc), so the
+ * program's first fetch lands at Klive's line 0, HC 0: the core's line 310, hc 448, as Klive's HC is
+ * the core's hc + 8. Calibrated with --release on a sample (the fetch comes 259 hc after the release).
  */
-const RELEASE = (opt("--release", null) ?? "310 205").split(" ").map(Number);
+const RELEASE = (opt("--release", null) ?? "310 197").split(" ").map(Number);
 
 const t0 = Date.now();
 const log = (m) => {
@@ -169,14 +174,19 @@ function compare(p) {
   // --- Real time from the first fetch to the stop, in 7 MHz HC: the simulated core's 28 MHz clocks
   // --- / 4 against Klive's frames and beam. (Not CPU clocks or Klive's tacts: contention stretches
   // --- the CPU clock, and a higher CPU speed makes more T-states in the same time.)
-  // --- When the stop came: frames since the first fetch (wraps of the raw line counter) and the
-  // --- raw line/HC. Both machines start at frame 0, line 0, HC 0 and run the same timing, so equal
-  // --- triples mean equal time to the 7 MHz pixel clock.
-  const tbWhen = `${tb.stop_frame} ${tb.stop_beam}`, klWhen = `${kl.stop_frame} ${kl.stop_beam}`;
+  // --- When the stop came: frames since the first fetch and line/HC, in Klive's coordinates (HC =
+  // --- the core's hc + 8). Both machines start at Klive's frame 0, line 0, HC 0 and run the same
+  // --- timing, so equal triples mean equal time to the 7 MHz pixel clock.
+  // runs before the frame-count fix counted the wrap right after an entry at line 310 as frame 1
+  const [sf, sv, sh] = (tb.stop_klive ?? "").split(" ").map(Number);
+  const tbFrame = tb.entry_beam && !tb.entry_beam.startsWith("0 ") && Number(tb.stop_frame) >= 1 && legacyFrames ? sf - 1 : sf;
+  const tbWhen = `${tbFrame} ${sv} ${sh}`, klWhen = `${kl.stop_frame} ${kl.stop_beam}`;
   if (tbWhen !== klWhen) {
     kinds.push("time");
     why.push(`stop at frame/line/HC: VHDL ${tbWhen} Klive ${klWhen}`);
   }
+  // --- $22 bit 7 (the ULA interrupt is active) as the core had it at the stop itself
+  if (tb.stop_int === "0" || tb.stop_int === "1") tb.nr[0x22] = (tb.nr[0x22] & 0x7f) | (Number(tb.stop_int) << 7);
   for (let r = 0; r < 256; r++) {
     if (VOLATILE_NR.has(r) || IDENTITY_NR.has(r) || tb.nr[r] === kl.nr[r]) continue;
     nrDiff.push(`${hex(r)}: VHDL ${hex(tb.nr[r])} Klive ${hex(kl.nr[r])}`);
@@ -200,6 +210,7 @@ function compare(p) {
 
 // ------------------------------------------------------------------------------------- main
 async function main() {
+  if (compareOnly) return report(JSON.parse("[" + fs.readFileSync(path.join(out, "programs.jsonl"), "utf8").trim().split("\n").join(",") + "]"), null, Date.now(), Date.now(), false);
   log(`F3 run, output ${path.relative(ROOT, out)}`);
   const programs = capture();
   log(`programs: ${programs.length} unique${sample ? " (sample)" : ""}`);
@@ -298,8 +309,16 @@ async function main() {
   }));
   clearInterval(ticker);
   status(stopped ? "STOPPED" : "phase 4 done");
+  fs.rmSync(work, { recursive: true, force: true });
 
-  // --- 5. compare
+  return report(programs, withMarker.length, t3, t4, stopped);
+}
+
+// ------------------------------------------------------------------------------------- 5. compare and report
+function report(programs, withMarkerCount, t3, t4, stopped) {
+  if (withMarkerCount === null) {
+    withMarkerCount = programs.filter((p) => fs.readFileSync(path.join(out, "progs", String(p.id), "klive.txt"), "utf8").startsWith("status marker")).length;
+  }
   const results = programs.map((p) => ({ p, ...compare(p) }));
   const count = {};
   for (const r of results) count[r.verdict] = (count[r.verdict] ?? 0) + 1;
@@ -315,7 +334,7 @@ async function main() {
   const kindRows = [...byKind.entries()].sort((a, b) => b[1].n - a[1].n)
     .map(([k, v]) => `| ${k} | ${v.n} | ${[...v.tests].slice(0, 4).map((t) => t.replace("test/zxnext-hw/", "")).join(", ")}${v.tests.size > 4 ? ", ..." : ""} |`).join("\n");
   const onlyNr81 = results.filter((r) => r.verdict === "differ" && r.kinds.length === 1 && r.kinds[0].startsWith("NR $81")).length;
-  const summary = { programs: programs.length, reachMarkerOnKlive: withMarker.length, compared, count, stopped, seconds: { total: (Date.now() - t0) / 1000, phase3: (t4 - t3) / 1000, phase4: (Date.now() - t4) / 1000 }, jobs, klives };
+  const summary = { programs: programs.length, reachMarkerOnKlive: withMarkerCount, compared, count, stopped, seconds: { total: (Date.now() - t0) / 1000, phase3: (t4 - t3) / 1000, phase4: (Date.now() - t4) / 1000 }, jobs, klives };
   fs.writeFileSync(path.join(out, "summary.json"), JSON.stringify(summary, null, 2));
   const inputs = ["tb_next.vhd", "models.vhd", "f3-klive.f3.ts", "run-f3.cjs"].map((f) => `| test/vhdl/f3/${f} | \`${sha(path.join(F3, f))}\` |`).join("\n");
   const report = `# F3 — whole-core replay of the catalogue's programs
@@ -346,7 +365,6 @@ ${inputs}
 `;
   fs.writeFileSync(path.join(out, "report.md"), report);
   log(`verdicts: ${JSON.stringify(count)}; report ${path.relative(ROOT, path.join(out, "report.md"))}`);
-  fs.rmSync(work, { recursive: true, force: true });
 }
 
 main().catch((e) => { console.error(e); process.exit(1); });

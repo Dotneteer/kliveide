@@ -68,6 +68,21 @@ static void zxnextNmiRequestDivMmc(void) {
   }
 }
 
+/*
+ * S_NMI_IDLE with a source latched: the core drives /NMI low at once (zxnext.vhd ~2049 "must be
+ * applied to z80 /nmi immediately", ~2124 nmi_generate_n) and pulses the Multiface / DivMMC button
+ * (~2125-2126), then moves to S_NMI_FETCH on the next CPU clock. So an NMI raised by an instruction
+ * (a $02 write) is taken at the end of that instruction, not one instruction later; F3's NMI programs
+ * (NMI-004/005, DIV-032: return address $8015 on the core, $8016 before this) found it.
+ */
+static void zxnextNmiActivateIfIdle(void) {
+  if (nmiState != ZXNEXT_NMI_IDLE || !(nmiSourceMf || nmiSourceDivMmc)) return;
+  nmiState = ZXNEXT_NMI_FETCH;
+  nmiSignalActive = 1u;
+  if (nmiSourceMf) zxnextMultifacePressNmiButton();
+  if (nmiSourceDivMmc) zxDivMmcArmNmiButton();
+}
+
 static void zxnextNmiUpdateSources(void) {
   if (nmiSourceMf || nmiSourceDivMmc) return;
   uint32_t assertMf = nmiPendingMf && zxDivMmcGetEnableMultifaceNmiByM1Button();
@@ -81,18 +96,14 @@ static void zxnextNmiUpdateSources(void) {
   /* The causes are pulses: one that lost the arbitration is gone */
   nmiPendingMf = 0u;
   nmiPendingDivMmc = 0u;
+  zxnextNmiActivateIfIdle();
 }
 
 static void zxnextNmiBeforeOpcodeFetch(uint32_t pc) {
   if (zxnextNmiAcceptCause()) zxnextNmiUpdateSources();
   switch (nmiState) {
     case ZXNEXT_NMI_IDLE:
-      if (nmiSourceMf || nmiSourceDivMmc) {
-        nmiState = ZXNEXT_NMI_FETCH;
-        nmiSignalActive = 1u;
-        if (nmiSourceMf) zxnextMultifacePressNmiButton();
-        if (nmiSourceDivMmc) zxDivMmcArmNmiButton();
-      }
+      zxnextNmiActivateIfIdle();
       break;
     case ZXNEXT_NMI_FETCH:
       if ((pc & 0xffffu) == 0x0066u) {

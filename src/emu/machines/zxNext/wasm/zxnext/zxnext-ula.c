@@ -1533,7 +1533,7 @@ static uint32_t zxnextUlaGetScrollY(void) { return ulaScrollY; }
 static uint32_t zxnextUlaGetPulseIntActive(uint32_t frameTact) {
   /* the Pentagon interrupt starts at the last tact of the frame: the pulse wraps into the next one */
   uint32_t sinceInt = (frameTact + ZXNEXT_RENDERING_TACTS_IN_FRAME - zxnextTimingIntStart) % ZXNEXT_RENDERING_TACTS_IN_FRAME;
-  return sinceInt < zxnextTimingIntPulseLength();
+  return sinceInt < zxnextTimingIntPulseLengthAt(zxnextTimingIntStart);
 }
 
 static uint32_t zxnextNextRegGetMachineTiming(void);

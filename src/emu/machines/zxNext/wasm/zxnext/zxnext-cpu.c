@@ -16,6 +16,8 @@ static inline void zxnextCpuTactPlusN(uint32_t value);
 static inline void zxnextCpuDelayMemoryRead(uint32_t address);
 static inline void zxnextCpuDelayMemoryWrite(uint32_t address);
 static inline void zxnextCpuDelayPortAccess(uint32_t address);
+static inline void zxnextCpuDelayPortReadHead(uint32_t address);
+static inline void zxnextCpuDelayPortReadTail(uint32_t address);
 static inline uint32_t zxnextCpuShouldRaiseInt(void);
 static inline void zxnextCpuCaptureVideoInterrupts(void);
 
@@ -52,8 +54,12 @@ static uint8_t zxnextCpuHeldAtFrameEnd;
 #define Z80_DELAY_MEMORY_WRITE(address) zxnextCpuDelayMemoryWrite(address)
 static inline void zxnextCpuDelayContendedMemory(uint32_t address, uint32_t memoryCycle);
 #define Z80_DELAY_ADDRESS_BUS_ACCESS(address) zxnextCpuDelayContendedMemory((uint32_t)(address), 0u)
-#define Z80_DELAY_PORT_READ(address) zxnextCpuDelayPortAccess(address)
-#define Z80_DELAY_PORT_WRITE(address) zxnextCpuDelayPortAccess(address)
+/* A port read samples 2 T into its 4 T I/O cycle (F3-2: the simulated core's IN sees the line counter,
+   the ULA interrupt flag and the CTC as of then, test/vhdl/f3/probes.cjs); the cycle's length stays 4 T */
+#define Z80_DELAY_PORT_READ(address) zxnextCpuDelayPortReadHead(address)
+#define Z80_DELAY_PORT_READ_TAIL(address) zxnextCpuDelayPortReadTail(address)
+#define Z80_DELAY_PORT_WRITE(address) zxnextCpuDelayPortReadHead(address)
+#define Z80_DELAY_PORT_WRITE_TAIL(address) zxnextCpuDelayPortReadTail(address)
 
 /* The execution-history recorder's hooks (`.plans/EXECUTION_HISTORY_VIEWER_PLAN.md`); the recorder
    itself and this machine's macros for it are at the end of zxnext.c */
@@ -209,7 +215,10 @@ static inline void zxnextCpuDelayContendedMemory(uint32_t address, uint32_t memo
   const uint32_t page = zxnextNextRegs[0x50u + ((address >> 13) & 0x07u)];
   if (page > 0x0fu) return;
   if (timing == 1u ? (page & 0x0eu) != 0x0au : (timing == 2u ? (page & 0x02u) == 0u : (page & 0x08u) == 0u)) return;
-  const uint32_t delay = zxnextCpuContentionDelayAt(currentFrameTact);
+  /* 48K / 128K stretch the clock at the cycle's start (zxula.vhd o_cpu_contend). +3 holds WAIT_n, which
+     the T80 samples at the end of T2 (t80n.vhd "TState = 2 and WAIT_n = '0'"): 1 T, 2 HC, later
+     (F3-4, test/vhdl/f3/probes-timing.cjs group C) */
+  const uint32_t delay = zxnextCpuContentionDelayAt(timing == 3u ? currentFrameTact + 2u : currentFrameTact);
   if (delay == 0u) return;
   zxnextCpuTactPlusN(delay);
   totalContentionDelaySinceStart += delay;
@@ -251,6 +260,18 @@ static inline void zxnextCpuDelayPortAccess(uint32_t address) {
     zxnextCpuTactPlusN(1u);
     zxnextCpuTactPlusN(3u);
   }
+}
+
+/* Every branch of zxnextCpuDelayPortAccess is 4 plain T-states; a read samples after the first 2 */
+static inline void zxnextCpuDelayPortReadHead(uint32_t address) {
+  (void)address;
+  zxnextCpuTactPlusN(1u);
+  zxnextCpuTactPlusN(1u);
+}
+
+static inline void zxnextCpuDelayPortReadTail(uint32_t address) {
+  (void)address;
+  zxnextCpuTactPlusN(2u);
 }
 
 /*

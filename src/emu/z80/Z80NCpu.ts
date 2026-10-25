@@ -261,11 +261,12 @@ function nextregn(cpu: Z80NCpu) {
   cpu.tactPlusN(6);
 }
 
-// 0x92: NEXTREG NN,A
+// 0x92: NEXTREG NN,A - 17 T, as the Z80N documentation and the T80N (t80n_mcode.vhd ~1689) have it;
+// the WASM core (z80.c) times the last 6 as two bus read cycles
 function nextrega(cpu: Z80NCpu) {
   const register = cpu.fetchCodeByte();
   cpu.tbblueOut(register, cpu.a);
-  cpu.tactPlusN(3);
+  cpu.tactPlusN(6);
 }
 
 // 0x93: PIXELDN
