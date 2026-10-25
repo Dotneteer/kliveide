@@ -591,6 +591,129 @@ go/no-go measurement: tests are replayed shortest first, and the frame cost deci
 frame-heavy areas F3 and F6 go. Until the Xilinx RAM models are checked (Phase 2a), sprite and tilemap
 results in F3, F4 and F6 are reported but not used as expectations.
 
+#### F3 run specification (recorded 2026-10-25, before the measured run)
+
+The same four constraints as F1 (count first, evidence, the 10 % / 5-minute rule, progress every
+5 minutes), plus the author's request for frequent progress reports with a forecast finish.
+
+**What F3 is, as built** (`test/vhdl/f3/`, `node test/vhdl/f3/run-f3.cjs`):
+- *The testbench (`tb_next.vhd`):* `zxnext.vhd`, unchanged, wired as `zxnext_top_issue4.vhd` wires
+  it:
+  - aligned 28/14/7 MHz clocks, the CPU clock chosen by the core's speed output, `CLK_3M5_CONT`
+    contention, the AY enable;
+  - the soft-reset sequencer and the SRAM controller.
+
+  Models (`models.vhd`, written for the testbench) stand in for the Xilinx RAMs, the boot ROM and a
+  preloadable `dpram2`.
+- *Speed, measured:* boot plus one 50 Hz frame takes 9.4 s; a frame alone takes about 8.5 s, roughly
+  1/400 of real time.
+- *The programs:* every program the hardware tests load. Running `test/zxnext-hw` with `F3_CAPTURE`
+  records them: 114 files, 1,516 tests, 3,074 loads, **1,070 unique programs**.
+- *Each replay starts both machines from the same state:*
+  - *Memory:* Klive's memory right after `loadCode`.
+  - *Boot:* a firmware stand-in leaves config mode at Klive's machine type and timing (`$03` = $33)
+    and soft-resets. The start code then sets the registers NextZXOS's firmware sets (`$05`, `$06`,
+    `$08` as Klive has them), clears the interrupt status (`$C8`, `$C9`), and runs DI / LD SP / JP entry.
+  - *Raster:* the CPU is released so the program's first fetch lands at line 0, HC 0, where Klive
+    starts it. The raster runs through resets; the release point, line 310 HC 165, was calibrated
+    once.
+- *The comparison:* right after the instruction that writes the ready marker ($A5 to `$7F`).
+  Klive stops there with `runToNextRegWrite`; the testbench stops at the next M1. Compared:
+  - the time from the first fetch, in T-states;
+  - PC, A, F and SP;
+  - every NextReg through the core's own read mux, except the raster counters `$1E`/`$1F` and Klive's
+    deliberate identity (`$00` = $08 "emulator", `$0E` sub-version);
+  - all RAM from $40000, with banks 5 and 7 taken from the core's block RAM.
+
+**Exact count:**
+
+| | Programs |
+|---|---|
+| Captured, unique | **1,070** |
+| Replayed on both machines (reach the ready marker on Klive within 8 frames) — **the F3 tests** | **895** |
+| Not replayable: never write the marker themselves (their tests drive them from outside) | 170 |
+| Not replayable: need an SD card image (SPI-004/005/006/010/011) | 5 |
+
+The 895 runs need **1,232 frames** on Klive's clock: 649 programs take 1 frame, 199 take 2, 32 take 3,
+4 take 5, 8 take 6 and 3 take 7.
+
+**Expected time:**
+- *Phase 4 (simulator), 10 jobs:* 1,232 frames plus about ½ frame of boot wait per run gives
+  ≈ 1,680 frames. At 8.5 s each, divided by 10, that is ≈ 24 min, plus ≈ 15 % for 10 simulators at
+  once: **27 min (1,620 s)**.
+- *Phases 1–3 and the comparison:* about 2–3 min.
+- *Total:* **≈ 30 min**.
+- *Limit:* 10 % over phase 4 is 1,782 s. At the 5-minute mark the forecast, from frames simulated so
+  far including runs in flight, is checked; over the limit, the run stops (`--expect 1620`).
+
+**Measured run 1 (05:41) — STOPPED by the 5-minute rule.** The forecast for phase 4 was 2,502 s against
+1,620 s expected. 10 simulators at once ran about 2× slower each than one alone; my estimate assumed
+15 %. 44 runs finished. Their differences exposed two measurement errors, both fixed in bring-up
+runs 8–11 (34 executions):
+- *Wrong counters.* The testbench timed the start on `zxnext`'s `hc`/`vc`, which are the ULA's
+  display-relative counts. It now uses `zxula_timing`'s raw frame counters, where the interrupt
+  position is defined and which Klive's line/HC are. The release point is now line 310, HC 205; the
+  first fetch lands at exactly line 0, HC 0.
+- *Wrong time measure.* Klive's tacts count CPU T-states at the current speed, so they are not time.
+  The stop time is now compared as (frames since the first fetch, raw line, HC) on both machines.
+
+**Revised expected time (recorded 05:58, before measured run 2):**
+- *Phase 4:* **2,500 s (≈ 42 min)**, from run 1's measured rate.
+- *Total:* ≈ 45 min.
+- *Limit:* 2,750 s; the 5-minute check uses `--expect 2500`.
+
+The count is unchanged: **895** simulator runs out of 1,070 programs.
+
+**Measured run 2 (05:56–06:57) — complete, verdict DIFFERENCES.**
+- *Time:* 895 of 895 simulator runs in 3,672 s, 47 % over the recorded 2,500 s.
+  - The 5-minute check forecast 2,376 s and passed.
+  - The forecast weighted progress by frames and left out each run's fixed boot (about one frame of
+    waiting for the release point). That overhead dominates the many 1-frame runs at the end. A
+    later forecast must count runs too.
+- *Results:* `test/vhdl/f3/results/full-2/report.md`.
+
+| Result | Programs |
+|---|---|
+| Compared | 893 |
+| …differing only in `$81` bit 7 | **728** |
+| …with other differences | 165 |
+| Did not reach the marker in the VHDL: SPD-005 (expansion bus on), SPI-003 (no SD card) | 2 |
+| Not replayed: no marker on their own (170), need an SD image (5) | 175 |
+
+- **`$81` bit 7 (all 893).** The core reads `i_BUS_ROMCS_n` raw (`zxnext.vhd` ~6072), so an idle
+  expansion bus reads **1**. nextreg.txt documents it as "1 if asserted", and Klive reads 0. This is a
+  documentation-versus-VHDL conflict; the board can settle it.
+- **The other 165**, by test file:
+
+| Test file | Programs | Mostly |
+|---|---|---|
+| `video/video-timing` | 65 | `$22` bit 7 (ULA interrupt active at the stop, 41) and measured values in memory/A |
+| `speed/cpu-speed` | 19 | stop a few HC earlier in the VHDL |
+| `uart/uart` | 16 | stop a few HC earlier in the VHDL |
+| `memory/contention` | 16 | stop a few HC earlier in the VHDL; 2 by whole frames |
+| `sd/sd-card` | 10 | stop lines apart (no card in the testbench) |
+| `dma/dma` | 6 | stop a few HC later in the VHDL |
+| 17 others | 1–5 each | `$C8` (11), `$C2` (7), `$4A`, `$20` |
+
+Not every difference is a Klive bug. Each group is triaged against the testbench's own
+simplifications first:
+- the plain CPU clock mux on speed changes (the board's BUFGMUX switches glitch-free);
+- the idle UART, SD and expansion-bus lines;
+- the Xilinx RAM models for sprites and tilemap.
+
+Only then are they recorded as findings with a minimal program each.
+
+**Bring-up before it:**
+- *Sample runs:* 7 runs of a 6-program sample, 35 simulator executions, which calibrated the start
+  state; then runs 8–11 above.
+- *Plus:* one speed measurement and one plan-only pass (Klive only).
+
+**Evidence:**
+- *Report:* `test/vhdl/f3/results/<run>/report.md`, with verdicts per program, the differences grouped
+  by kind with the tests they come from, input hashes, and per-program files.
+- *Proof the comparison sees differences:* the sample runs already show it detecting real ones, such
+  as `$81` bit 7 and a 14,640 T-state contention gap.
+
 **What happens to a finding:** the step writes the mismatch, the seed and the minimised program into
 `.next-fidelity/findings/` (git-ignored). Deciding whether it is a Klive bug, a misread VHDL or a test
 error is the normal bug-fixing work, not part of the automatic run.
