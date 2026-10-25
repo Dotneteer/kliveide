@@ -3280,9 +3280,9 @@
       "hi": "The largest value, e.g. '127'"
     }
   },
-  "panels.side.variables.noProgram": "Build a Klive BASIC program to see its variables",
+  "panels.side.variables.noProgram": "Build a program with source-level debug information to see its variables",
   "@panels.side.variables.noProgram": {
-    "context": "Empty state of the Variables panel when the build has no source-level debug information. 'Klive BASIC' is the product's BASIC dialect, keep it."
+    "context": "Empty state of the Variables panel when the build has no source-level debug information (Klive BASIC, Boriel BASIC and z88dk C builds have it; plain assembly does not)."
   },
   "panels.side.variables.newValue": "New value of {name}",
   "@panels.side.variables.newValue": {
@@ -3355,13 +3355,13 @@
   "@panels.side.variables.removeWatch": {
     "context": "Tooltip of the trash button of a BASIC watch row in the Variables panel."
   },
-  "panels.side.variables.addWatchLabel": "Add a BASIC watch expression",
+  "panels.side.variables.addWatchLabel": "Add a watch expression",
   "@panels.side.variables.addWatchLabel": {
     "context": "Accessible name of the input at the foot of the Variables panel."
   },
-  "panels.side.variables.addWatchPlaceholder": "Add watch: a BASIC expression",
+  "panels.side.variables.addWatchPlaceholder": "Add watch: an expression in the program's language",
   "@panels.side.variables.addWatchPlaceholder": {
-    "context": "Placeholder of the input at the foot of the Variables panel: type a BASIC expression and press Enter to watch it."
+    "context": "Placeholder of the input at the foot of the Variables panel: type an expression of the program's source language (BASIC, C) and press Enter to watch it."
   },
   "panels.side.sourceCallStack.pause": "Pause the machine to see the call stack",
   "@panels.side.sourceCallStack.pause": {

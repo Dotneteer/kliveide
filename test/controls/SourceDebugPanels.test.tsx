@@ -176,26 +176,26 @@ describe("the Variables panel (§10.7, §10.8)", () => {
     expect(emu.setMemoryContent).not.toHaveBeenCalled();
   });
 
-  it("evaluates BASIC watches the user adds, and removes them", async () => {
+  it("evaluates watches the user adds in the program's language, and removes them", async () => {
     const store = await renderPaused(<VariablesPanel />);
-    const input = screen.getByLabelText("Add a BASIC watch expression");
+    const input = screen.getByLabelText("Add a watch expression");
     await act(async () => {
       fireEvent.change(input, { target: { value: "score + n" } });
       fireEvent.keyDown(input, { key: "Enter" });
     });
-    expect(store.getState().basicWatches).toEqual(["score + n"]);
+    expect(store.getState().sourceWatches).toEqual(["score + n"]);
     expect(screen.getByText("12352")).toBeInTheDocument();
     await act(async () => {
       fireEvent.click(screen.getByTitle("Remove this watch"));
     });
-    expect(store.getState().basicWatches).toEqual([]);
+    expect(store.getState().sourceWatches).toEqual([]);
   });
 
-  it("asks for a Klive BASIC program when there is no source-level info", async () => {
+  it("asks for a program with source-level debug information when there is none", async () => {
     const store = createMockStore();
     await act(async () => {
       renderWithProviders(<VariablesPanel />, { store });
     });
-    expect(screen.getByText("Build a Klive BASIC program to see its variables")).toBeInTheDocument();
+    expect(screen.getByText("Build a program with source-level debug information to see its variables")).toBeInTheDocument();
   });
 });
