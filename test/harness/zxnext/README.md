@@ -91,6 +91,7 @@ Methods returning `this` chain.
 | | `hardReset()` `reset()` | Power-on reset / soft reset (memory kept). |
 | Memory | `peek` `peekWord` `peekBytes` `poke(addr, byte \| bytes)` `pokeWord` | Through the current MMU paging, like the CPU. |
 | | `peekPage(page, offset)` `pokePage(page, offset, v)` `mmuPage(slot)` | An 8K page's byte whatever is mapped (through MMU slot 7, restored), and the page an MMU slot maps. For banked code and bank-local data. |
+| | `ramPages(firstPage, count)` | A live view of consecutive 8K RAM pages in the core's physical memory (no MMU, no overlays). For comparing whole pages after every instruction (`test/vhdl/f1/`); read-only by convention. |
 | Text | `screenLine(row)` `screenChar(row, col)` | A ULA text row, matched against the 48K ROM font at `$3D00` (needs the ROM, as `prepareBasic` leaves it). |
 | Debug | `attachDebugSupport()` `continueToBreakpoint({ returnTo?, maxFrames })` `sourceStep(index, kind, opts)` `machineView()` `interruptDepth()` | The 48K harness's breakpoint and source-step API, for Klive BASIC's source-level debugger; `machineView()` adds PC's partition (8K page) for banked code. |
 | I/O | `out(port, v)` `in(port)` | With every hardware side effect (reads that clear status bits clear them). |

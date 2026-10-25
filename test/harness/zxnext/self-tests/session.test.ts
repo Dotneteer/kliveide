@@ -73,6 +73,21 @@ describe("harness session", () => {
     expect(s.peek(0xc000)).toBe(1);
   });
 
+  it("ramPages is a live view of the physical pages a CPU write lands in", async () => {
+    const s = await createSession();
+    s.setNextReg(0x57, 0x21); // page $21 at $E000
+    s.poke(0xe123, 0x5a).poke(0xe124, 0xa5);
+    const view = s.ramPages(0x20, 2);
+    expect(view.length).toBe(0x4000);
+    expect(view[0x2000 + 0x123]).toBe(0x5a);
+    expect(view[0x2000 + 0x124]).toBe(0xa5);
+    // live, not a copy: a later write shows without asking again
+    s.poke(0xe123, 0x77);
+    expect(view[0x2123]).toBe(0x77);
+    expect(s.peekPage(0x21, 0x123)).toBe(0x77);
+    expect(() => s.ramPages(0x200)).toThrow(/outside/);
+  });
+
   it("Z80 code writing a NextReg is visible, and runUntilReady waits for the marker", async () => {
     const s = await createSession();
     await s.loadCode(`

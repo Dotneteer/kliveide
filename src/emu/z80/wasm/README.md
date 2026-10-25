@@ -27,6 +27,24 @@ the address-bus hook; the 48K and 128K define it as nothing, because the ULA hal
 M-cycle's first T-state (IR Contention's real-machine pictures, `.plans/SPECTRUM_ACCURACY_DOCS_PLAN.md`).
 The +2A/+3's gate array contends memory cycles only, so its address-bus and port hooks add no delay.
 
+## The Next's CPU is a T80N, not a Zilog Z80
+
+`Z80_T80N`, defined only by the Next (`zxnext-cpu.c`), switches `z80.c` to the FPGA's T80N
+(`_input/next-fpga/src/cpu/`) where the two differ:
+- *Flags:* `BIT` takes flag bits 3/5 from the operand, or 0 for `(HL)`/`(IX+d)`, never from MEMPTR.
+  `IN r,(C)`, `LD A,I` and `LD A,R` keep flag bits 3/5, and `IN r,(C)` sets parity. `CPI` and friends
+  take flag bits 3/5 from the byte. Block I/O keeps the flags of `SUB B,1`. The Z80N block copies
+  set `LDI`'s flags.
+- *`ED B6` (LDIRSCALE):* runs as `LDIRX`.
+
+Without the define, a core keeps the Zilog behaviour that ZEXALL and the Spectrum suites check.
+PIXELDN, a Z80N-only instruction, follows the T80N everywhere.
+
+The T80N differential in `test/vhdl/f1/` (`node test/vhdl/f1/run-f1.cjs --full`, about 30 s) runs
+115,854 single-instruction cases on the simulated VHDL and on the Next core and must report 0
+mismatches. Run it after any change to `z80.c` that the Next can see. It needs `nvc`
+(`brew install nvc`). The `test/wasm/z80` corpus covers the build without the define.
+
 ## A fast frame does no debugging work it can avoid
 
 A plain Run is `<prefix>ExecuteFrame`, one call per frame. Every debugging hook in it is either compiled

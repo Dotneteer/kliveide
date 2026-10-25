@@ -637,6 +637,22 @@ export class NextTestSession {
     return value;
   }
 
+  /**
+   * A live view of `count` consecutive 8K RAM pages from `firstPage`: the core's own physical RAM
+   * (`ZXNEXT_OFFS_NEXT_RAM` + page * 8K in `zxnext-memory.c`), not a copy. Reading it is as fast as
+   * reading an array, for tests that compare whole pages after every instruction. It bypasses MMU
+   * slots and overlays (DivMMC, Multiface), so it shows what is stored, not what the CPU sees.
+   * Writing through it is not a hardware action: use `poke`/`pokePage` to change memory.
+   */
+  ramPages(firstPage: number, count = 1): Uint8Array {
+    const RAM_OFFSET = 0x40000;
+    const memory = this.machine.wasmV2Runtime!.memory;
+    const start = RAM_OFFSET + firstPage * 0x2000;
+    const end = start + count * 0x2000;
+    if (firstPage < 0 || end > memory.length) throw new Error(`ramPages(${firstPage}, ${count}) is outside the Next's RAM`);
+    return memory.subarray(start, end);
+  }
+
   /** Writes a byte of an 8K RAM page whatever is mapped, through MMU slot 7 (restored afterwards). */
   pokePage(page: number, offset: number, value: number): this {
     const saved = readNextRegDirect(this.machine, 0x57);

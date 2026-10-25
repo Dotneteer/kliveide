@@ -28,6 +28,9 @@ static uint8_t zxnextCpuMreqSuppressed;
 static uint8_t zxnextCpuHeldAtFrameEnd;
 
 #define Z80_EXTERNAL_BUS 1
+/* The Next's CPU is the FPGA's T80N: its flags and ED B6 follow t80n*.vhd, not a Zilog Z80 (z80.c,
+ * D1-D8; checked against the simulated VHDL by test/vhdl/f1/) */
+#define Z80_T80N 1
 #define Z80_MEMORY_PTR() zxnextMemory
 #define Z80_READ_MEMORY(address) zxnextCpuSharedReadMemory(address)
 #define Z80_FETCH_CODE_BYTE(address) zxnextCpuSharedFetchCodeByte(address)
