@@ -58,9 +58,9 @@ function g4Problems(r: Run): string[] {
   for (const v of r.entries) {
     const st = mir.statements[v.sid];
     const fn = mir.functions[st.functionIndex];
-    // --- DATA items run as a call from READ, one level below the reading statement: not an activation of their own
-    if (fn.kind === "data") continue;
-    if (fn.kind !== "main") {
+    // --- DATA items (a fragment) run as a call from READ, one level below the reading statement: not an activation of their own
+    if (fn.kind === "fragment") continue;
+    if (fn.kind !== "entry") {
       const expected = (v.ix - 2 * Math.ceil(fn.frameSize / 2)) & 0xffff;
       if (v.sp !== expected) problems.push(`statement ${v.sid} in ${fn.name}: SP ${v.sp}, IX - frame ${expected}`);
       continue;

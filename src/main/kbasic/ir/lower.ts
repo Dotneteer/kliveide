@@ -7,9 +7,11 @@ import type { AddressTarget, BoundArgument, BoundExpr, BoundProgram, BoundStatem
 import type { Constant } from "../semantics/constants";
 import * as f40 from "../../z80-backend/numeric/float40";
 import type { ArraySymbol, LabelSymbol, RoutineSymbol, Scope, VariableSymbol } from "../semantics/symbols";
+import { frameDescriptor, globalDescriptors, globalName } from "./debug-descriptors";
+import { mtypeOf, withBasicSemantics } from "./types";
+import type { SourceSet } from "../syntax/source";
 import {
   COMPARISONS,
-  mtypeOf,
   mtypeSize,
   isSignedM,
   type BinOp,
@@ -37,8 +39,11 @@ import {
  * What the code generator does not handle yet is reported as E501 and left out, so the rest of the
  * program still gets its diagnostics.
  */
-/** The run-time checks a program asks for (zxbc's --debug-array and --enable-break). */
-export type RuntimeChecks = { bounds?: boolean; breakKey?: boolean };
+/**
+ * The run-time checks a program asks for (zxbc's --debug-array and --enable-break), and the source
+ * set, from which the debugger's variable names are taken as the source writes them.
+ */
+export type RuntimeChecks = { bounds?: boolean; breakKey?: boolean; sources?: SourceSet };
 
 export function lowerProgram(
   program: BoundProgram,
@@ -58,10 +63,6 @@ export function labelName(label: LabelSymbol): string {
   return `_label.${label.lineNumber !== undefined ? label.lineNumber : label.name.replace(/[$%]$/, "")}`;
 }
 
-/** The label of a global variable. */
-export function globalName(name: string): string {
-  return `_${name}`;
-}
 
 /** PrintColour's codes: the ROM's control codes 16-21, and Klive's own 26 BOLD and 27 ITALIC (print.kz80.asm). */
 const ATTR_CODES: Record<AttrName, number> = { INK: 16, PAPER: 17, FLASH: 18, BRIGHT: 19, INVERSE: 20, OVER: 21, BOLD: 26, ITALIC: 27 };
@@ -133,13 +134,13 @@ class Lowering {
     this.collectData(program.statements, []);
     this.dataRead = containsKind(program.statements, "read") || containsKind(program.statements, "restore");
     this.globalData(globals);
-    this.fn = { label: "_main", name: "main", kind: "main", convention: "stdcall", params: [], locals: [], frameSize: 0, argBytes: 0, blocks: [] };
+    this.fn = { label: "_main", name: "main", kind: "entry", convention: "stdcall", params: [], locals: [], frameSize: 0, argBytes: 0, blocks: [] };
     this.module.functions.push(this.fn);
     this.startBlock("_main");
     this.statements(program.statements);
     // --- Falling off the end of the main program is END 0
     this.endStatement();
-    this.terminate({ op: "end", code: imm("u16", 0), sid: -1 });
+    this.terminate(endProgram(imm("u16", 0), -1));
     const reachable = reachableRoutines(program.statements);
     for (const s of routinesOf(program.statements)) {
       // --- A library routine the program never reaches is left out (a user's is kept: inline asm
@@ -150,6 +151,8 @@ class Lowering {
     for (const init of this.bankInits) this.lowerBankInitialiser(init);
     if (this.dataRead) this.lowerData();
     this.module.data.push(...this.staticSlots);
+    // --- The debugger's globals: the user's variables and constants, by name, type and storage
+    this.module.globals = globalDescriptors(globals, this.checks.sources, this.isLibraryFile);
     return this.module;
   }
 
@@ -296,7 +299,8 @@ class Lowering {
 
   private emit(i: Instr): void {
     if (this.block.term) this.startBlock(this.newLabel());
-    this.block.instrs.push(i);
+    // --- What BASIC means by the operations whose meaning differs between languages (types.ts)
+    this.block.instrs.push(withBasicSemantics(i));
   }
 
   private vreg(type: MType): VReg {
@@ -481,7 +485,7 @@ class Lowering {
       case "gosub": {
         this.beginStatement(s.span, "call");
         const next = this.newLabel();
-        this.terminate({ op: "gosub", target: labelName(s.label), next, sid: this.sid, site: { kind: "gosub", moreCallsFollow: false, order: 0 } });
+        this.terminate({ op: "localcall", target: labelName(s.label), next, sid: this.sid, site: { kind: "local", moreCallsFollow: false, order: 0 } });
         this.startBlock(next);
         return;
       }
@@ -491,7 +495,15 @@ class Lowering {
         const next = this.newLabel();
         const targets = s.labels.map(labelName);
         if (s.jump === "GOTO") this.terminate({ op: "switch", sel, targets, otherwise: next, sid: this.sid });
-        else this.terminate({ op: "ongosub", sel, targets, next, sid: this.sid, site: { kind: "on-gosub", moreCallsFollow: false, order: 0 } });
+        else
+          this.terminate({
+            op: "switch",
+            sel,
+            targets,
+            otherwise: next,
+            call: { site: { kind: "local", dispatch: true, moreCallsFollow: false, order: 0 } },
+            sid: this.sid
+          });
         this.startBlock(next);
         return;
       }
@@ -509,18 +521,18 @@ class Lowering {
         return;
       case "end":
         this.beginStatement(s.span, "return");
-        this.terminate({ op: "end", code: s.value ? this.value(s.value) : imm("u16", 0), sid: this.sid });
+        this.terminate(endProgram(s.value ? this.value(s.value) : imm("u16", 0), this.sid));
         return;
       case "stop":
         this.beginStatement(s.span, "return");
         // --- ERR_NR 8: "9 STOP statement". The program returns with it set, and BASIC shows the
         // --- report when its own statement ends (ZX BASIC; compatibility plan C3)
         this.emit({ op: "rtcall", name: this.rt("StopProgram"), args: [s.value ? this.value(s.value) : imm("u8", 8)], sid: this.sid });
-        this.terminate({ op: "end", code: imm("u16", 0), sid: this.sid });
+        this.terminate(endProgram(imm("u16", 0), this.sid));
         return;
       case "error":
         this.beginStatement(s.span, "return");
-        this.terminate({ op: "raise", code: this.value(s.value), sid: this.sid });
+        this.terminate(raiseError(this.value(s.value), this.sid));
         return;
       case "poke": {
         this.beginStatement(s.span, "other");
@@ -746,7 +758,8 @@ class Lowering {
 
   /** READ into one target: the next item (a call into the DATA code), converted to the target's type. */
   private readInto(target: BoundExpr): void {
-    const site: CallSite = { kind: "read", moreCallsFollow: false, order: this.statementCalls.length };
+    // --- READ's call of the DATA items is runtime code to the debugger (no call-site record)
+    const site: CallSite = { kind: "runtime", moreCallsFollow: false, order: this.statementCalls.length };
     this.statementCalls.push(site);
     this.emit({ op: "call", target: "__data_read", convention: "stdcall", args: [], site, sid: this.sid });
     const type = mtypeOf(target.type);
@@ -785,7 +798,7 @@ class Lowering {
    * takes its first item.
    */
   private lowerData(): void {
-    this.fn = { label: "__data_read", name: "DATA", kind: "data", convention: "stdcall", params: [], locals: [], frameSize: 0, argBytes: 0, blocks: [] };
+    this.fn = { label: "__data_read", name: "DATA", kind: "fragment", convention: "stdcall", params: [], locals: [], frameSize: 0, argBytes: 0, blocks: [] };
     this.fnIndex = this.module.functions.length;
     this.module.functions.push(this.fn);
     this.routine = undefined;
@@ -1159,7 +1172,7 @@ class Lowering {
     const name = `__kbinit${this.bankInits.length}`;
     this.bankInits.push({ name, bank: s.symbol.bank, statement: s });
     this.beginStatement(s.span, "declaration");
-    const site: CallSite = { kind: "sub", callee: name, moreCallsFollow: false, order: this.statementCalls.length };
+    const site: CallSite = { kind: "routine", callee: name, moreCallsFollow: false, order: this.statementCalls.length };
     this.statementCalls.push(site);
     this.emit({ op: "call", target: globalName(name), convention: "stdcall", args: [], site, sid: this.sid });
   }
@@ -1171,7 +1184,7 @@ class Lowering {
     this.fn = {
       label: `${label}.__far`,
       name: init.name,
-      kind: "sub",
+      kind: "routine",
       convention: "stdcall",
       params: [],
       locals: [],
@@ -1270,13 +1283,13 @@ class Lowering {
       // --- A banked routine's body is `_name.__far` in its bank; `_name` is its resident trampoline
       label: r.bank ? `${globalName(r.name)}.__far` : globalName(r.name),
       name: r.name,
-      kind: r.kind,
+      kind: "routine",
       convention: fastcall ? "fastcall" : "stdcall",
       params: [],
       locals: [],
       frameSize: 0,
       argBytes: 0,
-      ...(returnType ? { returnType } : {}),
+      ...(returnType ? { returnType, returnLabel: r.returnType ?? "Float" } : {}),
       blocks: [],
       epilogue: `${globalName(r.name)}.leave`,
       span: s.span,
@@ -1354,7 +1367,9 @@ class Lowering {
     // --- For the debugger: where each parameter and local lives
     const params = new Set(r.params.map((p) => p.symbol));
     this.fn.vars = [...this.frameSlots].flatMap(([symbol, { slot, byref }]) =>
-      slot.kind === "frame" ? [{ symbol, offset: slot.offset, byref: byref || (symbol.kind === "array" && !!symbol.param), param: params.has(symbol) }] : []
+      slot.kind === "frame"
+        ? [frameDescriptor(symbol, slot.offset, byref || (symbol.kind === "array" && !!symbol.param), params.has(symbol), this.checks.sources)]
+        : []
     );
 
     this.startBlock(this.fn.label);
@@ -1552,7 +1567,7 @@ class Lowering {
     const ok = this.newLabel();
     this.terminate({ op: "br", cond: beyond, ifTrue: fail, ifFalse: ok, sid: this.sid });
     this.startBlock(fail);
-    this.terminate({ op: "raise", code: imm("u8", 2), sid: this.sid });
+    this.terminate(raiseError(imm("u8", 2), this.sid));
     this.startBlock(ok);
   }
 
@@ -1584,7 +1599,7 @@ class Lowering {
     const ok = this.newLabel();
     this.terminate({ op: "br", cond: beyond, ifTrue: fail, ifFalse: ok, sid: this.sid });
     this.startBlock(fail);
-    this.terminate({ op: "raise", code: imm("u8", 2), sid: this.sid });
+    this.terminate(raiseError(imm("u8", 2), this.sid));
     this.startBlock(ok);
     return held;
   }
@@ -1623,7 +1638,13 @@ class Lowering {
 
   /** A call with its arguments already in vregs, computed last first (by value, none a String). */
   private callValues(routine: RoutineSymbol, values: Value[], resultType: MType | undefined): Value | undefined {
-    const site: CallSite = { kind: routine.kind, callee: routine.name, moreCallsFollow: false, order: this.statementCalls.length };
+    const site: CallSite = {
+      kind: "routine",
+      callee: routine.name,
+      ...(routine.kind === "function" ? { returnsValue: true } : {}),
+      moreCallsFollow: false,
+      order: this.statementCalls.length
+    };
     this.statementCalls.push(site);
     const dst = resultType ? this.vreg(resultType) : undefined;
     if (dst?.type === "str") this.owned.add(dst.id);
@@ -2218,4 +2239,14 @@ function bytesOf(c: Constant, type: MType): number[] | undefined {
     v >>= 8n;
   }
   return bytes;
+}
+
+/** END (and falling off the end): the runtime's End, with the exit code in BC. */
+function endProgram(code: Value, sid: number): Terminator {
+  return { op: "exit", routine: "core.End", value: code, width: 16, sid };
+}
+
+/** ERROR n, and a failed bounds check (report 3): the runtime's RaiseError, with the ERR_NR code in A. */
+function raiseError(code: Value, sid: number): Terminator {
+  return { op: "exit", routine: "core.RaiseError", value: code, width: 8, sid };
 }

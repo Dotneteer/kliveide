@@ -14,7 +14,8 @@ import type { WatchBinaryOp, WatchExpr } from "../source/watch-ast";
  * The source-level debugger's ZX BASIC (`language: "basic"`: Klive BASIC and Boriel BASIC; plan
  * §10.7, §10.8, `.plans/SHARED_Z80_BACKEND_PLAN.md` §12.4). Watches are parsed by Klive BASIC's own
  * expression parser and turned into the neutral watch AST with BASIC's meanings: `/` divides
- * exactly, `MOD` truncates, `+` joins strings, comparisons and logic give 1 or 0. Values are written
+ * exactly, `MOD` is the remainder of the magnitudes (`-100 MOD 3` is 1, as the compiled program
+ * computes it), `+` joins strings, comparisons and logic give 1 or 0. Values are written
  * as BASIC writes them: `TRUE`/`FALSE`, strings in BASIC's escapes, arrays as `Integer(0 TO 9)`.
  */
 
@@ -54,7 +55,7 @@ const OPS: Record<string, { op: WatchBinaryOp; extra?: Partial<Extract<WatchExpr
   "*": { op: "mul" },
   "/": { op: "div", extra: { mode: "real" } },
   "^": { op: "pow" },
-  MOD: { op: "mod", extra: { mode: "trunc" } },
+  MOD: { op: "mod", extra: { mode: "magnitude" } },
   "=": { op: "eq" },
   "<>": { op: "ne" },
   "<": { op: "lt" },

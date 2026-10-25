@@ -211,6 +211,7 @@ function binary(e: Extract<WatchExpr, { kind: "binary" }>, ctx: Ctx): WatchValue
       return n(a ** b);
     case "mod":
       if (b === 0) return fail(translate("panels.side.watchExpr.divisionByZero"));
+      if (e.mode === "magnitude") return n(Math.abs(a) % Math.abs(b));
       return n(e.mode === "floor" ? a - b * Math.floor(a / b) : a % b);
     case "eq":
       return truth(a === b, t);

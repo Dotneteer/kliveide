@@ -10,30 +10,25 @@ import type {
   CallableFrameInfo,
   CallSiteDebugInfo,
   CodebankDebugInfo,
-  ReturnRegisters,
-  SourceValueType,
-  VariableDebugInfo,
-  VariableDebugLocation
+  ErrorStopInfo,
+  VariableDebugInfo
 } from "@abstractions/SourceDebugInfo";
-import type { EmittedProgram } from "../../z80-backend/emit/emit";
-import type { CallSite, MFunction, MModule, MType } from "../../z80-backend/mir/mir";
-import { globalName } from "../ir/lower";
-import * as f40 from "../../z80-backend/numeric/float40";
-import type { ArraySymbol, ConstSymbol, Scope, Symbol as KSymbol, VariableSymbol } from "../semantics/symbols";
-import type { KType } from "../semantics/types";
-import type { Span } from "../diagnostics";
-import type { SourceSet } from "../syntax/source";
+import type { EmittedProgram } from "../emit/emit";
+import type { CallSite, MFunction, MModule, MType, Span, VariableDescriptor } from "../mir/mir";
+import { representationOf } from "../mir/representations";
 import type { StatementAddresses } from "./builder";
-import { isLibraryPath } from "../stdlib";
+import type { SourceFiles } from "./sources";
 
 /**
- * The source-level tables (`.docs/kbasic-debug-builder.md` §4): `SourceLevelDebugInfo` and its
- * extensions (plan §8.4), which source stepping, the call stack and the Variables panel read.
+ * The source-level tables (`.docs/z80-backend-debug-builder.md` §4): `SourceLevelDebugInfo` and its
+ * extensions (plan §8.4), which source stepping, the call stack and the Variables panel read. It
+ * reads the MIR, the emitted program, the assembler's listing and the front end's descriptors only:
+ * no language's symbols or types (`.plans/SHARED_Z80_BACKEND_PLAN.md` §3.3).
  *
- * The user's statements and the standard library's are statements here; the DATA table's code
- * (which READ calls) counts as runtime. Library files come after the user's and are listed in
- * `libraryFiles`: Just My Code (plan §10.12) runs through their statements unless it is turned off.
- * Library routines are callables flagged `library`.
+ * The user's statements and the language library's are statements here; a fragment's code (Klive
+ * BASIC's DATA items, which READ calls) counts as runtime. Library files come after the user's and
+ * are listed in `libraryFiles`: Just My Code (plan §10.12) runs through their statements unless it is
+ * turned off. Library routines are callables flagged `library`.
  */
 export type SourceLevelInput = {
   mir: MModule;
@@ -41,13 +36,21 @@ export type SourceLevelInput = {
   /** The assembler's list items; those of the generated program have `programFileIndex`. */
   listFileItems: ListFileItem[];
   programFileIndex: number;
-  sources: SourceSet;
+  sources: SourceFiles;
   addresses: StatementAddresses[];
   /** An assembler symbol's address (`_main`, `_f`, `core.ProgramSP`), or undefined. */
   symbol: (name: string) => number | undefined;
   runtimeSymbols: { name: string; address: number }[];
-  globals: Scope;
+  /** The source language (`SourceLevelDebugInfo.language`): the debugger's plugin for it. */
+  language: string;
+  /** A source file (by index) of the language's own library. */
   isLibraryFile: (fileIndex: number) => boolean;
+  /** A reported file name of the language's own library. */
+  isLibraryFileName: (name: string) => boolean;
+  /** The language's run-time error stop: the routine its errors go through, by symbol, and how they are named. */
+  errorStop?: { symbol: string; code: ErrorStopInfo["code"]; reports: ErrorStopInfo["reports"] };
+  /** The prefix of the labels the language gives its source labels and line numbers (`_label.` in Klive BASIC). */
+  sourceLabelPrefix?: string;
   optimizationLevel: number;
   /** CODEBANK: the 8K page a list item's code lives in (undefined: resident), and the far-call runtime. */
   partitionOf?: (item: ListFileItem) => number | undefined;
@@ -82,11 +85,11 @@ export function buildSourceLevel(input: SourceLevelInput): SourceLevelDebugInfo 
   const statementOf = new Map(mir.statements.map((s) => [s.sid, s]));
   const userStatement = (sid: number) => {
     const s = statementOf.get(sid);
-    return !!s && mir.functions[s.functionIndex].kind !== "data" && !input.isLibraryFile(s.span.file);
+    return !!s && mir.functions[s.functionIndex].kind !== "fragment" && !input.isLibraryFile(s.span.file);
   };
   const debuggableStatement = (sid: number) => {
     const s = statementOf.get(sid);
-    return !!s && mir.functions[s.functionIndex].kind !== "data";
+    return !!s && mir.functions[s.functionIndex].kind !== "fragment";
   };
   for (const a of input.addresses) {
     if (!a.elided && userStatement(a.sid)) fileIndex(locate(sources, statementOf.get(a.sid)!.span.start, statementOf.get(a.sid)!.span.file).fileName);
@@ -97,11 +100,11 @@ export function buildSourceLevel(input: SourceLevelInput): SourceLevelDebugInfo 
     return { fileIndex: fileIndex(start.fileName), start, end };
   };
 
-  // --- Callables: every function but the DATA table's
+  // --- Callables: every function but fragments
   const callableOf = new Map<number, number>();
   const functions: { fn: MFunction; index: number }[] = [];
   mir.functions.forEach((fn, index) => {
-    if (fn.kind === "data" || fn.removed) return;
+    if (fn.kind === "fragment" || fn.removed) return;
     callableOf.set(index, functions.length);
     functions.push({ fn, index });
   });
@@ -117,19 +120,19 @@ export function buildSourceLevel(input: SourceLevelInput): SourceLevelDebugInfo 
       return { a, index };
     });
 
-  // --- Call sites: every line with a call-site record (READ's call of the DATA table is runtime)
+  // --- Call sites: every line with a call-site record (one the front end marks `runtime` is not the user's)
   const callSites: CallSiteDebugInfo[] = [];
   const callTargets = new Map<number, number[]>();
   emitted.lines.forEach((info, i) => {
     const site = info.site;
-    if (!site || site.kind === "read") return;
+    if (!site || site.kind === "runtime") return;
     const item = byLine.get(i + 1);
     // --- The calling routine: the statement's, or for shared code (-2: the rest of a statement an
     // --- inlined call split, level 3) the routine whose lines hold the call
     const functionIndex = statementOf.get(info.sid)?.functionIndex ?? emitted.functionLines.findIndex((r) => r && i + 1 >= r.start && i + 1 < r.end);
     if (!item || functionIndex < 0) return;
     const caller = { functionIndex };
-    const calleeIndex = site.callee !== undefined && (site.kind === "sub" || site.kind === "function") ? calleeByName.get(site.callee) : undefined;
+    const calleeIndex = site.callee !== undefined && site.kind === "routine" ? calleeByName.get(site.callee) : undefined;
     const statementIndex = sidToIndex.get(info.sid) ?? -1;
     const partition = input.partitionOf?.(item);
     callSites.push({
@@ -137,7 +140,7 @@ export function buildSourceLevel(input: SourceLevelInput): SourceLevelDebugInfo 
       ...(partition !== undefined ? { partition } : {}),
       statementIndex,
       callerIndex: callableOf.get(caller.functionIndex) ?? 0,
-      ...callSiteKind(site.kind),
+      ...callSiteKind(site),
       ...(calleeIndex !== undefined ? { calleeIndex } : {}),
       moreCallsFollow: site.moreCallsFollow,
       order: site.order
@@ -188,8 +191,8 @@ export function buildSourceLevel(input: SourceLevelInput): SourceLevelDebugInfo 
       }
       return undefined;
     };
-    const bodyStart = fn.kind === "main" ? first : (markerCode("prologue.end") ?? first);
-    const epilogueStart = fn.kind === "main" ? endAddress : (markerCode("epilogue.begin") ?? endAddress);
+    const bodyStart = fn.kind === "entry" ? first : (markerCode("prologue.end") ?? first);
+    const epilogueStart = fn.kind === "entry" ? endAddress : (markerCode("epilogue.begin") ?? endAddress);
     const exitAddresses: number[] = [];
     for (let n = range.start; n < range.end; n++) {
       const item = byLine.get(n);
@@ -206,7 +209,7 @@ export function buildSourceLevel(input: SourceLevelInput): SourceLevelDebugInfo 
       startLine = start.line;
       endLine = end.line;
     }
-    const kind: CallableKind = fn.kind === "main" ? "entrypoint" : fn.kind === "function" ? "function" : "subroutine";
+    const kind: CallableKind = fn.kind === "entry" ? "entrypoint" : fn.returnType ? "function" : "subroutine";
     const partition = items[0] ? input.partitionOf?.(items[0]) : undefined;
     const inPartition = partition !== undefined ? { partition } : {};
     callables.push({
@@ -224,14 +227,14 @@ export function buildSourceLevel(input: SourceLevelInput): SourceLevelDebugInfo 
     });
     frames.push({
       callableIndex: index,
-      convention: fn.kind === "main" ? "entrypoint" : "frame",
-      ...(fn.kind === "main" ? {} : { returnSlotOffset: fn.naked ? 0 : 2 * Math.ceil(fn.frameSize / 2) + 2, argBytes: fn.argBytes }),
+      convention: fn.kind === "entry" ? "entrypoint" : "frame",
+      ...(fn.kind === "entry" ? {} : { returnSlotOffset: fn.naked ? 0 : 2 * Math.ceil(fn.frameSize / 2) + 2, argBytes: fn.argBytes }),
       startAddress: first,
       bodyStart,
       epilogueStart,
       endAddress,
       ...inPartition,
-      ...(fn.returnType ? { returns: returnsOf(fn.returnType) } : {}),
+      ...(fn.returnType ? { returns: returnsOf(fn.returnType, fn.returnLabel) } : {}),
       ...(library ? { library: true } : {})
     });
   });
@@ -265,18 +268,21 @@ export function buildSourceLevel(input: SourceLevelInput): SourceLevelDebugInfo 
     : {};
 
   const variables = buildVariables(input, functions, at);
-  // --- The runtime's RaiseError takes the ROM's ERR_NR code in A
-  const errorEntry = input.symbol("core.RaiseError");
-  // --- Labels, from their definitions in the generated text (`_label.<name>:`)
-  const labels = text
-    .flatMap((line) => {
-      const m = /^_label\.([^\s:]+):/.exec(line);
-      const address = m ? input.symbol(`_label.${m[1]}`) : undefined;
-      return m && address !== undefined ? [{ name: m[1], address }] : [];
-    })
-    .sort((a, b) => a.address - b.address);
+  const errorEntry = input.errorStop ? input.symbol(input.errorStop.symbol) : undefined;
+  // --- Source labels, from their definitions in the generated text (`<prefix><name>:`)
+  const prefix = input.sourceLabelPrefix;
+  const labels = prefix
+    ? text
+        .flatMap((line) => {
+          if (!line.startsWith(prefix)) return [];
+          const m = /^([^\s:]+):/.exec(line.slice(prefix.length));
+          const address = m ? input.symbol(`${prefix}${m[1]}`) : undefined;
+          return m && address !== undefined ? [{ name: m[1], address }] : [];
+        })
+        .sort((a, b) => a.address - b.address)
+    : [];
   return {
-    language: "basic",
+    language: input.language,
     files: [...files.map((filename, index): SourceFileEntry => ({ index, filename }))],
     statements,
     callables,
@@ -288,16 +294,16 @@ export function buildSourceLevel(input: SourceLevelInput): SourceLevelDebugInfo 
       frames,
       mainBaselineSymbol: input.symbol("core.ProgramSP") ?? 0,
       labels,
-      libraryFiles: files.flatMap((name, index) => (isLibraryPath(name) ? [index] : [])),
+      libraryFiles: files.flatMap((name, index) => (input.isLibraryFileName(name) ? [index] : [])),
       runtimeSymbols: input.runtimeSymbols,
-      ...(errorEntry !== undefined ? { errorStop: { entry: errorEntry, code: { register: "a" as const }, reports: "zx-rom" as const } } : {}),
+      ...(errorEntry !== undefined && input.errorStop ? { errorStop: { entry: errorEntry, code: input.errorStop.code, reports: input.errorStop.reports } } : {}),
       ...(input.codebank ? { codebank: input.codebank } : {}),
       optimizationLevel: input.optimizationLevel
     }
   };
 }
 
-function locate(sources: SourceSet, offset: number, file: number) {
+function locate(sources: SourceFiles, offset: number, file: number) {
   return sources.get(file).location(offset);
 }
 
@@ -306,65 +312,46 @@ function locate(sources: SourceSet, offset: number, file: number) {
 
 type At = (span: Span) => { fileIndex: number; start: { line: number; column: number } };
 
+/** The front end's descriptors as the debugger's variable table: storage becomes a location. */
 function buildVariables(input: SourceLevelInput, functions: { fn: MFunction }[], at: At): VariableDebugInfo[] {
   const out: VariableDebugInfo[] = [];
   const declaredAt = (span: Span) => {
     const { fileIndex, start } = at(span);
     return { fileIndex, line: start.line, column: start.column };
   };
-  const displayName = (symbol: KSymbol) => {
-    const text = input.sources.get(symbol.span.file).text.slice(symbol.span.start, symbol.span.end);
-    return /^[A-Za-z_]\w*[$%]$/.test(text) && text.slice(0, -1) === symbol.name ? text : symbol.name;
-  };
-
-  for (const symbol of input.globals.symbols) {
-    if (input.isLibraryFile(symbol.span.file)) continue;
-    if (symbol.kind === "const") {
-      const value = constantValue(symbol);
-      if (value === undefined) continue;
-      out.push({
-        name: symbol.name,
-        displayName: displayName(symbol),
-        ...valueTypeOf(symbol.type),
-        kind: "constant",
-        location: { at: "constant", value },
-        scope: "global",
-        declaredAt: declaredAt(symbol.span)
-      });
-      continue;
+  const describe = (d: VariableDescriptor, scope: VariableDebugInfo["scope"]): VariableDebugInfo | undefined => {
+    let location: VariableDebugInfo["location"];
+    if ("constant" in d.storage) location = { at: "constant", value: d.storage.constant };
+    else if ("frameOffset" in d.storage) location = { at: "frame", ixOffset: d.storage.frameOffset };
+    else {
+      // --- A label the assembler did not define is a variable the program does not keep
+      const base = "address" in d.storage ? d.storage.address : input.symbol(d.storage.label);
+      if (base === undefined) return undefined;
+      const address = (base + ("offset" in d.storage ? (d.storage.offset ?? 0) : 0)) & 0xffff;
+      location = { at: "absolute", address, ...bankPartition(input.codebank, d.bank, address) };
     }
-    if (symbol.kind !== "variable" && symbol.kind !== "array") continue;
-    if (symbol.storage !== "global") continue;
-    const address = globalAddress(input, symbol);
-    if (address === undefined) continue;
-    out.push({
-      name: symbol.name,
-      displayName: displayName(symbol),
-      ...valueTypeOf(symbol.kind === "array" ? symbol.elementType : symbol.type),
-      kind: "global",
-      location: { at: "absolute", address, ...bankPartition(input.codebank, symbol.bank, address) },
-      ...(symbol.kind === "array" ? { array: arrayInfo(symbol) } : {}),
-      scope: "global",
-      declaredAt: declaredAt(symbol.span),
-      ...(symbol.bank ? { bank: symbol.bank } : {})
-    });
+    return {
+      name: d.name,
+      displayName: d.displayName,
+      type: d.type,
+      typeLabel: d.typeLabel,
+      kind: d.kind,
+      ...(d.byRef ? { byRef: true } : {}),
+      location,
+      ...(d.array ? { array: d.array } : {}),
+      scope,
+      declaredAt: declaredAt(d.declaredAt),
+      ...(d.bank && scope === "global" ? { bank: d.bank } : {})
+    };
+  };
+  for (const d of input.mir.globals ?? []) {
+    const v = describe(d, "global");
+    if (v) out.push(v);
   }
-
   functions.forEach(({ fn }, callableIndex) => {
-    for (const v of fn.vars ?? []) {
-      const { symbol } = v;
-      const location: VariableDebugLocation = { at: "frame", ixOffset: v.offset };
-      out.push({
-        name: symbol.name,
-        displayName: displayName(symbol),
-        ...valueTypeOf(symbol.kind === "array" ? symbol.elementType : symbol.type),
-        kind: v.param ? "parameter" : "local",
-        ...(v.byref ? { byRef: true } : {}),
-        location,
-        ...(symbol.kind === "array" ? { array: arrayInfo(symbol) } : {}),
-        scope: { callableIndex },
-        declaredAt: declaredAt(symbol.span)
-      });
+    for (const d of fn.vars ?? []) {
+      const v = describe(d, { callableIndex });
+      if (v) out.push(v);
     }
   });
   return out;
@@ -378,89 +365,14 @@ function bankPartition(codebank: CodebankDebugInfo | undefined, bank: number | u
   return { partition: pages[offset >> 13] };
 }
 
-function globalAddress(input: SourceLevelInput, symbol: VariableSymbol | ArraySymbol): number | undefined {
-  const at = symbol.at?.value;
-  if (at?.kind === "int") return Number(at.value) & 0xffff;
-  if (at?.kind === "address") {
-    const base = input.symbol(at.symbol.startsWith("array:") ? `${globalName(at.symbol.slice(6))}.data` : globalName(at.symbol));
-    return base === undefined ? undefined : (base + at.offset) & 0xffff;
-  }
-  return input.symbol(globalName(symbol.name));
+/** A result: the representation the debugger decodes, the language's name for its type, and the registers it is returned in. */
+function returnsOf(type: MType, typeLabel: string | undefined): NonNullable<CallableFrameInfo["returns"]> {
+  const repr = representationOf(type);
+  return { type: repr.debug, typeLabel: typeLabel ?? repr.debug, in: repr.returnsIn };
 }
 
-function arrayInfo(symbol: ArraySymbol): NonNullable<VariableDebugInfo["array"]> {
-  const element = valueTypeOf(symbol.elementType);
-  return {
-    elementType: element.type,
-    elementLabel: element.typeLabel,
-    layout: "descriptor",
-    ...(symbol.bounds.length ? { dimensions: symbol.bounds.map((b) => ({ lower: b.lower, upper: b.upper })) } : {})
-  };
-}
-
-function constantValue(symbol: ConstSymbol): number | string | undefined {
-  const v = symbol.value.value;
-  switch (v.kind) {
-    case "int":
-      return Number(v.value);
-    case "fixed":
-      return v.raw / 65536;
-    case "float":
-      return f40.toNumber(v.value);
-    case "string":
-      return v.value;
-    default:
-      return undefined;
-  }
-}
-
-/** The representation of each BASIC type (runtime ABI §2), and the type's name as BASIC writes it. */
-const VALUE_TYPES: Partial<Record<KType, SourceValueType>> = {
-  Byte: "i8",
-  UByte: "u8",
-  Integer: "i16",
-  UInteger: "u16",
-  Long: "i32",
-  ULong: "u32",
-  Fixed: "fix16.16",
-  Float: "float40",
-  String: "str.heap",
-  Boolean: "bool"
-};
-
-function valueTypeOf(type: KType): { type: SourceValueType; typeLabel: string } {
-  return VALUE_TYPES[type] ? { type: VALUE_TYPES[type]!, typeLabel: type } : { type: "float40", typeLabel: "Float" };
-}
-
-/** A FUNCTION's result: its representation, its BASIC type, and the registers it is returned in (runtime ABI §3.1). */
-function returnsOf(type: MType): NonNullable<CallableFrameInfo["returns"]> {
-  const map: Record<MType, [SourceValueType, string, ReturnRegisters]> = {
-    i8: ["i8", "Byte", "a"],
-    u8: ["u8", "UByte", "a"],
-    bool: ["bool", "Boolean", "a"],
-    i16: ["i16", "Integer", "hl"],
-    u16: ["u16", "UInteger", "hl"],
-    ptr: ["u16", "UInteger", "hl"],
-    str: ["str.heap", "String", "hl"],
-    i32: ["i32", "Long", "dehl"],
-    u32: ["u32", "ULong", "dehl"],
-    fix: ["fix16.16", "Fixed", "dehl"],
-    flt: ["float40", "Float", "aedcb"]
-  };
-  const [repr, typeLabel, registers] = map[type];
-  return { type: repr, typeLabel, in: registers };
-}
-
-/** A MIR call site's kind in the debugger's vocabulary (a GOSUB runs in its caller's activation). */
-function callSiteKind(kind: CallSite["kind"]): Pick<CallSiteDebugInfo, "kind" | "dispatch" | "returnsValue"> {
-  switch (kind) {
-    case "gosub":
-      return { kind: "local" };
-    case "on-gosub":
-      return { kind: "local", dispatch: true };
-    case "function":
-      return { kind: "routine", returnsValue: true };
-    default:
-      return { kind: "routine" };
-  }
+/** A MIR call site in the debugger's vocabulary (a `local` call runs in its caller's activation). */
+function callSiteKind(site: CallSite): Pick<CallSiteDebugInfo, "kind" | "dispatch" | "returnsValue"> {
+  if (site.kind === "local") return { kind: "local", ...(site.dispatch ? { dispatch: true } : {}) };
+  return { kind: "routine", ...(site.returnsValue ? { returnsValue: true } : {}) };
 }

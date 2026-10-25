@@ -20,13 +20,13 @@ export type LirOptions = {
   onFire?: (rule: string) => void;
 };
 
-/** The rules over every function's LIR (from level 1). The DATA table's code is left as it is. */
+/** The rules over every function's LIR (from level 1). A fragment's code (Klive BASIC's DATA items) is left as it is. */
 export function optimizeLir(mir: MModule, functions: LirLine[][], options: LirOptions): LirLine[][] {
   if (options.level < 1) return functions;
   const asmStatements = new Set(mir.statements.filter((s) => s.asmLines?.length).map((s) => s.sid));
   const onFire = options.onFire ? { onFire: options.onFire } : {};
   return functions.map((fn, i) => {
-    if (mir.functions[i].kind === "data") return fn;
+    if (mir.functions[i].kind === "fragment") return fn;
     // --- Level-1 rules first: the code is still level-1 shaped (no value crosses a statement)
     let lines = runRules(fn, RULES, { level: 1, target: options.target, asmStatements, ...onFire });
     if (options.level < 2) return lines;

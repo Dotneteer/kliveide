@@ -1,6 +1,5 @@
 import type { GeneratedProgram } from "./codegen";
-import type { Block, Instr, MFunction, MModule, Slot, Terminator } from "../z80-backend/mir/mir";
-import { symText, vregText } from "../z80-backend/mir/mir";
+import { mirText } from "../z80-backend/mir/print";
 import type { KBasicOptions } from "./options/options";
 
 /**
@@ -89,95 +88,4 @@ function banksManifest(generated: GeneratedProgram, programName: string): Emitte
   });
   const manifest = { window: codebank.window, window_size: codebank.windowSize, banks };
   return [{ suffix: ".banks.json", content: JSON.stringify(manifest, null, 2) + "\n" }, ...files];
-}
-
-// =================================================================================================
-// The MIR dump
-
-export function mirText(mir: MModule): string {
-  const out: string[] = [];
-  for (const fn of mir.functions) out.push(...functionText(fn), "");
-  return out.join("\n");
-}
-
-function functionText(fn: MFunction): string[] {
-  const params = fn.params.map((p) => `${p.name}: ${p.type} @ix${p.offset >= 0 ? "+" : ""}${p.offset}`).join(", ");
-  const lines = [
-    `${fn.kind} ${fn.label}(${params})${fn.returnType ? `: ${fn.returnType}` : ""}  ; ${fn.convention}, frame ${fn.frameSize}, args ${fn.argBytes}${fn.bank ? `, CODEBANK ${fn.bank}` : ""}`
-  ];
-  for (const l of fn.locals) lines.push(`  local ${l.name}: ${l.type} @ix${l.offset}`);
-  for (const b of fn.blocks) lines.push(...blockText(b));
-  return lines;
-}
-
-function blockText(b: Block): string[] {
-  const lines = [`${b.label}:`];
-  for (const i of b.instrs) lines.push(`    ${instrText(i)}`);
-  if (b.term) lines.push(`    ${termText(b.term)}`);
-  return lines;
-}
-
-function slotText(s: Slot): string {
-  switch (s.kind) {
-    case "global":
-      return `[${s.name}]`;
-    case "frame":
-      return `[ix${s.offset >= 0 ? "+" : ""}${s.offset}]`;
-    case "deref":
-      return `[${vregText(s.ptr)}]`;
-  }
-}
-
-function instrText(i: Instr): string {
-  const at = `  ; s${i.sid}`;
-  switch (i.op) {
-    case "stmt":
-      return `; --- statement ${i.sid}`;
-    case "prologue.end":
-    case "epilogue.begin":
-      return `; ${i.op}`;
-    case "const":
-      return `${vregText(i.dst)}:${i.dst.type} = ${i.value.kind === "sym" ? `@${symText(i.value)}` : i.value.value}${at}`;
-    case "load":
-      return `${vregText(i.dst)}:${i.dst.type} = load ${slotText(i.slot)}${at}`;
-    case "store":
-      return `store.${i.type} ${slotText(i.slot)}, ${vregText(i.src)}${at}`;
-    case "addr":
-      return `${vregText(i.dst)} = addr ${slotText(i.slot)}${at}`;
-    case "bin":
-      return `${vregText(i.dst)}:${i.dst.type} = ${i.bop} ${vregText(i.a)}, ${vregText(i.b)}${at}`;
-    case "neg":
-    case "not":
-    case "lnot":
-    case "conv":
-      return `${vregText(i.dst)}:${i.dst.type} = ${i.op} ${vregText(i.a)}${at}`;
-    case "call":
-      return `${i.dst ? `${vregText(i.dst)}:${i.dst.type} = ` : ""}call.${i.convention} ${i.target}(${i.args.map(vregText).join(", ")})${at}`;
-    case "rtcall":
-      return `${i.dst ? `${vregText(i.dst)}:${i.dst.type} = ` : ""}rtcall ${i.name}(${i.args.map(vregText).join(", ")})${at}`;
-    case "asm":
-      return `asm {${i.lines.length} lines}${at}`;
-  }
-}
-
-function termText(t: Terminator): string {
-  const at = `  ; s${t.sid}`;
-  switch (t.op) {
-    case "jmp":
-      return `jmp ${t.target}${at}`;
-    case "br":
-      return `br ${vregText(t.cond)}, ${t.ifTrue}, ${t.ifFalse}${at}`;
-    case "switch":
-      return `switch ${vregText(t.sel)}, [${t.targets.join(", ")}], ${t.otherwise}${at}`;
-    case "gosub":
-      return `gosub ${t.target}, ${t.next}${at}`;
-    case "ongosub":
-      return `ongosub ${vregText(t.sel)}, [${t.targets.join(", ")}], ${t.next}${at}`;
-    case "ret":
-      return `ret${t.value ? ` ${vregText(t.value)}` : ""}${at}`;
-    case "end":
-      return `end ${vregText(t.code)}${at}`;
-    case "raise":
-      return `raise ${vregText(t.code)}${at}`;
-  }
 }

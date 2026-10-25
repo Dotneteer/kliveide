@@ -26,10 +26,11 @@ export type WatchExpr =
       /**
        * `div`: `real` divides exactly; `trunc` truncates towards zero; `c` truncates when both
        * operands are whole numbers and divides exactly otherwise (C's `/`).
-       * `mod`: `trunc` (the remainder has the dividend's sign) or `floor` (the divisor's).
+       * `mod`: `trunc` (the remainder has the dividend's sign), `floor` (the divisor's), or
+       * `magnitude` (the remainder of the magnitudes, never negative: BASIC's `MOD`).
        * `shr`: `arith` keeps the sign; otherwise the shift is logical.
        */
-      mode?: "real" | "trunc" | "floor" | "c" | "arith";
+      mode?: "real" | "trunc" | "floor" | "magnitude" | "c" | "arith";
       /** `add` of two strings concatenates them (BASIC's `+`). */
       concatStrings?: boolean;
       /** What a comparison or a logical operator gives for true (false is 0); default 1. */

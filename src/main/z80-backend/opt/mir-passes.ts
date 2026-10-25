@@ -132,6 +132,8 @@ const fold: MirPass = {
     for (const b of fn.blocks) {
       b.instrs = b.instrs.map((i) => {
         if (i.op !== "bin" || !INTEGER.has(i.a.type) || !INTEGER.has(i.dst.type)) return i;
+        // --- Folding wraps (foldBinary): an operation whose overflow is checked keeps its run-time check
+        if (i.overflow === "check") return i;
         const x = constantOf(i.a, defs);
         const y = constantOf(i.b, defs);
         if (x === undefined || y === undefined) return i;
@@ -159,9 +161,9 @@ function renameUses(fn: MFunction, from: VReg, to: Value): void {
     if (b.term) {
       const t = b.term;
       if (t.op === "br") b.term = { ...t, cond: swap(t.cond) };
-      else if (t.op === "switch" || t.op === "ongosub") b.term = { ...t, sel: swap(t.sel) };
+      else if (t.op === "switch") b.term = { ...t, sel: swap(t.sel) };
       else if (t.op === "ret" && t.value) b.term = { ...t, value: swap(t.value) };
-      else if (t.op === "end" || t.op === "raise") b.term = { ...t, code: swap(t.code) };
+      else if (t.op === "exit") b.term = { ...t, value: swap(t.value) };
     }
   }
 }
@@ -252,9 +254,9 @@ const deadCode: MirPass = {
       for (const i of b.instrs) mapOperands(i, (v) => (count(v), v));
       const t = b.term;
       if (t?.op === "br") count(t.cond);
-      else if (t?.op === "switch" || t?.op === "ongosub") count(t.sel);
+      else if (t?.op === "switch") count(t.sel);
       else if (t?.op === "ret" && t.value) count(t.value);
-      else if (t?.op === "end" || t?.op === "raise") count(t.code);
+      else if (t?.op === "exit") count(t.value);
     }
     let changed = false;
     for (const b of fn.blocks) {

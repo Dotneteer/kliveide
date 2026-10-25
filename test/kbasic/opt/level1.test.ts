@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { mirText } from "@main/kbasic/emit-files";
+import { mirText } from "@main/z80-backend/mir/print";
 import type { MFunction } from "@main/z80-backend/mir/mir";
 import { MIR_PASSES, optimizeMir } from "@main/z80-backend/opt/mir-passes";
 
@@ -35,7 +35,7 @@ describe("MIR passes", () => {
     const fn: MFunction = {
       label: "_main",
       name: "main",
-      kind: "main",
+      kind: "entry",
       convention: "stdcall",
       params: [],
       locals: [],
@@ -48,7 +48,7 @@ describe("MIR passes", () => {
             { op: "stmt", sid: 0 },
             { op: "const", dst: { kind: "vreg", id: 1, type: "u8" }, value: { kind: "imm", type: "u8", value: 200 }, sid: 0 },
             { op: "const", dst: { kind: "vreg", id: 2, type: "u8" }, value: { kind: "imm", type: "u8", value: 100 }, sid: 0 },
-            { op: "bin", bop: "add", dst: { kind: "vreg", id: 3, type: "u8" }, a: { kind: "vreg", id: 1, type: "u8" }, b: { kind: "vreg", id: 2, type: "u8" }, sid: 0 },
+            { op: "bin", bop: "add", dst: { kind: "vreg", id: 3, type: "u8" }, a: { kind: "vreg", id: 1, type: "u8" }, b: { kind: "vreg", id: 2, type: "u8" }, overflow: "wrap", sid: 0 },
             { op: "store", type: "u8", slot: { kind: "global", name: "_x" }, src: { kind: "vreg", id: 3, type: "u8" }, sid: 0 }
           ],
           term: { op: "ret", sid: -1 }
@@ -181,7 +181,7 @@ describe("level 3: inlining", () => {
     const once = generated.mir.functions.findIndex((f) => f.name === "once");
     const moved = generated.mir.statements.filter((s) => s.inlinedFrom === once);
     expect(moved.length).toBeGreaterThan(0);
-    expect(moved.every((s) => generated.mir.functions[s.functionIndex].kind === "main")).toBe(true);
+    expect(moved.every((s) => generated.mir.functions[s.functionIndex].kind === "entry")).toBe(true);
     expect(generated.debug.sourceLevel.callables.map((c) => c.name)).not.toContain("once");
   });
 });

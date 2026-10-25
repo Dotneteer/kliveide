@@ -1,9 +1,6 @@
 {
-  "A1 back end imports a language|src/main/kbasic/debug/builder.ts": 2,
-  "A1 back end imports a language|src/main/kbasic/debug/source-level.ts": 6,
   "A1 back end imports a language|src/main/kbasic/emit-files.ts": 2,
   "A1 back end imports a language|src/main/kbasic/runtime/runtime-linker.ts": 1,
-  "A1 back end imports a language|src/main/z80-backend/mir/mir.ts": 3,
   "A2 language imports a back-end internal|src/main/kbasic/codegen.ts": 9,
   "A2 language imports a back-end internal|src/main/kbasic/KBasicCompiler.ts": 1,
   "A2 language imports a back-end internal|src/main/kbasic/runtime/generated/runtime-bundle.ts": 1,

@@ -88,8 +88,8 @@ function findSite(mir: MModule): Site | undefined {
     if (sites.length !== 1) continue;
     const s = sites[0];
     const caller = mir.functions[s.caller];
-    if (s.caller === callee || caller.kind === "data" || caller.bank) continue;
-    if (caller.kind !== "main" && caller.frameSize + fn.frameSize + 16 > MAX_FRAME) continue;
+    if (s.caller === callee || caller.kind === "fragment" || caller.bank) continue;
+    if (caller.kind !== "entry" && caller.frameSize + fn.frameSize + 16 > MAX_FRAME) continue;
     if (!splittable(caller.blocks[s.block], s.index)) continue;
     return s;
   }
@@ -97,16 +97,16 @@ function findSite(mir: MModule): Site | undefined {
 }
 
 function candidate(fn: MFunction): boolean {
-  if ((fn.kind !== "sub" && fn.kind !== "function") || fn.removed || fn.bank) return false;
+  if (fn.kind !== "routine" || fn.removed || fn.bank) return false;
   const instrs = fn.blocks.flatMap((b) => b.instrs);
   if (instrs.some((i) => i.op === "call" || i.op === "asm")) return false;
   if (instrs.filter((i) => i.op === "stmt").length > MAX_STATEMENTS + 1) return false;
-  if ((fn.vars ?? []).some((v) => v.symbol.kind === "array" || v.byref)) return false;
+  if ((fn.vars ?? []).some((v) => v.array || v.byRef)) return false;
   if ([...fn.params, ...fn.locals].some((p) => !NUMERIC.has(p.type))) return false;
   if (fn.returnType && !NUMERIC.has(fn.returnType)) return false;
   // --- Frame slots only through plain loads and stores (no address taken, no pointer arithmetic on the frame)
   if (instrs.some((i) => i.op === "addr" && i.slot.kind === "frame")) return false;
-  // --- A GOSUB-like terminator would not be a routine's; switch/ongosub keep it simple
+  // --- A local call or a jump table would not be a routine's; keep it simple
   if (fn.blocks.some((b) => b.term && !["jmp", "br", "ret"].includes(b.term.op))) return false;
   return true;
 }
@@ -152,7 +152,7 @@ function inlineAt(mir: MModule, site: Site, freshId: () => number, hiddenName: (
     if (!sizes.has(at)) sizes.set(at, p.type);
   }
   const newHome = (type: MType): Slot => {
-    if (caller.kind === "main") {
+    if (caller.kind === "entry") {
       const name = hiddenName();
       mir.data.push({ kind: "var", label: name, size: mtypeSize(type) });
       return { kind: "global", name };
@@ -341,13 +341,11 @@ function termOperands(t: Terminator): Value[] {
     case "br":
       return [t.cond];
     case "switch":
-    case "ongosub":
       return [t.sel];
     case "ret":
       return t.value ? [t.value] : [];
-    case "end":
-    case "raise":
-      return [t.code];
+    case "exit":
+      return [t.value];
     default:
       return [];
   }
@@ -381,13 +379,11 @@ function mapTermOperands(t: Terminator, f: (v: Value) => Value): Terminator {
     case "br":
       return { ...t, cond: f(t.cond) };
     case "switch":
-    case "ongosub":
       return { ...t, sel: f(t.sel) };
     case "ret":
       return t.value ? { ...t, value: f(t.value) } : t;
-    case "end":
-    case "raise":
-      return { ...t, code: f(t.code) };
+    case "exit":
+      return { ...t, value: f(t.value) };
     default:
       return t;
   }

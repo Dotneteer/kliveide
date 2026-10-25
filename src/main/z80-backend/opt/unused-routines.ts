@@ -26,7 +26,7 @@ export function removeUnusedRoutines(mir: MModule): boolean {
     for (const m of text.matchAll(/[A-Za-z_][\w.]*/g)) reach(byLabel.get(m[0]));
   };
   mir.functions.forEach((fn, i) => {
-    if (fn.kind === "main" || fn.kind === "data" || fn.bank) reach(i);
+    if (fn.kind === "entry" || fn.kind === "fragment" || fn.bank) reach(i);
   });
   for (const d of mir.data) {
     if (d.kind === "raw") d.lines.forEach(reachNames);

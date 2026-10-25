@@ -42,7 +42,6 @@ const LANGUAGES = ["src/main/kbasic/", "src/main/boriel-integration/", "src/main
 const BACKEND = [
   "src/main/z80-backend/",
   "src/main/compiler-shell/",
-  "src/main/kbasic/debug/",
   "src/main/kbasic/runtime/runtime-linker.ts",
   "src/main/kbasic/runtime/runtime-types.ts",
   "src/main/kbasic/emit-files.ts"
@@ -56,7 +55,8 @@ const FRONT_END_API = [
   "src/main/z80-backend/options.ts",
   "src/main/z80-backend/problems.ts",
   "src/main/z80-backend/runtime/runtime-types.ts",
-  "src/main/z80-backend/runtime/representations.ts",
+  "src/main/z80-backend/mir/representations.ts",
+  "src/main/z80-backend/mir/print.ts",
   "src/main/z80-backend/numeric/float40.ts",
   "src/main/compiler-shell/Z80LanguageCompiler.ts",
   "src/main/compiler-shell/emit-files.ts"

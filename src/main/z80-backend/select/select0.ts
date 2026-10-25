@@ -135,13 +135,13 @@ class Selector {
     this.acc = undefined;
     this.stack = [];
     this.out.push(label(b.label, b.instrs[0]?.sid ?? b.term?.sid ?? -1));
-    if (b === this.fn.blocks[0] && (this.fn.kind === "sub" || this.fn.kind === "function")) this.prologue();
+    if (b === this.fn.blocks[0] && this.fn.kind === "routine") this.prologue();
     // --- Runs between boundaries (the block's start, markers): no value is live at a run's start
     // --- (G4). From level 1 each run goes to the tree selector first (select1.ts), and to the stack
     // --- machine below when that declines (.docs/kbasic-optimiser.md O8).
     const isMarker = (i: Instr) => i.op === "stmt" || i.op === "prologue.end" || i.op === "epilogue.begin";
     const n = b.instrs.length;
-    const tree = this.level >= 1 && this.fn.kind !== "data";
+    const tree = this.level >= 1 && this.fn.kind !== "fragment";
     let termDone = false;
     let k = 0;
     for (;;) {
@@ -181,7 +181,7 @@ class Selector {
   private treeRun(instrs: Instr[], term: Terminator | undefined): boolean {
     if (this.acc || this.stack.length) return false;
     return selectRun(instrs, term, {
-      plainReturn: this.fn.kind === "main" || this.fn.kind === "data",
+      plainReturn: this.fn.kind === "entry" || this.fn.kind === "fragment",
       emit: (sid, ...lines) => lines.forEach((l) => this.out.push(instr(l, sid))),
       emitCall: (sid, text, site) => this.out.push(instr(text, sid, site)),
       label: (sid, name) => this.out.push(label(name, sid)),
@@ -924,49 +924,45 @@ class Selector {
         this.emit("or a", `jp nz,${t.ifTrue}`, `jp ${t.ifFalse}`);
         return;
       }
-      case "switch":
-      case "ongosub": {
+      case "switch": {
         const [place] = this.take([t.sel]);
         if (place !== "acc") this.loadImmediate("u8", place);
         const table = this.local();
-        const after = t.op === "switch" ? t.otherwise : t.next;
+        const after = t.otherwise;
         this.emit(`cp ${t.targets.length}`, `jp nc,${after}`, "ld l,a", "ld h,0", "add hl,hl", `ld de,${table}`, "add hl,de", "ld a,(hl)", "inc hl", "ld h,(hl)", "ld l,a");
-        if (t.op === "switch") this.emit("jp (hl)");
+        if (!t.call) this.emit("jp (hl)");
         else {
-          // --- An indirect call: push the return address, then jump
+          // --- A dispatching local call: push the return address, then jump
           const back = this.local();
           this.emit(`ld de,${back}`, "push de");
-          this.out.push(instr("jp (hl)", this.sid, t.site));
+          this.out.push(instr("jp (hl)", this.sid, t.call.site));
           this.placeLabel(back);
-          this.emit(`jp ${t.next}`);
+          this.emit(`jp ${t.otherwise}`);
         }
         this.placeLabel(table);
         for (const target of t.targets) this.emit(`.defw ${target}`);
         return;
       }
-      case "gosub":
+      case "localcall":
         this.out.push(instr(`call ${t.target}`, this.sid, t.site));
         this.emit(`jp ${t.next}`);
         return;
       case "ret":
-        if (this.fn.kind === "main" || this.fn.kind === "data") this.emit("ret");
+        if (this.fn.kind === "entry" || this.fn.kind === "fragment") this.emit("ret");
         else this.epilogue(t.value);
         return;
-      case "end": {
-        const [place] = this.take([t.code]);
-        if (place === "acc") {
-          if (regClassOf(t.code.type) === "r8") this.emit("ld c,a", "ld b,0");
-          else this.emit("ld b,h", "ld c,l");
-        } else this.emit(`ld bc,${place}`);
-        this.emit(`jp ${this.rt("core.End")}`);
-        return;
-      }
-      case "raise": {
-        const [place] = this.take([t.code]);
-        if (place === "acc") {
-          if (regClassOf(t.code.type) !== "r8") this.emit("ld a,l");
+      case "exit": {
+        // --- The routine takes the value in BC (16 bits) or A (8 bits)
+        const [place] = this.take([t.value]);
+        if (t.width === 16) {
+          if (place === "acc") {
+            if (regClassOf(t.value.type) === "r8") this.emit("ld c,a", "ld b,0");
+            else this.emit("ld b,h", "ld c,l");
+          } else this.emit(`ld bc,${place}`);
+        } else if (place === "acc") {
+          if (regClassOf(t.value.type) !== "r8") this.emit("ld a,l");
         } else this.emit(`ld a,${place}`);
-        this.emit(`jp ${this.rt("core.RaiseError")}`);
+        this.emit(`jp ${this.rt(t.routine)}`);
         return;
       }
     }

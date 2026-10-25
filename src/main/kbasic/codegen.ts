@@ -13,12 +13,12 @@ import type { DiagnosticBag, Span } from "./diagnostics";
 import { emitProgram, USER_HEAP, type EmittedProgram } from "../z80-backend/emit/emit";
 import { CodegenError, type LirLine } from "../z80-backend/select/lir";
 import { selectFunction } from "../z80-backend/select/select0";
-import { buildDebugInfo, type DebugBuild } from "./debug/builder";
-import { buildSourceLevel } from "./debug/source-level";
+import { buildDebugInfo, type DebugBuild } from "../z80-backend/debug/builder";
+import { buildSourceLevel } from "../z80-backend/debug/source-level";
 import { lowerProgram } from "./ir/lower";
 import { optimizeLir, shapeBranches } from "../z80-backend/opt/pipeline";
 import { optimizeMir } from "../z80-backend/opt/mir-passes";
-import { verifyModule } from "../z80-backend/opt/verify";
+import { moduleSemanticProblems, verifyModule } from "../z80-backend/opt/verify";
 import type { MModule } from "../z80-backend/mir/mir";
 import type { KBasicOptions } from "./options/options";
 import { prologueSource, resolveRuntimeModules, runtimeInitialisers, runtimeUnits } from "./runtime/runtime-linker";
@@ -49,7 +49,8 @@ export async function generateProgram(
 ): Promise<GeneratedProgram | undefined> {
   const mir = lowerProgram(bound.program, bound.globals, diagnostics, (file) => isLibraryPath(sources.get(file).name), {
     bounds: options.checkBounds,
-    breakKey: options.breakKey
+    breakKey: options.breakKey,
+    sources
   });
   if (diagnostics.hasErrors) return undefined;
 
@@ -57,6 +58,12 @@ export async function generateProgram(
   const runtime = new Set(mir.runtime);
   // --- The level the code is generated at
   const level = effectiveLevel(options.optimize);
+  // --- Every build: each operation states a meaning the back end implements (S3)
+  const unsupported = moduleSemanticProblems(mir);
+  if (unsupported.length) {
+    diagnostics.error("E599", tr("compiler.basic.E599.invalidMir", { problems: unsupported.slice(0, 3).join("; ") }), { file: 0, start: 0, end: 0 });
+    return undefined;
+  }
   // --- The MIR verifier (.docs/kbasic-optimiser.md §3): an optimised build checks its input first
   if (level >= 1) {
     const problems = verifyModule(mir, level);
@@ -223,6 +230,7 @@ export async function generateProgram(
     listFileItems: output.listFileItems,
     programFileIndex: 0,
     sources,
+    isLibraryFileName: isLibraryPath,
     ...(partitionOf ? { partitionOf } : {})
   });
   // --- An assembler symbol's address: a dotted runtime name (`core.X`) is in the core module
@@ -247,8 +255,12 @@ export async function generateProgram(
     addresses: debug.addresses,
     symbol,
     runtimeSymbols,
-    globals: bound.globals,
+    language: "basic",
     isLibraryFile: (file) => isLibraryPath(sources.get(file).name),
+    isLibraryFileName: isLibraryPath,
+    // --- The runtime's RaiseError takes the ROM's ERR_NR code in A
+    errorStop: { symbol: "core.RaiseError", code: { register: "a" }, reports: "zx-rom" },
+    sourceLabelPrefix: "_label.",
     optimizationLevel: options.optimize,
     ...(partitionOf && banking ? { partitionOf, codebank: codebankDebugInfo(banking, options, symbol) } : {})
   });

@@ -109,7 +109,9 @@ const decline = (): never => {
 
 /** Checks the run's shape; gives each vreg's defining instruction and the roots in order. */
 function planRun(instrs: Instr[], term: Terminator | undefined, plainReturn: boolean): { defs: Map<number, Node>; roots: Instr[] } | undefined {
-  if (term && term.op !== "jmp" && term.op !== "br" && term.op !== "end" && !(term.op === "ret" && plainReturn && !term.value)) return undefined;
+  // --- An exit tiles when it passes its value in BC (width 16); one in A goes to level 0
+  const tiledExit = term?.op === "exit" && term.width === 16;
+  if (term && term.op !== "jmp" && term.op !== "br" && !tiledExit && !(term.op === "ret" && plainReturn && !term.value)) return undefined;
   const defs = new Map<number, Node>();
   const position = new Map<number, number>();
   const uses = new Map<number, number>();
@@ -179,7 +181,7 @@ function planRun(instrs: Instr[], term: Terminator | undefined, plainReturn: boo
       position.set(i.dst.id, n);
     } else roots.push(i);
   }
-  const termValue = term?.op === "br" ? term.cond : term?.op === "end" ? term.code : undefined;
+  const termValue = term?.op === "br" ? term.cond : term?.op === "exit" ? term.value : undefined;
   if (termValue?.kind === "vreg") {
     if (!defs.has(termValue.id)) return undefined;
     uses.set(termValue.id, (uses.get(termValue.id) ?? 0) + 1);
@@ -245,16 +247,16 @@ class TreeGen {
       this.emit("ret");
       return;
     }
-    if (term.op === "end") {
-      // --- The exit code into BC, as level 0 passes it
-      const k = this.constant(term.code);
+    if (term.op === "exit") {
+      // --- The value into BC, as level 0 passes it (planRun lets only width 16 through)
+      const k = this.constant(term.value);
       if (k !== undefined) this.emit(`ld bc,${k & 0xffff}`);
       else {
-        this.gen(term.code);
-        if (regClassOf(term.code.type) === "r8") this.emit("ld c,a", "ld b,0");
+        this.gen(term.value);
+        if (regClassOf(term.value.type) === "r8") this.emit("ld c,a", "ld b,0");
         else this.emit("ld b,h", "ld c,l");
       }
-      this.emit(`jp ${this.ctx.rt("core.End")}`);
+      this.emit(`jp ${this.ctx.rt(term.routine)}`);
       return;
     }
     if (term.op !== "br") decline();

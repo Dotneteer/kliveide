@@ -101,7 +101,7 @@ describe("what the engine protects", () => {
   });
 
   it("never touches a call site, the user's inline asm, or the prologue and epilogue", () => {
-    const site = { kind: "sub" as const, callee: "s", moreCallsFollow: false, order: 0 };
+    const site = { kind: "routine" as const, callee: "s", moreCallsFollow: false, order: 0 };
     const withSite: LirLine[] = [stmt(1), ins("ld hl,5"), instr("call _s", 1, site), ins("ld b,1"), stmt(9), ins("ret", 9)];
     expect(run(withSite)).toEqual(["<stmt>", "ld hl,5", "call _s", "<stmt>", "ret"]);
     // --- The same dead load is kept when it is the user's inline asm

@@ -25,7 +25,7 @@ export function propagateConstantSlots(mir: MModule): boolean {
   let changed = false;
   const removedGlobals: string[] = [];
   for (const fn of mir.functions) {
-    if (fn.kind === "data" || fn.blocks.some((b) => b.instrs.some((i) => i.op === "asm"))) continue;
+    if (fn.kind === "fragment" || fn.blocks.some((b) => b.instrs.some((i) => i.op === "asm"))) continue;
     const result = propagateInFunction(fn);
     if (result.changed) changed = true;
     removedGlobals.push(...result.removedGlobals);
@@ -131,10 +131,8 @@ function successors(t: Terminator | undefined, next: string | undefined): string
       return [t.ifTrue, t.ifFalse];
     case "switch":
       return [...t.targets, t.otherwise];
-    case "gosub":
+    case "localcall":
       return [t.target, t.next];
-    case "ongosub":
-      return [...t.targets, t.next];
     default:
       return [];
   }

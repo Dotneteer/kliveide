@@ -147,7 +147,9 @@ describe("watch expressions in each language", () => {
 
   it("gives BASIC's meanings to BASIC's operators", () => {
     expect(w("n / 2", BASIC_LANGUAGE)).toBe("3.5");
-    expect(w("-n MOD 4", BASIC_LANGUAGE)).toBe("-3");
+    // --- MOD as the compiled program computes it: the remainder of the magnitudes (arith16.kz80.asm)
+    expect(w("-n MOD 4", BASIC_LANGUAGE)).toBe("3");
+    expect(w("-100 MOD 3", BASIC_LANGUAGE)).toBe("1");
     expect(w('"a" + "b"', BASIC_LANGUAGE)).toBe('"ab"');
     // --- BASIC matches names without regard to case when nothing matches exactly
     expect(w("N", BASIC_LANGUAGE)).toBe("7");

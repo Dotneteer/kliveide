@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { ClassicTables } from "@main/kbasic/debug/builder";
+import type { ClassicTables } from "@main/z80-backend/debug/builder";
 
 import { startBasic } from "./run-kit";
 

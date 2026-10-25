@@ -261,7 +261,7 @@ describe("the zxbas compiler", () => {
     expect(output.errors?.filter((e) => !e.isWarning)).toEqual([]);
     const read = (name: string) => fs.readFileSync(path.join(folder, name), "utf8");
     expect(read("banked.kbasic.asm")).toMatch(/^_Twice\.__far:/m);
-    expect(read("banked.kbasic.ir")).toMatch(/^function _Twice\.__far\(n: u16 @ix\+4\): u16 .*CODEBANK 1$/m);
+    expect(read("banked.kbasic.ir")).toMatch(/^routine _Twice\.__far\(n: u16 @ix\+4\): u16 .*CODEBANK 1$/m);
     const map = read("banked.kbasic.map");
     expect(map).toMatch(/^\$6000 B1:_Twice\.__far$/m);
     expect(map).toMatch(/^\$6000 B2:_Store\.__far$/m);

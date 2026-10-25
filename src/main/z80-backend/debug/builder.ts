@@ -1,11 +1,10 @@
 import type { FileLine, ListFileItem } from "@abstractions/CompilerInfo";
-import type { StatementEntry } from "../../z80-backend/mir/mir";
-import type { LineInfo } from "../../z80-backend/emit/emit";
-import { isLibraryPath } from "../stdlib";
-import type { SourceSet } from "../syntax/source";
+import type { StatementEntry } from "../mir/mir";
+import type { LineInfo } from "../emit/emit";
+import type { SourceFiles } from "./sources";
 
 /**
- * The debug-info builder (`.docs/kbasic-debug-builder.md`): joins the generated program's line
+ * The debug-info builder (`.docs/z80-backend-debug-builder.md`): joins the generated program's line
  * table with the assembler's list items and turns statement ids into the classic tables the IDE's
  * breakpoint and execution-point code reads (§5), plus each statement's address range.
  */
@@ -36,7 +35,9 @@ export type DebugBuildInput = {
   /** The assembler's list items; those of the generated program have `programFileIndex`. */
   listFileItems: ListFileItem[];
   programFileIndex: number;
-  sources: SourceSet;
+  sources: SourceFiles;
+  /** A source file of the language's own library (by its reported name): the IDE treats its code like the runtime's. */
+  isLibraryFileName: (name: string) => boolean;
   /**
    * CODEBANK: the 8K page a list item's code lives in, undefined for resident code. Banks share the
    * window's addresses, so the validator compares addresses only within one partition.
@@ -226,8 +227,8 @@ function classicTables(input: DebugBuildInput, addresses: StatementAddresses[]):
     if (a.elided) continue;
     const s = bySid.get(a.sid)!;
     const file = input.sources.get(s.span.file);
-    // --- Klive's library is not the user's source: the IDE treats its code like the runtime's
-    if (isLibraryPath(file.name)) continue;
+    // --- The language's library is not the user's source: the IDE treats its code like the runtime's
+    if (input.isLibraryFileName(file.name)) continue;
     const start = file.location(s.span.start);
     const end = file.location(Math.max(s.span.start, s.span.end));
     const index = fileIndex(start.fileName);
