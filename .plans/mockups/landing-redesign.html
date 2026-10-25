@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Klive landing mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass:ital,wght@0,400..800;1,400..700&family=Overpass+Mono:wght@400..600&display=swap">
+<style>
+/* ============================================================ tokens: the site's colours, B+ type */
+body{margin:0;background:#141517}
+.lp{--fd:'Overpass',sans-serif;--fb:'Overpass',sans-serif;--fm:'Overpass Mono',monospace;--bg:#ffffff;--panel:#f7f8f9;--hover:#e8eaee;--line:#d5d8dd;--line2:#b9bec6;--fg:#1b1d21;--muted:#565c65;--subtle:#6b717a;--accent:#0a6fb8;--onaccent:#ffffff}
+.lp[data-theme="dark"]{--bg:#141517;--panel:#17191c;--hover:#24272e;--line:#2e3238;--line2:#3d424a;--fg:#e4e6ea;--muted:#949aa4;--subtle:#7f8690;--accent:#45a5e6;--onaccent:#0e0f11}
+
+/* ============================================================ base */
+.lp{background:var(--bg);color:var(--fg);font-family:var(--fb);font-size:17px;line-height:1.55;-webkit-font-smoothing:antialiased}
+.lp *,.lp *::before,.lp *::after{box-sizing:border-box}
+.lp a{color:inherit}
+.lp h1,.lp h2,.lp h3{font-family:var(--fd);font-weight:700;letter-spacing:0;text-wrap:pretty;margin:0}
+.lp img{max-width:100%;height:auto;display:block}
+.in,.wrap{max-width:76rem;margin:0 auto;padding-left:1.25rem;padding-right:1.25rem}
+.rule4{height:6px;background:linear-gradient(90deg,#d80000 0 25%,#d8d800 25% 50%,#00c800 50% 75%,#00c8c8 75%)}
+
+/* --- header */
+.hdr{background:var(--bg);border-bottom:1px solid var(--line)}
+.hdr .in{display:flex;align-items:center;gap:2rem;height:3.75rem}
+.brand{display:flex;align-items:center;gap:.625rem;font-family:var(--fd);font-weight:800;font-size:1.125rem;text-decoration:none;white-space:nowrap}
+.brand svg{width:1.75rem;height:1.75rem;border-radius:4px}
+.nav{display:flex;gap:1.5rem;font-size:.9375rem}
+.nav a{color:var(--muted);text-decoration:none}
+.nav a:hover{color:var(--fg)}
+.tools{margin-left:auto;display:flex;align-items:center;gap:.5rem}
+.ib{display:inline-flex;align-items:center;gap:.375rem;height:2.25rem;min-width:2.25rem;justify-content:center;padding:0 .5rem;border:1px solid transparent;border-radius:6px;background:none;color:var(--muted);font:inherit;font-size:.875rem;cursor:pointer;text-decoration:none}
+.ib:hover{color:var(--fg);background:var(--hover)}
+
+/* --- buttons and hero text */
+.btn{display:inline-flex;align-items:center;gap:.5rem;padding:.7rem 1.25rem;border:1px solid var(--line2);border-radius:6px;font-weight:600;text-decoration:none;white-space:nowrap}
+.btn:hover{background:var(--hover)}
+.lp a.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--onaccent)}
+.lead{margin:0 0 1.75rem;max-width:30rem;font-size:1.25rem;line-height:1.5}
+.actions{display:flex;flex-wrap:wrap;gap:.75rem}
+.fine{margin:1rem 0 0;font-size:.875rem;color:var(--subtle)}
+.fine a{color:var(--accent)}
+
+/* --- footer */
+.ftr{border-top:1px solid var(--line)}
+.ftr .in{display:flex;flex-wrap:wrap;justify-content:space-between;gap:1rem 2rem;padding-top:1.75rem;padding-bottom:2.5rem;font-size:.875rem;color:var(--muted)}
+.ftr nav{display:flex;flex-wrap:wrap;gap:.5rem 1.5rem}
+.ftr a{text-decoration:none}
+.ftr a:hover{color:var(--fg)}
+
+/* ============================================================ data sheet */
+.sq{display:inline-block;width:.75rem;height:.75rem;margin-right:.5rem}
+.sq1{background:#0000c8}.sq2{background:#c800c8}.sq3{background:#00a800}.sq4{background:#c8c800}.sq5{background:#00b4cc}
+.lbl{font-weight:700;font-size:.9375rem}
+.lp ul.sqlist{list-style:square;padding-left:1.25rem;margin:0 0 1.25rem}
+.lp ul.sqlist li::marker{color:var(--accent)}
+.lp ul.sqlist li + li{margin-top:.25rem}
+.lp a.ul{color:var(--accent);font-weight:700;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:.2em}
+.lp table{border-collapse:collapse;width:100%}
+.lp th,.lp td{text-align:left;vertical-align:top;padding:.625rem 1rem .625rem 0;border-top:1px solid var(--line)}
+.lp th{font-weight:700}
+.lp td.m{color:var(--muted)}
+
+.s-top{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:4rem;padding:3.5rem 0 3rem;align-items:start}
+.s-top h1{font-size:3.25rem;line-height:1.1;max-width:15ch;margin:0 0 1rem}
+.s-glance{border:2px solid var(--fg);padding:1.25rem 1.5rem 1rem}
+.s-glance h2{font-size:1.125rem;margin:0 0 .5rem}
+.s-glance th{width:8.5rem}
+.s-glance tr:first-child th,.s-glance tr:first-child td{border-top:0}
+.s-glance .mono{font-family:var(--fm);font-size:.875rem}
+.s-sec{padding:2.5rem 0;border-top:2px solid var(--fg)}
+.s-sec > h2{font-size:1.5rem;margin:0 0 1.25rem}
+.s-two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:3rem}
+.s-flow th{width:25%}
+.s-flow td{padding-right:1.5rem}
+.s-feat{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:3rem;padding:2.5rem 0;border-top:1px solid var(--line);align-items:start}
+.s-feat h3{font-size:1.75rem;line-height:1.15;margin:.5rem 0 1rem}
+.s-feat p{margin:0 0 1rem}
+.s-feat ul{font-size:.9375rem}
+.s-feat figure{margin:0}
+.s-end{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:1.5rem;padding:2rem 0 3.5rem;border-top:2px solid var(--fg)}
+.s-end h2{font-size:1.5rem;margin:0 0 .25rem}
+.s-end p{margin:0}
+
+/* --- clickable pictures: a link to the image file, opened in the viewer */
+a.zoom{display:block;position:relative;border:1px solid var(--line);border-radius:4px;overflow:hidden;background:#141517;cursor:zoom-in}
+a.zoom img{width:100%;height:auto;display:block;transition:opacity .15s}
+a.zoom:hover img{opacity:.9}
+a.zoom .zi{position:absolute;right:.5rem;bottom:.5rem;display:inline-grid;place-items:center;width:2rem;height:2rem;border-radius:6px;background:rgb(0 0 0 / .65);color:#fff;opacity:0;transition:opacity .15s}
+a.zoom:hover .zi,a.zoom:focus-visible .zi{opacity:1}
+.lp :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* --- the hero carousel, as on the site today */
+.s-car{margin-bottom:3.5rem}
+.c-frame{position:relative;aspect-ratio:16/10;border:1px solid #2e3238;border-radius:4px;background:#141517;overflow:hidden}
+.c-slide{position:absolute;inset:0;margin:0;visibility:hidden;display:block;cursor:zoom-in}
+.c-slide img{width:100%;height:100%;object-fit:contain;display:block}
+.c-slide.on,.c-slide.out-f,.c-slide.out-b{visibility:visible}
+.c-slide.in-f{animation:c-in-r .7s cubic-bezier(.22,.8,.24,1) both}
+.c-slide.out-f{animation:c-out-l .7s cubic-bezier(.22,.8,.24,1) both}
+.c-slide.in-b{animation:c-in-l .7s cubic-bezier(.22,.8,.24,1) both}
+.c-slide.out-b{animation:c-out-r .7s cubic-bezier(.22,.8,.24,1) both}
+@keyframes c-in-r{from{transform:translateX(100%)}to{transform:none}}
+@keyframes c-out-l{from{transform:none}to{transform:translateX(-100%)}}
+@keyframes c-in-l{from{transform:translateX(-100%)}to{transform:none}}
+@keyframes c-out-r{from{transform:none}to{transform:translateX(100%)}}
+@media (prefers-reduced-motion:reduce){.c-slide.in-f,.c-slide.in-b,.c-slide.out-f,.c-slide.out-b{animation-duration:1ms}}
+.c-bar{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto auto;align-items:center;gap:.75rem;padding:.625rem 0 0}
+.c-cap{margin:0;font-size:.875rem;color:var(--muted);min-height:1.25rem}
+.c-btn{display:inline-grid;place-items:center;width:2rem;height:2rem;padding:0;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--fg);cursor:pointer}
+.c-btn:hover{background:var(--hover)}
+.c-dots{display:flex;gap:.375rem}
+.c-dots button{width:.5rem;height:.5rem;padding:0;border:0;border-radius:0;background:var(--line2);cursor:pointer}
+.c-dots button[aria-current="true"]{width:1.25rem;background:var(--accent)}
+
+/* --- full-size viewer */
+dialog.lb{width:calc(100vw - 8rem);height:calc(100vh - 6rem);max-width:none;max-height:none;margin:auto;padding:0;border:1px solid #3d424a;border-radius:8px;background:#141517;color:#e4e6ea;font-family:'Overpass',sans-serif;box-shadow:0 24px 80px rgb(0 0 0 / .5)}
+dialog.lb::backdrop{background:rgb(10 11 12 / .72)}
+@media (max-width:640px){dialog.lb{width:calc(100vw - 2rem);height:calc(100vh - 2rem)}}
+.lb-in{position:absolute;inset:0;display:grid;grid-template-rows:auto minmax(0,1fr) auto}
+.lb-top{display:flex;align-items:center;gap:.75rem;padding:.75rem 1rem}
+.lb-top .sp{flex:1}
+.lb-top button{font:inherit;font-size:.875rem;color:#e4e6ea;background:#24272e;border:1px solid #3d424a;border-radius:6px;height:2.25rem;padding:0 .75rem;cursor:pointer}
+.lb-top button:hover{background:#2e3238}
+.lb-stage{position:relative;overflow:hidden;min-height:0}
+.lb-stage img{position:absolute;inset:0;margin:auto;max-width:calc(100% - 3rem);max-height:100%;width:auto;height:auto;display:block}
+.lb-cap{margin:0;padding:.75rem 1rem 1rem;font-size:.9375rem;text-align:center;color:#b9bec6}
+.lb-count{font-size:.875rem;color:#949aa4;font-variant-numeric:tabular-nums}
+
+/* ============================================================ narrow screens */
+@media (max-width:960px){
+.s-top,.s-two,.s-feat{grid-template-columns:minmax(0,1fr);gap:2rem}
+}
+@media (max-width:640px){
+.nav{display:none}
+.s-top h1{font-size:2.5rem}
+.c-dots{display:none}
+.c-bar{grid-template-columns:auto minmax(0,1fr) auto auto}
+}
+
+/* ============================================================ mockup bar (not part of the design) */
+.sw{position:sticky;top:0;z-index:50;display:flex;flex-wrap:wrap;align-items:center;gap:.5rem 1rem;padding:.5rem 1.25rem;background:#000;color:#fff;font:14px/1.3 system-ui,-apple-system,sans-serif}
+.sw button{font:inherit;color:#fff;background:#24272e;border:1px solid #3d424a;border-radius:6px;padding:.3rem .75rem;cursor:pointer}
+.sw button[aria-pressed="true"]{background:#0a6fb8;border-color:#45a5e6}
+.sw span{color:#949aa4}
+</style>
+</head>
+<body>
+<div class="sw" role="toolbar" aria-label="Mockup">
+<b>Data sheet · B+ type</b>
+<button type="button" id="theme" aria-pressed="false">Dark</button>
+<span>Key D switches the theme. Click any picture to see it full size.</span>
+</div>
+<div class="lp" id="lp" data-theme="light">
+<div class="rule4"></div>
+<header class="hdr">
+<div class="in">
+<a class="brand" href="#">
+<svg viewBox="0 0 200 200" aria-hidden="true"><rect width="200" height="200" fill="#000"></rect><path d="M200 149v-20l-70 70h20" fill="#0ff"></path><path d="M200 129v-20l-90 90h20" fill="#0f0"></path><path d="M200 109V89L90 199h20" fill="#ff0"></path><path d="M200 89V69L70 199h20" fill="#f00"></path><path d="M0 0h200v8H0zM0 192h200v8H0zM0 0h8v200H0zM192 0h8v200h-8z" fill="#00B4CC"></path><path d="M40 40h20v120H40zM60 80h40v20H60zM100 100h20v20h-20zM120 120h20v20h-20zM140 140h20v20h-20zM100 60h20v20h-20zM120 40h20v20h-20z" fill="#00B4CC"></path></svg>
+<span>Klive IDE</span>
+</a>
+<nav class="nav" aria-label="Klive">
+<a href="#">Get Started</a>
+<a href="#">Guides</a>
+<a href="#">Reference</a>
+<a href="#">Under the hood</a>
+</nav>
+<div class="tools">
+<button class="ib" type="button" aria-label="Language">
+<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M2 12h20"></path><path d="M12 2a15 15 0 0 1 0 20a15 15 0 0 1 0-20"></path></svg>
+<span>English</span>
+</button>
+<button class="ib" type="button" aria-label="Switch between light and dark">
+<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg>
+</button>
+<a class="ib" href="#" aria-label="GitHub">
+<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 0 0-3.2 19.5c.5.1.7-.2.7-.5v-1.7c-2.8.6-3.4-1.3-3.4-1.3-.5-1.2-1.1-1.5-1.1-1.5-.9-.6.1-.6.1-.6 1 .1 1.5 1 1.5 1 .9 1.6 2.4 1.1 3 .9.1-.7.4-1.1.6-1.4-2.2-.3-4.6-1.1-4.6-5 0-1.1.4-2 1-2.7-.1-.3-.4-1.3.1-2.7 0 0 .8-.3 2.8 1a9.6 9.6 0 0 1 5 0c1.9-1.3 2.8-1 2.8-1 .5 1.4.2 2.4.1 2.7.6.7 1 1.6 1 2.7 0 3.9-2.3 4.7-4.6 5 .4.3.7.9.7 1.9v2.8c0 .3.2.6.7.5A10 10 0 0 0 12 2Z"></path></svg>
+</a>
+</div>
+</div>
+</header>
+<main class="wrap">
+<div class="s-top">
+<div>
+<h1>The complete ZX Spectrum and Next development studio</h1>
+<p class="lead">Write, assemble, compile, run and debug Z80 code and ZX BASIC in one app. No toolchain to wire up.</p>
+<div class="actions"><a class="btn pri" href="#">Download for macOS</a><a class="btn" href="#">Get started</a></div>
+<p class="fine"><a href="#">Other platforms</a></p>
+</div>
+<div class="s-glance">
+<h2>At a glance</h2>
+<table><tbody>
+<tr><th>Version</th><td><span class="mono">0.64.0</span></td></tr>
+<tr><th>Runs on</th><td>macOS, Windows, Linux</td></tr>
+<tr><th>Licence</th><td>MIT, free and open source</td></tr>
+<tr><th>Languages</th><td>Z80 assembly, ZX BASIC</td></tr>
+<tr><th>Works with</th><td>sjasmplus, Boriel BASIC, z88dk, PASTA/80</td></tr>
+<tr><th>Interface</th><td>In six languages</td></tr>
+</tbody></table>
+</div>
+</div>
+
+<section class="s-car" id="car" aria-roledescription="carousel" aria-label="Klive in action">
+<div class="c-frame">
+<a class="c-slide on" href="../../docs/public/images/en/get-started/debug-paused.webp" data-cap="Debug Z80 programs at the source level, register by register" aria-label="Picture 1 of 7: show full size"><img src="../../docs/public/images/en/get-started/debug-paused.webp" width="1800" height="1153" alt="Debug Z80 programs at the source level, register by register"></a>
+<a class="c-slide" href="../../docs/public/images/landing/emulator-scrollnutter.webp" data-cap="Run ZX Spectrum and Next software: the ScrollNutter demo on the Next" aria-label="Picture 2 of 7: show full size"><img data-src="../../docs/public/images/landing/emulator-scrollnutter.webp" width="1440" height="1184" alt="Run ZX Spectrum and Next software: the ScrollNutter demo on the Next"></a>
+<a class="c-slide" href="../../docs/public/images/landing/disassembly-scrollnutter.webp" data-cap="Take a .nex apart: ScrollNutter's annotated disassembly, its zxnDMA program decoded" aria-label="Picture 3 of 7: show full size"><img data-src="../../docs/public/images/landing/disassembly-scrollnutter.webp" width="2200" height="1375" alt="Take a .nex apart: ScrollNutter's annotated disassembly, its zxnDMA program decoded"></a>
+<a class="c-slide" href="../../docs/public/images/landing/sprite-inspector.webp" data-cap="Every hardware sprite, live, in the Sprite Inspector" aria-label="Picture 4 of 7: show full size"><img data-src="../../docs/public/images/landing/sprite-inspector.webp" width="2200" height="1375" alt="Every hardware sprite, live, in the Sprite Inspector"></a>
+<a class="c-slide" href="../../docs/public/images/landing/copper-list.webp" data-cap="The Copper list, with every MOVE and WAIT explained" aria-label="Picture 5 of 7: show full size"><img data-src="../../docs/public/images/landing/copper-list.webp" width="2200" height="1375" alt="The Copper list, with every MOVE and WAIT explained"></a>
+<a class="c-slide" href="../../docs/public/images/landing/sprite-editor.webp" data-cap="Draw sprites and patterns in the sprite editor" aria-label="Picture 6 of 7: show full size"><img data-src="../../docs/public/images/landing/sprite-editor.webp" width="2200" height="1375" alt="Draw sprites and patterns in the sprite editor"></a>
+<a class="c-slide" href="../../docs/public/images/en/get-started/basic-debug.webp" data-cap="Step through ZX BASIC, with its call stack and variables" aria-label="Picture 7 of 7: show full size"><img data-src="../../docs/public/images/en/get-started/basic-debug.webp" width="1800" height="1153" alt="Step through ZX BASIC, with its call stack and variables"></a>
+</div>
+<div class="c-bar">
+<button type="button" class="c-btn" id="c-prev" aria-label="Previous picture"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="m15 18-6-6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+<p class="c-cap" id="c-cap" aria-live="off"></p>
+<button type="button" class="c-btn" id="c-pause" aria-label="Pause the pictures" title="Pause the pictures" aria-pressed="false"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path id="c-pause-icon" d="M7 5h3v14H7zM14 5h3v14h-3z" fill="currentColor"></path></svg></button>
+<div class="c-dots" id="c-dots"></div>
+<button type="button" class="c-btn" id="c-next" aria-label="Next picture"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="m9 18 6-6-6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+</div>
+</section>
+
+<section class="s-sec s-two">
+<div><h2>Machines</h2>
+<table><tbody>
+<tr><th>ZX Spectrum</th><td class="m">48K · 128K · +2A/+3 · +2E/+3E</td></tr>
+<tr><th>ZX Spectrum Next</th><td class="m"></td></tr>
+<tr><th>ZX80 · ZX81</th><td class="m"></td></tr>
+<tr><th>Clones</th><td class="m">Pentagon · Scorpion · Timex</td></tr>
+<tr><th>Cambridge Z88</th><td class="m"></td></tr>
+</tbody></table></div>
+<div><h2>Also included</h2>
+<table><tbody>
+<tr><td>Record the emulator and the IDE as video</td></tr>
+<tr><td>Script the IDE and your builds</td></tr>
+<tr><td>Unit tests, code coverage and a profiler</td></tr>
+<tr><td>NextZXOS boots from an emulated SD card</td></tr>
+<tr><td>Sprite and palette editors</td></tr>
+</tbody></table></div>
+</section>
+
+<section class="s-sec">
+<h2>Write, build, run, debug</h2>
+<table class="s-flow">
+<thead><tr><th>Write</th><th>Build</th><th>Run</th><th>Debug</th></tr></thead>
+<tbody><tr><td>An editor that knows Z80. Completion, hover and rename from the real compiler.</td><td>Assembler and BASIC built in. Or sjasmplus, Boriel BASIC, z88dk and PASTA/80.</td><td>One click to the emulator. Klive builds, loads and starts your code.</td><td>See inside the machine. Breakpoints, stepping, registers and memory.</td></tr></tbody>
+</table>
+</section>
+
+<section class="s-sec">
+<h2>What makes Klive different</h2>
+
+<div class="s-feat">
+<div><span class="lbl"><span class="sq sq1"></span>All in one</span><h3>One app. Zero glue.</h3><p>Start from a template for the 48K, 128K, +3E, Next or Z88 and press Run. Elsewhere this takes an assembler, an editor, an emulator and a debugger bridge, configured by hand.</p><ul class="sqlist"><li>Compile, inject, run and debug with one click</li><li>Project templates for every machine</li><li>Works with sjasmplus, Boriel BASIC, z88dk and PASTA/80 when you want them</li></ul><a class="ul" href="#">Read more</a></div>
+<figure><a class="zoom" href="../../docs/public/images/en/get-started/first-program.webp" data-cap="One app. Zero glue." aria-label="One app. Zero glue.: show the picture full size"><img src="../../docs/public/images/en/get-started/first-program.webp" width="1800" height="1153" alt="" loading="lazy"><span class="zi" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"></path></svg></span></a></figure>
+</div>
+
+<div class="s-feat">
+<div><span class="lbl"><span class="sq sq2"></span>ZX BASIC</span><h3>Step through your BASIC, line by line</h3><p>Klive's built-in ZX BASIC compiler, compatible with Boriel ZX BASIC, debugs at the source level: breakpoints on statements, Step Over and Step Into, a real call stack, live variables, and stops on runtime errors.</p><ul class="sqlist"><li>No installation: the compiler is built in</li><li>Compatible with Boriel ZX BASIC and NextBuild's CODEBANK</li><li>Editor help: completion, go to definition, rename</li></ul><a class="ul" href="#">Read more</a></div>
+<figure><a class="zoom" href="../../docs/public/images/en/get-started/basic-debug.webp" data-cap="Step through your BASIC, line by line" aria-label="Step through your BASIC, line by line: show the picture full size"><img src="../../docs/public/images/en/get-started/basic-debug.webp" width="1800" height="1153" alt="" loading="lazy"><span class="zi" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"></path></svg></span></a></figure>
+</div>
+
+<div class="s-feat">
+<div><span class="lbl"><span class="sq sq3"></span>Reverse debugging</span><h3>Go back in time</h3><p>Step back through every instruction with memory, devices and the screen restored. Find the last write to a byte, continue from the past, and save a whole session to open elsewhere.</p><ul class="sqlist"><li>On every Z80 machine Klive emulates</li><li>Every breakpoint works backwards too</li><li>Debug recordings: send the bug, not a description</li></ul><a class="ul" href="#">Read more</a></div>
+<figure><a class="zoom" href="../../docs/public/images/working-with-ide/step-back-over.png" data-cap="Go back in time" aria-label="Go back in time: show the picture full size"><img src="../../docs/public/images/working-with-ide/step-back-over.png" width="2336" height="1570" alt="" loading="lazy"><span class="zi" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"></path></svg></span></a></figure>
+</div>
+
+<div class="s-feat">
+<div><span class="lbl"><span class="sq sq4"></span>ZX Spectrum Next</span><h3>Speaks Next natively</h3><p>Break when a program writes a Next register, with value and mask filters and old-to-new values. Set breakpoints on banks rather than addresses, program the DMA with a readable syntax, and build .nex files with palettes, Copper lists and loading bars.</p><ul class="sqlist"><li>Live views of the sprites, the Copper and the video layers</li><li>Sprite and palette editors</li><li>NextZXOS boots from an emulated SD card</li></ul><a class="ul" href="#">Read more</a></div>
+<figure><a class="zoom" href="../../docs/public/images/landing/sprite-editor.webp" data-cap="Speaks Next natively" aria-label="Speaks Next natively: show the picture full size"><img src="../../docs/public/images/landing/sprite-editor.webp" width="2200" height="1375" alt="" loading="lazy"><span class="zi" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"></path></svg></span></a></figure>
+</div>
+
+<div class="s-feat">
+<div><span class="lbl"><span class="sq sq5"></span>Testing</span><h3>Test it like modern code</h3><p>Write unit tests for your Z80 routines and run them headless, with exact T-state timings. See which lines ran with code coverage, and where the time goes with a profiler.</p><ul class="sqlist"><li>DeZog-compatible test projects</li><li>JUnit XML and LCOV output for CI</li><li>Coverage per memory bank</li></ul><a class="ul" href="#">Read more</a></div>
+<figure><a class="zoom" href="../../docs/public/images/working-with-ide/profiler-call-tree.png" data-cap="Test it like modern code" aria-label="Test it like modern code: show the picture full size"><img src="../../docs/public/images/working-with-ide/profiler-call-tree.png" width="1990" height="1074" alt="" loading="lazy"><span class="zi" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"></path></svg></span></a></figure>
+</div>
+</section>
+
+<div class="s-end">
+<div><h2>Ready to write your first program?</h2><p>The Get Started tutorial takes you from installing Klive to debugging Z80 assembly and BASIC.</p></div>
+<a class="btn pri" href="#">Get started</a>
+</div>
+</main>
+<footer class="ftr">
+<div class="in">
+<span>Klive IDE is free and open source, under the MIT license.</span>
+<nav aria-label="Documentation">
+<a href="#">Documentation</a>
+<a href="#">Changelog</a>
+<a href="#">Report an issue</a>
+<a href="#">Help translate Klive</a>
+</nav>
+</div>
+</footer>
+</div>
+
+<dialog class="lb" id="lb" aria-label="Picture, full size">
+<div class="lb-in">
+<div class="lb-top">
+<span class="lb-count" id="lb-count"></span>
+<span class="sp"></span>
+<button type="button" id="lb-close">Close</button>
+</div>
+<div class="lb-stage" id="lb-stage"><img id="lb-img" alt=""></div>
+<p class="lb-cap" id="lb-cap"></p>
+</div>
+</dialog>
+
+<script>
+(() => {
+  const lp = document.getElementById('lp');
+  // --- theme
+  const themeBtn = document.getElementById('theme');
+  function theme(d) { lp.dataset.theme = d ? 'dark' : 'light'; themeBtn.setAttribute('aria-pressed', String(d)); history.replaceState(null, '', d ? '#dark' : location.pathname); }
+  themeBtn.onclick = () => theme(lp.dataset.theme !== 'dark');
+  theme(location.hash === '#dark');
+  document.querySelectorAll('.lp a[href="#"]').forEach(a => a.addEventListener('click', e => e.preventDefault()));
+
+  // --- carousel: the same behaviour as docs/landing/HeroCarousel.tsx
+  const slides = [...document.querySelectorAll('.c-slide')];
+  const cap = document.getElementById('c-cap'), dots = document.getElementById('c-dots');
+  const pauseBtn = document.getElementById('c-pause'), pauseIcon = document.getElementById('c-pause-icon');
+  let index = 0, paused = false, timer;
+  slides.forEach((s, i) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.setAttribute('aria-label', `Picture ${i + 1} of ${slides.length}`);
+    b.onclick = () => go(i);
+    dots.appendChild(b);
+    s.addEventListener('animationend', () => s.classList.remove('in-f', 'in-b', 'out-f', 'out-b'));
+  });
+  function load(i) { const img = slides[(i + slides.length) % slides.length].querySelector('img'); if (!img.getAttribute('src') && img.dataset.src) img.src = img.dataset.src; }
+  function render() {
+    cap.textContent = slides[index].dataset.cap;
+    [...dots.children].forEach((d, i) => d.setAttribute('aria-current', String(i === index)));
+    slides.forEach((s, i) => s.setAttribute('aria-hidden', String(i !== index)));
+  }
+  function schedule() { clearTimeout(timer); if (!paused) timer = setTimeout(() => go(index + 1, 'f'), 5000); }
+  function go(target, dir) {
+    const next = (target + slides.length) % slides.length;
+    if (next === index) return;
+    dir = dir || (target > index ? 'f' : 'b');
+    load(next); load(next + 1); load(next - 1);
+    const old = slides[index];
+    old.classList.remove('on', 'in-f', 'in-b'); old.classList.add('out-' + dir);
+    slides[next].classList.remove('out-f', 'out-b');
+    slides[next].classList.add('on', 'in-' + dir);
+    index = next; render(); schedule();
+  }
+  document.getElementById('c-prev').onclick = () => go(index - 1, 'b');
+  document.getElementById('c-next').onclick = () => go(index + 1, 'f');
+  pauseBtn.onclick = () => {
+    paused = !paused;
+    const l = paused ? 'Play the pictures' : 'Pause the pictures';
+    pauseBtn.setAttribute('aria-label', l); pauseBtn.title = l; pauseBtn.setAttribute('aria-pressed', String(paused));
+    pauseIcon.setAttribute('d', paused ? 'M7 5v14l12-7z' : 'M7 5h3v14H7zM14 5h3v14h-3z');
+    cap.setAttribute('aria-live', paused ? 'polite' : 'off');
+    schedule();
+  };
+  document.getElementById('car').addEventListener('keydown', e => { if (e.key === 'ArrowRight') go(index + 1, 'f'); else if (e.key === 'ArrowLeft') go(index - 1, 'b'); });
+  setTimeout(() => load(1), 1500);
+  render(); schedule();
+
+  // --- full-size viewer: every picture is a link to its file; with script it opens here instead
+  const lb = document.getElementById('lb'), lbImg = document.getElementById('lb-img'), lbCap = document.getElementById('lb-cap');
+  const lbCount = document.getElementById('lb-count');
+  let group = [], at = 0, wasPaused = false;
+  function show() {
+    const a = group[at];
+    lbImg.src = a.getAttribute('href'); lbImg.alt = a.querySelector('img').alt || a.dataset.cap || '';
+    lbCap.textContent = a.dataset.cap || '';
+    lbCount.textContent = group.length > 1 ? `${at + 1} / ${group.length}` : '';
+  }
+  function open(a) {
+    group = a.classList.contains('c-slide') ? slides : [...document.querySelectorAll('a.zoom')];
+    at = group.indexOf(a); show();
+    wasPaused = paused; paused = true; clearTimeout(timer);
+    lb.showModal();
+  }
+  document.querySelectorAll('a.zoom, a.c-slide').forEach(a => a.addEventListener('click', e => { e.preventDefault(); open(a); }));
+  document.getElementById('lb-close').onclick = () => lb.close();
+  lb.addEventListener('click', e => { if (e.target === lb || e.target.id === 'lb-stage') lb.close(); });
+  lb.addEventListener('close', () => { paused = wasPaused; schedule(); });
+  lb.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' && group.length > 1) { at = (at + 1) % group.length; show(); }
+    else if (e.key === 'ArrowLeft' && group.length > 1) { at = (at - 1 + group.length) % group.length; show(); }
+  });
+
+  document.addEventListener('keydown', e => { if (lb.open || e.metaKey || e.ctrlKey || e.altKey) return; if (e.key === 'd' || e.key === 'D') theme(lp.dataset.theme !== 'dark'); });
+})();
+</script>
+</body>
+</html>

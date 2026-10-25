@@ -1,16 +1,18 @@
 /**
- * The landing page, in any language (decision D8 of .plans/DOCS_SITE_MODERNIZATION_PLAN.md):
- * the app's tokens and type everywhere (direction A), one loud Spectrum moment - the stripe band
- * behind the hero and the colour blocks (direction B) - and plain, translatable text.
+ * The landing page, in any language: the data-sheet layout of .plans/DOCS_SITE_REDESIGN_PLAN.md
+ * (R3), with the app's colour tokens and the site's Overpass type (R1, R2). The Spectrum colours
+ * appear only as the four-colour rule at the top and the square before each feature's label.
  *
  * A server component rendered at build time: it reads the dictionary, the release facts and the
- * localized screenshots from disk. The Download button, the theme switch and the language menu
- * are the only client code.
+ * localized screenshots from disk. The Download button, the theme switch, the language menu, the
+ * carousel and the picture viewer are the only client code. Every picture is a plain link to its
+ * file, which the viewer opens over the page (R5).
  */
 import Link from "next/link";
 import { findLocalizedImage } from "../page-components/images";
 import { DEFAULT_LOCALE, LOCALE_NAMES, LOCALES } from "../i18n/locales.mjs";
 import DownloadButton from "./DownloadButton";
+import ImageViewer from "./ImageViewer";
 import LanguageSelect from "./LanguageSelect";
 import ThemeToggle from "./ThemeToggle";
 import { FEATURES, HERO_SLIDES, SHOWN_FEATURES, type Feature } from "./features";
@@ -32,6 +34,21 @@ const LOGO = (
     <path d="M40 40h20v120H40zM60 80h40v20H60zM100 100h20v20h-20zM120 120h20v20h-20zM140 140h20v20h-20zM100 60h20v20h-20zM120 40h20v20h-20z" fill="#00B4CC" />
   </svg>
 );
+
+/** The corner mark on a picture that opens full size */
+const EXPAND = (
+  <span className="lp-zoom-mark" aria-hidden="true">
+    <svg viewBox="0 0 24 24" width="16" height="16">
+      <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  </span>
+);
+
+/** The steps of the "Write, build, run, debug" table */
+const LOOP = ["write", "build", "run", "debug"] as const;
+
+/** The rows of "Also included" (the first two keep their keys from the old strip of cards) */
+const ALSO = ["strip.recording", "strip.scripting", "also.testing", "also.sdCard", "also.editors"] as const;
 
 function imageUrl(image: Feature["image"], lang: string): string {
   if ("path" in image) return `${basePath}/images/${image.path}`;
@@ -56,13 +73,20 @@ export default function LandingPage({ lang }: Readonly<{ lang: string }>) {
     (LOCALE_NAMES as Record<string, string>)[id] ?? id,
     `${basePath}${landingHref(id)}`
   ]);
-  const [before, after] = t("hero.title").split("{next}");
+  const machines: [string, string][] = [
+    ["ZX Spectrum", t("machines.spectrum")],
+    ["ZX Spectrum Next", ""],
+    ["ZX80 · ZX81", ""],
+    [t("machines.clonesLabel"), t("machines.clones")],
+    ["Cambridge Z88", ""]
+  ];
 
   return (
     <div className="lp">
       <a className="lp-skip" href="#main">
         {t("nav.skip")}
       </a>
+      <div className="lp-rule" aria-hidden="true" />
       <header className="lp-header">
         <div className="lp-header-in">
           <Link className="lp-brand" href={landingHref(lang)}>
@@ -73,6 +97,7 @@ export default function LandingPage({ lang }: Readonly<{ lang: string }>) {
             <Link href={docsHref(lang, "get-started")}>{t("nav.getStarted")}</Link>
             <Link href={docsHref(lang, "guides")}>{t("nav.guides")}</Link>
             <Link href={docsHref(lang, "reference")}>{t("nav.reference")}</Link>
+            <Link href={docsHref(lang, "under-the-hood")}>{t("nav.underTheHood")}</Link>
           </nav>
           <div className="lp-tools">
             <LanguageSelect current={lang} label={t("nav.language")} languages={languages} />
@@ -89,134 +114,173 @@ export default function LandingPage({ lang }: Readonly<{ lang: string }>) {
         </div>
       </header>
 
-      <main id="main">
-        <section className="lp-hero">
-          <div className="lp-hero-in">
-            <div className="lp-hero-copy">
-              {site.latestRelease !== "0.0.0" && (
-                <span className="lp-badge">{t("hero.badge", { version: site.latestRelease })}</span>
-              )}
-              <h1>
-                {before}
-                <em>{t("hero.next")}</em>
-                {after}
-              </h1>
-              <p className="lp-lead">{t("hero.lead")}</p>
-              <div className="lp-actions">
-                <DownloadButton
-                  downloads={site.downloads}
-                  releasesPage={site.releasesPage}
-                  labelForOs={t("hero.download")}
-                  labelGeneric={t("hero.downloadGeneric")}
-                />
-                <Link className="lp-button" href={docsHref(lang, "get-started")}>
-                  {t("hero.getStarted")}
-                </Link>
-              </div>
-              <p className="lp-fine">
-                <a href={site.releasesPage}>{t("hero.otherPlatforms")}</a>
-                <span aria-hidden="true"> · </span>
-                {t("hero.free")}
-              </p>
-            </div>
-            <div className="lp-hero-shot">
-              <HeroCarousel
-                slides={slides}
-                label={t("hero.carousel.label")}
-                previousLabel={t("hero.carousel.previous")}
-                nextLabel={t("hero.carousel.next")}
-                slideLabel={t("hero.carousel.slide")}
-                pauseLabel={t("hero.carousel.pause")}
-                playLabel={t("hero.carousel.play")}
+      <main id="main" className="lp-main">
+        <section className="lp-top">
+          <div className="lp-top-copy">
+            <h1>{t("hero.title", { next: t("hero.next") })}</h1>
+            <p className="lp-lead">{t("hero.lead")}</p>
+            <div className="lp-actions">
+              <DownloadButton
+                downloads={site.downloads}
+                releasesPage={site.releasesPage}
+                labelForOs={t("hero.download")}
+                labelGeneric={t("hero.downloadGeneric")}
               />
+              <Link className="lp-button" href={docsHref(lang, "get-started")}>
+                {t("hero.getStarted")}
+              </Link>
             </div>
+            <p className="lp-fine">
+              <a href={site.releasesPage}>{t("hero.otherPlatforms")}</a>
+            </p>
+          </div>
+          <div className="lp-glance">
+            <h2>{t("glance.title")}</h2>
+            <table>
+              <tbody>
+                {site.latestRelease !== "0.0.0" && (
+                  <tr>
+                    <th scope="row">{t("glance.version")}</th>
+                    <td>
+                      <span className="lp-mono">{site.latestRelease}</span>
+                    </td>
+                  </tr>
+                )}
+                <tr>
+                  <th scope="row">{t("glance.runsOn")}</th>
+                  <td>macOS · Windows · Linux</td>
+                </tr>
+                <tr>
+                  <th scope="row">{t("glance.licence")}</th>
+                  <td>{t("glance.licenceValue")}</td>
+                </tr>
+                <tr>
+                  <th scope="row">{t("glance.languages")}</th>
+                  <td>{t("glance.languagesValue")}</td>
+                </tr>
+                <tr>
+                  <th scope="row">{t("glance.worksWith")}</th>
+                  <td>sjasmplus · Boriel BASIC · z88dk · PASTA/80</td>
+                </tr>
+                <tr>
+                  <th scope="row">{t("glance.interface")}</th>
+                  <td>{t("glance.interfaceValue")}</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </section>
 
-        <section className="lp-machines" aria-label={t("machines.title")}>
-          <div className="lp-machines-in">
-            <span>
-              <b>ZX Spectrum</b> {t("machines.spectrum")}
-            </span>
-            <span>
-              <b>ZX Spectrum Next</b>
-            </span>
-            <span>
-              <b>ZX80 · ZX81</b>
-            </span>
-            <span>
-              <b>{t("machines.clones")}</b>
-            </span>
-            <span>
-              <b>Cambridge Z88</b>
-            </span>
+        <section className="lp-carousel-band">
+          <HeroCarousel
+            slides={slides}
+            label={t("hero.carousel.label")}
+            previousLabel={t("hero.carousel.previous")}
+            nextLabel={t("hero.carousel.next")}
+            slideLabel={t("hero.carousel.slide")}
+            pauseLabel={t("hero.carousel.pause")}
+            playLabel={t("hero.carousel.play")}
+            openLabel={t("viewer.open")}
+          />
+        </section>
+
+        <section className="lp-sec lp-two">
+          <div>
+            <h2>{t("machines.title")}</h2>
+            <table>
+              <tbody>
+                {machines.map(([name, models]) => (
+                  <tr key={name}>
+                    <th scope="row">{name}</th>
+                    <td className="lp-muted">{models}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div>
+            <h2>{t("also.title")}</h2>
+            <ul className="lp-rows">
+              {ALSO.map((k) => (
+                <li key={k}>{t(k)}</li>
+              ))}
+            </ul>
           </div>
         </section>
 
-        <section className="lp-blocks" aria-label={t("features.title")}>
-          {features.slice(0, 4).map((f) => (
-            <a key={f.id} className="lp-block" href={`#${f.id}`}>
-              <span className="lp-block-tag">{t(`feature.${f.id}.tag`)}</span>
-              <h2>{t(`feature.${f.id}.title`)}</h2>
-              <p>{t(`feature.${f.id}.short`)}</p>
-            </a>
-          ))}
+        <section className="lp-sec">
+          <h2>{t("loop.title")}</h2>
+          <table className="lp-loop">
+            <thead>
+              <tr>
+                {LOOP.map((step) => (
+                  <th key={step} scope="col">
+                    {t(`loop.${step}.label`)}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                {LOOP.map((step) => (
+                  <td key={step}>
+                    <b>{t(`loop.${step}.title`)}</b>
+                    <span>{t(`loop.${step}.text`)}</span>
+                  </td>
+                ))}
+              </tr>
+            </tbody>
+          </table>
         </section>
 
-        <section className="lp-loop">
-          <div className="lp-loop-in">
-            {(["write", "build", "run", "debug"] as const).map((step, i) => (
-              <div key={step} className="lp-step">
-                <span className="lp-step-label">
-                  {String(i + 1).padStart(2, "0")} · {t(`loop.${step}.label`)}
-                </span>
-                <h3>{t(`loop.${step}.title`)}</h3>
-                <p>{t(`loop.${step}.text`)}</p>
-              </div>
-            ))}
-          </div>
+        <section className="lp-sec lp-features">
+          <h2>{t("features.title")}</h2>
+          {features.map((f, i) => {
+            const title = t(`feature.${f.id}.title`);
+            const src = imageUrl(f.image, lang);
+            return (
+              <article key={f.id} id={f.id} className="lp-feature">
+                <div className="lp-feature-copy">
+                  <span className="lp-label">
+                    <span className={`lp-square lp-square-${(i % 5) + 1}`} aria-hidden="true" />
+                    {t(`feature.${f.id}.tag`)}
+                  </span>
+                  <h3>{title}</h3>
+                  <p>{t(`feature.${f.id}.text`)}</p>
+                  <ul>
+                    {[1, 2, 3].map((n) => (
+                      <li key={n}>{t(`feature.${f.id}.point${n}`)}</li>
+                    ))}
+                  </ul>
+                  <Link className="lp-more" href={docsHref(lang, f.more.area, f.more.rest)}>
+                    {t("feature.more")}
+                  </Link>
+                </div>
+                <figure className="lp-feature-media">
+                  <a
+                    className="lp-zoom"
+                    href={src}
+                    data-viewer="features"
+                    data-caption={title}
+                    aria-label={t("viewer.open", { title })}
+                  >
+                    <img src={src} alt="" loading="lazy" decoding="async" />
+                    {EXPAND}
+                  </a>
+                </figure>
+              </article>
+            );
+          })}
         </section>
 
-        <section className="lp-features">
-          <h2 className="lp-section-title">{t("features.title")}</h2>
-          {features.map((f, i) => (
-            <article key={f.id} id={f.id} className={`lp-feature${i % 2 ? " lp-feature-flip" : ""}`}>
-              <div className="lp-feature-copy">
-                <span className="lp-tag">{t(`feature.${f.id}.tag`)}</span>
-                <h3>{t(`feature.${f.id}.title`)}</h3>
-                <p>{t(`feature.${f.id}.text`)}</p>
-                <ul>
-                  {[1, 2, 3].map((n) => (
-                    <li key={n}>{t(`feature.${f.id}.point${n}`)}</li>
-                  ))}
-                </ul>
-                <Link className="lp-more" href={docsHref(lang, f.more.area, f.more.rest)}>
-                  {t("feature.more")} →
-                </Link>
-              </div>
-              <div className="lp-feature-media">
-                <img src={imageUrl(f.image, lang)} alt="" loading="lazy" decoding="async" />
-              </div>
-            </article>
-          ))}
-        </section>
-
-        <section className="lp-strip">
-          <div className="lp-strip-in">
-            {(["machines", "recording", "scripting", "languages", "open"] as const).map((k) => (
-              <span key={k}>{t(`strip.${k}`)}</span>
-            ))}
-          </div>
-        </section>
-
-        <section className="lp-cta">
-          <div className="lp-cta-in">
+        <section className="lp-end">
+          <div>
             <h2>{t("cta.title")}</h2>
             <p>{t("cta.text")}</p>
-            <Link className="lp-button lp-button-primary" href={docsHref(lang, "get-started")}>
-              {t("hero.getStarted")}
-            </Link>
           </div>
+          <Link className="lp-button lp-button-primary" href={docsHref(lang, "get-started")}>
+            {t("hero.getStarted")}
+          </Link>
         </section>
       </main>
 
@@ -231,6 +295,8 @@ export default function LandingPage({ lang }: Readonly<{ lang: string }>) {
           </nav>
         </div>
       </footer>
+
+      <ImageViewer label={t("viewer.label")} closeLabel={t("viewer.close")} countLabel={t("viewer.count")} />
     </div>
   );
 }

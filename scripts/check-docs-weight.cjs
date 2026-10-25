@@ -40,8 +40,11 @@ function checkDocsWeight({ budgetMb = DEFAULT_BUDGET_MB } = {}) {
     // --- Images are referenced as /images/... (public) or /_next/static/media/... (imported);
     // --- the base path, if any, comes first
     // --- (Fonts are served from /_next/static/media too; only images count)
+    // --- `src` loads with the page, and so does a <link href> (a preload); an <a href> to a
+    // --- picture (the landing page's full-size links) loads only when it is clicked, so it is not
+    // --- counted
     const urls = new Set(
-      [...html.matchAll(/\s(?:src|href)="[^"]*?(\/images\/[^"]+|\/_next\/static\/media\/[^"]+)"/g)]
+      [...html.matchAll(/(?:\ssrc|<link\b[^>]*?\shref)="[^"]*?(\/images\/[^"]+|\/_next\/static\/media\/[^"]+)"/g)]
         .map((m) => m[1])
         .filter((url) => /\.(png|jpe?g|webp|avif|gif|svg)(\?|$)/i.test(url))
     );

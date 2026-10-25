@@ -13,8 +13,12 @@
  *   often rests on it and a clicked arrow keeps the focus.
  * - Buttons, dots and the arrow keys change slides; each slide has a caption, which is also the
  *   image's description for screen readers.
+ * - Each picture is a link to its file, which ImageViewer opens full size over the page (R5 of
+ *   .plans/DOCS_SITE_REDESIGN_PLAN.md). While the viewer is open the carousel stands still; it
+ *   tells us through the VIEWER_EVENT it sends on the document.
  */
 import { useCallback, useEffect, useState } from "react";
+import { VIEWER_EVENT } from "./ImageViewer";
 
 export type Slide = { src: string; alt: string; caption: string; width: number; height: number };
 
@@ -27,19 +31,23 @@ type Props = Readonly<{
   slideLabel: string;
   pauseLabel: string;
   playLabel: string;
+  /** "{title}: show the picture full size", with the placeholder still in it */
+  openLabel: string;
 }>;
 
 const INTERVAL_MS = 5000;
 
 type Move = { from: number; dir: "forward" | "backward" };
 
-export default function HeroCarousel({ slides, label, previousLabel, nextLabel, slideLabel, pauseLabel, playLabel }: Props) {
+export default function HeroCarousel({ slides, label, previousLabel, nextLabel, slideLabel, pauseLabel, playLabel, openLabel }: Props) {
   const [index, setIndex] = useState(0);
   // --- The slide that is leaving, and which way, while the fly-out runs
   const [move, setMove] = useState<Move | undefined>();
   // --- Slides whose image may load: the current one and its neighbours
   const [loaded, setLoaded] = useState<Set<number>>(() => new Set([0]));
   const [paused, setPaused] = useState(false);
+  // --- The full-size viewer is open: hold the picture without touching the pause button's state
+  const [viewing, setViewing] = useState(false);
   // --- Bumped by every change of picture, so the timer always restarts from a full interval
   const [tick, setTick] = useState(0);
 
@@ -63,10 +71,16 @@ export default function HeroCarousel({ slides, label, previousLabel, nextLabel, 
   }, [slides.length]);
 
   useEffect(() => {
-    if (paused || slides.length < 2) return;
+    const onViewer = (e: Event) => setViewing((e as CustomEvent<boolean>).detail);
+    document.addEventListener(VIEWER_EVENT, onViewer);
+    return () => document.removeEventListener(VIEWER_EVENT, onViewer);
+  }, []);
+
+  useEffect(() => {
+    if (paused || viewing || slides.length < 2) return;
     const id = setTimeout(() => go(index + 1, "forward"), INTERVAL_MS);
     return () => clearTimeout(id);
-  }, [index, tick, paused, go, slides.length]);
+  }, [index, tick, paused, viewing, go, slides.length]);
 
   const onKey = (e: React.KeyboardEvent) => {
     if (e.key === "ArrowRight") go(index + 1, "forward");
@@ -86,14 +100,23 @@ export default function HeroCarousel({ slides, label, previousLabel, nextLabel, 
             aria-label={slideLabel.replace("{n}", String(i + 1)).replace("{count}", String(slides.length))}
             aria-hidden={i !== index}
           >
-            <img
-              src={loaded.has(i) ? slide.src : undefined}
-              data-src={slide.src}
-              alt={slide.alt}
-              width={slide.width}
-              height={slide.height}
-              decoding="async"
-            />
+            <a
+              className="lp-slide-link"
+              href={slide.src}
+              data-viewer="hero"
+              data-caption={slide.caption}
+              aria-label={openLabel.replace("{title}", slide.caption)}
+              tabIndex={i === index ? undefined : -1}
+            >
+              <img
+                src={loaded.has(i) ? slide.src : undefined}
+                data-src={slide.src}
+                alt={slide.alt}
+                width={slide.width}
+                height={slide.height}
+                decoding="async"
+              />
+            </a>
           </figure>
         ))}
       </div>
