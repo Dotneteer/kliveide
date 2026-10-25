@@ -1,4 +1,7 @@
 import type { FileLine, ListFileItem, SourceLevelDebugInfo } from "@abstractions/CompilerInfo";
+import { SOURCE_DEBUG_MODEL_VERSION } from "@abstractions/SourceDebugInfo";
+
+import { upgradeSourceLevelDebug } from "./source-debug-upgrade";
 
 /**
  * The source-level debug sidecar of a NEX (plan `.plans/ZXBASIC_COMPILER_PLAN.md` §8.5):
@@ -12,11 +15,15 @@ import type { FileLine, ListFileItem, SourceLevelDebugInfo } from "@abstractions
  *
  * Separate from the NEX viewer's own sidecar (breakpoints, labels): that one belongs to the file and
  * survives rebuilds; this one describes one build and is replaced with it.
+ *
+ * The format version is the debug model's (`SOURCE_DEBUG_MODEL_VERSION`); a version-1 sidecar,
+ * written before the model became language-neutral, is upgraded as it is read. The file name keeps
+ * its historical suffix, so sidecars beside existing NEX files are still found.
  */
 export const SOURCE_DEBUG_SIDECAR_SUFFIX = ".kbasic-debug.json";
 
 const FORMAT = "klive-source-debug";
-const VERSION = 1;
+const VERSION = SOURCE_DEBUG_MODEL_VERSION;
 
 export type SourceDebugSidecar = {
   format: typeof FORMAT;
@@ -113,5 +120,6 @@ export function readSourceDebugSidecar(
   if (parsed.nexLength !== nex.length || parsed.nexChecksum !== nexChecksum(nex)) {
     return { error: "it was written for another build of this NEX" };
   }
-  return { info: parsed.sourceLevelDebug, ...(parsed.program ? { program: parsed.program } : {}) };
+  const info = parsed.version < VERSION ? upgradeSourceLevelDebug(parsed.sourceLevelDebug) : parsed.sourceLevelDebug;
+  return { info, ...(parsed.program ? { program: parsed.program } : {}) };
 }

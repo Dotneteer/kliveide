@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it } from "vitest";
 
-import { add, divide, fromDecimal, fromInteger, multiply, subtract, toNumber, type Float40 } from "@main/kbasic/semantics/float40";
+import { add, divide, fromDecimal, fromInteger, multiply, subtract, toNumber, type Float40 } from "@main/z80-backend/numeric/float40";
 
 import { createRuntimeRig, makeString, readString, type RuntimeRig } from "./runtime-kit";
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Klive BASIC optimiser report (`.docs/kbasic-optimiser.md` §7): builds every 48K corpus program at
+ * Klive BASIC optimiser report (`.docs/z80-backend-optimiser.md` §7): builds every 48K corpus program at
  * each optimisation level, runs it, prints the totals and rewrites `test/kbasic/opt/opt-baseline.json`
  * (code size and T-states per program and level). The test `test/kbasic/opt/opt-report.test.ts`
  * fails when a level gets worse than that file.

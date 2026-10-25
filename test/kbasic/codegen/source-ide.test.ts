@@ -125,7 +125,7 @@ describe("the execution point's source location (§10.4, §10.5)", () => {
     const f = info.callables.findIndex((c) => c.name === "f");
     const location = locateSource(out, 0x1234, { kind: "returnPoint", pc: 0x1234, statementIndex: call.index, returnedFrom: f, returned: [] });
     expect(location).toMatchObject({ line: 5, startColumn: 8, endColumn: 16, kind: "returnPoint", returnedFrom: "f" });
-    expect(locateSource(out, 0x1234, { kind: "returnPoint", pc: 0x1234, statementIndex: call.index, returnedFromGosub: true, returned: [] })?.returnedFrom).toBe("GOSUB");
+    expect(locateSource(out, 0x1234, { kind: "returnPoint", pc: 0x1234, statementIndex: call.index, returnedFromLocal: true, returned: [] })?.returnedFrom).toBe("GOSUB");
   });
 
   it("shows an error stop on the statement that raised it, with the report", async () => {

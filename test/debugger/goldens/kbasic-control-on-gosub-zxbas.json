@@ -1,0 +1,447 @@
+{
+ "language": "basic",
+ "files": [
+  {
+   "index": 0,
+   "filename": "/test/main.bas"
+  }
+ ],
+ "statements": [
+  {
+   "index": 0,
+   "fileIndex": 0,
+   "startLine": 4,
+   "startColumn": 0,
+   "endLine": 4,
+   "endColumn": 14,
+   "startAddress": 32795,
+   "endAddress": 32817,
+   "kind": "loop",
+   "callableIndex": 0
+  },
+  {
+   "index": 1,
+   "fileIndex": 0,
+   "startLine": 5,
+   "startColumn": 2,
+   "endLine": 5,
+   "endColumn": 28,
+   "startAddress": 32817,
+   "endAddress": 32845,
+   "kind": "switch",
+   "callableIndex": 0
+  },
+  {
+   "index": 2,
+   "fileIndex": 0,
+   "startLine": 6,
+   "startColumn": 0,
+   "endLine": 6,
+   "endColumn": 6,
+   "startAddress": 32851,
+   "endAddress": 32881,
+   "kind": "loop",
+   "callableIndex": 0
+  },
+  {
+   "index": 3,
+   "fileIndex": 0,
+   "startLine": 7,
+   "startColumn": 0,
+   "endLine": 7,
+   "endColumn": 5,
+   "startAddress": 32881,
+   "endAddress": 32884,
+   "kind": "other",
+   "callableIndex": 0
+  },
+  {
+   "index": 4,
+   "fileIndex": 0,
+   "startLine": 8,
+   "startColumn": 0,
+   "endLine": 8,
+   "endColumn": 3,
+   "startAddress": 32884,
+   "endAddress": 32890,
+   "kind": "return",
+   "callableIndex": 0
+  },
+  {
+   "index": 5,
+   "fileIndex": 0,
+   "startLine": 9,
+   "startColumn": 5,
+   "endLine": 9,
+   "endColumn": 15,
+   "startAddress": 32890,
+   "endAddress": 32898,
+   "kind": "other",
+   "callableIndex": 0
+  },
+  {
+   "index": 6,
+   "fileIndex": 0,
+   "startLine": 9,
+   "startColumn": 18,
+   "endLine": 9,
+   "endColumn": 24,
+   "startAddress": 32898,
+   "endAddress": 32899,
+   "kind": "return",
+   "callableIndex": 0
+  },
+  {
+   "index": 7,
+   "fileIndex": 0,
+   "startLine": 10,
+   "startColumn": 5,
+   "endLine": 10,
+   "endColumn": 15,
+   "startAddress": 32899,
+   "endAddress": 32907,
+   "kind": "other",
+   "callableIndex": 0
+  },
+  {
+   "index": 8,
+   "fileIndex": 0,
+   "startLine": 10,
+   "startColumn": 18,
+   "endLine": 10,
+   "endColumn": 24,
+   "startAddress": 32907,
+   "endAddress": 32908,
+   "kind": "return",
+   "callableIndex": 0
+  },
+  {
+   "index": 9,
+   "fileIndex": 0,
+   "startLine": 11,
+   "startColumn": 7,
+   "endLine": 11,
+   "endColumn": 17,
+   "startAddress": 32908,
+   "endAddress": 32916,
+   "kind": "other",
+   "callableIndex": 0
+  },
+  {
+   "index": 10,
+   "fileIndex": 0,
+   "startLine": 11,
+   "startColumn": 20,
+   "endLine": 11,
+   "endColumn": 26,
+   "startAddress": 32916,
+   "endAddress": 32917,
+   "kind": "return",
+   "callableIndex": 0
+  }
+ ],
+ "callables": [
+  {
+   "index": 0,
+   "name": "main",
+   "kind": "entrypoint",
+   "fileIndex": 0,
+   "startLine": 4,
+   "endLine": 11,
+   "entryAddress": 32795,
+   "exitAddresses": [
+    32898,
+    32907,
+    32916
+   ],
+   "firstStatementIndex": 0,
+   "lastStatementIndex": 10
+  }
+ ],
+ "addressToStatement": [
+  [
+   0,
+   -1
+  ],
+  [
+   32795,
+   0
+  ],
+  [
+   32817,
+   1
+  ],
+  [
+   32845,
+   -1
+  ],
+  [
+   32851,
+   2
+  ],
+  [
+   32881,
+   3
+  ],
+  [
+   32884,
+   4
+  ],
+  [
+   32890,
+   5
+  ],
+  [
+   32898,
+   6
+  ],
+  [
+   32899,
+   7
+  ],
+  [
+   32907,
+   8
+  ],
+  [
+   32908,
+   9
+  ],
+  [
+   32916,
+   10
+  ],
+  [
+   32917,
+   -1
+  ]
+ ],
+ "extensions": {
+  "variables": [
+   {
+    "name": "i",
+    "displayName": "i",
+    "type": "u8",
+    "typeLabel": "UByte",
+    "kind": "global",
+    "location": {
+     "at": "absolute",
+     "address": 32932
+    },
+    "scope": "global",
+    "declaredAt": {
+     "fileIndex": 0,
+     "line": 3,
+     "column": 4
+    }
+   }
+  ],
+  "callSites": [
+   {
+    "returnAddress": 32842,
+    "statementIndex": 1,
+    "callerIndex": 0,
+    "kind": "local",
+    "dispatch": true,
+    "moreCallsFollow": false,
+    "order": 0
+   }
+  ],
+  "frames": [
+   {
+    "callableIndex": 0,
+    "convention": "entrypoint",
+    "startAddress": 32795,
+    "bodyStart": 32795,
+    "epilogueStart": 32923,
+    "endAddress": 32923
+   }
+  ],
+  "mainBaselineSymbol": 37739,
+  "labels": [
+   {
+    "name": "one",
+    "address": 32890
+   },
+   {
+    "name": "two",
+    "address": 32899
+   },
+   {
+    "name": "three",
+    "address": 32908
+   }
+  ],
+  "libraryFiles": [],
+  "runtimeSymbols": [
+   {
+    "name": "core.End",
+    "address": 37701
+   },
+   {
+    "name": "core.StopProgram",
+    "address": 37727
+   },
+   {
+    "name": "core.EndHook",
+    "address": 37736
+   },
+   {
+    "name": "core.ProgramSP",
+    "address": 37739
+   },
+   {
+    "name": "core.SavedIY",
+    "address": 37741
+   },
+   {
+    "name": "core.SavedIX",
+    "address": 37743
+   },
+   {
+    "name": "core.SavedHL2",
+    "address": 37745
+   },
+   {
+    "name": "core.RomCall",
+    "address": 37747
+   },
+   {
+    "name": "core.RomIn",
+    "address": 37787
+   },
+   {
+    "name": "core.RomOut",
+    "address": 37788
+   },
+   {
+    "name": "core.RomPeek",
+    "address": 37789
+   },
+   {
+    "name": "core.RaiseError",
+    "address": 37810
+   },
+   {
+    "name": "core.ReportError",
+    "address": 37836
+   },
+   {
+    "name": "core.CheckBreak",
+    "address": 37837
+   },
+   {
+    "name": "core.HeapInit",
+    "address": 37854
+   },
+   {
+    "name": "core.FreeList",
+    "address": 37889
+   },
+   {
+    "name": "core.Alloc",
+    "address": 37891
+   },
+   {
+    "name": "core.AllocFailed",
+    "address": 37978
+   },
+   {
+    "name": "core.Free",
+    "address": 37982
+   },
+   {
+    "name": "core.PrintInit",
+    "address": 38085
+   },
+   {
+    "name": "core.PrintReset",
+    "address": 38148
+   },
+   {
+    "name": "core.PrintRow",
+    "address": 38161
+   },
+   {
+    "name": "core.PrintCol",
+    "address": 38162
+   },
+   {
+    "name": "core.PrintChar",
+    "address": 38188
+   },
+   {
+    "name": "core.PrintApplyAttr",
+    "address": 38417
+   },
+   {
+    "name": "core.PrintNewline",
+    "address": 38539
+   },
+   {
+    "name": "core.PrintComma",
+    "address": 38644
+   },
+   {
+    "name": "core.PrintTab",
+    "address": 38670
+   },
+   {
+    "name": "core.PrintAt",
+    "address": 38691
+   },
+   {
+    "name": "core.PrintSave",
+    "address": 38715
+   },
+   {
+    "name": "core.PrintColour",
+    "address": 38760
+   },
+   {
+    "name": "core.PrintStr",
+    "address": 38894
+   },
+   {
+    "name": "core.PrintU8",
+    "address": 38927
+   },
+   {
+    "name": "core.PrintI8",
+    "address": 38932
+   },
+   {
+    "name": "core.PrintI16",
+    "address": 38936
+   },
+   {
+    "name": "core.PrintU16",
+    "address": 38953
+   },
+   {
+    "name": "core.PrintFixed",
+    "address": 39010
+   },
+   {
+    "name": "core.PrintI32",
+    "address": 39078
+   },
+   {
+    "name": "core.PrintU32",
+    "address": 39106
+   },
+   {
+    "name": "core.Cls",
+    "address": 39172
+   }
+  ],
+  "errorStop": {
+   "entry": 37810,
+   "code": {
+    "register": "a"
+   },
+   "reports": "zx-rom"
+  },
+  "optimizationLevel": 0
+ }
+}

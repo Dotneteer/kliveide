@@ -1,4 +1,4 @@
-import type { Float40 } from "@main/kbasic/semantics/float40";
+import type { Float40 } from "@main/z80-backend/numeric/float40";
 
 import { createSp48Session, type Sp48TestSession } from "../../harness/sp48";
 

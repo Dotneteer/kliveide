@@ -141,6 +141,31 @@ merely uncoloured, which no route diff can see.
   gap table (§4) in `.plans/LANDING_PAGE_COMPETITIVE_ANALYSIS.md` in the same change**, and mark
   the feature as done in the roadmap. This is a standing instruction from the project author.
 
+## Shared Z80 back end and source-level debugging
+
+- **Every language Klive compiles itself is a front end on one back end** (`src/main/z80-backend/`):
+  it lowers to MIR and calls `compileModule` (`link/compile-module.ts`); it never optimises, selects
+  instructions, writes Z80 text (only the source's own inline asm), runs the assembler or builds debug
+  tables of its own. Read `.docs/z80-backend-frontend-guide.md` before adding or changing a language;
+  the plan is `.plans/SHARED_Z80_BACKEND_PLAN.md` (Part A, with its as-built notes).
+- MIR types are representations (`mir/representations.ts`), and **every operation whose meaning
+  differs between languages states it** (`rounding`, `overflow`, `toInt`, `shift`, `truth`); the
+  verifier rejects a missing one and one not implemented yet. Klive BASIC states its own in
+  `src/main/kbasic/ir/types.ts`. A new meaning needs selector support, the folder and a MIR-level test.
+- The runtime is in packages: the back end's `core` and `zx` (`src/main/z80-backend/runtime/`, read
+  its README) and each language's own (Klive BASIC's in `src/main/kbasic/runtime/`). A module declares
+  its register contract with `; @abi Name(regs)`. Run `npm run runtime:bundle` after changing a module.
+- `test/architecture/boundaries.test.ts` enforces the boundaries (the back end imports no language; a
+  language imports only the front-end API files; the debug core imports no language and names no
+  language construct). `test/z80-backend/snapshot/` pins every corpus program's output at every level:
+  a back-end refactoring keeps it byte-identical (`BACKEND_SNAPSHOT_UPDATE=1` re-records it, a reviewed
+  change). The test-only "mini" language (`test/z80-backend/minilang/`) must keep compiling and running.
+- **The source-level debugger is language-neutral** (`.docs/source-debugging-model.md`, plan Part B):
+  the model (version 2) speaks in representations and neutral call/activation kinds; language
+  specifics come from the producer (`typeLabel`, `errorStop`, labels) or a plugin in
+  `src/renderer/appIde/debugger/languages/` (watch parser, value formatting), which only `registry.ts`
+  imports. Old sidecars are upgraded on read (`src/common/utils/source-debug-upgrade.ts`).
+
 ## Klive BASIC (the ZX BASIC compiler)
 
 - The plan is `.plans/ZXBASIC_COMPILER_PLAN.md`; read its §0 (ground rules and decisions) and §17
@@ -156,7 +181,7 @@ merely uncoloured, which no route diff can see.
   integration map, documented library API).
 - The standard library is Klive BASIC source in `src/main/kbasic/stdlib/` (read its `README.md`),
   written only from the documented API in `.ai/kbasic/stdlib-api.json`. Regenerate the bundle with
-  `npm run kbasic:runtime` after changing it.
+  `npm run runtime:bundle` after changing it.
 - Execution tests run on the real WASM cores: `test/harness/sp48/` (48K with the real ROM, booted
   to BASIC; read its README) and `test/harness/zxnext/`.
 - New language behaviour gets a program in the test corpus, `test/kbasic/corpus/<area>/<name>.zxbas`,

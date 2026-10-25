@@ -3230,6 +3230,21 @@
       "name": "The BASIC function (a keyword, not translated)"
     }
   },
+  "panels.side.watchExpr.notAvailable": "Watch expressions are not available for this program's language",
+  "@panels.side.watchExpr.notAvailable": {
+    "context": "Shown instead of a watch expression's value (Variables panel) when the debugger cannot read expressions of the program's language (it has no expression reader for it)."
+  },
+  "panels.side.callStack.localRoutine": "Local routine",
+  "@panels.side.callStack.localRoutine": {
+    "context": "Name of a row of the source-level call stack: a subroutine that runs inside its caller's routine (like BASIC's GOSUB), for a language the debugger has no own wording for, when no label names the subroutine."
+  },
+  "panels.side.callStack.localRoutineAt": "Local routine {label}",
+  "@panels.side.callStack.localRoutineAt": {
+    "context": "Name of a row of the source-level call stack: a subroutine that runs inside its caller's routine (like BASIC's GOSUB), for a language the debugger has no own wording for, named by the source label it starts at.",
+    "placeholders": {
+      "label": "The source label or line number (not translated)"
+    }
+  },
   "panels.side.variables.edit.stringsReadOnly": "Strings cannot be edited",
   "@panels.side.variables.edit.stringsReadOnly": {
     "context": "Error shown under a value being edited in the Variables panel (Klive BASIC). String variables are read-only here. 'String' is the BASIC type name."
@@ -3265,9 +3280,9 @@
       "hi": "The largest value, e.g. '127'"
     }
   },
-  "panels.side.variables.noProgram": "Build a Klive BASIC program to see its variables",
+  "panels.side.variables.noProgram": "Build a program with source-level debug information to see its variables",
   "@panels.side.variables.noProgram": {
-    "context": "Empty state of the Variables panel when the build has no source-level debug information. 'Klive BASIC' is the product's BASIC dialect, keep it."
+    "context": "Empty state of the Variables panel when the build has no source-level debug information (Klive BASIC, Boriel BASIC and z88dk C builds have it; plain assembly does not)."
   },
   "panels.side.variables.newValue": "New value of {name}",
   "@panels.side.variables.newValue": {
@@ -3340,13 +3355,13 @@
   "@panels.side.variables.removeWatch": {
     "context": "Tooltip of the trash button of a BASIC watch row in the Variables panel."
   },
-  "panels.side.variables.addWatchLabel": "Add a BASIC watch expression",
+  "panels.side.variables.addWatchLabel": "Add a watch expression",
   "@panels.side.variables.addWatchLabel": {
     "context": "Accessible name of the input at the foot of the Variables panel."
   },
-  "panels.side.variables.addWatchPlaceholder": "Add watch: a BASIC expression",
+  "panels.side.variables.addWatchPlaceholder": "Add watch: an expression in the program's language",
   "@panels.side.variables.addWatchPlaceholder": {
-    "context": "Placeholder of the input at the foot of the Variables panel: type a BASIC expression and press Enter to watch it."
+    "context": "Placeholder of the input at the foot of the Variables panel: type an expression of the program's source language (BASIC, C) and press Enter to watch it."
   },
   "panels.side.sourceCallStack.pause": "Pause the machine to see the call stack",
   "@panels.side.sourceCallStack.pause": {

@@ -1,13 +1,12 @@
 import { t as tr } from "@common/i18n/i18n";
 import fs from "fs";
 
-import type { AssemblerErrorInfo, CompileProfile, DebuggableOutput, IKliveCompiler, SimpleAssemblerOutput } from "@abstractions/CompilerInfo";
-import type { AppState } from "@common/state/AppState";
+import type { AssemblerErrorInfo, CompileProfile, DebuggableOutput, SimpleAssemblerOutput } from "@abstractions/CompilerInfo";
 
 import { createSettingsReader } from "@common/utils/SettingsReader";
-import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
-import { effectiveLevel, generateProgram } from "./codegen";
-import { emittedFiles } from "./emit-files";
+import { generateProgram } from "./codegen";
+import { DEBUG_PROFILE_LEVEL, effectiveLevel, type BackendTarget } from "../z80-backend/options";
+import { folderOf, programName, targetModel, Z80LanguageCompiler } from "../compiler-shell/Z80LanguageCompiler";
 import { lineCanHaveBreakpoint } from "./breakpoints";
 import { DiagnosticBag, type Diagnostic } from "./diagnostics";
 import { parseProgram, type FrontEndResult } from "./front-end";
@@ -29,22 +28,17 @@ export type KBasicFrontEndResult = FrontEndResult & {
 };
 
 /**
- * Klive BASIC, Klive's own ZX BASIC compiler (plan §3). Phase 1 runs the front end only: header
- * options, preprocessor and parser. Its diagnostics feed the editor; a foreground build reports
- * them and then that code generation is not available yet.
+ * Klive BASIC, Klive's own ZX BASIC compiler (plan §3): its front end — header options,
+ * preprocessor, parser, binder, lowering to MIR — on the shared Z80 back end, through the compiler
+ * shell (`Z80LanguageCompiler`). Its diagnostics feed the editor; a foreground build generates code.
  */
-export class KBasicCompiler implements IKliveCompiler {
-  private state: AppState | undefined;
-
+export class KBasicCompiler extends Z80LanguageCompiler {
   readonly id = "KBasicCompiler";
   readonly language = "zxbas";
-  readonly providesKliveOutput = true;
+  readonly productName = "Klive BASIC";
+  readonly artefactTag = "kbasic";
 
-  setAppState(state: AppState): void {
-    this.state = state;
-  }
-
-  /** A build: until code generation exists, the front end's diagnostics and a note saying so. */
+  /** A build. */
   compileFile(filename: string, _options?: Record<string, unknown>, profile?: CompileProfile): Promise<SimpleAssemblerOutput> {
     return this.run(filename, false, profile);
   }
@@ -99,19 +93,16 @@ export class KBasicCompiler implements IKliveCompiler {
     }
   }
 
-  /** Code generation (the 48K, 128K, +3 and Next targets, optimisation level 0). */
+  /** Code generation (the 48K, 128K, +3 and Next targets), through the shared back end. */
   private async build(filename: string, front: KBasicFrontEndResult, debugProfile = false): Promise<SimpleAssemblerOutput | DebuggableOutput> {
     const diagnostics = front.diagnostics;
-    const model = targetModel(front.options.target);
-    if (model === undefined) {
+    if (targetModel(front.options.target) === undefined) {
       diagnostics.error("E502", tr("compiler.basic.E502", { target: front.options.target }), { file: 0, start: 0, end: 0 });
       return { errors: toErrorInfo(diagnostics.items, front.sources) };
     }
     const generated = await generateProgram(front.bound!, front.sources, front.options, programName(filename), diagnostics);
     const errors = toErrorInfo(diagnostics.items, front.sources);
     if (!generated) return { errors };
-    const classic = generated.debug.classic;
-    // --- '@emit-asm, '@emit-ir, '@emit-map: files beside the source (a failed write is a warning, not a failed build)
     const requested = front.options.optimize;
     const level = effectiveLevel(requested);
     const traceOutput = [
@@ -123,42 +114,9 @@ export class KBasicCompiler implements IKliveCompiler {
             : ""
       }`
     ];
-    const name = programName(filename);
-    for (const file of emittedFiles(generated, front.options, name)) {
-      const folder = folderOf(filename);
-      const target = folder ? `${folder}/${name}${file.suffix}` : `${name}${file.suffix}`;
-      try {
-        fs.writeFileSync(target, file.content);
-        traceOutput.push(`Klive BASIC: wrote ${target}`);
-      } catch (err) {
-        traceOutput.push(`Klive BASIC: could not write ${target}: ${(err as Error).message}`);
-      }
-    }
-    return {
-      errors,
-      traceOutput,
-      segments: generated.output.segments.map((s) => ({
-        startAddress: s.startAddress,
-        emittedCode: s.emittedCode,
-        ...(s.bank !== undefined ? { bank: s.bank, bankOffset: s.bankOffset } : {})
-      })),
-      // --- The Next: the IDE exports a NEX (unbanked code goes into bank 2) and launches it with .nexload
-      ...(model === SpectrumModelType.Next
-        ? {
-            nexConfig: generated.output.nexConfig,
-            unbankedSegments: generated.output.segments
-              .filter((s) => s.bank === undefined)
-              .map((s) => ({ startAddress: s.startAddress, emittedCode: s.emittedCode }))
-          }
-        : {}),
-      injectOptions: { subroutine: true },
-      sourceFileList: classic.sourceFileList,
-      sourceMap: classic.sourceMap,
-      listFileItems: classic.listFileItems,
-      sourceLevelDebug: generated.debug.sourceLevel,
-      modelType: model,
-      entryAddress: generated.entryAddress
-    } as DebuggableOutput & { modelType: number; entryAddress: number };
+    // --- '@emit-asm, '@emit-ir, '@emit-map: files beside the source (a failed write is a warning, not a failed build)
+    this.writeArtefacts(filename, generated, { asm: front.options.emitAsm, ir: front.options.emitIr, map: front.options.emitMap }, traceOutput);
+    return this.programOutput(generated, front.options.target as BackendTarget, errors, traceOutput);
   }
 
   async lineCanHaveBreakpoint(line: string): Promise<boolean> {
@@ -322,35 +280,12 @@ function fileError(filename: string, errorCode: string, message: string): Assemb
   };
 }
 
-/** The build root's name without folder and extension: the generated program's file name. */
-/** The highest optimisation level a debug build uses when the header does not set one (plan §8.6). */
-export const DEBUG_PROFILE_LEVEL = 1;
 
 /** Whether the build root's header sets the optimisation level itself (`'@optimize`, NextBuild's `'!opt`). */
 export function headerSetsOptimize(filename: string, text: string): boolean {
   return readHeader(new SourceFile(0, filename, text.replace(/\r\n?/g, "\n")), new DiagnosticBag()).some((h) => h.name === "optimize" || h.name === "opt");
 }
 
-function programName(path: string): string {
-  const base = path.slice(Math.max(path.lastIndexOf("/"), path.lastIndexOf("\\")) + 1);
-  return base.replace(/\.[^.]*$/, "") || "program";
-}
-
-function folderOf(path: string): string {
-  const i = Math.max(path.lastIndexOf("/"), path.lastIndexOf("\\"));
-  return i < 0 ? "" : path.slice(0, i);
-}
-
 function isAbsolutePath(path: string): boolean {
   return /^([A-Za-z]:)?[\\/]/.test(path);
-}
-
-/** The Spectrum model a target builds for; undefined for a target without code generation yet. */
-export function targetModel(target: string): SpectrumModelType | undefined {
-  return {
-    zx48k: SpectrumModelType.Spectrum48,
-    zx128k: SpectrumModelType.Spectrum128,
-    zxplus3: SpectrumModelType.SpectrumP3,
-    next: SpectrumModelType.Next
-  }[target as "zx48k"];
 }

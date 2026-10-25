@@ -1,25 +1,27 @@
+import { kbasicPackage } from "@main/kbasic/runtime/generated/kbasic-package";
+import { runtimeLibrary } from "@main/z80-backend/runtime/runtime-linker";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { instr, label, type LirLine } from "@main/kbasic/backend/lir";
-import { selectFunction } from "@main/kbasic/backend/select0";
+import { instr, label, type LirLine } from "@main/z80-backend/select/lir";
+import { selectFunction } from "@main/z80-backend/select/select0";
 import { DiagnosticBag } from "@main/kbasic/diagnostics";
 import { lowerProgram } from "@main/kbasic/ir/lower";
 import { runFrontEnd } from "@main/kbasic/KBasicCompiler";
-import { runRules } from "@main/kbasic/opt/engine";
-import { computeLiveness } from "@main/kbasic/opt/liveness";
-import { parseInstr } from "@main/kbasic/opt/lir";
-import { optimizeLir, RULES } from "@main/kbasic/opt/pipeline";
-import { verifyModule } from "@main/kbasic/opt/verify";
+import { runRules } from "@main/z80-backend/opt/engine";
+import { computeLiveness } from "@main/z80-backend/opt/liveness";
+import { parseInstr } from "@main/z80-backend/opt/lir";
+import { optimizeLir, RULES } from "@main/z80-backend/opt/pipeline";
+import { verifyModule } from "@main/z80-backend/opt/verify";
 import { defaultOptions } from "@main/kbasic/options/options";
 import { isLibraryPath } from "@main/kbasic/stdlib";
 
 import { isNextOnly, programs } from "../corpus/expectations";
 
 /**
- * The level-1 peephole rules (`.docs/kbasic-optimiser.md` §4.2): each rule before and after, and
+ * The level-1 peephole rules (`.docs/z80-backend-optimiser.md` §4.2): each rule before and after, and
  * what the engine protects whatever the rule says. The corpus runs every program at level 1 with its
  * expectations, the validator and G4 (the execution checks); the last test here proves every rule
  * fires somewhere in the corpus, so each one is exercised by them.
@@ -101,7 +103,7 @@ describe("what the engine protects", () => {
   });
 
   it("never touches a call site, the user's inline asm, or the prologue and epilogue", () => {
-    const site = { kind: "sub" as const, callee: "s", moreCallsFollow: false, order: 0 };
+    const site = { kind: "routine" as const, callee: "s", moreCallsFollow: false, order: 0 };
     const withSite: LirLine[] = [stmt(1), ins("ld hl,5"), instr("call _s", 1, site), ins("ld b,1"), stmt(9), ins("ret", 9)];
     expect(run(withSite)).toEqual(["<stmt>", "ld hl,5", "call _s", "<stmt>", "ret"]);
     // --- The same dead load is kept when it is the user's inline asm
@@ -129,7 +131,8 @@ describe("the rules on the corpus", () => {
       const mir = lowerProgram(front.bound.program, front.bound.globals, diagnostics, (f) => isLibraryPath(front.sources.get(f).name));
       expect(verifyModule(mir, 1), file).toEqual([]);
       const runtime = new Set(mir.runtime);
-      const functions = mir.functions.map((fn) => selectFunction(fn, runtime, 1));
+      const library = runtimeLibrary([kbasicPackage]);
+      const functions = mir.functions.map((fn) => selectFunction(fn, runtime, 1, (r) => library.argumentsOf(r)));
       optimizeLir(mir, functions, { level: 1, target: "z80", onFire: (r) => fired.set(r, (fired.get(r) ?? 0) + 1) });
     }
     expect(RULES.map((r) => r.name).filter((r) => !fired.has(r))).toEqual([]);

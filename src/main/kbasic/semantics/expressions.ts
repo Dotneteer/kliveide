@@ -21,7 +21,7 @@ import {
   type BinaryFoldOp,
   type Constant
 } from "./constants";
-import * as f40 from "./float40";
+import * as f40 from "../../z80-backend/numeric/float40";
 import {
   Scope,
   type ArraySymbol,

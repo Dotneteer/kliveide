@@ -45,7 +45,7 @@ function heapUsed(r: Run): number {
 }
 
 /**
- * G4 (`.docs/kbasic-debug-builder.md` §7), checked on the run: inside a routine SP is IX minus the
+ * G4 (`.docs/z80-backend-debug-builder.md` §7), checked on the run: inside a routine SP is IX minus the
  * frame at every statement entry; in the main program it is the first statement's SP minus two bytes
  * per GOSUB that has not returned yet. DATA items, which READ calls, are left out. A GOSUB or ON (which may or may not call) allows one level
  * more at the next main entry, a RETURN one level less; a SUB or FUNCTION call leaves it.
@@ -58,9 +58,9 @@ function g4Problems(r: Run): string[] {
   for (const v of r.entries) {
     const st = mir.statements[v.sid];
     const fn = mir.functions[st.functionIndex];
-    // --- DATA items run as a call from READ, one level below the reading statement: not an activation of their own
-    if (fn.kind === "data") continue;
-    if (fn.kind !== "main") {
+    // --- DATA items (a fragment) run as a call from READ, one level below the reading statement: not an activation of their own
+    if (fn.kind === "fragment") continue;
+    if (fn.kind !== "entry") {
       const expected = (v.ix - 2 * Math.ceil(fn.frameSize / 2)) & 0xffff;
       if (v.sp !== expected) problems.push(`statement ${v.sid} in ${fn.name}: SP ${v.sp}, IX - frame ${expected}`);
       continue;

@@ -1,12 +1,21 @@
-import type { CodebankDebugInfo, SourceReturnRegisters, SourceValueType, VariableDebugInfo } from "@abstractions/SourceDebugInfo";
-import { fromNumber, toNumber, type Float40 } from "@main/kbasic/semantics/float40";
+import type {
+  CallableFrameInfo,
+  CodebankDebugInfo,
+  SourceReturnRegisters,
+  SourceValueType,
+  VariableDebugInfo
+} from "@abstractions/SourceDebugInfo";
+import { fromNumber, toNumber, type Float40 } from "@main/z80-backend/numeric/float40";
 // --- `t` is a local name in this file (the trimmed text): the translator is `translate`
 import { t as translate } from "@common/i18n/i18n";
 
+import { formatRaw, NEUTRAL_LANGUAGE, type DebugLanguageSupport, type RawValue, type ValueDecoder } from "./language-support";
+
 /**
- * Decoding a Klive BASIC value from emulator memory or registers (plan §10.7), in the
- * representations of `.ai/kbasic/runtime-abi.md` §2: the Variables panel, returned values and
- * watch expressions all read values through here.
+ * Decoding values from emulator memory or registers by their **representation**
+ * (`@abstractions/SourceDebugInfo` `SourceValueType`, plan §10.7, `.plans/SHARED_Z80_BACKEND_PLAN.md`
+ * §12.3): the Variables panel, returned values and watch expressions all read values through here.
+ * A decoder knows bytes only; how a value is written is the language's (`formatRaw`).
  */
 
 /** Reads the machine's memory: the 64K the CPU sees. */
@@ -63,198 +72,188 @@ export function bankPagesOf(variables: readonly VariableDebugInfo[], codebank: C
 }
 
 /** A decoded value: its text for display, and the number or string behind it. */
-export type DecodedValue = { text: string; number?: number; string?: string };
+export type DecodedValue = { text: string; number?: number; string?: string; raw?: RawValue };
 
-const SIZES: Record<SourceValueType, number> = {
-  byte: 1,
-  ubyte: 1,
-  boolean: 1,
-  integer: 2,
-  uinteger: 2,
-  string: 2,
-  long: 4,
-  ulong: 4,
-  fixed: 4,
-  float: 5,
-  char: 1,
-  pointer: 2
-};
-
-export function valueSize(type: SourceValueType): number {
-  return SIZES[type];
-}
-
-const TYPE_NAMES: Record<SourceValueType, string> = {
-  byte: "Byte",
-  ubyte: "UByte",
-  boolean: "Boolean",
-  integer: "Integer",
-  uinteger: "UInteger",
-  string: "String",
-  long: "Long",
-  ulong: "ULong",
-  fixed: "Fixed",
-  float: "Float",
-  char: "char",
-  pointer: "Pointer"
-};
-
-/** The type as the source writes it. */
-export function typeName(type: SourceValueType): string {
-  return TYPE_NAMES[type];
-}
-
-/** The longest String shown in full; a longer one is cut with an ellipsis. */
+/** The longest string shown in full; a longer one is cut with an ellipsis. */
 export const MAX_STRING_SHOWN = 256;
 
-/**
- * A String's characters as source text, in double quotes: the Spectrum's character set (`£` for
- * 96, `©` for 127), and every other code in the escape form the compiler reads (`\A` for a UDG,
- * `\#013` for the rest).
- */
-export function spectrumText(codes: number[], truncated = false): string {
-  let out = "";
-  for (const c of codes) {
-    if (c === 34) out += '""';
-    else if (c === 92) out += "\\\\";
-    else if (c === 96) out += "£";
-    else if (c === 127) out += "©";
-    else if (c >= 32 && c < 127) out += String.fromCharCode(c);
-    else if (c >= 144 && c <= 164) out += "\\" + String.fromCharCode(65 + c - 144);
-    else out += `\\#${c.toString().padStart(3, "0")}`;
-  }
-  return `"${out}${truncated ? "…" : ""}"`;
+// =================================================================================================
+// The built-in decoders
+
+const le = (value: number, size: number) => Array.from({ length: size }, (_, i) => Math.floor(value / 2 ** (8 * i)) & 0xff);
+const u16Of = (b: number[]) => b[0] | (b[1] << 8);
+const u32Of = (b: number[]) => (u16Of(b) + (b[2] | (b[3] << 8)) * 0x10000) >>> 0;
+
+function integer(size: number, signed: boolean): ValueDecoder {
+  const bits = 8 * size;
+  const range: [number, number] = signed ? [-(2 ** (bits - 1)), 2 ** (bits - 1) - 1] : [0, 2 ** bits - 1];
+  return {
+    size,
+    range,
+    decode: (b) => {
+      const u = size === 1 ? b[0] : size === 2 ? u16Of(b) : u32Of(b);
+      return { kind: "int", value: signed && u >= 2 ** (bits - 1) ? u - 2 ** bits : u };
+    },
+    encode: (x) => {
+      const n = Number(x);
+      if (!Number.isInteger(n)) return "whole";
+      if (n < range[0] || n > range[1]) return "range";
+      return le(n < 0 ? n + 2 ** bits : n, size);
+    }
+  };
 }
 
-/** The String a heap pointer points at (0 is the empty string). */
-export function decodeStringAt(mem: MemoryView, pointer: number): DecodedValue {
-  if (!pointer) return { text: '""', string: "" };
-  const length = mem.word(pointer);
-  const shown = Math.min(length, MAX_STRING_SHOWN);
+/** The characters at `address`: `count` of them, or up to a NUL when `count` is undefined. */
+function textAt(mem: MemoryView, address: number, count: number | undefined): RawValue {
   const codes: number[] = [];
-  for (let i = 0; i < shown; i++) codes.push(mem.byte(pointer + 2 + i));
-  return { text: spectrumText(codes, length > shown), string: String.fromCharCode(...codes) };
-}
-
-/** A Float as the ROM would print it: at most ten significant digits. */
-export function formatFloat(x: number): string {
-  if (!Number.isFinite(x)) return String(x);
-  return String(Number(x.toPrecision(10)));
-}
-
-function fromBytes(type: SourceValueType, b: number[], mem: MemoryView): DecodedValue {
-  const num = (n: number, text = String(n)) => ({ text, number: n });
-  const u16 = b[0] | (b[1] << 8);
-  const u32 = (u16 + (b[2] | (b[3] << 8)) * 0x10000) >>> 0;
-  switch (type) {
-    case "ubyte":
-      return num(b[0]);
-    case "byte":
-      return num(b[0] >= 0x80 ? b[0] - 0x100 : b[0]);
-    case "boolean":
-      return { text: b[0] ? "TRUE" : "FALSE", number: b[0] ? 1 : 0 };
-    case "uinteger":
-      return num(u16);
-    case "integer":
-      return num(u16 >= 0x8000 ? u16 - 0x10000 : u16);
-    case "ulong":
-      return num(u32);
-    case "long":
-      return num(u32 | 0);
-    case "fixed": {
-      const x = (u32 | 0) / 0x10000;
-      return num(x, formatFloat(x));
+  if (count === undefined) {
+    for (let i = 0; i < MAX_STRING_SHOWN; i++) {
+      const c = mem.byte(address + i);
+      if (c === 0) return { kind: "text", codes, truncated: false };
+      codes.push(c);
     }
-    case "float": {
-      const x = toNumber(b.slice(0, 5) as unknown as Float40);
-      return num(x, formatFloat(x));
-    }
-    case "string":
-      return decodeStringAt(mem, u16);
-    case "char": {
-      const value = b[0] >= 0x80 ? b[0] - 0x100 : b[0];
-      return num(value, b[0] >= 32 && b[0] < 127 ? `${value} '${String.fromCharCode(b[0])}'` : String(value));
-    }
-    case "pointer":
-      return num(u16, `$${u16.toString(16).toUpperCase().padStart(4, "0")}`);
+    return { kind: "text", codes, truncated: true };
   }
+  const shown = Math.min(count, MAX_STRING_SHOWN);
+  for (let i = 0; i < shown; i++) codes.push(mem.byte(address + i));
+  return { kind: "text", codes, truncated: count > shown };
+}
+
+const bool = (trueByte: number): ValueDecoder => ({
+  size: 1,
+  decode: (b) => ({ kind: "bool", value: b[0] !== 0 }),
+  encode: (x) => [x === true || (typeof x === "number" && x !== 0) ? trueByte : 0]
+});
+
+const BUILTIN: Record<string, ValueDecoder> = {
+  i8: integer(1, true),
+  u8: integer(1, false),
+  i16: integer(2, true),
+  u16: integer(2, false),
+  i32: integer(4, true),
+  u32: integer(4, false),
+  bool: bool(1),
+  "bool/ff": bool(0xff),
+  char8: { ...integer(1, true), decode: (b) => ({ kind: "char", value: b[0] >= 0x80 ? b[0] - 0x100 : b[0] }) },
+  ptr16: { ...integer(2, false), decode: (b) => ({ kind: "address", value: u16Of(b) }) },
+  "fix16.16": {
+    size: 4,
+    decode: (b) => ({ kind: "real", value: (u32Of(b) | 0) / 0x10000 }),
+    encode: (x) => {
+      const raw = Math.round(Number(x) * 0x10000);
+      return raw < -0x80000000 || raw > 0x7fffffff ? "range" : le(raw >>> 0, 4);
+    }
+  },
+  float40: {
+    size: 5,
+    decode: (b) => ({ kind: "real", value: toNumber(b.slice(0, 5) as unknown as Float40) }),
+    encode: (x) => {
+      try {
+        return [...fromNumber(Number(x))];
+      } catch {
+        return "range";
+      }
+    }
+  },
+  "str.heap": {
+    size: 2,
+    decode: (b, mem) => {
+      const pointer = u16Of(b);
+      return pointer ? textAt(mem, pointer + 2, mem.word(pointer)) : { kind: "text", codes: [], truncated: false };
+    }
+  },
+  "str.c": {
+    size: 2,
+    decode: (b, mem) => {
+      const pointer = u16Of(b);
+      return pointer ? textAt(mem, pointer, undefined) : { kind: "address", value: 0 };
+    }
+  }
+};
+
+/** The decoder of a representation: the language's own, a built-in, `str.short:<n>`, or undefined. */
+export function decoderOf(type: SourceValueType, lang: DebugLanguageSupport = NEUTRAL_LANGUAGE): ValueDecoder | undefined {
+  const own = lang.decoders?.[type] ?? BUILTIN[type];
+  if (own) return own;
+  const short = /^str\.short:(\d+)$/.exec(type);
+  if (short) {
+    const capacity = Number(short[1]);
+    // --- The bytes are read by the caller (size), so the text comes from them, not from memory
+    return { size: capacity + 1, decode: (b) => ({ kind: "text", codes: b.slice(1, 1 + Math.min(b[0], capacity)), truncated: false }) };
+  }
+  return undefined;
+}
+
+/** Bytes a value of the representation occupies where it is stored (1 for an unknown one). */
+export function valueSize(type: SourceValueType, lang: DebugLanguageSupport = NEUTRAL_LANGUAGE): number {
+  return decoderOf(type, lang)?.size ?? 1;
+}
+
+function decoded(raw: RawValue, lang: DebugLanguageSupport): DecodedValue {
+  const text = formatRaw(lang, raw);
+  switch (raw.kind) {
+    case "int":
+    case "real":
+    case "char":
+    case "address":
+      return { text, number: raw.value, raw };
+    case "bool":
+      return { text, number: raw.value ? 1 : 0, raw };
+    case "text":
+      return { text, string: String.fromCharCode(...raw.codes), raw };
+    case "bytes":
+      return { text, raw };
+  }
+}
+
+function fromBytes(type: SourceValueType, bytes: number[], mem: MemoryView, lang: DebugLanguageSupport): DecodedValue {
+  const decoder = decoderOf(type, lang);
+  return decoded(decoder ? decoder.decode(bytes, mem) : { kind: "bytes", bytes }, lang);
 }
 
 /** The value of `type` stored at `address`. */
-export function decodeValue(type: SourceValueType, mem: MemoryView, address: number): DecodedValue {
+export function decodeValue(type: SourceValueType, mem: MemoryView, address: number, lang: DebugLanguageSupport = NEUTRAL_LANGUAGE): DecodedValue {
   const bytes: number[] = [];
-  for (let i = 0; i < valueSize(type); i++) bytes.push(mem.byte(address + i));
-  return fromBytes(type, bytes, mem);
+  for (let i = 0; i < valueSize(type, lang); i++) bytes.push(mem.byte(address + i));
+  return fromBytes(type, bytes, mem, lang);
 }
 
-/**
- * A FUNCTION's result from the registers it returns in (runtime ABI §3.1): A for 8 bits, HL for
- * 16 bits and a String's pointer, DE:HL for 32 bits and Fixed, A-E-D-C-B for a Float.
- */
-export function decodeRegisters(type: SourceValueType, r: SourceReturnRegisters, mem: MemoryView): DecodedValue {
+/** A result from the registers its callable returns it in (`CallableFrameInfo.returns.in`). */
+export function decodeRegisters(
+  returns: NonNullable<CallableFrameInfo["returns"]>,
+  r: SourceReturnRegisters,
+  mem: MemoryView,
+  lang: DebugLanguageSupport = NEUTRAL_LANGUAGE
+): DecodedValue {
   const a = (r.af >> 8) & 0xff;
   const lo = (w: number) => w & 0xff;
   const hi = (w: number) => (w >> 8) & 0xff;
-  switch (type) {
-    case "byte":
-    case "ubyte":
-    case "boolean":
-    case "char":
-      return fromBytes(type, [a], mem);
-    case "float":
-      return fromBytes(type, [a, lo(r.de), hi(r.de), lo(r.bc), hi(r.bc)], mem);
-    default:
-      return fromBytes(type, [lo(r.hl), hi(r.hl), lo(r.de), hi(r.de)], mem);
-  }
+  const bytes =
+    returns.in === "a" ? [a] : returns.in === "aedcb" ? [a, lo(r.de), hi(r.de), lo(r.bc), hi(r.bc)] : returns.in === "hl" ? [lo(r.hl), hi(r.hl)] : [lo(r.hl), hi(r.hl), lo(r.de), hi(r.de)];
+  return fromBytes(returns.type, bytes, mem, lang);
 }
-
-const RANGES: Partial<Record<SourceValueType, [number, number]>> = {
-  byte: [-128, 127],
-  ubyte: [0, 255],
-  integer: [-32768, 32767],
-  uinteger: [0, 65535],
-  long: [-2147483648, 2147483647],
-  ulong: [0, 4294967295],
-  char: [-128, 127],
-  pointer: [0, 65535]
-};
 
 /**
  * The bytes a new value of `type` is stored as (plan §10.7: editing a value writes memory), or an
- * error for text that is not a number of the type. Numbers only: a String is a heap pointer, and
- * writing one would need the program's heap.
+ * error for text that is not a value of the type. Numbers and booleans only: a string may live on
+ * the program's heap, and writing one would need it. `typeLabel` names the type in the messages.
  */
-export function encodeValue(type: SourceValueType, text: string): { bytes: number[] } | { error: string } {
+export function encodeValue(type: SourceValueType, typeLabel: string, text: string): { bytes: number[] } | { error: string } {
   const t = text.trim();
-  if (type === "string") return { error: translate("panels.side.variables.edit.stringsReadOnly") };
-  if (type === "boolean") {
-    const upper = t.toUpperCase();
-    if (upper === "TRUE" || upper === "FALSE") return { bytes: [upper === "TRUE" ? 1 : 0] };
-  }
-  const hex = /^\$([0-9a-f]+)$/i.exec(t);
+  const decoder = decoderOf(type);
+  if (!decoder?.encode) return { error: translate("panels.side.variables.edit.stringsReadOnly") };
+  const isBool = type === "bool" || type === "bool/ff";
+  if (isBool && /^(true|false)$/i.test(t)) return { bytes: decoder.encode(/^true$/i.test(t)) as number[] };
+  const hex = /^(?:\$|0x)([0-9a-f]+)$/i.exec(t);
   const x = hex ? parseInt(hex[1], 16) : t === "" ? NaN : Number(t);
   if (!Number.isFinite(x)) return { error: translate("panels.side.variables.edit.notANumber", { text }) };
-  const le = (value: number, size: number) => Array.from({ length: size }, (_, i) => Math.floor(value / 2 ** (8 * i)) & 0xff);
-  switch (type) {
-    case "boolean":
-      return { bytes: [x ? 1 : 0] };
-    case "fixed": {
-      const raw = Math.round(x * 0x10000);
-      if (raw < -0x80000000 || raw > 0x7fffffff) return { error: translate("panels.side.variables.edit.outOfFixed") };
-      return { bytes: le(raw >>> 0, 4) };
-    }
-    case "float":
-      try {
-        return { bytes: [...fromNumber(x)] };
-      } catch {
-        return { error: translate("panels.side.variables.edit.outOfFloat") };
-      }
-    default: {
-      const [lo, hi] = RANGES[type]!;
-      if (!Number.isInteger(x)) return { error: translate("panels.side.variables.edit.wholeNumbers", { type: typeName(type) }) };
-      if (x < lo || x > hi) return { error: translate("panels.side.variables.edit.range", { type: typeName(type), lo, hi }) };
-      const size = valueSize(type);
-      return { bytes: le(x < 0 ? x + 2 ** (8 * size) : x, size) };
-    }
+  const bytes = decoder.encode(x);
+  if (bytes === "whole") return { error: translate("panels.side.variables.edit.wholeNumbers", { type: typeLabel }) };
+  if (bytes === "range") {
+    if (type === "fix16.16") return { error: translate("panels.side.variables.edit.outOfFixed") };
+    if (type === "float40") return { error: translate("panels.side.variables.edit.outOfFloat") };
+    const [lo, hi] = decoder.range ?? [0, 0];
+    return { error: translate("panels.side.variables.edit.range", { type: typeLabel, lo, hi }) };
   }
+  return { bytes };
 }

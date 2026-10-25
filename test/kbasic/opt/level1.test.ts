@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { mirText } from "@main/kbasic/emit-files";
-import type { MFunction } from "@main/kbasic/ir/mir";
-import { MIR_PASSES, optimizeMir } from "@main/kbasic/opt/mir-passes";
+import { mirText } from "@main/z80-backend/mir/print";
+import type { MFunction } from "@main/z80-backend/mir/mir";
+import { MIR_PASSES, optimizeMir } from "@main/z80-backend/opt/mir-passes";
 
 import { compileBasic } from "../codegen/run-kit";
 
 /**
- * Level 1 (`.docs/kbasic-optimiser.md` §2–§4): the per-statement MIR passes and the tree selector's
+ * Level 1 (`.docs/z80-backend-optimiser.md` §2–§4): the per-statement MIR passes and the tree selector's
  * code shapes. The corpus checks that level 1 behaves as level 0 (`integers/level1-shapes.zxbas` is
  * written for these shapes); this pins what the code looks like.
  */
@@ -35,7 +35,7 @@ describe("MIR passes", () => {
     const fn: MFunction = {
       label: "_main",
       name: "main",
-      kind: "main",
+      kind: "entry",
       convention: "stdcall",
       params: [],
       locals: [],
@@ -48,7 +48,7 @@ describe("MIR passes", () => {
             { op: "stmt", sid: 0 },
             { op: "const", dst: { kind: "vreg", id: 1, type: "u8" }, value: { kind: "imm", type: "u8", value: 200 }, sid: 0 },
             { op: "const", dst: { kind: "vreg", id: 2, type: "u8" }, value: { kind: "imm", type: "u8", value: 100 }, sid: 0 },
-            { op: "bin", bop: "add", dst: { kind: "vreg", id: 3, type: "u8" }, a: { kind: "vreg", id: 1, type: "u8" }, b: { kind: "vreg", id: 2, type: "u8" }, sid: 0 },
+            { op: "bin", bop: "add", dst: { kind: "vreg", id: 3, type: "u8" }, a: { kind: "vreg", id: 1, type: "u8" }, b: { kind: "vreg", id: 2, type: "u8" }, overflow: "wrap", sid: 0 },
             { op: "store", type: "u8", slot: { kind: "global", name: "_x" }, src: { kind: "vreg", id: 3, type: "u8" }, sid: 0 }
           ],
           term: { op: "ret", sid: -1 }
@@ -181,7 +181,7 @@ describe("level 3: inlining", () => {
     const once = generated.mir.functions.findIndex((f) => f.name === "once");
     const moved = generated.mir.statements.filter((s) => s.inlinedFrom === once);
     expect(moved.length).toBeGreaterThan(0);
-    expect(moved.every((s) => generated.mir.functions[s.functionIndex].kind === "main")).toBe(true);
+    expect(moved.every((s) => generated.mir.functions[s.functionIndex].kind === "entry")).toBe(true);
     expect(generated.debug.sourceLevel.callables.map((c) => c.name)).not.toContain("once");
   });
 });

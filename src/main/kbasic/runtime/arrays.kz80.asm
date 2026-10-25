@@ -3,6 +3,12 @@
 ; @exports  ArrayAddress, ArrayAlloc, ArrayInit, ArrayFreeStrings, ArrayLBound, ArrayUBound
 ; @exports  ArrayCopyStrings
 ; @requires arith16, heap, errors, strings
+; @abi      ArrayAlloc(hl)
+; @abi      ArrayFreeStrings(hl, bc)
+; @abi      ArrayInit(hl, de, bc)
+; @abi      ArrayCopyStrings(hl, de, bc)
+; @abi      ArrayLBound(hl, de)
+; @abi      ArrayUBound(hl, de)
 ;
 ; A descriptor is four words (runtime-abi.md §2.3): the dimension table, the data, the lower-bound
 ; table (or 0: every lower bound is 0), the upper-bound table (or 0). The dimension table holds the

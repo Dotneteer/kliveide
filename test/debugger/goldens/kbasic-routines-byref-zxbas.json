@@ -1,0 +1,636 @@
+{
+ "language": "basic",
+ "files": [
+  {
+   "index": 0,
+   "filename": "/test/main.bas"
+  }
+ ],
+ "statements": [
+  {
+   "index": 0,
+   "fileIndex": 0,
+   "startLine": 16,
+   "startColumn": 0,
+   "endLine": 16,
+   "endColumn": 11,
+   "startAddress": 32795,
+   "endAddress": 32802,
+   "kind": "call",
+   "callableIndex": 0,
+   "callTargets": [
+    2
+   ]
+  },
+  {
+   "index": 1,
+   "fileIndex": 0,
+   "startLine": 17,
+   "startColumn": 0,
+   "endLine": 17,
+   "endColumn": 8,
+   "startAddress": 32802,
+   "endAddress": 32808,
+   "kind": "other",
+   "callableIndex": 0
+  },
+  {
+   "index": 2,
+   "fileIndex": 0,
+   "startLine": 18,
+   "startColumn": 0,
+   "endLine": 18,
+   "endColumn": 9,
+   "startAddress": 32808,
+   "endAddress": 32811,
+   "kind": "call",
+   "callableIndex": 0,
+   "callTargets": [
+    3
+   ]
+  },
+  {
+   "index": 3,
+   "fileIndex": 0,
+   "startLine": 4,
+   "startColumn": 1,
+   "endLine": 4,
+   "endColumn": 10,
+   "startAddress": 32825,
+   "endAddress": 32851,
+   "kind": "assignment",
+   "callableIndex": 1
+  },
+  {
+   "index": 4,
+   "fileIndex": 0,
+   "startLine": 5,
+   "startColumn": 0,
+   "endLine": 5,
+   "endColumn": 7,
+   "startAddress": 32851,
+   "endAddress": 32865,
+   "kind": "return",
+   "callableIndex": 1
+  },
+  {
+   "index": 5,
+   "fileIndex": 0,
+   "startLine": 7,
+   "startColumn": 1,
+   "endLine": 7,
+   "endColumn": 7,
+   "startAddress": 32873,
+   "endAddress": 32883,
+   "kind": "call",
+   "callableIndex": 2,
+   "callTargets": [
+    1
+   ]
+  },
+  {
+   "index": 6,
+   "fileIndex": 0,
+   "startLine": 8,
+   "startColumn": 1,
+   "endLine": 8,
+   "endColumn": 7,
+   "startAddress": 32883,
+   "endAddress": 32893,
+   "kind": "call",
+   "callableIndex": 2,
+   "callTargets": [
+    1
+   ]
+  },
+  {
+   "index": 7,
+   "fileIndex": 0,
+   "startLine": 9,
+   "startColumn": 0,
+   "endLine": 9,
+   "endColumn": 7,
+   "startAddress": 32893,
+   "endAddress": 32907,
+   "kind": "return",
+   "callableIndex": 2
+  },
+  {
+   "index": 8,
+   "fileIndex": 0,
+   "startLine": 11,
+   "startColumn": 1,
+   "endLine": 11,
+   "endColumn": 23,
+   "startAddress": 32919,
+   "endAddress": 32928,
+   "kind": "declaration",
+   "callableIndex": 3
+  },
+  {
+   "index": 9,
+   "fileIndex": 0,
+   "startLine": 12,
+   "startColumn": 1,
+   "endLine": 12,
+   "endColumn": 12,
+   "startAddress": 32928,
+   "endAddress": 32939,
+   "kind": "call",
+   "callableIndex": 3,
+   "callTargets": [
+    2
+   ]
+  },
+  {
+   "index": 10,
+   "fileIndex": 0,
+   "startLine": 13,
+   "startColumn": 1,
+   "endLine": 13,
+   "endColumn": 13,
+   "startAddress": 32939,
+   "endAddress": 32959,
+   "kind": "other",
+   "callableIndex": 3
+  },
+  {
+   "index": 11,
+   "fileIndex": 0,
+   "startLine": 14,
+   "startColumn": 0,
+   "endLine": 14,
+   "endColumn": 7,
+   "startAddress": 32959,
+   "endAddress": 32964,
+   "kind": "return",
+   "callableIndex": 3
+  }
+ ],
+ "callables": [
+  {
+   "index": 0,
+   "name": "main",
+   "kind": "entrypoint",
+   "fileIndex": 0,
+   "startLine": 16,
+   "endLine": 18,
+   "entryAddress": 32795,
+   "exitAddresses": [],
+   "firstStatementIndex": 0,
+   "lastStatementIndex": 2
+  },
+  {
+   "index": 1,
+   "name": "bump",
+   "kind": "subroutine",
+   "fileIndex": 0,
+   "startLine": 3,
+   "endLine": 5,
+   "entryAddress": 32825,
+   "exitAddresses": [
+    32864
+   ],
+   "firstStatementIndex": 3,
+   "lastStatementIndex": 4
+  },
+  {
+   "index": 2,
+   "name": "bumpTwice",
+   "kind": "subroutine",
+   "fileIndex": 0,
+   "startLine": 6,
+   "endLine": 9,
+   "entryAddress": 32873,
+   "exitAddresses": [
+    32906
+   ],
+   "firstStatementIndex": 5,
+   "lastStatementIndex": 7
+  },
+  {
+   "index": 3,
+   "name": "withLocal",
+   "kind": "subroutine",
+   "fileIndex": 0,
+   "startLine": 10,
+   "endLine": 14,
+   "entryAddress": 32919,
+   "exitAddresses": [
+    32963
+   ],
+   "firstStatementIndex": 8,
+   "lastStatementIndex": 11
+  }
+ ],
+ "addressToStatement": [
+  [
+   0,
+   -1
+  ],
+  [
+   32795,
+   0
+  ],
+  [
+   32802,
+   1
+  ],
+  [
+   32808,
+   2
+  ],
+  [
+   32811,
+   -1
+  ],
+  [
+   32825,
+   3
+  ],
+  [
+   32851,
+   4
+  ],
+  [
+   32865,
+   -1
+  ],
+  [
+   32873,
+   5
+  ],
+  [
+   32883,
+   6
+  ],
+  [
+   32893,
+   7
+  ],
+  [
+   32907,
+   -1
+  ],
+  [
+   32919,
+   8
+  ],
+  [
+   32928,
+   9
+  ],
+  [
+   32939,
+   10
+  ],
+  [
+   32959,
+   11
+  ],
+  [
+   32964,
+   -1
+  ]
+ ],
+ "extensions": {
+  "variables": [
+   {
+    "name": "g",
+    "displayName": "g",
+    "type": "u16",
+    "typeLabel": "UInteger",
+    "kind": "global",
+    "location": {
+     "at": "absolute",
+     "address": 32967
+    },
+    "scope": "global",
+    "declaredAt": {
+     "fileIndex": 0,
+     "line": 15,
+     "column": 4
+    }
+   },
+   {
+    "name": "v",
+    "displayName": "v",
+    "type": "u16",
+    "typeLabel": "UInteger",
+    "kind": "parameter",
+    "byRef": true,
+    "location": {
+     "at": "frame",
+     "ixOffset": 4
+    },
+    "scope": {
+     "callableIndex": 1
+    },
+    "declaredAt": {
+     "fileIndex": 0,
+     "line": 3,
+     "column": 15
+    }
+   },
+   {
+    "name": "w",
+    "displayName": "w",
+    "type": "u16",
+    "typeLabel": "UInteger",
+    "kind": "parameter",
+    "byRef": true,
+    "location": {
+     "at": "frame",
+     "ixOffset": 4
+    },
+    "scope": {
+     "callableIndex": 2
+    },
+    "declaredAt": {
+     "fileIndex": 0,
+     "line": 6,
+     "column": 20
+    }
+   },
+   {
+    "name": "k",
+    "displayName": "k",
+    "type": "u16",
+    "typeLabel": "UInteger",
+    "kind": "local",
+    "location": {
+     "at": "frame",
+     "ixOffset": -2
+    },
+    "scope": {
+     "callableIndex": 3
+    },
+    "declaredAt": {
+     "fileIndex": 0,
+     "line": 11,
+     "column": 5
+    }
+   }
+  ],
+  "callSites": [
+   {
+    "returnAddress": 32802,
+    "statementIndex": 0,
+    "callerIndex": 0,
+    "kind": "routine",
+    "calleeIndex": 2,
+    "moreCallsFollow": false,
+    "order": 0
+   },
+   {
+    "returnAddress": 32811,
+    "statementIndex": 2,
+    "callerIndex": 0,
+    "kind": "routine",
+    "calleeIndex": 3,
+    "moreCallsFollow": false,
+    "order": 0
+   },
+   {
+    "returnAddress": 32883,
+    "statementIndex": 5,
+    "callerIndex": 2,
+    "kind": "routine",
+    "calleeIndex": 1,
+    "moreCallsFollow": false,
+    "order": 0
+   },
+   {
+    "returnAddress": 32893,
+    "statementIndex": 6,
+    "callerIndex": 2,
+    "kind": "routine",
+    "calleeIndex": 1,
+    "moreCallsFollow": false,
+    "order": 0
+   },
+   {
+    "returnAddress": 32939,
+    "statementIndex": 9,
+    "callerIndex": 3,
+    "kind": "routine",
+    "calleeIndex": 2,
+    "moreCallsFollow": false,
+    "order": 0
+   }
+  ],
+  "frames": [
+   {
+    "callableIndex": 0,
+    "convention": "entrypoint",
+    "startAddress": 32795,
+    "bodyStart": 32795,
+    "epilogueStart": 32817,
+    "endAddress": 32817
+   },
+   {
+    "callableIndex": 1,
+    "convention": "frame",
+    "returnSlotOffset": 2,
+    "argBytes": 2,
+    "startAddress": 32817,
+    "bodyStart": 32825,
+    "epilogueStart": 32851,
+    "endAddress": 32865
+   },
+   {
+    "callableIndex": 2,
+    "convention": "frame",
+    "returnSlotOffset": 2,
+    "argBytes": 2,
+    "startAddress": 32865,
+    "bodyStart": 32873,
+    "epilogueStart": 32893,
+    "endAddress": 32907
+   },
+   {
+    "callableIndex": 3,
+    "convention": "frame",
+    "returnSlotOffset": 4,
+    "argBytes": 0,
+    "startAddress": 32907,
+    "bodyStart": 32919,
+    "epilogueStart": 32959,
+    "endAddress": 32964
+   }
+  ],
+  "mainBaselineSymbol": 37775,
+  "labels": [],
+  "libraryFiles": [],
+  "runtimeSymbols": [
+   {
+    "name": "core.End",
+    "address": 37737
+   },
+   {
+    "name": "core.StopProgram",
+    "address": 37763
+   },
+   {
+    "name": "core.EndHook",
+    "address": 37772
+   },
+   {
+    "name": "core.ProgramSP",
+    "address": 37775
+   },
+   {
+    "name": "core.SavedIY",
+    "address": 37777
+   },
+   {
+    "name": "core.SavedIX",
+    "address": 37779
+   },
+   {
+    "name": "core.SavedHL2",
+    "address": 37781
+   },
+   {
+    "name": "core.RomCall",
+    "address": 37783
+   },
+   {
+    "name": "core.RomIn",
+    "address": 37823
+   },
+   {
+    "name": "core.RomOut",
+    "address": 37824
+   },
+   {
+    "name": "core.RomPeek",
+    "address": 37825
+   },
+   {
+    "name": "core.RaiseError",
+    "address": 37846
+   },
+   {
+    "name": "core.ReportError",
+    "address": 37872
+   },
+   {
+    "name": "core.CheckBreak",
+    "address": 37873
+   },
+   {
+    "name": "core.HeapInit",
+    "address": 37890
+   },
+   {
+    "name": "core.FreeList",
+    "address": 37925
+   },
+   {
+    "name": "core.Alloc",
+    "address": 37927
+   },
+   {
+    "name": "core.AllocFailed",
+    "address": 38014
+   },
+   {
+    "name": "core.Free",
+    "address": 38018
+   },
+   {
+    "name": "core.PrintInit",
+    "address": 38121
+   },
+   {
+    "name": "core.PrintReset",
+    "address": 38184
+   },
+   {
+    "name": "core.PrintRow",
+    "address": 38197
+   },
+   {
+    "name": "core.PrintCol",
+    "address": 38198
+   },
+   {
+    "name": "core.PrintChar",
+    "address": 38224
+   },
+   {
+    "name": "core.PrintApplyAttr",
+    "address": 38453
+   },
+   {
+    "name": "core.PrintNewline",
+    "address": 38575
+   },
+   {
+    "name": "core.PrintComma",
+    "address": 38680
+   },
+   {
+    "name": "core.PrintTab",
+    "address": 38706
+   },
+   {
+    "name": "core.PrintAt",
+    "address": 38727
+   },
+   {
+    "name": "core.PrintSave",
+    "address": 38751
+   },
+   {
+    "name": "core.PrintColour",
+    "address": 38796
+   },
+   {
+    "name": "core.PrintStr",
+    "address": 38930
+   },
+   {
+    "name": "core.PrintU8",
+    "address": 38963
+   },
+   {
+    "name": "core.PrintI8",
+    "address": 38968
+   },
+   {
+    "name": "core.PrintI16",
+    "address": 38972
+   },
+   {
+    "name": "core.PrintU16",
+    "address": 38989
+   },
+   {
+    "name": "core.PrintFixed",
+    "address": 39046
+   },
+   {
+    "name": "core.PrintI32",
+    "address": 39114
+   },
+   {
+    "name": "core.PrintU32",
+    "address": 39142
+   },
+   {
+    "name": "core.Cls",
+    "address": 39208
+   }
+  ],
+  "errorStop": {
+   "entry": 37846,
+   "code": {
+    "register": "a"
+   },
+   "reports": "zx-rom"
+  },
+  "optimizationLevel": 0
+ }
+}

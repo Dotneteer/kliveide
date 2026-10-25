@@ -2,6 +2,10 @@
 ; @summary  DATA and READ: the item being read, between the program's item code and READ.
 ; @exports  DataPutNumber, DataPutString, DataNumber, DataString, DataNone
 ; @requires errors, heap
+; @abi      DataPutNumber(aedcb)
+; @abi      DataPutString(hl)
+; @abi      DataNumber()
+; @abi      DataString()
 ;
 ; The compiler turns every DATA item into code that computes it (items may be expressions, evaluated
 ; when READ runs) and hands the value over here: a number as a Float, a String as a String the item

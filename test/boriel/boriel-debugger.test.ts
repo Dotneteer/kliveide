@@ -6,6 +6,7 @@ import type { SourceLevelDebugInfo } from "@abstractions/CompilerInfo";
 import { CurrentStatementTracker, locateActivations, SourceDebugIndex } from "@emu/machines/SourceStepDecision";
 import { parseMemoryMap } from "@main/boriel-integration/boriel-map";
 import { adaptBorielDebugInfo } from "@main/boriel-integration/dbg-adapter";
+import { debugLanguageOf } from "@renderer/appIde/debugger/languages/registry";
 import { buildSourceCallStack } from "@renderer/appIde/debugger/source/call-stack-model";
 import type { MemoryView } from "@renderer/appIde/debugger/source/value-decoder";
 import { buildVariableSections, type VariableNode } from "@renderer/appIde/debugger/source/variables-model";
@@ -71,10 +72,12 @@ async function debugRun(name: string): Promise<{ info: SourceLevelDebugInfo; sto
   const index = new SourceDebugIndex(info, false);
   const debug = session.attachDebugSupport();
   debug.statementTracker = new CurrentStatementTracker(index);
-  const errorEntry = info.extensions!.errorEntry;
+  const errorEntry = info.extensions!.errorStop?.entry;
   debug.errorStopAddress = errorEntry;
   for (const s of info.statements) debug.addBreakpoint({ address: s.startAddress, exec: true });
   const mem: MemoryView = { byte: (a) => session.peek(a & 0xffff), word: (a) => session.peekWord(a & 0xffff) };
+  // --- The language the producer names: zxbc's programs are BASIC
+  const lang = debugLanguageOf(info.language);
 
   const stops: Stop[] = [];
   for (let guard = 0; guard < 200; guard++) {
@@ -90,11 +93,11 @@ async function debugRun(name: string): Promise<{ info: SourceLevelDebugInfo; sto
     const view = { pc, sp: session.machine.sp, ix: session.machine.ix, readWord: (a: number) => session.peekWord(a) };
     const chain = locateActivations(index, view);
     const stop = { kind: "statement" as const, pc, statementIndex, returned: [] };
-    const sections = buildVariableSections(info, chain, 0, stop, mem);
+    const sections = buildVariableSections(info, chain, 0, stop, mem, lang);
     const problems: string[] = [];
     // --- A watch naming a scalar shows what its Variables row shows
     for (const row of [...(sections.locals ?? []), ...sections.globals].filter((n) => !n.expand && n.address !== undefined)) {
-      const r = evaluateWatch(row.name, { info, chain, frame: 0, mem });
+      const r = evaluateWatch(row.name, { info, chain, frame: 0, mem, lang });
       const text = "error" in r ? `error: ${r.error}` : r.text;
       if (text !== row.value) problems.push(`watch ${row.name} = ${text}, Variables shows ${row.value}`);
     }
@@ -102,7 +105,7 @@ async function debugRun(name: string): Promise<{ info: SourceLevelDebugInfo; sto
       line: statement.startLine,
       column: statement.startColumn,
       chain,
-      callStack: buildSourceCallStack(info, chain, stop),
+      callStack: buildSourceCallStack(info, chain, stop, lang),
       locals: snapshot(sections.locals ?? []),
       globals: snapshot(sections.globals),
       problems
@@ -122,7 +125,7 @@ describe("the debugger on Boriel BASIC programs", () => {
     for (const line of [11, 12, 18, 19, 21, 25, 28, 29, 30, 32, 33, 34, 35, 36, 37, 38, 39, 40, 42, 43]) expect(lines, `line ${line}`).toContain(line);
     for (const stop of stops) {
       expect(stop.problems, `line ${stop.line}`).toEqual([]);
-      expect(stop.chain[stop.chain.length - 1].kind, `line ${stop.line}`).toBe("main");
+      expect(stop.chain[stop.chain.length - 1].kind, `line ${stop.line}`).toBe("entry");
       const top = stop.callStack[0];
       expect(top && !("runtime" in top) && top.line, `line ${stop.line}`).toBe(stop.line);
     }
@@ -144,7 +147,7 @@ describe("the debugger on Boriel BASIC programs", () => {
 
     // --- GOSUB 1000's subroutine is a GOSUB activation of main
     const gosub = stops.find((s) => s.line === 42)!;
-    expect(gosub.chain.map((a) => a.kind)).toEqual(["gosub", "main"]);
+    expect(gosub.chain.map((a) => a.kind)).toEqual(["local", "entry"]);
 
     // --- At the last PRINT the globals hold what the program assigned
     const end = stops.find((s) => s.line === 39)!;

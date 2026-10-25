@@ -17,7 +17,7 @@ import type {
  * are checked before it and always win.
  *
  * **Activations, not routines.** Stepping over and out is about activations — one execution of the
- * main program, of a SUB or FUNCTION, or of a GOSUB subroutine — located on the stack by the frame
+ * main program, of a routine, or of a local subroutine (`local` calls) — located on the stack by the frame
  * locator (`locateActivations`, §10.2.2). The compiler guarantees what makes that possible: the
  * same SP at every statement entry of an activation (G4), every user call a recorded call site
  * (G5), results in registers at the `ret` (G6).
@@ -264,22 +264,21 @@ export function stackReader(index: SourceDebugIndex, m: MachineView, limit: numb
   const cb = index.codebank;
   const far: { slot: number; ret: number; bank: number }[] = [];
   if (cb && m.readByte) {
-    // --- zxbc pushes 4-byte records downwards from the area's end; Klive's grow up in 3-byte steps
-    const zxbc = cb.shadowStackKind === "zxbc";
+    // --- The runtime's record layout (CodebankDebugInfo.records): which way the records grow, where
+    // --- the bank and the return address are in one, how return slots are aligned on the stack
+    const layout = cb.records;
     const pointer = m.readWord(cb.shadowStackPointer);
-    const records = Math.max(0, Math.floor(zxbc ? (cb.shadowStack - pointer) / 4 : (pointer - cb.shadowStack) / 3));
+    const span = layout.grows === "down" ? cb.shadowStack - pointer : pointer - cb.shadowStack;
+    const records = Math.max(0, Math.floor(span / layout.size));
     const slots: number[] = [];
-    // --- zxbc's frames hold byte-sized locals, so a return slot may sit at an odd address: every
-    // --- byte is a candidate there. Klive BASIC keeps the stack word-aligned.
-    const stride = zxbc ? 1 : 2;
-    for (let p = m.sp; p < limit; p += stride) if (m.readWord(p) === cb.farReturn) slots.push(p);
+    for (let p = m.sp; p < limit; p += layout.slotStride) if (m.readWord(p) === cb.farReturn) slots.push(p);
     // --- The outermost slot is the oldest record. Unpaired: a record without its slot (paused in the
-    // --- far return) and, with zxbc, a slot without its record (paused in the far call, which
-    // --- replaces the slot first); both are the newest, so pairing from the oldest end stays right
+    // --- far return) and a slot without its record (paused in a far call that replaces the slot
+    // --- first); both are the newest, so pairing from the oldest end stays right
     for (let k = 0; k < Math.min(records, slots.length); k++) {
-      const record = zxbc ? cb.shadowStack - 4 * (k + 1) : cb.shadowStack + 3 * k;
-      const bank = zxbc ? m.readByte(record + 3) & (cb.bankMask ?? 0xff) : m.readByte(record);
-      far.push({ slot: slots[slots.length - 1 - k], bank, ret: m.readWord(zxbc ? record : record + 1) });
+      const record = layout.grows === "down" ? cb.shadowStack - layout.size * (k + 1) : cb.shadowStack + layout.size * k;
+      const bank = m.readByte(record + layout.bankOffset) & (layout.bankMask ?? 0xff);
+      far.push({ slot: slots[slots.length - 1 - k], bank, ret: m.readWord(record + layout.returnOffset) });
     }
     far.sort((a, b) => a.slot - b.slot);
   }
@@ -301,8 +300,8 @@ export function stackReader(index: SourceDebugIndex, m: MachineView, limit: numb
  * entry, the middle of a statement, a prologue, the runtime. Method (§10.2.2): the innermost
  * callable from PC (or, in runtime code, from IX); a routine's return slot at IX + 2 while its frame
  * is up, otherwise the first stack word that is a call of it; the caller's IX from the saved-IX
- * word under the return address; GOSUB return addresses between an activation's stack top and its
- * baseline.
+ * word under the return address; the return addresses of local calls (BASIC's GOSUB) between an
+ * activation's stack top and its baseline.
  */
 export function locateActivations(index: SourceDebugIndex, m: MachineView): Activation[] {
   const out: Activation[] = [];
@@ -315,7 +314,7 @@ export function locateActivations(index: SourceDebugIndex, m: MachineView): Acti
   };
   const isRoutineSite = (site: CallSiteDebugInfo | undefined, callee?: number) =>
     !!site &&
-    (site.kind === "sub" || site.kind === "function") &&
+    site.kind === "routine" &&
     site.calleeIndex !== undefined &&
     (callee === undefined || site.calleeIndex === callee);
   const inStack = (address: number) => address >= m.sp && address < mainBaseline;
@@ -336,18 +335,18 @@ export function locateActivations(index: SourceDebugIndex, m: MachineView): Acti
     } else callable = main;
   }
 
-  // --- GOSUB activations of `c` in [from, to): innermost (lowest address) first
-  const gosubs = (from: number, to: number, c: number) => {
+  // --- Local activations of `c` in [from, to): innermost (lowest address) first
+  const locals = (from: number, to: number, c: number) => {
     for (let p = from; p < to; p += 2) {
       const site = siteAt(p);
-      if (site && (site.kind === "gosub" || site.kind === "on-gosub") && site.callerIndex === c) {
-        out.push({ callableIndex: c, kind: "gosub", baseline: p, returnSlot: p, callSite: site });
+      if (site && site.kind === "local" && site.callerIndex === c) {
+        out.push({ callableIndex: c, kind: "local", baseline: p, returnSlot: p, callSite: site });
       }
     }
   };
 
   let low = m.sp;
-  // --- The IX value live in the activation being walked: a FASTCALL routine (Boriel BASIC) builds no
+  // --- The IX value live in the activation being walked: a frameless (`fastcall`) routine builds no
   // --- frame, so its caller's IX is still in the register, or under the next frame callee's return slot
   let liveIx = fp;
   for (let guard = 0; guard < 1024; guard++) {
@@ -366,7 +365,7 @@ export function locateActivations(index: SourceDebugIndex, m: MachineView): Acti
     }
     if (slot === undefined || !f || (f.convention !== "frame" && !frameless)) break;
     const baseline = slot - (f.returnSlotOffset ?? (frameless ? 0 : 2));
-    gosubs(low, baseline, callable);
+    locals(low, baseline, callable);
     const site = siteAt(slot)!;
     out.push({
       callableIndex: callable,
@@ -380,12 +379,12 @@ export function locateActivations(index: SourceDebugIndex, m: MachineView): Acti
     const callerFrame = index.frames[caller];
     if (!frameless) liveIx = m.readWord(slot - 2);
     ix = callerFrame?.convention === "frame" ? liveIx : undefined;
-    // --- A FASTCALL routine's first argument comes in registers; the stack holds none of it
+    // --- A frameless routine's first argument comes in registers; the stack holds none of it
     low = slot + 2 + (frameless ? 0 : (f.argBytes ?? 0));
     callable = caller;
   }
-  gosubs(low, mainBaseline, main);
-  out.push({ callableIndex: main, kind: "main", baseline: mainBaseline });
+  locals(low, mainBaseline, main);
+  out.push({ callableIndex: main, kind: "entry", baseline: mainBaseline });
   return out;
 }
 
@@ -415,43 +414,6 @@ export class CurrentStatementTracker {
     const site = this.index.returnSiteAt(pc, partition);
     if (site && site.statementIndex >= 0) this.current = site.statementIndex;
   }
-}
-
-/** The ROM's reports by ERR_NR (the report's number or letter, less one): what an error stop names. */
-const REPORTS = [
-  "0 OK",
-  "1 NEXT without FOR",
-  "2 Variable not found",
-  "3 Subscript wrong",
-  "4 Out of memory",
-  "5 Out of screen",
-  "6 Number too big",
-  "7 RETURN without GOSUB",
-  "8 End of file",
-  "9 STOP statement",
-  "A Invalid argument",
-  "B Integer out of range",
-  "C Nonsense in BASIC",
-  "D BREAK - CONT repeats",
-  "E Out of DATA",
-  "F Invalid file name",
-  "G No room for line",
-  "H STOP in INPUT",
-  "I FOR without NEXT",
-  "J Invalid I/O device",
-  "K Invalid colour",
-  "L BREAK into program",
-  "M RAMTOP no good",
-  "N Statement lost",
-  "O Invalid stream",
-  "P FN without DEF",
-  "Q Parameter error",
-  "R Tape loading error"
-];
-
-/** The report text of an ERR_NR code (runtime `RaiseError`: A = the code). */
-export function basicErrorReport(code: number): string {
-  return REPORTS[code + 1] ?? `Error ${code}`;
 }
 
 /**
@@ -616,7 +578,7 @@ export function shouldStopAtSourceStep(step: SourceStep, input: SourceStepInput)
     while (step.level < step.chain.length - 1) {
       const a = step.chain[step.level];
       if (a.returnSlot === undefined || sp <= a.returnSlot) break;
-      if (a.kind === "routine" && index.frames[a.callableIndex]?.returnType && input.getRegisters) {
+      if (a.kind === "routine" && index.frames[a.callableIndex]?.returns && input.getRegisters) {
         step.returned.push({ callableIndex: a.callableIndex, registers: input.getRegisters() });
       }
       step.level++;

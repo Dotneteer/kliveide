@@ -7,7 +7,7 @@ import { isProfileRootKey, PROFILE_KEY_UNMAPPED, type ProfileEdge } from "./prof
  * The profiler's routines (`.plans/PROFILER_PLAN.md` D6, §4.1): what a profile offset's time rolls
  * up into. Pure, so the IDE, the CLI (G5.6) and KSX share it.
  *
- * A routine comes from the best debug info available, in this order: Klive BASIC callables, the
+ * A routine comes from the best debug info available, in this order: source-level callables (any compiler with source-level debug info), the
  * Klive assembler's `.proc` extents, non-local labels (each up to the next), call targets the
  * call tracker saw, and - for whatever none of them covers - the bare 256-byte block. A higher
  * source claims its ranges first; a lower one only fills the gaps it leaves (the BASIC runtime
@@ -19,7 +19,7 @@ import { isProfileRootKey, PROFILE_KEY_UNMAPPED, type ProfileEdge } from "./prof
  * unbanked breakpoint fires there).
  */
 
-export type RoutineSource = "kbasic" | "proc" | "labels" | "annotations" | "callTargets" | "blocks";
+export type RoutineSource = "sourceLevel" | "proc" | "labels" | "annotations" | "callTargets" | "blocks";
 
 export type Routine = {
   /** Unique within the map */
@@ -43,7 +43,7 @@ export type Routine = {
 export type RoutineMap = {
   /** The best source that named any routine: the table header says it (D6) */
   source: RoutineSource;
-  /** The compiler behind the symbols, when known ("sjasmplus", "Klive asm", "Klive BASIC") */
+  /** The compiler behind the symbols, when known ("sjasmplus", "Klive asm", or a compiler's `compilerName`) */
   compiler?: string;
   /** Every named routine (blocks are made on demand and are not listed) */
   routines: Routine[];
@@ -56,7 +56,7 @@ export type RoutineMap = {
 /** What the table header says about a source */
 export function routineSourceLabel(map: Pick<RoutineMap, "source" | "compiler">): string {
   const by: Record<RoutineSource, string> = {
-    kbasic: "Routines from Klive BASIC SUBs and FUNCTIONs",
+    sourceLevel: "Routines from the source program's routines",
     proc: "Routines from .proc blocks",
     labels: "Routines from labels",
     annotations: "Routines from annotation labels",
@@ -101,9 +101,10 @@ export function buildRoutineMap(input: RoutineMapInput): RoutineMap {
   const { layout } = input;
   const compilation = input.compilation as Partial<DebuggableOutput> & { symbols?: Record<string, unknown> } | undefined;
   const files = (compilation?.sourceFileList ?? []).map((f) => f.filename);
-  const kbasic = compilation?.sourceLevelDebug;
-  const compiler = kbasic
-    ? "Klive BASIC"
+  const sourceLevel = compilation?.sourceLevelDebug;
+  // --- A compiler with source-level debug info names itself; no name is better than a wrong one
+  const compiler = sourceLevel
+    ? compilation?.compilerName
     : compilation?.sourceType === "sjasmp"
       ? "sjasmplus"
       : Array.isArray(compilation?.procedures)
@@ -158,10 +159,10 @@ export function buildRoutineMap(input: RoutineMapInput): RoutineMap {
       offsetPieces(candidate, layout, input.offsetOf)
     );
 
-  // --- (1) Klive BASIC callables, and the runtime's symbols between them
-  if (kbasic) {
-    for (const c of kbasicRoutines(kbasic, files)) claim(c);
-    const runtime = kbasic.extensions?.runtimeSymbols ?? [];
+  // --- (1) Source-level callables, and the runtime's symbols between them
+  if (sourceLevel) {
+    for (const c of sourceLevelRoutines(sourceLevel, files)) claim(c);
+    const runtime = sourceLevel.extensions?.runtimeSymbols ?? [];
     for (const c of labelRuns(runtime.map((r) => ({ name: r.name, address: r.address })), "labels", compilation)) claim(c);
   }
   // --- (2) .proc extents
@@ -236,8 +237,8 @@ function offsetPieces(
   return pieces;
 }
 
-/** Klive BASIC's SUBs, FUNCTIONs and main program: their frames' exact extents (D6 (1)) */
-function kbasicRoutines(debug: NonNullable<DebuggableOutput["sourceLevelDebug"]>, files: string[]): Candidate[] {
+/** The program's callables (SUBs, FUNCTIONs, C functions, the main program): their frames' exact extents (D6 (1)) */
+function sourceLevelRoutines(debug: NonNullable<DebuggableOutput["sourceLevelDebug"]>, files: string[]): Candidate[] {
   const frames = debug.extensions?.frames ?? [];
   const result: Candidate[] = [];
   for (const callable of debug.callables) {
@@ -255,7 +256,7 @@ function kbasicRoutines(debug: NonNullable<DebuggableOutput["sourceLevelDebug"]>
     const fileName = debug.files.find((f) => f.index === callable.fileIndex)?.filename ?? files[callable.fileIndex];
     result.push({
       name: callable.name,
-      source: "kbasic",
+      source: "sourceLevel",
       partition: frame?.partition ?? callable.partition,
       entry,
       end,

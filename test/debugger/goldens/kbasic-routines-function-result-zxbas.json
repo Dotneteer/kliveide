@@ -1,0 +1,508 @@
+{
+ "language": "basic",
+ "files": [
+  {
+   "index": 0,
+   "filename": "/test/main.bas"
+  }
+ ],
+ "statements": [
+  {
+   "index": 0,
+   "fileIndex": 0,
+   "startLine": 10,
+   "startColumn": 0,
+   "endLine": 10,
+   "endColumn": 53,
+   "startAddress": 32795,
+   "endAddress": 32860,
+   "kind": "other",
+   "callableIndex": 0,
+   "callTargets": [
+    1,
+    2
+   ]
+  },
+  {
+   "index": 1,
+   "fileIndex": 0,
+   "startLine": 5,
+   "startColumn": 1,
+   "endLine": 5,
+   "endColumn": 13,
+   "startAddress": 32878,
+   "endAddress": 32902,
+   "kind": "return",
+   "callableIndex": 1
+  },
+  {
+   "index": 2,
+   "fileIndex": 0,
+   "startLine": 6,
+   "startColumn": 0,
+   "endLine": 6,
+   "endColumn": 12,
+   "startAddress": 32902,
+   "endAddress": 32922,
+   "kind": "return",
+   "callableIndex": 1
+  },
+  {
+   "index": 3,
+   "fileIndex": 0,
+   "startLine": 8,
+   "startColumn": 1,
+   "endLine": 8,
+   "endColumn": 9,
+   "startAddress": 32934,
+   "endAddress": 32955,
+   "kind": "if",
+   "callableIndex": 2
+  },
+  {
+   "index": 4,
+   "fileIndex": 0,
+   "startLine": 8,
+   "startColumn": 15,
+   "endLine": 8,
+   "endColumn": 23,
+   "startAddress": 32955,
+   "endAddress": 32964,
+   "kind": "return",
+   "callableIndex": 2
+  },
+  {
+   "index": 5,
+   "fileIndex": 0,
+   "startLine": 9,
+   "startColumn": 0,
+   "endLine": 9,
+   "endColumn": 12,
+   "startAddress": 32964,
+   "endAddress": 32981,
+   "kind": "return",
+   "callableIndex": 2
+  }
+ ],
+ "callables": [
+  {
+   "index": 0,
+   "name": "main",
+   "kind": "entrypoint",
+   "fileIndex": 0,
+   "startLine": 10,
+   "endLine": 10,
+   "entryAddress": 32795,
+   "exitAddresses": [],
+   "firstStatementIndex": 0,
+   "lastStatementIndex": 0
+  },
+  {
+   "index": 1,
+   "name": "sq",
+   "kind": "function",
+   "fileIndex": 0,
+   "startLine": 4,
+   "endLine": 6,
+   "entryAddress": 32878,
+   "exitAddresses": [
+    32921
+   ],
+   "firstStatementIndex": 1,
+   "lastStatementIndex": 2
+  },
+  {
+   "index": 2,
+   "name": "maybe",
+   "kind": "function",
+   "fileIndex": 0,
+   "startLine": 7,
+   "endLine": 9,
+   "entryAddress": 32934,
+   "exitAddresses": [
+    32980
+   ],
+   "firstStatementIndex": 3,
+   "lastStatementIndex": 5
+  }
+ ],
+ "addressToStatement": [
+  [
+   0,
+   -1
+  ],
+  [
+   32795,
+   0
+  ],
+  [
+   32860,
+   -1
+  ],
+  [
+   32878,
+   1
+  ],
+  [
+   32902,
+   2
+  ],
+  [
+   32922,
+   -1
+  ],
+  [
+   32934,
+   3
+  ],
+  [
+   32955,
+   4
+  ],
+  [
+   32964,
+   5
+  ],
+  [
+   32981,
+   -1
+  ]
+ ],
+ "extensions": {
+  "variables": [
+   {
+    "name": "n",
+    "displayName": "n",
+    "type": "u16",
+    "typeLabel": "UInteger",
+    "kind": "parameter",
+    "location": {
+     "at": "frame",
+     "ixOffset": 4
+    },
+    "scope": {
+     "callableIndex": 1
+    },
+    "declaredAt": {
+     "fileIndex": 0,
+     "line": 4,
+     "column": 12
+    }
+   },
+   {
+    "name": "n",
+    "displayName": "n",
+    "type": "u8",
+    "typeLabel": "UByte",
+    "kind": "parameter",
+    "location": {
+     "at": "frame",
+     "ixOffset": 5
+    },
+    "scope": {
+     "callableIndex": 2
+    },
+    "declaredAt": {
+     "fileIndex": 0,
+     "line": 7,
+     "column": 15
+    }
+   }
+  ],
+  "callSites": [
+   {
+    "returnAddress": 32802,
+    "statementIndex": 0,
+    "callerIndex": 0,
+    "kind": "routine",
+    "returnsValue": true,
+    "calleeIndex": 1,
+    "moreCallsFollow": true,
+    "order": 0
+   },
+   {
+    "returnAddress": 32819,
+    "statementIndex": 0,
+    "callerIndex": 0,
+    "kind": "routine",
+    "returnsValue": true,
+    "calleeIndex": 2,
+    "moreCallsFollow": true,
+    "order": 1
+   },
+   {
+    "returnAddress": 32837,
+    "statementIndex": 0,
+    "callerIndex": 0,
+    "kind": "routine",
+    "returnsValue": true,
+    "calleeIndex": 1,
+    "moreCallsFollow": true,
+    "order": 2
+   },
+   {
+    "returnAddress": 32844,
+    "statementIndex": 0,
+    "callerIndex": 0,
+    "kind": "routine",
+    "returnsValue": true,
+    "calleeIndex": 2,
+    "moreCallsFollow": false,
+    "order": 3
+   }
+  ],
+  "frames": [
+   {
+    "callableIndex": 0,
+    "convention": "entrypoint",
+    "startAddress": 32795,
+    "bodyStart": 32795,
+    "epilogueStart": 32866,
+    "endAddress": 32866
+   },
+   {
+    "callableIndex": 1,
+    "convention": "frame",
+    "returnSlotOffset": 4,
+    "argBytes": 2,
+    "startAddress": 32866,
+    "bodyStart": 32878,
+    "epilogueStart": 32902,
+    "endAddress": 32922,
+    "returns": {
+     "type": "u16",
+     "typeLabel": "UInteger",
+     "in": "hl"
+    }
+   },
+   {
+    "callableIndex": 2,
+    "convention": "frame",
+    "returnSlotOffset": 4,
+    "argBytes": 2,
+    "startAddress": 32922,
+    "bodyStart": 32934,
+    "epilogueStart": 32964,
+    "endAddress": 32981,
+    "returns": {
+     "type": "u8",
+     "typeLabel": "UByte",
+     "in": "a"
+    }
+   }
+  ],
+  "mainBaselineSymbol": 37962,
+  "labels": [],
+  "libraryFiles": [],
+  "runtimeSymbols": [
+   {
+    "name": "core.Mul8",
+    "address": 37752
+   },
+   {
+    "name": "core.DivModU8",
+    "address": 37765
+   },
+   {
+    "name": "core.DivModI8",
+    "address": 37784
+   },
+   {
+    "name": "core.Mul16",
+    "address": 37815
+   },
+   {
+    "name": "core.DivModU16",
+    "address": 37833
+   },
+   {
+    "name": "core.DivModI16",
+    "address": 37866
+   },
+   {
+    "name": "core.AbsI8",
+    "address": 37894
+   },
+   {
+    "name": "core.AbsI16",
+    "address": 37899
+   },
+   {
+    "name": "core.SgnI8",
+    "address": 37905
+   },
+   {
+    "name": "core.SgnI16",
+    "address": 37913
+   },
+   {
+    "name": "core.End",
+    "address": 37924
+   },
+   {
+    "name": "core.StopProgram",
+    "address": 37950
+   },
+   {
+    "name": "core.EndHook",
+    "address": 37959
+   },
+   {
+    "name": "core.ProgramSP",
+    "address": 37962
+   },
+   {
+    "name": "core.SavedIY",
+    "address": 37964
+   },
+   {
+    "name": "core.SavedIX",
+    "address": 37966
+   },
+   {
+    "name": "core.SavedHL2",
+    "address": 37968
+   },
+   {
+    "name": "core.RomCall",
+    "address": 37970
+   },
+   {
+    "name": "core.RomIn",
+    "address": 38010
+   },
+   {
+    "name": "core.RomOut",
+    "address": 38011
+   },
+   {
+    "name": "core.RomPeek",
+    "address": 38012
+   },
+   {
+    "name": "core.RaiseError",
+    "address": 38033
+   },
+   {
+    "name": "core.ReportError",
+    "address": 38059
+   },
+   {
+    "name": "core.CheckBreak",
+    "address": 38060
+   },
+   {
+    "name": "core.HeapInit",
+    "address": 38077
+   },
+   {
+    "name": "core.FreeList",
+    "address": 38112
+   },
+   {
+    "name": "core.Alloc",
+    "address": 38114
+   },
+   {
+    "name": "core.AllocFailed",
+    "address": 38201
+   },
+   {
+    "name": "core.Free",
+    "address": 38205
+   },
+   {
+    "name": "core.PrintInit",
+    "address": 38308
+   },
+   {
+    "name": "core.PrintReset",
+    "address": 38371
+   },
+   {
+    "name": "core.PrintRow",
+    "address": 38384
+   },
+   {
+    "name": "core.PrintCol",
+    "address": 38385
+   },
+   {
+    "name": "core.PrintChar",
+    "address": 38411
+   },
+   {
+    "name": "core.PrintApplyAttr",
+    "address": 38640
+   },
+   {
+    "name": "core.PrintNewline",
+    "address": 38762
+   },
+   {
+    "name": "core.PrintComma",
+    "address": 38867
+   },
+   {
+    "name": "core.PrintTab",
+    "address": 38893
+   },
+   {
+    "name": "core.PrintAt",
+    "address": 38914
+   },
+   {
+    "name": "core.PrintSave",
+    "address": 38938
+   },
+   {
+    "name": "core.PrintColour",
+    "address": 38983
+   },
+   {
+    "name": "core.PrintStr",
+    "address": 39117
+   },
+   {
+    "name": "core.PrintU8",
+    "address": 39150
+   },
+   {
+    "name": "core.PrintI8",
+    "address": 39155
+   },
+   {
+    "name": "core.PrintI16",
+    "address": 39159
+   },
+   {
+    "name": "core.PrintU16",
+    "address": 39176
+   },
+   {
+    "name": "core.PrintFixed",
+    "address": 39233
+   },
+   {
+    "name": "core.PrintI32",
+    "address": 39301
+   },
+   {
+    "name": "core.PrintU32",
+    "address": 39329
+   },
+   {
+    "name": "core.Cls",
+    "address": 39395
+   }
+  ],
+  "errorStop": {
+   "entry": 38033,
+   "code": {
+    "register": "a"
+   },
+   "reports": "zx-rom"
+  },
+  "optimizationLevel": 0
+ }
+}

@@ -6,9 +6,11 @@ import type { SourceLevelDebugInfo } from "@abstractions/CompilerInfo";
 import { locateActivations, SourceDebugIndex } from "@emu/machines/SourceStepDecision";
 import { adaptZ88dkDebugInfo } from "@main/z88dk-integration/z88dk-debug-adapter";
 import { mapValue, parseZ88dkMap, projectFileTest, z88dkLineDebug, z88dkLineRecords } from "@main/z88dk-integration/z88dk-map";
+import { debugLanguageOf } from "@renderer/appIde/debugger/languages/registry";
 import { buildSourceCallStack } from "@renderer/appIde/debugger/source/call-stack-model";
 import type { MemoryView } from "@renderer/appIde/debugger/source/value-decoder";
 import { buildVariableSections } from "@renderer/appIde/debugger/source/variables-model";
+import { evaluateWatch } from "@renderer/appIde/debugger/source/watch-expression";
 
 import { createSp48Session } from "../harness/sp48";
 
@@ -55,7 +57,16 @@ describe("the debugger on a z88dk C program", () => {
     for (const s of info.statements) debug.addBreakpoint({ address: s.startAddress, exec: true });
     const mem: MemoryView = { byte: (a) => session.peek(a & 0xffff), word: (a) => session.peekWord(a & 0xffff) };
 
-    const stops: { line: number; chain: string[]; locals: Record<string, string>; globals: Record<string, string>; top?: number }[] = [];
+    // --- The program's language (`c`): its watch expressions are C's
+    const lang = debugLanguageOf(info.language);
+    const stops: {
+      line: number;
+      chain: string[];
+      locals: Record<string, string>;
+      globals: Record<string, string>;
+      top?: number;
+      watches: Record<string, string>;
+    }[] = [];
     for (let guard = 0; guard < 50; guard++) {
       let pc: number;
       try {
@@ -67,7 +78,11 @@ describe("the debugger on a z88dk C program", () => {
       const view = { pc, sp: session.machine.sp, ix: session.machine.ix, readWord: (a: number) => session.peekWord(a) };
       const chain = locateActivations(index, view);
       const stop = { kind: "statement" as const, pc, statementIndex: statement.index, returned: [] };
-      const sections = buildVariableSections(info, chain, 0, stop, mem);
+      const sections = buildVariableSections(info, chain, 0, stop, mem, lang);
+      const watch = (text: string) => {
+        const r = evaluateWatch(text, { info, chain, frame: 0, mem, lang });
+        return "error" in r ? `error: ${r.error}` : r.text;
+      };
       const rows = (nodes: { name: string; value: string }[] = []) => Object.fromEntries(nodes.map((n) => [n.name, n.value]));
       const callStack = buildSourceCallStack(info, chain, stop);
       const top = callStack[0];
@@ -76,7 +91,8 @@ describe("the debugger on a z88dk C program", () => {
         chain: chain.map((a) => info.callables[a.callableIndex].name),
         locals: rows(sections.locals),
         globals: rows(sections.globals),
-        top: top && !("runtime" in top) ? top.line : undefined
+        top: top && !("runtime" in top) ? top.line : undefined,
+        watches: Object.fromEntries(["a + b * 2", "(a + b) / 2", "-7 / 2", "-7 % 2", "a == 3 && b != 3", "!a", "~0", "counter << 1", "&counter == 0"].map((w) => [w, watch(w)]))
       });
     }
 
@@ -90,12 +106,24 @@ describe("the debugger on a z88dk C program", () => {
     const inAdd = stops.find((s) => s.line === 11)!;
     expect(inAdd.chain).toEqual(["add", "main", "(startup)"]);
     expect(inAdd.locals).toEqual({ a: "3", b: "4", s: "7" });
+    // --- C watch expressions, with C's meanings: integer division and remainder truncate, logic gives 1 or 0
+    expect(inAdd.watches).toMatchObject({
+      "a + b * 2": "11",
+      "(a + b) / 2": "3",
+      "-7 / 2": "-3",
+      "-7 % 2": "-1",
+      "a == 3 && b != 3": "1",
+      "!a": "0",
+      "~0": "-1",
+      "&counter == 0": "0"
+    });
     const firstInAdd = stops.find((s) => s.line === 10)!;
     expect(firstInAdd.locals).toMatchObject({ a: "3", b: "4" });
     // --- Back in main after the call: the global holds add's result
     const afterCall = stops.find((s) => s.line === 18)!;
     expect(afterCall.chain).toEqual(["main", "(startup)"]);
     expect(afterCall.globals.counter).toBe("7");
+    expect(afterCall.watches["counter << 1"]).toBe("14");
     expect(session.peekWord(mapValue(parseZ88dkMap(fs.readFileSync(path.join(FIXTURE, "program.map"), "utf8")), "_counter")!)).toBe(7);
   });
 

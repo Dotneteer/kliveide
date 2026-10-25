@@ -5,11 +5,12 @@ import { ExpressionValue } from "@main/compiler-common/expressions";
 import {
   endSource,
   prologueSource,
-  resolveRuntimeModules,
+  runtimeLibrary,
   runtimeInitialisers,
   runtimeUnits,
   type RuntimeLayout
-} from "@main/kbasic/runtime/runtime-linker";
+} from "@main/z80-backend/runtime/runtime-linker";
+import { kbasicPackage } from "@main/kbasic/runtime/generated/kbasic-package";
 import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
 import { Z80Assembler } from "@main/z80-compiler/z80-assembler";
 
@@ -55,7 +56,7 @@ export async function assembleRuntimeProgram(options: RuntimeProgramOptions) {
   assemblerOptions.currentModel = options.next ? SpectrumModelType.Next : SpectrumModelType.Spectrum48;
   for (const d of options.defines ?? []) assemblerOptions.predefinedSymbols[d] = new ExpressionValue(true);
 
-  const modules = resolveRuntimeModules(options.uses, ["program"]);
+  const modules = runtimeLibrary([kbasicPackage]).resolve(options.uses, ["program"]);
   const source = [
     `    .model ${options.next ? "Next" : "Spectrum48"}`,
     "    .org $8000",

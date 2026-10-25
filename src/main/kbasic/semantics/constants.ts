@@ -1,5 +1,5 @@
-import * as f40 from "./float40";
-import type { Float40 } from "./float40";
+import * as f40 from "../../z80-backend/numeric/float40";
+import type { Float40 } from "../../z80-backend/numeric/float40";
 import { integralRange, isIntegral, literalIntegerType, sizeOf, type KType } from "./types";
 
 /**

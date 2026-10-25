@@ -107,7 +107,7 @@ integration changes.
   partitionResolver)` over a 64K flag array plus per-address partition lists. Tests construct it
   as `new DebugSupport(undefined, [])`.
 - Persistence: `.kliveproject` `debugger.breakpoints`; NEX-owned ones in `.nex.dis` sidecars.
-- **Klive BASIC's classic tables** (`src/main/kbasic/debug/builder.ts`, `.docs/kbasic-debug-builder.md`
+- **Klive BASIC's classic tables** (`src/main/z80-backend/debug/builder.ts`, `.docs/z80-backend-debug-builder.md`
   §5): `sourceFileList` holds the BASIC files only; `listFileItems` has one item per statement (so a
   line breakpoint resolves to the line's first statement); `sourceMap` maps each statement entry to
   its line and columns (0-based start, exclusive end, the assembler's convention). The `zxbas`

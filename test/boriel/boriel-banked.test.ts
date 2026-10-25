@@ -102,7 +102,7 @@ describe("banked Boriel BASIC programs", () => {
     const frameStart = (name: string) => info.extensions!.frames!.find((f) => f.callableIndex === callable(info, name).index)!.startAddress;
     expect(frameStart("Sum")).toBe(frameStart("Peek3"));
     expect([callable(info, "Sum").partition, callable(info, "Peek3").partition]).toEqual([0, 1]);
-    expect(info.extensions?.codebank).toMatchObject({ shadowStackKind: "zxbc", bankMask: 0x07, window: 0xc000, windowSize: 0x4000 });
+    expect(info.extensions?.codebank).toMatchObject({ records: { grows: "down", size: 4, bankMask: 0x07 }, window: 0xc000, windowSize: 0x4000 });
   });
 
   it("stops in the right bank and walks the call stack through far calls on the 128K", async () => {
@@ -141,7 +141,7 @@ describe("banked Boriel BASIC programs", () => {
     expect([callable(info, "Sum").partition, callable(info, "Peek3").partition]).toEqual([32, 34]);
     // --- Mix starts past $E000: its code is in the bank's second page
     expect(callable(info, "Mix").partition).toBe(33);
-    expect(info.extensions?.codebank).toMatchObject({ shadowStackKind: "zxbc", bankMask: 0xff });
+    expect(info.extensions?.codebank).toMatchObject({ records: { grows: "down", size: 4, bankMask: 0xff } });
   });
 
   it("stops in the right page and walks the call stack through far calls on the Next", async () => {

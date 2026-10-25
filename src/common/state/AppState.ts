@@ -62,8 +62,8 @@ export type AppState = {
   scripts?: ScriptRunInfo[];
   workspaceSettings?: Record<string, any>;
   watchExpressions?: WatchInfo[];
-  /** BASIC watch expressions of the Variables panel (plan §10.8), as the user typed them. */
-  basicWatches?: string[];
+  /** Source-level watch expressions of the Variables panel (plan §10.8), as the user typed them. */
+  sourceWatches?: string[];
   /**
    * Which logpoint groups log (`.plans/LOGPOINTS_PLAN.md` §4.2). In the shared store so the IDE
    * (commands, the Breakpoints panel), the emulator (`DebugSupport`) and the project save all read
@@ -416,7 +416,7 @@ export const initialAppState: AppState = {
   scripts: [],
   workspaceSettings: {},
   watchExpressions: [],
-  basicWatches: [],
+  sourceWatches: [],
   logpointGroups: { enabled: true },
   sourceComments: {},
   unitTests: { results: {}, version: 0 }

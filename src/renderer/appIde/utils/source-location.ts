@@ -3,6 +3,8 @@ import { resolvedPartitionFor } from "@common/utils/source-breakpoint-partition"
 import type { SourceStopInfo } from "@abstractions/SourceDebugInfo";
 
 import { hasSourceLevelDebug, isDebuggableCompilerOutput } from "./compiler-utils";
+import { debugLanguageOf } from "@renderer/appIde/debugger/languages/registry";
+import { localActivationLabel } from "@renderer/appIde/debugger/source/language-support";
 
 /**
  * Where a paused program stands in its source (plan §10.4, §10.5): the file, the statement's lines
@@ -49,7 +51,11 @@ export function locateSource(
     if (s) {
       const filename = info.files[s.fileIndex]?.filename ?? result.sourceFileList[s.fileIndex]?.filename;
       if (filename === undefined) return undefined;
-      const from = stop.returnedFromGosub ? "GOSUB" : stop.returnedFrom !== undefined ? info.callables[stop.returnedFrom]?.name : undefined;
+      const from = stop.returnedFromLocal
+        ? localActivationLabel(debugLanguageOf(info.language), undefined)
+        : stop.returnedFrom !== undefined
+          ? info.callables[stop.returnedFrom]?.name
+          : undefined;
       return {
         fileIndex: s.fileIndex,
         filename,

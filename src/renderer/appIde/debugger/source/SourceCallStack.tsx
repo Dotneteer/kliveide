@@ -20,6 +20,7 @@ import { useDispatch, useSelector } from "@renderer/core/RendererProvider";
 import regStyles from "@renderer/controls/data/Registers.module.scss";
 import styles from "@renderer/appIde/SideBarPanels/CallStackPanel.module.scss";
 
+import { debugLanguageOf } from "../languages/registry";
 import { buildSourceCallStack, type RuntimeRow, type SourceFrameRow } from "./call-stack-model";
 import { useT } from "@common/i18n/useT";
 
@@ -56,7 +57,7 @@ export const SourceCallStack = ({ info }: { info: SourceLevelDebugInfo }) => {
       emuApi.getSourceStopInfo(),
       emuApi.getCpuState()
     ]);
-    setRows(chain ? buildSourceCallStack(info, chain, stop) : undefined);
+    setRows(chain ? buildSourceCallStack(info, chain, stop, debugLanguageOf(info.language)) : undefined);
     if (chain?.length && stop && stop.statementIndex < 0) {
       const raw = await emuApi.getCallStack();
       const limit = chain[0].returnSlot ?? chain[0].baseline;

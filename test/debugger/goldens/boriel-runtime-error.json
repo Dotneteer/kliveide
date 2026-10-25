@@ -1,0 +1,578 @@
+{
+ "language": "basic",
+ "files": [
+  {
+   "index": 0,
+   "filename": "<root>/test/boriel/fixtures/runtime-error/program.bas"
+  }
+ ],
+ "statements": [
+  {
+   "index": 0,
+   "fileIndex": 0,
+   "startLine": 3,
+   "startColumn": 0,
+   "endLine": 3,
+   "endColumn": 14,
+   "startAddress": 37578,
+   "endAddress": 37591,
+   "kind": "other",
+   "callableIndex": 0
+  },
+  {
+   "index": 1,
+   "fileIndex": 0,
+   "startLine": 4,
+   "startColumn": 0,
+   "endLine": 4,
+   "endColumn": 8,
+   "startAddress": 37591,
+   "endAddress": 37606,
+   "kind": "other",
+   "callableIndex": 0
+  },
+  {
+   "index": 2,
+   "fileIndex": 0,
+   "startLine": 5,
+   "startColumn": 0,
+   "endLine": 5,
+   "endColumn": 19,
+   "startAddress": 37606,
+   "endAddress": 37625,
+   "kind": "other",
+   "callableIndex": 0
+  },
+  {
+   "index": 3,
+   "fileIndex": 0,
+   "startLine": 5,
+   "startColumn": 0,
+   "endLine": 6,
+   "endColumn": 0,
+   "startAddress": 37625,
+   "endAddress": 37630,
+   "kind": "other",
+   "callableIndex": 0
+  }
+ ],
+ "callables": [
+  {
+   "index": 0,
+   "name": "main",
+   "kind": "entrypoint",
+   "fileIndex": 0,
+   "startLine": 1,
+   "endLine": 6,
+   "entryAddress": 37578,
+   "exitAddresses": [
+    37630
+   ],
+   "firstStatementIndex": 0,
+   "lastStatementIndex": 3
+  }
+ ],
+ "addressToStatement": [
+  [
+   0,
+   -1
+  ],
+  [
+   37578,
+   0
+  ],
+  [
+   37591,
+   1
+  ],
+  [
+   37606,
+   2
+  ],
+  [
+   37625,
+   3
+  ],
+  [
+   37630,
+   -1
+  ]
+ ],
+ "extensions": {
+  "variables": [
+   {
+    "name": "a",
+    "displayName": "a",
+    "type": "u8",
+    "typeLabel": "UByte",
+    "kind": "global",
+    "location": {
+     "at": "absolute",
+     "address": 37561
+    },
+    "array": {
+     "elementType": "u8",
+     "elementLabel": "UByte",
+     "layout": "descriptor",
+     "dimensions": [
+      {
+       "lower": 0,
+       "upper": 3
+      }
+     ]
+    },
+    "scope": "global",
+    "declaredAt": {
+     "fileIndex": 0,
+     "line": 1,
+     "column": 0
+    }
+   },
+   {
+    "name": "k",
+    "displayName": "k",
+    "type": "u8",
+    "typeLabel": "UByte",
+    "kind": "global",
+    "location": {
+     "at": "absolute",
+     "address": 37560
+    },
+    "scope": "global",
+    "declaredAt": {
+     "fileIndex": 0,
+     "line": 2,
+     "column": 0
+    }
+   }
+  ],
+  "callSites": [],
+  "frames": [
+   {
+    "callableIndex": 0,
+    "convention": "entrypoint",
+    "startAddress": 32768,
+    "bodyStart": 37578,
+    "epilogueStart": 37630,
+    "endAddress": 37631
+   }
+  ],
+  "mainBaselineSymbol": 32790,
+  "labels": [],
+  "libraryFiles": [],
+  "runtimeSymbols": [
+   {
+    "name": "core.__START_PROGRAM",
+    "address": 32768
+   },
+   {
+    "name": "core.__CALL_BACK__",
+    "address": 32790
+   },
+   {
+    "name": "core.ZXBASIC_MEM_HEAP",
+    "address": 32792
+   },
+   {
+    "name": "core.ZXBASIC_USER_DATA",
+    "address": 32792
+   },
+   {
+    "name": "core.ZXBASIC_USER_DATA_END",
+    "address": 37578
+   },
+   {
+    "name": "core.__MAIN_PROGRAM__",
+    "address": 37578
+   },
+   {
+    "name": "core.__END_PROGRAM",
+    "address": 37630
+   },
+   {
+    "name": "core.__MUL16",
+    "address": 37659
+   },
+   {
+    "name": "core.__MUL16_FAST",
+    "address": 37662
+   },
+   {
+    "name": "core.__FMUL16",
+    "address": 37680
+   },
+   {
+    "name": "core.__ERROR",
+    "address": 37698
+   },
+   {
+    "name": "core.__ERROR_CODE",
+    "address": 37702
+   },
+   {
+    "name": "core.__STOP",
+    "address": 37704
+   },
+   {
+    "name": "core.__ARRAY_PTR",
+    "address": 37708
+   },
+   {
+    "name": "core.__ARRAY",
+    "address": 37712
+   },
+   {
+    "name": "core.SCREEN_ADDR",
+    "address": 37842
+   },
+   {
+    "name": "core.SCREEN_ATTR_ADDR",
+    "address": 37844
+   },
+   {
+    "name": "core.__IN_SCREEN",
+    "address": 37846
+   },
+   {
+    "name": "core.__OUT_OF_SCREEN_ERR",
+    "address": 37856
+   },
+   {
+    "name": "core.__ATTR_ADDR",
+    "address": 37861
+   },
+   {
+    "name": "core.SET_ATTR",
+    "address": 37878
+   },
+   {
+    "name": "core.__SET_ATTR",
+    "address": 37885
+   },
+   {
+    "name": "core.__SET_ATTR2",
+    "address": 37885
+   },
+   {
+    "name": "core.__LOAD_S_POSN",
+    "address": 37898
+   },
+   {
+    "name": "core.__SAVE_S_POSN",
+    "address": 37910
+   },
+   {
+    "name": "core.__SET_SCR_PTR",
+    "address": 37919
+   },
+   {
+    "name": "core.JUMP_HL_PLUS_2A",
+    "address": 37948
+   },
+   {
+    "name": "core.JUMP_HL_PLUS_A",
+    "address": 37949
+   },
+   {
+    "name": "core.JUMP_HL_PLUS_DE",
+    "address": 37952
+   },
+   {
+    "name": "core.CALL_HL",
+    "address": 37957
+   },
+   {
+    "name": "core.INK",
+    "address": 37958
+   },
+   {
+    "name": "core.INK_TMP",
+    "address": 37985
+   },
+   {
+    "name": "core.PAPER",
+    "address": 37991
+   },
+   {
+    "name": "core.PAPER_TMP",
+    "address": 38021
+   },
+   {
+    "name": "core.FLASH",
+    "address": 38027
+   },
+   {
+    "name": "core.__SET_FLASH",
+    "address": 38030
+   },
+   {
+    "name": "core.FLASH_TMP",
+    "address": 38053
+   },
+   {
+    "name": "core.BRIGHT",
+    "address": 38058
+   },
+   {
+    "name": "core.__SET_BRIGHT",
+    "address": 38061
+   },
+   {
+    "name": "core.BRIGHT_TMP",
+    "address": 38084
+   },
+   {
+    "name": "core.OVER",
+    "address": 38089
+   },
+   {
+    "name": "core.OVER_TMP",
+    "address": 38111
+   },
+   {
+    "name": "core.INVERSE",
+    "address": 38135
+   },
+   {
+    "name": "core.INVERSE_TMP",
+    "address": 38148
+   },
+   {
+    "name": "core.BOLD",
+    "address": 38162
+   },
+   {
+    "name": "core.BOLD_TMP",
+    "address": 38175
+   },
+   {
+    "name": "core.ITALIC",
+    "address": 38187
+   },
+   {
+    "name": "core.ITALIC_TMP",
+    "address": 38200
+   },
+   {
+    "name": "core.__PRINT_INIT",
+    "address": 38214
+   },
+   {
+    "name": "core.__PRINTCHAR",
+    "address": 38250
+   },
+   {
+    "name": "core.__PRINT_CHR",
+    "address": 38254
+   },
+   {
+    "name": "core.__PRGRAPH0",
+    "address": 38315
+   },
+   {
+    "name": "core.PRINT_MODE",
+    "address": 38344
+   },
+   {
+    "name": "core.INVERSE_MODE",
+    "address": 38345
+   },
+   {
+    "name": "core.__PRINT_SPECIAL",
+    "address": 38369
+   },
+   {
+    "name": "core.PRINT_EOL",
+    "address": 38375
+   },
+   {
+    "name": "core.__PRINT_0Dh",
+    "address": 38376
+   },
+   {
+    "name": "core.__PRINT_EOL_END",
+    "address": 38393
+   },
+   {
+    "name": "core.__PRINT_AT",
+    "address": 38442
+   },
+   {
+    "name": "core.__PRINT_NOP",
+    "address": 38447
+   },
+   {
+    "name": "core.__PRINT_RESTART",
+    "address": 38447
+   },
+   {
+    "name": "core.__PRINT_DEL",
+    "address": 38479
+   },
+   {
+    "name": "core.__PRINT_INK2",
+    "address": 38506
+   },
+   {
+    "name": "core.__PRINT_PAP2",
+    "address": 38516
+   },
+   {
+    "name": "core.__PRINT_FLA",
+    "address": 38521
+   },
+   {
+    "name": "core.__PRINT_FLA2",
+    "address": 38526
+   },
+   {
+    "name": "core.__PRINT_BRI",
+    "address": 38531
+   },
+   {
+    "name": "core.__PRINT_BRI2",
+    "address": 38536
+   },
+   {
+    "name": "core.__PRINT_INV",
+    "address": 38541
+   },
+   {
+    "name": "core.__PRINT_INV2",
+    "address": 38546
+   },
+   {
+    "name": "core.__PRINT_OVR",
+    "address": 38551
+   },
+   {
+    "name": "core.__PRINT_OVR2",
+    "address": 38556
+   },
+   {
+    "name": "core.PRINT_COMMA",
+    "address": 38642
+   },
+   {
+    "name": "core.PRINT_TAB",
+    "address": 38650
+   },
+   {
+    "name": "core.PRINT_AT",
+    "address": 38666
+   },
+   {
+    "name": "core.COPY_ATTR",
+    "address": 38725
+   },
+   {
+    "name": "core.__SET_ATTR_MODE",
+    "address": 38743
+   },
+   {
+    "name": "core.__MEM_INIT",
+    "address": 38787
+   },
+   {
+    "name": "core.__MEM_INIT2",
+    "address": 38793
+   },
+   {
+    "name": "core.MEM_FREE",
+    "address": 38823
+   },
+   {
+    "name": "core.__MEM_FREE",
+    "address": 38823
+   },
+   {
+    "name": "core.PRINT_STR",
+    "address": 38905
+   },
+   {
+    "name": "core.__PRINTSTR",
+    "address": 38905
+   },
+   {
+    "name": "core.__PRINT_STR",
+    "address": 38934
+   },
+   {
+    "name": "core.__PRINTU_START",
+    "address": 38939
+   },
+   {
+    "name": "core.__PRINT_MINUS",
+    "address": 38958
+   },
+   {
+    "name": "core.__DIVU8",
+    "address": 38963
+   },
+   {
+    "name": "core.__DIVU8_FAST",
+    "address": 38965
+   },
+   {
+    "name": "core.__DIV8LOOP",
+    "address": 38970
+   },
+   {
+    "name": "core.__DIV8NOSUB",
+    "address": 38978
+   },
+   {
+    "name": "core.__DIVI8",
+    "address": 38983
+   },
+   {
+    "name": "core.__DIVI8_FAST",
+    "address": 38985
+   },
+   {
+    "name": "core.__DIV8A",
+    "address": 38993
+   },
+   {
+    "name": "core.__DIV8B",
+    "address": 39002
+   },
+   {
+    "name": "core.__MODU8",
+    "address": 39013
+   },
+   {
+    "name": "core.__MODU8_FAST",
+    "address": 39015
+   },
+   {
+    "name": "core.__MODI8",
+    "address": 39020
+   },
+   {
+    "name": "core.__MODI8_FAST",
+    "address": 39022
+   },
+   {
+    "name": "core.__MODI8_POS",
+    "address": 39034
+   },
+   {
+    "name": "core.__PRINTI8",
+    "address": 39041
+   },
+   {
+    "name": "core.__PRINTU8",
+    "address": 39052
+   }
+  ],
+  "errorStop": {
+   "entry": 37698,
+   "code": {
+    "register": "a"
+   },
+   "reports": "zx-rom"
+  },
+  "optimizationLevel": 2
+ }
+}

@@ -1,49 +1,25 @@
 ; @module   strings
-; @summary  Core String routines: allocation, length, copy, concatenation, store and comparison.
-; @exports  StrAlloc, StrLen, StrDup, StrConcat, StrStore, StrCompare, StrCopyChars
-; @exports  StrSlice, StrLength, StrCode, StrChr, StrOverwrite
-; @requires heap
+; @summary  BASIC's String operations: copy, concatenation, store, comparison, slicing, CODE, overwrite.
+; @exports  StrDup, StrConcat, StrStore, StrCompare, StrCopyChars
+; @exports  StrSlice, StrLength, StrCode, StrOverwrite
+; @requires heap, strcore
+; @abi      StrConcat(hl, de, a)
+; @abi      StrCompare(hl, de, a)
+; @abi      StrSlice(hl, bc, de, a)
+; @abi      StrLength(hl, a)
+; @abi      StrCode(hl, a)
+; @abi      StrDup(hl)
+; @abi      StrStore(hl, de)
+; @abi      StrStore!addressFirst(de, hl)
+; @abi      StrOverwrite(stack, bc, de, hl, a)
+;
+; The heap String itself - allocation, length, a one-character String - is `strcore`'s (the shared
+; back end's core package), which every package may use.
 ;
 ; A String value is a pointer to a heap block [length:2][characters], or 0 for the empty string
 ; (runtime-abi.md §2.2). A String produced by an expression is a temporary: whoever consumes it frees
 ; it. The routines that take two Strings take "free after use" flags in A: bit 0 frees the first
 ; operand (HL), bit 1 the second (DE), after the result has been built.
-
-; ------------------------------------------------------------------------------------------------
-; Allocates a String of BC characters and sets its length; the characters are not set.
-; Out: HL = the String, or 0 when the heap is full. Changes AF, BC, DE.
-StrAlloc:
-    push bc
-    ld hl,2
-    add hl,bc
-    ld b,h
-    ld c,l                  ; BC = block payload size
-    pop de                  ; DE = length
-    jp c,AllocFailed        ; longer than a block can hold
-    push de
-    call Alloc
-    pop bc                  ; BC = length
-    ld a,h
-    or l
-    ret z
-    ld (hl),c
-    inc hl
-    ld (hl),b
-    dec hl
-    ret
-
-; ------------------------------------------------------------------------------------------------
-; The length of String HL (0 for the empty String). Out: BC. Changes AF only.
-StrLen:
-    ld bc,0
-    ld a,h
-    or l
-    ret z
-    ld c,(hl)
-    inc hl
-    ld b,(hl)
-    dec hl
-    ret
 
 ; ------------------------------------------------------------------------------------------------
 ; Copies the characters of String HL to DE. Out: DE = the address after the copy. Changes AF, BC, HL.
@@ -343,24 +319,6 @@ StrCodeFree:
     call c,Free
     pop de                  ; S: []
     ld a,e
-    ret
-
-; ------------------------------------------------------------------------------------------------
-; CHR$: a String of the one character A. Out: HL; 0 when the heap is full. Changes AF, BC, DE.
-StrChr:
-    push af                 ; S: [char]
-    ld bc,1
-    call StrAlloc
-    pop af                  ; A = char                             S: []
-    ld c,a
-    ld a,h
-    or l
-    ret z
-    inc hl
-    inc hl
-    ld (hl),c
-    dec hl
-    dec hl
     ret
 
 ; ------------------------------------------------------------------------------------------------

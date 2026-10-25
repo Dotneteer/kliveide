@@ -1,3 +1,4 @@
+import { debugLanguageOf } from "@renderer/appIde/debugger/languages/registry";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -94,7 +95,7 @@ async function debug(source: string, optimize = 0) {
   };
   const chain = () =>
     locateActivations(index, session.machineView()).map((a) =>
-      a.kind === "main"
+      a.kind === "entry"
         ? "main"
         : `${info.callables[a.callableIndex].name}@${a.callSite ? text(a.callSite.statementIndex) : "?"}`
     );
@@ -247,7 +248,7 @@ function scenarios(level: number) {
       );
 
       const chain = locateActivations(d.index, d.session.machineView());
-      const globals = buildVariableSections(info, chain, 0, undefined, mem).globals;
+      const globals = buildVariableSections(info, chain, 0, undefined, mem, debugLanguageOf(info.language)).globals;
       const row = (name: string) => globals.find((n) => n.name === name)!;
       expect([row("k").value, row("s$").value, row("two").value]).toEqual([
         "1235",
@@ -265,7 +266,7 @@ function scenarios(level: number) {
       ]);
 
       const watch = (text: string) => {
-        const r = evaluateWatch(text, { info, chain, frame: 0, mem });
+        const r = evaluateWatch(text, { info, chain, frame: 0, mem, lang: debugLanguageOf(info.language) });
         return "error" in r ? r.error : r.text;
       };
       expect([watch("t(2) + k"), watch("two / 4"), watch('s$ + "!"')]).toEqual([
@@ -296,7 +297,7 @@ function scenarios(level: number) {
 
     it("stops at the error routine and names the banked statement and its callers", async () => {
       const d = await dbg(FAILS);
-      const errorEntry = d.info.extensions!.errorEntry!;
+      const errorEntry = d.info.extensions!.errorStop!.entry;
       d.debugSupport.errorStopAddress = errorEntry;
       d.debugSupport.statementTracker = new CurrentStatementTracker(d.index);
       expect(d.session.continueToBreakpoint()).toBe(errorEntry);

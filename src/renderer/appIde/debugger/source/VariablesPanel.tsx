@@ -3,7 +3,7 @@ import type { SourceActivationInfo, SourceStopInfo } from "@abstractions/SourceD
 import { useCallback, useEffect, useMemo, useState, type KeyboardEvent } from "react";
 
 import { MachineControllerState } from "@abstractions/MachineControllerState";
-import { addBasicWatchAction, removeBasicWatchAction } from "@common/state/actions";
+import { addSourceWatchAction, removeSourceWatchAction } from "@common/state/actions";
 import { hasSourceLevelDebug } from "@renderer/appIde/utils/compiler-utils";
 import { toHexa4 } from "@renderer/appIde/services/ide-commands";
 import { useEmuStateListener } from "@renderer/appIde/useStateRefresh";
@@ -17,6 +17,7 @@ import { useMainApi } from "@renderer/core/MainApi";
 import { takeOverBeforeEdit } from "@renderer/appIde/commands/reverseDebugFork";
 import { iconSizes } from "@renderer/theming/tokens/dimensions";
 
+import { debugLanguageOf } from "../languages/registry";
 import { buildSourceCallStack } from "./call-stack-model";
 import { bankedMemoryView, bankPagesOf, encodeValue, memoryView, type MemoryView } from "./value-decoder";
 import { buildVariableSections, type VariableNode } from "./variables-model";
@@ -50,7 +51,9 @@ const SourceVariables = ({ info }: { info: SourceLevelDebugInfo }) => {
   const dispatch = useDispatch();
   const machineState = useSelector((s) => s.emulatorState?.machineState);
   const frame = useSelector((s) => s.ideView?.sourceFrame ?? 0);
-  const watches = useSelector((s) => s.basicWatches);
+  const watches = useSelector((s) => s.sourceWatches);
+  // --- The program's language: how values, array types and local activations are written, and what a watch means
+  const lang = useMemo(() => debugLanguageOf(info.language), [info]);
   const [snapshot, setSnapshot] = useState<Snapshot>();
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
   const [draft, setDraft] = useState("");
@@ -82,14 +85,14 @@ const SourceVariables = ({ info }: { info: SourceLevelDebugInfo }) => {
   useEmuStateListener(emuApi, refresh);
 
   const sections = useMemo(
-    () => (snapshot ? buildVariableSections(info, snapshot.chain, frame, snapshot.stop, snapshot.mem) : undefined),
-    [info, snapshot, frame]
+    () => (snapshot ? buildVariableSections(info, snapshot.chain, frame, snapshot.stop, snapshot.mem, lang) : undefined),
+    [info, snapshot, frame, lang]
   );
   const frameName = useMemo(() => {
     if (!snapshot) return "";
-    const row = buildSourceCallStack(info, snapshot.chain, snapshot.stop).find((r) => !("runtime" in r) && r.frame === frame);
+    const row = buildSourceCallStack(info, snapshot.chain, snapshot.stop, lang).find((r) => !("runtime" in r) && r.frame === frame);
     return row && !("runtime" in row) ? row.name : "";
-  }, [info, snapshot, frame]);
+  }, [info, snapshot, frame, lang]);
 
   const toggle = (id: string) =>
     setExpanded((prev) => {
@@ -101,7 +104,7 @@ const SourceVariables = ({ info }: { info: SourceLevelDebugInfo }) => {
 
   const addWatch = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key !== "Enter" || !draft.trim()) return;
-    dispatch(addBasicWatchAction(draft.trim()));
+    dispatch(addSourceWatchAction(draft.trim()));
     setDraft("");
   };
 
@@ -110,11 +113,11 @@ const SourceVariables = ({ info }: { info: SourceLevelDebugInfo }) => {
     node.address !== undefined &&
     node.bank === undefined &&
     node.valueType !== undefined &&
-    node.valueType !== "string";
+    !node.valueType.startsWith("str.");
 
   const commitEdit = async (node: VariableNode) => {
     if (!editing) return;
-    const encoded = encodeValue(node.valueType!, editing.text);
+    const encoded = encodeValue(node.valueType!, node.type, editing.text);
     if ("error" in encoded) {
       setEditing({ ...editing, error: encoded.error });
       return;
@@ -183,7 +186,7 @@ const SourceVariables = ({ info }: { info: SourceLevelDebugInfo }) => {
       );
     });
 
-  const ctx = snapshot ? { info, chain: snapshot.chain, frame, mem: snapshot.mem } : undefined;
+  const ctx = snapshot ? { info, chain: snapshot.chain, frame, mem: snapshot.mem, lang } : undefined;
 
   return (
     <DataPanel xclass={styles.variablesPanel}>
@@ -228,7 +231,7 @@ const SourceVariables = ({ info }: { info: SourceLevelDebugInfo }) => {
                 buttonHeight={16}
                 noPadding
                 title={t("panels.side.variables.removeWatch")}
-                clicked={() => dispatch(removeBasicWatchAction(i))}
+                clicked={() => dispatch(removeSourceWatchAction(i))}
               />
             </span>
           </DataRow>

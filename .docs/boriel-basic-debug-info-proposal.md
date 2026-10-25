@@ -6,7 +6,7 @@ treat it as an outbound proposal, not a design note.
 
 - Klive side: `src/common/abstractions/CompilerInfo.ts` (`SourceLevelDebugInfo`),
   `src/common/abstractions/SourceDebugInfo.ts` (`SourceDebugExtensions`),
-  `src/common/utils/source-debug-sidecar.ts`, `.docs/kbasic-debug-builder.md`.
+  `src/common/utils/source-debug-sidecar.ts`, `.docs/z80-backend-debug-builder.md`.
 - Boriel side: `boriel-basic/zxbasic` v1.19.0, commit `ac9081d` (2026-09-24). Paths below are
   relative to that repository. They locate where a change would go; no upstream code is copied
   here, and nothing in this document was used to design Klive (provenance rule,

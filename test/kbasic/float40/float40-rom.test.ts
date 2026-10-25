@@ -12,7 +12,7 @@ import {
   truncate,
   type Float40,
   type Float40Comparison
-} from "@main/kbasic/semantics/float40";
+} from "@main/z80-backend/numeric/float40";
 
 import { CALC, RomCalculator, type CalcCase, type CalcResult } from "./rom-calculator";
 

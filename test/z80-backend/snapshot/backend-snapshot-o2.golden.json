@@ -1,0 +1,1398 @@
+{
+ "arrays/array-base.zxbas": {
+  "text": "2938169b882c4bf2",
+  "bytes": "f6940c03474398b3",
+  "sourceLevel": "8cd43cfa46c20da5",
+  "classic": "f8a1f04f3b519149",
+  "diagnostics": []
+ },
+ "arrays/array-parameter.zxbas": {
+  "text": "f2db44ab870f1689",
+  "bytes": "88746073c1106bb6",
+  "sourceLevel": "1e5299b38c5ab97a",
+  "classic": "3f3e77189c6b0038",
+  "diagnostics": []
+ },
+ "arrays/initialiser-equals.zxbas": {
+  "text": "8d462af7ebe04a37",
+  "bytes": "eddd17ace02c6d7c",
+  "sourceLevel": "ed54e11a84fbc939",
+  "classic": "5eaa5a5c437f318f",
+  "diagnostics": []
+ },
+ "arrays/initialiser.zxbas": {
+  "text": "52710ee9ad0eb722",
+  "bytes": "86e783a6eb552ff6",
+  "sourceLevel": "89fe58a8246af687",
+  "classic": "eb8f8c632e51cf83",
+  "diagnostics": []
+ },
+ "arrays/local-array.zxbas": {
+  "text": "2aeff9db51f844a3",
+  "bytes": "dbf57f8b0474d03a",
+  "sourceLevel": "4c209d861d48e807",
+  "classic": "22fb66479c04ccb1",
+  "diagnostics": []
+ },
+ "arrays/one-dim.zxbas": {
+  "text": "16ee19708b98b170",
+  "bytes": "fabe5e6a8b402bad",
+  "sourceLevel": "335a9819158069c0",
+  "classic": "60256640c5818d0d",
+  "diagnostics": []
+ },
+ "arrays/string-array.zxbas": {
+  "text": "ba10c0a3b285bdec",
+  "bytes": "9b8b0b5d212a9d51",
+  "sourceLevel": "8492213a3ed5e133",
+  "classic": "323910aff9d980e9",
+  "diagnostics": []
+ },
+ "arrays/two-dim.zxbas": {
+  "text": "34ae40f12828f61e",
+  "bytes": "a207c9cbb432ee6b",
+  "sourceLevel": "822459261a44ea3e",
+  "classic": "3e82c16fe81f4f62",
+  "diagnostics": []
+ },
+ "builtins/abs-sgn-int.zxbas": {
+  "text": "95d254a0f756d072",
+  "bytes": "f76a6cf6cd5e861b",
+  "sourceLevel": "f1de6dfafb985e1a",
+  "classic": "4e79a3be56ac1a8a",
+  "diagnostics": [
+   "warning K403 0:199"
+  ]
+ },
+ "builtins/bounds.zxbas": {
+  "text": "dac59e6cb0866873",
+  "bytes": "7a7608af9a53da04",
+  "sourceLevel": "8fc0bbbda3276852",
+  "classic": "30e65e9b58aaa11f",
+  "diagnostics": []
+ },
+ "builtins/cast.zxbas": {
+  "text": "046f7f43c9781efd",
+  "bytes": "160af4ecea25f586",
+  "sourceLevel": "0443da0b7c6302f1",
+  "classic": "8fb59a66c33fa949",
+  "diagnostics": []
+ },
+ "builtins/chr-code.zxbas": {
+  "text": "9d261c98051e2847",
+  "bytes": "1f9cf326268565a8",
+  "sourceLevel": "0042601e64bbf444",
+  "classic": "600a8f01af871c52",
+  "diagnostics": []
+ },
+ "builtins/in-out.zxbas": {
+  "text": "a9a4f8e2ce55c8ef",
+  "bytes": "786b5624c0a32f78",
+  "sourceLevel": "8ffb9d0602091183",
+  "classic": "73f25fe11617bfae",
+  "diagnostics": []
+ },
+ "builtins/inkey-wait.zxbas": {
+  "text": "59817a696b93ad6c",
+  "bytes": "e6a17e3078076a8c",
+  "sourceLevel": "853335e06d8b13b2",
+  "classic": "44d6baaceeeeb6ce",
+  "diagnostics": [
+   "warning W101 0:116"
+  ]
+ },
+ "builtins/len-str.zxbas": {
+  "text": "164a525a78d288fb",
+  "bytes": "c3d59c1244a75235",
+  "sourceLevel": "84835c3c5e278b9f",
+  "classic": "0ab16bd814cc5ee7",
+  "diagnostics": []
+ },
+ "builtins/peek-poke-typed.zxbas": {
+  "text": "7e4dc54dcff04a88",
+  "bytes": "a276a21a2a9247d4",
+  "sourceLevel": "4eb6b0d9a5812577",
+  "classic": "5f566bf995075fed",
+  "diagnostics": []
+ },
+ "builtins/rnd-range.zxbas": {
+  "text": "25908af3c7011d74",
+  "bytes": "a00eec085e13cc70",
+  "sourceLevel": "20961abfbc48f175",
+  "classic": "4542b0152f6e52ba",
+  "diagnostics": []
+ },
+ "builtins/usr-udg.zxbas": {
+  "text": "63bb3ff70cad9349",
+  "bytes": "27e0f827f8a46604",
+  "sourceLevel": "adc38e963d59d9ac",
+  "classic": "a97306417fba7df9",
+  "diagnostics": []
+ },
+ "builtins/usr.zxbas": {
+  "text": "28546a3eecbdd3e4",
+  "bytes": "3595d008e53d2711",
+  "sourceLevel": "999d5f9d8912e30e",
+  "classic": "1f1703c6f264de83",
+  "diagnostics": []
+ },
+ "builtins/val-error.zxbas": {
+  "text": "4747f66dcf427faf",
+  "bytes": "3f21c65a4340a372",
+  "sourceLevel": "b86b0ff1f6dfd3b1",
+  "classic": "78360efb2405ff56",
+  "diagnostics": []
+ },
+ "builtins/val.zxbas": {
+  "text": "ba417b424354220d",
+  "bytes": "c2cf2df8de5df853",
+  "sourceLevel": "60711d568004e87f",
+  "classic": "45a8d18ab6bcc9ca",
+  "diagnostics": []
+ },
+ "classic/binary.zxbas": {
+  "text": "c0116c9cb85641d7",
+  "bytes": "542f5cfd86495553",
+  "sourceLevel": "ec8a975a28443108",
+  "classic": "01a03e8df0b09ac0",
+  "diagnostics": []
+ },
+ "classic/bubble-sort.zxbas": {
+  "text": "10557a6eebd350ed",
+  "bytes": "3e5b54d5e7f3c649",
+  "sourceLevel": "cba3302bda2f279e",
+  "classic": "592739dd97cbb20a",
+  "diagnostics": []
+ },
+ "classic/collatz.zxbas": {
+  "text": "1ded3b23fdb34289",
+  "bytes": "846fdb7eb294cbf0",
+  "sourceLevel": "f6835390dc4b136c",
+  "classic": "23fb637a87389714",
+  "diagnostics": []
+ },
+ "classic/factorial.zxbas": {
+  "text": "2233381d27f3307f",
+  "bytes": "23a9e04fe97d7320",
+  "sourceLevel": "0f93ff12c87e496d",
+  "classic": "c3f52d9ec82e8cc9",
+  "diagnostics": []
+ },
+ "classic/fibonacci.zxbas": {
+  "text": "61773be5751c560a",
+  "bytes": "d752d596cebeaa78",
+  "sourceLevel": "821f0a9aa7770336",
+  "classic": "0f08052f8da1d1eb",
+  "diagnostics": []
+ },
+ "classic/gcd.zxbas": {
+  "text": "e92e6bcfc34776ce",
+  "bytes": "f4dbf0ef6eb12125",
+  "sourceLevel": "0f810e03a99df095",
+  "classic": "4d3c0c204243ace0",
+  "diagnostics": []
+ },
+ "classic/hanoi.zxbas": {
+  "text": "e47532321d4165f1",
+  "bytes": "c8c89ec711e36fe0",
+  "sourceLevel": "e2413ed7df60e883",
+  "classic": "4f0af11ef0dba6ba",
+  "diagnostics": []
+ },
+ "classic/pascal.zxbas": {
+  "text": "0ba327ec09a8d79f",
+  "bytes": "a5573b7d3930983d",
+  "sourceLevel": "b24dea6c8dbc4b91",
+  "classic": "c14e3dfaf29526df",
+  "diagnostics": []
+ },
+ "classic/primes-sieve.zxbas": {
+  "text": "4c0c461e5b5b9087",
+  "bytes": "b8d958c0baec32d3",
+  "sourceLevel": "e6ca761c4fb56e85",
+  "classic": "cb6f04ca3b21aa3a",
+  "diagnostics": []
+ },
+ "classic/reverse-string.zxbas": {
+  "text": "0c321a519b12164e",
+  "bytes": "d525616a1f8730c6",
+  "sourceLevel": "48fe8e222b4320ee",
+  "classic": "89049b70fcb7c0cb",
+  "diagnostics": []
+ },
+ "classic/sqr-newton.zxbas": {
+  "text": "26131fc81c5a04fc",
+  "bytes": "3abbc956bc785a79",
+  "sourceLevel": "9a57f64e13ea0d67",
+  "classic": "01a1a7fca19580b6",
+  "diagnostics": []
+ },
+ "classic/temperature.zxbas": {
+  "text": "63ab1572934ef484",
+  "bytes": "3118b28eab3b15bc",
+  "sourceLevel": "0c482558efdbc005",
+  "classic": "341e55f7fb0edff5",
+  "diagnostics": []
+ },
+ "classic/times-table.zxbas": {
+  "text": "f74641bf46aa3ecb",
+  "bytes": "fb071a42074de949",
+  "sourceLevel": "268f626f3b7b889a",
+  "classic": "c3d75a6ad0f60967",
+  "diagnostics": []
+ },
+ "codebank/asm-data.zxbas": {
+  "text": "25ac9da29956d5df",
+  "bytes": "8df133610585712b",
+  "sourceLevel": "257b5b2910908918",
+  "classic": "4d7b847306705f94",
+  "diagnostics": []
+ },
+ "codebank/bank-data.zxbas": {
+  "text": "fb3ee4d0396f992e",
+  "bytes": "c362419d7b4063a5",
+  "sourceLevel": "3369ecec8e9ebdea",
+  "classic": "c9d43395d05f6cfb",
+  "diagnostics": [
+   "warning W150 0:827"
+  ]
+ },
+ "codebank/farmem.zxbas": {
+  "text": "67ea7d54735ef712",
+  "bytes": "1b462f8b3053a8da",
+  "sourceLevel": "a231d88a8a78a79e",
+  "classic": "958375162b5df18d",
+  "diagnostics": [
+   "warning W910 0:373"
+  ]
+ },
+ "codebank/farptr.zxbas": {
+  "text": "e2084d968897fe5a",
+  "bytes": "2dbc1c4170b20274",
+  "sourceLevel": "897aa190a6009562",
+  "classic": "1dc4921e8bb118a9",
+  "diagnostics": [
+   "warning W170 0:271"
+  ]
+ },
+ "codebank/many-banks.zxbas": {
+  "text": "375fd1aa6be4314e",
+  "bytes": "4fd450bd0e0960a4",
+  "sourceLevel": "f9d85f04da55b5d2",
+  "classic": "d3a86955eb21c4e9",
+  "diagnostics": [
+   "warning W150 0:211"
+  ]
+ },
+ "codebank/page-list.zxbas": {
+  "text": "b601060ca604968a",
+  "bytes": "c6de1860ef3bb53e",
+  "sourceLevel": "b836ecaefd666269",
+  "classic": "23a154a684ad72b7",
+  "diagnostics": []
+ },
+ "codebank/recursion.zxbas": {
+  "text": "1718cc64a0651d42",
+  "bytes": "0881acb2cf5d7b08",
+  "sourceLevel": "5105dcaf41f1da77",
+  "classic": "76f956545f0ce336",
+  "diagnostics": []
+ },
+ "codebank/return-types.zxbas": {
+  "text": "8353be9105ab369b",
+  "bytes": "22d2948cbf83ffd0",
+  "sourceLevel": "f4cac56d03045faf",
+  "classic": "1b685a5a8943eeee",
+  "diagnostics": []
+ },
+ "codebank/same-bank.zxbas": {
+  "text": "f11682e5c2732d44",
+  "bytes": "7cc6dd7ff634f1e4",
+  "sourceLevel": "47e4f27c4fbff9f4",
+  "classic": "b75dac242bd6f384",
+  "diagnostics": []
+ },
+ "codebank/strings.zxbas": {
+  "text": "1d99f9ef9d4bab12",
+  "bytes": "5f6653ce2d00be7f",
+  "sourceLevel": "368b38f546f8706e",
+  "classic": "be5a34ce67571cd7",
+  "diagnostics": []
+ },
+ "codebank/two-banks.zxbas": {
+  "text": "a270771d09d901e1",
+  "bytes": "0416b300a95b380a",
+  "sourceLevel": "263054bcc5746cd5",
+  "classic": "223bcd82b02bbb28",
+  "diagnostics": []
+ },
+ "codebank/window16.zxbas": {
+  "text": "81b1c52ab7365c81",
+  "bytes": "d25895e5f02c1f04",
+  "sourceLevel": "6862704c57647e4d",
+  "classic": "522eec6c4d516422",
+  "diagnostics": []
+ },
+ "control/do-loops.zxbas": {
+  "text": "bc6ff7988413bbfe",
+  "bytes": "8d15f6e649044eb2",
+  "sourceLevel": "9b0f57fba44c1a21",
+  "classic": "c421fcae0f6c0efc",
+  "diagnostics": [
+   "warning W130 0:525"
+  ]
+ },
+ "control/end-stop.zxbas": {
+  "text": "cffada5045a9444e",
+  "bytes": "bc8b7042aed40bcf",
+  "sourceLevel": "afe4143e039c77dc",
+  "classic": "286067fd6cb0c254",
+  "diagnostics": [
+   "warning W180 0:245"
+  ]
+ },
+ "control/exit-continue.zxbas": {
+  "text": "41de3f2f22cd3fd9",
+  "bytes": "8f9327b4cbdf124b",
+  "sourceLevel": "db91b1a19f415a3b",
+  "classic": "dc8b6a514841c57b",
+  "diagnostics": [
+   "warning W110 0:205"
+  ]
+ },
+ "control/exit-nested.zxbas": {
+  "text": "3a3c1e5026b10a97",
+  "bytes": "5a72fe8c450af035",
+  "sourceLevel": "03c5efaeae56cb3f",
+  "classic": "43ac4eb3b21b346e",
+  "diagnostics": []
+ },
+ "control/for-evaluation.zxbas": {
+  "text": "cb0b903f5735c4c4",
+  "bytes": "3ef9e61b701f3f19",
+  "sourceLevel": "2ee8829f6e8f82cf",
+  "classic": "1a4d9c1335ab1239",
+  "diagnostics": []
+ },
+ "control/for-integer.zxbas": {
+  "text": "05218c59bb3c7210",
+  "bytes": "41affc236a8c1116",
+  "sourceLevel": "29def6acb941621a",
+  "classic": "b1bfc1cfcdbbc0c2",
+  "diagnostics": []
+ },
+ "control/for-steps.zxbas": {
+  "text": "da60601f7537b119",
+  "bytes": "c32fc75e32305dbf",
+  "sourceLevel": "add1728eccf5ea3e",
+  "classic": "879e7bd3e5c0ee62",
+  "diagnostics": [
+   "warning K402 0:336"
+  ]
+ },
+ "control/for-unsigned-down.zxbas": {
+  "text": "0b3ccb3b905e63b5",
+  "bytes": "88bc8f728a1d5da3",
+  "sourceLevel": "05aec90d7d243975",
+  "classic": "14c86cbf912e8358",
+  "diagnostics": []
+ },
+ "control/gosub-nested.zxbas": {
+  "text": "b6a1cb03996cf6af",
+  "bytes": "c4cfa263fee1903b",
+  "sourceLevel": "b015168ee6dd9c20",
+  "classic": "c8841980a2c72906",
+  "diagnostics": []
+ },
+ "control/goto-gosub.zxbas": {
+  "text": "e9abad25dc114761",
+  "bytes": "3f8950506f2807fe",
+  "sourceLevel": "227eae6b91c92cef",
+  "classic": "9e58f0c3f8f74c91",
+  "diagnostics": [
+   "warning W180 0:105"
+  ]
+ },
+ "control/if-else.zxbas": {
+  "text": "caf8f351c87601e2",
+  "bytes": "158d1053f4e1ebe4",
+  "sourceLevel": "79a2865750d06eb0",
+  "classic": "dbcc35eb386cd1fb",
+  "diagnostics": []
+ },
+ "control/level2-constant-slots.zxbas": {
+  "text": "68ef9e3813796625",
+  "bytes": "a5b9218b3b7608c9",
+  "sourceLevel": "ab56b815ec2347e1",
+  "classic": "d8ee4cfad17caed4",
+  "diagnostics": []
+ },
+ "control/line-numbers.zxbas": {
+  "text": "f37e1bdfa5eca084",
+  "bytes": "5e01455efa4470fd",
+  "sourceLevel": "782c7ee297f952ad",
+  "classic": "75535049770f09c0",
+  "diagnostics": []
+ },
+ "control/logic-evaluation.zxbas": {
+  "text": "4b8533c2ccc06d48",
+  "bytes": "02d72a072edf6c62",
+  "sourceLevel": "afa0a59b4903d480",
+  "classic": "a30602be101a35b3",
+  "diagnostics": []
+ },
+ "control/nested-for.zxbas": {
+  "text": "f3250427b619501b",
+  "bytes": "3b0814f79d11dfb0",
+  "sourceLevel": "cfe027abb876acd9",
+  "classic": "d3c39c98ec32563c",
+  "diagnostics": []
+ },
+ "control/on-gosub.zxbas": {
+  "text": "ae68567c866d32de",
+  "bytes": "c522033c0160b923",
+  "sourceLevel": "269573fc1011dbee",
+  "classic": "7fc41672f94a6b8c",
+  "diagnostics": []
+ },
+ "control/on-goto-range.zxbas": {
+  "text": "28c6e56d0cbe42eb",
+  "bytes": "8276a34edf48a9e8",
+  "sourceLevel": "dc053ea20c58a074",
+  "classic": "d5cd5d77ca093ecb",
+  "diagnostics": []
+ },
+ "control/on-goto.zxbas": {
+  "text": "c2538539e0457ed2",
+  "bytes": "d782cd0d8cc6aeba",
+  "sourceLevel": "7a7b0c3179755251",
+  "classic": "e9f06d3120dc0dd2",
+  "diagnostics": []
+ },
+ "control/single-line-if.zxbas": {
+  "text": "8bed2ffed5c623f2",
+  "bytes": "3fca0cac80d96081",
+  "sourceLevel": "ccac7218102141fd",
+  "classic": "ba614f8090b79506",
+  "diagnostics": []
+ },
+ "control/while-float.zxbas": {
+  "text": "680944ff952e956c",
+  "bytes": "3f3e45309e2482a7",
+  "sourceLevel": "0d5cc16a0072dc28",
+  "classic": "658134c2666add0d",
+  "diagnostics": []
+ },
+ "control/while.zxbas": {
+  "text": "57e8ce7ba3d57a34",
+  "bytes": "a427ae28803eaff6",
+  "sourceLevel": "49b6e09b626d9eff",
+  "classic": "b2ad49193ad88d2d",
+  "diagnostics": []
+ },
+ "data/data-expressions.zxbas": {
+  "text": "bf1a0fe4721302cf",
+  "bytes": "eae875eda0adff9e",
+  "sourceLevel": "14f48ed5b9a371ea",
+  "classic": "4b34ec7750fdfda7",
+  "diagnostics": []
+ },
+ "data/read-array.zxbas": {
+  "text": "63f66c816ae7e04b",
+  "bytes": "557f615a36f1e6c5",
+  "sourceLevel": "b8ece38e33e04954",
+  "classic": "65a073261cb4ed44",
+  "diagnostics": []
+ },
+ "data/read-mismatch.zxbas": {
+  "text": "6b58eb231e57616c",
+  "bytes": "a57e4c49a5dbfb33",
+  "sourceLevel": "087b6439cefb4be3",
+  "classic": "93f4c1f93f5ae5d8",
+  "diagnostics": []
+ },
+ "data/read-no-data.zxbas": {
+  "text": "e6ab95c5c0ff9cb8",
+  "bytes": "af5bcd151c95e5db",
+  "sourceLevel": "67dfb25ff5993229",
+  "classic": "942a9875e13ba9c6",
+  "diagnostics": []
+ },
+ "data/read-numbers.zxbas": {
+  "text": "1e7f2b35ed5cef3d",
+  "bytes": "3d988cffefc015df",
+  "sourceLevel": "71a34825b21086a7",
+  "classic": "2423dd53978d3ec8",
+  "diagnostics": []
+ },
+ "data/read-strings.zxbas": {
+  "text": "20c600574bb5c4fc",
+  "bytes": "fcd0d9d26aa00929",
+  "sourceLevel": "d3e6fdee56893ea2",
+  "classic": "9e9d267666c09578",
+  "diagnostics": []
+ },
+ "data/read-wraps.zxbas": {
+  "text": "c846f876dc21a327",
+  "bytes": "73aa1c1ec9d82451",
+  "sourceLevel": "87a35d800ce13973",
+  "classic": "d4bf470662d2e95f",
+  "diagnostics": []
+ },
+ "data/restore-label.zxbas": {
+  "text": "1c6281a022410536",
+  "bytes": "761acfd6cbd8a453",
+  "sourceLevel": "084a5e9248ace374",
+  "classic": "eb3de563df10cee6",
+  "diagnostics": []
+ },
+ "data/restore-line.zxbas": {
+  "text": "9540c3f121eaf929",
+  "bytes": "8ec7deb9d835cbaf",
+  "sourceLevel": "f4b3108f632709cd",
+  "classic": "4e638f679df27c47",
+  "diagnostics": []
+ },
+ "fixed/fixed-arith.zxbas": {
+  "text": "6d9c80424c0a1372",
+  "bytes": "3ece6b9ab650106b",
+  "sourceLevel": "551e717ee47f1440",
+  "classic": "456ac8bb88710255",
+  "diagnostics": []
+ },
+ "fixed/fixed-compare.zxbas": {
+  "text": "d42a7a9c09442f6c",
+  "bytes": "eb35ba0c6efda65d",
+  "sourceLevel": "f362ca7819d52b6f",
+  "classic": "2cdba1523a72e317",
+  "diagnostics": []
+ },
+ "fixed/fixed-conversions.zxbas": {
+  "text": "1a9e45698e1aa6ef",
+  "bytes": "92b1c7e5925f6244",
+  "sourceLevel": "10c40611e959dc66",
+  "classic": "1f7abf76af861a30",
+  "diagnostics": [
+   "warning W200 0:161",
+   "warning W200 0:193"
+  ]
+ },
+ "fixed/fixed-divide-zero.zxbas": {
+  "text": "2c5866588995176a",
+  "bytes": "aeee90bf833f1834",
+  "sourceLevel": "c0f3c48a6a2c02ca",
+  "classic": "31f25fc7d762f33c",
+  "diagnostics": []
+ },
+ "fixed/fixed-loop.zxbas": {
+  "text": "a16d43408ed16c35",
+  "bytes": "e260fff18b9d1b9d",
+  "sourceLevel": "0be5a5eb2b4f63b8",
+  "classic": "bc51cdfb2d2b01e3",
+  "diagnostics": [
+   "warning W150 0:75"
+  ]
+ },
+ "fixed/fixed-negative.zxbas": {
+  "text": "33c5404f9746ef31",
+  "bytes": "b1d505fb8d596fef",
+  "sourceLevel": "644b2d67294777c0",
+  "classic": "0df3a9b6b5c75fe3",
+  "diagnostics": []
+ },
+ "float/arithmetic.zxbas": {
+  "text": "2be8e983a379ffef",
+  "bytes": "5bfc99501bddcef7",
+  "sourceLevel": "9a435d8f85aec331",
+  "classic": "ee96f64a8e0e1b28",
+  "diagnostics": []
+ },
+ "float/compare.zxbas": {
+  "text": "52548aa8f866e2f4",
+  "bytes": "b02416b0f95c0eb1",
+  "sourceLevel": "67944c75611a8b68",
+  "classic": "fb258679df80ea3a",
+  "diagnostics": []
+ },
+ "float/float-array.zxbas": {
+  "text": "dd3b6570c4dddfcb",
+  "bytes": "fad55057b790591d",
+  "sourceLevel": "e039a0d15f69139f",
+  "classic": "01e8a3c42fd000e3",
+  "diagnostics": []
+ },
+ "float/float-routines.zxbas": {
+  "text": "a6ec1df698e818aa",
+  "bytes": "caff2e7f8be43486",
+  "sourceLevel": "3008d58e9b99032e",
+  "classic": "94c57ad234ae8bb8",
+  "diagnostics": []
+ },
+ "float/for-step.zxbas": {
+  "text": "6f7261085fe7573a",
+  "bytes": "66232b20738f3996",
+  "sourceLevel": "85fd0fc81ea20be7",
+  "classic": "67429c0559a8126e",
+  "diagnostics": []
+ },
+ "float/from-integer.zxbas": {
+  "text": "c45726ecec3fa1e4",
+  "bytes": "226680d4df818b69",
+  "sourceLevel": "c2a425a9fd4a8d2f",
+  "classic": "bc618576effed513",
+  "diagnostics": []
+ },
+ "float/int-abs-sgn.zxbas": {
+  "text": "b5c560117de5419f",
+  "bytes": "8e3ab065c3e2a06a",
+  "sourceLevel": "349b44d4696d5c70",
+  "classic": "39d483adb4630d31",
+  "diagnostics": [
+   "warning K403 0:198"
+  ]
+ },
+ "float/inverse-trig.zxbas": {
+  "text": "debe7ab41c00a891",
+  "bytes": "60f34c1e0bba7073",
+  "sourceLevel": "4bf632f9fd661c30",
+  "classic": "7fc92c580a762a6f",
+  "diagnostics": []
+ },
+ "float/level1-float-shapes.zxbas": {
+  "text": "ff944968dda39eac",
+  "bytes": "a74460c2800642a9",
+  "sourceLevel": "8fd28ef717ec61e4",
+  "classic": "a6b9f427b2f7e922",
+  "diagnostics": [
+   "warning W200 0:746"
+  ]
+ },
+ "float/ln-exp.zxbas": {
+  "text": "19a2a526ca7d0626",
+  "bytes": "8e47abd277b5c0e7",
+  "sourceLevel": "837af0bdbfaea1c3",
+  "classic": "290adf3d7c113ace",
+  "diagnostics": []
+ },
+ "float/mod.zxbas": {
+  "text": "a24381c6affe6435",
+  "bytes": "b2daaca214e499ed",
+  "sourceLevel": "cca64fa67c9fe46e",
+  "classic": "a3e9445e8f690c72",
+  "diagnostics": []
+ },
+ "float/overflow.zxbas": {
+  "text": "58cd4c4a16af3e9e",
+  "bytes": "1404bc1731290fa9",
+  "sourceLevel": "26c63bedf7688d7e",
+  "classic": "ab672050c9c399ef",
+  "diagnostics": []
+ },
+ "float/power-constant.zxbas": {
+  "text": "7fd98d60d93d86f0",
+  "bytes": "6a55dff7dafcceb8",
+  "sourceLevel": "82362c1756bec0d0",
+  "classic": "5310863eb9f81e29",
+  "diagnostics": []
+ },
+ "float/power-roots.zxbas": {
+  "text": "d151beb817a4365d",
+  "bytes": "8cc953a28f4a75b3",
+  "sourceLevel": "25d50633bfb42c37",
+  "classic": "76582b1b3c500cb7",
+  "diagnostics": []
+ },
+ "float/precedence.zxbas": {
+  "text": "3102d12df4a2e114",
+  "bytes": "9e71bd35e2140790",
+  "sourceLevel": "1dc1db04e8d8aca0",
+  "classic": "aaeec34a95a9db32",
+  "diagnostics": []
+ },
+ "float/print-format.zxbas": {
+  "text": "cc42a748048267ce",
+  "bytes": "6f243314da637428",
+  "sourceLevel": "27c41bce521d0e29",
+  "classic": "0332556a0ddc4e7f",
+  "diagnostics": []
+ },
+ "float/rnd-seed.zxbas": {
+  "text": "183e39b668383d5a",
+  "bytes": "7ab3673d20358b78",
+  "sourceLevel": "d8a23249576bbb3d",
+  "classic": "1cd6e6326cd939d1",
+  "diagnostics": []
+ },
+ "float/str-val.zxbas": {
+  "text": "fd96208229572c30",
+  "bytes": "eecfb0f9fe735001",
+  "sourceLevel": "0427edff029581df",
+  "classic": "c6c5c56f5f64c77d",
+  "diagnostics": []
+ },
+ "float/to-integer.zxbas": {
+  "text": "f68a47ca6e83b6fe",
+  "bytes": "fc9e2faaf335ac39",
+  "sourceLevel": "c0a72f9818b31d01",
+  "classic": "e7be33a6d51963bf",
+  "diagnostics": [
+   "warning W200 0:186",
+   "warning W200 0:193",
+   "warning W200 0:226",
+   "warning W200 0:257"
+  ]
+ },
+ "float/trig.zxbas": {
+  "text": "5af0e80b18fc14b6",
+  "bytes": "37e9452f807b95ad",
+  "sourceLevel": "27e3e66993852e4f",
+  "classic": "d90ac133ef9a950f",
+  "diagnostics": []
+ },
+ "graphics/border.zxbas": {
+  "text": "152a891a42794552",
+  "bytes": "d30b119279ec2116",
+  "sourceLevel": "d4f3fa3f7e5a24e4",
+  "classic": "c6d6e1c049e1dad6",
+  "diagnostics": []
+ },
+ "graphics/circle.zxbas": {
+  "text": "e7d544edcf4923bf",
+  "bytes": "d6f13d16d1661719",
+  "sourceLevel": "94eb0ff0c8aabcc1",
+  "classic": "529537d61f398992",
+  "diagnostics": [
+   "warning W120 0:116"
+  ]
+ },
+ "graphics/cls-attr.zxbas": {
+  "text": "0360a7539f0e5eed",
+  "bytes": "66ce244afe0e145b",
+  "sourceLevel": "d42af35dabed18a0",
+  "classic": "503379192f1be7cc",
+  "diagnostics": []
+ },
+ "graphics/draw-arc.zxbas": {
+  "text": "2ae4e5bd7d527cbf",
+  "bytes": "b4819d7539e61a1b",
+  "sourceLevel": "49f3a785f2842b0d",
+  "classic": "3b2f81c8decebdd9",
+  "diagnostics": []
+ },
+ "graphics/draw-count.zxbas": {
+  "text": "8f0bcafcb086f290",
+  "bytes": "b6772382741f3fdd",
+  "sourceLevel": "427b58c0471b2db4",
+  "classic": "acc2d737cbaae9a3",
+  "diagnostics": []
+ },
+ "graphics/draw-lines.zxbas": {
+  "text": "97d7ff9e8b76313f",
+  "bytes": "ade511f44a0c6bd3",
+  "sourceLevel": "c65328d66b8c84b3",
+  "classic": "199133133163e1c6",
+  "diagnostics": []
+ },
+ "graphics/plot-colour.zxbas": {
+  "text": "383fa8f81f0767c8",
+  "bytes": "997aad8bd9c082d2",
+  "sourceLevel": "a6cf865c8d505bdb",
+  "classic": "b862580253af9299",
+  "diagnostics": []
+ },
+ "graphics/plot-over.zxbas": {
+  "text": "8964e579861fb1fa",
+  "bytes": "49aa2aa134b3f5bc",
+  "sourceLevel": "c9d9f027446b29b0",
+  "classic": "27184f9d6e6564f8",
+  "diagnostics": []
+ },
+ "graphics/plot-pixel.zxbas": {
+  "text": "e5e414296a1ede61",
+  "bytes": "1e744a05d896f972",
+  "sourceLevel": "23d8de139dd43431",
+  "classic": "c684453d8acf5929",
+  "diagnostics": []
+ },
+ "graphics/plot-range.zxbas": {
+  "text": "99cdb261f4c3ff17",
+  "bytes": "8e12a0cf869b36d2",
+  "sourceLevel": "1a8193eb6c989b6f",
+  "classic": "4e86055d3c05f274",
+  "diagnostics": []
+ },
+ "integers/bitwise.zxbas": {
+  "text": "cee410c2bb60f3e2",
+  "bytes": "3c1c39e4268b1599",
+  "sourceLevel": "21720b56c789e92a",
+  "classic": "23b2eedcca2ffc39",
+  "diagnostics": []
+ },
+ "integers/byte-signed.zxbas": {
+  "text": "15bc1bcb5250f8d6",
+  "bytes": "b3c23a620cbad4d3",
+  "sourceLevel": "f2cdf90f28e44eb2",
+  "classic": "eea6c680635288f2",
+  "diagnostics": []
+ },
+ "integers/comparisons.zxbas": {
+  "text": "913c4e0951a7532a",
+  "bytes": "555a00b92f7ed277",
+  "sourceLevel": "de458c24c080f26c",
+  "classic": "cb3fb2695d0d9936",
+  "diagnostics": []
+ },
+ "integers/constant-divide-by-zero.zxbas": {
+  "text": "9b1d037e0bc2788f",
+  "bytes": "8429cfdba833ffee",
+  "sourceLevel": "b5c03552ccd15f3d",
+  "classic": "f4ddd3664a1c936d",
+  "diagnostics": [
+   "warning K406 0:159",
+   "warning K406 0:173"
+  ]
+ },
+ "integers/constant-typed.zxbas": {
+  "text": "ba45e58ea9a53e40",
+  "bytes": "5662585652120a70",
+  "sourceLevel": "62d50fe4fffd5333",
+  "classic": "fba4c8325b767e31",
+  "diagnostics": []
+ },
+ "integers/divide-by-zero.zxbas": {
+  "text": "ec3947bfea0dca30",
+  "bytes": "1903ff9b35a79e67",
+  "sourceLevel": "85ec426ef746757f",
+  "classic": "4641fbed0035cc39",
+  "diagnostics": []
+ },
+ "integers/division-by-zero.zxbas": {
+  "text": "c8f47b343e115368",
+  "bytes": "cb21a50cfc9c2f42",
+  "sourceLevel": "7571e3ecfe4d04d4",
+  "classic": "15c2a81620c27fb1",
+  "diagnostics": []
+ },
+ "integers/integer-division.zxbas": {
+  "text": "bcda24ef1f83148c",
+  "bytes": "21f7aa0e8e863c57",
+  "sourceLevel": "5105adff6c7a9b02",
+  "classic": "092b43b9ed09b25f",
+  "diagnostics": []
+ },
+ "integers/level1-shapes.zxbas": {
+  "text": "26c5a10bdd8984b7",
+  "bytes": "f9de548be2cf702d",
+  "sourceLevel": "a1852e2d1e323a4f",
+  "classic": "8fce5735b3d891b0",
+  "diagnostics": []
+ },
+ "integers/literal-typing.zxbas": {
+  "text": "ebebba00080074d0",
+  "bytes": "37331e9d1d3c22b7",
+  "sourceLevel": "17f78cfafe95ec46",
+  "classic": "f0d11d2d0dacca75",
+  "diagnostics": []
+ },
+ "integers/logic.zxbas": {
+  "text": "d790ac37f57ab56d",
+  "bytes": "e997d554e4a1afbf",
+  "sourceLevel": "9d33fa3a021dddd5",
+  "classic": "b439259742f6dee5",
+  "diagnostics": []
+ },
+ "integers/peek-poke.zxbas": {
+  "text": "3a2f8226b83d2581",
+  "bytes": "268d2c9cfe2ff7da",
+  "sourceLevel": "3e8b65db76e443fe",
+  "classic": "0b46367d482779c6",
+  "diagnostics": []
+ },
+ "integers/precedence.zxbas": {
+  "text": "d6567e07f2f24669",
+  "bytes": "63c51799fd7a51d7",
+  "sourceLevel": "6dbec4ecf3e1ecc1",
+  "classic": "92d9fc7b004a20c9",
+  "diagnostics": []
+ },
+ "integers/shifts.zxbas": {
+  "text": "9237782b2d19fab7",
+  "bytes": "23cb5a4462557757",
+  "sourceLevel": "19dee38fbefc0c76",
+  "classic": "298a1deade2e906f",
+  "diagnostics": []
+ },
+ "integers/ubyte-wraps.zxbas": {
+  "text": "3b8c7644361f7c08",
+  "bytes": "8ef98edd9f482653",
+  "sourceLevel": "25f42feb4c10b23a",
+  "classic": "89b86aff0a7b3019",
+  "diagnostics": []
+ },
+ "integers/uinteger.zxbas": {
+  "text": "ee4af3c52a58c9c1",
+  "bytes": "5a47c5f1674d6ae9",
+  "sourceLevel": "5beec9166c144ec5",
+  "classic": "34e3e158d5bb5f72",
+  "diagnostics": []
+ },
+ "long/level1-long-shapes.zxbas": {
+  "text": "f33c2b0fbb2e2715",
+  "bytes": "2bc5479b1e737608",
+  "sourceLevel": "32bfd56e49901714",
+  "classic": "13e8a5ee3b175b52",
+  "diagnostics": []
+ },
+ "long/long-arith.zxbas": {
+  "text": "4d816f824beef665",
+  "bytes": "c68b7ba63654334c",
+  "sourceLevel": "6ef136ddaa3b4eca",
+  "classic": "8e46658f7ffcf4ee",
+  "diagnostics": []
+ },
+ "long/long-bitwise.zxbas": {
+  "text": "301b286701d1f9c7",
+  "bytes": "022311a4becce1f5",
+  "sourceLevel": "cb0031e72680bc0f",
+  "classic": "1e230dfdf839047f",
+  "diagnostics": []
+ },
+ "long/long-compare.zxbas": {
+  "text": "5b52f40905016d07",
+  "bytes": "378289fb3bcec175",
+  "sourceLevel": "0c30593db2064853",
+  "classic": "d9802eaded46d61e",
+  "diagnostics": []
+ },
+ "long/long-conversions.zxbas": {
+  "text": "d7e0918a59dcfd16",
+  "bytes": "92fdba5994889025",
+  "sourceLevel": "48b120eef85f00d3",
+  "classic": "fa387233da153438",
+  "diagnostics": []
+ },
+ "long/long-divide.zxbas": {
+  "text": "17fe835a51528cb8",
+  "bytes": "1c2893a0c7c391a5",
+  "sourceLevel": "9ab866d11bcc3d4a",
+  "classic": "87b6537efded27dc",
+  "diagnostics": []
+ },
+ "long/long-loop.zxbas": {
+  "text": "c7c26f9cd7006fcf",
+  "bytes": "08a8adec30f3c466",
+  "sourceLevel": "ab62ef8905e4fcad",
+  "classic": "c495d7fecab39724",
+  "diagnostics": []
+ },
+ "long/long-mul-div.zxbas": {
+  "text": "69f3b7304e455ecb",
+  "bytes": "2b810390eb23ed0d",
+  "sourceLevel": "b9e57ad6c4696138",
+  "classic": "2c25a29e70639197",
+  "diagnostics": []
+ },
+ "long/ulong-wrap.zxbas": {
+  "text": "dacb5fb0eab8ae9a",
+  "bytes": "48fbfe768996c0a8",
+  "sourceLevel": "4ad8fa7b17c2576a",
+  "classic": "800a5957ba92f7fb",
+  "diagnostics": []
+ },
+ "preprocessor/elif.zxbas": {
+  "text": "09471aaf59742c1f",
+  "bytes": "4213573a696932b5",
+  "sourceLevel": "836da4a81fd5e8eb",
+  "classic": "5156690a7c8776e1",
+  "diagnostics": []
+ },
+ "preprocessor/include-quoted-library.zxbas": {
+  "text": "e213163400b3608a",
+  "bytes": "dd3f4cae2a4ec91e",
+  "sourceLevel": "75bdbd035fcf4b41",
+  "classic": "2b4397fe773a4c1a",
+  "diagnostics": []
+ },
+ "preprocessor/keyword-macro.zxbas": {
+  "text": "ced4aad3cc293b07",
+  "bytes": "4d01cb3b6cdaeb47",
+  "sourceLevel": "d2030aeaf4d51276",
+  "classic": "f84fd4e2859a0083",
+  "diagnostics": []
+ },
+ "print/at-error.zxbas": {
+  "text": "2dd32eb18bfa3168",
+  "bytes": "ba1a82bd9af53d0e",
+  "sourceLevel": "eadebb63b1a39088",
+  "classic": "f302b04984926b67",
+  "diagnostics": []
+ },
+ "print/at-tab.zxbas": {
+  "text": "c0bddc358da37e7a",
+  "bytes": "4b47e9a9e832b447",
+  "sourceLevel": "caa3fd6059361554",
+  "classic": "fe8badbfbd511bcb",
+  "diagnostics": []
+ },
+ "print/cls.zxbas": {
+  "text": "b650e623e83794f0",
+  "bytes": "3fb48c649b4cd14a",
+  "sourceLevel": "5a7fe36bf7db728d",
+  "classic": "385b28e2c45e6f9f",
+  "diagnostics": []
+ },
+ "print/colour-items.zxbas": {
+  "text": "e93717caef541c6d",
+  "bytes": "60fc1acb351b9b34",
+  "sourceLevel": "ee3779abb2812c84",
+  "classic": "fa64bc642f2636fb",
+  "diagnostics": []
+ },
+ "print/numbers.zxbas": {
+  "text": "c7ba0b1279789808",
+  "bytes": "3ecaa14439363a33",
+  "sourceLevel": "67bc835561b41816",
+  "classic": "d32ce71f71950e6a",
+  "diagnostics": []
+ },
+ "print/scroll.zxbas": {
+  "text": "24bc1ccb49ae3182",
+  "bytes": "b9eb531caa1358fe",
+  "sourceLevel": "4d88563063a3cf2a",
+  "classic": "8958ecd64404ed1b",
+  "diagnostics": []
+ },
+ "print/separators.zxbas": {
+  "text": "38082cd8cb9eb1cc",
+  "bytes": "5fc1af1e3b460355",
+  "sourceLevel": "53b6ba9c27edb08b",
+  "classic": "fa8c64462f7babb8",
+  "diagnostics": []
+ },
+ "print/udg-codes.zxbas": {
+  "text": "e99c07af3af57d62",
+  "bytes": "eb58137a3ee02a1d",
+  "sourceLevel": "1c08fe451da9b3c3",
+  "classic": "6183cb0e8379f553",
+  "diagnostics": []
+ },
+ "routines/array-byref-sum.zxbas": {
+  "text": "1612b4c7804296cd",
+  "bytes": "290986b3ba139ae3",
+  "sourceLevel": "244a36c13d02c936",
+  "classic": "8e4eeec88171f29c",
+  "diagnostics": []
+ },
+ "routines/byref.zxbas": {
+  "text": "00770ae317a17da2",
+  "bytes": "3821bbb6d0a56bb2",
+  "sourceLevel": "b1a9d875746d794d",
+  "classic": "6cdb48e115353bf0",
+  "diagnostics": []
+ },
+ "routines/call-order-effects.zxbas": {
+  "text": "349e684721e15330",
+  "bytes": "1a1e6c9e5198d67f",
+  "sourceLevel": "13a626c263f1511c",
+  "classic": "86809e8589696b7c",
+  "diagnostics": []
+ },
+ "routines/call-order.zxbas": {
+  "text": "a0c902a0c6c77c88",
+  "bytes": "f42375e648216d04",
+  "sourceLevel": "6be5d992fd07e6a5",
+  "classic": "b2c6c574529ba971",
+  "diagnostics": []
+ },
+ "routines/defaults-named.zxbas": {
+  "text": "ccd8d02d024d8e80",
+  "bytes": "dd3242586d8c39d9",
+  "sourceLevel": "35ecace3796a3b20",
+  "classic": "ff4544de0f112038",
+  "diagnostics": []
+ },
+ "routines/fastcall.zxbas": {
+  "text": "42dab95db059592a",
+  "bytes": "cf8a64956dc3c606",
+  "sourceLevel": "cea42ecee1d2bf2b",
+  "classic": "73017099a51dca27",
+  "diagnostics": [
+   "warning W160 0:231"
+  ]
+ },
+ "routines/function-result.zxbas": {
+  "text": "e0d09b905c4df352",
+  "bytes": "edd308fc424ec2ef",
+  "sourceLevel": "a3bd19a7dd3275a1",
+  "classic": "7deeb1bc3567a72a",
+  "diagnostics": [
+   "warning W190 0:230"
+  ]
+ },
+ "routines/implicit-global.zxbas": {
+  "text": "e9e7677d59f0b0cc",
+  "bytes": "e6807106d27f280b",
+  "sourceLevel": "f387fd7930811b05",
+  "classic": "432f4e1a71ba4d7c",
+  "diagnostics": []
+ },
+ "routines/level2-unused.zxbas": {
+  "text": "a7e0274dd1ba10e8",
+  "bytes": "0da84515260dee97",
+  "sourceLevel": "fa1a7f1b34128a18",
+  "classic": "aa3447bc04ef559e",
+  "diagnostics": [
+   "warning W170 0:437",
+   "warning W170 0:494"
+  ]
+ },
+ "routines/level3-inline.zxbas": {
+  "text": "7ebf7124f665ab98",
+  "bytes": "7093507e91ebe66c",
+  "sourceLevel": "95320251d0d02f7e",
+  "classic": "bd2d9446946bc22d",
+  "diagnostics": [
+   "warning W190 0:824"
+  ]
+ },
+ "routines/locals-zeroed.zxbas": {
+  "text": "df77fad1befc9a17",
+  "bytes": "4bb5481de9602430",
+  "sourceLevel": "0caf44d5689ee4b3",
+  "classic": "921c64aca0435391",
+  "diagnostics": []
+ },
+ "routines/recursion-float.zxbas": {
+  "text": "8a4f49f327ed2898",
+  "bytes": "9f2ed65140933983",
+  "sourceLevel": "7cb05d4feb9e79fd",
+  "classic": "52bd36f6dc5790b9",
+  "diagnostics": []
+ },
+ "routines/recursion.zxbas": {
+  "text": "a9ca9df115c7d8bf",
+  "bytes": "d34385fc38032391",
+  "sourceLevel": "3e7fd4815b479c69",
+  "classic": "887528fb297704b9",
+  "diagnostics": []
+ },
+ "routines/string-locals.zxbas": {
+  "text": "a55adbb6d4f02855",
+  "bytes": "253209d74aa4f983",
+  "sourceLevel": "74b6df4c1c97e279",
+  "classic": "749b068a9bbb0a7f",
+  "diagnostics": []
+ },
+ "routines/sub-params.zxbas": {
+  "text": "db65e894a5167f55",
+  "bytes": "fd06986a0d174da5",
+  "sourceLevel": "64aaac8befaac6be",
+  "classic": "5f9a24f01f972fa5",
+  "diagnostics": []
+ },
+ "screen/asm-block.zxbas": {
+  "text": "d437c274c581efd9",
+  "bytes": "e5ed6270a7332d5a",
+  "sourceLevel": "d3c9d7fa5e2c27f4",
+  "classic": "6ca10c2e7ca7d8d5",
+  "diagnostics": []
+ },
+ "screen/colours.zxbas": {
+  "text": "8bc7f2ce1317e212",
+  "bytes": "b7085cbbb4af8a09",
+  "sourceLevel": "109d0b19f35237de",
+  "classic": "18b5128a150bbe3f",
+  "diagnostics": []
+ },
+ "screen/inkey.zxbas": {
+  "text": "48be85d7d7a2dfd9",
+  "bytes": "0ce498863249d6f9",
+  "sourceLevel": "d5bf2b0308ba84e4",
+  "classic": "4129c1baebec7498",
+  "diagnostics": [
+   "warning W101 0:123"
+  ]
+ },
+ "sound/beep-returns.zxbas": {
+  "text": "206b1b7f174657c0",
+  "bytes": "9ce805889fb3cc9c",
+  "sourceLevel": "403cc08366207afb",
+  "classic": "9f3ad61cfbfb49dc",
+  "diagnostics": []
+ },
+ "stdlib/attr-screen.zxbas": {
+  "text": "8b1740f4092e7b4c",
+  "bytes": "c2ce46fd017f59ff",
+  "sourceLevel": "83bbd8e207a3f578",
+  "classic": "9caac69c6e879dee",
+  "diagnostics": []
+ },
+ "stdlib/hex-lib.zxbas": {
+  "text": "c00f86f815fab199",
+  "bytes": "69906de00e58aa31",
+  "sourceLevel": "c9f3feccc84a9998",
+  "classic": "96e46095b5a4dd0f",
+  "diagnostics": []
+ },
+ "stdlib/keys-lib.zxbas": {
+  "text": "fad3f798361685c0",
+  "bytes": "7486a60c101629ce",
+  "sourceLevel": "700eb5d1c692510a",
+  "classic": "6aca0d619f63aabd",
+  "diagnostics": []
+ },
+ "stdlib/point-lib.zxbas": {
+  "text": "966bdb4b727483b3",
+  "bytes": "e8e817166b26afed",
+  "sourceLevel": "1d5d9a5c34fb9663",
+  "classic": "84356f43960e4376",
+  "diagnostics": []
+ },
+ "stdlib/pos-csrlin.zxbas": {
+  "text": "23ea8a0ec70957c5",
+  "bytes": "3ef81673759221c4",
+  "sourceLevel": "d8ce09c0e12a1cd4",
+  "classic": "de6c32eb2938962d",
+  "diagnostics": []
+ },
+ "stdlib/print42-lib.zxbas": {
+  "text": "c605323e25e5049c",
+  "bytes": "728757461bbef979",
+  "sourceLevel": "f3f0efe573202bfb",
+  "classic": "2a0011f1b45e3080",
+  "diagnostics": []
+ },
+ "stdlib/print64-lib.zxbas": {
+  "text": "64282ee67a47d1db",
+  "bytes": "cb2edea7d29f9b7b",
+  "sourceLevel": "3c7476866036b36b",
+  "classic": "1befaf0841d59989",
+  "diagnostics": []
+ },
+ "stdlib/putchars-lib.zxbas": {
+  "text": "2cb2d2332f1a25a4",
+  "bytes": "4efaea6fe34f1701",
+  "sourceLevel": "104a95ef2bc06690",
+  "classic": "f0a49741aaa94180",
+  "diagnostics": []
+ },
+ "stdlib/sinclair-functions.zxbas": {
+  "text": "c191d5fbf3fcf432",
+  "bytes": "a38998bcfbbfa116",
+  "sourceLevel": "8249cb075d59e33e",
+  "classic": "fb516877abd8ff8e",
+  "diagnostics": []
+ },
+ "stdlib/string-lib.zxbas": {
+  "text": "4f74eedc3f831350",
+  "bytes": "7901d8d8dfaa82e1",
+  "sourceLevel": "c113a855804e5b98",
+  "classic": "b0ed2d3b999eb582",
+  "diagnostics": []
+ },
+ "strings/byref-string.zxbas": {
+  "text": "22f05c53176f3c37",
+  "bytes": "5b2b05e7438988c7",
+  "sourceLevel": "554b9884b5a97f49",
+  "classic": "ab7dd762250cd303",
+  "diagnostics": []
+ },
+ "strings/chr.zxbas": {
+  "text": "ff0a99891a87ded8",
+  "bytes": "835c663f5841f7eb",
+  "sourceLevel": "403b1ed5f142309a",
+  "classic": "2dbdd53be64c2bfc",
+  "diagnostics": []
+ },
+ "strings/compare.zxbas": {
+  "text": "43a6f91754e69909",
+  "bytes": "db729ec93d6a963e",
+  "sourceLevel": "7e29b8c113d38148",
+  "classic": "77c9da0c5785596f",
+  "diagnostics": []
+ },
+ "strings/concat.zxbas": {
+  "text": "ae1fb08c0e19dfb4",
+  "bytes": "fd52f658d48713a8",
+  "sourceLevel": "98ffb54b632dfd71",
+  "classic": "d2dec8b98e09ad00",
+  "diagnostics": []
+ },
+ "strings/escape-unknown.zxbas": {
+  "text": "c8b58b40f3bf6db5",
+  "bytes": "43a7b9fbc1e52aae",
+  "sourceLevel": "4e1e0abdf49dcba0",
+  "classic": "7b7f6ea200748bfe",
+  "diagnostics": []
+ },
+ "strings/length-code.zxbas": {
+  "text": "3dcb9c1f316c4d9f",
+  "bytes": "248ea373cc7453af",
+  "sourceLevel": "65712cbd27294a98",
+  "classic": "499794aa46d5c48d",
+  "diagnostics": []
+ },
+ "strings/loop-temporaries.zxbas": {
+  "text": "a305f4c831935273",
+  "bytes": "eb3347b0d9fa986e",
+  "sourceLevel": "d06ccc66cc006338",
+  "classic": "4a81787f08c2b1f1",
+  "diagnostics": []
+ },
+ "strings/ordering.zxbas": {
+  "text": "acea74f39b677f0a",
+  "bytes": "32faad0dcab33cc0",
+  "sourceLevel": "951d7397e9cf1855",
+  "classic": "6ed4595cea559c11",
+  "diagnostics": []
+ },
+ "strings/self-assign.zxbas": {
+  "text": "3194dd51de205b7b",
+  "bytes": "0c238026d826098d",
+  "sourceLevel": "1bd430ec2ebec44a",
+  "classic": "dc9be8f98db6fa52",
+  "diagnostics": []
+ },
+ "strings/slices.zxbas": {
+  "text": "e9faf58ec4b859f4",
+  "bytes": "ba6acaf5cb228a87",
+  "sourceLevel": "5a4dd62c0d91e62b",
+  "classic": "d9143b26c6356a99",
+  "diagnostics": []
+ },
+ "strings/str-numbers.zxbas": {
+  "text": "387a60f7ea4cb73b",
+  "bytes": "5693a7c22b21b4f9",
+  "sourceLevel": "7408a9a09f7bf1a7",
+  "classic": "44ea8eb7fb2e6951",
+  "diagnostics": []
+ },
+ "strings/string-base-1.zxbas": {
+  "text": "59d29554d94532b1",
+  "bytes": "d09a7c343d5011f1",
+  "sourceLevel": "c03d7e002995d9d8",
+  "classic": "d5f73a96e99782ce",
+  "diagnostics": []
+ },
+ "strings/string-function-result.zxbas": {
+  "text": "0d60dab3d1bcf566",
+  "bytes": "79054e3e9f74eab5",
+  "sourceLevel": "bd5a1b32efc10c5b",
+  "classic": "4f835e0b7bb6affe",
+  "diagnostics": []
+ },
+ "strings/string-functions.zxbas": {
+  "text": "bb79e8869717405e",
+  "bytes": "6b3b11dabd1e1cba",
+  "sourceLevel": "f78418e4e6b2512a",
+  "classic": "50bc515dde047e6e",
+  "diagnostics": []
+ },
+ "strings/substring-assign.zxbas": {
+  "text": "fc9620ad42ffdb9a",
+  "bytes": "b9dbfa97c5fb7c54",
+  "sourceLevel": "e63bb75ece78272f",
+  "classic": "6c0aedc38ca84b89",
+  "diagnostics": []
+ }
+}

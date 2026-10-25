@@ -98,6 +98,8 @@ export const E2E_CORE_TESTS: string[] = [
  */
 export const E2E_KBASIC_TESTS: string[] = [
   "test/kbasic/corpus/**/*.test.ts",
+  // --- The test-only "mini" language on the shared Z80 back end (`.plans/SHARED_Z80_BACKEND_PLAN.md` Phase 6)
+  "test/z80-backend/minilang/mini-run.test.ts",
   // --- The debugger on zxbc-built Boriel BASIC programs (`.plans/BORIEL_BASIC_INTEGRATION_PLAN.md` §5)
   "test/boriel/boriel-debugger.test.ts",
   "test/boriel/boriel-next.test.ts",

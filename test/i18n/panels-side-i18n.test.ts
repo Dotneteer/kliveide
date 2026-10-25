@@ -27,7 +27,8 @@ const ARGS = {
   paged: "in R0", hc: 12, range: "$8000", indexes: "$001", lines: 311, hcs: 456, x: 64, pct: "9.4",
   capacity: 100, hits: 3, executed: 1, total: 2, error: "e", note: "n", code: "nop", shortcut: "^-",
   layer: "ULA", rule: 1, why: "w", flags: "border", beam: "line 1", lo: 0, hi: 255, type: "Byte",
-  op: "*", key: "$8000", max: 9, column: 1, message: "m", text: "q", frames: "1.0", line2: 0
+  op: "*", key: "$8000", max: 9, column: 1, message: "m", text: "q", frames: "1.0", line2: 0,
+  label: "100"
 };
 
 const KEYS = Object.keys(panelsSide).filter((key) => !key.startsWith("@")) as MessageKey[];

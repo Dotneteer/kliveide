@@ -2,8 +2,8 @@
 
 `#include <name.bas>` finds these files before the user's include path (plan §6.4). They are Klive's
 own code, written from the documented API in `.ai/kbasic/stdlib-api.json`; nothing here is taken
-from upstream ZX BASIC (see the provenance rule in `AGENTS.md`). `npm run kbasic:runtime` bundles
-every `*.bas` file here into `runtime/generated/runtime-bundle.ts`; they are served under the path
+from upstream ZX BASIC (see the provenance rule in `AGENTS.md`). `npm run runtime:bundle` bundles
+every `*.bas` file here into `stdlib/generated/stdlib-bundle.ts`; they are served under the path
 `<kbasic-stdlib>/name.bas`.
 
 ## How the compiler treats library files
