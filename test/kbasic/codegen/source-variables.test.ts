@@ -2,9 +2,12 @@ import { describe, expect, it } from "vitest";
 
 import { innermostUserStatement, locateActivations, SourceDebugIndex } from "@emu/machines/SourceStepDecision";
 import { buildSourceCallStack } from "@renderer/appIde/debugger/source/call-stack-model";
-import { decodeRegisters, decodeValue, encodeValue, memoryView, spectrumText, type MemoryView } from "@renderer/appIde/debugger/source/value-decoder";
+import { BASIC_LANGUAGE as BASIC, spectrumText } from "@renderer/appIde/debugger/languages/basic";
+import { decodeRegisters, decodeValue, encodeValue, memoryView, type MemoryView } from "@renderer/appIde/debugger/source/value-decoder";
 import { buildVariableSections, type VariableNode } from "@renderer/appIde/debugger/source/variables-model";
-import { evaluateWatch, parseWatch } from "@renderer/appIde/debugger/source/watch-expression";
+import { evaluateWatch } from "@renderer/appIde/debugger/source/watch-expression";
+
+const parseWatch = (text: string) => BASIC.parseWatch!(text);
 
 import { startBasic } from "./run-kit";
 
@@ -64,7 +67,7 @@ const values = (nodes: VariableNode[] | undefined) => Object.fromEntries((nodes 
 describe("the Variables panel (§10.7)", () => {
   it("decodes globals of every type from memory", async () => {
     const d = await stopAt(24);
-    const { globals, locals } = buildVariableSections(d.info, d.chain(), 0, d.stop(), d.mem);
+    const { globals, locals } = buildVariableSections(d.info, d.chain(), 0, d.stop(), d.mem, BASIC);
     expect(locals).toBeUndefined();
     expect(values(globals)).toMatchObject({
       b: "-5",
@@ -82,7 +85,7 @@ describe("the Variables panel (§10.7)", () => {
 
   it("expands arrays by dimension, and pages a long one", async () => {
     const d = await stopAt(24);
-    const { globals } = buildVariableSections(d.info, d.chain(), 0, d.stop(), d.mem);
+    const { globals } = buildVariableSections(d.info, d.chain(), 0, d.stop(), d.mem, BASIC);
     const rows = row(globals, "grid")!.expand!();
     expect(rows.map((r) => r.name)).toEqual(["grid(1, …)", "grid(2, …)"]);
     const second = rows[1].expand!();
@@ -95,13 +98,13 @@ describe("the Variables panel (§10.7)", () => {
   it("shows a routine's parameters and locals, a BYREF through its address", async () => {
     const d = await stopAt(15);
     const chain = d.chain();
-    const sections = buildVariableSections(d.info, chain, 0, d.stop(), d.mem);
+    const sections = buildVariableSections(d.info, chain, 0, d.stop(), d.mem, BASIC);
     expect(values(sections.locals)).toEqual({ n: "3", t$: '"ab"', r: "-1233", k: "1003" });
     // --- The BYREF parameter's address is the global's
     const i = d.info.extensions!.variables.find((v) => v.name === "i")!;
     expect(row(sections.locals, "r")?.address).toBe(i.location.at === "absolute" ? i.location.address : -1);
     // --- The outer frame is the main program: no locals
-    expect(buildVariableSections(d.info, chain, 1, d.stop(), d.mem).locals).toBeUndefined();
+    expect(buildVariableSections(d.info, chain, 1, d.stop(), d.mem, BASIC).locals).toBeUndefined();
   });
 
   it("shows each recursive activation's own locals", async () => {
@@ -110,8 +113,8 @@ describe("the Variables panel (§10.7)", () => {
     d.session.continueToBreakpoint({ returnTo: d.done });
     d.session.continueToBreakpoint({ returnTo: d.done });
     const chain = d.chain();
-    expect(chain.map((a) => a.kind)).toEqual(["routine", "routine", "routine", "main"]);
-    const n = (frame: number) => row(buildVariableSections(d.info, chain, frame, d.stop(), d.mem).locals, "n")?.value;
+    expect(chain.map((a) => a.kind)).toEqual(["routine", "routine", "routine", "entry"]);
+    const n = (frame: number) => row(buildVariableSections(d.info, chain, frame, d.stop(), d.mem, BASIC).locals, "n")?.value;
     expect([n(0), n(1), n(2)]).toEqual(["1", "2", "3"]);
   });
 
@@ -119,11 +122,12 @@ describe("the Variables panel (§10.7)", () => {
     const mem = memoryView(new Uint8Array(0x10000));
     const regs = { af: 0x8200, bc: 0x0000, de: 0x0020, hl: 0x0000 };
     // --- 2.5 = exponent $82, mantissa $20 00 00 00 (sign bit clear)
-    expect(decodeRegisters("float", regs, mem).text).toBe("2.5");
-    expect(decodeRegisters("integer", { af: 0, bc: 0, de: 0, hl: 0xfffe }, mem).text).toBe("-2");
-    expect(decodeRegisters("long", { af: 0, bc: 0, de: 0x0001, hl: 0x0000 }, mem).text).toBe("65536");
-    expect(decodeRegisters("fixed", { af: 0, bc: 0, de: 0xffff, hl: 0x8000 }, mem).text).toBe("-0.5");
-    expect(decodeRegisters("ubyte", { af: 0xc800, bc: 0, de: 0, hl: 0 }, mem).text).toBe("200");
+    const returns = (type: string, registers: "a" | "hl" | "dehl" | "aedcb") => ({ type, typeLabel: type, in: registers });
+    expect(decodeRegisters(returns("float40", "aedcb"), regs, mem, BASIC).text).toBe("2.5");
+    expect(decodeRegisters(returns("i16", "hl"), { af: 0, bc: 0, de: 0, hl: 0xfffe }, mem, BASIC).text).toBe("-2");
+    expect(decodeRegisters(returns("i32", "dehl"), { af: 0, bc: 0, de: 0x0001, hl: 0x0000 }, mem, BASIC).text).toBe("65536");
+    expect(decodeRegisters(returns("fix16.16", "dehl"), { af: 0, bc: 0, de: 0xffff, hl: 0x8000 }, mem, BASIC).text).toBe("-0.5");
+    expect(decodeRegisters(returns("u8", "a"), { af: 0xc800, bc: 0, de: 0, hl: 0 }, mem, BASIC).text).toBe("200");
   });
 
   it("writes Strings in the source's escape form", () => {
@@ -135,7 +139,7 @@ describe("the symbolic call stack (§10.6)", () => {
   it("names each activation with the statement it stands at", async () => {
     const d = await stopAt(18);
     d.session.continueToBreakpoint({ returnTo: d.done });
-    const rows = buildSourceCallStack(d.info, d.chain(), d.stop());
+    const rows = buildSourceCallStack(d.info, d.chain(), d.stop(), BASIC);
     expect(rows.map((r) => ("runtime" in r ? "runtime" : `${r.frame}:${r.name}:${r.line}`))).toEqual([
       "0:Fact:18",
       "1:Fact:19",
@@ -152,7 +156,7 @@ describe("the symbolic call stack (§10.6)", () => {
     expect(d.index.statementAt(d.session.machine.pc)).toBe(-1);
     expect(innermostUserStatement(d.index, d.view())).toBe(start);
     const stop = { kind: "other" as const, pc: d.session.machine.pc, statementIndex: -1, userStatementIndex: start, returned: [] };
-    const rows = buildSourceCallStack(d.info, d.chain(), stop);
+    const rows = buildSourceCallStack(d.info, d.chain(), stop, BASIC);
     expect("runtime" in rows[0]).toBe(true);
     expect(rows[1]).toMatchObject({ frame: 0, name: "main", line: 21 });
   });
@@ -161,7 +165,7 @@ describe("the symbolic call stack (§10.6)", () => {
 describe("BASIC watch expressions (§10.8)", () => {
   it("evaluates variables, elements, addresses, PEEK and operators", async () => {
     const d = await stopAt(24);
-    const ctx = { info: d.info, chain: d.chain(), frame: 0, mem: d.mem };
+    const ctx = { info: d.info, chain: d.chain(), frame: 0, mem: d.mem, lang: BASIC };
     const w = (text: string) => {
       const r = evaluateWatch(text, ctx);
       return "error" in r ? `error: ${r.error}` : r.text;
@@ -186,7 +190,7 @@ describe("BASIC watch expressions (§10.8)", () => {
 
   it("sees the selected frame's locals before the globals", async () => {
     const d = await stopAt(15);
-    const ctx = { info: d.info, chain: d.chain(), frame: 0, mem: d.mem };
+    const ctx = { info: d.info, chain: d.chain(), frame: 0, mem: d.mem, lang: BASIC };
     const r = evaluateWatch("k + n", ctx);
     expect("error" in r ? r.error : r.text).toBe("1006");
     expect(evaluateWatch("k", { ...ctx, frame: 1 })).toEqual({ error: "Unknown variable 'k'" });
@@ -201,55 +205,57 @@ describe("BASIC watch expressions (§10.8)", () => {
 
 describe("the BASIC watch list (§10.8)", () => {
   it("adds trimmed, distinct expressions, removes by position and restores a project's list", async () => {
-    const { basicWatchReducer } = await import("@common/state/watch-reducer");
-    const { addBasicWatchAction, removeBasicWatchAction, setBasicWatchesAction } = await import("@common/state/actions");
-    let state = basicWatchReducer([], addBasicWatchAction("  a + 1 "));
-    state = basicWatchReducer(state, addBasicWatchAction("a + 1"));
-    state = basicWatchReducer(state, addBasicWatchAction("grid(1, 2)"));
-    state = basicWatchReducer(state, addBasicWatchAction("   "));
+    const { sourceWatchReducer } = await import("@common/state/watch-reducer");
+    const { addSourceWatchAction, removeSourceWatchAction, setSourceWatchesAction } = await import("@common/state/actions");
+    let state = sourceWatchReducer([], addSourceWatchAction("  a + 1 "));
+    state = sourceWatchReducer(state, addSourceWatchAction("a + 1"));
+    state = sourceWatchReducer(state, addSourceWatchAction("grid(1, 2)"));
+    state = sourceWatchReducer(state, addSourceWatchAction("   "));
     expect(state).toEqual(["a + 1", "grid(1, 2)"]);
-    expect(basicWatchReducer(state, removeBasicWatchAction(0))).toEqual(["grid(1, 2)"]);
-    expect(basicWatchReducer(state, setBasicWatchesAction(undefined))).toEqual([]);
+    expect(sourceWatchReducer(state, removeSourceWatchAction(0))).toEqual(["grid(1, 2)"]);
+    expect(sourceWatchReducer(state, setSourceWatchesAction(undefined))).toEqual([]);
   });
 });
 
 describe("editing a value (§10.7)", () => {
-  const roundTrip = (type: Parameters<typeof encodeValue>[0], text: string) => {
-    const encoded = encodeValue(type, text);
+  // --- The representations of BASIC's types, and the names BASIC gives them
+  const LABELS: Record<string, string> = { i8: "Byte", u8: "UByte", i16: "Integer", u16: "UInteger", i32: "Long", u32: "ULong", "fix16.16": "Fixed", float40: "Float", bool: "Boolean", "str.heap": "String" };
+  const roundTrip = (type: string, text: string) => {
+    const encoded = encodeValue(type, LABELS[type], text);
     if ("error" in encoded) return `error: ${encoded.error}`;
     const memory = new Uint8Array(0x10000);
     memory.set(encoded.bytes, 0x8000);
-    return decodeValue(type, memoryView(memory), 0x8000).text;
+    return decodeValue(type, memoryView(memory), 0x8000, BASIC).text;
   };
 
   it("stores numbers of every type as the program reads them", () => {
-    expect(roundTrip("byte", "-5")).toBe("-5");
-    expect(roundTrip("ubyte", "$FF")).toBe("255");
-    expect(roundTrip("integer", "-1234")).toBe("-1234");
-    expect(roundTrip("uinteger", "60000")).toBe("60000");
-    expect(roundTrip("long", "-100000")).toBe("-100000");
-    expect(roundTrip("ulong", "4000000000")).toBe("4000000000");
-    expect(roundTrip("fixed", "-1.25")).toBe("-1.25");
-    expect(roundTrip("float", "3.25")).toBe("3.25");
-    expect(roundTrip("float", "1e30")).toBe("1e+30");
-    expect(roundTrip("boolean", "true")).toBe("TRUE");
+    expect(roundTrip("i8", "-5")).toBe("-5");
+    expect(roundTrip("u8", "$FF")).toBe("255");
+    expect(roundTrip("i16", "-1234")).toBe("-1234");
+    expect(roundTrip("u16", "60000")).toBe("60000");
+    expect(roundTrip("i32", "-100000")).toBe("-100000");
+    expect(roundTrip("u32", "4000000000")).toBe("4000000000");
+    expect(roundTrip("fix16.16", "-1.25")).toBe("-1.25");
+    expect(roundTrip("float40", "3.25")).toBe("3.25");
+    expect(roundTrip("float40", "1e30")).toBe("1e+30");
+    expect(roundTrip("bool", "true")).toBe("TRUE");
   });
 
   it("refuses what the type cannot hold, and Strings", () => {
-    expect(roundTrip("ubyte", "256")).toBe("error: UByte holds 0 to 255");
-    expect(roundTrip("integer", "1.5")).toBe("error: Integer takes whole numbers");
-    expect(roundTrip("uinteger", "abc")).toBe("error: 'abc' is not a number");
-    expect(roundTrip("string", "x")).toBe("error: Strings cannot be edited");
+    expect(roundTrip("u8", "256")).toBe("error: UByte holds 0 to 255");
+    expect(roundTrip("i16", "1.5")).toBe("error: Integer takes whole numbers");
+    expect(roundTrip("u16", "abc")).toBe("error: 'abc' is not a number");
+    expect(roundTrip("str.heap", "x")).toBe("error: Strings cannot be edited");
   });
 
   it("writes through the running machine and the program sees it", async () => {
     const d = await stopAt(24);
-    const { globals } = buildVariableSections(d.info, d.chain(), 0, d.stop(), d.mem);
+    const { globals } = buildVariableSections(d.info, d.chain(), 0, d.stop(), d.mem, BASIC);
     const u = row(globals, "u")!;
-    const encoded = encodeValue(u.valueType!, "1234");
+    const encoded = encodeValue(u.valueType!, u.type, "1234");
     if ("error" in encoded) throw new Error(encoded.error);
     d.session.poke(u.address!, encoded.bytes);
-    expect(row(buildVariableSections(d.info, d.chain(), 0, d.stop(), d.mem).globals, "u")?.value).toBe("1234");
+    expect(row(buildVariableSections(d.info, d.chain(), 0, d.stop(), d.mem, BASIC).globals, "u")?.value).toBe("1234");
   });
 });
 
@@ -263,7 +269,7 @@ describe("GOSUB rows (§10.6)", () => {
     debugSupport.addBreakpoint({ address: info.statements.find((s) => s.startLine === 7)!.startAddress, exec: true });
     const pc = session.continueToBreakpoint({ returnTo: done });
     const view = { pc, sp: session.machine.sp, ix: session.machine.ix, readWord: (a: number) => session.peekWord(a) };
-    const rows = buildSourceCallStack(info, locateActivations(index, view), { kind: "statement", pc, statementIndex: index.statementAt(pc), returned: [] });
+    const rows = buildSourceCallStack(info, locateActivations(index, view), { kind: "statement", pc, statementIndex: index.statementAt(pc), returned: [] }, BASIC);
     expect(rows.map((r) => ("runtime" in r ? "runtime" : `${r.name}:${r.line}`))).toEqual(["GOSUB inner:7", "GOSUB 100:4", "main:1"]);
   });
 });

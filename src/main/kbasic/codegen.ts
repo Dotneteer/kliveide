@@ -358,6 +358,8 @@ function codebankDebugInfo(banking: BankPlan, options: KBasicOptions, symbol: (n
     currentBank: at("FarBank"),
     shadowStackPointer: at("FarSP"),
     shadowStack: at("FarStack"),
+    // --- banking.kz80.asm: a 3-byte record [caller's bank, return address] per cross-bank call, growing up
+    records: { size: 3, grows: "up", bankOffset: 0, returnOffset: 1, slotStride: 2 },
     banks: [...banking.placement].map(([bank, place]) => ({
       bank,
       pages: Array.from({ length: place.pages }, (_, i) => place.page + i)

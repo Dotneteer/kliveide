@@ -1,3 +1,4 @@
+import { debugLanguageOf } from "@renderer/appIde/debugger/languages/registry";
 import { readFileSync } from "node:fs";
 import { relative } from "node:path";
 
@@ -57,7 +58,7 @@ describe("the source-level debugger on the corpus", () => {
         const debugSupport = session.attachDebugSupport();
         debugSupport.statementTracker = new CurrentStatementTracker(index);
         // --- A program that raises an error ends at the error stop, not in the ROM's report loop
-        const errorEntry = info.extensions!.errorEntry;
+        const errorEntry = info.extensions!.errorStop?.entry;
         debugSupport.errorStopAddress = errorEntry;
         for (const s of info.statements) {
           if (s.endAddress > s.startAddress)
@@ -90,13 +91,13 @@ describe("the source-level debugger on the corpus", () => {
           const chain = locateActivations(index, view);
           const stop = { kind: "statement" as const, pc, statementIndex: statement, returned: [] };
 
-          if (chain[chain.length - 1]?.kind !== "main")
+          if (chain[chain.length - 1]?.kind !== "entry")
             problems.push(`${where}: the call stack does not end in main`);
           const holder = index.callableAt(pc);
           if (
             holder !== undefined &&
             chain[0]?.callableIndex !== holder &&
-            chain[0]?.kind !== "gosub"
+            chain[0]?.kind !== "local"
           ) {
             problems.push(
               `${where}: innermost activation ${chain[0]?.callableIndex}, the statement is in ${holder}`
@@ -106,15 +107,16 @@ describe("the source-level debugger on the corpus", () => {
             if (a.kind === "routine" && a.ix === undefined)
               problems.push(`${where}: frame ${k} has no IX`);
           });
-          const rows = buildSourceCallStack(info, chain, stop);
+          const rows = buildSourceCallStack(info, chain, stop, debugLanguageOf(info.language));
           const top = rows[0];
           if (!top || "runtime" in top || top.line !== info.statements[statement].startLine) {
             problems.push(`${where}: the innermost call-stack row is not the stop's statement`);
           }
 
           chain.forEach((_, frame) => {
-            const sections = buildVariableSections(info, chain, frame, stop, mem);
-            const ctx = { info, chain, frame, mem };
+            const lang = debugLanguageOf(info.language);
+            const sections = buildVariableSections(info, chain, frame, stop, mem, lang);
+            const ctx = { info, chain, frame, mem, lang };
             for (const row of [...scalarRows(sections.locals), ...scalarRows(sections.globals)]) {
               // --- A global hidden by a local of the same name is not what a watch of that name reads
               if (

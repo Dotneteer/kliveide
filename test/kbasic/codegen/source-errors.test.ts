@@ -1,6 +1,8 @@
+import { debugLanguageOf } from "@renderer/appIde/debugger/languages/registry";
 import { describe, expect, it } from "vitest";
 
-import { basicErrorReport, CurrentStatementTracker, innermostUserStatement, SourceDebugIndex } from "@emu/machines/SourceStepDecision";
+import { zxRomReport } from "@common/spectrum/rom-reports";
+import { CurrentStatementTracker, innermostUserStatement, SourceDebugIndex } from "@emu/machines/SourceStepDecision";
 import { buildSourceCallStack } from "@renderer/appIde/debugger/source/call-stack-model";
 import { locateActivations } from "@emu/machines/SourceStepDecision";
 
@@ -16,7 +18,7 @@ async function runToError(source: string, options = {}) {
   const info = generated.debug.sourceLevel;
   const index = new SourceDebugIndex(info);
   const debugSupport = session.attachDebugSupport();
-  debugSupport.errorStopAddress = info.extensions!.errorEntry;
+  debugSupport.errorStopAddress = info.extensions!.errorStop!.entry;
   // --- As MachineController arms it: the ROM's RST 8, while a statement of the program is on the stack
   const machineView = () => ({ pc: session.machine.pc, sp: session.machine.sp, ix: session.machine.ix, readWord: (a: number) => session.peekWord(a) });
   debugSupport.romErrorAddress = 0x0008;
@@ -35,8 +37,8 @@ async function runToError(source: string, options = {}) {
 describe("runtime-error stops (§10.10)", () => {
   it("stops at the error routine with the report and the statement that raised it", async () => {
     const r = await runToError(["DIM a AS UByte = 1", "a = a + 1 : ERROR 2 : PRINT a", 'PRINT "never"', ""].join("\n"));
-    expect(r.pc).toBe(r.info.extensions!.errorEntry);
-    expect(basicErrorReport(r.code)).toBe("3 Subscript wrong");
+    expect(r.pc).toBe(r.info.extensions!.errorStop!.entry);
+    expect(zxRomReport(r.code)).toBe("3 Subscript wrong");
     expect(r.text).toBe("ERROR 2");
     // --- The ROM has not printed the report yet
     expect(r.session.screenLine(23)).not.toMatch(/Subscript wrong/);
@@ -52,17 +54,17 @@ describe("runtime-error stops (§10.10)", () => {
       ""
     ].join("\n");
     const r = await runToError(source);
-    expect(basicErrorReport(r.code)).toBe("A Invalid argument");
+    expect(zxRomReport(r.code)).toBe("A Invalid argument");
     expect(r.text).toBe("ERROR n");
     const stop = { kind: "error" as const, pc: r.pc, statementIndex: -1, userStatementIndex: r.tracker.current, returned: [] };
-    const rows = buildSourceCallStack(r.info, locateActivations(r.index, r.view), stop);
+    const rows = buildSourceCallStack(r.info, locateActivations(r.index, r.view), stop, debugLanguageOf(r.info.language));
     expect(rows.map((x) => ("runtime" in x ? "runtime" : `${x.name}:${x.line}`))).toEqual(["runtime", "Fail:3", "main:5"]);
   });
 
   it("stops when the runtime raises Out of memory (memory checking on)", async () => {
     const source = ["DIM s$ AS String", "DO", '  s$ = s$ + "0123456789"', "LOOP", ""].join("\n");
     const r = await runToError(source, { heapSize: 200, checkMemory: true });
-    expect(basicErrorReport(r.code)).toBe("4 Out of memory");
+    expect(zxRomReport(r.code)).toBe("4 Out of memory");
     expect(r.text).toBe('s$ = s$ + "0123456789"');
   });
 
@@ -70,7 +72,7 @@ describe("runtime-error stops (§10.10)", () => {
     const source = ["DIM x AS Float = 1E30", 'PRINT "before"', "x = x * x * x * x * x", 'PRINT "not reached"', ""].join("\n");
     const r = await runToError(source);
     expect(r.pc).toBe(0x0008);
-    expect(basicErrorReport(r.code)).toBe("6 Number too big");
+    expect(zxRomReport(r.code)).toBe("6 Number too big");
     expect(r.text).toBe("x = x * x * x * x * x");
   });
 

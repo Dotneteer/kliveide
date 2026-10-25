@@ -1,6 +1,8 @@
 import type { SourceLevelDebugInfo } from "@abstractions/CompilerInfo";
 import type { SourceActivationInfo, SourceStopInfo } from "@abstractions/SourceDebugInfo";
 
+import { localActivationLabel, NEUTRAL_LANGUAGE, type DebugLanguageSupport } from "./language-support";
+
 /**
  * One row of the symbolic call stack (plan §10.6): an activation and where it stands — for the
  * innermost one the statement about to run, for an outer one the statement that made the call.
@@ -8,9 +10,9 @@ import type { SourceActivationInfo, SourceStopInfo } from "@abstractions/SourceD
 export type SourceFrameRow = {
   /** The frame index: 0 is the innermost activation; Run to Frame and the Variables panel use it. */
   frame: number;
-  /** A routine's name, `main`, or `GOSUB` for a GOSUB subroutine. */
+  /** A routine's name, the entry point's, or the language's label of a local activation (`GOSUB 100`). */
   name: string;
-  kind: "main" | "routine" | "gosub";
+  kind: SourceActivationInfo["kind"];
   filename?: string;
   line?: number;
   endLine?: number;
@@ -26,7 +28,8 @@ export type RuntimeRow = { runtime: true; pc: number; /** An error stop's report
 export function buildSourceCallStack(
   info: SourceLevelDebugInfo,
   chain: SourceActivationInfo[],
-  stop: SourceStopInfo | undefined
+  stop: SourceStopInfo | undefined,
+  lang: DebugLanguageSupport = NEUTRAL_LANGUAGE
 ): (SourceFrameRow | RuntimeRow)[] {
   const rows: (SourceFrameRow | RuntimeRow)[] = [];
   const inRuntime = !!stop && stop.statementIndex < 0;
@@ -43,7 +46,7 @@ export function buildSourceCallStack(
     const callable = info.callables[activation.callableIndex];
     rows.push({
       frame,
-      name: activation.kind === "gosub" ? gosubName(info, activation.callableIndex, s?.startAddress) : (callable?.name ?? "?"),
+      name: activation.kind === "local" ? localActivationName(info, activation.callableIndex, s?.startAddress, lang) : (callable?.name ?? "?"),
       kind: activation.kind,
       ...(s
         ? {
@@ -61,17 +64,23 @@ export function buildSourceCallStack(
 }
 
 /**
- * A GOSUB activation's name: `GOSUB` and the label its subroutine starts at — the nearest label at
- * or before the statement it stands at, in the same callable. The subroutine's entry is not on the
- * stack (ON ... GOSUB does not even call it directly), so this is the reading a user would make.
+ * A local activation's name: the language's label for it with the label its subroutine starts at —
+ * the nearest label at or before the statement it stands at, in the same callable. The subroutine's
+ * entry is not on the stack (a dispatching call does not even call it directly), so this is the
+ * reading a user would make.
  */
-export function gosubName(info: SourceLevelDebugInfo, callableIndex: number, address: number | undefined): string {
+export function localActivationName(
+  info: SourceLevelDebugInfo,
+  callableIndex: number,
+  address: number | undefined,
+  lang: DebugLanguageSupport = NEUTRAL_LANGUAGE
+): string {
   const frame = info.extensions?.frames[callableIndex];
-  if (address === undefined || !frame) return "GOSUB";
+  if (address === undefined || !frame) return localActivationLabel(lang, undefined);
   let best: string | undefined;
   for (const label of info.extensions?.labels ?? []) {
     if (label.address > address) break;
     if (label.address >= frame.startAddress && label.address < frame.endAddress) best = label.name;
   }
-  return best === undefined ? "GOSUB" : `GOSUB ${best}`;
+  return localActivationLabel(lang, best);
 }

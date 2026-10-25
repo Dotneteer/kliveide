@@ -10,12 +10,13 @@ import type {
   CallableFrameInfo,
   CallSiteDebugInfo,
   CodebankDebugInfo,
+  ReturnRegisters,
   SourceValueType,
   VariableDebugInfo,
   VariableDebugLocation
 } from "@abstractions/SourceDebugInfo";
 import type { EmittedProgram } from "../backend/emit";
-import type { MFunction, MModule, MType } from "../ir/mir";
+import type { CallSite, MFunction, MModule, MType } from "../ir/mir";
 import { globalName } from "../ir/lower";
 import * as f40 from "../semantics/float40";
 import type { ArraySymbol, ConstSymbol, Scope, Symbol as KSymbol, VariableSymbol } from "../semantics/symbols";
@@ -136,7 +137,7 @@ export function buildSourceLevel(input: SourceLevelInput): SourceLevelDebugInfo 
       ...(partition !== undefined ? { partition } : {}),
       statementIndex,
       callerIndex: callableOf.get(caller.functionIndex) ?? 0,
-      kind: site.kind,
+      ...callSiteKind(site.kind),
       ...(calleeIndex !== undefined ? { calleeIndex } : {}),
       moreCallsFollow: site.moreCallsFollow,
       order: site.order
@@ -230,7 +231,7 @@ export function buildSourceLevel(input: SourceLevelInput): SourceLevelDebugInfo 
       epilogueStart,
       endAddress,
       ...inPartition,
-      ...(fn.returnType ? { returnType: valueTypeOfMType(fn.returnType) } : {}),
+      ...(fn.returnType ? { returns: returnsOf(fn.returnType) } : {}),
       ...(library ? { library: true } : {})
     });
   });
@@ -264,6 +265,7 @@ export function buildSourceLevel(input: SourceLevelInput): SourceLevelDebugInfo 
     : {};
 
   const variables = buildVariables(input, functions, at);
+  // --- The runtime's RaiseError takes the ROM's ERR_NR code in A
   const errorEntry = input.symbol("core.RaiseError");
   // --- Labels, from their definitions in the generated text (`_label.<name>:`)
   const labels = text
@@ -288,7 +290,7 @@ export function buildSourceLevel(input: SourceLevelInput): SourceLevelDebugInfo 
       labels,
       libraryFiles: files.flatMap((name, index) => (isLibraryPath(name) ? [index] : [])),
       runtimeSymbols: input.runtimeSymbols,
-      ...(errorEntry !== undefined ? { errorEntry } : {}),
+      ...(errorEntry !== undefined ? { errorStop: { entry: errorEntry, code: { register: "a" as const }, reports: "zx-rom" as const } } : {}),
       ...(input.codebank ? { codebank: input.codebank } : {}),
       optimizationLevel: input.optimizationLevel
     }
@@ -323,7 +325,7 @@ function buildVariables(input: SourceLevelInput, functions: { fn: MFunction }[],
       out.push({
         name: symbol.name,
         displayName: displayName(symbol),
-        type: valueTypeOf(symbol.type),
+        ...valueTypeOf(symbol.type),
         kind: "constant",
         location: { at: "constant", value },
         scope: "global",
@@ -338,7 +340,7 @@ function buildVariables(input: SourceLevelInput, functions: { fn: MFunction }[],
     out.push({
       name: symbol.name,
       displayName: displayName(symbol),
-      type: valueTypeOf(symbol.kind === "array" ? symbol.elementType : symbol.type),
+      ...valueTypeOf(symbol.kind === "array" ? symbol.elementType : symbol.type),
       kind: "global",
       location: { at: "absolute", address, ...bankPartition(input.codebank, symbol.bank, address) },
       ...(symbol.kind === "array" ? { array: arrayInfo(symbol) } : {}),
@@ -355,7 +357,7 @@ function buildVariables(input: SourceLevelInput, functions: { fn: MFunction }[],
       out.push({
         name: symbol.name,
         displayName: displayName(symbol),
-        type: valueTypeOf(symbol.kind === "array" ? symbol.elementType : symbol.type),
+        ...valueTypeOf(symbol.kind === "array" ? symbol.elementType : symbol.type),
         kind: v.param ? "parameter" : "local",
         ...(v.byref ? { byRef: true } : {}),
         location,
@@ -387,8 +389,11 @@ function globalAddress(input: SourceLevelInput, symbol: VariableSymbol | ArraySy
 }
 
 function arrayInfo(symbol: ArraySymbol): NonNullable<VariableDebugInfo["array"]> {
+  const element = valueTypeOf(symbol.elementType);
   return {
-    elementType: valueTypeOf(symbol.elementType),
+    elementType: element.type,
+    elementLabel: element.typeLabel,
+    layout: "descriptor",
     ...(symbol.bounds.length ? { dimensions: symbol.bounds.map((b) => ({ lower: b.lower, upper: b.upper })) } : {})
   };
 }
@@ -409,36 +414,53 @@ function constantValue(symbol: ConstSymbol): number | string | undefined {
   }
 }
 
+/** The representation of each BASIC type (runtime ABI §2), and the type's name as BASIC writes it. */
 const VALUE_TYPES: Partial<Record<KType, SourceValueType>> = {
-  Byte: "byte",
-  UByte: "ubyte",
-  Integer: "integer",
-  UInteger: "uinteger",
-  Long: "long",
-  ULong: "ulong",
-  Fixed: "fixed",
-  Float: "float",
-  String: "string",
-  Boolean: "boolean"
+  Byte: "i8",
+  UByte: "u8",
+  Integer: "i16",
+  UInteger: "u16",
+  Long: "i32",
+  ULong: "u32",
+  Fixed: "fix16.16",
+  Float: "float40",
+  String: "str.heap",
+  Boolean: "bool"
 };
 
-function valueTypeOf(type: KType): SourceValueType {
-  return VALUE_TYPES[type] ?? "float";
+function valueTypeOf(type: KType): { type: SourceValueType; typeLabel: string } {
+  return VALUE_TYPES[type] ? { type: VALUE_TYPES[type]!, typeLabel: type } : { type: "float40", typeLabel: "Float" };
 }
 
-function valueTypeOfMType(type: MType): SourceValueType {
-  const map: Record<MType, SourceValueType> = {
-    i8: "byte",
-    u8: "ubyte",
-    i16: "integer",
-    u16: "uinteger",
-    i32: "long",
-    u32: "ulong",
-    fix: "fixed",
-    flt: "float",
-    str: "string",
-    bool: "boolean",
-    ptr: "uinteger"
+/** A FUNCTION's result: its representation, its BASIC type, and the registers it is returned in (runtime ABI §3.1). */
+function returnsOf(type: MType): NonNullable<CallableFrameInfo["returns"]> {
+  const map: Record<MType, [SourceValueType, string, ReturnRegisters]> = {
+    i8: ["i8", "Byte", "a"],
+    u8: ["u8", "UByte", "a"],
+    bool: ["bool", "Boolean", "a"],
+    i16: ["i16", "Integer", "hl"],
+    u16: ["u16", "UInteger", "hl"],
+    ptr: ["u16", "UInteger", "hl"],
+    str: ["str.heap", "String", "hl"],
+    i32: ["i32", "Long", "dehl"],
+    u32: ["u32", "ULong", "dehl"],
+    fix: ["fix16.16", "Fixed", "dehl"],
+    flt: ["float40", "Float", "aedcb"]
   };
-  return map[type];
+  const [repr, typeLabel, registers] = map[type];
+  return { type: repr, typeLabel, in: registers };
+}
+
+/** A MIR call site's kind in the debugger's vocabulary (a GOSUB runs in its caller's activation). */
+function callSiteKind(kind: CallSite["kind"]): Pick<CallSiteDebugInfo, "kind" | "dispatch" | "returnsValue"> {
+  switch (kind) {
+    case "gosub":
+      return { kind: "local" };
+    case "on-gosub":
+      return { kind: "local", dispatch: true };
+    case "function":
+      return { kind: "routine", returnsValue: true };
+    default:
+      return { kind: "routine" };
+  }
 }

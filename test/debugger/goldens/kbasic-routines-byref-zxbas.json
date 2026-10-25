@@ -298,7 +298,8 @@
    {
     "name": "g",
     "displayName": "g",
-    "type": "uinteger",
+    "type": "u16",
+    "typeLabel": "UInteger",
     "kind": "global",
     "location": {
      "at": "absolute",
@@ -314,7 +315,8 @@
    {
     "name": "v",
     "displayName": "v",
-    "type": "uinteger",
+    "type": "u16",
+    "typeLabel": "UInteger",
     "kind": "parameter",
     "byRef": true,
     "location": {
@@ -333,7 +335,8 @@
    {
     "name": "w",
     "displayName": "w",
-    "type": "uinteger",
+    "type": "u16",
+    "typeLabel": "UInteger",
     "kind": "parameter",
     "byRef": true,
     "location": {
@@ -352,7 +355,8 @@
    {
     "name": "k",
     "displayName": "k",
-    "type": "uinteger",
+    "type": "u16",
+    "typeLabel": "UInteger",
     "kind": "local",
     "location": {
      "at": "frame",
@@ -373,7 +377,7 @@
     "returnAddress": 32802,
     "statementIndex": 0,
     "callerIndex": 0,
-    "kind": "sub",
+    "kind": "routine",
     "calleeIndex": 2,
     "moreCallsFollow": false,
     "order": 0
@@ -382,7 +386,7 @@
     "returnAddress": 32811,
     "statementIndex": 2,
     "callerIndex": 0,
-    "kind": "sub",
+    "kind": "routine",
     "calleeIndex": 3,
     "moreCallsFollow": false,
     "order": 0
@@ -391,7 +395,7 @@
     "returnAddress": 32883,
     "statementIndex": 5,
     "callerIndex": 2,
-    "kind": "sub",
+    "kind": "routine",
     "calleeIndex": 1,
     "moreCallsFollow": false,
     "order": 0
@@ -400,7 +404,7 @@
     "returnAddress": 32893,
     "statementIndex": 6,
     "callerIndex": 2,
-    "kind": "sub",
+    "kind": "routine",
     "calleeIndex": 1,
     "moreCallsFollow": false,
     "order": 0
@@ -409,7 +413,7 @@
     "returnAddress": 32939,
     "statementIndex": 9,
     "callerIndex": 3,
-    "kind": "sub",
+    "kind": "routine",
     "calleeIndex": 2,
     "moreCallsFollow": false,
     "order": 0
@@ -620,7 +624,13 @@
     "address": 39208
    }
   ],
-  "errorEntry": 37846,
+  "errorStop": {
+   "entry": 37846,
+   "code": {
+    "register": "a"
+   },
+   "reports": "zx-rom"
+  },
   "optimizationLevel": 0
  }
 }

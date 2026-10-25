@@ -211,7 +211,8 @@ export function adaptZ88dkDebugInfo(input: Z88dkDebugAdapterInput): Z88dkDebugAd
         returnAddress: call.address + call.length,
         statementIndex,
         callerIndex: f.callableIndex,
-        kind: callee.kind === "subroutine" ? "sub" : "function",
+        kind: "routine",
+        ...(callee.kind === "subroutine" ? {} : { returnsValue: true as const }),
         calleeIndex: callee.callableIndex,
         moreCallsFollow: false,
         order
@@ -230,7 +231,8 @@ export function adaptZ88dkDebugInfo(input: Z88dkDebugAdapterInput): Z88dkDebugAd
         returnAddress: startupCall.address + startupCall.length,
         statementIndex: -1,
         callerIndex: 0,
-        kind: main.kind === "subroutine" ? "sub" : "function",
+        kind: "routine",
+        ...(main.kind === "subroutine" ? {} : { returnsValue: true as const }),
         calleeIndex: main.callableIndex,
         moreCallsFollow: false,
         order: 0
@@ -409,18 +411,18 @@ export function cType(chain: string): { type: SourceValueType; label: string } |
   const parts = chain.split(",");
   if (parts[0] === "DG") {
     const target = parts.slice(1).join(",");
-    return { type: "pointer", label: `${baseLabel(target) ?? "void"} *` };
+    return { type: "ptr16", label: `${baseLabel(target) ?? "void"} *` };
   }
   const m = /^S([CILV])(?:[^:]*)?:([SU])$/.exec(chain);
   if (!m) return undefined;
   const unsigned = m[2] === "U";
   switch (m[1]) {
     case "C":
-      return unsigned ? { type: "ubyte", label: "unsigned char" } : { type: "char", label: "char" };
+      return unsigned ? { type: "u8", label: "unsigned char" } : { type: "char8", label: "char" };
     case "I":
-      return unsigned ? { type: "uinteger", label: "unsigned int" } : { type: "integer", label: "int" };
+      return unsigned ? { type: "u16", label: "unsigned int" } : { type: "i16", label: "int" };
     case "L":
-      return unsigned ? { type: "ulong", label: "unsigned long" } : { type: "long", label: "long" };
+      return unsigned ? { type: "u32", label: "unsigned long" } : { type: "i32", label: "long" };
     default:
       return undefined;
   }

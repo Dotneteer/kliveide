@@ -103,14 +103,17 @@
    {
     "name": "a",
     "displayName": "a",
-    "type": "ubyte",
+    "type": "u8",
+    "typeLabel": "UByte",
     "kind": "global",
     "location": {
      "at": "absolute",
      "address": 37561
     },
     "array": {
-     "elementType": "ubyte",
+     "elementType": "u8",
+     "elementLabel": "UByte",
+     "layout": "descriptor",
      "dimensions": [
       {
        "lower": 0,
@@ -128,7 +131,8 @@
    {
     "name": "k",
     "displayName": "k",
-    "type": "ubyte",
+    "type": "u8",
+    "typeLabel": "UByte",
     "kind": "global",
     "location": {
      "at": "absolute",
@@ -562,7 +566,13 @@
     "address": 39052
    }
   ],
-  "errorEntry": 37698,
+  "errorStop": {
+   "entry": 37698,
+   "code": {
+    "register": "a"
+   },
+   "reports": "zx-rom"
+  },
   "optimizationLevel": 2
  }
 }

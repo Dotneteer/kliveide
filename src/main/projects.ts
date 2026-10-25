@@ -25,7 +25,7 @@ import {
   setProjectAnnotationsAction,
   setWorkspaceSettingsAction,
   setWatchesAction,
-  setBasicWatchesAction,
+  setSourceWatchesAction,
   setLogpointGroupsAction,
   setSourceCommentsAction,
 } from "@state/actions";
@@ -207,7 +207,8 @@ export async function openFolderByPath(projectFolder: string): Promise<string | 
       // --- `?? []` matters — a project without saved watches must *clear* the list, otherwise the
       // --- previously open project's watches would leak into this one.
       disp(setWatchesAction(projectStruct.debugger?.watchExpressions ?? []));
-      disp(setBasicWatchesAction(projectStruct.debugger?.basicWatches ?? []));
+      // --- `basicWatches`: the name project files written before the debugger became language-neutral use
+      disp(setSourceWatchesAction(projectStruct.debugger?.sourceWatches ?? projectStruct.debugger?.basicWatches ?? []));
       // --- The logpoint group switch (`.plans/LOGPOINTS_PLAN.md` §4.6). Absent means everything
       // --- on, so a project without it resets what the previous project switched off. The
       // --- emulator reads it from the shared store.
@@ -477,7 +478,7 @@ function getKliveProjectStructureFromState(breakpoints: BreakpointInfo[]): Klive
       // --- Unlike breakpoints, watches live in the shared store rather than in the emulator, so
       // --- they are read straight from the state snapshot instead of over IPC.
       watchExpressions: state.watchExpressions ?? [],
-      basicWatches: state.basicWatches ?? [],
+      sourceWatches: state.sourceWatches ?? [],
       // --- Absent when everything logs, so a project that never touched the switch stays
       // --- byte-identical (`.plans/LOGPOINTS_PLAN.md` §4.6)
       ...(isDefaultLogpointGroups(state.logpointGroups)
@@ -645,7 +646,9 @@ type DebuggerState = {
    * restore an empty list.
    */
   watchExpressions?: WatchInfo[];
-  /** BASIC watch expressions (the Variables panel); optional for the same reason. */
+  /** Source-level watch expressions (the Variables panel); optional for the same reason. */
+  sourceWatches?: string[];
+  /** The same list as project files written by older builds name it; read, never written. */
   basicWatches?: string[];
   /**
    * Which logpoint groups log (`.plans/LOGPOINTS_PLAN.md` §4.6). Absent when everything does - an

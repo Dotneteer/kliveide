@@ -77,7 +77,7 @@ describe("Boriel BASIC on the ZX Spectrum Next", () => {
 
   it("stops at the runtime error routine with the error code in A, before the panic screen", async () => {
     const info = load("runtime-error-next");
-    const errorEntry = info.extensions!.errorEntry!;
+    const errorEntry = info.extensions!.errorStop!.entry;
     expect(errorEntry).toBeDefined();
     const session = await startNex("runtime-error-next");
     const debug = session.attachDebugSupport();

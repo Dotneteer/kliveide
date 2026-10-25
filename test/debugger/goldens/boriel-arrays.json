@@ -331,7 +331,8 @@
    {
     "name": "total",
     "displayName": "total",
-    "type": "long",
+    "type": "i32",
+    "typeLabel": "Long",
     "kind": "global",
     "location": {
      "at": "absolute",
@@ -347,7 +348,8 @@
    {
     "name": "name",
     "displayName": "name$",
-    "type": "string",
+    "type": "str.heap",
+    "typeLabel": "String",
     "kind": "global",
     "location": {
      "at": "absolute",
@@ -363,7 +365,8 @@
    {
     "name": "ratio",
     "displayName": "ratio",
-    "type": "float",
+    "type": "float40",
+    "typeLabel": "Float",
     "kind": "global",
     "location": {
      "at": "absolute",
@@ -379,7 +382,8 @@
    {
     "name": "fx",
     "displayName": "fx",
-    "type": "fixed",
+    "type": "fix16.16",
+    "typeLabel": "Fixed",
     "kind": "global",
     "location": {
      "at": "absolute",
@@ -395,14 +399,17 @@
    {
     "name": "grid",
     "displayName": "grid",
-    "type": "uinteger",
+    "type": "u16",
+    "typeLabel": "UInteger",
     "kind": "global",
     "location": {
      "at": "absolute",
      "address": 37601
     },
     "array": {
-     "elementType": "uinteger",
+     "elementType": "u16",
+     "elementLabel": "UInteger",
+     "layout": "descriptor",
      "dimensions": [
       {
        "lower": 0,
@@ -424,14 +431,17 @@
    {
     "name": "words",
     "displayName": "words$",
-    "type": "string",
+    "type": "str.heap",
+    "typeLabel": "String",
     "kind": "global",
     "location": {
      "at": "absolute",
      "address": 37638
     },
     "array": {
-     "elementType": "string",
+     "elementType": "str.heap",
+     "elementLabel": "String",
+     "layout": "descriptor",
      "dimensions": [
       {
        "lower": 0,
@@ -449,7 +459,8 @@
    {
     "name": "n",
     "displayName": "n",
-    "type": "ubyte",
+    "type": "u8",
+    "typeLabel": "UByte",
     "kind": "parameter",
     "location": {
      "at": "frame",
@@ -467,7 +478,8 @@
    {
     "name": "acc",
     "displayName": "acc",
-    "type": "long",
+    "type": "i32",
+    "typeLabel": "Long",
     "kind": "parameter",
     "byRef": true,
     "location": {
@@ -486,14 +498,17 @@
    {
     "name": "arr",
     "displayName": "arr",
-    "type": "ubyte",
+    "type": "u8",
+    "typeLabel": "UByte",
     "kind": "local",
     "location": {
      "at": "frame",
      "ixOffset": -7
     },
     "array": {
-     "elementType": "ubyte",
+     "elementType": "u8",
+     "elementLabel": "UByte",
+     "layout": "descriptor",
      "dimensions": [
       {
        "lower": 0,
@@ -513,7 +528,8 @@
    {
     "name": "i",
     "displayName": "i",
-    "type": "ubyte",
+    "type": "u8",
+    "typeLabel": "UByte",
     "kind": "local",
     "location": {
      "at": "frame",
@@ -531,7 +547,8 @@
    {
     "name": "k",
     "displayName": "k",
-    "type": "ubyte",
+    "type": "u8",
+    "typeLabel": "UByte",
     "kind": "parameter",
     "location": {
      "at": "frame",
@@ -552,7 +569,7 @@
     "returnAddress": 37727,
     "statementIndex": 6,
     "callerIndex": 2,
-    "kind": "sub",
+    "kind": "routine",
     "calleeIndex": 0,
     "moreCallsFollow": false,
     "order": 0
@@ -561,7 +578,7 @@
     "returnAddress": 37733,
     "statementIndex": 7,
     "callerIndex": 2,
-    "kind": "sub",
+    "kind": "routine",
     "calleeIndex": 1,
     "moreCallsFollow": false,
     "order": 0
@@ -1262,7 +1279,13 @@
     "address": 40781
    }
   ],
-  "errorEntry": 38725,
+  "errorStop": {
+   "entry": 38725,
+   "code": {
+    "register": "a"
+   },
+   "reports": "zx-rom"
+  },
   "optimizationLevel": 2
  }
 }

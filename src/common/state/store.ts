@@ -12,7 +12,7 @@ import { workspaceSettingsReducer } from "./workspace-settings-reducer";
 import { unitTestsReducer } from "./unit-tests-reducer";
 import { globalSettingsReducer } from "./global-settings-reducer";
 import {
-  basicWatchReducer,
+  sourceWatchReducer,
   logpointGroupsReducer,
   sourceCommentsReducer,
   watchReducer
@@ -39,7 +39,7 @@ function appReducer(state: AppState, action: Action): AppState {
     (a, n) => (a.workspaceSettings = n)
   );
   invokeReducer(state.watchExpressions, watchReducer, (a, n) => (a.watchExpressions = n));
-  invokeReducer(state.basicWatches, basicWatchReducer, (a, n) => (a.basicWatches = n));
+  invokeReducer(state.sourceWatches, sourceWatchReducer, (a, n) => (a.sourceWatches = n));
   invokeReducer(state.logpointGroups, logpointGroupsReducer, (a, n) => (a.logpointGroups = n));
   invokeReducer(state.sourceComments, sourceCommentsReducer, (a, n) => (a.sourceComments = n));
   invokeReducer(state.unitTests, unitTestsReducer, (a, n) => (a.unitTests = n));

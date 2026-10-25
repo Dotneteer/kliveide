@@ -497,7 +497,8 @@
    {
     "name": "g",
     "displayName": "g",
-    "type": "ubyte",
+    "type": "u8",
+    "typeLabel": "UByte",
     "kind": "global",
     "location": {
      "at": "absolute",
@@ -513,7 +514,8 @@
    {
     "name": "total",
     "displayName": "total",
-    "type": "long",
+    "type": "i32",
+    "typeLabel": "Long",
     "kind": "global",
     "location": {
      "at": "absolute",
@@ -529,7 +531,8 @@
    {
     "name": "name",
     "displayName": "name$",
-    "type": "string",
+    "type": "str.heap",
+    "typeLabel": "String",
     "kind": "global",
     "location": {
      "at": "absolute",
@@ -545,7 +548,8 @@
    {
     "name": "ratio",
     "displayName": "ratio",
-    "type": "float",
+    "type": "float40",
+    "typeLabel": "Float",
     "kind": "global",
     "location": {
      "at": "absolute",
@@ -561,7 +565,8 @@
    {
     "name": "fx",
     "displayName": "fx",
-    "type": "fixed",
+    "type": "fix16.16",
+    "typeLabel": "Fixed",
     "kind": "global",
     "location": {
      "at": "absolute",
@@ -577,7 +582,8 @@
    {
     "name": "n",
     "displayName": "n",
-    "type": "ubyte",
+    "type": "u8",
+    "typeLabel": "UByte",
     "kind": "parameter",
     "location": {
      "at": "frame",
@@ -595,7 +601,8 @@
    {
     "name": "r",
     "displayName": "r",
-    "type": "uinteger",
+    "type": "u16",
+    "typeLabel": "UInteger",
     "kind": "local",
     "location": {
      "at": "frame",
@@ -613,7 +620,8 @@
    {
     "name": "n",
     "displayName": "n",
-    "type": "ubyte",
+    "type": "u8",
+    "typeLabel": "UByte",
     "kind": "parameter",
     "location": {
      "at": "frame",
@@ -631,7 +639,8 @@
    {
     "name": "acc",
     "displayName": "acc",
-    "type": "long",
+    "type": "i32",
+    "typeLabel": "Long",
     "kind": "parameter",
     "byRef": true,
     "location": {
@@ -650,14 +659,17 @@
    {
     "name": "arr",
     "displayName": "arr",
-    "type": "ubyte",
+    "type": "u8",
+    "typeLabel": "UByte",
     "kind": "local",
     "location": {
      "at": "frame",
      "ixOffset": -7
     },
     "array": {
-     "elementType": "ubyte",
+     "elementType": "u8",
+     "elementLabel": "UByte",
+     "layout": "descriptor",
      "dimensions": [
       {
        "lower": 0,
@@ -677,7 +689,8 @@
    {
     "name": "i",
     "displayName": "i",
-    "type": "ubyte",
+    "type": "u8",
+    "typeLabel": "UByte",
     "kind": "local",
     "location": {
      "at": "frame",
@@ -698,7 +711,7 @@
     "returnAddress": 37635,
     "statementIndex": 4,
     "callerIndex": 3,
-    "kind": "sub",
+    "kind": "routine",
     "calleeIndex": 1,
     "moreCallsFollow": false,
     "order": 0
@@ -707,7 +720,8 @@
     "returnAddress": 37644,
     "statementIndex": 5,
     "callerIndex": 3,
-    "kind": "function",
+    "kind": "routine",
+    "returnsValue": true,
     "calleeIndex": 0,
     "moreCallsFollow": true,
     "order": 0
@@ -716,7 +730,8 @@
     "returnAddress": 37651,
     "statementIndex": 5,
     "callerIndex": 3,
-    "kind": "function",
+    "kind": "routine",
+    "returnsValue": true,
     "calleeIndex": 0,
     "moreCallsFollow": false,
     "order": 1
@@ -725,7 +740,8 @@
     "returnAddress": 37670,
     "statementIndex": 6,
     "callerIndex": 3,
-    "kind": "function",
+    "kind": "routine",
+    "returnsValue": true,
     "calleeIndex": 2,
     "moreCallsFollow": false,
     "order": 0
@@ -734,7 +750,7 @@
     "returnAddress": 37719,
     "statementIndex": 10,
     "callerIndex": 3,
-    "kind": "gosub",
+    "kind": "local",
     "moreCallsFollow": false,
     "order": 0
    },
@@ -742,7 +758,8 @@
     "returnAddress": 37731,
     "statementIndex": 11,
     "callerIndex": 3,
-    "kind": "on-gosub",
+    "kind": "local",
+    "dispatch": true,
     "moreCallsFollow": false,
     "order": 0
    }
@@ -757,7 +774,11 @@
     "bodyStart": 37843,
     "epilogueStart": 37867,
     "endAddress": 37876,
-    "returnType": "uinteger"
+    "returns": {
+     "type": "u16",
+     "typeLabel": "UInteger",
+     "in": "hl"
+    }
    },
    {
     "callableIndex": 1,
@@ -778,7 +799,11 @@
     "bodyStart": 38021,
     "epilogueStart": 38025,
     "endAddress": 38026,
-    "returnType": "ubyte"
+    "returns": {
+     "type": "u8",
+     "typeLabel": "UByte",
+     "in": "a"
+    }
    },
    {
     "callableIndex": 3,
@@ -1407,7 +1432,13 @@
     "address": 40132
    }
   ],
-  "errorEntry": 38078,
+  "errorStop": {
+   "entry": 38078,
+   "code": {
+    "register": "a"
+   },
+   "reports": "zx-rom"
+  },
   "optimizationLevel": 2
  }
 }

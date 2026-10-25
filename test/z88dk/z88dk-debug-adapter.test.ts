@@ -41,14 +41,14 @@ describe("CDB records", () => {
   });
 
   it("maps C types to value types and their spelling", () => {
-    expect(cType("SI:S")).toEqual({ type: "integer", label: "int" });
-    expect(cType("SI:U")).toEqual({ type: "uinteger", label: "unsigned int" });
-    expect(cType("SC:S")).toEqual({ type: "char", label: "char" });
-    expect(cType("SC:U")).toEqual({ type: "ubyte", label: "unsigned char" });
-    expect(cType("SL:U")).toEqual({ type: "ulong", label: "unsigned long" });
-    expect(cType("DG,SC:U")).toEqual({ type: "pointer", label: "unsigned char *" });
-    expect(cType("DG,STpoint:S")).toEqual({ type: "pointer", label: "struct point *" });
-    expect(cType("DG,DG,SC:S")).toEqual({ type: "pointer", label: "char * *" });
+    expect(cType("SI:S")).toEqual({ type: "i16", label: "int" });
+    expect(cType("SI:U")).toEqual({ type: "u16", label: "unsigned int" });
+    expect(cType("SC:S")).toEqual({ type: "char8", label: "char" });
+    expect(cType("SC:U")).toEqual({ type: "u8", label: "unsigned char" });
+    expect(cType("SL:U")).toEqual({ type: "u32", label: "unsigned long" });
+    expect(cType("DG,SC:U")).toEqual({ type: "ptr16", label: "unsigned char *" });
+    expect(cType("DG,STpoint:S")).toEqual({ type: "ptr16", label: "struct point *" });
+    expect(cType("DG,DG,SC:S")).toEqual({ type: "ptr16", label: "char * *" });
     expect(cType("STpoint:S")).toBeUndefined();
     expect(cType("DA12x,SC:S")).toBeUndefined();
     expect(cType("SF:S")).toBeUndefined();
@@ -109,7 +109,7 @@ describe("adaptZ88dkDebugInfo (zx-hello)", () => {
     const { sourceLevelDebug: sld } = adapt();
     const sites = sld.extensions!.callSites;
     const addSite = sites.find((s) => s.calleeIndex === 1)!;
-    expect(addSite).toMatchObject({ callerIndex: 2, kind: "function", statementIndex: sld.statements.findIndex((s) => s.startLine === 16) });
+    expect(addSite).toMatchObject({ callerIndex: 2, kind: "routine", returnsValue: true, statementIndex: sld.statements.findIndex((s) => s.startLine === 16) });
     const mainSite = sites.find((s) => s.calleeIndex === 2)!;
     expect(mainSite).toMatchObject({ callerIndex: 0, statementIndex: -1, returnAddress: mapValue(symbols, "__Exit") });
   });
@@ -119,7 +119,7 @@ describe("adaptZ88dkDebugInfo (zx-hello)", () => {
     const vars = sld.extensions!.variables;
     expect(vars.find((v) => v.name === "counter")).toMatchObject({
       kind: "global",
-      type: "integer",
+      type: "i16",
       typeLabel: "int",
       location: { at: "absolute", address: mapValue(symbols, "_counter") }
     });

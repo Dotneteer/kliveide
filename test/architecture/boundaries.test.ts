@@ -138,7 +138,7 @@ function violations(): Record<string, number> {
   for (const file of core) {
     for (const target of importsOf(file)) {
       if (under(target, LANGUAGES)) add("B1 debug core imports a language", file);
-      if (target.startsWith(DEBUG_PLUGINS)) add("B1 debug core imports a language plugin", file);
+      if (target.startsWith(DEBUG_PLUGINS) && target !== `${DEBUG_PLUGINS}registry`) add("B1 debug core imports a language plugin", file);
     }
     // --- B2: no language keyword in a string literal
     const code = codeOf(readFileSync(join(ROOT, file), "utf8"));
@@ -147,8 +147,9 @@ function violations(): Record<string, number> {
 
   // --- B3: only the registry imports a plugin
   for (const file of files("src/").filter((f) => !f.startsWith(DEBUG_PLUGINS))) {
-    if (!/debugger|appIde|renderer/.test(file)) continue;
-    for (const target of importsOf(file)) if (target.startsWith(DEBUG_PLUGINS)) add("B3 a plugin is imported outside the registry", file);
+    for (const target of importsOf(file)) {
+      if (target.startsWith(DEBUG_PLUGINS) && target !== `${DEBUG_PLUGINS}registry`) add("B3 a plugin is imported outside the registry", file);
+    }
   }
   for (const file of files(DEBUG_PLUGINS).filter((f) => !f.endsWith("registry.ts"))) {
     for (const other of files(DEBUG_PLUGINS)) {

@@ -15,6 +15,7 @@ import type {
   SourceValueType,
   VariableDebugInfo
 } from "@abstractions/SourceDebugInfo";
+import { defaultReturnRegisters, upgradeCallSiteKind, upgradeValueType, zxbcFarRecords } from "@common/utils/source-debug-upgrade";
 import { mapSymbols, type MapEntry } from "./boriel-map";
 
 /*
@@ -70,19 +71,10 @@ export type DbgAdapterOutput = ClassicDebugTables & {
   dropped: string[];
 };
 
-const VALUE_TYPES: Record<string, SourceValueType> = {
-  byte: "byte",
-  ubyte: "ubyte",
-  integer: "integer",
-  uinteger: "uinteger",
-  long: "long",
-  ulong: "ulong",
-  fixed: "fixed",
-  float: "float",
-  string: "string",
-  boolean: "boolean",
-  bool: "boolean"
-};
+/** zxbc's `.dbg` speaks version 1 of the debug model: its type names read through the upgrade's table. */
+const VALUE_TYPES: Record<string, { type: SourceValueType; typeLabel: string }> = Object.fromEntries(
+  ["byte", "ubyte", "integer", "uinteger", "long", "ulong", "fixed", "float", "string", "boolean", "bool"].map((t) => [t, upgradeValueType(t)])
+);
 
 const CALLABLE_KINDS: Record<string, CallableKind> = {
   entrypoint: "entrypoint",
@@ -137,9 +129,8 @@ function adaptCodebank(
     // --- A logical bank is the `.dbg`'s partition: the 16K bank on the 128K (whose partitions are
     // --- 16K, so both halves of the window name it), the first 8K page on the Next
     banks: (raw.banks ?? []).map((b: any) => ({ bank: b.id, pages: next ? [b.id, b.id + 1] : [b.id, b.id] })),
-    shadowStackKind: "zxbc",
     // --- The 128K saves BANKM (bank in bits 0-2); the Next saves the page MMU slot 6 held
-    bankMask: next ? 0xff : 0x07
+    records: zxbcFarRecords(next ? 0xff : 0x07)
   };
 }
 
@@ -265,6 +256,7 @@ export function adaptBorielDebugInfo(input: DbgAdapterInput): DbgAdapterOutput {
     const epilogueStart = f?.epilogueStart ?? startAddress;
     const endAddress = Math.max(f?.endAddress ?? epilogueStart, epilogueStart, ...(c.exitAddresses.map((a) => a + 1)));
     const returnType = f?.returnType ? VALUE_TYPES[f.returnType] : undefined;
+    const returns = returnType ? { ...returnType, in: defaultReturnRegisters(returnType.type) } : undefined;
     return {
       callableIndex: c.index,
       convention,
@@ -274,7 +266,7 @@ export function adaptBorielDebugInfo(input: DbgAdapterInput): DbgAdapterOutput {
       epilogueStart,
       endAddress,
       ...(c.partition !== undefined ? { partition: c.partition } : {}),
-      ...(returnType ? { returnType } : {}),
+      ...(returns ? { returns } : {}),
       ...(isLibrary(c.fileIndex) ? { library: true } : {})
     };
   });
@@ -298,7 +290,7 @@ export function adaptBorielDebugInfo(input: DbgAdapterInput): DbgAdapterOutput {
       ...(partition !== undefined ? { partition } : {}),
       statementIndex,
       callerIndex: site.callerIndex ?? statements[statementIndex]?.callableIndex ?? mainIndex,
-      kind: site.kind,
+      ...upgradeCallSiteKind(site.kind),
       ...(site.calleeIndex !== undefined ? { calleeIndex: site.calleeIndex } : {}),
       moreCallsFollow: !!site.moreCallsFollow,
       order: site.order ?? 0
@@ -351,7 +343,9 @@ export function adaptBorielDebugInfo(input: DbgAdapterInput): DbgAdapterOutput {
       labels: symbols.labels,
       libraryFiles,
       runtimeSymbols: symbols.runtimeSymbols,
-      ...(symbols.errorEntry !== undefined ? { errorEntry: symbols.errorEntry } : {}),
+      ...(symbols.errorEntry !== undefined
+        ? { errorStop: { entry: symbols.errorEntry, code: { register: "a" as const }, reports: "zx-rom" as const } }
+        : {}),
       ...(codebank ? { codebank } : {}),
       optimizationLevel: input.optimizationLevel
     }
@@ -457,8 +451,8 @@ function adaptVariables(
 ): VariableDebugInfo[] {
   const out: VariableDebugInfo[] = [];
   for (const v of raw) {
-    const type = VALUE_TYPES[v.type ?? v.array?.elementType];
-    if (!type) {
+    const valueType = VALUE_TYPES[v.type ?? v.array?.elementType];
+    if (!valueType) {
       dropped.push(`variable ${v.displayName ?? v.name}: unknown type ${v.type}`);
       continue;
     }
@@ -489,12 +483,13 @@ function adaptVariables(
         dropped.push(`variable ${v.displayName ?? v.name}: a dynamic array`);
         continue;
       }
-      array = { elementType: VALUE_TYPES[v.array.elementType] ?? type, ...(dimensions ? { dimensions } : {}) };
+      const element = VALUE_TYPES[v.array.elementType] ?? valueType;
+      array = { elementType: element.type, elementLabel: element.typeLabel, layout: "descriptor", ...(dimensions ? { dimensions } : {}) };
     }
     out.push({
       name: v.name,
       displayName: v.displayName ?? v.name,
-      type,
+      ...valueType,
       kind: v.kind === "parameter" || v.kind === "local" ? v.kind : "global",
       ...(v.byRef ? { byRef: true } : {}),
       location,

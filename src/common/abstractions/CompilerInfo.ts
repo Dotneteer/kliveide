@@ -829,6 +829,8 @@ export type SimpleAssemblerOutput = {
   traceOutput?: string[];
   /** A Klive BASIC background check's language intelligence (`.plans/BASIC_EDITOR_INTELLIGENCE_PLAN.md` §4.2). */
   basicIntel?: BasicIntelData[];
+  /** The compiler's product name ("Klive BASIC", "z88dk"): the profiler's routine table names it. */
+  compilerName?: string;
 };
 
 /**

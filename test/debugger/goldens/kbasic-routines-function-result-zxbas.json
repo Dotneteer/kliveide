@@ -173,7 +173,8 @@
    {
     "name": "n",
     "displayName": "n",
-    "type": "uinteger",
+    "type": "u16",
+    "typeLabel": "UInteger",
     "kind": "parameter",
     "location": {
      "at": "frame",
@@ -191,7 +192,8 @@
    {
     "name": "n",
     "displayName": "n",
-    "type": "ubyte",
+    "type": "u8",
+    "typeLabel": "UByte",
     "kind": "parameter",
     "location": {
      "at": "frame",
@@ -212,7 +214,8 @@
     "returnAddress": 32802,
     "statementIndex": 0,
     "callerIndex": 0,
-    "kind": "function",
+    "kind": "routine",
+    "returnsValue": true,
     "calleeIndex": 1,
     "moreCallsFollow": true,
     "order": 0
@@ -221,7 +224,8 @@
     "returnAddress": 32819,
     "statementIndex": 0,
     "callerIndex": 0,
-    "kind": "function",
+    "kind": "routine",
+    "returnsValue": true,
     "calleeIndex": 2,
     "moreCallsFollow": true,
     "order": 1
@@ -230,7 +234,8 @@
     "returnAddress": 32837,
     "statementIndex": 0,
     "callerIndex": 0,
-    "kind": "function",
+    "kind": "routine",
+    "returnsValue": true,
     "calleeIndex": 1,
     "moreCallsFollow": true,
     "order": 2
@@ -239,7 +244,8 @@
     "returnAddress": 32844,
     "statementIndex": 0,
     "callerIndex": 0,
-    "kind": "function",
+    "kind": "routine",
+    "returnsValue": true,
     "calleeIndex": 2,
     "moreCallsFollow": false,
     "order": 3
@@ -263,7 +269,11 @@
     "bodyStart": 32878,
     "epilogueStart": 32902,
     "endAddress": 32922,
-    "returnType": "uinteger"
+    "returns": {
+     "type": "u16",
+     "typeLabel": "UInteger",
+     "in": "hl"
+    }
    },
    {
     "callableIndex": 2,
@@ -274,7 +284,11 @@
     "bodyStart": 32934,
     "epilogueStart": 32964,
     "endAddress": 32981,
-    "returnType": "ubyte"
+    "returns": {
+     "type": "u8",
+     "typeLabel": "UByte",
+     "in": "a"
+    }
    }
   ],
   "mainBaselineSymbol": 37962,
@@ -482,7 +496,13 @@
     "address": 39395
    }
   ],
-  "errorEntry": 38033,
+  "errorStop": {
+   "entry": 38033,
+   "code": {
+    "register": "a"
+   },
+   "reports": "zx-rom"
+  },
   "optimizationLevel": 0
  }
 }

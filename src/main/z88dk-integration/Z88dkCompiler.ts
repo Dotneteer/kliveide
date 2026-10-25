@@ -354,7 +354,7 @@ export class Z88dkCompiler implements IKliveCompiler {
       sourceMap: lineDebug.sourceMap,
       listFileItems: lineDebug.listFileItems,
       symbols: symbolTable,
-      ...(sourceLevelDebug ? { sourceLevelDebug } : {}),
+      ...(sourceLevelDebug ? { sourceLevelDebug, compilerName: "z88dk" } : {}),
       z88dkArtefacts: artefacts,
       z88dkRun: target.run
     } as Z88dkBuildOutput;

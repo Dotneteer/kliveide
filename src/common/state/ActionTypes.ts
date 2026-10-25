@@ -105,9 +105,9 @@ export interface ActionTypes {
   REMOVE_WATCH: null;
   CLEAR_WATCH: null;
   SET_WATCHES: null;
-  ADD_BASIC_WATCH: null;
-  REMOVE_BASIC_WATCH: null;
-  SET_BASIC_WATCHES: null;
+  ADD_SOURCE_WATCH: null;
+  REMOVE_SOURCE_WATCH: null;
+  SET_SOURCE_WATCHES: null;
 
   // --- Logpoint groups (`.plans/LOGPOINTS_PLAN.md` §4.2)
   SET_LOGPOINT_GROUPS: null;

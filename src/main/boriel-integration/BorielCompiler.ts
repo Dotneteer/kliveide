@@ -304,7 +304,7 @@ export class BorielCompiler implements IKliveCompiler {
       entryAddress,
       sourceFileList: debug?.sourceFileList ?? [],
       ...(debug
-        ? { sourceMap: debug.sourceMap, listFileItems: debug.listFileItems, sourceLevelDebug: debug.sourceLevelDebug }
+        ? { sourceMap: debug.sourceMap, listFileItems: debug.listFileItems, sourceLevelDebug: debug.sourceLevelDebug, compilerName: "Boriel BASIC" }
         : {}),
       ...(prebuiltNex ? { nexConfig: { filename: `${name}.nex` }, prebuiltNex } : {}),
       ...(prebuiltTape ? { prebuiltTape } : {})

@@ -1,0 +1,1413 @@
+{
+ "language": "basic",
+ "files": [
+  {
+   "index": 0,
+   "filename": "<root>/test/boriel/fixtures/calls/program.bas"
+  }
+ ],
+ "statements": [
+  {
+   "index": 0,
+   "fileIndex": 0,
+   "startLine": 28,
+   "startColumn": 0,
+   "endLine": 28,
+   "endColumn": 15,
+   "startAddress": 37576,
+   "endAddress": 37585,
+   "kind": "other",
+   "callableIndex": 3
+  },
+  {
+   "index": 1,
+   "fileIndex": 0,
+   "startLine": 29,
+   "startColumn": 0,
+   "endLine": 29,
+   "endColumn": 12,
+   "startAddress": 37585,
+   "endAddress": 37599,
+   "kind": "other",
+   "callableIndex": 3
+  },
+  {
+   "index": 2,
+   "fileIndex": 0,
+   "startLine": 30,
+   "startColumn": 0,
+   "endLine": 30,
+   "endColumn": 8,
+   "startAddress": 37599,
+   "endAddress": 37612,
+   "kind": "other",
+   "callableIndex": 3
+  },
+  {
+   "index": 3,
+   "fileIndex": 0,
+   "startLine": 32,
+   "startColumn": 0,
+   "endLine": 32,
+   "endColumn": 9,
+   "startAddress": 37612,
+   "endAddress": 37625,
+   "kind": "other",
+   "callableIndex": 3
+  },
+  {
+   "index": 4,
+   "fileIndex": 0,
+   "startLine": 33,
+   "startColumn": 0,
+   "endLine": 33,
+   "endColumn": 14,
+   "startAddress": 37625,
+   "endAddress": 37635,
+   "kind": "other",
+   "callableIndex": 3
+  },
+  {
+   "index": 5,
+   "fileIndex": 0,
+   "startLine": 34,
+   "startColumn": 0,
+   "endLine": 34,
+   "endColumn": 27,
+   "startAddress": 37635,
+   "endAddress": 37661,
+   "kind": "other",
+   "callableIndex": 3
+  },
+  {
+   "index": 6,
+   "fileIndex": 0,
+   "startLine": 35,
+   "startColumn": 0,
+   "endLine": 35,
+   "endColumn": 14,
+   "startAddress": 37661,
+   "endAddress": 37678,
+   "kind": "other",
+   "callableIndex": 3
+  },
+  {
+   "index": 7,
+   "fileIndex": 0,
+   "startLine": 36,
+   "startColumn": 0,
+   "endLine": 36,
+   "endColumn": 44,
+   "startAddress": 37678,
+   "endAddress": 37687,
+   "kind": "other",
+   "callableIndex": 3
+  },
+  {
+   "index": 8,
+   "fileIndex": 0,
+   "startLine": 36,
+   "startColumn": 14,
+   "endLine": 36,
+   "endColumn": 44,
+   "startAddress": 37687,
+   "endAddress": 37703,
+   "kind": "other",
+   "callableIndex": 3
+  },
+  {
+   "index": 9,
+   "fileIndex": 0,
+   "startLine": 36,
+   "startColumn": 31,
+   "endLine": 36,
+   "endColumn": 44,
+   "startAddress": 37703,
+   "endAddress": 37716,
+   "kind": "other",
+   "callableIndex": 3
+  },
+  {
+   "index": 10,
+   "fileIndex": 0,
+   "startLine": 37,
+   "startColumn": 0,
+   "endLine": 37,
+   "endColumn": 10,
+   "startAddress": 37716,
+   "endAddress": 37719,
+   "kind": "other",
+   "callableIndex": 3
+  },
+  {
+   "index": 11,
+   "fileIndex": 0,
+   "startLine": 38,
+   "startColumn": 0,
+   "endLine": 38,
+   "endColumn": 25,
+   "startAddress": 37719,
+   "endAddress": 37731,
+   "kind": "other",
+   "callableIndex": 3
+  },
+  {
+   "index": 12,
+   "fileIndex": 0,
+   "startLine": 39,
+   "startColumn": 0,
+   "endLine": 39,
+   "endColumn": 22,
+   "startAddress": 37731,
+   "endAddress": 37768,
+   "kind": "other",
+   "callableIndex": 3
+  },
+  {
+   "index": 13,
+   "fileIndex": 0,
+   "startLine": 39,
+   "startColumn": 24,
+   "endLine": 39,
+   "endColumn": 35,
+   "startAddress": 37768,
+   "endAddress": 37784,
+   "kind": "other",
+   "callableIndex": 3
+  },
+  {
+   "index": 14,
+   "fileIndex": 0,
+   "startLine": 40,
+   "startColumn": 0,
+   "endLine": 40,
+   "endColumn": 3,
+   "startAddress": 37784,
+   "endAddress": 37789,
+   "kind": "other",
+   "callableIndex": 3
+  },
+  {
+   "index": 15,
+   "fileIndex": 0,
+   "startLine": 42,
+   "startColumn": 5,
+   "endLine": 42,
+   "endColumn": 17,
+   "startAddress": 37803,
+   "endAddress": 37816,
+   "kind": "other",
+   "callableIndex": 3
+  },
+  {
+   "index": 16,
+   "fileIndex": 0,
+   "startLine": 42,
+   "startColumn": 19,
+   "endLine": 42,
+   "endColumn": 25,
+   "startAddress": 37816,
+   "endAddress": 37817,
+   "kind": "other",
+   "callableIndex": 3
+  },
+  {
+   "index": 17,
+   "fileIndex": 0,
+   "startLine": 43,
+   "startColumn": 5,
+   "endLine": 43,
+   "endColumn": 17,
+   "startAddress": 37817,
+   "endAddress": 37830,
+   "kind": "other",
+   "callableIndex": 3
+  },
+  {
+   "index": 18,
+   "fileIndex": 0,
+   "startLine": 43,
+   "startColumn": 19,
+   "endLine": 43,
+   "endColumn": 25,
+   "startAddress": 37830,
+   "endAddress": 37831,
+   "kind": "other",
+   "callableIndex": 3
+  },
+  {
+   "index": 19,
+   "fileIndex": 0,
+   "startLine": 11,
+   "startColumn": 4,
+   "endLine": 11,
+   "endColumn": 13,
+   "startAddress": 37843,
+   "endAddress": 37861,
+   "kind": "other",
+   "callableIndex": 0
+  },
+  {
+   "index": 20,
+   "fileIndex": 0,
+   "startLine": 12,
+   "startColumn": 4,
+   "endLine": 12,
+   "endColumn": 12,
+   "startAddress": 37861,
+   "endAddress": 37867,
+   "kind": "other",
+   "callableIndex": 0
+  },
+  {
+   "index": 21,
+   "fileIndex": 0,
+   "startLine": 18,
+   "startColumn": 4,
+   "endLine": 20,
+   "endColumn": 10,
+   "startAddress": 37911,
+   "endAddress": 37918,
+   "kind": "other",
+   "callableIndex": 1
+  },
+  {
+   "index": 22,
+   "fileIndex": 0,
+   "startLine": 19,
+   "startColumn": 8,
+   "endLine": 19,
+   "endColumn": 22,
+   "startAddress": 37918,
+   "endAddress": 37958,
+   "kind": "other",
+   "callableIndex": 1
+  },
+  {
+   "index": 23,
+   "fileIndex": 0,
+   "startLine": 21,
+   "startColumn": 4,
+   "endLine": 21,
+   "endColumn": 22,
+   "startAddress": 37958,
+   "endAddress": 37998,
+   "kind": "other",
+   "callableIndex": 1
+  },
+  {
+   "index": 24,
+   "fileIndex": 0,
+   "startLine": 25,
+   "startColumn": 4,
+   "endLine": 25,
+   "endColumn": 16,
+   "startAddress": 38021,
+   "endAddress": 38025,
+   "kind": "other",
+   "callableIndex": 2
+  }
+ ],
+ "callables": [
+  {
+   "index": 0,
+   "name": "Square",
+   "kind": "function",
+   "fileIndex": 0,
+   "startLine": 9,
+   "endLine": 12,
+   "entryAddress": 37843,
+   "exitAddresses": [
+    37867
+   ],
+   "firstStatementIndex": 19,
+   "lastStatementIndex": 20
+  },
+  {
+   "index": 1,
+   "name": "Fill",
+   "kind": "subroutine",
+   "fileIndex": 0,
+   "startLine": 15,
+   "endLine": 21,
+   "entryAddress": 37899,
+   "exitAddresses": [
+    38011
+   ],
+   "firstStatementIndex": 21,
+   "lastStatementIndex": 23
+  },
+  {
+   "index": 2,
+   "name": "Twice",
+   "kind": "function",
+   "fileIndex": 0,
+   "startLine": 24,
+   "endLine": 25,
+   "entryAddress": 38021,
+   "exitAddresses": [
+    38025
+   ],
+   "firstStatementIndex": 24,
+   "lastStatementIndex": 24
+  },
+  {
+   "index": 3,
+   "name": "main",
+   "kind": "entrypoint",
+   "fileIndex": 0,
+   "startLine": 1,
+   "endLine": 43,
+   "entryAddress": 37576,
+   "exitAddresses": [
+    37789
+   ],
+   "firstStatementIndex": 0,
+   "lastStatementIndex": 18
+  }
+ ],
+ "addressToStatement": [
+  [
+   0,
+   -1
+  ],
+  [
+   37576,
+   0
+  ],
+  [
+   37585,
+   1
+  ],
+  [
+   37599,
+   2
+  ],
+  [
+   37612,
+   3
+  ],
+  [
+   37625,
+   4
+  ],
+  [
+   37635,
+   5
+  ],
+  [
+   37661,
+   6
+  ],
+  [
+   37678,
+   7
+  ],
+  [
+   37687,
+   8
+  ],
+  [
+   37703,
+   9
+  ],
+  [
+   37716,
+   10
+  ],
+  [
+   37719,
+   11
+  ],
+  [
+   37731,
+   12
+  ],
+  [
+   37768,
+   13
+  ],
+  [
+   37784,
+   14
+  ],
+  [
+   37789,
+   -1
+  ],
+  [
+   37803,
+   15
+  ],
+  [
+   37816,
+   16
+  ],
+  [
+   37817,
+   17
+  ],
+  [
+   37830,
+   18
+  ],
+  [
+   37831,
+   -1
+  ],
+  [
+   37843,
+   19
+  ],
+  [
+   37861,
+   20
+  ],
+  [
+   37867,
+   -1
+  ],
+  [
+   37911,
+   21
+  ],
+  [
+   37918,
+   22
+  ],
+  [
+   37958,
+   23
+  ],
+  [
+   37998,
+   -1
+  ],
+  [
+   38021,
+   24
+  ],
+  [
+   38025,
+   -1
+  ]
+ ],
+ "extensions": {
+  "variables": [
+   {
+    "name": "g",
+    "displayName": "g",
+    "type": "ubyte",
+    "kind": "global",
+    "location": {
+     "at": "absolute",
+     "address": 37560
+    },
+    "scope": "global",
+    "declaredAt": {
+     "fileIndex": 0,
+     "line": 1,
+     "column": 0
+    }
+   },
+   {
+    "name": "total",
+    "displayName": "total",
+    "type": "long",
+    "kind": "global",
+    "location": {
+     "at": "absolute",
+     "address": 37561
+    },
+    "scope": "global",
+    "declaredAt": {
+     "fileIndex": 0,
+     "line": 2,
+     "column": 0
+    }
+   },
+   {
+    "name": "name",
+    "displayName": "name$",
+    "type": "string",
+    "kind": "global",
+    "location": {
+     "at": "absolute",
+     "address": 37565
+    },
+    "scope": "global",
+    "declaredAt": {
+     "fileIndex": 0,
+     "line": 3,
+     "column": 0
+    }
+   },
+   {
+    "name": "ratio",
+    "displayName": "ratio",
+    "type": "float",
+    "kind": "global",
+    "location": {
+     "at": "absolute",
+     "address": 37567
+    },
+    "scope": "global",
+    "declaredAt": {
+     "fileIndex": 0,
+     "line": 4,
+     "column": 0
+    }
+   },
+   {
+    "name": "fx",
+    "displayName": "fx",
+    "type": "fixed",
+    "kind": "global",
+    "location": {
+     "at": "absolute",
+     "address": 37572
+    },
+    "scope": "global",
+    "declaredAt": {
+     "fileIndex": 0,
+     "line": 5,
+     "column": 0
+    }
+   },
+   {
+    "name": "n",
+    "displayName": "n",
+    "type": "ubyte",
+    "kind": "parameter",
+    "location": {
+     "at": "frame",
+     "ixOffset": 5
+    },
+    "scope": {
+     "callableIndex": 0
+    },
+    "declaredAt": {
+     "fileIndex": 0,
+     "line": 9,
+     "column": 0
+    }
+   },
+   {
+    "name": "r",
+    "displayName": "r",
+    "type": "uinteger",
+    "kind": "local",
+    "location": {
+     "at": "frame",
+     "ixOffset": -2
+    },
+    "scope": {
+     "callableIndex": 0
+    },
+    "declaredAt": {
+     "fileIndex": 0,
+     "line": 10,
+     "column": 0
+    }
+   },
+   {
+    "name": "n",
+    "displayName": "n",
+    "type": "ubyte",
+    "kind": "parameter",
+    "location": {
+     "at": "frame",
+     "ixOffset": 5
+    },
+    "scope": {
+     "callableIndex": 1
+    },
+    "declaredAt": {
+     "fileIndex": 0,
+     "line": 15,
+     "column": 0
+    }
+   },
+   {
+    "name": "acc",
+    "displayName": "acc",
+    "type": "long",
+    "kind": "parameter",
+    "byRef": true,
+    "location": {
+     "at": "frame",
+     "ixOffset": 6
+    },
+    "scope": {
+     "callableIndex": 1
+    },
+    "declaredAt": {
+     "fileIndex": 0,
+     "line": 15,
+     "column": 0
+    }
+   },
+   {
+    "name": "arr",
+    "displayName": "arr",
+    "type": "ubyte",
+    "kind": "local",
+    "location": {
+     "at": "frame",
+     "ixOffset": -7
+    },
+    "array": {
+     "elementType": "ubyte",
+     "dimensions": [
+      {
+       "lower": 0,
+       "upper": 9
+      }
+     ]
+    },
+    "scope": {
+     "callableIndex": 1
+    },
+    "declaredAt": {
+     "fileIndex": 0,
+     "line": 16,
+     "column": 0
+    }
+   },
+   {
+    "name": "i",
+    "displayName": "i",
+    "type": "ubyte",
+    "kind": "local",
+    "location": {
+     "at": "frame",
+     "ixOffset": -1
+    },
+    "scope": {
+     "callableIndex": 1
+    },
+    "declaredAt": {
+     "fileIndex": 0,
+     "line": 17,
+     "column": 0
+    }
+   }
+  ],
+  "callSites": [
+   {
+    "returnAddress": 37635,
+    "statementIndex": 4,
+    "callerIndex": 3,
+    "kind": "sub",
+    "calleeIndex": 1,
+    "moreCallsFollow": false,
+    "order": 0
+   },
+   {
+    "returnAddress": 37644,
+    "statementIndex": 5,
+    "callerIndex": 3,
+    "kind": "function",
+    "calleeIndex": 0,
+    "moreCallsFollow": true,
+    "order": 0
+   },
+   {
+    "returnAddress": 37651,
+    "statementIndex": 5,
+    "callerIndex": 3,
+    "kind": "function",
+    "calleeIndex": 0,
+    "moreCallsFollow": false,
+    "order": 1
+   },
+   {
+    "returnAddress": 37670,
+    "statementIndex": 6,
+    "callerIndex": 3,
+    "kind": "function",
+    "calleeIndex": 2,
+    "moreCallsFollow": false,
+    "order": 0
+   },
+   {
+    "returnAddress": 37719,
+    "statementIndex": 10,
+    "callerIndex": 3,
+    "kind": "gosub",
+    "moreCallsFollow": false,
+    "order": 0
+   },
+   {
+    "returnAddress": 37731,
+    "statementIndex": 11,
+    "callerIndex": 3,
+    "kind": "on-gosub",
+    "moreCallsFollow": false,
+    "order": 0
+   }
+  ],
+  "frames": [
+   {
+    "callableIndex": 0,
+    "convention": "frame",
+    "returnSlotOffset": 4,
+    "argBytes": 2,
+    "startAddress": 37831,
+    "bodyStart": 37843,
+    "epilogueStart": 37867,
+    "endAddress": 37876,
+    "returnType": "uinteger"
+   },
+   {
+    "callableIndex": 1,
+    "convention": "frame",
+    "returnSlotOffset": 9,
+    "argBytes": 4,
+    "startAddress": 37876,
+    "bodyStart": 37899,
+    "epilogueStart": 37998,
+    "endAddress": 38021
+   },
+   {
+    "callableIndex": 2,
+    "convention": "fastcall",
+    "returnSlotOffset": 0,
+    "argBytes": 2,
+    "startAddress": 38021,
+    "bodyStart": 38021,
+    "epilogueStart": 38025,
+    "endAddress": 38026,
+    "returnType": "ubyte"
+   },
+   {
+    "callableIndex": 3,
+    "convention": "entrypoint",
+    "startAddress": 32768,
+    "bodyStart": 37576,
+    "epilogueStart": 37789,
+    "endAddress": 37790
+   }
+  ],
+  "mainBaselineSymbol": 32790,
+  "labels": [
+   {
+    "name": "1000",
+    "address": 37803
+   },
+   {
+    "name": "2000",
+    "address": 37817
+   }
+  ],
+  "libraryFiles": [],
+  "runtimeSymbols": [
+   {
+    "name": "core.__START_PROGRAM",
+    "address": 32768
+   },
+   {
+    "name": "core.__CALL_BACK__",
+    "address": 32790
+   },
+   {
+    "name": "core.ZXBASIC_MEM_HEAP",
+    "address": 32792
+   },
+   {
+    "name": "core.ZXBASIC_USER_DATA",
+    "address": 32792
+   },
+   {
+    "name": "core.ZXBASIC_USER_DATA_END",
+    "address": 37576
+   },
+   {
+    "name": "core.__MAIN_PROGRAM__",
+    "address": 37576
+   },
+   {
+    "name": "core.__END_PROGRAM",
+    "address": 37789
+   },
+   {
+    "name": "core.__MUL8",
+    "address": 38062
+   },
+   {
+    "name": "core.__MUL8_FAST",
+    "address": 38064
+   },
+   {
+    "name": "core.__ERROR",
+    "address": 38078
+   },
+   {
+    "name": "core.__ERROR_CODE",
+    "address": 38082
+   },
+   {
+    "name": "core.__STOP",
+    "address": 38084
+   },
+   {
+    "name": "core.__MEM_INIT",
+    "address": 38088
+   },
+   {
+    "name": "core.__MEM_INIT2",
+    "address": 38094
+   },
+   {
+    "name": "core.MEM_ALLOC",
+    "address": 38124
+   },
+   {
+    "name": "core.__MEM_ALLOC",
+    "address": 38124
+   },
+   {
+    "name": "core.__MEM_CALLOC",
+    "address": 38203
+   },
+   {
+    "name": "core.__ALLOC_LOCAL_ARRAY",
+    "address": 38225
+   },
+   {
+    "name": "core.__ALLOC_INITIALIZED_LOCAL_ARRAY",
+    "address": 38245
+   },
+   {
+    "name": "core.__STATIC_ARRAY1_B1",
+    "address": 38260
+   },
+   {
+    "name": "core.SCREEN_ADDR",
+    "address": 38266
+   },
+   {
+    "name": "core.SCREEN_ATTR_ADDR",
+    "address": 38268
+   },
+   {
+    "name": "core.__IN_SCREEN",
+    "address": 38270
+   },
+   {
+    "name": "core.__OUT_OF_SCREEN_ERR",
+    "address": 38280
+   },
+   {
+    "name": "core.__ATTR_ADDR",
+    "address": 38285
+   },
+   {
+    "name": "core.SET_ATTR",
+    "address": 38302
+   },
+   {
+    "name": "core.__SET_ATTR",
+    "address": 38309
+   },
+   {
+    "name": "core.__SET_ATTR2",
+    "address": 38309
+   },
+   {
+    "name": "core.__LOAD_S_POSN",
+    "address": 38322
+   },
+   {
+    "name": "core.__SAVE_S_POSN",
+    "address": 38334
+   },
+   {
+    "name": "core.__SET_SCR_PTR",
+    "address": 38343
+   },
+   {
+    "name": "core.JUMP_HL_PLUS_2A",
+    "address": 38372
+   },
+   {
+    "name": "core.JUMP_HL_PLUS_A",
+    "address": 38373
+   },
+   {
+    "name": "core.JUMP_HL_PLUS_DE",
+    "address": 38376
+   },
+   {
+    "name": "core.CALL_HL",
+    "address": 38381
+   },
+   {
+    "name": "core.INK",
+    "address": 38382
+   },
+   {
+    "name": "core.INK_TMP",
+    "address": 38409
+   },
+   {
+    "name": "core.PAPER",
+    "address": 38415
+   },
+   {
+    "name": "core.PAPER_TMP",
+    "address": 38445
+   },
+   {
+    "name": "core.FLASH",
+    "address": 38451
+   },
+   {
+    "name": "core.__SET_FLASH",
+    "address": 38454
+   },
+   {
+    "name": "core.FLASH_TMP",
+    "address": 38477
+   },
+   {
+    "name": "core.BRIGHT",
+    "address": 38482
+   },
+   {
+    "name": "core.__SET_BRIGHT",
+    "address": 38485
+   },
+   {
+    "name": "core.BRIGHT_TMP",
+    "address": 38508
+   },
+   {
+    "name": "core.OVER",
+    "address": 38513
+   },
+   {
+    "name": "core.OVER_TMP",
+    "address": 38535
+   },
+   {
+    "name": "core.INVERSE",
+    "address": 38559
+   },
+   {
+    "name": "core.INVERSE_TMP",
+    "address": 38572
+   },
+   {
+    "name": "core.BOLD",
+    "address": 38586
+   },
+   {
+    "name": "core.BOLD_TMP",
+    "address": 38599
+   },
+   {
+    "name": "core.ITALIC",
+    "address": 38611
+   },
+   {
+    "name": "core.ITALIC_TMP",
+    "address": 38624
+   },
+   {
+    "name": "core.__PRINT_INIT",
+    "address": 38638
+   },
+   {
+    "name": "core.__PRINTCHAR",
+    "address": 38674
+   },
+   {
+    "name": "core.__PRINT_CHR",
+    "address": 38678
+   },
+   {
+    "name": "core.__PRGRAPH0",
+    "address": 38739
+   },
+   {
+    "name": "core.PRINT_MODE",
+    "address": 38768
+   },
+   {
+    "name": "core.INVERSE_MODE",
+    "address": 38769
+   },
+   {
+    "name": "core.__PRINT_SPECIAL",
+    "address": 38793
+   },
+   {
+    "name": "core.PRINT_EOL",
+    "address": 38799
+   },
+   {
+    "name": "core.__PRINT_0Dh",
+    "address": 38800
+   },
+   {
+    "name": "core.__PRINT_EOL_END",
+    "address": 38817
+   },
+   {
+    "name": "core.__PRINT_AT",
+    "address": 38866
+   },
+   {
+    "name": "core.__PRINT_NOP",
+    "address": 38871
+   },
+   {
+    "name": "core.__PRINT_RESTART",
+    "address": 38871
+   },
+   {
+    "name": "core.__PRINT_DEL",
+    "address": 38903
+   },
+   {
+    "name": "core.__PRINT_INK2",
+    "address": 38930
+   },
+   {
+    "name": "core.__PRINT_PAP2",
+    "address": 38940
+   },
+   {
+    "name": "core.__PRINT_FLA",
+    "address": 38945
+   },
+   {
+    "name": "core.__PRINT_FLA2",
+    "address": 38950
+   },
+   {
+    "name": "core.__PRINT_BRI",
+    "address": 38955
+   },
+   {
+    "name": "core.__PRINT_BRI2",
+    "address": 38960
+   },
+   {
+    "name": "core.__PRINT_INV",
+    "address": 38965
+   },
+   {
+    "name": "core.__PRINT_INV2",
+    "address": 38970
+   },
+   {
+    "name": "core.__PRINT_OVR",
+    "address": 38975
+   },
+   {
+    "name": "core.__PRINT_OVR2",
+    "address": 38980
+   },
+   {
+    "name": "core.PRINT_COMMA",
+    "address": 39066
+   },
+   {
+    "name": "core.PRINT_TAB",
+    "address": 39074
+   },
+   {
+    "name": "core.PRINT_AT",
+    "address": 39090
+   },
+   {
+    "name": "core.COPY_ATTR",
+    "address": 39149
+   },
+   {
+    "name": "core.__SET_ATTR_MODE",
+    "address": 39167
+   },
+   {
+    "name": "core.__ILOAD32",
+    "address": 39211
+   },
+   {
+    "name": "core.MEM_FREE",
+    "address": 39221
+   },
+   {
+    "name": "core.__MEM_FREE",
+    "address": 39221
+   },
+   {
+    "name": "core.__ON_GOSUB",
+    "address": 39303
+   },
+   {
+    "name": "core.__ON_GOTO",
+    "address": 39309
+   },
+   {
+    "name": "core.__ON_GOTO_START",
+    "address": 39311
+   },
+   {
+    "name": "core.__PISTORE32",
+    "address": 39327
+   },
+   {
+    "name": "core.__ISTORE32",
+    "address": 39333
+   },
+   {
+    "name": "core.__STORE32",
+    "address": 39337
+   },
+   {
+    "name": "core.PRINT_STR",
+    "address": 39345
+   },
+   {
+    "name": "core.__PRINTSTR",
+    "address": 39345
+   },
+   {
+    "name": "core.__PRINT_STR",
+    "address": 39374
+   },
+   {
+    "name": "core.__FPSTACK_PUSH2",
+    "address": 39379
+   },
+   {
+    "name": "core.__FPSTACK_I16",
+    "address": 39396
+   },
+   {
+    "name": "core.__PRINTF",
+    "address": 39407
+   },
+   {
+    "name": "core.__PRINTU_START",
+    "address": 39443
+   },
+   {
+    "name": "core.__PRINT_MINUS",
+    "address": 39462
+   },
+   {
+    "name": "core.__ABS16",
+    "address": 39467
+   },
+   {
+    "name": "core.__NEGHL",
+    "address": 39470
+   },
+   {
+    "name": "core.__DIVU16",
+    "address": 39478
+   },
+   {
+    "name": "core.__DIVU16_FAST",
+    "address": 39478
+   },
+   {
+    "name": "core.__DIV16LOOP",
+    "address": 39485
+   },
+   {
+    "name": "core.__DIV16NOADD",
+    "address": 39496
+   },
+   {
+    "name": "core.__MODU16",
+    "address": 39502
+   },
+   {
+    "name": "core.__DIVI16",
+    "address": 39507
+   },
+   {
+    "name": "core.__DIVI16_FAST",
+    "address": 39507
+   },
+   {
+    "name": "core.__DIVI16A",
+    "address": 39521
+   },
+   {
+    "name": "core.__DIVI16B",
+    "address": 39526
+   },
+   {
+    "name": "core.__MODI16",
+    "address": 39535
+   },
+   {
+    "name": "core.__PRINTI16",
+    "address": 39558
+   },
+   {
+    "name": "core.__PRINTU16",
+    "address": 39569
+   },
+   {
+    "name": "core.__ABS32",
+    "address": 39592
+   },
+   {
+    "name": "core.__NEG32",
+    "address": 39595
+   },
+   {
+    "name": "core.__PRINTF16",
+    "address": 39613
+   },
+   {
+    "name": "core.__DIVU32",
+    "address": 39664
+   },
+   {
+    "name": "core.__DIVU32START",
+    "address": 39668
+   },
+   {
+    "name": "core.__DIV32LOOP",
+    "address": 39687
+   },
+   {
+    "name": "core.__DIV32NOADD",
+    "address": 39718
+   },
+   {
+    "name": "core.__MODU32",
+    "address": 39732
+   },
+   {
+    "name": "core.__MODU32START",
+    "address": 39739
+   },
+   {
+    "name": "core.__DIVI32",
+    "address": 39746
+   },
+   {
+    "name": "core.__DIVI32START",
+    "address": 39750
+   },
+   {
+    "name": "core.__MODI32",
+    "address": 39779
+   },
+   {
+    "name": "core.__PRINTI32",
+    "address": 39828
+   },
+   {
+    "name": "core.__PRINTU32",
+    "address": 39839
+   },
+   {
+    "name": "core.__DIVU8",
+    "address": 39871
+   },
+   {
+    "name": "core.__DIVU8_FAST",
+    "address": 39873
+   },
+   {
+    "name": "core.__DIV8LOOP",
+    "address": 39878
+   },
+   {
+    "name": "core.__DIV8NOSUB",
+    "address": 39886
+   },
+   {
+    "name": "core.__DIVI8",
+    "address": 39891
+   },
+   {
+    "name": "core.__DIVI8_FAST",
+    "address": 39893
+   },
+   {
+    "name": "core.__DIV8A",
+    "address": 39901
+   },
+   {
+    "name": "core.__DIV8B",
+    "address": 39910
+   },
+   {
+    "name": "core.__MODU8",
+    "address": 39921
+   },
+   {
+    "name": "core.__MODU8_FAST",
+    "address": 39923
+   },
+   {
+    "name": "core.__MODI8",
+    "address": 39928
+   },
+   {
+    "name": "core.__MODI8_FAST",
+    "address": 39930
+   },
+   {
+    "name": "core.__MODI8_POS",
+    "address": 39942
+   },
+   {
+    "name": "core.__PRINTI8",
+    "address": 39949
+   },
+   {
+    "name": "core.__PRINTU8",
+    "address": 39960
+   },
+   {
+    "name": "core.__PISTOREF",
+    "address": 39982
+   },
+   {
+    "name": "core.__ISTOREF",
+    "address": 39989
+   },
+   {
+    "name": "core.__STOREF",
+    "address": 39995
+   },
+   {
+    "name": "core.__REALLOC",
+    "address": 40005
+   },
+   {
+    "name": "core.__STRASSIGN",
+    "address": 40051
+   },
+   {
+    "name": "core.__STRCPY",
+    "address": 40103
+   },
+   {
+    "name": "core.__PISTORE_STR",
+    "address": 40124
+   },
+   {
+    "name": "core.__ISTORE_STR",
+    "address": 40128
+   },
+   {
+    "name": "core.__STORE_STR",
+    "address": 40132
+   }
+  ],
+  "errorEntry": 38078,
+  "optimizationLevel": 2
+ }
+}

@@ -202,7 +202,7 @@
     "returnAddress": 32806,
     "statementIndex": 1,
     "callerIndex": 0,
-    "kind": "gosub",
+    "kind": "local",
     "moreCallsFollow": false,
     "order": 0
    },
@@ -210,7 +210,7 @@
     "returnAddress": 32834,
     "statementIndex": 5,
     "callerIndex": 0,
-    "kind": "gosub",
+    "kind": "local",
     "moreCallsFollow": false,
     "order": 0
    }
@@ -399,7 +399,13 @@
     "address": 39112
    }
   ],
-  "errorEntry": 37750,
+  "errorStop": {
+   "entry": 37750,
+   "code": {
+    "register": "a"
+   },
+   "reports": "zx-rom"
+  },
   "optimizationLevel": 0
  }
 }

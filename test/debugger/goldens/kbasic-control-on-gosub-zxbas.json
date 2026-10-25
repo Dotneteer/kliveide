@@ -221,7 +221,8 @@
    {
     "name": "i",
     "displayName": "i",
-    "type": "ubyte",
+    "type": "u8",
+    "typeLabel": "UByte",
     "kind": "global",
     "location": {
      "at": "absolute",
@@ -240,7 +241,8 @@
     "returnAddress": 32842,
     "statementIndex": 1,
     "callerIndex": 0,
-    "kind": "on-gosub",
+    "kind": "local",
+    "dispatch": true,
     "moreCallsFollow": false,
     "order": 0
    }
@@ -433,7 +435,13 @@
     "address": 39172
    }
   ],
-  "errorEntry": 37810,
+  "errorStop": {
+   "entry": 37810,
+   "code": {
+    "register": "a"
+   },
+   "reports": "zx-rom"
+  },
   "optimizationLevel": 0
  }
 }

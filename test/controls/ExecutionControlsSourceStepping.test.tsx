@@ -123,7 +123,7 @@ describe("ExecutionControls source stepping", () => {
       }
     };
     emu.getSourceStopInfo.mockResolvedValue({ kind: "statement", pc: 0x8000, statementIndex: 4, returned: [] });
-    emu.getSourceCallStack.mockResolvedValue([{ callableIndex: 0, kind: "main", baseline: 0xff00 }]);
+    emu.getSourceCallStack.mockResolvedValue([{ callableIndex: 0, kind: "entry", baseline: 0xff00 }]);
     await renderPaused(withCalls);
     expect(screen.getByTitle("Step Into g")).toBeInTheDocument();
     await act(async () => {

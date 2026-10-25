@@ -19,8 +19,8 @@ memory[0x9001] = 0x30; // 12345
 memory[0xff05] = 7;
 
 const chain = [
-  { callableIndex: 1, kind: "routine", baseline: 0xfefe, returnSlot: 0xff02, ix: 0xff00, callSite: { returnAddress: 0x8010, statementIndex: 0, callerIndex: 0, kind: "function", calleeIndex: 1, moreCallsFollow: false, order: 0 } },
-  { callableIndex: 0, kind: "main", baseline: 0xff40 }
+  { callableIndex: 1, kind: "routine", baseline: 0xfefe, returnSlot: 0xff02, ix: 0xff00, callSite: { returnAddress: 0x8010, statementIndex: 0, callerIndex: 0, kind: "routine", returnsValue: true, calleeIndex: 1, moreCallsFollow: false, order: 0 } },
+  { callableIndex: 0, kind: "entry", baseline: 0xff40 }
 ];
 const stop = { kind: "statement", pc: 0x8100, statementIndex: 1, returned: [] };
 
@@ -60,6 +60,7 @@ const result = {
   listFileItems: [],
   errors: [],
   sourceLevelDebug: {
+    language: "basic",
     files: [{ filename: "/p/code/main.bas" }],
     statements: [
       { index: 0, fileIndex: 0, startLine: 9, startColumn: 0, endLine: 9, endColumn: 10, startAddress: 0x800c, endAddress: 0x8014, kind: "assign", span },
@@ -72,13 +73,13 @@ const result = {
     addressToStatement: [],
     extensions: {
       variables: [
-        { name: "score", displayName: "score", type: "uinteger", kind: "global", location: { at: "absolute", address: 0x9000 }, scope: "global", declaredAt: { fileIndex: 0, line: 1, column: 0 } },
-        { name: "n", displayName: "n", type: "ubyte", kind: "parameter", location: { at: "frame", ixOffset: 5 }, scope: { callableIndex: 1 }, declaredAt: { fileIndex: 0, line: 2, column: 11 } }
+        { name: "score", displayName: "score", type: "u16", typeLabel: "UInteger", kind: "global", location: { at: "absolute", address: 0x9000 }, scope: "global", declaredAt: { fileIndex: 0, line: 1, column: 0 } },
+        { name: "n", displayName: "n", type: "u8", typeLabel: "UByte", kind: "parameter", location: { at: "frame", ixOffset: 5 }, scope: { callableIndex: 1 }, declaredAt: { fileIndex: 0, line: 2, column: 11 } }
       ],
       callSites: [],
       frames: [
         { callableIndex: 0, convention: "entrypoint", startAddress: 0x8000, bodyStart: 0x8000, epilogueStart: 0x8020, endAddress: 0x8020 },
-        { callableIndex: 1, convention: "frame", returnSlotOffset: 4, argBytes: 2, startAddress: 0x80f0, bodyStart: 0x8100, epilogueStart: 0x8110, endAddress: 0x8118, returnType: "ubyte" }
+        { callableIndex: 1, convention: "frame", returnSlotOffset: 4, argBytes: 2, startAddress: 0x80f0, bodyStart: 0x8100, epilogueStart: 0x8110, endAddress: 0x8118, returns: { type: "u8", typeLabel: "UByte", in: "a" } }
       ],
       mainBaselineSymbol: 0x9100,
       runtimeSymbols: [],

@@ -122,8 +122,8 @@ import { reverseDebugBudgetBytes } from "./reverse/KeyframeStore";
 import { IAnyMachine } from "@renderer/abstractions/IAnyMachine";
 import type { SourceLevelDebugInfo } from "@abstractions/CompilerInfo";
 import type { SourceActivationInfo, SourceStopInfo } from "@abstractions/SourceDebugInfo";
+import { errorReport } from "@common/spectrum/rom-reports";
 import {
-  basicErrorReport,
   beginSourceStep,
   canStepOut,
   CurrentStatementTracker,
@@ -717,7 +717,7 @@ export class MachineController implements IMachineController {
     const debugSupport = this.debugSupport;
     if (!debugSupport) return;
     const on = this.stopOnErrors && !!index;
-    debugSupport.errorStopAddress = on ? index!.info.extensions?.errorEntry : undefined;
+    debugSupport.errorStopAddress = on ? index!.info.extensions?.errorStop?.entry : undefined;
     // --- The ROM's own errors (RST 8), while a statement of the program is on the stack
     debugSupport.romErrorAddress = on ? ROM_ERROR_RESTART : undefined;
     debugSupport.romErrorGuard = on ? () => innermostUserStatement(index!, this.machineView()) >= 0 : undefined;
@@ -727,7 +727,11 @@ export class MachineController implements IMachineController {
   private errorCodeAt(pc: number): number | undefined {
     const debugSupport = this.debugSupport;
     if (!debugSupport) return undefined;
-    if (pc === debugSupport.errorStopAddress) return ((this.machine as unknown as { af: number }).af >> 8) & 0xff;
+    if (pc === debugSupport.errorStopAddress) {
+      // --- The producer says where its error routine finds the code: A, or a byte in memory
+      const code = this.sourceIndex?.info.extensions?.errorStop?.code;
+      return code && "address" in code ? this.machine.doReadMemory(code.address) & 0xff : ((this.machine as unknown as { af: number }).af >> 8) & 0xff;
+    }
     if (pc === debugSupport.romErrorAddress && debugSupport.romErrorGuard?.()) {
       const view = this.machineView();
       return this.machine.doReadMemory(view.readWord(view.sp)) & 0xff;
@@ -810,7 +814,7 @@ export class MachineController implements IMachineController {
         pc,
         statementIndex: step.stopStatement ?? index.statementAt(pc, index.partitionNow(this.machineView(), pc)),
         ...(from?.kind === "routine" ? { returnedFrom: from.callableIndex } : {}),
-        ...(from?.kind === "gosub" ? { returnedFromGosub: true } : {}),
+        ...(from?.kind === "local" ? { returnedFromLocal: true } : {}),
         returned: step.returned
       };
     }
@@ -821,7 +825,8 @@ export class MachineController implements IMachineController {
         pc,
         statementIndex: -1,
         userStatementIndex: this.userStatement(index, true),
-        error: { code, report: basicErrorReport(code) },
+        // --- The program's error stop names the error by the producer's table; the ROM's restart by the ROM's
+        error: { code, report: errorReport(pc === this.debugSupport?.errorStopAddress ? index.info.extensions?.errorStop?.reports : "zx-rom", code) },
         returned: step?.returned ?? []
       };
     }

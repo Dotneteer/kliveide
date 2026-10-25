@@ -133,7 +133,7 @@
    {
     "name": "counter",
     "displayName": "counter",
-    "type": "integer",
+    "type": "i16",
     "typeLabel": "int",
     "kind": "global",
     "location": {
@@ -150,7 +150,7 @@
    {
     "name": "a",
     "displayName": "a",
-    "type": "integer",
+    "type": "i16",
     "typeLabel": "int",
     "kind": "parameter",
     "location": {
@@ -169,7 +169,7 @@
    {
     "name": "b",
     "displayName": "b",
-    "type": "integer",
+    "type": "i16",
     "typeLabel": "int",
     "kind": "parameter",
     "location": {
@@ -188,7 +188,7 @@
    {
     "name": "s",
     "displayName": "s",
-    "type": "integer",
+    "type": "i16",
     "typeLabel": "int",
     "kind": "local",
     "location": {
@@ -210,7 +210,8 @@
     "returnAddress": 32793,
     "statementIndex": -1,
     "callerIndex": 0,
-    "kind": "function",
+    "kind": "routine",
+    "returnsValue": true,
     "calleeIndex": 2,
     "moreCallsFollow": false,
     "order": 0
@@ -219,7 +220,8 @@
     "returnAddress": 33575,
     "statementIndex": 2,
     "callerIndex": 2,
-    "kind": "function",
+    "kind": "routine",
+    "returnsValue": true,
     "calleeIndex": 1,
     "moreCallsFollow": false,
     "order": 0

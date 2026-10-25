@@ -156,6 +156,7 @@ export class KBasicCompiler implements IKliveCompiler {
       sourceMap: classic.sourceMap,
       listFileItems: classic.listFileItems,
       sourceLevelDebug: generated.debug.sourceLevel,
+      compilerName: "Klive BASIC",
       modelType: model,
       entryAddress: generated.entryAddress
     } as DebuggableOutput & { modelType: number; entryAddress: number };

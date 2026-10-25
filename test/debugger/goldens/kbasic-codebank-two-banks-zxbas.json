@@ -202,7 +202,8 @@
    {
     "name": "result",
     "displayName": "result",
-    "type": "uinteger",
+    "type": "u16",
+    "typeLabel": "UInteger",
     "kind": "global",
     "location": {
      "at": "absolute",
@@ -218,7 +219,8 @@
    {
     "name": "n",
     "displayName": "n",
-    "type": "uinteger",
+    "type": "u16",
+    "typeLabel": "UInteger",
     "kind": "parameter",
     "location": {
      "at": "frame",
@@ -236,7 +238,8 @@
    {
     "name": "v",
     "displayName": "v",
-    "type": "uinteger",
+    "type": "u16",
+    "typeLabel": "UInteger",
     "kind": "parameter",
     "location": {
      "at": "frame",
@@ -258,7 +261,8 @@
     "partition": 31,
     "statementIndex": 0,
     "callerIndex": 2,
-    "kind": "function",
+    "kind": "routine",
+    "returnsValue": true,
     "calleeIndex": 1,
     "moreCallsFollow": false,
     "order": 0
@@ -267,7 +271,7 @@
     "returnAddress": 32819,
     "statementIndex": 4,
     "callerIndex": 0,
-    "kind": "sub",
+    "kind": "routine",
     "calleeIndex": 2,
     "moreCallsFollow": false,
     "order": 0
@@ -292,7 +296,11 @@
     "epilogueStart": 24606,
     "endAddress": 24626,
     "partition": 30,
-    "returnType": "uinteger"
+    "returns": {
+     "type": "u16",
+     "typeLabel": "UInteger",
+     "in": "hl"
+    }
    },
    {
     "callableIndex": 2,
@@ -543,7 +551,13 @@
     "address": 40127
    }
   ],
-  "errorEntry": 38231,
+  "errorStop": {
+   "entry": 38231,
+   "code": {
+    "register": "a"
+   },
+   "reports": "zx-rom"
+  },
   "codebank": {
    "window": 24576,
    "windowSize": 8192,
@@ -552,6 +566,13 @@
    "currentBank": 38014,
    "shadowStackPointer": 38015,
    "shadowStack": 40162,
+   "records": {
+    "size": 3,
+    "grows": "up",
+    "bankOffset": 0,
+    "returnOffset": 1,
+    "slotStride": 2
+   },
    "banks": [
     {
      "bank": 1,

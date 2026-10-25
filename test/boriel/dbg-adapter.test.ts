@@ -118,7 +118,14 @@ describe("the .dbg adapter", () => {
     const { sourceLevelDebug: sld } = adapt("calls");
     const main = sld.callables.find((c) => c.kind === "entrypoint")!.index;
     const sites = sld.extensions!.callSites;
-    expect(sites.map((s) => s.kind)).toEqual(["sub", "function", "function", "function", "gosub", "on-gosub"]);
+    expect(sites.map((s) => [s.kind, !!s.returnsValue, !!s.dispatch])).toEqual([
+      ["routine", false, false],
+      ["routine", true, false],
+      ["routine", true, false],
+      ["routine", true, false],
+      ["local", false, false],
+      ["local", false, true]
+    ]);
     for (const site of sites) {
       expect(site.callerIndex).toBe(main);
       // --- The site's statement is the one whose code holds the call
@@ -145,8 +152,8 @@ describe("the .dbg adapter", () => {
     expect(names).not.toContain("v");
     expect(calls.dropped).toEqual(["variable v: in a routine without a frame"]);
     const arr = calls.sourceLevelDebug.extensions!.variables.find((v) => v.name === "arr")!;
-    expect(arr).toMatchObject({ kind: "local", location: { at: "frame", ixOffset: -7 }, array: { elementType: "ubyte", dimensions: [{ lower: 0, upper: 9 }] } });
-    expect(calls.sourceLevelDebug.extensions!.variables.find((v) => v.name === "acc")).toMatchObject({ byRef: true, type: "long" });
+    expect(arr).toMatchObject({ kind: "local", location: { at: "frame", ixOffset: -7 }, array: { elementType: "u8", elementLabel: "UByte", layout: "descriptor", dimensions: [{ lower: 0, upper: 9 }] } });
+    expect(calls.sourceLevelDebug.extensions!.variables.find((v) => v.name === "acc")).toMatchObject({ byRef: true, type: "i32", typeLabel: "Long" });
 
     const arrays = adapt("arrays");
     // --- d(k): a dynamic local array, behind a pointer to a heap block of unknown shape
@@ -161,7 +168,7 @@ describe("the .dbg adapter", () => {
     const { sourceLevelDebug: sld } = adapt("calls");
     const ext = sld.extensions!;
     const map = parseMemoryMap(fs.readFileSync(path.join(FIXTURES, "calls", "program.map"), "utf8"));
-    expect(ext.errorEntry).toBe(map.find((e) => e.name === "core.__ERROR")!.address);
+    expect(ext.errorStop).toEqual({ entry: map.find((e) => e.name === "core.__ERROR")!.address, code: { register: "a" }, reports: "zx-rom" });
     expect(ext.labels!.map((l) => l.name)).toEqual(["1000", "2000"]);
     expect(ext.runtimeSymbols.every((s) => s.name.startsWith("core."))).toBe(true);
     expect(ext.mainBaselineSymbol).toBe(map.find((e) => e.name === "core.__CALL_BACK__")!.address);
@@ -230,10 +237,16 @@ describe("the .dbg adapter on banked builds (--split-modules)", () => {
     const cb128 = adaptBanked("banked-128", "zx128k").sourceLevelDebug.extensions!.codebank!;
     const map = parseMemoryMap(fs.readFileSync(path.join(FIXTURES, "banked-128", "program.map"), "utf8"));
     const pageStack = map.find((e) => e.name === "core.PAGE_STACK")!.address;
-    expect(cb128).toMatchObject({ window: 0xc000, windowSize: 0x4000, shadowStackKind: "zxbc", bankMask: 0x07, shadowStackPointer: pageStack, shadowStack: pageStack });
+    expect(cb128).toMatchObject({
+      window: 0xc000,
+      windowSize: 0x4000,
+      records: { size: 4, grows: "down", bankOffset: 3, returnOffset: 0, bankMask: 0x07, slotStride: 1 },
+      shadowStackPointer: pageStack,
+      shadowStack: pageStack
+    });
     expect(cb128.banks.find((b) => b.bank === 1)).toEqual({ bank: 1, pages: [1, 1] });
     const cbNext = adaptBanked("banked-next", "zxnext").sourceLevelDebug.extensions!.codebank!;
-    expect(cbNext).toMatchObject({ shadowStackKind: "zxbc", bankMask: 0xff });
+    expect(cbNext.records).toMatchObject({ grows: "down", bankMask: 0xff });
     expect(cbNext.banks.find((b) => b.bank === 34)).toEqual({ bank: 34, pages: [34, 35] });
     // --- The far return is the helper's own return path, loaded by its LD HL,nn
     expect(cbNext.farReturn).toBeGreaterThan(cbNext.farCall);

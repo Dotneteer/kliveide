@@ -86,14 +86,14 @@ describe("the source-level tables", () => {
     const info = generated.debug.sourceLevel;
     const sites = info.extensions!.callSites;
     const callee = (i?: number) => (i === undefined ? undefined : info.callables[i].name);
-    const summary = sites.map((c) => [info.statements[c.statementIndex]?.startLine, c.kind, callee(c.calleeIndex), c.order, c.moreCallsFollow]);
+    const summary = sites.map((c) => [info.statements[c.statementIndex]?.startLine, c.returnsValue ? "routine+value" : c.kind, callee(c.calleeIndex), c.order, c.moreCallsFollow]);
     expect(summary).toEqual(
       expect.arrayContaining([
-        [14, "sub", "add", 0, false],
-        [14, "function", "square", 0, true],
-        [14, "function", "square", 1, false],
-        [16, "gosub", undefined, 0, false],
-        [17, "function", "hex8", 0, false]
+        [14, "routine", "add", 0, false],
+        [14, "routine+value", "square", 0, true],
+        [14, "routine+value", "square", 1, false],
+        [16, "local", undefined, 0, false],
+        [17, "routine+value", "hex8", 0, false]
       ])
     );
     // --- The library's own call (hex8 calls __kbHexDigits) is a call site of a library callable
@@ -109,10 +109,10 @@ describe("the source-level tables", () => {
     const vars = info.extensions!.variables;
     const add = info.callables.findIndex((c) => c.name === "add");
     const byName = (name: string) => vars.find((v) => v.name === name && (v.scope === "global" || v.scope.callableIndex === add))!;
-    expect(byName("total")).toMatchObject({ type: "uinteger", kind: "global", scope: "global", location: { at: "absolute" } });
-    expect(byName("names")).toMatchObject({ type: "string", array: { elementType: "string", dimensions: [{ lower: 1, upper: 2 }] } });
+    expect(byName("total")).toMatchObject({ type: "u16", typeLabel: "UInteger", kind: "global", scope: "global", location: { at: "absolute" } });
+    expect(byName("names")).toMatchObject({ type: "str.heap", typeLabel: "String", array: { elementType: "str.heap", elementLabel: "String", layout: "descriptor", dimensions: [{ lower: 1, upper: 2 }] } });
     expect(byName("LIMIT")).toMatchObject({ kind: "constant", location: { at: "constant", value: 3 } });
-    expect(byName("n")).toMatchObject({ kind: "parameter", type: "ubyte", scope: { callableIndex: add }, location: { at: "frame", ixOffset: 5 } });
+    expect(byName("n")).toMatchObject({ kind: "parameter", type: "u8", typeLabel: "UByte", scope: { callableIndex: add }, location: { at: "frame", ixOffset: 5 } });
     expect(byName("t")).toMatchObject({ kind: "parameter", byRef: true, location: { at: "frame", ixOffset: 6 } });
     expect(byName("twice")).toMatchObject({ kind: "local", location: { at: "frame", ixOffset: -2 } });
     expect(byName("twice").declaredAt).toEqual({ fileIndex: 0, line: 6, column: 6 });
@@ -144,7 +144,7 @@ describe("the source-level tables", () => {
         const depth = (mainBaseline - v.sp) / 2;
         if (depth > 0) {
           const site = returnAddresses.get(word(v, v.sp))!;
-          expect(site.kind).toBe("gosub");
+          expect(site.kind).toBe("local");
           gosubLevels++;
         } else expect(v.sp).toBe(mainBaseline);
       } else {
@@ -165,7 +165,7 @@ describe("the source-level tables", () => {
     const ext = generated.debug.sourceLevel.extensions!;
     const names = ext.runtimeSymbols.map((s) => s.name);
     expect(names).toEqual(expect.arrayContaining(["core.PrintU16", "core.ProgramSP", "core.RaiseError"]));
-    expect(ext.errorEntry).toBe(ext.runtimeSymbols.find((s) => s.name === "core.RaiseError")!.address);
+    expect(ext.errorStop!.entry).toBe(ext.runtimeSymbols.find((s) => s.name === "core.RaiseError")!.address);
     expect(ext.optimizationLevel).toBe(0);
     expect(JSON.parse(JSON.stringify(generated.debug.sourceLevel))).toEqual(generated.debug.sourceLevel);
   });

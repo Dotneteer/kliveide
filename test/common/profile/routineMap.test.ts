@@ -185,13 +185,13 @@ describe("routine maps from Klive BASIC", () => {
 
   it("uses the callables' exact extents first (D6 (1))", () => {
     const map = buildRoutineMap({ compilation, layout: sp48ProfileLayout, offsetOf: offsets(sp48ProfileLayout), machineId: "sp48" });
-    expect(map.source).toBe("kbasic");
-    expect(routineSourceLabel(map)).toBe("Routines from Klive BASIC SUBs and FUNCTIONs (Klive BASIC)");
+    expect(map.source).toBe("sourceLevel");
+    expect(routineSourceLabel(map)).toBe("Routines from the source program's routines (Klive BASIC)");
     const debug = compilation.sourceLevelDebug!;
     const beep = debug.callables.find((c) => c.name.toLowerCase() === "blip")!;
     const frame = debug.extensions!.frames.find((f) => f.callableIndex === beep.index)!;
     const routine = map.routineAt(frame.bodyStart);
-    expect(routine).toMatchObject({ source: "kbasic", entry: frame.startAddress, end: frame.endAddress, line: beep.startLine });
+    expect(routine).toMatchObject({ source: "sourceLevel", entry: frame.startAddress, end: frame.endAddress, line: beep.startLine });
     expect(routine.name.toLowerCase()).toBe("blip");
     // --- The runtime between the callables is named by its runtime symbols
     const runtime = debug.extensions!.runtimeSymbols[0];

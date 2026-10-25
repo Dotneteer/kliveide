@@ -1,0 +1,264 @@
+{
+ "language": "c",
+ "files": [
+  {
+   "index": 0,
+   "filename": "<root>/test/z88dk/fixtures/zx-hello/main.c"
+  }
+ ],
+ "statements": [
+  {
+   "index": 0,
+   "fileIndex": 0,
+   "startLine": 10,
+   "startColumn": 0,
+   "endLine": 10,
+   "endColumn": 18,
+   "startAddress": 33542,
+   "endAddress": 33554,
+   "kind": "other",
+   "callableIndex": 1
+  },
+  {
+   "index": 1,
+   "fileIndex": 0,
+   "startLine": 11,
+   "startColumn": 0,
+   "endLine": 11,
+   "endColumn": 13,
+   "startAddress": 33554,
+   "endAddress": 33561,
+   "kind": "other",
+   "callableIndex": 1
+  },
+  {
+   "index": 2,
+   "fileIndex": 0,
+   "startLine": 16,
+   "startColumn": 0,
+   "endLine": 16,
+   "endColumn": 24,
+   "startAddress": 33564,
+   "endAddress": 33589,
+   "kind": "other",
+   "callableIndex": 2
+  },
+  {
+   "index": 3,
+   "fileIndex": 0,
+   "startLine": 18,
+   "startColumn": 0,
+   "endLine": 18,
+   "endColumn": 34,
+   "startAddress": 33589,
+   "endAddress": 33752,
+   "kind": "other",
+   "callableIndex": 2
+  }
+ ],
+ "callables": [
+  {
+   "index": 0,
+   "name": "(startup)",
+   "kind": "entrypoint",
+   "fileIndex": 0,
+   "startLine": 1,
+   "endLine": 1,
+   "entryAddress": 32768,
+   "exitAddresses": [],
+   "firstStatementIndex": 0,
+   "lastStatementIndex": -1
+  },
+  {
+   "index": 1,
+   "name": "add",
+   "kind": "function",
+   "fileIndex": 0,
+   "startLine": 10,
+   "endLine": 11,
+   "entryAddress": 33542,
+   "exitAddresses": [
+    33560
+   ],
+   "firstStatementIndex": 0,
+   "lastStatementIndex": 1
+  },
+  {
+   "index": 2,
+   "name": "main",
+   "kind": "function",
+   "fileIndex": 0,
+   "startLine": 16,
+   "endLine": 18,
+   "entryAddress": 33564,
+   "exitAddresses": [
+    33610
+   ],
+   "firstStatementIndex": 2,
+   "lastStatementIndex": 3
+  }
+ ],
+ "addressToStatement": [
+  [
+   0,
+   -1
+  ],
+  [
+   33542,
+   0
+  ],
+  [
+   33554,
+   1
+  ],
+  [
+   33561,
+   -1
+  ],
+  [
+   33564,
+   2
+  ],
+  [
+   33589,
+   3
+  ],
+  [
+   33752,
+   -1
+  ]
+ ],
+ "extensions": {
+  "variables": [
+   {
+    "name": "counter",
+    "displayName": "counter",
+    "type": "integer",
+    "typeLabel": "int",
+    "kind": "global",
+    "location": {
+     "at": "absolute",
+     "address": 35775
+    },
+    "scope": "global",
+    "declaredAt": {
+     "fileIndex": 0,
+     "line": 1,
+     "column": 0
+    }
+   },
+   {
+    "name": "a",
+    "displayName": "a",
+    "type": "integer",
+    "typeLabel": "int",
+    "kind": "parameter",
+    "location": {
+     "at": "frame",
+     "ixOffset": 6
+    },
+    "scope": {
+     "callableIndex": 1
+    },
+    "declaredAt": {
+     "fileIndex": 0,
+     "line": 10,
+     "column": 0
+    }
+   },
+   {
+    "name": "b",
+    "displayName": "b",
+    "type": "integer",
+    "typeLabel": "int",
+    "kind": "parameter",
+    "location": {
+     "at": "frame",
+     "ixOffset": 4
+    },
+    "scope": {
+     "callableIndex": 1
+    },
+    "declaredAt": {
+     "fileIndex": 0,
+     "line": 10,
+     "column": 0
+    }
+   },
+   {
+    "name": "s",
+    "displayName": "s",
+    "type": "integer",
+    "typeLabel": "int",
+    "kind": "local",
+    "location": {
+     "at": "frame",
+     "ixOffset": -2
+    },
+    "scope": {
+     "callableIndex": 1
+    },
+    "declaredAt": {
+     "fileIndex": 0,
+     "line": 10,
+     "column": 0
+    }
+   }
+  ],
+  "callSites": [
+   {
+    "returnAddress": 32793,
+    "statementIndex": -1,
+    "callerIndex": 0,
+    "kind": "function",
+    "calleeIndex": 2,
+    "moreCallsFollow": false,
+    "order": 0
+   },
+   {
+    "returnAddress": 33575,
+    "statementIndex": 2,
+    "callerIndex": 2,
+    "kind": "function",
+    "calleeIndex": 1,
+    "moreCallsFollow": false,
+    "order": 0
+   }
+  ],
+  "frames": [
+   {
+    "callableIndex": 0,
+    "convention": "entrypoint",
+    "startAddress": 32768,
+    "bodyStart": 32768,
+    "epilogueStart": 32768,
+    "endAddress": 33539,
+    "library": true
+   },
+   {
+    "callableIndex": 1,
+    "convention": "frame",
+    "returnSlotOffset": 4,
+    "argBytes": 0,
+    "startAddress": 33539,
+    "bodyStart": 33542,
+    "epilogueStart": 33557,
+    "endAddress": 33561
+   },
+   {
+    "callableIndex": 2,
+    "convention": "frame",
+    "returnSlotOffset": 2,
+    "argBytes": 0,
+    "startAddress": 33561,
+    "bodyStart": 33564,
+    "epilogueStart": 33607,
+    "endAddress": 33752
+   }
+  ],
+  "mainBaselineSymbol": 32803,
+  "framePointerAddress": 35790,
+  "runtimeSymbols": [],
+  "optimizationLevel": 0
+ }
+}

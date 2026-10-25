@@ -585,20 +585,20 @@ export const setWatchesAction: ActionCreator = (watches: any[]) => ({
   payload: { watches }
 });
 
-// --- BASIC watch expressions (the Variables panel, plan §10.8)
-export const addBasicWatchAction: ActionCreator = (expression: string) => ({
-  type: "ADD_BASIC_WATCH",
+// --- Source-level watch expressions (the Variables panel, plan §10.8), in the program's language
+export const addSourceWatchAction: ActionCreator = (expression: string) => ({
+  type: "ADD_SOURCE_WATCH",
   payload: { text: expression }
 });
 
-export const removeBasicWatchAction: ActionCreator = (index: number) => ({
-  type: "REMOVE_BASIC_WATCH",
+export const removeSourceWatchAction: ActionCreator = (index: number) => ({
+  type: "REMOVE_SOURCE_WATCH",
   payload: { index }
 });
 
 /** Replaces the list in one action, as `setWatchesAction` does, when a project is opened. */
-export const setBasicWatchesAction: ActionCreator = (watches: string[]) => ({
-  type: "SET_BASIC_WATCHES",
+export const setSourceWatchesAction: ActionCreator = (watches: string[]) => ({
+  type: "SET_SOURCE_WATCHES",
   payload: { value: watches }
 });
 

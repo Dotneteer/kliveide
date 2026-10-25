@@ -11,12 +11,5 @@
   "A2 language imports a back-end internal|src/main/kbasic/semantics/constants.ts": 2,
   "A2 language imports a back-end internal|src/main/kbasic/semantics/expressions.ts": 1,
   "A2 language runs the Z80 assembler|src/main/kbasic/codegen.ts": 1,
-  "B1 debug core imports a language|src/renderer/appIde/debugger/source/value-decoder.ts": 1,
-  "B1 debug core imports a language|src/renderer/appIde/debugger/source/watch-expression.ts": 5,
-  "B2 debug core names a language construct|src/common/abstractions/SourceDebugInfo.ts": 3,
-  "B2 debug core names a language construct|src/common/profile/routineMap.ts": 2,
-  "B2 debug core names a language construct|src/emu/machines/SourceStepDecision.ts": 5,
-  "B2 debug core names a language construct|src/renderer/appIde/debugger/source/call-stack-model.ts": 5,
-  "B2 debug core names a language construct|src/renderer/appIde/debugger/source/variables-model.ts": 1,
-  "B2 debug core names a language construct|src/renderer/appIde/utils/source-location.ts": 1
+  "B1 debug core imports a language|src/renderer/appIde/debugger/source/value-decoder.ts": 1
 }
