@@ -1,7 +1,7 @@
 ; @module   tape
 ; @summary  SAVE, LOAD and VERIFY of CODE (and SCREEN$) through the ROM's tape routines.
 ; @exports  TapeSave, TapeLoad
-; @requires rom, strings
+; @requires rom, strcore
 ;
 ; A CODE block goes to tape as the ROM writes it: a 17-byte header (type 3, the name padded to ten
 ; characters, the length, the start address, 32768) and then the data. LOAD and VERIFY read headers

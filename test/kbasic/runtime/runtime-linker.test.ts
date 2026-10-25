@@ -34,6 +34,7 @@ describe("Klive BASIC runtime - linker", () => {
       "rom",
       "errors",
       "heap",
+      "strcore",
       "strings"
     ]);
   });
@@ -41,7 +42,7 @@ describe("Klive BASIC runtime - linker", () => {
   it("accepts labels with or without core. and links each module once", () => {
     const names = resolveRuntimeModules(["Alloc", "core.Free", "core.StrDup", "PrintStr"]).map((m) => m.name);
     expect(names).toEqual([...new Set(names)]);
-    expect(names).toEqual(["program", "rom", "errors", "heap", "print", "strings"]);
+    expect(names).toEqual(["program", "rom", "errors", "heap", "print", "strcore", "strings"]);
   });
 
   it("rejects a label no module exports", () => {
@@ -112,6 +113,7 @@ describe("Klive BASIC runtime - linker", () => {
       "<kbasic-runtime>/rom.kz80.asm",
       "<kbasic-runtime>/errors.kz80.asm",
       "<kbasic-runtime>/heap.kz80.asm",
+      "<kbasic-runtime>/strcore.kz80.asm",
       "<kbasic-runtime>/strings.kz80.asm",
       "<kbasic-runtime>/core-close.kz80.asm"
     ]);

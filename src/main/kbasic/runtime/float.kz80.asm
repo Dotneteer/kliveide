@@ -1,8 +1,8 @@
 ; @module   float
 ; @summary  Float arithmetic, comparison, maths and text through the ROM calculator; integer conversions.
-; @exports  FBinary, FMod, FCompare, FUnary, FFromU32, FFromI32, FToI32, FToText, FStr, PrintFloat, FVal
+; @exports  FBinary, FMod, FCompare, FUnary, FFromU32, FFromI32, FToI32, FToText, FStr, FVal
 ; @exports  FText, FTextLen, FNormalise, FFromFixed, FToFixed, FStack, FFetch
-; @requires rom, strings, print
+; @requires rom, strcore
 ;
 ; A Float is the ROM's five-byte number (runtime-abi.md §2.1), in registers as A = exponent, E, D, C,
 ; B = the mantissa (the sign in bit 7 of E). On the Z80 stack it takes six bytes: `push bc`,
@@ -382,23 +382,6 @@ FStr:
     ld b,0
     ldir
     pop hl
-    ret
-
-; PRINT of a Float. In: A-E-D-C-B. Changes AF, BC, DE, HL.
-PrintFloat:
-    call FToText
-    ld hl,FText
-    ld a,(FTextLen)
-    ld b,a
-PrintFloatLoop:
-    ld a,(hl)
-    push hl
-    push bc
-    call PrintChar
-    pop bc
-    pop hl
-    inc hl
-    djnz PrintFloatLoop
     ret
 
 ; ------------------------------------------------------------------------------------------------
