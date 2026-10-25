@@ -21,7 +21,7 @@ import { isLibraryPath } from "@main/kbasic/stdlib";
 import { isNextOnly, programs } from "../corpus/expectations";
 
 /**
- * The level-1 peephole rules (`.docs/kbasic-optimiser.md` §4.2): each rule before and after, and
+ * The level-1 peephole rules (`.docs/z80-backend-optimiser.md` §4.2): each rule before and after, and
  * what the engine protects whatever the rule says. The corpus runs every program at level 1 with its
  * expectations, the validator and G4 (the execution checks); the last test here proves every rule
  * fires somewhere in the corpus, so each one is exercised by them.

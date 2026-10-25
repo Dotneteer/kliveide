@@ -7,7 +7,7 @@ import { MIR_PASSES, optimizeMir } from "@main/z80-backend/opt/mir-passes";
 import { compileBasic } from "../codegen/run-kit";
 
 /**
- * Level 1 (`.docs/kbasic-optimiser.md` §2–§4): the per-statement MIR passes and the tree selector's
+ * Level 1 (`.docs/z80-backend-optimiser.md` §2–§4): the per-statement MIR passes and the tree selector's
  * code shapes. The corpus checks that level 1 behaves as level 0 (`integers/level1-shapes.zxbas` is
  * written for these shapes); this pins what the code looks like.
  */

@@ -8,7 +8,7 @@ import { BRANCH_RULES } from "./rules/branches";
 import { LOAD_RULES } from "./rules/loads";
 
 /**
- * The optimiser's pipeline (`.docs/kbasic-optimiser.md` §2, §8). Stage 7a: level 1 is the level-0
+ * The optimiser's pipeline (`.docs/z80-backend-optimiser.md` §2, §8). Stage 7a: level 1 is the level-0
  * code with the peephole rules applied inside statements, then branch shaping after assembly.
  * Level 0 is never optimised: it stays the reference every other level is compared with.
  */

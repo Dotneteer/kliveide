@@ -16,7 +16,7 @@ import { CodegenError } from "./lir";
 import { FLOAT_BINARY, FLOAT_COMPARE, FLOAT_REGS, LOAD_FLOAT_HL, PUSH_FLOAT, STORE_FLOAT_HL } from "./select0";
 
 /**
- * Level-1 instruction selection (`.docs/kbasic-optimiser.md` §4.1, O8): expression trees instead of a
+ * Level-1 instruction selection (`.docs/z80-backend-optimiser.md` §4.1, O8): expression trees instead of a
  * stack machine, for one *run* — the instructions of a block between two boundaries (the block's
  * start, a statement entry), where no value is live on entry (G4). The level-0 selector hands every
  * run here first and selects it itself when this declines (returns undefined).

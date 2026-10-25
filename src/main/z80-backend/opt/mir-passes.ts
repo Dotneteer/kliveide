@@ -5,7 +5,7 @@ import { removeUnusedRoutines } from "./unused-routines";
 import { verifyFunction } from "./verify";
 
 /**
- * The level-1 MIR passes (`.docs/kbasic-optimiser.md` §3): constant folding, algebraic identities
+ * The level-1 MIR passes (`.docs/z80-backend-optimiser.md` §3): constant folding, algebraic identities
  * and removal of unused pure instructions. At level 1 they work inside statements only — a
  * value never crosses a statement (S2), and nothing here moves an instruction to another statement.
  *

@@ -20,7 +20,7 @@ import { CodegenError, instr, label, type LirLine } from "./lir";
 import { selectRun } from "./select1";
 
 /**
- * Level-0 instruction selection (`.docs/kbasic-lir-regalloc.md` §4): a stack machine. Every value
+ * Level-0 instruction selection (`.docs/z80-backend-lir-regalloc.md` §4): a stack machine. Every value
  * is computed into the accumulator of its class (A for 8-bit and bool, HL for 16-bit, pointers and
  * Strings); before a new value is computed, the one waiting in the accumulator is pushed. MIR
  * evaluates expressions depth first, so an instruction always finds its last operand in the
@@ -106,7 +106,7 @@ class Selector {
     if (b === this.fn.blocks[0] && this.fn.kind === "routine") this.prologue();
     // --- Runs between boundaries (the block's start, markers): no value is live at a run's start
     // --- (G4). From level 1 each run goes to the tree selector first (select1.ts), and to the stack
-    // --- machine below when that declines (.docs/kbasic-optimiser.md O8).
+    // --- machine below when that declines (.docs/z80-backend-optimiser.md O8).
     const isMarker = (i: Instr) => i.op === "stmt" || i.op === "prologue.end" || i.op === "epilogue.begin";
     const n = b.instrs.length;
     const tree = this.level >= 1 && this.fn.kind !== "fragment";
@@ -393,7 +393,7 @@ class Selector {
   }
 
   // ----------------------------------------------------------------------------------------------
-  // Frames and calls (.docs/kbasic-lir-regalloc.md §6)
+  // Frames and calls (.docs/z80-backend-lir-regalloc.md §6)
 
   /**
    * STDCALL and FASTCALL alike: `push ix; ld ix,0; add ix,sp`, then the frame below IX, zeroed. A

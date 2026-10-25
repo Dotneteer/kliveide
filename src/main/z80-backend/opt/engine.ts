@@ -3,7 +3,7 @@ import { computeLiveness, type Liveness } from "./liveness";
 import type { ParsedInstr } from "./lir";
 
 /**
- * The peephole rule engine (`.docs/kbasic-optimiser.md` §4.2). Rules are data: each looks at the
+ * The peephole rule engine (`.docs/z80-backend-optimiser.md` §4.2). Rules are data: each looks at the
  * lines from a position and may propose to replace a window of them. The engine, not the rule,
  * decides whether the window may be touched, so no rule can break what the debugger relies on:
  *

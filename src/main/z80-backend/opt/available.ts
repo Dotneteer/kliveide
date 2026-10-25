@@ -3,7 +3,7 @@ import { pinnedLines } from "./engine";
 import { parseInstr, type Reg } from "./lir";
 
 /**
- * Redundant loads across statements (level 2, `.docs/kbasic-optimiser.md` §2): a forward pass over a
+ * Redundant loads across statements (level 2, `.docs/z80-backend-optimiser.md` §2): a forward pass over a
  * function's LIR that knows, at each point, which registers hold the value of a variable or a
  * constant, and drops a load of a value a register already holds (or turns it into a register copy).
  * It is what removes the reload at the start of a statement of what the statement before it stored.

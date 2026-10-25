@@ -2,7 +2,7 @@ import type { LirLine } from "../select/lir";
 import { ALL_REGS, parseInstr, type ParsedInstr, type Reg } from "./lir";
 
 /**
- * Register liveness over one function's LIR (`.docs/kbasic-optimiser.md` §4.2): which registers
+ * Register liveness over one function's LIR (`.docs/z80-backend-optimiser.md` §4.2): which registers
  * (flags included) may still be read after each line. A register not live after an instruction
  * that writes it is dead there, and a rule may drop or change that write.
  *

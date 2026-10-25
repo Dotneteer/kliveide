@@ -43,7 +43,7 @@ export const USER_HEAP = "__kbHeap";
 export const RESIDENT_END = "__kbResidentEnd";
 
 /**
- * Writes the program (`.docs/kbasic-lir-regalloc.md` §7): one assembler line per LIR line, with the
+ * Writes the program (`.docs/z80-backend-lir-regalloc.md` §7): one assembler line per LIR line, with the
  * line table the debug builder joins with the assembler's list items. A `jp` to the label that
  * follows it is dropped.
  */

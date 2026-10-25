@@ -3,7 +3,7 @@ import { instrAt, lineAt, liveAfter, sidAt, type Rule } from "../engine";
 import { invertCondition } from "../lir";
 
 /**
- * Branch rules (`.docs/kbasic-optimiser.md` §4.2): conditions materialised as 0/1 only to be tested
+ * Branch rules (`.docs/z80-backend-optimiser.md` §4.2): conditions materialised as 0/1 only to be tested
  * again, jumps over jumps, jumps to jumps. Branch *shaping* (`jp` → `jr`) needs addresses and runs
  * after the first assembly (`shape.ts`).
  */

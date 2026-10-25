@@ -1,9 +1,11 @@
 # Klive BASIC: the optimiser (Phase 7)
 
+> **As built in the shared Z80 back end** (`.plans/SHARED_Z80_BACKEND_PLAN.md`, 2026-10-25). Written for Klive BASIC; now the shared Z80 back end's (`src/main/z80-backend/opt/`). The MIR folder folds an operation only by the meaning it states (`.docs/z80-backend-mir.md`, as-built note).
+
 Design note for plan §7 (optimisation), §8.6 (the debug profile) and §7.5 / §10.3 (optimisation and
 debug information), written before any Phase 7 code as R11 asks. It builds on the approved notes:
-the MIR's memory form, `promote` and the statement-id rules S1–S5 (`kbasic-mir.md` §1, §4, §7),
-and the LIR, the level-0 stack machine and linear-scan allocation (`kbasic-lir-regalloc.md` §4–§5).
+the MIR's memory form, `promote` and the statement-id rules S1–S5 (`z80-backend-mir.md` §1, §4, §7),
+and the LIR, the level-0 stack machine and linear-scan allocation (`z80-backend-lir-regalloc.md` §4–§5).
 Section 9 lists the decisions this note asks the project author to approve.
 
 ## 1. What must not change
@@ -38,15 +40,15 @@ inlining threshold (level 3), not a separate pass list.
 
 ## 3. MIR passes
 
-Each pass is a function `(fn: MFunction, ctx) => boolean` (changed or not) in `src/main/kbasic/opt/`,
-with a table of passes per level in `opt/pipeline.ts`. The MIR verifier (`kbasic-mir.md` §7) runs
+Each pass is a function `(fn: MFunction, ctx) => boolean` (changed or not) in `src/main/z80-backend/opt/`,
+with a table of passes per level in `opt/pipeline.ts`. The MIR verifier (`z80-backend-mir.md` §7) runs
 after every pass in tests and debug builds, so a pass that breaks S1–S5, SSA or types fails at once
 with the pass's name.
 
 - **Level 1 passes see one statement at a time**: they get the instructions between two `stmt`
   markers and may not move anything across one. That is what keeps level 1 "debug-friendly" without
   extra bookkeeping.
-- **`promote` (level 2)** exactly as `kbasic-mir.md` §7 defines it, with one addition: a promoted
+- **`promote` (level 2)** exactly as `z80-backend-mir.md` §7 defines it, with one addition: a promoted
   variable keeps its frame slot, and the pass records for the debug builder which statements hold
   its current value only in a vreg (§5.2).
 - **Type narrowing** (plan §7.2 step 5) is a MIR pass: an operation whose operands and result
@@ -62,7 +64,7 @@ with the pass's name.
 
 ### 4.1 Allocation
 
-As `kbasic-lir-regalloc.md` §5 describes; the frame keeps its IX (O2), spill slots go below the
+As `z80-backend-lir-regalloc.md` §5 describes; the frame keeps its IX (O2), spill slots go below the
 locals and are zeroed with them, and the main program and FASTCALL routines use in-statement
 `push`/`pop` at level 1 (G4 holds because every push has its pop inside the statement). The level-0
 stack machine stays as the code generator of last resort: an expression the level-1 selector does not
@@ -197,7 +199,7 @@ and is committed on its own:
 
 Approved as proposed (O1–O9). Done:
 
-- `src/main/kbasic/opt/`: `lir.ts` (parses LIR text into opcode, operands, register uses/defs and
+- `src/main/z80-backend/opt/`: `lir.ts` (parses LIR text into opcode, operands, register uses/defs and
   side effects; anything unknown is conservative), `liveness.ts` (per-function control flow; at
   levels 0–1 nothing is live at a statement entry, except the `END SUB`/`END FUNCTION` entry, which a
   `RETURN` reaches with the result in registers), `engine.ts` (the rule engine and its protections),

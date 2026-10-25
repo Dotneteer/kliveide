@@ -2,7 +2,7 @@ import { instr } from "../../select/lir";
 import { instrAt, lineAt, liveAfter, sidAt, type Rule } from "../engine";
 
 /**
- * Load and store rules (`.docs/kbasic-optimiser.md` §4.2): values the code writes and reads back at
+ * Load and store rules (`.docs/z80-backend-optimiser.md` §4.2): values the code writes and reads back at
  * once, instructions whose results nobody reads, register operands that can be immediates. A rule
  * is kept only while some corpus program fires it (`test/kbasic/opt/rules.test.ts`).
  */

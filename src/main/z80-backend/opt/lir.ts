@@ -1,7 +1,7 @@
 import type { LirLine } from "../select/lir";
 
 /**
- * The LIR as the optimiser reads it (`.docs/kbasic-optimiser.md` §4): the level-0 selector writes
+ * The LIR as the optimiser reads it (`.docs/z80-backend-optimiser.md` §4): the level-0 selector writes
  * each instruction as assembler text, and this parses that text into an opcode, its operands and
  * the registers it reads and writes. Anything this does not know is treated as reading and writing
  * everything, and as having side effects, so no rule can move or drop it.

@@ -91,6 +91,12 @@ export class FunctionBuilder {
     return this;
   }
 
+  /** A routine's frame boundary: where its body starts (`prologue.end`) and its epilogue does. */
+  marker(op: "prologue.end" | "epilogue.begin", sid: number): this {
+    this.push({ op, sid });
+    return this;
+  }
+
   const(sid: number, value: Imm | SymRef): VReg {
     const dst = this.owner.vreg(value.type);
     this.push({ op: "const", dst, value, sid });

@@ -1,7 +1,7 @@
 import type { Instr, MFunction, MModule, Slot, Terminator, Value } from "../mir/mir";
 
 /**
- * Constant slots (level 2, `.docs/kbasic-optimiser.md` §12–§14): SCCP's most valuable case in memory
+ * Constant slots (level 2, `.docs/z80-backend-optimiser.md` §12–§14): SCCP's most valuable case in memory
  * form. A slot the routine stores exactly once, with a constant, holds that constant wherever the
  * store dominates the load — so the load becomes the constant. It is what turns a FOR loop's hidden
  * limit (`FOR i = 0 TO 9`) into `cp 9` at every NEXT, and a `DIM k AS UByte = 5` that is never

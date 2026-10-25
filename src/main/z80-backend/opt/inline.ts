@@ -2,7 +2,7 @@ import type { Block, Instr, MFunction, MModule, MType, Slot, Terminator, Value, 
 import { mtypeSize } from "../mir/mir";
 
 /**
- * Inlining (level 3, plan §7.1, `.docs/kbasic-optimiser.md` §16): a small leaf SUB or FUNCTION with a
+ * Inlining (level 3, plan §7.1, `.docs/z80-backend-optimiser.md` §16): a small leaf SUB or FUNCTION with a
  * single call site is put in its caller, in memory form.
  *
  * Candidates: a SUB or FUNCTION with at most MAX_STATEMENTS statements, no user call, no inline asm,

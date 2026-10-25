@@ -1,5 +1,7 @@
 # Klive BASIC: LIR, instruction selection and register allocation
 
+> **As built in the shared Z80 back end** (`.plans/SHARED_Z80_BACKEND_PLAN.md`, 2026-10-25). Written for Klive BASIC; now the shared Z80 back end's (`src/main/z80-backend/select/`). The register contract of runtime calls comes from the runtime modules' `@abi` header lines (`src/main/z80-backend/runtime/README.md`), not from a table in the selector.
+
 Design note R11-2 of `.plans/ZXBASIC_COMPILER_PLAN.md` (§3.1, §3.2, §6.7, §7.1, §7.3).
 **Status: approved by the project author on 2026-09-26, with every proposal in the decisions table below.**
 
@@ -28,7 +30,7 @@ Fixed by plan §6.7 and `.ai/kbasic/runtime-abi.md` §2–§3 (the user-visible 
 type LirInstr = {
   op: string;                  // "ld", "add", "call", "jp", ... or a pseudo-op
   operands: LirOperand[];      // registers, immediates, (ix+d), (hl), (nn), labels, symbols
-  sid: number;                 // the statement id, from the MIR instruction (§4 of kbasic-mir.md)
+  sid: number;                 // the statement id, from the MIR instruction (§4 of z80-backend-mir.md)
   uses: Reg[]; defs: Reg[];    // registers read and written, flags included (for liveness)
   size: number;                // bytes, from the instruction-length table
   callSite?: CallSiteRecord;   // on the call that implements a MIR call / gosub (plan §8.4)
@@ -136,7 +138,7 @@ direct tree construction as an optimisation for later (question L1):
 - The emitter writes one assembler line per LIR instruction into a virtual file
   `<name>.kbasic.asm`, and records for **each line index** its sid (and any call-site record). The
   assembler's list items give each line's address and length, which is how the debug builder
-  recovers everything (`kbasic-debug-builder.md` §3).
+  recovers everything (`z80-backend-debug-builder.md` §3).
 - The text **is** what `'@emit-asm` shows, so the dump and the build can never disagree.
 - The runtime modules are already parsed once and cached (`RuntimeUnitCache`); only the program
   itself is parsed per build. **Measured 2026-09-26** (cloud container, 4 cores): 15,700 lines of

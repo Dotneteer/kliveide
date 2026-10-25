@@ -1,7 +1,7 @@
 import type { Instr, MModule } from "../mir/mir";
 
 /**
- * Unused routines (level 2, plan §7.2 step 10, `.docs/kbasic-optimiser.md` §15): a SUB or FUNCTION
+ * Unused routines (level 2, plan §7.2 step 10, `.docs/z80-backend-optimiser.md` §15): a SUB or FUNCTION
  * nothing can reach from the main program gets no code (the binder has already warned, W170).
  *
  * Reached: the main program and the DATA table's code; then every routine a reached one calls, names

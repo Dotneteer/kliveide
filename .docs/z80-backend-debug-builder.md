@@ -1,5 +1,7 @@
 # Klive BASIC: the debug-info builder
 
+> **As built in the shared Z80 back end** (`.plans/SHARED_Z80_BACKEND_PLAN.md`, 2026-10-25). Written for Klive BASIC; now the shared Z80 back end's (`src/main/z80-backend/debug/`). The builders read the front end's variable descriptors (`MModule.globals`, `MFunction.vars`) and its source files through `debug/sources.ts`, never a language's symbols; the language, its error stop and its label prefix come from the front end (`link/compile-module.ts`).
+
 Design note R11-4 of `.plans/ZXBASIC_COMPILER_PLAN.md` (§8, §10.1–§10.3, §13.5). **Status: approved by the project author on 2026-09-26, with every proposal in the decisions table below.**
 
 The builder runs after assembly. It turns "which generated line belongs to which statement" plus
@@ -89,7 +91,7 @@ The extensions (plan §8.4, type `KBasicDebugExtensions` in the new
 | `codebank` | the far-call runtime's symbols and the bank manifest | 6 |
 | `optimizationLevel` | the options | 3 |
 
-**Phase 5 state.** `buildSourceLevel` (`src/main/kbasic/debug/source-level.ts`, called from
+**Phase 5 state.** `buildSourceLevel` (`src/main/z80-backend/debug/source-level.ts`, called from
 `codegen.ts` after `buildDebugInfo`) produces the whole table above except `codebank`, and
 `KBasicCompiler` ships it as `sourceLevelDebug`. Where it differs from the plan's letter:
 

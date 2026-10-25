@@ -1,7 +1,7 @@
 import type { CallSite } from "../mir/mir";
 
 /**
- * LIR lines (`.docs/kbasic-lir-regalloc.md` §2): Z80 code as the emitter writes it, one assembler
+ * LIR lines (`.docs/z80-backend-lir-regalloc.md` §2): Z80 code as the emitter writes it, one assembler
  * line each, every one tagged with the statement id it belongs to. Phase 3's level-0 code needs
  * only the instruction text; the register uses and definitions the Phase 7 allocator and peephole
  * rules need are added to `instr` lines then.

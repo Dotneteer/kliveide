@@ -2,7 +2,7 @@ import { mtypeSize, type Block, type Instr, type MFunction, type MModule, type T
 import { isIntegerType, isRealType } from "../mir/representations";
 
 /**
- * The MIR verifier (`.docs/kbasic-mir.md` §7, `.docs/kbasic-optimiser.md` §3): run after lowering
+ * The MIR verifier (`.docs/z80-backend-mir.md` §7, `.docs/z80-backend-optimiser.md` §3): run after lowering
  * and after every optimisation pass, so a pass that breaks an invariant is named at once.
  *
  * - S1: every instruction and terminator has a statement id.

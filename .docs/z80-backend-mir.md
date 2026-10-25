@@ -1,13 +1,36 @@
-# Klive BASIC: the MIR (mid-level intermediate representation)
+# The shared Z80 back end: the MIR (mid-level intermediate representation)
+
+> **As built in the shared Z80 back end** (`.plans/SHARED_Z80_BACKEND_PLAN.md`, 2026-10-25). This note
+> was written for Klive BASIC; its MIR is now the input of the back end every language shares
+> (`src/main/z80-backend/mir/mir.ts`), and the parts that named BASIC are neutral:
+>
+> - **Functions** are `entry` (the main program), `routine` (a SUB or FUNCTION: whether it returns a
+>   value is `returnType`) and `fragment` (code called without a frame: Klive BASIC's DATA items).
+> - **Terminators**: GOSUB is `localcall`; ON ... GOSUB is a `switch` with `call`; END and ERROR are
+>   `exit` (a jump to a runtime routine with one value in BC or A); the DATA dispatch is `jumpvia`.
+>   Two instructions carry calling-convention facts a language used to write as asm: `param.reload`
+>   and `result.capture`.
+> - **Call sites** are `routine`, `local` or `runtime` (`returnsValue`, `dispatch`).
+> - **Types are representations** (`representations.ts`): size, register class, result registers,
+>   debug representation, runtime package. `fix`, `flt` and `str` are implemented by runtime packages.
+> - **Meanings are stated**: integer `div`/`mod` say their `rounding` (`trunc`, `floor`, `magnitude`),
+>   arithmetic and narrowing their `overflow`, real-to-integer conversions their `toInt`, signed `shr`
+>   its `shift`, boolean conversions their `truth`. The verifier (S3) rejects a missing one and one the
+>   selector does not implement. Klive BASIC states its own (`src/main/kbasic/ir/types.ts`).
+> - **Debug descriptors**: functions' `vars` and the module's `globals` describe variables in the
+>   debugger's vocabulary; the back end resolves their storage after assembly.
+> - Build MIR with `mir/builder.ts`; print it with `mir/print.ts` (the `'@emit-ir` text).
+>
+> Where the text below says SUB/FUNCTION, GOSUB or `main`, read the neutral names above.
 
 Design note R11-1 of `.plans/ZXBASIC_COMPILER_PLAN.md` (§3.1, §7, §8.2). **Status: approved by the project author on 2026-09-26, with every proposal in the decisions table below.**
 
 The MIR sits between the typed tree the binder produces (`src/main/kbasic/semantics/bound.ts`)
-and instruction selection (`kbasic-lir-regalloc.md`). Lowering turns each routine into a MIR
+and instruction selection (`z80-backend-lir-regalloc.md`). Lowering turns each routine into a MIR
 function; the optimiser (Phase 7) rewrites MIR functions; instruction selection turns them into
 LIR. This note fixes the MIR's shape, instruction set, typing, statement-id rules and the lowering
 of every BASIC construct. String values have their own note (`kbasic-string-ownership.md`); how
-statement ids become debug tables is in `kbasic-debug-builder.md`.
+statement ids become debug tables is in `z80-backend-debug-builder.md`.
 
 ## 1. Principles
 
@@ -80,7 +103,7 @@ Float keeps its exact five bytes) or **slots**:
 
 A **sid** identifies one BASIC statement, or one separately executing part of a block statement
 (plan §8.2). Lowering assigns sids in source order and records each in the statement table
-(`kbasic-debug-builder.md` §2): file, span, kind, function.
+(`z80-backend-debug-builder.md` §2): file, span, kind, function.
 
 | Construct | Parts with their own sid |
 | --- | --- |
@@ -201,79 +224,10 @@ Plan §7.2 gives the passes per level. The MIR adds what they need:
 | the plan's passes 3–10 | 1–3 | at level 1 they run per statement, respecting S2 |
 | ssa-out | 2–3 | phis to copies before instruction selection |
 
-## 8. Lowering the typed tree
+## 8. Lowering a language
 
-Order of evaluation, and the choices it implies, are listed as questions in §10.
-
-### 8.1 Expressions
-
-Straightforward recursion over `BoundExpr`: `constant` → `const`; `variable` → `load`;
-`element` → `elem` then `load deref`; `convert` → `conv`; `binary` → the operand-typed
-instruction; `call` → `call`; `builtin` → `builtin` or `rtcall`. Logical `AND`/`OR`/`XOR` evaluate
-both operands (no short-circuit, question Q2).
-
-### 8.2 Assignment and DIM
-
-`store T S, %v`; element targets through `elem`. A `dim` statement with a value is an assignment;
-a local's `dim` without a value lowers to nothing (locals are zeroed at entry by the prologue).
-Static initial values (`symbol.initial`) are emitted as data, not code.
-
-### 8.3 IF
-
-```
-stmt s_if ; %c = … ; br %c, then, next_test
-then:  … ; jmp after
-next_test: stmt s_elseif ; …          ; one per ELSEIF
-else:  …
-after:
-```
-
-### 8.4 FOR
-
-The limit and step are evaluated **once**, at the `FOR`, into hidden slots (frame slots in a
-routine, static ones in the main program; question Q3).
-The variable is the user's variable (a slot, not a vreg, so the debugger sees it).
-
-```
-stmt s_for ; store i, from ; store lim, to ; store step, s ; test: br (i beyond lim), exit, body
-body:  …
-stmt s_next ; store i, i + step ; br (i beyond lim), exit, body
-exit:
-```
-
-"Beyond" is `i > lim` for a positive step and `i < lim` for a negative one; a step whose sign is
-not constant is tested at run time. Overflow of the variable's type wraps, as the spec warns.
-
-### 8.5 WHILE and DO
-
-The test's sid owns the test block. The back edge targets the test's entry, so each iteration is a
-statement entry (plan §10.3, re-entry stops). An untested `DO … LOOP` jumps back to the first
-statement of its body, or to the `LOOP` itself when the body is empty.
-
-### 8.6 EXIT and CONTINUE
-
-`jmp` to the loop's exit block, or to its `NEXT` / test block.
-
-### 8.7 GOTO, ON GOTO, labels
-
-`jmp` / `switch` to the block that starts at the label. A label starts a new block.
-
-### 8.8 SUB and FUNCTION
-
-Parameters are `param(i)` slots; locals are frame slots. `RETURN` jumps to the epilogue block,
-whose sid is `END SUB`/`END FUNCTION`'s. A FUNCTION's `RETURN v` first stores `v` in a hidden
-result slot, so there is a single `ret %v` in the epilogue.
-
-### 8.9 GOSUB and RETURN
-
-`gosub L, Bnext`. At global scope `RETURN` is `ret`. The subroutine's statements belong to the
-main function; the activation is visible to the debugger through the call-site record.
-
-### 8.10 PRINT and the other statements
-
-Each item is one or more `rtcall`s (`PrintStr`, `PrintU16`, `PrintAt`, …). Attribute modifiers
-inside PRINT set temporary colours and end with `PrintReset`. `READ` is a `rtcall` per target with
-the target's type. `DATA` emits the DATA table (its format is Klive's own, plan §6.1) and no code.
+How Klive BASIC lowers each of its constructs to MIR is Klive BASIC's, not the back end's: it is in
+`.docs/kbasic-lowering.md`. A new front end writes its own (`.docs/z80-backend-frontend-guide.md`).
 
 ## 9. Text form and tests
 

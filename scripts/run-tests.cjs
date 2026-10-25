@@ -59,9 +59,17 @@ const CORE_INPUTS = [
   "src/common/utils/breakpoint-condition"
 ];
 
-// --- The programs are compiled by Klive BASIC and assembled by the Klive assembler before they
-// --- run, so either changing is a reason to run them - as is any core change.
-const KBASIC_INPUTS = [...CORE_INPUTS, "src/main/kbasic", "src/main/z80-compiler", "test/kbasic"];
+// --- The programs are compiled by Klive BASIC (on the shared Z80 back end) and assembled by the Klive
+// --- assembler before they run, so any of them changing is a reason to run them - as is any core change.
+const KBASIC_INPUTS = [
+  ...CORE_INPUTS,
+  "src/main/kbasic",
+  "src/main/z80-backend",
+  "src/main/compiler-shell",
+  "src/main/z80-compiler",
+  "test/kbasic",
+  "test/z80-backend"
+];
 
 const TIERS = [
   { project: "e2e-cores", title: "machine cores", inputs: CORE_INPUTS },

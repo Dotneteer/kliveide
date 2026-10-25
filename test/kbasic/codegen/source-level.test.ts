@@ -5,7 +5,7 @@ import type { SourceLevelDebugInfo } from "@abstractions/CompilerInfo";
 import { compileBasic, runBasic } from "./run-kit";
 
 /**
- * The source-level tables (plan §8.4, `.docs/kbasic-debug-builder.md` §4) that source stepping, the
+ * The source-level tables (plan §8.4, `.docs/z80-backend-debug-builder.md` §4) that source stepping, the
  * call stack and the Variables panel read, checked against the program they describe running on the
  * 48K: every frame description must match the real stack at every statement entry.
  */
