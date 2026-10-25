@@ -6,7 +6,8 @@ import type { AppState } from "@common/state/AppState";
 
 import { createSettingsReader } from "@common/utils/SettingsReader";
 import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
-import { effectiveLevel, generateProgram } from "./codegen";
+import { generateProgram } from "./codegen";
+import { DEBUG_PROFILE_LEVEL, effectiveLevel } from "../z80-backend/options";
 import { emittedFiles } from "./emit-files";
 import { lineCanHaveBreakpoint } from "./breakpoints";
 import { DiagnosticBag, type Diagnostic } from "./diagnostics";
@@ -323,9 +324,6 @@ function fileError(filename: string, errorCode: string, message: string): Assemb
   };
 }
 
-/** The build root's name without folder and extension: the generated program's file name. */
-/** The highest optimisation level a debug build uses when the header does not set one (plan §8.6). */
-export const DEBUG_PROFILE_LEVEL = 1;
 
 /** Whether the build root's header sets the optimisation level itself (`'@optimize`, NextBuild's `'!opt`). */
 export function headerSetsOptimize(filename: string, text: string): boolean {

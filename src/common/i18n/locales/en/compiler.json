@@ -1055,5 +1055,97 @@
   "compiler.z88dk.printfTableInStartup": "This program uses printf, and z88dk linked printf's format table into the startup code, which runs it as instructions. Depending on where the code ends up, the program may fail to start (the screen goes black and the machine resets). Print with putchar or puts instead, as the ZX Spectrum Next template does.",
   "@compiler.z88dk.printfTableInStartup": {
     "context": "Warning after a z88dk (C compiler) build, shown in the Output pane and the Problems view. It happens with z88dk v2.4's classic library on the ZX Spectrum Next. Keep printf, putchar, puts and z88dk exactly as they are: they are names from the C library and of the compiler."
+  },
+  "compiler.backend.invalidMir": "Internal code generator error: the intermediate code is invalid ({problems})",
+  "@compiler.backend.invalidMir": {
+    "context": "Message of Klive's shared Z80 code generator (the back end every compiled language uses: Klive BASIC and the languages to come), shown in the Output pane and as an editor squiggle for a language that has no wording of its own for it. A compiler bug report.",
+    "placeholders": {
+      "problems": "Internal, English details of what is wrong"
+    }
+  },
+  "compiler.backend.internal": "Internal code generator error: {reason}",
+  "@compiler.backend.internal": {
+    "context": "Message of Klive's shared Z80 code generator (the back end every compiled language uses: Klive BASIC and the languages to come), shown in the Output pane and as an editor squiggle for a language that has no wording of its own for it. A compiler bug report.",
+    "placeholders": {
+      "reason": "An internal, English detail of what went wrong"
+    }
+  },
+  "compiler.backend.bankingNeedsNext": "Banked code needs the ZX Spectrum Next target (it pages banks in through the Next''s MMU)",
+  "@compiler.backend.bankingNeedsNext": {
+    "context": "Message of Klive's shared Z80 code generator (the back end every compiled language uses: Klive BASIC and the languages to come), shown in the Output pane and as an editor squiggle for a language that has no wording of its own for it. The program puts code or data in memory banks, which only the ZX Spectrum Next can page this way."
+  },
+  "compiler.backend.bankWindowBoundary": "The bank window ({window}) must start on an 8K boundary",
+  "@compiler.backend.bankWindowBoundary": {
+    "context": "Message of Klive's shared Z80 code generator (the back end every compiled language uses: Klive BASIC and the languages to come), shown in the Output pane and as an editor squiggle for a language that has no wording of its own for it. The memory window banked code runs in has a wrong start address.",
+    "placeholders": {
+      "window": "A hexadecimal address such as $C000"
+    }
+  },
+  "compiler.backend.bankWindowPastEnd": "The {size}K bank window at {window} runs past $FFFF",
+  "@compiler.backend.bankWindowPastEnd": {
+    "context": "Message of Klive's shared Z80 code generator (the back end every compiled language uses: Klive BASIC and the languages to come), shown in the Output pane and as an editor squiggle for a language that has no wording of its own for it. The memory window banked code runs in does not fit the 64K address space.",
+    "placeholders": {
+      "size": "8 or 16",
+      "window": "A hexadecimal address such as $E000"
+    }
+  },
+  "compiler.backend.bankPage": "Bank {bank}''s page ({page}) is not an 8K page of the Next (0-223)",
+  "@compiler.backend.bankPage": {
+    "context": "Message of Klive's shared Z80 code generator (the back end every compiled language uses: Klive BASIC and the languages to come), shown in the Output pane and as an editor squiggle for a language that has no wording of its own for it. A memory bank of the program would be placed on a page the ZX Spectrum Next does not have.",
+    "placeholders": {
+      "bank": "The bank's number",
+      "page": "The page's number"
+    }
+  },
+  "compiler.backend.bankOddPage": "A 16K bank window needs even pages; bank {bank} would start on page {page}",
+  "@compiler.backend.bankOddPage": {
+    "context": "Message of Klive's shared Z80 code generator (the back end every compiled language uses: Klive BASIC and the languages to come), shown in the Output pane and as an editor squiggle for a language that has no wording of its own for it. A 16K memory window must start on an even 8K page of the ZX Spectrum Next.",
+    "placeholders": {
+      "bank": "The bank's number",
+      "page": "The page's number"
+    }
+  },
+  "compiler.backend.bankOverflow": "Bank {bank} does not fit its {size}K window: move code or data to another bank",
+  "@compiler.backend.bankOverflow": {
+    "context": "Message of Klive's shared Z80 code generator (the back end every compiled language uses: Klive BASIC and the languages to come), shown in the Output pane and as an editor squiggle for a language that has no wording of its own for it. A memory bank of the program holds more than its window can show.",
+    "placeholders": {
+      "bank": "The bank's number",
+      "size": "8 or 16"
+    }
+  },
+  "compiler.backend.windowClash": "The bank window {low}-{high} overlaps the resident program ({start}-{end}): move the window or the program",
+  "@compiler.backend.windowClash": {
+    "context": "Message of Klive's shared Z80 code generator (the back end every compiled language uses: Klive BASIC and the languages to come), shown in the Output pane and as an editor squiggle for a language that has no wording of its own for it. The memory window banked code runs in would hide part of the program that is always in memory.",
+    "placeholders": {
+      "low": "A hexadecimal address",
+      "high": "A hexadecimal address",
+      "start": "A hexadecimal address",
+      "end": "A hexadecimal address"
+    }
+  },
+  "compiler.backend.inlineAsm": "Inline assembly: {message}",
+  "@compiler.backend.inlineAsm": {
+    "context": "Message of Klive's shared Z80 code generator (the back end every compiled language uses: Klive BASIC and the languages to come), shown in the Output pane and as an editor squiggle for a language that has no wording of its own for it. The assembler rejected a line of assembly the user wrote inside the program.",
+    "placeholders": {
+      "message": "The assembler's message (already translated)"
+    }
+  },
+  "compiler.backend.doesNotAssemble": "Internal code generator error: the generated program does not assemble ({file}:{line}: {message})",
+  "@compiler.backend.doesNotAssemble": {
+    "context": "Message of Klive's shared Z80 code generator (the back end every compiled language uses: Klive BASIC and the languages to come), shown in the Output pane and as an editor squiggle for a language that has no wording of its own for it. A compiler bug report.",
+    "placeholders": {
+      "file": "A file name",
+      "line": "A line number",
+      "message": "The assembler's message"
+    }
+  },
+  "compiler.backend.branchShaping": "Internal code generator error: branch shaping broke the program ({file}:{line}: {message})",
+  "@compiler.backend.branchShaping": {
+    "context": "Message of Klive's shared Z80 code generator (the back end every compiled language uses: Klive BASIC and the languages to come), shown in the Output pane and as an editor squiggle for a language that has no wording of its own for it. A compiler bug report. Branch shaping is an optimisation that shortens jumps.",
+    "placeholders": {
+      "file": "A file name",
+      "line": "A line number",
+      "message": "The assembler's message"
+    }
   }
 }
