@@ -542,17 +542,23 @@ div.lp-body {
   min-width: 0;
 }
 
+/* --- The square stands on the text's baseline and is exactly as tall as a capital letter, so it
+   --- lines up with the capitals. Centring it in the line box (align-items: center) set it low:
+   --- Overpass places its capitals above the middle of the line. */
 .lp-label {
   display: inline-flex;
-  align-items: center;
+  align-items: baseline;
   gap: 0.5rem;
   font-size: 0.9375rem;
   font-weight: 700;
 }
 
 .lp-square {
+  flex: none;
   width: 0.75rem;
   height: 0.75rem;
+  width: 1cap;
+  height: 1cap;
 }
 
 .lp-square-1 { background: var(--site-spectrum-blue); }
