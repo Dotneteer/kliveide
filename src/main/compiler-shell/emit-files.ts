@@ -1,16 +1,17 @@
-import type { GeneratedProgram } from "./codegen";
+import type { CompiledModule } from "../z80-backend/link/compile-module";
 import { mirText } from "../z80-backend/mir/print";
-import type { KBasicOptions } from "./options/options";
 
 /**
- * The files the `emit-*` header options ask for (plan §5.3, §9.3), written beside the source by a
- * foreground build. Contents only: the compiler decides the names, `KBasicCompiler` writes them.
+ * The build artefacts a source may ask for (Klive BASIC's `emit-*` header options, plan §5.3, §9.3),
+ * written beside the source by a foreground build — the same for every language the shared Z80 back
+ * end compiles. Contents only: the compiler decides the names (`<name>.<tag>.<ext>`, the tag being
+ * the language's: `kbasic`), `Z80LanguageCompiler` writes them.
  *
- * | Option | Files |
+ * | Request | Files |
  * | --- | --- |
- * | `emit-asm` | `<name>.kbasic.asm` — the generated program as assembler text (the runtime is not included) |
- * | `emit-ir` | `<name>.kbasic.ir` — the MIR of every routine |
- * | `emit-map` | `<name>.kbasic.map` — every label with its address (and `B<n>:` for a CODEBANK bank's); with CODEBANK also `<name>.banks.json` and `<name>.bank<n>.bin` |
+ * | `asm` | `<name>.<tag>.asm` — the generated program as assembler text (the runtime is not included) |
+ * | `ir` | `<name>.<tag>.ir` — the MIR of every routine |
+ * | `map` | `<name>.<tag>.map` — every label with its address (and `B<n>:` for a bank's); with banked code also `<name>.banks.json` and `<name>.bank<n>.bin` |
  *
  * The banks manifest follows the shape NextBuild's tools read (`.ai/kbasic/codebank-contract.md` §5):
  * `{window, window_size, banks: [{bank, file, org, size, page, pages}]}` sorted by bank, each bank's
@@ -18,13 +19,16 @@ import type { KBasicOptions } from "./options/options";
  */
 export type EmittedFile = { suffix: string; content: string | Uint8Array };
 
-export function emittedFiles(generated: GeneratedProgram, options: KBasicOptions, programName: string): EmittedFile[] {
+/** What a build asks to have written. */
+export type EmitRequest = { asm?: boolean; ir?: boolean; map?: boolean };
+
+export function emittedFiles(compiled: CompiledModule, request: EmitRequest, programName: string, tag: string): EmittedFile[] {
   const files: EmittedFile[] = [];
-  if (options.emitAsm) files.push({ suffix: ".kbasic.asm", content: generated.emitted.text + "\n" });
-  if (options.emitIr) files.push({ suffix: ".kbasic.ir", content: mirText(generated.mir) });
-  if (options.emitMap) {
-    files.push({ suffix: ".kbasic.map", content: labelMap(generated) });
-    files.push(...banksManifest(generated, programName));
+  if (request.asm) files.push({ suffix: `.${tag}.asm`, content: compiled.emitted.text + "\n" });
+  if (request.ir) files.push({ suffix: `.${tag}.ir`, content: mirText(compiled.mir) });
+  if (request.map) {
+    files.push({ suffix: `.${tag}.map`, content: labelMap(compiled) });
+    files.push(...banksManifest(compiled, programName));
   }
   return files;
 }
@@ -33,7 +37,7 @@ export function emittedFiles(generated: GeneratedProgram, options: KBasicOptions
 // The label map
 
 /** Each label of the generated program and the runtime, by address; a banked label is prefixed `B<n>:`. */
-export function labelMap(generated: GeneratedProgram): string {
+export function labelMap(generated: CompiledModule): string {
   const bankOf = labelBanks(generated.emitted.text);
   const rows: { address: number; name: string }[] = [];
   const add = (prefix: string, symbols: Record<string, { value?: { value?: unknown } }>) => {
@@ -52,7 +56,7 @@ export function labelMap(generated: GeneratedProgram): string {
   return rows.map((r) => `$${r.address.toString(16).toUpperCase().padStart(4, "0")} ${r.name}`).join("\n") + "\n";
 }
 
-/** The CODEBANK bank of every label defined in a bank section of the generated text. */
+/** The bank of every label defined in a bank section of the generated text. */
 function labelBanks(text: string): Map<string, number> {
   const out = new Map<string, number>();
   let bank: number | undefined;
@@ -70,9 +74,9 @@ function labelBanks(text: string): Map<string, number> {
 }
 
 // =================================================================================================
-// The CODEBANK manifest
+// The banks manifest
 
-function banksManifest(generated: GeneratedProgram, programName: string): EmittedFile[] {
+function banksManifest(generated: CompiledModule, programName: string): EmittedFile[] {
   const codebank = generated.debug.sourceLevel.extensions?.codebank;
   if (!codebank) return [];
   const files: EmittedFile[] = [];

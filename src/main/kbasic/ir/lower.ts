@@ -806,8 +806,7 @@ class Lowering {
     this.frameSlots = new Map();
     this.sid = -1;
     this.startBlock("__data_read");
-    this.emit({ op: "asm", lines: ["ld hl,(__data_next)", "jp (hl)"], sid: -1 });
-    this.terminate({ op: "ret", sid: -1 });
+    this.terminate({ op: "jumpvia", slot: { kind: "global", name: "__data_next" }, sid: -1 });
     const count = this.dataStatements.reduce((n, d) => n + d.items.length, 0);
     let n = 0;
     for (const s of this.dataStatements) {
@@ -1253,27 +1252,14 @@ class Lowering {
    */
   private reloadFastcallParam(): void {
     const type = this.fn.registerParam;
-    if (!type) return;
-    const size = mtypeSize(type);
-    const lines =
-      size === 1
-        ? ["ld a,(ix-1)"]
-        : size === 2
-          ? ["ld l,(ix-2)", "ld h,(ix-1)"]
-          : size === 4
-            ? ["ld l,(ix-4)", "ld h,(ix-3)", "ld e,(ix-2)", "ld d,(ix-1)"]
-            : [];
-    if (lines.length) this.emit({ op: "asm", lines, sid: this.sid });
+    if (!type || ![1, 2, 4].includes(mtypeSize(type))) return;
+    this.emit({ op: "param.reload", sid: this.sid });
   }
 
   private registersResult(last: BoundStatement | undefined, returnType: MType | undefined): void {
     if (last?.kind !== "asm" || !last.zxbasm || !returnType || this.block.term || this.resultSlot?.kind !== "frame") return;
-    const base = this.resultSlot.offset;
-    const at = (k: number) => `(ix${base + k < 0 ? base + k : `+${base + k}`})`;
-    const regs: Partial<Record<MType, string[]>> = { u8: ["a"], i8: ["a"], bool: ["a"], u16: ["l", "h"], i16: ["l", "h"], u32: ["l", "h", "e", "d"], i32: ["l", "h", "e", "d"], fix: ["l", "h", "e", "d"], flt: ["a", "e", "d", "c", "b"] };
-    const order = regs[returnType];
-    if (!order) return;
-    this.emit({ op: "asm", lines: order.map((r, k) => `ld ${at(k)},${r}`), sid: this.sid });
+    if (returnType === "str" || returnType === "ptr") return;
+    this.emit({ op: "result.capture", type: returnType, offset: this.resultSlot.offset, sid: this.sid });
   }
 
   private lowerRoutine(s: Extract<BoundStatement, { kind: "routine" }>): void {

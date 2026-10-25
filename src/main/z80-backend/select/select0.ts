@@ -1,6 +1,7 @@
 import {
   COMPARISONS,
   isSignedM,
+  mtypeSize,
   regClassOf,
   symText,
   type BinOp,
@@ -59,6 +60,19 @@ export function contractOf(contract: RuntimeContract, routine: string): string[]
 const INLINE: Record<string, string[]> = {
   "inline.Out": ["out (c),a"],
   "inline.In": ["in a,(c)"]
+};
+
+/** The registers a result of each type is returned in, byte by byte (runtime ABI §3.1). */
+const RESULT_REGISTERS: Partial<Record<MType, string[]>> = {
+  u8: ["a"],
+  i8: ["a"],
+  bool: ["a"],
+  u16: ["l", "h"],
+  i16: ["l", "h"],
+  u32: ["l", "h", "e", "d"],
+  i32: ["l", "h", "e", "d"],
+  fix: ["l", "h", "e", "d"],
+  flt: ["a", "e", "d", "c", "b"]
 };
 
 /** Where a value of each class lives while it is the current value. */
@@ -226,6 +240,27 @@ class Selector {
         this.spill();
         for (const line of i.lines) this.out.push(instr(line.trim() || "; (empty)", i.sid));
         return;
+      case "param.reload": {
+        this.spill();
+        const size = this.fn.registerParam ? mtypeSize(this.fn.registerParam) : 0;
+        const lines =
+          size === 1
+            ? ["ld a,(ix-1)"]
+            : size === 2
+              ? ["ld l,(ix-2)", "ld h,(ix-1)"]
+              : size === 4
+                ? ["ld l,(ix-4)", "ld h,(ix-3)", "ld e,(ix-2)", "ld d,(ix-1)"]
+                : [];
+        for (const line of lines) this.out.push(instr(line, i.sid));
+        return;
+      }
+      case "result.capture": {
+        this.spill();
+        const at = (k: number) => `(ix${i.offset + k < 0 ? i.offset + k : `+${i.offset + k}`})`;
+        const order = RESULT_REGISTERS[i.type] ?? [];
+        order.forEach((r, k) => this.out.push(instr(`ld ${at(k)},${r}`, i.sid)));
+        return;
+      }
       case "const":
         this.spill();
         this.loadImmediate(i.dst.type, immText(i.value));
@@ -898,6 +933,9 @@ class Selector {
         for (const target of t.targets) this.emit(`.defw ${target}`);
         return;
       }
+      case "jumpvia":
+        this.emit(`ld hl,(${t.slot.name})`, "jp (hl)");
+        return;
       case "localcall":
         this.out.push(instr(`call ${t.target}`, this.sid, t.site));
         this.emit(`jp ${t.next}`);

@@ -1,4 +1,4 @@
-import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 
 import { describe, expect, it } from "vitest";
@@ -11,12 +11,10 @@ import { describe, expect, it } from "vitest";
  * - **Part B (§12):** the source-level debug layers (model, engine, presentation core) import
  *   nothing from a language or a producer, and write no language keyword in code.
  *
- * While the plan is carried out, `build/boundary-baseline.json` lists the violations that still
- * exist; a count may only go down (`BOUNDARY_BASELINE_UPDATE=1` records a lower one). The baseline
- * is empty when the plan is complete.
+ * A plain rule: any violation fails. (While the plan was carried out, a baseline of the violations
+ * that still existed could only shrink; it reached zero when the plan was complete.)
  */
 const ROOT = resolve(__dirname, "../..");
-const BASELINE = join(ROOT, "build/boundary-baseline.json");
 
 const ALIASES: [string, string][] = [
   ["@abstractions/", "src/common/abstractions/"],
@@ -35,15 +33,8 @@ const ALIASES: [string, string][] = [
 /** Language and producer folders: what a neutral layer must not depend on. */
 const LANGUAGES = ["src/main/kbasic/", "src/main/boriel-integration/", "src/main/z88dk-integration/", "src/main/zxb-integration/"];
 
-/**
- * The shared back end and the shared compiler shell, plus the Klive BASIC files the plan moves into
- * them (removed from this list as they move), so the boundary holds from Phase 0 on.
- */
-const BACKEND = [
-  "src/main/z80-backend/",
-  "src/main/compiler-shell/",
-  "src/main/kbasic/emit-files.ts"
-];
+/** The shared back end and the shared compiler shell. */
+const BACKEND = ["src/main/z80-backend/", "src/main/compiler-shell/"];
 
 /** The back-end files a front end may import (plan §4.4). */
 const FRONT_END_API = [
@@ -156,17 +147,7 @@ function violations(): Record<string, number> {
 }
 
 describe("architectural boundaries (shared back end, debug core)", () => {
-  it("has no violation beyond the baseline, and the baseline is current", () => {
-    const actual = violations();
-    if (process.env.BOUNDARY_BASELINE_UPDATE === "1") {
-      const sorted = Object.fromEntries(Object.entries(actual).sort(([a], [b]) => a.localeCompare(b)));
-      writeFileSync(BASELINE, `${JSON.stringify(sorted, null, 2)}\n`);
-      return;
-    }
-    const baseline: Record<string, number> = existsSync(BASELINE) ? JSON.parse(readFileSync(BASELINE, "utf8")) : {};
-    const worse = Object.entries(actual).filter(([k, n]) => n > (baseline[k] ?? 0)).map(([k, n]) => `${k}: ${n} (baseline ${baseline[k] ?? 0})`);
-    expect(worse, "new boundary violations (plan §1.2, §12)").toEqual([]);
-    const stale = Object.entries(baseline).filter(([k, n]) => (actual[k] ?? 0) < n).map(([k, n]) => `${k}: ${actual[k] ?? 0} < ${n}`);
-    expect(stale, "violations fixed but still in build/boundary-baseline.json: run with BOUNDARY_BASELINE_UPDATE=1").toEqual([]);
+  it("has no violation", () => {
+    expect(violations(), "boundary violations (plan §1.2, §4.4, §12): rule|file -> count").toEqual({});
   });
 });

@@ -129,7 +129,18 @@ export type Instr = { sid: number } & (
   | { op: "call"; dst?: VReg; target: string; convention: "stdcall" | "fastcall"; args: Value[]; site: CallSite }
   /** A runtime routine (`core.X`), whose register contract instruction selection knows. */
   | { op: "rtcall"; dst?: VReg; name: string; args: Value[] }
+  /** The source's own inline assembly, in Klive's assembler dialect. */
   | { op: "asm"; lines: string[] }
+  /**
+   * A FASTCALL routine's first parameter back into the registers it arrived in (A, HL, DE:HL), from
+   * the frame slot the prologue saved it to: for inline assembly that expects it there.
+   */
+  | { op: "param.reload" }
+  /**
+   * The result registers of the calling convention (A, HL, DE:HL, A-E-D-C-B for `type`) into the
+   * frame slot at `offset`: for a routine whose inline assembly leaves its result in them.
+   */
+  | { op: "result.capture"; type: MType; offset: number }
 );
 
 export type Terminator = { sid: number } & (
@@ -145,6 +156,8 @@ export type Terminator = { sid: number } & (
   | { op: "localcall"; target: string; next: string; site: CallSite }
   /** From a routine (through its epilogue, with the result), or from a `local` call. */
   | { op: "ret"; value?: Value }
+  /** A jump to the address a global slot holds (Klive BASIC's DATA items: READ jumps to the next one). */
+  | { op: "jumpvia"; slot: Extract<Slot, { kind: "global" }> }
   /**
    * A jump, never returning, to a runtime routine that takes one value: in A (`width: 8`) or in BC
    * (`width: 16`). The language names the routine (Klive BASIC's END and its run-time errors).

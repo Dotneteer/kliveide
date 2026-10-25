@@ -25,7 +25,8 @@ export function propagateConstantSlots(mir: MModule): boolean {
   let changed = false;
   const removedGlobals: string[] = [];
   for (const fn of mir.functions) {
-    if (fn.kind === "fragment" || fn.blocks.some((b) => b.instrs.some((i) => i.op === "asm"))) continue;
+    // --- Inline assembly, and the operations that hand frame slots to it, may touch any slot
+    if (fn.kind === "fragment" || fn.blocks.some((b) => b.instrs.some((i) => i.op === "asm" || i.op === "param.reload" || i.op === "result.capture"))) continue;
     const result = propagateInFunction(fn);
     if (result.changed) changed = true;
     removedGlobals.push(...result.removedGlobals);

@@ -99,7 +99,7 @@ function findSite(mir: MModule): Site | undefined {
 function candidate(fn: MFunction): boolean {
   if (fn.kind !== "routine" || fn.removed || fn.bank) return false;
   const instrs = fn.blocks.flatMap((b) => b.instrs);
-  if (instrs.some((i) => i.op === "call" || i.op === "asm")) return false;
+  if (instrs.some((i) => i.op === "call" || i.op === "asm" || i.op === "param.reload" || i.op === "result.capture")) return false;
   if (instrs.filter((i) => i.op === "stmt").length > MAX_STATEMENTS + 1) return false;
   if ((fn.vars ?? []).some((v) => v.array || v.byRef)) return false;
   if ([...fn.params, ...fn.locals].some((p) => !NUMERIC.has(p.type))) return false;

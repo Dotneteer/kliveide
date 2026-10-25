@@ -78,6 +78,10 @@ function instrText(i: Instr): string {
       return `${i.dst ? `${vregText(i.dst)}:${i.dst.type} = ` : ""}rtcall ${i.name}(${i.args.map(vregText).join(", ")})${at}`;
     case "asm":
       return `asm {${i.lines.length} lines}${at}`;
+    case "param.reload":
+      return `param.reload${at}`;
+    case "result.capture":
+      return `result.capture.${i.type} [ix${i.offset >= 0 ? "+" : ""}${i.offset}]${at}`;
   }
 }
 
@@ -96,5 +100,7 @@ function termText(t: Terminator): string {
       return `ret${t.value ? ` ${vregText(t.value)}` : ""}${at}`;
     case "exit":
       return `exit ${t.routine}, ${vregText(t.value)} (${t.width}-bit)${at}`;
+    case "jumpvia":
+      return `jumpvia [${t.slot.name}]${at}`;
   }
 }
