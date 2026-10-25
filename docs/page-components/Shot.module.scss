@@ -13,10 +13,9 @@
   margin-bottom: 0.5rem;
   padding-bottom: 0.375rem;
   border-bottom: 1px solid var(--site-line, rgb(127 127 127 / 0.3));
-  font-family: var(--site-font-mono, ui-monospace, Menlo, Consolas, monospace);
-  font-size: 0.75rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  font-family: var(--site-font-body, system-ui, sans-serif);
+  font-size: 0.875rem;
+  font-weight: 700;
   color: var(--site-muted, #7f8690);
 }
 
@@ -51,6 +50,6 @@
   background: var(--site-accent, #45a5e6);
   color: var(--site-on-accent, #0e0f11);
   box-shadow: 0 0 0 2px var(--site-bg, #141517);
-  font: 700 0.75rem/1 var(--site-font-mono, ui-monospace, Menlo, Consolas, monospace);
+  font: 700 0.8125rem/1 var(--site-font-body, system-ui, sans-serif);
   pointer-events: none;
 }

@@ -37,9 +37,9 @@
   --site-stripe-green: #00c800;
   --site-stripe-cyan: #00c8c8;
 
-  --site-font-display: var(--font-display), "Schibsted Grotesk", system-ui, sans-serif;
-  --site-font-body: var(--font-body), "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --site-font-mono: var(--font-mono), "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+  --site-font-display: var(--font-body), "Overpass", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --site-font-body: var(--font-body), "Overpass", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --site-font-mono: var(--font-mono), "Overpass Mono", ui-monospace, Menlo, Consolas, monospace;
 
   color-scheme: light;
 }

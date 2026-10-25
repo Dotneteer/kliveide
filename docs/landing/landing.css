@@ -1,6 +1,11 @@
 /*
- * The landing page (decision D8). Colours and type come only from app/tokens.css; the four
- * Spectrum colours appear in exactly two places, the hero's stripe band and the feature blocks.
+ * The landing page: the data-sheet layout of .plans/DOCS_SITE_REDESIGN_PLAN.md (R2-R5). Colours and
+ * type come only from app/tokens.css. The four Spectrum colours appear in exactly two places: the
+ * rule at the top of the page and the small square before each feature's label.
+ *
+ * Type rules (R2): headings bold, never tighter than normal spacing; labels in bold body type and
+ * sentence case, never uppercase or letter-spaced; body text in the full text colour, grey only for
+ * secondary details; the mono face only for values such as the version number.
  */
 
 .lp *,
@@ -15,8 +20,8 @@ div.lp-body {
   background: var(--site-bg);
   color: var(--site-fg);
   font-family: var(--site-font-body);
-  font-size: 1rem;
-  line-height: 1.6;
+  font-size: 1.0625rem;
+  line-height: 1.55;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -28,7 +33,9 @@ div.lp-body {
 .lp h2,
 .lp h3 {
   font-family: var(--site-font-display);
-  text-wrap: balance;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-wrap: pretty;
   margin: 0;
 }
 
@@ -38,14 +45,35 @@ div.lp-body {
   display: block;
 }
 
-/* --- One content width for every band; the bands themselves run edge to edge */
+.lp table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.lp th,
+.lp td {
+  text-align: left;
+  vertical-align: top;
+  padding: 0.625rem 1rem 0.625rem 0;
+  border-top: 1px solid var(--site-line);
+}
+
+.lp th {
+  font-weight: 700;
+}
+
+.lp-muted {
+  color: var(--site-muted);
+}
+
+.lp-mono {
+  font-family: var(--site-font-mono);
+  font-size: 0.875rem;
+}
+
+/* --- One content width for every band */
 .lp-header-in,
-.lp-hero-in,
-.lp-machines-in,
-.lp-loop-in,
-.lp-features,
-.lp-strip-in,
-.lp-cta-in,
+.lp-main,
 .lp-footer-in {
   max-width: 76rem;
   margin: 0 auto;
@@ -71,6 +99,18 @@ div.lp-body {
 .lp :focus-visible {
   outline: 2px solid var(--site-accent);
   outline-offset: 2px;
+}
+
+/* --- The Spectrum rule: the logo's four stripes as one thin band */
+.lp-rule {
+  height: 6px;
+  background: linear-gradient(
+    90deg,
+    var(--site-stripe-red) 0 25%,
+    var(--site-stripe-yellow) 25% 50%,
+    var(--site-stripe-green) 50% 75%,
+    var(--site-stripe-cyan) 75%
+  );
 }
 
 /* ------------------------------------------------------------------ header */
@@ -117,6 +157,7 @@ div.lp-body {
 .lp-nav a {
   color: var(--site-muted);
   text-decoration: none;
+  white-space: nowrap;
 }
 
 .lp-nav a:hover {
@@ -205,9 +246,13 @@ div.lp-body {
   padding: 0.7rem 1.25rem;
   border: 1px solid var(--site-line-strong);
   border-radius: 6px;
+  background: none;
+  color: inherit;
+  font: inherit;
   font-weight: 600;
   text-decoration: none;
   white-space: nowrap;
+  cursor: pointer;
   transition: background-color 0.15s, filter 0.15s;
 }
 
@@ -226,75 +271,28 @@ div.lp-body {
   filter: brightness(1.08);
 }
 
-/* ------------------------------------------------------------------ hero */
+/* ------------------------------------------------------------------ headline and "At a glance" */
 
-.lp-hero {
-  position: relative;
-  overflow: hidden;
-}
-
-/* --- The stripe band: the logo's four stripes, large, behind the screenshot (direction B) */
-.lp-hero::before {
-  content: "";
-  position: absolute;
-  inset: 0 -14% 0 auto;
-  width: 80%;
-  background: linear-gradient(
-    118deg,
-    transparent 0 44%,
-    var(--site-stripe-red) 44% 50%,
-    var(--site-stripe-yellow) 50% 56%,
-    var(--site-stripe-green) 56% 62%,
-    var(--site-stripe-cyan) 62% 68%,
-    transparent 68%
-  );
-  opacity: 0.92;
-  pointer-events: none;
-}
-
-.lp-hero-in {
-  position: relative;
+.lp-top {
   display: grid;
-  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
-  gap: 3rem;
-  align-items: center;
-  padding-top: 4rem;
-  padding-bottom: 4rem;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  gap: 4rem;
+  align-items: start;
+  padding: 3.5rem 0 3rem;
 }
 
-.lp-hero-copy {
-  min-width: 0;
-}
-
-.lp-badge {
-  display: inline-block;
-  padding: 0.2rem 0.75rem;
-  border: 1px solid var(--site-line);
-  border-radius: 999px;
-  font-family: var(--site-font-mono);
-  font-size: 0.8125rem;
-  color: var(--site-muted);
-  background: var(--site-bg);
-}
-
-.lp-hero h1 {
-  margin: 1rem 0;
-  font-size: clamp(2.25rem, 4.6vw, 3.6rem);
-  line-height: 1.04;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-}
-
-.lp-hero h1 em {
-  font-style: normal;
-  color: var(--site-accent);
+.lp-top h1 {
+  margin-bottom: 1rem;
+  max-width: 15ch;
+  font-size: clamp(2.25rem, 4.2vw, 3.25rem);
+  line-height: 1.1;
 }
 
 .lp-lead {
   margin: 0 0 1.75rem;
-  max-width: 34rem;
-  font-size: 1.1875rem;
-  color: var(--site-muted);
+  max-width: 30rem;
+  font-size: 1.25rem;
+  line-height: 1.5;
 }
 
 .lp-actions {
@@ -313,25 +311,42 @@ div.lp-body {
   color: var(--site-accent);
 }
 
-.lp-hero-shot {
-  min-width: 0;
+.lp-glance {
+  border: 2px solid var(--site-fg);
+  padding: 1.25rem 1.5rem 1rem;
 }
 
-/* --- The hero carousel. The frame keeps the IDE shots' 16:10 shape; a picture of another shape
-   --- (the emulator) is centred on the IDE's own canvas colour. */
+.lp-glance h2 {
+  margin-bottom: 0.5rem;
+  font-size: 1.125rem;
+}
+
+.lp-glance th {
+  width: 8.5rem;
+}
+
+.lp-glance tr:first-child > * {
+  border-top: 0;
+}
+
+/* ------------------------------------------------------------------ the hero carousel */
+
+.lp-carousel-band {
+  margin-bottom: 3.5rem;
+}
+
 .lp-carousel {
   display: grid;
-  gap: 0.75rem;
+  gap: 0.625rem;
 }
 
 .lp-carousel-frame {
   position: relative;
   aspect-ratio: 16 / 10;
   max-width: 100%;
-  border-radius: 10px;
+  border-radius: 4px;
   border: 1px solid #2e3238;
   background: #141517;
-  box-shadow: 0 30px 70px rgb(0 0 0 / 0.45);
   overflow: hidden;
 }
 
@@ -395,6 +410,13 @@ div.lp-body {
   }
 }
 
+.lp-slide-link {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: zoom-in;
+}
+
 .lp-slide img {
   width: 100%;
   height: 100%;
@@ -406,10 +428,6 @@ div.lp-body {
   grid-template-columns: auto minmax(0, 1fr) auto auto auto;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.5rem 0.75rem;
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--site-bg) 88%, transparent);
-  backdrop-filter: blur(6px);
 }
 
 /* --- Always two lines tall, so a one-line caption after a two-line one does not move the page */
@@ -420,7 +438,7 @@ div.lp-body {
   margin: 0;
   font-size: 0.875rem;
   line-height: 1.25rem;
-  color: var(--site-fg);
+  color: var(--site-muted);
   min-width: 0;
 }
 
@@ -448,7 +466,6 @@ div.lp-body {
   background: var(--site-hover);
 }
 
-
 .lp-carousel-dots {
   display: flex;
   gap: 0.375rem;
@@ -459,7 +476,6 @@ div.lp-body {
   height: 0.5rem;
   padding: 0;
   border: 0;
-  border-radius: 999px;
   background: var(--site-line-strong);
   cursor: pointer;
 }
@@ -469,196 +485,101 @@ div.lp-body {
   background: var(--site-accent);
 }
 
-@media (max-width: 640px) {
-  .lp-carousel-dots {
-    display: none;
-  }
+/* ------------------------------------------------------------------ the sheet's sections */
 
-  .lp-carousel-bar {
-    grid-template-columns: auto minmax(0, 1fr) auto auto;
-  }
+.lp-sec {
+  padding: 2.5rem 0;
+  border-top: 2px solid var(--site-fg);
 }
 
-/* ------------------------------------------------------------------ machines */
+.lp-sec > h2,
+.lp-sec > div > h2 {
+  margin-bottom: 1.25rem;
+  font-size: 1.5rem;
+}
 
-.lp-machines {
+.lp-two {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 3rem;
+}
+
+.lp-rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lp-rows li {
+  padding: 0.625rem 0;
   border-top: 1px solid var(--site-line);
-  border-bottom: 1px solid var(--site-line);
-  background: var(--site-panel);
 }
 
-.lp-machines-in {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem 2rem;
-  padding-top: 1rem;
-  padding-bottom: 1rem;
-  font-size: 0.9375rem;
-  color: var(--site-muted);
+.lp-loop th {
+  width: 25%;
 }
 
-.lp-machines b {
-  color: var(--site-fg);
-  font-weight: 600;
+.lp-loop td {
+  padding-right: 1.5rem;
 }
 
-/* ------------------------------------------------------------------ colour blocks */
-
-.lp-blocks {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+.lp-loop td b {
+  display: block;
 }
 
-.lp-block {
-  display: grid;
-  align-content: start;
-  gap: 0.5rem;
-  padding: 1.75rem 1.75rem 2rem;
-  text-decoration: none;
-  transition: filter 0.15s;
-}
-
-.lp-block:hover {
-  filter: brightness(1.08);
-}
-
-.lp-block:nth-child(1) {
-  background: var(--site-spectrum-blue);
-  color: #fff !important;
-}
-
-.lp-block:nth-child(2) {
-  background: var(--site-spectrum-magenta);
-  color: #fff !important;
-}
-
-.lp-block:nth-child(3) {
-  background: var(--site-spectrum-green);
-  color: #000 !important;
-}
-
-.lp-block:nth-child(4) {
-  background: var(--site-spectrum-yellow);
-  color: #000 !important;
-}
-
-.lp-block-tag {
-  font-family: var(--site-font-mono);
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  opacity: 0.85;
-}
-
-.lp-block h2 {
-  font-size: 1.375rem;
-  line-height: 1.15;
-}
-
-.lp-block p {
-  margin: 0;
-  font-size: 0.9375rem;
-  opacity: 0.92;
-}
-
-/* ------------------------------------------------------------------ the loop */
-
-.lp-loop {
-  border-bottom: 1px solid var(--site-line);
-}
-
-.lp-loop-in {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-}
-
-.lp-step {
-  padding: 1.75rem 1.5rem 1.75rem 0;
-  min-width: 0;
-}
-
-.lp-step + .lp-step {
-  padding-left: 1.5rem;
-  border-left: 1px solid var(--site-line);
-}
-
-.lp-step-label {
-  font-family: var(--site-font-mono);
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--site-accent);
-}
-
-.lp-step h3 {
-  margin: 0.375rem 0 0.25rem;
-  font-size: 1.0625rem;
-}
-
-.lp-step p {
-  margin: 0;
-  font-size: 0.875rem;
-  color: var(--site-muted);
-}
-
-/* ------------------------------------------------------------------ features */
-
-.lp-features {
-  padding-top: 4.5rem;
-  padding-bottom: 2rem;
-}
-
-.lp-section-title {
-  font-size: clamp(1.75rem, 3vw, 2.25rem);
-  margin-bottom: 1rem !important;
-}
-
+/* --- Features: text left, picture right, never alternating */
 .lp-feature {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
   gap: 3rem;
-  align-items: center;
-  padding: 3rem 0;
+  align-items: start;
+  padding: 2.5rem 0;
   border-top: 1px solid var(--site-line);
   scroll-margin-top: 4.5rem;
-}
-
-.lp-feature-flip .lp-feature-copy {
-  order: 2;
 }
 
 .lp-feature-copy {
   min-width: 0;
 }
 
-.lp-tag {
-  font-family: var(--site-font-mono);
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--site-accent);
+.lp-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9375rem;
+  font-weight: 700;
 }
 
+.lp-square {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+.lp-square-1 { background: var(--site-spectrum-blue); }
+.lp-square-2 { background: var(--site-spectrum-magenta); }
+.lp-square-3 { background: var(--site-spectrum-green); }
+.lp-square-4 { background: var(--site-spectrum-yellow); }
+.lp-square-5 { background: var(--site-stripe-cyan); }
+
 .lp-feature h3 {
-  margin: 0.5rem 0 0.75rem;
+  margin: 0.5rem 0 1rem;
   font-size: 1.75rem;
   line-height: 1.15;
 }
 
 .lp-feature p {
   margin: 0 0 1rem;
-  color: var(--site-muted);
-  max-width: 34rem;
 }
 
 .lp-feature ul {
   margin: 0 0 1.25rem;
-  padding-left: 1.125rem;
-  color: var(--site-muted);
+  padding-left: 1.25rem;
+  list-style: square;
   font-size: 0.9375rem;
+}
+
+.lp-feature li::marker {
+  color: var(--site-accent);
 }
 
 .lp-feature li + li {
@@ -667,64 +588,157 @@ div.lp-body {
 
 .lp-more {
   color: var(--site-accent) !important;
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.lp-more:hover {
+  font-weight: 700;
   text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
 }
 
 .lp-feature-media {
   min-width: 0;
+  margin: 0;
 }
 
-.lp-feature-media img {
-  border-radius: 8px;
+/* --- A picture that opens full size (ImageViewer) */
+.lp-zoom {
+  position: relative;
+  display: block;
   border: 1px solid var(--site-line);
-  box-shadow: 0 18px 44px rgb(0 0 0 / 0.22);
+  border-radius: 4px;
+  overflow: hidden;
+  background: #141517;
+  cursor: zoom-in;
 }
 
-/* ------------------------------------------------------------------ strip, CTA, footer */
-
-.lp-strip {
-  border-top: 1px solid var(--site-line);
-  border-bottom: 1px solid var(--site-line);
-  background: var(--site-panel);
+.lp-zoom img {
+  width: 100%;
+  transition: opacity 0.15s;
 }
 
-.lp-strip-in {
+.lp-zoom:hover img {
+  opacity: 0.9;
+}
+
+.lp-zoom-mark {
+  position: absolute;
+  right: 0.5rem;
+  bottom: 0.5rem;
+  display: inline-grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 6px;
+  background: rgb(0 0 0 / 0.65);
+  color: #fff;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.lp-zoom:hover .lp-zoom-mark,
+.lp-zoom:focus-visible .lp-zoom-mark {
+  opacity: 1;
+}
+
+/* --- The closing bar */
+.lp-end {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 2rem 0 3.5rem;
+  border-top: 2px solid var(--site-fg);
+}
+
+.lp-end h2 {
+  margin-bottom: 0.25rem;
+  font-size: 1.5rem;
+}
+
+.lp-end p {
+  margin: 0;
+}
+
+/* ------------------------------------------------------------------ the full-size viewer */
+
+/* --- An inset panel over the dimmed page; the picture always fits, nothing scrolls. Its colours
+   --- are the dark theme's in both themes: a screenshot reads best on a dark surround. */
+.lp-viewer {
+  width: calc(100vw - 8rem);
+  height: calc(100vh - 6rem);
+  max-width: none;
+  max-height: none;
+  margin: auto;
+  padding: 0;
+  border: 1px solid #3d424a;
+  border-radius: 8px;
+  background: #141517;
+  color: #e4e6ea;
+  font-family: var(--site-font-body);
+  box-shadow: 0 24px 80px rgb(0 0 0 / 0.5);
+}
+
+.lp-viewer::backdrop {
+  background: rgb(10 11 12 / 0.72);
+}
+
+.lp-viewer-in {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+}
+
+.lp-viewer-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: 0.75rem;
-  padding-top: 1.5rem;
-  padding-bottom: 1.5rem;
+  padding: 0.75rem 1rem;
 }
 
-.lp-strip-in span {
-  padding: 0.375rem 0.875rem;
-  border: 1px solid var(--site-line);
-  border-radius: 999px;
-  background: var(--site-bg);
+.lp-viewer-bar .lp-button {
+  padding: 0.4rem 0.9rem;
   font-size: 0.875rem;
-  color: var(--site-muted);
+  border-color: #3d424a;
+  background: #24272e;
 }
 
-.lp-cta-in {
-  padding-top: 4.5rem;
-  padding-bottom: 4.5rem;
+.lp-viewer-bar .lp-button:hover {
+  background: #2e3238;
+}
+
+.lp-viewer-count {
+  font-size: 0.875rem;
+  color: #949aa4;
+  font-variant-numeric: tabular-nums;
+}
+
+.lp-viewer-stage {
+  position: relative;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.lp-viewer-stage img {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  max-width: calc(100% - 3rem);
+  max-height: 100%;
+  width: auto;
+  height: auto;
+}
+
+.lp-viewer-caption {
+  margin: 0;
+  padding: 0.75rem 1rem 1rem;
+  font-size: 0.9375rem;
   text-align: center;
+  color: #b9bec6;
 }
 
-.lp-cta h2 {
-  font-size: clamp(1.75rem, 3vw, 2.25rem);
-}
-
-.lp-cta p {
-  margin: 0.75rem auto 1.75rem;
-  max-width: 36rem;
-  color: var(--site-muted);
-}
+/* ------------------------------------------------------------------ footer */
 
 .lp-footer {
   border-top: 1px solid var(--site-line);
@@ -759,59 +773,55 @@ div.lp-body {
 /* ------------------------------------------------------------------ narrow screens */
 
 @media (max-width: 960px) {
-  .lp-hero-in,
+  .lp-top,
+  .lp-two,
   .lp-feature {
     grid-template-columns: minmax(0, 1fr);
     gap: 2rem;
   }
 
-  .lp-feature-flip .lp-feature-copy {
-    order: 0;
+  .lp-header-in {
+    gap: 1.25rem;
   }
 
-  .lp-hero::before {
-    inset: auto -20% 0 auto;
-    width: 120%;
-    height: 50%;
-  }
-
-  .lp-blocks,
-  .lp-loop-in {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .lp-step:nth-child(3) {
-    padding-left: 0;
-    border-left: 0;
-  }
-
-  .lp-step:nth-child(n + 3) {
-    border-top: 1px solid var(--site-line);
+  .lp-nav {
+    gap: 1rem;
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 760px) {
   .lp-nav {
     display: none;
   }
 
-  .lp-blocks,
-  .lp-loop-in {
-    grid-template-columns: minmax(0, 1fr);
+  /* --- The four steps stack: each column becomes a row */
+  .lp-loop thead {
+    display: none;
   }
 
-  .lp-step,
-  .lp-step + .lp-step {
-    padding-left: 0;
-    border-left: 0;
+  .lp-loop tr,
+  .lp-loop td {
+    display: block;
+    width: auto;
   }
+}
 
-  .lp-step + .lp-step {
-    border-top: 1px solid var(--site-line);
-  }
-
-  .lp-hero-in {
+@media (max-width: 640px) {
+  .lp-top {
     padding-top: 2.5rem;
+  }
+
+  .lp-carousel-dots {
+    display: none;
+  }
+
+  .lp-carousel-bar {
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+  }
+
+  .lp-viewer {
+    width: calc(100vw - 2rem);
+    height: calc(100vh - 2rem);
   }
 }
 

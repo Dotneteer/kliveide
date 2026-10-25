@@ -200,6 +200,10 @@ docs screenshots. Whichever is chosen, the tokens live in `docs/app/tokens.css`,
 or checked against the app's L1/L2 tokens so the two cannot drift, and the decision is recorded in
 `.ai/ui-theming-intent-and-lessons.md`.
 
+> **Superseded in part** by [`DOCS_SITE_REDESIGN_PLAN.md`](DOCS_SITE_REDESIGN_PLAN.md): the type
+> (now Overpass) and the landing page (now the data-sheet layout, without the stripe band and the
+> colour blocks). The tokens and the docs pages' layout still follow D8.
+
 ## 4. Internationalization architecture
 
 ### 4.1 URL scheme (decision D1 — recommended option A)
@@ -431,4 +435,4 @@ Phase 1; 6 needs 3, 4 and 5.
 | D5 | Get Started's BASIC page uses **Klive BASIC**; Boriel BASIC 2.x is a closing note. |
 | D6 | Book: **no public links, but available** at its URLs (§2.4). |
 | D7 | Try in the browser: **a separate plan**, not part of this one. |
-| D8 | Visual design: **the mix** — A (Studio) tokens and type everywhere; B's hero stripe band and solid Spectrum-colour feature blocks on the landing page only; C's figure labels and numbered markers on docs screenshots (§3.1, "Recommended mix" tab in the mockups). |
+| D8 | *(Type and landing page superseded by `DOCS_SITE_REDESIGN_PLAN.md`.)* Visual design: **the mix** — A (Studio) tokens and type everywhere; B's hero stripe band and solid Spectrum-colour feature blocks on the landing page only; C's figure labels and numbered markers on docs screenshots (§3.1, "Recommended mix" tab in the mockups). |

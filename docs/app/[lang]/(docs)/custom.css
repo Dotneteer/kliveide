@@ -1,7 +1,9 @@
 /*
- * The docs' share of the website's design (decision D8): the site's typefaces over Nextra's, the
- * navbar brand, and the numbered lists that explain screenshot markers. Colours come from Nextra's
- * own variables, which app/[lang]/layout.tsx sets to the app's palette.
+ * The docs' share of the website's design (decision D8, its type replaced by R1-R2 of
+ * .plans/DOCS_SITE_REDESIGN_PLAN.md): the site's typefaces over Nextra's, the navbar brand, and the
+ * numbered lists that explain screenshot markers. Colours come from Nextra's own variables, which
+ * app/[lang]/layout.tsx sets to the app's palette. Headings are bold with no negative tracking, and
+ * the mono face is for code only, never for labels or numbers.
  */
 ul li ul {
   margin-top: 0px;
@@ -16,7 +18,8 @@ article h2,
 article h3,
 article h4 {
   font-family: var(--site-font-display);
-  letter-spacing: -0.01em;
+  font-weight: 700;
+  letter-spacing: 0;
 }
 
 code,
@@ -93,7 +96,7 @@ article figure + ol > li::before {
   border-radius: 4px;
   background: var(--site-accent);
   color: var(--site-on-accent);
-  font: 700 0.75rem/1 var(--site-font-mono);
+  font: 700 0.8125rem/1 var(--site-font-body);
 }
 
 /* --- The navbar's language selector (page-components/DocsLanguageSwitch.tsx) */
