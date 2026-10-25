@@ -11,7 +11,7 @@ import {
   type Constant
 } from "@main/kbasic/semantics/constants";
 import { commonType, literalIntegerType, signedOf, type KType } from "@main/kbasic/semantics/types";
-import * as f40 from "@main/kbasic/semantics/float40";
+import * as f40 from "@main/z80-backend/numeric/float40";
 
 const lit = (n: number, text = String(n)) => numberLiteral(n, text, Number.isInteger(n) ? "integer" : "real");
 const typed = (n: number, type: KType): Constant => intConstant(BigInt(n), type);

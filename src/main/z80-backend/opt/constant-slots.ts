@@ -1,4 +1,4 @@
-import type { Instr, MFunction, MModule, Slot, Terminator, Value } from "../ir/mir";
+import type { Instr, MFunction, MModule, Slot, Terminator, Value } from "../mir/mir";
 
 /**
  * Constant slots (level 2, `.docs/kbasic-optimiser.md` §12–§14): SCCP's most valuable case in memory

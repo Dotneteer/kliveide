@@ -1,4 +1,4 @@
-import type { LirLine } from "../backend/lir";
+import type { LirLine } from "../select/lir";
 import { ALL_REGS, parseInstr, type ParsedInstr, type Reg } from "./lir";
 
 /**

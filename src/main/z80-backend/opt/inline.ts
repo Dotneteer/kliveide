@@ -1,5 +1,5 @@
-import type { Block, Instr, MFunction, MModule, MType, Slot, Terminator, Value, VReg } from "../ir/mir";
-import { mtypeSize } from "../ir/mir";
+import type { Block, Instr, MFunction, MModule, MType, Slot, Terminator, Value, VReg } from "../mir/mir";
+import { mtypeSize } from "../mir/mir";
 
 /**
  * Inlining (level 3, plan §7.1, `.docs/kbasic-optimiser.md` §16): a small leaf SUB or FUNCTION with a

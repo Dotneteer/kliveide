@@ -13,7 +13,7 @@ import {
   type Terminator,
   type Value,
   type VReg
-} from "../ir/mir";
+} from "../mir/mir";
 import { CodegenError, instr, label, type LirLine } from "./lir";
 import { selectRun } from "./select1";
 

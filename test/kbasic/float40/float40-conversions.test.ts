@@ -9,7 +9,7 @@ import {
   negate,
   toNumber,
   type Float40
-} from "@main/kbasic/semantics/float40";
+} from "@main/z80-backend/numeric/float40";
 
 describe("float40 conversions", () => {
   it("stores integers in -65535..65535 in the ROM's integer form", () => {

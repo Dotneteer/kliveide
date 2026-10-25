@@ -1,4 +1,4 @@
-import type { Instr, MModule } from "../ir/mir";
+import type { Instr, MModule } from "../mir/mir";
 
 /**
  * Unused routines (level 2, plan §7.2 step 10, `.docs/kbasic-optimiser.md` §15): a SUB or FUNCTION

@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import { mirText } from "@main/kbasic/emit-files";
-import type { MFunction } from "@main/kbasic/ir/mir";
-import { MIR_PASSES, optimizeMir } from "@main/kbasic/opt/mir-passes";
+import type { MFunction } from "@main/z80-backend/mir/mir";
+import { MIR_PASSES, optimizeMir } from "@main/z80-backend/opt/mir-passes";
 
 import { compileBasic } from "../codegen/run-kit";
 

@@ -2,14 +2,10 @@
   "A1 back end imports a language|src/main/kbasic/debug/builder.ts": 2,
   "A1 back end imports a language|src/main/kbasic/debug/source-level.ts": 6,
   "A1 back end imports a language|src/main/kbasic/emit-files.ts": 2,
-  "A1 back end imports a language|src/main/kbasic/ir/mir.ts": 3,
   "A1 back end imports a language|src/main/kbasic/runtime/runtime-linker.ts": 1,
-  "A2 language imports a back-end internal|src/main/kbasic/codegen.ts": 10,
-  "A2 language imports a back-end internal|src/main/kbasic/ir/lower.ts": 2,
+  "A1 back end imports a language|src/main/z80-backend/mir/mir.ts": 3,
+  "A2 language imports a back-end internal|src/main/kbasic/codegen.ts": 9,
   "A2 language imports a back-end internal|src/main/kbasic/KBasicCompiler.ts": 1,
   "A2 language imports a back-end internal|src/main/kbasic/runtime/generated/runtime-bundle.ts": 1,
-  "A2 language imports a back-end internal|src/main/kbasic/semantics/constants.ts": 2,
-  "A2 language imports a back-end internal|src/main/kbasic/semantics/expressions.ts": 1,
-  "A2 language runs the Z80 assembler|src/main/kbasic/codegen.ts": 1,
-  "B1 debug core imports a language|src/renderer/appIde/debugger/source/value-decoder.ts": 1
+  "A2 language runs the Z80 assembler|src/main/kbasic/codegen.ts": 1
 }

@@ -1,4 +1,4 @@
-import type { CallSite } from "../ir/mir";
+import type { CallSite } from "../mir/mir";
 
 /**
  * LIR lines (`.docs/kbasic-lir-regalloc.md` §2): Z80 code as the emitter writes it, one assembler

@@ -1,6 +1,6 @@
 import type { FileLine, ListFileItem } from "@abstractions/CompilerInfo";
-import type { StatementEntry } from "../ir/mir";
-import type { LineInfo } from "../backend/emit";
+import type { StatementEntry } from "../../z80-backend/mir/mir";
+import type { LineInfo } from "../../z80-backend/emit/emit";
 import { isLibraryPath } from "../stdlib";
 import type { SourceSet } from "../syntax/source";
 

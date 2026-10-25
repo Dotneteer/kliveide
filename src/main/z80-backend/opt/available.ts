@@ -1,4 +1,4 @@
-import { instr, type LirLine } from "../backend/lir";
+import { instr, type LirLine } from "../select/lir";
 import { pinnedLines } from "./engine";
 import { parseInstr, type Reg } from "./lir";
 

@@ -5,7 +5,7 @@ import type {
   SourceValueType,
   VariableDebugInfo
 } from "@abstractions/SourceDebugInfo";
-import { fromNumber, toNumber, type Float40 } from "@main/kbasic/semantics/float40";
+import { fromNumber, toNumber, type Float40 } from "@main/z80-backend/numeric/float40";
 // --- `t` is a local name in this file (the trimmed text): the translator is `translate`
 import { t as translate } from "@common/i18n/i18n";
 

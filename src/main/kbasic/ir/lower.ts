@@ -5,7 +5,7 @@ import type { DiagnosticBag, Span } from "../diagnostics";
 import type { AttrName } from "../syntax/ast";
 import type { AddressTarget, BoundArgument, BoundExpr, BoundProgram, BoundStatement } from "../semantics/bound";
 import type { Constant } from "../semantics/constants";
-import * as f40 from "../semantics/float40";
+import * as f40 from "../../z80-backend/numeric/float40";
 import type { ArraySymbol, LabelSymbol, RoutineSymbol, Scope, VariableSymbol } from "../semantics/symbols";
 import {
   COMPARISONS,
@@ -27,7 +27,7 @@ import {
   type Value,
   type VReg,
   symText
-} from "./mir";
+} from "../../z80-backend/mir/mir";
 
 /**
  * Lowers the typed program to MIR (`.docs/kbasic-mir.md` §8). Variables are read and written through

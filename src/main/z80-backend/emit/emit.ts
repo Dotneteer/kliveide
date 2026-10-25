@@ -1,5 +1,5 @@
-import type { CallSite, DataItem } from "../ir/mir";
-import type { LirLine } from "./lir";
+import type { CallSite, DataItem } from "../mir/mir";
+import type { LirLine } from "../select/lir";
 
 /** What the debug builder needs to know about one line of the generated program. */
 export type LineInfo = {

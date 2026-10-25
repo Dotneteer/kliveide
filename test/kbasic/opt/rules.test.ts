@@ -3,16 +3,16 @@ import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { instr, label, type LirLine } from "@main/kbasic/backend/lir";
-import { selectFunction } from "@main/kbasic/backend/select0";
+import { instr, label, type LirLine } from "@main/z80-backend/select/lir";
+import { selectFunction } from "@main/z80-backend/select/select0";
 import { DiagnosticBag } from "@main/kbasic/diagnostics";
 import { lowerProgram } from "@main/kbasic/ir/lower";
 import { runFrontEnd } from "@main/kbasic/KBasicCompiler";
-import { runRules } from "@main/kbasic/opt/engine";
-import { computeLiveness } from "@main/kbasic/opt/liveness";
-import { parseInstr } from "@main/kbasic/opt/lir";
-import { optimizeLir, RULES } from "@main/kbasic/opt/pipeline";
-import { verifyModule } from "@main/kbasic/opt/verify";
+import { runRules } from "@main/z80-backend/opt/engine";
+import { computeLiveness } from "@main/z80-backend/opt/liveness";
+import { parseInstr } from "@main/z80-backend/opt/lir";
+import { optimizeLir, RULES } from "@main/z80-backend/opt/pipeline";
+import { verifyModule } from "@main/z80-backend/opt/verify";
 import { defaultOptions } from "@main/kbasic/options/options";
 import { isLibraryPath } from "@main/kbasic/stdlib";
 

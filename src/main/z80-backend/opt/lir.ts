@@ -1,4 +1,4 @@
-import type { LirLine } from "../backend/lir";
+import type { LirLine } from "../select/lir";
 
 /**
  * The LIR as the optimiser reads it (`.docs/kbasic-optimiser.md` §4): the level-0 selector writes

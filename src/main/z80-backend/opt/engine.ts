@@ -1,4 +1,4 @@
-import type { LirLine } from "../backend/lir";
+import type { LirLine } from "../select/lir";
 import { computeLiveness, type Liveness } from "./liveness";
 import type { ParsedInstr } from "./lir";
 

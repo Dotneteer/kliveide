@@ -15,10 +15,10 @@ import type {
   VariableDebugInfo,
   VariableDebugLocation
 } from "@abstractions/SourceDebugInfo";
-import type { EmittedProgram } from "../backend/emit";
-import type { CallSite, MFunction, MModule, MType } from "../ir/mir";
+import type { EmittedProgram } from "../../z80-backend/emit/emit";
+import type { CallSite, MFunction, MModule, MType } from "../../z80-backend/mir/mir";
 import { globalName } from "../ir/lower";
-import * as f40 from "../semantics/float40";
+import * as f40 from "../../z80-backend/numeric/float40";
 import type { ArraySymbol, ConstSymbol, Scope, Symbol as KSymbol, VariableSymbol } from "../semantics/symbols";
 import type { KType } from "../semantics/types";
 import type { Span } from "../diagnostics";

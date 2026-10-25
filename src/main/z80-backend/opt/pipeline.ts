@@ -1,7 +1,7 @@
 import type { ListFileItem } from "@abstractions/CompilerInfo";
-import type { LirLine } from "../backend/lir";
-import type { MModule } from "../ir/mir";
-import type { EmittedProgram } from "../backend/emit";
+import type { LirLine } from "../select/lir";
+import type { MModule } from "../mir/mir";
+import type { EmittedProgram } from "../emit/emit";
 import { removeRedundantLoads } from "./available";
 import { runRules, type Rule } from "./engine";
 import { BRANCH_RULES } from "./rules/branches";

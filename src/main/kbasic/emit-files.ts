@@ -1,6 +1,6 @@
 import type { GeneratedProgram } from "./codegen";
-import type { Block, Instr, MFunction, MModule, Slot, Terminator } from "./ir/mir";
-import { symText, vregText } from "./ir/mir";
+import type { Block, Instr, MFunction, MModule, Slot, Terminator } from "../z80-backend/mir/mir";
+import { symText, vregText } from "../z80-backend/mir/mir";
 import type { KBasicOptions } from "./options/options";
 
 /**

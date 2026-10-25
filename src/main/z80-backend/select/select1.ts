@@ -11,7 +11,7 @@ import {
   type Terminator,
   type Value,
   type VReg
-} from "../ir/mir";
+} from "../mir/mir";
 import { CodegenError } from "./lir";
 import { FLOAT_BINARY, FLOAT_COMPARE, FLOAT_REGS, LOAD_FLOAT_HL, PUSH_FLOAT, RUNTIME_ARGS, STORE_FLOAT_HL } from "./select0";
 

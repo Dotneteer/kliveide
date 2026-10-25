@@ -1,4 +1,4 @@
-import { instr } from "../../backend/lir";
+import { instr } from "../../select/lir";
 import { instrAt, lineAt, liveAfter, sidAt, type Rule } from "../engine";
 
 /**

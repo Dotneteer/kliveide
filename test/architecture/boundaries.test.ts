@@ -42,11 +42,7 @@ const LANGUAGES = ["src/main/kbasic/", "src/main/boriel-integration/", "src/main
 const BACKEND = [
   "src/main/z80-backend/",
   "src/main/compiler-shell/",
-  "src/main/kbasic/backend/",
-  "src/main/kbasic/opt/",
-  "src/main/kbasic/ir/mir.ts",
   "src/main/kbasic/debug/",
-  "src/main/kbasic/semantics/float40.ts",
   "src/main/kbasic/runtime/runtime-linker.ts",
   "src/main/kbasic/runtime/runtime-types.ts",
   "src/main/kbasic/emit-files.ts"

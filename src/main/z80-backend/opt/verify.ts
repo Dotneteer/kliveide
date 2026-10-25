@@ -1,4 +1,4 @@
-import type { Block, Instr, MFunction, MModule, Terminator, Value } from "../ir/mir";
+import type { Block, Instr, MFunction, MModule, Terminator, Value } from "../mir/mir";
 
 /**
  * The MIR verifier (`.docs/kbasic-mir.md` §7, `.docs/kbasic-optimiser.md` §3): run after lowering

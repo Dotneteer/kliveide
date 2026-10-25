@@ -1,7 +1,7 @@
-import type { Span } from "../diagnostics";
+import type { Span } from "../../kbasic/diagnostics";
 import type { StatementKind } from "@abstractions/CompilerInfo";
-import type { ArraySymbol, VariableSymbol } from "../semantics/symbols";
-import type { KType } from "../semantics/types";
+import type { ArraySymbol, VariableSymbol } from "../../kbasic/semantics/symbols";
+import type { KType } from "../../kbasic/semantics/types";
 
 /**
  * The MIR (`.docs/kbasic-mir.md`): per function, a control-flow graph of blocks whose instructions

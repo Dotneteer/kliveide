@@ -1,4 +1,4 @@
-import { COMPARISONS, isSignedM, mtypeSize, type BinOp, type Instr, type MFunction, type MModule, type MType, type Value, type VReg } from "../ir/mir";
+import { COMPARISONS, isSignedM, mtypeSize, type BinOp, type Instr, type MFunction, type MModule, type MType, type Value, type VReg } from "../mir/mir";
 import { propagateConstantSlots } from "./constant-slots";
 import { inlineCalls } from "./inline";
 import { removeUnusedRoutines } from "./unused-routines";
