@@ -1,0 +1,932 @@
+---
+description: "What the ZX Spectrum Next adds to the Spectrum's ULA screen: the screen memory inside the FPGA, a line read twice over for scrolling, the Timex second screen, hi-colour and 512-dot hi-res modes, ULANext and ULA+ attribute formats, the border in each mode, the hardware scroll with its half-dot step, the clip window, and how Klive's emulator draws the same."
+---
+
+import { Callout } from 'nextra/components'
+
+# ZX Spectrum Next: The ULA Layer, Extended
+
+Every 48K program still sees exactly the screen it expects: the same bytes at `$4000`, the same
+colours, the same border stripes, the same FLASH. Yet the same ULA can put 512 dots on a line, give
+every 8 × 1 dots their own colours, show 64 colours at once, and scroll the whole screen smoothly
+by a single dot. All of it hides behind switches that old software never touches.
+
+This article is about those switches, and about the machinery behind them. It builds on the
+[Spectrum display article](/en/under-the-hood/emulator-internals/spectrum-display/), which explains
+the ULA itself: the bitmap and its attributes, the famous address order, how a line is read and
+drawn, contention and the floating bus. Here we cover only what the Next changes. It also assumes the
+series so far: the [big picture](/en/under-the-hood/emulator-internals/next-display/overview/) for the
+layers and the pipeline, and [colours and palettes](/en/under-the-hood/emulator-internals/next-display/palettes/)
+for how an index becomes a colour.
+
+### How this article is organised
+
+- **The same ULA, new memory** ([Part 1](#part-1-the-same-ula-new-memory)): where the screen lives,
+  and why the Next has to imitate contention rather than suffer it.
+- **Reading a line twice** ([Part 2](#part-2-reading-a-line-twice)): eight reads where the Spectrum
+  made four, and what they are for.
+- **The Timex modes** ([Part 3](#part-3-the-timex-modes)): a second screen, hi-colour and hi-res,
+  on the machine. If you read only one part, read this one.
+- **ULANext** ([Part 4](#part-4-ulanext-the-attribute-byte-split-anew)) and **ULA+**
+  ([Part 5](#part-5-ula-64-colours)): two new readings of the attribute byte.
+- **The border** ([Part 6](#part-6-the-border)) in every mode.
+- **Scrolling** ([Part 7](#part-7-scrolling-by-the-dot)): dot by dot, colours included, and by half
+  a dot.
+- **The clip window and switching the ULA off** ([Part 8](#part-8-clipped-and-switched-off)), and
+  **the emulator** ([Part 9](#part-9-how-klive-does-it)).
+
+<Callout type="info">
+The pictures are Klive's Next with only the ULA switched on, at 128K/+3 timing and 50 Hz. Each picture is
+written by a test that first checks the dots this article describes: the colours of a cell's lines,
+the letters of the hi-res text, the dots a scroll moves.
+</Callout>
+
+## Part 1: The same ULA, new memory
+
+Leave every new switch alone and the Next's ULA is the Spectrum's: the 256 × 192 bitmap at `$4000`,
+the 768 attributes at `$5800`, INK, PAPER, BRIGHT and FLASH (16 frames on, 16 off), and the border
+from port `$FE`. It reads the same bytes at the same moments of the frame. The Spectrum article's
+[Part 2 and Part 3](/en/under-the-hood/emulator-internals/spectrum-display/#part-2-the-screen-in-memory)
+hold for it word for word.
+
+What differs is the memory behind it. On a Spectrum the screen is ordinary RAM that the ULA and the
+CPU take turns to use.
+
+They take turns because the RAM can do only one thing at a time. The screen lives in the lower 16K,
+eight dynamic RAM chips with one set of address pins and one data line each: at any moment they can
+be given one address and deliver one byte, to the ULA or to the CPU, never to both. Memory that can
+serve two readers at once did exist, but it cost far more for each bit than the ordinary dynamic RAM
+of home computers, too much for a machine built to a price. So the ULA and the CPU share the RAM, and
+someone has to give way. It cannot be the ULA: the beam does not wait, and a byte fetched late is a
+dot drawn wrong. So the ULA always goes first, and the CPU is held up until it has finished. That is
+**contention**, and the
+[Spectrum article](/en/under-the-hood/emulator-internals/spectrum-display/#part-5-sharing-the-memory)
+explains the exact pattern.
+
+The Next has no such limit. On the Next, **bank 5**, the 16K that normally appears at
+`$4000`–`$7FFF`, is kept in **block RAM inside the FPGA**, and so is the first half of **bank 7**,
+the 128K's shadow screen. Block RAM is built with **two ports** at no extra cost: two independent
+sets of address and data lines into the same bytes. The CPU uses one, the ULA (and the tilemap) the
+other, and neither ever waits for the other. The ULA reads bank 5 directly, whichever banks the CPU
+has paged in.
+
+<figure>
+<svg viewBox="0 0 700 300" role="img" aria-label="The ULA's memory, drawn to scale. Bank 5, sixteen kilobytes from address 4000 to 7FFF: the first display file's bitmap, 6,144 bytes from 4000; its attributes, 768 bytes from 5800; 1,280 bytes that are not screen; then the second display file's bitmap, or hi-colour's colour bytes, 6,144 bytes from 6000; and that file's attributes, 768 bytes from 7800. All of bank 5 is in the FPGA's block RAM. Bank 7, sixteen kilobytes: the shadow screen's bitmap and attributes in its first 6,912 bytes; only the first eight kilobytes of bank 7 are in the block RAM, so the ULA cannot see its second half." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
+  <defs>
+    <pattern id="ula-hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <line x1="0" y1="0" x2="0" y2="8" stroke="currentColor" strokeOpacity="0.3" strokeWidth="2" />
+    </pattern>
+  </defs>
+  <text x="50" y="97" textAnchor="end" fill="currentColor" fontSize="12" fontWeight="600">bank 5</text>
+  <text x="60" y="62" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">$4000</text>
+  <text x="285" y="62" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">$5800</text>
+  <text x="360" y="62" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">$6000</text>
+  <text x="585" y="62" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">$7800</text>
+  <text x="660" y="62" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">$8000</text>
+  <rect x="60" y="70" width="225" height="44" fill="#3b82f6" fillOpacity="0.3" stroke="#3b82f6" />
+  <text x="172.5" y="96" textAnchor="middle" fill="currentColor" fontSize="11">bitmap, 6,144 bytes</text>
+  <rect x="285" y="70" width="28.1" height="44" fill="#3b82f6" fillOpacity="0.55" stroke="#3b82f6" />
+  <rect x="313.1" y="70" width="46.9" height="44" fill="currentColor" fillOpacity="0.05" stroke="currentColor" strokeOpacity="0.4" />
+  <rect x="360" y="70" width="225" height="44" fill="#3b82f6" fillOpacity="0.15" stroke="#3b82f6" strokeDasharray="5 3" />
+  <text x="472.5" y="90" textAnchor="middle" fill="currentColor" fontSize="11">second bitmap,</text>
+  <text x="472.5" y="104" textAnchor="middle" fill="currentColor" fontSize="11">or hi-colour’s colours</text>
+  <rect x="585" y="70" width="28.1" height="44" fill="#3b82f6" fillOpacity="0.3" stroke="#3b82f6" strokeDasharray="5 3" />
+  <rect x="613.1" y="70" width="46.9" height="44" fill="currentColor" fillOpacity="0.05" stroke="currentColor" strokeOpacity="0.4" />
+  <line x1="299" y1="114" x2="299" y2="126" stroke="currentColor" strokeOpacity="0.5" />
+  <text x="299" y="137" textAnchor="middle" fill="currentColor" fontSize="10">attributes</text>
+  <line x1="599" y1="114" x2="599" y2="126" stroke="currentColor" strokeOpacity="0.5" />
+  <text x="599" y="137" textAnchor="middle" fill="currentColor" fontSize="10">attributes</text>
+  <text x="172.5" y="137" textAnchor="middle" fill="#3b82f6" fontSize="11" fontWeight="600">display file 1</text>
+  <text x="472.5" y="137" textAnchor="middle" fill="#3b82f6" fontSize="11" fontWeight="600">display file 2 (Timex)</text>
+  <text x="50" y="217" textAnchor="end" fill="currentColor" fontSize="12" fontWeight="600">bank 7</text>
+  <text x="60" y="182" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">+$0000</text>
+  <text x="285" y="182" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">+$1800</text>
+  <text x="360" y="182" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">+$2000</text>
+  <text x="660" y="182" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">+$4000</text>
+  <rect x="60" y="190" width="225" height="44" fill="#3b82f6" fillOpacity="0.3" stroke="#3b82f6" />
+  <text x="172.5" y="216" textAnchor="middle" fill="currentColor" fontSize="11">shadow bitmap</text>
+  <rect x="285" y="190" width="28.1" height="44" fill="#3b82f6" fillOpacity="0.55" stroke="#3b82f6" />
+  <rect x="313.1" y="190" width="46.9" height="44" fill="currentColor" fillOpacity="0.05" stroke="currentColor" strokeOpacity="0.4" />
+  <rect x="360" y="190" width="300" height="44" fill="url(#ula-hatch)" stroke="currentColor" strokeOpacity="0.4" />
+  <text x="510" y="216" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.8">not in block RAM: the ULA cannot see it</text>
+  <text x="210" y="258" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.8">first 8K in block RAM, shown with port $7FFD bit 3</text>
+  <text x="360" y="288" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.8">all of bank 5 is in the FPGA’s block RAM; each unit across is the same number of bytes</text>
+</svg>
+<figcaption>The memory the ULA reads, to scale. Dashed: the parts only the Timex modes of Part 3 use.</figcaption>
+</figure>
+
+Two consequences follow, and the rest of the article meets both of them.
+
+**Contention is an imitation.** The Spectrum held up the CPU because both could not use the RAM at
+once. The Next has no such problem, yet old programs count T-states with the delays built in. So
+the ULA works out, from the beam's position, exactly when a Spectrum's CPU would have been held up,
+and holds the Next's CPU up then, for no other reason than to keep time. It does so only while the CPU
+runs at 3.5 MHz, as the [timing article](/en/under-the-hood/emulator-internals/next-display/timing/#part-4-dots-ticks-and-t-states)
+explains. And there is **no snow**: the Spectrum's flickering dots came from the CPU's refresh cycles
+disturbing the ULA's reads of shared RAM, and here the ULA has a port of its own.
+
+**Bank 7 is only half there.** The FPGA has enough block RAM for 16K of bank 5 but only 8K of bank 7.
+That is plenty for the 128K shadow screen, 6,912 bytes, but not for a second display file at
+`+$2000`. So while the shadow screen is shown, the Timex modes of Part 3 are switched off, and the
+ULA shows a plain Spectrum screen from bank 7.
+
+## Part 2: Reading a line twice
+
+The Spectrum's ULA reads four bytes for every 16 dots: the bitmap byte and the attribute of one
+character cell, then of the next. The Next's ULA reads **eight**. For every 8 dots it fetches the
+bitmap byte and attribute of the cell under the beam **and of the cell after it**.
+
+The reason is the scroll of Part 7. Without a scroll, the 8 dots the beam is about to draw are
+exactly one cell. With a scroll of, say, 3 dots, they are the last 5 dots of one cell and the first 3
+of the next, so the ULA needs both cells' bytes, both bitmaps and both attributes, at once. It
+always fetches both, scroll or not; block RAM has bandwidth to spare, and a fixed pattern of reads is
+simpler than a changing one.
+
+<figure>
+<svg viewBox="0 0 700 385" role="img" aria-label="Two rows of the same line, with and without a scroll that is not a multiple of 8. Top: X scroll 0. The picture in memory is cells n, n plus 1, n plus 2, 8 dots each, and every 8-dot stretch the ULA draws on screen lines up with exactly one cell, so it needs one bitmap byte and one attribute. Bottom: X scroll 3. The picture is moved 3 dots to the left, so every 8-dot stretch on screen takes its first 5 dots from the end of cell n and its last 3 from the start of cell n plus 1, each part in its own cell's colours: the ULA needs both cells' bitmaps and attributes for the same stretch." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
+  <text x="20" y="24" textAnchor="start" fill="currentColor" fontSize="12" fontWeight="600">X scroll 0 (or 8, 16, …): the 8 dots on screen are one cell</text>
+  <text x="94" y="66" textAnchor="end" fill="currentColor" fontSize="11">memory</text>
+  <text x="94" y="126" textAnchor="end" fill="currentColor" fontSize="11">screen</text>
+  <rect x="100" y="46" width="144" height="30" fill="#3b82f6" fillOpacity="0.4" stroke="#3b82f6" />
+  <path d="M118,46 v30 M136,46 v30 M154,46 v30 M172,46 v30 M190,46 v30 M208,46 v30 M226,46 v30" fill="none" stroke="currentColor" strokeOpacity="0.2" />
+  <text x="172.0" y="66" textAnchor="middle" fill="currentColor" fontSize="11">cell n</text>
+  <rect x="244" y="46" width="144" height="30" fill="#3b82f6" fillOpacity="0.12" stroke="#3b82f6" strokeDasharray="5 3" />
+  <path d="M262,46 v30 M280,46 v30 M298,46 v30 M316,46 v30 M334,46 v30 M352,46 v30 M370,46 v30" fill="none" stroke="currentColor" strokeOpacity="0.2" />
+  <text x="316.0" y="66" textAnchor="middle" fill="currentColor" fontSize="11">cell n+1</text>
+  <rect x="388" y="46" width="144" height="30" fill="#3b82f6" fillOpacity="0.4" stroke="#3b82f6" />
+  <path d="M406,46 v30 M424,46 v30 M442,46 v30 M460,46 v30 M478,46 v30 M496,46 v30 M514,46 v30" fill="none" stroke="currentColor" strokeOpacity="0.2" />
+  <text x="460.0" y="66" textAnchor="middle" fill="currentColor" fontSize="11">cell n+2</text>
+  <rect x="100" y="106" width="144" height="30" fill="#3b82f6" fillOpacity="0.4" />
+  <path d="M118,106 v30 M136,106 v30 M154,106 v30 M172,106 v30 M190,106 v30 M208,106 v30 M226,106 v30" fill="none" stroke="currentColor" strokeOpacity="0.2" />
+  <rect x="100" y="106" width="144" height="30" fill="none" stroke="#e5484d" strokeWidth="2" />
+  <rect x="244" y="106" width="144" height="30" fill="#3b82f6" fillOpacity="0.12" />
+  <path d="M262,106 v30 M280,106 v30 M298,106 v30 M316,106 v30 M334,106 v30 M352,106 v30 M370,106 v30" fill="none" stroke="currentColor" strokeOpacity="0.2" />
+  <rect x="244" y="106" width="144" height="30" fill="none" stroke="#e5484d" strokeWidth="2" />
+  <rect x="388" y="106" width="144" height="30" fill="#3b82f6" fillOpacity="0.4" />
+  <path d="M406,106 v30 M424,106 v30 M442,106 v30 M460,106 v30 M478,106 v30 M496,106 v30 M514,106 v30" fill="none" stroke="currentColor" strokeOpacity="0.2" />
+  <rect x="388" y="106" width="144" height="30" fill="none" stroke="#e5484d" strokeWidth="2" />
+  <line x1="100" y1="80" x2="100" y2="102" stroke="currentColor" strokeOpacity="0.45" strokeDasharray="3 3" />
+  <line x1="244" y1="80" x2="244" y2="102" stroke="currentColor" strokeOpacity="0.45" strokeDasharray="3 3" />
+  <line x1="388" y1="80" x2="388" y2="102" stroke="currentColor" strokeOpacity="0.45" strokeDasharray="3 3" />
+  <line x1="532" y1="80" x2="532" y2="102" stroke="currentColor" strokeOpacity="0.45" strokeDasharray="3 3" />
+  <text x="172" y="156" textAnchor="middle" fill="currentColor" fontSize="11">needs cell n only</text>
+  <text x="20" y="214" textAnchor="start" fill="currentColor" fontSize="12" fontWeight="600">X scroll 3 (or 11, 19, …): the 8 dots on screen straddle two cells</text>
+  <text x="40" y="256" textAnchor="end" fill="currentColor" fontSize="11">memory</text>
+  <text x="94" y="316" textAnchor="end" fill="currentColor" fontSize="11">screen</text>
+  <rect x="46" y="236" width="144" height="30" fill="#3b82f6" fillOpacity="0.4" stroke="#3b82f6" />
+  <path d="M64,236 v30 M82,236 v30 M100,236 v30 M118,236 v30 M136,236 v30 M154,236 v30 M172,236 v30" fill="none" stroke="currentColor" strokeOpacity="0.2" />
+  <text x="118.0" y="256" textAnchor="middle" fill="currentColor" fontSize="11">cell n</text>
+  <rect x="190" y="236" width="144" height="30" fill="#3b82f6" fillOpacity="0.12" stroke="#3b82f6" strokeDasharray="5 3" />
+  <path d="M208,236 v30 M226,236 v30 M244,236 v30 M262,236 v30 M280,236 v30 M298,236 v30 M316,236 v30" fill="none" stroke="currentColor" strokeOpacity="0.2" />
+  <text x="262.0" y="256" textAnchor="middle" fill="currentColor" fontSize="11">cell n+1</text>
+  <rect x="334" y="236" width="144" height="30" fill="#3b82f6" fillOpacity="0.4" stroke="#3b82f6" />
+  <path d="M352,236 v30 M370,236 v30 M388,236 v30 M406,236 v30 M424,236 v30 M442,236 v30 M460,236 v30" fill="none" stroke="currentColor" strokeOpacity="0.2" />
+  <text x="406.0" y="256" textAnchor="middle" fill="currentColor" fontSize="11">cell n+2</text>
+  <rect x="478" y="236" width="144" height="30" fill="#3b82f6" fillOpacity="0.12" stroke="#3b82f6" strokeDasharray="5 3" />
+  <path d="M496,236 v30 M514,236 v30 M532,236 v30 M550,236 v30 M568,236 v30 M586,236 v30 M604,236 v30" fill="none" stroke="currentColor" strokeOpacity="0.2" />
+  <text x="550.0" y="256" textAnchor="middle" fill="currentColor" fontSize="11">cell n+3</text>
+  <rect x="100" y="296" width="90" height="30" fill="#3b82f6" fillOpacity="0.4" />
+  <rect x="190" y="296" width="54" height="30" fill="#3b82f6" fillOpacity="0.12" />
+  <path d="M118,296 v30 M136,296 v30 M154,296 v30 M172,296 v30 M190,296 v30 M208,296 v30 M226,296 v30" fill="none" stroke="currentColor" strokeOpacity="0.2" />
+  <rect x="100" y="296" width="144" height="30" fill="none" stroke="#e5484d" strokeWidth="2" />
+  <rect x="244" y="296" width="90" height="30" fill="#3b82f6" fillOpacity="0.12" />
+  <rect x="334" y="296" width="54" height="30" fill="#3b82f6" fillOpacity="0.4" />
+  <path d="M262,296 v30 M280,296 v30 M298,296 v30 M316,296 v30 M334,296 v30 M352,296 v30 M370,296 v30" fill="none" stroke="currentColor" strokeOpacity="0.2" />
+  <rect x="244" y="296" width="144" height="30" fill="none" stroke="#e5484d" strokeWidth="2" />
+  <rect x="388" y="296" width="90" height="30" fill="#3b82f6" fillOpacity="0.4" />
+  <rect x="478" y="296" width="54" height="30" fill="#3b82f6" fillOpacity="0.12" />
+  <path d="M406,296 v30 M424,296 v30 M442,296 v30 M460,296 v30 M478,296 v30 M496,296 v30 M514,296 v30" fill="none" stroke="currentColor" strokeOpacity="0.2" />
+  <rect x="388" y="296" width="144" height="30" fill="none" stroke="#e5484d" strokeWidth="2" />
+  <line x1="100" y1="270" x2="100" y2="292" stroke="currentColor" strokeOpacity="0.45" strokeDasharray="3 3" />
+  <line x1="244" y1="270" x2="244" y2="292" stroke="currentColor" strokeOpacity="0.45" strokeDasharray="3 3" />
+  <line x1="388" y1="270" x2="388" y2="292" stroke="currentColor" strokeOpacity="0.45" strokeDasharray="3 3" />
+  <line x1="532" y1="270" x2="532" y2="292" stroke="currentColor" strokeOpacity="0.45" strokeDasharray="3 3" />
+  <path d="M46,270 v4 h54 v-4" fill="none" stroke="currentColor" strokeOpacity="0.6" />
+  <text x="73" y="288" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">−3 dots</text>
+  <text x="172" y="346" textAnchor="middle" fill="currentColor" fontSize="11">needs cells n and n+1</text>
+  <text x="350" y="370" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.8">red: one 8-dot stretch the ULA draws from one load · each part keeps its own cell’s attribute</text>
+
+</svg>
+<figcaption>Why the ULA reads each cell and its neighbour. Without a scroll, or with one that is a multiple of 8, an 8-dot stretch is one cell; with any other scroll it is the end of one cell and the start of the next.</figcaption>
+</figure>
+
+<figure>
+<svg viewBox="0 0 700 250" role="img" aria-label="The reads of the screen memory during 16 dots of a line. Top: the Spectrum makes four reads, the bitmap and attribute of cell n, then of cell n plus 1. Bottom: the Next makes eight reads, one every two dots. Four are the reads of the neighbouring cells needed for scrolling: the bitmap and attribute of cell n plus 1 and of cell n plus 2. The other four are the same reads the Spectrum makes, at the same moments: bitmap and attribute of cell n and of cell n plus 1. Only those four ever appear on the floating bus." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
+  <text x="350" y="22" textAnchor="middle" fill="currentColor" fontSize="12" fontWeight="600">16 dots of a line: two character cells</text>
+  <line x1="130" y1="34" x2="674" y2="34" stroke="currentColor" strokeOpacity="0.4" />
+  <line x1="130" y1="30" x2="130" y2="38" stroke="currentColor" strokeOpacity="0.4" />
+  <line x1="402" y1="30" x2="402" y2="38" stroke="currentColor" strokeOpacity="0.4" />
+  <line x1="674" y1="30" x2="674" y2="38" stroke="currentColor" strokeOpacity="0.4" />
+  <text x="120" y="80" textAnchor="end" fill="currentColor" fontSize="12" fontWeight="600">Spectrum</text>
+  <rect x="404" y="60" width="64" height="32" rx="4" fill="#3b82f6" fillOpacity="0.45" stroke="#3b82f6" />
+  <text x="436" y="80" textAnchor="middle" fill="currentColor" fontSize="11">bmp n</text>
+  <rect x="472" y="60" width="64" height="32" rx="4" fill="#3b82f6" fillOpacity="0.45" stroke="#3b82f6" />
+  <text x="504" y="80" textAnchor="middle" fill="currentColor" fontSize="11">attr n</text>
+  <rect x="540" y="60" width="64" height="32" rx="4" fill="#3b82f6" fillOpacity="0.45" stroke="#3b82f6" />
+  <text x="572" y="80" textAnchor="middle" fill="currentColor" fontSize="11">bmp n+1</text>
+  <rect x="608" y="60" width="64" height="32" rx="4" fill="#3b82f6" fillOpacity="0.45" stroke="#3b82f6" />
+  <text x="640" y="80" textAnchor="middle" fill="currentColor" fontSize="11">attr n+1</text>
+  <text x="120" y="150" textAnchor="end" fill="currentColor" fontSize="12" fontWeight="600">Next</text>
+  <rect x="132" y="130" width="64" height="32" rx="4" fill="#3b82f6" fillOpacity="0.12" stroke="#3b82f6" strokeDasharray="4 3" />
+  <text x="164" y="150" textAnchor="middle" fill="currentColor" fontSize="11">bmp n+2</text>
+  <rect x="200" y="130" width="64" height="32" rx="4" fill="#3b82f6" fillOpacity="0.12" stroke="#3b82f6" strokeDasharray="4 3" />
+  <text x="232" y="150" textAnchor="middle" fill="currentColor" fontSize="11">attr n+2</text>
+  <rect x="268" y="130" width="64" height="32" rx="4" fill="#3b82f6" fillOpacity="0.12" stroke="#3b82f6" strokeDasharray="4 3" />
+  <text x="300" y="150" textAnchor="middle" fill="currentColor" fontSize="11">bmp n+1</text>
+  <rect x="336" y="130" width="64" height="32" rx="4" fill="#3b82f6" fillOpacity="0.12" stroke="#3b82f6" strokeDasharray="4 3" />
+  <text x="368" y="150" textAnchor="middle" fill="currentColor" fontSize="11">attr n+1</text>
+  <rect x="404" y="130" width="64" height="32" rx="4" fill="#3b82f6" fillOpacity="0.45" stroke="#3b82f6" />
+  <text x="436" y="150" textAnchor="middle" fill="currentColor" fontSize="11">bmp n</text>
+  <rect x="472" y="130" width="64" height="32" rx="4" fill="#3b82f6" fillOpacity="0.45" stroke="#3b82f6" />
+  <text x="504" y="150" textAnchor="middle" fill="currentColor" fontSize="11">attr n</text>
+  <rect x="540" y="130" width="64" height="32" rx="4" fill="#3b82f6" fillOpacity="0.45" stroke="#3b82f6" />
+  <text x="572" y="150" textAnchor="middle" fill="currentColor" fontSize="11">bmp n+1</text>
+  <rect x="608" y="130" width="64" height="32" rx="4" fill="#3b82f6" fillOpacity="0.45" stroke="#3b82f6" />
+  <text x="640" y="150" textAnchor="middle" fill="currentColor" fontSize="11">attr n+1</text>
+  <path d="M132,172 v6 H400 v-6" fill="none" stroke="currentColor" strokeOpacity="0.6" />
+  <text x="266" y="194" textAnchor="middle" fill="currentColor" fontSize="11">the neighbours, for scrolling</text>
+  <path d="M404,172 v6 H672 v-6" fill="none" stroke="#e5484d" />
+  <text x="538" y="194" textAnchor="middle" fill="#e5484d" fontSize="11">the Spectrum’s reads: seen on the floating bus</text>
+  <text x="350" y="234" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.8">one read every two dots; each byte is held until its cell is drawn</text>
+</svg>
+<figcaption>Eight reads where the Spectrum made four. The extra four fetch the next cell along, which a scrolled screen needs; only the Spectrum's four reach the floating bus.</figcaption>
+</figure>
+
+The extra reads are invisible to programs. The **floating bus**, the byte a read of port `$FF`
+returns on a Spectrum, shows only the four reads a Spectrum would make, at the moments it would make
+them, and `$FF` over the border, exactly as the
+[Spectrum article](/en/under-the-hood/emulator-internals/spectrum-display/#the-floating-bus)
+describes. The Next gives it with 48K and 128K timing; with +3 or Pentagon timing a port `$FF` read returns
+`$FF`. With +3 timing the floating bus appears instead on the +3's own port, with bit 0 set, as on a real +3. One more
+thing can take port `$FF`'s place: with bit 2 of the Peripheral 3 Setting register, NextReg `$08`, a
+read of port `$FF` returns the Timex register of Part 3 instead of the floating bus.
+
+## Part 3: The Timex modes
+
+The Timex Computer Corporation sold Spectrum-compatible machines in America whose ULA had more modes,
+switched by **port `$FF`**. A small amount of software uses them, and the Next has them all. The port's
+bits, as the Next has them:
+
+| Bits of port `$FF` | Meaning |
+|---|---|
+| 7 | not used |
+| 6 | 1 switches off the frame interrupt |
+| 5–3 | ink colour of the hi-res mode (the paper is its opposite) |
+| 2–0 | the screen mode: `000` standard, `001` second screen, `010` hi-colour, `110` hi-res |
+
+Bits 5–0 can also be written through the Display Control 1 register, **NextReg `$69`**, which carries
+two more switches beside them: bit 7 switches Layer 2 on, and bit 6 shows the shadow screen. The
+three mode bits act on their own: bit 0 moves the bitmap to the second display file, bit 1 takes
+the colours from there, bit 2 doubles the dots across. The four combinations in the table are the ones
+the Timex defined, and the only ones software uses.
+
+The mode is taken again for every 8 dots, at the same moment as the scroll of Part 7. A program, or
+the Copper, can change it between two cells of the same line, and the change shows from the next cell.
+
+### A second screen
+
+Mode `001` is the plainest: the same Spectrum screen, read from **`$6000`** instead of `$4000`, with
+its attributes at `$7800`. A program draws the next frame in one screen while the other is shown, and
+switches with one `OUT`: **double buffering**, the 128K's shadow screen idea, but in bank 5.
+
+### Hi-colour: a colour for every 8 × 1 dots
+
+On the Spectrum the attribute byte of a cell covers 8 × 8 dots. Mode `010` gives every **byte of the
+bitmap** a colour byte of its own. The bitmap stays at `$4000`, and the colour bytes are a second copy
+of its layout at `$6000`: the colour of the bitmap byte at `$4000 + o` is the byte at **`$6000 + o`**.
+
+So the ULA's address for the colour is the bitmap address with one more bit set. The Spectrum's
+attribute address is built differently, from the row of cells, which is what made the 8 × 8 cells:
+
+<figure>
+<svg viewBox="0 0 700 270" role="img" aria-label="Three 16-bit addresses the ULA builds, bit 15 on the left. The bitmap address: 0 1 0, then Y7 Y6, Y2 Y1 Y0, Y5 Y4 Y3, then X4 to X0, where Y is the line and X the byte column. Hi-colour's colour address: the same bits with bit 13 set, so it points 8K higher, at 6000 plus the same offset: one colour byte per bitmap byte. The standard attribute address: 0 1 0 1 1 0, then Y7 to Y3, then X4 to X0; it uses only the top five bits of the line, so the eight lines of a cell share one attribute." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
+  <text x="80" y="24" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.75">15</text>
+  <text x="620" y="24" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.75">0</text>
+  <text x="62" y="44" textAnchor="start" fill="currentColor" fontSize="12" fontWeight="600">bitmap byte</text>
+  <rect x="62" y="52" width="36" height="30" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="80" y="72" textAnchor="middle" fill="currentColor" fontSize="11">0</text>
+  <rect x="98" y="52" width="36" height="30" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="116" y="72" textAnchor="middle" fill="currentColor" fontSize="11">1</text>
+  <rect x="134" y="52" width="36" height="30" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="152" y="72" textAnchor="middle" fill="currentColor" fontSize="11">0</text>
+  <rect x="170" y="52" width="36" height="30" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" />
+  <text x="188" y="72" textAnchor="middle" fill="currentColor" fontSize="11">Y7</text>
+  <rect x="206" y="52" width="36" height="30" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" />
+  <text x="224" y="72" textAnchor="middle" fill="currentColor" fontSize="11">Y6</text>
+  <rect x="242" y="52" width="36" height="30" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" />
+  <text x="260" y="72" textAnchor="middle" fill="currentColor" fontSize="11">Y2</text>
+  <rect x="278" y="52" width="36" height="30" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" />
+  <text x="296" y="72" textAnchor="middle" fill="currentColor" fontSize="11">Y1</text>
+  <rect x="314" y="52" width="36" height="30" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" />
+  <text x="332" y="72" textAnchor="middle" fill="currentColor" fontSize="11">Y0</text>
+  <rect x="350" y="52" width="36" height="30" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" />
+  <text x="368" y="72" textAnchor="middle" fill="currentColor" fontSize="11">Y5</text>
+  <rect x="386" y="52" width="36" height="30" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" />
+  <text x="404" y="72" textAnchor="middle" fill="currentColor" fontSize="11">Y4</text>
+  <rect x="422" y="52" width="36" height="30" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" />
+  <text x="440" y="72" textAnchor="middle" fill="currentColor" fontSize="11">Y3</text>
+  <rect x="458" y="52" width="36" height="30" fill="#3b82f6" fillOpacity="0.1" stroke="#3b82f6" />
+  <text x="476" y="72" textAnchor="middle" fill="currentColor" fontSize="11">X4</text>
+  <rect x="494" y="52" width="36" height="30" fill="#3b82f6" fillOpacity="0.1" stroke="#3b82f6" />
+  <text x="512" y="72" textAnchor="middle" fill="currentColor" fontSize="11">X3</text>
+  <rect x="530" y="52" width="36" height="30" fill="#3b82f6" fillOpacity="0.1" stroke="#3b82f6" />
+  <text x="548" y="72" textAnchor="middle" fill="currentColor" fontSize="11">X2</text>
+  <rect x="566" y="52" width="36" height="30" fill="#3b82f6" fillOpacity="0.1" stroke="#3b82f6" />
+  <text x="584" y="72" textAnchor="middle" fill="currentColor" fontSize="11">X1</text>
+  <rect x="602" y="52" width="36" height="30" fill="#3b82f6" fillOpacity="0.1" stroke="#3b82f6" />
+  <text x="620" y="72" textAnchor="middle" fill="currentColor" fontSize="11">X0</text>
+  <text x="650" y="72" textAnchor="start" fill="currentColor" fontSize="11" fillOpacity="0.8">$4000+</text>
+  <text x="62" y="124" textAnchor="start" fill="currentColor" fontSize="12" fontWeight="600">hi-colour’s colour byte</text>
+  <rect x="62" y="132" width="36" height="30" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="80" y="152" textAnchor="middle" fill="currentColor" fontSize="11">0</text>
+  <rect x="98" y="132" width="36" height="30" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="116" y="152" textAnchor="middle" fill="currentColor" fontSize="11">1</text>
+  <rect x="134" y="132" width="36" height="30" fill="#e5484d" fillOpacity="0.2" stroke="#e5484d" />
+  <text x="152" y="152" textAnchor="middle" fill="#e5484d" fontSize="11" fontWeight="600">1</text>
+  <rect x="170" y="132" width="36" height="30" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" />
+  <text x="188" y="152" textAnchor="middle" fill="currentColor" fontSize="11">Y7</text>
+  <rect x="206" y="132" width="36" height="30" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" />
+  <text x="224" y="152" textAnchor="middle" fill="currentColor" fontSize="11">Y6</text>
+  <rect x="242" y="132" width="36" height="30" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" />
+  <text x="260" y="152" textAnchor="middle" fill="currentColor" fontSize="11">Y2</text>
+  <rect x="278" y="132" width="36" height="30" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" />
+  <text x="296" y="152" textAnchor="middle" fill="currentColor" fontSize="11">Y1</text>
+  <rect x="314" y="132" width="36" height="30" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" />
+  <text x="332" y="152" textAnchor="middle" fill="currentColor" fontSize="11">Y0</text>
+  <rect x="350" y="132" width="36" height="30" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" />
+  <text x="368" y="152" textAnchor="middle" fill="currentColor" fontSize="11">Y5</text>
+  <rect x="386" y="132" width="36" height="30" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" />
+  <text x="404" y="152" textAnchor="middle" fill="currentColor" fontSize="11">Y4</text>
+  <rect x="422" y="132" width="36" height="30" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" />
+  <text x="440" y="152" textAnchor="middle" fill="currentColor" fontSize="11">Y3</text>
+  <rect x="458" y="132" width="36" height="30" fill="#3b82f6" fillOpacity="0.1" stroke="#3b82f6" />
+  <text x="476" y="152" textAnchor="middle" fill="currentColor" fontSize="11">X4</text>
+  <rect x="494" y="132" width="36" height="30" fill="#3b82f6" fillOpacity="0.1" stroke="#3b82f6" />
+  <text x="512" y="152" textAnchor="middle" fill="currentColor" fontSize="11">X3</text>
+  <rect x="530" y="132" width="36" height="30" fill="#3b82f6" fillOpacity="0.1" stroke="#3b82f6" />
+  <text x="548" y="152" textAnchor="middle" fill="currentColor" fontSize="11">X2</text>
+  <rect x="566" y="132" width="36" height="30" fill="#3b82f6" fillOpacity="0.1" stroke="#3b82f6" />
+  <text x="584" y="152" textAnchor="middle" fill="currentColor" fontSize="11">X1</text>
+  <rect x="602" y="132" width="36" height="30" fill="#3b82f6" fillOpacity="0.1" stroke="#3b82f6" />
+  <text x="620" y="152" textAnchor="middle" fill="currentColor" fontSize="11">X0</text>
+  <text x="650" y="152" textAnchor="start" fill="currentColor" fontSize="11" fillOpacity="0.8">$6000+</text>
+  <text x="62" y="204" textAnchor="start" fill="currentColor" fontSize="12" fontWeight="600">standard attribute</text>
+  <rect x="62" y="212" width="36" height="30" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="80" y="232" textAnchor="middle" fill="currentColor" fontSize="11">0</text>
+  <rect x="98" y="212" width="36" height="30" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="116" y="232" textAnchor="middle" fill="currentColor" fontSize="11">1</text>
+  <rect x="134" y="212" width="36" height="30" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="152" y="232" textAnchor="middle" fill="currentColor" fontSize="11">0</text>
+  <rect x="170" y="212" width="36" height="30" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="188" y="232" textAnchor="middle" fill="currentColor" fontSize="11">1</text>
+  <rect x="206" y="212" width="36" height="30" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="224" y="232" textAnchor="middle" fill="currentColor" fontSize="11">1</text>
+  <rect x="242" y="212" width="36" height="30" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="260" y="232" textAnchor="middle" fill="currentColor" fontSize="11">0</text>
+  <rect x="278" y="212" width="36" height="30" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" />
+  <text x="296" y="232" textAnchor="middle" fill="currentColor" fontSize="11">Y7</text>
+  <rect x="314" y="212" width="36" height="30" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" />
+  <text x="332" y="232" textAnchor="middle" fill="currentColor" fontSize="11">Y6</text>
+  <rect x="350" y="212" width="36" height="30" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" />
+  <text x="368" y="232" textAnchor="middle" fill="currentColor" fontSize="11">Y5</text>
+  <rect x="386" y="212" width="36" height="30" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" />
+  <text x="404" y="232" textAnchor="middle" fill="currentColor" fontSize="11">Y4</text>
+  <rect x="422" y="212" width="36" height="30" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" />
+  <text x="440" y="232" textAnchor="middle" fill="currentColor" fontSize="11">Y3</text>
+  <rect x="458" y="212" width="36" height="30" fill="#3b82f6" fillOpacity="0.1" stroke="#3b82f6" />
+  <text x="476" y="232" textAnchor="middle" fill="currentColor" fontSize="11">X4</text>
+  <rect x="494" y="212" width="36" height="30" fill="#3b82f6" fillOpacity="0.1" stroke="#3b82f6" />
+  <text x="512" y="232" textAnchor="middle" fill="currentColor" fontSize="11">X3</text>
+  <rect x="530" y="212" width="36" height="30" fill="#3b82f6" fillOpacity="0.1" stroke="#3b82f6" />
+  <text x="548" y="232" textAnchor="middle" fill="currentColor" fontSize="11">X2</text>
+  <rect x="566" y="212" width="36" height="30" fill="#3b82f6" fillOpacity="0.1" stroke="#3b82f6" />
+  <text x="584" y="232" textAnchor="middle" fill="currentColor" fontSize="11">X1</text>
+  <rect x="602" y="212" width="36" height="30" fill="#3b82f6" fillOpacity="0.1" stroke="#3b82f6" />
+  <text x="620" y="232" textAnchor="middle" fill="currentColor" fontSize="11">X0</text>
+  <text x="650" y="232" textAnchor="start" fill="currentColor" fontSize="11" fillOpacity="0.8">$5800+</text>
+  <text x="350" y="262" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.8">Y: the line, 0–191 · X: the byte column, 0–31 · Y2–Y0 are missing from the attribute: eight lines share it</text>
+</svg>
+<figcaption>Hi-colour needs no new address logic: its colour byte is the bitmap address with bit 13 set. The standard attribute drops the line's three low bits, which is what makes a cell 8 lines tall.</figcaption>
+</figure>
+
+The colour byte is an ordinary attribute in every other way: INK, PAPER, BRIGHT and FLASH, in the same
+bits. Here is the same bitmap twice on the machine, a ball striped with a new colour on every line, the stripes stepping down by two lines from one 8-dot column to the next:
+
+<figure>
+<svg viewBox="0 0 700 350" role="img" aria-label="Two close-ups from Klive's Next of the same bitmap, a ball 72 dots across, with the same colour bytes in different places. Left, the standard mode: each 8 by 8 cell has one ink, the colour of its top line, so the stripes turn into a patchwork of squares, the Spectrum's attribute clash. Right, hi-colour: every 8 dots of every line has its own colour byte, so each cell shows eight colours, one per line, in thin stripes that step down at every 8-dot column." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
+  <image x="30" y="10" width="300" height="300" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/ula/standard.webp`} />
+  <rect x="30" y="10" width="300" height="300" fill="none" stroke="currentColor" strokeOpacity="0.35" />
+  <image x="370" y="10" width="300" height="300" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/ula/hicolour.webp`} />
+  <rect x="370" y="10" width="300" height="300" fill="none" stroke="currentColor" strokeOpacity="0.35" />
+  <text x="180" y="334" textAnchor="middle" fill="currentColor" fontSize="12" fontWeight="600">standard: one colour per 8 × 8 cell</text>
+  <text x="520" y="334" textAnchor="middle" fill="currentColor" fontSize="12" fontWeight="600">hi-colour: one colour per 8 × 1 dots</text>
+</svg>
+<figcaption>The same bitmap in the two modes, 96 × 96 dots of the screen. On the left each cell takes the colour of its top line; on the right each of a cell's eight lines has its own colour.</figcaption>
+</figure>
+
+The price is memory: 12K for one screen instead of 6.75K, and a program must write 6,144 colour bytes
+where it wrote 768. The gain is that colour clash, the Spectrum's best-known limit, is gone from the
+vertical direction. A sprite can move up and down through a cell and keep its own colours; only across
+does it still share 8 dots with its neighbours.
+
+### Hi-res: 512 dots across
+
+Mode `110` is the other way round: one colour, twice the dots. The line has **512 dots** instead of
+256, each half as wide, one 14 MHz dot instead of one 7 MHz dot, so the line is just as long on the
+screen.
+
+First, what a **column** means here, because the word is easy to misread. A column is a strip of the
+screen **8 dots wide**: on every line it is **one byte** of the bitmap, and with an 8 × 8 font it holds
+**one character** of text.
+
+- The **standard** Spectrum screen has **32 columns**: 256 dots ÷ 8. A line is 32 bytes, and the
+  display file at `$4000` holds them all: column 0 is the line's byte 0, column 31 its byte 31.
+- **Hi-res** has **64 columns**: 512 dots ÷ 8. Each column is half as wide on the screen as a standard
+  one, because its dots are. A line is 64 bytes, twice what one display file holds for a line, so
+  **both** files hold half each: column 0 is byte 0 of the line in the file at `$4000`, column 1 is byte 0
+  in the file at `$6000`, column 2 is byte 1 at `$4000`, column 3 byte 1 at `$6000`, and so on. The
+  even columns come from the first file, the odd ones from the second.
+
+| | Standard | Hi-res |
+|---|---|---|
+| Dots on a line | 256 | 512 |
+| Width of a dot | one 7 MHz dot | half that: one 14 MHz dot |
+| Columns: 8 dots, one byte a line | **32** | **64** |
+| Characters of 8 × 8 text on a line | 32 | 64 |
+| Where column *c* is | byte *c* of the line at `$4000` | byte *c* ÷ 2 of the line, at `$4000` if *c* is even, at `$6000` if odd |
+
+<figure>
+<svg viewBox="0 0 700 270" role="img" aria-label="The same 16 standard dots of width at the start of a line, in the two modes. Top, hi-res: four columns of 8 hi-res dots each. Column 0 is byte 0 of the line in the first display file at 4000, column 1 is byte 0 in the second file at 6000, column 2 is byte 1 at 4000, column 3 is byte 1 at 6000. Bottom, standard: two columns of 8 standard dots each, twice as wide. Column 0 is byte 0 at 4000 and column 1 is byte 1 at 4000. Across the whole line, hi-res has 64 columns and the standard screen 32. In hi-res, ink and paper come from port FF bits 5 to 3, not from attributes." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
+  <text x="62" y="26" textAnchor="start" fill="currentColor" fontSize="12" fontWeight="600">hi-res: columns 0–3 of 64, each 8 dots of 14 MHz</text>
+  <rect x="62" y="38" width="144" height="44" fill="#3b82f6" fillOpacity="0.4" stroke="#3b82f6" />
+  <text x="134" y="56" textAnchor="middle" fill="currentColor" fontSize="12" fontWeight="600">column 0</text>
+  <text x="134" y="73" textAnchor="middle" fill="currentColor" fontSize="10">$4000, byte 0</text>
+  <rect x="206" y="38" width="144" height="44" fill="#3b82f6" fillOpacity="0.15" stroke="#3b82f6" strokeDasharray="5 3" />
+  <text x="278" y="56" textAnchor="middle" fill="currentColor" fontSize="12" fontWeight="600">column 1</text>
+  <text x="278" y="73" textAnchor="middle" fill="currentColor" fontSize="10">$6000, byte 0</text>
+  <rect x="350" y="38" width="144" height="44" fill="#3b82f6" fillOpacity="0.4" stroke="#3b82f6" />
+  <text x="422" y="56" textAnchor="middle" fill="currentColor" fontSize="12" fontWeight="600">column 2</text>
+  <text x="422" y="73" textAnchor="middle" fill="currentColor" fontSize="10">$4000, byte 1</text>
+  <rect x="494" y="38" width="144" height="44" fill="#3b82f6" fillOpacity="0.15" stroke="#3b82f6" strokeDasharray="5 3" />
+  <text x="566" y="56" textAnchor="middle" fill="currentColor" fontSize="12" fontWeight="600">column 3</text>
+  <text x="566" y="73" textAnchor="middle" fill="currentColor" fontSize="10">$6000, byte 1</text>
+  <path d="M62,90 v4 h18 v-4 M80,94 h18 v-4 M98,94 h18 v-4 M116,94 h18 v-4 M134,94 h18 v-4 M152,94 h18 v-4 M170,94 h18 v-4 M188,94 h18 v-4" fill="none" stroke="currentColor" strokeOpacity="0.5" />
+  <text x="134" y="110" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">8 hi-res dots</text>
+  <text x="652" y="64" textAnchor="start" fill="currentColor" fontSize="11" fillOpacity="0.8">…</text>
+  <text x="62" y="146" textAnchor="start" fill="currentColor" fontSize="12" fontWeight="600">standard: the same width, columns 0–1 of 32, each 8 dots of 7 MHz</text>
+  <rect x="62" y="158" width="288" height="44" fill="#3b82f6" fillOpacity="0.4" stroke="#3b82f6" />
+  <text x="206" y="176" textAnchor="middle" fill="currentColor" fontSize="12" fontWeight="600">column 0</text>
+  <text x="206" y="193" textAnchor="middle" fill="currentColor" fontSize="10">$4000, byte 0</text>
+  <rect x="350" y="158" width="288" height="44" fill="#3b82f6" fillOpacity="0.4" stroke="#3b82f6" />
+  <text x="494" y="176" textAnchor="middle" fill="currentColor" fontSize="12" fontWeight="600">column 1</text>
+  <text x="494" y="193" textAnchor="middle" fill="currentColor" fontSize="10">$4000, byte 1</text>
+  <text x="652" y="184" textAnchor="start" fill="currentColor" fontSize="11" fillOpacity="0.8">…</text>
+  <text x="350" y="232" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.8">a whole line: 64 columns in hi-res, 32 in the standard screen, the same width on screen</text>
+  <text x="350" y="254" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.8">hi-res: ink from port $FF bits 5–3 (BRIGHT), paper its opposite · no attributes, no FLASH</text>
+</svg>
+<figcaption>Columns in the two modes. A column is always 8 dots, one byte a line; hi-res dots are half as wide, so the same width holds twice the columns: 64 across the line, the even ones from `$4000`, the odd ones from `$6000`.</figcaption>
+</figure>
+
+This is where Part 2's eight reads pay off a second time. In hi-res the four "attribute" reads per 8
+dots fetch from the second file's bitmap instead, at the same addresses as the first file's bitmap
+plus `$2000`, so the ULA gets the bytes of both files with no extra reads at all. The shift register,
+which normally sends out each bit twice, once for each half of the 7 MHz dot, now sends each bit once.
+
+There are no attributes left to colour the dots, so the whole screen has **one ink and one paper**,
+set by bits 5–3 of port `$FF`. The ink is that colour, BRIGHT; the paper is its opposite, also BRIGHT:
+`000` black on white, `001` blue on yellow, and so on to `111` white on black. On the machine, three
+lines of text in an 8 × 8 font, one character per column, 64 columns to a line:
+
+<figure>
+<svg viewBox="0 0 700 316" role="img" aria-label="Two close-ups from Klive's Next of the same bytes in the two display files: the left half of the screen, three character rows. Top, in hi-res mode, with port FF bits 5 to 3 set to 001: blue text on yellow reading 512 DOTS ACROSS: 64 COLUMNS, EVEN ONES FROM 4000, ODD ONES FROM 6000, every character eight hi-res dots wide. Bottom, the same memory in the standard mode with a blue on yellow attribute: only the first file is shown, so every other character is missing and the rest are twice as wide." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
+  <image x="20" y="10" width="660" height="124" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/ula/hires.webp`} />
+  <rect x="20" y="10" width="660" height="124" fill="none" stroke="currentColor" strokeOpacity="0.35" />
+  <text x="350" y="152" textAnchor="middle" fill="currentColor" fontSize="12" fontWeight="600">hi-res (port $FF = $0E): both files, 512 dots across</text>
+  <image x="20" y="166" width="660" height="124" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/ula/hires-standard.webp`} />
+  <rect x="20" y="166" width="660" height="124" fill="none" stroke="currentColor" strokeOpacity="0.35" />
+  <text x="350" y="308" textAnchor="middle" fill="currentColor" fontSize="12" fontWeight="600">standard (port $FF = $00): the first file alone</text>
+</svg>
+<figcaption>The left half of the screen, 128 × 24 dots: hi-res columns 0–31 above, standard columns 0–15 below. The same bytes; the standard mode shows only the file at `$4000`, the hi-res columns 0, 2, 4, …, each at twice the width.</figcaption>
+</figure>
+
+Hi-res is a text mode at heart, 64 columns of 8 × 8 characters where the Spectrum has 32, and it is the ULA's only
+512-dot mode: the left and right halves of a 7 MHz dot really differ here, as the
+[big picture](/en/under-the-hood/emulator-internals/next-display/overview/#two-dots-for-every-position-of-the-beam)
+describes. It costs the same 12K as hi-colour, and its colours can still be changed for a band of
+the screen by rewriting port `$FF` between lines.
+
+## Part 4: ULANext: the attribute byte split anew
+
+The attribute byte spends its 8 bits as FLASH, BRIGHT, three bits of PAPER and three of INK: 8 inks,
+8 papers, and a bright version of each. **ULANext** keeps the byte and the bitmap and changes only how
+the byte is read. Bit 0 of the Palette Control register, **NextReg `$43`**, switches it on, and the
+ULANext Attribute Byte Format register, **NextReg `$42`**, holds a **mask**: the bits the mask covers
+are the INK, the rest are the PAPER. FLASH and BRIGHT are gone; their bits are colour now.
+
+<figure>
+<svg viewBox="0 0 700 300" role="img" aria-label="The attribute byte, bit 7 on the left, read five ways. Standard: FLASH, BRIGHT, three PAPER bits, three INK bits; ink is entry 0 to 7, paper 16 to 23, plus 8 for BRIGHT. ULANext with mask 07: five paper bits and three ink bits; 8 inks in entries 0 to 7 and 32 papers in entries 128 to 159. Mask 0F: four and four; 16 inks, entries 0 to 15, and 16 papers, 128 to 143. Mask 3F: two paper bits and six ink bits; 64 inks, 0 to 63, and 4 papers, 128 to 131. Mask FF: all eight bits are ink, 256 inks, entries 0 to 255; the paper and the border are the fallback colour." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
+  <text x="170" y="28" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.75">7</text>
+  <text x="450" y="28" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.75">0</text>
+  <text x="140" y="56" textAnchor="end" fill="currentColor" fontSize="12" fontWeight="600">standard</text>
+  <rect x="150" y="36" width="40" height="30" fill="none" stroke="currentColor" strokeOpacity="0.45" strokeDasharray="3 2" />
+  <text x="170" y="56" textAnchor="middle" fill="currentColor" fontSize="11">F</text>
+  <rect x="190" y="36" width="40" height="30" fill="none" stroke="currentColor" strokeOpacity="0.45" strokeDasharray="3 2" />
+  <text x="210" y="56" textAnchor="middle" fill="currentColor" fontSize="11">B</text>
+  <rect x="230" y="36" width="40" height="30" fill="currentColor" fillOpacity="0.12" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="250" y="56" textAnchor="middle" fill="currentColor" fontSize="11">P</text>
+  <rect x="270" y="36" width="40" height="30" fill="currentColor" fillOpacity="0.12" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="290" y="56" textAnchor="middle" fill="currentColor" fontSize="11">P</text>
+  <rect x="310" y="36" width="40" height="30" fill="currentColor" fillOpacity="0.12" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="330" y="56" textAnchor="middle" fill="currentColor" fontSize="11">P</text>
+  <rect x="350" y="36" width="40" height="30" fill="#3b82f6" fillOpacity="0.35" stroke="#3b82f6" />
+  <text x="370" y="56" textAnchor="middle" fill="currentColor" fontSize="11">I</text>
+  <rect x="390" y="36" width="40" height="30" fill="#3b82f6" fillOpacity="0.35" stroke="#3b82f6" />
+  <text x="410" y="56" textAnchor="middle" fill="currentColor" fontSize="11">I</text>
+  <rect x="430" y="36" width="40" height="30" fill="#3b82f6" fillOpacity="0.35" stroke="#3b82f6" />
+  <text x="450" y="56" textAnchor="middle" fill="currentColor" fontSize="11">I</text>
+  <text x="486" y="49" textAnchor="start" fill="currentColor" fontSize="11">ink: entries 0–7 (+8 BRIGHT)</text>
+  <text x="486" y="63" textAnchor="start" fill="currentColor" fontSize="11">paper: 16–23 (+8 BRIGHT)</text>
+  <text x="140" y="106" textAnchor="end" fill="currentColor" fontSize="12" fontWeight="600">mask $07</text>
+  <rect x="150" y="86" width="40" height="30" fill="currentColor" fillOpacity="0.12" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="170" y="106" textAnchor="middle" fill="currentColor" fontSize="11">P</text>
+  <rect x="190" y="86" width="40" height="30" fill="currentColor" fillOpacity="0.12" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="210" y="106" textAnchor="middle" fill="currentColor" fontSize="11">P</text>
+  <rect x="230" y="86" width="40" height="30" fill="currentColor" fillOpacity="0.12" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="250" y="106" textAnchor="middle" fill="currentColor" fontSize="11">P</text>
+  <rect x="270" y="86" width="40" height="30" fill="currentColor" fillOpacity="0.12" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="290" y="106" textAnchor="middle" fill="currentColor" fontSize="11">P</text>
+  <rect x="310" y="86" width="40" height="30" fill="currentColor" fillOpacity="0.12" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="330" y="106" textAnchor="middle" fill="currentColor" fontSize="11">P</text>
+  <rect x="350" y="86" width="40" height="30" fill="#3b82f6" fillOpacity="0.35" stroke="#3b82f6" />
+  <text x="370" y="106" textAnchor="middle" fill="currentColor" fontSize="11">I</text>
+  <rect x="390" y="86" width="40" height="30" fill="#3b82f6" fillOpacity="0.35" stroke="#3b82f6" />
+  <text x="410" y="106" textAnchor="middle" fill="currentColor" fontSize="11">I</text>
+  <rect x="430" y="86" width="40" height="30" fill="#3b82f6" fillOpacity="0.35" stroke="#3b82f6" />
+  <text x="450" y="106" textAnchor="middle" fill="currentColor" fontSize="11">I</text>
+  <text x="486" y="99" textAnchor="start" fill="currentColor" fontSize="11">8 inks: entries 0–7</text>
+  <text x="486" y="113" textAnchor="start" fill="currentColor" fontSize="11">32 papers: 128–159</text>
+  <text x="140" y="156" textAnchor="end" fill="currentColor" fontSize="12" fontWeight="600">mask $0F</text>
+  <rect x="150" y="136" width="40" height="30" fill="currentColor" fillOpacity="0.12" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="170" y="156" textAnchor="middle" fill="currentColor" fontSize="11">P</text>
+  <rect x="190" y="136" width="40" height="30" fill="currentColor" fillOpacity="0.12" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="210" y="156" textAnchor="middle" fill="currentColor" fontSize="11">P</text>
+  <rect x="230" y="136" width="40" height="30" fill="currentColor" fillOpacity="0.12" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="250" y="156" textAnchor="middle" fill="currentColor" fontSize="11">P</text>
+  <rect x="270" y="136" width="40" height="30" fill="currentColor" fillOpacity="0.12" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="290" y="156" textAnchor="middle" fill="currentColor" fontSize="11">P</text>
+  <rect x="310" y="136" width="40" height="30" fill="#3b82f6" fillOpacity="0.35" stroke="#3b82f6" />
+  <text x="330" y="156" textAnchor="middle" fill="currentColor" fontSize="11">I</text>
+  <rect x="350" y="136" width="40" height="30" fill="#3b82f6" fillOpacity="0.35" stroke="#3b82f6" />
+  <text x="370" y="156" textAnchor="middle" fill="currentColor" fontSize="11">I</text>
+  <rect x="390" y="136" width="40" height="30" fill="#3b82f6" fillOpacity="0.35" stroke="#3b82f6" />
+  <text x="410" y="156" textAnchor="middle" fill="currentColor" fontSize="11">I</text>
+  <rect x="430" y="136" width="40" height="30" fill="#3b82f6" fillOpacity="0.35" stroke="#3b82f6" />
+  <text x="450" y="156" textAnchor="middle" fill="currentColor" fontSize="11">I</text>
+  <text x="486" y="149" textAnchor="start" fill="currentColor" fontSize="11">16 inks: entries 0–15</text>
+  <text x="486" y="163" textAnchor="start" fill="currentColor" fontSize="11">16 papers: 128–143</text>
+  <text x="140" y="206" textAnchor="end" fill="currentColor" fontSize="12" fontWeight="600">mask $3F</text>
+  <rect x="150" y="186" width="40" height="30" fill="currentColor" fillOpacity="0.12" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="170" y="206" textAnchor="middle" fill="currentColor" fontSize="11">P</text>
+  <rect x="190" y="186" width="40" height="30" fill="currentColor" fillOpacity="0.12" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="210" y="206" textAnchor="middle" fill="currentColor" fontSize="11">P</text>
+  <rect x="230" y="186" width="40" height="30" fill="#3b82f6" fillOpacity="0.35" stroke="#3b82f6" />
+  <text x="250" y="206" textAnchor="middle" fill="currentColor" fontSize="11">I</text>
+  <rect x="270" y="186" width="40" height="30" fill="#3b82f6" fillOpacity="0.35" stroke="#3b82f6" />
+  <text x="290" y="206" textAnchor="middle" fill="currentColor" fontSize="11">I</text>
+  <rect x="310" y="186" width="40" height="30" fill="#3b82f6" fillOpacity="0.35" stroke="#3b82f6" />
+  <text x="330" y="206" textAnchor="middle" fill="currentColor" fontSize="11">I</text>
+  <rect x="350" y="186" width="40" height="30" fill="#3b82f6" fillOpacity="0.35" stroke="#3b82f6" />
+  <text x="370" y="206" textAnchor="middle" fill="currentColor" fontSize="11">I</text>
+  <rect x="390" y="186" width="40" height="30" fill="#3b82f6" fillOpacity="0.35" stroke="#3b82f6" />
+  <text x="410" y="206" textAnchor="middle" fill="currentColor" fontSize="11">I</text>
+  <rect x="430" y="186" width="40" height="30" fill="#3b82f6" fillOpacity="0.35" stroke="#3b82f6" />
+  <text x="450" y="206" textAnchor="middle" fill="currentColor" fontSize="11">I</text>
+  <text x="486" y="199" textAnchor="start" fill="currentColor" fontSize="11">64 inks: entries 0–63</text>
+  <text x="486" y="213" textAnchor="start" fill="currentColor" fontSize="11">4 papers: 128–131</text>
+  <text x="140" y="256" textAnchor="end" fill="currentColor" fontSize="12" fontWeight="600">mask $FF</text>
+  <rect x="150" y="236" width="40" height="30" fill="#3b82f6" fillOpacity="0.35" stroke="#3b82f6" />
+  <text x="170" y="256" textAnchor="middle" fill="currentColor" fontSize="11">I</text>
+  <rect x="190" y="236" width="40" height="30" fill="#3b82f6" fillOpacity="0.35" stroke="#3b82f6" />
+  <text x="210" y="256" textAnchor="middle" fill="currentColor" fontSize="11">I</text>
+  <rect x="230" y="236" width="40" height="30" fill="#3b82f6" fillOpacity="0.35" stroke="#3b82f6" />
+  <text x="250" y="256" textAnchor="middle" fill="currentColor" fontSize="11">I</text>
+  <rect x="270" y="236" width="40" height="30" fill="#3b82f6" fillOpacity="0.35" stroke="#3b82f6" />
+  <text x="290" y="256" textAnchor="middle" fill="currentColor" fontSize="11">I</text>
+  <rect x="310" y="236" width="40" height="30" fill="#3b82f6" fillOpacity="0.35" stroke="#3b82f6" />
+  <text x="330" y="256" textAnchor="middle" fill="currentColor" fontSize="11">I</text>
+  <rect x="350" y="236" width="40" height="30" fill="#3b82f6" fillOpacity="0.35" stroke="#3b82f6" />
+  <text x="370" y="256" textAnchor="middle" fill="currentColor" fontSize="11">I</text>
+  <rect x="390" y="236" width="40" height="30" fill="#3b82f6" fillOpacity="0.35" stroke="#3b82f6" />
+  <text x="410" y="256" textAnchor="middle" fill="currentColor" fontSize="11">I</text>
+  <rect x="430" y="236" width="40" height="30" fill="#3b82f6" fillOpacity="0.35" stroke="#3b82f6" />
+  <text x="450" y="256" textAnchor="middle" fill="currentColor" fontSize="11">I</text>
+  <text x="486" y="249" textAnchor="start" fill="currentColor" fontSize="11">256 inks: entries 0–255</text>
+  <text x="486" y="263" textAnchor="start" fill="currentColor" fontSize="11">paper: the fallback colour</text>
+  <text x="350" y="292" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.8">I: ink bits · P: paper bits · F, B: FLASH and BRIGHT, which ULANext does not have</text>
+</svg>
+<figcaption>One attribute byte, four ULANext masks. The mask moves the line between ink and paper; the inks always count from entry 0 of the ULA palette, the papers from entry 128.</figcaption>
+</figure>
+
+The rule is short. For an ink dot, the index is the attribute **AND** the mask: entries 0 upward. For
+a paper dot, it is the bits above the mask, moved down, plus **128**: entries 128 upward. The mask
+must be a run of ones from bit 0, `$01`, `$03`, `$07` and so on to `$FF`, and each choice trades inks
+for papers:
+
+| Mask (NextReg `$42`) | Inks | Papers | The border |
+|---|---|---|---|
+| `$01` | 2 | 128 | entries 128–135 |
+| `$03` | 4 | 64 | entries 128–135 |
+| `$07` (after reset) | 8 | 32 | entries 128–135 |
+| `$0F` | 16 | 16 | entries 128–135 |
+| `$1F` | 32 | 8 | entries 128–135 |
+| `$3F` | 64 | 4 | entries 128–135 |
+| `$7F` | 128 | 2 | entries 128–135 |
+| `$FF` | 256 | the fallback colour | the fallback colour |
+| any other value | the attribute AND the mask | the fallback colour | entries 128–135 |
+
+`$FF` is the **full-ink** mode: every attribute value is an ink, so a cell can have any of 256
+colours, and its paper dots show the Fallback Colour register, NextReg `$4A`, instead of a paper. The
+border's colour from port `$FE` always uses the first eight paper entries, 128–135, except in the
+full-ink mode, where it too is the fallback colour.
+
+Why would a program want this? The default `$07` is the Spectrum's 8 inks with **32 papers**, so a
+game can give its backgrounds far more colours than its text. `$0F` gives 16 of each, a match for
+16-colour graphics. And since the palette entries are the Next's 9-bit colours, every one of those
+inks and papers can be any of 512 colours. What ULANext cannot do is change the bitmap: a cell is
+still 8 × 8 dots with one ink and one paper, so colour clash remains. With hi-colour it does: ULANext
+reads the hi-colour colour bytes the same way, one ink and paper for every 8 × 1 dots.
+
+## Part 5: ULA+: 64 colours
+
+**ULA+** is not the Next's invention. It is a standard defined for Spectrum clones and add-ons, with
+software and emulators that support it, and the Next implements it so that software runs. It keeps
+the Spectrum's attribute layout and reuses its FLASH and BRIGHT bits: together they pick one of
+**four groups** of 16 colours, and each group has 8 inks and 8 papers. The colours live in entries
+**192–255** of the ULA palette:
+
+<figure>
+<svg viewBox="0 0 700 270" role="img" aria-label="How ULA+ turns an attribute byte into a palette index. The attribute: bit 7, the old FLASH bit, and bit 6, the old BRIGHT bit, become bits 5 and 4 of the index, the group. Bits 5 to 3, the paper, or bits 2 to 0, the ink, become bits 2 to 0 of the index, depending on whether the dot is paper or ink. Bit 3 of the index is 1 for paper and 0 for ink. Bits 7 and 6 of the index are always 1. So the index is 192 plus 16 times the group, plus 8 for paper, plus the colour: 64 entries, 192 to 255." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
+  <defs>
+    <marker id="ula-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor" fillOpacity="0.6" />
+    </marker>
+  </defs>
+  <text x="140" y="56" textAnchor="end" fill="currentColor" fontSize="12" fontWeight="600">attribute</text>
+  <rect x="150" y="36" width="44" height="30" fill="none" stroke="currentColor" strokeOpacity="0.6" />
+  <text x="172" y="56" textAnchor="middle" fill="currentColor" fontSize="11">F</text>
+  <rect x="194" y="36" width="44" height="30" fill="none" stroke="currentColor" strokeOpacity="0.6" />
+  <text x="216" y="56" textAnchor="middle" fill="currentColor" fontSize="11">B</text>
+  <rect x="238" y="36" width="44" height="30" fill="currentColor" fillOpacity="0.12" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="260" y="56" textAnchor="middle" fill="currentColor" fontSize="11">P</text>
+  <rect x="282" y="36" width="44" height="30" fill="currentColor" fillOpacity="0.12" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="304" y="56" textAnchor="middle" fill="currentColor" fontSize="11">P</text>
+  <rect x="326" y="36" width="44" height="30" fill="currentColor" fillOpacity="0.12" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="348" y="56" textAnchor="middle" fill="currentColor" fontSize="11">P</text>
+  <rect x="370" y="36" width="44" height="30" fill="#3b82f6" fillOpacity="0.35" stroke="#3b82f6" />
+  <text x="392" y="56" textAnchor="middle" fill="currentColor" fontSize="11">I</text>
+  <rect x="414" y="36" width="44" height="30" fill="#3b82f6" fillOpacity="0.35" stroke="#3b82f6" />
+  <text x="436" y="56" textAnchor="middle" fill="currentColor" fontSize="11">I</text>
+  <rect x="458" y="36" width="44" height="30" fill="#3b82f6" fillOpacity="0.35" stroke="#3b82f6" />
+  <text x="480" y="56" textAnchor="middle" fill="currentColor" fontSize="11">I</text>
+  <text x="140" y="196" textAnchor="end" fill="currentColor" fontSize="12" fontWeight="600">index</text>
+  <rect x="150" y="176" width="44" height="30" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="172" y="196" textAnchor="middle" fill="currentColor" fontSize="11">1</text>
+  <rect x="194" y="176" width="44" height="30" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="216" y="196" textAnchor="middle" fill="currentColor" fontSize="11">1</text>
+  <rect x="238" y="176" width="44" height="30" fill="none" stroke="currentColor" strokeOpacity="0.6" />
+  <text x="260" y="196" textAnchor="middle" fill="currentColor" fontSize="11">F</text>
+  <rect x="282" y="176" width="44" height="30" fill="none" stroke="currentColor" strokeOpacity="0.6" />
+  <text x="304" y="196" textAnchor="middle" fill="currentColor" fontSize="11">B</text>
+  <rect x="326" y="176" width="44" height="30" fill="#e5484d" fillOpacity="0.15" stroke="#e5484d" />
+  <text x="348" y="196" textAnchor="middle" fill="currentColor" fontSize="10">0 / 1</text>
+  <rect x="370" y="176" width="44" height="30" fill="#3b82f6" fillOpacity="0.2" stroke="#3b82f6" />
+  <text x="392" y="196" textAnchor="middle" fill="currentColor" fontSize="11">c</text>
+  <rect x="414" y="176" width="44" height="30" fill="#3b82f6" fillOpacity="0.2" stroke="#3b82f6" />
+  <text x="436" y="196" textAnchor="middle" fill="currentColor" fontSize="11">c</text>
+  <rect x="458" y="176" width="44" height="30" fill="#3b82f6" fillOpacity="0.2" stroke="#3b82f6" />
+  <text x="480" y="196" textAnchor="middle" fill="currentColor" fontSize="11">c</text>
+  <line x1="172" y1="68" x2="258" y2="172" stroke="currentColor" strokeOpacity="0.6" markerEnd="url(#ula-arrow)" />
+  <line x1="216" y1="68" x2="302" y2="172" stroke="currentColor" strokeOpacity="0.6" markerEnd="url(#ula-arrow)" />
+  <path d="M238,72 v6 H370 v-6" fill="none" stroke="currentColor" strokeOpacity="0.6" />
+  <path d="M370,72 v6 H502 v-6" fill="none" stroke="#3b82f6" />
+  <line x1="304" y1="80" x2="420" y2="172" stroke="currentColor" strokeOpacity="0.6" strokeDasharray="4 3" markerEnd="url(#ula-arrow)" />
+  <line x1="436" y1="80" x2="436" y2="172" stroke="#3b82f6" markerEnd="url(#ula-arrow)" />
+  <text x="300" y="100" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">paper dot</text>
+  <text x="470" y="100" textAnchor="start" fill="#3b82f6" fontSize="10">ink dot</text>
+  <text x="348" y="232" textAnchor="middle" fill="#e5484d" fontSize="10">0 ink · 1 paper</text>
+  <text x="260" y="232" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">the group</text>
+  <text x="530" y="186" textAnchor="start" fill="currentColor" fontSize="11">= 192 + 16 × group</text>
+  <text x="530" y="202" textAnchor="start" fill="currentColor" fontSize="11">+ 8 for paper + colour</text>
+  <text x="350" y="260" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.8">four groups of 16 entries, 192–255; no FLASH, no BRIGHT</text>
+</svg>
+<figcaption>ULA+: FLASH and BRIGHT pick a group of 16 entries, and ink or paper picks its half.</figcaption>
+</figure>
+
+Software switches ULA+ on and writes its colours through two ports of its own. **Port `$BF3B`**, the
+ULA+ Register, selects what **port `$FF3B`**, the ULA+ Data port, does: with bits 7–6 of the value
+`00`, bits 5–0 choose one of the 64 colours, and the next write to port `$FF3B` sets it; with `01`,
+bit 0 of the next write to port `$FF3B` switches ULA+ on or off. ULA+ software writes its colours in
+its own bit order, `GGGRRRBB`; the Next turns them into its `RRRGGGBB` and stores them in the ULA palette
+like any other colour, as the [palette article](/en/under-the-hood/emulator-internals/next-display/palettes/#the-ula-three-maps-of-one-palette)
+explains. A Next program can also switch ULA+ with bit 3 of the ULA Control register, NextReg `$68`,
+and write entries 192–255 through the ordinary palette registers.
+
+With ULA+ the border uses the paper half of group 0, entries **200–207**. If both ULA+ and ULANext
+are switched on, ULANext wins. And neither of them has FLASH: its bit now chooses colours, so nothing
+blinks.
+
+## Part 6: The border
+
+The border is still the ULA's: three bits of port `$FE`, a colour for every dot of the frame outside
+the 256 × 192 display area, the wide area of the other layers included. What the Next adds is the
+choice of palette entry, which follows the mode:
+
+| Mode | The border's palette entry |
+|---|---|
+| Standard (and the Timex second screen and hi-colour) | 16–23: the PAPER entries, never BRIGHT |
+| ULANext | 128–135; with the mask `$FF`, the fallback colour |
+| ULA+ | 200–207 |
+| Hi-res | the hi-res paper colour: port `$FE` is not used |
+
+The hi-res line is worth a second look: in hi-res, the border takes the paper colour of port `$FF`
+bits 5–3, so the whole screen, border and all, is one paper colour, and port `$FE`'s border is ignored.
+
+A new border colour from port `$FE` reaches the screen at the start of the next 8-dot cell, as on the
+Spectrum, so border stripes have the Spectrum's 8-dot steps; with Pentagon timing the change shows from
+the very next dot, as on a Pentagon. And because the border is a ULA dot like any other, the rules of
+the [composition article](/en/under-the-hood/emulator-internals/next-display/composition/#part-2-transparent-or-not)
+apply to it: a border whose colour matches the Global Transparency Colour register, NextReg `$14`, is
+transparent, and other layers show through it.
+
+## Part 7: Scrolling by the dot
+
+On the Spectrum, moving the screen meant moving its bytes, as the
+[big picture](/en/under-the-hood/emulator-internals/next-display/overview/#scrolling-moving-the-picture-without-moving-memory)
+explains. The Next's ULA has two offsets instead: the ULA X Scroll register, **NextReg `$26`**,
+0–255 dots, and the ULA Y Scroll register, **NextReg `$27`**, 0–191 lines. The ULA starts reading its
+picture that many dots to the right and lines down, and the picture **wraps round**: across at 256,
+down at 192. (A Y offset of 192–255 counts on from 0, as 0–63.)
+
+The interesting part is what happens to the **colours**. A program that scrolls the Spectrum's
+screen by one dot moves the bitmap and leaves the attributes, which can only move by whole cells. The
+ULA's scroll moves both. Here is how, for one 8-dot stretch of the line:
+
+<figure>
+<svg viewBox="0 0 700 280" role="img" aria-label="How the ULA draws 8 dots with a scroll of 3 dots. Top: the bitmap bytes of two neighbouring cells, n and n plus 1, 16 dots, each cell with its own attribute. Middle: the ULA loads both into a 32-place shift register, each dot twice, once per half; it shifts them left by twice the scroll's low three bits plus the half-dot bit, here 6 places, and takes the next 16 places, 8 dots. Bottom: the 8 dots on screen: 5 from cell n, drawn in cell n's colours, and 3 from cell n plus 1, in cell n plus 1's colours. The colours change at the cell edge inside the 8 dots." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
+  <text x="78" y="24" textAnchor="start" fill="currentColor" fontSize="12" fontWeight="600">the bitmap of cells n and n+1, as read (Part 2)</text>
+  <rect x="78" y="34" width="272" height="30" fill="#3b82f6" fillOpacity="0.4" stroke="#3b82f6" />
+  <text x="214" y="54" textAnchor="middle" fill="currentColor" fontSize="11">cell n · its attribute</text>
+  <rect x="350" y="34" width="272" height="30" fill="#3b82f6" fillOpacity="0.15" stroke="#3b82f6" strokeDasharray="5 3" />
+  <text x="486" y="54" textAnchor="middle" fill="currentColor" fontSize="11">cell n+1 · its attribute</text>
+  <text x="78" y="98" textAnchor="start" fill="currentColor" fontSize="12" fontWeight="600">the shift register: 32 half-dots, shifted left by 2 × (X mod 8) + half-dot bit</text>
+  <path d="M78,108 h544 M78,138 h544 M78,108 v30 M95,108 v30 M112,108 v30 M129,108 v30 M146,108 v30 M163,108 v30 M180,108 v30 M197,108 v30 M214,108 v30 M231,108 v30 M248,108 v30 M265,108 v30 M282,108 v30 M299,108 v30 M316,108 v30 M333,108 v30 M350,108 v30 M367,108 v30 M384,108 v30 M401,108 v30 M418,108 v30 M435,108 v30 M452,108 v30 M469,108 v30 M486,108 v30 M503,108 v30 M520,108 v30 M537,108 v30 M554,108 v30 M571,108 v30 M588,108 v30 M605,108 v30 M622,108 v30" fill="none" stroke="currentColor" strokeOpacity="0.35" />
+  <rect x="78" y="108" width="272" height="30" fill="#3b82f6" fillOpacity="0.2" />
+  <rect x="350" y="108" width="272" height="30" fill="#3b82f6" fillOpacity="0.07" />
+  <rect x="180" y="104" width="272" height="38" fill="none" stroke="#e5484d" strokeWidth="2" />
+  <text x="129" y="156" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">6 places out</text>
+  <text x="316" y="156" textAnchor="middle" fill="#e5484d" fontSize="10">the next 16 places: 8 dots on screen</text>
+  <line x1="180" y1="160" x2="180" y2="196" stroke="currentColor" strokeOpacity="0.5" strokeDasharray="3 3" />
+  <line x1="452" y1="160" x2="452" y2="196" stroke="currentColor" strokeOpacity="0.5" strokeDasharray="3 3" />
+  <rect x="180" y="198" width="170" height="30" fill="#3b82f6" fillOpacity="0.4" stroke="#3b82f6" />
+  <text x="265" y="218" textAnchor="middle" fill="currentColor" fontSize="11">5 dots, cell n’s colours</text>
+  <rect x="350" y="198" width="102" height="30" fill="#3b82f6" fillOpacity="0.15" stroke="#3b82f6" strokeDasharray="5 3" />
+  <text x="401" y="218" textAnchor="middle" fill="currentColor" fontSize="10">3 dots, n+1’s</text>
+  <text x="472" y="218" textAnchor="start" fill="currentColor" fontSize="11">on screen</text>
+  <text x="350" y="262" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.8">example: X scroll 3 (or 11, 19, …): the ULA switches attribute where the cell edge falls</text>
+</svg>
+<figcaption>The ULA's scroll inside 8 dots. Two cells go into the shift register, the scroll's low bits choose where the 8 dots start, and the colour switches from one cell's attribute to the next at the cell's edge.</figcaption>
+</figure>
+
+The ULA does it with Part 2's reads. The high five bits of the X offset pick the cell the line starts
+from; the low three bits pick the dot inside it. The shift register holds both cells, and a counter
+started at the same dot tells the ULA when it passes from the first cell into the second, at which
+point it switches from the first cell's attribute to the second's. So every dot keeps its own cell's
+colours, wherever the scroll puts it. On the machine:
+
+<figure>
+<svg viewBox="0 0 700 300" role="img" aria-label="Two frames from Klive's Next, the ULA alone. Left: no scroll; a black ball in the top left over a screen of coloured cells. Right: X scroll 100 and Y scroll 60. The picture has moved 100 dots left and 60 lines up, and wrapped round: the ball, pushed off the top left, is now split between the top right and the bottom right of the display area. The cells keep their colours as they move, though 100 is not a multiple of 8. The border has not moved." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
+  <image x="20" y="10" width="320" height="256" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/ula/scroll-0.webp`} />
+  <rect x="20" y="10" width="320" height="256" fill="none" stroke="currentColor" strokeOpacity="0.35" />
+  <image x="360" y="10" width="320" height="256" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/ula/scroll-1.webp`} />
+  <rect x="360" y="10" width="320" height="256" fill="none" stroke="currentColor" strokeOpacity="0.35" />
+  <text x="180" y="286" textAnchor="middle" fill="currentColor" fontSize="12" fontWeight="600">no scroll</text>
+  <text x="520" y="286" textAnchor="middle" fill="currentColor" fontSize="12" fontWeight="600">NextReg $26 = 100, NextReg $27 = 60</text>
+</svg>
+<figcaption>A scroll of 100 dots across and 60 lines down. The ball wraps round at both edges; the cells take their colours with them though 100 is not a multiple of 8. The border does not scroll.</figcaption>
+</figure>
+
+### Half a dot
+
+One more bit makes the scroll finer still: bit 2 of the ULA Control register, **NextReg `$68`**, the
+**half-dot scroll**, moves the picture half a dot further left, one 14 MHz dot. The shift register
+already holds every dot twice, once for each half, so a shift by one place more is all it takes. In the
+standard modes it is a smoothing step for slow scrolls. In hi-res, where every dot is a 14 MHz dot,
+it is what makes the scroll exact: NextReg `$26` moves a hi-res picture two dots at a time, and the
+half-dot bit adds the one between.
+
+### When a scroll takes effect
+
+The ULA takes both offsets, the half-dot bit and the Timex mode of Part 3 once for every 8 dots, at
+the start of the cell it is about to fetch. A new value written in the middle of a line shows from the
+next cell on. That is fine enough to scroll the bottom of the screen differently from the top, from a
+line interrupt or the Copper, and even to change the offsets within a line.
+
+## Part 8: Clipped and switched off
+
+The ULA's clip window, the Clip Window ULA register, **NextReg `$1A`**, works in the display area's
+own coordinates: X 0–255 and Y 0–191, one unit per dot, both edges inside the window, as the
+[big picture](/en/under-the-hood/emulator-internals/next-display/overview/#the-clip-window-a-rectangle-for-each-layer)
+explains. Two details matter for the ULA. A clipped dot is not paper, it is **transparent**: the
+layers below the ULA, or the fallback colour, show there. And the **border is never clipped**: the
+window only cuts the 256 × 192 picture.
+
+Bit 7 of the ULA Control register, NextReg `$68`, switches the ULA **off**. Then it is transparent
+everywhere, border included, and the screen is made by the other layers and the fallback colour. It is
+not gone, though: the blend modes of the
+[composition article](/en/under-the-hood/emulator-internals/next-display/composition/#part-6-blending)
+still read its colours. LoRes, which takes the ULA's place, obeys the same window and the same switch.
+
+All of the ULA's switches in one place:
+
+| Register | Bits | What it does |
+|---|---|---|
+| port `$FE` | 2–0 | the border colour |
+| port `$FF` (and NextReg `$69` bits 5–0) | 5–3, 2–0 | hi-res ink; the Timex screen mode (Part 3) |
+| port `$7FFD` (and NextReg `$69` bit 6) | 3 | show the shadow screen in bank 7 (no Timex modes) |
+| NextReg `$26`, `$27` | 7–0 | the X and Y scroll |
+| NextReg `$68` | 7, 3, 2 | ULA off; ULA+ on; the half-dot scroll |
+| NextReg `$43` | 0 | ULANext on |
+| NextReg `$42` | 7–0 | the ULANext ink mask |
+| port `$BF3B`, `$FF3B` | | ULA+ colours and on/off (Part 5) |
+| NextReg `$1A` | | the clip window |
+
+## Part 9: How Klive does it
+
+### Two renderers and one index rule
+
+Klive's Next core draws the ULA layer in C, with two renderers that follow Part 3. The four
+standard-width modes, the Spectrum's screen, the second screen and hi-colour, share one:
+`zxnextUlaRenderStandardScreen` reads, for every dot, a bitmap byte and a colour byte, and the mode
+only changes where it reads them from, the bitmap at `$4000` or `$6000`, the colour at `$5800`,
+`$7800` or the bitmap address plus `$2000`, exactly the addresses of Part 3's figure. Hi-res has its
+own, `zxnextUlaRenderHiResScreen`, which takes one bit per 14 MHz dot from the two files in turn.
+
+Both turn an ink or paper dot into a palette index through one function, `zxnextUlaAttrPaletteIndex`:
+the standard rule with BRIGHT and FLASH, ULANext's mask, or ULA+'s groups, as Parts 4 and 5 describe
+them, including the fallback colour for the full-ink mode and for a mask that is not a run of ones.
+The scroll is applied as the address is formed, the half-dot bit by taking the second half of each
+dot from the next dot along.
+
+### Changes at the next cell
+
+The emulator does not run a shift register; it renders a stretch of dots at a time. To change
+things where the hardware does, it **latches** the border colour, the scroll offsets, the half-dot
+bit and the Timex mode: a write is recorded with the frame position where the hardware would first
+use it, the start of the next 8-dot cell (every dot for the border with Pentagon timing), and the
+raster renders up to that position with the old value. So a border stripe or a mid-line scroll split
+falls on the same dot as on the hardware.
+
+### One difference
+
+Klive's **floating bus** reads the bytes of the standard, unscrolled screen at `$4000`. The hardware's
+shows the bytes the ULA actually reads, so with a scroll or a Timex mode on, the two differ. A program
+that reads the floating bus with either of them on sees other bytes in Klive than on the hardware.
+
+### In the IDE
+
+The **ULA & I/O** panel shows the border colour and the beam's position (see
+[Machine-state panels](/en/guides/debugging/machine-state-panels/#ula--io)); the **Next Registers**
+and **Next Palettes** panels show the scroll, mode and ULANext registers and the ULA palette's
+entries (see [Next Registers, Memory Mapping and Palettes](/en/guides/next/next-registers/)); and the
+[Layers](/en/guides/next/layers/) view shows the ULA layer alone, with its clip window.
+
+### Where to read the code
+
+| What | Where |
+|---|---|
+| The renderers, the index rule, the border and the latches | `src/emu/machines/zxNext/wasm/zxnext/zxnext-ula.c` |
+| Port `$FF` and port `$FE` | `zxnext-ports.c`, `zxnext-ula.c` in the same folder |
+| The ULA palette and ULA+'s colour order | `zxnext-palette.c` |
+| The pictures of this article, with the dots they check | `test/zxnext-hw/layers/next-display-scene.test.ts` |
+
+## Summary
+
+- The Next's ULA is the Spectrum's, byte for byte, but its screen memory, bank 5 and half of bank 7,
+  is **block RAM inside the FPGA** with a port of its own. Contention is imitated, at 3.5 MHz only;
+  there is no snow.
+- It reads **eight bytes per 16 dots**: the Spectrum's four, which the floating bus shows, and the
+  next cell's, which the scroll needs.
+- **Port `$FF`** selects the Timex modes: a **second screen** at `$6000`, **hi-colour** with a colour
+  byte for every 8 × 1 dots at the bitmap address plus `$2000`, and **hi-res**, 512 dots across from
+  the two files interleaved, in one colour pair from port `$FF` bits 5–3. The shadow screen in bank 7
+  has none of them.
+- **ULANext** (NextReg `$43` bit 0) splits the attribute byte by the mask in NextReg `$42`: inks from
+  entry 0, papers from 128; `$FF` is 256 inks with the fallback as paper.
+- **ULA+** (ports `$BF3B`/`$FF3B`, NextReg `$68` bit 3) turns FLASH and BRIGHT into four groups of 16
+  colours in entries 192–255.
+- The **border** follows the mode's paper entries; in hi-res it is the hi-res paper.
+- NextRegs **`$26`** and **`$27`** scroll the picture by the dot, wrapping at 256 × 192, and the
+  colours move with it; NextReg `$68` bit 2 adds half a dot. Offsets and modes take effect from the
+  next 8-dot cell.
+- Klive renders the four standard-width modes with one renderer and hi-res with another, and latches
+  each change at the cell where the hardware would make it.

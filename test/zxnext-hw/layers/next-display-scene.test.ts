@@ -349,11 +349,170 @@ describe("next-display composition: orders, priority, blending", () => {
   });
 });
 
+describe("next-display ula: the Timex modes and the scroll", () => {
+  /*
+   * The ULA article's pictures, drawn straight into bank 5 (no layer but the ULA is on). The program
+   * only idles; the test writes the screen bytes and port $FF itself.
+   */
+  const IDLE = ".org $8000\n di\n jr $\n";
+  const bitmapAddress = (y: number, col: number) =>
+    0x4000 | ((y & 0xc0) << 5) | ((y & 0x07) << 8) | ((y & 0x38) << 2) | col;
+
+  /** A session with the ULA alone: the screen cleared to `attr`, the border black */
+  const ulaOnly = async (attr: number): Promise<NextTestSession> => {
+    const s = await createSession();
+    await s.loadCode(IDLE);
+    s.poke(0x4000, new Uint8Array(0x1800));
+    s.poke(0x5800, new Uint8Array(768).fill(attr));
+    s.out(0xfe, 0);
+    return s;
+  };
+
+  // --- A ball of radius 36 dots centred at (48, 48): cells 1-10 across and down
+  const inBall = (x: number, y: number) => (x - 48) ** 2 + (y - 48) ** 2 <= 36 * 36;
+  const drawBall = (s: NextTestSession) => {
+    for (let y = 0; y < 96; y++) {
+      for (let col = 0; col < 12; col++) {
+        let byte = 0;
+        for (let b = 0; b < 8; b++) if (inBall(col * 8 + b, y)) byte |= 0x80 >> b;
+        s.poke(bitmapAddress(y, col), byte);
+      }
+    }
+  };
+  // --- Diagonal bands of colour, one line tall: ink by (line + 2 * column), six inks, normal then
+  // --- bright, so the eight lines of a cell have eight different inks; paper black
+  const INKS = [2, 6, 4, 5, 1, 3];
+  const bandAttr = (y: number, col: number) => {
+    const k = (y + 2 * col) % 12;
+    return (k >= 6 ? 0x40 : 0) | INKS[k % 6];
+  };
+  /** The ball, coloured per 8 x 8 cell at $5800 and per 8 x 1 strip at $6000 (hi-colour's colours) */
+  const ballScreen = async (): Promise<NextTestSession> => {
+    const s = await ulaOnly(0x07);
+    drawBall(s);
+    for (let y = 0; y < 192; y++) {
+      for (let col = 0; col < 32; col++) {
+        s.poke(0x2000 + bitmapAddress(y, col), col < 12 && y < 96 ? bandAttr(y, col) : 0x07);
+      }
+    }
+    for (let row = 0; row < 12; row++) {
+      for (let col = 0; col < 12; col++) s.poke(0x5800 + row * 32 + col, bandAttr(row * 8, col));
+    }
+    return s;
+  };
+  const showMode = (s: NextTestSession, portFf: number): Frame => {
+    s.out(0xff, portFf);
+    s.runFrames(2);
+    return s.screen();
+  };
+
+  it("colours the same bitmap per 8 x 8 cell, or per 8 x 1 strip in hi-colour", async () => {
+    const s = await ballScreen();
+    const standard = showMode(s, 0x00);
+    const hiColour = showMode(s, 0x02);
+    // --- In the cell of column 5, row 2 (dots 40-47, lines 16-23) the ball covers the whole cell
+    const top = paper(44, 16);
+    const bottom = paper(44, 23);
+    expect(at(standard, top)).toBe(at(standard, bottom)); // one colour for the cell
+    expect(at(hiColour, top)).not.toBe(at(hiColour, bottom)); // its own colour on each line
+    expect(at(hiColour, top)).toBe(at(standard, top)); // the cell's top line has the same colour in both
+    // --- hi-colour: eight lines, eight colours
+    expect(new Set([...Array(8).keys()].map((line) => at(hiColour, paper(44, 16 + line)))).size).toBe(8);
+    // --- Outside the ball, both show the black paper
+    expect(at(standard, paper(2, 2))).toBe("#000000");
+    expect(at(hiColour, paper(2, 2))).toBe("#000000");
+
+    const out = process.env.NEXT_DISPLAY_SHOTS;
+    if (out) {
+      // --- 12 x 12 cells, 96 x 96 dots: buffer x 96-287, rows 48-143
+      await writeCrop(join(out, "en/under-the-hood/next-display/ula/standard.webp"), standard, 96, 48, 192, 96);
+      await writeCrop(join(out, "en/under-the-hood/next-display/ula/hicolour.webp"), hiColour, 96, 48, 192, 96);
+    }
+  });
+
+  it("interleaves the two display files into 512 dots across in hi-res", async () => {
+    const s = await createSession();
+    await s.prepareBasic(); // the 48K ROM, for its font at $3D00
+    const font = s.peekBytes(0x3d00, 96 * 8);
+    await s.loadCode(IDLE);
+    s.poke(0x4000, new Uint8Array(0x1800));
+    s.poke(0x6000, new Uint8Array(0x1800));
+    s.poke(0x5800, new Uint8Array(768).fill(0x71)); // standard mode: bright, blue ink on yellow paper
+    s.out(0xfe, 0);
+    const lines = ["512 DOTS ACROSS: 64 COLUMNS,", "EVEN ONES FROM $4000, ODD", "ONES FROM $6000."];
+    for (const [row, text] of lines.entries()) {
+      for (const [k, ch] of [...text].entries()) {
+        // --- hi-res column k: even from the first file's column k/2, odd from the second file's
+        const base = (k & 1) === 0 ? 0 : 0x2000;
+        for (let line = 0; line < 8; line++) {
+          s.poke(base + bitmapAddress(row * 8 + line, k >> 1), font[(ch.charCodeAt(0) - 0x20) * 8 + line]);
+        }
+      }
+    }
+    const hiRes = showMode(s, 0x0e); // hi-res, port $FF bits 5-3 = 001: bright blue on yellow
+    const standard = showMode(s, 0x00); // the same bytes, the first display file alone
+    // --- "5" is hi-res column 0: its top stroke, row 1 of the glyph, spans the cell; in standard
+    // --- mode the first file's column 0 is the same glyph twice as wide
+    const fiveTop = font[(0x35 - 0x20) * 8 + 1];
+    const firstInk = Math.clz32(fiveTop) - 24; // the leftmost set bit, 0 = the byte's bit 7
+    expect(pixelHex(hiRes, 96 + firstInk, 48 + 1)).toBe(pixelHex(standard, 96 + 2 * firstInk, 48 + 1));
+    // --- hi-res ink and paper are port $FF's colour, not an attribute: the same as standard's 0x71 here
+    expect(pixelHex(hiRes, 96 + 300, 48 + 100)).toBe(pixelHex(standard, 96 + 300, 48 + 100));
+    // --- the border in hi-res is the paper colour (yellow), not port $FE's black
+    expect(at(hiRes, wide(4, 100))).toBe(pixelHex(hiRes, 96 + 300, 48 + 100));
+    expect(at(standard, wide(4, 100))).toBe("#000000");
+
+    const out = process.env.NEXT_DISPLAY_SHOTS;
+    if (out) {
+      // --- the left half of the display area, three text rows: 128 x 24 dots
+      await writeCrop(join(out, "en/under-the-hood/next-display/ula/hires.webp"), hiRes, 96, 48, 256, 24);
+      await writeCrop(join(out, "en/under-the-hood/next-display/ula/hires-standard.webp"), standard, 96, 48, 256, 24);
+    }
+  });
+
+  it("scrolls the ULA's picture with its colours, wrapping at 256 x 192", async () => {
+    const s = await ulaOnly(0x00);
+    drawBall(s);
+    // --- every cell gets a paper colour in diagonal bands, black ink: the ball is a black silhouette
+    for (let row = 0; row < 24; row++) {
+      for (let col = 0; col < 32; col++) s.poke(0x5800 + row * 32 + col, (((col + row) % 6) + 1) << 3);
+    }
+    s.runFrames(2);
+    const plain = s.screen();
+    s.setNextReg(0x26, 100);
+    s.setNextReg(0x27, 60);
+    s.runFrames(2);
+    const scrolled = s.screen();
+    // --- the dot at (x, y) is the unscrolled dot at (x + 100, y + 60), wrapped; x + 100 is not on a
+    // --- cell edge, so the colours moved dot by dot with the picture
+    for (const [x, y] of [[0, 0], [3, 10], [155, 131], [156, 132], [200, 100], [255, 191]]) {
+      expect(at(scrolled, paper(x, y))).toBe(at(plain, paper((x + 100) % 256, (y + 60) % 192)));
+    }
+    // --- the border does not scroll
+    expect(at(scrolled, wide(4, 100))).toBe("#000000");
+
+    const out = process.env.NEXT_DISPLAY_SHOTS;
+    if (out) {
+      await writeWebp(join(out, "en/under-the-hood/next-display/ula/scroll-0.webp"), plain);
+      await writeWebp(join(out, "en/under-the-hood/next-display/ula/scroll-1.webp"), scrolled);
+    }
+  });
+});
+
 /** One picture as lossless WebP, alpha forced opaque */
 async function writeWebp(path: string, frame: Frame): Promise<void> {
-  const opaque = new Uint8Array(frame.rgba);
+  await writeCrop(path, frame, 0, 0, frame.width, frame.height);
+}
+
+/** A rectangle of the picture (buffer pixels) as lossless WebP, alpha forced opaque */
+async function writeCrop(path: string, frame: Frame, x: number, y: number, width: number, height: number): Promise<void> {
+  const opaque = new Uint8Array(width * height * 4);
+  for (let row = 0; row < height; row++) {
+    const from = ((y + row) * frame.width + x) * 4;
+    opaque.set(frame.rgba.subarray(from, from + width * 4), row * width * 4);
+  }
   for (let k = 3; k < opaque.length; k += 4) opaque[k] = 0xff;
-  const webp = await sharp(Buffer.from(opaque.buffer), { raw: { width: frame.width, height: frame.height, channels: 4 } })
+  const webp = await sharp(Buffer.from(opaque.buffer), { raw: { width, height, channels: 4 } })
     .webp({ lossless: true })
     .toBuffer();
   mkdirSync(dirname(path), { recursive: true });

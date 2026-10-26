@@ -169,6 +169,12 @@
 /images/en/under-the-hood/next-display/palettes/transparent.webp
 /images/en/under-the-hood/next-display/timing/hz50.webp
 /images/en/under-the-hood/next-display/timing/hz60.webp
+/images/en/under-the-hood/next-display/ula/hicolour.webp
+/images/en/under-the-hood/next-display/ula/hires-standard.webp
+/images/en/under-the-hood/next-display/ula/hires.webp
+/images/en/under-the-hood/next-display/ula/scroll-0.webp
+/images/en/under-the-hood/next-display/ula/scroll-1.webp
+/images/en/under-the-hood/next-display/ula/standard.webp
 /images/es/get-started/basic-debug.webp
 /images/es/get-started/basic-debug.webp.json
 /images/es/get-started/basic-running.webp

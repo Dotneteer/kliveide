@@ -4,9 +4,9 @@ A series of *Under the hood* articles that explain, in the style of
 `spectrum-display.mdx` and `zx81-display.mdx`, how the ZX Spectrum Next produces its picture:
 every video mode, the palettes, the layers and how they are composed into one pixel.
 
-Status: **articles 1, 2, 3 and 9 written** (`next-display/overview.mdx`, `timing.mdx`,
-`palettes.mdx`, `composition.mdx`). Articles 4–8 and 10 to go, in the writing order of §1 (next: 4,
-the ULA layer).
+Status: **articles 1, 2, 3, 4 and 9 written** (`next-display/overview.mdx`, `timing.mdx`,
+`palettes.mdx`, `ula.mdx`, `composition.mdx`). Articles 5–8 and 10 to go, in the writing order of §1
+(next: 6, Layer 2).
 
 ### As built (article 1)
 
@@ -37,6 +37,16 @@ the ULA layer).
   blend picture showed two facts the plan did not list, now in the article: the blend source shows only
   through Layer 2 (even the border disappears), and the tilemap can rise above the sprites. Its worked
   example is the A–D table rather than five separate dots.
+- Article 4's pictures are drawn by the scene test straight into bank 5 (pokes and port `$FF` from the
+  test, no assembler scene), and close-ups are written with `writeCrop` in buffer pixels. Facts it
+  established that later articles can rely on: the ULA reads eight bytes per 16 dots (each cell and
+  its neighbour, for the scroll), only the Spectrum's four reach the floating bus; the screen memory
+  is dual-port block RAM, so contention is imitated and there is no snow; bank 7 has only 8K there, so
+  the shadow screen disables the Timex modes; the scroll, half-dot bit and Timex mode are taken per
+  8-dot cell; in hi-res the border is the hi-res paper. One difference is stated rather than fixed:
+  Klive's floating bus reads the unscrolled standard screen.
+- The plan's figure list for article 4 was cut to ten (no ULA+/ULANext machine pictures, the register
+  bit strips are a table); the clip window and scroll basics stay in article 1 and are only linked.
 
 ---
 
