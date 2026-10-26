@@ -1,0 +1,594 @@
+5:"$Sreact.fragment"
+6:I[7121,[],""]
+7:I[4581,[],""]
+c:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+d:"static/chunks/500-fc3b64d9ff4a32a7.js"
+e:"static/chunks/436-2e7c1075bb484b2c.js"
+f:"static/chunks/app/%5Blang%5D/(unlisted)/z88-user-guide/%5B%5B...mdxPath%5D%5D/page-4cda6fdcf01c581d.js"
+10:I[826,["545","$c","500","$d","436","$e","992","$f"],"TOCProvider"]
+11:I[4637,["545","$c","500","$d","436","$e","992","$f"],"Sidebar"]
+12:I[6665,["545","$c","500","$d","436","$e","992","$f"],"ClientWrapper"]
+18:"ViewportBoundary"
+19:I[484,[],"$18"]
+1a:"MetadataBoundary"
+1b:I[484,[],"$1a"]
+1c:"$Sreact.suspense"
+1d:I[6869,[],"IconMark"]
+9:X
+9:C
+a:X
+13:T3371,---
+description: "Diary error messages are displayed in the DIARY DATE window between the date and mode."
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/35913797 (version 18) by scripts/import-z88-user-guide.cjs */}
+
+# Appendix C - Error messages
+
+## General error messages
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>[Memory low condition](/en/z88-user-guide/getting-started/basic-concepts/memory-low-condition)</Table.Td>
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>[FAIL](/en/z88-user-guide/getting-started/using-cards#carderrors)</Table.Td>
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>[CARD](/en/z88-user-guide/getting-started/using-cards/rom-cards#card-errormessage)</Table.Td>
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>[INDEX](/en/z88-user-guide/getting-started/using-cards/rom-cards#index-errormessage)</Table.Td>
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td />
+</Table.Tr>
+</tbody>
+</Table>
+
+<Shot src="z88-user-guide/appendix-c-error-messages/in-use-error-message.webp" alt="in use error message" width={640} />
+
+## Useful Information
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>[CRC-32](/en/z88-user-guide/using-the-popdowns/the-filer-popdown#viewfile)</Table.Td>
+<Table.Td>Calculates the CRC of a Z88 file</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td />
+</Table.Tr>
+</tbody>
+</Table>
+
+## PipeDream error messages
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>-ve root</Table.Td>
+<Table.Td>The argument to the SQR function was negative; eg SQR(-1).</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>All columns zero width</Table.Td>
+<Table.Td>Attempt to set the width of all columns to zero.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Bad argument</Table.Td>
+<Table.Td>The argument to a Next Match (<Key k="diamond" />BNM) command was given with no prior Search command.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Bad column</Table.Td>
+<Table.Td>The Sort (<Key k="diamond" />BSO) command was given with an invalid column specification.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Bad date</Table.Td>
+<Table.Td>The argument to the DAY, MONTH, or YEAR function is not a valid date; eg DAY(27).</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Bad file</Table.Td>
+<Table.Td>The file specified was not a valid file.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Bad index</Table.Td>
+<Table.Td>A CHOOSE, or INDEX function was called with an invalid index; eg CHOOSE(-2,1).</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Bad list file</Table.Td>
+<Table.Td>The list file loaded by the Load command (<Key k="diamond" />FL) does not contain valid file names, or was not saved with the Save Plain text option.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Bad name</Table.Td>
+<Table.Td>The name specified in a Load, Save, or Name command was not a valid file name.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Bad number</Table.Td>
+<Table.Td>The argument to an Insert Highlights (<Key k="diamond" />PHI), Remove Highlights (<Key k="diamond" />PHR), Highlight Block (<Key k="diamond" />PHB), or Decimal Places (<Key k="diamond" />LDP) command was not in the valid range.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Bad option</Table.Td>
+<Table.Td>The option was not valid for the command.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Bad range</Table.Td>
+<Table.Td>
+
+The range of slots specified in a Replicate or Save command was not a valid range; eg,
+
+`Save only range of columns C A.`
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Bad slot</Table.Td>
+<Table.Td>The command was given an invalid slot reference; eg **Go to Slot** (<Key k="diamond" />CGS) A0.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Bad A ^ field</Table.Td>
+<Table.Td>
+
+The ^ sequence in a **Search** or **Replace** string was invalid; e.g.
+
+`String to search for ^H`
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Divide by 0</Table.Td>
+<Table.Td>An expression attempted to divide by zero; eg 2/0.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Edge</Table.Td>
+<Table.Td>The block being copied or moved would not fit within the maximum possible sheet size; eg, an attempt to copy from A1 Z6 to AA1.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Editing expression</Table.Td>
+<Table.Td>The specified command is not available while editing an expression; eg, Load (<Key k="diamond" />FL).</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>End of list file</Table.Td>
+<Table.Td>The end of the List file has been reached; eg Bottom File (<Key k="diamond" />FB) at the end of a document.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Escape</Table.Td>
+<Table.Td>The <Key k="esc" /> key was pressed while processing a document.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Exp range</Table.Td>
+<Table.Td>The range of the EXP function was exceeded; e.g. EXP(100).</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Expression too long</Table.Td>
+<Table.Td>The string of text is too long to be entered into a slot; i.e. longer than 240 characters.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>FP overflow</Table.Td>
+<Table.Td>An expression resulted in a number too large to be represented; eg, 100^100.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Log range</Table.Td>
+<Table.Td>The argument to the LOG function was invalid; eg LOG(-1).</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Lookup</Table.Td>
+<Table.Td>The LOOKUP function could not find a successful match.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Loop</Table.Td>
+<Table.Td>Two slots containing string values reference each other.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Memory full</Table.Td>
+<Table.Td>No more memory is available for the current sheet.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>No list file</Table.Td>
+<Table.Td>A multi-file command such as Bottom File (<Key k="diamond" />FB) was given with no List file loaded, or after the List file was cancelled due to an error.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>No marked block</Table.Td>
+<Table.Td>The command requires a marked block; eg Move.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Overlap</Table.Td>
+<Table.Td>The source and destination blocks, specified in a Move or Copy command, overlap.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Propagated</Table.Td>
+<Table.Td>The expression slot refers to another slot with an error.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Stack overflow</Table.Td>
+<Table.Td>The expression is too complex for evaluation.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Too few arguments</Table.Td>
+<Table.Td>An IF, CHOOSE, or INDEX function has been specified with too few arguments; eg, INDEX(2).</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Too long</Table.Td>
+<Table.Td>The length of line that would result after a Join Lines or Replace command is longer than 240 characters, or the string specified in a Search or Replace command is longer than 240 characters.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Too many columns</Table.Td>
+<Table.Td>The Add Column (<Key k="diamond" />EAC) or Insert Column (<Key k="diamond" />EIC) command was given in a document which already has 42 columns, the maximum number.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Typing error</Table.Td>
+<Table.Td>The expression is invalid; eg, A1+\*3.</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+## Diary error messages
+
+Diary error messages are displayed in the DIARY DATE window between the date and mode.
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>Memory Low</Table.Td>
+<Table.Td>The user should take immediate action to delete data from the Diary, files, or suspended applications. Delete a line to free memory with <Key k="diamond" /><Key k="esc" />, followed by <Key k="diamond" />Y to free more entries.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>No String</Table.Td>
+<Table.Td>Tried to Search or Replace with null string.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>No Room</Table.Td>
+<Table.Td>The Save Position command (<Key k="diamond" />CSP) was given with five positions already saved.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>No Marker</Table.Td>
+<Table.Td>Search/Replace between markers etc.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Not Marked</Table.Td>
+<Table.Td>Next/Previous Match (Search within block) when cursor is outside block.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Date Range</Table.Td>
+<Table.Td>An attempt was made to move outside the legal date range.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Overlaps</Table.Td>
+<Table.Td>A block operation was attempted with the cursor inside the block.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>n Found</Table.Td>
+<Table.Td>Final message after Replace command.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td>In addition system error messages, such as 'File not found' are displayed in another window on top of the operation being performed.</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+## BBC BASIC error messages
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>0</Table.Td>
+<Table.Td />
+<Table.Td>No room</Table.Td>
+<Table.Td />
+<Table.Td>24</Table.Td>
+<Table.Td />
+<Table.Td>EXP range</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>1</Table.Td>
+<Table.Td />
+<Table.Td>Out of range</Table.Td>
+<Table.Td />
+<Table.Td>26</Table.Td>
+<Table.Td />
+<Table.Td>No such variable</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>2</Table.Td>
+<Table.Td />
+<Table.Td>Byte</Table.Td>
+<Table.Td />
+<Table.Td>27</Table.Td>
+<Table.Td />
+<Table.Td>Missing )</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>3</Table.Td>
+<Table.Td />
+<Table.Td>Index</Table.Td>
+<Table.Td />
+<Table.Td>28</Table.Td>
+<Table.Td />
+<Table.Td>Bad hex</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>4</Table.Td>
+<Table.Td />
+<Table.Td>Mistake</Table.Td>
+<Table.Td />
+<Table.Td>29</Table.Td>
+<Table.Td />
+<Table.Td>No such FN/PROC</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>5</Table.Td>
+<Table.Td />
+<Table.Td>Missing</Table.Td>
+<Table.Td />
+<Table.Td>30</Table.Td>
+<Table.Td />
+<Table.Td>Bad call</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>6</Table.Td>
+<Table.Td />
+<Table.Td>Type mismatch</Table.Td>
+<Table.Td />
+<Table.Td>31</Table.Td>
+<Table.Td />
+<Table.Td>Arguments</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>7</Table.Td>
+<Table.Td />
+<Table.Td>No FN</Table.Td>
+<Table.Td />
+<Table.Td>32</Table.Td>
+<Table.Td />
+<Table.Td>No FOR</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>8</Table.Td>
+<Table.Td />
+<Table.Td>$ range</Table.Td>
+<Table.Td />
+<Table.Td>33</Table.Td>
+<Table.Td />
+<Table.Td>Can't match FOR</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>9</Table.Td>
+<Table.Td />
+<Table.Td>Missing</Table.Td>
+<Table.Td />
+<Table.Td>34</Table.Td>
+<Table.Td />
+<Table.Td>FOR variable</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>10</Table.Td>
+<Table.Td />
+<Table.Td>Bad DIM</Table.Td>
+<Table.Td />
+<Table.Td>36</Table.Td>
+<Table.Td />
+<Table.Td>No TO</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>11</Table.Td>
+<Table.Td />
+<Table.Td>DIM space</Table.Td>
+<Table.Td />
+<Table.Td>38</Table.Td>
+<Table.Td />
+<Table.Td>No GOSUB</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>12</Table.Td>
+<Table.Td />
+<Table.Td>Not LOCAL</Table.Td>
+<Table.Td />
+<Table.Td>39</Table.Td>
+<Table.Td />
+<Table.Td>ON syntax</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>13</Table.Td>
+<Table.Td />
+<Table.Td>No PROC</Table.Td>
+<Table.Td />
+<Table.Td>40</Table.Td>
+<Table.Td />
+<Table.Td>ON range</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>14</Table.Td>
+<Table.Td />
+<Table.Td>Array</Table.Td>
+<Table.Td />
+<Table.Td>41</Table.Td>
+<Table.Td />
+<Table.Td>No such line</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>15</Table.Td>
+<Table.Td />
+<Table.Td>Subscript</Table.Td>
+<Table.Td />
+<Table.Td>42</Table.Td>
+<Table.Td />
+<Table.Td>Out of DATA</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>16</Table.Td>
+<Table.Td />
+<Table.Td>Syntax error</Table.Td>
+<Table.Td />
+<Table.Td>43</Table.Td>
+<Table.Td />
+<Table.Td>No REPEAT</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>17</Table.Td>
+<Table.Td />
+<Table.Td>Escape</Table.Td>
+<Table.Td />
+<Table.Td>220</Table.Td>
+<Table.Td />
+<Table.Td>Syntax</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>18</Table.Td>
+<Table.Td />
+<Table.Td>Division by zero</Table.Td>
+<Table.Td />
+<Table.Td>222</Table.Td>
+<Table.Td />
+<Table.Td>Channel</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>19</Table.Td>
+<Table.Td />
+<Table.Td>String too long</Table.Td>
+<Table.Td />
+<Table.Td>252</Table.Td>
+<Table.Td />
+<Table.Td>End of file</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>20</Table.Td>
+<Table.Td />
+<Table.Td>Too big</Table.Td>
+<Table.Td />
+<Table.Td>252</Table.Td>
+<Table.Td />
+<Table.Td>Suspended</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>21</Table.Td>
+<Table.Td />
+<Table.Td>-ve root</Table.Td>
+<Table.Td />
+<Table.Td>252</Table.Td>
+<Table.Td />
+<Table.Td>File not found</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>22</Table.Td>
+<Table.Td />
+<Table.Td>LOG range</Table.Td>
+<Table.Td />
+<Table.Td>252</Table.Td>
+<Table.Td />
+<Table.Td>Read protected</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>23</Table.Td>
+<Table.Td />
+<Table.Td>Accuracy lost</Table.Td>
+<Table.Td />
+<Table.Td>252</Table.Td>
+<Table.Td />
+<Table.Td>Write protected</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>b:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$5","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$L10",null,{"value":[{"value":"General error messages","id":"general-error-messages","depth":2},{"value":"Useful Information","id":"useful-information","depth":2},{"value":"PipeDream error messages","id":"pipedream-error-messages","depth":2},{"value":"Diary error messages","id":"diary-error-messages","depth":2},{"value":"BBC BASIC error messages","id":"bbc-basic-error-messages","depth":2}],"children":[["$","$L11",null,{}],["$","$L12",null,{"metadata":{"description":"Diary error messages are displayed in the DIARY DATE window between the date and mode.","title":"Appendix C - Error messages","filePath":"content/en/z88-user-guide/appendix-c-error-messages.mdx","timestamp":1792315833000},"sourceCode":"$13","children":["$L14","$L15"]}]]}]}],null,"$L16"]}],"p":"$@17","v":null,"s":"$a"}}]]
+4:[["children",{"s":{"n":"mdxPath","t":"oc","k":"appendix-c-error-messages","s":[]},"h":65600,"d":{"r":["$","$5","c",{"children":[null,["$","$L6",null,{"parallelRouterKey":"children","template":["$","$L7",null,{}]}]]}],"p":"$@8","v":"$9","s":"$a"},"c":"$Qb"}]]
+3:[["children",{"s":"z88-user-guide","h":131104,"c":"$Q4"}]]
+2:[["children",{"s":"(unlisted)","h":131168,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$5","h",{"children":[null,["$","$L19",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1b",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1c",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Appendix C - Error messages - Klive IDE"}],["$","meta","1",{"name":"description","content":"Diary error messages are displayed in the DIARY DATE window between the date and mode."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/z88-user-guide/appendix-c-error-messages/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1d","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1e","v":null,"s":"$a"}},"a":"$@1f","u":"$@20","b":"nDS4ludpRjwY0zdBe-KGb"}
+21:I[721,["545","$c","500","$d","436","$e","992","$f"],"HeadingAnchor"]
+22:I[8500,["545","$c","500","$d","436","$e","992","$f"],""]
+2d:I[484,[],"OutletBoundary"]
+14:["$","div",null,{"id":"nextra-skip-nav"}]
+15:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Appendix C - Error messages","$undefined"]}],"\n",["$","h2",null,{"id":"general-error-messages","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["General error messages",["$","$L21",null,{"id":"general-error-messages"}]]}],"\n",["$","table",null,{"children":["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":["$","$L22",null,{"href":"/en/z88-user-guide/getting-started/basic-concepts/memory-low-condition","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Memory low condition"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","$L22",null,{"href":"/en/z88-user-guide/getting-started/using-cards#carderrors","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"FAIL"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","$L22",null,{"href":"/en/z88-user-guide/getting-started/using-cards/rom-cards#card-errormessage","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"CARD"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","$L22",null,{"href":"/en/z88-user-guide/getting-started/using-cards/rom-cards#index-errormessage","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"INDEX"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}],"className":"x:block x:overflow-x-auto"}],"\n",["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/appendix-c-error-messages/in-use-error-message.webp","target":"_blank","rel":"noopener noreferrer","children":["$L23",[]]}]]}],"\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c"]]}]
+16:["$","$L2d",null,{"children":["$","$1c",null,{"name":"Next.MetadataOutlet","children":"$@2e"}]}]
+20:true
+a:300
+23:["$","img",null,{"src":"/images/en/z88-user-guide/appendix-c-error-messages/in-use-error-message.webp","alt":"in use error message","loading":"lazy","decoding":"async","width":640,"height":64}]
+24:["$","h2",null,{"id":"useful-information","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Useful Information",["$","$L21",null,{"id":"useful-information"}]]}]
+25:["$","table",null,{"children":["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":["$","$L22",null,{"href":"/en/z88-user-guide/using-the-popdowns/the-filer-popdown#viewfile","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"CRC-32"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Calculates the CRC of a Z88 file","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}],"className":"x:block x:overflow-x-auto"}]
+26:["$","h2",null,{"id":"pipedream-error-messages","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["PipeDream error messages",["$","$L21",null,{"id":"pipedream-error-messages"}]]}]
+27:["$","table",null,{"children":["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":"-ve root","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The argument to the SQR function was negative; eg SQR(-1).","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"All columns zero width","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Attempt to set the width of all columns to zero.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"Bad argument","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["The argument to a Next Match (",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"BNM) command was given with no prior Search command."],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"Bad column","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["The Sort (",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"BSO) command was given with an invalid column specification."],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"Bad date","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The argument to the DAY, MONTH, or YEAR function is not a valid date; eg DAY(27).","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"Bad file","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The file specified was not a valid file.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"Bad index","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"A CHOOSE, or INDEX function was called with an invalid index; eg CHOOSE(-2,1).","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"Bad list file","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["The list file loaded by the Load command (",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"FL) does not contain valid file names, or was not saved with the Save Plain text option."],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],"$L2f","$L30","$L31","$L32","$L33","$L34","$L35","$L36","$L37","$L38","$L39","$L3a","$L3b","$L3c","$L3d","$L3e","$L3f","$L40","$L41","$L42","$L43","$L44","$L45","$L46","$L47","$L48","$L49"]}],"className":"x:block x:overflow-x-auto"}]
+28:["$","h2",null,{"id":"diary-error-messages","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Diary error messages",["$","$L21",null,{"id":"diary-error-messages"}]]}]
+29:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Diary error messages are displayed in the DIARY DATE window between the date and mode."}]
+2a:["$","table",null,{"children":["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":"Memory Low","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["The user should take immediate action to delete data from the Diary, files, or suspended applications. Delete a line to free memory with ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Escape","children":"ESC"}],", followed by ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"Y to free more entries."],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"No String","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Tried to Search or Replace with null string.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"No Room","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["The Save Position command (",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"CSP) was given with five positions already saved."],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"No Marker","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Search/Replace between markers etc.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"Not Marked","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Next/Previous Match (Search within block) when cursor is outside block.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"Date Range","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"An attempt was made to move outside the legal date range.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"Overlaps","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"A block operation was attempted with the cursor inside the block.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"n Found","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],"$L4a"],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],"$L4b"]}],"className":"x:block x:overflow-x-auto"}]
+2b:["$","h2",null,{"id":"bbc-basic-error-messages","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["BBC BASIC error messages",["$","$L21",null,{"id":"bbc-basic-error-messages"}]]}]
+2c:["$","table",null,{"children":["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":"0","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"No room","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"24","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"EXP range","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"1","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Out of range","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"26","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"No such variable","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"2","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Byte","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"27","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Missing )","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"3","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Index","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"28","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Bad hex","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"4","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],"$L4c","$L4d","$L4e","$L4f","$L50","$L51"],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],"$L52","$L53","$L54","$L55","$L56","$L57","$L58","$L59","$L5a","$L5b","$L5c","$L5d","$L5e","$L5f","$L60","$L61","$L62","$L63","$L64"]}],"className":"x:block x:overflow-x-auto"}]
+2e:null
+a:C
+2f:["$","tr",null,{"children":[["$","td",null,{"children":"Bad name","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The name specified in a Load, Save, or Name command was not a valid file name.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+30:["$","tr",null,{"children":[["$","td",null,{"children":"Bad number","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["The argument to an Insert Highlights (",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"PHI), Remove Highlights (",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"PHR), Highlight Block (",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"PHB), or Decimal Places (",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"LDP) command was not in the valid range."],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+31:["$","tr",null,{"children":[["$","td",null,{"children":"Bad option","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The option was not valid for the command.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+32:["$","tr",null,{"children":[["$","td",null,{"children":"Bad range","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The range of slots specified in a Replicate or Save command was not a valid range; eg,"}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Save only range of columns C A."}]}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+33:["$","tr",null,{"children":[["$","td",null,{"children":"Bad slot","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["The command was given an invalid slot reference; eg ",["$","strong",null,{"children":"Go to Slot"}]," (",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"CGS) A0."],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+34:["$","tr",null,{"children":[["$","td",null,{"children":"Bad A ^ field","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ^ sequence in a ",["$","strong",null,{"children":"Search"}]," or ",["$","strong",null,{"children":"Replace"}]," string was invalid; e.g."]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"String to search for ^H"}]}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+35:["$","tr",null,{"children":[["$","td",null,{"children":"Divide by 0","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"An expression attempted to divide by zero; eg 2/0.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+36:["$","tr",null,{"children":[["$","td",null,{"children":"Edge","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The block being copied or moved would not fit within the maximum possible sheet size; eg, an attempt to copy from A1 Z6 to AA1.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+37:["$","tr",null,{"children":[["$","td",null,{"children":"Editing expression","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["The specified command is not available while editing an expression; eg, Load (",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"FL)."],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+38:["$","tr",null,{"children":[["$","td",null,{"children":"End of list file","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["The end of the List file has been reached; eg Bottom File (",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"FB) at the end of a document."],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+39:["$","tr",null,{"children":[["$","td",null,{"children":"Escape","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["The ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Escape","children":"ESC"}]," key was pressed while processing a document."],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+3a:["$","tr",null,{"children":[["$","td",null,{"children":"Exp range","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The range of the EXP function was exceeded; e.g. EXP(100).","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+3b:["$","tr",null,{"children":[["$","td",null,{"children":"Expression too long","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The string of text is too long to be entered into a slot; i.e. longer than 240 characters.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+3c:["$","tr",null,{"children":[["$","td",null,{"children":"FP overflow","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"An expression resulted in a number too large to be represented; eg, 100^100.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+3d:["$","tr",null,{"children":[["$","td",null,{"children":"Log range","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The argument to the LOG function was invalid; eg LOG(-1).","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+3e:["$","tr",null,{"children":[["$","td",null,{"children":"Lookup","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The LOOKUP function could not find a successful match.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+3f:["$","tr",null,{"children":[["$","td",null,{"children":"Loop","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Two slots containing string values reference each other.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+40:["$","tr",null,{"children":[["$","td",null,{"children":"Memory full","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"No more memory is available for the current sheet.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+41:["$","tr",null,{"children":[["$","td",null,{"children":"No list file","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["A multi-file command such as Bottom File (",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"FB) was given with no List file loaded, or after the List file was cancelled due to an error."],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+42:["$","tr",null,{"children":[["$","td",null,{"children":"No marked block","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The command requires a marked block; eg Move.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+43:["$","tr",null,{"children":[["$","td",null,{"children":"Overlap","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The source and destination blocks, specified in a Move or Copy command, overlap.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+44:["$","tr",null,{"children":[["$","td",null,{"children":"Propagated","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The expression slot refers to another slot with an error.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+45:["$","tr",null,{"children":[["$","td",null,{"children":"Stack overflow","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The expression is too complex for evaluation.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+46:["$","tr",null,{"children":[["$","td",null,{"children":"Too few arguments","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"An IF, CHOOSE, or INDEX function has been specified with too few arguments; eg, INDEX(2).","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+47:["$","tr",null,{"children":[["$","td",null,{"children":"Too long","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The length of line that would result after a Join Lines or Replace command is longer than 240 characters, or the string specified in a Search or Replace command is longer than 240 characters.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+48:["$","tr",null,{"children":[["$","td",null,{"children":"Too many columns","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["The Add Column (",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"EAC) or Insert Column (",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"EIC) command was given in a document which already has 42 columns, the maximum number."],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+49:["$","tr",null,{"children":[["$","td",null,{"children":"Typing error","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The expression is invalid; eg, A1+*3.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+4a:["$","td",null,{"children":"Final message after Replace command.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
+4b:["$","tr",null,{"children":[["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"In addition system error messages, such as ‘File not found’ are displayed in another window on top of the operation being performed.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+4c:["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
+4d:["$","td",null,{"children":"Mistake","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
+4e:["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
+4f:["$","td",null,{"children":"29","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
+50:["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
+51:["$","td",null,{"children":"No such FN/PROC","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
+52:["$","tr",null,{"children":[["$","td",null,{"children":"5","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Missing","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"30","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Bad call","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+53:["$","tr",null,{"children":[["$","td",null,{"children":"6","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Type mismatch","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"31","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Arguments","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+54:["$","tr",null,{"children":[["$","td",null,{"children":"7","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"No FN","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"32","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"No FOR","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+55:["$","tr",null,{"children":[["$","td",null,{"children":"8","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"$$ range","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"33","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Can’t match FOR","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+56:["$","tr",null,{"children":[["$","td",null,{"children":"9","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Missing","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"34","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"FOR variable","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+57:["$","tr",null,{"children":[["$","td",null,{"children":"10","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Bad DIM","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"36","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"No TO","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+58:["$","tr",null,{"children":[["$","td",null,{"children":"11","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"DIM space","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"38","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"No GOSUB","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+59:["$","tr",null,{"children":[["$","td",null,{"children":"12","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Not LOCAL","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"39","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"ON syntax","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+5a:["$","tr",null,{"children":[["$","td",null,{"children":"13","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"No PROC","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"40","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"ON range","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+5b:["$","tr",null,{"children":[["$","td",null,{"children":"14","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Array","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"41","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"No such line","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+5c:["$","tr",null,{"children":[["$","td",null,{"children":"15","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Subscript","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"42","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Out of DATA","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+5d:["$","tr",null,{"children":[["$","td",null,{"children":"16","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Syntax error","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"43","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"No REPEAT","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+5e:["$","tr",null,{"children":[["$","td",null,{"children":"17","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Escape","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"220","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Syntax","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+5f:["$","tr",null,{"children":[["$","td",null,{"children":"18","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Division by zero","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"222","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Channel","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+60:["$","tr",null,{"children":[["$","td",null,{"children":"19","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"String too long","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"252","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"End of file","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+61:["$","tr",null,{"children":[["$","td",null,{"children":"20","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Too big","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"252","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Suspended","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+62:["$","tr",null,{"children":[["$","td",null,{"children":"21","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"-ve root","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"252","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"File not found","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+63:["$","tr",null,{"children":[["$","td",null,{"children":"22","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"LOG range","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"252","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Read protected","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+64:["$","tr",null,{"children":[["$","td",null,{"children":"23","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Accuracy lost","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"252","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Write protected","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+1f:0
+8:"$undefined"
+1e:"$undefined"
+17:"$undefined"

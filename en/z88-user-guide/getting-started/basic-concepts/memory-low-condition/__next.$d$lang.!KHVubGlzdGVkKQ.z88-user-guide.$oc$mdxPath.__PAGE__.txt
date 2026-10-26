@@ -1,0 +1,34 @@
+5:"$Sreact.fragment"
+6:I[7121,[],""]
+7:I[4581,[],""]
+c:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+d:"static/chunks/500-fc3b64d9ff4a32a7.js"
+e:"static/chunks/436-2e7c1075bb484b2c.js"
+f:"static/chunks/app/%5Blang%5D/(unlisted)/z88-user-guide/%5B%5B...mdxPath%5D%5D/page-4cda6fdcf01c581d.js"
+10:I[826,["545","$c","500","$d","436","$e","992","$f"],"TOCProvider"]
+11:I[4637,["545","$c","500","$d","436","$e","992","$f"],"Sidebar"]
+12:I[6665,["545","$c","500","$d","436","$e","992","$f"],"ClientWrapper"]
+13:I[484,[],"OutletBoundary"]
+14:"$Sreact.suspense"
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:I[6869,[],"IconMark"]
+9:X
+9:C
+a:X
+b:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$5","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$L10",null,{"value":[],"children":[["$","$L11",null,{}],["$","$L12",null,{"metadata":{"description":"When you have almost filled the Cambridge Z88 memory, with applications or data, the menu-selection of commands is automatically disabled to conserve memory. The highlight bar disappears, and the...","title":"Memory low condition","filePath":"content/en/z88-user-guide/getting-started/basic-concepts/memory-low-condition.mdx","timestamp":1792315833000},"sourceCode":"---\ndescription: \"When you have almost filled the Cambridge Z88 memory, with applications or data, the menu-selection of commands is automatically disabled to conserve memory. The highlight bar disappears, and the...\"\n---\n\n{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/35913767 (version 2) by scripts/import-z88-user-guide.cjs */}\n\n# Memory low condition\n\nWhen you have almost filled the Cambridge Z88 memory, with applications or data, the menu-selection of commands is automatically disabled to conserve memory. The highlight bar disappears, and the prompt display, at the right-hand side of all menu screens, changes to indicate that menu commands can no longer be selected with the cursor keys:\n\n<Shot src=\"z88-user-guide/getting-started/basic-concepts/memory-low-condition/memlow.webp\" alt=\"memlow.png\" width={267} />\n\nIn the memory-low condition the command short cuts must be used until enough memory has been freed from the machine.","children":[["$","div",null,{"id":"nextra-skip-nav"}],["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Memory low condition","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When you have almost filled the Cambridge Z88 memory, with applications or data, the menu-selection of commands is automatically disabled to conserve memory. The highlight bar disappears, and the prompt display, at the right-hand side of all menu screens, changes to indicate that menu commands can no longer be selected with the cursor keys:"}],"\n",["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"267px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/basic-concepts/memory-low-condition/memlow.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/basic-concepts/memory-low-condition/memlow.webp","alt":"memlow.png","loading":"lazy","decoding":"async","width":267,"height":94}],[]]}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"In the memory-low condition the command short cuts must be used until enough memory has been freed from the machine."}]]]}]]}]]}]}],null,["$","$L13",null,{"children":["$","$14",null,{"name":"Next.MetadataOutlet","children":"$@15"}]}]]}],"p":"$@16","v":null,"s":"$a"}}]]
+4:[["children",{"s":{"n":"mdxPath","t":"oc","k":"getting-started/basic-concepts/memory-low-condition","s":[]},"h":65600,"d":{"r":["$","$5","c",{"children":[null,["$","$L6",null,{"parallelRouterKey":"children","template":["$","$L7",null,{}]}]]}],"p":"$@8","v":"$9","s":"$a"},"c":"$Qb"}]]
+3:[["children",{"s":"z88-user-guide","h":131104,"c":"$Q4"}]]
+2:[["children",{"s":"(unlisted)","h":131168,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$5","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$14",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Memory low condition - Klive IDE"}],["$","meta","1",{"name":"description","content":"When you have almost filled the Cambridge Z88 memory, with applications or data, the menu-selection of commands is automatically disabled to conserve memory. The highlight bar disappears, and the..."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/z88-user-guide/getting-started/basic-concepts/memory-low-condition/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1b","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1c","v":null,"s":"$a"}},"a":"$@1d","u":"$@1e","b":"nDS4ludpRjwY0zdBe-KGb"}
+15:null
+1e:true
+a:300
+a:C
+1d:0
+8:"$undefined"
+1c:"$undefined"
+16:"$undefined"

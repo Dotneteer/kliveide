@@ -1,0 +1,66 @@
+5:"$Sreact.fragment"
+6:I[7121,[],""]
+7:I[4581,[],""]
+c:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+d:"static/chunks/500-fc3b64d9ff4a32a7.js"
+e:"static/chunks/436-2e7c1075bb484b2c.js"
+f:"static/chunks/app/%5Blang%5D/(unlisted)/z88-user-guide/%5B%5B...mdxPath%5D%5D/page-4cda6fdcf01c581d.js"
+10:I[826,["545","$c","500","$d","436","$e","992","$f"],"TOCProvider"]
+11:I[4637,["545","$c","500","$d","436","$e","992","$f"],"Sidebar"]
+12:I[6665,["545","$c","500","$d","436","$e","992","$f"],"ClientWrapper"]
+1a:"ViewportBoundary"
+1b:I[484,[],"$1a"]
+1c:"MetadataBoundary"
+1d:I[484,[],"$1c"]
+1e:"$Sreact.suspense"
+1f:I[6869,[],"IconMark"]
+9:X
+9:C
+a:X
+13:T49b,---
+description: "Start here to find out how to get your Cambridge Z88 working for you. This section contains four introductory chapters:"
+asIndexPage: true
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/35913736 (version 12) by scripts/import-z88-user-guide.cjs */}
+
+# Section One - Getting started
+
+<Shot src="z88-user-guide/getting-started/oz47.webp" alt="Illustration for “Section One - Getting started”" width={640} />
+
+Start here to find out how to get your Cambridge Z88 working for you. This section contains four introductory chapters:
+
+- **Introducing the Cambridge Z88**
+
+Gives a foretaste of what the Cambridge Z88 can do.
+
+- **Up and running**
+
+Shows a new machine in/out of the box, explains how to insert batteries, switch on, and start writing your first document on the Cambridge Z88.
+
+- **Applications and popdowns**
+
+Describes the programs provided in the Cambridge Z88, to help you decide which you want to learn about first. These are then explained more fully in the later sections.
+
+- **Basic concepts**
+
+Explains a little more about the components of the Cambridge Z88: the keyboard, the display, and how the functions work.b:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$5","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$L10",null,{"value":[],"children":[["$","$L11",null,{}],["$","$L12",null,{"metadata":{"description":"Start here to find out how to get your Cambridge Z88 working for you. This section contains four introductory chapters:","asIndexPage":true,"title":"Section One - Getting started","filePath":"content/en/z88-user-guide/getting-started/index.mdx","timestamp":1792315833000},"sourceCode":"$13","children":[["$","div",null,{"id":"nextra-skip-nav"}],["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Section One - Getting started","$undefined"]}],"\n",["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/oz47.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/oz47.webp","alt":"Illustration for “Section One - Getting started”","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Start here to find out how to get your Cambridge Z88 working for you. This section contains four introductory chapters:"}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","strong",null,{"children":"Introducing the Cambridge Z88"}]}],"\n"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Gives a foretaste of what the Cambridge Z88 can do."}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","strong",null,{"children":"Up and running"}]}],"\n"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Shows a new machine in/out of the box, explains how to insert batteries, switch on, and start writing your first document on the Cambridge Z88."}],"\n","$L14","\n","$L15","\n","$L16","\n","$L17"]]}]]}]]}]}],null,"$L18"]}],"p":"$@19","v":null,"s":"$a"}}]]
+4:[["children",{"s":{"n":"mdxPath","t":"oc","k":"getting-started","s":[]},"h":65600,"d":{"r":["$","$5","c",{"children":[null,["$","$L6",null,{"parallelRouterKey":"children","template":["$","$L7",null,{}]}]]}],"p":"$@8","v":"$9","s":"$a"},"c":"$Qb"}]]
+3:[["children",{"s":"z88-user-guide","h":131104,"c":"$Q4"}]]
+2:[["children",{"s":"(unlisted)","h":131168,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$5","h",{"children":[null,["$","$L1b",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1d",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1e",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Section One - Getting started - Klive IDE"}],["$","meta","1",{"name":"description","content":"Start here to find out how to get your Cambridge Z88 working for you. This section contains four introductory chapters:"}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/z88-user-guide/getting-started/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1f","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@20","v":null,"s":"$a"}},"a":"$@21","u":"$@22","b":"nDS4ludpRjwY0zdBe-KGb"}
+23:I[484,[],"OutletBoundary"]
+14:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","strong",null,{"children":"Applications and popdowns"}]}],"\n"]}]
+15:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Describes the programs provided in the Cambridge Z88, to help you decide which you want to learn about first. These are then explained more fully in the later sections."}]
+16:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","strong",null,{"children":"Basic concepts"}]}],"\n"]}]
+17:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Explains a little more about the components of the Cambridge Z88: the keyboard, the display, and how the functions work."}]
+18:["$","$L23",null,{"children":["$","$1e",null,{"name":"Next.MetadataOutlet","children":"$@24"}]}]
+22:true
+a:300
+24:null
+a:C
+21:0
+8:"$undefined"
+20:"$undefined"
+19:"$undefined"

@@ -1,0 +1,307 @@
+5:"$Sreact.fragment"
+6:I[7121,[],""]
+7:I[4581,[],""]
+c:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+d:"static/chunks/500-fc3b64d9ff4a32a7.js"
+e:"static/chunks/436-2e7c1075bb484b2c.js"
+f:"static/chunks/app/%5Blang%5D/(unlisted)/z88-user-guide/%5B%5B...mdxPath%5D%5D/page-4cda6fdcf01c581d.js"
+10:I[826,["545","$c","500","$d","436","$e","992","$f"],"TOCProvider"]
+11:I[4637,["545","$c","500","$d","436","$e","992","$f"],"Sidebar"]
+12:I[6665,["545","$c","500","$d","436","$e","992","$f"],"ClientWrapper"]
+18:"ViewportBoundary"
+19:I[484,[],"$18"]
+1a:"MetadataBoundary"
+1b:I[484,[],"$1a"]
+1c:"$Sreact.suspense"
+1d:I[6869,[],"IconMark"]
+9:X
+9:C
+a:X
+13:T1a3e,---
+description: "If you ever need to perform calculations while using the Cambridge Z88 you can simply call up the Calculator popdown using □R, even if you are in the middle of doing something else at the time:"
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/35913762 (version 6) by scripts/import-z88-user-guide.cjs */}
+
+# The Calculator popdown
+
+If you ever need to perform calculations while using the Cambridge Z88 you can simply call up the Calculator popdown using <strong><Key k="square" /></strong>R, even if you are in the middle of doing something else at the time:
+
+<Shot src="z88-user-guide/using-the-popdowns/calculator.webp" alt="calculator" width={640} />
+
+The top line of the calculator displays the result of your calculation - initially 0.00 - and below that are the calculator keys. You can press these in either of two ways, depending on your preference.
+
+*Either:* Use the cursor keys <Key k="left" />, <Key k="right" />, <Key k="up" /><Key k="down" /> to highlight the operation you want, and then press <Key k="enter" /> to enter the selected key.
+
+*Or:* Type the Cambridge Z88 key corresponding to the key you want, as listed on the following table.
+
+<Table>
+<thead>
+<Table.Tr>
+<Table.Th>**Calculator Key <br />Legend:**</Table.Th>
+<Table.Th>**Cambridge Z88 Key<br />Equivalent:**</Table.Th>
+<Table.Th>**Function:**</Table.Th>
+</Table.Tr>
+</thead>
+<tbody>
+<Table.Tr>
+<Table.Td>Clear</Table.Td>
+<Table.Td>C</Table.Td>
+<Table.Td>Clear</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>DEL</Table.Td>
+<Table.Td><Key k="del" /></Table.Td>
+<Table.Td>Delete last keypress</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>StoM</Table.Td>
+<Table.Td>S</Table.Td>
+<Table.Td>Store to memory 0 to 9</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>RclM</Table.Td>
+<Table.Td>R</Table.Td>
+<Table.Td>Recall from memory 0 to 9</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>0 to 9</Table.Td>
+<Table.Td>0 to 9</Table.Td>
+<Table.Td>Enter digit</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>.</Table.Td>
+<Table.Td>.</Table.Td>
+<Table.Td>Decimal point</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Unit</Table.Td>
+<Table.Td>U</Table.Td>
+<Table.Td>Convert units (see below)</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Y\<\>x</Table.Td>
+<Table.Td>Y</Table.Td>
+<Table.Td>Swap y and x</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>sIgn</Table.Td>
+<Table.Td>I</Table.Td>
+<Table.Td>Change sign</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Fix</Table.Td>
+<Table.Td>F</Table.Td>
+<Table.Td>Number of decimal places</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>%</Table.Td>
+<Table.Td>%</Table.Td>
+<Table.Td>Percentage (see below)</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\+</Table.Td>
+<Table.Td>\+ or P</Table.Td>
+<Table.Td>Plus</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>x</Table.Td>
+<Table.Td>X, \* or T</Table.Td>
+<Table.Td>Times</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\-</Table.Td>
+<Table.Td>
+
+- or M
+
+</Table.Td>
+<Table.Td>Minus</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>/</Table.Td>
+<Table.Td>/, \\ or D</Table.Td>
+<Table.Td>Divide</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\=</Table.Td>
+<Table.Td>\=</Table.Td>
+<Table.Td>Result</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+## Entering numbers
+
+Enter a number by selecting the digits with the cursor keys, and press <Key k="enter" />; or just type the number with the keys 0-9. You can use C or <Key k="del" /> to correct typing mistakes. Numbers can contain a decimal point, obtained by typing the full-stop key, and can be entered in scientific notation, as in
+
+1.27E6, entered as <Typed>1 . 2 7 E 6</Typed>, which means 1.27 x 10<sup>6</sup>.
+
+7.1E-13, entered as <Typed>7 . 1 E 1 1 3</Typed>, which means 7.1 x 10<sup>-13</sup>.
+
+The two operands of an operation can be exchanged, before pressing =, by selecting the Y\<\>x operation, or pressing `Y`. For example, to find the reciprocal of a previous calculation, enter
+
+<Typed>/ 1 Y =</Typed>
+
+All calculations are performed to an accuracy of nine decimal places, and numbers can lie between 1E38 and 1E-38. The Calculator displays <strong>`Error`</strong> if an error, such as 1/0, occurs.
+
+## Display format
+
+The format in which numbers are displayed can be altered with the *Fix* operation, which gives the prompt
+
+`Fix?`
+
+Typing a number between 0 and 8 will fix the number of decimal places displayed to the specified number; the initial value is 2. Typing 9 will give free format.
+
+## Constants
+
+Entering a number, followed by one of the arithmetic keys pressed twice, stores the operation as a constant operation and displays the operator with K at the top right-hand corner of the screen.
+
+For example, entering
+
+`1.15 * *`
+
+sets up constant multiplication by 1.15, and displays `* K`; entering
+
+<Typed>1000 =</Typed>
+
+then gives the result 1150.00, and
+
+<Typed>2000 =</Typed>
+
+gives the result 2300.00.
+
+## Storing and Recalling
+
+You can store a result for use later in a calculation with the StoM and RclM operations.
+
+To store a result, select the StoM operation (or type S). The prompt
+
+<strong>`StoM ?`</strong>
+
+will be given, to which you should give a register number by typing a digit from 0 to 9. Up to ten different results can be stored, one in each register.
+
+You can also add a result into a register, subtract a result from a register, multiply a register by a result, or divide a register by a result, by giving the StoM operation followed by '+', '-', '\*', or '/' respectively, followed by the register 0 to 9.
+
+You can cancel a store operation in the middle by pressing <Key k="esc" />.
+
+For example,
+
+<Typed>1.2 S 9</Typed>
+
+stores 1.2 in register 9, and
+
+<Typed>3.56 S-9</Typed>
+
+subtracts 3.56 from the same register. Finally
+
+<Typed>R 9</Typed>
+
+recalls the result from register 9.
+
+## Percentages
+
+The '%' key works in conjunction with one of the other keys '\*', '/', '+', or '-' to calculate percentages, and to add or subtract a given percentage to or from a number. The following examples illustrate each of these cases.
+
+To find 12% of 1500 enter
+
+<Typed>1500 \* 12 %</Typed>
+
+To express 660/880 as a percentage, enter
+
+<Typed>660 / 880 %</Typed>
+
+To add 15% on to 125 enter
+
+<Typed>125 \* 15 % +</Typed>
+
+Likewise, to discount 125 by 15% enter
+
+<Typed>125 \* 15 % -</Typed>
+
+## Converting units
+
+You can convert any result between the pairs of units displayed on the **CONVERT** menu by selecting the *Unit* operation.
+
+Highlight the unit you want to convert to using the cursor keys, and press <Key k="enter" /> to perform the conversion. For example, to convert from Litres to Gallons highlight Gallons, and to convert from Gallons to Litres highlight Litres. To exit from the **CONVERT** menu press <Key k="esc" />.b:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$5","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$L10",null,{"value":[{"value":"Entering numbers","id":"entering-numbers","depth":2},{"value":"Display format","id":"display-format","depth":2},{"value":"Constants","id":"constants","depth":2},{"value":"Storing and Recalling","id":"storing-and-recalling","depth":2},{"value":"Percentages","id":"percentages","depth":2},{"value":"Converting units","id":"converting-units","depth":2}],"children":[["$","$L11",null,{}],["$","$L12",null,{"metadata":{"description":"If you ever need to perform calculations while using the Cambridge Z88 you can simply call up the Calculator popdown using □R, even if you are in the middle of doing something else at the time:","title":"The Calculator popdown","filePath":"content/en/z88-user-guide/using-the-popdowns/the-calculator-popdown.mdx","timestamp":1792315833000},"sourceCode":"$13","children":["$L14","$L15"]}]]}]}],null,"$L16"]}],"p":"$@17","v":null,"s":"$a"}}]]
+4:[["children",{"s":{"n":"mdxPath","t":"oc","k":"using-the-popdowns/the-calculator-popdown","s":[]},"h":65600,"d":{"r":["$","$5","c",{"children":[null,["$","$L6",null,{"parallelRouterKey":"children","template":["$","$L7",null,{}]}]]}],"p":"$@8","v":"$9","s":"$a"},"c":"$Qb"}]]
+3:[["children",{"s":"z88-user-guide","h":131104,"c":"$Q4"}]]
+2:[["children",{"s":"(unlisted)","h":131168,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$5","h",{"children":[null,["$","$L19",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1b",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1c",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"The Calculator popdown - Klive IDE"}],["$","meta","1",{"name":"description","content":"If you ever need to perform calculations while using the Cambridge Z88 you can simply call up the Calculator popdown using □R, even if you are in the middle of doing something else at the time:"}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/z88-user-guide/using-the-popdowns/the-calculator-popdown/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1d","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1e","v":null,"s":"$a"}},"a":"$@1f","u":"$@20","b":"nDS4ludpRjwY0zdBe-KGb"}
+5e:I[484,[],"OutletBoundary"]
+14:["$","div",null,{"id":"nextra-skip-nav"}]
+15:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["The Calculator popdown","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["If you ever need to perform calculations while using the Cambridge Z88 you can simply call up the Calculator popdown using ",["$","strong",null,{"children":["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}]}],"R, even if you are in the middle of doing something else at the time:"]}],"\n",["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/using-the-popdowns/calculator.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/using-the-popdowns/calculator.webp","alt":"calculator","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The top line of the calculator displays the result of your calculation - initially 0.00 - and below that are the calculator keys. You can press these in either of two ways, depending on your preference."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","em",null,{"children":"Either:"}]," Use the cursor keys ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor left","children":"←"}],", ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor right","children":"→"}],", ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor up","children":"↑"}],["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor down","children":"↓"}]," to highlight the operation you want, and then press ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]," to enter the selected key."]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","em",null,{"children":"Or:"}]," Type the Cambridge Z88 key corresponding to the key you want, as listed on the following table."]}],"\n",["$","table",null,{"children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":["$","strong",null,{"children":["Calculator Key ",["$","br",null,{}],"Legend:"]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":["$","strong",null,{"children":["Cambridge Z88 Key",["$","br",null,{}],"Equivalent:"]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":["$","strong",null,{"children":"Function:"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":"Clear","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"C","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Clear","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"DEL","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Delete","children":"DEL"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Delete last keypress","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],"$L21","$L22","$L23","$L24","$L25","$L26","$L27","$L28","$L29","$L2a","$L2b","$L2c","$L2d","$L2e"]}]],"className":"x:block x:overflow-x-auto"}],"\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41","\n","$L42","\n","$L43","\n","$L44","\n","$L45","\n","$L46","\n","$L47","\n","$L48","\n","$L49","\n","$L4a","\n","$L4b","\n","$L4c","\n","$L4d","\n","$L4e","\n","$L4f","\n","$L50","\n","$L51","\n","$L52","\n","$L53","\n","$L54","\n","$L55","\n","$L56","\n","$L57","\n","$L58","\n","$L59","\n","$L5a","\n","$L5b","\n","$L5c","\n","$L5d"]]}]
+16:["$","$L5e",null,{"children":["$","$1c",null,{"name":"Next.MetadataOutlet","children":"$@5f"}]}]
+20:true
+60:I[721,["545","$c","500","$d","436","$e","992","$f"],"HeadingAnchor"]
+a:300
+21:["$","tr",null,{"children":[["$","td",null,{"children":"StoM","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"S","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Store to memory 0 to 9","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+22:["$","tr",null,{"children":[["$","td",null,{"children":"RclM","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"R","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Recall from memory 0 to 9","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+23:["$","tr",null,{"children":[["$","td",null,{"children":"0 to 9","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"0 to 9","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Enter digit","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+24:["$","tr",null,{"children":[["$","td",null,{"children":".","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":".","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Decimal point","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+25:["$","tr",null,{"children":[["$","td",null,{"children":"Unit","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"U","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Convert units (see below)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+26:["$","tr",null,{"children":[["$","td",null,{"children":"Y<>x","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Y","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Swap y and x","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+27:["$","tr",null,{"children":[["$","td",null,{"children":"sIgn","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"I","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Change sign","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+28:["$","tr",null,{"children":[["$","td",null,{"children":"Fix","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"F","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Number of decimal places","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+29:["$","tr",null,{"children":[["$","td",null,{"children":"%","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"%","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Percentage (see below)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+2a:["$","tr",null,{"children":[["$","td",null,{"children":"+","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"+ or P","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Plus","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+2b:["$","tr",null,{"children":[["$","td",null,{"children":"x","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"X, * or T","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Times","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+2c:["$","tr",null,{"children":[["$","td",null,{"children":"-","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"or M"}],"\n"]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Minus","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+2d:["$","tr",null,{"children":[["$","td",null,{"children":"/","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"/, \\ or D","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Divide","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+2e:["$","tr",null,{"children":[["$","td",null,{"children":"=","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"=","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Result","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+2f:["$","h2",null,{"id":"entering-numbers","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Entering numbers",["$","$L60",null,{"id":"entering-numbers"}]]}]
+30:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Enter a number by selecting the digits with the cursor keys, and press ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}],"; or just type the number with the keys 0-9. You can use C or ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Delete","children":"DEL"}]," to correct typing mistakes. Numbers can contain a decimal point, obtained by typing the full-stop key, and can be entered in scientific notation, as in"]}]
+31:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["1.27E6, entered as ",["$","span",null,{"className":"Z88_typed___J27m","children":"1 . 2 7 E 6"}],", which means 1.27 x 10",["$","sup",null,{"children":"6"}],"."]}]
+32:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["7.1E-13, entered as ",["$","span",null,{"className":"Z88_typed___J27m","children":"7 . 1 E 1 1 3"}],", which means 7.1 x 10",["$","sup",null,{"children":"-13"}],"."]}]
+33:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The two operands of an operation can be exchanged, before pressing =, by selecting the Y<>x operation, or pressing ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Y"}],". For example, to find the reciprocal of a previous calculation, enter"]}]
+34:["$","span",null,{"className":"Z88_typed___J27m","children":"/ 1 Y ="}]
+35:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["All calculations are performed to an accuracy of nine decimal places, and numbers can lie between 1E38 and 1E-38. The Calculator displays ",["$","strong",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Error"}]}]," if an error, such as 1/0, occurs."]}]
+36:["$","h2",null,{"id":"display-format","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Display format",["$","$L60",null,{"id":"display-format"}]]}]
+37:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The format in which numbers are displayed can be altered with the ",["$","em",null,{"children":"Fix"}]," operation, which gives the prompt"]}]
+38:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Fix?"}]}]
+39:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Typing a number between 0 and 8 will fix the number of decimal places displayed to the specified number; the initial value is 2. Typing 9 will give free format."}]
+3a:["$","h2",null,{"id":"constants","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Constants",["$","$L60",null,{"id":"constants"}]]}]
+3b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Entering a number, followed by one of the arithmetic keys pressed twice, stores the operation as a constant operation and displays the operator with K at the top right-hand corner of the screen."}]
+3c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"For example, entering"}]
+3d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"1.15 * *"}]}]
+3e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["sets up constant multiplication by 1.15, and displays ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"* K"}],"; entering"]}]
+3f:["$","span",null,{"className":"Z88_typed___J27m","children":"1000 ="}]
+40:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"then gives the result 1150.00, and"}]
+41:["$","span",null,{"className":"Z88_typed___J27m","children":"2000 ="}]
+42:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"gives the result 2300.00."}]
+43:["$","h2",null,{"id":"storing-and-recalling","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Storing and Recalling",["$","$L60",null,{"id":"storing-and-recalling"}]]}]
+44:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You can store a result for use later in a calculation with the StoM and RclM operations."}]
+45:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"To store a result, select the StoM operation (or type S). The prompt"}]
+46:["$","strong",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"StoM ?"}]}]
+47:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"will be given, to which you should give a register number by typing a digit from 0 to 9. Up to ten different results can be stored, one in each register."}]
+48:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You can also add a result into a register, subtract a result from a register, multiply a register by a result, or divide a register by a result, by giving the StoM operation followed by ’+’, ’-’, ’*’, or ’/’ respectively, followed by the register 0 to 9."}]
+49:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["You can cancel a store operation in the middle by pressing ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Escape","children":"ESC"}],"."]}]
+4a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"For example,"}]
+4b:["$","span",null,{"className":"Z88_typed___J27m","children":"1.2 S 9"}]
+4c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"stores 1.2 in register 9, and"}]
+4d:["$","span",null,{"className":"Z88_typed___J27m","children":"3.56 S-9"}]
+4e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"subtracts 3.56 from the same register. Finally"}]
+4f:["$","span",null,{"className":"Z88_typed___J27m","children":"R 9"}]
+50:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"recalls the result from register 9."}]
+51:["$","h2",null,{"id":"percentages","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Percentages",["$","$L60",null,{"id":"percentages"}]]}]
+52:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The ’%’ key works in conjunction with one of the other keys ’*’, ’/’, ’+’, or ’-’ to calculate percentages, and to add or subtract a given percentage to or from a number. The following examples illustrate each of these cases."}]
+53:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"To find 12% of 1500 enter"}]
+54:["$","span",null,{"className":"Z88_typed___J27m","children":"1500 * 12 %"}]
+55:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"To express 660/880 as a percentage, enter"}]
+56:["$","span",null,{"className":"Z88_typed___J27m","children":"660 / 880 %"}]
+57:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"To add 15% on to 125 enter"}]
+58:["$","span",null,{"className":"Z88_typed___J27m","children":"125 * 15 % +"}]
+59:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Likewise, to discount 125 by 15% enter"}]
+5a:["$","span",null,{"className":"Z88_typed___J27m","children":"125 * 15 % -"}]
+5b:["$","h2",null,{"id":"converting-units","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Converting units",["$","$L60",null,{"id":"converting-units"}]]}]
+5c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["You can convert any result between the pairs of units displayed on the ",["$","strong",null,{"children":"CONVERT"}]," menu by selecting the ",["$","em",null,{"children":"Unit"}]," operation."]}]
+5d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Highlight the unit you want to convert to using the cursor keys, and press ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]," to perform the conversion. For example, to convert from Litres to Gallons highlight Gallons, and to convert from Gallons to Litres highlight Litres. To exit from the ",["$","strong",null,{"children":"CONVERT"}]," menu press ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Escape","children":"ESC"}],"."]}]
+5f:null
+a:C
+1f:0
+8:"$undefined"
+1e:"$undefined"
+17:"$undefined"

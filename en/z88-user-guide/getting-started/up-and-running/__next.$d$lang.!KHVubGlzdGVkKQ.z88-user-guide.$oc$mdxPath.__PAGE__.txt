@@ -1,0 +1,865 @@
+5:"$Sreact.fragment"
+6:I[7121,[],""]
+7:I[4581,[],""]
+c:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+d:"static/chunks/500-fc3b64d9ff4a32a7.js"
+e:"static/chunks/436-2e7c1075bb484b2c.js"
+f:"static/chunks/app/%5Blang%5D/(unlisted)/z88-user-guide/%5B%5B...mdxPath%5D%5D/page-4cda6fdcf01c581d.js"
+10:I[826,["545","$c","500","$d","436","$e","992","$f"],"TOCProvider"]
+11:I[4637,["545","$c","500","$d","436","$e","992","$f"],"Sidebar"]
+12:I[6665,["545","$c","500","$d","436","$e","992","$f"],"ClientWrapper"]
+18:"ViewportBoundary"
+19:I[484,[],"$18"]
+1a:"MetadataBoundary"
+1b:I[484,[],"$1a"]
+1c:"$Sreact.suspense"
+1d:I[6869,[],"IconMark"]
+9:X
+9:C
+a:X
+13:T7143,---
+description: "This section will explain how to upgrade and get your Cambridge Z88 working for you as soon as possible. Once you have tried out the simple examples in the next few pages you should have a feel..."
+asIndexPage: true
+---
+
+import { Callout, Table } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/35913733 (version 131) by scripts/import-z88-user-guide.cjs */}
+
+# Up and running
+
+This section will explain how to upgrade and get your Cambridge Z88 working for you as soon as possible. Once you have tried out the simple examples in the next few pages you should have a feel for what the Cambridge Z88 can do for you, before proceeding to the later sections at your leisure. There are some important sections that need to be understood, they are: [Switch On/Off](#switchonoff), [Using an External Flash Card,](#usinganexternalflashcard)[Changing keyboard layout](#changingkeyboardlayout), [Set the Default Device](#set_default_device) and [Using an External Flash Card](#using_an_external_flash_card).
+
+**Z88 Survival Kit**
+
+There are four items that the acute Z88 user should have handy for emergencies.
+
+<Table>
+<thead>
+<Table.Tr>
+<Table.Th colSpan={2}>Storage Device</Table.Th>
+</Table.Tr>
+</thead>
+<tbody>
+<Table.Tr>
+<Table.Td>
+
+<Shot src="z88-user-guide/external/qg-z88-quick-guide-help-home-page/1m-flash.webp" alt="1M flash" width={64} />
+
+</Table.Td>
+<Table.Td>Flash or EPROMs should be used to backup important data.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Th colSpan={2}>Set of batteries</Table.Th>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+<Shot src="z88-user-guide/getting-started/up-and-running/4aa-batteries.webp" alt="4AA Batteries" width={64} />
+
+</Table.Td>
+<Table.Td>These always seem to fail when you don't want them to.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Th colSpan={2}>Mains Adapter</Table.Th>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+<Shot src="z88-user-guide/getting-started/up-and-running/mains-adapter.webp" alt="mains adapter" width={64} />
+
+</Table.Td>
+<Table.Td>Handy to use when you are near a mains socket.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Th colSpan={2}>Paper Clip</Table.Th>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+<Shot src="z88-user-guide/getting-started/up-and-running/unbent-paperclip.webp" alt="Unbent Paperclip" width={64} />
+
+</Table.Td>
+<Table.Td>Small but effective to reset the Z88 if it becomes unresponsive.</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+**New Z88**
+
+For those of you who have never seen what a new Z88 in the box looks like, here it is.
+
+The Box
+
+<Shot src="z88-user-guide/getting-started/up-and-running/z88-boxed.webp" alt="Boxed Z88 omputer" width={900} />
+
+### Box and Sleeve
+
+<Shot src="z88-user-guide/getting-started/up-and-running/z88-box-and-sleeve.webp" alt="Z88 box and sleeve" width={900} />
+
+The sleeve exposes the plasticized cardboard box
+
+### Carrying Handle
+
+<Shot src="z88-user-guide/getting-started/up-and-running/z88-box-handle.webp" alt="Z88 Box handle" width={833} />
+
+with a carrying handle that invites it to be used with the Z88.
+
+### User Guide
+
+<Shot src="z88-user-guide/getting-started/up-and-running/z88-box-with-user-guide.webp" alt="Z88 Verion 3 User Guide in box" width={797} />
+
+is stored in a separate section.
+
+There were 4 versions. The copy shown here is version 4, which is what this User Guide is based on.
+
+### Protection
+
+<Shot src="z88-user-guide/getting-started/up-and-running/z88-box-protection.webp" alt="Showing large sheet to protect Z88 keyboard" width={818} />
+
+There is an A3 sheet of paper wrapped around the front edge of the Z88.
+
+This is to protect the rubber keys from being damaged.
+
+There are the Z88's "Start Up" instructions on the opposite side.
+
+### WARNING
+
+<Shot src="z88-user-guide/getting-started/up-and-running/z88-using-box-warning.webp" alt="Using Box warning" width={683} />
+
+Should you decide to use the box with the Z88, make sure you do not insert the Z88 as shown.
+
+The cardboard box can catch the rubber keys and shear them off quite easily.
+
+The UK keyboard mat is no longer available.
+
+Either use the protection sheet, or do not use the box for general use.
+
+The carrying case is a lot softer and is a better option to use.
+
+## Fitting batteries
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td colSpan={2}>
+
+<Callout type="error">
+
+**Check Batteries**
+
+Although we like to think that when we buy a new set of batteries they are at the working voltage, this is not always the case. Prudent Z88 users check them before using them.
+
+</Callout>
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+<Shot src="z88-user-guide/getting-started/up-and-running/check-batteries1.webp" alt="Check batteries1" width={434} />
+
+</Table.Td>
+<Table.Td>
+
+To run the Cambridge Z88 you will need the following batteries:
+
+- Four alkaline cells, Size AA, type MN1500 or LR6.
+
+Other types of the same size can be used in an emergency, but we recommend the use of the leak-resistant alkaline type as these will keep your Cambridge Z88 working for longer without needing replacement.
+
+With these batteries an unexpanded Cambridge Z88 will give about 20 hours of active computing, and the data will be preserved in the machine while it is switched off for up to a year.
+
+For heavy indoor use the mains power unit is recommended.
+
+**Note that the procedure described here is not the same as the one for replacing existing batteries. In this case refer to Appendix A.**
+
+</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+### Inserting the batteries
+
+The four batteries are housed in a row in the battery compartment, under a flap on the rear of the Cambridge Z88 case.
+
+<Shot src="z88-user-guide/getting-started/up-and-running/007.webp" alt="007.png" width={426} />
+
+### To insert batteries for the first time, use the following procedure:
+
+1. Remove the cover from the battery compartment on the back of the Cambridge Z88 case, and insert one battery at each end of the compartment. <br />Make sure the batteries are fitted the correct way round, as indicated by the diagram in the battery compartment.
+
+2. Insert the remaining two batteries to make an 'A' shape above the case. Make sure that all four batteries are facing in the same direction, with the correct polarity. <br />Then push down on the two batteries so that they click into place.
+
+3. Replace the battery compartment cover firmly.
+
+<Shot src="z88-user-guide/getting-started/up-and-running/007-2.webp" alt="007_2.png" width={640} />
+
+## Switch On/Off
+
+There is no On/Off switch. The Z88 is always on, but to conserve power the display can be turned off and the Z88 is put into dozy mode.
+
+<Shot src="z88-user-guide/getting-started/up-and-running/z88-uk-keyboard.webp" alt="z88 uk keyboard" width={645} />
+
+To switch the Z88 on or off press both <Key k="shift" /> keys simultaneously.
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>
+
+<Shot src="z88-user-guide/getting-started/up-and-running/battery-keyboard.webp" alt="battery keyboard" width={832} />
+
+</Table.Td>
+<Table.Td>
+
+<Callout type="info">
+
+**Leave Keyboard Clear of items.**
+
+When the Z88 is OFF i.e. in sleep mode, the Z88 wakes up if a key is pressed to check if they are the two Shift Keys.<br />If an item inadvertently, presses a key, this constant checking shortens the life of the batteries.
+
+</Callout>
+
+</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+## Display Screen Area
+
+<Shot src="z88-user-guide/external/welcome-cambridge-z88/z88-top.webp" alt="z88 top" width={640} />
+
+For those of you that are used to working with large monitors this screen may seem small but because of the ingenious and economical way the system uses the available space, you will find that the size will not inhibit its use.
+
+Immediately below the display is a list of commands together with the control key and code needed to action them. These are useful reminders for beginners but once the comprehensive internal MENU(s) are used, they show and allow selection all the commands that may be used at that point.
+
+## The built-in OZ operating system and external cards
+
+The standard Cambridge Z88 has all the operating system and software pre-installed, named as **OZ** - ready to be run when the machine has been initially reset, leaving the external slots free for more RAM or to install applications or memory cards for files. All internal ROM versions originally released by Cambridge Computer in 1990 (final release was V4.0 UK) are a lower version number than the one available now. When the Z88 is given a HARD RESET, the first thing the operating system checks is whether there is a program is available to run from Slot 1. It is that technique that is used when using an external card.
+
+## Flash Card example
+
+When Rakewell supplies Flash Cards, there are additional applications and extra files loaded in the file area.
+
+Impatient users may elect to skip the detailed description on how to use these cards in this manual initially as the example illustrates some useful techniques which the first-time user may find very useful.
+
+Follow [this link](/en/z88-user-guide/getting-started/up-and-running/flash-card-example) for a step by step instructions on how to use this, but **please come back and read the full description later.**
+
+## Upgrading the Z88 to OZ 4.5 or later
+
+Since Cambridge Computer stopped production of the Z88, the community has independently continued the development of the operating system and default applications, comprising many bug fixes of the original software, multiple international keyboard layouts, improved overall speed of the system and better serial port management. There are two ways that the standard Z88 can be upgraded to the latest OZ releases.
+
+- Changing the Internal ROM
+- Using the External Flash Card.
+
+Changing the internal ROM is now a difficult procedure, as the original chips that were used are no longer available. Replacement chips may be used if modifications to the pin outs are changed.
+
+### Using an External Flash Card [#using_an_external_flash_card]
+
+All the other languages are supported and using an external Flash card in slot 1 is easy to fit, the Z88 boots off that device and ignores the internal OZ ROM altogether.
+
+There are two sizes and types available. Which one to use depends on whether or not the user wants to use an additional RAM card. It is recommended the size chosen is greater than 128K. This makes the Z88 into an [Expanded Machine](/en/z88-user-guide/getting-started/using-cards/expanded-unexpanded) (enabling more memory to be used for applications and creating a larger graphical map area).
+
+- 1M Flash card
+- 512K / 512K Flash/RAM card
+
+The following description shows the recommended use of using the different cards together with information to boot the Z88 up using the new Operating System.
+
+### 1M Flash Card
+
+<Shot src="z88-user-guide/external/qg-z88-quick-guide-help-home-page/1m-flash.webp" alt="1M flash" width={166} />
+
+<Shot src="z88-user-guide/external/zfs-operation-and-commands/flash-ram-flash.webp" alt="flash ram flash" width={450} />
+
+Open the card flap and slide the card into Slot 1.
+
+Use an additional RAM pack in Slot 2. See [Expanded Machine](/en/z88-user-guide/getting-started/using-cards/expanded-unexpanded).
+
+This leaves Slot 3 free for another Flash card or EPROM pack if and when desired.
+
+The Applications and File Area are in the Flash Card
+
+<Shot src="z88-user-guide/getting-started/up-and-running/z88card1mfrf.webp" alt="z88card1mfrf" width={640} />
+
+### 512K / 512K Flash/RAM Card
+
+<Shot src="z88-user-guide/getting-started/up-and-running/512k-flash.webp" alt="512K Flash" width={167} />
+
+<Shot src="z88-user-guide/getting-started/up-and-running/512k-flash-1m-flash-eprom.webp" alt="512K flash 1M flash Eprom" width={455} />
+
+Open the card flap and slide the card into Slot 1.
+
+As 512K of RAM is included in Slot 1, this is now an [Expanded Machine](/en/z88-user-guide/getting-started/using-cards/expanded-unexpanded). Slot 2 may be used for additional Flash cards, leaving slot 3 free for yet another Flash card or EPROM pack if and when desired. Using this card will also enable expanded mode (more RAM in slot 1).
+
+The Applications and File Area are in the Flash Card
+
+<Callout type="warning">
+
+**Note: Erased EPROMs**
+
+If the EPROM has been erased with the EPROM Eraser they are a blank space. It will not be recognised until the header has been re-blown into it with the [Catalogue File Card](/en/z88-user-guide/filer-reference#cataloguefilecard) command. See Section Seven - Filer reference.
+
+This doesn't happen with Flash cards as they are able to be asked what they are even when they are empty.
+
+</Callout>
+
+<Shot src="z88-user-guide/getting-started/up-and-running/z88card512ffe.webp" alt="z88card512ffe" width={640} />
+
+## Initialize the Cambridge Z88 [#initialisez88]
+
+### Hard Reset
+
+Do this by
+
+<Table>
+<thead>
+<Table.Tr>
+<Table.Th>opening the CARD flap</Table.Th>
+<Table.Th>Using an unbent paper clip, press the reset switch 2 twice, then</Table.Th>
+</Table.Tr>
+</thead>
+<tbody>
+<Table.Tr>
+<Table.Td>
+
+<Shot src="z88-user-guide/external/qg-z88-quick-guide-help-home-page/card-slot.webp" alt="card slot" width={265} />
+
+</Table.Td>
+<Table.Td>
+
+<Shot src="z88-user-guide/external/eazugv10-problem-solving-area/cambridge-z88-leftside-1.webp" alt="Cambridge Z88 LeftSide 1" width={160} />
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Th>shut the CARD flap</Table.Th>
+<Table.Th />
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={2}>
+
+<Shot src="z88-user-guide/getting-started/up-and-running/hardreset.webp" alt="hardreset" width={670} />
+
+</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+HARD RESET should appear on the screen.
+
+<Callout type="error">
+
+**Must show HARD RESET**
+
+If HARD RESET is not displayed after adjusting the contrast (see below), there is no point continuing until this is corrected.
+
+There are two mechanical switches, the card flap and reset switch. If these are faulty, this may be the reason why this is happening.
+
+Removing the batteries and leaving the Z88 alone for 30 minutes can resolve this error.
+
+</Callout>
+
+### Adjust the display
+
+<Shot src="z88-user-guide/getting-started/up-and-running/008-3.webp" alt="008_3.png" width={640} />
+
+1. Turn the contrast control as far towards the top of the Cambridge Z88 case as it will go (ie clockwise).
+
+2. The screen should display a dark blue rectangle.
+
+3. Gradually turn back the control until you can see the Cambridge Z88 screen clearly.
+
+### Has the Z88 booted up correctly?
+
+The OZ 4.x index screen should now be displaying.
+
+<Shot src="z88-user-guide/external/oz-the-z88-operating-system/index.webp" alt="index" width={640} />
+
+It is obvious that it is not running from its internal ROM as there should be UK just below the OZ symbol on the top right-hand side. If just the OZ symbol is displayed, then the internal ROM is still in control. Check that the OZ 4.x card is in Slot 1.
+
+### Check Latest Version
+
+Whilst in the INDEX use the following command <Key k="diamond" /> INFO
+
+<Shot src="z88-user-guide/getting-started/up-and-running/oz47.webp" alt="Illustration for “Up and running”" width={640} />
+
+If this display does either not appear, or has an earlier date than displayed, you have an older version. Please consider upgrading. See [Appendix I - Creating / Updating an Application Card](/en/z88-user-guide/appendix-i-creating-updating-an-application-card). More details may be obtained from the [BLOG](https://cambridgez88.jira.com/wiki/pages/viewrecentblogposts.action?key=welcome).
+
+### Changing keyboard layout
+
+When the Z88 was sold in different countries, both the internal ROM and the keyboard was changed accordingly. With OZ 4.5 the language-specific parts of those ROM's have been integrated. The default language is UK. To match a different keyboard layout (which may still need to be changed mechanically,) use the additional command in the Panel, to change the ROM component if a different language is required:
+
+- select the Panel <Key k="square" />S
+
+- move the cursor (with the <Key k="left" />keys) so that it is over the Uk to the right of Keyboard
+
+- change the language either by using
+
+  - <Key k="diamond" />J to toggle through all the languages or
+  - select a letter from this table.
+
+<Table>
+<thead>
+<Table.Tr>
+<Table.Th>Letter</Table.Th>
+<Table.Th>Country</Table.Th>
+<Table.Th>Language</Table.Th>
+<Table.Th>Displayed</Table.Th>
+</Table.Tr>
+</thead>
+<tbody>
+<Table.Tr>
+<Table.Td>U</Table.Td>
+<Table.Td>
+
+<Shot src="z88-user-guide/getting-started/up-and-running/uk.webp" alt="UK" width={32} />
+
+</Table.Td>
+<Table.Td>UK (default)</Table.Td>
+<Table.Td>UK</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>F</Table.Td>
+<Table.Td>
+
+<Shot src="z88-user-guide/getting-started/up-and-running/france.webp" alt="France" width={32} />
+
+</Table.Td>
+<Table.Td>French</Table.Td>
+<Table.Td>FR</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>D</Table.Td>
+<Table.Td>
+
+<Shot src="z88-user-guide/getting-started/up-and-running/denmark.webp" alt="Denmark" width={32} />
+
+</Table.Td>
+<Table.Td>Danish</Table.Td>
+<Table.Td>DK</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>S</Table.Td>
+<Table.Td>
+
+<Shot src="z88-user-guide/getting-started/up-and-running/sweden.webp" alt="Sweden" width={32} />
+
+</Table.Td>
+<Table.Td>Swedish</Table.Td>
+<Table.Td>SE</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>L</Table.Td>
+<Table.Td>
+
+<Shot src="z88-user-guide/getting-started/up-and-running/finland.webp" alt="Finland" width={32} />
+
+</Table.Td>
+<Table.Td>Finnish</Table.Td>
+<Table.Td>FI</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>G</Table.Td>
+<Table.Td>
+
+<Shot src="z88-user-guide/getting-started/up-and-running/germany.webp" alt="Germany" width={32} />
+
+</Table.Td>
+<Table.Td>German</Table.Td>
+<Table.Td>DE</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>A</Table.Td>
+<Table.Td>
+
+<Shot src="z88-user-guide/getting-started/up-and-running/320px-flag-of-the-united-states.webp" alt="USA" width={32} />
+
+</Table.Td>
+<Table.Td>American</Table.Td>
+<Table.Td>US</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>P</Table.Td>
+<Table.Td>
+
+<Shot src="z88-user-guide/getting-started/up-and-running/spain.webp" alt="Spain" width={32} />
+
+</Table.Td>
+<Table.Td>Spanish</Table.Td>
+<Table.Td>ES</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>I</Table.Td>
+<Table.Td>
+
+<Shot src="z88-user-guide/getting-started/up-and-running/italy.webp" alt="Italy" width={32} />
+
+</Table.Td>
+<Table.Td>Italian</Table.Td>
+<Table.Td>IT</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>N</Table.Td>
+<Table.Td>
+
+<Shot src="z88-user-guide/getting-started/up-and-running/norway.webp" alt="norway" width={32} />
+
+</Table.Td>
+<Table.Td>Norway</Table.Td>
+<Table.Td>NO</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+The selected keyboard layout (UK) is displayed just below the OZ symbol on the top right-hand side on all the screens as shown below.
+
+<Shot src="z88-user-guide/getting-started/up-and-running/ozpanel.webp" alt="ozpanel" width={640} />
+
+The rubber keyboard may also need to be physically changed if the language chosen does not match the correct keyboard layout.
+
+#### French Z88 Example
+
+<Shot src="z88-user-guide/getting-started/up-and-running/french-z88.webp" alt="French Z88" width={647} />
+
+This example shown above shows the Z88 set to France showing
+
+- the FR symbol just below the OZ indicating the change of Keyboard
+- The French Keyboard Layout
+- A 1M AMD Flash Card in slot 1 with OZ 4.5
+- A 1M RAM Card in slot 2
+- The <Key k="diamond" />CARD display showing how the cards are split between RAM FILES and ROM.
+
+**IMPORTANT: If the amount of RAM displayed does not match the amount of physical RAM used, the Z88 has not reset itself correctly. **Keep doing HARD RESET(s) until they are the same.** In this case, 1024K matches the 1M RAM card used, so it is correct. See [Memory Chips - Testing and Results](https://cambridgez88.jira.com/wiki/display/ZP/Memory+Chips+-+Testing+and+Results) to test them.**
+
+### Check the RAM [#check_the_ram]
+
+As stated above it is a good idea at this point to check that the Z88 cards, like the RAM and Flash cards have been correctly recognised by OZ. These are displayed in the CARD screen. To display the values, start in the INDEX screen which should already be displayed. If not
+
+**1.** Hold down the <Key k="square" /> key (at the bottom left of the keyboard) and press the **I** key, to enter Index. Alternatively it may be selected by pressing the <Key k="index" /> key at the lower left of the keyboard.
+
+<Shot src="z88-user-guide/getting-started/up-and-running/z88-index.webp" alt="z88 index" width={640} />
+
+<strong>**2.**</strong> Press <Key k="diamond" /> CARD
+
+<Shot src="z88-user-guide/getting-started/up-and-running/z88-card-47.webp" alt="z88 card 47" width={640} />
+
+The CARD display has been changed to include the size of the file area and the amount of Free RAM that is available. This is a different example to the French Z88 Example and is what you would expect to see if you are using a 512/512 Flash/RAM card running OZ 4.7.1 in slot 1. The important numbers to note here are the ones displayed in the RAM column. 32K in slot 0 is the internal RAM and 512K is the correct amount in the 512/512 Flash/RAM card. If these numbers are slightly different than what is expected, do another Hard Reset to see if it has been corrected.
+
+If the RAM value never reaches the expected value, there may be a RAM or a Card connector fault. **See [Memory Chips - Testing and Results](https://cambridgez88.jira.com/wiki/display/ZP/Memory+Chips+-+Testing+and+Results) to test them.**
+
+### Set the Default Device [#set_default_device]
+
+OZ makes an intelligent choice on which RAM it should set as its Default Device. This should normally be the largest RAM card you have. Make sure that you have enough RAM otherwise you will run out of space quite quickly. To see which device has been selected, the Panel needs to be selected.
+
+Hold down the <Key k="square" /> key (at the bottom left of the keyboard) and press the **S** key, to enter the Panel. Alternatively it may be selected by pressing the <Key k="index" /> key at the lower left of the keyboard and then moving the cursor down to the Panel application and then Press <Key k="enter" /> to select it.
+
+<Shot src="z88-user-guide/getting-started/up-and-running/z88-select-panel.webp" alt="z88 select panel" width={640} />
+
+The following screen will be displayed. If the Default device is the correct one shown, there is no need to change it. Get out of viewing this screen by pressing <Key k="esc" /> to return to the previous screen.
+
+<Shot src="z88-user-guide/getting-started/up-and-running/z88-panel-ram.webp" alt="z88 panel ram" width={640} />
+
+**If the Default device number has been changed, the following instructions regarding **Select deVice** in the Filer need to be followed.**
+
+### Select Device [#select_device]
+
+**1.** Hold down the <Key k="square" /> key (at the bottom left of the keyboard) and press the **F** key, to enter Filer.
+
+Alternatively it may be selected by pressing the <Key k="index" /> key at the lower left of the keyboard and then using the <Key k="down" /> key, move the cursor down to the Filer application. <br />Press <Key k="enter" /> to select it.
+
+<Shot src="z88-user-guide/getting-started/up-and-running/select-filer.webp" alt="select filer" width={640} />
+
+<strong>**2.**</strong> Press <Key k="diamond" />SV to **S**elect de**V**ice or using the <Key k="down" /> key, move the cursor down until that command is displayed in the COMMANDS window, then press <Key k="enter" /> to select it.
+
+<Shot src="z88-user-guide/getting-started/up-and-running/z88-filer-blank.webp" alt="z88 filer blank" width={640} />
+
+**3.** Move the cursor over to the right (using <Key k="diamond" /> <Key k="right" />, then press the <Key k="del" /> key to remove the number that is there, finally type in the RAM slot number you wish to use and then press <Key k="enter" /> to select it.
+
+<Shot src="z88-user-guide/getting-started/up-and-running/z88-filer-sv.webp" alt="z88 filer sv" width={640} />
+
+### Set the clock [#set_the_clock]
+
+**Note**: Eazylink has the facility of synchronizing the Z88 clock to the Desktop's date and time. This method is quicker than using this manual method.
+
+**1.** Press <Key k="square" />**T** to enter the clock popdown.
+
+**2.** Press <Key k="right" /> to highlight the *Set* option:
+
+<Shot src="z88-user-guide/getting-started/up-and-running/clock1.webp" alt="clock1.png" width={670} />
+
+**3.** Press <Key k="enter" /> to enter the *Set* function, which displays the previous (incorrect) date and time, and will allow you to alter these to their correct values:
+
+<Shot src="z88-user-guide/getting-started/up-and-running/clock2.webp" alt="clock2.png" width={670} />
+
+You can move the cursor between the time and date with <Key k="up" /> and <Key k="down" />.<br />You can also move the cursor left and right along the digits with the <Key k="left" /> and <Key k="right" /> keys. Moving off the end of the date will position the cursor on the time, and vice versa.
+
+**4.** Having positioned the cursor, simply type the correct time or date, using the numeric keys 0 to 9. The format of the new time and date should not change; if you type over the '/' or ':' signs, move the cursor back with the <Key k="left" /> key and replace them.<br /><br />When you have set the correct values, press <Key k="enter" /> to confirm them, and after about two-seconds the correct time and date will be displayed.<br /><br />Finally, press <Key k="esc" /> to exit from the Clock.
+
+### Try typing text
+
+**1.** Hold down the <Key k="square" /> key (at the bottom left of the keyboard) and press the **P** key, to enter PipeDream.
+
+<Shot src="z88-user-guide/getting-started/up-and-running/pipedream1.webp" alt="pipedream1.png" width={670} />
+
+**2.** Type <Typed>`Dear Sir`,</Typed> at the keyboard. Press the <Key k="del" /> key to delete mistakes. If you type more than will fit on one line, PipeDream will automatically lay out the text for you.
+
+<Shot src="z88-user-guide/getting-started/up-and-running/pipedream2.webp" alt="pipedream2.png" width={670} />
+
+### Switch off
+
+**There is usually no need to worry about switching your Cambridge Z88 off.**
+
+If you do not type anything for several minutes the machine will automatically switch off to conserve power.
+
+You should always switch your Cambridge Z88 off before, for example, carrying it in a briefcase. This is because the keys may get pressed, disturbing what you were in the middle of doing, or keeping the Cambridge Z88 on and wasting the batteries.
+
+To switch off press both <Key k="shift" /> keys simultaneously.
+
+To switch the Cambridge Z88 on again at any time, press both <Key k="shift" /> keys simultaneously.
+
+### Power Supply Socket
+
+This is the larger of the two sockets, about two-thirds of the way up the left-hand edge 1 allowing the Z88 to be powered externally.
+
+### Reset button
+
+The reset button 2 is adjacent to the Power Supply Socket. It looks like another socket because it has been set right into the machine to avoid it being activated accidentally. It can only be reached by inserting a blunt instrument into the hole. The manufacturers recommend using an unbent paper clip.
+
+<Shot src="z88-user-guide/external/eazugv10-problem-solving-area/cambridge-z88-leftside-1.webp" alt="Cambridge Z88 LeftSide 1" width={160} />
+
+### Card Slots
+
+These are on the front edge of the machine, below and to the left of the space bar. This is where up to three additional cards may added for extra RAM, EPROM or Flash for other applications and local storage for files, It opens from the front downwards and outwards.
+
+<Callout type="info">
+
+**Definition**
+
+CARD = Add on memory or Application cartridge.
+
+</Callout>
+
+<Shot src="z88-user-guide/getting-started/up-and-running/card-slot.webp" alt="card slot" width={300} />
+
+### RS-232 Port
+
+This is the large rectangular socket on the right-hand edge of the Z88, directly opposite the Power Supply Socket. This is used to connect the Z88 to other computers or Printers.
+
+<Shot src="z88-user-guide/getting-started/up-and-running/z88-side-l.webp" alt="z88 side l" width={300} />
+
+<Callout type="error">
+
+**Do Not Use the same power supply with External devices using the RS-232 port.**
+
+The RS-232 Port's GND pin is the same as the 6v power for the Z88. This means that if, for example, if a printer was powered by the same power supply as the Z88, whilst connected to the RS-232 port, this will cause a short circuit. This has led to the track inside the Z88 to be blown like a fuse. To avoid this, two separate isolated power supplies should be used.
+
+</Callout>
+
+### Stand
+
+On the back of the Z88 opposite the screen on the front, is a large piece of plastic that hinges at the top to make a stand so that the machine no longer lies flat, but tilts towards you. This can make the screen more visible.
+
+### Battery Compartment
+
+The opening for this is also on the back in the centre, just below the space where the stand folds away when not in use.
+
+<Shot src="z88-user-guide/getting-started/up-and-running/z88-back.webp" alt="z88 back" width={300} />b:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$5","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$L10",null,{"value":[{"value":"Box and Sleeve","id":"box-and-sleeve","depth":3},{"value":"Carrying Handle","id":"carrying-handle","depth":3},{"value":"User Guide","id":"user-guide","depth":3},{"value":"Protection","id":"protection","depth":3},{"value":"WARNING","id":"warning","depth":3},{"value":"Fitting batteries","id":"fitting-batteries","depth":2},{"value":"Inserting the batteries","id":"inserting-the-batteries","depth":3},{"value":"To insert batteries for the first time, use the following procedure:","id":"to-insert-batteries-for-the-first-time-use-the-following-procedure","depth":3},{"value":"Switch On/Off","id":"switch-onoff","depth":2},{"value":"Display Screen Area","id":"display-screen-area","depth":2},{"value":"The built-in OZ operating system and external cards","id":"the-built-in-oz-operating-system-and-external-cards","depth":2},{"value":"Flash Card example","id":"flash-card-example","depth":2},{"value":"Upgrading the Z88 to OZ 4.5 or later","id":"upgrading-the-z88-to-oz-45-or-later","depth":2},{"value":"Using an External Flash Card","id":"using_an_external_flash_card","depth":3},{"value":"1M Flash Card","id":"1m-flash-card","depth":3},{"value":"512K / 512K Flash/RAM Card","id":"512k--512k-flashram-card","depth":3},{"value":"Initialize the Cambridge Z88","id":"initialisez88","depth":2},{"value":"Hard Reset","id":"hard-reset","depth":3},{"value":"Adjust the display","id":"adjust-the-display","depth":3},{"value":"Has the Z88 booted up correctly?","id":"has-the-z88-booted-up-correctly","depth":3},{"value":"Check Latest Version","id":"check-latest-version","depth":3},{"value":"Changing keyboard layout","id":"changing-keyboard-layout","depth":3},{"value":"French Z88 Example","id":"french-z88-example","depth":4},{"value":"Check the RAM","id":"check_the_ram","depth":3},{"value":"Set the Default Device","id":"set_default_device","depth":3},{"value":"Select Device","id":"select_device","depth":3},{"value":"Set the clock","id":"set_the_clock","depth":3},{"value":"Try typing text","id":"try-typing-text","depth":3},{"value":"Switch off","id":"switch-off","depth":3},{"value":"Power Supply Socket","id":"power-supply-socket","depth":3},{"value":"Reset button","id":"reset-button","depth":3},{"value":"Card Slots","id":"card-slots","depth":3},{"value":"RS-232 Port","id":"rs-232-port","depth":3},{"value":"Stand","id":"stand","depth":3},{"value":"Battery Compartment","id":"battery-compartment","depth":3}],"children":[["$","$L11",null,{}],["$","$L12",null,{"metadata":{"description":"This section will explain how to upgrade and get your Cambridge Z88 working for you as soon as possible. Once you have tried out the simple examples in the next few pages you should have a feel...","asIndexPage":true,"title":"Up and running","filePath":"content/en/z88-user-guide/getting-started/up-and-running/index.mdx","timestamp":1792315833000},"sourceCode":"$13","children":["$L14","$L15"]}]]}]}],null,"$L16"]}],"p":"$@17","v":null,"s":"$a"}}]]
+4:[["children",{"s":{"n":"mdxPath","t":"oc","k":"getting-started/up-and-running","s":[]},"h":65600,"d":{"r":["$","$5","c",{"children":[null,["$","$L6",null,{"parallelRouterKey":"children","template":["$","$L7",null,{}]}]]}],"p":"$@8","v":"$9","s":"$a"},"c":"$Qb"}]]
+3:[["children",{"s":"z88-user-guide","h":131104,"c":"$Q4"}]]
+2:[["children",{"s":"(unlisted)","h":131168,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$5","h",{"children":[null,["$","$L19",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1b",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1c",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Up and running - Klive IDE"}],["$","meta","1",{"name":"description","content":"This section will explain how to upgrade and get your Cambridge Z88 working for you as soon as possible. Once you have tried out the simple examples in the next few pages you should have a feel..."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/z88-user-guide/getting-started/up-and-running/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1d","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1e","v":null,"s":"$a"}},"a":"$@1f","u":"$@20","b":"nDS4ludpRjwY0zdBe-KGb"}
+ca:I[484,[],"OutletBoundary"]
+14:["$","div",null,{"id":"nextra-skip-nav"}]
+15:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Up and running","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["This section will explain how to upgrade and get your Cambridge Z88 working for you as soon as possible. Once you have tried out the simple examples in the next few pages you should have a feel for what the Cambridge Z88 can do for you, before proceeding to the later sections at your leisure. There are some important sections that need to be understood, they are: ",["$","a",null,{"href":"#switchonoff","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Switch On/Off"}],", ",["$","a",null,{"href":"#usinganexternalflashcard","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Using an External Flash Card,"}],["$","a",null,{"href":"#changingkeyboardlayout","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Changing keyboard layout"}],", ",["$","a",null,{"href":"#set_default_device","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Set the Default Device"}]," and ",["$","a",null,{"href":"#using_an_external_flash_card","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Using an External Flash Card"}],"."]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Z88 Survival Kit"}]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"There are four items that the acute Z88 user should have handy for emergencies."}],"\n",["$","table",null,{"children":[["$","thead",null,{"children":["$","tr",null,{"children":["$","th",null,{"colSpan":2,"children":"Storage Device","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"64px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/external/qg-z88-quick-guide-help-home-page/1m-flash.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/external/qg-z88-quick-guide-help-home-page/1m-flash.webp","alt":"1M flash","loading":"lazy","decoding":"async","width":166,"height":165}],[]]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Flash or EPROMs should be used to backup important data.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":["$","th",null,{"colSpan":2,"children":"Set of batteries","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],"$L21","$L22","$L23","$L24","$L25"]}]],"className":"x:block x:overflow-x-auto"}],"\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41","\n","$L42","\n","$L43","\n","$L44","\n","$L45","\n","$L46","\n","$L47","\n","$L48","\n","$L49","\n","$L4a","\n","$L4b","\n","$L4c","\n","$L4d","\n","$L4e","\n","$L4f","\n","$L50","\n","$L51","\n","$L52","\n","$L53","\n","$L54","\n","$L55","\n","$L56","\n","$L57","\n","$L58","\n","$L59","\n","$L5a","\n","$L5b","\n","$L5c","\n","$L5d","\n","$L5e","\n","$L5f","\n","$L60","\n","$L61","\n","$L62","\n","$L63","\n","$L64","\n","$L65","\n","$L66","\n","$L67","\n","$L68","\n","$L69","\n","$L6a","\n","$L6b","\n","$L6c","\n","$L6d","\n","$L6e","\n","$L6f","\n","$L70","\n","$L71","\n","$L72","\n","$L73","\n","$L74","\n","$L75","\n","$L76","\n","$L77","\n","$L78","\n","$L79","\n","$L7a","\n","$L7b","\n","$L7c","\n","$L7d","\n","$L7e","\n","$L7f","\n","$L80","\n","$L81","\n","$L82","\n","$L83","\n","$L84","\n","$L85","\n","$L86","\n","$L87","\n","$L88","\n","$L89","\n","$L8a","\n","$L8b","\n","$L8c","\n","$L8d","\n","$L8e","\n","$L8f","\n","$L90","\n","$L91","\n","$L92","\n","$L93","\n","$L94","\n","$L95","\n","$L96","\n","$L97","\n","$L98","\n","$L99","\n","$L9a","\n","$L9b","\n","$L9c","\n","$L9d","\n","$L9e","\n","$L9f","\n","$La0","\n","$La1","\n","$La2","\n","$La3","\n","$La4","\n","$La5","\n","$La6","\n","$La7","\n","$La8","\n","$La9","\n","$Laa","\n","$Lab","\n","$Lac","\n","$Lad","\n","$Lae","\n","$Laf","\n","$Lb0","\n","$Lb1","\n","$Lb2","\n","$Lb3","\n","$Lb4","\n","$Lb5","\n","$Lb6","\n","$Lb7","\n","$Lb8","\n","$Lb9","\n","$Lba","\n","$Lbb","\n","$Lbc","\n","$Lbd","\n","$Lbe","\n","$Lbf","\n","$Lc0","\n","$Lc1","\n","$Lc2","\n","$Lc3","\n","$Lc4","\n","$Lc5","\n","$Lc6","\n","$Lc7","\n","$Lc8","\n","$Lc9"]]}]
+16:["$","$Lca",null,{"children":["$","$1c",null,{"name":"Next.MetadataOutlet","children":"$@cb"}]}]
+20:true
+cc:I[721,["545","$c","500","$d","436","$e","992","$f"],"HeadingAnchor"]
+cd:I[8500,["545","$c","500","$d","436","$e","992","$f"],""]
+a:300
+21:["$","tr",null,{"children":[["$","td",null,{"children":["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"64px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/up-and-running/4aa-batteries.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/up-and-running/4aa-batteries.webp","alt":"4AA Batteries","loading":"lazy","decoding":"async","width":567,"height":456}],[]]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"These always seem to fail when you don’t want them to.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+22:["$","tr",null,{"children":["$","th",null,{"colSpan":2,"children":"Mains Adapter","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+23:["$","tr",null,{"children":[["$","td",null,{"children":["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"64px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/up-and-running/mains-adapter.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/up-and-running/mains-adapter.webp","alt":"mains adapter","loading":"lazy","decoding":"async","width":143,"height":143}],[]]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Handy to use when you are near a mains socket.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+24:["$","tr",null,{"children":["$","th",null,{"colSpan":2,"children":"Paper Clip","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+25:["$","tr",null,{"children":[["$","td",null,{"children":["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"64px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/up-and-running/unbent-paperclip.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/up-and-running/unbent-paperclip.webp","alt":"Unbent Paperclip","loading":"lazy","decoding":"async","width":300,"height":307}],[]]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Small but effective to reset the Z88 if it becomes unresponsive.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+26:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"New Z88"}]}]
+27:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"For those of you who have never seen what a new Z88 in the box looks like, here it is."}]
+28:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The Box"}]
+29:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"900px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/up-and-running/z88-boxed.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/up-and-running/z88-boxed.webp","alt":"Boxed Z88 omputer","loading":"lazy","decoding":"async","width":900,"height":732}],[]]}]]}]
+2a:["$","h3",null,{"id":"box-and-sleeve","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Box and Sleeve",["$","$Lcc",null,{"id":"box-and-sleeve"}]]}]
+2b:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"900px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/up-and-running/z88-box-and-sleeve.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/up-and-running/z88-box-and-sleeve.webp","alt":"Z88 box and sleeve","loading":"lazy","decoding":"async","width":900,"height":635}],[]]}]]}]
+2c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The sleeve exposes the plasticized cardboard box"}]
+2d:["$","h3",null,{"id":"carrying-handle","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Carrying Handle",["$","$Lcc",null,{"id":"carrying-handle"}]]}]
+2e:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"833px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/up-and-running/z88-box-handle.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/up-and-running/z88-box-handle.webp","alt":"Z88 Box handle","loading":"lazy","decoding":"async","width":833,"height":677}],[]]}]]}]
+2f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"with a carrying handle that invites it to be used with the Z88."}]
+30:["$","h3",null,{"id":"user-guide","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["User Guide",["$","$Lcc",null,{"id":"user-guide"}]]}]
+31:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"797px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/up-and-running/z88-box-with-user-guide.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/up-and-running/z88-box-with-user-guide.webp","alt":"Z88 Verion 3 User Guide in box","loading":"lazy","decoding":"async","width":797,"height":792}],[]]}]]}]
+32:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"is stored in a separate section."}]
+33:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"There were 4 versions. The copy shown here is version 4, which is what this User Guide is based on."}]
+34:["$","h3",null,{"id":"protection","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Protection",["$","$Lcc",null,{"id":"protection"}]]}]
+35:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"818px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/up-and-running/z88-box-protection.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/up-and-running/z88-box-protection.webp","alt":"Showing large sheet to protect Z88 keyboard","loading":"lazy","decoding":"async","width":818,"height":760}],[]]}]]}]
+36:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"There is an A3 sheet of paper wrapped around the front edge of the Z88."}]
+37:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This is to protect the rubber keys from being damaged."}]
+38:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"There are the Z88’s “Start Up” instructions on the opposite side."}]
+39:["$","h3",null,{"id":"warning","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["WARNING",["$","$Lcc",null,{"id":"warning"}]]}]
+3a:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"683px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/up-and-running/z88-using-box-warning.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/up-and-running/z88-using-box-warning.webp","alt":"Using Box warning","loading":"lazy","decoding":"async","width":683,"height":655}],[]]}]]}]
+3b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Should you decide to use the box with the Z88, make sure you do not insert the Z88 as shown."}]
+3c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The cardboard box can catch the rubber keys and shear them off quite easily."}]
+3d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The UK keyboard mat is no longer available."}]
+3e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Either use the protection sheet, or do not use the box for general use."}]
+3f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The carrying case is a lot softer and is a better option to use."}]
+40:["$","h2",null,{"id":"fitting-batteries","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Fitting batteries",["$","$Lcc",null,{"id":"fitting-batteries"}]]}]
+41:["$","table",null,{"children":["$","tbody",null,{"children":[["$","tr",null,{"children":["$","td",null,{"colSpan":2,"children":["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-red-100 x:dark:bg-red-900/30 x:text-red-700 x:dark:text-red-500 x:border-red-700 x:dark:border-red-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":["$","svg",null,{"viewBox":"0 0 16 16","fill":"currentColor","height":".8em","className":"x:mt-[.3em]","children":["$","path",null,{"d":"M4.47.22A.749.749 0 0 1 5 0h6c.199 0 .389.079.53.22l4.25 4.25c.141.14.22.331.22.53v6a.749.749 0 0 1-.22.53l-4.25 4.25A.749.749 0 0 1 11 16H5a.749.749 0 0 1-.53-.22L.22 11.53A.749.749 0 0 1 0 11V5c0-.199.079-.389.22-.53Zm.84 1.28L1.5 5.31v5.38l3.81 3.81h5.38l3.81-3.81V5.31L10.69 1.5ZM8 4a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 8 4Zm0 8a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"}]}]}],["$","div",null,{"className":"x:w-full x:min-w-0","children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Check Batteries"}]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Although we like to think that when we buy a new set of batteries they are at the working voltage, this is not always the case. Prudent Z88 users check them before using them."}]]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"434px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/up-and-running/check-batteries1.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/up-and-running/check-batteries1.webp","alt":"Check batteries1","loading":"lazy","decoding":"async","width":434,"height":923}],[]]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"To run the Cambridge Z88 you will need the following batteries:"}],["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"Four alkaline cells, Size AA, type MN1500 or LR6."}],"\n"]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Other types of the same size can be used in an emergency, but we recommend the use of the leak-resistant alkaline type as these will keep your Cambridge Z88 working for longer without needing replacement."}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"With these batteries an unexpanded Cambridge Z88 will give about 20 hours of active computing, and the data will be preserved in the machine while it is switched off for up to a year."}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"For heavy indoor use the mains power unit is recommended."}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Note that the procedure described here is not the same as the one for replacing existing batteries. In this case refer to Appendix A."}]}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}],"className":"x:block x:overflow-x-auto"}]
+42:["$","h3",null,{"id":"inserting-the-batteries","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Inserting the batteries",["$","$Lcc",null,{"id":"inserting-the-batteries"}]]}]
+43:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The four batteries are housed in a row in the battery compartment, under a flap on the rear of the Cambridge Z88 case."}]
+44:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"426px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/up-and-running/007.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/up-and-running/007.webp","alt":"007.png","loading":"lazy","decoding":"async","width":426,"height":274}],[]]}]]}]
+45:["$","h3",null,{"id":"to-insert-batteries-for-the-first-time-use-the-following-procedure","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["To insert batteries for the first time, use the following procedure:",["$","$Lcc",null,{"id":"to-insert-batteries-for-the-first-time-use-the-following-procedure"}]]}]
+46:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Remove the cover from the battery compartment on the back of the Cambridge Z88 case, and insert one battery at each end of the compartment. ",["$","br",null,{}],"Make sure the batteries are fitted the correct way round, as indicated by the diagram in the battery compartment."]}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Insert the remaining two batteries to make an ‘A’ shape above the case. Make sure that all four batteries are facing in the same direction, with the correct polarity. ",["$","br",null,{}],"Then push down on the two batteries so that they click into place."]}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Replace the battery compartment cover firmly."}],"\n"]}],"\n"]}]
+47:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/up-and-running/007-2.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/up-and-running/007-2.webp","alt":"007_2.png","loading":"lazy","decoding":"async","width":640,"height":77}],[]]}]]}]
+48:["$","h2",null,{"id":"switch-onoff","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Switch On/Off",["$","$Lcc",null,{"id":"switch-onoff"}]]}]
+49:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"There is no On/Off switch. The Z88 is always on, but to conserve power the display can be turned off and the Z88 is put into dozy mode."}]
+4a:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"645px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/up-and-running/z88-uk-keyboard.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/up-and-running/z88-uk-keyboard.webp","alt":"z88 uk keyboard","loading":"lazy","decoding":"async","width":645,"height":213}],[]]}]]}]
+4b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["To switch the Z88 on or off press both ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Shift","children":"SHIFT"}]," keys simultaneously."]}]
+4c:["$","table",null,{"children":["$","tbody",null,{"children":["$","tr",null,{"children":[["$","td",null,{"children":["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"832px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/up-and-running/battery-keyboard.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/up-and-running/battery-keyboard.webp","alt":"battery keyboard","loading":"lazy","decoding":"async","width":832,"height":635}],[]]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$41:props:children:props:children:0:props:children:props:children:props:children:0:props:style","data-pagefind-ignore":"all","children":["$","svg",null,{"viewBox":"0 0 16 16","fill":"currentColor","height":".8em","className":"x:mt-[.3em]","children":["$","path",null,{"d":"M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"}]}]}],["$","div",null,{"className":"x:w-full x:min-w-0","children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Leave Keyboard Clear of items."}]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["When the Z88 is OFF i.e. in sleep mode, the Z88 wakes up if a key is pressed to check if they are the two Shift Keys.",["$","br",null,{}],"If an item inadvertently, presses a key, this constant checking shortens the life of the batteries."]}]]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],"className":"x:block x:overflow-x-auto"}]
+4d:["$","h2",null,{"id":"display-screen-area","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Display Screen Area",["$","$Lcc",null,{"id":"display-screen-area"}]]}]
+4e:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/external/welcome-cambridge-z88/z88-top.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/external/welcome-cambridge-z88/z88-top.webp","alt":"z88 top","loading":"lazy","decoding":"async","width":800,"height":198}],[]]}]]}]
+4f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"For those of you that are used to working with large monitors this screen may seem small but because of the ingenious and economical way the system uses the available space, you will find that the size will not inhibit its use."}]
+50:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Immediately below the display is a list of commands together with the control key and code needed to action them. These are useful reminders for beginners but once the comprehensive internal MENU(s) are used, they show and allow selection all the commands that may be used at that point."}]
+51:["$","h2",null,{"id":"the-built-in-oz-operating-system-and-external-cards","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The built-in OZ operating system and external cards",["$","$Lcc",null,{"id":"the-built-in-oz-operating-system-and-external-cards"}]]}]
+52:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The standard Cambridge Z88 has all the operating system and software pre-installed, named as ",["$","strong",null,{"children":"OZ"}]," - ready to be run when the machine has been initially reset, leaving the external slots free for more RAM or to install applications or memory cards for files. All internal ROM versions originally released by Cambridge Computer in 1990 (final release was V4.0 UK) are a lower version number than the one available now. When the Z88 is given a HARD RESET, the first thing the operating system checks is whether there is a program is available to run from Slot 1. It is that technique that is used when using an external card."]}]
+53:["$","h2",null,{"id":"flash-card-example","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Flash Card example",["$","$Lcc",null,{"id":"flash-card-example"}]]}]
+54:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When Rakewell supplies Flash Cards, there are additional applications and extra files loaded in the file area."}]
+55:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Impatient users may elect to skip the detailed description on how to use these cards in this manual initially as the example illustrates some useful techniques which the first-time user may find very useful."}]
+56:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Follow ",["$","$Lcd",null,{"href":"/en/z88-user-guide/getting-started/up-and-running/flash-card-example","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"this link"}]," for a step by step instructions on how to use this, but ",["$","strong",null,{"children":"please come back and read the full description later."}]]}]
+57:["$","h2",null,{"id":"upgrading-the-z88-to-oz-45-or-later","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Upgrading the Z88 to OZ 4.5 or later",["$","$Lcc",null,{"id":"upgrading-the-z88-to-oz-45-or-later"}]]}]
+58:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Since Cambridge Computer stopped production of the Z88, the community has independently continued the development of the operating system and default applications, comprising many bug fixes of the original software, multiple international keyboard layouts, improved overall speed of the system and better serial port management. There are two ways that the standard Z88 can be upgraded to the latest OZ releases."}]
+59:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"Changing the Internal ROM"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Using the External Flash Card."}],"\n"]}]
+5a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Changing the internal ROM is now a difficult procedure, as the original chips that were used are no longer available. Replacement chips may be used if modifications to the pin outs are changed."}]
+5b:["$","h3",null,{"id":"using_an_external_flash_card","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Using an External Flash Card",["$","$Lcc",null,{"id":"using_an_external_flash_card"}]]}]
+5c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"All the other languages are supported and using an external Flash card in slot 1 is easy to fit, the Z88 boots off that device and ignores the internal OZ ROM altogether."}]
+5d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["There are two sizes and types available. Which one to use depends on whether or not the user wants to use an additional RAM card. It is recommended the size chosen is greater than 128K. This makes the Z88 into an ",["$","$Lcd",null,{"href":"/en/z88-user-guide/getting-started/using-cards/expanded-unexpanded","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Expanded Machine"}]," (enabling more memory to be used for applications and creating a larger graphical map area)."]}]
+5e:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"1M Flash card"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"512K / 512K Flash/RAM card"}],"\n"]}]
+5f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The following description shows the recommended use of using the different cards together with information to boot the Z88 up using the new Operating System."}]
+60:["$","h3",null,{"id":"1m-flash-card","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["1M Flash Card",["$","$Lcc",null,{"id":"1m-flash-card"}]]}]
+61:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"166px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/external/qg-z88-quick-guide-help-home-page/1m-flash.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/external/qg-z88-quick-guide-help-home-page/1m-flash.webp","alt":"1M flash","loading":"lazy","decoding":"async","width":166,"height":165}],[]]}]]}]
+62:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"450px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/external/zfs-operation-and-commands/flash-ram-flash.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/external/zfs-operation-and-commands/flash-ram-flash.webp","alt":"flash ram flash","loading":"lazy","decoding":"async","width":450,"height":55}],[]]}]]}]
+63:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Open the card flap and slide the card into Slot 1."}]
+64:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Use an additional RAM pack in Slot 2. See ",["$","$Lcd",null,{"href":"/en/z88-user-guide/getting-started/using-cards/expanded-unexpanded","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Expanded Machine"}],"."]}]
+65:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This leaves Slot 3 free for another Flash card or EPROM pack if and when desired."}]
+66:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The Applications and File Area are in the Flash Card"}]
+67:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/up-and-running/z88card1mfrf.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/up-and-running/z88card1mfrf.webp","alt":"z88card1mfrf","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+68:["$","h3",null,{"id":"512k--512k-flashram-card","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["512K / 512K Flash/RAM Card",["$","$Lcc",null,{"id":"512k--512k-flashram-card"}]]}]
+69:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"167px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/up-and-running/512k-flash.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/up-and-running/512k-flash.webp","alt":"512K Flash","loading":"lazy","decoding":"async","width":628,"height":649}],[]]}]]}]
+6a:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"455px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/up-and-running/512k-flash-1m-flash-eprom.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/up-and-running/512k-flash-1m-flash-eprom.webp","alt":"512K flash 1M flash Eprom","loading":"lazy","decoding":"async","width":455,"height":56}],[]]}]]}]
+6b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Open the card flap and slide the card into Slot 1."}]
+6c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["As 512K of RAM is included in Slot 1, this is now an ",["$","$Lcd",null,{"href":"/en/z88-user-guide/getting-started/using-cards/expanded-unexpanded","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Expanded Machine"}],". Slot 2 may be used for additional Flash cards, leaving slot 3 free for yet another Flash card or EPROM pack if and when desired. Using this card will also enable expanded mode (more RAM in slot 1)."]}]
+6d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The Applications and File Area are in the Flash Card"}]
+6e:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-yellow-50 x:dark:bg-yellow-700/30 x:text-yellow-700 x:dark:text-yellow-500 x:border-yellow-700","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$41:props:children:props:children:0:props:children:props:children:props:children:0:props:style","data-pagefind-ignore":"all","children":["$","svg",null,{"viewBox":"0 0 16 16","fill":"currentColor","height":".8em","className":"x:mt-[.3em]","children":["$","path",null,{"d":"M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575Zm1.763.707a.25.25 0 0 0-.44 0L1.698 13.132a.25.25 0 0 0 .22.368h12.164a.25.25 0 0 0 .22-.368Zm.53 3.996v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"}]}]}],["$","div",null,{"className":"x:w-full x:min-w-0","children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Note: Erased EPROMs"}]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["If the EPROM has been erased with the EPROM Eraser they are a blank space. It will not be recognised until the header has been re-blown into it with the ",["$","$Lcd",null,{"href":"/en/z88-user-guide/filer-reference#cataloguefilecard","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Catalogue File Card"}]," command. See Section Seven - Filer reference."]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This doesn’t happen with Flash cards as they are able to be asked what they are even when they are empty."}]]}]]}]
+6f:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/up-and-running/z88card512ffe.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/up-and-running/z88card512ffe.webp","alt":"z88card512ffe","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+70:["$","h2",null,{"id":"initialisez88","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Initialize the Cambridge Z88",["$","$Lcc",null,{"id":"initialisez88"}]]}]
+71:["$","h3",null,{"id":"hard-reset","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Hard Reset",["$","$Lcc",null,{"id":"hard-reset"}]]}]
+72:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Do this by"}]
+73:["$","table",null,{"children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"opening the CARD flap","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Using an unbent paper clip, press the reset switch 2 twice, then","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"265px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/external/qg-z88-quick-guide-help-home-page/card-slot.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/external/qg-z88-quick-guide-help-home-page/card-slot.webp","alt":"card slot","loading":"lazy","decoding":"async","width":265,"height":140}],[]]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"160px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/external/eazugv10-problem-solving-area/cambridge-z88-leftside-1.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/external/eazugv10-problem-solving-area/cambridge-z88-leftside-1.webp","alt":"Cambridge Z88 LeftSide 1","loading":"lazy","decoding":"async","width":160,"height":134}],[]]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","th",null,{"children":"shut the CARD flap","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":["$","td",null,{"colSpan":2,"children":["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"670px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/up-and-running/hardreset.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/up-and-running/hardreset.webp","alt":"hardreset","loading":"lazy","decoding":"async","width":670,"height":94}],[]]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}]],"className":"x:block x:overflow-x-auto"}]
+74:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"HARD RESET should appear on the screen."}]
+75:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-red-100 x:dark:bg-red-900/30 x:text-red-700 x:dark:text-red-500 x:border-red-700 x:dark:border-red-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$41:props:children:props:children:0:props:children:props:children:props:children:0:props:style","data-pagefind-ignore":"all","children":"$41:props:children:props:children:0:props:children:props:children:props:children:0:props:children"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Must show HARD RESET"}]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If HARD RESET is not displayed after adjusting the contrast (see below), there is no point continuing until this is corrected."}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"There are two mechanical switches, the card flap and reset switch. If these are faulty, this may be the reason why this is happening."}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Removing the batteries and leaving the Z88 alone for 30 minutes can resolve this error."}]]}]]}]
+76:["$","h3",null,{"id":"adjust-the-display","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Adjust the display",["$","$Lcc",null,{"id":"adjust-the-display"}]]}]
+77:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/up-and-running/008-3.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/up-and-running/008-3.webp","alt":"008_3.png","loading":"lazy","decoding":"async","width":640,"height":262}],[]]}]]}]
+78:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Turn the contrast control as far towards the top of the Cambridge Z88 case as it will go (ie clockwise)."}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The screen should display a dark blue rectangle."}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Gradually turn back the control until you can see the Cambridge Z88 screen clearly."}],"\n"]}],"\n"]}]
+79:["$","h3",null,{"id":"has-the-z88-booted-up-correctly","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Has the Z88 booted up correctly?",["$","$Lcc",null,{"id":"has-the-z88-booted-up-correctly"}]]}]
+7a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The OZ 4.x index screen should now be displaying."}]
+7b:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/external/oz-the-z88-operating-system/index.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/external/oz-the-z88-operating-system/index.webp","alt":"index","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+7c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"It is obvious that it is not running from its internal ROM as there should be UK just below the OZ symbol on the top right-hand side. If just the OZ symbol is displayed, then the internal ROM is still in control. Check that the OZ 4.x card is in Slot 1."}]
+7d:["$","h3",null,{"id":"check-latest-version","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Check Latest Version",["$","$Lcc",null,{"id":"check-latest-version"}]]}]
+7e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Whilst in the INDEX use the following command ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}]," INFO"]}]
+7f:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/up-and-running/oz47.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/up-and-running/oz47.webp","alt":"Illustration for “Up and running”","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+80:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["If this display does either not appear, or has an earlier date than displayed, you have an older version. Please consider upgrading. See ",["$","$Lcd",null,{"href":"/en/z88-user-guide/appendix-i-creating-updating-an-application-card","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Appendix I - Creating / Updating an Application Card"}],". More details may be obtained from the ",["$","a",null,{"href":"https://cambridgez88.jira.com/wiki/pages/viewrecentblogposts.action?key=welcome","target":"_blank","rel":"noreferrer","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["BLOG",[" ",["$","svg",null,{"fill":"none","stroke":"currentColor","strokeLinecap":"round","strokeLinejoin":"round","strokeWidth":1.7,"viewBox":"0 0 24 24","height":"1em","className":"x:inline x:align-baseline x:shrink-0","children":[["$","path",null,{"d":"M7 17L17 7"}],["$","path",null,{"d":"M7 7h10v10"}]]}]]]}],"."]}]
+81:["$","h3",null,{"id":"changing-keyboard-layout","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Changing keyboard layout",["$","$Lcc",null,{"id":"changing-keyboard-layout"}]]}]
+82:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When the Z88 was sold in different countries, both the internal ROM and the keyboard was changed accordingly. With OZ 4.5 the language-specific parts of those ROM’s have been integrated. The default language is UK. To match a different keyboard layout (which may still need to be changed mechanically,) use the additional command in the Panel, to change the ROM component if a different language is required:"}]
+83:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["select the Panel ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],"S"]}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["move the cursor (with the ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor left","children":"←"}],"keys) so that it is over the Uk to the right of Keyboard"]}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"change the language either by using"}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"J to toggle through all the languages or"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"select a letter from this table."}],"\n"]}],"\n"]}],"\n"]}]
+84:["$","table",null,{"children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"Letter","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Country","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Language","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Displayed","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":"U","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"32px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/up-and-running/uk.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/up-and-running/uk.webp","alt":"UK","loading":"lazy","decoding":"async","width":128,"height":64}],[]]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"UK (default)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"UK","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"F","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"32px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/up-and-running/france.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/up-and-running/france.webp","alt":"France","loading":"lazy","decoding":"async","width":96,"height":64}],[]]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"French","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"FR","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"D","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"32px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/up-and-running/denmark.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/up-and-running/denmark.webp","alt":"Denmark","loading":"lazy","decoding":"async","width":96,"height":64}],[]]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Danish","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"DK","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":["$Lce","$Lcf","$Ld0","$Ld1"],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],"$Ld2","$Ld3","$Ld4","$Ld5","$Ld6","$Ld7"]}]],"className":"x:block x:overflow-x-auto"}]
+85:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The selected keyboard layout (UK) is displayed just below the OZ symbol on the top right-hand side on all the screens as shown below."}]
+86:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/up-and-running/ozpanel.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/up-and-running/ozpanel.webp","alt":"ozpanel","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+87:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The rubber keyboard may also need to be physically changed if the language chosen does not match the correct keyboard layout."}]
+88:["$","h4",null,{"id":"french-z88-example","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":["French Z88 Example",["$","$Lcc",null,{"id":"french-z88-example"}]]}]
+89:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"647px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/up-and-running/french-z88.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/up-and-running/french-z88.webp","alt":"French Z88","loading":"lazy","decoding":"async","width":647,"height":342}],[]]}]]}]
+8a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This example shown above shows the Z88 set to France showing"}]
+8b:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"the FR symbol just below the OZ indicating the change of Keyboard"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"The French Keyboard Layout"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"A 1M AMD Flash Card in slot 1 with OZ 4.5"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"A 1M RAM Card in slot 2"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["The ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"CARD display showing how the cards are split between RAM FILES and ROM."]}],"\n"]}]
+8c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":["IMPORTANT: If the amount of RAM displayed does not match the amount of physical RAM used, the Z88 has not reset itself correctly. ",["$","strong",null,{"children":"Keep doing HARD RESET(s) until they are the same."}]," In this case, 1024K matches the 1M RAM card used, so it is correct. See ",["$","a",null,{"href":"https://cambridgez88.jira.com/wiki/display/ZP/Memory+Chips+-+Testing+and+Results","target":"_blank","rel":"noreferrer","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["Memory Chips - Testing and Results",[" ",["$","svg",null,{"fill":"none","stroke":"currentColor","strokeLinecap":"round","strokeLinejoin":"round","strokeWidth":1.7,"viewBox":"0 0 24 24","height":"1em","className":"x:inline x:align-baseline x:shrink-0","children":[["$","path",null,{"d":"M7 17L17 7"}],["$","path",null,{"d":"M7 7h10v10"}]]}]]]}]," to test them."]}]}]
+8d:["$","h3",null,{"id":"check_the_ram","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Check the RAM",["$","$Lcc",null,{"id":"check_the_ram"}]]}]
+8e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"As stated above it is a good idea at this point to check that the Z88 cards, like the RAM and Flash cards have been correctly recognised by OZ. These are displayed in the CARD screen. To display the values, start in the INDEX screen which should already be displayed. If not"}]
+8f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"1."}]," Hold down the ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}]," key (at the bottom left of the keyboard) and press the ",["$","strong",null,{"children":"I"}]," key, to enter Index. Alternatively it may be selected by pressing the ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Index","children":"INDEX"}]," key at the lower left of the keyboard."]}]
+90:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/up-and-running/z88-index.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/up-and-running/z88-index.webp","alt":"z88 index","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+91:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":["$","strong",null,{"children":"2."}]}]," Press ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}]," CARD"]}]
+92:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/up-and-running/z88-card-47.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/up-and-running/z88-card-47.webp","alt":"z88 card 47","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+93:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The CARD display has been changed to include the size of the file area and the amount of Free RAM that is available. This is a different example to the French Z88 Example and is what you would expect to see if you are using a 512/512 Flash/RAM card running OZ 4.7.1 in slot 1. The important numbers to note here are the ones displayed in the RAM column. 32K in slot 0 is the internal RAM and 512K is the correct amount in the 512/512 Flash/RAM card. If these numbers are slightly different than what is expected, do another Hard Reset to see if it has been corrected."}]
+94:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["If the RAM value never reaches the expected value, there may be a RAM or a Card connector fault. ",["$","strong",null,{"children":["See ",["$","a",null,{"href":"https://cambridgez88.jira.com/wiki/display/ZP/Memory+Chips+-+Testing+and+Results","target":"_blank","rel":"noreferrer","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["Memory Chips - Testing and Results",[" ",["$","svg",null,{"fill":"none","stroke":"currentColor","strokeLinecap":"round","strokeLinejoin":"round","strokeWidth":1.7,"viewBox":"0 0 24 24","height":"1em","className":"x:inline x:align-baseline x:shrink-0","children":[["$","path",null,{"d":"M7 17L17 7"}],["$","path",null,{"d":"M7 7h10v10"}]]}]]]}]," to test them."]}]]}]
+95:["$","h3",null,{"id":"set_default_device","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Set the Default Device",["$","$Lcc",null,{"id":"set_default_device"}]]}]
+96:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"OZ makes an intelligent choice on which RAM it should set as its Default Device. This should normally be the largest RAM card you have. Make sure that you have enough RAM otherwise you will run out of space quite quickly. To see which device has been selected, the Panel needs to be selected."}]
+97:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Hold down the ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}]," key (at the bottom left of the keyboard) and press the ",["$","strong",null,{"children":"S"}]," key, to enter the Panel. Alternatively it may be selected by pressing the ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Index","children":"INDEX"}]," key at the lower left of the keyboard and then moving the cursor down to the Panel application and then Press ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]," to select it."]}]
+98:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/up-and-running/z88-select-panel.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/up-and-running/z88-select-panel.webp","alt":"z88 select panel","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+99:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The following screen will be displayed. If the Default device is the correct one shown, there is no need to change it. Get out of viewing this screen by pressing ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Escape","children":"ESC"}]," to return to the previous screen."]}]
+9a:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/up-and-running/z88-panel-ram.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/up-and-running/z88-panel-ram.webp","alt":"z88 panel ram","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+9b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":["If the Default device number has been changed, the following instructions regarding ",["$","strong",null,{"children":"Select deVice"}]," in the Filer need to be followed."]}]}]
+9c:["$","h3",null,{"id":"select_device","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Select Device",["$","$Lcc",null,{"id":"select_device"}]]}]
+9d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"1."}]," Hold down the ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}]," key (at the bottom left of the keyboard) and press the ",["$","strong",null,{"children":"F"}]," key, to enter Filer."]}]
+9e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Alternatively it may be selected by pressing the ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Index","children":"INDEX"}]," key at the lower left of the keyboard and then using the ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor down","children":"↓"}]," key, move the cursor down to the Filer application. ",["$","br",null,{}],"Press ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]," to select it."]}]
+9f:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/up-and-running/select-filer.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/up-and-running/select-filer.webp","alt":"select filer","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+a0:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":["$","strong",null,{"children":"2."}]}]," Press ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"SV to ",["$","strong",null,{"children":"S"}],"elect de",["$","strong",null,{"children":"V"}],"ice or using the ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor down","children":"↓"}]," key, move the cursor down until that command is displayed in the COMMANDS window, then press ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]," to select it."]}]
+a1:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/up-and-running/z88-filer-blank.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/up-and-running/z88-filer-blank.webp","alt":"z88 filer blank","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+a2:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"3."}]," Move the cursor over to the right (using ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}]," ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor right","children":"→"}],", then press the ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Delete","children":"DEL"}]," key to remove the number that is there, finally type in the RAM slot number you wish to use and then press ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]," to select it."]}]
+a3:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/up-and-running/z88-filer-sv.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/up-and-running/z88-filer-sv.webp","alt":"z88 filer sv","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+a4:["$","h3",null,{"id":"set_the_clock","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Set the clock",["$","$Lcc",null,{"id":"set_the_clock"}]]}]
+a5:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Note"}],": Eazylink has the facility of synchronizing the Z88 clock to the Desktop’s date and time. This method is quicker than using this manual method."]}]
+a6:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"1."}]," Press ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],["$","strong",null,{"children":"T"}]," to enter the clock popdown."]}]
+a7:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"2."}]," Press ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor right","children":"→"}]," to highlight the ",["$","em",null,{"children":"Set"}]," option:"]}]
+a8:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"670px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/up-and-running/clock1.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/up-and-running/clock1.webp","alt":"clock1.png","loading":"lazy","decoding":"async","width":670,"height":94}],[]]}]]}]
+a9:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"3."}]," Press ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]," to enter the ",["$","em",null,{"children":"Set"}]," function, which displays the previous (incorrect) date and time, and will allow you to alter these to their correct values:"]}]
+aa:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"670px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/up-and-running/clock2.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/up-and-running/clock2.webp","alt":"clock2.png","loading":"lazy","decoding":"async","width":670,"height":94}],[]]}]]}]
+ab:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["You can move the cursor between the time and date with ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor up","children":"↑"}]," and ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor down","children":"↓"}],".",["$","br",null,{}],"You can also move the cursor left and right along the digits with the ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor left","children":"←"}]," and ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor right","children":"→"}]," keys. Moving off the end of the date will position the cursor on the time, and vice versa."]}]
+ac:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"4."}]," Having positioned the cursor, simply type the correct time or date, using the numeric keys 0 to 9. The format of the new time and date should not change; if you type over the ’/’ or ’:’ signs, move the cursor back with the ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor left","children":"←"}]," key and replace them.",["$","br",null,{}],["$","br",null,{}],"When you have set the correct values, press ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]," to confirm them, and after about two-seconds the correct time and date will be displayed.",["$","br",null,{}],["$","br",null,{}],"Finally, press ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Escape","children":"ESC"}]," to exit from the Clock."]}]
+ad:["$","h3",null,{"id":"try-typing-text","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Try typing text",["$","$Lcc",null,{"id":"try-typing-text"}]]}]
+ae:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"1."}]," Hold down the ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}]," key (at the bottom left of the keyboard) and press the ",["$","strong",null,{"children":"P"}]," key, to enter PipeDream."]}]
+af:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"670px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/up-and-running/pipedream1.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/up-and-running/pipedream1.webp","alt":"pipedream1.png","loading":"lazy","decoding":"async","width":670,"height":94}],[]]}]]}]
+b0:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"2."}]," Type ",["$","span",null,{"className":"Z88_typed___J27m","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Dear Sir"}],","]}]," at the keyboard. Press the ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Delete","children":"DEL"}]," key to delete mistakes. If you type more than will fit on one line, PipeDream will automatically lay out the text for you."]}]
+b1:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"670px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/up-and-running/pipedream2.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/up-and-running/pipedream2.webp","alt":"pipedream2.png","loading":"lazy","decoding":"async","width":670,"height":94}],[]]}]]}]
+b2:["$","h3",null,{"id":"switch-off","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Switch off",["$","$Lcc",null,{"id":"switch-off"}]]}]
+b3:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"There is usually no need to worry about switching your Cambridge Z88 off."}]}]
+b4:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If you do not type anything for several minutes the machine will automatically switch off to conserve power."}]
+b5:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You should always switch your Cambridge Z88 off before, for example, carrying it in a briefcase. This is because the keys may get pressed, disturbing what you were in the middle of doing, or keeping the Cambridge Z88 on and wasting the batteries."}]
+b6:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["To switch off press both ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Shift","children":"SHIFT"}]," keys simultaneously."]}]
+b7:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["To switch the Cambridge Z88 on again at any time, press both ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Shift","children":"SHIFT"}]," keys simultaneously."]}]
+b8:["$","h3",null,{"id":"power-supply-socket","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Power Supply Socket",["$","$Lcc",null,{"id":"power-supply-socket"}]]}]
+b9:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This is the larger of the two sockets, about two-thirds of the way up the left-hand edge 1 allowing the Z88 to be powered externally."}]
+ba:["$","h3",null,{"id":"reset-button","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Reset button",["$","$Lcc",null,{"id":"reset-button"}]]}]
+bb:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The reset button 2 is adjacent to the Power Supply Socket. It looks like another socket because it has been set right into the machine to avoid it being activated accidentally. It can only be reached by inserting a blunt instrument into the hole. The manufacturers recommend using an unbent paper clip."}]
+bc:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"160px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/external/eazugv10-problem-solving-area/cambridge-z88-leftside-1.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/external/eazugv10-problem-solving-area/cambridge-z88-leftside-1.webp","alt":"Cambridge Z88 LeftSide 1","loading":"lazy","decoding":"async","width":160,"height":134}],[]]}]]}]
+bd:["$","h3",null,{"id":"card-slots","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Card Slots",["$","$Lcc",null,{"id":"card-slots"}]]}]
+be:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"These are on the front edge of the machine, below and to the left of the space bar. This is where up to three additional cards may added for extra RAM, EPROM or Flash for other applications and local storage for files, It opens from the front downwards and outwards."}]
+bf:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$41:props:children:props:children:0:props:children:props:children:props:children:0:props:style","data-pagefind-ignore":"all","children":"$4c:props:children:props:children:props:children:1:props:children:props:children:0:props:children"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Definition"}]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"CARD = Add on memory or Application cartridge."}]]}]]}]
+c0:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"300px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/up-and-running/card-slot.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/up-and-running/card-slot.webp","alt":"card slot","loading":"lazy","decoding":"async","width":265,"height":140}],[]]}]]}]
+c1:["$","h3",null,{"id":"rs-232-port","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["RS-232 Port",["$","$Lcc",null,{"id":"rs-232-port"}]]}]
+c2:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This is the large rectangular socket on the right-hand edge of the Z88, directly opposite the Power Supply Socket. This is used to connect the Z88 to other computers or Printers."}]
+c3:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"300px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/up-and-running/z88-side-l.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/up-and-running/z88-side-l.webp","alt":"z88 side l","loading":"lazy","decoding":"async","width":900,"height":164}],[]]}]]}]
+c4:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-red-100 x:dark:bg-red-900/30 x:text-red-700 x:dark:text-red-500 x:border-red-700 x:dark:border-red-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$41:props:children:props:children:0:props:children:props:children:props:children:0:props:style","data-pagefind-ignore":"all","children":"$41:props:children:props:children:0:props:children:props:children:props:children:0:props:children"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Do Not Use the same power supply with External devices using the RS-232 port."}]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The RS-232 Port’s GND pin is the same as the 6v power for the Z88. This means that if, for example, if a printer was powered by the same power supply as the Z88, whilst connected to the RS-232 port, this will cause a short circuit. This has led to the track inside the Z88 to be blown like a fuse. To avoid this, two separate isolated power supplies should be used."}]]}]]}]
+c5:["$","h3",null,{"id":"stand","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Stand",["$","$Lcc",null,{"id":"stand"}]]}]
+c6:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"On the back of the Z88 opposite the screen on the front, is a large piece of plastic that hinges at the top to make a stand so that the machine no longer lies flat, but tilts towards you. This can make the screen more visible."}]
+c7:["$","h3",null,{"id":"battery-compartment","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Battery Compartment",["$","$Lcc",null,{"id":"battery-compartment"}]]}]
+c8:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The opening for this is also on the back in the centre, just below the space where the stand folds away when not in use."}]
+c9:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"300px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/up-and-running/z88-back.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/up-and-running/z88-back.webp","alt":"z88 back","loading":"lazy","decoding":"async","width":900,"height":531}],[]]}]]}]
+cb:null
+a:C
+ce:["$","td",null,{"children":"S","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
+cf:["$","td",null,{"children":["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"32px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/up-and-running/sweden.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/up-and-running/sweden.webp","alt":"Sweden","loading":"lazy","decoding":"async","width":96,"height":64}],[]]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
+d0:["$","td",null,{"children":"Swedish","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
+d1:["$","td",null,{"children":"SE","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
+d2:["$","tr",null,{"children":[["$","td",null,{"children":"L","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"32px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/up-and-running/finland.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/up-and-running/finland.webp","alt":"Finland","loading":"lazy","decoding":"async","width":286,"height":176}],[]]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Finnish","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"FI","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+d3:["$","tr",null,{"children":[["$","td",null,{"children":"G","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"32px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/up-and-running/germany.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/up-and-running/germany.webp","alt":"Germany","loading":"lazy","decoding":"async","width":96,"height":64}],[]]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"German","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"DE","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+d4:["$","tr",null,{"children":[["$","td",null,{"children":"A","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"32px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/up-and-running/320px-flag-of-the-united-states.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/up-and-running/320px-flag-of-the-united-states.webp","alt":"USA","loading":"lazy","decoding":"async","width":320,"height":168}],[]]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"American","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"US","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+d5:["$","tr",null,{"children":[["$","td",null,{"children":"P","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"32px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/up-and-running/spain.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/up-and-running/spain.webp","alt":"Spain","loading":"lazy","decoding":"async","width":96,"height":64}],[]]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Spanish","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"ES","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+d6:["$","tr",null,{"children":[["$","td",null,{"children":"I","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"32px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/up-and-running/italy.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/up-and-running/italy.webp","alt":"Italy","loading":"lazy","decoding":"async","width":96,"height":64}],[]]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Italian","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"IT","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+d7:["$","tr",null,{"children":[["$","td",null,{"children":"N","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"32px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/up-and-running/norway.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/up-and-running/norway.webp","alt":"norway","loading":"lazy","decoding":"async","width":87,"height":65}],[]]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Norway","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"NO","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+1f:0
+8:"$undefined"
+1e:"$undefined"
+17:"$undefined"

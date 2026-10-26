@@ -1,0 +1,269 @@
+5:"$Sreact.fragment"
+6:I[7121,[],""]
+7:I[4581,[],""]
+c:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+d:"static/chunks/500-fc3b64d9ff4a32a7.js"
+e:"static/chunks/436-2e7c1075bb484b2c.js"
+f:"static/chunks/app/%5Blang%5D/(unlisted)/z88-user-guide/%5B%5B...mdxPath%5D%5D/page-4cda6fdcf01c581d.js"
+10:I[826,["545","$c","500","$d","436","$e","992","$f"],"TOCProvider"]
+11:I[4637,["545","$c","500","$d","436","$e","992","$f"],"Sidebar"]
+12:I[6665,["545","$c","500","$d","436","$e","992","$f"],"ClientWrapper"]
+18:"ViewportBoundary"
+19:I[484,[],"$18"]
+1a:"MetadataBoundary"
+1b:I[484,[],"$1a"]
+1c:"$Sreact.suspense"
+1d:I[6869,[],"IconMark"]
+9:X
+9:C
+a:X
+13:T229b,---
+description: "The OPTIONS menu contains only one command, Options Page, or ◇O, which displays a page of information about the current document together with the global settings which may be altered to effect..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/35913749 (version 4) by scripts/import-z88-user-guide.cjs */}
+
+# Document options - OPTIONS
+
+<Shot src="z88-user-guide/pipedream-reference/pipedream-menu-options.webp" alt="Pipedream menu options" width={640} />
+
+The **OPTIONS** menu contains only one command, **Options Page**, or <Key k="diamond" />O, which displays a page of information about the current document together with the global settings which may be altered to effect the way that commands operate on the document.
+
+<Shot src="z88-user-guide/pipedream-reference/pipedream-menu-options1.webp" alt="Pipedream menu options1" width={640} />
+
+You can return to a PipeDream document by pressing the <Key k="esc" /> key.
+
+## Information lines
+
+The right-hand column of the Options Page display gives information about the current document.
+
+### File
+
+The name of the document previously loaded with the **Load** command, or the name assigned to a document by the **Name** command (<Key k="diamond" />FC) on the **FILES** menu. If no name has been specified, it will show
+
+`No File`
+
+The name will also appear on the SUSPENDED ACTIVITIES list in the Index display.
+
+### Page
+
+Shows the current page number of the line containing the cursor. This will correspond to the page numbering when the document is printed unless rows are fixed with the **Fix Row** command on the **LAYOUT** menu, or the Options Page page-length setting has been set to zero.
+
+### Insert/Overtype
+
+Shows the current text entry mode selected by the **Insert/Overtype** command on the **EDIT** menu. The mode initially selected is Insert mode.
+
+### Microspace
+
+Normally blank, displays the word `Microspace` if the microspace option has been selected from the **PRINT** menu.
+
+### Free
+
+Displays the amount of space remaining for characters in the current document, to the nearest multiple of 256 characters. It is inadvisable to continue typing text into a document if there are less than approximately 300 free characters. In such a situation you are advised to make space in memory by freeing activities, or deleting files.
+
+## Option lines
+
+This page is used to determine how text and expressions are displayed in a document (including the default setting for the display of expression results) and to set up the layout of a document ready for printing, specifying headers and footers, and margins at the top, bottom and left of the page. In addition, you can control the length of the page, the spacing of text, and the page numbering.
+
+### Altering options - Next Option
+
+As with many other commands, Next Option, <Key k="diamond" />J will alternate between two available values, for example `Y` and `N` for `Yes` and `No`, or `T` and `N` for `Text` and `Numbers`. Alternatively, these values can be changed by typing the appropriate letter. In the case of options with more than two possible values, <Key k="diamond" />J will set the option back to its default value.
+
+Other options can be altered by moving the cursor to the appropriate item, with the<Key k="up" /> and <Key k="down" /> keys, and then editing the item with the line-editing commands <Key k="left" />, <Key k="right" />, <Key k="del" /> key and <Key k="diamond" />G or <Key k="shift" /> <Key k="del" /> to delete the character under the cursor. In numeric fields, such as **Page length**, Overtype mode is automatically set irrespective of the current Overtype/Insert mode setting.
+
+In the following list of options the default value is shown against each option.
+
+## Text format
+
+Determines the formatting of text in the document.
+
+### Text/Numbers (T)
+
+Set to `T` (Text) to make the default slot format text slots, or `N` (Numbers) for expression slots. In Numbers mode there is no need to type <Key k="diamond" />X before entering an expression, and the cursor keys <Key k="right" /> and <Key k="left" /> will move directly between slots containing expressions; ie behave like <Key k="tab" /> and <Key k="shift" /> <Key k="tab" />.
+
+### Borders (Y)
+
+Set to `Y` (Yes) to display borders, or `N` (No) to hide borders. Hiding the borders allows a larger area of the sheet to be displayed, and can be useful for word-processing applications.
+
+### Justify (N)
+
+Set to `N` (No justify) for ragged right margins, or `Y` (Yes) for even right-hand margins. To reformat a paragraph of text after changing this option, give the `Format Paragraph` command, <Key k="diamond" />R.
+
+### Wrap (Y)
+
+Set to `Y` (Yes) to make text wrap automatically at the wrap point, or `N` (No) for no wrapping.
+
+### Insert on wrap (R)
+
+Set to `R` (Rows) to maintain alignment between adjacent rows, or `C` (Columns) for creating independent columns of text; see **Widths and margins in a multi-column document**, p. 129.
+
+## Recalculation mode
+
+The `Calc` options determine how expression slots are recalculated in the document.
+
+### Auto/Man (A)
+
+Determines the recalculation of expression slots on the document.
+
+Set to `A` (Automatic) to recalculate the document every time an expression slot changes or `M` (Manual) for recalculation only with the <Key k="diamond" />A command. This option can be set to `M` to make entering data into a large spreadsheet, or working with large text documents, faster.
+
+### Columns/Rows (C)
+
+Select the order of recalculation: `R` (Rows) across rows first, or `C` (Columns) down columns first.
+
+## Number formats
+
+Determine the default display format for numerical expression slots.
+
+### Decimal places (2)
+
+Select `0` to `9` decimal places or `F` for free format.
+
+### Minus/brackets (M)
+
+Select `M` (Minus) to display negative numbers with a minus sign, or `B` (Brackets) for financial bracketed notation.
+
+### Lead chs. (£) Trail chs. (%)
+
+Specify up to 4 characters to be displayed in front of or after expression slots with <Key k="diamond" />LCL or <Key k="diamond" />LCT set.
+
+## Page format
+
+Determines the spacing and pagination of the document when printed.
+
+### Page length (66)
+
+Set to between `1` and `127` to specify the number of lines on each page, including margins, footer and header, or 0 to suppress page breaks altogether.
+
+### Line spacing (1)
+
+You can specify from `0` to `255` additional blank lines to be inserted between each line of text.
+
+### Start page
+
+You can set the current page number to `0` to `255`.
+
+## Headers, footers, and margins
+
+You can specify an additional header or footer line of text to appear at the top or bottom of each printed page respectively. Each line of text can consist of up to three components, which will be left-aligned, centred, and right-aligned.
+
+The left margin, and the margins above and below the header and footer, and between the header and footer and the page of text, can be separately altered to determine the layout of the printed page.
+
+Note that if a header or footer are specified, the number of lines of text on each page will be reduced accordingly.
+
+<Shot src="z88-user-guide/pipedream-reference/139.webp" alt="Illustration for “Document options - OPTIONS”" width={277} />
+
+The complete page layout, with headers and footers and their associated margins, will be represented on the page map display at the right-hand side of the PipeDream screen.
+
+### Header Footer
+
+You can specify lines of text which will be printed out at the head and foot of each page. Each line has the format
+
+`/left/centre/right/`
+
+where left, centre, and right represent text which will be respectively left-aligned, centred and right-aligned, and '/' represents an arbitrary delimiter, which must not occur elsewhere in the line of text.
+
+### Title
+
+A line of up to 244 characters can be entered in this field as a title for the document. The title can be included in the document, or in the footer or header, by giving the @T@ field; see p. 153.
+
+## Margins
+
+You can specify the number of blank lines, from 0 to 255, to be left above the header, between header and text, between text and footer, and below the footer respectively. The left margin can specify a margin of 0 to 255 characters at the left of each page:
+
+`Margins: Top 0` <br /> `Header 2` <br /> `Footer 2` <br /> `Bottom 8` <br /> `Left 0`
+
+For example, a typical set-up might be
+
+`Margins: Top 2` <br /> `Header 2` <br /> `Footer 2` <br /> `Bottom 2` <br /> `Left 6` <br /> `Header /@T@//Maxo Ltd/` <br /> `Footer //Page @P@//`
+
+`Title Quarterly Report`
+
+The @-field `@P@` will be replaced by the current page number, and the @-field `@T@` by the Title. The resulting page layout would be as follows:
+
+<Shot src="z88-user-guide/pipedream-reference/140.webp" alt="Illustration for “Document options - OPTIONS”" width={276} />b:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$5","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$L10",null,{"value":[{"value":"Information lines","id":"information-lines","depth":2},{"value":"File","id":"file","depth":3},{"value":"Page","id":"page","depth":3},{"value":"Insert/Overtype","id":"insertovertype","depth":3},{"value":"Microspace","id":"microspace","depth":3},{"value":"Free","id":"free","depth":3},{"value":"Option lines","id":"option-lines","depth":2},{"value":"Altering options - Next Option","id":"altering-options---next-option","depth":3},{"value":"Text format","id":"text-format","depth":2},{"value":"Text/Numbers (T)","id":"textnumbers-t","depth":3},{"value":"Borders (Y)","id":"borders-y","depth":3},{"value":"Justify (N)","id":"justify-n","depth":3},{"value":"Wrap (Y)","id":"wrap-y","depth":3},{"value":"Insert on wrap (R)","id":"insert-on-wrap-r","depth":3},{"value":"Recalculation mode","id":"recalculation-mode","depth":2},{"value":"Auto/Man (A)","id":"automan-a","depth":3},{"value":"Columns/Rows (C)","id":"columnsrows-c","depth":3},{"value":"Number formats","id":"number-formats","depth":2},{"value":"Decimal places (2)","id":"decimal-places-2","depth":3},{"value":"Minus/brackets (M)","id":"minusbrackets-m","depth":3},{"value":"Lead chs. (£) Trail chs. (%)","id":"lead-chs--trail-chs-","depth":3},{"value":"Page format","id":"page-format","depth":2},{"value":"Page length (66)","id":"page-length-66","depth":3},{"value":"Line spacing (1)","id":"line-spacing-1","depth":3},{"value":"Start page","id":"start-page","depth":3},{"value":"Headers, footers, and margins","id":"headers-footers-and-margins","depth":2},{"value":"Header Footer","id":"header-footer","depth":3},{"value":"Title","id":"title","depth":3},{"value":"Margins","id":"margins","depth":2}],"children":[["$","$L11",null,{}],["$","$L12",null,{"metadata":{"description":"The OPTIONS menu contains only one command, Options Page, or ◇O, which displays a page of information about the current document together with the global settings which may be altered to effect...","title":"Document options - OPTIONS","filePath":"content/en/z88-user-guide/pipedream-reference/document-options-options.mdx","timestamp":1792315833000},"sourceCode":"$13","children":["$L14","$L15"]}]]}]}],null,"$L16"]}],"p":"$@17","v":null,"s":"$a"}}]]
+4:[["children",{"s":{"n":"mdxPath","t":"oc","k":"pipedream-reference/document-options-options","s":[]},"h":65600,"d":{"r":["$","$5","c",{"children":[null,["$","$L6",null,{"parallelRouterKey":"children","template":["$","$L7",null,{}]}]]}],"p":"$@8","v":"$9","s":"$a"},"c":"$Qb"}]]
+3:[["children",{"s":"z88-user-guide","h":131104,"c":"$Q4"}]]
+2:[["children",{"s":"(unlisted)","h":131168,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$5","h",{"children":[null,["$","$L19",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1b",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1c",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Document options - OPTIONS - Klive IDE"}],["$","meta","1",{"name":"description","content":"The OPTIONS menu contains only one command, Options Page, or ◇O, which displays a page of information about the current document together with the global settings which may be altered to effect..."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/z88-user-guide/pipedream-reference/document-options-options/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1d","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1e","v":null,"s":"$a"}},"a":"$@1f","u":"$@20","b":"nDS4ludpRjwY0zdBe-KGb"}
+21:I[721,["545","$c","500","$d","436","$e","992","$f"],"HeadingAnchor"]
+65:I[484,[],"OutletBoundary"]
+14:["$","div",null,{"id":"nextra-skip-nav"}]
+15:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Document options - OPTIONS","$undefined"]}],"\n",["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/pipedream-reference/pipedream-menu-options.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/pipedream-reference/pipedream-menu-options.webp","alt":"Pipedream menu options","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ",["$","strong",null,{"children":"OPTIONS"}]," menu contains only one command, ",["$","strong",null,{"children":"Options Page"}],", or ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"O, which displays a page of information about the current document together with the global settings which may be altered to effect the way that commands operate on the document."]}],"\n",["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/pipedream-reference/pipedream-menu-options1.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/pipedream-reference/pipedream-menu-options1.webp","alt":"Pipedream menu options1","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["You can return to a PipeDream document by pressing the ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Escape","children":"ESC"}]," key."]}],"\n",["$","h2",null,{"id":"information-lines","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Information lines",["$","$L21",null,{"id":"information-lines"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The right-hand column of the Options Page display gives information about the current document."}],"\n",["$","h3",null,{"id":"file","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["File",["$","$L21",null,{"id":"file"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The name of the document previously loaded with the ",["$","strong",null,{"children":"Load"}]," command, or the name assigned to a document by the ",["$","strong",null,{"children":"Name"}]," command (",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"FC) on the ",["$","strong",null,{"children":"FILES"}]," menu. If no name has been specified, it will show"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"No File"}]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The name will also appear on the SUSPENDED ACTIVITIES list in the Index display."}],"\n",["$","h3",null,{"id":"page","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Page",["$","$L21",null,{"id":"page"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Shows the current page number of the line containing the cursor. This will correspond to the page numbering when the document is printed unless rows are fixed with the ",["$","strong",null,{"children":"Fix Row"}]," command on the ",["$","strong",null,{"children":"LAYOUT"}]," menu, or the Options Page page-length setting has been set to zero."]}],"\n","$L22","\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41","\n","$L42","\n","$L43","\n","$L44","\n","$L45","\n","$L46","\n","$L47","\n","$L48","\n","$L49","\n","$L4a","\n","$L4b","\n","$L4c","\n","$L4d","\n","$L4e","\n","$L4f","\n","$L50","\n","$L51","\n","$L52","\n","$L53","\n","$L54","\n","$L55","\n","$L56","\n","$L57","\n","$L58","\n","$L59","\n","$L5a","\n","$L5b","\n","$L5c","\n","$L5d","\n","$L5e","\n","$L5f","\n","$L60","\n","$L61","\n","$L62","\n","$L63","\n","$L64"]]}]
+16:["$","$L65",null,{"children":["$","$1c",null,{"name":"Next.MetadataOutlet","children":"$@66"}]}]
+20:true
+a:300
+22:["$","h3",null,{"id":"insertovertype","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Insert/Overtype",["$","$L21",null,{"id":"insertovertype"}]]}]
+23:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Shows the current text entry mode selected by the ",["$","strong",null,{"children":"Insert/Overtype"}]," command on the ",["$","strong",null,{"children":"EDIT"}]," menu. The mode initially selected is Insert mode."]}]
+24:["$","h3",null,{"id":"microspace","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Microspace",["$","$L21",null,{"id":"microspace"}]]}]
+25:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Normally blank, displays the word ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Microspace"}]," if the microspace option has been selected from the ",["$","strong",null,{"children":"PRINT"}]," menu."]}]
+26:["$","h3",null,{"id":"free","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Free",["$","$L21",null,{"id":"free"}]]}]
+27:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Displays the amount of space remaining for characters in the current document, to the nearest multiple of 256 characters. It is inadvisable to continue typing text into a document if there are less than approximately 300 free characters. In such a situation you are advised to make space in memory by freeing activities, or deleting files."}]
+28:["$","h2",null,{"id":"option-lines","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Option lines",["$","$L21",null,{"id":"option-lines"}]]}]
+29:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This page is used to determine how text and expressions are displayed in a document (including the default setting for the display of expression results) and to set up the layout of a document ready for printing, specifying headers and footers, and margins at the top, bottom and left of the page. In addition, you can control the length of the page, the spacing of text, and the page numbering."}]
+2a:["$","h3",null,{"id":"altering-options---next-option","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Altering options - Next Option",["$","$L21",null,{"id":"altering-options---next-option"}]]}]
+2b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["As with many other commands, Next Option, ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"J will alternate between two available values, for example ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Y"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"N"}]," for ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Yes"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"No"}],", or ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"T"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"N"}]," for ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Text"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Numbers"}],". Alternatively, these values can be changed by typing the appropriate letter. In the case of options with more than two possible values, ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"J will set the option back to its default value."]}]
+2c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Other options can be altered by moving the cursor to the appropriate item, with the",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor up","children":"↑"}]," and ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor down","children":"↓"}]," keys, and then editing the item with the line-editing commands ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor left","children":"←"}],", ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor right","children":"→"}],", ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Delete","children":"DEL"}]," key and ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"G or ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Shift","children":"SHIFT"}]," ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Delete","children":"DEL"}]," to delete the character under the cursor. In numeric fields, such as ",["$","strong",null,{"children":"Page length"}],", Overtype mode is automatically set irrespective of the current Overtype/Insert mode setting."]}]
+2d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"In the following list of options the default value is shown against each option."}]
+2e:["$","h2",null,{"id":"text-format","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Text format",["$","$L21",null,{"id":"text-format"}]]}]
+2f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Determines the formatting of text in the document."}]
+30:["$","h3",null,{"id":"textnumbers-t","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Text/Numbers (T)",["$","$L21",null,{"id":"textnumbers-t"}]]}]
+31:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Set to ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"T"}]," (Text) to make the default slot format text slots, or ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"N"}]," (Numbers) for expression slots. In Numbers mode there is no need to type ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"X before entering an expression, and the cursor keys ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor right","children":"→"}]," and ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor left","children":"←"}]," will move directly between slots containing expressions; ie behave like ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Tab","children":"TAB"}]," and ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Shift","children":"SHIFT"}]," ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Tab","children":"TAB"}],"."]}]
+32:["$","h3",null,{"id":"borders-y","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Borders (Y)",["$","$L21",null,{"id":"borders-y"}]]}]
+33:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Set to ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Y"}]," (Yes) to display borders, or ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"N"}]," (No) to hide borders. Hiding the borders allows a larger area of the sheet to be displayed, and can be useful for word-processing applications."]}]
+34:["$","h3",null,{"id":"justify-n","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Justify (N)",["$","$L21",null,{"id":"justify-n"}]]}]
+35:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Set to ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"N"}]," (No justify) for ragged right margins, or ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Y"}]," (Yes) for even right-hand margins. To reformat a paragraph of text after changing this option, give the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Format Paragraph"}]," command, ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"R."]}]
+36:["$","h3",null,{"id":"wrap-y","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Wrap (Y)",["$","$L21",null,{"id":"wrap-y"}]]}]
+37:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Set to ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Y"}]," (Yes) to make text wrap automatically at the wrap point, or ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"N"}]," (No) for no wrapping."]}]
+38:["$","h3",null,{"id":"insert-on-wrap-r","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Insert on wrap (R)",["$","$L21",null,{"id":"insert-on-wrap-r"}]]}]
+39:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Set to ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"R"}]," (Rows) to maintain alignment between adjacent rows, or ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"C"}]," (Columns) for creating independent columns of text; see ",["$","strong",null,{"children":"Widths and margins in a multi-column document"}],", p. 129."]}]
+3a:["$","h2",null,{"id":"recalculation-mode","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Recalculation mode",["$","$L21",null,{"id":"recalculation-mode"}]]}]
+3b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Calc"}]," options determine how expression slots are recalculated in the document."]}]
+3c:["$","h3",null,{"id":"automan-a","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Auto/Man (A)",["$","$L21",null,{"id":"automan-a"}]]}]
+3d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Determines the recalculation of expression slots on the document."}]
+3e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Set to ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"A"}]," (Automatic) to recalculate the document every time an expression slot changes or ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"M"}]," (Manual) for recalculation only with the ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"A command. This option can be set to ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"M"}]," to make entering data into a large spreadsheet, or working with large text documents, faster."]}]
+3f:["$","h3",null,{"id":"columnsrows-c","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Columns/Rows (C)",["$","$L21",null,{"id":"columnsrows-c"}]]}]
+40:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Select the order of recalculation: ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"R"}]," (Rows) across rows first, or ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"C"}]," (Columns) down columns first."]}]
+41:["$","h2",null,{"id":"number-formats","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Number formats",["$","$L21",null,{"id":"number-formats"}]]}]
+42:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Determine the default display format for numerical expression slots."}]
+43:["$","h3",null,{"id":"decimal-places-2","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Decimal places (2)",["$","$L21",null,{"id":"decimal-places-2"}]]}]
+44:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Select ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"0"}]," to ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"9"}]," decimal places or ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"F"}]," for free format."]}]
+45:["$","h3",null,{"id":"minusbrackets-m","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Minus/brackets (M)",["$","$L21",null,{"id":"minusbrackets-m"}]]}]
+46:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Select ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"M"}]," (Minus) to display negative numbers with a minus sign, or ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"B"}]," (Brackets) for financial bracketed notation."]}]
+47:["$","h3",null,{"id":"lead-chs--trail-chs-","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Lead chs. (£) Trail chs. (%)",["$","$L21",null,{"id":"lead-chs--trail-chs-"}]]}]
+48:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Specify up to 4 characters to be displayed in front of or after expression slots with ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"LCL or ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"LCT set."]}]
+49:["$","h2",null,{"id":"page-format","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Page format",["$","$L21",null,{"id":"page-format"}]]}]
+4a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Determines the spacing and pagination of the document when printed."}]
+4b:["$","h3",null,{"id":"page-length-66","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Page length (66)",["$","$L21",null,{"id":"page-length-66"}]]}]
+4c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Set to between ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"1"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"127"}]," to specify the number of lines on each page, including margins, footer and header, or 0 to suppress page breaks altogether."]}]
+4d:["$","h3",null,{"id":"line-spacing-1","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Line spacing (1)",["$","$L21",null,{"id":"line-spacing-1"}]]}]
+4e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["You can specify from ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"0"}]," to ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"255"}]," additional blank lines to be inserted between each line of text."]}]
+4f:["$","h3",null,{"id":"start-page","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Start page",["$","$L21",null,{"id":"start-page"}]]}]
+50:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["You can set the current page number to ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"0"}]," to ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"255"}],"."]}]
+51:["$","h2",null,{"id":"headers-footers-and-margins","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Headers, footers, and margins",["$","$L21",null,{"id":"headers-footers-and-margins"}]]}]
+52:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You can specify an additional header or footer line of text to appear at the top or bottom of each printed page respectively. Each line of text can consist of up to three components, which will be left-aligned, centred, and right-aligned."}]
+53:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The left margin, and the margins above and below the header and footer, and between the header and footer and the page of text, can be separately altered to determine the layout of the printed page."}]
+54:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Note that if a header or footer are specified, the number of lines of text on each page will be reduced accordingly."}]
+55:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"277px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/pipedream-reference/139.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/pipedream-reference/139.webp","alt":"Illustration for “Document options - OPTIONS”","loading":"lazy","decoding":"async","width":277,"height":360}],[]]}]]}]
+56:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The complete page layout, with headers and footers and their associated margins, will be represented on the page map display at the right-hand side of the PipeDream screen."}]
+57:["$","h3",null,{"id":"header-footer","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Header Footer",["$","$L21",null,{"id":"header-footer"}]]}]
+58:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You can specify lines of text which will be printed out at the head and foot of each page. Each line has the format"}]
+59:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"/left/centre/right/"}]}]
+5a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"where left, centre, and right represent text which will be respectively left-aligned, centred and right-aligned, and ’/’ represents an arbitrary delimiter, which must not occur elsewhere in the line of text."}]
+5b:["$","h3",null,{"id":"title","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Title",["$","$L21",null,{"id":"title"}]]}]
+5c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A line of up to 244 characters can be entered in this field as a title for the document. The title can be included in the document, or in the footer or header, by giving the @T@ field; see p. 153."}]
+5d:["$","h2",null,{"id":"margins","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Margins",["$","$L21",null,{"id":"margins"}]]}]
+5e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You can specify the number of blank lines, from 0 to 255, to be left above the header, between header and text, between text and footer, and below the footer respectively. The left margin can specify a margin of 0 to 255 characters at the left of each page:"}]
+5f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Margins: Top 0"}]," ",["$","br",null,{}]," ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Header 2"}]," ",["$","br",null,{}]," ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Footer 2"}]," ",["$","br",null,{}]," ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Bottom 8"}]," ",["$","br",null,{}]," ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Left 0"}]]}]
+60:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"For example, a typical set-up might be"}]
+61:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Margins: Top 2"}]," ",["$","br",null,{}]," ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Header 2"}]," ",["$","br",null,{}]," ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Footer 2"}]," ",["$","br",null,{}]," ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Bottom 2"}]," ",["$","br",null,{}]," ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Left 6"}]," ",["$","br",null,{}]," ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Header /@T@//Maxo Ltd/"}]," ",["$","br",null,{}]," ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Footer //Page @P@//"}]]}]
+62:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Title Quarterly Report"}]}]
+63:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The @-field ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"@P@"}]," will be replaced by the current page number, and the @-field ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"@T@"}]," by the Title. The resulting page layout would be as follows:"]}]
+64:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"276px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/pipedream-reference/140.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/pipedream-reference/140.webp","alt":"Illustration for “Document options - OPTIONS”","loading":"lazy","decoding":"async","width":276,"height":361}],[]]}]]}]
+66:null
+a:C
+1f:0
+8:"$undefined"
+1e:"$undefined"
+17:"$undefined"

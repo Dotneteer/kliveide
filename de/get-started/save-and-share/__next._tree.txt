@@ -6,10 +6,10 @@
 :HL["/_next/static/media/cf9548a654a0290e-s.p.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
 :HL["/_next/static/css/0f6f87e08ec092cb.css","style"]
 :HL["/_next/static/css/11c59cc40cabfed8.css","style"]
-:HL["/_next/static/css/9c4bc814765a44b7.css","style"]
+:HL["/_next/static/css/4a37c4022140c7af.css","style"]
 :HL["/images/klive-logo.svg","image"]
 4:[["children",{"s":"__PAGE__","h":160}]]
-3:[["children",{"s":{"n":"mdxPath","t":"c","k":"get-started/save-and-share","s":[]},"h":65600,"c":"$Q4"}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"get-started/save-and-share","s":["z88-user-guide"]},"h":65600,"c":"$Q4"}]]
 2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
 1:[["children",{"s":{"n":"lang","t":"d","k":"de","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
-0:{"b":"m01EIyAwm2thcHawkou9W","t":{"t":{"s":"","h":131152,"c":"$Q1"}}}
+0:{"b":"nDS4ludpRjwY0zdBe-KGb","t":{"t":{"s":"","h":131152,"c":"$Q1"}}}
