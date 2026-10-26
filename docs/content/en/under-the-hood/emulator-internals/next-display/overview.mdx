@@ -1645,7 +1645,7 @@ green, a shade the eye hardly tells apart and the compositor never mistakes for 
 The palettes are what connect the 8-bit indices of Part 4 to these 9-bit colours, and the 8-bit
 indices are what keep the layers cheap: a Layer 2 dot is one byte, not two. An 8-bit palette
 entry can also be written in the short form `RRRGGGBB`, which leaves out the lowest bit of blue; the
-palette article of the series explains how that bit is made, and where the eight palettes are
+[palette article](/en/under-the-hood/emulator-internals/next-display/palettes/) of the series explains how that bit is made, and where the eight palettes are
 selected and written.
 
 ## Part 7: What stays the same
@@ -1717,7 +1717,7 @@ Next's ULA. What the Next changes about the ULA is the subject of the ULA articl
 |---|---|---|
 | 1 | The big picture | this article |
 | 2 | [The frame and the beam](/en/under-the-hood/emulator-internals/next-display/timing/) | the counters, the timing modes, 50 and 60 Hz, the interrupts, and the road from the counters to VGA and HDMI |
-| 3 | Colours and palettes | RGB333, the eight palettes and how they are written, both kinds of transparency, the fallback colour |
+| 3 | [Colours and palettes](/en/under-the-hood/emulator-internals/next-display/palettes/) | RGB333, the eight palettes and how they are written, both kinds of transparency, the fallback colour |
 | 4 | The ULA layer, extended | the Timex modes, ULANext, ULA+, scrolling and clipping |
 | 5 | LoRes and Radastan | the 128 × 96 modes that take the ULA's place |
 | 6 | Layer 2 | three resolutions, and why two of them store their bytes down the screen |

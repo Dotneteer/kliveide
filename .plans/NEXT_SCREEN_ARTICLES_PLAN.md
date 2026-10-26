@@ -4,8 +4,8 @@ A series of *Under the hood* articles that explain, in the style of
 `spectrum-display.mdx` and `zx81-display.mdx`, how the ZX Spectrum Next produces its picture:
 every video mode, the palettes, the layers and how they are composed into one pixel.
 
-Status: **articles 1 and 2 written** (`next-display/overview.mdx`, `next-display/timing.mdx`).
-Articles 3–10 to go, in the writing order of §1 (next: 3, the palettes).
+Status: **articles 1–3 written** (`next-display/overview.mdx`, `timing.mdx`, `palettes.mdx`).
+Articles 4–10 to go, in the writing order of §1 (next: 9, putting it together).
 
 ### As built (article 1)
 
@@ -28,6 +28,9 @@ Articles 3–10 to go, in the writing order of §1 (next: 3, the palettes).
 - Article 2's frame figures were generated once from each timing's counter values, so they are to
   scale; later edits are made in the SVG itself, keeping the scale (one unit = one dot or line, times
   the figure's stated factor). Its 50/60 Hz pictures come from the scene test like article 1's.
+- Article 3's machine pictures show that Layer 2's colour-based transparency is tested after the
+  palette offset: an offset moves the "empty" `$E3` byte to an opaque entry. Later articles (6, 9)
+  can point back to Part 4 and Part 6 of article 3 instead of re-explaining it.
 
 ---
 

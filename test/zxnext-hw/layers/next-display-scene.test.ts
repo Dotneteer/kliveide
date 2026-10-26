@@ -243,6 +243,52 @@ Wait:
   });
 });
 
+describe("next-display palettes: one bitmap, four pictures", () => {
+  /** The scene with some NextRegs written after it is drawn; no pixel byte changes */
+  const variant = async (writes: Array<[number, number]>): Promise<Frame> => {
+    const s = await drawScene();
+    for (const [r, v] of writes) s.setNextReg(r, v);
+    s.runFrames(2);
+    return s.screen();
+  };
+
+  it("recolours Layer 2 through its palette, its offset and the transparency colour", async () => {
+    const asDrawn = await variant([]);
+    // --- Layer 2's first palette ($43 bits 6-4 = 001), entry $A8 rewritten as $12: RGB333 0,4,5
+    const entry = await variant([[0x43, 0x10], [0x40, 0xa8], [0x41, 0x12], [0x43, 0x00]]);
+    // --- palette offset 1 ($70 bits 3-0): byte $A8 shows entry $B8, colour $B8: 5,6,0
+    const offset = await variant([[0x70, 0x01]]);
+    // --- entry $A8 given the colour $E3, the global transparency colour: the hills' body becomes
+    // --- see-through. (Setting $14 to $A8 instead would also do it, and make every $E3 dot visible.)
+    const transparent = await variant([[0x43, 0x10], [0x40, 0xa8], [0x41, 0xe3], [0x43, 0x00]]);
+
+    const hill = paper(128, 110);
+    expect(at(asDrawn, hill)).toBe(HILL);
+    expect(at(entry, hill)).toBe("#0092B6");
+    expect(at(offset, hill)).toBe("#B6DB00");
+    expect(at(transparent, hill)).toBe(SKY);
+    // --- the rest of the picture is the same in all four
+    for (const f of [entry, offset, transparent]) {
+      expect(at(f, POINTS.ground)).toBe(TILE_TOP);
+      expect(at(f, POINTS.sprite)).toBe(SPRITE);
+    }
+    expect(at(entry, POINTS.panel)).toBe(PANEL);
+    expect(at(transparent, POINTS.panel)).toBe(PANEL);
+    // --- the offset moves the transparent sky too: byte $E3 shows entry $F3, colour $F3 (7,4,7), which
+    // --- is not $14, so Layer 2's sky is opaque and covers the ULA's panel below it
+    expect(at(offset, POINTS.panel)).toBe("#FF92FF");
+    expect(at(offset, paper(10, 30))).toBe("#FF92FF");
+
+    const out = process.env.NEXT_DISPLAY_SHOTS;
+    if (out) {
+      const pictures = { "as-drawn": asDrawn, entry, offset, transparent };
+      for (const [name, f] of Object.entries(pictures)) {
+        await writeWebp(join(out, `en/under-the-hood/next-display/palettes/${name}.webp`), f);
+      }
+    }
+  });
+});
+
 /** One picture as lossless WebP, alpha forced opaque */
 async function writeWebp(path: string, frame: Frame): Promise<void> {
   const opaque = new Uint8Array(frame.rgba);
