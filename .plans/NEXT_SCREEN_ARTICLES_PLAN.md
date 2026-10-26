@@ -4,8 +4,9 @@ A series of *Under the hood* articles that explain, in the style of
 `spectrum-display.mdx` and `zx81-display.mdx`, how the ZX Spectrum Next produces its picture:
 every video mode, the palettes, the layers and how they are composed into one pixel.
 
-Status: **articles 1–3 written** (`next-display/overview.mdx`, `timing.mdx`, `palettes.mdx`).
-Articles 4–10 to go, in the writing order of §1 (next: 9, putting it together).
+Status: **articles 1, 2, 3 and 9 written** (`next-display/overview.mdx`, `timing.mdx`,
+`palettes.mdx`, `composition.mdx`). Articles 4–8 and 10 to go, in the writing order of §1 (next: 4,
+the ULA layer).
 
 ### As built (article 1)
 
@@ -31,6 +32,11 @@ Articles 4–10 to go, in the writing order of §1 (next: 9, putting it together
 - Article 3's machine pictures show that Layer 2's colour-based transparency is tested after the
   palette offset: an offset moves the "empty" `$E3` byte to an opaque entry. Later articles (6, 9)
   can point back to Part 4 and Part 6 of article 3 instead of re-explaining it.
+- Article 9 is checked on the machine: the scene scrolled so every pair of layers overlaps, four test
+  dots whose winner the test asserts in all six orders, the priority bit, and blend mode 110. The
+  blend picture showed two facts the plan did not list, now in the article: the blend source shows only
+  through Layer 2 (even the border disappears), and the tilemap can rise above the sprites. Its worked
+  example is the A–D table rather than five separate dots.
 
 ---
 
@@ -82,6 +88,13 @@ Articles 4–10 to go, in the writing order of §1 (next: 9, putting it together
   panel shows this state) with a **"Where to read the code"** table, and a **Summary**.
 - Relaxed and direct, never chatty: explain *why* the hardware is shaped this way, not only *what* it
   does.
+- **A register is always called a register** (a decision of the project author). A Next register is
+  never a bare `` `$15` ``: it is "NextReg `$15`", its bits "NextReg `$15` bits 4–2", and an I/O port is
+  "port `$123B`". The first time a register appears in a Part, it gets its official name from the
+  register list (`nextreg.txt`), in plain words: "the Sprite and Layers System register, NextReg
+  `$15`"; after that, "NextReg `$15`". A bare hex number such as `$E3` is then always a **value**. The
+  same holds in tables, figure labels and alt texts (a table may name the register in a cell as
+  "NextReg `$15`" without the official name).
 
 ### 0.3 Figures — many more than the model articles
 

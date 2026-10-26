@@ -147,7 +147,7 @@ reach the levels 0, 2, 4 and 6, never full blue. With the OR they reach **0, 3, 
 and full blue both, and two steps between them, nearly even. An 8-bit colour can be as bright as a
 9-bit one, which is what matters most.
 
-A program that wants all nine bits writes them in two goes, through NextReg `$44`: the first write is
+A program that wants all nine bits writes them in two goes, through the 9-bit Palette Value register, NextReg `$44`: the first write is
 the upper eight bits, the same `RRRGGGBB`, and the second write carries the lowest blue bit in bit 0.
 Bit 7 of the second write has another job, for Layer 2 only: the **priority bit** that lifts a Layer 2
 dot above every other layer, whatever their order.
@@ -227,35 +227,35 @@ program can edit any of the eight, shown or not, with two independent choices in
   <text x="195.0" y="44" textAnchor="middle" fill="#3b82f6" fontSize="13" fontWeight="600">ULA</text>
   <rect x="130" y="70" width="130" height="54" rx="6" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" />
   <text x="195.0" y="94" textAnchor="middle" fill="currentColor" fontSize="12">256 entries</text>
-  <text x="195.0" y="112" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.8">edit: $43 = 000</text>
+  <text x="195.0" y="112" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.8">edit: NextReg $43 = 000</text>
   <rect x="130" y="140" width="130" height="54" rx="6" fill="#3b82f6" fillOpacity="0.12" stroke="#3b82f6" />
   <text x="195.0" y="164" textAnchor="middle" fill="currentColor" fontSize="12">256 entries</text>
-  <text x="195.0" y="182" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.8">edit: $43 = 100</text>
-  <text x="195.0" y="222" textAnchor="middle" fill="currentColor" fontSize="11">shown: $43 bit 1</text>
+  <text x="195.0" y="182" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.8">edit: NextReg $43 = 100</text>
+  <text x="195.0" y="222" textAnchor="middle" fill="currentColor" fontSize="11">shown: NextReg $43 bit 1</text>
   <text x="337.0" y="44" textAnchor="middle" fill="#e8912d" fontSize="13" fontWeight="600">Layer 2</text>
   <rect x="272" y="70" width="130" height="54" rx="6" fill="#e8912d" fillOpacity="0.22" stroke="#e8912d" />
   <text x="337.0" y="94" textAnchor="middle" fill="currentColor" fontSize="12">256 entries</text>
-  <text x="337.0" y="112" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.8">edit: $43 = 001</text>
+  <text x="337.0" y="112" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.8">edit: NextReg $43 = 001</text>
   <rect x="272" y="140" width="130" height="54" rx="6" fill="#e8912d" fillOpacity="0.12" stroke="#e8912d" />
   <text x="337.0" y="164" textAnchor="middle" fill="currentColor" fontSize="12">256 entries</text>
-  <text x="337.0" y="182" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.8">edit: $43 = 101</text>
-  <text x="337.0" y="222" textAnchor="middle" fill="currentColor" fontSize="11">shown: $43 bit 2</text>
+  <text x="337.0" y="182" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.8">edit: NextReg $43 = 101</text>
+  <text x="337.0" y="222" textAnchor="middle" fill="currentColor" fontSize="11">shown: NextReg $43 bit 2</text>
   <text x="479.0" y="44" textAnchor="middle" fill="#a855f7" fontSize="13" fontWeight="600">sprites</text>
   <rect x="414" y="70" width="130" height="54" rx="6" fill="#a855f7" fillOpacity="0.22" stroke="#a855f7" />
   <text x="479.0" y="94" textAnchor="middle" fill="currentColor" fontSize="12">256 entries</text>
-  <text x="479.0" y="112" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.8">edit: $43 = 010</text>
+  <text x="479.0" y="112" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.8">edit: NextReg $43 = 010</text>
   <rect x="414" y="140" width="130" height="54" rx="6" fill="#a855f7" fillOpacity="0.12" stroke="#a855f7" />
   <text x="479.0" y="164" textAnchor="middle" fill="currentColor" fontSize="12">256 entries</text>
-  <text x="479.0" y="182" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.8">edit: $43 = 110</text>
-  <text x="479.0" y="222" textAnchor="middle" fill="currentColor" fontSize="11">shown: $43 bit 3</text>
+  <text x="479.0" y="182" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.8">edit: NextReg $43 = 110</text>
+  <text x="479.0" y="222" textAnchor="middle" fill="currentColor" fontSize="11">shown: NextReg $43 bit 3</text>
   <text x="621.0" y="44" textAnchor="middle" fill="#30a46c" fontSize="13" fontWeight="600">tilemap</text>
   <rect x="556" y="70" width="130" height="54" rx="6" fill="#30a46c" fillOpacity="0.22" stroke="#30a46c" />
   <text x="621.0" y="94" textAnchor="middle" fill="currentColor" fontSize="12">256 entries</text>
-  <text x="621.0" y="112" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.8">edit: $43 = 011</text>
+  <text x="621.0" y="112" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.8">edit: NextReg $43 = 011</text>
   <rect x="556" y="140" width="130" height="54" rx="6" fill="#30a46c" fillOpacity="0.12" stroke="#30a46c" />
   <text x="621.0" y="164" textAnchor="middle" fill="currentColor" fontSize="12">256 entries</text>
-  <text x="621.0" y="182" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.8">edit: $43 = 111</text>
-  <text x="621.0" y="222" textAnchor="middle" fill="currentColor" fontSize="11">shown: $6B bit 4</text>
+  <text x="621.0" y="182" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.8">edit: NextReg $43 = 111</text>
+  <text x="621.0" y="222" textAnchor="middle" fill="currentColor" fontSize="11">shown: NextReg $6B bit 4</text>
   <path d="M195.0,238 v8 H621.0 v-8" fill="none" stroke="currentColor" strokeOpacity="0.55" />
   <text x="408.0" y="260" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.85">memory 1: ULA and tilemap</text>
   <path d="M337.0,264 v8 H479.0 v-8" fill="none" stroke="currentColor" strokeOpacity="0.55" />
@@ -270,8 +270,7 @@ the middle of one.
 
 ### Writing and reading a palette
 
-Writing a palette is three steps. NextReg `$43` bits 6–4 pick the palette. NextReg `$40` sets the
-**index** of the first entry to write. Then each write to NextReg `$41` stores one 8-bit colour into
+Writing a palette is three steps. Bits 6–4 of the Palette Control register, NextReg `$43`, pick the palette. The Palette Index register, NextReg `$40`, sets the **index** of the first entry to write. Then each write to the 8-bit Palette Value register, NextReg `$41`, stores one 8-bit colour into
 the entry at the index and moves the index on by one, so a run of colours goes into a run of entries
 without setting the index again:
 
@@ -283,28 +282,28 @@ without setting the index again:
     </marker>
   </defs>
   <rect x="20" y="40" width="118" height="54" rx="6" fill="currentColor" fillOpacity="0.05" stroke="currentColor" strokeOpacity="0.45" />
-  <text x="79" y="62" textAnchor="middle" fill="currentColor" fontSize="13" fontWeight="600">$43</text>
+  <text x="79" y="62" textAnchor="middle" fill="currentColor" fontSize="13" fontWeight="600">NextReg $43</text>
   <text x="79" y="82" textAnchor="middle" fill="currentColor" fontSize="11">which palette</text>
   <line x1="138" y1="67" x2="154" y2="67" stroke="currentColor" strokeOpacity="0.6" markerEnd="url(#pl4-arrow)" />
   <rect x="156" y="40" width="118" height="54" rx="6" fill="currentColor" fillOpacity="0.05" stroke="currentColor" strokeOpacity="0.45" />
-  <text x="215" y="62" textAnchor="middle" fill="currentColor" fontSize="13" fontWeight="600">$40 = 16</text>
-  <text x="215" y="82" textAnchor="middle" fill="currentColor" fontSize="11">index 16</text>
+  <text x="215" y="62" textAnchor="middle" fill="currentColor" fontSize="13" fontWeight="600">NextReg $40</text>
+  <text x="215" y="82" textAnchor="middle" fill="currentColor" fontSize="11">index = 16</text>
   <line x1="274" y1="67" x2="290" y2="67" stroke="currentColor" strokeOpacity="0.6" markerEnd="url(#pl4-arrow)" />
   <rect x="292" y="40" width="118" height="54" rx="6" fill="#e5484d" fillOpacity="0.1" stroke="#e5484d" />
-  <text x="351" y="62" textAnchor="middle" fill="currentColor" fontSize="13" fontWeight="600">$41</text>
+  <text x="351" y="62" textAnchor="middle" fill="currentColor" fontSize="13" fontWeight="600">NextReg $41</text>
   <text x="351" y="82" textAnchor="middle" fill="currentColor" fontSize="11">entry 16, → 17</text>
   <line x1="410" y1="67" x2="426" y2="67" stroke="currentColor" strokeOpacity="0.6" markerEnd="url(#pl4-arrow)" />
   <rect x="428" y="40" width="118" height="54" rx="6" fill="#e5484d" fillOpacity="0.1" stroke="#e5484d" />
-  <text x="487" y="62" textAnchor="middle" fill="currentColor" fontSize="13" fontWeight="600">$41</text>
+  <text x="487" y="62" textAnchor="middle" fill="currentColor" fontSize="13" fontWeight="600">NextReg $41</text>
   <text x="487" y="82" textAnchor="middle" fill="currentColor" fontSize="11">entry 17, → 18</text>
   <line x1="546" y1="67" x2="562" y2="67" stroke="currentColor" strokeOpacity="0.6" markerEnd="url(#pl4-arrow)" />
   <rect x="564" y="40" width="118" height="54" rx="6" fill="#e5484d" fillOpacity="0.1" stroke="#e5484d" />
-  <text x="623" y="62" textAnchor="middle" fill="currentColor" fontSize="13" fontWeight="600">$41</text>
+  <text x="623" y="62" textAnchor="middle" fill="currentColor" fontSize="13" fontWeight="600">NextReg $41</text>
   <text x="623" y="82" textAnchor="middle" fill="currentColor" fontSize="11">entry 18, → 19</text>
-  <text x="350" y="128" textAnchor="middle" fill="currentColor" fontSize="11">each $41 write stores one colour and moves the index on (unless $43 bit 7 stops it)</text>
-  <text x="350" y="148" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.8">with $44, two writes per entry; a write to $40, $41 or $43 restarts the pair</text>
+  <text x="350" y="128" textAnchor="middle" fill="currentColor" fontSize="11">each write to NextReg $41 stores one colour and moves the index on (unless NextReg $43 bit 7 stops it)</text>
+  <text x="350" y="148" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.8">with NextReg $44, two writes per entry; a write to NextReg $40, $41 or $43 restarts the pair</text>
 </svg>
-<figcaption>Writing a palette: one index, then a colour per write. `$43` bit 7 stops the index moving on, for a program that wants to rewrite the same entry again and again.</figcaption>
+<figcaption>Writing a palette: one index, then a colour per write. NextReg `$43` bit 7 stops the index moving on, for a program that wants to rewrite the same entry again and again.</figcaption>
 </figure>
 
 ```z80klive
@@ -317,11 +316,11 @@ without setting the index again:
     nextreg $41,%11100000   ; red 7
 ```
 
-With `$44` it is the same, with two writes per entry; the index moves on after the second. A write to
-`$40`, `$41` or `$43` in between restarts the pair, so a program cannot leave half a colour behind.
+With the 9-bit Palette Value register, NextReg `$44`, it is the same, with two writes per entry; the index moves on after the second. A write to
+NextReg `$40`, `$41` or `$43` in between restarts the pair, so a program cannot leave half a colour behind.
 
-A program can read the entries back too. Reading `$41` gives the upper eight bits of the entry at the
-index, and reading `$44` gives its second byte, the lowest blue bit and the priority bit. Reads never
+A program can read the entries back too. Reading NextReg `$41` gives the upper eight bits of the entry at the
+index, and reading NextReg `$44` gives its second byte, the lowest blue bit and the priority bit. Reads never
 move the index on.
 
 ## Part 3: Where the indices come from
@@ -339,12 +338,12 @@ uses different entries of the ULA palette:
   PAPER 24–31. The border uses the PAPER entries. FLASH swaps ink and paper, as it always did. A
   program that changes these 32 entries changes the Spectrum's colours, and old software keeps
   working in new colours.
-- **ULANext** (NextReg `$43` bit 0): the attribute byte is split by a **mask** in NextReg `$42`. The bits
+- **ULANext** (bit 0 of the Palette Control register, NextReg `$43`): the attribute byte is split by a **mask** in the ULANext Attribute Byte Format register, NextReg `$42`. The bits
   the mask covers are the INK, an index from 0 upward; the rest are the PAPER, an index from 128
   upward, and the border uses the PAPER entries too. A mask of `$07` gives 8 inks and 32 papers, `$FF`
   gives 256 inks and takes paper and border from the fallback colour. FLASH and BRIGHT are gone: their
   bits are colour now.
-- **ULA+** (NextReg `$68` bit 3, or ULA+'s own ports): a standard from other Spectrum clones, with 64
+- **ULA+** (bit 3 of the ULA Control register, NextReg `$68`, or ULA+'s own ports): a standard from other Spectrum clones, with 64
   colours in entries 192–255. FLASH and BRIGHT choose one of four groups of 16, each with 8 inks and
   8 papers. ULA+ software writes its colours to port `$FF3B` in its own bit order, green first; the
   Next reorders them into `RRRGGGBB` and stores them in the ULA palette like any other colour.
@@ -852,8 +851,7 @@ and why there are two different rules.
 
 ### The index rule: a hole in a shape
 
-A **sprite** dot is transparent when its pattern value equals NextReg `$4B`, and a **tile** dot when
-its 4-bit value equals NextReg `$4C` (for 4-bit sprites, the lower four bits of `$4B`). The test is
+A **sprite** dot is transparent when its pattern value equals the value in the Sprite Transparency Index register, NextReg `$4B`, and a **tile** dot when its 4-bit value equals the value in the Tilemap Transparency Index register, NextReg `$4C` (for 4-bit sprites, the lower four bits of NextReg `$4B`). The test is
 made on the dot itself, **before** the palette offset is applied. That is what makes a pattern
 reusable: the hole is part of the shape, and it stays a hole whichever offset a sprite or tile is
 drawn with, and whatever the palette holds.
@@ -861,28 +859,28 @@ drawn with, and whatever the palette holds.
 ### The colour rule: a colour that means nothing
 
 The **ULA**, **LoRes**, **Layer 2**, and tiles in text mode use the other rule: a dot is transparent
-when its **colour**, after the palette, equals the **global transparency colour** in NextReg `$14`.
-`$14` is an 8-bit colour, and it is compared with the upper eight bits of the 9-bit colour, so the
+when its **colour**, after the palette, equals the **global transparency colour**, held in the Global Transparency Colour register, NextReg `$14`.
+NextReg `$14` is an 8-bit colour, and it is compared with the upper eight bits of the 9-bit colour, so the
 lowest blue bit does not matter: two colours that differ only in it are both transparent.
 
 These layers draw whole screens of colours, and for a picture "this colour means see-through" is the
 natural rule. But it has consequences a programmer must know, because the test is made on the
 colour:
 
-- **Any index can be transparent.** Whatever entry holds the colour `$14` makes its dots
+- **Any index can be transparent.** Whatever entry holds the colour in NextReg `$14` makes its dots
   transparent, and two entries with that colour make two transparent indices.
-- **A palette change can make dots appear or vanish.** Give an entry the colour `$14` and every dot
+- **A palette change can make dots appear or vanish.** Give an entry the colour in NextReg `$14` and every dot
   using it disappears; give the transparent entry another colour and the "empty" parts of the layer
   suddenly show. Part 6 shows both on the machine.
 - **The offset moves transparency too.** The offset is added before the lookup, so with an offset the
   "empty" byte `$E3` points at another entry, with another colour.
-- **Changing `$14` changes the meaning of every layer that uses it.** Set it to some other colour and
+- **Changing NextReg `$14` changes the meaning of every layer that uses it.** Set it to some other colour and
   that colour vanishes from the ULA, LoRes and Layer 2 alike, while every dot that was `$E3` becomes
   visible.
 
 ### `$E3`: the colour of nothing
 
-`$14` starts at `$E3`, and so do the sprites' `$4B` and the fallback colour, while the tilemap's `$4C`
+NextReg `$14` starts at `$E3`, and so do the sprites' NextReg `$4B` and the fallback colour, while the tilemap's NextReg `$4C`
 starts at `$F`. `$E3` is `111 000 11`, a bright magenta, a colour a picture rarely wants. And in the
 default Layer 2 and sprite palettes, entry `$E3` holds the colour `$E3` (Part 5). So out of the box, a
 Layer 2 byte `$E3` and a sprite pattern value `$E3` are both invisible, by two different rules that
@@ -895,7 +893,7 @@ hole. So the default ULA palette gives bright magenta one step of green.
 ### The fallback colour
 
 When every layer answers "transparent" for a dot, the picture still needs a colour. It is the
-**fallback colour**, NextReg `$4A`, an 8-bit colour made into nine bits the same way as a `$41` write.
+**fallback colour**, held in the Fallback Colour register, NextReg `$4A`: an 8-bit colour made into nine bits the same way as a write to the 8-bit Palette Value register, NextReg `$41`.
 The ULA uses it in two more places: in ULANext with the mask `$FF`, as the paper and the border, and
 for any mask that is not one of the eight it accepts.
 
@@ -988,8 +986,7 @@ For that last kind, and for most palette effects that follow the beam, the **Cop
 the cheapest tool. It is a small co-processor of its own, beside the CPU, that runs a list of up to
 1,024 instructions in step with the beam: **WAIT** until the beam reaches a line and a position, and
 **MOVE** a value into a NextReg. The palette registers are NextRegs, so a Copper list can rewrite a
-palette entry at any line, or at several places along one: WAIT for the line, MOVE the index into
-`$40`, MOVE the colour into `$41`. With `$43` bit 7 set the index does not move on after a `$41`
+palette entry at any line, or at several places along one: WAIT for the line, MOVE the index into the Palette Index register, NextReg `$40`, MOVE the colour into the 8-bit Palette Value register, NextReg `$41`. With bit 7 of the Palette Control register, NextReg `$43`, set the index does not move on after a NextReg `$41`
 write, so a gradient that recolours one entry needs a single MOVE per line.
 
 Everything about it is cheaper than doing the same with the CPU. Once the list is written, it costs
@@ -1010,15 +1007,15 @@ NextRegs changed:
   <image x="360" y="8" width="320" height="256" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/palettes/entry.webp`} />
   <rect x="360" y="8" width="320" height="256" fill="none" stroke="currentColor" strokeOpacity="0.35" />
   <text x="520" y="282" textAnchor="middle" fill="currentColor" fontSize="12" fontWeight="600">entry $A8 rewritten</text>
-  <text x="520" y="297" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.75">$43 = $10, $40 = $A8, $41 = $12</text>
+  <text x="520" y="297" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.75">NextReg $43 = $10, NextReg $40 = $A8, NextReg $41 = $12</text>
   <image x="20" y="300" width="320" height="256" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/palettes/offset.webp`} />
   <rect x="20" y="300" width="320" height="256" fill="none" stroke="currentColor" strokeOpacity="0.35" />
   <text x="180" y="574" textAnchor="middle" fill="currentColor" fontSize="12" fontWeight="600">palette offset 1</text>
-  <text x="180" y="589" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.75">$70 = $01</text>
+  <text x="180" y="589" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.75">NextReg $70 = $01</text>
   <image x="360" y="300" width="320" height="256" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/palettes/transparent.webp`} />
   <rect x="360" y="300" width="320" height="256" fill="none" stroke="currentColor" strokeOpacity="0.35" />
   <text x="520" y="574" textAnchor="middle" fill="currentColor" fontSize="12" fontWeight="600">entry $A8 given the colour $E3</text>
-  <text x="520" y="589" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.75">$40 = $A8, $41 = $E3</text>
+  <text x="520" y="589" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.75">NextReg $40 = $A8, NextReg $41 = $E3</text>
 </svg>
 <figcaption>One bitmap, four pictures. Top right: one palette entry rewritten. Bottom left: an offset moves every byte, and the "empty" `$E3` moves to an opaque pink that covers the layers below. Bottom right: the hills' entry given the transparency colour; only their edge, another entry, remains.</figcaption>
 </figure>
@@ -1088,8 +1085,8 @@ the steps between are within a unit of even.
 ### Eight palettes of nine bits
 
 Klive's Next core keeps the **eight palettes** as 256 entries each, nine bits of colour plus the
-priority bit, and handles `$40`–`$44` and `$4A` as the machine does: the 8-bit form with the OR, the
-two writes of `$44`, the moving index and its `$43` bit 7, reads that do not move it. ULA+ colours
+priority bit, and handles the palette registers, NextRegs `$40`–`$44`, and the Fallback Colour register, NextReg `$4A`, as the machine does: the 8-bit form with the OR, the
+two writes of NextReg `$44`, the moving index and its NextReg `$43` bit 7, reads that do not move it. ULA+ colours
 written to port `$FF3B` are reordered and stored in the ULA palette's top 64 entries. A reset clears
 the palette registers and leaves the colours; switching the machine on fills them with the firmware's
 defaults of Part 5.
@@ -1122,18 +1119,18 @@ palette files (`.pal`, `.npl`) open in the IDE's [palette editor](/en/guides/nex
 ## Summary
 
 - Every colour is **RGB333**, 512 colours. Programs usually write the 8-bit form `RRRGGGBB`, whose
-  missing blue bit is **B1 OR B0**, so blue still reaches levels 0, 3, 5 and 7; `$44` writes all nine
+  missing blue bit is **B1 OR B0**, so blue still reaches levels 0, 3, 5 and 7; NextReg `$44` writes all nine
   bits, and the Layer 2 priority bit, in two writes.
 - There are **eight palettes**, two each for the ULA, Layer 2, the sprites and the tilemap. NextReg
-  `$43` bits 6–4 pick the one a program edits; separate bits pick the one each layer shows. `$40` sets
-  the index, and each `$41` write stores a colour and moves it on.
+  `$43` bits 6–4 pick the one a program edits; separate bits pick the one each layer shows. NextReg `$40` sets
+  the index, and each NextReg `$41` write stores a colour and moves it on.
 - The ULA makes indices from attributes in three maps, **standard, ULANext and ULA+**. The other
   layers use their dots with a 4-bit **palette offset**, added to the upper four bits of the index.
-- Transparency has **two rules**: the sprites and the tilemap test their **index** (`$4B`, `$4C`)
-  before the offset, the ULA, LoRes and Layer 2 test their **colour** (`$14`) after the palette. So for
+- Transparency has **two rules**: the sprites and the tilemap test their **index** (NextRegs `$4B` and `$4C`)
+  before the offset, the ULA, LoRes and Layer 2 test their **colour** (NextReg `$14`) after the palette. So for
   those three, palette changes and offsets can make dots appear or vanish.
 - **`$E3`** is the colour of nothing by default, which is also why the default bright magenta has one
-  step of green. When every layer is transparent, the **fallback colour** `$4A` shows.
+  step of green. When every layer is transparent, the **fallback colour** NextReg `$4A` shows.
 - At power-on the firmware fills the ULA palettes with the Spectrum's colours and the others with the
   identity; a reset keeps whatever they hold.
 - Palettes make colour changes cheap: cycling, fades, switching, recolouring, and per-line changes,

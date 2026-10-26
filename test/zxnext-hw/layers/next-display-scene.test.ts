@@ -289,6 +289,66 @@ describe("next-display palettes: one bitmap, four pictures", () => {
   });
 });
 
+describe("next-display composition: orders, priority, blending", () => {
+  /** The scene with Layer 2 scrolled up 50 lines and the tilemap 64, so every pair of layers overlaps */
+  const stacked = async (writes: Array<[number, number]>): Promise<Frame> => {
+    const s = await drawScene();
+    for (const [r, v] of [[0x17, 50], [0x31, 64], ...writes] as Array<[number, number]>) s.setNextReg(r, v);
+    s.runFrames(2);
+    return s.screen();
+  };
+  const order = (o: number): [number, number] => [0x15, (o << 2) | 0x01]; // $15: sprites on, order o
+  // --- A: a sprite on a hill; B: the ULA panel on a hill's edge; C: a platform's top on a hill;
+  // --- D: a sprite on the ground (the tilemap), with no Layer 2 under it
+  const A = paper(154, 60);
+  const B = paper(128, 8);
+  const C = paper(60, 56);
+  const D = wide(96, 166);
+  const EDGE = "#DB6D00"; // Layer 2 $CC: 6,3,0
+
+  it("lets each of the six orders decide the four overlaps", async () => {
+    // --- expected winners at A, B, C, D: S sprite, L Layer 2, U the ULA/tilemap layer
+    const expected: Record<string, [string, string, string, string]> = {
+      SLU: ["S", "L", "L", "S"], LSU: ["L", "L", "L", "S"], SUL: ["S", "U", "U", "S"],
+      LUS: ["L", "L", "L", "U"], USL: ["S", "U", "U", "U"], ULS: ["L", "U", "U", "U"]
+    };
+    const out = process.env.NEXT_DISPLAY_SHOTS;
+    for (const [i, name] of ["SLU", "LSU", "SUL", "LUS", "USL", "ULS"].entries()) {
+      const f = await stacked([order(i)]);
+      const [a, b, c, d] = expected[name];
+      expect(`${name} A ${at(f, A)}`).toBe(`${name} A ${a === "S" ? SPRITE : HILL}`);
+      expect(`${name} B ${at(f, B)}`).toBe(`${name} B ${b === "U" ? PANEL : EDGE}`);
+      expect(`${name} C ${at(f, C)}`).toBe(`${name} C ${c === "U" ? TILE_TOP : HILL}`);
+      expect(`${name} D ${at(f, D) === SPRITE ? "S" : "U"}`).toBe(`${name} D ${d}`);
+      if (out) await writeWebp(join(out, `en/under-the-hood/next-display/composition/order-${name.toLowerCase()}.webp`), f);
+    }
+  });
+
+  it("lifts a Layer 2 dot with the priority bit above everything", async () => {
+    // --- USL: the ULA/tilemap on top; Layer 2's entry $A8 gets the priority bit (the 2nd $44 write, bit 7)
+    const plain = await stacked([order(4)]);
+    const lifted = await stacked([order(4), [0x43, 0x10], [0x40, 0xa8], [0x44, 0xa8], [0x44, 0x80], [0x43, 0x00]]);
+    expect(at(plain, C)).toBe(TILE_TOP);
+    expect(at(lifted, C)).toBe(HILL); // the hill's body ($A8) over the platform
+    expect(at(lifted, A)).toBe(HILL); // and over the sprite
+    expect(at(lifted, B)).toBe(PANEL); // the edge ($CC) has no priority: the panel stays on top
+    const out = process.env.NEXT_DISPLAY_SHOTS;
+    if (out) await writeWebp(join(out, "en/under-the-hood/next-display/composition/priority.webp"), lifted);
+  });
+
+  it("blends Layer 2 with the ULA, which then shows only where Layer 2 is opaque", async () => {
+    // --- the ULA's clip window opened to the whole display area (yellow paper everywhere); blend mode
+    // --- 110 ($15 = 110 << 2 | sprites on), blend source the ULA ($68 bits 6-5 = 00)
+    const f = await stacked([[0x1c, 0x04], [0x1a, 0], [0x1a, 255], [0x1a, 0], [0x1a, 191], [0x15, (6 << 2) | 1], [0x68, 0x00]]);
+    // --- a hill's body: Layer 2 5,2,0 + ULA yellow paper 5,5,0 = 10,7,0, clamped to 7,7,0
+    expect(at(f, paper(128, 40))).toBe("#FFFF00");
+    // --- where Layer 2 is transparent, the yellow paper does not show at all: the fallback does
+    expect(at(f, paper(10, 100))).toBe(SKY);
+    const out = process.env.NEXT_DISPLAY_SHOTS;
+    if (out) await writeWebp(join(out, "en/under-the-hood/next-display/composition/blend.webp"), f);
+  });
+});
+
 /** One picture as lossless WebP, alpha forced opaque */
 async function writeWebp(path: string, frame: Frame): Promise<void> {
   const opaque = new Uint8Array(frame.rgba);

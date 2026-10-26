@@ -222,12 +222,12 @@ is **transparent**, the dot comes from the layer below it; where that one is tra
 the next one down, and so on to the bottom of the stack. Only where every layer is transparent does
 the fallback colour show. Part 4 explains what makes a layer transparent at a dot.
 
-The order of the stack is **not fixed**. NextReg `$15` picks one of six orders for the sprites,
+The order of the stack is **not fixed**. The Sprite and Layers System register, NextReg `$15`, picks one of six orders for the sprites,
 Layer 2 and the ULA (with the tilemap), so a program can put Layer 2 in front of the sprites, or the
 Spectrum screen in front of everything. The tilemap can sit in front of the ULA or behind it, for the
 whole map or tile by tile. The figures in this article use the default order, the one the machine
 starts with: the sprites on top, then Layer 2, then the tilemap, then the ULA. Part 5 shows where in
-the pipeline the order is applied, and article 9 of the series shows all six.
+the pipeline the order is applied, and [article 9](/en/under-the-hood/emulator-internals/next-display/composition/#part-4-six-orders) of the series shows all six.
 
 - **The ULA.** The Spectrum's own screen, `$4000` in bank 5 or the shadow screen in bank 7, with
   all of its rules. The Next lets it do more when a program asks: the Timex modes (a colour for
@@ -252,7 +252,7 @@ the pipeline the order is applied, and article 9 of the series shows all six.
   shows outside its 256 × 192 area**, in the colour of port `$FE`. It takes part in the composition
   like any other ULA dot, which is why sprites and Layer 2 can be drawn over it.
 - **The fallback colour.** When every layer says "nothing here" for a dot, the picture still needs
-  a colour. NextReg `$4A` holds it.
+  a colour. The Fallback Colour register, NextReg `$4A`, holds it.
 
 Here is one scene, the screen of a game in progress, split into what each layer contributes:
 
@@ -354,15 +354,15 @@ There are four windows, one for each layer (LoRes, which takes the ULA's place, 
 
 | Window | NextReg | Coordinates | One X unit | After reset |
 |---|---|---|---|---|
-| ULA and LoRes | `$1A` | the display area | 1 dot | 0–255, 0–191 |
-| Layer 2 | `$18` | the display area in 256 × 192; the wide area in 320 × 256 and 640 × 256 | 1 dot; 2 dots in the wide modes | 0–255, 0–191 |
-| Tilemap | `$1B` | the wide area | 2 dots | 0–159, 0–255 |
-| Sprites | `$19` | the display area; with "over border" (`$15` bit 1), the whole wide area, or the window in wide-area units if `$15` bit 5 is set | 1 dot; 2 dots over the border | 0–255, 0–191 |
+| ULA and LoRes | NextReg `$1A` | the display area | 1 dot | 0–255, 0–191 |
+| Layer 2 | NextReg `$18` | the display area in 256 × 192; the wide area in 320 × 256 and 640 × 256 | 1 dot; 2 dots in the wide modes | 0–255, 0–191 |
+| Tilemap | NextReg `$1B` | the wide area | 2 dots | 0–159, 0–255 |
+| Sprites | NextReg `$19` | the display area; with "over border" (NextReg `$15` bit 1), the whole wide area, or the window in wide-area units if NextReg `$15` bit 5 is set | 1 dot; 2 dots over the border | 0–255, 0–191 |
 
 Each window is four bytes, **X1, X2, Y1, Y2**, and both edges are inside it: a window of X 0–255 is
 256 dots wide. A program writes all four to the same NextReg, one after the other; a small index
 inside the machine says which coordinate the next write sets, steps on after every write, and wraps
-from Y2 back to X1. NextReg `$1C` resets the index of any of the four windows, so a program can
+from Y2 back to X1. The Clip Window Control register, NextReg `$1C`, resets the index of any of the four windows, so a program can
 start from X1 without counting.
 
 <figure>
@@ -496,10 +496,10 @@ just before it comes back in on the right. The picture never needs to be bigger 
 
 | Layer | X offset | Y offset | The picture wraps at |
 |---|---|---|---|
-| ULA | `$26`: 0–255 | `$27`: 0–191 | 256 × 192 |
-| LoRes | `$32`: 0–255 | `$33`: 0–191 | 256 × 192, in dots: one step is half a LoRes block |
-| Layer 2 | `$16` and `$71` bit 0: 0–319 (in 640 × 256, steps of two dots) | `$17`: 0–191 or 0–255 | its own size: 256 × 192, or 320 × 256 |
-| Tilemap | `$2F` and `$30`: 0–319, or 0–639 with 80 columns | `$31`: 0–255 | its own size: 320 or 640 × 256 |
+| ULA | NextReg `$26`: 0–255 | NextReg `$27`: 0–191 | 256 × 192 |
+| LoRes | NextReg `$32`: 0–255 | NextReg `$33`: 0–191 | 256 × 192, in dots: one step is half a LoRes block |
+| Layer 2 | NextRegs `$16` and `$71` bit 0: 0–319 (in 640 × 256, steps of two dots) | NextReg `$17`: 0–191 or 0–255 | its own size: 256 × 192, or 320 × 256 |
+| Tilemap | NextRegs `$2F` and `$30`: 0–319, or 0–639 with 80 columns | NextReg `$31`: 0–255 | its own size: 320 or 640 × 256 |
 
 The sprites have no scroll offset. They do not need one: every sprite has its own position, and
 moving a sprite is a matter of changing it.
@@ -597,10 +597,9 @@ Look at the red lines in the figure: there are **two kinds of transparency**, an
 says something about it.
 
 - The ULA, LoRes and Layer 2 are transparent where their dot's **colour**, after the palette lookup,
-  equals the **global transparency colour** in NextReg `$14`. These layers draw whole screens of
+  equals the **global transparency colour**, held in the Global Transparency Colour register, NextReg `$14`. These layers draw whole screens of
   colours, and "this colour means see-through" is the natural rule for a bitmap.
-- The sprites and the tilemap are transparent where their **index**, before the lookup, equals
-  NextReg `$4B` (sprites) or `$4C` (tilemap). These layers draw shapes out of small 4- or 8-bit
+- The sprites and the tilemap are transparent where their **index**, before the lookup, equals the value in the Sprite Transparency Index register, NextReg `$4B` (sprites), or in the Tilemap Transparency Index register, NextReg `$4C` (tilemap). These layers draw shapes out of small 4- or 8-bit
   patterns, and "this value in the pattern is the hole" is the natural rule for a shape.
   (The tilemap's text mode, whose tiles have one bit per dot, uses the colour rule instead.)
 
@@ -701,8 +700,8 @@ Here is the road from the beam's counters to those two colours, in four stages:
   <rect x="25" y="186" width="130" height="28" rx="4" fill="#a855f7" fillOpacity="0.2" stroke="#a855f7" />
   <text x="90" y="204" textAnchor="middle" fill="currentColor" fontSize="11">sprites</text>
   <text x="25" y="240" fill="currentColor" fontSize="11" fillOpacity="0.8">latched for the dot:</text>
-  <text x="25" y="256" fill="currentColor" fontSize="11" fillOpacity="0.8">$15, $68, $14, $4A,</text>
-  <text x="25" y="272" fill="currentColor" fontSize="11" fillOpacity="0.8">$43, $6B, $42,</text>
+  <text x="25" y="256" fill="currentColor" fontSize="11" fillOpacity="0.8">NextRegs $15, $68, $14,</text>
+  <text x="25" y="272" fill="currentColor" fontSize="11" fillOpacity="0.8">$4A, $43, $6B, $42,</text>
   <text x="25" y="288" fill="currentColor" fontSize="11" fillOpacity="0.8">clip windows</text>
   <rect x="200" y="56" width="140" height="78" rx="5" fill="currentColor" fillOpacity="0.05" stroke="currentColor" strokeOpacity="0.45" />
   <rect x="200" y="56" width="70" height="6" fill="#3b82f6" fillOpacity="0.6" />
@@ -725,15 +724,15 @@ Here is the road from the beam's counters to those two colours, in four stages:
   <line x1="155" y1="200" x2="198" y2="196" stroke="currentColor" strokeOpacity="0.6" markerEnd="url(#ov6-arrow)" />
   <rect x="375" y="56" width="150" height="214" rx="6" fill="#e5484d" fillOpacity="0.08" stroke="#e5484d" />
   <text x="387" y="80" fill="currentColor" fontSize="11">transparent?</text>
-  <text x="387" y="94" fill="currentColor" fontSize="10" fillOpacity="0.75">$14, $4B, $4C, clip, on/off</text>
+  <text x="387" y="94" fill="currentColor" fontSize="10" fillOpacity="0.75">NextRegs $14, $4B, $4C</text>
   <text x="387" y="118" fill="currentColor" fontSize="11">ULA + tilemap → U</text>
-  <text x="387" y="132" fill="currentColor" fontSize="10" fillOpacity="0.75">below flag, stencil ($68)</text>
+  <text x="387" y="132" fill="currentColor" fontSize="10" fillOpacity="0.75">below flag; NextReg $68</text>
   <text x="387" y="156" fill="currentColor" fontSize="11">order of S, L, U</text>
-  <text x="387" y="170" fill="currentColor" fontSize="10" fillOpacity="0.75">$15 bits 4–2</text>
+  <text x="387" y="170" fill="currentColor" fontSize="10" fillOpacity="0.75">NextReg $15 bits 4–2</text>
   <text x="387" y="194" fill="currentColor" fontSize="11">priority bit, blending</text>
-  <text x="387" y="208" fill="currentColor" fontSize="10" fillOpacity="0.75">$15 = 110, 111; $68</text>
+  <text x="387" y="208" fill="currentColor" fontSize="10" fillOpacity="0.75">NextReg $15 = 110, 111</text>
   <text x="387" y="232" fill="currentColor" fontSize="11">nothing opaque?</text>
-  <text x="387" y="246" fill="currentColor" fontSize="10" fillOpacity="0.75">the fallback, $4A</text>
+  <text x="387" y="246" fill="currentColor" fontSize="10" fillOpacity="0.75">the fallback, NextReg $4A</text>
   <line x1="340" y1="95" x2="373" y2="120" stroke="currentColor" strokeOpacity="0.6" markerEnd="url(#ov6-arrow)" />
   <line x1="340" y1="185" x2="373" y2="170" stroke="currentColor" strokeOpacity="0.6" markerEnd="url(#ov6-arrow)" />
   <rect x="560" y="120" width="130" height="80" rx="5" fill="currentColor" fillOpacity="0.05" stroke="currentColor" strokeOpacity="0.45" />
@@ -764,8 +763,7 @@ sprites. Two numbers describe each memory: **1,024 entries of 16 bits**.
 
 **Why 1,024 entries?** Look at what picks an entry. Its address has ten bits. One says which of the
 memory's two layers is looking up: the ULA or the tilemap in one memory, Layer 2 or the sprites in
-the other. One says which of that layer's two palettes is shown, the first or the second (NextReg
-`$43` chooses for three of the layers, `$6B` for the tilemap). The other eight are the layer's own
+the other. One says which of that layer's two palettes is shown, the first or the second (the Palette Control register, NextReg `$43`, chooses for three of the layers, and the Tilemap Control register, NextReg `$6B`, for the tilemap). The other eight are the layer's own
 index. Two layers, two palettes, 256 indices: 2 × 2 × 256 = 1,024, four palettes one after the other
 in one memory. (Entries, not bytes: an entry is two bytes, so each memory holds 2K.)
 
@@ -902,17 +900,19 @@ not the Next's: its four lookups are made by two memories, two at a time.
 
 Now the compositor has four colours with their flags, and it applies the rules:
 
-- **Is each layer transparent here?** The colour rule (against `$14`) is checked now; the index
+- **Is each layer transparent here?** The colour rule (against the value in the Global Transparency Colour register, NextReg `$14`) is checked now; the index
   rules were already applied by the sprites and the tilemap themselves.
 - **The ULA and the tilemap become one layer, U.** Before the main order is applied, these two are
   mixed: the tilemap goes in front of the ULA, or behind it where a tile asks for it. In **stencil
   mode** a dot is shown only where both are opaque.
-- **The order.** Three layers are left, **S** (sprites), **L** (Layer 2) and **U**, and NextReg
-  `$15` picks one of six orders, from SLU (sprites in front, the default) to ULS. The first opaque
+- **The order.** Three layers are left, **S** (sprites), **L** (Layer 2) and **U**, and the Sprite and Layers System register, NextReg `$15`, picks one of six orders, from SLU (sprites in front, the default) to ULS. The first opaque
   one, in that order, wins.
 - **The exceptions.** A Layer 2 dot with the priority bit wins whatever the order. Two further
-  settings of `$15` do not order Layer 2 and U at all but **add** their colours, channel by channel.
-- **Nothing opaque?** Then the fallback colour, NextReg `$4A`.
+  settings of NextReg `$15` do not order Layer 2 and U at all but **add** their colours, channel by channel.
+- **Nothing opaque?** Then the fallback colour, from the Fallback Colour register, NextReg `$4A`.
+
+[Putting it together](/en/under-the-hood/emulator-internals/next-display/composition/), article 9 of the
+series, follows each of these rules in full, with the machine's own pictures.
 
 ### One dot, through the pipeline
 
@@ -958,7 +958,7 @@ the figure again, with what each layer answers at that dot:
   <text x="440" y="143" fill="#e8912d" fontSize="13" fontWeight="600">Layer 2</text>
   <text x="440" y="159" fill="currentColor" fontSize="11">stage 0: index $E3 (below the hills)</text>
   <text x="440" y="173" fill="currentColor" fontSize="11">stage 1: colour $E3</text>
-  <text x="440" y="187" fill="#e5484d" fontSize="11">stage 2: equals $14 → transparent</text>
+  <text x="440" y="187" fill="#e5484d" fontSize="11">stage 2: matches NextReg $14: transparent</text>
   <text x="440" y="228" fill="#30a46c" fontSize="13" fontWeight="600">tilemap</text>
   <text x="440" y="244" fill="currentColor" fontSize="11">stage 0: a tile dot, index $13</text>
   <text x="440" y="258" fill="currentColor" fontSize="11">stage 1: a green</text>
@@ -991,7 +991,7 @@ Step by step:
    The ULA offers its paper colour.
 2. **Stage 1.** Layer 2's `$E3` becomes the colour `$E3` (and a ninth bit). The tile's `$13`
    becomes whatever the tilemap palette holds at `$13`, a green.
-3. **Stage 2.** Layer 2's colour equals `$14`: transparent. The tile is not behind the ULA, so U is
+3. **Stage 2.** Layer 2's colour equals NextReg `$14`: transparent. The tile is not behind the ULA, so U is
    the tile's green. The order is SLU: the sprites are transparent, Layer 2 is transparent, U is
    not. The dot is green.
 
@@ -1053,7 +1053,7 @@ Everything in the later articles happens inside one of these three steps.
 <figcaption>Which part of the picture runs on which clock. The CPU's clock is not a fourth clock but one of the same three, or the 7 MHz clock with every other tick taken out to make 3.5 MHz.</figcaption>
 </figure>
 
-The VGA modes 1 to 6 (NextReg `$11`) raise the master clock in steps up to 33 MHz, for monitors
+The VGA modes 1 to 6 (the Video Timing register, NextReg `$11`) raise the master clock in steps up to 33 MHz, for monitors
 that do not accept the standard rate. Everything above scales with it: the frame keeps its shape and
 only gets faster.
 
@@ -1662,8 +1662,7 @@ leave the new layers off, as an old program does, and what is left is the Spectr
 - **The ULA reads the screen the same way**: a bitmap byte and an attribute for every 8 dots, in
   the same order and at the same moments relative to the interrupt.
 - **Contention** stops the CPU at the same T-states, in the same pattern. It exists only while the
-  CPU runs at **3.5 MHz**: at 7, 14 or 28 MHz the CPU is never held back (and NextReg `$08` bit 6
-  switches it off at 3.5 MHz too). That is the price of speed being paid by compatibility: a program
+  CPU runs at **3.5 MHz**: at 7, 14 or 28 MHz the CPU is never held back (and bit 6 of the Peripheral 3 Setting register, NextReg `$08`, switches it off at 3.5 MHz too). That is the price of speed being paid by compatibility: a program
   that counts T-states against the beam works only at the speed it was written for.
 - **The border** is still port `$FE`, changed at the same moments.
 
@@ -1726,7 +1725,7 @@ Next's ULA. What the Next changes about the ULA is the subject of the ULA articl
 | 6 | Layer 2 | three resolutions, and why two of them store their bytes down the screen |
 | 7 | The tilemap | maps, tiles, mirroring and rotation, in front of the ULA or behind it |
 | 8 | Sprites | attributes, anchors, the line buffer and its time budget |
-| 9 | Putting it together | stage 2 in full: the six orders, stencils and blending |
+| 9 | [Putting it together](/en/under-the-hood/emulator-internals/next-display/composition/) | stage 2 in full: the six orders, stencils and blending |
 | 10 | Changing the picture mid-frame | the Copper, line interrupts, and how Klive keeps up with the beam |
 
 Articles 2 and 3 come before all the others, and article 9 after the layer articles. Articles 4 to 8
@@ -1753,7 +1752,7 @@ the ULA's) has a buffer of its own of the same size, with **16 bits per pixel**:
 ```
 
 A layer's renderer does stages 0 and 1 for the whole of its buffer: it works out its dot, looks up
-the palette, applies its transparency rule (the colour against `$14` for the ULA and Layer 2, the
+the palette, applies its transparency rule (the colour against the value in the Global Transparency Colour register, NextReg `$14`, for the ULA and Layer 2, the
 index for the tilemap and the sprites), and writes either 0, for transparent, or `OPAQUE`, the
 colour and its flags. These are Part 4's two answers and flags, with the palette lookup already done.
 The border is drawn into the ULA's buffer first, as ULA pixels marked `BORDER`, and the ULA's
@@ -1798,11 +1797,11 @@ Article 10 of the series explains this raster and the one line of difference it 
   (LoRes, when it is on, replaces the ULA's picture; the border stays the ULA's).
 - The ULA draws the 256 × 192 display area and the **border** around it; Layer 2's wide modes, the
   tilemap and the sprites can draw over the **wide area**, 320 × 256. When no layer has a dot, the
-  **fallback colour** (`$4A`) shows.
+  **fallback colour** (NextReg `$4A`) shows.
 - For every dot, every layer gives two answers: **a colour index** and **"am I transparent?"**,
   sometimes with a flag. The compositor sees nothing else.
-- Transparency comes in two kinds: by **colour** after the palette (`$14`: ULA, LoRes, Layer 2) and
-  by **index** before it (`$4B` sprites, `$4C` tilemap). All three, and the fallback, start at `$E3`.
+- Transparency comes in two kinds: by **colour** after the palette (NextReg `$14`: ULA, LoRes, Layer 2) and
+  by **index** before it (NextReg `$4B` for the sprites, NextReg `$4C` for the tilemap). All three, and the fallback, start at `$E3`.
 - The **pipeline** gathers the answers and latches the registers (stage 0), looks the indices up in
   eight palettes held in two time-shared memories (stage 1), and decides the winner (stage 2): the
   ULA and tilemap mixed into one layer, then one of six orders, the priority bit, blending, the

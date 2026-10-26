@@ -144,6 +144,14 @@
 /images/en/guides/projects/project-explorer/folder-menu.webp
 /images/en/guides/projects/project-explorer/tape-menu.webp
 /images/en/guides/projects/project-explorer/tree.webp
+/images/en/under-the-hood/next-display/composition/blend.webp
+/images/en/under-the-hood/next-display/composition/order-lsu.webp
+/images/en/under-the-hood/next-display/composition/order-lus.webp
+/images/en/under-the-hood/next-display/composition/order-slu.webp
+/images/en/under-the-hood/next-display/composition/order-sul.webp
+/images/en/under-the-hood/next-display/composition/order-uls.webp
+/images/en/under-the-hood/next-display/composition/order-usl.webp
+/images/en/under-the-hood/next-display/composition/priority.webp
 /images/en/under-the-hood/next-display/overview/clip-off.webp
 /images/en/under-the-hood/next-display/overview/clip-on.webp
 /images/en/under-the-hood/next-display/overview/layers-fallback.webp
