@@ -43,8 +43,9 @@ Status: **articles 1, 2, 3, 4 and 9 written** (`next-display/overview.mdx`, `tim
   its neighbour, for the scroll), only the Spectrum's four reach the floating bus; the screen memory
   is dual-port block RAM, so contention is imitated and there is no snow; bank 7 has only 8K there, so
   the shadow screen disables the Timex modes; the scroll, half-dot bit and Timex mode are taken per
-  8-dot cell; in hi-res the border is the hi-res paper. One difference is stated rather than fixed:
-  Klive's floating bus reads the unscrolled standard screen.
+  8-dot cell; in hi-res the border is the hi-res paper. Klive's floating bus used to read the
+  unscrolled standard screen; it was fixed to follow the scroll, the Timex mode and the shadow screen,
+  checked against the simulated FPGA core (F3).
 - The plan's figure list for article 4 was cut to ten (no ULA+/ULANext machine pictures, the register
   bit strips are a table); the clip window and scroll basics stay in article 1 and are only linked.
 

@@ -1553,12 +1553,24 @@ static uint32_t zxnextNextRegGetMachineTiming(void);
 /* p3_floating_bus_dat (zxnext.vhd ~4478-4488): the last byte the CPU moved to or from a contended bank */
 static uint8_t zxnextP3FloatingBus = 0xffu;
 
+/* A latched ULA setting as the ULA uses it at a frame tact: a pending write counts from its latch tact
+ * on, though the raster may not have drawn that far yet. */
+static inline uint32_t zxnextUlaLatchAt(uint32_t which, uint32_t frameTact) {
+  return ulaLatchPending[which] && ulaLatchTact[which] <= frameTact ? ulaLatchValue[which] : ulaShown[which];
+}
+
 /*
- * The ULA floating bus at a frame tact (zxula.vhd ~306-340, 573), as NextComposedScreenDevice.floatingBusAt:
+ * The ULA floating bus at a frame tact (zxula.vhd ~306-340, 573):
  * in the display each 16-HC pair of cells shows pixel, attribute, pixel, attribute for ULA hc 9-10,
  * 11-12, 13-14, 15-0 and $FF for hc 1-8; the border is $FF. +3 timing sets bit 0 of those bytes and
  * shows the contended-access latch the rest of the time. hc_ula = HC - (displayXStart - 12),
- * vc_ula = VC - displayYStart; scrolling and the Timex modes are not applied.
+ * vc_ula = VC - displayYStart.
+ *
+ * The bytes are the ones the ULA fetches (zxula.vhd floating_bus_r takes i_ula_vram_d), so they come
+ * from the addresses it forms (~191-250): the column moved by the coarse X scroll (px = hc(7:3) +
+ * scroll_x(7:3); the fine bits and the half-dot bit only shift the pixels), the line by the Y scroll
+ * (py, wrapped at 192), and the Timex mode choosing the display file and the colour address (forced
+ * to 0 with the shadow screen, which zxnextMemoryReadScreenOffset reads from bank 7).
  */
 static uint32_t zxnextUlaFloatingBus(uint32_t frameTact) {
   uint32_t p3 = zxnextNextRegGetMachineTiming() == 3u;
@@ -1570,10 +1582,12 @@ static uint32_t zxnextUlaFloatingBus(uint32_t frameTact) {
       uint32_t pair = (uint32_t)(phase == 0u ? hc - 16 : hc) >> 4;
       uint32_t column = pair * 2u + ((phase >= 13u || phase == 0u) ? 1u : 0u);
       uint32_t attribute = phase == 11u || phase == 12u || phase == 15u || phase == 0u;
-      uint32_t y = (uint32_t)vc;
-      uint32_t offset = attribute
-        ? 0x1800u + ((y >> 3) << 5) + column
-        : (((y & 0xc0u) << 5) | ((y & 0x07u) << 8) | ((y & 0x38u) << 2) | column);
+      uint32_t scrollX = zxnextUlaLatchAt(ZXNEXT_ULA_LATCH_SCROLL_X, frameTact);
+      uint32_t scrollY = zxnextUlaLatchAt(ZXNEXT_ULA_LATCH_SCROLL_Y, frameTact);
+      uint32_t mode = zxnextMemoryShadowScreen() ? 0u : (zxnextUlaLatchAt(ZXNEXT_ULA_LATCH_TIMEX, frameTact) & 0x07u);
+      uint32_t x = (column + (scrollX >> 3u)) & 0x1fu;
+      uint32_t y = ((uint32_t)vc + scrollY) % ZXNEXT_STANDARD_SCREEN_HEIGHT;
+      uint32_t offset = attribute ? zxnextUlaAttributeAddress(mode, y, x) : zxnextUlaBitmapAddress(mode, y, x);
       uint32_t value = zxnextMemoryReadScreenOffset(offset);
       return p3 ? (value | 0x01u) : value;
     }

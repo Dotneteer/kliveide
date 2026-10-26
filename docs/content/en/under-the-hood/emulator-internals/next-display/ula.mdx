@@ -256,7 +256,9 @@ The extra reads are invisible to programs. The **floating bus**, the byte a read
 returns on a Spectrum, shows only the four reads a Spectrum would make, at the moments it would make
 them, and `$FF` over the border, exactly as the
 [Spectrum article](/en/under-the-hood/emulator-internals/spectrum-display/#the-floating-bus)
-describes. The Next gives it with 48K and 128K timing; with +3 or Pentagon timing a port `$FF` read returns
+describes. They are the bytes the ULA really reads, so with a scroll they come from the scrolled
+cells, and in the Timex modes of Part 3 from the display file the mode reads. The Next gives it with
+48K and 128K timing; with +3 or Pentagon timing a port `$FF` read returns
 `$FF`. With +3 timing the floating bus appears instead on the +3's own port, with bit 0 set, as on a real +3. One more
 thing can take port `$FF`'s place: with bit 2 of the Peripheral 3 Setting register, NextReg `$08`, a
 read of port `$FF` returns the Timex register of Part 3 instead of the floating bus.
@@ -886,11 +888,13 @@ use it, the start of the next 8-dot cell (every dot for the border with Pentagon
 raster renders up to that position with the old value. So a border stripe or a mid-line scroll split
 falls on the same dot as on the hardware.
 
-### One difference
+### The floating bus
 
-Klive's **floating bus** reads the bytes of the standard, unscrolled screen at `$4000`. The hardware's
-shows the bytes the ULA actually reads, so with a scroll or a Timex mode on, the two differ. A program
-that reads the floating bus with either of them on sees other bytes in Klive than on the hardware.
+Klive works out the floating bus the way Part 2 describes it: from the beam's position it knows which
+of the Spectrum's four reads, if any, the ULA is making, and it forms that read's address as the ULA
+does, with the scroll offsets, the Timex mode and the shadow screen in force at that moment. So a
+program reading port `$FF` over a scrolled screen, or in hi-colour or hi-res, gets the bytes it would
+get on the hardware.
 
 ### In the IDE
 
