@@ -167,6 +167,82 @@ describe("next-display overview: clip windows and scrolling", () => {
   });
 });
 
+describe("next-display timing: 50 and 60 Hz", () => {
+  it("moves the picture up and shortens the frame at 60 Hz", async () => {
+    const s = await drawScene();
+    const hz50 = s.screen();
+    // --- NextReg $05 bit 2: 60 Hz, taken at the end of the frame
+    s.setNextReg(0x05, s.nextRegValue(0x05) | 0x04);
+    s.runFrames(4);
+    const hz60 = s.screen();
+    // --- 50 Hz: the display area from window row 48, the tiles' ground on rows 216-271
+    expect(at(hz50, [96 + 200, 48 + 8])).toBe(PANEL);
+    expect(at(hz50, [40, 216])).toBe(TILE_TOP);
+    expect(at(hz50, [40, 248])).toBe(TILE_TOP); // wide-area line 232: the top row of a tile
+    // --- 60 Hz: the display area 24 lines lower in the frame, 24 rows higher in the window
+    expect(at(hz60, [96 + 200, 24 + 8])).toBe(PANEL);
+    expect(at(hz60, [40, 192])).toBe(TILE_TOP);
+    // --- below the frame's last line (window row 248 on) there is nothing: black
+    expect(at(hz60, [40, 248])).toBe("#000000");
+    expect(at(hz60, [400, 280])).toBe("#000000");
+
+    const out = process.env.NEXT_DISPLAY_SHOTS;
+    if (out) {
+      await writeWebp(join(out, "en/under-the-hood/next-display/timing/hz50.webp"), hz50);
+      await writeWebp(join(out, "en/under-the-hood/next-display/timing/hz60.webp"), hz60);
+    }
+  });
+});
+
+describe("next-display timing: line numbers", () => {
+  /** Sets the $64 offset, waits twice for the active line ($1F, then $1E) to read 0, then writes $A5 to $7F */
+  const lineZero = (offset: number) => `
+    .model Next
+    .org $8000
+    di
+    nextreg $64,${offset}
+    ld bc,$243B
+    call Zero
+    call Zero
+    nextreg $7F,$A5
+    jr $
+Zero:
+Skip:
+    ld a,$1F
+    out (c),a
+    inc b
+    in a,(c)
+    dec b
+    or a
+    jr z,Skip
+Wait:
+    ld a,$1F            ; the low byte first: the other way round, a line that moves on from 255 to
+    out (c),a           ; 256 between the reads reads as 0 (this way it can read 511, which is not 0)
+    inc b
+    in d,(c)
+    dec b
+    ld a,$1E
+    out (c),a
+    inc b
+    in a,(c)
+    dec b
+    or d
+    jr nz,Wait
+    ret
+`;
+
+  it("numbers from the display area, or from the wide area with an offset of 32", async () => {
+    const lineOfZero = async (offset: number) => {
+      const s = await createSession();
+      await s.loadCode(lineZero(offset));
+      s.runToNextRegWrite(0x7f, 0xa5, { maxFrames: 4 });
+      return s.beamPosition().line;
+    };
+    expect(await lineOfZero(0)).toBe(64); // 128K timing at 50 Hz: the display area's first line
+    expect(await lineOfZero(32)).toBe(32); // the wide area's first line
+  });
+});
+
 /** One picture as lossless WebP, alpha forced opaque */
 async function writeWebp(path: string, frame: Frame): Promise<void> {
   const opaque = new Uint8Array(frame.rgba);

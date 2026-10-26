@@ -4,8 +4,8 @@ A series of *Under the hood* articles that explain, in the style of
 `spectrum-display.mdx` and `zx81-display.mdx`, how the ZX Spectrum Next produces its picture:
 every video mode, the palettes, the layers and how they are composed into one pixel.
 
-Status: **article 1 written** (`next-display/overview.mdx`). Articles 2–10 to go, in the writing
-order of §1.
+Status: **articles 1 and 2 written** (`next-display/overview.mdx`, `next-display/timing.mdx`).
+Articles 3–10 to go, in the writing order of §1 (next: 3, the palettes).
 
 ### As built (article 1)
 
@@ -22,7 +22,12 @@ order of §1.
   (lossless WebP) after the picture was checked by eye. Later articles add their scenes the same way;
   `scripts/doc-shots/` stays for pictures of the IDE itself (inspector panels).
 - Links to articles not yet written are plain text; add the links when the article exists.
-- Q1 is settled as proposed (subfolder `next-display/`), Q3 as "per article".
+- Q1 is settled as proposed (subfolder `next-display/`), Q3 as "per article", Q4 as "in scope":
+  article 2 covers RGB, the scan doubler, VGA modes and HDMI at the level of what each does to the
+  frame. Klive emulates none of the output stage; the article says so.
+- Article 2's frame figures were generated once from each timing's counter values, so they are to
+  scale; later edits are made in the SVG itself, keeping the scale (one unit = one dot or line, times
+  the figure's stated factor). Its 50/60 Hz pictures come from the scene test like article 1's.
 
 ---
 

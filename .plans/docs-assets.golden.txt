@@ -155,6 +155,8 @@
 /images/en/under-the-hood/next-display/overview/scroll-0.webp
 /images/en/under-the-hood/next-display/overview/scroll-1.webp
 /images/en/under-the-hood/next-display/overview/scroll-2.webp
+/images/en/under-the-hood/next-display/timing/hz50.webp
+/images/en/under-the-hood/next-display/timing/hz60.webp
 /images/es/get-started/basic-debug.webp
 /images/es/get-started/basic-debug.webp.json
 /images/es/get-started/basic-running.webp
