@@ -152,6 +152,10 @@
 /images/en/under-the-hood/next-display/composition/order-uls.webp
 /images/en/under-the-hood/next-display/composition/order-usl.webp
 /images/en/under-the-hood/next-display/composition/priority.webp
+/images/en/under-the-hood/next-display/layer2/columns.webp
+/images/en/under-the-hood/next-display/layer2/hires-offset.webp
+/images/en/under-the-hood/next-display/layer2/hires.webp
+/images/en/under-the-hood/next-display/layer2/rows.webp
 /images/en/under-the-hood/next-display/overview/clip-off.webp
 /images/en/under-the-hood/next-display/overview/clip-on.webp
 /images/en/under-the-hood/next-display/overview/layers-fallback.webp

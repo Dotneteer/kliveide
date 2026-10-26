@@ -499,6 +499,120 @@ describe("next-display ula: the Timex modes and the scroll", () => {
   });
 });
 
+describe("next-display layer2: one byte per dot, in three resolutions", () => {
+  /*
+   * The Layer 2 article's pictures: Layer 2 alone (the ULA switched off, the fallback colour black),
+   * its 80K written straight into banks 8-12 from the test.
+   */
+  const IDLE = ".org $8000\n di\n jr $\n";
+  /** Writes `bytes` (up to 80K) from the start of bank 8, page by page through MMU slot 7 */
+  const writeLayer2 = (s: NextTestSession, bytes: Uint8Array) => {
+    const saved = s.mmuPage(7);
+    for (let page = 0; page * 0x2000 < bytes.length; page++) {
+      s.setNextReg(0x57, 16 + page);
+      s.poke(0xe000, bytes.subarray(page * 0x2000, (page + 1) * 0x2000));
+    }
+    s.setNextReg(0x57, saved);
+  };
+  const layer2Only = async (): Promise<NextTestSession> => {
+    const s = await createSession();
+    await s.loadCode(IDLE);
+    s.setNextReg(0x68, 0x80); // the ULA off
+    s.setNextReg(0x4a, 0x00); // the fallback colour black
+    s.out(0x123b, 0x02); // Layer 2 on
+    return s;
+  };
+  /** Wide-mode clip window: the whole 320 x 256 (X in units of two dots) */
+  const wideClip = (s: NextTestSession) => {
+    s.setNextReg(0x1c, 0x01);
+    for (const v of [0, 159, 0, 255]) s.setNextReg(0x18, v);
+  };
+
+  // --- Eight colours (RRRGGGBB), none of them $E3, the transparency colour
+  const BANDS = [0xe0, 0xfc, 0x1c, 0x1f, 0x03, 0xc3, 0xff, 0x92];
+  const BAND_HEX = ["#FF0000", "#FFFF00", "#00FF00", "#00FFFF", "#0000FF", "#DB00FF", "#FFFFFF", "#9292B6"];
+
+  it("reads the same bytes across in 256 x 192 and down in 320 x 256", async () => {
+    // --- byte o is band o >> 11: 2,048 bytes, eight 256-byte pages, per band
+    const bytes = new Uint8Array(80 * 1024).map((_, o) => BANDS[(o >> 11) % 8]);
+    const s = await layer2Only();
+    writeLayer2(s, bytes);
+    s.runFrames(2);
+    const rows = s.screen();
+    s.setNextReg(0x70, 0x10); // 320 x 256
+    wideClip(s);
+    s.runFrames(2);
+    const columns = s.screen();
+    // --- 256 x 192: a page is a line, so the bands run across, 8 lines each
+    expect(at(rows, paper(10, 3))).toBe(BAND_HEX[0]);
+    expect(at(rows, paper(200, 3))).toBe(BAND_HEX[0]);
+    expect(at(rows, paper(10, 12))).toBe(BAND_HEX[1]);
+    expect(at(rows, paper(10, 191))).toBe(BAND_HEX[23 % 8]);
+    // --- 320 x 256: a page is a column, so the bands run down, 8 columns each, over the wide area
+    expect(at(columns, wide(3, 10))).toBe(BAND_HEX[0]);
+    expect(at(columns, wide(3, 250))).toBe(BAND_HEX[0]);
+    expect(at(columns, wide(12, 10))).toBe(BAND_HEX[1]);
+    expect(at(columns, wide(319, 100))).toBe(BAND_HEX[39 % 8]);
+
+    const out = process.env.NEXT_DISPLAY_SHOTS;
+    if (out) {
+      await writeWebp(join(out, "en/under-the-hood/next-display/layer2/rows.webp"), rows);
+      await writeWebp(join(out, "en/under-the-hood/next-display/layer2/columns.webp"), columns);
+    }
+  });
+
+  it("puts two 4-bit dots in a byte at 640 x 256, coloured through the palette offset", async () => {
+    const s = await createSession();
+    await s.prepareBasic(); // the 48K ROM, for its font at $3D00
+    const font = s.peekBytes(0x3d00, 96 * 8);
+    await s.loadCode(IDLE);
+    s.setNextReg(0x68, 0x80);
+    s.setNextReg(0x4a, 0x00);
+    s.out(0x123b, 0x02);
+    const lines = [
+      "LAYER 2 AT 640 X 256: 80 COLUMNS OF TEXT, 4 BITS A DOT, 2 DOTS IN A BYTE.",
+      "THE BYTE AT X * 256 + Y HOLDS DOTS 2X AND 2X+1 OF LINE Y: THE HIGH NIBBLE FIRST.",
+      "INK IS NIBBLE $F, PAPER NIBBLE $0; THE PALETTE OFFSET PICKS THEIR ROW OF 16."
+    ];
+    const bytes = new Uint8Array(80 * 1024);
+    for (const [row, text] of lines.entries()) {
+      for (const [k, ch] of [...text].entries()) {
+        for (let line = 0; line < 8; line++) {
+          const glyph = font[(ch.charCodeAt(0) - 0x20) * 8 + line];
+          for (let b = 0; b < 4; b++) {
+            // --- dots 2b and 2b+1 of the character: glyph bits 7-2b and 6-2b
+            const hi = (glyph >> (7 - 2 * b)) & 1 ? 0xf0 : 0x00;
+            const lo = (glyph >> (6 - 2 * b)) & 1 ? 0x0f : 0x00;
+            bytes[(4 * k + b) * 256 + row * 8 + line] = hi | lo;
+          }
+        }
+      }
+    }
+    writeLayer2(s, bytes);
+    s.setNextReg(0x70, 0x20); // 640 x 256, palette offset 0
+    wideClip(s);
+    s.runFrames(2);
+    const plain = s.screen();
+    s.setNextReg(0x70, 0x2e); // palette offset $E: entries $E0-$EF
+    s.runFrames(2);
+    const offset = s.screen();
+    // --- "L" (0x4C): its glyph row 1 is a vertical stroke; one buffer pixel per 640-mode dot
+    const glyphL = font[(0x4c - 0x20) * 8 + 1];
+    const firstInk = Math.clz32(glyphL) - 24;
+    expect(pixelHex(plain, 32 + firstInk, 16 + 1)).toBe("#006DFF"); // entry $0F
+    expect(pixelHex(plain, 32 + 7, 16 + 1)).toBe("#000000"); // entry $00
+    expect(pixelHex(offset, 32 + firstInk, 16 + 1)).toBe("#FF6DFF"); // entry $EF
+    expect(pixelHex(offset, 32 + 7, 16 + 1)).toBe("#FF0000"); // entry $E0
+
+    const out = process.env.NEXT_DISPLAY_SHOTS;
+    if (out) {
+      // --- the left half of the wide area, the three text rows: 320 dots of 640 x 24 lines
+      await writeCrop(join(out, "en/under-the-hood/next-display/layer2/hires.webp"), plain, 32, 16, 320, 24);
+      await writeCrop(join(out, "en/under-the-hood/next-display/layer2/hires-offset.webp"), offset, 32, 16, 320, 24);
+    }
+  });
+});
+
 /** One picture as lossless WebP, alpha forced opaque */
 async function writeWebp(path: string, frame: Frame): Promise<void> {
   await writeCrop(path, frame, 0, 0, frame.width, frame.height);

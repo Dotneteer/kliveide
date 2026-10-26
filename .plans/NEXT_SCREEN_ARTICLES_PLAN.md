@@ -4,9 +4,9 @@ A series of *Under the hood* articles that explain, in the style of
 `spectrum-display.mdx` and `zx81-display.mdx`, how the ZX Spectrum Next produces its picture:
 every video mode, the palettes, the layers and how they are composed into one pixel.
 
-Status: **articles 1, 2, 3, 4 and 9 written** (`next-display/overview.mdx`, `timing.mdx`,
-`palettes.mdx`, `ula.mdx`, `composition.mdx`). Articles 5–8 and 10 to go, in the writing order of §1
-(next: 6, Layer 2).
+Status: **articles 1, 2, 3, 4, 6 and 9 written** (`next-display/overview.mdx`, `timing.mdx`,
+`palettes.mdx`, `ula.mdx`, `layer2.mdx`, `composition.mdx`). Articles 5, 7, 8 and 10 to go, in the
+writing order of §1 (next: 7, the tilemap).
 
 ### As built (article 1)
 
@@ -49,6 +49,16 @@ Status: **articles 1, 2, 3, 4 and 9 written** (`next-display/overview.mdx`, `tim
   (`test/zxnext-hw/ports/floating-bus-timing.test.ts`): a CPU write always reaches its next `IN`, and
   a Copper write mid-line reaches the floating bus at the ULA's next sample point, to the exact read,
   matching the FPGA core sample for sample.
+- Article 6 (Layer 2): the machine pictures are the same 80K shown in 256 × 192 and 320 × 256 (bands
+  that run across, then down) and 80-column text at 640 × 256 with two palette offsets. Facts it
+  established: the address of a dot is its two coordinates side by side, the 256-long one in the low
+  byte; Layer 2 reads the external SRAM, which makes one access per 28 MHz tick, the CPU first and
+  Layer 2 second, so it never delays the CPU; one byte per 7 MHz dot is why 640 × 256 has 4-bit dots;
+  every Layer 2 setting is sampled per dot. The port `$123B` mapping's part + bank offset is a 4-bit
+  sum (up to 10); Klive wrapped it at 8, fixed with the article. Open: Klive's default Layer 2,
+  sprite and tilemap palettes set the ninth blue bit to B1, where the 8-bit rule gives B1 OR B0 (they
+  differ for blue `01`); the defaults come from the firmware, not the FPGA, so the hardware sources
+  cannot settle it.
 - The plan's figure list for article 4 was cut to ten (no ULA+/ULANext machine pictures, the register
   bit strips are a table); the clip window and scroll basics stay in article 1 and are only linked.
 

@@ -244,6 +244,7 @@
 /en/under-the-hood/emulator-internals/ht1080z-video/index.html
 /en/under-the-hood/emulator-internals/next-core/index.html
 /en/under-the-hood/emulator-internals/next-display/composition/index.html
+/en/under-the-hood/emulator-internals/next-display/layer2/index.html
 /en/under-the-hood/emulator-internals/next-display/overview/index.html
 /en/under-the-hood/emulator-internals/next-display/palettes/index.html
 /en/under-the-hood/emulator-internals/next-display/timing/index.html
