@@ -389,385 +389,423 @@ uses different entries of the ULA palette:
 
 ### The other layers: a dot and an offset
 
-The other layers have real pixels, of 8 or 4 bits, and they turn a pixel into an index with one more
-ingredient: a **palette offset** of 4 bits.
+The other layers do not have attributes; they have real pixels, here called **dots**. Each dot is a
+number stored in memory, and the layer turns it into a palette **index**, a number from 0 to 255. How
+it does that depends on how big a dot is.
+
+**Think of an index as two hex digits.** An index is one byte, 0 to 255, or `$00` to `$FF` in hex.
+Each hex digit is four bits, and the palette's 256 entries can be drawn as **16 rows of 16**: the first
+digit is the row, the second the column. Entry `$59` is in row 5, column 9.
 
 <figure>
-<svg viewBox="0 0 700 330" role="img" aria-label="Where the index of each layer comes from, and which palette it goes to. The ULA turns an attribute and an ink-or-paper bit into an index of the ULA palette. LoRes uses its byte as an index of the ULA palette; Radastan mode puts the LoRes palette offset in front of a 4-bit dot. Layer 2 adds its palette offset to the upper four bits of its byte, or puts the offset in front of a 4-bit dot in the 640-wide mode, and looks it up in the Layer 2 palette. A sprite adds its own palette offset to the upper four bits of an 8-bit pattern dot, or puts it in front of a 4-bit one, and looks it up in the sprite palette. A tile puts the palette offset from its attribute in front of its 4-bit dot and looks it up in the tilemap palette." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
-  <defs>
-    <marker id="pl6-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-      <path d="M0,0 L10,5 L0,10 z" fill="currentColor" fillOpacity="0.6" />
-    </marker>
-  </defs>
-  <rect x="20" y="24" width="110" height="44" rx="6" fill="#3b82f6" fillOpacity="0.2" stroke="#3b82f6" />
-  <text x="75" y="51" textAnchor="middle" fill="currentColor" fontSize="12">ULA</text>
-  <rect x="134" y="24" width="236" height="44" rx="5" fill="currentColor" fillOpacity="0.04" stroke="currentColor" strokeOpacity="0.3" />
-  <text x="146" y="42" fill="currentColor" fontSize="12">attribute + ink/paper</text>
-  <text x="146" y="59" fill="currentColor" fontSize="11" fillOpacity="0.7">standard, ULANext or ULA+</text>
-  <line x1="370" y1="46" x2="478" y2="46" stroke="currentColor" strokeOpacity="0.6" markerEnd="url(#pl6-arrow)" />
-  <text x="424" y="39" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.75">8-bit index</text>
-  <rect x="480" y="24" width="190" height="44" rx="6" fill="currentColor" fillOpacity="0.05" stroke="#3b82f6" />
-  <text x="575" y="51" textAnchor="middle" fill="currentColor" fontSize="12">ULA palette</text>
-  <rect x="20" y="84" width="110" height="44" rx="6" fill="#3b82f6" fillOpacity="0.2" stroke="#3b82f6" />
-  <text x="75" y="111" textAnchor="middle" fill="currentColor" fontSize="12">LoRes</text>
-  <rect x="134" y="84" width="236" height="44" rx="5" fill="currentColor" fillOpacity="0.04" stroke="currentColor" strokeOpacity="0.3" />
-  <text x="146" y="102" fill="currentColor" fontSize="12">the byte</text>
-  <text x="146" y="119" fill="currentColor" fontSize="11" fillOpacity="0.7">Radastan: $6A offset · 4-bit dot</text>
-  <line x1="370" y1="106" x2="478" y2="106" stroke="currentColor" strokeOpacity="0.6" markerEnd="url(#pl6-arrow)" />
-  <text x="424" y="99" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.75">8-bit index</text>
-  <rect x="480" y="84" width="190" height="44" rx="6" fill="currentColor" fillOpacity="0.05" stroke="#3b82f6" />
-  <text x="575" y="111" textAnchor="middle" fill="currentColor" fontSize="12">ULA palette</text>
-  <rect x="20" y="144" width="110" height="44" rx="6" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
-  <text x="75" y="171" textAnchor="middle" fill="currentColor" fontSize="12">Layer 2</text>
-  <rect x="134" y="144" width="236" height="44" rx="5" fill="currentColor" fillOpacity="0.04" stroke="currentColor" strokeOpacity="0.3" />
-  <text x="146" y="162" fill="currentColor" fontSize="12">the byte + $70 offset</text>
-  <text x="146" y="179" fill="currentColor" fontSize="11" fillOpacity="0.7">640 mode: offset · 4-bit dot</text>
-  <line x1="370" y1="166" x2="478" y2="166" stroke="currentColor" strokeOpacity="0.6" markerEnd="url(#pl6-arrow)" />
-  <text x="424" y="159" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.75">8-bit index</text>
-  <rect x="480" y="144" width="190" height="44" rx="6" fill="currentColor" fillOpacity="0.05" stroke="#e8912d" />
-  <text x="575" y="171" textAnchor="middle" fill="currentColor" fontSize="12">Layer 2 palette</text>
-  <rect x="20" y="204" width="110" height="44" rx="6" fill="#a855f7" fillOpacity="0.2" stroke="#a855f7" />
-  <text x="75" y="231" textAnchor="middle" fill="currentColor" fontSize="12">sprites</text>
-  <rect x="134" y="204" width="236" height="44" rx="5" fill="currentColor" fillOpacity="0.04" stroke="currentColor" strokeOpacity="0.3" />
-  <text x="146" y="222" fill="currentColor" fontSize="12">pattern dot + sprite's offset</text>
-  <text x="146" y="239" fill="currentColor" fontSize="11" fillOpacity="0.7">4-bit: offset · 4-bit dot</text>
-  <line x1="370" y1="226" x2="478" y2="226" stroke="currentColor" strokeOpacity="0.6" markerEnd="url(#pl6-arrow)" />
-  <text x="424" y="219" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.75">8-bit index</text>
-  <rect x="480" y="204" width="190" height="44" rx="6" fill="currentColor" fillOpacity="0.05" stroke="#a855f7" />
-  <text x="575" y="231" textAnchor="middle" fill="currentColor" fontSize="12">sprite palette</text>
-  <rect x="20" y="264" width="110" height="44" rx="6" fill="#30a46c" fillOpacity="0.2" stroke="#30a46c" />
-  <text x="75" y="291" textAnchor="middle" fill="currentColor" fontSize="12">tilemap</text>
-  <rect x="134" y="264" width="236" height="44" rx="5" fill="currentColor" fillOpacity="0.04" stroke="currentColor" strokeOpacity="0.3" />
-  <text x="146" y="282" fill="currentColor" fontSize="12">tile's offset · 4-bit dot</text>
-  <text x="146" y="299" fill="currentColor" fontSize="11" fillOpacity="0.7">text mode: 7-bit offset · 1 bit</text>
-  <line x1="370" y1="286" x2="478" y2="286" stroke="currentColor" strokeOpacity="0.6" markerEnd="url(#pl6-arrow)" />
-  <text x="424" y="279" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.75">8-bit index</text>
-  <rect x="480" y="264" width="190" height="44" rx="6" fill="currentColor" fillOpacity="0.05" stroke="#30a46c" />
-  <text x="575" y="291" textAnchor="middle" fill="currentColor" fontSize="12">tilemap palette</text>
-</svg>
-<figcaption>Where each layer's index comes from, and which palette it reads. "Offset · dot" means the offset becomes the upper four bits and the dot the lower four.</figcaption>
-</figure>
-
-The offset works on the **upper four bits** of the index. A 4-bit dot uses it as its upper four bits:
-the offset picks one of 16 rows of 16 entries, and the dot picks the entry in the row. A sprite with
-offset 5 uses entries `$50`–`$5F`; another sprite with the same pattern and offset 6 uses `$60`–`$6F`
-and appears in other colours. An 8-bit dot gets the offset **added** to its upper four bits: with
-offset 1, a Layer 2 byte `$A8` shows entry `$B8`, and the addition wraps, so `$F0`–`$FF` come round to
-`$00`–`$0F`.
-
-<figure>
-<svg viewBox="0 0 700 330" role="img" aria-label="The 256 entries of a palette as sixteen rows of sixteen. A palette offset is added to the upper four bits of an index, so it moves the index down by whole rows and wraps from the last row to the first. A 4-bit dot with offset 5 uses row 5, entries 80 to 95. An 8-bit Layer 2 byte A8 with offset 1 becomes B8; the byte E3, normally the transparent colour, becomes F3." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
+<svg viewBox="0 0 700 360" role="img" aria-label="The 256 entries of a palette drawn as 16 rows of 16. The first hex digit of an index is its row, the second its column. Row 5, entries 50 to 5F, is what 4-bit dots with offset 5 can reach: the dot picks the column. Row 6 is what the same dots reach with offset 6. An 8-bit dot A8 with offset 1 moves one row down, to B8, in the same column; the byte E3 moves to F3 the same way." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
   <defs>
     <marker id="pl7-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M0,0 L10,5 L0,10 z" fill="currentColor" fillOpacity="0.6" />
     </marker>
   </defs>
-  <text x="52" y="41" textAnchor="end" fill="currentColor" fontSize="9" fillOpacity="0.7">0x</text>
-  <rect x="60" y="30" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="75" y="30" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="90" y="30" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="105" y="30" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="120" y="30" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="135" y="30" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="150" y="30" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="165" y="30" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="180" y="30" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="195" y="30" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="210" y="30" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="225" y="30" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="240" y="30" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="255" y="30" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="270" y="30" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="285" y="30" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <text x="52" y="56" textAnchor="end" fill="currentColor" fontSize="9" fillOpacity="0.7">1x</text>
-  <rect x="60" y="45" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="75" y="45" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="90" y="45" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="105" y="45" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="120" y="45" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="135" y="45" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="150" y="45" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="165" y="45" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="180" y="45" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="195" y="45" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="210" y="45" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="225" y="45" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="240" y="45" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="255" y="45" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="270" y="45" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="285" y="45" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <text x="52" y="71" textAnchor="end" fill="currentColor" fontSize="9" fillOpacity="0.7">2x</text>
-  <rect x="60" y="60" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="75" y="60" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="90" y="60" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="105" y="60" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="120" y="60" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="135" y="60" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="150" y="60" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="165" y="60" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="180" y="60" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="195" y="60" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="210" y="60" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="225" y="60" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="240" y="60" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="255" y="60" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="270" y="60" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="285" y="60" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <text x="52" y="86" textAnchor="end" fill="currentColor" fontSize="9" fillOpacity="0.7">3x</text>
-  <rect x="60" y="75" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="75" y="75" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="90" y="75" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="105" y="75" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="120" y="75" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="135" y="75" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="150" y="75" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="165" y="75" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="180" y="75" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="195" y="75" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="210" y="75" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="225" y="75" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="240" y="75" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="255" y="75" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="270" y="75" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="285" y="75" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <text x="52" y="101" textAnchor="end" fill="currentColor" fontSize="9" fillOpacity="0.7">4x</text>
-  <rect x="60" y="90" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="75" y="90" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="90" y="90" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="105" y="90" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="120" y="90" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="135" y="90" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="150" y="90" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="165" y="90" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="180" y="90" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="195" y="90" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="210" y="90" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="225" y="90" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="240" y="90" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="255" y="90" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="270" y="90" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="285" y="90" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <text x="52" y="116" textAnchor="end" fill="currentColor" fontSize="9" fillOpacity="0.7">5x</text>
-  <rect x="60" y="105" width="14" height="14" fill="#a855f7" fillOpacity="0.3" />
-  <rect x="75" y="105" width="14" height="14" fill="#a855f7" fillOpacity="0.3" />
-  <rect x="90" y="105" width="14" height="14" fill="#a855f7" fillOpacity="0.3" />
-  <rect x="105" y="105" width="14" height="14" fill="#a855f7" fillOpacity="0.3" />
-  <rect x="120" y="105" width="14" height="14" fill="#a855f7" fillOpacity="0.3" />
-  <rect x="135" y="105" width="14" height="14" fill="#a855f7" fillOpacity="0.3" />
-  <rect x="150" y="105" width="14" height="14" fill="#a855f7" fillOpacity="0.3" />
-  <rect x="165" y="105" width="14" height="14" fill="#a855f7" fillOpacity="0.3" />
-  <rect x="180" y="105" width="14" height="14" fill="#a855f7" fillOpacity="0.3" />
-  <rect x="195" y="105" width="14" height="14" fill="#a855f7" fillOpacity="0.3" />
-  <rect x="210" y="105" width="14" height="14" fill="#a855f7" fillOpacity="0.3" />
-  <rect x="225" y="105" width="14" height="14" fill="#a855f7" fillOpacity="0.3" />
-  <rect x="240" y="105" width="14" height="14" fill="#a855f7" fillOpacity="0.3" />
-  <rect x="255" y="105" width="14" height="14" fill="#a855f7" fillOpacity="0.3" />
-  <rect x="270" y="105" width="14" height="14" fill="#a855f7" fillOpacity="0.3" />
-  <rect x="285" y="105" width="14" height="14" fill="#a855f7" fillOpacity="0.3" />
-  <text x="52" y="131" textAnchor="end" fill="currentColor" fontSize="9" fillOpacity="0.7">6x</text>
-  <rect x="60" y="120" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="75" y="120" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="90" y="120" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="105" y="120" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="120" y="120" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="135" y="120" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="150" y="120" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="165" y="120" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="180" y="120" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="195" y="120" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="210" y="120" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="225" y="120" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="240" y="120" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="255" y="120" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="270" y="120" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="285" y="120" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <text x="52" y="146" textAnchor="end" fill="currentColor" fontSize="9" fillOpacity="0.7">7x</text>
-  <rect x="60" y="135" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="75" y="135" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="90" y="135" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="105" y="135" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="120" y="135" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="135" y="135" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="150" y="135" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="165" y="135" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="180" y="135" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="195" y="135" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="210" y="135" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="225" y="135" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="240" y="135" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="255" y="135" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="270" y="135" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="285" y="135" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <text x="52" y="161" textAnchor="end" fill="currentColor" fontSize="9" fillOpacity="0.7">8x</text>
-  <rect x="60" y="150" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="75" y="150" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="90" y="150" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="105" y="150" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="120" y="150" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="135" y="150" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="150" y="150" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="165" y="150" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="180" y="150" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="195" y="150" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="210" y="150" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="225" y="150" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="240" y="150" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="255" y="150" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="270" y="150" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="285" y="150" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <text x="52" y="176" textAnchor="end" fill="currentColor" fontSize="9" fillOpacity="0.7">9x</text>
-  <rect x="60" y="165" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="75" y="165" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="90" y="165" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="105" y="165" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="120" y="165" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="135" y="165" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="150" y="165" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="165" y="165" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="180" y="165" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="195" y="165" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="210" y="165" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="225" y="165" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="240" y="165" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="255" y="165" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="270" y="165" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="285" y="165" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <text x="52" y="191" textAnchor="end" fill="currentColor" fontSize="9" fillOpacity="0.7">Ax</text>
-  <rect x="60" y="180" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="75" y="180" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="90" y="180" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="105" y="180" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="120" y="180" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="135" y="180" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="150" y="180" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="165" y="180" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="180" y="180" width="14" height="14" fill="#e8912d" fillOpacity="0.45" />
-  <rect x="195" y="180" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="210" y="180" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="225" y="180" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="240" y="180" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="255" y="180" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="270" y="180" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="285" y="180" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <text x="52" y="206" textAnchor="end" fill="currentColor" fontSize="9" fillOpacity="0.7">Bx</text>
-  <rect x="60" y="195" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="75" y="195" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="90" y="195" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="105" y="195" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="120" y="195" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="135" y="195" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="150" y="195" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="165" y="195" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="180" y="195" width="14" height="14" fill="#e5484d" fillOpacity="0.5" />
-  <rect x="195" y="195" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="210" y="195" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="225" y="195" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="240" y="195" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="255" y="195" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="270" y="195" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="285" y="195" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <text x="52" y="221" textAnchor="end" fill="currentColor" fontSize="9" fillOpacity="0.7">Cx</text>
-  <rect x="60" y="210" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="75" y="210" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="90" y="210" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="105" y="210" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="120" y="210" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="135" y="210" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="150" y="210" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="165" y="210" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="180" y="210" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="195" y="210" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="210" y="210" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="225" y="210" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="240" y="210" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="255" y="210" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="270" y="210" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="285" y="210" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <text x="52" y="236" textAnchor="end" fill="currentColor" fontSize="9" fillOpacity="0.7">Dx</text>
-  <rect x="60" y="225" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="75" y="225" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="90" y="225" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="105" y="225" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="120" y="225" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="135" y="225" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="150" y="225" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="165" y="225" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="180" y="225" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="195" y="225" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="210" y="225" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="225" y="225" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="240" y="225" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="255" y="225" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="270" y="225" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="285" y="225" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <text x="52" y="251" textAnchor="end" fill="currentColor" fontSize="9" fillOpacity="0.7">Ex</text>
-  <rect x="60" y="240" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="75" y="240" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="90" y="240" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="105" y="240" width="14" height="14" fill="#e8912d" fillOpacity="0.45" />
-  <rect x="120" y="240" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="135" y="240" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="150" y="240" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="165" y="240" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="180" y="240" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="195" y="240" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="210" y="240" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="225" y="240" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="240" y="240" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="255" y="240" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="270" y="240" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="285" y="240" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <text x="52" y="266" textAnchor="end" fill="currentColor" fontSize="9" fillOpacity="0.7">Fx</text>
-  <rect x="60" y="255" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="75" y="255" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="90" y="255" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="105" y="255" width="14" height="14" fill="#e5484d" fillOpacity="0.5" />
-  <rect x="120" y="255" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="135" y="255" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="150" y="255" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="165" y="255" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="180" y="255" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="195" y="255" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="210" y="255" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="225" y="255" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="240" y="255" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="255" y="255" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="270" y="255" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <rect x="285" y="255" width="14" height="14" fill="currentColor" fillOpacity="0.05" />
-  <text x="67" y="24" textAnchor="middle" fill="currentColor" fontSize="9" fillOpacity="0.7">0</text>
-  <text x="82" y="24" textAnchor="middle" fill="currentColor" fontSize="9" fillOpacity="0.7">1</text>
-  <text x="97" y="24" textAnchor="middle" fill="currentColor" fontSize="9" fillOpacity="0.7">2</text>
-  <text x="112" y="24" textAnchor="middle" fill="currentColor" fontSize="9" fillOpacity="0.7">3</text>
-  <text x="127" y="24" textAnchor="middle" fill="currentColor" fontSize="9" fillOpacity="0.7">4</text>
-  <text x="142" y="24" textAnchor="middle" fill="currentColor" fontSize="9" fillOpacity="0.7">5</text>
-  <text x="157" y="24" textAnchor="middle" fill="currentColor" fontSize="9" fillOpacity="0.7">6</text>
-  <text x="172" y="24" textAnchor="middle" fill="currentColor" fontSize="9" fillOpacity="0.7">7</text>
-  <text x="187" y="24" textAnchor="middle" fill="currentColor" fontSize="9" fillOpacity="0.7">8</text>
-  <text x="202" y="24" textAnchor="middle" fill="currentColor" fontSize="9" fillOpacity="0.7">9</text>
-  <text x="217" y="24" textAnchor="middle" fill="currentColor" fontSize="9" fillOpacity="0.7">A</text>
-  <text x="232" y="24" textAnchor="middle" fill="currentColor" fontSize="9" fillOpacity="0.7">B</text>
-  <text x="247" y="24" textAnchor="middle" fill="currentColor" fontSize="9" fillOpacity="0.7">C</text>
-  <text x="262" y="24" textAnchor="middle" fill="currentColor" fontSize="9" fillOpacity="0.7">D</text>
-  <text x="277" y="24" textAnchor="middle" fill="currentColor" fontSize="9" fillOpacity="0.7">E</text>
-  <text x="292" y="24" textAnchor="middle" fill="currentColor" fontSize="9" fillOpacity="0.7">F</text>
-  <line x1="187" y1="192" x2="187" y2="197" stroke="#e5484d" strokeWidth="1.5" markerEnd="url(#pl7-arrow)" />
-  <line x1="112" y1="252" x2="112" y2="257" stroke="#e5484d" strokeWidth="1.5" markerEnd="url(#pl7-arrow)" />
-  <text x="330" y="116" fill="#a855f7" fontSize="12" fontWeight="600">row 5: a 4-bit dot with offset 5</text>
-  <text x="330" y="132" fill="currentColor" fontSize="11">entries $50–$5F: the offset is the upper four bits</text>
-  <text x="330" y="191" fill="#e5484d" fontSize="12" fontWeight="600">$A8 → $B8: a Layer 2 byte, offset 1</text>
-  <text x="330" y="207" fill="currentColor" fontSize="11">the offset is added to the upper four bits</text>
-  <text x="330" y="251" fill="#e5484d" fontSize="12" fontWeight="600">$E3 → $F3</text>
-  <text x="330" y="267" fill="currentColor" fontSize="11">the "transparent" byte moves too</text>
-  <text x="330" y="282" fill="currentColor" fontSize="11" fillOpacity="0.75">($F0–$FF wrap round to $00–$0F)</text>
+  <text x="208" y="18" textAnchor="middle" fill="currentColor" fontSize="12" fontWeight="600">second digit: the column</text>
+  <text x="22" y="176" textAnchor="middle" fill="currentColor" fontSize="12" fontWeight="600" transform="rotate(-90 22 172)">first digit: the row</text>
+  <text x="72" y="60" textAnchor="end" fill="currentColor" fontSize="10" fillOpacity="0.8">$0x</text>
+  <rect x="80" y="48" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="96" y="48" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="112" y="48" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="128" y="48" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="144" y="48" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="160" y="48" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="176" y="48" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="192" y="48" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="208" y="48" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="224" y="48" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="240" y="48" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="256" y="48" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="272" y="48" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="288" y="48" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="304" y="48" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="320" y="48" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <text x="72" y="76" textAnchor="end" fill="currentColor" fontSize="10" fillOpacity="0.8">$1x</text>
+  <rect x="80" y="64" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="96" y="64" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="112" y="64" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="128" y="64" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="144" y="64" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="160" y="64" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="176" y="64" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="192" y="64" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="208" y="64" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="224" y="64" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="240" y="64" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="256" y="64" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="272" y="64" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="288" y="64" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="304" y="64" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="320" y="64" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <text x="72" y="92" textAnchor="end" fill="currentColor" fontSize="10" fillOpacity="0.8">$2x</text>
+  <rect x="80" y="80" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="96" y="80" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="112" y="80" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="128" y="80" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="144" y="80" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="160" y="80" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="176" y="80" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="192" y="80" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="208" y="80" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="224" y="80" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="240" y="80" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="256" y="80" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="272" y="80" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="288" y="80" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="304" y="80" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="320" y="80" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <text x="72" y="108" textAnchor="end" fill="currentColor" fontSize="10" fillOpacity="0.8">$3x</text>
+  <rect x="80" y="96" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="96" y="96" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="112" y="96" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="128" y="96" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="144" y="96" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="160" y="96" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="176" y="96" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="192" y="96" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="208" y="96" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="224" y="96" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="240" y="96" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="256" y="96" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="272" y="96" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="288" y="96" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="304" y="96" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="320" y="96" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <text x="72" y="124" textAnchor="end" fill="currentColor" fontSize="10" fillOpacity="0.8">$4x</text>
+  <rect x="80" y="112" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="96" y="112" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="112" y="112" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="128" y="112" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="144" y="112" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="160" y="112" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="176" y="112" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="192" y="112" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="208" y="112" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="224" y="112" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="240" y="112" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="256" y="112" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="272" y="112" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="288" y="112" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="304" y="112" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="320" y="112" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <text x="72" y="140" textAnchor="end" fill="currentColor" fontSize="10" fillOpacity="0.8">$5x</text>
+  <rect x="80" y="128" width="15" height="15" fill="#a855f7" fillOpacity="0.35" />
+  <rect x="96" y="128" width="15" height="15" fill="#a855f7" fillOpacity="0.35" />
+  <rect x="112" y="128" width="15" height="15" fill="#a855f7" fillOpacity="0.35" />
+  <rect x="128" y="128" width="15" height="15" fill="#a855f7" fillOpacity="0.35" />
+  <rect x="144" y="128" width="15" height="15" fill="#a855f7" fillOpacity="0.35" />
+  <rect x="160" y="128" width="15" height="15" fill="#a855f7" fillOpacity="0.35" />
+  <rect x="176" y="128" width="15" height="15" fill="#a855f7" fillOpacity="0.35" />
+  <rect x="192" y="128" width="15" height="15" fill="#a855f7" fillOpacity="0.35" />
+  <rect x="208" y="128" width="15" height="15" fill="#a855f7" fillOpacity="0.35" />
+  <rect x="224" y="128" width="15" height="15" fill="#a855f7" fillOpacity="0.35" />
+  <rect x="240" y="128" width="15" height="15" fill="#a855f7" fillOpacity="0.35" />
+  <rect x="256" y="128" width="15" height="15" fill="#a855f7" fillOpacity="0.35" />
+  <rect x="272" y="128" width="15" height="15" fill="#a855f7" fillOpacity="0.35" />
+  <rect x="288" y="128" width="15" height="15" fill="#a855f7" fillOpacity="0.35" />
+  <rect x="304" y="128" width="15" height="15" fill="#a855f7" fillOpacity="0.35" />
+  <rect x="320" y="128" width="15" height="15" fill="#a855f7" fillOpacity="0.35" />
+  <text x="72" y="156" textAnchor="end" fill="currentColor" fontSize="10" fillOpacity="0.8">$6x</text>
+  <rect x="80" y="144" width="15" height="15" fill="#a855f7" fillOpacity="0.15" />
+  <rect x="96" y="144" width="15" height="15" fill="#a855f7" fillOpacity="0.15" />
+  <rect x="112" y="144" width="15" height="15" fill="#a855f7" fillOpacity="0.15" />
+  <rect x="128" y="144" width="15" height="15" fill="#a855f7" fillOpacity="0.15" />
+  <rect x="144" y="144" width="15" height="15" fill="#a855f7" fillOpacity="0.15" />
+  <rect x="160" y="144" width="15" height="15" fill="#a855f7" fillOpacity="0.15" />
+  <rect x="176" y="144" width="15" height="15" fill="#a855f7" fillOpacity="0.15" />
+  <rect x="192" y="144" width="15" height="15" fill="#a855f7" fillOpacity="0.15" />
+  <rect x="208" y="144" width="15" height="15" fill="#a855f7" fillOpacity="0.15" />
+  <rect x="224" y="144" width="15" height="15" fill="#a855f7" fillOpacity="0.15" />
+  <rect x="240" y="144" width="15" height="15" fill="#a855f7" fillOpacity="0.15" />
+  <rect x="256" y="144" width="15" height="15" fill="#a855f7" fillOpacity="0.15" />
+  <rect x="272" y="144" width="15" height="15" fill="#a855f7" fillOpacity="0.15" />
+  <rect x="288" y="144" width="15" height="15" fill="#a855f7" fillOpacity="0.15" />
+  <rect x="304" y="144" width="15" height="15" fill="#a855f7" fillOpacity="0.15" />
+  <rect x="320" y="144" width="15" height="15" fill="#a855f7" fillOpacity="0.15" />
+  <text x="72" y="172" textAnchor="end" fill="currentColor" fontSize="10" fillOpacity="0.8">$7x</text>
+  <rect x="80" y="160" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="96" y="160" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="112" y="160" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="128" y="160" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="144" y="160" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="160" y="160" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="176" y="160" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="192" y="160" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="208" y="160" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="224" y="160" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="240" y="160" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="256" y="160" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="272" y="160" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="288" y="160" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="304" y="160" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="320" y="160" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <text x="72" y="188" textAnchor="end" fill="currentColor" fontSize="10" fillOpacity="0.8">$8x</text>
+  <rect x="80" y="176" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="96" y="176" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="112" y="176" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="128" y="176" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="144" y="176" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="160" y="176" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="176" y="176" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="192" y="176" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="208" y="176" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="224" y="176" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="240" y="176" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="256" y="176" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="272" y="176" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="288" y="176" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="304" y="176" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="320" y="176" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <text x="72" y="204" textAnchor="end" fill="currentColor" fontSize="10" fillOpacity="0.8">$9x</text>
+  <rect x="80" y="192" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="96" y="192" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="112" y="192" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="128" y="192" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="144" y="192" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="160" y="192" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="176" y="192" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="192" y="192" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="208" y="192" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="224" y="192" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="240" y="192" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="256" y="192" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="272" y="192" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="288" y="192" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="304" y="192" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="320" y="192" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <text x="72" y="220" textAnchor="end" fill="currentColor" fontSize="10" fillOpacity="0.8">$Ax</text>
+  <rect x="80" y="208" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="96" y="208" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="112" y="208" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="128" y="208" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="144" y="208" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="160" y="208" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="176" y="208" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="192" y="208" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="208" y="208" width="15" height="15" fill="#e8912d" fillOpacity="0.55" />
+  <rect x="224" y="208" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="240" y="208" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="256" y="208" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="272" y="208" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="288" y="208" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="304" y="208" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="320" y="208" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <text x="72" y="236" textAnchor="end" fill="currentColor" fontSize="10" fillOpacity="0.8">$Bx</text>
+  <rect x="80" y="224" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="96" y="224" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="112" y="224" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="128" y="224" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="144" y="224" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="160" y="224" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="176" y="224" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="192" y="224" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="208" y="224" width="15" height="15" fill="#e5484d" fillOpacity="0.55" />
+  <rect x="224" y="224" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="240" y="224" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="256" y="224" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="272" y="224" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="288" y="224" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="304" y="224" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="320" y="224" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <text x="72" y="252" textAnchor="end" fill="currentColor" fontSize="10" fillOpacity="0.8">$Cx</text>
+  <rect x="80" y="240" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="96" y="240" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="112" y="240" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="128" y="240" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="144" y="240" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="160" y="240" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="176" y="240" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="192" y="240" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="208" y="240" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="224" y="240" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="240" y="240" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="256" y="240" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="272" y="240" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="288" y="240" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="304" y="240" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="320" y="240" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <text x="72" y="268" textAnchor="end" fill="currentColor" fontSize="10" fillOpacity="0.8">$Dx</text>
+  <rect x="80" y="256" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="96" y="256" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="112" y="256" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="128" y="256" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="144" y="256" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="160" y="256" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="176" y="256" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="192" y="256" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="208" y="256" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="224" y="256" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="240" y="256" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="256" y="256" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="272" y="256" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="288" y="256" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="304" y="256" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="320" y="256" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <text x="72" y="284" textAnchor="end" fill="currentColor" fontSize="10" fillOpacity="0.8">$Ex</text>
+  <rect x="80" y="272" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="96" y="272" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="112" y="272" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="128" y="272" width="15" height="15" fill="#e8912d" fillOpacity="0.55" />
+  <rect x="144" y="272" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="160" y="272" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="176" y="272" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="192" y="272" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="208" y="272" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="224" y="272" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="240" y="272" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="256" y="272" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="272" y="272" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="288" y="272" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="304" y="272" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="320" y="272" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <text x="72" y="300" textAnchor="end" fill="currentColor" fontSize="10" fillOpacity="0.8">$Fx</text>
+  <rect x="80" y="288" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="96" y="288" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="112" y="288" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="128" y="288" width="15" height="15" fill="#e5484d" fillOpacity="0.55" />
+  <rect x="144" y="288" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="160" y="288" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="176" y="288" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="192" y="288" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="208" y="288" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="224" y="288" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="240" y="288" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="256" y="288" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="272" y="288" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="288" y="288" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="304" y="288" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <rect x="320" y="288" width="15" height="15" fill="currentColor" fillOpacity="0.05" />
+  <text x="87.5" y="40" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">0</text>
+  <text x="103.5" y="40" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">1</text>
+  <text x="119.5" y="40" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">2</text>
+  <text x="135.5" y="40" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">3</text>
+  <text x="151.5" y="40" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">4</text>
+  <text x="167.5" y="40" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">5</text>
+  <text x="183.5" y="40" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">6</text>
+  <text x="199.5" y="40" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">7</text>
+  <text x="215.5" y="40" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">8</text>
+  <text x="231.5" y="40" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">9</text>
+  <text x="247.5" y="40" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">A</text>
+  <text x="263.5" y="40" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">B</text>
+  <text x="279.5" y="40" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">C</text>
+  <text x="295.5" y="40" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">D</text>
+  <text x="311.5" y="40" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">E</text>
+  <text x="327.5" y="40" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">F</text>
+  <line x1="215.5" y1="221" x2="215.5" y2="226" stroke="#e5484d" strokeWidth="1.6" markerEnd="url(#pl7-arrow)" />
+  <line x1="135.5" y1="285" x2="135.5" y2="290" stroke="#e5484d" strokeWidth="1.6" markerEnd="url(#pl7-arrow)" />
+  <text x="364" y="140" fill="#a855f7" fontSize="12" fontWeight="600">row $5x: 4-bit dots, offset 5</text>
+  <text x="364" y="156" fill="#a855f7" fontSize="12">row $6x: the same dots, offset 6</text>
+  <text x="364" y="174" fill="currentColor" fontSize="11" fillOpacity="0.8">the dot (0–F) picks the column</text>
+  <text x="364" y="220" fill="#e5484d" fontSize="12" fontWeight="600">$A8 → $B8: an 8-bit dot, offset 1</text>
+  <text x="364" y="236" fill="currentColor" fontSize="11" fillOpacity="0.8">one row down, the same column</text>
+  <text x="364" y="284" fill="#e5484d" fontSize="12" fontWeight="600">$E3 → $F3: the same for "empty"</text>
+  <text x="364" y="300" fill="currentColor" fontSize="11" fillOpacity="0.8">from row $F, a row down is row $0</text>
 </svg>
-<figcaption>The palette as 16 rows of 16 entries. The offset moves an index down by whole rows. For an 8-bit layer it moves every byte, the "transparent" `$E3` included.</figcaption>
+<figcaption>The palette as 16 rows of 16 entries. An index's first hex digit is its row, its second the column. The highlights are the examples of the text below.</figcaption>
 </figure>
 
-The offsets live in different places. Layer 2's is NextReg `$70` bits 3–0, one for the whole layer.
-Each sprite has its own, in its attributes. Each tile has its own, in its attribute byte. LoRes in
-its 4-bit Radastan mode takes one from NextReg `$6A`. The tilemap's 1-bit text mode, which has no
-colour bits in its dots at all, takes nearly the whole index from the tile's attribute: seven bits of
-offset and the dot's one bit.
+**Dots come in two sizes.**
+
+- An **8-bit dot** is a whole byte, `$00` to `$FF`: two hex digits, a complete index. Layer 2's dots in
+  its 256 × 192 and 320 × 256 modes are 8-bit, one byte per dot, and so are the dots of 8-bit sprite
+  patterns.
+- A **4-bit dot** is half a byte, `0` to `F`: one hex digit, so one byte holds two dots, the left dot
+  in the first digit and the right dot in the second. 4-bit sprite patterns, tiles, Layer 2's 640 × 256
+  mode and LoRes in Radastan mode store their dots this way. They save half the memory, but a single
+  digit can name only 16 entries.
+
+**The palette offset fills the gap.** The offset is one more hex digit, 4 bits, `0` to `F`, that each
+of these layers keeps beside its dots. What the layer does with it depends on the dot:
+
+- **A 4-bit dot** has no first digit, so the offset **becomes the first digit**. Offset 5 and dot 9 make
+  index `$59`. So the offset picks the **row** and the dot picks the column: a 4-bit sprite with offset 5
+  uses the 16 entries of row 5, `$50` to `$5F`, and the same sprite with offset 6 uses row 6 and appears
+  in a different set of 16 colours. The pattern does not change; only its row of the palette does.
+- **An 8-bit dot** already has both digits, so the offset is **added to its first digit**, and the
+  second digit is left alone. Layer 2 byte `$A8` with offset 1 shows entry `$B8`: one row down, the same
+  column. If the first digit passes `F` it wraps round to `0`: `$F3` with offset 1 shows `$03`. With
+  offset 0, nothing changes, which is why Layer 2 normally shows its bytes as they are.
+
+<figure>
+<svg viewBox="0 0 700 330" role="img" aria-label="Two ways to make an 8-bit palette index, written as two hex digits. Left, a 4-bit dot such as a pixel of a 4-bit sprite: the dot is a single hex digit, 9, and the offset, 5, is put in front of it as the first digit, so the index is 59. Right, an 8-bit dot such as a Layer 2 byte: the dot already has two digits, A8, and the offset, 1, is added to its first digit only, so the index is B8; the second digit does not change. A second example adds 1 to E3 and gives F3, and adding 1 to F3 wraps round to 03." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
+  <defs>
+    <marker id="pl6-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor" fillOpacity="0.6" />
+    </marker>
+  </defs>
+  <text x="170" y="24" textAnchor="middle" fill="currentColor" fontSize="13" fontWeight="600">a 4-bit dot: one hex digit</text>
+  <text x="170" y="42" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.75">4-bit sprites and tiles, Layer 2 at 640 wide, Radastan</text>
+  <rect x="96" y="70" width="44" height="44" rx="5" fill="currentColor" fillOpacity="0.04" stroke="currentColor" strokeOpacity="0.7" strokeDasharray="5 3" />
+  <text x="118.0" y="99.0" textAnchor="middle" fill="currentColor" fontSize="20" fontWeight="600">5</text>
+  <rect x="196" y="70" width="44" height="44" rx="5" fill="currentColor" fillOpacity="0.1" stroke="currentColor" strokeOpacity="0.55" />
+  <text x="218.0" y="99.0" textAnchor="middle" fill="currentColor" fontSize="20" fontWeight="600">9</text>
+  <text x="118" y="134" textAnchor="middle" fill="currentColor" fontSize="11">the offset</text>
+  <text x="218" y="134" textAnchor="middle" fill="currentColor" fontSize="11">the dot</text>
+  <text x="118" y="150" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.7">0101</text>
+  <text x="218" y="150" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.7">1001</text>
+  <line x1="118" y1="160" x2="148" y2="196" stroke="currentColor" strokeOpacity="0.6" markerEnd="url(#pl6-arrow)" />
+  <line x1="218" y1="160" x2="192" y2="196" stroke="currentColor" strokeOpacity="0.6" markerEnd="url(#pl6-arrow)" />
+  <rect x="126" y="200" width="44" height="44" rx="5" fill="#e5484d" fillOpacity="0.1" stroke="#e5484d" strokeWidth="1.5" />
+  <text x="148.0" y="229.0" textAnchor="middle" fill="currentColor" fontSize="20" fontWeight="600">5</text>
+  <rect x="170" y="200" width="44" height="44" rx="5" fill="#e5484d" fillOpacity="0.1" stroke="#e5484d" strokeWidth="1.5" />
+  <text x="192.0" y="229.0" textAnchor="middle" fill="currentColor" fontSize="20" fontWeight="600">9</text>
+  <text x="170" y="266" textAnchor="middle" fill="currentColor" fontSize="12" fontWeight="600">index $59</text>
+  <text x="170" y="284" textAnchor="middle" fill="currentColor" fontSize="11">the offset becomes the first digit,</text>
+  <text x="170" y="300" textAnchor="middle" fill="currentColor" fontSize="11">the dot the second: 5 × 16 + 9 = 89</text>
+  <line x1="350" y1="20" x2="350" y2="310" stroke="currentColor" strokeOpacity="0.2" strokeDasharray="4 4" />
+  <text x="525" y="24" textAnchor="middle" fill="currentColor" fontSize="13" fontWeight="600">an 8-bit dot: two hex digits</text>
+  <text x="525" y="42" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.75">Layer 2 at 256 and 320 wide, 8-bit sprites</text>
+  <rect x="440" y="70" width="44" height="44" rx="5" fill="currentColor" fillOpacity="0.1" stroke="currentColor" strokeOpacity="0.55" />
+  <text x="462.0" y="99.0" textAnchor="middle" fill="currentColor" fontSize="20" fontWeight="600">A</text>
+  <rect x="484" y="70" width="44" height="44" rx="5" fill="currentColor" fillOpacity="0.1" stroke="currentColor" strokeOpacity="0.55" />
+  <text x="506.0" y="99.0" textAnchor="middle" fill="currentColor" fontSize="20" fontWeight="600">8</text>
+  <text x="420" y="138" textAnchor="end" fill="currentColor" fontSize="18" fontWeight="600">+</text>
+  <rect x="440" y="114" width="44" height="44" rx="5" fill="currentColor" fillOpacity="0.04" stroke="currentColor" strokeOpacity="0.7" strokeDasharray="5 3" />
+  <text x="462.0" y="143.0" textAnchor="middle" fill="currentColor" fontSize="20" fontWeight="600">1</text>
+  <text x="400" y="98" textAnchor="end" fill="currentColor" fontSize="11">the dot</text>
+  <text x="400" y="142" textAnchor="end" fill="currentColor" fontSize="11">the offset</text>
+  <line x1="428" y1="168" x2="540" y2="168" stroke="currentColor" strokeOpacity="0.6" />
+  <rect x="440" y="178" width="44" height="44" rx="5" fill="#e5484d" fillOpacity="0.1" stroke="#e5484d" strokeWidth="1.5" />
+  <text x="462.0" y="207.0" textAnchor="middle" fill="currentColor" fontSize="20" fontWeight="600">B</text>
+  <rect x="484" y="178" width="44" height="44" rx="5" fill="#e5484d" fillOpacity="0.1" stroke="#e5484d" strokeWidth="1.5" />
+  <text x="506.0" y="207.0" textAnchor="middle" fill="currentColor" fontSize="20" fontWeight="600">8</text>
+  <text x="400" y="206" textAnchor="end" fill="currentColor" fontSize="11">index $B8</text>
+  <text x="560" y="98" fill="currentColor" fontSize="11">A + 1 = B</text>
+  <text x="560" y="114" fill="currentColor" fontSize="11">8 stays 8</text>
+  <text x="560" y="206" fill="currentColor" fontSize="11">one row down</text>
+  <text x="525" y="252" textAnchor="middle" fill="currentColor" fontSize="12">$E3 + offset 1 = $F3</text>
+  <text x="525" y="272" textAnchor="middle" fill="currentColor" fontSize="12">$F3 + offset 1 = $03 (F + 1 wraps to 0)</text>
+  <text x="525" y="300" textAnchor="middle" fill="currentColor" fontSize="11">the offset is added to the first digit only</text>
+</svg>
+<figcaption>The two rules side by side. A 4-bit dot gets the offset in front of it; an 8-bit dot gets the offset added to its first digit.</figcaption>
+</figure>
+
+The two rules serve two different purposes. For 4-bit dots the offset is what makes them useful at
+all: 16 colours per sprite or tile, but up to 16 different sets of them in one palette. For 8-bit dots
+it is a way to shift a whole picture's colours to another part of the palette without rewriting a byte
+of it, for an effect or to share one palette between pictures.
+
+Every layer with dots keeps its offset somewhere else:
+
+| Layer | Its dots | Its offset | The index |
+|---|---|---|---|
+| Layer 2, 256 × 192 and 320 × 256 | 8-bit | NextReg `$70` bits 3–0, one for the whole layer | the byte, offset added to the first digit |
+| Layer 2, 640 × 256 | 4-bit, two per byte | NextReg `$70` bits 3–0 | offset, then the dot |
+| Sprites, 8-bit patterns | 8-bit | in each sprite's attributes, one per sprite | the dot, offset added to the first digit |
+| Sprites, 4-bit patterns | 4-bit, two per byte | in each sprite's attributes | offset, then the dot |
+| Tilemap | 4-bit, two per byte | in each tile's attribute byte, one per tile | offset, then the dot |
+| LoRes | 8-bit | none | the byte itself |
+| LoRes, Radastan mode | 4-bit, two per byte | NextReg `$6A` bits 3–0 | offset, then the dot |
+
+The tilemap's **text mode** is the extreme case. Its dots are a single bit, on or off, so nearly the
+whole index comes from the tile's attribute: a 7-bit offset, with the dot's one bit as the last bit
+of the index. Every tile of text can have its own pair of colours.
+
+One consequence for the next part: an offset moves **every** dot, and for an 8-bit layer that includes
+the byte the program uses for "nothing here". Part 4 and Part 6 show what that does to transparency.
 
 ## Part 4: Transparency and the fallback colour
 
@@ -776,35 +814,40 @@ says that every layer answers "am I transparent here?" for every dot. Here is ho
 and why there are two different rules.
 
 <figure>
-<svg viewBox="0 0 700 250" role="img" aria-label="The two transparency rules on the way from an index to a colour. The sprites and the tilemap test their index before the palette, and before any palette offset: a sprite dot equal to NextReg 4B, or a tile dot equal to NextReg 4C, is transparent. The ULA, LoRes, Layer 2 and text-mode tiles test the colour after the palette: a colour whose upper eight bits equal NextReg 14 is transparent." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
+<svg viewBox="0 0 700 290" role="img" aria-label="The two transparency tests on the way from a dot to a colour. Before the palette and its offset, the index test: a sprite dot is transparent when its value equals the value held in NextReg 4B, and a tile dot when its value equals the value held in NextReg 4C. After the palette, the colour test: for the ULA, LoRes, Layer 2 and text-mode tiles, a dot is transparent when the upper eight bits of its colour equal the value held in NextReg 14." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
   <defs>
     <marker id="pl8-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M0,0 L10,5 L0,10 z" fill="currentColor" fillOpacity="0.6" />
     </marker>
   </defs>
-  <rect x="20" y="90" width="190" height="56" rx="6" fill="currentColor" fillOpacity="0.05" stroke="currentColor" strokeOpacity="0.45" />
-  <text x="115" y="114" textAnchor="middle" fill="currentColor" fontSize="12" fontWeight="600">the layer's dot</text>
-  <text x="115" y="132" textAnchor="middle" fill="currentColor" fontSize="11">an index</text>
-  <rect x="250" y="90" width="190" height="56" rx="6" fill="currentColor" fillOpacity="0.05" stroke="currentColor" strokeOpacity="0.45" />
-  <text x="345" y="114" textAnchor="middle" fill="currentColor" fontSize="12" fontWeight="600">the palette</text>
-  <text x="345" y="132" textAnchor="middle" fill="currentColor" fontSize="11">+ offset, lookup</text>
-  <rect x="480" y="90" width="190" height="56" rx="6" fill="currentColor" fillOpacity="0.05" stroke="currentColor" strokeOpacity="0.45" />
-  <text x="575" y="114" textAnchor="middle" fill="currentColor" fontSize="12" fontWeight="600">a 9-bit colour</text>
-  <text x="575" y="132" textAnchor="middle" fill="currentColor" fontSize="11">to stage 2</text>
-  <line x1="210" y1="118" x2="248" y2="118" stroke="currentColor" strokeOpacity="0.6" markerEnd="url(#pl8-arrow)" />
-  <line x1="440" y1="118" x2="478" y2="118" stroke="currentColor" strokeOpacity="0.6" markerEnd="url(#pl8-arrow)" />
-  <circle cx="229" cy="118" r="7" fill="#e5484d" />
-  <circle cx="459" cy="118" r="7" fill="#e5484d" />
-  <text x="229" y="40" textAnchor="middle" fill="#e5484d" fontSize="12" fontWeight="600">the index rule</text>
-  <text x="229" y="58" textAnchor="middle" fill="currentColor" fontSize="11">sprites: dot = $4B</text>
-  <text x="229" y="74" textAnchor="middle" fill="currentColor" fontSize="11">tilemap: dot = $4C</text>
-  <text x="459" y="180" textAnchor="middle" fill="#e5484d" fontSize="12" fontWeight="600">the colour rule</text>
-  <text x="459" y="198" textAnchor="middle" fill="currentColor" fontSize="11">upper 8 bits = $14</text>
-  <text x="459" y="214" textAnchor="middle" fill="currentColor" fontSize="11">ULA, LoRes, Layer 2, text-mode tiles</text>
-  <text x="229" y="180" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.8">before the offset:</text>
-  <text x="229" y="196" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.8">a hole stays a hole</text>
+  <rect x="20" y="112" width="190" height="56" rx="6" fill="currentColor" fillOpacity="0.05" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="115" y="136" textAnchor="middle" fill="currentColor" fontSize="12" fontWeight="600">the layer's dot</text>
+  <text x="115" y="154" textAnchor="middle" fill="currentColor" fontSize="11">its value</text>
+  <rect x="250" y="112" width="190" height="56" rx="6" fill="currentColor" fillOpacity="0.05" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="345" y="136" textAnchor="middle" fill="currentColor" fontSize="12" fontWeight="600">the palette</text>
+  <text x="345" y="154" textAnchor="middle" fill="currentColor" fontSize="11">offset, then lookup</text>
+  <rect x="480" y="112" width="190" height="56" rx="6" fill="currentColor" fillOpacity="0.05" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="575" y="136" textAnchor="middle" fill="currentColor" fontSize="12" fontWeight="600">a 9-bit colour</text>
+  <text x="575" y="154" textAnchor="middle" fill="currentColor" fontSize="11">on to stage 2</text>
+  <line x1="210" y1="140" x2="248" y2="140" stroke="currentColor" strokeOpacity="0.6" markerEnd="url(#pl8-arrow)" />
+  <line x1="440" y1="140" x2="478" y2="140" stroke="currentColor" strokeOpacity="0.6" markerEnd="url(#pl8-arrow)" />
+  <circle cx="229" cy="140" r="7" fill="#e5484d" />
+  <circle cx="459" cy="140" r="7" fill="#e5484d" />
+  <line x1="229" y1="133" x2="229" y2="98" stroke="#e5484d" strokeOpacity="0.6" strokeDasharray="3 3" />
+  <line x1="459" y1="147" x2="459" y2="184" stroke="#e5484d" strokeOpacity="0.6" strokeDasharray="3 3" />
+  <text x="229" y="20" textAnchor="middle" fill="#e5484d" fontSize="12" fontWeight="600">the index test, before the palette</text>
+  <text x="229" y="40" textAnchor="middle" fill="currentColor" fontSize="11">a sprite dot is transparent if its value equals</text>
+  <text x="229" y="55" textAnchor="middle" fill="currentColor" fontSize="11" fontWeight="600">the value held in NextReg $4B</text>
+  <text x="229" y="74" textAnchor="middle" fill="currentColor" fontSize="11">a tile dot is transparent if its value equals</text>
+  <text x="229" y="89" textAnchor="middle" fill="currentColor" fontSize="11" fontWeight="600">the value held in NextReg $4C</text>
+  <text x="459" y="202" textAnchor="middle" fill="#e5484d" fontSize="12" fontWeight="600">the colour test, after the palette</text>
+  <text x="459" y="222" textAnchor="middle" fill="currentColor" fontSize="11">a dot is transparent if the upper 8 bits of its colour</text>
+  <text x="459" y="237" textAnchor="middle" fill="currentColor" fontSize="11">equal <tspan fontWeight="600">the value held in NextReg $14</tspan></text>
+  <text x="459" y="256" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.75">for the ULA, LoRes, Layer 2 and text-mode tiles</text>
+  <text x="115" y="196" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.75">tested before the offset:</text>
+  <text x="115" y="212" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.75">a hole in a pattern stays a hole</text>
 </svg>
-<figcaption>The two rules, and where each one looks: at the index, before the palette and its offset, or at the colour that comes out of it.</figcaption>
+<figcaption>The two transparency tests. A sprite or tile dot is compared, before the palette, with the value a program has put in NextReg `$4B` or `$4C`; a colour is compared, after the palette, with the value in NextReg `$14`.</figcaption>
 </figure>
 
 ### The index rule: a hole in a shape
@@ -938,9 +981,23 @@ of bytes:
   frames, at the cost of 256 writes per palette.
 - **Switching.** Prepare the second palette and switch to it with one bit: day becomes night.
 - **Recolouring.** One sprite pattern in eight colourings needs eight offsets, not eight patterns.
-- **Changing it mid-frame.** A palette entry rewritten at every line, by the line interrupt or the
-  Copper, gives one entry a different colour on each line: the sky gradients of Next games. The last
-  article of the series shows how.
+- **Changing it mid-frame.** A palette entry rewritten at every line gives one entry a different
+  colour on each line: the sky gradients and colour bars of Next games.
+
+For that last kind, and for most palette effects that follow the beam, the **Copper** is the best and
+the cheapest tool. It is a small co-processor of its own, beside the CPU, that runs a list of up to
+1,024 instructions in step with the beam: **WAIT** until the beam reaches a line and a position, and
+**MOVE** a value into a NextReg. The palette registers are NextRegs, so a Copper list can rewrite a
+palette entry at any line, or at several places along one: WAIT for the line, MOVE the index into
+`$40`, MOVE the colour into `$41`. With `$43` bit 7 set the index does not move on after a `$41`
+write, so a gradient that recolours one entry needs a single MOVE per line.
+
+Everything about it is cheaper than doing the same with the CPU. Once the list is written, it costs
+the CPU **nothing**: no interrupt, no instruction, not a T-state, every frame, by itself. And it is
+**on time**: the CPU answers a line interrupt only when its current instruction ends, a few T-states
+earlier or later from frame to frame, while the Copper makes its MOVE at the position it waited for,
+every frame alike. The last article of the series explains the Copper in detail, and
+[the Copper guide](/en/guides/next/copper/) shows how to see a Copper list at work in Klive.
 
 Here is the scene of the first article, four times. Layer 2's bitmap is the same in all four; only
 NextRegs changed:
@@ -1079,6 +1136,7 @@ palette files (`.pal`, `.npl`) open in the IDE's [palette editor](/en/guides/nex
   step of green. When every layer is transparent, the **fallback colour** `$4A` shows.
 - At power-on the firmware fills the ULA palettes with the Spectrum's colours and the others with the
   identity; a reset keeps whatever they hold.
-- Palettes make colour changes cheap: cycling, fades, switching, recolouring, and per-line changes.
+- Palettes make colour changes cheap: cycling, fades, switching, recolouring, and per-line changes,
+  which the **Copper** makes at exact beam positions without costing the CPU anything.
 - The 9-bit colour goes out as three bits a channel on VGA and RGB, and with its bits repeated to eight
   on HDMI.
