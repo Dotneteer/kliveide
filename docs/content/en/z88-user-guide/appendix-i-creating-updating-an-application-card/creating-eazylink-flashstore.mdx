@@ -1,0 +1,408 @@
+---
+description: "There are two ways to upgrade your Flashcard"
+---
+
+import { Callout, Table } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/63701372 (version 23) by scripts/import-z88-user-guide.cjs */}
+
+# Creating Eazylink/Flashstore
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/oz45-about.webp" alt="oz45 about" width={640} />
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/eazylink-flashstore-32k-eprom.webp" alt="Eazylink and Flashstore from Rakewell" width={888} />
+
+There are two ways to upgrade your Flashcard
+
+1. Get in touch with [Rakewell](http://www.rakewell.com) who offer the service of <br />upgrading (your own EPROM) or <br />supplying EPROMs with Eazylink & Flashstore.
+
+2. Do it yourself
+
+See [Prerequisites](/en/z88-user-guide/appendix-i-creating-updating-an-application-card#prerequisites)
+
+## Prerequisites
+
+<Callout type="info">
+
+**INFO Put the EPROM in the EPROM ERASER NOW**
+
+If you are going to blow the image into an EPROM card, start erasing it now, as it may take several attempts to erase it completely.
+
+</Callout>
+
+- [Desktop Installation](https://cambridgez88.jira.com/wiki/display/EAZUGV10/Desktop+Installation)
+- [Connect the Z88 to the Desktop](https://cambridgez88.jira.com/wiki/display/EAZUGV10/Connect+the+Z88+to+the+Desktop)
+- [Starting EazyLink on the Desktop](https://cambridgez88.jira.com/wiki/display/EAZUGV10/Starting+EazyLink+on+the+Desktop)
+- Extra RAM fitted in slot 1. Large enough to receive and store all the files required.
+- EPROM or Flash card to store the image (as a separate operation)
+
+The Z88 needs to have the following cards as a minimum configuration.
+
+<Shot src="z88-user-guide/external/qg-check-all-z88-cards/128k-ram1-32k-eprom-3.webp" alt="128k RAM Slot 1 32K EPROM Slot 3" width={453} />
+
+- Slot 1 needs to have at least 128K
+- Slot 3 has a blank 32K EPROM card to blow the two applications.
+
+The alternative temporary solution is to use the Flash card that OZ will be loaded into. The Z88's configuration is either the 512K/512 RAM/Flash option:-
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-oz/512k-0k-0k.webp" alt="512K/512K RAM/Flash card in slot 1" width={452} />
+
+- Slot 1 has 512K to saves the files into
+- Slot 1 also has 512K Flash card to blow the two applications into.
+
+or the 512K RAM (minimum)/1M Flash option:-
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/512k-ram-1m-flash-0.webp" alt="512K RAM 1M Flash card" width={452} />
+
+- Slot 1 has 512K to saves the files into
+- Slot 2 is a 1M Flash card to blow the two applications into.
+
+## Downloading Files
+
+Download from the Wiki the files needed to transfer to the Z88. If they are zipped, unzip all the files on the Desktop Computer and save them all in a separate directory.
+
+<Table>
+<thead>
+<Table.Tr>
+<Table.Th colSpan={3}>Download Location</Table.Th>
+</Table.Tr>
+</thead>
+<tbody>
+<Table.Tr>
+<Table.Th />
+<Table.Td>**[Eazylink](https://cambridgez88.jira.com/wiki/display/ZEP/Easy+file+transfer+between+Z88+and+other+computers)**</Table.Td>
+<Table.Td>**[FlashStore](https://cambridgez88.jira.com/wiki/display/ZFS/FlashStore+(Z88+popdown)+Home)**</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Th />
+<Table.Th>Eazylink 5.2.3-06</Table.Th>
+<Table.Th>Flashstore 1.9.3</Table.Th>
+</Table.Tr>
+<Table.Tr>
+<Table.Th>Files<br />Required</Table.Th>
+<Table.Td>eazyLink.63<br />RomCombiner.bas<br />romcombiner.bin<br />RomUtil.bas</Table.Td>
+<Table.Td>flashstore.63</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Th>Imp/Export</Table.Th>
+<Table.Td colSpan={2}>4 minutes 10 seconds</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+For convenience This section has been copied from the [Eazylink2 User Guide](https://cambridgez88.jira.com/wiki/display/EAZUGV10/Imp-Export+Mode) to show how to do this.
+
+## On the Desktop start Eazylink2.
+
+## First time use
+
+The first time Eazylink is connected to the Z88 the Com Port window is displayed.
+
+<Shot src="z88-user-guide/external/eazugv10-imp-export-mode/imp-exp-compref.webp" alt="ImpExp communications preferences" width={610} />
+
+- Clear the 'Open Serial Port on Startup' tick box<br />Select the 'Default Serial Port:' to the device name the Z88 is connected to.<br />Click the 'Refresh' box and click OK.
+
+An intelligent guess is made at which Serial Port is being used. Here is your chance to check that the correct one has been selected. In this case Windows is using COM 5.
+
+Getting control of Eazylink can be difficult to do initially because Eazylink2 is expecting the pop-down to be running on the Z88. Just keep waiting until you receive the Reading Z88 Devices Command Failed Command Error window.
+
+<Shot src="z88-user-guide/external/eazugv10-imp-export-mode/eazylink-hello-command-failed.webp" alt="eazylink_hello_command_failed" width={487} />
+
+**Choose 'Ignore.'**
+
+What you really need to see is the top Eazylink Menu not being greyed out
+
+<Shot src="z88-user-guide/external/eazugv10-imp-export-mode/eazylink-top-menu.webp" alt="eazylink top menu" width={708} />
+
+### Select the Directory to be used
+
+Here is a picture of the blank screen you should see. The left-hand window (normally used to show the Z88 side) is not used in this Imp-Export Mode. The right-hand side window showing the Desktop side is used. Select which Directory is to be used here. The selection of the files are made in a different window later.
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/imp-exp-start-eazyflash.webp" alt="Imp-Export start Eazyflash" width={440} />
+
+## Send to the Z88
+
+On the top menu bar, Select Z88
+
+Communication not established
+
+If all the functions are greyed out in the Z88 Menu, communication to the Z88 has not been established. Check that the cable is connected to the Z88 and [Connect the Z88 to the Desktop](https://cambridgez88.jira.com/wiki/display/EAZUGV10/Connect+the+Z88+to+the+Desktop) has been followed.
+
+<Shot src="z88-user-guide/external/eazugv10-imp-export-mode/eazylink-z88-menu.webp" alt="eazylink z88 menu" width={313} />
+
+- Select - Send files to Z88 Imp-Export popdown
+
+<Shot src="z88-user-guide/external/eazugv10-imp-export-mode/send-to-z88-using-imp-export-popdown.webp" alt="send to z88 using imp export popdown" width={283} />
+
+If 'Show Details...' is selected, you will be presented with a help screen listing instructions (without the screen shots) on how to use the Z88.
+
+On the Z88 it is a good idea to make sure you have additional RAM in slot 1 and [Resetting the Z88](https://cambridgez88.jira.com/wiki/display/EAZUGV10/Problem+Solving+Area) before starting this exercise unless you want to keep the files that are already on the Z88.
+
+### 1. Start Z88
+
+#### Select Panel
+
+Use <Key k="square" />S
+
+<Shot src="z88-user-guide/getting-started/up-and-running/z88-select-panel.webp" alt="z88 select panel" width={640} />
+
+Change Default device to :RAM.1 - You need extra RAM in your Z88 for the file and it needs to be in slot 1.
+
+<Shot src="z88-user-guide/external/eazugv10-imp-export-mode/panel-ram1.webp" alt="panel ram1" width={640} />
+
+**Check** that the Transmit and Receive rates Parity (9600) and **change the default Xon/Xoff settings from (Yes) to (No)** are the correct value as given.
+
+<Shot src="z88-user-guide/external/eazugv10-imp-export-mode/panel-xoff.webp" alt="panel xoff" width={640} />
+
+Scroll down to the next instruction.
+
+### 2. Select Imp-Export
+
+Use <Key k="square" />X
+
+<Shot src="z88-user-guide/external/eazugv10-eazylink2-user-guide/select-impexp.webp" alt="select impexp" width={640} />
+
+Scroll down to the next instruction. 3. the Imp-Export Menu will be displayed
+
+<Shot src="z88-user-guide/external/eazugv10-imp-export-mode/select-impexp-b.webp" alt="select impexp b" width={640} />
+
+### 3. On Z88, select B)atch receive
+
+by pressing 'b' and then press the <Key k="enter" /> key.
+
+On the Desktop, click 'Yes' to 'Is Z88 ready?'
+
+<Shot src="z88-user-guide/external/eazugv10-imp-export-mode/send-to-z88-using-imp-export-popdown.webp" alt="send to z88 using imp export popdown" width={283} />
+
+The Desktop will now display a window for you to select which file(s) to send
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/imp-exp-start-eazyflash2.webp" alt="Select Files" width={439} />
+
+Mark the desired files. These are:-
+
+<Table>
+<thead>
+<Table.Tr>
+<Table.Th colSpan={3}>Download Location</Table.Th>
+</Table.Tr>
+</thead>
+<tbody>
+<Table.Tr>
+<Table.Th />
+<Table.Td>**[Eazylink](https://cambridgez88.jira.com/wiki/display/ZEP/Easy+file+transfer+between+Z88+and+other+computers)**</Table.Td>
+<Table.Td>**[FlashStore](https://cambridgez88.jira.com/wiki/display/ZFS/FlashStore+(Z88+popdown)+Home)**</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Th />
+<Table.Th>Eazylink 5.2.3-06</Table.Th>
+<Table.Th>Flashstore 1.9.3</Table.Th>
+</Table.Tr>
+<Table.Tr>
+<Table.Th>Files<br />Required</Table.Th>
+<Table.Td>eazyLink.63<br />RomCombiner.bas<br />romcombiner.bin<br />RomUtil.bas</Table.Td>
+<Table.Td>flashstore.63</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/imp-export-select-1.webp" alt="Select 1" width={216} />
+
+Select the Z88's destination storage slot (in this case Slot 1).
+
+After press OK the Z88 screen will show
+
+```text
+Using remote name:  :RAM.1/the_filename
+(Incrementing numbers on this row)
+End of file
+```
+
+This will repeat itself until all the files are transferred.
+
+Press <Key k="esc" /> on the Z88 to return to the Imp-Export Menu.
+
+<Callout type="warning">
+
+**Note**
+
+Both these popdowns are 16K each. Might as well put both of them on the same card and use up the spare space if only Eazylink is used.
+
+</Callout>
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/create-eazylink-flashstore1.webp" alt="files" width={640} />
+
+The files are shown here displayed in the Filer are:-
+
+- eazyLink.63 & flashstore.63 - These are the image files for Eazylink and Flashstore.
+- Romcombiner.bas, .bin & RomUtil.bas - These 3 files are required to blow the image to the EPROM card.
+
+## Running RomCombiner
+
+To run the program, do the following:-
+
+- Select BBC BASIC <Key k="square" />B. Type
+- RUN "ROMCOMBINER.BAS"
+
+The following screen is displayed.
+
+<Shot src="z88-user-guide/external/qg-check-all-z88-cards/flashtest1.webp" alt="ROMCOMBINER v2.10" width={640} />
+
+EPROMs can only be programmed in Slot 3.
+
+### If an EPROM is being used in slot 3
+
+#### Verify EPROM banks properly erased
+
+<Shot src="z88-user-guide/external/qg-check-all-z88-cards/128k-ram1-32k-eprom-3.webp" alt="128k RAM Slot 1 32K EPROM Slot 3" width={453} />
+
+Press V. followed by
+
+- F
+- 32 <Key k="enter" />
+
+If the EPROM is properly erased the following screen is displayed.
+
+<Shot src="z88-user-guide/external/qg-check-all-z88-cards/flashtest4.webp" alt="Verify EPROM properly erased" width={640} />
+
+If an error message is displayed,
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/not-erased.webp" alt="EPROM not erased" width={640} />
+
+the EPROM should be removed and erased again with the EPROM Eraser until it passes this test.
+
+<Shot src="z88-user-guide/external/qg-check-all-z88-cards/flashtest1.webp" alt="ROMCOMBINER v2.10" width={640} />
+
+### If a Flash card is being used in slot 2
+
+#### Flash EPROM block erase
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/512k-ram-1m-flash-0.webp" alt="512K RAM 1M Flash card" width={452} />
+
+There is no point in checking whether it is erased or not, it can be erased here straight away.
+
+Press F. followed by
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/rc-erase-s2-success.webp" alt="Success" width={640} />
+
+- 256 <Key k="enter" />
+- 2 <Key k="enter" />
+
+To return to the main display.
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/rc-end.webp" alt="Type 0 to end" width={640} />
+
+Press 0 <Key k="enter" />.
+
+### If a Flash card is being used in slot 1
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-oz/512k-0k-0k.webp" alt="512K/512K RAM/Flash card in slot 1" width={452} />
+
+Follow the instructions as above, except the Flash card is in Slot 1.
+
+Press F. followed by
+
+- 256 <Key k="enter" />
+- 1 <Key k="enter" />
+
+To return to the main display.
+
+Press 0 <Key k="enter" />.
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/rc-end.webp" alt="Type 0 to end" width={640} />
+
+<Shot src="z88-user-guide/external/qg-check-all-z88-cards/flashtest1.webp" alt="ROMCOMBINER v2.10" width={640} />
+
+### Combine image files of cards
+
+Press C. followed by
+
+- A
+- EAZYLINK <Key k="enter" />
+- A
+- FLASHSTORE <Key k="enter" />
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/rc-combine.webp" alt="Combine" width={640} />
+
+Press C. for Create followed by
+
+Destination card name? EAZYFLASH
+
+Delete source images (Y/N)? N
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/rc-finished.webp" alt="Finished" width={640} />
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/create-eazylink-flashstore1.webp" alt="files" width={640} />
+
+### Blow image files to an EPROM
+
+<Shot src="z88-user-guide/external/qg-check-all-z88-cards/128k-ram1-32k-eprom-3.webp" alt="128k RAM Slot 1 32K EPROM Slot 3" width={453} />
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/rc-blow-image-eprom.webp" alt="Blow image inro EPROM" width={640} />
+
+From the main screen, Select
+
+- B
+- 3 <Key k="enter" /> and then the Card name
+- EAZYFLASH <Key k="enter" />
+- F
+
+The screen will flash a few times until the following screen is displayed. If any programming errors are given, the EPROM will need to be erased and this procedure needs to be repeated from [Verify EPROM banks properly erased](https://cambridgez88.jira.com/wiki/pages/viewpage.action?pageId=96403586).
+
+### Blow image files to Flash Card (Slot 2)
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/512k-ram-1m-flash-0.webp" alt="512K RAM 1M Flash card" width={452} />
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/rc-blow-image-flash.webp" alt="Blow Flash card" width={640} />
+
+From the main screen, Select
+
+- B
+- F
+- 2 <Key k="enter" /> and then the Card name
+- EAZYFLASH <Key k="enter" />
+- F
+
+The screen may flash a few times until the following screen is displayed.
+
+### Blow image files to Flash Card (Slot 1)
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-oz/512k-0k-0k.webp" alt="512K/512K RAM/Flash card in slot 1" width={452} />
+
+This is similar to [Blow image files to Flash Card (Slot 2)](https://cambridgez88.jira.com/wiki/pages/viewpage.action?pageId=96403586) except to select Slot 1.
+
+From the main screen, Select
+
+- B
+- F
+- 1 <Key k="enter" /> and then the Card name
+- EAZYFLASH <Key k="enter" />
+- F
+
+The screen may flash a few times until the following screen is displayed.
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/rc-blow-image-eprom-success.webp" alt="Blow EPROM Success" width={640} />
+
+If the 512K/512K Flash/RAM is in Slot 1, do a HARD RESET, otherwise
+
+- Select <Key k="index" />
+- Open the Card Flap
+- Remove the 32K EPROM card from slot 3 or the Flash card from Slot 1 or 2
+- Close the Card Flap
+- Open the Card Flap
+- Insert the 32K EPROM in slot 2
+- Close the Card Flap
+- Press the <Key k="up" />key to display the two new applications at the bottom of the list
+
+<a id="flashstore_in_index_window" />
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/index-flashstore.webp" alt="Index Flashstore" width={640} />
+
+## Running Eazylink
+
+To run Eazylink either select the INDEX with <Key k="square" />I or <Key k="index" />
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/index-eazylink.webp" alt="select eazylink" width={640} />
+
+or move the cursor over the application name and press <Key k="enter" />.
+
+<Shot src="z88-user-guide/external/zep-easy-file-transfer-between-z88-and-other-computers/el-main.webp" alt="Main Screen" width={640} />

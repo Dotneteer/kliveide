@@ -1,0 +1,175 @@
+---
+description: "The Panel popdown allows you to set up aspects of the Cambridge Z88's operation to suit your own preferences. You can change the language, alter the rate at which keys on the keyboard, auto-repeat..."
+---
+
+import { Callout } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/35913778 (version 35) by scripts/import-z88-user-guide.cjs */}
+
+# The Panel popdown
+
+The Panel popdown allows you to set up aspects of the Cambridge Z88's operation to suit your own preferences. You can change the language, alter the rate at which keys on the keyboard, auto-repeat when you hold them down, the time after which the Cambridge Z88 will automatically switch off, the default device and directory used by the Filer, and the parameters for the serial interface.
+
+You call up the panel by typing <Key k="square" />S (for Settings) or from the INDEX moving the cursor over the Application name and using the <Key k="enter" /> key.
+
+<Shot src="z88-user-guide/external/oz-the-z88-operating-system/panel.webp" alt="panel" width={640} />
+
+## Altering the panel
+
+## Cursor Keys
+
+To alter an option on the panel, first select it by moving the cursor to the appropriate line with the cursor keys <Key k="left" />, <Key k="right" />, <Key k="up" /> and <Key k="down" />. Then type in the new value for the option, and press <Key k="enter" />.
+
+The editing commands are summarised on the Panel **CURSOR** menu.
+
+<Shot src="z88-user-guide/using-the-popdowns/the-panel-popdown/panel-menu-cursor.webp" alt="panel menu cursor" width={640} />
+
+In the case of options with alternative values you can also select between the alternatives using
+
+### <Key k="diamond" />J Next Option
+
+This toggles through all the available options or if you can remember the option you want, typing the option's
+
+### First letter or first Capital letter
+
+shown in the word, will select it immediately.
+
+You can save a particular set of panel settings in a panel file, using the **Save** command on the **FILES** menu. Selecting the **New** command on the **FILES** menu returns the settings to their initial values.
+
+## Panel options
+
+For each of the following options the initial default value is shown in brackets.
+
+## Keyboard options
+
+### *Auto-repeat rate (6):*
+
+determines the rate at which keys auto-repeat when held down continuously. Smaller values increase the repeat rate. A value of 0 gives no auto-repeat.
+
+### *Keyclick (No):*
+
+altering the option to `Yes` gives an audible bleep at each keypress, to provide additional feedback during touch-typing.
+
+<Callout type="warning">
+
+**Note: + Use these Settings before starting an Application or Popdown**
+
+These 3 settings for *Insert/Overtype*, *Default device* and *Default directory* only affect new activities. <br />When a new Application or Popdown is started, it looks up and uses the values of these options. Existing activities retain their original settings.
+
+</Callout>
+
+### + *Insert/Overtype (Insert):*
+
+in Insert mode text typed at the keyboard is inserted at the cursor position, and subsequent text on the line moves to the right to make space for the new text. Some typists prefer Overtype mode, in which text types over any text previously on the line. To insert text in Overtype mode you need to make a gap in the line with the **Insert Character** command <Key k="diamond" />U first.
+
+## Filer options
+
+### + *Default device (:RAM.1 or :RAM.2):*
+
+the device to and from which files are saved and loaded. This is set to the largest RAM found. It can be set to :RAM.1, :RAM.2, or :RAM.3, corresponding to the three RAM cards.
+
+### + *Default directory:*
+
+allows a path of one or more directories, which should already exist, to be specified for all filing-system operations. By default the top-level directory is selected.
+
+## Machine options
+
+### *Timeout (mins) (5):*
+
+determines the time after which the Cambridge Z88 will switch off if nothing is typed at the keyboard; a value of 0 disables timeout. Setting the timeout to 2 minutes will extend the effective battery life of the Cambridge Z88 (1 minute is possible but not recommended for normal use).
+
+### *Sound (Yes):*
+
+allows the internal sound system to be switched off.
+
+### *Map (Yes):*
+
+allows the PipeDream page map display to be turned off if not required. Typing and editing will be marginally faster when the map is disabled.
+
+### *Map size (80):*
+
+allows the size of the map to be altered up to a maximum of 92 characters across, or 255 characters across on an expanded machine. See **[Expanded/Unexpanded](/en/z88-user-guide/getting-started/using-cards/expanded-unexpanded)**,
+
+### *Date format (European):*
+
+determines the format for all dates in the Cambridge Z88; the default date format is European, so that dates are recognised in the form:
+
+day/month/year
+
+This option can be changed to American to work with the format
+
+month/day/year.
+
+### *Keyboard (Uk):*
+
+can be set to any of the following countries using the capital letter of the name:
+
+Uk, France, Denmark, Sweden, Finland, Germany, usA, sPain & Italy.
+
+Changing this option allows the appropriate extra characters to be displayed on the screen, allows a different keyboard to be used and has been covered in more detail previously. See [Changing keyboard layout](/en/z88-user-guide/getting-started/up-and-running#changingkeyboardlayout).
+
+Keyboard layouts are shown in the Appendix
+
+## Serial port parameters [#serial_port_parameters]
+
+### *Transmit baud rate (9600) / Receive baud rate (9600):*
+
+can both be set to any of the following values:
+
+75, 300, 600, 1200, 2400, 9600, 19200, 38400
+
+<Shot src="z88-user-guide/external/eazugv10-starting-eazylink-on-the-z88/speed.webp" alt="Speed" width={60} />
+
+The standard Z88 with OZ 3.x and V4.0 could only reach 9600 baud. All speeds can be selected using OZ 4.5.
+
+### *Parity (None):*
+
+can be set to None, Space, Mark, Odd, or Even. The number of data bits is 8 if None is specified, or 7 otherwise.
+
+### *Xon/Xoff (Yes):*
+
+determines whether the serial communication protocol uses Xon/Xoff.
+
+The number of start and stop bits is fixed as follows:
+
+Transmit: 1 start bit, 2 stop bits. <br />Receive: 1 start bit, 1 stop bit.
+
+## Menu Options
+
+Pressing the <Key k="menu" /> key gives the following options.
+
+### Cursor
+
+<Shot src="z88-user-guide/using-the-popdowns/the-panel-popdown/panel-menu-cursor.webp" alt="panel menu cursor" width={640} />
+
+These cursor commands are described above.
+
+### Files
+
+<Shot src="z88-user-guide/using-the-popdowns/the-panel-popdown/panel-menu-files.webp" alt="panel menu files" width={640} />
+
+### <Key k="diamond" />FL File Load
+
+Loading the Panel's settings
+
+Loads a file that has been saved previously by the Panel. This will set all the parameters in the Panel to the setting that were made when the save was made. The following option is displayed:
+
+`Filename`
+
+Instead of typing the file name, the file can be selected from the Filer. After typing <Key k="diamond" />FL, call the Filer by typing <Key k="square" />F, and select the required document using the cursor keys followed by <Key k="enter" /> (see **[Selecting files](/en/z88-user-guide/using-the-popdowns/the-filer-popdown#selecting_files)**). You can then return to PipeDream from the Filer by pressing <Key k="esc" />, and the full file name will have been entered for you. Press <Key k="enter" /> to load the file.
+
+### <Key k="diamond" />FS File Save
+
+Saving the Panel's settings
+
+The following option is displayed:
+
+`Filename`
+
+You can save a particular set of panel settings in a panel file, using the **Save** command on the **FILES** menu.
+
+### <Key k="diamond" />FNEW
+
+Reset to initial values
+
+Selecting the **New** command on the **FILES** menu returns the settings to their initial values.

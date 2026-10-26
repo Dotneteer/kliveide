@@ -1,0 +1,167 @@
+---
+description: "The Imp-Export popdown allows you to communicates with other computers or your Desktop using the serial port on the right-hand side of the machine."
+---
+
+import { Callout } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/35913777 (version 39) by scripts/import-z88-user-guide.cjs */}
+
+# The Imp-Export popdown
+
+The Imp-Export popdown allows you to communicates with other computers or your Desktop using the serial port on the right-hand side of the machine.
+
+Prerequisites
+
+To use Import/Export you need either
+
+- Imp-Export feature on Eazylink2 desktop program
+- Terminal desktop program supporting X-MODEM or Y-MODEM protocol
+
+and a
+
+- Z88 to Computer Serial connecting lead
+- USB / Serial Converter (if there is no serial port on your Desktop).
+
+### Before Sending or Receiving Files
+
+<Callout type="error">
+
+**IMPORTANT - Before running Imp-Export**
+
+Use the Panel, and check that the [serial parameters](/en/z88-user-guide/using-the-popdowns/the-panel-popdown#serial_port_parameters) (Baud rate, Stop Bits and X-on/X-off) are the same as the Desktop computer. Also start running the communications software on the machine you wish to communicate with.
+
+</Callout>
+
+You call up Imp-Export by typing <Key k="square" />X or from the INDEX moving the cursor over the Application name and using the <Key k="enter" /> key.
+
+Details of the serial port connections and the protocol used for programmers are given in [Appendix B](/en/z88-user-guide/appendix-b-serial-port-and-transfer-protocols).
+
+<Shot src="z88-user-guide/using-the-popdowns/the-imp-export-popdown/impexport-ozv45.webp" alt="impexport ozv45" width={640} />
+
+## Using Imp-Export
+
+The program recognises the following commands, which are given by typing the first letter of the command followed by <Key k="enter" />: Use the <Key k="esc" /> key to abandon the transfer.
+
+### S)end file
+
+Prompts for the name of the file to be transmitted, and then transmits the name and file to the receiving computer. Wildcards are accepted in the file name.
+
+Imp-Export, Xmodem, <br />Ymodem
+
+<Shot src="z88-user-guide/using-the-popdowns/the-imp-export-popdown/z88-impexp-send.webp" alt="z88 impexp send" width={640} />
+
+### R)eceive file
+
+Prompts for a file name; press <Key k="enter" /> to receive a file and use its transmitted name, or type a name to rename the received file.
+
+Imp-Export, Xmodem, <br />Ymodem
+
+<Shot src="z88-user-guide/using-the-popdowns/the-imp-export-popdown/z88-impexp-receive.webp" alt="z88 impexp receive" width={640} />
+
+### B)atch receive
+
+Receives a sequence of named files, terminated by an end batch code.
+
+Imp-Export
+
+<Shot src="z88-user-guide/using-the-popdowns/the-imp-export-popdown/z88-impexp-b-receive.webp" alt="z88 impexp b receive" width={640} />
+
+To send a batch of files use the following procedure:
+
+1. Give the **Batch receive** command on the receiving computer
+
+2. Send each file with a **Send file** command (or give a '\*' wildcard in the file name)
+
+3. Give an **End batch** command.
+
+### E)nd batch
+
+Sends an end batch code (ESC Z).
+
+Imp-Export
+
+### X)modem
+
+Selects XMODEM
+
+Xmodem
+
+### Y)modem
+
+Selects YMODEM
+
+Ymodem
+
+## X-Y MODEM on Desktop [#x-y_modem_on_desktop]
+
+<Callout type="info">
+
+Even though Eazylink is the preferred choice for end-users sending and receiving files, the XY-MODEM protocol is a tried and trusted terminal communication across all operating system platforms. Minicom, for example, running on both BSD and Linux has built-in support. Zterm for Mac OSX also works reliably with the Z88 XY-modem implementation.
+
+</Callout>
+
+XY-Modem when using Ymodem does preserve file name, size and modification date and time for transfers in both directions if used with a program having a proper Ymodem implementation at the Desktop end.
+
+While developing XY-Modem Dennis Gröning tried many PC programs with bad Ymodem implementations. One that he thought worked as it should was ZOC windows program. For proper tests he used inventor of Ymodem Chuck Forsberg's rb and sb on unix and DSZ, GSZ and ZCOMM on PC.
+
+After finding Chuck's source code for CPM operating system YAM (Yet Another Modem program) program, he used this to compile a Win32 console application hard-coded for COM1 and 38400 baud in the year 2000. When started with a filename as a parameter it sends this file using Ymodem and then exits. When run without parameter it receives files for ever until an "End Batch" is received and it exits.
+
+<Shot src="z88-user-guide/using-the-popdowns/the-imp-export-popdown/ymodem-beta.webp" alt="Ymodem beta" width={833} />
+
+He went on to make a normal Windows program YAS-Link.
+
+Same functionality for sending. COM1 to COM4 can be selected. When receiving it displays received files in a scrolling list. He meant to have similar user interface as his Z88-Xport program, but he wasn't into building Windows user interfaces at the time, so it didn't get any further than that. The last modification was in 2002.
+
+It may be very likely that the PC program used for testing did not have a proper implementation of the Ymodem protocol. To test this further another PC could be set up with the same program and try transferring files between the two PCs to see if file sizes and modification date and times are preserved. Two Z88s (with old OZ for known behaviour) could be connected together and use XY-Modem to do the same test for file size and modification date and time preservation.
+
+Check that you can choose which protocol to use in XY-Modem by pressing key X or Y.
+
+## Using Xmodem
+
+When X is pressed followed by <Key k="enter" />, the display shows that
+
+<Shot src="z88-user-guide/using-the-popdowns/the-imp-export-popdown/z88-impexp-xmodem-checksum.webp" alt="z88 impexp xmodem checksum" width={640} />
+
+### XMODEM Checksum
+
+is selected and is waiting for either a key press of either **R**, R)eceive file or **S**, S\}end file. If the other option,
+
+### XMODEM CRC
+
+is required pressing **C** changes Xmodem to CRC**.**
+
+<Shot src="z88-user-guide/using-the-popdowns/the-imp-export-popdown/z88-impexp-xmodem-crc.webp" alt="z88 impexp xmodem crc" width={640} />
+
+<Callout type="warning">
+
+**Note:**
+
+Use **R**, R)eceive file or **S**, S\}end file after the mode is selected.
+
+</Callout>
+
+## Using Ymodem
+
+When **Y** is pressed followed by <Key k="enter" />, the display shows that
+
+<Shot src="z88-user-guide/using-the-popdowns/the-imp-export-popdown/z88-impexp-ymodem-checksum.webp" alt="z88 impexp ymodem checksum" width={640} />
+
+### YMODEM Checksum
+
+is selected and is waiting for either a key press of either **R**, R)eceive file or **S**, S\}end file. If
+
+### YMODEM CRC
+
+is required pressing **C** changes Xmodem to CRC**.**
+
+<Shot src="z88-user-guide/using-the-popdowns/the-imp-export-popdown/z88-impexp-ymodem-crc.webp" alt="z88 impexp ymodem crc" width={640} />
+
+<Callout type="warning">
+
+**Note:**
+
+The order in which the Checksum and CRC modes occur may be different. Just check which one is selected and if it is wrong, use **C** to toggle the mode.
+
+Use **R**, R)eceive file or **S**, S\}end file after the mode is selected.
+
+</Callout>

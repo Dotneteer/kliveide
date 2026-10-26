@@ -1,0 +1,41 @@
+---
+description: "ROM cards are used to contain new copies of OZ, extra data or applications programs such as databases, communications programs, or spelling checkers."
+---
+
+import { Callout } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/35913758 (version 9) by scripts/import-z88-user-guide.cjs */}
+
+# ROM cards
+
+ROM cards are used to contain new copies of OZ, extra data or applications programs such as databases, communications programs, or spelling checkers.
+
+The procedure for inserting a ROM card is very similar to that for inserting a RAM card. First turn the Cambridge Z88 ON and enter the Index.
+
+<Shot src="z88-user-guide/external/oz-the-z88-operating-system/index.webp" alt="index" width={640} />
+
+Open the flap and push the card into a free slot. Close the flap. The Cambridge Z88 will take note of the new card in the APPS column, check this by typing <Key k="diamond" />CARD from the Index.
+
+<Shot src="z88-user-guide/external/oz-the-z88-operating-system/indexcard2.webp" alt="indexcard2" width={640} />
+
+To remove a ROM card the Cambridge Z88 must once again be ON and you must be in the Index. You must not have any suspended activities which are making use of the card. To check this, look at the list of activities on the display and see if any of them have a number in the rightmost column. If they do, and this is the slot number which holds the card in question, then that activity must be killed (using <Key k="diamond" />KILL) before the ROM card is removed.
+
+## CARD - Error message
+
+If you remove a card that is in the use the Cambridge Z88 will sound a warning when you close the flap and display the symbol `CARD` at the top right of the screen. You must then replace the card in the same slot that it came from (in this case Slot 2) and kill all remaining activities.
+
+<Shot src="z88-user-guide/external/zp-fitting-using-the-rom/z88-index-card-error.webp" alt="z88 index card error" width={640} />
+
+## INDEX - Error message
+
+If you remove a card whilst you are not in the Index the Cambridge Z88 will sound a warning when you close the flap and display the symbol `INDEX` at the top right of the screen. You must return the card to the original slot, close the flap and return to the Index. You will then be able to remove the card normally.
+
+<Shot src="z88-user-guide/getting-started/using-cards/rom-cards/z88-index-error.webp" alt="z88 index error" width={640} />
+
+<Callout type="error">
+
+**WARNING**
+
+Do not remove ROM cards whilst the Cambridge Z88 is switched OFF.
+
+</Callout>

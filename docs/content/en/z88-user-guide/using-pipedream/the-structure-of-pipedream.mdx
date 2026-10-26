@@ -1,0 +1,61 @@
+---
+description: "To make best use of PipeDream it is important to understand some basic principles of how PipeDream documents are constructed."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/35913744 (version 6) by scripts/import-z88-user-guide.cjs */}
+
+# The structure of PipeDream
+
+To make best use of PipeDream it is important to understand some basic principles of how PipeDream documents are constructed.
+
+## Rows and columns
+
+Every document is divided into rows or lines, numbered 1, 2, 3... etc and one or more columns, labelled with letters A, B, C... etc. Initially the document has 6 columns, labelled A to F, each of which is 12 characters wide, but commands are available for you to alter the widths of individual columns or to alter the number of columns.
+
+The part of a document lying in one row and one column is called a slot. A slot is referred to by its column label and its row number; for example, the following diagram shows slot D3 highlighted by the highlighting bar:
+
+<Shot src="z88-user-guide/using-pipedream/the-structure-of-pipedream/pipedream-rowscolumns.webp" alt="pipedream-rowscolumns.png" width={670} />
+
+The co-ordinates of the slot containing the cursor are shown at the top left of the PipeDream screen, and the column containing the cursor is identified by closely-spaced dots on the top border.
+
+The right-hand margin is indicated by the ↓ symbol on the top border, and normally all columns have their right-hand margins at the right-hand edge of the screen.
+
+Much of the power and flexibility of PipeDream comes from the two different types of slot which you can create and combine within a single document: text slots and expression slots. Each type of slot can contain up to 240 characters.
+
+## Text slots
+
+Text slots are used for entering and editing continuous text, such as the body of a letter, a technical paper, or a novel.
+
+When working with text, the columns in PipeDream behave as if they are on different layers, like separate overlapping sheets of paper. For example, the initial column format could be represented by the following diagram:
+
+<Shot src="z88-user-guide/using-pipedream/the-structure-of-pipedream/pipedream-column-concept.webp" alt="pipedream column concept" width={683} />
+
+Text typed into column A behaves as if it is on the bottom layer, which is 72 characters wide; it will 'show through' the other layers, unless they contain text or expressions in the same row.
+
+Text typed into column F behaves as if it is on the uppermost layer, which is only 12 characters wide.
+
+When text is typed into a text slot it will automatically wrap around to the start of the next row in the same column when the cursor reaches the right-hand margin for that column (unless wrapping has specifically been turned off).
+
+## Formatting
+
+If justified text has been selected, from the Options Page, lines will be padded with spaces so that the right-hand margin is even. The layout of a document can be altered simply by moving the right-hand margin, and then reformatting the text paragraph by paragraph.
+
+By giving each column a different right-hand margin, independent columns of text can be created within the same document. With a little practice you will find that PipeDream is capable of creating quite complex multi-column page layouts.
+
+## Expression slots
+
+Expression slots, on the other hand, are used for creating tables of figures or information, often called spreadsheets. These can contain mathematical expressions, including references to other slots in the document, and scientific functions.
+
+The main difference between expression slots and text slots is that once you have typed the expression into an expression slot, what is displayed in the document is not the expression itself, but the result of evaluating the expression. For example, if you typed **1.15 \* 300** into an expression slot, the result **345** would be displayed in the document.
+
+For spreadsheet work you can make all slots work as expression slots by default by setting the Options Page Text/Numbers setting to Numbers.
+
+## Mixing text and expressions
+
+Text slots and expression slots can be mixed in the same document; so a letter could include a table of financial calculations automatically added together by PipeDream, or a company business plan could incorporate a spreadsheet within the descriptive text to show financial predictions.
+
+Values from expression slots can be included within formatted text in text slots using '@-fields'. This is convenient if, for example, you want a letter to refer to the result of a particular calculation.
+
+## The examples
+
+The concepts of rows and columns, text slots and expression slots, and formatting text, are illustrated by the following three practical examples in the use of PipeDream.

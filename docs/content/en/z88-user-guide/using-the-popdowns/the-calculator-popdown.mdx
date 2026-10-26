@@ -1,0 +1,209 @@
+---
+description: "If you ever need to perform calculations while using the Cambridge Z88 you can simply call up the Calculator popdown using □R, even if you are in the middle of doing something else at the time:"
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/35913762 (version 6) by scripts/import-z88-user-guide.cjs */}
+
+# The Calculator popdown
+
+If you ever need to perform calculations while using the Cambridge Z88 you can simply call up the Calculator popdown using <strong><Key k="square" /></strong>R, even if you are in the middle of doing something else at the time:
+
+<Shot src="z88-user-guide/using-the-popdowns/calculator.webp" alt="calculator" width={640} />
+
+The top line of the calculator displays the result of your calculation - initially 0.00 - and below that are the calculator keys. You can press these in either of two ways, depending on your preference.
+
+*Either:* Use the cursor keys <Key k="left" />, <Key k="right" />, <Key k="up" /><Key k="down" /> to highlight the operation you want, and then press <Key k="enter" /> to enter the selected key.
+
+*Or:* Type the Cambridge Z88 key corresponding to the key you want, as listed on the following table.
+
+<Table>
+<thead>
+<Table.Tr>
+<Table.Th>**Calculator Key <br />Legend:**</Table.Th>
+<Table.Th>**Cambridge Z88 Key<br />Equivalent:**</Table.Th>
+<Table.Th>**Function:**</Table.Th>
+</Table.Tr>
+</thead>
+<tbody>
+<Table.Tr>
+<Table.Td>Clear</Table.Td>
+<Table.Td>C</Table.Td>
+<Table.Td>Clear</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>DEL</Table.Td>
+<Table.Td><Key k="del" /></Table.Td>
+<Table.Td>Delete last keypress</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>StoM</Table.Td>
+<Table.Td>S</Table.Td>
+<Table.Td>Store to memory 0 to 9</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>RclM</Table.Td>
+<Table.Td>R</Table.Td>
+<Table.Td>Recall from memory 0 to 9</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>0 to 9</Table.Td>
+<Table.Td>0 to 9</Table.Td>
+<Table.Td>Enter digit</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>.</Table.Td>
+<Table.Td>.</Table.Td>
+<Table.Td>Decimal point</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Unit</Table.Td>
+<Table.Td>U</Table.Td>
+<Table.Td>Convert units (see below)</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Y\<\>x</Table.Td>
+<Table.Td>Y</Table.Td>
+<Table.Td>Swap y and x</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>sIgn</Table.Td>
+<Table.Td>I</Table.Td>
+<Table.Td>Change sign</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Fix</Table.Td>
+<Table.Td>F</Table.Td>
+<Table.Td>Number of decimal places</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>%</Table.Td>
+<Table.Td>%</Table.Td>
+<Table.Td>Percentage (see below)</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\+</Table.Td>
+<Table.Td>\+ or P</Table.Td>
+<Table.Td>Plus</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>x</Table.Td>
+<Table.Td>X, \* or T</Table.Td>
+<Table.Td>Times</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\-</Table.Td>
+<Table.Td>
+
+- or M
+
+</Table.Td>
+<Table.Td>Minus</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>/</Table.Td>
+<Table.Td>/, \\ or D</Table.Td>
+<Table.Td>Divide</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\=</Table.Td>
+<Table.Td>\=</Table.Td>
+<Table.Td>Result</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+## Entering numbers
+
+Enter a number by selecting the digits with the cursor keys, and press <Key k="enter" />; or just type the number with the keys 0-9. You can use C or <Key k="del" /> to correct typing mistakes. Numbers can contain a decimal point, obtained by typing the full-stop key, and can be entered in scientific notation, as in
+
+1.27E6, entered as <Typed>1 . 2 7 E 6</Typed>, which means 1.27 x 10<sup>6</sup>.
+
+7.1E-13, entered as <Typed>7 . 1 E 1 1 3</Typed>, which means 7.1 x 10<sup>-13</sup>.
+
+The two operands of an operation can be exchanged, before pressing =, by selecting the Y\<\>x operation, or pressing `Y`. For example, to find the reciprocal of a previous calculation, enter
+
+<Typed>/ 1 Y =</Typed>
+
+All calculations are performed to an accuracy of nine decimal places, and numbers can lie between 1E38 and 1E-38. The Calculator displays <strong>`Error`</strong> if an error, such as 1/0, occurs.
+
+## Display format
+
+The format in which numbers are displayed can be altered with the *Fix* operation, which gives the prompt
+
+`Fix?`
+
+Typing a number between 0 and 8 will fix the number of decimal places displayed to the specified number; the initial value is 2. Typing 9 will give free format.
+
+## Constants
+
+Entering a number, followed by one of the arithmetic keys pressed twice, stores the operation as a constant operation and displays the operator with K at the top right-hand corner of the screen.
+
+For example, entering
+
+`1.15 * *`
+
+sets up constant multiplication by 1.15, and displays `* K`; entering
+
+<Typed>1000 =</Typed>
+
+then gives the result 1150.00, and
+
+<Typed>2000 =</Typed>
+
+gives the result 2300.00.
+
+## Storing and Recalling
+
+You can store a result for use later in a calculation with the StoM and RclM operations.
+
+To store a result, select the StoM operation (or type S). The prompt
+
+<strong>`StoM ?`</strong>
+
+will be given, to which you should give a register number by typing a digit from 0 to 9. Up to ten different results can be stored, one in each register.
+
+You can also add a result into a register, subtract a result from a register, multiply a register by a result, or divide a register by a result, by giving the StoM operation followed by '+', '-', '\*', or '/' respectively, followed by the register 0 to 9.
+
+You can cancel a store operation in the middle by pressing <Key k="esc" />.
+
+For example,
+
+<Typed>1.2 S 9</Typed>
+
+stores 1.2 in register 9, and
+
+<Typed>3.56 S-9</Typed>
+
+subtracts 3.56 from the same register. Finally
+
+<Typed>R 9</Typed>
+
+recalls the result from register 9.
+
+## Percentages
+
+The '%' key works in conjunction with one of the other keys '\*', '/', '+', or '-' to calculate percentages, and to add or subtract a given percentage to or from a number. The following examples illustrate each of these cases.
+
+To find 12% of 1500 enter
+
+<Typed>1500 \* 12 %</Typed>
+
+To express 660/880 as a percentage, enter
+
+<Typed>660 / 880 %</Typed>
+
+To add 15% on to 125 enter
+
+<Typed>125 \* 15 % +</Typed>
+
+Likewise, to discount 125 by 15% enter
+
+<Typed>125 \* 15 % -</Typed>
+
+## Converting units
+
+You can convert any result between the pairs of units displayed on the **CONVERT** menu by selecting the *Unit* operation.
+
+Highlight the unit you want to convert to using the cursor keys, and press <Key k="enter" /> to perform the conversion. For example, to convert from Litres to Gallons highlight Gallons, and to convert from Gallons to Litres highlight Litres. To exit from the **CONVERT** menu press <Key k="esc" />.

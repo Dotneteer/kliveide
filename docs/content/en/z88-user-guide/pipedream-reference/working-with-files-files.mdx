@@ -1,0 +1,141 @@
+---
+description: "The commands on the FILES menu allow you to load documents from the Cambridge Z88 filing system, and save documents to the filing system."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/35913766 (version 9) by scripts/import-z88-user-guide.cjs */}
+
+# Working with files - FILES
+
+<Shot src="z88-user-guide/pipedream-reference/pipedream-menu-files.webp" alt="Pipedream menu files" width={640} />
+
+The commands on the **FILES** menu allow you to load documents from the Cambridge Z88 filing system, and save documents to the filing system.
+
+You can create a document consisting of several files linked together by a List file. Commands are available to move to the next file or previous file, or go directly to the first file or last file in a multi-file document.
+
+For simple use of PipeDream you do not need to use files, since you can leave documents you are working on as suspended applications. However, since there is a small overhead in keeping suspended applications, saving a large number of small documents as files will prevent the inconveniences of memory low conditions.
+
+## File names
+
+When you start PipeDream with a blank document, the document will have no File name associated with it, and it will show:
+
+`File No File`
+
+at the top right-hand side of the Options Page. A File name can be given to a document with the **Name** command. Loading a file, with the **Load** command, will set the File name to the name of the loaded file.
+
+The File name of the document is displayed in the Options Page, and is used as the default file name in the options for the **Save** and **Name** commands. The File name is also used to label PipeDream suspended activities, in the Index YOUR REF. column.
+
+### <Key k="diamond" />FC — Name
+
+Sets the File name for the current document. Gives the prompt:
+
+`New name of file`
+
+The current File name, if any, will be displayed; this should be edited to the new name, followed by <Key k="enter" />.
+
+## Loading a document
+
+### <Key k="diamond" />FL — Load
+
+Loads a document of a given name from the filing system. The following options are displayed:
+
+`Name of file to load`<br />`Insert at slot No`<br />`Limit to range of rows No`<br />`Load as plain text No`
+
+*Name of file to load*: specifies the file name. If a file of the same name but with the extension'<Typed>.L</Typed>' exists, this file is taken as a List file; See **[Multi-file documents](#multi-file_documents)**, If not, the specified file is loaded.
+
+The File name, displayed in the Options Page, will be set to the name of the file loaded. In the case of a multi-file document, this will be the name of the current document, not the name of the List file.
+
+Instead of typing the file name, the file can be selected from the Filer. After typing <Key k="diamond" />FL, call the Filer by typing <Key k="square" />F, and select the required document using the cursor keys followed by <Key k="enter" /> (see **[Selecting files](/en/z88-user-guide/using-the-popdowns/the-filer-popdown#selecting_files)**). You can then return to PipeDream from the Filer by pressing <Key k="esc" />, and the full file name will have been entered for you. Press <Key k="enter" /> to load the file.
+
+If the document in memory has been altered since last saving it, the message
+
+`Overwrite text?`
+
+will be displayed, and the document will only be loaded if <Typed>Y</Typed> (or <Typed>y</Typed>) is typed. If the document is too large to fit into memory, only the first section will be loaded, and the display will show the message
+
+`Memory full`
+
+*Insert at slot*: appends the file to the document already in memory, either at the specified slot reference, or at the current cursor position if no slot reference is specified. Type <Typed>Y</Typed> for the option
+
+`Insert at slot Yes`
+
+and enter a slot reference.
+
+*Limit to range of rows*: enables files too large for the available memory to be edited by splitting them up into sections. If the option is set to `Yes`, a range of rows can be entered as two numbers separated by a space. Only rows lying between the specified range, inclusive, will be loaded.
+
+*Load as plain text*: if `Yes` is specified, the file is interpreted as plain text. Sections of text on each line separated by tabs are put into successive columns across each row of the PipeDream document.
+
+After loading a document, expression slots are recalculated twice, once to obtain the correct values of constant slots, and then again to ensure that references to constant slots have the correct values. If the document contains complicated forward referencing, it may need further recalculation before the values of slots stabilise.
+
+## Saving a document
+
+### <Key k="diamond" /> FS — Save
+
+If none of the options are changed, pressing <Key k="enter" /> saves the whole of the current document to the name last set by the **Load** or **Name** commands.
+
+The following options are displayed:
+
+`Name of file to save` <br />`Save only range of columns No`<br />`Save selection of rows No`<br />`Save marked block No`<br />`Save plain text No`
+
+*Name of file to save*: by default, the current File name is displayed, as shown in the Options Page. This can be edited to save the document under a different name.
+
+*Save only range of columns*: altering this option to `Yes` allows you to specify a range of columns. This should be given as two column labels, separated by a space: for example, A F. Only the text within the range of columns, inclusive, will be saved.
+
+*Save selection of rows*: altering this option to `Yes` allows you to enter an expression. Only rows for which the expression evaluates to TRUE will be saved.
+
+For example, column E in an inventory of goods may represent the quantity of each item in stock. To save a copy of the database which excluded out-of-stock items, you would type
+
+`Save selection of rows Yes E1>0`
+
+All row references in the expression are incremented before the expression is evaluated for each row in the document. So in this example row 6 will be saved if E6\>0.
+
+*Save marked block*: altering this option to `Yes` specifies that only the marked block of text should be saved.
+
+*Save plain text*: altering this option to `Yes` will save the document as a plain text file, containing no special constructs. The contents of each successive column will be output separated by tab characters, with each row terminated by a return character.
+
+## Multi-file documents [#multi-file_documents]
+
+Documents comprised of several different files can be edited and printed as a single document by means of a PipeDream List file
+
+The List file is a plain text file containing the names of all the files making up the entire document. It should be saved with the *Save plain text* option, with each file name on a separate line.
+
+The List file should be given a name with the extension'<Typed>.L</Typed>'. A file with extension'<Typed>.L</Typed>' is taken as a List file when loading, and the first document in the list will be loaded.
+
+Any error which occurs during the processing of a multi-file document cancels the multi-file mode after reporting the error, to avoid overwriting files with incorrect text.
+
+The following commands provide a convenient way of moving between files in a multi-file document:
+
+### <Key k="diamond" />FN — Next File
+
+Loads the next file in a multi-file document, but first saves the current file if it has been altered since the last save command.
+
+### <Key k="diamond" />FP — Previous File
+
+Loads the previous file in a multi-file document. The current document is saved if it has been altered since last saving it.
+
+### <Key k="diamond" />FT — Top File
+
+Loads the first file in a multi-file document. The current document is first saved if it has been altered since last saving it.
+
+### <Key k="diamond" />FB — Bottom File
+
+Loads the last document in a multi-file document. The current document is first saved if it has been altered since last saving it.
+
+### Multi-file example
+
+For example, first create a List file in PipeDream, containing the following text:
+
+<Shot src="z88-user-guide/pipedream-reference/pipedream-multifile-example.webp" alt="Pipedream multifile example" width={640} />
+
+Take care not to add any blank lines after the last file name. Then save this as a plain text file called <Typed>book.L</Typed>, by typing <Key k="diamond" />FS <Typed>book.L</Typed>, and setting the *Save plain text* option to `Y`.
+
+Create three files, <Typed>chapterone</Typed>, <Typed>chaptertwo</Typed>, and <Typed>chapterthree</Typed>, containing, for example, the following lines of text respectively:
+
+<Typed>This is the first chapter</Typed>
+
+<Typed>This is the second chapter</Typed>
+
+<Typed>This is chapter three</Typed>
+
+Now load the multi-file document by typing <Key k="diamond" />FL <Typed>book</Typed>. If you use the Filer to select the file you will need to delete the '<Typed>.L</Typed>' extension from the end of the file name.
+
+Typing <Key k="diamond" />FN, <Key k="diamond" />FP, <Key k="diamond" />FT, and <Key k="diamond" />FB will then move between the three files.

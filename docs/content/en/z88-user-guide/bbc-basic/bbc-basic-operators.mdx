@@ -1,0 +1,407 @@
+---
+description: "The following operators may be used as part of expressions."
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/35913794 (version 9) by scripts/import-z88-user-guide.cjs */}
+
+# BBC BASIC Operators
+
+The following operators may be used as part of expressions.
+
+## Arithmetic operators
+
+The arithmetic operators take two numbers as operands.
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>\+</Table.Td>
+<Table.Td>add</Table.Td>
+<Table.Td />
+<Table.Td>\-</Table.Td>
+<Table.Td>subtract</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\*</Table.Td>
+<Table.Td>multiply</Table.Td>
+<Table.Td />
+<Table.Td>/</Table.Td>
+<Table.Td>divide</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>^</Table.Td>
+<Table.Td>raise to the power</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td />
+</Table.Tr>
+</tbody>
+</Table>
+
+## Relational operators
+
+The relational operators can compare numbers, and return a logical value of FALSE=O and TRUE=-1.
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>\<</Table.Td>
+<Table.Td>less than</Table.Td>
+<Table.Td />
+<Table.Td>\=</Table.Td>
+<Table.Td>equal to</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\<=</Table.Td>
+<Table.Td>less than or equal to</Table.Td>
+<Table.Td />
+<Table.Td>\></Table.Td>
+<Table.Td>greater than</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\<\></Table.Td>
+<Table.Td>not equal to</Table.Td>
+<Table.Td />
+<Table.Td>\>=</Table.Td>
+<Table.Td>greater than or equal to</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+## Logical operators
+
+The logical operators operate on numeric or logical values. Boolean FALSE is taken as zero, TRUE as —1.
+
+## Indirection operators
+
+The following operators allow the programmer to access memory directly (called PEEK in other versions of BASIC) or to alter the contents of specified memory locations (called POKE in other BASICs).
+
+These operators should only be used by experienced programmers, since they give the programmer the capability of altering the operation of other activities in the Cambridge Z88 operating system; in general, only addresses within the region allocated by a BASIC DIM statement should be altered.
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>?</Table.Td>
+<Table.Td>byte indirection</Table.Td>
+<Table.Td />
+<Table.Td>!</Table.Td>
+<Table.Td>word indirection</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>$</Table.Td>
+<Table.Td>string indirection</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td />
+</Table.Tr>
+</tbody>
+</Table>
+
+The usual way of using these operators is to allocate a vector using the DIM statement, and then manipulate elements of this vector with the indirection operators. For example,
+
+`DIM vec 15`
+
+allocates a vector of 16 bytes, and assigns its address to the variable `vec`. These bytes can be addressed as
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>0</Table.Td>
+<Table.Td>1</Table.Td>
+<Table.Td>2</Table.Td>
+<Table.Td>3</Table.Td>
+<Table.Td>4</Table.Td>
+<Table.Td>5</Table.Td>
+<Table.Td>6</Table.Td>
+<Table.Td>7</Table.Td>
+<Table.Td>8</Table.Td>
+<Table.Td>9</Table.Td>
+<Table.Td>10</Table.Td>
+<Table.Td>11</Table.Td>
+<Table.Td>12</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>vec?0</Table.Td>
+<Table.Td>vec?1</Table.Td>
+<Table.Td>vec?2</Table.Td>
+<Table.Td>vec?3</Table.Td>
+<Table.Td>vec?4</Table.Td>
+<Table.Td>vec?5</Table.Td>
+<Table.Td>vec?6</Table.Td>
+<Table.Td>vec?7</Table.Td>
+<Table.Td>vec?8</Table.Td>
+<Table.Td>vec?9</Table.Td>
+<Table.Td>vec?10</Table.Td>
+<Table.Td>vec?11</Table.Td>
+<Table.Td>vec?12</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+Note that `?vec` is an alternative way of writing `vec?0`. A typical manipulation might be
+
+`vec?l = vec?l + 1`
+
+Alternatively the vector could be addressed as 4 four-byte words:
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>0</Table.Td>
+<Table.Td>1</Table.Td>
+<Table.Td>2</Table.Td>
+<Table.Td>3</Table.Td>
+<Table.Td>4</Table.Td>
+<Table.Td>5</Table.Td>
+<Table.Td>6</Table.Td>
+<Table.Td>7</Table.Td>
+<Table.Td>8</Table.Td>
+<Table.Td>9</Table.Td>
+<Table.Td>10</Table.Td>
+<Table.Td>11</Table.Td>
+<Table.Td>12</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={4}>vec?0</Table.Td>
+<Table.Td colSpan={4}>vec?4</Table.Td>
+<Table.Td colSpan={4}>vec?8</Table.Td>
+<Table.Td>vec?12</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+Finally, the string indirection operator allows a string to be stored directly into an area of memory. For example:
+
+`$vec = "THE COMPUTER"`
+
+stores characters in the vector as follows:
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>0</Table.Td>
+<Table.Td>1</Table.Td>
+<Table.Td>2</Table.Td>
+<Table.Td>3</Table.Td>
+<Table.Td>4</Table.Td>
+<Table.Td>5</Table.Td>
+<Table.Td>6</Table.Td>
+<Table.Td>7</Table.Td>
+<Table.Td>8</Table.Td>
+<Table.Td>9</Table.Td>
+<Table.Td>10</Table.Td>
+<Table.Td>11</Table.Td>
+<Table.Td>12</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>T</Table.Td>
+<Table.Td>H</Table.Td>
+<Table.Td>E</Table.Td>
+<Table.Td>&20</Table.Td>
+<Table.Td>C</Table.Td>
+<Table.Td>O</Table.Td>
+<Table.Td>M</Table.Td>
+<Table.Td>P</Table.Td>
+<Table.Td>U</Table.Td>
+<Table.Td>T</Table.Td>
+<Table.Td>E</Table.Td>
+<Table.Td>R</Table.Td>
+<Table.Td>&0D</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>$vec</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td />
+<Table.Td />
+<Table.Td />
+<Table.Td />
+<Table.Td />
+<Table.Td />
+<Table.Td />
+<Table.Td />
+<Table.Td />
+<Table.Td />
+</Table.Tr>
+</tbody>
+</Table>
+
+The string can be accessed with the $ operator, so the following statement will print the string:
+
+`PRINT $vec`
+
+Individual characters can be accessed with the ? operator.
+
+## Order of precedence
+
+The order of precedence of the operators is as follows:
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>Group 1</Table.Td>
+<Table.Td />
+<Table.Td>\-</Table.Td>
+<Table.Td />
+<Table.Td>unary minus</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td />
+<Table.Td>()</Table.Td>
+<Table.Td />
+<Table.Td>brackets</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td />
+<Table.Td>NOT</Table.Td>
+<Table.Td />
+<Table.Td>logical NOT</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td />
+<Table.Td />
+<Table.Td />
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Group 2</Table.Td>
+<Table.Td />
+<Table.Td>^</Table.Td>
+<Table.Td />
+<Table.Td>raise to the power</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td />
+<Table.Td />
+<Table.Td />
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Group 3</Table.Td>
+<Table.Td />
+<Table.Td>\*</Table.Td>
+<Table.Td />
+<Table.Td>multiply</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td />
+<Table.Td>/</Table.Td>
+<Table.Td />
+<Table.Td>divide</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td />
+<Table.Td />
+<Table.Td />
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Group 4</Table.Td>
+<Table.Td />
+<Table.Td>\+</Table.Td>
+<Table.Td />
+<Table.Td>add</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td />
+<Table.Td>\-</Table.Td>
+<Table.Td />
+<Table.Td>subtract</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td />
+<Table.Td />
+<Table.Td />
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Group 5</Table.Td>
+<Table.Td />
+<Table.Td>\<</Table.Td>
+<Table.Td />
+<Table.Td>less than</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td />
+<Table.Td>\=</Table.Td>
+<Table.Td />
+<Table.Td>equal to</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td />
+<Table.Td>\<=</Table.Td>
+<Table.Td />
+<Table.Td>less than or equal to</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td />
+<Table.Td>\></Table.Td>
+<Table.Td />
+<Table.Td>greater than</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td />
+<Table.Td>\<\></Table.Td>
+<Table.Td />
+<Table.Td>not equal to</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td />
+<Table.Td>\>=</Table.Td>
+<Table.Td />
+<Table.Td>greater than or equal to</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td />
+<Table.Td />
+<Table.Td />
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Group 6</Table.Td>
+<Table.Td />
+<Table.Td>AND</Table.Td>
+<Table.Td />
+<Table.Td>Logical AND</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td />
+<Table.Td />
+<Table.Td />
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Group 7</Table.Td>
+<Table.Td />
+<Table.Td>OR</Table.Td>
+<Table.Td />
+<Table.Td>Logical OR</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td />
+<Table.Td>EOR</Table.Td>
+<Table.Td />
+<Table.Td>Logical Exclusive-OR</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+so, for example, `A-B*C^D` is equivalent to `A-(B*(C^D))`.

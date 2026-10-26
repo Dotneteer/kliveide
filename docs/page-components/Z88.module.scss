@@ -1,0 +1,36 @@
+// The Z88 User Guide's inline notation (Z88.tsx). Colours come from the site tokens
+// (app/tokens.css), with fallbacks so the components also render before they load.
+
+// --- A key legend: a small dark keycap, like the manual's key pictures, in either theme
+.key {
+  display: inline-block;
+  min-width: 1.5em;
+  margin: 0 0.1em;
+  padding: 0.05em 0.4em;
+  border: 1px solid var(--site-line-strong, rgb(127 127 127 / 0.5));
+  border-bottom-width: 2px;
+  border-radius: 3px;
+  background: var(--site-chrome, rgb(127 127 127 / 0.12));
+  color: var(--site-fg, inherit);
+  font-family: var(--site-font-mono, ui-monospace, monospace);
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.4;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: 0.1em;
+}
+
+// --- Symbol keys (diamond, square, cursor keys) read better a little larger
+.symbol {
+  font-size: 0.875rem;
+  line-height: 1.2;
+}
+
+// --- Text the reader types: the accent colour in the mono face, distinct from screen text
+.typed {
+  font-family: var(--site-font-mono, ui-monospace, monospace);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--site-accent, #45a5e6);
+}

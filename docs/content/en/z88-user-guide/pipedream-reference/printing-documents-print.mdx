@@ -1,0 +1,126 @@
+---
+description: "The commands on the PRINT menu allow you to print your document and to take advantage of facilities offered by the printer, such as bold and underlined text, and alternative fonts."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/35913752 (version 8) by scripts/import-z88-user-guide.cjs */}
+
+# Printing documents - PRINT
+
+<Shot src="z88-user-guide/pipedream-reference/pipedream-menu-print.webp" alt="Pipedream menu print" width={640} />
+
+The commands on the **PRINT** menu allow you to print your document and to take advantage of facilities offered by the printer, such as bold and underlined text, and alternative fonts.
+
+### <Key k="diamond" />PO — Print
+
+Prints all or part of a document. The following options are displayed:
+
+`Print only range of columns No`<br />`Select rows to print No`<br />`Wait between pages No`
+
+By default, the **Print** command prints the whole of the current document with no pause between pages.
+
+The starting page number is determined by the Options Page **Start page** setting, except when printing a marked block, or selected rows. In this case the pages will be numbered, starting at `1`, and soft page breaks will be ignored.
+
+*Print only range of columns*: setting this option to `Yes` will allow a column range to be specified. The column range should be given as two column labels, separated by a space. Only the columns within the specified range (inclusive) will be printed.
+
+*Select rows to print*: setting this option to `Yes` will allow an expression to be entered. Rows will only be printed if the expression evaluates to a true or nonzero result. The expression can contain slot references; after each row the slot references are updated by one row, unless they are fixed with the `$` operator.
+
+For example, a document containing text in column B could use column A to contain a '\*' character, indicating the latest revisions to the document. To print out only the revised lines the option
+
+`Select rows to print Yes A1="*"`
+
+could be specified. See also **[Printing selected rows](/en/z88-user-guide/using-pipedream/compiling-a-name-and-address-list#printing_selected_rows)**, for an example.
+
+*Wait between pages*: setting this option to `Yes` gives a prompt between pages to allow single sheets to be inserted into the printer. The prompt
+
+`Page n ..`
+
+is displayed, where n is the page number. You can then press one of the following keys to control printing:
+
+- <Typed>M</Typed> to miss the page
+- <Typed>C</Typed> to continue printing all remaining pages without further prompting
+- Any other character (eg the space bar) to print the page
+- <Key k="esc" /> to abandon printing.
+
+*Printing a marked block*: if a block of slots is marked when the **Print** command is given, only the marked slots will be printed.
+
+*Multi-file documents*: if the **Print** command is given in a multi-file document, the current document will be saved if it is modified, and the entire multi-file document will be printed, starting with the first file.
+
+### <Key k="diamond" />PM — Microspace pitch
+
+Selects microspaced printed output. Gives the prompt
+
+`Microspace printed output No`
+
+Changing the option to `Yes` and pressing <Key k="enter" /> causes subsequent output to be microspaced at the default spacing of 12/120ths of an inch, giving a pitch of 10 characters per inch. A number can be entered to specify an alternative spacing. For example, entering 10 gives 12 characters per inch. `Microspace` is displayed at the top right-hand corner of the Options Page display if it has been selected.
+
+## Highlighting text
+
+You can alter the style of text in your document by inserting one of eight highlight codes in front of the text, and the same code after the text to revert back to normal.
+
+### Highlight codes
+
+The recommended assignment of the eight codes shown with their commands are as follows:
+
+### <strong><Key k="diamond" />PU</strong> — Underline
+
+**Code** 1 - **Printed example** underlined type
+
+### <Key k="diamond" />PB — Bold
+
+**Code** 2 - <strong>Printed example **bold type**</strong>
+
+### <Key k="diamond" />PX — Extended Sequence
+
+**Code** 3 - **Printed example** ė ҫ π
+
+### <strong><Key k="diamond" />PI</strong> — Italic
+
+**Code** 4 - **Printed example** *italic type*
+
+### <strong><Key k="diamond" />PL</strong> — Subscript
+
+**Code** 5 - **Printed example** H<sub>2</sub>0
+
+### <strong><Key k="diamond" />PR</strong> — Superscript
+
+**Code** 6 - **Printed example** e=mc<sup>2</sup>
+
+### <strong><Key k="diamond" />PA</strong> — Alternative font
+
+**Code** 7 - **Printed example** `alternative font`
+
+### <strong><Key k="diamond" />PE</strong> — User Defined
+
+**Code** 8 - **Printed example**
+
+These commands insert the corresponding highlight code at the current cursor position. Successive occurrences of a highlight code enable and disable the corresponding printer facility.
+
+The effect of highlights 1, 2, 3, and 4 (underline, bold, extended sequences, and italic text styles) are displayed on the screen as underlined, bold, grey, and tiny characters respectively when the cursor is moved onto another slot. When the cursor is on the same slot, all highlight codes are displayed as the corresponding highlighted numbers `1` to `8`.
+
+Highlight characters are considered to be of zero width for formatting and justification.
+
+*Note:* You can use <Key k="diamond" /><Key k="space" /> to create an 'exact space' character. This may help to create continuous underlining of titles etc.
+
+### <Key k="diamond" />PHI — Insert Highlights
+
+Inserts a specified highlight number in the text at the cursor position. Gives the prompt
+
+`Highlight number`
+
+Typing in a number between `1` and `8`, followed by <Key k="enter" />, will insert the corresponding highlight code into the text.
+
+### <Key k="diamond" />PHR — Remove Highlights
+
+Removes all occurrences of a specified highlight number from a given marked block of text. Gives the prompt
+
+`Highlight number`
+
+Typing a number between `1` and `8` followed by <Key k="enter" /> will remove all occurrences of the corresponding highlight from the marked block.
+
+### <Key k="diamond" />PHB — Highlight Block
+
+Highlights all words within a marked block of text with a given highlight number. Gives the prompt
+
+`Highlight number`
+
+Typing a number between `1` and `8` will remove any existing highlights of the same number and highlight all words in the marked block with pairs of the specified highlight character. Because individual words are highlighted, reformatting the highlighted block of text will leave the selected text correctly highlighted, and text will be printed correctly even if the highlighted block extends over a page break.

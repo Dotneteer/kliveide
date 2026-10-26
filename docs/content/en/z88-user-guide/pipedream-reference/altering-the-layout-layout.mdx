@@ -1,0 +1,163 @@
+---
+description: "The commands in the LAYOUT menu allow you to specify how the information entered in a document is displayed."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/35913765 (version 10) by scripts/import-z88-user-guide.cjs */}
+
+# Altering the layout - LAYOUT
+
+<Shot src="z88-user-guide/pipedream-reference/pipedream-menu-layout.webp" alt="Pipedream menu layout" width={640} />
+
+The commands in the **LAYOUT** menu allow you to specify how the information entered in a document is displayed.
+
+You can alter the width that any column occupies, and the column's right-hand margin, which determines the point at which lines of text entered into that column wrap onto the next line.
+
+You can also fix rows above the cursor position and columns to the left of the cursor position so that you can see information on one part of the document while editing information on another part.
+
+## Column widths and margins
+
+### <Key k="diamond" />W — Width
+
+Specifies the width that a column occupies on the document. The following options are displayed:
+
+`New width`<br />`Specify column No`
+
+If no column is specified, the column currently containing the cursor is assumed.
+
+### <Key k="diamond" />H — Set Margin
+
+Alters the right-hand margin of a specified column. The margin is indicated by the right-hand margin pointer, , on the top border, (See [Pipedream Screen](/en/z88-user-guide/using-pipedream/starting-pipedream#pipedream_screen)) and determines the point at which text typed into the column will wrap onto the next line.
+
+<Shot src="z88-user-guide/pipedream-reference/margin-marker.webp" alt="margin marker" width={8} />
+
+This command determines the area over which text is to be formatted within the column; thus, if the width is set to zero, it will be equal to the column width, and there will be no margin. The following options are displayed:
+
+`New width`<br />`Specify column No`
+
+If no column is specified, the column containing the cursor will be assumed.
+
+### <Key k="square" /> <Key k="left" /> — Margin Left
+
+### <Key k="square" /> <Key k="right" /> — Margin Right
+
+These commands allow you to move the right-hand margin for a number of columns simultaneously.
+
+The commands move the right-hand margin pointer, , for the column containing the cursor one character position to the left or right respectively. They also set the wrap point of all columns between the current column and the wrap point so that they wrap at the same position.
+
+<Shot src="z88-user-guide/pipedream-reference/margin-marker.webp" alt="margin marker" width={8} />
+
+## Widths and margins in a multi-column document [#widths_and_margins]
+
+By default, the wrap point for all columns is set to the right-hand edge of the screen, which is most appropriate for creating tables of information within a single column of text. The **Insert on wrap** option on the Options Page is initially set to Rows, ensuring that information in adjacent columns will remain aligned.
+
+It is also possible to create a document with two or more independent columns of text, like the layout of a newspaper.
+
+You do this by moving the right-hand margin for each column to the right-hand edge of the column. Setting the **Insert on wrap** Options Page option to Columns will then ensure that the text in each column can be edited without affecting adjacent columns.
+
+For example, the following steps can be used to create the three-column document shown below.
+
+1. Set the widths of columns A, B, and C to 24, by giving the **Width** command on the **LAYOUT** menu with the options
+
+   `New width 24`<br />`Specify column Yes A`
+
+   `New width 24`<br />`Specify column Yes B`
+
+   `New width 24`<br />`Specify column Yes C`
+
+2. With the cursor in column A, move the right-hand margin to the right-hand edge of column A by pressing <Key k="square" /><Key k="left" /> until the right-hand margin pointer is just to the left of the A on the top border; see the diagram below. This will also position the left margin for columns B and C to the right-hand edge of those columns.
+
+3. Enter the Options Page, by typing <Key k="diamond" />O, and alter the **Insert on wrap** option to Columns by pressing<Key k="down" /> until the cursor is on the option line, and typing C to alter it to
+
+`Insert on wrap C`
+
+Press <Key k="esc" /> to exit from the Options Page.
+
+4\. Type the required text into each column; it will format automatically within the column width.
+
+<Shot src="z88-user-guide/pipedream-reference/pipedream-column-example.webp" alt="Pipedream column example" width={640} />
+
+## Alignment
+
+Text can be aligned in one of the following ways:
+
+1. Left-aligned with the left-hand edge of the column.
+
+2. Right-aligned with the right-hand margin pointer.
+
+3. Centred between the left-hand edge of the column and the right-hand margin pointer.
+
+4. Components of the line can be left-aligned, centred, and right-aligned (LCR alignment).
+
+Text in a slot which has been aligned with one of the **Align** commands will not be reformatted by the **Format Paragraph** command.
+
+The results of expression slots can similarly be displayed left-aligned, centred, or right-aligned over the width of the column.
+
+### <Key k="diamond" /> LAR — Right Align
+
+### <Key k="diamond" /> LAL — Left Align
+
+Aligns the text in the current slot to the right or left of the wrap-width of the current column, respectively. The alignment will be displayed when the cursor is moved off the slot. The **Left Align** command can, for example, be used to prevent text in a table from being inadvertently re-formatted with the **Format Paragraph** command.
+
+### <Key k="diamond" /> LAC — Centre Align
+
+Centres the text in the slot containing the cursor, or a marked block of slots, over the wrap-width of the column containing it.
+
+### <Key k="diamond" /> LLCR — LCR Align
+
+Aligns components of the slot containing the cursor, or the slots within a marked block, to the left, centre, and right of the column's text wrap-width. The line has the format
+
+`/left/centre/right/`
+
+where left, centre, and right represent text which will be respectively left-aligned, centred and right-aligned, and '/' represents an arbitrary delimiter, which must not occur elsewhere in the line of text.
+
+### <Key k="diamond" /> LAF — Free Align
+
+Removes the alignment from a slot containing the cursor, or a marked block of slots. Text, or the results of expression slots, will be left-aligned in the slot.
+
+## Fixing rows and columns
+
+### <Key k="diamond" /> LFR — Fix Row
+
+Fixes the row containing the cursor, and all rows above it, on the screen. If borders are displayed, the fixed rows are identified with horizontal lines in the left-hand border. Moving the cursor up or down on the document will scroll only those rows which have not been fixed, so the cursor can be moved to another part of the document while retaining the fixed rows on the screen. Giving the **Fix Row** command again frees the rows and restores the document to its original state.
+
+### <Key k="diamond" />LFC — Fix Column
+
+Fixes the column containing the cursor, and all columns to its left, on the screen. If borders are displayed, the fixed columns are identified in the top border by solid lines. If the cursor is moved on the document, only the columns that have not been fixed will scroll, so that the cursor can be moved to another part of the document while retaining the fixed columns on the screen. Giving the **Fix Column** command again frees the columns.
+
+For example, the top row of headings and leftmost column of labels have been fixed in the following document by giving the commands <Key k="diamond" />LFR and <Key k="diamond" />LFC with the cursor in slot A1:
+
+<Shot src="z88-user-guide/pipedream-reference/pipedream-fix-column-example.webp" alt="Pipedream fix column example" width={640} />
+
+The cursor can then be moved around to scroll the document while keeping the column headings and row labels in view.
+
+## Number formats
+
+Expressions can be displayed with a specified number of decimal places, or in free format. Negative numbers can be displayed either with a minus sign, or with brackets as in financial notation. The results of expression slots can also be displayed with one or more leading characters, such as '£' and one or more trailing characters, such as '%'. The leading and trailing characters for the document are specified in the Options Page.
+
+The format in which any expression slot is displayed can be restored to the default specified in the Options Page by the **Default Format** command.
+
+All the format commands can be applied either to the single slot containing the cursor, or to a block of slots by marking them before giving the command.
+
+### <Key k="diamond" />LDP — Decimal Places
+
+Sets the number of decimal places displayed by an expression slot, or a marked block of expression slots. Gives the prompt
+
+`Number of decimal places` <br />`Floating format No`
+
+The number of decimal places may be set to a value from 0 to 9, or floating format may be specified which uses the display format giving the most significant figures displayed in the available width.
+
+### <Key k="diamond" />LSB — Sign Brackets
+
+### <Key k="diamond" />LSM — Sign Minus
+
+Specify that negative values in an expression slot or marked block of expression slots should be displayed in financial notation, enclosed in brackets, or with a minus sign prefix respectively.
+
+### <Key k="diamond" />LCL — Leading Characters
+
+### <Key k="diamond" />LCT — Trailing Characters
+
+Specify that the leading or trailing characters defined in the Options Page should be displayed for the expression slot contained in the cursor or the marked block of expression slots. The default leading and trailing characters are '£' and '%' respectively, and these can be altered on the Options Page.
+
+### <Key k="diamond" />LDF — Default Format
+
+Restores the expression slot containing the cursor, or a marked block of expression slots, to the default format as specified on the Options Page. Once any element of an expression slot's format has been altered with one of the commands **Decimal Places**, **Sign Brackets**, **Sign Minus**, **Leading Characters** or **Trailing Characters**, the slot's format is frozen and not be affected by subsequent alterations to the Options Page. Giving the **Default Format** command removes any specific format set on the slot.

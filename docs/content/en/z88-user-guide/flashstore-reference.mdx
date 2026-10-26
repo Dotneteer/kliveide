@@ -1,0 +1,750 @@
+---
+description: "You have fourteen commands. They are selected by using"
+---
+
+import { Callout, Table } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/63701171 (version 8) by scripts/import-z88-user-guide.cjs */}
+
+# Section Eleven - Flashstore reference
+
+## Commands [#commands]
+
+<Shot src="z88-user-guide/flashstore-reference/oz45-fs-menu.webp" alt="Menu" width={640} />
+
+You have fourteen commands. They are selected by using
+
+- the <Key k="menu" /> using cursor keys and the <Key k="enter" /> key
+- or using the <Key k="diamond" /> key command sequence (useful for .cli files)
+- or use the COMMAND window - seven quick access useful commands are here using cursor keys and the <Key k="enter" /> key.
+- There is a 'special case' command View File which is only available when in the FILE AREA window - see above.
+
+Three of the commands - are directly accessible from the FILE AREA window. These commands are displayed in the INFORMATION window to remind you what they are.
+
+<Table>
+<thead>
+<Table.Tr>
+<Table.Th colSpan={3}><Key k="diamond" /> KEYS</Table.Th>
+<Table.Th>DESCRIPTION</Table.Th>
+<Table.Th>FILE AREA COMMANDS<br />(individual files)</Table.Th>
+</Table.Tr>
+</thead>
+<tbody>
+<Table.Tr>
+<Table.Td><a id="menu" /></Table.Td>
+<Table.Td><Key k="diamond" />CE</Table.Td>
+<Table.Td><Key k="diamond" />CF</Table.Td>
+<Table.Td>[Catalogue Card Files](#catalogue_card_files)</Table.Td>
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td><Key k="diamond" />SC</Table.Td>
+<Table.Td />
+<Table.Td>[Select Card](#select_card)</Table.Td>
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td><Key k="diamond" />FS</Table.Td>
+<Table.Td />
+<Table.Td>[Save files to Card](#save_files_to_card)</Table.Td>
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td><Key k="diamond" />FL</Table.Td>
+<Table.Td />
+<Table.Td>[Fetch file from Card](#fetch_file_from_card)</Table.Td>
+<Table.Td><Key k="enter" />or [F](#fetch_file)</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td><Key k="diamond" />BF</Table.Td>
+<Table.Td />
+<Table.Td>[Backup files from RAM](#backup_files_from_ram)</Table.Td>
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td><Key k="diamond" />FC</Table.Td>
+<Table.Td />
+<Table.Td>[Copy all files to Card](#copy_all_files_to_card)</Table.Td>
+<Table.Td>[C](#copy_file)</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td><Key k="diamond" />RF</Table.Td>
+<Table.Td />
+<Table.Td>[Restore files to RAM](#restore_files_to_ram)</Table.Td>
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td><Key k="diamond" />SV</Table.Td>
+<Table.Td />
+<Table.Td>[Select RAM Device](#select_ram_device) (Default RAM)</Table.Td>
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td><Key k="diamond" />TFV</Table.Td>
+<Table.Td />
+<Table.Td>[Toggle File View](#toggle_file_view)</Table.Td>
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td />
+<Table.Td />
+<Table.Td>[View File](#view_file)</Table.Td>
+<Table.Td>V</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td><Key k="diamond" />ER</Table.Td>
+<Table.Td><Key k="diamond" />FE</Table.Td>
+<Table.Td>[Erase file from Card](#erase_file_from_card)</Table.Td>
+<Table.Td><Key k="del" />or [D](#delete_file)</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td><Key k="diamond" />FFA</Table.Td>
+<Table.Td />
+<Table.Td>[Format File Area](#format_file_area)</Table.Td>
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td><Key k="esc" /></Table.Td>
+<Table.Td />
+<Table.Td>[Quits this application](#quit)</Table.Td>
+<Table.Td />
+</Table.Tr>
+</tbody>
+</Table>
+
+<Callout type="warning">
+
+**Note Battery LOW**
+
+If the Z88's battery is low ("BATT LOW" displayed in right hand side of the Z88 screen), you might still be able to save files, but the result may be unreliable. SAVING FILES OR FORMATTING A FLASH CARD WITH A BATTERY LOW CONDITION IS NOT RECOMMENDED.
+
+Before formatting make sure you have saved and have a copy of the files supplied! (See Format) After formatting, you will have the unused space for saving your files.
+
+If the card you have selected does not support any of the commands due to slot position or type, that command will be greyed out.
+
+The <Key k="esc" /> key can interrupt a command at any time (when user input is required).
+
+</Callout>
+
+#### Select RAM Device (Default RAM) [#select_ram_device]
+
+Changes the default RAM device for this session.
+
+FlashStore by default uses the RAM device that is the Default device set in the Panel <Key k="square" />S. This can be changed for this session only, using this command. Instructions on changing the device are given on the screen. All commands that use the RAM will default to the value set here.
+
+#### Toggle File View [#toggle_file_view]
+
+Changes between browsing only saved files or browsing all files (both saved and marked as deleted). The top banner displays which view is being shown.
+
+Normally the FILE AREA window displays saved files only. By using the Toggle File View marked deleted files are displayed, allowing these to be fetched with the cursor.
+
+There are 2 views of the FILE AREA. These are:-
+
+- Cursor selects only saved files and
+
+<Shot src="z88-user-guide/flashstore-reference/oz45-fs-view-2-file-del.webp" alt="2 files deleted" width={640} />
+
+- Cursor selects saved & deleted files
+
+<Shot src="z88-user-guide/flashstore-reference/oz45-fs-view-toggle.webp" alt="Toggle display" width={640} />
+
+Looking at these displays, the top display shows the saved files but when the file view is toggled, the deleted files appear in small text with the D character in grey.
+
+<Shot src="z88-user-guide/flashstore-reference/oz45-fs-view-curs-over-del-file.webp" alt="Cursor over deleted file" width={640} />
+
+This mode allows the cursor to be placed over the file name so the following commands may be selected.
+
+| COMMAND | KEY |
+| --- | --- |
+| [Fetch File](#fetch_file_from_card) | <Key k="enter" /> |
+| [View File](#view_file) | **V** |
+| [Delete File](#erase_file_from_card) | <Key k="del" /> |
+| [Copy to Card](#copy_file) | **C** |
+
+<Callout type="error">
+
+**Deleting a Deleted File**
+
+A file can only be 'marked deleted' once. You can only 'un-mark delete' it using Fetch and the save it again to the Flash Card.Format is necessary to reclaim the space it is using back again.
+
+</Callout>
+
+#### Catalogue Card Files [#catalogue_card_files]
+
+Lists filenames on file card area to a PipeDream file.
+
+This command creates a file (default name filearea.pdd) listing the filenames and size. Loading this file into PipeDream allows it to be viewed or printed. Depending on which File Area view is selected, it will either print saved files or saved and deleted files.
+
+#### Select Card [#select_card]
+
+Selects which file card to use when you have more than one.
+
+<Shot src="z88-user-guide/external/zfs-operation-and-commands/flashstore-select-card.webp" alt="flashstore select card" width={640} />
+
+This allows multiple Flash cards and EPROMs to be read using the same FlashStore application. Highlight the Slot number (0, 1, 2 or 3) with the cursor that you wish to use. You may also press digits '0', '1', '2' or '3' to select the actual slot. The selected device will be displayed at the top of the right-hand window with the file information with current information of file data and space left on the card.
+
+The padlock indicates a read-only device (like an EPROM or an INTEL flash card not in slot 3). 'AMD' or 'INTEL' labels are displayed on top line of each visual card for identified flash chip.
+
+#### Save files to Card [#save_files_to_card]
+
+Saves files from the RAM device to the file card area (both Flash and Eprom cards).
+
+```text
+Wildcards are allowed,
+Filename: :RAM.1
+```
+
+You simply have to enter the filename. Always specify the device. You are allowed to use wildcards. For example, if you want to save all the files including sub-directories, in RAM.1, type :RAM.1//\*.
+
+When files are saved, the file size is shown together with the "header," the amount of space needed for the filename to be stored on the Flash File card. The program checks the data being saved is correct. In the unlikely event of an error, a message will be displayed and the file will be saved again. When the 'no room' message is displayed, the last filename that was trying to be saved can be viewed after pressing the <Key k="esc" /> key.
+
+If the file does NOT save, this is usually because the filename has been mis-spelt or even that it does not exist.
+
+<Callout type="warning">
+
+Normally the display stays on when saving files, but if the file area is on the same device as OZ, the display goes BLANK.
+
+This is quite normal, just wait, the display will return after the file has been saved.
+
+</Callout>
+
+#### Fetch file from Card [#fetch_file_from_card]
+
+Fetches a file from the file card area to the RAM device.
+
+```text
+Enter exact filename (no wildcard).
+Filename:
+```
+
+You have to enter the exact filename, preceded with the slash (/).<br />Wildcards are not allowed.
+
+```text
+Fetch as : /
+```
+
+\[The slash is already there\]
+
+```text
+Overwrite existing file : Yes
+```
+
+\[Yes overwrites, No doesn't\]
+
+```text
+Fetching... Done.
+```
+
+\[The file has been fetched\]
+
+```text
+Completed
+```
+
+```text
+[The Fetch command is finished]
+Press ESC to Resume [ESC returns to Main Menu]
+```
+
+Don't forget you can use the point and shoot option in the FILE AREA window.
+
+#### Copy all files to Card [#copy_all_files_to_card]
+
+<Shot src="z88-user-guide/external/zfs-operation-and-commands/flash-ram-flash.webp" alt="Two Flash Cards" width={500} />
+
+Copy saved files in current file card area to another flash card in a different slot.
+
+<Callout type="info">
+
+**Really useful Command**
+
+Many users overlook this inconspicuous command because they fail to grasp what it really means.
+
+When a flash card has a large number of deleted files, these files take up space. The normal method of getting this space back is to save the files to RAM, Format the Flash card and then save them back onto the Flash card agaon.
+
+With this command, you can save all the files directly to another Flash card (which can already be Formatted) thus saving the need to go through the RAM card.
+
+</Callout>
+
+This command is used when you wish to copy all the files from the current file area, to either an EPROM or flash card, to another flash card without having to load the files into RAM. Using two flash cards you can reclaim the deleted file area from one card by just copying all the files to the other flash card.
+
+Individual files may be copied by using the Copy command whilst in the FILE AREA window.
+
+If you have more than two flash cards to copy to, you will be prompted for its slot number.
+
+#### Copy File [#copy_file]
+
+Pressing the C key will copy the singe selected file to another Flash card.
+
+#### Backup files from RAM [#backup_files_from_ram]
+
+Saves all the files from the RAM device to the file card area.
+
+This backs up all the files (until the flash card is full) in your current RAM device. Instructions on changing the device are given on the screen.
+
+#### Restore files to RAM [#restore_files_to_ram]
+
+Fetches all the files from the file card area to the RAM device.
+
+All files (including sub-directories) on the Flash card are fetched using the sub-menu commands. You might choose to restore all files without checking for existing files. Directories are created automatically in your selected RAM device.
+
+```text
+Enter Device (or path),
+Device :RAM.1
+```
+
+\[Change RAM device and/or path\]
+
+```text
+Overwrite existing RAM files? No
+```
+
+\[Will prompt user to overwrite file\]
+
+```text
+Fetching file to :RAM.1/filename
+Overwrite existing file : Yes
+```
+
+\[Yes overwrites, No doesn't\]
+
+```text
+Fetching... Done.
+```
+
+```text
+[The file has been fetched]
+```
+
+```text
+Completed
+```
+
+\[The Restore command is finished\]
+
+```text
+Press SPACE to Resume
+```
+
+\[SPACE returns to Main Menu\]
+
+#### Erase file from Card [#erase_file_from_card]
+
+Marks a file in the file card area as deleted.
+
+Although files cannot be deleted from the flash card to gain space, this command allows a single file to be marked as deleted. This is useful for getting rid of those obsolete files that do not get overwritten.
+
+Don't forget you can use the point and shoot option in the FILE AREA window.
+
+#### Format File Area [#format_file_area]
+
+Formats and erases the complete file card area.
+
+This erases the File Area of the Flash card and formats it. If you have two (or more) flash cards that can be formatted you will be invited to choose which one you want to format..
+
+When the command is executed, it says:
+
+```text
+CAUTION! All data will be lost.
+Are you really sure? No
+```
+
+\[Yes formats, No returns Main Menu\]
+
+#### Fetch File [#fetch_file]
+
+pressing either
+
+the <Key k="enter" /> or F key will fetch that file to RAM
+
+#### View File [#view_file]
+
+To use this command move the cursor over the file name to be viewed
+
+<Shot src="z88-user-guide/flashstore-reference/oz45-fs-view-whatsnew.webp" alt="View Whats New" width={640} />
+
+Press V to view the file
+
+<Shot src="z88-user-guide/filer-reference/oz45-filer-vf-fileview.webp" alt="viewed file" width={640} />
+
+CRC-32
+
+The [CRC-32](http://en.wikipedia.org/wiki/Cyclic_redundancy_check) value of the file is also displayed.
+
+<Callout type="info">
+
+CRC-32 is the checksum of the file. It is used by several applications on the Z88 (Eazylink2, FlashStore, ROMupdate) to ensure file integrity.
+
+</Callout>
+
+#### Delete File [#delete_file]
+
+pressing either the <Key k="del" /> or D key will mark the file deleted
+
+#### Quit [#quit]
+
+<Key k="esc" /> key quits the application
+
+## Using the Filer, FlashStore & EP-Fetch2 with FLASH cards & EPROMs [#using_the_filer]
+
+These applications are very useful. Here is a summary of what they can do.
+
+<Table>
+<thead>
+<Table.Tr>
+<Table.Th />
+<Table.Th>
+
+```text
+Filer
+```
+
+</Table.Th>
+<Table.Th>
+
+```text
+Filer OZ 4.5
+```
+
+</Table.Th>
+<Table.Th>
+
+```text
+Flashstore
+```
+
+</Table.Th>
+<Table.Th>
+
+```text
+EP-Fetch2
+```
+
+</Table.Th>
+</Table.Tr>
+</thead>
+<tbody>
+<Table.Tr>
+<Table.Td>
+
+```text
+Save a File to an EPROM card
+```
+
+</Table.Td>
+<Table.Td>✓</Table.Td>
+<Table.Td>✓</Table.Td>
+<Table.Td>✓</Table.Td>
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+Save a File to a FLASH card
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td>✓</Table.Td>
+<Table.Td>✓</Table.Td>
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+Save all Files to an EPROM card
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td>✓</Table.Td>
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+Save all Files to a FLASH card
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td>BACKUP</Table.Td>
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Th />
+<Table.Th />
+<Table.Th />
+<Table.Th />
+<Table.Th />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+Copy all or single Files from 
+a FLASH card to a FLASH card 
+an EPROM card to a FLASH card
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td>✓</Table.Td>
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Th />
+<Table.Th />
+<Table.Th />
+<Table.Th />
+<Table.Th />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Fetch a File from an EPROM card</Table.Td>
+<Table.Td>✓</Table.Td>
+<Table.Td>✓</Table.Td>
+<Table.Td>✓</Table.Td>
+<Table.Td>✓</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Fetch a File from a FLASH card</Table.Td>
+<Table.Td>✓</Table.Td>
+<Table.Td>✓</Table.Td>
+<Table.Td>✓</Table.Td>
+<Table.Td>✓</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Th />
+<Table.Th />
+<Table.Th />
+<Table.Th />
+<Table.Th />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+Fetch all Files from an EPROM card
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td>
+
+```text
+RESTORE
+```
+
+</Table.Td>
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+Fetch all Files from a FLASH card
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td>
+
+```text
+RESTORE
+```
+
+</Table.Td>
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Th />
+<Table.Th />
+<Table.Th />
+<Table.Th />
+<Table.Th />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+Fetch deleted Files from EPROM card
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td>✓</Table.Td>
+<Table.Td>✓</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+Fetch deleted Files from FLASH card
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td>✓</Table.Td>
+<Table.Td>✓</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Th />
+<Table.Th />
+<Table.Th />
+<Table.Th />
+<Table.Th />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+Format File area from EPROM card
+```
+
+</Table.Td>
+<Table.Td colSpan={4}>
+
+```text
+[ERASE WITH THE EPROM ERASER]
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+Format File area from FLASH card
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td>✓</Table.Td>
+<Table.Td />
+</Table.Tr>
+</tbody>
+</Table>
+
+### Fetching all Files [#fetching_all_files]
+
+Don't forget the RESTORE function. Sometimes it is easier to fetch all the files and delete a few unwanted files afterwards.
+
+Erasing all files in the RAM card before Restoring
+
+If you are using Directories and you want to erase the complete RAM try using the wildcard //\* in the ERASE command in the Filer. It removes both files and directories.
+
+### Restoring or Saving Files to base directories [#restoring_or_saving_files]
+
+Restore is usually used to restore a complete Device in the root directory of the RAM. You can also add a Directory to restore the files as well. This could be used where you wish to compare files from two Flash Cards provided you have enough space.
+
+### Using two Flash cards [#using_two_flash_cards]
+
+Only one copy of Flashstore is required despite the number of flash cards used. For example, if you have the standard OZ 2.2 version running in slot 0, you could have your Applications (including FlashStore) in slot 2 and read any of your "master" files from there, whilst using another Flash card in slot 3 for current files.
+
+<Shot src="z88-user-guide/external/zfs-operation-and-commands/flash-ram-flash.webp" alt="Two Flash Cards" width={500} />
+
+When running OZ in slot 1and RAM in slot 2 you still have slot 3 to use the additional flash card to do what is described.
+
+To use two Flash cards first prepare the Flash card which you want to use in slot 2, with your master files. This is done by using it in slot 3 to save your files first. You may elect to ZIP these files up beforehand (to save space).
+
+When moving the Flash card from Slot 3 to 2, follow the following rules.
+
+## Deleting Files [#deleting_files]
+
+When files in RAM cards are deleted, the space is returned to OZ. That space may be used by other files.
+
+This is not true in Flash or EPROM cards. When a file is deleted, it is marked individually by writing a bit in the file name. This marks it as a deleted file. Files have not been removed, they are still there, taking up the space they used before. Lets delete some files to see what happens.
+
+<Shot src="z88-user-guide/flashstore-reference/oz45-fs-main.webp" alt="Main display" width={640} />
+
+<Callout type="warning">
+
+On the display above in the INFORMATION Window, (the one on the right) <br />the graphics bar is either solid (for saved files) of clear (empty space).
+
+the last 2 lines state<br />7 FILES SAVED<br />0 FILES DELETED
+
+</Callout>
+
+Move the cursor over the file to be deleted.
+
+<Shot src="z88-user-guide/flashstore-reference/oz45-fs-view-del-whatsnew.webp" alt="Delete whats new" width={640} />
+
+Notice that the INFORMATION Window has now changed, showing the 4 commands that can be used here. One of them is <Key k="del" />, use that now.
+
+<Shot src="z88-user-guide/flashstore-reference/oz45-fs-view-del-whatsnew-n.webp" alt="oz45 fs view del whatsnew n" width={640} />
+
+The 'fail-safe' window is displayed. Select Y, then use the <Key k="enter" /> key.
+
+<Shot src="z88-user-guide/flashstore-reference/oz45-fs-view-del-whatsnew-y.webp" alt="oz45 fs view del whatsnew y" width={640} />
+
+Too late to change your mind now, press <Key k="space" /> or <Key k="enter" /> to resume.
+
+<Shot src="z88-user-guide/flashstore-reference/oz45-fs-view-del-next-file.webp" alt="Delete next file" width={640} />
+
+Delete the next file with the <Key k="del" /> key. Follow the instructions,
+
+<Shot src="z88-user-guide/flashstore-reference/oz45-fs-view-del-2nd-file.webp" alt="2nd file deleted" width={640} />
+
+Move the cursor to the left with the <Key k="left" /> key.
+
+<Shot src="z88-user-guide/flashstore-reference/oz45-fs-view-2-file-del.webp" alt="2 files deleted" width={640} />
+
+This now shows the INFORMATION Window again.
+
+<Callout type="warning">
+
+On the display above in the INFORMATION Window, (the one on the right) <br />the graphics bar is either grey (for deleted files), solid (for saved files) or clear (for free space).
+
+the last 2 lines state
+
+5 FILES SAVED<br />2 FILES DELETED
+
+</Callout>
+
+Toggling the display shows the deleted files.
+
+<Shot src="z88-user-guide/flashstore-reference/oz45-fs-view-toggle.webp" alt="Toggle display" width={640} />
+
+Moving the cursor over a deleted file
+
+<Shot src="z88-user-guide/flashstore-reference/oz45-fs-view-curs-over-del-file.webp" alt="Cursor over deleted file" width={640} />
+
+This mode allows the cursor to be placed over the file name so the following commands may be selected.
+
+| COMMAND | KEY |
+| --- | --- |
+| [Fetch File](#fetch_file_from_card) | <Key k="enter" /> |
+| [View File](#view_file) | **V** |
+| [Delete File](#erase_file_from_card) | <Key k="del" /> |
+| [Copy to Card](#copy_file) | **C** |
+
+<Callout type="error">
+
+**Deleting a Deleted File**
+
+A file can only be deleted once. You can only un-delete it using Fetch and the save it again to the Flash Card.
+
+</Callout>

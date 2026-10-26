@@ -1,0 +1,203 @@
+---
+description: "This section describes the pin connections for the Cambridge Z88 serial connector."
+---
+
+import { Callout, Table } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/35913795 (version 14) by scripts/import-z88-user-guide.cjs */}
+
+# Appendix B - Serial port and transfer protocols
+
+## Z88 to Serial Printer Connections
+
+This section describes the pin connections for the Cambridge Z88 serial connector.
+
+The following connections are for a cable to connect the Cambridge Z88 serial port connector to a 25-pin D-type serial printer connector, or equivalent:
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td colSpan={3}>
+
+<Shot src="z88-user-guide/appendix-b-serial-port-and-transfer-protocols/200px-cambridgez88.webp" alt="200px CambridgeZ88" width={232} />
+
+</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td colSpan={3}>
+
+<Shot src="z88-user-guide/appendix-b-serial-port-and-transfer-protocols/fx80-printer.webp" alt="fx80 printer" width={320} />
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Th colSpan={3}>Cambridge Z88<br />9 way D (Male)</Table.Th>
+<Table.Th />
+<Table.Th />
+<Table.Th colSpan={3}>Printer -<br /> 25 way D (Male)</Table.Th>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>1</Table.Td>
+<Table.Td>\-</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td />
+<Table.Td>\-</Table.Td>
+<Table.Td />
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>2</Table.Td>
+<Table.Td>TxD</Table.Td>
+<Table.Td />
+<Table.Td>-\></Table.Td>
+<Table.Td />
+<Table.Td>3</Table.Td>
+<Table.Td>RxD</Table.Td>
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>3</Table.Td>
+<Table.Td>RxD</Table.Td>
+<Table.Td />
+<Table.Td>\<-</Table.Td>
+<Table.Td />
+<Table.Td>2</Table.Td>
+<Table.Td>TxD</Table.Td>
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>4</Table.Td>
+<Table.Td>RTS</Table.Td>
+<Table.Td />
+<Table.Td>-\></Table.Td>
+<Table.Td />
+<Table.Td>5</Table.Td>
+<Table.Td>CTS</Table.Td>
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>5</Table.Td>
+<Table.Td>CTS</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td />
+<Table.Td>20</Table.Td>
+<Table.Td>DTR</Table.Td>
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>6</Table.Td>
+<Table.Td>\-</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td />
+<Table.Td>\-</Table.Td>
+<Table.Td />
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>7</Table.Td>
+<Table.Td>GND</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td />
+<Table.Td>7</Table.Td>
+<Table.Td>GND</Table.Td>
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>8</Table.Td>
+<Table.Td>DCD</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td />
+<Table.Td>20</Table.Td>
+<Table.Td>DTR</Table.Td>
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>9</Table.Td>
+<Table.Td>DTR</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td />
+<Table.Td>6,8</Table.Td>
+<Table.Td colSpan={2}>(DSR,DCD)</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+where the signals are as follows:
+
+TxD Transmitted data
+
+RxD Received data
+
+RTS Request to send
+
+CTS Clear to send
+
+GND Signal ground
+
+DCD Data carrier detect
+
+DTR Data terminal ready
+
+<Callout type="warning">
+
+**Notes**
+
+The Cambridge Z88 RS232 port is wired as Data Terminal Equipment
+
+Pin 1 must not be used for RS232 signals. It carries +5v at 10pA, even when the machine is OFF.
+
+Do not use pin 6 on the Cambridge Z88 connector.
+
+Pin 9 is the RS232 DTR signal. It provides +5v at 1mA while the Cambridge Z88 is switched on,for powering CMOS serial to parallel converters.
+
+CTS on the Cambridge Z88 must be high for the Cambridge Z88 to transmit, and DCD must be high for the Cambridge Z88 to receive. For simple RS232 use, connect pins 5 and 8 to pin 9, and connect pins 2 (TxD), 3 (RxD), and 7 (GND) to the other computer.
+
+</Callout>
+
+<Callout type="error">
+
+**WARNING**
+
+DO NOT USE THIS CABLE TO CONNECT TO A COMPUTER. IT WILL NOT WORK.
+
+</Callout>
+
+## Import/Export Protocol
+
+The Imp-Export protocol for Send & Batch Send/Receive functions is given here for programmers who want to interface the Cambridge Z88 to a computer by writing their own interface software.
+
+### Control sequences
+
+| **Sequence** | **Function** |
+| --- | --- |
+| ESC N | Start of file name |
+| ESC F | Start of file/end of file name |
+| ESC E | End of file |
+| ESC Z | End of file or end of list of files |
+| ESC B x x | Where x x is two ASCII digits representing a hex <br />byte. For example, the byte &A9 is transmitted with <br />ESC B A 9. |
+
+Note that all the characters after the ESC code must be in upper-case ASCII.
+
+#### Transfer protocol
+
+First file, and subsequent files: <br />ESC N *filename* ESC F *data* ESC E
+
+Last file: <br />ESC N *filename* ESC F *data* ESC Z
+
+where *data* is a sequence of characters in the range &20 to &7E. Codes in the range &00 to &1F and &7F to &FF should be transmitted using the ESC B prefix. The ESC B sequence is not accepted as part of the filename.
+
+Import/Export will give a `Suspended` message if a battery low is flagged while sending or receiving, or if the Cambridge Z88 is switched off or the flap is opened. In this case you must repeat the transfer.
+
+The *filename* can be omitted.
+
+## XMODEM/YMODEM Protocol
+
+This may be found on the internet. See [XMODEM/YMODEM PROTOCOL](http://www.textfiles.com/programming/ymodem.txt)
+
+A <strong>`Suspended`</strong> message will be displayed if a battery low is flagged while sending or receiving, or if the Cambridge Z88 is switched off or the flap is opened. In this case you must repeat the transfer.

@@ -1,0 +1,402 @@
+---
+description: "The next worked example shows how to use the Cambridge Z88 to perform numerical calculations. It shows how you would analyse your monthly expenses, and discover what proportion of your income you..."
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/35913781 (version 14) by scripts/import-z88-user-guide.cjs */}
+
+# Calculating home expenses
+
+The next worked example shows how to use the Cambridge Z88 to perform numerical calculations. It shows how you would analyse your monthly expenses, and discover what proportion of your income you were spending on each
+
+You will learn how to:
+
+- Enter numbers and expressions into a table
+- Copy expressions to save typing
+- Perform calculations
+- Alter the format of the numbers
+
+## Designing the table
+
+You are going to create a table which shows for each of the months January to April what your expenditure has been on your rates, mortgage, food, car, gas and electricity.
+
+At first sight it might appear that an awful lot of typing would be involved in setting up such a table. However, as you will see, all the repetition is carried out automatically for you by PipeDream and very little typing is actually needed.
+
+## Moving around the document
+
+To set up the table of expenses you will need to be familiar with the procedure for moving the cursor between slots (or columns) in the document. Remember that you will need to use the following keys:
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td><Key k="up" /></Table.Td>
+<Table.Td />
+<Table.Td>to move up a line</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td><Key k="down" /></Table.Td>
+<Table.Td />
+<Table.Td>to move down a line</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td><Key k="shift" /> <Key k="tab" /></Table.Td>
+<Table.Td />
+<Table.Td>to move to the previous slot to the left</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td><Key k="tab" /></Table.Td>
+<Table.Td />
+<Table.Td>to move to the next slot to the right</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td><Key k="diamond" /><Key k="tab" /></Table.Td>
+<Table.Td />
+<Table.Td>to move to the left-most slot</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+Also, when you are at the left-hand edge of a slot, pressing <Key k="left" /> will move to the previous slot to the left, if there is one.
+
+When you are working with a document you can use the **First Column**, **Last Column**, **Top of Column**, or **Bottom of Column** commands on the **CURSOR** menu to move to the four edges of the document in a single operation.
+
+## Labelling the table
+
+You are now going to set up the column and row labels for the table of expenses.
+
+Move the cursor to slot B1 and type the label <Typed>Jan</Typed> (for January). Likewise type <Typed>Feb</Typed>, <Typed>March</Typed>, and <Typed>April</Typed> in slots C1 to E1 to complete the column headings for the table. Later you could extend the table for a whole year's figures.
+
+Now type the row labels for the different expense categories, as follows:
+
+| In slot: | Enter: |
+| --- | --- |
+| A2 | <Typed>Rates</Typed> |
+| A3 | <Typed>Mortgage</Typed> |
+| A4 | `Food` |
+| A5 | `Car` |
+| A6 | `Gas/Elect` |
+
+The table headings are now complete. Move the cursor back up to slot B2, and the table should appear as shown on the following screen:
+
+<Shot src="z88-user-guide/using-pipedream/calculating-home-expenses/labelling-the-table.webp" alt="labelling the table" width={640} />
+
+## Entering the rates
+
+The rates in the example are going to be £500 per half-year. This is going to be divided evenly over each month's expenses, but you do not need to divide 500 by 6; PipeDream will do it for you. You only have to enter the expression <Typed>500/6</Typed> into slot B2 (the '/' sign means divide).
+
+However, you first need to specify that this slot is to be an expression slot, so that whatever you type into it will be evaluated, and so that other slots on the table can refer to the result. To do this you give the **Edit Expression** command from the **EDIT** menu; alternatively you may find it more convenient to type <Key k="diamond" />X which has the same effect.
+
+The slot B2 will be highlighted on the screen to show that you are editing an expression slot, and the cursor will move to the centre of the top line of the screen so that you can enter an expression. Type the expression
+
+```text
+500/6
+```
+
+and press the <Key k="enter" /> key to enter it into slot B2. The number 83.33 will be displayed right-aligned in slot B2.
+
+## Referring to slots
+
+You do not need to type the rates expression into the other slots in row 2; you can simply indicate that you want the same value as slot B2 by typing the coordinates of that slot.
+
+Move to slot C2 and press <Key k="diamond" />X to enter an expression. Then type
+
+<Typed>B2</Typed>
+
+and press <Key k="enter" />. The value 83.33 will appear in slot C2. Likewise enter the expression <Typed>B2</Typed> into slots D2 and E2.
+
+Effectively you have specified that you always want slots C2 to E2 to contain the same value as slot B2. So, for example, suppose you were granted a rates reduction to £400 per half-year. Move the cursor back to slot B2 and type <Key k="diamond" />X to display the slot's previous contents, 500/6. Delete them, by typing
+
+<Key k="diamond" />D
+
+and then type the new value:
+
+400/6 <Key k="enter" />
+
+Not only will the value in B2 change to 66.67, but slots C2 to E2 will also change, since they refer to this value.
+
+## Replicating values
+
+Next you are going to enter the figure 200 for the four months' mortgage payments. Type <Typed>200</Typed> into slot B3. If you forgot to type <Key k="diamond" />X when entering the figure, the number will appear left-aligned just as you entered it. In this case, move the cursor back to the slot and press <Key k="diamond" />X and then <Key k="enter" /> afterwards.
+
+You do not need to type the same value in slots C3 to E3; the **Replicate** command will do it automatically.
+
+Select the **Replicate** command from the **BLOCKS** menu, and press <Key k="enter" /> to execute it. Answer the prompts as follows, pressing <Key k="down" /> to move to the next line after entering B3:
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>
+
+```text
+Range to copy from
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+B3
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+Range to copy to
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+C3 E3
+```
+
+</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+This says that you are going to replicate the value in slot B3 to the range of slots C3 to E3. Press <Key k="enter" /> to give the command, and the figure `200.00` should appear across the entire row so that the table appears as shown:
+
+<Shot src="z88-user-guide/using-pipedream/calculating-home-expenses/replicating-values.webp" alt="replicating values" width={640} />
+
+Note that until you press the <Key k="enter" /> key you can alter the values you have typed for the ranges, moving between the two prompts with <Key k="up" />and <Key k="down" />.
+
+## Other expenses
+
+The expenses in the other categories will tend to vary each month. You can either type in the figures used in the example shown below, or use figures from your own experience. In either case complete the table, remembering to make each slot into an expression slot before you enter the figure, or if you forget, afterwards.
+
+<Shot src="z88-user-guide/using-pipedream/calculating-home-expenses/other-expenses.webp" alt="other expenses" width={640} />
+
+## Monthly totals
+
+You are now going to produce monthly totals for the expenses. Enter the label <Typed>TOTAL</Typed> into slot A7, and press <Key k="tab" /> to move the cursor to slot B7.
+
+Now press <Key k="diamond" />X, and enter the following expression:
+
+```text
+sum(B2 B6)
+```
+
+Press the <Key k="enter" /> key, and PipeDream will perform the calculation and instantly display the sum of the figures in the range of slots B2 to B6; ie all the expenses for January.
+
+The function <Typed>sum(B2 B6)</Typed> is a convenient way of writing the equivalent expression
+
+```text
+B2+B3+B4+B5+B6
+```
+
+where the slots to be added are all in a row, column, or rectangular table.
+
+## Replicating slot references
+
+Just as you replicated the value 200.00 above, you can also replicate an expression across a range of slots. Where the expression contains references to other slots, as in this example <Typed>sum(B2 B6)</Typed>, the references will automatically be altered to reflect the change in position.
+
+Replicate the expression you have just entered for slot B7 to slots C7 to E7 as follows. Select the **Replicate** command from the **BLOCKS** menu, and give the options as:
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>
+
+```text
+Range to copy from
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+B7
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+Range to copy to
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+C7 E7
+```
+
+</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+Press <Key k="enter" /> and totals will appear for each column. The **Replicate** command has automatically altered the range B2B6 to give the appropriate totals in columns C to E.
+
+If you now move the cursor to slot C7 you will see the expression in that slot displayed at the top left-hand side of the screen:
+
+```text
+sum(C2C6)
+```
+
+Note that PipeDream removes unnecessary spaces when storing an expression.
+
+<Shot src="z88-user-guide/using-pipedream/calculating-home-expenses/replicating-slot-ref.webp" alt="replicating slot ref" width={640} />
+
+## Percentage expenditures
+
+As a final illustration of the power of PipeDream in analysing figures, you are going to calculate the percentage expenditure represented by each of the categories in the table.
+
+First type the label
+
+```text
+Percentage
+```
+
+in slot Fl.
+
+Next find the total expenditure for the four months in the table. Move to slot F7, press <Key k="diamond" />X, and enter the expression
+
+```text
+sum(B7 E7)
+```
+
+Instead of typing the references B7 and E7, you can 'point to' each slot by moving the highlighted slot with the keys <Key k="tab" /> and <Key k="shift" /> <Key k="tab" />, <Key k="left" /> and <Key k="right" />, and then give the **Insert Reference** command, <Key k="diamond" />K, to enter the corresponding references, B7 and then E7, into the editing line.
+
+Now move to F2 and enter the following expression (which will be explained in a moment):
+
+<Typed>sum(B2 E2)/$F$7 \* 100</Typed>
+
+Press <Key k="enter" /> to enter the expression.
+
+This expression is built up as follows:
+
+<Typed>sum(B2 E2)</Typed> is the total spent on rates for the four months.
+
+<Typed>F7</Typed> is the overall total expenditure for the four months. The `$` signs 'freeze' the reference so that when the expression is replicated, the reference to `F7` will remain the same.
+
+<Typed>sum(B2 E2)/$F$7</Typed> is thus the proportion of the overall expenditure spent on rates.
+
+<Typed>sum(B2 E2)/$F$7 \* 100</Typed> expresses this proportion as a percentage.
+
+Now replicate this expression down the remaining slots in column F by giving the **Replicate** command from the **BLOCKS** menu, and entering the options as
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>
+
+```text
+Range to copy from
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+F2
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+Range to copy to
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+F3 F6
+```
+
+</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+The appropriate percentages will be displayed against each category.
+
+<Shot src="z88-user-guide/using-pipedream/calculating-home-expenses/percentage-expenditures.webp" alt="percentage expenditures" width={640} />
+
+## Changing the format
+
+When you first start using PipeDream, the results of all expression slots are displayed with two decimal places, the most useful format for working with financial calculations (although values are stored internally with full accuracy).
+
+You can alter the display format for all expression slots in your document by changing the *Decimal Places* option on the **Options Page** menu, or for individual slots with the **Decimal Places** command on the **LAYOUT** menu.
+
+For example, the table would look tidier if the percentages were displayed with no decimal places. First, mark the block of slots containing the percentages with the following procedure:
+
+1. Move the cursor to F2 and give the **Mark Block** command on the **BLOCKS** menu; alternatively, type <Key k="diamond" />Z as shown on the list of key functions above the keyboard.
+
+2. Move the cursor to F6 and give the **Mark Block** command again.
+
+The block containing slots F2 to F6 will now be highlighted.
+
+Now select the **Decimal Places** command from the **LAYOUT** menu. Reply to the prompts as follows:
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>
+
+```text
+Number of decimal places
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+0
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+Floating format
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+No
+```
+
+</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+Press <Key k="enter" /> and the numbers will be displayed with no decimal places.
+
+You can also specify that certain characters, given on the **Options Page**, should be displayed before or after certain numbers in the document. By default, the trailing characters are set to '%', and the leading characters are set to '£'.
+
+To display a `'%`' sign after the numbers in the marked block, give the **Trailing Characters** command from the **LAYOUT** menu.
+
+You can also display a '£' sign before each value in the table. Mark the block of slots from B2 to E7 by moving the cursor to each of these slots in turn and typing <Key k="diamond" />Z. Then give the Leading Characters command from the LAYOUT menu.
+
+Finally, the column labels can be right-aligned. Mark slots B1 to F1 with the **Mark Block** command, <Key k="diamond" />Z, and give the **Right Align** command from the **LAYOUT** menu.
+
+Press <Key k="diamond" />Q to clear the marked area, and the table will now appear as shown:
+
+<Shot src="z88-user-guide/using-pipedream/calculating-home-expenses/changing-the-format.webp" alt="changing the format" width={640} />
+
+## What you have learnt
+
+These three examples have demonstrated how PipeDream can help you to write letters and design text documents (word processing), set up lists of information, sort them, retrieve the items you need (databases), and set up and perform calculations on tables of numerical or financial information (spreadsheets).
+
+For simplicity, each example focussed on one aspect of PipeDream's capabilities. However, the real power of PipeDream comes in its ability to mix all three different functions in a single document. For example, the expense account could be incorporated into a letter to your bank manager, the name and address list could include financial information and calculations, or the party invitation could be automatically addressed to everyone on your name and address list.
+
+You are now in a position to start using PipeDream for your own applications, but to get the most out of its facilities you will probably want to read through the list of commands given in Section Five. You will then be able to refer back to it when your requirements of PipeDream become more advanced.

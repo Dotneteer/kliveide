@@ -1,0 +1,405 @@
+---
+description: "The EazyLink popdown is run on the Z88, and is the Server part which listens to commands sent to it from the serial port. The Client part is run on a desktop operating system like Windows, Mac or..."
+---
+
+import { Callout, Table } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/63701088 (version 6) by scripts/import-z88-user-guide.cjs */}
+
+# The Eazylink popdown
+
+The EazyLink popdown is run on the Z88, and is the **Server** part which listens to commands sent to it from the serial port. The **Client** part is run on a desktop operating system like Windows, Mac or Unix and functions as the window to the filing systems of both computers.
+
+### About EazyLink
+
+<Shot src="z88-user-guide/external/zep-the-eazylink-command-menu/eazylink-popdown.webp" alt="eazylink popdown" width={640} />
+
+### Introduction and History
+
+When the Z88 came out, there were loads of different desktop computers that were being used. This meant that to transfer with the Z88 and any other computer would have to be simple and reliable. Cambridge Computers initially came out with PC Link.
+
+<Shot src="z88-user-guide/external/zep-easy-file-transfer-between-z88-and-other-computers/pc-link-screen.webp" alt="Original PC Link II DOS Program" width={640} />
+
+This was a DOS based file request program which used the Imp/Export popdown on the Z88 and required the user to type commands on both the Z88 and the desktop computer. This was not very popular as it meant the user needed two pairs of hands. Around the same time Colton Software were working on a PC version of PipeDream. they wanted additional commands sent from the desktop computer to communicate with the Z88, like selecting directories, and so the protocol of PC-LINK II was born. <br /><br />EazyLink is based on PC-LINK II, using a "file server" (Z88) and a "client" (desktop computer) that requests file handling. It supports the existing file transfer protocol of PC-LINK II for compatibility. This enables you (if required) to use the original PC-LINK DOS application for transferring of files between DOS and the Z88.
+
+EazyLink's additional communication protocol offer
+
+- faster transfer rates using 38400 BPS (16K in approx 13s)
+- remote date stamp
+- file size requests
+- CRC-32 checksum validation after binary file upload
+- backup only updated files<sup>\*</sup>
+- read/write Z88 clock (to allow Z88's time and date to be set by file client seamlessly)
+
+It automatically
+
+- creates the Z88 path, including directories when receiving a file
+- creates MSDOS/Z88 line feed and ASCII character conversions during transfer
+
+Everything this popdown can do is requested and displayed from the Client application, as the "server" just sits at the other end and handles the various requests.
+
+<Callout type="info">
+
+**Backup only updated files\***
+
+This was implemented in Eazylink desktop client v1.6.2 (for Windows 95). This is planned to be implemented in Eazylink2 desktop client at a later date.
+
+</Callout>
+
+## Text and Binary Files
+
+PC Link II came with several file conversion programs. Two of these programs, ISO to IBM and IBM to ISO were needed for text files on the foreign Z88s. These users became very irritable having to run a separate program before being able to use them on their Desktop computers. The result is that in EazyLink, the character conversion is performed during the transfer of the file, making this process transparent to the user. Other variables that need to be changed, have been included using this method.
+
+<Callout type="error">
+
+**Binary Files**
+
+When Program or Binary files are transferred the user must ensure that Toggle Translation Mode and CRLF Mode is OFF, the default mode of this command.
+
+</Callout>
+
+## Selecting EazyLink.
+
+<Shot src="z88-user-guide/using-the-popdowns/the-eazylink-popdown/oz45-el-select.webp" alt="Select" width={640} />
+
+**EazyLink** can be started from the INDEX using the cursor bar or can be selected at any time using <Key k="square" />L.
+
+### Checking Version Number
+
+<Shot src="z88-user-guide/using-the-popdowns/the-eazylink-popdown/oz45-el-help.webp" alt="Version Number" width={640} />
+
+Use the <Key k="help" /> key whilst in the application to display the version number. If the version number is lower than displayed, consider updating to this latest version. The version number is displayed in the bottom left-hand corner together with the protocol level it supports, in this case Version 5.4 Protocol level 9.
+
+<Callout type="warning">
+
+**Eazylink commands are sent from the Client**
+
+Apart from starting this application there is no need to give any further commands on the Z88 itself. All commands are received from the Desktop Computer including Quit.
+
+They are shown here for completeness together with a detailed description of the different functions.
+
+</Callout>
+
+## Menu
+
+Pressing the <Key k="menu" /> key reveals the following commands:-
+
+<Shot src="z88-user-guide/external/zep-easy-file-transfer-between-z88-and-other-computers/el-menu.webp" alt="el menu" width={640} />
+
+The Main Menus are selected in the application itself.
+
+## Log Files
+
+This is used for development. These features are disable by default.
+
+The log files are created in the default RAM device and are named
+
+- "rs232snd.log" for bytes sent to the RS-232 port
+- "rs232rcv.log" for bytes received from the RS-232 port
+
+### Enable :COM.0 logging
+
+Selection is made by either pressing the <Key k="enter" /> key with the cursor over the command in the menu or it can be selected with<Key k="diamond" />D.
+
+Confirmation is given in the EazyLink window
+
+<Shot src="z88-user-guide/external/zep-easy-file-transfer-between-z88-and-other-computers/el-enable-com-logging.webp" alt="el Enable COM logging" width={640} />
+
+### Disable :COM.0 logging
+
+This disables the logging feature
+
+Selection is made by either pressing the <Key k="enter" /> key with the cursor over the command in the menu or it can be selected with<Key k="diamond" />Z.
+
+<Shot src="z88-user-guide/external/zep-easy-file-transfer-between-z88-and-other-computers/el-disable-com-logging.webp" alt="el Disable COM logging" width={640} />
+
+Once again, confirmation is given in the eazylink window
+
+## Main Menu
+
+To select a function on the menu on the left-hand side of the display, use the cursor <Key k="up" />or <Key k="down" />keys followed by the <Key k="enter" /> key.
+
+| <a id="tof" /><br />MAIN MENU |
+| --- |
+| [TOGGLE TRANSLATION MODE](#toggle-translation-mode) |
+| [TOGGLE LINEFEED MODE](#toggle-linefeed-mode) |
+| [USE ISO/IBM TRANSLATIONS](#use-isoibm-translations) |
+| [LOAD TRANSLATIONS](#load-translations) |
+| [QUIT EAZYLINK](#quit-eazylink) |
+
+When EazyLink starts the status of the three different modes are displayed in the EazyLink window.
+
+<Shot src="z88-user-guide/using-the-popdowns/the-eazylink-popdown/oz45-el-main.webp" alt="Main" width={640} />
+
+### [tof](#tof)Toggle Translation Mode
+
+The default mode of this command is OFF.
+
+<Callout type="warning">
+
+**Description to be added**
+
+</Callout>
+
+Changing the state of this mode or any of the other commands is achieved by pressing the <Key k="enter" /> key when the cursor is over the desired command. It is already over the Toggle Translation Mode by default.
+
+<Shot src="z88-user-guide/external/zep-easy-file-transfer-between-z88-and-other-computers/el-toggle-translation-on.webp" alt="el Toggle Translation on" width={640} />
+
+Pressing the <Key k="enter" /> key again changes the state again.
+
+<Shot src="z88-user-guide/external/zep-easy-file-transfer-between-z88-and-other-computers/el-toggle-translation-off.webp" alt="el Toggle Translation off" width={640} />
+
+The change of state is displayed in the EazyLink window.
+
+### [tof](#tof)Toggle Linefeed Mode
+
+<Shot src="z88-user-guide/external/zep-easy-file-transfer-between-z88-and-other-computers/el-toggle-linefeed-mode.webp" alt="el Toggle Linefeed Mode" width={640} />
+
+<Shot src="z88-user-guide/external/zp-history-z88-magic-and-background-of-this-manual/teletype-with-papertape-punch-and-reader.webp" alt="Teletype with papertape punch and reader" width={220} />
+
+The default mode of this command is OFF.
+
+Auto CRLF is short for Carriage Return, Line Feed.
+
+This command is due to historical reasons when teleprinters ruled the day. The two commands were issued separately. This allowed time for the carriage to return before issuing the line feed character, before sending the next character at the beginning of the line.. When sending a CR - Carriage Return character, some Word-processors will put another line-feed character in with it. If after sending a file across to your word-processor or printer you find there is an issue with blank lines or over-typing a line, changing the state of this command may correct this.
+
+As previously stated, changing the state of this mode is achieved by pressing the <Key k="enter" /> key with the cursor over the Toggle Linefeed Mode .
+
+### [tof](#tof)Use ISO/IBM Translations
+
+<Shot src="z88-user-guide/external/zep-easy-file-transfer-between-z88-and-other-computers/el-use-isoibm-translations.webp" alt="el use ISOIBM translations" width={640} />
+
+The default mode of this command is ON.
+
+The ISO/IBM Translations converts files between the ISO and IBM character sets and visa versa.
+
+Although IBM compatible PCs running under DOS used the IBM character set, applications running under Windows use the same ISO 8859-1 (ISO Latin 1) character set as the Z88. Therefore the IBM/ISO conversion is not necessary on files to be imported to Windows word-processors.
+
+When sending a file from the Z88 to the Desktop, the ISO character set is converted to the character set used on the IBM PC and other Desktop computers. This allows PipeDream or text files containing international characters that are outside the normal ASCII character set to be used. These characters are commonly the accented characters used in European languages.
+
+The conversion does not alter the structure of the file, but translates the characters in the file. When transferring a file created in PipeDream on the French Z88 to a Desktop word-processor, the file will appear the same as it did on the French Z88.
+
+Alternatively, you may wish to transfer a file from PipeDream on the Z88 in plain text and load the text file into another word processor that uses the IBM character set.
+
+This conversion does not affect characters in the range 32 - 127; these are standard ASCII characters that are common to both character sets. The conversion translates, where possible, character values outside this range to the corresponding character in the other character set.
+
+These characters are usually in the range 128 - 255, but there are some exceptions.
+
+<Callout type="warning">
+
+**Note**
+
+Not all characters in the ISO set have an equivalent in the IBM character set, and it is thus not possible to get a perfect translation. However, the most commonly used characters are in both character sets.
+
+The international versions of the Z88 do not support the whole ISO character set, just a subset required for each country. Refer to the Z88 manual of the country in question to see which ISO characters are available. In the UK version, no accented characters are available.
+
+OZ contains all those ISO characters implemented that supports French, Spanish, Italian, German, Danish, Swedish, Norwegian and Finnish (corresponding to country's keyboard layout).
+
+</Callout>
+
+**Characters that are translated**
+
+Here is a list of all the characters that can be successfully translated between the IBM and ISO character sets:
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td />
+<Table.Td>**Character Description**</Table.Td>
+<Table.Td />
+<Table.Td>**Character Description**</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>¡</Table.Td>
+<Table.Td>Inverted exclamation mark</Table.Td>
+<Table.Td>Ø</Table.Td>
+<Table.Td>O with stroke</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>¢</Table.Td>
+<Table.Td>Cent symbol</Table.Td>
+<Table.Td>Ü</Table.Td>
+<Table.Td>U diaeresis</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>£</Table.Td>
+<Table.Td>Pound symbol</Table.Td>
+<Table.Td>ß</Table.Td>
+<Table.Td>German sharp S</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>¤</Table.Td>
+<Table.Td>General currency symbol</Table.Td>
+<Table.Td>à</Table.Td>
+<Table.Td>a grave</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>¥</Table.Td>
+<Table.Td>Yen symbol</Table.Td>
+<Table.Td>á</Table.Td>
+<Table.Td>a acute</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>¦</Table.Td>
+<Table.Td>Broken bar</Table.Td>
+<Table.Td>â</Table.Td>
+<Table.Td>a circumflex</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>§</Table.Td>
+<Table.Td>Paragraph symbol</Table.Td>
+<Table.Td>ä</Table.Td>
+<Table.Td>a diaeresis</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>ª</Table.Td>
+<Table.Td>Feminine ordinal</Table.Td>
+<Table.Td>å</Table.Td>
+<Table.Td>a with ring above</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>«</Table.Td>
+<Table.Td>Left angle quotation</Table.Td>
+<Table.Td>æ</Table.Td>
+<Table.Td>a e diphthong</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>¬</Table.Td>
+<Table.Td>Not sign</Table.Td>
+<Table.Td>ç</Table.Td>
+<Table.Td>c cedilla</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>°</Table.Td>
+<Table.Td>Degree symbol</Table.Td>
+<Table.Td>è</Table.Td>
+<Table.Td>e grave</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>±</Table.Td>
+<Table.Td>Plus or minus sign</Table.Td>
+<Table.Td>é</Table.Td>
+<Table.Td>e acute</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>²</Table.Td>
+<Table.Td>Superscript 2</Table.Td>
+<Table.Td>ê</Table.Td>
+<Table.Td>e circumflex</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>µ</Table.Td>
+<Table.Td>Mu symbol</Table.Td>
+<Table.Td>ë</Table.Td>
+<Table.Td>e diaeresis</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>¶</Table.Td>
+<Table.Td>Pilcrow symbol</Table.Td>
+<Table.Td>ì</Table.Td>
+<Table.Td>i grave</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>·</Table.Td>
+<Table.Td>Middle dot</Table.Td>
+<Table.Td>í</Table.Td>
+<Table.Td>i acute</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>º</Table.Td>
+<Table.Td>Masculine ordinal</Table.Td>
+<Table.Td>î</Table.Td>
+<Table.Td>i circumflex</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>»</Table.Td>
+<Table.Td>Right angle quotation</Table.Td>
+<Table.Td>ï</Table.Td>
+<Table.Td>i diaeresis</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>¼</Table.Td>
+<Table.Td>Quarter symbol</Table.Td>
+<Table.Td>ñ</Table.Td>
+<Table.Td>n tilde</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>½</Table.Td>
+<Table.Td>Half symbol</Table.Td>
+<Table.Td>ò</Table.Td>
+<Table.Td>o grave</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>¿</Table.Td>
+<Table.Td>Inverted question mark</Table.Td>
+<Table.Td>ó</Table.Td>
+<Table.Td>o acute</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Á</Table.Td>
+<Table.Td>A diaeresis</Table.Td>
+<Table.Td>ô</Table.Td>
+<Table.Td>o circumflex</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Å</Table.Td>
+<Table.Td>A with ring</Table.Td>
+<Table.Td>õ</Table.Td>
+<Table.Td>o diaeresis</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Æ</Table.Td>
+<Table.Td>A E diphthong</Table.Td>
+<Table.Td>÷</Table.Td>
+<Table.Td>Division symbol</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Ç</Table.Td>
+<Table.Td>C cedilla</Table.Td>
+<Table.Td>ù</Table.Td>
+<Table.Td>u grave</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>È</Table.Td>
+<Table.Td>E acute</Table.Td>
+<Table.Td>ú</Table.Td>
+<Table.Td>u acute</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Ñ</Table.Td>
+<Table.Td>N tilde</Table.Td>
+<Table.Td>û</Table.Td>
+<Table.Td>u circumflex</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Ö</Table.Td>
+<Table.Td>O diaeresis</Table.Td>
+<Table.Td>ü</Table.Td>
+<Table.Td>u diaeresis</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td />
+<Table.Td>ý</Table.Td>
+<Table.Td>y diaeresis</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+### [tof](#tof)Load Translations
+
+<Shot src="z88-user-guide/external/zep-easy-file-transfer-between-z88-and-other-computers/el-load-translations.webp" alt="el load translations" width={640} />
+
+<Callout type="warning">
+
+**Description to be added**
+
+</Callout>
+
+### [tof](#tof)Quit Eazylink
+
+<Shot src="z88-user-guide/external/zep-easy-file-transfer-between-z88-and-other-computers/el-quit-eazylink.webp" alt="el quit eazylink" width={640} />
+
+This command closes the application.
+
+The <Key k="esc" /> key may also be used.
