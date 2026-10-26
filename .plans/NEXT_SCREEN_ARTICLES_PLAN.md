@@ -45,7 +45,10 @@ Status: **articles 1, 2, 3, 4 and 9 written** (`next-display/overview.mdx`, `tim
   the shadow screen disables the Timex modes; the scroll, half-dot bit and Timex mode are taken per
   8-dot cell; in hi-res the border is the hi-res paper. Klive's floating bus used to read the
   unscrolled standard screen; it was fixed to follow the scroll, the Timex mode and the shadow screen,
-  checked against the simulated FPGA core (F3).
+  checked against the simulated FPGA core (F3). Its timing is checked too
+  (`test/zxnext-hw/ports/floating-bus-timing.test.ts`): a CPU write always reaches its next `IN`, and
+  a Copper write mid-line reaches the floating bus at the ULA's next sample point, to the exact read,
+  matching the FPGA core sample for sample.
 - The plan's figure list for article 4 was cut to ten (no ULA+/ULANext machine pictures, the register
   bit strips are a table); the clip window and scroll basics stay in article 1 and are only linked.
 
