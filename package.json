@@ -139,7 +139,7 @@
     "@types/lodash": "^4.17.26",
     "@types/react": "^18.3.28",
     "@types/react-dom": "^18.0.8",
-    "@typescript-eslint/parser": "^8.71.2",
+    "@typescript-eslint/parser": "^8.72.0",
     "@vitejs/plugin-react": "^5.0.4",
     "electron": "^44.9.3",
     "electron-builder": "^26.15.3",
