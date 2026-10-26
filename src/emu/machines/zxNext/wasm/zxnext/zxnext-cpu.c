@@ -16,6 +16,8 @@ static inline void zxnextCpuTactPlusN(uint32_t value);
 static inline void zxnextCpuDelayMemoryRead(uint32_t address);
 static inline void zxnextCpuDelayMemoryWrite(uint32_t address);
 static inline void zxnextCpuDelayPortAccess(uint32_t address);
+static inline void zxnextCpuDelayPortReadHead(uint32_t address);
+static inline void zxnextCpuDelayPortReadTail(uint32_t address);
 static inline uint32_t zxnextCpuShouldRaiseInt(void);
 static inline void zxnextCpuCaptureVideoInterrupts(void);
 
@@ -28,6 +30,9 @@ static uint8_t zxnextCpuMreqSuppressed;
 static uint8_t zxnextCpuHeldAtFrameEnd;
 
 #define Z80_EXTERNAL_BUS 1
+/* The Next's CPU is the FPGA's T80N: its flags and ED B6 follow t80n*.vhd, not a Zilog Z80 (z80.c,
+ * D1-D8; checked against the simulated VHDL by test/vhdl/f1/) */
+#define Z80_T80N 1
 #define Z80_MEMORY_PTR() zxnextMemory
 #define Z80_READ_MEMORY(address) zxnextCpuSharedReadMemory(address)
 #define Z80_FETCH_CODE_BYTE(address) zxnextCpuSharedFetchCodeByte(address)
@@ -49,8 +54,12 @@ static uint8_t zxnextCpuHeldAtFrameEnd;
 #define Z80_DELAY_MEMORY_WRITE(address) zxnextCpuDelayMemoryWrite(address)
 static inline void zxnextCpuDelayContendedMemory(uint32_t address, uint32_t memoryCycle);
 #define Z80_DELAY_ADDRESS_BUS_ACCESS(address) zxnextCpuDelayContendedMemory((uint32_t)(address), 0u)
-#define Z80_DELAY_PORT_READ(address) zxnextCpuDelayPortAccess(address)
-#define Z80_DELAY_PORT_WRITE(address) zxnextCpuDelayPortAccess(address)
+/* A port read samples 2 T into its 4 T I/O cycle (F3-2: the simulated core's IN sees the line counter,
+   the ULA interrupt flag and the CTC as of then, test/vhdl/f3/probes.cjs); the cycle's length stays 4 T */
+#define Z80_DELAY_PORT_READ(address) zxnextCpuDelayPortReadHead(address)
+#define Z80_DELAY_PORT_READ_TAIL(address) zxnextCpuDelayPortReadTail(address)
+#define Z80_DELAY_PORT_WRITE(address) zxnextCpuDelayPortReadHead(address)
+#define Z80_DELAY_PORT_WRITE_TAIL(address) zxnextCpuDelayPortReadTail(address)
 
 /* The execution-history recorder's hooks (`.plans/EXECUTION_HISTORY_VIEWER_PLAN.md`); the recorder
    itself and this machine's macros for it are at the end of zxnext.c */
@@ -78,14 +87,37 @@ static inline void zxnextCpuMarkFrameCompleted(void) {
   frameCompleted = 1;
   zxnextUlaOnFrameCompleted();
   zxnextCopperOnFrameCompleted();
+  zxnextPrevFrameIntStart = zxnextTimingIntStart;
+  zxnextPrevFrameTacts = ZXNEXT_RENDERING_TACTS_IN_FRAME;
   /* The next frame runs on the raster NextReg $03 selects now (NextComposedScreenDevice.onNewFrame) */
   zxnextTimingSelect();
 }
 
+/*
+ * A CPU speed change waiting to reach the clock (F3-5). cpu_speed latches at the next CPU edge with no
+ * bus cycle under way (zxnext.vhd ~5755-5766), one T-state on the old clock in the simulated core, and the
+ * board's glitch-free BUFGMUX_1s then hand over on the new clock's next edge, strictly after the switch:
+ * the clock pauses until the frame's 28 MHz count reaches the next multiple of the new clock's period
+ * (18 speed probes, probes-timing.cjs group S, every phase of 3.5 <-> 28 MHz).
+ */
+static inline void zxnextCpuTactPlusNTicks(uint32_t value, uint32_t extraTicks);
+
 static inline void zxnextCpuTactPlusN(uint32_t value) {
+  if (__builtin_expect(zxnextCpuScalePending != 0u, 0)) {
+    zxnextCpuTactPlusNTicks(1u, 0u);
+    zxnextCpuScalePending = 0u;
+    cpuTactScale = zxnextCpuPendingScale;
+    const uint32_t pause = cpuTactScale - frameTacts28 % cpuTactScale;
+    zxnextCpuTactPlusNTicks(value - 1u, pause);
+    return;
+  }
+  zxnextCpuTactPlusNTicks(value, 0u);
+}
+
+static inline void zxnextCpuTactPlusNTicks(uint32_t value, uint32_t extraTicks) {
   cpu.tacts += value;
   tacts += value;
-  const uint32_t ticks28 = value * zxnextCpuTactScale();
+  const uint32_t ticks28 = value * zxnextCpuTactScale() + extraTicks;
   frameTacts28 += ticks28;
 #ifndef Z80_BENCH_STRIP_DEBUG
   zxnextProfileTicks28 += ticks28;
@@ -108,12 +140,46 @@ static inline void zxnextCpuTactPlusN(uint32_t value) {
   zxnextAudioMixerSetNextSample(frameTacts28);
 }
 
+/* Before an instruction: a speed change still pending reaches the clock now, on the new clock's edge
+   (the instruction's first edge has no bus cycle under way) */
+static inline void zxnextCpuSyncTactScale(void) {
+  if (zxnextCpuScalePending) {
+    zxnextCpuScalePending = 0u;
+    cpuTactScale = zxnextCpuPendingScale;
+    zxnextCpuTactPlusNTicks(0u, cpuTactScale - frameTacts28 % cpuTactScale);
+    return;
+  }
+  cpuTactScale = 8u >> (cpuEffectiveSpeed & 0x03u);
+}
+
 /*
  * Charge a DMA byte's clocks. The DMA runs from the 28 MHz system clock, so its clocks go to the
  * frame unscaled, and the CPU T-state counters advance by the equivalent (at least one), as in
  * ZxNextMachine.tactPlusDmaTicks.
  */
+/*
+ * After a DMA hold of many clocks: a video interrupt pulse that started and ended inside it (at 28 MHz the
+ * pulse is 8 HC, a prescaled byte thousands of clocks) still latched its status (im2_peripheral; the
+ * capture below samples only the tact after the hold). `fromTact` is where the hold started; a hold that
+ * crossed a frame end is checked from the new frame's start.
+ */
+static uint8_t zxnextCpuPrevUlaPulse;
+static uint8_t zxnextCpuPrevLinePulse;
+
+static inline void zxnextCpuCaptureVideoInterruptsOver(uint32_t fromTact) {
+  const uint32_t toTact = currentFrameTact;
+  if (toTact <= fromTact + 1u) return;
+  const uint32_t ulaStart = zxnextTimingIntStart;
+  if (!ulaInterruptDisabled && ulaStart > fromTact && ulaStart < toTact && !zxnextCpuPrevUlaPulse)
+    zxnextInterruptsRequest(ZXNEXT_INT_ULA, 1, 0);
+  const uint32_t lineStart = zxnextVideoLineIntStart();
+  if (lineInterruptEnabled && lineStart != 0xffffffffu && lineStart > fromTact && lineStart < toTact && !zxnextCpuPrevLinePulse)
+    zxnextInterruptsRequest(ZXNEXT_INT_LINE, 1, 0);
+}
+
 static inline void zxnextCpuTactPlusDmaTicks(uint32_t ticks) {
+  const uint32_t fromFrames = frames;
+  const uint32_t fromTact = currentFrameTact;
   const uint32_t scale = zxnextCpuTactScale();
   uint32_t cpuTacts = (ticks + scale - 1u) / scale;
   if (cpuTacts == 0u) cpuTacts = 1u;
@@ -135,6 +201,7 @@ static inline void zxnextCpuTactPlusDmaTicks(uint32_t ticks) {
   }
   currentFrameTact = frameTacts28 >> 2;
   if (frameCompleted == 0u) zxnextCopperAdvanceTo(currentFrameTact);
+  zxnextCpuCaptureVideoInterruptsOver(frames == fromFrames ? fromTact : 0u);
   zxnextCpuCaptureVideoInterrupts();
   zxnextBeeperSetTacts(tacts);
   zxnextAudioMixerSetNextSample(frameTacts28);
@@ -149,9 +216,35 @@ static inline void zxnextCpuTactPlusDmaTicks(uint32_t ticks) {
  * ended while the DMA still had the bus: the CPU runs no instruction in this pass, the frame loop
  * starts the next frame and the DMA goes on before the next instruction (ZxNextMachine isCpuSnoozed).
  */
+/*
+ * Whether the instruction at PC is one M-cycle (its opcode fetch, perhaps with extra T-states, and no
+ * other bus cycle): the T80 grants BUSRQ at the end of an M-cycle, so such an instruction ends before a
+ * request seen during it is granted. Prefixed instructions have a second M1; a HALT repeats its M1.
+ */
+static inline uint32_t zxnextCpuNextIsOneMCycle(void) {
+  const uint8_t op = (uint8_t)zxnextMemoryReadMapped(z80GetPc() & 0xffffu);
+  if (op >= 0x40u && op <= 0x7fu) return op == 0x76u || ((op & 0x07u) != 0x06u && (op & 0xf8u) != 0x70u);
+  if (op >= 0x80u && op <= 0xbfu) return (op & 0x07u) != 0x06u;
+  switch (op) {
+    case 0x00u: case 0x03u: case 0x13u: case 0x23u: case 0x33u: case 0x0bu: case 0x1bu: case 0x2bu: case 0x3bu:
+    case 0x04u: case 0x0cu: case 0x14u: case 0x1cu: case 0x24u: case 0x2cu: case 0x3cu:
+    case 0x05u: case 0x0du: case 0x15u: case 0x1du: case 0x25u: case 0x2du: case 0x3du:
+    case 0x07u: case 0x0fu: case 0x17u: case 0x1fu: case 0x27u: case 0x2fu: case 0x37u: case 0x3fu:
+    case 0x08u: case 0xd9u: case 0xebu: case 0xe9u: case 0xf9u: case 0xf3u: case 0xfbu:
+      return 1u;
+    default:
+      return 0u;
+  }
+}
+
 static uint32_t zxnextCpuRunDma(void) {
   if (!zxnextDmaIsActive()) return 0;
   for (uint32_t step = 0; step < 0x20000u; step++) {
+    if (dmaGrantAfterNextM1) {
+      /* a request first seen in the next instruction's M1 (zxnext-dma.c dmaGrantAfterNextM1) */
+      dmaGrantAfterNextM1 = 0u;
+      if (zxnextCpuNextIsOneMCycle()) return 0;
+    }
     zxnextDmaAcknowledgeBusIfRequested();
     const uint32_t ticks = zxnextDmaStep();
     if (ticks > 0u) zxnextCpuTactPlusDmaTicks(ticks);
@@ -206,7 +299,10 @@ static inline void zxnextCpuDelayContendedMemory(uint32_t address, uint32_t memo
   const uint32_t page = zxnextNextRegs[0x50u + ((address >> 13) & 0x07u)];
   if (page > 0x0fu) return;
   if (timing == 1u ? (page & 0x0eu) != 0x0au : (timing == 2u ? (page & 0x02u) == 0u : (page & 0x08u) == 0u)) return;
-  const uint32_t delay = zxnextCpuContentionDelayAt(currentFrameTact);
+  /* 48K / 128K stretch the clock at the cycle's start (zxula.vhd o_cpu_contend). +3 holds WAIT_n, which
+     the T80 samples at the end of T2 (t80n.vhd "TState = 2 and WAIT_n = '0'"): 1 T, 2 HC, later
+     (F3-4, test/vhdl/f3/probes-timing.cjs group C) */
+  const uint32_t delay = zxnextCpuContentionDelayAt(timing == 3u ? currentFrameTact + 2u : currentFrameTact);
   if (delay == 0u) return;
   zxnextCpuTactPlusN(delay);
   totalContentionDelaySinceStart += delay;
@@ -250,6 +346,18 @@ static inline void zxnextCpuDelayPortAccess(uint32_t address) {
   }
 }
 
+/* Every branch of zxnextCpuDelayPortAccess is 4 plain T-states; a read samples after the first 2 */
+static inline void zxnextCpuDelayPortReadHead(uint32_t address) {
+  (void)address;
+  zxnextCpuTactPlusN(1u);
+  zxnextCpuTactPlusN(1u);
+}
+
+static inline void zxnextCpuDelayPortReadTail(uint32_t address) {
+  (void)address;
+  zxnextCpuTactPlusN(2u);
+}
+
 /*
  * The video interrupt sources at the last rendered tact, and their status flags.
  *
@@ -257,8 +365,6 @@ static inline void zxnextCpuDelayPortAccess(uint32_t address) {
  * edge (when the source is enabled), which is what hardware IM2 mode's daisy chain reads. Before this,
  * nothing in the WASM core ever set them from the video timing.
  */
-static uint8_t zxnextCpuPrevUlaPulse;
-static uint8_t zxnextCpuPrevLinePulse;
 
 static inline void zxnextCpuCaptureVideoInterrupts(void) {
   uint32_t renderedFrameTact = currentFrameTact == 0u ? 0u : currentFrameTact - 1u;
@@ -271,13 +377,15 @@ static inline void zxnextCpuCaptureVideoInterrupts(void) {
 }
 
 /*
- * Whether the ULA frame interrupt can be active at this tact. The ULA counters restart with a reset and
- * the interrupt is a compare against them (zxula_timing.vhd), so frame 0 has its interrupt like any
- * other frame. Only the part of a pulse that wraps in from the previous frame - the Pentagon's starts
- * at the frame's last tact - does not exist in frame 0, as no frame came before it.
+ * The frame tact at which the CPU sees the video INT pulses before an instruction ends. The T80 registers
+ * INT_n into INT_s on one CPU clock and decides on the next (t80n.vhd ~1640-1660), so the line must already
+ * be low at the edge one CPU clock before the last one: 2 HC at 3.5 MHz, 1 at 7 MHz, under an HC faster.
+ * pulse_int_n falls mid-HC one HC after the compare tact the pulse functions start at, so the edge must be
+ * 2 HC past it (F3-9, measured on the simulated core in all four timings: probes-timing.cjs group I).
+ * Negative: in the previous frame.
  */
-static inline uint32_t zxnextCpuFrameIntStarted(uint32_t renderedFrameTact) {
-  return frames != 0u || renderedFrameTact >= zxnextTimingIntStart;
+static inline int32_t zxnextCpuIntSampleTact(void) {
+  return (int32_t)currentFrameTact - 2 - (int32_t)(2u >> (cpuEffectiveSpeed & 0x03u));
 }
 
 static inline uint32_t zxnextCpuShouldRaiseInt(void) {
@@ -287,17 +395,17 @@ static inline uint32_t zxnextCpuShouldRaiseInt(void) {
   if (zxnextInterruptsGetHardwareIm2Mode()) {
     /* The chain interrupts a CPU in IM 2 only; the ULA (EXCEPTION) and requests raised while the CPU was
        not in IM 2 pulse instead */
-    uint32_t renderedFrameTact = currentFrameTact == 0u ? 0u : currentFrameTact - 1u;
+    const int32_t sampleTact = zxnextCpuIntSampleTact();
     return zxnextInterruptsShouldAcceptInt() ||
-      (z80GetInterruptMode() != 2u && zxnextCpuFrameIntStarted(renderedFrameTact) && !ulaInterruptDisabled && zxnextUlaGetPulseIntActive(renderedFrameTact)) ||
+      (z80GetInterruptMode() != 2u && !ulaInterruptDisabled && zxnextUlaPulseActiveAt(sampleTact)) ||
       zxnextInterruptsPulseActive();
   }
   // --- Pulse mode: any enabled source starts the INT pulse (peripherals.vhd `o_pulse_en`). The ULA frame
   // --- interrupt obeys its disable bit; the line interrupt used to be missing altogether.
-  uint32_t renderedFrameTact = currentFrameTact == 0u ? 0u : currentFrameTact - 1u;
+  const int32_t sampleTact = zxnextCpuIntSampleTact();
   return zxnextInterruptsGetSignalInt() ||
-    (zxnextCpuFrameIntStarted(renderedFrameTact) && !ulaInterruptDisabled && zxnextUlaGetPulseIntActive(renderedFrameTact)) ||
-    (lineInterruptEnabled && zxnextVideoLineIntActive(renderedFrameTact)) ||
+    (!ulaInterruptDisabled && zxnextUlaPulseActiveAt(sampleTact)) ||
+    (lineInterruptEnabled && zxnextVideoLineIntActive(sampleTact < 0 ? 0u : (uint32_t)sampleTact)) ||
     zxnextInterruptsPulseActive() ||
     zxnextDmaGetIpSignal();
 }
@@ -380,7 +488,8 @@ static uint32_t zxnextCpuExecuteInstruction(void) {
 #endif
 
   // --- The DMA goes first, after the INT line is sampled, as in ZxNextMachine.beforeInstructionExecuted.
-  cpuTactScale = 8u >> (cpuEffectiveSpeed & 0x03u);
+  zxnextCpuSyncTactScale();
+  const uint32_t tactsBeforeDmaRun = cpu.tacts;
   uint32_t dmaHeld;
 #ifdef Z80_BENCH_STRIP_DEBUG
   dmaHeld = zxnextCpuRunDma();
@@ -406,12 +515,19 @@ static uint32_t zxnextCpuExecuteInstruction(void) {
     return zxnextSharedCpuExecutedInstructions;
   }
   zxnextCpuHeldAtFrameEnd = 0u;
+  if (cpu.tacts != tactsBeforeDmaRun) {
+    /* The T80 decides about NMI and INT at the T_Res where it takes the bus back (t80n.vhd ~1718-1760):
+       a request that came during the transfer is taken before the next instruction (F3, INT-026) */
+    rawIntSignal = zxnextCpuShouldRaiseInt() != 0u;
+    shouldAcceptInt = rawIntSignal && z80GetIff1();
+    nmiSignal = zxnextNmiGetSignal();
+  }
   /* zxnext.vhd ~2008-2041: the acknowledge's push always lands in $C2/$C3; with $C0 bit 3 it does not
      reach memory. The pushed address is past a HALT, as removeFromHaltedState makes it. */
   uint16_t nmiReturnAddress = (uint16_t)(pcBefore + (wasHalted ? 1u : 0u));
   zxnextCpuMreqSuppressed = nmiSignal && zxnextNmiGetStacklessEnabled();
 
-  cpuTactScale = 8u >> (cpuEffectiveSpeed & 0x03u);
+  zxnextCpuSyncTactScale();
   /* The acknowledge moves a device to S_ACK, so it must happen only when the core really takes the
      interrupt: not on the instruction after EI (the core decrements eiBacklog first), not with a prefix
      pending or an NMI in front of it - and only a CPU in IM 2 acknowledges the chain (im2_device
@@ -445,12 +561,14 @@ static uint32_t zxnextCpuExecuteInstruction(void) {
      happened to be in memory before the fetch. An interrupt acknowledge fetches no opcode. */
   uint8_t firstOpcode = 0u;
   uint8_t secondOpcode = 0u;
+  zxnextCpuInInstruction = 1u;
   do {
     z80ExecuteCpuCycle();
     if (cyclesExecuted == 0u) firstOpcode = cpu.opCode;
     else if (cyclesExecuted == 1u) secondOpcode = cpu.opCode;
     cyclesExecuted++;
   } while (z80GetPrefix() != 0 && cyclesExecuted < 4u);
+  zxnextCpuInInstruction = 0u;
   uint8_t isRetiInstruction = firstOpcode == 0xedu && secondOpcode == 0x4du && cyclesExecuted == 2u;
   /* im2_control o_retn_seen: exactly ED 45 (not RETI, not the RETN aliases) */
   uint8_t isRetnInstruction = firstOpcode == 0xedu && secondOpcode == 0x45u && cyclesExecuted == 2u;
@@ -482,6 +600,7 @@ static uint32_t zxnextCpuExecuteInstruction(void) {
     }
   }
   if (isRetnInstruction && !mfWasActive) zxDivMmcRetn();
+  if (z80GetRetnExecuted()) zxnextNmiAfterHoldRelease();
 #ifndef Z80_BENCH_STRIP_DEBUG
   if (z80GetRetExecuted()) {
     z80SetRetExecuted(0);

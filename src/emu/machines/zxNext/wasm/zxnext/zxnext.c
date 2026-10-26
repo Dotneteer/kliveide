@@ -22,6 +22,10 @@ static uint32_t zxnextTimingDisplayYStart = 64u;
 static uint32_t zxnextTimingIntStart = 0x252u;
 /* INT pulse length in CPU cycles (zxnext.vhd ~1968-1990): 32 for 48K and +3, 36 for 128K and Pentagon */
 static uint32_t zxnextTimingIntPulseCycles = 32u;
+/* The previous frame's interrupt start and length in tacts, recorded at its end; 0 before the first
+   frame end (a pulse can wrap into a frame only from a frame that had one) */
+static uint32_t zxnextPrevFrameIntStart;
+static uint32_t zxnextPrevFrameTacts;
 /* The memory contention pattern of the raster (NextComposedScreenDevice.contentionTiming): 0 none, 1 48K, 2 128K, 3 +3 */
 static uint32_t zxnextTimingContention = 3u;
 #define ZXNEXT_RENDERING_TACTS_IN_FRAME (zxnextTimingTotalHc * zxnextTimingTotalVc)
@@ -162,6 +166,11 @@ static uint32_t contentionDelaySincePause;
 static uint8_t cpuProgrammedSpeed;
 static uint8_t cpuEffectiveSpeed;
 static uint32_t cpuTactScale;
+/* a CPU speed change waiting to reach the clock (zxnext-cpu.c zxnextCpuTactPlusN, F3-5) */
+static uint8_t zxnextCpuScalePending;
+static uint8_t zxnextCpuPendingScale;
+/* 1 while the CPU executes an instruction (zxnextCpuExecuteInstruction): a port write made then is the CPU's */
+static uint8_t zxnextCpuInInstruction;
 
 /*
  * The INT pulse length in HC ticks. zxnext.vhd ~1968-2000 counts the pulse on the CPU clock, so it lasts
@@ -169,6 +178,20 @@ static uint32_t cpuTactScale;
  */
 static inline uint32_t zxnextTimingIntPulseLength(void) {
   return (zxnextTimingIntPulseCycles * 2u) >> (cpuEffectiveSpeed & 0x03u);
+}
+
+/*
+ * The pulse length for a pulse whose compare matches at frame tact `start`. The source registers the
+ * match on CLK_7 (zxula_timing.vhd int_ula / int_line), so pulse_int_n falls one HC later, and the count
+ * runs on CPU rising edges, which at 3.5 MHz fall on even HCs (Klive's HC = the core's + 8, the line
+ * lengths are even, so a frame tact has its HC's parity). A pulse falling on an odd HC starts mid-cycle
+ * and ends on the last count's edge, half a T-state short: 2 x cycles - 1 HC (F3-2, measured on the
+ * simulated core: 252 clk28 = 63 HC for +3 timing). At 7 MHz and up the CPU edges are 1 HC or closer,
+ * which the HC resolution does not see.
+ */
+static inline uint32_t zxnextTimingIntPulseLengthAt(uint32_t start) {
+  const uint32_t length = zxnextTimingIntPulseLength();
+  return ((cpuEffectiveSpeed & 0x03u) == 0u && (start & 1u) == 0u) ? length - 1u : length;
 }
 /* 1 while the CPU's data accesses go to the access log (z80.c): off in a fast frame unless tracing */
 static uint8_t zxnextCaptureBusEvents = 1u;

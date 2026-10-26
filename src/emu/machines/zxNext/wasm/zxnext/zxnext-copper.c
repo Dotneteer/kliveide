@@ -14,6 +14,9 @@ static uint8_t zxnextCopperVerticalLineOffset;
    frame's reload, and the one loaded there. Mirrors CopperDevice.offsetBeforeReload/AfterReload. */
 static uint8_t zxnextCopperOffsetBeforeReload;
 static uint8_t zxnextCopperOffsetAfterReload;
+/* cvc on the last line of the previous frame, and whether it is known (not before the first frame end) */
+static uint16_t zxnextCopperPrevFrameLastCvc;
+static uint8_t zxnextCopperPrevFrameLastCvcValid;
 /* copper.vhd copper_data_o / last_state_s; zxnext.vhd copper_requester_d, copper_req + its data */
 static uint16_t zxnextCopperData;
 static uint8_t zxnextCopperLastMode;
@@ -69,6 +72,8 @@ static void zxnextCopperReset(void) {
   zxnextCopperVerticalLineOffset = 0u;
   zxnextCopperOffsetBeforeReload = 0u;
   zxnextCopperOffsetAfterReload = 0u;
+  zxnextCopperPrevFrameLastCvc = 0u;
+  zxnextCopperPrevFrameLastCvcValid = 0u;
   zxnextCopperData = 0u;
   zxnextCopperLastMode = 0u;
   zxnextCopperDoutDelayed = 0u;
@@ -169,7 +174,11 @@ static void zxnextCopperResyncBeam(void) {
 // Reset the beam for a new frame. Called when a frame completes, which is equivalent to
 // ZxNextMachine.onInitNewFrame resetting the counters at frame start: nothing ticks in
 // between.
+static inline uint32_t zxnextCopperLineAt(uint32_t vc, uint32_t hc);
 static void zxnextCopperOnFrameCompleted(void) {
+  /* the frame's last cvc, under the timing that ran it (zxnextTimingSelect runs after this) */
+  zxnextCopperPrevFrameLastCvc = (uint16_t)zxnextCopperLineAt(ZXNEXT_COPPER_TOTAL_VC - 1u, ZXNEXT_SCREEN_TOTAL_HC - 1u);
+  zxnextCopperPrevFrameLastCvcValid = 1u;
   /* cvc carries the last loaded offset into the new frame until its reload loads $64 again */
   zxnextCopperOffsetBeforeReload = zxnextCopperOffsetAfterReload;
   zxnextCopperOffsetAfterReload = zxnextCopperVerticalLineOffset;
@@ -187,6 +196,16 @@ static void zxnextCopperOnFrameCompleted(void) {
 // The copper beam, hardware (`cvc`, `hc_ula`), at a raw position. Mirrors
 // NextComposedScreenDevice.copperLineAt / copperHcAt: `cvc` advances when `hc_ula` wraps.
 static inline uint32_t zxnextCopperLineAt(uint32_t vc, uint32_t hc) {
+  if (zxnextCopperPrevFrameLastCvcValid && vc * ZXNEXT_SCREEN_TOTAL_HC + hc < ZXNEXT_COPPER_RELOAD_TACT) {
+    /* Before this frame's reload cvc is still the counter that ran through the previous frame
+       (zxula_timing.vhd ~456-470): +1 at every hc_ula wrap, back to 0 only when it equals c_max_vc. After a
+       timing change that is not the new timing's formula: the counter carries the old frame's count on, and
+       one above the new c_max_vc runs on to the 9-bit wrap (F3, VT-002). Without a change it is the formula. */
+    const uint32_t steps = hc >= ZXNEXT_COPPER_HC_ULA_ORIGIN ? vc + 1u : vc;
+    const uint32_t last = zxnextCopperPrevFrameLastCvc;
+    const uint32_t maxVc = ZXNEXT_COPPER_TOTAL_VC - 1u;
+    return last <= maxVc ? (last + steps) % (maxVc + 1u) : (last + steps) & 0x1ffu;
+  }
   return zxnextCopperVcToCopperLine(hc >= ZXNEXT_COPPER_HC_ULA_ORIGIN ? vc : vc + ZXNEXT_COPPER_TOTAL_VC - 1u,
                                     zxnextCopperOffsetAt(vc, hc));
 }
@@ -203,20 +222,27 @@ static inline uint32_t zxnextVideoLineIntStartFor(uint32_t targetCvc, uint32_t o
   return rawVc * ZXNEXT_SCREEN_TOTAL_HC + ZXNEXT_COPPER_HC_ULA_ORIGIN + 255u;
 }
 
-static uint32_t zxnextVideoLineIntActive(uint32_t frameTact) {
+/* The frame tact the line interrupt's pulse starts at this frame, or 0xffffffff when it does not fire */
+static uint32_t zxnextVideoLineIntStart(void) {
   uint32_t line = lineInterrupt & 0x1ffu;
   /* int_line_num = line - 1 is compared with cvc (0 ... c_max_vc): lines past c_max_vc + 1 never fire */
-  if (line > ZXNEXT_COPPER_TOTAL_VC) return 0;
+  if (line > ZXNEXT_COPPER_TOTAL_VC) return 0xffffffffu;
   uint32_t targetCvc = line == 0u ? ZXNEXT_COPPER_TOTAL_VC - 1u : line - 1u;
   /* the match is where cvc reaches targetCvc under the offset in effect there: after this frame's
      reload, or before it */
   uint32_t start = zxnextVideoLineIntStartFor(targetCvc, zxnextCopperOffsetAfterReload);
   if (start < ZXNEXT_COPPER_RELOAD_TACT) {
     start = zxnextVideoLineIntStartFor(targetCvc, zxnextCopperOffsetBeforeReload);
-    if (start >= ZXNEXT_COPPER_RELOAD_TACT) return 0;
+    if (start >= ZXNEXT_COPPER_RELOAD_TACT) return 0xffffffffu;
   }
+  return start;
+}
+
+static uint32_t zxnextVideoLineIntActive(uint32_t frameTact) {
+  uint32_t start = zxnextVideoLineIntStart();
+  if (start == 0xffffffffu) return 0;
   uint32_t elapsed = (frameTact + ZXNEXT_RENDERING_TACTS_IN_FRAME - start) % ZXNEXT_RENDERING_TACTS_IN_FRAME;
-  return elapsed < zxnextTimingIntPulseLength();
+  return elapsed < zxnextTimingIntPulseLengthAt(start);
 }
 
 static void zxnextCopperAdvanceTo(uint32_t frameTact) {

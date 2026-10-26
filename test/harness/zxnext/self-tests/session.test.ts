@@ -73,6 +73,43 @@ describe("harness session", () => {
     expect(s.peek(0xc000)).toBe(1);
   });
 
+  it("runToNextRegWrite stops right after the writing instruction, mid-frame, and only on that value", async () => {
+    const s = await createSession();
+    await s.loadCode(`
+        .org $8000
+        nextreg $7f,$11     ; another value: no stop
+        ld a,$33
+        nextreg $7f,$a5     ; the stop
+    After:
+        ld a,$44
+        jr $
+    `);
+    s.runToNextRegWrite(0x7f, 0xa5);
+    expect(s.registers().pc).toBe(s.symbol("After"));
+    expect(s.registers().a).toBe(0x33); // the next instruction has not run
+    expect(s.nextRegValue(0x7f)).toBe(0xa5);
+    expect(() => s.runToNextRegWrite(0x7f, 0x01, { maxFrames: 2 })).toThrow(/No breakpoint hit/);
+  });
+
+  it("ramPages is a live view of the physical pages a CPU write lands in", async () => {
+    const s = await createSession();
+    s.setNextReg(0x57, 0x21); // page $21 at $E000
+    s.poke(0xe123, 0x5a).poke(0xe124, 0xa5);
+    const view = s.ramPages(0x20, 2);
+    expect(view.length).toBe(0x4000);
+    expect(view[0x2000 + 0x123]).toBe(0x5a);
+    expect(view[0x2000 + 0x124]).toBe(0xa5);
+    // live, not a copy: a later write shows without asking again
+    s.poke(0xe123, 0x77);
+    expect(view[0x2123]).toBe(0x77);
+    expect(s.peekPage(0x21, 0x123)).toBe(0x77);
+    expect(() => s.ramPages(0x200)).toThrow(/outside/);
+    // physicalMemory: the same byte at $40000 + page * 8K, and the ROM at 0
+    expect(s.physicalMemory()[0x40000 + 0x21 * 0x2000 + 0x123]).toBe(0x77);
+    s.setNextReg(0x50, 0xff); // ROM in slot 0
+    expect(s.physicalMemory()[0x0000]).toBe(s.peek(0x0000));
+  });
+
   it("Z80 code writing a NextReg is visible, and runUntilReady waits for the marker", async () => {
     const s = await createSession();
     await s.loadCode(`

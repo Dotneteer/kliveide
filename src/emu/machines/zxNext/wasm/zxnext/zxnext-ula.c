@@ -1530,10 +1530,22 @@ static uint32_t zxnextUlaGetClip(uint32_t index) { return ulaClipWindow[index & 
 static uint32_t zxnextUlaGetScrollX(void) { return ulaScrollX; }
 static uint32_t zxnextUlaGetScrollY(void) { return ulaScrollY; }
 
+/*
+ * The ULA INT pulse at a frame tact; a negative tact is in the previous frame. The Pentagon interrupt starts
+ * at the last tact of the frame, so its pulse wraps into the next frame - but only from a frame that ran it:
+ * after a switch to Pentagon timing the first frame has no pulse wrapping in (F3, probes-timing.cjs group I).
+ */
+static uint32_t zxnextUlaPulseActiveAt(int32_t frameTact) {
+  if (frameTact >= 0 && (uint32_t)frameTact >= zxnextTimingIntStart)
+    return (uint32_t)frameTact - zxnextTimingIntStart < zxnextTimingIntPulseLengthAt(zxnextTimingIntStart);
+  if (zxnextPrevFrameTacts == 0u) return 0u;
+  const int32_t prevPos = (int32_t)zxnextPrevFrameTacts + frameTact;
+  return prevPos >= (int32_t)zxnextPrevFrameIntStart &&
+    (uint32_t)(prevPos - (int32_t)zxnextPrevFrameIntStart) < zxnextTimingIntPulseLengthAt(zxnextPrevFrameIntStart);
+}
+
 static uint32_t zxnextUlaGetPulseIntActive(uint32_t frameTact) {
-  /* the Pentagon interrupt starts at the last tact of the frame: the pulse wraps into the next one */
-  uint32_t sinceInt = (frameTact + ZXNEXT_RENDERING_TACTS_IN_FRAME - zxnextTimingIntStart) % ZXNEXT_RENDERING_TACTS_IN_FRAME;
-  return sinceInt < zxnextTimingIntPulseLength();
+  return zxnextUlaPulseActiveAt((int32_t)frameTact);
 }
 
 static uint32_t zxnextNextRegGetMachineTiming(void);
@@ -1567,6 +1579,13 @@ static uint32_t zxnextUlaFloatingBus(uint32_t frameTact) {
     }
   }
   return p3 ? zxnextP3FloatingBus : 0xffu;
+}
+
+/* The floating bus a port read sees: floating_bus_r loads on the falling CLK_7 edge (zxula.vhd ~308),
+   half an HC after the tact zxnextUlaFloatingBus computes, so at the read's sample point it already holds
+   the next tact's byte (F3: all 6,000 PORT-006/008 samples match the simulated core this way) */
+static uint32_t zxnextUlaFloatingBusAtRead(void) {
+  return zxnextUlaFloatingBus(currentFrameTact + 1u);
 }
 
 static uint32_t zxnextUlaGetScanlineForTact(uint32_t tact) {

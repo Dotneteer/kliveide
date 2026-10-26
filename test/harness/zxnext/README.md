@@ -85,12 +85,15 @@ Methods returning `this` chain.
 | Run | `runFrames(n = 1)` | Whole frames exactly as the emulator panel runs them. Finishes a frame stopped midway first. |
 | | `runUntil(pred, what, { maxFrames })` | Frame granularity; fails with PC and `what` on timeout. |
 | | `runUntilReady({ maxFrames = 50 })` | Until the program writes `$A5` to NextReg `$7F`. |
+| | `runToNextRegWrite(reg, value, { maxFrames })` | Debug mode, until the CPU writes that value to that NextReg; stops right after the writing instruction, mid-frame (a NextReg write breakpoint). |
 | | `runTo(addrOrLabel, { maxFrames })` | Stops mid-frame *before* that instruction. |
 | | `step(n = 1)` | Executes `n` instructions. |
 | | `call(addrOrLabel, { returnTo?, maxFrames })` | Pushes a return address, jumps, runs until it returns. |
 | | `hardReset()` `reset()` | Power-on reset / soft reset (memory kept). |
 | Memory | `peek` `peekWord` `peekBytes` `poke(addr, byte \| bytes)` `pokeWord` | Through the current MMU paging, like the CPU. |
 | | `peekPage(page, offset)` `pokePage(page, offset, v)` `mmuPage(slot)` | An 8K page's byte whatever is mapped (through MMU slot 7, restored), and the page an MMU slot maps. For banked code and bank-local data. |
+| | `physicalMemory()` | A live view of the core's whole physical memory, laid out as the Next's SRAM (ROMs at 0, RAM at `$40000`); for handing the memory to the simulated FPGA core (`test/vhdl/f3/`). |
+| | `ramPages(firstPage, count)` | A live view of consecutive 8K RAM pages in the core's physical memory (no MMU, no overlays). For comparing whole pages after every instruction (`test/vhdl/f1/`); read-only by convention. |
 | Text | `screenLine(row)` `screenChar(row, col)` | A ULA text row, matched against the 48K ROM font at `$3D00` (needs the ROM, as `prepareBasic` leaves it). |
 | Debug | `attachDebugSupport()` `continueToBreakpoint({ returnTo?, maxFrames })` `sourceStep(index, kind, opts)` `machineView()` `interruptDepth()` | The 48K harness's breakpoint and source-step API, for Klive BASIC's source-level debugger; `machineView()` adds PC's partition (8K page) for banked code. |
 | I/O | `out(port, v)` `in(port)` | With every hardware side effect (reads that clear status bits clear them). |

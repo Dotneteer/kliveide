@@ -1,4 +1,4 @@
-import { writeFileSync } from "node:fs";
+import { appendFileSync, writeFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 
 import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
@@ -544,6 +544,15 @@ export class NextTestSession {
     this.machine.sp = options.sp ?? 0xbff0;
     this.machine.pc = entry;
     this.machine.iff1 = this.machine.iff2 = false;
+    // --- F3 (`test/vhdl/f3/`): with F3_CAPTURE set, every program a test loads is recorded so it
+    // --- can be replayed on the simulated FPGA core. Off by default; no effect on the test.
+    const capture = process.env.F3_CAPTURE;
+    if (capture) {
+      const { expect } = await import("vitest");
+      const state = expect.getState();
+      const record = { testPath: state.testPath, testName: state.currentTestName, source, entry: options.entry, sp: options.sp };
+      appendFileSync(capture, JSON.stringify(record) + "\n");
+    }
     return this.program;
   }
 
@@ -635,6 +644,32 @@ export class NextTestSession {
     const value = this.peek(0xe000 + (offset & 0x1fff));
     writeNextReg(this.machine, 0x57, saved);
     return value;
+  }
+
+  /**
+   * A live view of `count` consecutive 8K RAM pages from `firstPage`: the core's own physical RAM
+   * (`ZXNEXT_OFFS_NEXT_RAM` + page * 8K in `zxnext-memory.c`), not a copy. Reading it is as fast as
+   * reading an array, for tests that compare whole pages after every instruction. It bypasses MMU
+   * slots and overlays (DivMMC, Multiface), so it shows what is stored, not what the CPU sees.
+   * Writing through it is not a hardware action: use `poke`/`pokePage` to change memory.
+   */
+  ramPages(firstPage: number, count = 1): Uint8Array {
+    const RAM_OFFSET = 0x40000;
+    const memory = this.machine.wasmV2Runtime!.memory;
+    const start = RAM_OFFSET + firstPage * 0x2000;
+    const end = start + count * 0x2000;
+    if (firstPage < 0 || end > memory.length) throw new Error(`ramPages(${firstPage}, ${count}) is outside the Next's RAM`);
+    return memory.subarray(start, end);
+  }
+
+  /**
+   * A live view of the core's whole physical memory, laid out as the Next's SRAM is (ROMs at $00000,
+   * the alternate ROMs at $18000, RAM page n at $40000 + n * 8K; `zxnext-memory.c`). For tooling that
+   * hands the memory to another implementation of the machine (`test/vhdl/f3/`); read-only by
+   * convention, like `ramPages`.
+   */
+  physicalMemory(): Uint8Array {
+    return this.machine.wasmV2Runtime!.memory;
   }
 
   /** Writes a byte of an 8K RAM page whatever is mapped, through MMU slot 7 (restored afterwards). */
@@ -788,6 +823,24 @@ export class NextTestSession {
     while (!done(this)) {
       if (this.frames >= limit) throw new Error(`Timed out after ${maxFrames} frames waiting for ${what} (PC=${hex(this.machine.pc, 4)})`);
       this.runOneFrame(true);
+    }
+    return this;
+  }
+
+  /**
+   * Runs in debug mode until the CPU writes `value` to NextReg `reg`, and stops right after the
+   * instruction that wrote it: mid-frame, unlike `runUntilReady`, which runs whole frames. A NextReg
+   * write breakpoint does the stopping, as in the IDE; any breakpoints attached before are restored.
+   * For comparing the machine's state at one exact instruction (`test/vhdl/f3/`).
+   */
+  runToNextRegWrite(reg: number, value: number, { maxFrames = 50 }: RunLimit = {}): this {
+    const ctx = this.machine.executionContext;
+    const saved = ctx.debugSupport;
+    ctx.debugSupport = new DebugSupport(undefined, [{ nextReg: reg & 0xff, nextRegValue: value & 0xff }]);
+    try {
+      this.continueToBreakpoint({ maxFrames });
+    } finally {
+      ctx.debugSupport = saved;
     }
     return this;
   }

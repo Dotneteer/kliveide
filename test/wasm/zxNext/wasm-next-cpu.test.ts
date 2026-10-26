@@ -173,12 +173,15 @@ describe("ZX Spectrum Next WASM CPU single step", () => {
         0x00
       ],
       steps: [
-        // --- NEXTREG $07,$03 (28 MHz)
-        { cpu: { ir: 0x3346, pc: 0x8004, tacts: 20, currentFrameTact: 40 } },
-        // --- LD A,($8000): A = $ED, WZ = nn + 1
-        { cpu: { af: 0xed34, wz: 0x8001, ir: 0x3347, pc: 0x8007, tacts: 37, currentFrameTact: 44 } },
+        // --- NEXTREG $07,$03 (28 MHz): 20 T, of which the last M-cycle - after the write - runs with
+        // --- its SRAM wait: 16 + 4 + 1 = 21 T. The clock changes one T after the write and on the
+        // --- 28 MHz clock's next edge (F3-5, measured on the simulated FPGA core,
+        // --- .plans/ZX_NEXT_FIDELITY_PROOF_PLAN.md), so only that one T runs at 3.5 MHz
+        { cpu: { ir: 0x3346, pc: 0x8004, tacts: 21, currentFrameTact: 37 } },
+        // --- LD A,($8000): A = $ED, WZ = nn + 1 - 13 T and four SRAM waits at 28 MHz
+        { cpu: { af: 0xed34, wz: 0x8001, ir: 0x3347, pc: 0x8007, tacts: 38, currentFrameTact: 41 } },
         // --- NOP
-        { cpu: { ir: 0x3348, pc: 0x8008, tacts: 42, currentFrameTact: 45 } }
+        { cpu: { ir: 0x3348, pc: 0x8008, tacts: 43, currentFrameTact: 42 } }
       ]
     }
   ];

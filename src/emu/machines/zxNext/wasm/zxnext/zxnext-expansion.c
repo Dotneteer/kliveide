@@ -18,6 +18,12 @@ static uint8_t zxnextExpansionIorqulaSignal;
 
 static inline void zxnextExpansionRequestSpeedUpdate(void) {
   cpuEffectiveSpeed = zxnextExpansionEnabled ? 0u : cpuProgrammedSpeed;
+  /* the clock follows one T-state later (zxnextCpuTactPlusN, F3-5) */
+  const uint8_t scale = (uint8_t)(8u >> (cpuEffectiveSpeed & 0x03u));
+  if (scale != cpuTactScale) {
+    zxnextCpuPendingScale = scale;
+    zxnextCpuScalePending = 1u;
+  }
 }
 
 void zxnextExpansionHardReset(void) {

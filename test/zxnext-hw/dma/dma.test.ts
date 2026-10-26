@@ -153,7 +153,8 @@ ${otir("Setup")}
         ld a,$87
         ld bc,$006b
 Enable: out (c),a                ; 12
-After:  nop                      ; 4
+After:  nop                      ; 4: the transfer starts after this one (F3: the enable's BUSRQ comes too
+        nop                      ; 4  late for the OUT's last M-cycle, so the next instruction runs first)
 Done:
 ${opts.between ?? ""}
         nextreg $7f,$a5
@@ -165,12 +166,12 @@ ${opts.extra ?? ""}`,
   return s;
 }
 
-/** CPU tacts from the start of the enabling OUT to `Done`, minus the OUT (12) and the NOP (4). */
+/** CPU tacts from the start of the enabling OUT to `Done`, minus the OUT (12) and the two NOPs (8). */
 function timeEnable(s: NextTestSession): number {
   s.runTo("Enable");
   const t0 = s.tacts;
   s.runTo("Done");
-  return s.tacts - t0 - 16;
+  return s.tacts - t0 - 20;
 }
 
 // ---------------------------------------------------------------------------------------------------

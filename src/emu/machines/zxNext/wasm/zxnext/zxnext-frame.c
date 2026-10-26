@@ -17,6 +17,9 @@ static uint32_t zxnextFrameBegun;
 
 static void zxnextFrameReset(void) {
   frames = 0;
+  /* no frame before the first: no pulse wraps into it */
+  zxnextPrevFrameIntStart = 0u;
+  zxnextPrevFrameTacts = 0u;
   tacts = 0;
   frameTacts28 = 0;
   currentFrameTact = 0;

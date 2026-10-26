@@ -1375,7 +1375,7 @@ describe("Z80 next ops", () => {
     expect(m.tbBlueAccessLog[0].isOutput).toBe(true);
 
     expect(cpu.pc).toBe(0x0003);
-    expect(cpu.tacts).toBe(14);
+    expect(cpu.tacts).toBe(17);
   });
 
   it("0x93: PIXELDN (ext not allowed)", () => {

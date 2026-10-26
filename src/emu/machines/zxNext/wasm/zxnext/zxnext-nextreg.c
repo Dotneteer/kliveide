@@ -52,6 +52,7 @@ static void zxnextNextRegHardReset(void) {
   cpuProgrammedSpeed = 0;
   cpuEffectiveSpeed = 0;
   cpuTactScale = 8;
+  zxnextCpuScalePending = 0u;
   zxnextNextRegs[0x00] = 0x08;
   zxnextNextRegs[0x01] = 0x32;
   zxnextNextRegs[0x03] = 0x33; /* +3 display timing and machine type (post-firmware) */
@@ -175,6 +176,7 @@ static void zxnextNextRegApplyResetBranch(void) {
   cpuProgrammedSpeed = 0; /* ~5733: nr_07_cpu_speed <= "00" */
   cpuEffectiveSpeed = 0;
   cpuTactScale = 8;
+  zxnextCpuScalePending = 0u;
   zxnextNextRegs[0x07] = 0x00;
   zxnextMemoryResetMapping();
   /* the raster and the effective $05 bits from the power-on register values (the call above ran on the

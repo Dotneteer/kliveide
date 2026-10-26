@@ -54,6 +54,11 @@ _pagefind/
 .visual-tests/
 # Pictures of the ZX Spectrum test kit's runs (test/spectrum-kit/), for a by-eye check
 .spectrum-kit/
+# Runs of the T80N differential (test/vhdl/f1/run-f1.cjs): case files, results, reports. Large and
+# reproducible from the seed; the plan records each measured run's outcome
+test/vhdl/f1/results/
+# Runs of the whole-core replay (test/vhdl/f3/run-f3.cjs): programs, simulator inputs and outputs
+test/vhdl/f3/results/
 
 # Boriel BASIC setup kits: archives are downloaded (see vendor/boriel-basic/README.md), never committed
 vendor/boriel-basic/kits/

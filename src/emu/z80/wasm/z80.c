@@ -21,6 +21,16 @@
 #define PREFIX_DDCB 5
 #define PREFIX_FDCB 6
 
+/*
+ * Z80_T80N: the ZX Spectrum Next's CPU is the T80N of the FPGA core
+ * (_input/next-fpga/src/cpu/t80n*.vhd, core 3.02.01), not a Zilog die, and some of its flags and one
+ * instruction differ from a Zilog Z80. The Next core defines Z80_T80N before including this file
+ * (src/emu/machines/zxNext/wasm/zxnext/zxnext-cpu.c); every other
+ * core builds this file without it and keeps the Zilog behaviour (ZEXALL, the Spectrum suites).
+ * Each difference (D1-D8) is pinned by the T80N differential, test/vhdl/f1/
+ * (.plans/ZX_NEXT_FIDELITY_PROOF_PLAN.md, section 8, F1).
+ */
+
 #ifndef Z80_CAPTURE_BUS_EVENTS
 #define Z80_CAPTURE_BUS_EVENTS() 1
 #endif
@@ -550,6 +560,24 @@ Z80_ALWAYS_INLINE void writeMemory(uint16_t address, uint8_t value) {
 }
 
 Z80_ALWAYS_INLINE uint8_t readPort(uint16_t address) {
+#ifdef Z80_DELAY_PORT_READ_TAIL
+  /* A core that samples the port partway through the I/O cycle splits the delay around the read:
+   * Z80_DELAY_PORT_READ is the part before the sample, Z80_DELAY_PORT_READ_TAIL the rest */
+  delayPortRead(address);
+#ifdef Z80_READ_PORT
+  uint8_t value = Z80_READ_PORT(address);
+#else
+  uint8_t value = cpu.portReadValue;
+#endif
+  Z80_DELAY_PORT_READ_TAIL(address);
+  if (Z80_CAPTURE_BUS_EVENTS()) {
+    cpu.lastPortAddress = address;
+    cpu.lastPortValue = value;
+    cpu.lastPortIsWrite = 0;
+    cpu.hasPortEvent = 1;
+  }
+  return value;
+#else
   delayPortRead(address);
 #ifdef Z80_READ_PORT
   uint8_t value = Z80_READ_PORT(address);
@@ -569,12 +597,17 @@ Z80_ALWAYS_INLINE uint8_t readPort(uint16_t address) {
   }
   return cpu.portReadValue;
 #endif
+#endif
 }
 
 Z80_ALWAYS_INLINE void writePort(uint16_t address, uint8_t value) {
   delayPortWrite(address);
 #ifdef Z80_WRITE_PORT
   Z80_WRITE_PORT(address, value);
+#endif
+#ifdef Z80_DELAY_PORT_WRITE_TAIL
+  /* A core whose devices take a port write partway through the I/O cycle splits the delay around it */
+  Z80_DELAY_PORT_WRITE_TAIL(address);
 #endif
   if (Z80_CAPTURE_BUS_EVENTS()) {
     cpu.lastPortAddress = address;
@@ -1861,16 +1894,33 @@ static void op76Halt(void) {
 // Extended instruction implementations
 // -----------------------------------------------------------------------------
 
+#ifdef Z80_T80N
+/* D2: the T80N's IN r,(C) sets S, Z and parity, clears H and N, and keeps C and flag bits 3/5
+ * (t80n.vhd ~1237-1248) */
+#define IN_C_FLAGS(value) ((uint8_t)((F & (FLAG_C | FLAG_R3 | FLAG_R5)) | (sz53PvFlags(value) & ~(FLAG_R3 | FLAG_R5))))
+#else
+#define IN_C_FLAGS(value) ((uint8_t)((F & FLAG_C) | sz53Flags(value)))
+#endif
+
 static inline void extInTo(uint8_t *target) {
   WZ = (uint16_t)(BC + 1);
   *target = readPort(BC);
-  F = (F & FLAG_C) | sz53Flags(*target);
+  F = IN_C_FLAGS(*target);
 }
 
 static inline void extOutFrom(uint8_t value) {
   writePort(BC, value);
   WZ = (uint16_t)(BC + 1);
 }
+
+#ifdef Z80_T80N
+/* D3: the T80N's LD A,I / LD A,R set S, Z, P/V = IFF2, clear H and N, keep C and flag bits 3/5
+ * (t80n.vhd ~1186-1215) */
+#define LD_A_IR_FLAGS(value) \
+  ((uint8_t)((F & (FLAG_C | FLAG_R3 | FLAG_R5)) | (sz53Flags(value) & (FLAG_S | FLAG_Z)) | (cpu.iff2 ? FLAG_PV : 0)))
+#else
+#define LD_A_IR_FLAGS(value) ((uint8_t)((F & FLAG_C) | sz53Flags(value) | (cpu.iff2 ? FLAG_PV : 0)))
+#endif
 
 static inline void extLoadPairFromAddr(RegisterPair *pairValue) {
   uint16_t address = readU16Le();
@@ -1936,7 +1986,7 @@ static void ext56Im1(void) {
 static void ext57LdAI(void) {
   tactPlus1WithAddress(IR);
   A = cpu.ir.bytes.high;
-  F = (F & FLAG_C) | sz53Flags(A) | (cpu.iff2 ? FLAG_PV : 0);
+  F = LD_A_IR_FLAGS(A);
   cpu.afterLdAIR = 1;
 }
 
@@ -1955,7 +2005,7 @@ static void ext5eIm2(void) {
 static void ext5fLdAR(void) {
   tactPlus1WithAddress(IR);
   A = cpu.ir.bytes.low;
-  F = (F & FLAG_C) | sz53Flags(A) | (cpu.iff2 ? FLAG_PV : 0);
+  F = LD_A_IR_FLAGS(A);
   cpu.afterLdAIR = 1;
 }
 
@@ -1994,7 +2044,7 @@ static void ext6fRld(void) {
 static void ext70InC(void) {
   WZ = (uint16_t)(BC + 1);
   uint8_t value = readPort(BC);
-  F = (F & FLAG_C) | sz53Flags(value);
+  F = IN_C_FLAGS(value);
 }
 static void ext71OutC0(void) { extOutFrom(0); }
 static void ext72SbcHlSp(void) {
@@ -2041,8 +2091,14 @@ static inline void extCpiCore(int8_t delta, uint8_t repeat) {
   if (BC != 0) flags |= FLAG_PV;
   if (result == 0) flags |= FLAG_Z;
   if (((A ^ value ^ result) & 0x10) != 0) flags |= FLAG_H;
+#ifdef Z80_T80N
+  /* D4: the T80N compares with its CP, which takes flag bits 3/5 from the operand
+   * (t80n_mcode.vhd ~2258, t80n_alu.vhd ~182) */
+  flags |= value & (FLAG_R3 | FLAG_R5);
+#else
   if (flags & FLAG_H) result = (uint8_t)(result - 1);
   flags |= (result & FLAG_R3) | ((result & 0x02) ? FLAG_R5 : 0);
+#endif
   F = flags;
   if (repeat && (F & (FLAG_PV | FLAG_Z)) == FLAG_PV) {
     tactPlus5WithAddress(HL);
@@ -2054,17 +2110,32 @@ static inline void extCpiCore(int8_t delta, uint8_t repeat) {
   HL = (uint16_t)(HL + delta);
 }
 
+#ifdef Z80_T80N
+/* D5/D6: the T80N's block I/O decrements B with its ALU (SUB B,1) and keeps exactly those flags
+ * (t80n_mcode.vhd ~2483-2550) */
+static inline uint8_t t80nDecBFlags(uint8_t b) {
+  uint8_t r = (uint8_t)(b - 1);
+  return (uint8_t)((r & (FLAG_S | FLAG_R5 | FLAG_R3)) | (r == 0 ? FLAG_Z : 0) | FLAG_N |
+                   ((b & 0x0f) == 0 ? FLAG_H : 0) | (b == 0x80 ? FLAG_PV : 0) | (b == 0 ? FLAG_C : 0));
+}
+#endif
+
 static inline void extIniCore(int8_t delta, uint8_t repeat) {
   tactPlus1WithAddress(IR);
   uint8_t value = readPort(BC);
   writeMemory(HL, value);
   WZ = (uint16_t)(BC + delta);
+#ifdef Z80_T80N
+  F = t80nDecBFlags(B);
+  B = (uint8_t)(B - 1);
+#else
   B = (uint8_t)(B - 1);
   uint8_t flagsValue = (uint8_t)(value + C + delta);
   F = ((value & 0x80) ? FLAG_N : 0) |
       (flagsValue < value ? (FLAG_H | FLAG_C) : 0) |
       (parityFlag((uint8_t)((flagsValue & 0x07) ^ B)) ? FLAG_PV : 0) |
       sz53Flags(B);
+#endif
   if (repeat && B != 0) {
     tactPlus5WithAddress(HL);
     cpu.pc = (uint16_t)(cpu.pc - 2);
@@ -2075,15 +2146,20 @@ static inline void extIniCore(int8_t delta, uint8_t repeat) {
 static inline void extOutiCore(int8_t delta, uint8_t repeat) {
   tactPlus1WithAddress(IR);
   uint8_t value = readMemory(HL);
+#ifdef Z80_T80N
+  F = t80nDecBFlags(B);
+#endif
   B = (uint8_t)(B - 1);
   WZ = (uint16_t)(BC + delta);
   writePort(BC, value);
   HL = (uint16_t)(HL + delta);
+#ifndef Z80_T80N
   uint8_t flagsValue = (uint8_t)(value + L);
   F = ((value & 0x80) ? FLAG_N : 0) |
       (flagsValue < value ? (FLAG_H | FLAG_C) : 0) |
       (parityFlag((uint8_t)((flagsValue & 0x07) ^ B)) ? FLAG_PV : 0) |
       sz53Flags(B);
+#endif
   if (repeat && B != 0) {
     tactPlus5WithAddress(HL);
     cpu.pc = (uint16_t)(cpu.pc - 2);
@@ -2198,28 +2274,38 @@ static void z80n90Outinb(void) {
   HL = (uint16_t)(HL + 1);
 }
 
+/*
+ * After their operands, both NEXTREGs run two more M-cycles that the T80N's microcode leaves as bus
+ * read cycles (no NoRead; t80n_mcode.vhd ~1667-1706), so they are timed as reads: 3 T each, plus
+ * contention or the 28 MHz SRAM wait state where the address has one. Nothing is read or logged. The
+ * NextReg write happens in the first of them (Z80N_command_o = NEXTREGW), so a write that changes the
+ * CPU speed ($07) affects only the second. F3's NEXTREG probes (test/vhdl/f3/probes-timing.cjs,
+ * group N) found the missing cycles and the extra wait at 28 MHz.
+ */
 static void z80n91NextregN(void) {
   uint8_t reg = fetchCodeByte();
   uint8_t value = fetchCodeByte();
+  delayMemoryRead(cpu.pc);
   tbBlueOut(reg, value);
-  tactPlusN(6);
+  delayMemoryRead(cpu.pc); /* 20 T in all */
 }
 
 static void z80n92NextregA(void) {
   uint8_t reg = fetchCodeByte();
+  /* 17 T in all (the Z80N documentation; t80n_mcode.vhd ~1689: four M-cycles after the ED prefix,
+   * 4 + 4 + 3 + 3 + 3). It was 14 T (3 internal T-states here), found by F3's NEXTREG probes. */
+  delayMemoryRead(cpu.pc);
   tbBlueOut(reg, A);
-  tactPlusN(3);
+  delayMemoryRead(cpu.pc);
 }
 
 static void z80n93Pixeldn(void) {
-  uint16_t value = HL;
-  if ((value & 0x0700) != 0x0700) {
-    H = (uint8_t)(H + 1);
-  } else if ((value & 0xe0) != 0xe0) {
-    HL = (uint16_t)((value & 0xf8ff) + 0x20);
-  } else {
-    HL = (uint16_t)((value & 0xf81f) + 0x0800);
-  }
+  /* t80n.vhd ~898-915: the pixel row y = H4H3 L7L6L5 H2H1H0 counts up by one and wraps from 255 to 0;
+   * H7-H5 and L4-L0 stay. (D9: carrying a wrap into H5, as before, gave $4009 for $3FE9, not $2009.) */
+  uint8_t y = (uint8_t)((((H >> 3) & 0x03) << 6) | (((L >> 5) & 0x07) << 3) | (H & 0x07));
+  y = (uint8_t)(y + 1);
+  H = (uint8_t)((H & 0xe0) | (((y >> 6) & 0x03) << 3) | (y & 0x07));
+  L = (uint8_t)((((y >> 3) & 0x07) << 5) | (L & 0x1f));
 }
 
 static void z80n94Pixelad(void) {
@@ -2234,6 +2320,16 @@ static void z80n98JpC(void) {
   tactPlusN(1);
 }
 
+#ifdef Z80_T80N
+/* D7: the T80N runs the Z80N block copies through LDI's microcode (I_BT), so they set LDI's flags:
+ * flag bit 3 = bit 3 and flag bit 5 = bit 1 of the ALU result, H = N = 0, P/V = BC != 0, S, Z and
+ * C kept (t80n.vhd ~1275-1283) */
+static inline void t80nBlockCopyFlags(uint8_t aluResult) {
+  F = (uint8_t)((F & (FLAG_C | FLAG_Z | FLAG_S)) | (BC != 0 ? FLAG_PV : 0) | (aluResult & FLAG_R3) |
+                ((aluResult & 0x02) ? FLAG_R5 : 0));
+}
+#endif
+
 static inline void z80nLdXCore(int8_t delta) {
   uint8_t value = readMemory(HL);
   if (value != A) {
@@ -2243,6 +2339,9 @@ static inline void z80nLdXCore(int8_t delta) {
   }
   tactPlus2WithAddress(DE);
   BC = (uint16_t)(BC - 1);
+#ifdef Z80_T80N
+  t80nBlockCopyFlags((uint8_t)(A + value)); /* the ALU adds A and the byte, as for LDI */
+#endif
   DE = (uint16_t)(DE + 1);
   HL = (uint16_t)(HL + delta);
 }
@@ -2280,6 +2379,11 @@ static void z80nB7Ldpirx(void) {
   }
   tactPlus2WithAddress(DE);
   BC = (uint16_t)(BC - 1);
+#ifdef Z80_T80N
+  /* LDPIRX's microcode sets no ALU operation, so the default one runs: OR of B and the byte
+   * (t80n_mcode.vhd ~249, ~1950-1985), with B as BC's decrement in the first M-cycle left it */
+  t80nBlockCopyFlags((uint8_t)(B | value));
+#endif
   if (BC != 0) {
     tactPlus5WithAddress(DE);
     cpu.pc = (uint16_t)(cpu.pc - 2);
@@ -2607,11 +2711,19 @@ DEFINE_INDEXED_BIT_SHIFT_REG_OP(xbit3fSrlA, srl8, A)
 #undef DEFINE_INDEXED_BIT_SHIFT_MEM_OP
 #undef DEFINE_INDEXED_BIT_SHIFT_REG_OP
 
+#ifdef Z80_T80N
+/* D1: the T80N's BIT takes flag bits 3/5 from the operand, or 0 when the opcode's low bits are
+ * 110 (t80n_alu.vhd ~275-292), never from MEMPTR */
+#define INDEXED_BIT_FLAGS_SOURCE(value) ((cpu.opCode & 0x07) == 0x06 ? 0 : (value))
+#else
+#define INDEXED_BIT_FLAGS_SOURCE(value) (cpu.wz.bytes.high)
+#endif
+
 #define DEFINE_INDEXED_BIT_OP(name, bit) \
   static void name(void) { \
     uint8_t value = readMemory(WZ); \
     tactPlus1WithAddress(WZ); \
-    bit8(bit, value, cpu.wz.bytes.high); \
+    bit8(bit, value, INDEXED_BIT_FLAGS_SOURCE(value)); \
   }
 
 DEFINE_INDEXED_BIT_OP(xbit40Bit0, 0)
@@ -2914,11 +3026,18 @@ static void bit3eSrlMemHl(void) {
 static void bit3fSrlA(void) { A = srl8(A); }
 
 #define DEFINE_BIT_REG_OP(name, bit, operand) static void name(void) { bit8(bit, operand, operand); }
+#ifdef Z80_T80N
+/* D1: BIT n,(HL) has low opcode bits 110, so the T80N clears flag bits 3/5 */
+#define BIT_MEM_FLAGS_SOURCE 0
+#else
+#define BIT_MEM_FLAGS_SOURCE (cpu.wz.bytes.high)
+#endif
+
 #define DEFINE_BIT_MEM_OP(name, bit) \
   static void name(void) { \
     uint8_t value = readMemory(HL); \
     tactPlus1WithAddress(HL); \
-    bit8(bit, value, cpu.wz.bytes.high); \
+    bit8(bit, value, BIT_MEM_FLAGS_SOURCE); \
   }
 
 DEFINE_BIT_REG_OP(bit40Bit0B, 0, B)
@@ -3304,6 +3423,12 @@ static inline Z80Operation getExtendedOperation(void) {
     case 0xac: return z80nAcLddx;
     case 0xb4: return z80nB4Ldirx;
     case 0xb7: return z80nB7Ldpirx;
+#ifdef Z80_T80N
+    /* D8: ED B6, LDIRSCALE. Its scaling is commented out in t80n.vhd (~1134-1152), so it runs
+     * LDIRX's microcode (t80n_mcode.vhd ~2186-2226): copy unless the byte equals A, HL+1, DE+1, BC-1,
+     * repeat while BC != 0 */
+    case 0xb6: return z80nB4Ldirx;
+#endif
     case 0xbc: return z80nBcLddrx;
     default: return extendedOps[cpu.opCode];
   }
