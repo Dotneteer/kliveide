@@ -1,0 +1,139 @@
+---
+description: "A computer's memory is where it stores all its information. Its initial capacity is already defined, but it can normally be increased when it is needed. This is certainly true of the Z88. Memory..."
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/35913745 (version 14) by scripts/import-z88-user-guide.cjs */}
+
+# RAM cards
+
+## Memory Introduction
+
+A computer's memory is where it stores all its information. Its initial capacity is already defined, but it can normally be increased when it is needed. This is certainly true of the Z88. Memory is not as we tend to think, simply a storage area like a filing cabinet. All tasks or programs need space in the memory to enable the computer to do them. A good analogy is to compare the to our working area say like an organised office. There is some space taken up by the filing system, but there is also a desk which not only provides space to do work, but also space for in/out trays. Then there are those piles of started work waiting to be finished. Well that's what our desks look like anyway! There's also space for you: the job wouldn't be done if you weren't there. That is the same with computers: it wouldn't be able to anything without its various programs and its operating systems. They all take up space in the memory as well as the text and data that is being in-putted.
+
+<Shot src="z88-user-guide/external/qg-z88-quick-guide-help-home-page/1m-ram-grey.webp" alt="1M ram grey" width={400} />
+
+**Memory is fragile** - not fragile in the sense of easy to break, but is very easily lost.
+
+This is the most important thing to remember about computer memory. In the office, when work is done it is somewhere, even if it has been mislaid or filed in the wrong place. **In the computer memory, information may be there one second and gone the next**: areas of memory can be erased much quicker than typing a sentence. The computer is not smart enough to know what is important data, or how long it took to create it. In its memory everything is broken down into minute pieces of digital information , so if something goes awry, everything can be erased and cannot be recovered. **This is why backing up the data in the files is so important.**
+
+## RAM Cards
+
+RAM cards allow you to
+
+- store more data
+- and give more memory for the applications to use
+
+in the Cambridge Z88. There are three slots, each of which may take up to 1 Megabyte of RAM, although it is advisable to use slots 1 and 2 for RAM leaving slot 3 available for EPROM. This is because slot 3 is the only one which can be used to record data onto EPROM. Also RAM cards will consume more power in this slot than in slots 1 and 2 and therefore reduce battery life.
+
+### Inserting a RAM card
+
+1. Make sure that the Cambridge Z88 is switched ON and the Index is displayed.
+
+2. Open the Perspex flap at the front. The Cambridge Z88 will give a short beep and the screen will go blank.
+
+3. Push the RAM pack into the slot making sure that the label is facing outwards and is the correct way up. Make sure that the card is pushed in as far as it will go.
+
+4. Close the flap. The Cambridge Z88 will turn itself back on and re-display the Index. You can check that the card has been recognised by typing <Key k="diamond" />CARD.
+
+## How the Z88 uses RAM
+
+The Z88 uses RAM in two ways. They are the
+
+- RAM Filing System and
+- RAM for Applications to use.
+
+There is not a central point to view or manage RAM. Different Applications are used to do this.
+
+<Table>
+<thead>
+<Table.Tr>
+<Table.Th>Application</Table.Th>
+<Table.Th>Key</Table.Th>
+<Table.Th>Command</Table.Th>
+<Table.Th>Function</Table.Th>
+</Table.Tr>
+</thead>
+<tbody>
+<Table.Tr>
+<Table.Td>INDEX</Table.Td>
+<Table.Td><Key k="index" /></Table.Td>
+<Table.Td>CARDS</Table.Td>
+<Table.Td><Key k="diamond" />CARD</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>INDEX</Table.Td>
+<Table.Td><Key k="index" /></Table.Td>
+<Table.Td>INFORMATION</Table.Td>
+<Table.Td><Key k="diamond" />INFO</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Pipedream</Table.Td>
+<Table.Td><Key k="square" />P</Table.Td>
+<Table.Td>OPTIONS</Table.Td>
+<Table.Td><Key k="diamond" />O</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Flashstore</Table.Td>
+<Table.Td><Key k="square" />J</Table.Td>
+<Table.Td>SELECT CARD</Table.Td>
+<Table.Td><Key k="diamond" />SC</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Eazylink2</Table.Td>
+<Table.Td><Key k="square" />L</Table.Td>
+<Table.Td colSpan={2}>RAM space displayed on<br />Desktop Computer.</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+### RAM Filing System
+
+Files created by Applications, like the word-processor Pipedream, are initially saved in RAM using this filing system. To see how much space there is, use the following command.
+
+### Card information \<\>CARD
+
+The <Key k="diamond" />CARD command, on the Index **COMMANDS** menu, shows the type and size of the card in each slot. However it will not show an erased EPROM until it has been accessed by the Filer.
+
+#### 1M/1M FLASH/RAM
+
+<Shot src="z88-user-guide/getting-started/using-cards/ram-cards/z88card1m.webp" alt="z88card1m" width={640} />
+
+This shows the 1M Flash/1M RAM configuration
+
+#### 512/512K FLASH/RAM
+
+<Shot src="z88-user-guide/getting-started/using-cards/ozcard.webp" alt="ozcard" width={640} />
+
+This shows the 512K Flash/512K RAM configuration
+
+#### Free RAM
+
+Free RAM Is the amount of RAM that may be used by the RAM filing system. It is shown on the right-hand side of the window. The RAM device number is selected with the numbers keys. 0, 1, 2 or 3, or by using <Key k="diamond" />J, the number will increment to the next available RAM device, which in this case doesn't exist.
+
+### System Information \<\>INFO
+
+The <Key k="diamond" />INFO command, on the Index **COMMANDS** menu, shows the Free memory available.
+
+#### 1M/1M FLASH/RAM
+
+<Shot src="z88-user-guide/getting-started/using-cards/ram-cards/index-info-1m.webp" alt="index info 1M" width={640} />
+
+This shows the Free Memory in a1M Flash/1M RAM configuration
+
+#### 512/512K FLASH/RAM
+
+<Shot src="z88-user-guide/getting-started/using-cards/ram-cards/index-info-512.webp" alt="index info 512" width={640} />
+
+This shows the Free Memory in a 512K Flash/512K RAM configuration
+
+### Free Memory
+
+Select Pipedream and the Options Page. There is plenty of free memory here, 698624 bytes.
+
+<Shot src="z88-user-guide/getting-started/using-cards/ram-cards/pd-options.webp" alt="pd options" width={640} />
+
+### Removing RAM Card
+
+If you remove a RAM pack from the Cambridge Z88 any data held in it will be lost instantly. Do not remove a RAM card unless you must. If you do have to remove a RAM card, the Cambridge Z88 will display [FAIL](/en/z88-user-guide/getting-started/using-cards#carderrors) in the top right hand corner of the screen. You will have to perform a soft-reset on the Cambridge Z88 and any suspended activities will be lost.

@@ -64,6 +64,13 @@ React 19 + Next 16.
   `get-started/`, `guides/`, `reference/`, `under-the-hood/` - plus the book, which is reachable
   by URL but deliberately not linked anywhere (decision D6). The plan is
   `.plans/DOCS_SITE_MODERNIZATION_PLAN.md`.
+- **The Cambridge Z88 User Guide (`content/en/z88-user-guide/`) is imported, not written here**:
+  `node scripts/import-z88-user-guide.cjs` converts the cambridgez88.jira.com "UG" Confluence space
+  (pictures to `public/images/en/z88-user-guide/`, key legends to `<Key>`/`<Typed>` from
+  `page-components/Z88.tsx`). Like the book it is unlisted (`display: "hidden"`, out of search), but
+  it keeps its own sidebar: its route `app/[lang]/(unlisted)/z88-user-guide/` un-hides it for its own
+  pages only (`UNLISTED_WITH_SIDEBAR` in `app/[lang]/docs-shell.tsx`), so no other page links to it.
+  Once the reviewed pages are edited by hand, do not re-run the import over them.
 - **The website is translated through its own workflow**, never by hand-editing
   `docs/content/<lang>/`: `npm run doc:i18n:todo -- <lang>` / `doc:i18n:merge` (read
   `docs/i18n/TRANSLATING.md`). The landing page's and the chrome's texts are in

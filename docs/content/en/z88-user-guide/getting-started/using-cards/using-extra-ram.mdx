@@ -1,0 +1,25 @@
+---
+description: "When you insert a RAM card the extra memory space which it provides will be instantly available to activities such as PipeDream. However, files which are saved in RAM must be specifically directed..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/35913750 (version 8) by scripts/import-z88-user-guide.cjs */}
+
+# Using extra RAM
+
+When you insert a RAM card the extra memory space which it provides will be instantly available to activities such as PipeDream. However, files which are saved in RAM must be specifically directed either to the original internal memory, a 512K/512K RAM/Flash or to an extra memory provided by the card. For example, if you insert a RAM card in slot 2, you will need to alter the default device setting in the Cambridge Z88's Panel utility to cause it to be used for files.
+
+To do this enter the Panel utility by typing
+
+<Key k="square" />S
+
+Then move the cursor to the default device and change the value to:
+
+<Typed>:RAM.2</Typed>
+
+<Shot src="z88-user-guide/getting-started/using-cards/using-extra-ram/panel-ram2.webp" alt="panel ram2" width={640} />
+
+Any new activities which you start will then save their data in the new RAM card.
+
+Existing activities will still save data files in the old RAM. To cause an existing activity to use the new RAM, go into it and then enter the Filer by typing <Key k="square" />F. Use the select device option to select the new RAM card and then return to the activity by pressing <Key k="esc" />.
+
+If you have RAM cards in more than one slot you may wish to save files to each of them explicitly. To do this you should use the device name <Typed>:RAM.1</Typed> or <Typed>:RAM.2</Typed> when specifying the filename, where the number refers to the slot in which the RAM card has been placed. The original memory of the Cambridge Z88 can be referred to as <Typed>:RAM.0</Typed> in all cases.

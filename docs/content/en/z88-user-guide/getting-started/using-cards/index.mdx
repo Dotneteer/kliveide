@@ -1,0 +1,173 @@
+---
+description: "There are four types of card for use with the Cambridge Z88:"
+asIndexPage: true
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/35913746 (version 33) by scripts/import-z88-user-guide.cjs */}
+
+# Using cards
+
+## Types of Cards
+
+There are four types of card for use with the Cambridge Z88:
+
+<Shot src="z88-user-guide/external/qg-check-all-z88-cards/rams-eproms.webp" alt="rams eproms" width={168} />
+
+**RAM** cards are for increasing working memory for the Z88, storing your own information and running additional applications.
+
+**ROM** cards are pre-programmed and are normally called applications; for example PCLINK. EPROM & FLASH cards are used for this
+
+**EPROM** cards allow you to write information once only in the File Area, but retain it even when removed from the machine thus providing a secure way of saving your data.
+
+**FLASH** cards can combine the **ROM** and **EPROM** function on a single card allowing applications to be stored with a File Area.
+
+### Prices
+
+When the Z88 came out, memory was very expensive. This is why RAM & EPROM cards were available in different sizes.
+
+<Table>
+<thead>
+<Table.Tr>
+<Table.Th />
+<Table.Th colSpan={2}>1989</Table.Th>
+<Table.Th colSpan={2}>2015</Table.Th>
+</Table.Tr>
+</thead>
+<tbody>
+<Table.Tr>
+<Table.Th />
+<Table.Th>RAM</Table.Th>
+<Table.Th>EPROM</Table.Th>
+<Table.Th>RAM</Table.Th>
+<Table.Th>FLASH</Table.Th>
+</Table.Tr>
+<Table.Tr>
+<Table.Th>1M</Table.Th>
+<Table.Td>£200</Table.Td>
+<Table.Td />
+<Table.Td>£59</Table.Td>
+<Table.Td>£55</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Th>512K</Table.Th>
+<Table.Td>£99</Table.Td>
+<Table.Td />
+<Table.Td colSpan={2}>£59</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Th>256K</Table.Th>
+<Table.Td />
+<Table.Td>£59</Table.Td>
+<Table.Td />
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Th>128K</Table.Th>
+<Table.Td>£49</Table.Td>
+<Table.Td>£49</Table.Td>
+<Table.Td />
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Th>32K</Table.Th>
+<Table.Td>£25</Table.Td>
+<Table.Td>£25</Table.Td>
+<Table.Td />
+<Table.Td />
+</Table.Tr>
+</tbody>
+</Table>
+
+Prices have fallen and the memory increased.
+
+As the maximum size that each slot can address is 1M, it is recommended that 1M is used so there is no wasted space.
+
+## How they work together
+
+<Shot src="z88-user-guide/getting-started/using-cards/z88-cards.webp" alt="Z88 Cards" width={900} />
+
+It is very important to understand how these cards work together with each other. This diagram shows the 1M Flash/1M RAM / 1M Flash configuration.
+
+<Shot src="z88-user-guide/external/zfs-operation-and-commands/flash-ram-flash.webp" alt="flash ram flash" width={450} />
+
+When using the 512K/512K Flash/RAM card, the sizes may be different but the principle remains the same,
+
+### Main Devices
+
+#### :EPR.1 1M FLASH
+
+This is where the applications OZ4.x are stored. The space that is left over is used for storing files in the File Area. Most Applications (like Pipedream in OZ 4.x) Save and Fetch their files from :RAM, in this example in :RAM.0 and :RAM.2.
+
+#### :RAM.0 INTERNAL 32K RAM
+
+This is the internal RAM. Any RAM that is not used for files is free to be used by any application.
+
+#### :RAM.2 1M RAM
+
+This is where files are saved and memory is used for applications.
+
+#### ;EPR.3 1M FLASH
+
+Another Flash Card can be used here, to save even more files.
+
+### Applications that hold them together
+
+Once a file has been saved to RAM, it should be saved to either a Flash card or to the Desktop computer. These applications allow you to do that.
+
+#### Filer and Flashstore
+
+This saves or load files from and to the RAM, using EPROM or Flash Cards.
+
+#### EP-Fetch2
+
+To fetch files from the EPROMs or Flash Card to RAM selecting from a list, use this 'point & shoot' method.
+
+#### Eazylink
+
+Transfers files to or from the Desktop computer and the Z88. Files can be saved to and fetched from both Flash or RAM cards.
+
+#### OZ 4.7
+
+Before OZ 4.7, files could only be saved and loaded in RAM before they could be used in applications.
+
+OZ 4.7 allows files in the Flash card file areas to be saved and loaded directly to all applications, without needing to save or load them to RAM beforehand.
+
+## Inserting or removing cards
+
+Cards should only be inserted or removed with the Cambridge Z88 switched on.
+
+First enter the Index. Use the <Key k="index" /> key.
+
+<Shot src="z88-user-guide/external/oz-the-z88-operating-system/index.webp" alt="index" width={640} />
+
+Then open the perspex flap at the front of the machine.
+
+<Shot src="z88-user-guide/external/qg-z88-quick-guide-help-home-page/card-slot.webp" alt="card slot" width={265} />
+
+Check that the screen goes blank.
+
+<Shot src="z88-user-guide/getting-started/using-cards/z88-blank-screen.webp" alt="z88 blank screen" width={640} />
+
+The computer should bleep once as you open the flap.
+
+The card can then be pushed in or pulled out. The label on the end of the card should be upright when you push the card home.
+
+When you have completed the operation,
+
+<Shot src="z88-user-guide/getting-started/up-and-running/flash-card-example/z88-512-512-card-shut-card-flap.webp" alt="z88 512 512 card shut card flap" width={900} />
+
+push the Perspex flap back into position.
+
+## Card errors
+
+Errors which occur during the insertion or removal of cards are displayed in the **OZ** position on the right-hand side of the screen.
+
+A **FAIL** message (on the top right-hand corner of the screen) is given if a RAM card is removed, indicating that a soft reset is necessary.
+
+<Shot src="z88-user-guide/external/ug40-using-cards/memory-fail.webp" alt="memory fail" width={640} />
+
+If you remove an application card which a suspended activity is using, the Cambridge Z88 will give a continuous tone and flash `CARD` until the card is replaced. The suspended activity should be removed with <Key k="diamond" />KILL before trying again.
+
+An `INDEX` message is given, together with a continuous tone, if you have attempted to remove an application card while not in the Index.

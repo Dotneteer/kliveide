@@ -1,0 +1,908 @@
+---
+description: "This section describes the more advanced features and commands of the Filer popdown, and should be read in conjunction with The Filer. The features described here include:"
+---
+
+import { Callout, Table } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/35913796 (version 91) by scripts/import-z88-user-guide.cjs */}
+
+# Section Seven - Filer reference
+
+This section describes the more advanced features and commands of the Filer popdown, and should be read in conjunction with [The Filer](/en/z88-user-guide/using-the-popdowns/the-filer-popdown). The features described here include:
+
+- Directories, and the [hierarchical filing system](#thefilingsystemhierarchicalsystem)
+- The Command Line Interpreter, and CLI files
+
+Here, you will find the following chapters:
+
+- [Specifying file names in full](#specifyingfilenamesinfull)
+
+Describes filename syntax, filename extensions, directory structure, device specifications and wildcards.
+
+- [Additional Filer commands](#additionalfilercommands)
+
+Describes commands that provide facilities for creating directories, manipulating files within the hierarchical directory structure.
+
+- [CLI Files](#cli_files)
+
+Describes how to use the Command Line Interpreter with text files, reference of special commands for the CLI, redirecting of I/O and how to utilize this for editing BBC BASIC programs in PipeDream.
+
+### A little story about Directories
+
+Users may not understand the value of using "The Filing System Hierarchical System," until it is too late. Here is a fictitious example showing what 482 files could look like if they are just dumped into the flash card. There are no directories, and when using EPROMs or Flashcards, no date is stored. The order of the files are known. the first file saved is on Page 1 top left-hand corner and the last file is on Page 2, bottom right-hand corner. There is no way of knowing what each file contains. Perhaps the answer is in the file name.
+
+<Table>
+<thead>
+<Table.Tr>
+<Table.Th>Page 1</Table.Th>
+<Table.Th>Page 2</Table.Th>
+</Table.Tr>
+</thead>
+<tbody>
+<Table.Tr>
+<Table.Td>
+
+<Shot src="z88-user-guide/filer-reference/z88-files-1.webp" alt="Z88 files 1" width={900} />
+
+</Table.Td>
+<Table.Td>
+
+<Shot src="z88-user-guide/filer-reference/z88-files-2.webp" alt="Z88 files 2" width={900} />
+
+</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+<Callout type="info">
+
+**NOTE**
+
+The numbers on the left column indicates the file size.
+
+</Callout>
+
+### File names
+
+The first 6 file-names were on the flash card to start with, but then there are
+
+```text
+286 RECEIPT
+863 DEBT
+739 FONENOS2
+```
+
+Now what you need to ask yourself when choosing a file name is,
+
+will I remember what this would be about in 10 years time,
+
+just by looking at the file name? If I asked you now, what would you say for the first one, "that's a receipt?" Now that is a good start, but, what was it for? Who was it from? When was it issued? The only way of knowing that is by opening the file and having a look.
+
+Other file names down the list include
+
+```text
+123 5
+141 4
+140 3
+```
+
+These file names could mean anything. You can have 12 characters to describe what the file is and the first file here is 5. There are some other clues. File 5 was saved before File 4 and File 3, but again without knowing what all these files are the only way again of knowing what they are is again by opening them and having a look.
+
+<Callout type="info">
+
+**Q & A**
+
+Q When is the best time to sort out your file names?<br />Q When is the best time to sort out your directories?
+
+**A At the beginning**
+
+</Callout>
+
+Looking at the file name 286 RECEIPT and then the questions we asked about it i.e. what was it for? Who was it from? When was it issued? These answers may be put into the Directories. i.e.
+
+/BATHROOM/PLUMBER/20150714/RECEIPT
+
+This now shows that the receipt was for the PLUMBER who did some work in the BATHROOM on the 14th July 2015.
+
+<Callout type="info">
+
+**Writing Dates**
+
+If the date is written backwards, i.e. YYYYMMDD the numbers can be easily sorted.
+
+</Callout>
+
+Do not think, I will use this name for now and will change it later. This example was based on 'real-life,' the file names never got changed.
+
+### Specifying file names in full
+
+##### The Filing System Hierarchical System
+
+<Shot src="z88-user-guide/filer-reference/hierarchical.webp" alt="Hierarchical" width={351} />
+
+The Filing System Hierarchical System looks like an upside down tree with the Device at the top. <br />Underneath that can be either a Directory or a filename,<br />Underneath that can be either a Directory or a filename,<br />and so on ...
+
+The full form of a file name is <br /><em>:DEVICE I DIRECTORY I DIRECTORY I .... /filename<br /></em>where <br />DEVICE is one of the specification listed below<br />DIRECTORY and filename are each of the form<br /><em>name**.**extension<br /></em>consisting of a name of up to 12 letters or digits, followed by an optional extension of up to three letters or digits, *DIRECTORY* is a directory name subject to the same constraints as *filename*.
+
+All ISO characters (such as **é** and **å**) are allowed in filenames<sup>**OZ4.7**</sup>.
+
+The following extensions are used for system functions:
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>`.sgn`</Table.Td>
+<Table.Td>For <Key k="square" />+K and <Key k="square" />+S CLI files</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>`.CLI`</Table.Td>
+<Table.Td>For BOOT.CLI; see **CLI files** section below</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>`.L`</Table.Td>
+<Table.Td>For PipeDream multi-file List file</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+In addition the following symbols can be used:
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>`../name`</Table.Td>
+<Table.Td>Parent directory of name</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>.</Table.Td>
+<Table.Td>Current directory</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+### Device specifications
+
+*DEVICE* can be specified as one of the following in Application Load or Save operations:
+
+<Table>
+<thead>
+<Table.Tr>
+<Table.Th colSpan={2}>Specification</Table.Th>
+<Table.Th>Effect</Table.Th>
+</Table.Tr>
+</thead>
+<tbody>
+<Table.Tr>
+<Table.Td colSpan={2}>`:RAM.0`</Table.Td>
+<Table.Td>RAM in slot 0 (internal memory)</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={2}>`:RAM.1`</Table.Td>
+<Table.Td>RAM in slot 1 (external memory)</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={2}>`:RAM.2`</Table.Td>
+<Table.Td>RAM in slot 2 (external memory)</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={2}>`:RAM.3`</Table.Td>
+<Table.Td>RAM in slot 3 (external memory)</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={2}>`:RAM.-`</Table.Td>
+<Table.Td>Any RAM memory; ie 0, 1, 2, or 3. Used by CLI for temporary files, and lost on reset.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={2}>`:EPR.0`</Table.Td>
+<Table.Td>FLASH or EPROM in slot 0 (internal memory)<sup>OZ4.7</sup></Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={2}>`:EPR.1`</Table.Td>
+<Table.Td>FLASH or EPROM in slot 1 (external file area)<sup>OZ4.7</sup></Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={2}>`:EPR.2`</Table.Td>
+<Table.Td>FLASH or EPROM in slot 2 (external file area)<sup>OZ4.7</sup></Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={2}>`:EPR.3`</Table.Td>
+<Table.Td>FLASH or EPROM in slot 3 (external file area)<sup>OZ4.7</sup></Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={2}>`:ROM.0`</Table.Td>
+<Table.Td>ROM</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={2}>`:SCR.0`</Table.Td>
+<Table.Td>Screen</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={2}>`:PRT.0`</Table.Td>
+<Table.Td>Printer; via printer driver so that highlight codes are interpreted</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={2}>`:COM.0`</Table.Td>
+<Table.Td>Communications; via serial port</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={2}>`:INP.0`</Table.Td>
+<Table.Td>Standard input</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={2}>`:OUT.0`</Table.Td>
+<Table.Td>Standard output</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={2}>`:NUL.0`</Table.Td>
+<Table.Td>Null: absorbs output, and acts like an empty file on input</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+### Wildcards
+
+The device, directory and file name can contain the following wildcards:
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>`*`</Table.Td>
+<Table.Td>Matches any number of characters (or none)</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>`?`</Table.Td>
+<Table.Td>Matches a single character</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>`//`</Table.Td>
+<Table.Td>Matches any number of directories (or none)</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+For example,
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>`:*//letter`</Table.Td>
+<Table.Td>Finds the file called `letter` anywhere</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>`doc*`</Table.Td>
+<Table.Td>Finds: `doc. tx, document, doc27, doc`, etc</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>`*.*`</Table.Td>
+<Table.Td>Finds only files with extensions.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>`../fred`</Table.Td>
+<Table.Td>Finds all files beginning with `fred` in the parent directory</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+Note that the characters / and \\ may be used interchangeably.
+
+### MENU Commands
+
+Press <Key k="menu" /> to see the **COMMANDS** menu:
+
+<Shot src="z88-user-guide/filer-reference/filer-menu.webp" alt="filer menu" width={640} />
+
+### Catalogue Files <Key k="diamond" />CF
+
+Gives fuller information about a specified list of files in RAM. The subset of files to be catalogued is specified after the prompt
+
+`Name :`
+
+Reply as follows:
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td><Key k="enter" /></Table.Td>
+<Table.Td>catalogues all files (in the current directory)</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>`fred*`</Table.Td>
+<Table.Td>catalogues all files beginning with fred</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\*.<Typed>bas</Typed></Table.Td>
+<Table.Td>catalogues all files with a bas extension</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+Each file will be listed as:
+
+<Table>
+<thead>
+<Table.Tr>
+<Table.Th>**File name**</Table.Th>
+<Table.Th colSpan={2}>**Creation date & time**</Table.Th>
+<Table.Th colSpan={2}><strong>Last updated <strong>**date & time**</strong></strong></Table.Th>
+<Table.Th>**Size (in characters)**</Table.Th>
+</Table.Tr>
+</thead>
+<tbody>
+<Table.Tr>
+<Table.Td>`letter.txt`</Table.Td>
+<Table.Td>`Today`</Table.Td>
+<Table.Td>`17:42:54`</Table.Td>
+<Table.Td>`Today`</Table.Td>
+<Table.Td>`17:42:54`</Table.Td>
+<Table.Td>`1254`</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>`novel.txt`</Table.Td>
+<Table.Td>`01-Jun-1987`</Table.Td>
+<Table.Td>`17:41:17`</Table.Td>
+<Table.Td>`Today`</Table.Td>
+<Table.Td>`14:32:58`</Table.Td>
+<Table.Td>`13112`</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>`game.bas`</Table.Td>
+<Table.Td>`02-Jun-1987`</Table.Td>
+<Table.Td>`12:27:43`</Table.Td>
+<Table.Td>`02-Jun-1987`</Table.Td>
+<Table.Td>`12:27:43`</Table.Td>
+<Table.Td>`827`</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+#### Updated Date is the only Date used
+
+Although both the **Creation date & time** and <strong><strong>Last updated <strong>**date & time**</strong></strong></strong> are shown in two columns in practise, they remain the same value as none of the applications on the Z88 use this feature i.e. when the file is changed, the creation date & time is also updated.
+
+The last updated time and date are only relevant if **OPENUP** is used from BASIC. If the file is open at the time it is catalogued, the size will not be shown.
+
+#### <Key k="diamond" />CE — Catalogue File Card
+
+#### Flashing Display whilst using Flash or EPROM card is normal
+
+Gives a list of information on all files in a Flash or EPROM card. The directories and file names will be given to show where the files originally came from.
+
+When you catalogue or save to a blank EPROM, the display will go blank for a few seconds while the EPROM is checked. This also happens with Flash cards when OZ is running on the same card. This happens only once; afterwards cataloging is without flickering.
+
+<Callout type="info">
+
+**The header of Erased EPROM has also been removed**
+
+If the Card has been erased, it will check the file area is blank and blow a header so that the file area is recognised by the <Key k="diamond" />CARD command in the INDEX.
+
+</Callout>
+
+<Callout type="warning">
+
+**Note**
+
+The Date information on files is not stored in either the Flash or EPROM cards. If this information is important, consider saving the file to the Desktop computer, where the date information is also transferred. Zipping the file in RAM before saving it to the Eprom card will retain the date.
+
+</Callout>
+
+<Callout type="info">
+
+**UV EPROM fully erased?**
+
+From OZ 4.5 a check is made that the file area is fully erased when using this command for the first time. Users using previous versions should check that the EPROM is fully erased using [ROMcombiner.](https://cambridgez88.jira.com/wiki/display/ZRC/RomCombiner+BBC+BASIC+utility)
+
+</Callout>
+
+#### <Key k="diamond" />ES — Save to File Card
+
+#### UV EPROM fully erased?
+
+Copies files from the filing system to a Flash or EPROM card. The file or files to be saved can either be selected as already described, or specified after the prompt
+
+`Name :`
+
+When a file is being saved to EPROM or to a Flash card in Slot 1, the screen will blank intermittently (if OZ is running on the same card) until saving is completed, when the Cambridge Z88 will bleep.
+
+Warning: the display may be blank for a long time when saving large files
+
+When saving very large file, the Z88 may appear to be doing nothing. It isn't, it is just working as fast as it can so leave it alone. For example a 368K file can take up to 3 minutes to complete, so just wait.
+
+Several files may be saved at the same time. See [Select Extra File](#selectextrafile-)
+
+From OZ 4.5 a check is made that the file area is fully erased when using this command for the first time. Users using previous versions should check that the EPROM is fully erased using [ROMcombiner.](https://cambridgez88.jira.com/wiki/display/ZRC/RomCombiner+BBC+BASIC+utility)
+
+#### <Key k="diamond" />EF — Fetch from File Card
+
+Copies files from Flash or EPROM card back to the filing system. Gives the prompts
+
+`Source :` <br />`Destination :`
+
+*Source:* specifies the name of the file in the EPROM.
+
+*Destination:* gives the name it is to be saved as in the destination filing system. It is initially set to the same as the source name, but you can edit it if you want to save the file under a different name.
+
+#### <Key k="diamond" />CO — Copy
+
+Makes a second copy of a file in RAM. Gives the prompt
+
+`Name :`
+
+allowing you to specify the file name to be copied, followed by the prompt
+
+`New name :`
+
+for the name of the copy.
+
+Multiple files (selected in the catalogue window) can be merged into a single file with the **Copy** command; they will be appended in the order in which they were selected. See [Select Extra File](#selectextrafile-)
+
+#### <Key k="diamond" />RE — Rename
+
+Allows the name of a file in RAM to be altered. Gives the prompts
+
+`Name :` <br />`New name :`
+
+For example, to change the name of a file from game.bas to 0ldversion you would specify
+
+`Name : game.bas` <br />`New name : oldversion`
+
+Note that you cannot use the **Rename** command to move a file from one directory or device to another. The new name must be a simple file name; devices and path names are not permitted.
+
+#### <Key k="diamond" />ER — Erase
+
+Allows one or more files from RAM to be removed from the filing system. Gives the prompt
+
+<strong>`Name :`</strong>
+
+followed by the prompt
+
+`Confirm each file ? Yes`
+
+Pressing <Key k="enter" /> will prompt for each file you have selected to be erased, so allowing you to change your decision for any particular file. Alternatively, changing the option to `No` by typing <Typed>N</Typed> will erase all the selected files without further prompting.
+
+You will not be permitted to erase a file which is in use; for example, a directory containing other files, or an open BASIC file.
+
+Several files may be erased at the same time. See [Select Extra File](#selectextrafile-)
+
+<Callout type="error">
+
+**Warning**
+
+Because parts of an erased file in RAM may still be present, you should not rely on the **Erase** command for disposing of confidential information from the system
+
+</Callout>
+
+<Callout type="warning">
+
+**Note**
+
+The file area in the Flash cards are erased (or formatted) using Flashstore or Filer (<Key k="diamond" />EC).
+
+Files can only be erased from the EPROM with the EPROM eraser using ultra-violet light.
+
+</Callout>
+
+#### <Key k="diamond" />SE — Select File Card
+
+Selects the slot for the default File Card. This is selected using the number keys, 0-3 or <Key k="diamond" />J to toggle each slot number.
+
+<Callout type="warning">
+
+**Note**
+
+As a blank EPROM may be used, any slot may be selected. The user needs to ensure that the correct slot is valid.
+
+</Callout>
+
+#### <Key k="diamond" />EC — Create File Card
+
+If the Flash card is blank, this command formats the File Area for the first time. If this has already been done and there are some files already saved, this command will format the file area again after giving a warning.
+
+<Callout type="error">
+
+**WARNING**
+
+ALL FILES WILL BE REMOVED. All Applications that are on the Flash card will be unaffected and remain on the card.
+
+</Callout>
+
+#### <Key k="diamond" />Sl — Select Directory
+
+Sets the current directory to the specified directory. Gives the prompt
+
+`Name :`
+
+displaying the current directory string (if any).
+
+For example; to set the current directory to directory `TEXT` in the current directory, specify
+
+`Name : TEXT`
+
+If the directory has not been created, a `File not found` error will be displayed.
+
+#### <Key k="diamond" />SV — Select Device
+
+Sets the current RAM device. Gives a prompt such as
+
+`Name : :RAM.1`
+
+showing the current device, which can be edited to the required new device.
+
+The **Select Device** command resets the current directory to the root directory.
+
+The **Select Device** and **Select Directory** commands affect the device and directory for the activity from which the Filer was entered, if there is one. This allows different activities to use different devices and directories without the need for specifying them explicitly each time.
+
+<Callout type="warning">
+
+If you save files having set a device and/or directory from one activity, and then enter the Filer from another activity, you may be in a different device and/or Directory. Check that the directory displayed at the top of the DIRECTORY window is the intended directory you wish to use.
+
+</Callout>
+
+#### Down Directory — Up Directory
+
+<Key k="shift" /><Key k="down" />
+
+<Key k="shift" /><Key k="up" />
+
+These commands are used for traversing a [hierarchical directory structure](#thefilingsystemhierarchicalsystem). To select a directory move the highlight bar to the directory name in the Filer DIRECTORY window and press <Key k="shift" /><Key k="down" />. To go back up to the parent directory press <Key k="shift" /><Key k="up" />.
+
+#### <Key k="diamond" />EX — Execute
+
+Executes a CLI file of commands specified after the prompt
+
+`Name : I`
+
+See CLI files below.
+
+#### <Key k="diamond" />CD — Create Directory
+
+Creates a directory within the current directory; the name is specified after the prompt
+
+`Name : I`
+
+#### <Key k="diamond" />TC — Tree Copy
+
+Copies a file tree from one directory to another. Arguments to the S o u r c e and D e s t i n a t i o n fields must be devices or directories. For example,
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>Source :</Table.Td>
+<Table.Td>:RAM.1</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Destination :</Table.Td>
+<Table.Td>:RAM.2</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+will make a duplicate copy of all files from RAM card 1 to RAM card 2.
+
+The source area cannot be part of the destination area.
+
+Source :
+
+:RAM.1
+
+Destination :
+
+:RAM.2
+
+#### <Key k="diamond" />NM — Name Match
+
+Sets up a match string restricting access to files in the current directory to those that match the string. For example, setting
+
+`Name : *.bas`
+
+Will catalogue only files with a `bas` extension. The default match string is \*, matching all file names. When a name match other than \* is active, the symbol `NM` will be displayed at the left-hand end of the Filer DIRECTORY window
+
+#### <Key k="diamond" />VF — View File
+
+When this command is issued, the user is prompted for the file name.
+
+<Shot src="z88-user-guide/filer-reference/oz45-filer-vf-filename.webp" alt="enter filename" width={640} />
+
+Alternatively, to avoid making typing errors, the file may be marked beforehand
+
+<Shot src="z88-user-guide/filer-reference/oz45-filer-vf-marked.webp" alt="marked file" width={640} />
+
+and then the command issued
+
+<Shot src="z88-user-guide/filer-reference/oz45-filer-vf-fileview.webp" alt="oz45 filer vf fileview" width={640} />
+
+CRC-32
+
+The [CRC-32](http://en.wikipedia.org/wiki/Cyclic_redundancy_check) (checksum) value of the file is displayed. It is used by several applications on the Z88 (Eazylink2, FlashStore, ROMupdate) to ensure file integrity. CRC-32 is found in many desktop applications as well.
+
+#### <Key k="down" /><Key k="up" /><Key k="left" /><Key k="right" /> — <Key k="shift" /><Key k="down" /><Key k="up" /><Key k="left" /><Key k="right" /> — <Key k="diamond" /><Key k="down" /><Key k="up" /><Key k="left" /><Key k="right" />
+
+The cursor keys are used to navigate around the file.
+
+<Key k="tab" />
+
+is used to toggle the cursor between the HEX display on the left and the ASCII display on the right.
+
+<Key k="esc" />
+
+Quits this View File function, but remains in the Filer.
+
+Make sure you use <Key k="esc" /> to leave this pop down otherwise an 'In use' error message will be shown when the file is deleted. The only way of clearing this error is with either a Soft or Hard Reset, risking losing files in RAM.
+
+<Shot src="z88-user-guide/appendix-c-error-messages/in-use-error-message.webp" alt="in use error message" width={640} />
+
+## CLI Files [#cli_files]
+
+The Filer Execute command,<Key k="diamond" />EX, allows a text file to be passed to the Command Line Interpreter, or CLI. The effect is as if the characters in the file had been typed at the Cambridge Z88 keyboard. CLI files thus provide a means of specifying a sequence of commands or operations, which can then be carried out simply by executing the file. For example, an execute file could be used to carry out a frequently-used sequence of Replace operations in PipeDream documents.
+
+<Callout type="warning">
+
+**CLI file fails to be interpreted**
+
+If a CLI file fails to be interpreted correctly, it may not have been written with PipeDream or tested.
+
+To correct this,
+
+1. Load the file into PipeDream
+
+2. Remove any spaces that are at the start of each CLI command
+
+3. Save the file as a 'plain text' file.
+
+This will correct the line feed character if it was different, at the end of each line.
+
+</Callout>
+
+### Special Significance Characters
+
+Certain characters are given a special significance in CLI files, to allow special keys on the keyboard to be represented, or additional operations to be carried out by the Command Line Interpreter.
+
+These special characters, and their functions, are as follows:
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>\#</Table.Td>
+<Table.Td>Prefixes a <Key k="square" /> key sequence - holding down <Key k="square" /> key and pressing another key</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\|</Table.Td>
+<Table.Td>Prefixes a <Key k="diamond" /> key sequence -holding down <Key k="diamond" /> key and pressing another key</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\~</Table.Td>
+<Table.Td>Used in combination with a letter to represent other special keys on the Cambridge Z88 keyboard</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>.</Table.Td>
+<Table.Td>As the first character on a line, introduces a special CLI command.</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+To represent these actual characters in a command file, they should be specified twice:
+
+| Sequence | Represents |
+| --- | --- |
+| \#\# | \# |
+| \~\~ | \~ |
+| \|\| | \| |
+
+#### Key sequences
+
+| Character | Significance |
+| --- | --- |
+| \~A | Single press of the <Key k="square" /> key; \~A\~A has no effect |
+| \~C | Single press of the <Key k="diamond" /> key; \~C\~C has no effect |
+| \~S | <Key k="shift" /> |
+| \~I | <Key k="index" /> |
+| \~M | <Key k="menu" /> |
+| \~H | <Key k="help" /> |
+| \~E | <Key k="enter" /> |
+| \~X | <Key k="del" /> |
+| \~T | <Key k="tab" /> |
+| \~U | <Key k="up" /> |
+| \~D | <Key k="down" /> |
+| \~L | <Key k="left" /> |
+| \~R | <Key k="right" /> |
+| \|\[ | <Key k="esc" /> |
+
+<Callout type="error">
+
+**ESC does not work in CLI files**
+
+The <Key k="esc" /> key code \|\[ does not work after OZ 4.0. A workaround is to select the Filer \#F and then select an application after that.
+
+This has been fixed from OZ 4.7.
+
+</Callout>
+
+##### File control commands
+
+The full-stop character introduces the following special commands when it is the first character of a line in an execute file.
+
+| Sequence | Significance |
+| --- | --- |
+| .T\> filename | Create output file |
+| .T\< filename | Create input file |
+| .T= filename | Create printer file |
+| .\> filename | Redirect output |
+| .\< filename | Redirect input |
+| .= filename | Redirect printer |
+| .D nnn | Delay nnn centiseconds |
+| .S | Suspend CLI; all redirections of input or output remain in force |
+| .\* filename | Invoke new file to CLI |
+| .J | Ignore special significance of subsequent escape characters |
+| a comment | Ignored. |
+
+The T character represents a 'T' junction, as it causes an additional copy of the input or output to be sent to a specified stream. For example:
+
+`.T> :RAM.0/fred.txt`
+
+sends a copy of what is going to the screen to the file
+
+`:RAM.0/fred.txt`
+
+The J character stands for 'Jam', as it inhibits interpretation of the escape characters.
+
+Printer output can be spooled to a file with the '=' symbol. For example,
+
+`.= :RAM.0/printout`
+
+takes the text that would have been printed out, before printer codes are added, and puts the text into the file
+
+`:RAM.0/printout`
+
+### Terminating execute files
+
+When the CLI is running an execute file a CLI symbol is displayed in the OZ area of the screen. The current CLI can be terminated by pressing <Key k="shift" /> <Key k="esc" />. If several CLIs are running they can all be terminated by holding down <Key k="diamond" /> and pressing <Key k="esc" />.
+
+### Redirecting keyboard input and screen output
+
+The following key combinations can be used to redirect keyboard input and screen output:
+
+| Key | Effect |
+| --- | --- |
+| <Key k="square" />+P | All screen output also sent to the printer |
+| <Key k="square" />+S | All screen output also sent to the file : RAM .-/S.sgn |
+| <Key k="square" />+K | Key input also sent to the file : RAM .-/K.sgn |
+
+For example, <Key k="square" />+P can be used to obtain a catalogue of EPROM or RAM to a printer.
+
+The corresponding sequences with \`–' turn the facility off, and sequences <Key k="square" /> +P and <Key k="square" />+S are mutually exclusive.
+
+The commands <Key k="square" />+S and <Key k="square" />+K generate files K.sgn and S.sgn in temporary RAM. These should be deleted after use with the Filer Erase command.
+
+<Callout type="warning">
+
+**Can be used as a recorder.**
+
+<Key k="square" />+K is a really useful and undervalued command as it can be used as a recorder. Typing in the keystokes normally, saves trying to remember all those special characters. The file created :RAM.-K.sgn may be copied and could then be edited as a plain text file in Pipedream to be a CLI file which will play back the keystrokes recorded.
+
+</Callout>
+
+#### Editing BASIC programs using PipeDream
+
+BASIC programs are saved in a tokenised format, and so cannot be loaded into PipeDream and edited directly. However, the CLI provides a convenient way of obtaining a text listing of a BASIC program, which can then be edited and executed back into BASIC.
+
+The procedure is as follows:
+
+1. LIST the program to the file **:RAM.-/S.sgn** by typing `LIST` <Key k="square" />`+S` <Key k="enter" />
+
+2. When the listing has finished, close the file by typing <Key k="square" />`-S`<br />The file `:RAM.-/S.sgn` can be loaded into PipeDream as plain text, and edited.
+
+3. Add the characters<br />`.J`<br />`NEW`<br /><br />at the start of the file, and save it from PipeDream using the Plain text option.
+
+4. Execute the edited file back into BASIC by entering BASIC and typing:<br />`*CLI .*FILENAME`<br /><br />to invoke the CLI to execute the file.
+
+5. When finished, erase the file `:RAM.-/S.sgn` using the Filer.
+
+The . J at the start of the file avoids the need to replace characters such as \# by \#\# throughout the BASIC program so that they will not be interpreted by the CLI.
+
+#### Executing a file on reset
+
+On resetting the Cambridge Z88, if a file with the name
+
+`BOOT.CLI`
+
+exists on an EPROM card in slot 3, it will be copied into
+
+`:RAM.-/BOOT.CLI`
+
+and then executed. The file should be deleted when it is no longer required.
+
+From OZ 4.7, the **boot.cli** may be in any RAM or card slot. This allows for example, Flash cards in slot 1 running OZ 4.7 or above to automatically execute the boot.cli file when a SOFT or HARD RESET is given.
+
+## Example using \[\]+K to make a Command File
+
+To record the sequence of keystrokes to RUN a boot.cli file for use in OZ 4.6.2 so that additional RAM applications are ready to run after a HARD RESET is given.
+
+If a mistake is made, it will be recorded in the file. Two choices
+
+- either STOP and START AGAIN or
+- continue, save it and edit the mistakes out afterwards.
+
+Select Index
+
+- Select CLI function \<\<SEND\>\> KEYBOARD to FILE.<br /><Key k="square" />+K <br />(CLI will appear flashing on RHS of display)
+- Select Filer<br /><Key k="square" />F
+- Fetch from File Card<br /><Key k="diamond" />EF
+- ziputils.ap0 <Key k="enter" /><Key k="enter" />
+- Fetch from File Card<br /><Key k="diamond" />EF
+- ziputils.app <Key k="enter" /><Key k="enter" />
+- Select INDEX<br /><Key k="square" />I
+- Install application<br /><Key k="diamond" />INS
+- Install Application - Filename (Name of File to Fetch) <br />ziputils.app <Key k="enter" /><Key k="enter" />
+- Deselect CLI function \<\<SEND\>\> KEYBOARD to FILE.<br /><Key k="square" />-K <br />(CLI disappears on RHS of display)
+
+The file will be in :RAM.-/K.sgn
+
+### Copy the File from temporary RAM.- to ordinary RAM.1
+
+There are two things to do straight away after creating any files in RAM.-
+
+- Copy the file to RAM.1
+- Delete the file in RAM.-
+
+Select Filer <Key k="square" />F<br />Select Copy <Key k="diamond" />CO<br />Name : :RAM.-/K.sgn <Key k="enter" /><br />New name : :RAM.1/boot.CLI <Key k="enter" />
+
+Select Erase <Key k="diamond" />ER<br />Name : :RAM.-/K.sgn <Key k="enter" />
+
+### Edit the File in Pipedream
+
+The boot.cli file is loaded into Pipedream as a 'plain text' file.
+
+A comment line prefixed with ; can be added to remind the reader what the file does.
+
+The final command \~A-k which was used to end using the cli command needs to be deleted.
+
+add \#I OR \~AI at the end.
+
+Here is a screen shot of the final file.
+
+<Shot src="z88-user-guide/filer-reference/cli-kb-example1.webp" alt="cli kb example1" width={640} />
+
+Save the file as a 'plain text' file and then in the Filer, save boot.cli to file card.
+
+### Starting boot.cli
+
+<Callout type="info">
+
+**Boot.cli only works in Slot 3 until OZ 4.7**
+
+Before OZ V4.7, when the Z88 is given a SOFT or HARD RESET, OZ looks to see if there is a boot.cli file to run in Slot 3. OZ V4.7 and later executes this file in any RAM or EPROM/FLASH card, if found
+
+</Callout>
+
+The workaround is as follows:-
+
+- Select Filer<br /><Key k="square" />F
+- Fetch from File Card<br /><Key k="diamond" />EF
+- boot.cli <Key k="enter" /><Key k="enter" />
+- Execute<br /><Key k="diamond" />EX
+- boot.cli <Key k="enter" /><Key k="enter" />
+
+This will load and run the boot.cli file and give the following screen output.
+
+<Shot src="z88-user-guide/filer-reference/index-instalation-complete.webp" alt="index instalation complete" width={640} />
+
+Press <Key k="esc" /> to resume.
+
+## Error messages
+
+### UV EPROM not fully erased
+
+When an EPROM is erased, all the memory locations are returned to their natural state i.e. ff. Occasionally some locations may escape erasure due to some dust covering the UV window or that the chip has reached the end of its useful life. From OZ 4.5 a check is made that all the locations have been cleared correctly before the header or the first file is saved.
+
+<Shot src="z88-user-guide/filer-reference/unerased-eprom.webp" alt="Unerased EPROM" width={482} />
+
+If an error is found, (see above), the following error message is displayed.
+
+<Shot src="z88-user-guide/filer-reference/uv-eprom-not-fully-cleared.webp" alt="UV EPROM not erased" width={640} />
+
+The solution is to continually erasing the EPROM until this message does not appear. If this does not happen, the EPROM card needs to be discarded.
+
+### In Use
+
+<Shot src="z88-user-guide/filer-reference/in-use-error-message.webp" alt="in use error message" width={640} />
+
+Make sure you use <Key k="esc" /> to leave this View File function. otherwise an 'In use' error message will be shown when the file is deleted. The only way of clearing this error is with either a Soft or Hard Reset, risking losing files in RAM.

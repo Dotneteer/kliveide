@@ -1,0 +1,164 @@
+---
+description: "This is the revised User Guide for the Cambridge Z88, being updated with all new features and improvements that has been added into the \"OZ\" operating system ROM, both on application and system..."
+---
+
+import { Callout } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/120497399 (version 33) by scripts/import-z88-user-guide.cjs */}
+
+# Welcome to the Z88 User Guide - edition 4.7
+
+<Callout type="info">
+
+This is the **Cambridge Z88 User Guide**, imported with its author's agreement from the [Cambridge Z88 wiki](https://cambridgez88.jira.com/wiki/spaces/UG/overview). The pages follow the original manual's structure; the conventions it uses for keys, typed text and screen text are explained in [Conventions in this manual](/en/z88-user-guide/getting-started/conventions-in-this-manual).
+
+</Callout>
+
+<Shot src="z88-user-guide/welcome/user-guide.webp" alt="user guide" width={339} />
+
+This is the revised User Guide for the Cambridge Z88, being updated with all new features and improvements that has been added into the "OZ" operating system ROM, both on application and system level by the Z88 Development Team since the last official V4.0 UK ROM was released by Cambridge Computer in 1989.
+
+The Z88 Development Team reverse-engineered the V4.0 ROM into source code in 2003 and has since then done substantial re-organisation and optimisation of the existing OZ code base, now fulfilled many of the original end-user wishes expressed in the independent end-user "Z88 EPROM" publishing made available in the early nineties.
+
+Per Svensson - a dedicated Z88 user - did all the OCR scanning of the printed 4th edition and converted it to HTML. With his permission, we continued the process, replaced all virtually drawn screenshots with live snapshots from the [Z88 emulator](https://cambridgez88.jira.com/wiki/display/OZVM/OZvm+-+the+Z88+Emulator) and finally converted it into this wiki.
+
+## Major improvements developed since original release by Cambridge Computer
+
+- **[Save and Load Files directly to the File Area](/en/z88-user-guide/filer-reference#sectionseven-filerreference-devicespecifications)** - no need to save the file to RAM first. Use :EPR:1, 2 or 3 from directly from the Application.
+
+- **[Run Application in RAM](/en/z88-user-guide/appendix-j-installing-applications-in-ram)** - No need to have applications in Flash or EPROM card, just get and use RAM.
+
+- **[Multiple Language & Keyboard selection](/en/z88-user-guide/getting-started/up-and-running#changingkeyboardlayout)** - The popular foreign ROM's can now be selected; choose from a range of countries, use different keyboard layouts and see the change of languages in the localized date names in the [Clock](/en/z88-user-guide/using-the-popdowns/the-clock-popdown#international), [Calendar](/en/z88-user-guide/using-the-popdowns/the-calendar-popdown#international) and [Diary](/en/z88-user-guide/using-the-diary#international)
+
+  - Supported languages are:- UK (default) USA, French, German, Spanish, Italian, Danish, Norwegian, Swedish and Finnish
+
+- Filenames may now use the complete ISO character set, allowing to use characters such as **é** and **å** in filenames.
+
+- **[Fast Serial Port](/en/z88-user-guide/using-the-popdowns/the-panel-popdown#serial_port_parameters)** - all speeds and protocols supported with reliable file transfer up to 38400 baud
+
+- **[Eazylink2](/en/z88-user-guide/using-the-popdowns/the-eazylink-popdown)** connects to 21<sup><sub>st</sub></sup> century Desktop computers with support for the original file transfer Imp/Export popdown
+
+- [**XMODEM** and **YMODEM**](/en/z88-user-guide/using-the-popdowns/the-imp-export-popdown#x-y_modem_on_desktop) protocol added to Imp/Export popdown
+
+- **[BBC BASIC V3.10](/en/z88-user-guide/bbc-basic)**. Now includes the "patch" integration from the V2.2 / V3 UK ROM
+
+- **[Fast Backup](/en/z88-user-guide/flashstore-reference#backup_files_from_ram) using Flash cards** support in **Filer** and **Flashstore**. Flash cards are FORMATTED by the Z88 itself. - No need to use EPROM Cards or the EPROM Eraser to FORMAT them
+
+- **[Terminal](/en/z88-user-guide/the-terminal)** supports all VT52 commands
+
+- Main **HELP** pages repopulated and expanded from ROM V3.0 UK (from OZ 4.0)
+
+- **[System Info](/en/z88-user-guide/using-the-popdowns/the-index-popdown#systeminformation)** page in Index that displays OZ build release information, battery status and free system resources
+
+- **[Alarms](/en/z88-user-guide/using-the-popdowns/the-alarm-popdown#savingandloading)** can be saved to file (for backup and restore across soft reset)
+
+- [**EPROM**](/en/z88-user-guide/getting-started/using-cards/flash-and-eprom-cards#epromcardfullyerased) is checked that it is empty before cataloguing the first time
+
+## Available editions of Z88 User Guide
+
+The following table lists the released editions of the Z88 User Guide, provided by the Z88 Development Team and others:
+
+| Release edition | Description | Download / reference link |
+| --- | --- | --- |
+| 3.0 | Online browsable scanning of Cambridge Z88 User Guide. Can be downloaded as PDF or ePub file. | **[archive.org](https://archive.org/stream/aa153-Z88_User_Guide/aa153%20-%20Z88%20User%20Guide#page/n0/mode/2up)** |
+| 4.0 | Wiki-format of final fourth edition as it were bundled with a Cambridge Z88 Computer. | **[Z88 User Guide V4.0](https://cambridgez88.jira.com/wiki/display/UG40/Z88+User+Guide+V4.0)** |
+| 4.7 | Latest edition, containing all feature updates of OZ releases since 4.1 | W.I.P. |
+
+## Non-English language manuals
+
+Here are a number of foreign language manuals, available for download via the links in the table below.
+
+| Detail | PDF |
+| --- | --- |
+| German manual | [Z88 Handbuch.pdf](https://cambridgez88.jira.com/wiki/download/attachments/120497399/Z88%20Handbuch.pdf) |
+| Italian manual | [Z88 Italian Guide.pdf](https://cambridgez88.jira.com/wiki/download/attachments/120497399/Z88%20Italian%20Guide.pdf) |
+| French manual | [Z88 Manuel D’Instructions.pdf](https://cambridgez88.jira.com/wiki/download/attachments/120497399/Z88%20Manuel%20D%E2%80%99Instructions.pdf) |
+
+## Latest online edition
+
+We're constantly editing the user guide, reflecting the current development of the Z88 operating system. Click on chapters as seen below, or use search to specific details.
+
+###### Navigate space
+
+## Contents
+
+- [Copyright Notice](/en/z88-user-guide/copyright-notice)
+- [FCC Compliance](/en/z88-user-guide/fcc-compliance)
+- [Section One - Getting started](/en/z88-user-guide/getting-started)
+  - [Conventions in this manual](/en/z88-user-guide/getting-started/conventions-in-this-manual)
+  - [Introducing the Cambridge Z88](/en/z88-user-guide/getting-started/introducing-the-cambridge-z88)
+  - [Up and running](/en/z88-user-guide/getting-started/up-and-running)
+    - [Flash Card example](/en/z88-user-guide/getting-started/up-and-running/flash-card-example)
+      - [Booting up OZ 4.x using a Flash Card](/en/z88-user-guide/getting-started/up-and-running/flash-card-example/booting-up-oz-4-x-using-a-flash-card)
+      - [Fetching a file from the Flashcard](/en/z88-user-guide/getting-started/up-and-running/flash-card-example/fetching-a-file-from-the-flashcard)
+      - [Using Pipedream](/en/z88-user-guide/getting-started/up-and-running/flash-card-example/using-pipedream)
+      - [Using Unzip](/en/z88-user-guide/getting-started/up-and-running/flash-card-example/using-unzip)
+  - [Applications and popdowns](/en/z88-user-guide/getting-started/applications-and-popdowns)
+  - [Basic concepts](/en/z88-user-guide/getting-started/basic-concepts)
+    - [The keyboard](/en/z88-user-guide/getting-started/basic-concepts/the-keyboard)
+    - [The Index](/en/z88-user-guide/getting-started/basic-concepts/the-index)
+    - [Entering an application](/en/z88-user-guide/getting-started/basic-concepts/entering-an-application)
+    - [Suspended activities](/en/z88-user-guide/getting-started/basic-concepts/suspended-activities)
+    - [Using menus](/en/z88-user-guide/getting-started/basic-concepts/using-menus)
+    - [Shortcuts using diamond key](/en/z88-user-guide/getting-started/basic-concepts/shortcuts-using-diamond-key)
+    - [Line editing](/en/z88-user-guide/getting-started/basic-concepts/line-editing)
+    - [Memory low condition](/en/z88-user-guide/getting-started/basic-concepts/memory-low-condition)
+    - [Soft and hard reset](/en/z88-user-guide/getting-started/basic-concepts/soft-and-hard-reset)
+    - [Help](/en/z88-user-guide/getting-started/basic-concepts/help)
+  - [Using cards](/en/z88-user-guide/getting-started/using-cards)
+    - [RAM cards](/en/z88-user-guide/getting-started/using-cards/ram-cards)
+    - [Using extra RAM](/en/z88-user-guide/getting-started/using-cards/using-extra-ram)
+    - [Flash and EPROM cards](/en/z88-user-guide/getting-started/using-cards/flash-and-eprom-cards)
+    - [ROM cards](/en/z88-user-guide/getting-started/using-cards/rom-cards)
+    - [Expanded, Unexpanded](/en/z88-user-guide/getting-started/using-cards/expanded-unexpanded)
+- [Section Two - Using PipeDream](/en/z88-user-guide/using-pipedream)
+  - [Starting PipeDream](/en/z88-user-guide/using-pipedream/starting-pipedream)
+  - [The structure of PipeDream](/en/z88-user-guide/using-pipedream/the-structure-of-pipedream)
+  - [Designing a party invitation](/en/z88-user-guide/using-pipedream/designing-a-party-invitation)
+  - [Compiling a name and address list](/en/z88-user-guide/using-pipedream/compiling-a-name-and-address-list)
+  - [Calculating home expenses](/en/z88-user-guide/using-pipedream/calculating-home-expenses)
+- [Section Three - Using the Diary](/en/z88-user-guide/using-the-diary)
+- [Section Four - Using the popdowns](/en/z88-user-guide/using-the-popdowns)
+  - [The Index popdown](/en/z88-user-guide/using-the-popdowns/the-index-popdown)
+  - [The Calculator popdown](/en/z88-user-guide/using-the-popdowns/the-calculator-popdown)
+  - [The Calendar popdown](/en/z88-user-guide/using-the-popdowns/the-calendar-popdown)
+  - [The Clock popdown](/en/z88-user-guide/using-the-popdowns/the-clock-popdown)
+  - [The Alarm popdown](/en/z88-user-guide/using-the-popdowns/the-alarm-popdown)
+  - [The Filer popdown](/en/z88-user-guide/using-the-popdowns/the-filer-popdown)
+  - [The Flashstore popdown](/en/z88-user-guide/using-the-popdowns/the-flashstore-popdown)
+  - [The Panel popdown](/en/z88-user-guide/using-the-popdowns/the-panel-popdown)
+  - [The Imp-Export popdown](/en/z88-user-guide/using-the-popdowns/the-imp-export-popdown)
+  - [The Eazylink popdown](/en/z88-user-guide/using-the-popdowns/the-eazylink-popdown)
+- [Section Five - PipeDream Reference](/en/z88-user-guide/pipedream-reference)
+  - [Operations on blocks of slots - BLOCKS](/en/z88-user-guide/pipedream-reference/operations-on-blocks-of-slots-blocks)
+  - [Moving about the document - CURSOR](/en/z88-user-guide/pipedream-reference/moving-about-the-document-cursor)
+  - [Editing text and expressions - EDIT](/en/z88-user-guide/pipedream-reference/editing-text-and-expressions-edit)
+  - [Working with files - FILES](/en/z88-user-guide/pipedream-reference/working-with-files-files)
+  - [Altering the layout - LAYOUT](/en/z88-user-guide/pipedream-reference/altering-the-layout-layout)
+  - [Document options - OPTIONS](/en/z88-user-guide/pipedream-reference/document-options-options)
+  - [Printing documents - PRINT](/en/z88-user-guide/pipedream-reference/printing-documents-print)
+  - [Expression slots](/en/z88-user-guide/pipedream-reference/expression-slots)
+- [Section Six - Diary Reference](/en/z88-user-guide/diary-reference)
+  - [Operations on a block of text - BLOCKS](/en/z88-user-guide/diary-reference/operations-on-a-block-of-text-blocks)
+  - [Moving around the Diary - CURSOR](/en/z88-user-guide/diary-reference/moving-around-the-diary-cursor)
+  - [Editing the Diary - EDIT](/en/z88-user-guide/diary-reference/editing-the-diary-edit)
+  - [Loading and saving - FILES](/en/z88-user-guide/diary-reference/loading-and-saving-files)
+- [Section Seven - Filer reference](/en/z88-user-guide/filer-reference)
+- [Section Eight - The Terminal](/en/z88-user-guide/the-terminal)
+- [Section Nine - The Printer Editor](/en/z88-user-guide/the-printer-editor)
+- [Section Ten - BBC BASIC](/en/z88-user-guide/bbc-basic)
+  - [BBC BASIC Keywords](/en/z88-user-guide/bbc-basic/bbc-basic-keywords)
+  - [BBC BASIC Operators](/en/z88-user-guide/bbc-basic/bbc-basic-operators)
+- [Section Eleven - Flashstore reference](/en/z88-user-guide/flashstore-reference)
+- [Appendix A - Replacing batteries](/en/z88-user-guide/appendix-a-replacing-batteries)
+- [Appendix B - Serial port and transfer protocols](/en/z88-user-guide/appendix-b-serial-port-and-transfer-protocols)
+- [Appendix C - Error messages](/en/z88-user-guide/appendix-c-error-messages)
+- [Appendix D - Character set](/en/z88-user-guide/appendix-d-character-set)
+- [Appendix E - PipeDream file format](/en/z88-user-guide/appendix-e-pipedream-file-format)
+- [Appendix F - Specification](/en/z88-user-guide/appendix-f-specification)
+- [Appendix G - Using the mains adapter](/en/z88-user-guide/appendix-g-using-the-mains-adapter)
+- [Appendix I - Creating / Updating an Application Card](/en/z88-user-guide/appendix-i-creating-updating-an-application-card)
+  - [Creating Eazylink/Flashstore](/en/z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore)
+  - [Creating SpellMaster](/en/z88-user-guide/appendix-i-creating-updating-an-application-card/creating-spellmaster)
+  - [Creating OZ](/en/z88-user-guide/appendix-i-creating-updating-an-application-card/creating-oz)
+- [Appendix J - Installing applications in RAM](/en/z88-user-guide/appendix-j-installing-applications-in-ram)

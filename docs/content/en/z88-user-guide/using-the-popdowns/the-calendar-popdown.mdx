@@ -1,0 +1,108 @@
+---
+description: "The Calendar provides a convenient tool for planning your engagements, particularly when you want to look up dates quickly without leaving the application you are currently working on. Calling the..."
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/35913763 (version 14) by scripts/import-z88-user-guide.cjs */}
+
+# The Calendar popdown
+
+The Calendar provides a convenient tool for planning your engagements, particularly when you want to look up dates quickly without leaving the application you are currently working on. Calling the Calendar with <strong><Key k="square" /></strong>C displays the page for the current month, or the month you last looked at:
+
+<Shot src="z88-user-guide/using-the-popdowns/the-calendar-popdown/cal-uk.webp" alt="UKCalendar Display" width={640} />
+
+You use the cursor keys, in combination with <Key k="shift" /> and <Key k="diamond" /> keys, to move about within the calendar as follows:
+
+<Table>
+<thead>
+<Table.Tr>
+<Table.Th>Key</Table.Th>
+<Table.Th>Action</Table.Th>
+<Table.Th />
+<Table.Th>Key</Table.Th>
+<Table.Th>Action</Table.Th>
+</Table.Tr>
+</thead>
+<tbody>
+<Table.Tr>
+<Table.Td colSpan={2} />
+<Table.Td rowSpan={5} />
+<Table.Td colSpan={2} />
+</Table.Tr>
+<Table.Tr>
+<Table.Td><Key k="left" /></Table.Td>
+<Table.Td>previous day</Table.Td>
+<Table.Td><Key k="right" /></Table.Td>
+<Table.Td>next day</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td><Key k="up" /></Table.Td>
+<Table.Td>previous week</Table.Td>
+<Table.Td><Key k="down" /></Table.Td>
+<Table.Td>next week</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td><Key k="shift" /><Key k="up" /></Table.Td>
+<Table.Td>previous month</Table.Td>
+<Table.Td><Key k="shift" /><Key k="down" /></Table.Td>
+<Table.Td>next month</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td><Key k="diamond" /><Key k="up" /></Table.Td>
+<Table.Td>previous year</Table.Td>
+<Table.Td><Key k="diamond" /><Key k="down" /></Table.Td>
+<Table.Td>next year</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+If necessary, the calendar will automatically turn a page to the next or previous month.
+
+The Calendar is accurate back to the year 1753 (when the Gregorian calendar was accepted in England) and so has historical applications in addition to its obvious business uses.
+
+## Searching for a day
+
+You can also use the Calendar to go immediately to any date in any year.
+
+Press <Key k="enter" />, and the prompt
+
+`Look for: 17/06/2015`
+
+will be displayed, with today's date initially displayed. Type in the date you are searching for, and press the <Key k="enter" /> key. The cursor will move to the specified day.
+
+The date can also be entered in the form
+
+<Typed>17 jun 15</Typed>
+
+if you find this more convenient. The Cambridge Z88 defaults to the **twenty first century** now so 20 will be put in front of the two digit year.
+
+## Active days
+
+If the Calendar popdown is called from the Diary application, days containing information in the Diary will be identified on the Calendar with a pointer against the date
+
+For example like the symbol to the left of 17 on the screen shot above.
+
+<Shot src="z88-user-guide/using-the-popdowns/cal-17.webp" alt="cal 17" width={35} />
+
+Such active days can be found in the Calendar very quickly with the commands
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td><strong><Key k="square" /></strong> <Key k="left" /></Table.Td>
+<Table.Td>previous active day</Table.Td>
+<Table.Td />
+<Table.Td><strong><Key k="square" /></strong> <Key k="right" /></Table.Td>
+<Table.Td>next active day</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+## International
+
+If a different Keyboard is selected in the Panel, the wording reflecting the change of language will be displayed.
+
+<Shot src="z88-user-guide/using-the-popdowns/the-calendar-popdown/cal-fr.webp" alt="FR Calendar Display" width={640} />
+
+<Shot src="z88-user-guide/using-the-popdowns/the-calendar-popdown/cal-dk.webp" alt="DK Calendar Display" width={640} />

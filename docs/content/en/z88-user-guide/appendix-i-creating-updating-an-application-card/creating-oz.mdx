@@ -1,0 +1,678 @@
+---
+description: "Users are able to download the version that the developers have issued"
+---
+
+import { Callout, Table } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/53477416 (version 81) by scripts/import-z88-user-guide.cjs */}
+
+# Creating OZ
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-oz/oz472-info.webp" alt="oz472 info" width={640} />
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-oz/oz472-about.webp" alt="oz472 about" width={640} />
+
+<Callout type="info">
+
+**Info**
+
+Whether you already have a copy of OZ or not the instructions here has to assume that a new copy is made. You can only use the built-in OZ to create or update an existing copy of OZ.
+
+</Callout>
+
+## Which version to use?
+
+### Version 4.7.1
+
+Users are able to [download the version that the developers have issued](https://cambridgez88.jira.com/wiki/display/OZ/The+Z88+operating+system)
+
+This version does not have the files required to run RomUpdate. See further down to collect the three extra files.
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-oz/oz45-extra1.webp" alt="OZ 4.5 with extra programs screen1" width={640} />
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-oz/oz45-extra2.webp" alt="OZ 4.5 with extra programs Screen 2" width={640} />
+
+and these files in the file area.
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-oz/oz45-extra-files.webp" alt="Extra filles" width={640} />
+
+to blow it into their own Flash cards.
+
+### Version 5.0 beta
+
+Users are able to download the latest developer builds of OZ ROM and follow the additional instructions on that page - they have been changed.
+
+The current and previous copies including OZ 4.7.1 are further down the page, by using these, you may be able to get back to where you were. Please make Backups of what you do.
+
+There is another way to upgrade your Flashcard should this prove to be difficult.
+
+1. Get in touch with [Rakewell](http://www.rakewell.com) who offer the service of <br />upgrading or supplying Flashcards pre-installed with OZ.
+
+## Prerequisites
+
+- [Desktop Installation](https://cambridgez88.jira.com/wiki/display/EAZUGV10/Desktop+Installation)
+- [Connect the Z88 to the Desktop](https://cambridgez88.jira.com/wiki/display/EAZUGV10/Connect+the+Z88+to+the+Desktop)
+- [Starting EazyLink on the Desktop](https://cambridgez88.jira.com/wiki/display/EAZUGV10/Starting+EazyLink+on+the+Desktop)
+- Extra RAM fitted in slot 1. Large enough to receive and store all the files required.
+- EPROM or Flash card to store the image (as a separate operation)
+
+## Preparing the Z88
+
+<Callout type="info">
+
+**IMPORTANT INFO**
+
+The Z88 needs to be running off the internal OZ supplied with the Z88. To ensure that this happens all existing information on the Z88 will be lost after following this procedure. Backup any important files beforehand.
+
+</Callout>
+
+<Callout type="warning">
+
+**Note: Decision Time**
+
+Before you start, you need to decide whether to use the Imp-Export or Eazylink mode. If you choose Eazylink, then you will either have a 32K EPROM card, or it will be blown into the 512K/512K Flash RAM card. See the previous section [Creating Eazylink/Flashstore](/en/z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore).
+
+</Callout>
+
+### Hard Reset
+
+With no cards in the Z88 at all, give the Z88 a Hard Reset.
+
+<Shot src="z88-user-guide/getting-started/basic-concepts/soft-and-hard-reset/hardreset.webp" alt="hardreset" width={670} />
+
+Open the card flap<br />Insert the cards in the following configurations:-
+
+Shut the card flap.<br />In the INDEX check that the Z88 recognises the extra memory by giving the <Key k="diamond" /> CARD command. You should get the following result.
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td style={{ whiteSpace: "nowrap" }}><strong>**Imp-Export Mode** 512K</strong></Table.Td>
+<Table.Td><strong>**Imp-Export Mode** 1M Flash cards</strong></Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-oz/512k-0k-0k.webp" alt="Illustration for “Creating OZ”" width={452} />
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-oz/1m-ram-0-0.webp" alt="1M ram 0 0" width={452} />
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-oz/index-card-512kram.webp" alt="index card 512kram" width={640} />
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-oz/index-card-1m-ram-s1-0-s2-0-s3.webp" alt="index card 1m ram s1 0 s2 0 s3" width={640} />
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td style={{ whiteSpace: "nowrap" }}>**Eazylink Mode - ROM in Slot 1**</Table.Td>
+<Table.Td>**Eazylink Mode - ROM in Slot 2**</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-oz/512k-0k-0k.webp" alt="Illustration for “Creating OZ”" width={452} />
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-oz/1m-ram-32k-eprom-0.webp" alt="1M ram 32K EPROM 0" width={451} />
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-oz/index-card-512kr512k32k-0-0.webp" alt="index card 512KR512K32K 0 0" width={640} />
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-oz/index-card-1m-ram-32k-0.webp" alt="index card 1M ram 32K 0" width={640} />
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td style={{ whiteSpace: "nowrap" }}>**Eazylink Mode - ROM in Slot 2**</Table.Td>
+<Table.Td>**Eazylink Mode - ROM in Slot 2 with Blank flash card in Slot 3**</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-oz/512k-512k-32k.webp" alt="Illustration for “Creating OZ”" width={458} />
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-oz/1m-ram-32k-eprom-1m-flash.webp" alt="1M ram 32K EPROM 1M Flash" width={451} />
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-oz/index-card-512-ram-32k-0.webp" alt="index card 512 ram 32K 0" width={640} />
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-oz/index-card-1m-ram-32k-0.webp" alt="index card 1M ram 32K 0" width={640} />
+
+If the values shown in the RAM do not display these values, take all the cards out again give the Z88 a Hard Reset and go round the loop again until the values are correct.
+
+Press <Key k="esc" /> to return to the main screen.
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-oz/index-diary.webp" alt="Main INDEX Page" width={640} />
+
+### Set Default Device
+
+Set the default device to the RAM that is being used by selecting the Panel <Key k="square" />**S**. Move the cursor just past the `0` in `:RAM.0` in the Default Device field:-
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-oz/panel-default-device-past0.webp" alt="Cursor just past 0" width={640} />
+
+Press the <Key k="del" /> key
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-oz/panel-default-device-del.webp" alt="Delete the 0 in Default Device" width={640} />
+
+and replace it with a 1.
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-oz/panel-default-device-1.webp" alt="RAM in slot 1" width={640} />
+
+### Select Device [#select_device]
+
+Select the Filer <Key k="square" /> **F** .
+
+Press <Key k="diamond" />SV to **S**elect de**V**ice
+
+Move the cursor over to the right (using <Key k="diamond" /> <Key k="right" />, then press the <Key k="del" /> key to remove the number that is there, finally type in the RAM slot number 1 then press <Key k="enter" /> to select it.
+
+<Shot src="z88-user-guide/getting-started/up-and-running/z88-filer-sv.webp" alt="z88 filer sv" width={640} />
+
+## Preparing the Desktop
+
+### Downloading Files
+
+Download from the project file area the files needed to transfer to the Z88. If they are zipped, unzip all the files on the Desktop Computer and save them all in a directory.
+
+Check that you have downloaded the 4 RomUpdate files which are now in two separate locations (OZ 4.7.2. and RomUpdate).
+
+<Callout type="warning">
+
+**Note - File name changes**
+
+|   | 512K Flash | 512K Flash | 1M Flash | RomUpdate files |
+| --- | --- | --- | --- | --- |
+| OZ 4.7.2 | [ozrom-V4.7.1RC-46cdda4.zip](https://bitbucket.org/cambridge/oz/downloads/ozrom-V4.7.1RC-46cdda4.zip)<br />See above |   |   | romupdate.cfg |
+| RomUpdate | [RomUpdate (Z88 application & BBC BASIC)](https://cambridgez88.jira.com/wiki/spaces/ZRU/overview) |   |   | romupdate.bas<br />romupdate.cli<br />romupdate.crc |
+
+The extension (i.e. .52 .53 ...) remain the same.
+
+</Callout>
+
+<Callout type="warning">
+
+**UPDATED USE TO CHECK FILES REQUIRED**
+
+The example below has been updated. The current version being used is v4.7.1 There are no files in the file area.
+
+The RomUpdate files were initially supplied, but they are no longer there in the later versions. See above where they are.
+
+</Callout>
+
+<Table>
+<thead>
+<Table.Tr>
+<Table.Th colSpan={3}>Download Location</Table.Th>
+</Table.Tr>
+</thead>
+<tbody>
+<Table.Tr>
+<Table.Th />
+<Table.Td>[OZ V4.x Release Notes](https://cambridgez88.jira.com/wiki/display/OZ/Release+summary)</Table.Td>
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Th />
+<Table.Th>OZ 4.7.2</Table.Th>
+<Table.Th />
+</Table.Tr>
+<Table.Tr>
+<Table.Th />
+<Table.Th>512K Flash</Table.Th>
+<Table.Th>1M Flash</Table.Th>
+</Table.Tr>
+<Table.Tr>
+<Table.Th>Files<br />Required</Table.Th>
+<Table.Td>
+
+```text
+ ozs1-46cdda4.32
+ ozs1-46cdda4.47
+ ozs1-46cdda4.50
+ ozs1-46cdda4.51
+ ozs1-46cdda4.52
+ ozs1-46cdda4.53
+ ozs1-46cdda4.54
+ ozs1-46cdda4.55
+ ozs1-46cdda4.56
+ ozs1-46cdda4.57
+ ozs1-46cdda4.58
+ ozs1-46cdda4.59
+ ozs1-46cdda4.60
+ ozs1-46cdda4.61
+ ozs1-46cdda4.62
+ ozs1-46cdda4.63
+
+ romupdate.cfg
+```
+
+</Table.Td>
+<Table.Td>
+
+This needs to be updated.
+
+RomUdate will put the image<br />for the 512K.
+
+Use RomCombiner to delete<br />.47 and .32 then use Flashstore<br />to create the file area.
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Th>Imp/Export</Table.Th>
+<Table.Td>20 minutes 45 seconds</Table.Td>
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Th>Eazylink</Table.Th>
+<Table.Td>8 minutes 55 seconds.</Table.Td>
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Th>OZ 4.5 + CRC</Table.Th>
+<Table.Td>5 minutes 28 seconds</Table.Td>
+<Table.Td />
+</Table.Tr>
+</tbody>
+</Table>
+
+### Using Imp/Export Mode
+
+#### Start Eazylink2.
+
+If you want to use the Eazylink Mode, go to [Using Eazylink Mode](https://cambridgez88.jira.com/wiki/pages/viewpage.action?pageId=96403459)
+
+For convenience This section has been copied from the [Eazylink2 User Guide](https://cambridgez88.jira.com/wiki/display/EAZUGV10/Imp-Export+Mode).
+
+This can be difficult to do initially because Eazylink2 is expecting the pop-down to be running on the Z88. Just keep waiting until you receive the Reading Z88 Devices Command Failed!
+
+<Shot src="z88-user-guide/external/eazugv10-imp-export-mode/eazylink-hello-command-failed.webp" alt="eazylink_hello_command_failed" width={487} />
+
+**Choose 'Ignore.'**
+
+What you really need to see is the Eazylink Menu not being greyed out.
+
+<Shot src="z88-user-guide/external/eazugv10-imp-export-mode/eazylink-top-menu.webp" alt="eazylink top menu" width={708} />
+
+#### Select the Directory to be used
+
+Here is a picture of the blank screen you should see. The left-hand window (normally used to show the Z88 side) is not used in this Imp-Export Mode. The right-hand side window showing the Desktop side is used. Select which Directory is to be used here. The selection of the files are made in a different window later.
+
+<Shot src="z88-user-guide/external/eazugv10-imp-export-mode/imp-exp-start.webp" alt="Imp/Exp start" width={846} />
+
+#### Send to the Z88
+
+On the top menu bar, Select Z88
+
+<Shot src="z88-user-guide/external/eazugv10-imp-export-mode/eazylink-z88-menu.webp" alt="eazylink z88 menu" width={313} />
+
+- Select - Send files to Z88 Imp-Export popdown
+
+<Shot src="z88-user-guide/external/eazugv10-imp-export-mode/send-to-z88-using-imp-export-popdown.webp" alt="send to z88 using imp export popdown" width={283} />
+
+If 'Show Details...' is selected, you will be presented with a help screen listing instructions (without the screen shots) on how to use the Z88.
+
+#### Send files to the Z88
+
+**1. Start Z88**
+
+**2.** **Select Imp-Export <Key k="square" />X**
+
+<Shot src="z88-user-guide/external/eazugv10-eazylink2-user-guide/select-impexp.webp" alt="select impexp" width={640} />
+
+Scroll down to the next instruction. **3.**
+
+the Imp-Export Menu will be displayed
+
+<Shot src="z88-user-guide/external/eazugv10-imp-export-mode/select-impexp-b.webp" alt="select impexp b" width={640} />
+
+Type 'b' and then press the <Key k="enter" /> key.
+
+Now you can click 'Yes' to 'Is Z88 ready?'
+
+The Desktop will now display a window for you to select which file(s) to send.
+
+<Shot src="z88-user-guide/external/eazugv10-imp-export-mode/impexpsendfiles.webp" alt="ImpExpsendfiles" width={500} />
+
+Mark the desired files. These are:-
+
+<Callout type="warning">
+
+**Note - File name changes**
+
+<Table>
+<thead>
+<Table.Tr>
+<Table.Th />
+<Table.Th>512K Flash</Table.Th>
+<Table.Th>512K Flash</Table.Th>
+<Table.Th>1M Flash</Table.Th>
+</Table.Tr>
+</thead>
+<tbody>
+<Table.Tr>
+<Table.Td>OZ 4.5</Table.Td>
+<Table.Td>
+
+```text
+ozs1-90a181d
+```
+
+</Table.Td>
+<Table.Td>oz45ex</Table.Td>
+<Table.Td>oz45ex</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>OZ 4.6.1</Table.Td>
+<Table.Td>
+
+```text
+ozs1-eb06239
+```
+
+</Table.Td>
+<Table.Td>oz461ex</Table.Td>
+<Table.Td>oz461ex</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+The extension (i.e. .52 .53 ...) remain the same.
+
+</Callout>
+
+<Table>
+<thead>
+<Table.Tr>
+<Table.Th>OZ 4.5</Table.Th>
+<Table.Th>OZ 4.5 EXTRA<br />512K Version</Table.Th>
+<Table.Th>OZ 4.5 EXTRA<br />1M Version</Table.Th>
+</Table.Tr>
+</thead>
+<tbody>
+<Table.Tr>
+<Table.Td>
+
+```text
+ ozs1-90a181d.52
+ ozs1-90a181d.53
+ ozs1-90a181d.54
+ ozs1-90a181d.55
+ ozs1-90a181d.56
+ ozs1-90a181d.57
+ ozs1-90a181d.58
+ ozs1-90a181d.59
+ ozs1-90a181d.60
+ ozs1-90a181d.61
+ ozs1-90a181d.62
+ ozs1-90a181d.63
+ readme.txt
+ romupdate.bas
+ romupdate.cfg
+ romupdate.cli
+ romupdate.crc
+```
+
+</Table.Td>
+<Table.Td>oz45ex.32<br /> oz45ex.33<br /> oz45ex.34<br /> oz45ex.35<br /> oz45ex.36<br /> oz45ex.47<br /> oz45ex.48<br /> oz45ex.49<br /> oz45ex.50<br /> oz45ex.51<br /> oz45ex.52<br /> oz45ex.53<br /> oz45ex.54<br /> oz45ex.55<br /> oz45ex.56<br /> oz45ex.57<br /> oz45ex.58<br /> oz45ex.59<br /> oz45ex.60<br /> oz45ex.61<br /> oz45ex.62<br /> oz45ex.63<br /> romupdate.bas<br /> romupdate.cfg<br /> romupdate.cli<br /> romupdate.crc</Table.Td>
+<Table.Td>oz45ex.0<br />oz45ex.1<br />oz45ex.2<br />oz45ex.3<br />oz45ex.4<br />oz45ex.47<br />oz45ex.48<br />oz45ex.49<br />oz45ex.50<br />oz45ex.51<br />oz45ex.52<br />oz45ex.53<br />oz45ex.54<br />oz45ex.55<br />oz45ex.56<br />oz45ex.57<br />oz45ex.58<br />oz45ex.59<br />oz45ex.60<br />oz45ex.61<br />oz45ex.62<br />oz45ex.63<br />oz45ex1M.bin<br />romupdate.bas<br />romupdate.cfg<br />romupdate.cli<br />romupdate.crc</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+<Callout type="warning">
+
+**Note**
+
+There are more files sent than needed. This is the standard developers listing. Select all the files needed for slot 1 xxxxx.52 to xxxxx.63 and all the 'romupdate' files.
+
+</Callout>
+
+Warnings will be given for invalid file-names selected. e.g. howto-install-oz.gif
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/imp-export-select-1.webp" alt="imp export select 1" width={216} />
+
+Select the Z88's destination storage slot (in this case Slot 2).
+
+After press OK the Z88 screen will show
+
+```text
+Using remote name:  :RAM.1/the_filename
+(Incrementing numbers on this row)
+End of file
+```
+
+This will repeat itself until all the files are transferred.
+
+Press <Key k="esc" /> on the Z88 to return to the Imp-Export Menu.
+
+Files are download on the desktop
+
+RAM and Flashcards are set up
+
+Eazylink is on the Z88
+
+### Using Eazylink Mode
+
+For convenience This section has been copied from the [Eazylink2 User Guide](https://cambridgez88.jira.com/wiki/display/EAZUGV10/Eazylink+Mode).
+
+Start Eazylink2.
+
+#### Start Screen
+
+Here is a picture of the blank screen you should see. The left-hand window is used to show the files on Z88 side. There are no files on this Z88, hence the blank screen, but that will change soon.
+
+<Shot src="z88-user-guide/external/eazugv10-eazylink-mode/eazylink-main-screen.webp" alt="Eazylink Main Screen" width={520} />
+
+### Running for the first time
+
+Follow this procedure:-
+
+Quick Menu
+
+Most of the following commands can be selected from this menu. Select
+
+#### EazyLink Hello
+
+<Shot src="z88-user-guide/external/eazugv10-eazylink-mode/eazylink-get-hello.webp" alt="eazylink get hello" width={699} />
+
+The first time Eazylink is connected to the Z88 the Com Port window is displayed. This can also be selected with the
+
+#### Serial Port Settings
+
+<Shot src="z88-user-guide/external/eazugv10-eazylink-mode/eazylink-get-serial-port-settings.webp" alt="Get Serial Port Settings" width={577} />
+
+<Shot src="z88-user-guide/external/eazugv10-eazylink-menus/eazylink-comms-ticked.webp" alt="Com Port Settings" width={610} />
+
+An intelligent guess is made at which Serial Port is being used. Here is your chance to check that the correct one has been selected. In this case Windows is using COM 5.
+
+If the Eazylink pop-down is running under OZ 4.5, selecting the "**Use 38400 BPS High Speed Transfer**" will enable this.
+
+Command Error
+
+You may initially get this screen
+
+<Shot src="z88-user-guide/external/eazugv10-eazylink-mode/eazylink-hello-command-failed.webp" alt="eazylink_hello_command_failed" width={487} />
+
+**Choose 'Ignore.'** and try again.
+
+#### Select Z88 Device
+
+As :RAM.1 is set as the Default Device on the Z88. :RAM.1 is selected. If the files are to be saved to a different device, select the Tab now.
+
+The right-hand side window showing the Desktop side is used. There is a program that can be run to check that the connection is working correctly.
+
+#### Eazylink Popdown Protocol Testing Program
+
+This only works with the **Eazylink popdown** and is useful to check whether the hardware or USB to Serial ports are working as expected with the Z88. To use it, connect the Z88 to the Desktop and run the Eazylink popdown on the Z88.
+
+It is selected from the Z88 Menu.
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>
+
+<Shot src="z88-user-guide/external/eazugv10-starting-eazylink-on-the-desktop/eazylink-protocol-testing.webp" alt="Select Protocol Popdown Testing Program" width={319} />
+
+</Table.Td>
+<Table.Td>
+
+<Shot src="z88-user-guide/external/eazugv10-eazylink-mode/eazylink-protocol-testing-pass.webp" alt="Protocol Testing PASS" width={160} />
+
+</Table.Td>
+<Table.Td>
+
+<Shot src="z88-user-guide/external/eazugv10-eazylink-mode/eazylink-protocol-testing-fail.webp" alt="Failed" width={181} />
+
+</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+A report is generated which should have all TRUE statements in it. An overall test message is displayed in the bottom left-hand corner.
+
+If there are any FALSE statements, the test has FAILED. The serial port connection is not working correctly and help should be sought.
+
+WARNING -No point going any further!
+
+There is no point going any further until the protocol testing program passes all the tests. Go to [Problem Solving Area](https://cambridgez88.jira.com/wiki/display/EAZUGV10/Problem+Solving+Area) to get some clues there.
+
+### Z88 Commands
+
+#### Z88 Refresh
+
+If the information received looks a bit suspect try using this command.
+
+<Shot src="z88-user-guide/external/eazugv10-eazylink-mode/eazylink-get-z88-refresh.webp" alt="Z88 Refresh" width={696} />
+
+### Send files to the Z88
+
+#### Z88 Select Device
+
+As the Default Device was set to :RAM.1 on the Z88, this device is already selected. If a different device is required to save the files to, change it now by selecting a different tab.
+
+#### Desktop Select Files
+
+<Shot src="z88-user-guide/external/eazugv10-eazylink-mode/eazylink-select-desktop-files.webp" alt="Select Desktop Files" width={520} />
+
+In the Desktop window select the files to be transferred
+
+Selection exceeds Device Size
+
+Note: Notice missing file
+
+Have you noticed that there is a file not marked in the list? This file is a 512K binary file for the complete space. If this was selected, there would not be RAM on the Z88 to store them. Before files are transferred, a calculation is made to check if there is enough space to save all the selected files. This is the message received (with different values) if there is not enough room.
+
+<Shot src="z88-user-guide/external/eazugv10-eazylink-mode/eazylink-selection-exceeds-device-size.webp" alt="Selection exceeds device size" width={428} />
+
+#### Transfer Z88 \<- Desk
+
+Click on the "Select Transfer Z88 \<- Desk" button
+
+<Shot src="z88-user-guide/external/eazugv10-eazylink-mode/eazylink-select-desktop-files-menu.webp" alt="Top Menu" width={698} />
+
+A prompt is given, just to make sure this is what you want to do.
+
+<Shot src="z88-user-guide/external/eazugv10-eazylink-mode/eazylink-transfer-18-files.webp" alt="eazylink transfer 18 files" width={275} />
+
+Select No to save prompting,
+
+Progress may be monitored viewing the bottom of the screen.
+
+<Shot src="z88-user-guide/external/eazugv10-eazylink-mode/eazylink-progress-desktop-files.webp" alt="Progress" width={507} />
+
+together with the speed of transfer and the full file name showing a very long directory tree.
+
+<Shot src="z88-user-guide/external/eazugv10-eazylink-mode/eazylink-filename-desktop-files.webp" alt="Speed and Filename" width={729} />
+
+At the end of this the following screen will be presented with the transferred files also shown on the Z88.
+
+<Shot src="z88-user-guide/external/eazugv10-eazylink-mode/eazylink-transfer-18-files-end.webp" alt="18 files transferred" width={520} />
+
+Upload all the files to :RAM.1
+
+## On the Z88
+
+### Using ROMupdate
+
+### Select Filer [#select_filer]
+
+**1.** Hold down the <Key k="square" /> key (at the bottom left of the keyboard) and press the **F** key, to enter Filer.
+
+Alternatively it may be selected by pressing the <Key k="index" /> key at the lower left of the keyboard and then using the <Key k="down" /> key, move the cursor down to the Filer application.
+
+<Shot src="z88-user-guide/getting-started/up-and-running/select-filer.webp" alt="select filer" width={640} />
+
+Press <Key k="enter" /> to select it.
+
+### Using 512K/512K Flash/RAM
+
+<Shot src="z88-user-guide/getting-started/up-and-running/512k-flash.webp" alt="512K Flash" width={45} />
+
+### Using 1M Flash
+
+<Shot src="z88-user-guide/external/qg-z88-quick-guide-help-home-page/1m-flash.webp" alt="1M flash" width={40} />
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-oz/512k-512k-32k.webp" alt="Illustration for “Creating OZ”" width={458} />
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-oz/1m-ram-32k-eprom-1m-flash.webp" alt="1M ram 32K EPROM 1M Flash" width={451} />
+
+Add 1M Flash card in slot 3.
+
+### Select File [#select_file]
+
+The file romupdate.cli needs to be selected. This file is one of the files downloaded and will displayed somewhere on the right-hand side window.
+
+Move the cursor to the right using <Key k="right" /> key to get into that window and then the other cursor keys until the cursor is over that file name.
+
+Select that file by pressing the <Key k="enter" /> key.
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-oz/z88-excute-512k.webp" alt="z88 excute 512k" width={640} />
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-oz/z88-excute-1m.webp" alt="z88 excute 1m" width={640} />
+
+### Execute ROMupdate [#execute]
+
+Press <Key k="diamond" />EX to **EX**ecute or move the cursor back to the left into the command window. then using the <Key k="down" /> key, move the cursor down until that command is displayed in the COMMANDS window, then press <Key k="enter" /> to select it.
+
+The .cli file will be **EX**ecuted and will run the "romupdate.bas" program.
+
+- This program checks that the downloaded files are correct,
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-oz/romupdate-select-slot-1.webp" alt="Select Slot 1" width={640} />
+
+<Callout type="error">
+
+**Sometimes the display looks corrupted**
+
+Sometimes the display looks corrupted. This is normal and you should just WAIT. Eventually you will see a **HARD RESET** and the Z88 will boot into the new copy of OZ created.
+
+</Callout>
+
+- Displays "Select slot to write bank binaries (<Key k="enter" /> to start writing): 1" Select 1 for the 512K/512K Flash/RAM card or 3 for the 1M.
+- Erases the Flash card selected slot
+- blows the OZ ROM into the card
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-oz/romupdate-end.webp" alt="Romupdate end" width={640} />
+
+- finally, the card is inserted in slot 1 (if not already there), followed by a hard-reset issued by the Z88 user.
+- OZ in slot 1 is booted and is ready for use (original ROM in slot 0 is no longer running)
+
+You can check that you have the correct version by selecting the <Key k="help" /> key and then the <Key k="left" /> cursor key to display the version screen as shown at the beginning.
+
+<Callout type="error">
+
+**IMPORTANT:**
+
+**You cannot blow the OZ ROM images to slot 1 if you're already running OZ in that slot.**
+
+</Callout>
+
+## Updating a Z88 with an internal Flash Chip
+
+There may be some users out there that have a modified Z88 with an internal 512K Flash chip fitted. You can update an internal flash chip in a similar way to updating the external flash cards using ROMupdate.
+
+Here is what you do.
+
+1\. Go to the release summary [Release Summary](https://cambridgez88.jira.com/wiki/display/OZ/Release+summary)<br />2. Chose the latest version (it is v4.6.1 at the time of writing this) [OZ v4.6.1 Release Notes](https://cambridgez88.jira.com/wiki/display/OZ/OZ+V4.6.1+Release+Notes)<br />3. Download the zip file using the download link located further down the page.<br />4. Unzip the files on your desktop computer<br />5. Before uploading the files to the Z88, make sure that the Panel Default Device points to expanded RAM, typically :RAM.1<br />6. Transfer the 13 binary files (ozs0-xxxxxxx.xx) and
+
+romupdate.bas<br />romupdate-slot0.cfg<br />romupdate.cli<br />romupdate.crc
+
+7\. Rename romupdate-slot0.cfg to romupdate.cfg<br />8. From the FILER execute the "romupdate.cli" file with <Key k="diamond" />EX command.<br />9. The display will flash and do all sorts of things, this is normal, **LEAVE IT ALONE AND WAIT..**.

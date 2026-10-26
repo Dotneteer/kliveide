@@ -1,0 +1,124 @@
+---
+description: "Adding at least 128K of extra RAM to the Cambridge Z88 will change it from being an 'unexpanded' machine, to an expanded machine, the preferred configuration."
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/35913757 (version 13) by scripts/import-z88-user-guide.cjs */}
+
+# Expanded, Unexpanded
+
+Adding at least 128K of extra RAM to the Cambridge Z88 will change it from being an 'unexpanded' machine, to an expanded machine, the preferred configuration.
+
+An expanded machine will allow the use of a large BASIC work space and a larger map size in PipeDream.
+
+As the OZ 4.5 ROM needs to be in Slot 1, the rules on what happens with different size RAM cards are slightly different than the standard machine.
+
+To solve all the problems with RAM, please use either the 512K/512K Flash/RAM or the 1M/1M Flash/RAM combination.
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>**Slot 0<br />RAM**</Table.Td>
+<Table.Td>**Slot 1**</Table.Td>
+<Table.Td>**Slot 2<br />RAM**</Table.Td>
+<Table.Td>**Used <br />by Z88**</Table.Td>
+<Table.Td>**Left <br />for files**</Table.Td>
+<Table.Td>**Free**<br />**Space**</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={6}>**Unexpanded Z88**</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>**32K**</Table.Td>
+<Table.Td>1M Flash</Table.Td>
+<Table.Td>Empty</Table.Td>
+<Table.Td>**19.2K**</Table.Td>
+<Table.Td>**0K**</Table.Td>
+<Table.Td>**12.8K**</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>**32K**</Table.Td>
+<Table.Td>1M Flash</Table.Td>
+<Table.Td>**32K**</Table.Td>
+<Table.Td>**8K**</Table.Td>
+<Table.Td>**24K**</Table.Td>
+<Table.Td>**12.8K**</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={6} />
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={6}>**Expanded Z88**</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>**32K**</Table.Td>
+<Table.Td>1M Flash</Table.Td>
+<Table.Td>**128K**</Table.Td>
+<Table.Td>**40K**</Table.Td>
+<Table.Td>**88K**</Table.Td>
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>**32K**</Table.Td>
+<Table.Td>1M Flash</Table.Td>
+<Table.Td>**512K**</Table.Td>
+<Table.Td>**40K**</Table.Td>
+<Table.Td>**472K**</Table.Td>
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>**32K**</Table.Td>
+<Table.Td>1M Flash</Table.Td>
+<Table.Td>**1024K**</Table.Td>
+<Table.Td>**40K**</Table.Td>
+<Table.Td>**984K**</Table.Td>
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>**32K**</Table.Td>
+<Table.Td>512K / 512K<br />Flash/RAM</Table.Td>
+<Table.Td>Empty</Table.Td>
+<Table.Td>**40K**</Table.Td>
+<Table.Td>**472K**</Table.Td>
+<Table.Td />
+</Table.Tr>
+</tbody>
+</Table>
+
+The Z88 uses some of the extra RAM for itself internally for Applications and BBC BASIC. You will quickly discover that you need more RAM than you think.
+
+The following example assumes using a 20K document in Pipedream with a 128K RAM Pack.
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td colSpan={2}>Size of RAM</Table.Td>
+<Table.Td>**128K**</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={2}>Amount used by Z88 (expanded machine)</Table.Td>
+<Table.Td>40K</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={2}>Amount left</Table.Td>
+<Table.Td>**88K**</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={2}>Additional amount used by Pipedream</Table.Td>
+<Table.Td>20K</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={2}>Amount required to store the file in :RAM.1</Table.Td>
+<Table.Td>20K</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={2}>Amount left</Table.Td>
+<Table.Td>**48K**</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+**Remember** If you have not got enough space to save the file to RAM, you will not be able to save it to the Flash or EPROM Pack..
+
+To find out what version of operating system is fitted, press the <Key k="index" /> key and then <Key k="diamond" />INFO for the System Information page. The Cambridge Z88 will display the Operating System version number and other details. Press the <Key k="esc" /> key to return to the Index.

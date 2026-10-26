@@ -1,0 +1,245 @@
+---
+description: "To enter an application, or a popdown, select its name on the APPLICATIONS list by moving the highlighting bar up and down with the cursor keys UP and DOWN, and press the ENTER key:"
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/35913776 (version 44) by scripts/import-z88-user-guide.cjs */}
+
+# The Index popdown
+
+The Index pop-down allows you to
+
+- Enter pop-downs or applications.
+- Check whether the external cards have been recognised.
+- Start PipeDream (or BBC BASIC) with a new, blank, document (or program).
+- Obtain a list of all the suspended activities you have in the Cambridge Z88, and remove activities you no longer need.
+- Insert and remove RAM, ROM, EPROM or FLASH cards, as explained in **[Section One - Getting started](/en/z88-user-guide/getting-started/using-cards)**,
+- Central point for information of the Z88 OZ system.
+- Install or Remove an Application in RAM, rather than using a Flash or EPROM card (Refer to [Appendix J - Installing applications in RAM](/en/z88-user-guide/appendix-j-installing-applications-in-ram)).
+
+## The Index screen
+
+<Shot src="z88-user-guide/using-the-popdowns/the-index-popdown/index-overview.webp" alt="Index Overview" width={684} />
+
+## Entering an application
+
+To enter an application, or a popdown, select its name on the APPLICATIONS list by moving the highlighting bar up and down with the cursor keys <Key k="up" /> and <Key k="down" />, and press the <Key k="enter" /> key:
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>Diary</Table.Td>
+<Table.Td><Key k="square" />D</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>PipeDream</Table.Td>
+<Table.Td><Key k="square" />P</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>BASIC</Table.Td>
+<Table.Td><Key k="square" />B</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Calculator</Table.Td>
+<Table.Td><Key k="square" />R</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Calendar</Table.Td>
+<Table.Td><Key k="square" />C</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Clock</Table.Td>
+<Table.Td><Key k="square" />T</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Alarm</Table.Td>
+<Table.Td><Key k="square" />A</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Filer</Table.Td>
+<Table.Td><Key k="square" />F</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>FlashStore</Table.Td>
+<Table.Td><Key k="square" />J</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>PrinterEd</Table.Td>
+<Table.Td><Key k="square" />E</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Panel</Table.Td>
+<Table.Td><Key k="square" />S</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Terminal</Table.Td>
+<Table.Td><Key k="square" />V</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Imp-Export</Table.Td>
+<Table.Td><Key k="square" />X</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>EazyLink</Table.Td>
+<Table.Td><Key k="square" />L</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+When the bar reaches the bottom of the screen, the list scrolls up to show the remaining options.
+
+Entering PipeDream (or BBC BASIC) from the Index APPLICATIONS list creates a new, blank document (or program).
+
+Index can be activated from any application or popdown with the <Key k="index" /> key or <Key k="square" />I.
+
+### Suspended activities
+
+The SUSPENDED ACTIVITIES list shows the following information for each suspended activity:
+
+| **Heading** | **Meaning** |
+| --- | --- |
+| `YOUR REF.` | The name given to the document (with the PipeDream <Key k="diamond" />FC or <Key k="diamond" />FL commands, the Diary or PrinterEd <Key k="diamond" />FC, <Key k="diamond" />FS, or <Key k="diamond" />FL commands, or the<br />BASIC \*NAME command) |
+| `APPLICATION` | The application name |
+| `WHEN SUSPENDED` | The time and date the document was suspended |
+| <strong>`CARDS`</strong> | The number of the card slot, for activities using an application card |
+
+There can be more than one PipeDream and BBC BASIC suspended activity, but only one for each of the other applications.
+
+### Re-entering a suspended activity
+
+To re-enter a suspended activity, select it by moving the highlighting bar across with the cursor keys, and then press the <Key k="enter" /> key. Alternatively, pressing <Key k="square" />P or <Key k="square" />B repeatedly will enter each PipeDream or BBC BASIC activity in turn.
+
+## Menu
+
+To enter the Menu, use the <Key k="menu" /> key.
+
+<Shot src="z88-user-guide/using-the-popdowns/the-index-popdown/oz46-index-menu.webp" alt="Index - Menu" width={640} />
+
+Commands in <sub>SMALL CAPITALS</sub> i.e. KILL ACTIVITY, PURGE SYSTEM and REMOVE APPLICATION can only selected by using the individual <Key k="diamond" />keys. Moving the cursor and selecting it using the <Key k="enter" /> key in the Menu, does not work.
+
+## Commands
+
+### <Key k="enter" /> — Execute
+
+The <Key k="enter" /> key is used to select whatever the cursor is over.
+
+### ESCAPE
+
+<Key k="esc" />
+
+The <Key k="esc" /> key gets you out of trouble by cancelling what you are about to select.
+
+### Card Display
+
+<Key k="diamond" />CARD
+
+The <Key k="diamond" />CARD command shows the type and size of the card in each slot. It will not show an erased EPROM until it has been accessed by the Filer.
+
+<Shot src="z88-user-guide/using-the-popdowns/the-index-popdown/ozcard.webp" alt="ozcard" width={640} />
+
+This screen shows a 512K/512K RAM/Flash Card used in Slot 1. The 192K ROM is OZ4.5 itself, 320K is the File Area that user files may be saved leaving 512K of RAM making up the full 1M memory that the slot is able to address. The graphical display on the right-hand side gives a representation of how much RAM has been used by the system (resources) and the user (files and open applications).
+
+### System Information
+
+<Key k="diamond" />INFO
+
+The <Key k="diamond" />INFO screen is an addition to OZ V4.5 and later, showing information about the system which was shown in different places now in a central place. They are as follows:-
+
+<Shot src="z88-user-guide/using-the-popdowns/the-index-popdown/index-info.webp" alt="Info Page" width={640} />
+
+| KEY | Description |
+| --- | --- |
+| OZ | The version number of the Operating System |
+| MACHINE | The name of the computer it is running on, normally the Z88. |
+| TYPE | UNEXPANDED and EXPANDED types are shown. EXPANDED types have more than 128K of RAM. |
+| BATTERY | There are three levels displayed.<br />good - normal battery level<br />low - low battery level<br />screen fails to turn on, Battery too low for the Z88 to operate |
+| BUILD | The build revision number of this OZ release with the date and time when source code of the OZ ROM was compiled. |
+| FREE MEMORY | Free Memory was initially in the Diary but this information is valid for all the applications. Each byte represents the space needed for a character; approximately 2000 bytes are needed to store a typical A4 page of text. |
+| FREE HANDLES | This information displays the total free ressources to manage open files and other system components such as RAM memory. If this number keeps dropping, it is an indication that an application or popdown is not closing files after use. |
+
+KEY
+
+Description
+
+OZ
+
+The version number of the Operating System
+
+MACHINE
+
+The name of the computer it is running on, normally the Z88.
+
+TYPE
+
+UNEXPANDED and EXPANDED types are shown. EXPANDED types have more than 128K of RAM.
+
+BATTERY
+
+There are three levels displayed.
+
+good - normal battery level
+
+low - low battery level
+
+screen fails to turn on, Battery too low for the Z88 to operate
+
+BUILD
+
+The build revision number of this OZ release with the date and time when source code of the OZ ROM was compiled.
+
+FREE MEMORY
+
+Free Memory was initially in the Diary but this information is valid for all the applications. Each byte represents the space needed for a character; approximately 2000 bytes are needed to store a typical A4 page of text.
+
+FREE HANDLES
+
+This information displays the total free ressources to manage open files and other system components such as RAM memory. If this number keeps dropping, it is an indication that an application or popdown is not closing files after use.
+
+### <sub>KILL ACTIVITY</sub>
+
+<Key k="diamond" />KILL
+
+To kill a suspended activity, select it on the **SUSPENDED ACTIVITIES** list with the cursor, and type <Key k="diamond" />KILL. The activity will be removed from the list, and the document (or program) associated with it will be lost.
+
+### <sub>PURGE SYSTEM</sub>
+
+<Key k="diamond" />PURGE
+
+is equivalent to a soft reset, which kills all suspended activities, and should therefore be used with great caution.
+
+### Install RAM Application
+
+<Key k="diamond" />INS
+
+To install an application in RAM, enter the .app filename, or select the file by marking it in the Filer. All required files (.app, ap0...) need to be in the same directory but they may be deleted after installation if desired.
+
+### Remove RAM Application
+
+<Key k="diamond" />RMV
+
+Uninstalls an application in RAM that the cursor is over. If multiple applications are required to be removed, place the cursor over the first application in the list.
+
+Before using Remove RAM Application command, check that the application is not running as a suspended activity. If it is, remove it by placing the cursor over the suspended activity and then use the <Key k="diamond" />KILL command.
+
+## Hidden Commands
+
+These commands are reserved for advanced users.
+
+### Enquiry
+
+<Key k="diamond" />NQ
+
+When the select bar is in the application window, this command will show informations about the application.
+
+<Shot src="z88-user-guide/using-the-popdowns/the-index-popdown/nq-appl.webp" alt="nq appl" width={640} />
+
+When the select bar is in the suspended activities window, this command will show information about the suspended process.
+
+<Shot src="z88-user-guide/using-the-popdowns/the-index-popdown/nq-proc.webp" alt="nq proc" width={640} />
+
+### Hard Reset
+
+<Key k="diamond" />HARD
+
+Performs a **HARD RESET**. All data in RAM will be lost. All files and applications in Eprom and Flash cards are preserved during hard reset.

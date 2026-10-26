@@ -1,7 +1,8 @@
 /**
  * Keeps the unlinked areas out of the site search (decision D6 of
  * .plans/DOCS_SITE_MODERNIZATION_PLAN.md: the book is available at its URLs but not linked, and
- * search must not lead to it either).
+ * search must not lead to it either). The imported Z88 User Guide is unlinked the same way while
+ * its author reviews it.
  *
  * Nextra marks each page's content with `data-pagefind-body`; once any page has it, Pagefind
  * indexes only pages that do. Removing the attribute from a page therefore takes it out of the
@@ -14,7 +15,7 @@ const { join } = require("node:path");
 
 const outDir = join(__dirname, "..", "docs", "out");
 /** Areas (per language) that search must not find */
-const UNSEARCHED = ["book"];
+const UNSEARCHED = ["book", "z88-user-guide"];
 
 function htmlFiles(dir, found = []) {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {

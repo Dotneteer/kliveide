@@ -10,6 +10,7 @@ import type { MDXComponents } from "mdx/types";
 import { useMDXComponents as getDocsMDXComponents } from "nextra-theme-docs";
 import ClickableImage from "./page-components/ClickableImage";
 import Shot from "./page-components/Shot";
+import { Key, Typed } from "./page-components/Z88";
 
 const docsComponents = getDocsMDXComponents();
 
@@ -18,6 +19,9 @@ export function useMDXComponents(components?: MDXComponents) {
     ...docsComponents,
     ClickableImage,
     Shot,
+    // --- The Z88 User Guide's notation (content/en/z88-user-guide/)
+    Key,
+    Typed,
     ...components
   };
 }

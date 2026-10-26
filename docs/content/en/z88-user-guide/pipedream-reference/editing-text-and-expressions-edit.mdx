@@ -1,0 +1,251 @@
+---
+description: "The commands on the EDIT menu provide for various modifications on the contents of document. In the first place, there are commands which allow you to delete a character, word, slot, row or column..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/35913769 (version 15) by scripts/import-z88-user-guide.cjs */}
+
+# Editing text and expressions - EDIT
+
+<Shot src="z88-user-guide/pipedream-reference/pipedream-menu-edit.webp" alt="Pipedream menu edit" width={640} />
+
+The commands on the **EDIT** menu provide for various modifications on the contents of document. In the first place, there are commands which allow you to delete a character, word, slot, row or column on the document.
+
+You can also insert a row or a column, join two slots or split a slot, and insert a page break.
+
+Some of these commands are especially useful when working with multi-column documents: see **[Widths and margins in a multi-column document](/en/z88-user-guide/pipedream-reference/altering-the-layout-layout#widths_and_margins)**,
+
+The remaining commands are divided into two groups; the first applies specifically to working with text, the second to working with expression slots:
+
+**Format Paragraph** reformats a paragraph of text within a column, **Swap Case** swaps the case of a single character, and **Insert/Overtype** changes PipeDream between Insert and Overtype text entry modes.
+
+**Edit Expression** allows you to enter an expression, **Number to Text** converts between an expression slot and a text slot and **Insert Reference** inserts a slot reference into an expression.
+
+## Editing within a line/slot
+
+### <Key k="diamond" />V — Insert/Overtype
+
+Switches the text entry mode between Insert and Overtype. The mode currently selected is displayed on the top line of the Options Page.
+
+In **Insert mode**, characters typed are inserted at the cursor position, and subsequent text on the line moves apart to make space.
+
+In **Overtype mode**, characters type over any text previously on the same line, in the same way as a correcting typewriter works.
+
+The mode you choose to work in is a matter of personal preference. The selected mode is specific to each PipeDream suspended activity; the default mode can be set in the Panel.
+
+### Rubout
+
+<Key k="del" />
+
+The **Rubout** command, normally used by pressing the <Key k="del" /> key, deletes to the left. Then <Key k="del" /> key is used to remove a mistake in the line you have just typed. In Insert mode the remaining characters on the line move one position to the left. Note that <Key k="del" /> will not jump back to the previous line when the left-hand margin of a page is reached.
+
+### <Key k="diamond" />G or <Key k="shift" /><Key k="del" /> — Delete Character
+
+Deletes to the right. You would normally use the **Delete Character** command to delete one or more characters in the middle of a line of text.
+
+### <Key k="diamond" />U — Insert Character
+
+Inserts a space at the cursor position, leaving the cursor where it is and moving subsequent text on the line to the right. The **Insert Character** command is used when working in Overtype mode, to create spaces in which to insert additional text within a line.
+
+### <Key k="diamond" />T — Delete Word
+
+Deletes all the characters from the current cursor position, up to but not including the first character of the next word. Normally you would position the cursor at the beginning of the word you want to delete, using the **Next Word** and **Previous Word** commands, and then give the **Delete Word** command to delete everything up to the next word. Note that **Delete Word** will not delete beyond the end of the current slot.
+
+### <Key k="diamond" />D — Delete to End of Slot
+
+Deletes all characters from the current cursor position to the end of the slot.
+
+### <Key k="diamond" />S — Swap Case
+
+Changes the case of the character under the cursor, and moves the cursor one position to the right.
+
+## Editing within a column
+
+### <Key k="diamond" />EDRC — Delete Row in Column
+
+Deletes the slot containing the cursor and closes up the gap, so that subsequent rows in the current column move up on the document. This command will typically be used when PipeDream is operating in Columns mode, so that the text in the current column does not have to remain aligned with the text in adjacent columns.
+
+### <Key k="diamond" />EIRC — Insert Row in Column
+
+Inserts a row in the column containing the cursor. Subsequent rows in the current column are moved down to make space. The **Insert Row in Column** command is typically used when working in Columns mode, as it does not affect the text in columns to either side of the column containing the cursor. It is also useful for restoring the alignment of a table containing items in different columns.
+
+### <Key k="diamond" />EJL — Join Lines
+
+Joins the text in the line below the current line onto the end of the current line, and closes up the gap so that subsequent slots in the current column are moved up one row.
+
+### <Key k="diamond" />ESL — Split Line
+
+Splits the current line at the cursor position. The character at the cursor position and subsequent characters are moved to the next row and the cursor remains at the end of the current slot.
+
+### <Key k="diamond" />R — Format Paragraph
+
+Reformats text from the line containing the cursor to the end of the paragraph. The lines of text will be split at the last space before the right-hand margin for the current column; see [**Starting PipeDream**](/en/z88-user-guide/using-pipedream/starting-pipedream). If justification has been selected, with the Options Page *Justify* option, additional spaces will be added to each line to make the right-hand end always coincide with the wrap point. The end of the paragraph is determined by one of the following:
+
+A line beginning with at least one space
+
+An expression slot
+
+A slot with alignment other than free align; in other words, left align, right align or LCR align.
+
+You can prevent words from being split at a space by typing <Key k="diamond" />space, which is called an 'exact space' and is displayed on the screen as '...'. For example,
+
+`27 ...KHz`
+
+## Editing a document
+
+### <Key k="diamond" />Y or <Key k="diamond" /><Key k="del" /> — Delete Row
+
+Deletes the row containing the cursor across the entire document, closing up the gap. This command should be used with care, since the slot in every column on the current row will be deleted. The command is typically used when PipeDream is operating in Rows mode, in order to maintain alignment between text in adjacent columns.
+
+### <Key k="diamond" />EDC — Delete Column
+
+Deletes the column containing the cursor. Note that all information in the column will be lost, so use this command with caution.
+
+### <Key k="diamond" />EIP — Insert Page
+
+Normally, page breaks are inserted automatically by PipeDream. These are called 'soft' page breaks, and are represented by a horizontal line
+
+`^^^^^^^^^^^^^^^^^^^^^^^^`
+
+across the document between two rows. Their position will change if you alter the amount of text on a page, or change the margin settings on the Options Page.
+
+However, to force a page break to occur at a specific place in the document, such as before a new chapter, you can insert a 'hard' page break with the **Insert Page** command. Hard page breaks are displayed as a row on the document
+
+`~~~~~~~~~~~~~~~~~~~~~~~~`
+
+Using this command will insert a hard page break in the row containing the cursor. The command gives the prompt
+
+`Specify no. of unbroken lines No`
+
+Pressing <Key k="enter" /> executes the command, thereby ensuring that subsequent text will always start at the top of a new page.
+
+Alternatively, altering the option to `Yes` followed by a number enters a conditional hard page break. This means that a page break win occur if less than the specified number of lines is available on the current page. For example, before a table of ten lines one might insert a conditional hard page break with a value of 10 to ensure that all ten lines of the table were on the same page.
+
+If the conditional hard page break does not cause a page break, it will be displayed in column A as:
+
+`~n`
+
+### <Key k="diamond" />N — Insert Row
+
+Inserts a blank row across the entire document before the row containing the cursor. Subsequent rows are moved down to make space. The **Insert Row** command is typically used when working in Rows mode (see the Options Page), since it maintains alignment between text in adjacent columns.
+
+### <Key k="diamond" />EIC — Insert Column
+
+Inserts a blank column to the left of the column containing the cursor. The new column is created with an initial width of 12 characters, and an initial wrap-width of zero. The cursor remains in the new column.
+
+### <Key k="diamond" />EAC — Add Column
+
+Adds a blank column at the right-hand side of the document. The new column is added with an initial width of 12 characters, and a wrap-width of zero so that text in the new column will wrap at the right-hand edge of the column.
+
+## Editing expression slots
+
+### <Key k="diamond" />K — Insert Reference
+
+Enables expressions to be built up by indicating, or 'pointing to', various slots to which an expression will refer. It inserts the coordinates of the slot containing the cursor into the expression being edited. To perform the command, move the block cursor to the required slot using the cursor keys, and type <Key k="diamond" />K.
+
+If an expression is not being edited, this command will have no effect.
+
+### <Key k="diamond" />X — Edit Expression
+
+Sets the slot containing the cursor to an expression slot, or edits an existing expression slot.
+
+The slot is highlighted, and the cursor moves to the editing line above the top border at the centre of the screen. The current contents of the slot, if any, are displayed, and they can be edited using the cursor keys and line editing commands:
+
+<Key k="del" />
+
+Rubout
+
+### <Key k="shift" /> <Key k="del" />
+
+Delete character
+
+<Key k="diamond" /> V
+
+Insert/Overtype
+
+<Key k="diamond" /> U
+
+Insert character
+
+<Key k="diamond" /> T
+
+Delete word
+
+<Key k="diamond" /> D
+
+Delete to end of slot
+
+<Key k="diamond" /> K
+
+Insert reference
+
+<Key k="left" />, <Key k="right" />
+
+Cursor left/Cursor right
+
+### <Key k="shift" /><Key k="left" />, <Key k="shift" /><Key k="right" />
+
+Previous word/Next word
+
+<Key k="diamond" /> <Key k="left" />,<Key k="diamond" /> <Key k="right" />
+
+Beginning of line/End of line
+
+Finally press <Key k="enter" /> to enter the expression into the slot and display its value, or <Key k="esc" /> to leave the slot's previous value unaltered.
+
+Escape - <Key k="esc" />
+
+Exits from the Options Page, or from the options of any PipeDream command. <Key k="esc" /> will also abandon the editing of an expression and leave the contents of the slot being edited unchanged.
+
+<Key k="del" />
+
+Rubout
+
+### <Key k="shift" /> <Key k="del" />
+
+Delete character
+
+<Key k="diamond" /> V
+
+Insert/Overtype
+
+<Key k="diamond" /> U
+
+Insert character
+
+<Key k="diamond" /> T
+
+Delete word
+
+<Key k="diamond" /> D
+
+Delete to end of slot
+
+<Key k="diamond" /> K
+
+Insert reference
+
+<Key k="left" />, <Key k="right" />
+
+Cursor left/Cursor right
+
+### <Key k="shift" /><Key k="left" />, <Key k="shift" /><Key k="right" />
+
+Previous word/Next word
+
+<Key k="diamond" /> <Key k="left" />,<Key k="diamond" /> <Key k="right" />
+
+Beginning of line/End of line
+
+### <Key k="diamond" />ENT — Number \< \> Text
+
+Converts the slot containing the cursor between an expression slot and a text slot. This command allows a number inadvertently entered as text to be converted to an expression, or the equation in an expression slot to be displayed as text so that it can be printed out.
+
+The following procedure can be used to display, or print out, all the expressions within a particular area of a spreadsheet or document:
+
+1. Save the document first, as the procedure will alter it.
+
+2. Mark as much of the document as you wish to examine or print out.
+
+3. Type <Key k="diamond" />ENT. Expression slots within the marked block will display the expressions they contain. Note that text slots will display the error <Typed>Typing error</Typed>.
+
+4. Press <Key k="diamond" />Q to clear the marked block, and, if necessary, increase the column widths so that the full expressions can be seen.

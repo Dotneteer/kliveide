@@ -1,0 +1,128 @@
+---
+description: "The commands on the cursor menu enable you to move the cursor to any position on the page of information for the current day in the diary, and to the next or previous day."
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/35913759 (version 6) by scripts/import-z88-user-guide.cjs */}
+
+# Moving around the Diary - CURSOR
+
+The commands on the cursor menu enable you to move the cursor to any position on the page of information for the current day in the diary, and to the next or previous day.
+
+<Shot src="z88-user-guide/diary-reference/diary-cursor.webp" alt="diary cursor" width={640} />
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td style={{ whiteSpace: "nowrap" }}><Key k="tab" /></Table.Td>
+<Table.Td>Inserts spaces to position the cursor at the next tab position to the right. There are preset tab positions preset every 8 characters across the line.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td style={{ whiteSpace: "nowrap" }}><Key k="enter" /></Table.Td>
+<Table.Td>Moves the cursor to the beginning of the next line.</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+#### Save Position <Key k="diamond" />CSP
+
+Saves the current cursor position. If you move to a new position, you can jump back to the previous position with the Restore Position command. Up to five positions can be saved, and they will be restored in turn.
+
+#### Restore Position <Key k="diamond" />CRP
+
+Moves the cursor to the last position saved.
+
+## Moving within a line
+
+#### Cursor Right <Key k="right" />
+
+Moves the cursor one character space to the right.
+
+#### Cursor Left <Key k="left" />
+
+Moves the cursor one character position to the left. You cannot move past the beginning of the line.
+
+#### Next Word <Key k="shift" /> <Key k="right" />
+
+Moves the cursor to the beginning of the next word on the current line.
+
+#### Previous Word <Key k="shift" /> <Key k="left" />
+
+Moves the cursor to the beginning of the previous word on the current line.
+
+#### End of Line <Key k="diamond" /><Key k="right" />
+
+Moves the cursor to the character position after the last character on the current line.
+
+#### Start of Line <Key k="diamond" /><Key k="left" />
+
+Moves the cursor to the first character position in the current line.
+
+## Moving within a day
+
+#### Cursor Down <Key k="down" />
+
+Moves the cursor down within the current day.
+
+#### Cursor Up <Key k="up" />
+
+Moves the cursor up within the current day
+
+#### Last Line <Key k="diamond" /><Key k="down" />
+
+Moves the cursor to the last line on the current page.
+
+#### First Line <Key k="diamond" /><Key k="up" />
+
+Moves the cursor to the first line on the current page.
+
+#### Screen Down <Key k="shift" /><Key k="down" />
+
+Moves the cursor down by a screenful of information.
+
+#### Screen Up <Key k="shift" /><Key k="up" />
+
+Moves the cursor up by a screenful of information.
+
+## Moving between days
+
+#### Today <Key k="diamond" />CT
+
+Moves the cursor to today.
+
+#### Next Day <Key k="square" /><Key k="down" />
+
+Moves to the next day.
+
+#### Previous Day <Key k="square" /><Key k="up" />
+
+Moves to the previous day.
+
+## Active days
+
+Days in the Diary which contain information are referred to as 'active' days. You can move rapidly between the active days with the **Next** and **Previous Active Day** commands, and you can find the latest and earliest information in the Diary with the **Last** and **First Active Day** commands.
+
+<Shot src="z88-user-guide/diary-reference/diary-active-day.webp" alt="diary active day" width={640} />
+
+If you call the Calendar from the Diary, active days, and the day you are currently looking at, are indicated by a marker against the day: <strong>`14 15 16`</strong>
+
+#### Next Active Day <Key k="square" /><Key k="right" />
+
+Moves to the next day containing an entry.
+
+#### Previous Active Day <Key k="square" /><Key k="left" />
+
+Moves to the previous day containing an entry.
+
+#### Last Active Day <Key k="diamond" />CLAD
+
+Moves to the latest day containing any information.
+
+#### First Active Day <Key k="diamond" />CFAD
+
+Moves to the earliest day containing any information.
+
+## Summary of Diary cursor operations
+
+<Shot src="z88-user-guide/diary-reference/163.webp" alt="Illustration for “Moving around the Diary - CURSOR”" width={640} />

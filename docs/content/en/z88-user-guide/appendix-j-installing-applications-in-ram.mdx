@@ -1,0 +1,77 @@
+---
+description: "With OZ V4.6 a new feature was provided of installing and running additional applications in RAM. Normally, applications are blown via special software to Eprom and Flash cards, then inserted into..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/68780391 (version 7) by scripts/import-z88-user-guide.cjs */}
+
+# Appendix J - Installing applications in RAM
+
+## Introduction
+
+With OZ V4.6 a new feature was provided of installing and running additional applications in RAM. Normally, applications are blown via special software to Eprom and Flash cards, then inserted into one of the external slots in order to be installed into the running Z88 computer.
+
+This means that rather than taking up space on the application side of the Flash card with applications that are only occasionally used, the user may install and remove applications when required. RAM-based applications is also a considerable improvement for developers, making it much faster to install and test software.
+
+RAM applications may be
+
+- downloaded from our file archive from the internet at **[https://sourceforge.net/projects/z88/files/Z88 RAM Applications/](https://sourceforge.net/projects/z88/files/Z88%20RAM%20Applications/)** or
+- fetched from the File Area of the Flash card.
+
+They are normally supplied in a zipped format and need to be unzipped first on your desktop computer or using UnZip popdown (if this is installed on your Z88).
+
+OZ V4.6 provides the feature of installing an application in Z88 RAM memory. This operation has been designed to be as easy as possible for the end user. It is performed from the INDEX with two commands.
+
+## Installation and removal via Index command and Filer
+
+<Key k="diamond" />INS : Installs a new application and <Key k="diamond" />RMV : Removes an application.
+
+Their help page can be displayed by pressing the <Key k="help" /> key.
+
+<Shot src="z88-user-guide/appendix-j-installing-applications-in-ram/insrmvmnu.webp" alt="insrmvmnu" width={640} />
+
+<Shot src="z88-user-guide/appendix-j-installing-applications-in-ram/inshlp.webp" alt="inshlp" width={640} />
+
+<Shot src="z88-user-guide/appendix-j-installing-applications-in-ram/rmvhlp.webp" alt="rmvhlp" width={640} />
+
+Install is performed by an .APP file and its binaries .AP0, .AP1,... Let's install the ZetriZ game.
+
+The quickest way to select the ZETRIZ.APP file is in the FILER, mark the APP filename in the filename page with the <Key k="enter" /> key,
+
+then select the INDEX by pressing the <Key k="index" /> key.
+
+<Shot src="z88-user-guide/appendix-j-installing-applications-in-ram/insfiler.webp" alt="insfiler" width={640} />
+
+<Shot src="z88-user-guide/appendix-j-installing-applications-in-ram/inszetriz.webp" alt="inszetriz" width={640} />
+
+Press the <Key k="enter" /> key
+
+Confirmation is asked, accept.
+
+<Shot src="z88-user-guide/appendix-j-installing-applications-in-ram/inszetrizok.webp" alt="inszetrizok" width={640} />
+
+After pressing the <Key k="esc" /> key, the application appears as the last one in the INDEX.
+
+<Shot src="z88-user-guide/appendix-j-installing-applications-in-ram/inszetrizdone.webp" alt="inszetrizdone" width={640} />
+
+Removal of application is as easy as installation procedure. Before proceeding, all suspended activities of the application have to be killed. The Application is selected using the highlighting bar in APPLICATIONS column in the INDEX.
+
+The<Key k="diamond" />RMV command is entered manually (This command is protected in the MENU and cannot be selected from there).
+
+<Shot src="z88-user-guide/appendix-j-installing-applications-in-ram/rmvzetriz.webp" alt="rmvzetriz" width={640} />
+
+Confirmation is done by pressing the 'Y' key, followed by the <Key k="enter" /> key.
+
+<Shot src="z88-user-guide/appendix-j-installing-applications-in-ram/rmvzetrizask.webp" alt="rmvzetrizask" width={640} />
+
+Removal is performed. Press <Key k="esc" /> to return to the INDEX.
+
+**Please note**
+
+<Shot src="z88-user-guide/appendix-j-installing-applications-in-ram/rmvzetrizdone.webp" alt="rmvzetrizdone" width={640} />
+
+- When several application have been installed by one installation (eg. Unzip and ZipUp applications), removal is performed by highlighting the first application in INDEX.
+- When removing an active application, if an 'IN USE' error box is displayed, Kill the relative suspended activities and retry the removal again.
+
+<Shot src="z88-user-guide/appendix-j-installing-applications-in-ram/rmvinuse.webp" alt="rmvinuse" width={640} />
+
+For creating your own .APP file, please refer to [Installation and removal of RAM Applications](https://cambridgez88.jira.com/wiki/display/DN/Installation+and+removal+of+RAM+Applications) in Developers' Notes

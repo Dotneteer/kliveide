@@ -1,0 +1,97 @@
+---
+description: "The commands on the BLOCKS menu allow you to perform a command on a block of text with a single operation A marked block can consist of a single line, can include several lines within one day, or..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/35913756 (version 8) by scripts/import-z88-user-guide.cjs */}
+
+# Operations on a block of text - BLOCKS
+
+<Shot src="z88-user-guide/diary-reference/diary-blocks.webp" alt="diary blocks" width={640} />
+
+The commands on the BLOCKS menu allow you to perform a command on a block of text with a single operation A marked block can consist of a single line, can include several lines within one day, or can extend over several days, months, or even years.
+
+To mark a block give the Mark Block command on a line to be selected, or at the top and bottom of an area to be selected. The marked block will be displayed highlighted on the screen.
+
+### <Key k="diamond" />Z — Mark Block
+
+Marks a line, or the first and last lines in a block of lines, prior to performing one of the block operations on the entire block.
+
+### <Key k="diamond" />Q — Clear Mark
+
+Clears any marked block previously set up with the Mark Block command.
+
+### <Key k="diamond" />BC — Copy
+
+Makes a second copy of all the text within a marked block, putting the copy on the day indicated by the cursor position.
+
+### <Key k="diamond" />BM — Move
+
+Moves a marked block of text from one position in the Diary to the position indicated by the cursor.
+
+### <Key k="diamond" />BD — Delete
+
+Deletes a marked block of text from the Diary, closing up the gap. Note that this text cannot be recovered - the command should be used with caution.
+
+### <Key k="diamond" />BL — List
+
+Lists all or part of the diary to the screen, or to a printer.
+
+The following options are displayed:
+
+`List on screen Yes`<br />`List on printer No`<br />`List only marked block Yes`
+
+Pressing <Key k="enter" /> will list the entire Diary to the screen.
+
+To list part of the Diary, mark the part you wish to list with the Mark Block command on the BLOCKS menu first.
+
+<Shot src="z88-user-guide/diary-reference/diary-page-wait.webp" alt="diary page wait" width={640} />
+
+When listing to the screen the Diary will pause at the end of each screenful with the **PAGE WAIT** display:<br /><br /> SPACE<br />CONTINUE<br /> ESC<br /> RESUME
+
+Press the <Key k="space" /> bar to continue the listing or <Key k="esc" /> to exit.
+
+## Searching and replacing
+
+The Search and Replace commands allow you to search for information anywhere in the diary and, if you wish, replace it throughout by different text. Whenever the Diary is performing a time-consuming task, such as searching through a huge amount of information, or performing a large number of replacements, the cursor will disappear.
+
+### <Key k="diamond" />BSE — Search
+
+Searches for a specified string, and moves to the day containing the first occurrence. You can restrict the search to a marked block, and also print or list all the lines which match the search string.
+
+The following options are displayed:
+
+`- - - - - - - - - - - STRING TO SEARCH FOR - - - - - - - - - -`
+
+`EQUATE UPPER AND LOWER CASE . . . . . . . . . . . . . . . Yes`<br />`SEARCH ONLY MARKED BLOCK . . . . . . . . . . . . . . . . . No`<br />`PRODUCE LIST . . . . . . . . . . . . . . . . . . . . . . No`<br />`PRINT LIST . . . . . . . . . . . . . . . . . . . . . . . No`
+
+For example, if you identify every expense claim in your diary with the prefix 'EX' you could search for or print out all the expenses by entering `EX` : as the string to search for.
+
+*Equate upper* and *lower case*: by default the case is ignored so that specifying the will find `The THE`, etc. Change to `No` to find only strings that match the case of the specified string exactly.
+
+*Search only marked block*: change to `Yes` to restrict the search to a marked block.
+
+*Produce list* / *Print list*: change to `Ye`s to produce a list of the found strings to the screen or printer respectively. This is useful for finding and printing all lines beginning with the same word, such as Meeting.
+
+### <Key k="diamond" />BNM — Next Match
+
+Moves from the cursor position to the next occurrence of the string you are searching for.
+
+### <Key k="diamond" />BPM — Previous Match
+
+Moves from the cursor position to the previous occurrence of the string you are searching for.
+
+### <Key k="diamond" />BRP — Replace
+
+Allows you to replace each occurrence of a string you are searching for with other specified text. By default the case of the replaced string is altered to match the case of the string matched, and before each replacement you are asked whether you want to make it. You can restrict the replacements to a marked block.
+
+Gives the prompts:
+
+`- - - - - - - - - - - STRING TO SEARCH FOR - - - - - - - - - -` <br /> `- - - - - - - - - - STRING TO REPLACE WITH - - - - - - - - -`
+
+`EQUATE UPPER AND LOWER CASE . . . . . . . . . . . . . . . Yes`<br />`ASK FOR CONFIRMATION . . . . . . . . . . . . . . . . . . Yes`<br />`SEARCH ONLY MARKED BLOCK . . . . . . . . . . . . . . . . No`
+
+Replace with: specifies the string to replace every occurrence of the string to search for.
+
+Equate upper & lower case: only affects the search part of the string, and the string is replaced exactly as specified.
+
+The other options operate in the same way as for the **Search** command.
