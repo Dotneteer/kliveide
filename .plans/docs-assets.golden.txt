@@ -144,6 +144,17 @@
 /images/en/guides/projects/project-explorer/folder-menu.webp
 /images/en/guides/projects/project-explorer/tape-menu.webp
 /images/en/guides/projects/project-explorer/tree.webp
+/images/en/under-the-hood/next-display/overview/clip-off.webp
+/images/en/under-the-hood/next-display/overview/clip-on.webp
+/images/en/under-the-hood/next-display/overview/layers-fallback.webp
+/images/en/under-the-hood/next-display/overview/layers-l2.webp
+/images/en/under-the-hood/next-display/overview/layers-picture.webp
+/images/en/under-the-hood/next-display/overview/layers-spr.webp
+/images/en/under-the-hood/next-display/overview/layers-tm.webp
+/images/en/under-the-hood/next-display/overview/layers-ula.webp
+/images/en/under-the-hood/next-display/overview/scroll-0.webp
+/images/en/under-the-hood/next-display/overview/scroll-1.webp
+/images/en/under-the-hood/next-display/overview/scroll-2.webp
 /images/es/get-started/basic-debug.webp
 /images/es/get-started/basic-debug.webp.json
 /images/es/get-started/basic-running.webp

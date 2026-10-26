@@ -1,0 +1,215 @@
+; One game-like scene for the series "ZX Spectrum Next: how the screen is drawn"
+; (docs/content/en/under-the-hood/emulator-internals/next-display/): a ULA score panel clipped to the
+; top 16 lines, a tilemap ground and two platforms across the whole wide area, a Layer 2 band of hills
+; with a transparent sky, three sprites, and the fallback colour as the sky. The default order, SLU.
+    .model Next
+    .org $8000
+Start:
+    di
+    nextreg $07,3       ; 28 MHz
+    nextreg $14,$E3     ; the global transparency colour
+    nextreg $4A,$4F     ; the fallback colour is the sky: RRRGGGBB 010 011 11
+    xor a
+    out ($FE),a         ; border black
+
+; --- ULA: a yellow panel with dark blocks on character row 0-1, clipped to lines 0-15
+    ld hl,$4000
+    ld de,$4001
+    ld bc,$17FF
+    ld (hl),0
+    ldir
+    ld hl,$5800
+    ld de,$5801
+    ld bc,767
+    ld (hl),$30         ; yellow paper, black ink
+    ldir
+    ld h,$42            ; lines 2-5 of character row 0: blocks in columns 1-8 and 23-30
+Blocks:
+    ld l,1
+    ld b,8
+Left:
+    ld (hl),$7E
+    inc l
+    djnz Left
+    ld l,23
+    ld b,8
+Right:
+    ld (hl),$7E
+    inc l
+    djnz Right
+    inc h
+    ld a,h
+    cp $46
+    jr nz,Blocks
+    nextreg $1C,$04     ; ULA clip: x 0-255, y 0-15
+    nextreg $1A,0
+    nextreg $1A,255
+    nextreg $1A,0
+    nextreg $1A,15
+
+; --- Tilemap: 40 x 32, no attribute bytes, map at $6000, tiles at $6600
+    ld hl,$6000         ; the map: tile 0 (empty) everywhere
+    ld de,$6001
+    ld bc,1279
+    ld (hl),0
+    ldir
+    ld hl,$6000+25*40   ; the ground: rows 25-31
+    ld de,$6000+25*40+1
+    ld bc,7*40-1
+    ld (hl),1
+    ldir
+    ld hl,$6000+19*40+8 ; a platform: row 19, columns 8-14
+    ld de,$6000+19*40+9
+    ld bc,6
+    ld (hl),1
+    ldir
+    ld hl,$6000+19*40+26 ; and another: row 19, columns 26-32
+    ld de,$6000+19*40+27
+    ld bc,6
+    ld (hl),1
+    ldir
+    ld hl,$6600         ; tile 0: every nibble transparent ($F)
+    ld de,$6601
+    ld bc,31
+    ld (hl),$FF
+    ldir
+    ld hl,$6620         ; tile 1: a light top row, then a two-tone body
+    ld b,4
+Top:
+    ld (hl),$11
+    inc hl
+    djnz Top
+    ld c,7
+Body:
+    ld (hl),$22
+    inc hl
+    ld (hl),$23
+    inc hl
+    ld (hl),$22
+    inc hl
+    ld (hl),$32
+    inc hl
+    dec c
+    jr nz,Body
+    nextreg $43,$30     ; write the tilemap's first palette: 1 light green, 2 green, 3 dark green
+    nextreg $40,1
+    nextreg $41,$1C
+    nextreg $41,$10
+    nextreg $41,$08
+    nextreg $43,$00
+    nextreg $4C,$0F     ; nibble $F is transparent
+    nextreg $6C,$00     ; the default attribute: palette offset 0, in front of the ULA
+    nextreg $6E,$20     ; map at bank 5 + $2000
+    nextreg $6F,$26     ; tiles at bank 5 + $2600
+    nextreg $1C,$08     ; tilemap clip: the whole 320 x 256
+    nextreg $1B,0
+    nextreg $1B,159
+    nextreg $1B,0
+    nextreg $1B,255
+    nextreg $6B,$A0     ; on, 40 x 32, no attribute bytes
+
+; --- Layer 2: 256 x 192 from bank 9; hills between y = 56 + a triangle wave and y = 119, sky above
+    nextreg $70,$00
+    nextreg $12,9
+    nextreg $1C,$01
+    nextreg $18,0
+    nextreg $18,255
+    nextreg $18,0
+    nextreg $18,191
+    ld d,18             ; 8K pages 18-23, 32 rows each
+    ld e,0              ; the first row of the page
+L2Page:
+    ld a,d
+    nextreg $56,a
+    ld hl,$C000
+L2Pixel:
+    ld a,h
+    sub $C0
+    add a,e             ; A = y
+    cp 120
+    jr nc,L2Sky
+    ld c,a
+    ld a,l
+    and 63
+    cp 32
+    jr c,L2Rise
+    cpl
+    and 63              ; 63 - t: the falling half of the wave
+L2Rise:
+    add a,56
+    ld b,a              ; B = the hill's top at this x
+    ld a,c
+    sub b
+    jr c,L2Sky          ; above the hill
+    cp 4
+    ld a,$CC            ; the hill's light edge: 110 011 00
+    jr c,L2Put
+    ld a,$A8            ; the hill: 101 010 00
+    jr L2Put
+L2Sky:
+    ld a,$E3
+L2Put:
+    ld (hl),a
+    inc hl
+    ld a,h
+    cp $E0
+    jr nz,L2Pixel
+    ld a,e
+    add a,32
+    ld e,a
+    inc d
+    ld a,d
+    cp 24
+    jr nz,L2Page
+    nextreg $56,0
+    ld bc,$123B         ; Layer 2 shown
+    ld a,$02
+    out (c),a
+
+; --- Sprites: pattern 0 is a purple block with a transparent frame; three of them, scaled x2
+    ld bc,$303B
+    xor a
+    out (c),a
+    ld e,0
+Pattern:
+    ld a,e
+    and $0F
+    jr z,Clear
+    cp $0F
+    jr z,Clear
+    ld a,e
+    and $F0
+    jr z,Clear
+    cp $F0
+    jr z,Clear
+    ld a,$A3            ; purple: 101 000 11
+    jr Pixel
+Clear:
+    ld a,$E3
+Pixel:
+    out ($5B),a
+    inc e
+    jr nz,Pattern
+    ld bc,$303B
+    xor a
+    out (c),a
+    ld hl,Sprites
+    ld b,3
+Sprite:
+    ld a,(hl)
+    inc hl
+    out ($57),a         ; X
+    ld a,(hl)
+    inc hl
+    out ($57),a         ; Y
+    xor a
+    out ($57),a         ; palette offset 0, no mirror, X8 0
+    ld a,$C0
+    out ($57),a         ; visible, pattern 0, a fifth byte
+    ld a,$0A
+    out ($57),a         ; scale x2, x2
+    djnz Sprite
+    nextreg $15,$01     ; sprites on, SLU
+    jr $
+Sprites:
+    .defb 80,150, 170,76, 250,150

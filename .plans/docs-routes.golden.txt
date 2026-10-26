@@ -243,6 +243,7 @@
 /en/under-the-hood/emulator-internals/debugger-loop/index.html
 /en/under-the-hood/emulator-internals/ht1080z-video/index.html
 /en/under-the-hood/emulator-internals/next-core/index.html
+/en/under-the-hood/emulator-internals/next-display/overview/index.html
 /en/under-the-hood/emulator-internals/reverse-debugging/index.html
 /en/under-the-hood/emulator-internals/spectrum-accuracy/index.html
 /en/under-the-hood/emulator-internals/spectrum-display/index.html
