@@ -4,9 +4,9 @@ A series of *Under the hood* articles that explain, in the style of
 `spectrum-display.mdx` and `zx81-display.mdx`, how the ZX Spectrum Next produces its picture:
 every video mode, the palettes, the layers and how they are composed into one pixel.
 
-Status: **articles 1 to 9 written** (`next-display/overview.mdx`, `timing.mdx`, `palettes.mdx`,
-`ula.mdx`, `lores.mdx`, `layer2.mdx`, `tilemap.mdx`, `sprites.mdx`, `composition.mdx`). Article 10 to
-go (Changing the picture mid-frame).
+Status: **all ten articles written** (`next-display/overview.mdx`, `timing.mdx`, `palettes.mdx`,
+`ula.mdx`, `lores.mdx`, `layer2.mdx`, `tilemap.mdx`, `sprites.mdx`, `composition.mdx`,
+`raster-effects.mdx`). The series is complete.
 
 ### As built (article 1)
 
@@ -92,6 +92,16 @@ go (Changing the picture mid-frame).
   a pixel a step. **Klive's Radastan ignored ULA+** (the hardware uses `11` & offset(1:0) as the high
   nibble with ULA+ on and ULANext off); the existing test used offset `$0E`, for which both rules agree,
   so it could not see it. Fixed with the article, and `lores.test.ts` checks offset 3 too.
+- Article 10 (changing the picture mid-frame): the machine pictures are made by real Copper programs
+  uploaded through NextReg `$63`: a sky gradient (ULA palette entry 16 rewritten before each of the 311
+  lines, 625 instructions), a split scroll (NextReg `$26` at lines 0 and 152) and 32 ships from 8 sprites
+  (NextReg `$64` = 32, so Copper lines are sprite Y). Facts it established: the Copper runs at 28 MHz and
+  checks a WAIT at every clock; WAIT compares the line for equality and the horizontal count `>= 8h + 12`,
+  which is display dot 8h; a MOVE takes two clocks; MOVE to NextReg 0 is the NOP; only NextRegs
+  `$00`–`$7F` are reachable; Copper writes go ahead of the CPU's; NextReg `$63` writes both bytes on the
+  second write; mode 11 restarts at the Copper's line 0 (NextReg `$64`'s numbering), not at the frame's
+  first line. The series wrap-up is the article's Part 7. No core change was needed. Note for picture
+  checks: `sharp().resize(w, h)` crops to fill by default; pass `fit: "fill"` to view a whole picture.
 - The plan's figure list for article 4 was cut to ten (no ULA+/ULANext machine pictures, the register
   bit strips are a table); the clip window and scroll basics stay in article 1 and are only linked.
 

@@ -248,6 +248,7 @@
 /en/under-the-hood/emulator-internals/next-display/lores/index.html
 /en/under-the-hood/emulator-internals/next-display/overview/index.html
 /en/under-the-hood/emulator-internals/next-display/palettes/index.html
+/en/under-the-hood/emulator-internals/next-display/raster-effects/index.html
 /en/under-the-hood/emulator-internals/next-display/sprites/index.html
 /en/under-the-hood/emulator-internals/next-display/tilemap/index.html
 /en/under-the-hood/emulator-internals/next-display/timing/index.html

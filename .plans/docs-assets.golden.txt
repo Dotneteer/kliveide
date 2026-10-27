@@ -176,6 +176,10 @@
 /images/en/under-the-hood/next-display/palettes/entry.webp
 /images/en/under-the-hood/next-display/palettes/offset.webp
 /images/en/under-the-hood/next-display/palettes/transparent.webp
+/images/en/under-the-hood/next-display/raster-effects/gradient.webp
+/images/en/under-the-hood/next-display/raster-effects/multiplex.webp
+/images/en/under-the-hood/next-display/raster-effects/split-0.webp
+/images/en/under-the-hood/next-display/raster-effects/split-1.webp
 /images/en/under-the-hood/next-display/sprites/border-off.webp
 /images/en/under-the-hood/next-display/sprites/border-on.webp
 /images/en/under-the-hood/next-display/sprites/budget-all.webp

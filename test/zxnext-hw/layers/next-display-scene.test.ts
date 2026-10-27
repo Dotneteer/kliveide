@@ -975,6 +975,49 @@ describe("next-display sprites: orientations, scale, anchors, the time budget, t
       await writeCrop(join(out, "en/under-the-hood/next-display/sprites/priority-0.webp"), zero, 32, 16, 80, 40);
     }
   });
+
+  it("lets the Copper reuse eight sprites in four bands: 32 ships from 8 sprites", async () => {
+    // --- Used by the mid-frame article. NextReg $64 = 32 makes the Copper's line numbers the wide
+    // --- area's rows, which are also sprite Y
+    const s = await spritesAlone();
+    const HULLS = [[GREY, 0xb6], [0x06, 0x4f], [0x10, 0x5c], [0x80, 0xe9]];
+    HULLS.forEach(([dark, light], b) => spritePalette(s, (b << 4) | 1, [dark, light, ...SHIP_COLOURS.slice(2)]));
+    pattern(s, 0, SHIP);
+    const BAND_Y = [24, 80, 136, 192];
+    const shipX = (i: number, b: number) => 8 + 30 * i + 4 * b;
+    sprites(s, 0, [...Array(8).keys()].map((i) => attrs(shipX(i, 0), BAND_Y[0])));
+    const WAIT = (line: number) => 0x8000 | line;
+    const MOVE = (reg: number, value: number) => (reg << 8) | value;
+    const list: number[] = [];
+    BAND_Y.forEach((y, b) => {
+      // --- band 0 at the top of the frame; band b once the engine has drawn the last row of band b - 1
+      list.push(WAIT(b === 0 ? 0 : BAND_Y[b - 1] + 20));
+      for (let i = 0; i < 8; i++) list.push(MOVE(0x34, i), MOVE(0x35, shipX(i, b)), MOVE(0x36, y), MOVE(0x37, b << 4));
+    });
+    list.push(0xffff);
+    s.setNextReg(0x61, 0).setNextReg(0x62, 0);
+    for (const w of list) s.setNextReg(0x63, w >> 8).setNextReg(0x63, w & 0xff);
+    s.setNextReg(0x64, 32).setNextReg(0x62, 0xc0).setNextReg(0x15, 0x03);
+    s.runFrames(3);
+    const f = s.screen();
+    const toHex = (v: number) => {
+      const L = ["00", "24", "49", "6D", "92", "B6", "DB", "FF"];
+      const b2 = v & 3;
+      return `#${L[v >> 5]}${L[(v >> 2) & 7]}${L[(b2 << 1) | (b2 !== 0 ? 1 : 0)]}`;
+    };
+    for (let b = 0; b < 4; b++) {
+      for (let i = 0; i < 8; i++) {
+        const [x, y] = [shipX(i, b), BAND_Y[b]];
+        expect(`band ${b} ship ${i} nose ${dotAt(f, x + NOSE[0], y + NOSE[1])}`).toBe(`band ${b} ship ${i} nose ${RED}`);
+        expect(`band ${b} ship ${i} hull ${dotAt(f, x + 8, y + 8)}`).toBe(`band ${b} ship ${i} hull ${toHex(HULLS[b][1])}`);
+      }
+    }
+    const out = process.env.NEXT_DISPLAY_SHOTS;
+    if (out) {
+      // --- the wide area's left 256 dots, all 256 rows
+      await writeCrop(join(out, "en/under-the-hood/next-display/raster-effects/multiplex.webp"), f, 32, 16, 512, 256);
+    }
+  });
 });
 
 describe("next-display lores: LoRes and Radastan", () => {
@@ -1147,6 +1190,178 @@ describe("next-display lores: LoRes and Radastan", () => {
     expect(at(f, wide(4, 100))).toBe(rgb332Hex(16 + 7)); // the border: port $FE's colour 7, ULA palette entry 23
     const out = process.env.NEXT_DISPLAY_SHOTS;
     if (out) await writeWebp(join(out, "en/under-the-hood/next-display/lores/clip.webp"), f);
+  });
+});
+
+describe("next-display raster effects: the Copper changes the picture mid-frame", () => {
+  /*
+   * The mid-frame article's pictures. Each is made by a Copper program uploaded through NextReg $63
+   * (two writes an instruction, written together on the second) and started in mode 3 (NextReg $62
+   * bits 7-6 = 11: from address 0, again at every line 0).
+   */
+  const IDLE = ".org $8000\n di\n jr $\n";
+  const LEVEL = ["00", "24", "49", "6D", "92", "B6", "DB", "FF"];
+  const rgb332Hex = (v: number) => {
+    const b = v & 3;
+    return `#${LEVEL[v >> 5]}${LEVEL[(v >> 2) & 7]}${LEVEL[(b << 1) | (b !== 0 ? 1 : 0)]}`;
+  };
+  /** WAIT for line `line` at horizontal position `h` (display dot 8h) */
+  const WAIT = (line: number, h = 0) => 0x8000 | (h << 9) | line;
+  /** MOVE `value` into NextReg `reg` */
+  const MOVE = (reg: number, value: number) => (reg << 8) | value;
+  const HALT = 0xffff; // a WAIT for line 511, which never comes
+  const copper = (s: NextTestSession, list: number[]) => {
+    expect(list.length).toBeLessThanOrEqual(1024);
+    s.setNextReg(0x61, 0).setNextReg(0x62, 0);
+    for (const w of list) s.setNextReg(0x63, w >> 8).setNextReg(0x63, w & 0xff);
+    s.setNextReg(0x62, 0xc0);
+  };
+  const bitmapAddress = (y: number, col: number) =>
+    0x4000 | ((y & 0xc0) << 5) | ((y & 0x07) << 8) | ((y & 0x38) << 2) | col;
+  // --- 128K timing at 50 Hz: 311 lines, the frame's first line is line 247, 64 lines above line 0
+  const FRAME_LINES = 311;
+  const frameLineOf = (line: number) => (line + 64) % FRAME_LINES;
+
+  /** The sky colour of frame line f (0 = the top of the frame): navy, purple, pink, orange at the horizon */
+  const skyColour = (f: number) => {
+    const stops: [number, number[]][] = [
+      [0, [0, 0, 0.35]], [90, [0.35, 0.1, 0.55]], [160, [0.85, 0.25, 0.45]], [215, [1, 0.6, 0.2]], [310, [1, 0.85, 0.4]]
+    ];
+    let k = 0;
+    while (k < stops.length - 2 && f > stops[k + 1][0]) k++;
+    const [f0, c0] = stops[k];
+    const [f1, c1] = stops[k + 1];
+    const t = Math.min(1, Math.max(0, (f - f0) / (f1 - f0)));
+    const [r, g, b] = c0.map((v, i) => v + (c1[i] - v) * t);
+    return (Math.round(r * 7) << 5) | (Math.round(g * 7) << 2) | Math.round(b * 3);
+  };
+  /** A city skyline, black ink, in the bottom 64 lines of the screen */
+  const skyline = (x: number, y: number) => {
+    const block = Math.floor(x / 12);
+    const top = 128 + ((block * 37) % 41);
+    const window = y > top + 4 && x % 12 > 2 && x % 12 < 9 && (y - top) % 8 < 3 && (block * 7 + (y >> 3)) % 3 === 0;
+    return y >= top && !window;
+  };
+
+  it("recolours one palette entry on every line: a sky gradient from a Copper list", async () => {
+    const s = await createSession();
+    await s.loadCode(IDLE);
+    for (let y = 0; y < 192; y++) {
+      for (let col = 0; col < 32; col++) {
+        let byte = 0;
+        for (let b = 0; b < 8; b++) if (skyline(col * 8 + b, y)) byte |= 0x80 >> b;
+        s.poke(bitmapAddress(y, col), byte);
+      }
+    }
+    s.poke(0x5800, new Uint8Array(768).fill(0x00)); // ink 0 (entry 0, black), paper 0 (entry 16)
+    s.out(0xfe, 0); // border 0: entry 16 too
+    // --- NextReg $43 bit 7 stops the palette index moving on after a write, so one MOVE a line will do
+    const list = [MOVE(0x43, 0x80), MOVE(0x40, 16)];
+    for (let line = 0; line < FRAME_LINES; line++) list.push(WAIT(line), MOVE(0x41, skyColour(frameLineOf(line))));
+    list.push(HALT);
+    copper(s, list);
+    s.runFrames(3);
+    const f = s.screen();
+    // --- paper and border show the colour of their line; the ink stays black
+    for (const line of [0, 40, 100, 127]) {
+      expect(at(f, paper(4, line)), `paper, line ${line}`).toBe(rgb332Hex(skyColour(frameLineOf(line))));
+      expect(at(f, wide(4, line + 32)), `border, line ${line}`).toBe(rgb332Hex(skyColour(frameLineOf(line))));
+    }
+    expect(at(f, paper(6, 190))).toBe("#000000");
+    // --- the top border (lines 280-310 of the counter, buffer rows 0-31 here) has its own colours
+    expect(at(f, wide(4, 0))).toBe(rgb332Hex(skyColour(frameLineOf(279))));
+    const out = process.env.NEXT_DISPLAY_SHOTS;
+    if (out) await writeWebp(join(out, "en/under-the-hood/next-display/raster-effects/gradient.webp"), f);
+  });
+
+  it("stops a WAIT for line 99 at h = 51 on the left edge of line 100's border", async () => {
+    const s = await createSession();
+    await s.loadCode(IDLE);
+    s.poke(0x5800, new Uint8Array(768).fill(0x38)); // white paper: the border is the only black
+    s.out(0xfe, 0);
+    // --- border colour 0 is ULA palette entry 16: red from (line 99, h 51) on, black again at line 101
+    copper(s, [MOVE(0x43, 0x80), MOVE(0x40, 16), MOVE(0x41, 0x00), WAIT(99, 51), MOVE(0x41, 0xe0), WAIT(101, 0), MOVE(0x41, 0x00), HALT]);
+    s.runFrames(3);
+    const f = s.screen();
+    const RED_HEX = rgb332Hex(0xe0);
+    // --- buffer x 0 is dot -48; line n is buffer row 48 + n
+    expect(pixelHex(f, 0, 48 + 99), "line 99, dot -48").toBe("#000000");
+    expect(pixelHex(f, 0, 48 + 100), "line 100, dot -48").toBe(RED_HEX);
+    expect(pixelHex(f, 96 - 2, 48 + 100), "line 100, dot -1").toBe(RED_HEX);
+    expect(pixelHex(f, 96 + 2 * 300, 48 + 100), "line 100, dot 300").toBe(RED_HEX);
+    expect(pixelHex(f, 96 + 2 * 300, 48 + 99), "line 99, dot 300").toBe("#000000");
+  });
+
+  it("reaches the wide area's top-left corner: WAIT line 278, h 53 at 128K timing, h 52 on 448-dot lines", async () => {
+    // --- NextReg $03 timing, frame lines, and the WAIT for the corner with NextReg $64 = 0 and = 32
+    const TIMINGS = [
+      { name: "128K/+3", nr03: 0xb0, lines: 311, h: 53, line0: 278 },
+      { name: "48K", nr03: 0x90, lines: 312, h: 52, line0: 279 },
+      { name: "Pentagon", nr03: 0xc0, lines: 320, h: 52, line0: 287 }
+    ];
+    for (const tm of TIMINGS) for (const [offset, line] of [[0, tm.line0], [32, tm.lines - 1]]) {
+      const s = await createSession();
+      await s.loadCode(IDLE);
+      s.setNextReg(0x03, tm.nr03).runFrames(2);
+      s.out(0xfe, 0);
+      s.setNextReg(0x64, offset);
+      // --- border colour 0, ULA palette entry 16: red from the WAIT on, black again two lines later
+      const next = (line + 2) % tm.lines;
+      copper(s, [MOVE(0x43, 0x80), MOVE(0x40, 16), MOVE(0x41, 0x00), WAIT(line, tm.h), MOVE(0x41, 0xe0), WAIT(next, 0), MOVE(0x41, 0x00), HALT]);
+      s.runFrames(3);
+      const f = s.screen();
+      // --- the wide area's dot (0, 0) is buffer (32, 16) in every timing: dot -32 of the line above row 0
+      const what = `${tm.name}, offset ${offset}, WAIT ${line}, ${tm.h}`;
+      expect(pixelHex(f, 32, 16), `${what}: wide (0, 0)`).toBe(rgb332Hex(0xe0));
+      expect(pixelHex(f, 30, 16), `${what}: one dot to the left`).toBe("#000000");
+      expect(pixelHex(f, 32, 15), `${what}: one line up`).toBe("#000000");
+    }
+  });
+
+  it("keeps a status bar still while the playfield scrolls: two ULA scroll values in one frame", async () => {
+    const s = await createSession();
+    await s.prepareBasic(); // the 48K ROM, for its font at $3D00
+    const font = s.peekBytes(0x3d00, 96 * 8);
+    await s.loadCode(IDLE);
+    const text = (row: number, col: number, str: string) => {
+      for (const [k, ch] of [...str].entries()) {
+        for (let line = 0; line < 8; line++) s.poke(bitmapAddress(row * 8 + line, col + k), font[(ch.charCodeAt(0) - 0x20) * 8 + line]);
+      }
+    };
+    s.poke(0x4000, new Uint8Array(0x1800));
+    // --- the playfield, rows 0-18: columns of numbers, so a scroll shows; the bar, rows 20-23
+    for (let row = 0; row < 19; row++) {
+      for (let col = 0; col < 32; col++) s.poke(0x5800 + row * 32 + col, 0x08 * (1 + ((col >> 2) % 6)) | 0x40);
+      text(row, 0, "0123456789ABCDEF0123456789ABCDEF");
+    }
+    for (let row = 19; row < 24; row++) for (let col = 0; col < 32; col++) s.poke(0x5800 + row * 32 + col, 0x47);
+    text(20, 2, "SCORE 001200      LIVES 3");
+    text(22, 2, "THE BAR DOES NOT SCROLL");
+    // --- the bar's top line, 152, gets a dotted rule, so that a scroll of its first cell would show
+    for (let col = 0; col < 32; col++) s.poke(bitmapAddress(152, col), col * 8 + 1);
+    s.out(0xfe, 0);
+    s.runFrames(2);
+    const plain = s.screen();
+    // --- the playfield scrolls 40 dots to the left; the bar, from line 152 (row 19), not at all. Each
+    // --- value is written in the right border of the line before (h 33, dot 264), because the ULA reads
+    // --- a cell's scroll a little before it shows the cell: 0 before line 152, 40 again after line 191
+    copper(s, [WAIT(151, 33), MOVE(0x26, 0), WAIT(191, 33), MOVE(0x26, 40), HALT]);
+    s.runFrames(3);
+    const split = s.screen();
+    for (const [x, y] of [[0, 0], [0, 10], [100, 50], [215, 140], [255, 151]]) {
+      expect(at(split, paper(x, y))).toBe(at(plain, paper((x + 40) % 256, y)));
+    }
+    // --- every dot of the bar's text rows is where it was: the bar did not move
+    const moved: string[] = [];
+    for (const y of [152, 161, 163, 177, 179]) {
+      for (let x = 0; x < 256; x++) if (at(split, paper(x, y)) !== at(plain, paper(x, y))) moved.push(`${x},${y}`);
+    }
+    expect(moved.slice(0, 8)).toEqual([]);
+    const out = process.env.NEXT_DISPLAY_SHOTS;
+    if (out) {
+      await writeCrop(join(out, "en/under-the-hood/next-display/raster-effects/split-0.webp"), plain, 96, 48, 512, 192);
+      await writeCrop(join(out, "en/under-the-hood/next-display/raster-effects/split-1.webp"), split, 96, 48, 512, 192);
+    }
   });
 });
 

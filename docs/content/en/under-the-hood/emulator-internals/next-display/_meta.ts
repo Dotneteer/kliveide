@@ -7,5 +7,6 @@ export default {
   layer2: "Layer 2",
   tilemap: "The tilemap",
   sprites: "Sprites",
-  composition: "Putting it together"
+  composition: "Putting it together",
+  "raster-effects": "Changing the picture mid-frame"
 };

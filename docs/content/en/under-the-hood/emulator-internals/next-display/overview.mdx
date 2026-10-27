@@ -1726,7 +1726,7 @@ Next's ULA. What the Next changes about the ULA is the subject of the [ULA artic
 | 7 | [The tilemap](/en/under-the-hood/emulator-internals/next-display/tilemap/) | maps, tiles, mirroring and rotation, in front of the ULA or behind it |
 | 8 | [Sprites](/en/under-the-hood/emulator-internals/next-display/sprites/) | attributes, anchors, the line buffer and its time budget |
 | 9 | [Putting it together](/en/under-the-hood/emulator-internals/next-display/composition/) | stage 2 in full: the six orders, stencils and blending |
-| 10 | Changing the picture mid-frame | the Copper, line interrupts, and how Klive keeps up with the beam |
+| 10 | [Changing the picture mid-frame](/en/under-the-hood/emulator-internals/next-display/raster-effects/) | the Copper, line interrupts, and how Klive keeps up with the beam |
 
 Articles 2 and 3 come before all the others, and article 9 after the layer articles. Articles 4 to 8
 can be read in any order.
@@ -1777,7 +1777,7 @@ The renderers draw from the registers and memory *as they are now*. If they ran 
 palette change at line 100 would recolour the whole frame. So, as Klive's Spectrum cores do, the
 Next core draws **lazily**: just before a write that could change the picture, a Copper move, a
 palette write, a border `OUT`, it renders the lines the beam has already passed with the old state.
-Article 10 of the series explains this raster and the one line of difference it allows.
+[Article 10](/en/under-the-hood/emulator-internals/next-display/raster-effects/#part-6-how-klive-does-it) of the series explains this raster and the one line of difference it allows.
 
 ### Where to read the code
 
