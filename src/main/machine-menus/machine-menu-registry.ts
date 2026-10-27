@@ -10,12 +10,14 @@ import {
   MI_ZXNEXT,
   MI_TIMEX,
   MI_SCORPION,
-  MI_HT1080Z
+  MI_HT1080Z,
+  MI_TVC
 } from "@common/machines/constants";
 import { zx8081TapeMenuRenderer } from "./zx8081-menus";
 import { tapeMenuRenderer, spectrumIdeRenderer, diskMenuRenderer, ulaHardwareRenderer } from "./zx-specrum-menus";
 import { z88ResetRenderer } from "./z88-menus";
 import { ht1080zHardwareRenderer, ht1080zTapeMenuRenderer } from "./ht1080z-menus";
+import { tvcTapeMenuRenderer } from "./tvc-menus";
 import {
   hotkeyMenuRenderer,
   initializeZxSpectrumNext,
@@ -50,6 +52,9 @@ export const machineMenuRegistry: Record<string, MachineMenuInfo> = {
   [MI_ZX80]: {
     devices: { program: zx8081TapeMenuRenderer },
     viewItems: spectrumIdeRenderer
+  },
+  [MI_TVC]: {
+    devices: { tape: tvcTapeMenuRenderer }
   },
   [MI_HT1080Z]: {
     devices: { tape: ht1080zTapeMenuRenderer },

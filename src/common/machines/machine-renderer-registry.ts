@@ -9,6 +9,7 @@ import { createZx8081Machine } from "@emu/machines/zx8081/Zx8081MachineFactory";
 import { createTimexMachine } from "@emu/machines/timex/TimexMachineFactory";
 import { createScorpionMachine } from "@emu/machines/zxSpectrum128/ScorpionMachineFactory";
 import { createHt1080zMachine } from "@emu/machines/ht1080z/Ht1080zMachineFactory";
+import { createTvcMachine } from "@emu/machines/tvc/TvcMachineFactory";
 import {
   MI_SPECTRUM_128,
   MI_SPECTRUM_48,
@@ -20,7 +21,8 @@ import {
   MI_ZX81,
   MI_TIMEX,
   MI_SCORPION,
-  MI_HT1080Z
+  MI_HT1080Z,
+  MI_TVC
 } from "./constants";
 import { C64Machine } from "@emu/machines/c64/C64Machine";
 
@@ -64,6 +66,10 @@ export const machineRendererRegistry: MachineUiRendererInfo[] = [
   {
     machineId: MI_HT1080Z,
     factory: (_, model, config, messenger) => createHt1080zMachine(model, config, messenger)
+  },
+  {
+    machineId: MI_TVC,
+    factory: (_, model, config, messenger) => createTvcMachine(model, config, messenger)
   },
   {
     machineId: MI_C64,

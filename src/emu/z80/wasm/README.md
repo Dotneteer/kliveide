@@ -27,6 +27,18 @@ the address-bus hook; the 48K and 128K define it as nothing, because the ULA hal
 M-cycle's first T-state (IR Contention's real-machine pictures, `.plans/SPECTRUM_ACCURACY_DOCS_PLAN.md`).
 The +2A/+3's gate array contends memory cycles only, so its address-bus and port hooks add no delay.
 
+An opcode fetch normally goes through `Z80_DELAY_MEMORY_READ` like any read. A core that must time
+M1 cycles on their own defines `Z80_DELAY_OPCODE_FETCH(address)`. The Videoton TVC needs it: its
+clock stretch differs for an M1, and its WAIT circuit adds a wait state to every M1
+(`.plans/VIDEOTON_TVC_PLAN.md` §5, H1).
+- It then replaces the memory-read delay of every M1: the unprefixed opcode, the byte after a
+  `CB`/`ED`/`DD`/`FD` prefix, a repeated `DD`/`FD`, and each halted cycle. It adds the fetch's three
+  tacts itself; the refresh tact follows as usual.
+- Operand bytes and the `DDCB`/`FDCB` displacement and opcode are plain reads and keep
+  `Z80_DELAY_MEMORY_READ`.
+- Undefined, the core compiles exactly the old calls. `test/wasm/z80-hooks/z80-opcode-fetch.test.ts`
+  pins which fetches count as M1s.
+
 ## The Next's CPU is a T80N, not a Zilog Z80
 
 `Z80_T80N`, defined only by the Next (`zxnext-cpu.c`), switches `z80.c` to the FPGA's T80N

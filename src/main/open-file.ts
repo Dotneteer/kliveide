@@ -8,7 +8,7 @@ import { app, BrowserWindow, dialog } from "electron";
 
 import { EMULATOR_FILE_EXTENSIONS, droppedFileAction } from "@common/utils/dropped-file-action";
 import { machineRegistry } from "@common/machines/machine-registry";
-import { MF_TAPE_SUPPORT, MI_HT1080Z } from "@common/machines/constants";
+import { MF_TAPE_SUPPORT, MI_HT1080Z, MI_TVC } from "@common/machines/constants";
 import { getIdeApi } from "@messaging/MainToIdeMessenger";
 import { mainStore } from "./main-store";
 import { saveKliveProject } from "./projects";
@@ -39,6 +39,7 @@ export async function pickAndOpenEmulatorFile(window: BrowserWindow): Promise<vo
       { name: t("common.filter.rzxRecordingsShort"), extensions: ["rzx"] },
       { name: t("common.filter.tapes"), extensions: ["tap", "tzx"] },
       { name: t("common.filter.ht1080zTapes"), extensions: ["cas", "cmd", "bas"] },
+      { name: t("common.filter.tvcTapes"), extensions: ["cas"] },
       { name: t("common.filter.allFiles"), extensions: ["*"] }
     ],
     properties: ["openFile"]
@@ -125,13 +126,14 @@ export async function openEmulatorFile(
 }
 
 /**
- * Puts an HT-1080Z tape into the HT-1080Z's deck (`.plans/HT1080Z_PLAN.md` §9): refused on any other
- * machine, with the reason
+ * Puts an HT-1080Z tape into the HT-1080Z's deck (`.plans/HT1080Z_PLAN.md` §9), or a `.cas` into the
+ * Videoton TVC's (`.plans/VIDEOTON_TVC_PLAN.md` §9): refused on any other machine, with the reason
  * @returns An error message, or undefined when the tape went in
  */
 async function insertHtTape(filename: string): Promise<string | undefined> {
   const machineId = mainStore.getState()?.emulatorState?.machineId;
-  if (machineId !== MI_HT1080Z) {
+  const tvcTape = machineId === MI_TVC && filename.toLowerCase().endsWith(".cas");
+  if (machineId !== MI_HT1080Z && !tvcTape) {
     const name = machineRegistry.find((m) => m.machineId === machineId)?.displayName;
     return name ? t("commands.tapeLoad.refusedHtTape", { machine: name }) : t("commands.tapeLoad.refusedHtTapeNoMachine");
   }

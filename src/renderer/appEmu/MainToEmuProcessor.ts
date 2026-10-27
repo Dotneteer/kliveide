@@ -21,6 +21,8 @@ import { MEDIA_DISK_A, MEDIA_MICRODRIVES, MEDIA_MICRODRIVE_1, MEDIA_MICRODRIVE_2
 import { dockBankOf, parseDckFile } from "@common/timex/dckFile";
 import { isZx8081ProgramFileName, parseZxProgramFile } from "@emu/machines/zx8081/ZxPFile";
 import { ht1080zTapeErrorKey, isHt1080zTapeFor, parseHt1080zTapeFile } from "@emu/machines/ht1080z/Ht1080zTapeFile";
+import { isTvcCasFileName, parseTvcCasFile } from "@emu/machines/tvc/TvcCasFile";
+import { MI_TVC } from "@common/machines/constants";
 import { mediaStore } from "@emu/machines/media/media-info";
 import { screenImageOf } from "@common/headless/screenImage";
 import { tapeBlocksOf } from "@common/headless/tapeBlocks";
@@ -296,6 +298,34 @@ class EmuMessageProcessor {
       }
       mediaStore.addMedia({ id: MEDIA_TAPE, mediaFile: file, mediaContents: program });
       this.machineService.getMachineController()?.machine?.setMachineProperty(MEDIA_TAPE, program);
+      if (confirm) {
+        await createMainApi(this.mainMessenger).displayMessageBox(
+          "info",
+          t("emu.media.tape.setTitle"),
+          t("emu.media.tape.setMessage", { file })
+        );
+      }
+      return;
+    }
+
+    // --- A Videoton TVC tape (.cas on the TVC): turned into the tape program its core plays
+    // --- (`.plans/VIDEOTON_TVC_PLAN.md` §9)
+    if (this.machineService.getMachineController()?.machine?.machineId === MI_TVC && isTvcCasFileName(file)) {
+      let tvcTape;
+      try {
+        tvcTape = parseTvcCasFile(contents, file);
+      } catch {
+        if (!suppressError) {
+          await createMainApi(this.mainMessenger).displayMessageBox(
+            "error",
+            t("emu.media.tape.errorTitle"),
+            t("emu.media.tape.tvcNotCas", { file })
+          );
+        }
+        return;
+      }
+      mediaStore.addMedia({ id: MEDIA_TAPE, mediaFile: file, mediaContents: tvcTape });
+      this.machineService.getMachineController()?.machine?.setMachineProperty(MEDIA_TAPE, tvcTape);
       if (confirm) {
         await createMainApi(this.mainMessenger).displayMessageBox(
           "info",
