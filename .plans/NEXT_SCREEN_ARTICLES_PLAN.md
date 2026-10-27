@@ -4,9 +4,9 @@ A series of *Under the hood* articles that explain, in the style of
 `spectrum-display.mdx` and `zx81-display.mdx`, how the ZX Spectrum Next produces its picture:
 every video mode, the palettes, the layers and how they are composed into one pixel.
 
-Status: **articles 1, 2, 3, 4, 6, 7 and 9 written** (`next-display/overview.mdx`, `timing.mdx`,
-`palettes.mdx`, `ula.mdx`, `layer2.mdx`, `tilemap.mdx`, `composition.mdx`). Articles 5, 8 and 10 to go,
-in the writing order of §1 (next: 8, sprites).
+Status: **articles 1, 2, 3, 4, 6, 7, 8 and 9 written** (`next-display/overview.mdx`, `timing.mdx`,
+`palettes.mdx`, `ula.mdx`, `layer2.mdx`, `tilemap.mdx`, `sprites.mdx`, `composition.mdx`). Articles 5
+and 10 to go, in the writing order of §1 (next: 5, LoRes and Radastan).
 
 ### As built (article 1)
 
@@ -66,6 +66,22 @@ in the writing order of §1 (next: 8, sprites).
   into a two-half buffer, a read per dot; its settings are taken per cell fetched; a two-byte map and
   256 tiles (10,752 bytes) do not fit beside the ULA's screen in bank 5. Klive's renderer matched the
   hardware rule for rule; no core change.
+- Article 8 (sprites): the machine pictures are the eight orientations, six scales, composite and
+  unified relative sprites with the anchor rotated, the time budget (128 sprites on one band, then with
+  26 moved off it), over the border on and off, and the two settings of sprite 0 on top; the inspector
+  doc-shot was replaced by a link to the Sprite Inspector guide. **The time budget was checked by
+  simulating the sprite engine alone under nvc** (a block-level testbench with the F3 RAM models, random
+  sprite tables at 456- and 448-dot lines, pixels written per sprite compared one for one). Facts it
+  established: the engine works through the whole line, from one line-buffer swap (wide counter 511) to
+  the next, not only in blanking; sprite 0 is decided on clock 3; a sprite not on the line costs 1 clock,
+  one on it 1 + the positions it walks (fewer when it runs off the right without wrapping, 2 when parked
+  off the right); a sprite decided in the last 4/8/16/32 dots before 320 is refused with every sprite
+  after it, by **its own** scale; that is a window, not a deadline (sprites checked after 320 are drawn);
+  the next swap stops the engine mid-sprite. All on one line: 75, 38, 19, 9 sprites at 1×–8×. **Klive's
+  budget model differed** (18 clocks a 1× sprite, the previous sprite's window, no partial cut, off-screen
+  X free) and was fixed with the article; `test/zxnext-hw/sprites/sprite-time-budget.test.ts` pins the
+  simulation's results. Klive raises both `$303B` flags at frame completion, not per line; the article
+  says so. Article 10 can rely on: attributes are read as each line is drawn, one line ahead of the beam.
 - The plan's figure list for article 4 was cut to ten (no ULA+/ULANext machine pictures, the register
   bit strips are a table); the clip window and scroll basics stay in article 1 and are only linked.
 

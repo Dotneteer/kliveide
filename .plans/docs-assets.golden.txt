@@ -171,6 +171,15 @@
 /images/en/under-the-hood/next-display/palettes/entry.webp
 /images/en/under-the-hood/next-display/palettes/offset.webp
 /images/en/under-the-hood/next-display/palettes/transparent.webp
+/images/en/under-the-hood/next-display/sprites/border-off.webp
+/images/en/under-the-hood/next-display/sprites/border-on.webp
+/images/en/under-the-hood/next-display/sprites/budget-all.webp
+/images/en/under-the-hood/next-display/sprites/budget-gap.webp
+/images/en/under-the-hood/next-display/sprites/orientations.webp
+/images/en/under-the-hood/next-display/sprites/priority-0.webp
+/images/en/under-the-hood/next-display/sprites/priority-127.webp
+/images/en/under-the-hood/next-display/sprites/relative.webp
+/images/en/under-the-hood/next-display/sprites/scale.webp
 /images/en/under-the-hood/next-display/tilemap/orientations.webp
 /images/en/under-the-hood/next-display/tilemap/text.webp
 /images/en/under-the-hood/next-display/timing/hz50.webp

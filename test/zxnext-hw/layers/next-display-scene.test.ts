@@ -719,6 +719,264 @@ describe("next-display tilemap: orientations and text mode", () => {
   });
 });
 
+describe("next-display sprites: orientations, scale, anchors, the time budget, the border", () => {
+  /*
+   * The sprite article's pictures: the sprites alone (the ULA off, the fallback colour black) unless a
+   * picture needs the ULA's border, their patterns, attributes and first palette written from the test
+   * through ports $303B, $5B and $57 and NextRegs $40-$43.
+   */
+  const IDLE = ".org $8000\n di\n jr $\n";
+  const spritesAlone = async (ula = false): Promise<NextTestSession> => {
+    const s = await createSession();
+    await s.loadCode(IDLE);
+    if (!ula) s.setNextReg(0x68, 0x80);
+    s.setNextReg(0x4a, 0x00);
+    return s;
+  };
+  /** 8-bit colours into the sprites' first palette from entry `first` */
+  const spritePalette = (s: NextTestSession, first: number, colours: number[]) => {
+    s.setNextReg(0x43, 0x20).setNextReg(0x40, first);
+    for (const c of colours) s.setNextReg(0x41, c);
+    s.setNextReg(0x43, 0x00);
+  };
+  /** 256 bytes into 8-bit pattern `n` */
+  const pattern = (s: NextTestSession, n: number, bytes: number[]) => {
+    s.out(0x303b, n);
+    for (const b of bytes) s.out(0x005b, b);
+  };
+  /** Attribute bytes from sprite `first` on: four or five per sprite, as port $57 takes them */
+  const sprites = (s: NextTestSession, first: number, table: number[][]) => {
+    s.out(0x303b, first);
+    for (const attrs of table) for (const b of attrs) s.out(0x0057, b);
+  };
+  /** Five attribute bytes: a visible 8-bit sprite at (x, y) */
+  const attrs = (x: number, y: number, { pat = 0, paloff = 0, flags = 0, a4 = 0 } = {}) => [
+    x & 0xff,
+    y & 0xff,
+    (paloff << 4) | flags | ((x >> 8) & 1),
+    0xc0 | pat,
+    a4 | ((y >> 8) & 1)
+  ];
+  const GREY = 0x6d; // #6D6D6D
+  const RED = "#FF0000";
+  /**
+   * Part 4's sprite: a small spaceship pointing right, a big tail fin on top and a small one underneath, so
+   * that all eight orientations look different; `.` is transparent ($E3), and the red nose tip (r) at
+   * column 15, row 8 is the dot the tests follow.
+   */
+  const SHIP_ROWS = [
+    "................", ".dd.............", ".dld............", ".dlld...........",
+    "..dlld..........", "..dllldddd......", "y.dlllllllddd...", "oydllllllcccldd.",
+    "yodlllllllcclllr", "oydlllllllllldd.", "y.dllllllllddd..", "..ddddddddd.....",
+    "...dld..........", "...dd...........", "................", "................"
+  ];
+  const SHIP_INDEX: Record<string, number> = { ".": 0xe3, d: 1, l: 2, c: 3, r: 4, o: 5, y: 6 };
+  const SHIP = SHIP_ROWS.flatMap((row) => {
+    expect(row).toHaveLength(16);
+    return [...row].map((c) => SHIP_INDEX[c]);
+  });
+  /** dark and light hull, cockpit, nose tip, flame orange and yellow, from entry 1 */
+  const SHIP_COLOURS = [GREY, 0xb6, 0x1f, 0xe0, 0xec, 0xfc];
+  const NOSE: [number, number] = [15, 8];
+  const dotAt = (f: Frame, x: number, y: number) => at(f, wide(x, y));
+  /** Where pattern dot (u, v) lands for attribute 2 bits 3-1 = k: rotate clockwise, then mirror */
+  const oriented = (k: number, [u, v]: [number, number]): [number, number] => {
+    let [x, y] = [u, v];
+    if (k & 1) [x, y] = [15 - y, x];
+    if (k & 4) x = 15 - x;
+    if (k & 2) y = 15 - y;
+    return [x, y];
+  };
+
+  it("draws one pattern in its eight orientations: rotate clockwise, then mirror", async () => {
+    const s = await spritesAlone();
+    spritePalette(s, 1, SHIP_COLOURS);
+    pattern(s, 0, SHIP);
+    const at8 = (k: number) => ({ x: 8 + 32 * (k % 4), y: 8 + 40 * Math.floor(k / 4) });
+    sprites(s, 0, [0, 1, 2, 3, 4, 5, 6, 7].map((k) => attrs(at8(k).x, at8(k).y, { flags: k << 1 })));
+    s.setNextReg(0x15, 0x03);
+    s.runFrames(2);
+    const f = s.screen();
+    for (let k = 0; k < 8; k++) {
+      const [dx, dy] = oriented(k, NOSE);
+      expect(`attr2 ${k << 1}: ${dotAt(f, at8(k).x + dx, at8(k).y + dy)}`).toBe(`attr2 ${k << 1}: ${RED}`);
+    }
+    const out = process.env.NEXT_DISPLAY_SHOTS;
+    if (out) {
+      // --- dots 0-127 across, lines 0-79: room under each sprite for its label
+      await writeCrop(join(out, "en/under-the-hood/next-display/sprites/orientations.webp"), f, 32, 16, 256, 80);
+    }
+  });
+
+  it("scales a pattern 1x, 2x, 4x and 8x, across and down independently", async () => {
+    const s = await spritesAlone();
+    spritePalette(s, 1, SHIP_COLOURS);
+    pattern(s, 0, SHIP);
+    // --- (x, y, X scale, Y scale): attribute 4 bits 4-3 and 2-1
+    const placed: Array<[number, number, number, number]> = [
+      [8, 8, 0, 0], [32, 8, 1, 1], [72, 8, 2, 2], [152, 8, 3, 3], [8, 88, 2, 0], [96, 80, 0, 2]
+    ];
+    sprites(s, 0, placed.map(([x, y, sx, sy]) => attrs(x, y, { a4: (sx << 3) | (sy << 1) })));
+    s.setNextReg(0x15, 0x03);
+    s.runFrames(2);
+    const f = s.screen();
+    for (const [x, y, sx, sy] of placed) {
+      // --- the nose tip is 2^sx dots wide and 2^sy lines tall: light hull before it, nothing above it
+      const [nx, ny] = [x + NOSE[0] * (1 << sx), y + NOSE[1] * (1 << sy)];
+      expect(dotAt(f, nx, ny)).toBe(RED);
+      expect(dotAt(f, nx + (1 << sx) - 1, ny + (1 << sy) - 1)).toBe(RED);
+      expect(dotAt(f, nx - 1, ny)).toBe("#B6B6B6");
+      expect(dotAt(f, nx, ny - 1)).toBe("#000000");
+    }
+    const out = process.env.NEXT_DISPLAY_SHOTS;
+    if (out) {
+      // --- dots 0-287 across, lines 0-143
+      await writeCrop(join(out, "en/under-the-hood/next-display/sprites/scale.webp"), f, 32, 16, 576, 144);
+    }
+  });
+
+  it("moves relative sprites with their anchor: composite keeps their own look, unified turns as one", async () => {
+    const s = await spritesAlone();
+    // --- the ship with palette offsets 0, 1, 2: grey, blue and green hulls, the same cockpit, nose and flame
+    spritePalette(s, 1, SHIP_COLOURS);
+    spritePalette(s, 0x11, [0x06, 0x4f, ...SHIP_COLOURS.slice(2)]);
+    spritePalette(s, 0x21, [0x10, 0x5c, ...SHIP_COLOURS.slice(2)]);
+    pattern(s, 0, SHIP);
+    // --- four formations: an anchor ship and two relatives, (+16, 0) and (0, +16); anchor attribute 4 bit 5
+    // --- is the type (0 composite, 1 unified), attribute 2 bit 1 rotates it
+    const object = (x: number, unified: boolean, rotate: boolean) => [
+      attrs(x, 24, { flags: rotate ? 0x02 : 0, a4: unified ? 0x20 : 0 }),
+      [16, 0, 0x10, 0xc0, 0x40],
+      [0, 16, 0x20, 0xc0, 0x40]
+    ];
+    const X = [24, 88, 168, 232];
+    sprites(s, 0, [
+      ...object(X[0], false, false), ...object(X[1], false, true),
+      ...object(X[2], true, false), ...object(X[3], true, true)
+    ]);
+    s.setNextReg(0x15, 0x03);
+    s.runFrames(2);
+    const f = s.screen();
+    const [GREY_HULL, BLUE_HULL, GREEN_HULL] = ["#B6B6B6", "#496DFF", "#49FF00"];
+    /** A ship at (x, y), turned (k = 1) or not (k = 0): its nose tip is red, and pattern dot (8, 8) its light hull */
+    const ship = (x: number, y: number, k: number, hull: string) => {
+      const [nx, ny] = oriented(k, NOSE);
+      const [hx, hy] = oriented(k, [8, 8]);
+      expect(`${x},${y} nose ${dotAt(f, x + nx, y + ny)}`).toBe(`${x},${y} nose ${RED}`);
+      expect(`${x},${y} hull ${dotAt(f, x + hx, y + hy)}`).toBe(`${x},${y} hull ${hull}`);
+    };
+    // --- composite: the relatives keep their place and their own orientation whatever the anchor does
+    for (const x of [X[0], X[1]]) {
+      ship(x + 16, 24, 0, BLUE_HULL);
+      ship(x, 40, 0, GREEN_HULL);
+    }
+    ship(X[0], 24, 0, GREY_HULL);
+    ship(X[1], 24, 1, GREY_HULL); // --- the rotated anchor alone
+    // --- unified, not rotated: as composite; rotated: (16, 0) goes to (0, 16), (0, 16) to (-16, 0), all turned
+    ship(X[2], 24, 0, GREY_HULL);
+    ship(X[2] + 16, 24, 0, BLUE_HULL);
+    ship(X[2], 40, 0, GREEN_HULL);
+    ship(X[3], 24, 1, GREY_HULL);
+    ship(X[3], 40, 1, BLUE_HULL);
+    ship(X[3] - 16, 24, 1, GREEN_HULL);
+    const out = process.env.NEXT_DISPLAY_SHOTS;
+    if (out) {
+      // --- dots 0-271 across, lines 0-63
+      await writeCrop(join(out, "en/under-the-hood/next-display/sprites/relative.webp"), f, 32, 16, 544, 64);
+    }
+  });
+
+  /** 128 sprites at X 2k, 16 colours by palette offset; `offLine` sprites go 32 lines lower */
+  const budgetScene = async (offLine: (k: number) => boolean): Promise<Frame> => {
+    const s = await spritesAlone();
+    const rainbow = [0xe0, 0xec, 0xfc, 0x9c, 0x1c, 0x1d, 0x1f, 0x17, 0x03, 0x43, 0x83, 0xc3, 0xe2, 0xa0, 0x6d, 0xff];
+    rainbow.forEach((c, p) => spritePalette(s, (p << 4) | 1, [c]));
+    pattern(s, 0, new Array(256).fill(1));
+    sprites(s, 0, Array.from({ length: 128 }, (_, k) => attrs(2 * k, offLine(k) ? 40 : 8, { paloff: k & 15 })));
+    s.setNextReg(0x15, 0x03);
+    s.runFrames(2);
+    return s.screen();
+  };
+
+  it("runs out of time: 75 of 128 sprites on one line, 102 when the checks step over the window", async () => {
+    const all = await budgetScene(() => false);
+    // --- sprite 74 is the last drawn: its dots 148-163 show, dot 164 on is empty
+    expect(dotAt(all, 2 * 74 + 15, 8)).not.toBe("#000000");
+    expect(dotAt(all, 2 * 74 + 16, 8)).toBe("#000000");
+    const gap = await budgetScene((k) => k >= 74 && k <= 99);
+    // --- sprites 74-99 moved 32 lines down: the band above gets sprites 100-127 too
+    expect(dotAt(gap, 2 * 127 + 15, 8)).not.toBe("#000000");
+    expect(dotAt(gap, 2 * 99 + 15, 40)).not.toBe("#000000");
+    const out = process.env.NEXT_DISPLAY_SHOTS;
+    if (out) {
+      // --- the whole width, lines 0-63
+      await writeCrop(join(out, "en/under-the-hood/next-display/sprites/budget-all.webp"), all, 32, 16, 640, 64);
+      await writeCrop(join(out, "en/under-the-hood/next-display/sprites/budget-gap.webp"), gap, 32, 16, 640, 64);
+    }
+  });
+
+  it("shows sprites over the border only with NextReg $15 bit 1", async () => {
+    const shot = async (nr15: number): Promise<Frame> => {
+      const s = await spritesAlone(true);
+      // --- a blank Spectrum screen, yellow paper (not white: that is the ship's light hull), blue border
+      s.poke(0x4000, new Uint8Array(6144));
+      s.poke(0x5800, new Uint8Array(768).fill(0x30));
+      s.out(0x00fe, 0x01);
+      spritePalette(s, 1, SHIP_COLOURS);
+      pattern(s, 0, SHIP);
+      // --- the first ship across the display area's left edge (dot 32), its front half over the paper
+      sprites(s, 0, [attrs(24, 48), attrs(4, 80)]);
+      s.setNextReg(0x15, nr15);
+      s.runFrames(2);
+      return s.screen();
+    };
+    const over = await shot(0x03);
+    const inside = await shot(0x01);
+    // --- pattern dot (4, 8) is light hull, (15, 8) the nose tip, (10, 9) hull again
+    const HULL = "#B6B6B6";
+    const BORDER_BLUE = "#0000B6";
+    expect(dotAt(over, 24 + 4, 48 + 8)).toBe(HULL);
+    expect(dotAt(over, 4 + 4, 80 + 8)).toBe(HULL);
+    expect(dotAt(over, 4 + 15, 80 + 8)).toBe(RED);
+    // --- without bit 1, only the part over the display area (from dot 32, line 32) shows
+    expect(dotAt(inside, 24 + 4, 48 + 8)).toBe(BORDER_BLUE);
+    expect(dotAt(inside, 4 + 4, 80 + 8)).toBe(BORDER_BLUE);
+    expect(dotAt(inside, 4 + 15, 80 + 8)).toBe(BORDER_BLUE);
+    expect(dotAt(inside, 24 + 15, 48 + 8)).toBe(RED);
+    expect(dotAt(inside, 24 + 10, 48 + 9)).toBe(HULL);
+    expect(dotAt(inside, 24 + 12, 48 + 2)).toBe("#B6B600"); // --- a transparent dot: the yellow paper
+    const out = process.env.NEXT_DISPLAY_SHOTS;
+    if (out) {
+      // --- the top-left corner: dots 0-127, lines 0-95
+      await writeCrop(join(out, "en/under-the-hood/next-display/sprites/border-on.webp"), over, 32, 16, 256, 96);
+      await writeCrop(join(out, "en/under-the-hood/next-display/sprites/border-off.webp"), inside, 32, 16, 256, 96);
+    }
+  });
+
+  it("puts sprite 127 on top, or sprite 0 with NextReg $15 bit 6", async () => {
+    const shot = async (nr15: number): Promise<Frame> => {
+      const s = await spritesAlone();
+      spritePalette(s, 0, [0x00, 0xe0]);
+      spritePalette(s, 0x11, [0x03]);
+      pattern(s, 0, new Array(256).fill(1));
+      sprites(s, 0, [attrs(8, 8), attrs(16, 16, { paloff: 1 })]);
+      s.setNextReg(0x15, nr15);
+      s.runFrames(2);
+      return s.screen();
+    };
+    const high = await shot(0x03);
+    const zero = await shot(0x43);
+    expect(dotAt(high, 20, 20)).toBe("#0000FF");
+    expect(dotAt(zero, 20, 20)).toBe(RED);
+    const out = process.env.NEXT_DISPLAY_SHOTS;
+    if (out) {
+      // --- dots 0-39, lines 0-39
+      await writeCrop(join(out, "en/under-the-hood/next-display/sprites/priority-127.webp"), high, 32, 16, 80, 40);
+      await writeCrop(join(out, "en/under-the-hood/next-display/sprites/priority-0.webp"), zero, 32, 16, 80, 40);
+    }
+  });
+});
+
 /** One picture as lossless WebP, alpha forced opaque */
 async function writeWebp(path: string, frame: Frame): Promise<void> {
   await writeCrop(path, frame, 0, 0, frame.width, frame.height);

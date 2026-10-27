@@ -5,5 +5,6 @@ export default {
   ula: "The ULA layer, extended",
   layer2: "Layer 2",
   tilemap: "The tilemap",
+  sprites: "Sprites",
   composition: "Putting it together"
 };
