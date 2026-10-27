@@ -1,0 +1,299 @@
+---
+description: "This example shows how you can enter any type of information such as a library catalogue, a book index or bibliography, or a name and address list into the Cambridge Z88 using PipeDream."
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/35913782 (version 25) by scripts/import-z88-user-guide.cjs */}
+
+# Compiling a name and address list
+
+This example shows how you can enter any type of information such as a library catalogue, a book index or bibliography, or a name and address list into the Cambridge Z88 using PipeDream.
+
+You will learn how to:
+
+- Enter information
+- Find any particular information you want
+- Organise the information
+- Print out all, or a selection, of the information in an orderly table
+
+## Preparing the document
+
+Because you are going to enter lists of information, rather than a block of text for formatting into a document, you should first alter the *Wrap* option on the **Options Page** so that words do not wrap around onto the next line when they reach the right-hand margin.
+
+Select the **Options Page** by typing<Key k="diamond" />O. You will see a display showing the different options you can select for your document, and information about the document.
+
+Move the cursor down to the wrap option by pressing<Key k="down" />until the cursor is opposite the word <strong>`Wrap`</strong>. Then type <Typed>N</Typed> to change the option value from `Y` (Yes) to `N` (No) to stop wrapping altogether:
+
+<Shot src="z88-user-guide/using-pipedream/compiling-a-name-and-address-list/pd-options.webp" alt="pd options" width={640} />
+
+Finally press the <Key k="esc" /> key to return to the document.
+
+## Setting up headings
+
+Before entering information into PipeDream, it is good practice to set up headings to specify how the information will be arranged. Since you are going to create a name and address list, the headings will simply correspond to the name and address, with one reserved for additional information.
+
+When you start a new sheet in PipeDream you are given six columns, each 12 characters wide. Although you can enter lines of text much wider than this in each column, it will make working with the name and address information simpler if, at this point, you make each of the columns in the document wider. You do this with the **Width** command in the **LAYOUT** menu.
+
+Press the <Key k="menu" /> key until the **LAYOUT** menu is displayed. The **Width** command may already be highlighted as it is the first item on the menu; otherwise use the cursor keys to highlight it. Then press <Key k="enter" /> to select it. In reply to the prompt
+
+<strong>`New width`</strong>
+
+type
+
+<strong><Typed>24</Typed></strong>
+
+and press <Key k="enter" /> to carry out the change. (You can ignore the other prompt - <strong>`Specify column`</strong>.)
+
+The width of the column containing the cursor, column A, will increase to 24 characters.
+
+Now move the cursor into column B by pressing the <Key k="tab" /> key, and repeat the procedure to set the width of column B to 24 also. You can, if you wish, select the Width command directly without going through the **LAYOUT** menu, by typing<Key k="diamond" />W.
+
+Continue until you have set each of the columns A to F to a width of 24 characters. Notice that when you press the <Key k="tab" /> key to get from column C to column D, the document moves to the left on the screen so that columns D and E come into view without the cursor position changing.
+
+Then move the cursor back to the left-hand side of column A by typing <Key k="diamond" /><Key k="tab" />.
+
+Type the following headings, pressing the <Key k="tab" /> key between each heading to move the cursor to the beginning of the next column.
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>Name</Table.Td>
+<Table.Td><Key k="tab" /></Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Address</Table.Td>
+<Table.Td><Key k="tab" /></Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Town</Table.Td>
+<Table.Td><Key k="tab" /></Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>County</Table.Td>
+<Table.Td><Key k="tab" /></Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Postcode</Table.Td>
+<Table.Td><Key k="tab" /></Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Info</Table.Td>
+<Table.Td><Key k="tab" /></Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+Notice that when you type the word <Typed>Town</Typed> and press the <Key k="tab" /> key, the document scrolls to the left so that the column headed 'D' comes clearly into view:
+
+<Shot src="z88-user-guide/using-pipedream/compiling-a-name-and-address-list/pd-address-town.webp" alt="pd address town" width={640} />
+
+So, although you can only see three of the six columns in your document at any one time, it is a simple matter to move about and find the information you want.
+
+Although it should be quite obvious what you will be using each of the first five headings for, you may be wondering what the purpose of the last heading `Info` might be. You can use this to record additional information about all of the people in your address list, such as whether you sent them a Christmas card last year, when their birthday is, or any other information you would like to be able to recall. In the following examples the field will contain the person's age.
+
+## Entering some information
+
+Move the cursor back to the left-hand side of column A by typing <Key k="diamond" /><Key k="tab" />. Press the <Key k="enter" /> key to move the cursor to row 2.
+
+You can now type the first name into slot A2.
+
+<Typed>Bell , A</Typed>
+
+Press the <Key k="tab" /> key when you have finished typing the name to move the cursor across to the address column, column B. Type in the address, remembering to press the <Key k="tab" /> key between each item:
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>Bell , A</Table.Td>
+<Table.Td><Key k="tab" /></Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>2 Ringway</Table.Td>
+<Table.Td><Key k="tab" /></Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Tring</Table.Td>
+<Table.Td><Key k="tab" /></Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Herts</Table.Td>
+<Table.Td><Key k="tab" /></Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>TE1 2LM</Table.Td>
+<Table.Td><Key k="tab" /></Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>24</Table.Td>
+<Table.Td><Key k="tab" /></Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+<Shot src="z88-user-guide/using-pipedream/compiling-a-name-and-address-list/bell-a.webp" alt="Bell A" width={640} />
+
+Enter the other names and addresses given below on lines 3, 4, 5, and 6 of your document in exactly the same way. Of course, if you prefer, you can compile your own list. If part of an address is too long to fit within one column, just keep typing; although you will not be able to see all the information in that column, it will be retained and you will be able to refer to it later.
+
+Also, be sure to keep to the headings at the top of the document. For example, if a particular address does not have anything corresponding to a county, leave that column blank so that you put the postcode under the correct heading. This will enable you to search for a particular postcode, as described later.
+
+Complete the table as follows:
+
+```text
+Name        Address         Town        County   Postcode  Info
+Bell, A     2 Ringway       Tring       Herts    TE1 2LM   24
+Long, C     9 Knott Close   Farnham     Surrey   WAY 2G0   27
+Rover, A    4 Chase Mews    Kenilworth  Warw.    K9 WUF    12
+Bird, J     27 Wood Lane    Bath        Avon     CB1 L23   14
+Hill, Max   10 Upper Street Steep       Hants    UP 21T    43
+```
+
+## Saving the document
+
+Since by now you may have spent some time entering information into your document, it is a good idea to save a copy to the Cambridge Z88 filing system in case you accidentally lose the information during the next experiments. You save a copy of the document by using the same procedure as the one used for the party invitation.
+
+Select the **Save** command by pressing the <Key k="menu" /> key a number of times until the **FILES** menu is displayed. Press the <Key k="down" /> key to highlight **Save**. Then press <Key k="enter" /> to give the **Save** command.
+
+Type <Typed>addresses</Typed> as the name of file to save, ignoring the other options since you want to save the whole document, and press <Key k="enter" />. A copy of the document will now be saved to the filing system.
+
+## Sorting the information
+
+Now that you have entered a table of names and addresses, it would be useful to have them sorted into alphabetical order so that you can look up a particular name more easily.
+
+First you need to specify which part of your document you want to sort. Move the cursor to slot A2, the top left-hand comer of the table of names and addresses, using the<Key k="up" />and<Key k="down" />keys to move up and down the document and the <Key k="tab" /> and <Key k="shift" /> <Key k="tab" /> commands to move across the document between columns to the left and right.
+
+Mark slot A2 by giving the **Mark Block** command from the **BLOCKS** menu, or by typing <Key k="diamond" />Z.
+
+When you give the command, slot A2 will be highlighted on the screen to indicate that it has been marked:
+
+<Shot src="z88-user-guide/using-pipedream/compiling-a-name-and-address-list/pd-mark-block.webp" alt="pd mark block" width={640} />
+
+Now mark the bottom right-hand corner of the table of names and addresses. Move the cursor down to row 6 and across to column F with the <Key k="down" /> key and the <Key k="tab" /> command. Then give the **Mark Block** command again. When you have completed the second **Mark Block** command, the entire table of names and addresses will be selected and shown highlighted on the screen.
+
+{/* Missing picture in the source: using-pipedream/compiling-a-name-and-address-list/053-2.webp */}
+
+<Shot src="z88-user-guide/using-pipedream/compiling-a-name-and-address-list/pd-mark-block2.webp" alt="pd mark block2" width={640} />
+
+The highlighted table of slots is referred to as a 'block', and several commands are available which will operate on an entire block of slots that you have selected.
+
+Move back to the left-hand side of the sheet with <Key k="diamond" /><Key k="tab" />. To sort the block of slots, use the **Sort** command from the **BLOCKS** menu. Press the <Key k="menu" /> key until the **BLOCKS** menu is displayed. Then press the <Key k="down" /> key until the **Sort** command is highlighted on the menu, and press <Key k="enter" /> to select the command.
+
+We wish to sort the names and addresses into alphabetical order of the names, which are in column A, so type A to the prompt
+
+```text
+Sort on column A
+```
+
+and press the <Key k="enter" /> key to perform the sort. (You can ignore the other prompts for the moment.
+
+You will see that the names and addresses have been correctly sorted within the table. You can clear the marked block by giving the **Clear Mark** command from the **BLOCKS** menu, or by pressing<Key k="diamond" />Q:
+
+<Shot src="z88-user-guide/using-pipedream/compiling-a-name-and-address-list/pd-sort.webp" alt="pd sort" width={640} />
+
+You could, of course, have sorted the information on a different heading by specifying another column, rather than column A, when you gave the **Sort** command. For example, you may like to experiment with sorting the same names and addresses on the Town column, or on the column containing the peoples' ages.
+
+## Finding information
+
+You could have entered many more names and addresses than the few you have already stored without running out of space in the document.
+
+You can see how much space is available in a document at any time by typing <Key k="diamond" />O to display the Options Page. The number of characters of space available is given after the heading `Free` on the right-hand side of the Options Page display. Press <Key k="esc" /> return to your document.
+
+In a large list of names and addresses, it would be very inconvenient to have to search around in the list for a particular name or address. Fortunately, there is a much faster way, using the automatic search facility built into PipeDream.
+
+Select the **Search** command from the **BLOCKS** menu in the usual way: display the **BLOCKS** menu with the <Key k="menu" /> key, and use the cursor keys to highlight **Search**; then press <Key k="enter" /> to give the **Search** command.
+
+The **Search** command displays a number of options which allow you to specify exactly what you want to search for, and whether you want to restrict the search to a particular part of your table of information. For example, you might want to search for the address of someone whose surname you had forgotten, but whose Christian name you knew to be Max. You would then enter <Typed>Max</Typed> against the first option:
+
+```text
+String to search for Max
+```
+
+Press <Key k="down" /> to move to the next option which initially shows:
+
+```text
+Search only range of columns    No
+```
+
+and press <Typed>Y</Typed> to alter the option value to `Yes`, and type <Typed>A</Typed>, to specify that you want to search only column A, which contains the names. The option will now read:
+
+```text
+Search only range of columns    Yes A
+```
+
+Then press <Key k="enter" /> to begin the search. The cursor will instantly find the name `Hill, Max`, allowing you to read off his address.
+
+Incidentally, if the name you chose to search for found someone else with the same name first, you could use the **Next Match** command on the **BLOCKS** Menu to move on and find the next item that contained the same name.
+
+## Help with searching
+
+It is a peculiarity of the way we remember information that we can often only remember part of what we are trying to recall. For example, we may know that the person we are trying to find lives in a town called something like Caxton - or perhaps it was Croxton? Or then again, perhaps it was Foxton. The PipeDream **Search** command has two facilities which help in just this type of situation.
+
+You can type the symbols ^\# in the string you are looking for, to represent any combination of letters (including none). Thus, you simply have to specify
+
+```text
+String to search for         ^#xton
+```
+
+to find any of the towns, Caxton, Croxton or Foxton, or any other town ending in 'xton'.
+
+You can also specify the symbols ^? which will match any single letter or character in the string you are searching for. So, if you could only remember that the name of a road had three letters, you could search for
+
+```text
+^?^?^? Road
+```
+
+and you would be sure to find it.
+
+## Printing information
+
+To print out the information in your name and address list as an orderly table, select the **Print** option from the **PRINT** menu. Press the <Key k="menu" /> key until the **PRINT** menu is displayed. Select **Print** using the cursor keys, and then press <Key k="enter" /> to give the command.
+
+Since the total width of the table of names and addresses is 144 characters (six columns of 24 characters) it will probably be too wide to fit across the width of the paper on your printer; most printers will only print 80 characters. You will therefore need to print the table in two sections, by selecting a range of columns in each case.
+
+The first time you give the **Print** command, alter the option
+
+```text
+Print only range of Columns No
+```
+
+to `Yes` by typing <Typed>Y</Typed>, followed by <Typed>A C</Typed> so that the option reads
+
+```text
+Print only range of columns Yes A C
+```
+
+Then press the <Key k="enter" /> key to start printing. Once this is finished, give the **Print** command again, this time specifying the option as
+
+```text
+Print only range of columns Yes D F
+```
+
+Alternatively, some printers will print up to 132 characters across; in this case you may be able to fit the whole table onto a single sheet of paper by first reducing the width of some of the columns using the **Width** command on the **LAYOUT** menu.
+
+## Printing selected rows [#printing_selected_rows]
+
+If you were going to use the name and address list for a business mail shot, you might want to compile a selective list containing only the names and addresses of people living in one particular area. The PipeDream **Print** command caters for this by allowing you to specify a test to be performed on each row of the document. Only those rows for which the test succeeds will be printed.
+
+You specify the test in terms of slots in row 1; PipeDream automatically alters the slot coordinates to refer to the appropriate row as testing proceeds through the document.
+
+For example, to print out the names and addresses of all the people living in Hants or Surrey, give the **Print** command in the usual way by displaying the **PRINT** menu and then pressing <Key k="enter" /> to give the **Print** command. Then move the cursor to the option
+
+```text
+Select rows to print No
+```
+
+Change the option value to `Yes`, by typing <Typed>Y</Typed>, and type in the selection expression
+
+```text
+D1="Hants" | Dl="Surrey"
+```
+
+The '\|' symbol means 'OR', so the whole expression means: "If the item in slot D1 is Hants or the item in slot D1 is Surrey...". In row 2 the test will apply to D2, and so on.
+
+The selection expression can be virtually as complicated as you need, and can include tests on several different columns. For example, for a mail shot of information on a new wonder hair tonic you might want to select all men over 30 on the name and address list. The expression might be
+
+```text
+Dl="London" & G1="M" & F1>=30
+```
+
+where G1 was an extra column containing M or F to indicate the sex. The '&' symbol means 'AND' and can be used to link several tests together.

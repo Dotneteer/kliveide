@@ -1,0 +1,344 @@
+---
+description: "With PipeDream, you can create documents containing highlight codes that specify particular type styles and effects, such as bold and underlined text, superscripts and subscripts, and alternative..."
+---
+
+import { Callout, Table } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/35913788 (version 22) by scripts/import-z88-user-guide.cjs */}
+
+# Section Nine - The Printer Editor
+
+<Callout type="info">
+
+**Printing with a dot-matrix printer?**
+
+With PipeDream, you can create documents containing highlight codes that specify particular type styles and effects, such as bold and underlined text, superscripts and subscripts, and alternative fonts. Because different printers use different techniques to achieve these effects, the Cambridge Z88 uses a printer driver to convert the standard PipeDream highlights to each particular printer's codes. The printer driver can then be altered to suit a particular printer's facilities.
+
+The Cambridge Z88 comes with a built-in driver, which interfaces with the widely-used Epson series of dot-matrix printers, or other printers compatible with this.
+
+</Callout>
+
+With PipeDream, you can create documents containing highlight codes that specify particular type styles and effects, such as bold and underlined text, superscripts and subscripts, and alternative fonts. Because different printers use different techniques to achieve these effects, the Cambridge Z88 uses a printer driver to convert the standard PipeDream highlights to each particular printer's codes. The printer driver can then be altered to suit a particular printer's facilities.
+
+The Cambridge Z88 comes with a built-in driver, which interfaces with the widely-used Epson series of dot-matrix printers, or other printers compatible with this.
+
+## Selecting Printer Editor
+
+<Shot src="z88-user-guide/the-printer-editor/oz45-pe-select.webp" alt="Select Printer Editor" width={640} />
+
+The printer editor may be selected either fron the INDEX by moving the cursor over the Application name and pressing <Key k="enter" /> to select, or by using the short form keys <Key k="square" />**E**.
+
+### PrinterEd CURSOR menu
+
+<Shot src="z88-user-guide/the-printer-editor/oz45-pe-menu.webp" alt="menu cursor" width={640} />
+
+The editing commands are summarised on the PrinterEd **CURSOR** menu, which is selected with the <Key k="menu" /> key.
+
+### PrinterEd FILES menu
+
+The PrinterEd FILES menu provides commands to allow driver definitions to be used for subsequent printing, or to be saved and loaded as named files. You can also reset the driver definition to the standard Epson driver.
+
+<Shot src="z88-user-guide/the-printer-editor/oz45-pe-menu-files.webp" alt="Files Menu" width={640} />
+
+The name of the current driver definition, initially Epson,is displayed on the Printer Editor screen and is shown for the PrinterEd activity in the Index YOUR REF. column.
+
+##### <Key k="diamond" />FL — File Load
+
+Allows a driver definition to be loaded into the Printer Editor. Gives the prompt:
+
+`Filename`
+
+Note that the driver definition is not actually installed until the **Update Driver** command is given.
+
+##### <Key k="diamond" />FS — File Save
+
+Saves the current driver definition with a specified name.
+
+##### <Key k="diamond" />FC — File Name
+
+Sets the name of the current driver definition.
+
+##### <Key k="diamond" />FNEW — File New
+
+Resets the driver definition in the Printer Editor to the options for the default Epson driver, and resets the driver used for printing to this driver.
+
+##### <Key k="diamond" />FU — File Update
+
+Creates a printer driver from the definition currently in the Printer Editor, and installs it for use in subsequent printing.
+
+## Creating a new printer driver or changing an existing one
+
+The Cambridge Z88 PrinterEd application allows you to create your own printer driver definition, editing the options used by the built-in driver to add your own special printing effects to your documents.
+
+Alternatively, you can design a printer driver definition for a make of printer not catered for by the built-in driver. To do this you will need to consult the printer handbook, to find out which codes are needed for each facility you want to use.
+
+Having created a new printer driver definition, you can use this to replace the built-in driver by giving it a Name and then issuing the Update Driver command.
+
+<Callout type="error">
+
+**WARNING**
+
+Failure to use the<Key k="diamond" />FU Update Driver command will result in the existing driver to be used. It is good practise to<br /> <Key k="diamond" />FC Name the Printer<br /> <Key k="diamond" />FS Save the Printer before using the Update Driver command.
+
+</Callout>
+
+### Driver Definition Table
+
+The driver definition is displayed on two pages. You can move between the pages with the following commands:
+
+#### Page 1
+
+<Shot src="z88-user-guide/the-printer-editor/oz45-pe-scr1.webp" alt="Screen 1" width={640} />
+
+<Key k="shift" /><Key k="down" /> move from page 1 to page 2
+
+#### Page 2
+
+<Shot src="z88-user-guide/the-printer-editor/oz45-pe-scr2.webp" alt="Screen 2" width={640} />
+
+<Key k="shift" /><Key k="up" /> move from page 2 to page 1.
+
+While developing and testing a printer driver it is sensible to keep PrinterEd as a suspended activity. On completing a driver definition, and saving it to the filing system, the PrinterEd activity can be deleted from the INDEX with <Key k="diamond" />KILL.
+
+## Editing the driver definition table
+
+The printer driver definition is altered by moving the cursor to the appropriate field on the page with the cursor keys,<Key k="left" />, <Key k="right" />, <Key k="up" /> and <Key k="down" /> and then typing the required value for the option.
+
+Some options take a Yes/No value; in this case you can toggle between the values with the **Next Option** command, <Key k="diamond" />J, or select the appropriate value by typing `Y` or `N`.
+
+Most options take a list of one or more codes, separated by commas.
+
+### Code values
+
+Printer codes can be entered in any of the following forms:
+
+| Type | Example 1 | Example 2 |
+| --- | --- | --- |
+| Decimal number | 90 | 27 |
+| Hexadecimal number | $5A | $1B |
+| ASCII character | "Z" |   |
+| ASCII symbol |   | ESC |
+
+The two examples show equivalent representations of the same values.
+
+Any of the standard ASCII symbols can be used to represent the values 0 to 31, or $0 to $1F.A full list is given in Appendix D - Character Set.
+
+## Highlight codes
+
+Page 1 of the PrinterEd application allows the behaviour of each of the eight PipeDream, highlight codes to be specified.
+
+<Shot src="z88-user-guide/the-printer-editor/oz45-pe-scr1.webp" alt="Screen 1" width={640} />
+
+The recommended assignment of highlight codes to printer functions is as follows:
+
+Code
+
+Function
+
+Printed example
+
+### Underline
+
+1
+
+<u>underlined type</u>
+
+### Bold
+
+2
+
+**bold type**
+
+### Extended sequence
+
+3
+
+### Italic
+
+4
+
+*italic type*
+
+### Subscript
+
+5
+
+H<sub>2</sub>O
+
+### Superscript
+
+6
+
+e=mc<sup>2</sup>
+
+### Alternative font
+
+7
+
+`Alternative font`
+
+### User defined
+
+8
+
+In every case the same highlight turns the facility off, and in all cases except 7 and 8, the facility is also turned off at the end of a slot.
+
+The highlight table contains three columns specifying the following information for each of the eight highlights, 1 to 8:
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>ON String</Table.Td>
+<Table.Td>The sequence of codes needed to turn the facility on</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>OFF String</Table.Td>
+<Table.Td>The sequence of codes needed to turn the facility off</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Off at CR</Table.Td>
+<Table.Td>Ye s or No , to determine whether the facility should be cancelled at the end of a slot.</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+You can move between columns using the cursor keys <Key k="left" /> and <Key k="right" />, and between lines with <Key k="up" /> and <Key k="down" />.
+
+### ON String and OFF String
+
+The ON String specifies the sequence of codes to turn the corresponding printer facility on, and the OFF String the sequence of codes to turn it off. Each of these sequences of codes is output on alternate occurrences of the specified highlight code in the document.
+
+If the facility is toggled on and off by the same sequence of codes, the OFF String can be omitted, and the ON String will be output on every occurrence of the highlight.
+
+### Overprinting
+
+On some printers special effects can be obtained by outputting a sequence of codes for every character printed. For example, some daisy-wheel printers underline by backspacing, and then printing an underscore character, for every character printed.
+
+You can set up highlights that work on this principle by including the special '?' character in the ON String. When the highlight is active, the specified ON String sequence will be output for every character printed, with '?' replaced by that character. This facility is toggled on and off by successive occurrences of the specified highlight code.
+
+For example, to underline by backspacing and overprinting an underscore character, give the sequence
+
+`1 ON Underline ?,BS,"_"`
+
+If '? occurs in the ON String the OFF String is ignored, and should be left blank.
+
+### Off at CR
+
+The final column specifies for each code whether the facility should be turned off automatically at the end of each slot. In general, all highlights which are normally inserted on a word by word basis, such as underlining and bold type, should specify `Yes` (the default) in this column.
+
+Off at CR should also be set to `Yes` if the printer itself turns off the corresponding facility at a carriage return.
+
+Off at CR should be set to `No` in the case of highlights, such as alternative font, which are applied to a large section of a document. Note that in this case headers and footers within the highlighted area will also be affected.
+
+## Printer options
+
+Page 2 of the PrinterEd application allows the driver definition options to be specified, and up to nine character translations to be set up.
+
+<Shot src="z88-user-guide/the-printer-editor/oz45-pe-scr2.webp" alt="Screen 2" width={640} />
+
+### Printer on
+
+Specifies a sequence of codes to be sent to the printer before printing a document. For example, the codes 27,64 in the Epson driver definition initialise the printer.
+
+### Printer off
+
+Can be used to reset the printer to its previous settings so that subsequent printing will not be affected.
+
+### End of page
+
+Specifies a sequence of codes to be sent to the printer at the end of each page. If the sequence contains a form-feed character, 12 (or FF), PipeDream will not output linefeeds to the end of page, resulting in faster and quieter page ejects on printers that support this.
+
+### Allow line feed
+
+Determines whether a line feed code (LF) is sent at the end of each line, in addition to a carriage return (CR). This option is set to `Yes` in the default Epson driver. If unwanted extra line feeds are produced, so that all printing is double-spaced, change the option value to `No` .
+
+Note: With Operating Systems 3.0 and earlier, selecting `No will` cause ASCII 0 (NULL) to be sent instead of ASCII 10 (LF).
+
+### Microspacing - HMI
+
+Certain printers allow the horizontal movement of the print head to be controlled to 1/120th of an inch, which means that text will be justified with an almost perfectly even distribution of the space. The following sample is printed without microspacing:
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>
+
+`This sample of text demonstrates the`
+
+`improvement gained by justifying text with`
+
+`microspacing.`
+
+</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+The same sample with microspacing is shown below:
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>
+
+`This sample of text demonstrates the improvement`
+
+`gained by justifying text with microspacing.`
+
+</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+Microspacing requires a Horizontal Motion Increment, or HMI, to be specified to the printer as the number of 120ths of an inch to be allocated to the printing of subsequent characters. This is normally given after a prefix code, although for some printers a suffix is also required. For example, the Ricoh, Flowriter 1600, and JUKI 6100 use the following prefix:
+
+`HMI prefix ESC,31`
+
+`HMI suffix`
+
+`HMI offset 1`
+
+## Translations
+
+The character translation table allows up to 9 single-character substitutions to be made before printing, so that alterations can be made to the character set supplied by the printer. The sequence may include a string of codes, which will scroll within the window as they are entered.
+
+### ISO Translations
+
+<Shot src="z88-user-guide/the-printer-editor/oz45-pe-iso.webp" alt="iso translation table" width={640} />
+
+An extended ISO translation table has been provided as well, selected using the <Key k="diamond" />ISO command. This gives 14 more single-character substitutions which are additional to the number above.
+
+### Adding the £ translation character
+
+<Callout type="info">
+
+**Printing the £ symbol**
+
+Are you getting \]eMq,M5M=6MBMy\]a7I in-between the £ symbol and the numbers ? This is due to a bug affecting OZ4.4 to 4.6. The default translation is wrong inthe \<\>ISO translations page. It can be fixed by putting back this translation with 27,82,3,35,27,82,0 inline 2.
+
+</Callout>
+
+For example, the default Epson driver uses the following sequence to print a '£' sign, assuming it is set up to use the USA character set:
+
+`27,82,3,35,27,82,0`
+
+which is equivalent to:
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>`ESC R" 3`</Table.Td>
+<Table.Td>select UK character set</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>`35`</Table.Td>
+<Table.Td>print pound sign</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>`ESC R" 0`</Table.Td>
+<Table.Td>restore USA character set</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+Some printers do not print a space for the 'Hard space' character, decimal code 160. To correct this, enter a translation to change character 160 to 32.

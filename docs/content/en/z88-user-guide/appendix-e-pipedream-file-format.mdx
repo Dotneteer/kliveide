@@ -1,0 +1,302 @@
+---
+description: "The PipeDream file format is designed to facilitate manipulation by other programs. Apart from carriage return characters which are used as separators, no control characters or characters above..."
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/35913791 (version 5) by scripts/import-z88-user-guide.cjs */}
+
+# Appendix E - PipeDream file format
+
+The PipeDream file format is designed to facilitate manipulation by other programs. Apart from carriage return characters which are used as separators, no control characters or characters above 127 in value appear in the file (unless they have been explicitly typed in). The files are sequential, and can be edited by any text editor.
+
+## PipeDream constructs
+
+Information about the structure of the file is stored in constructs consisting of one or more alphabetic characters between percent signs. Additional information relevant to the construct may be included before the final percent sign.
+
+The file begins with a group of Options Page constructs giving the values of the Options Page parameters for the file. This is followed by the main body of the file.
+
+Each column in the file is preceded by a Column construct giving details about the column, and followed by an entry for each slot in the column.
+
+Each slot entry may include a collection of constructs giving details about the slot, and is terminated by a carriage return character.
+
+## Options Page construct
+
+`%OP%parameter value cr`
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>`parameter`</Table.Td>
+<Table.Td />
+<Table.Td>two characters identifying the parameter</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>`value`</Table.Td>
+<Table.Td />
+<Table.Td>the value of the parameter</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>`cr`</Table.Td>
+<Table.Td />
+<Table.Td>carriage return character</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+The various parameter values are:
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>AM</Table.Td>
+<Table.Td />
+<Table.Td>Auto/manual</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>BM</Table.Td>
+<Table.Td />
+<Table.Td>Bottom margin</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>BO</Table.Td>
+<Table.Td />
+<Table.Td>Borders</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>DE</Table.Td>
+<Table.Td />
+<Table.Td>Title</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>DP</Table.Td>
+<Table.Td />
+<Table.Td>Decimal places</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>FM</Table.Td>
+<Table.Td />
+<Table.Td>Footer margin</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>FO</Table.Td>
+<Table.Td />
+<Table.Td>Footer</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>HE</Table.Td>
+<Table.Td />
+<Table.Td>Header</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>HM</Table.Td>
+<Table.Td />
+<Table.Td>Header margin</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>IW</Table.Td>
+<Table.Td />
+<Table.Td>Insert on wrap</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>JU</Table.Td>
+<Table.Td />
+<Table.Td>Justify</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>LM</Table.Td>
+<Table.Td />
+<Table.Td>Left margin</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>LP</Table.Td>
+<Table.Td />
+<Table.Td>Leading characters</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>LS</Table.Td>
+<Table.Td />
+<Table.Td>Line spacing</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>MB</Table.Td>
+<Table.Td />
+<Table.Td>Minus/brackets</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>PA</Table.Td>
+<Table.Td />
+<Table.Td>Pages</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>PL</Table.Td>
+<Table.Td />
+<Table.Td>Page length</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>PS</Table.Td>
+<Table.Td />
+<Table.Td>Page no. start</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>RC</Table.Td>
+<Table.Td />
+<Table.Td>Rows/columns</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>TM</Table.Td>
+<Table.Td />
+<Table.Td>Top margin</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>TN</Table.Td>
+<Table.Td />
+<Table.Td>Text/numbers</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>TP</Table.Td>
+<Table.Td />
+<Table.Td>Trailing characters</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>WR</Table.Td>
+<Table.Td />
+<Table.Td>Wrap</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+## Column construct
+
+`%CO:co1umn,width,wrap-width%`
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>`column`</Table.Td>
+<Table.Td />
+<Table.Td>letter identifying the column</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>`width`</Table.Td>
+<Table.Td />
+<Table.Td>decimal number giving the column width</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>`wrap-width`</Table.Td>
+<Table.Td />
+<Table.Td>decimal number giving the wrap-width</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+These constructs can appear anywhere in the entry for each slot:
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>%B%</Table.Td>
+<Table.Td />
+<Table.Td>brackets format</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>%C%</Table.Td>
+<Table.Td />
+<Table.Td>centre align</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>%Dn%</Table.Td>
+<Table.Td />
+<Table.Td>decimal places, n gives the number</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>%DF%</Table.Td>
+<Table.Td />
+<Table.Td>floating format</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>%F%</Table.Td>
+<Table.Td />
+<Table.Td>free align</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>%Hn%</Table.Td>
+<Table.Td />
+<Table.Td>highlight character: n gives the number</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>%JL%</Table.Td>
+<Table.Td />
+<Table.Td>justify left</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>%JR%</Table.Td>
+<Table.Td />
+<Table.Td>justify right</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>%L%</Table.Td>
+<Table.Td />
+<Table.Td>left align</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>%LC%</Table.Td>
+<Table.Td />
+<Table.Td>leading character format</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>%LCR%</Table.Td>
+<Table.Td />
+<Table.Td>LCR align</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>%Pn%</Table.Td>
+<Table.Td />
+<Table.Td>page break: n gives the argument, 0 for unconditional</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>%PC%</Table.Td>
+<Table.Td />
+<Table.Td>percent character</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>%R%</Table.Td>
+<Table.Td />
+<Table.Td>right align</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>%TC%</Table.Td>
+<Table.Td />
+<Table.Td>trailing character format</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>%V%</Table.Td>
+<Table.Td />
+<Table.Td>slot is a number slot</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+## General format:
+
+`construct text construct text ... cr`
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>`construct`</Table.Td>
+<Table.Td />
+<Table.Td>one of the constructs above</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>`text`</Table.Td>
+<Table.Td />
+<Table.Td>ASCII characters being the slot contents</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>`cr`</Table.Td>
+<Table.Td />
+<Table.Td>carriage return character</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>

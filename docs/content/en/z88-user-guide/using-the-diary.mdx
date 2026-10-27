@@ -1,0 +1,163 @@
+---
+description: "This chapter will show how you can use the Cambridge Z88 Diary application to organise your engagements, and plan your time. It demonstrates how to:"
+---
+
+import { Callout } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/35913783 (version 22) by scripts/import-z88-user-guide.cjs */}
+
+# Section Three - Using the Diary
+
+This chapter will show how you can use the Cambridge Z88 Diary application to organise your engagements, and plan your time. It demonstrates how to:
+
+- Enter engagements into the Diary
+- Search for and list out all engagements relating a particular thing
+- Using multiple Diaries do organize engagements differently.
+- Use the Diary with the Calendar popdown to find any date very quickly
+
+## Entering the Diary
+
+Before using the Diary, make sure you have set the correct time and date on the Clock popdown, as described in Section One.
+
+You can enter the Diary in either of two equivalent ways, whichever you find most convenient:
+
+*Either:* go into the Index, by pressing the <Key k="index" /> key, and select the Diary from the APPLICATIONS list by pressing the <Key k="up" /> and <Key k="down" /> keys until the Diary item is highlighted. Then press the <Key k="enter" /> key to create a Diary application instance. Using this method you can create several Diary applications (OZ V4.2 and later).
+
+<Shot src="z88-user-guide/using-the-diary/oz45-dy-select.webp" alt="Diary Select" width={640} />
+
+*Or*: type <Key k="square" />D. You can do this from anywhere, even another application. This will create a Diary application (if none exists), or jump back to an already running Diary.
+
+Once you have made entries in the Diary, it will appear on the list of <strong>`SUSPENDED ACTIVITIES`</strong> in the Index, but there can only be one copy of the Diary.
+
+Type <Key k="diamond" />CT to go to today's date, and the Diary screen display similar to the diagram shown below will appear:
+
+<Shot src="z88-user-guide/using-the-diary/diary-uk.webp" alt="Diary - UK" width={640} />
+
+This gives you a page for today's date, onto which you can type information in any form you like. The information is stored permanently in the diary, and you will be able to refer back to it on another occasion.
+
+## Making a Diary entry
+
+Try typing the following appointments onto today's page in the Diary, pressing the <Key k="tab" /> and <Key k="enter" /> keys where indicated to lay out the lines neatly:
+
+<Typed>Work: <Typed><Key k="tab" /></Typed> 10.00 Sales meeting</Typed> <Key k="enter" /><Typed>Simon:</Typed> <Typed><Key k="tab" /></Typed> <Typed>12.30 Pick up from station</Typed> <Key k="enter" />
+
+You can actually lay out information in the Diary however you like, but it is a good idea to label your appointments, as in the example above, because you will then be able to locate everything in a particular category by searching for the appropriate label. An example of this is given below.
+
+<Shot src="z88-user-guide/using-the-diary/oz45-dy-simon.webp" alt="Simon appointment" width={640} />
+
+## Moving between days
+
+You can move between days in the Diary by typing
+
+<Key k="square" /><Key k="down" /> to go to the next day
+
+<Key k="square" /><Key k="up" /> to go to the previous day
+
+Try moving to the day after tomorrow, by typing <Key k="square" /><Key k="down" /> twice.
+
+Then enter the following appointment:
+
+<Typed>Work:</Typed> <Typed><Key k="tab" /></Typed> <Typed>11.00 Present report to Board</Typed> <Key k="enter" />
+
+## Searching for Diary entries
+
+The Diary provides a powerful **Search** command which enables you to find and list out all appointments in a particular category.
+
+As an illustration, the following example provides a list of all appointments relating to Work.
+
+First select the **BLOCKS** menu, by pressing the <Key k="menu" /> key until `BLOCKS` is highlighted on the menu bar at the left-hand side of the screen. Then move the cursor to highlight **Search** on the menu, and press <Key k="enter" /> to give the command.
+
+The following prompts will be displayed:
+
+```text
+------------ STRING TO SEARCH FOR ---------
+```
+
+```text
+EQUATE UPPER AND LOWER CASE ........... Yes
+SEARCH ONLY MARKED BLOCK .............. No 
+PRODUCE LIST .......................... No
+PRINT LIST ............................ No
+```
+
+Below the prompt `STRING TO SEARCH FOR` type
+
+```text
+Work:
+```
+
+Then press <Key k="down" /> three times to move the cursor to the line
+
+```text
+PRODUCE LIST .......................... No
+```
+
+and type <Typed>Y</Typed> to alter the value of the option to `Yes`.
+
+Now press <Key k="enter" />, since the other options are not relevant, and the appointments will be listed:
+
+```text
+Thursday 17th March 1987 
+Work:   10.00 Sales meeting
+```
+
+```text
+Saturday 19th March 1987 
+Work:   11.00 Present report to board
+```
+
+Of course, in your case the dates will be different, corresponding to the information you have used.
+
+## Using multiple diaries
+
+OZ V4.2 and later allows you to create multiple diaries from the Index. Select the Diary from the APPLICATIONS list by pressing the <Key k="up" /> and <Key k="down" /> keys until the Diary item is highlighted. Then press the <Key k="enter" /> key to create another Diary application instance. Using the <Key k="square" />D hot-key will alternate activation between all the running diaries. This will assist you in organizing your engagements differently, for example by entering personal notes in one and work-related notes in another:
+
+<Shot src="z88-user-guide/using-the-diary/multiple-diaries.webp" alt="multiple diaries" width={640} />
+
+The "Your Ref." column in the Index reflects the file-name used inside Diary to either save or load Diary entries. Equally this filename is displayed inside Diary in the right-hand side window, which is very handy when you have multiple diaries, making it easier to identify where you are:
+
+<Shot src="z88-user-guide/using-the-diary/named-diary.webp" alt="named diary" width={640} />
+
+## Using the Calendar and Diary together
+
+By calling the Calendar pop-down from within the Diary, you can move quickly between different dates, and the Diary will then give the page for the date you have selected.
+
+For example, having forgotten a friend's birthday on the 17th March, you decide to make an entry in the Diary to make sure you do not forget it the following year. Use the following procedure to find the right day very quickly:
+
+<Shot src="z88-user-guide/using-the-diary/oz45-dy-17-3-15.webp" alt="17th March" width={640} />
+
+<Key k="square" />C Select Calendar popdown
+
+<Shot src="z88-user-guide/using-the-diary/oz45-cl-17-3-15.webp" alt="17th March 2015 Calender" width={640} />
+
+<Key k="diamond" /><Key k="down" />Go to next year
+
+<Key k="esc" /> to Escape back to Diary application
+
+<Shot src="z88-user-guide/using-the-diary/oz45-cl-17-3-16.webp" alt="17 March 2016" width={640} />
+
+<Shot src="z88-user-guide/using-the-diary/oz45dyl-17-3-16.webp" alt="17th March 2016" width={640} />
+
+You are now on the diary page for the same date one year later, and can type in the reminder.
+
+Typing in the reminder and saving it to "vic" gives the following display.
+
+<Shot src="z88-user-guide/using-the-diary/oz45dyl-17-3-16vic.webp" alt="oz45dyl 17 3 16vic" width={640} />
+
+<Callout type="warning">
+
+**NOTE**
+
+The 'NOT SAVED' banner on the bottom right-hand side has been replaced with the file name of 'vic.'
+
+</Callout>
+
+## International
+
+If a different keyboard is selected in the Panel, the correct words are displayed for that language.
+
+<Shot src="z88-user-guide/using-the-diary/diary-fr.webp" alt="Diary - French" width={640} />
+
+<Shot src="z88-user-guide/using-the-diary/diary-dk.webp" alt="Diary - Danish" width={640} />
+
+Refer to the following section for a full list of the Calendar operations.

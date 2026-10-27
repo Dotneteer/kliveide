@@ -1,0 +1,165 @@
+---
+description: "The OPTIONS menu contains only one command, Options Page, or ◇O, which displays a page of information about the current document together with the global settings which may be altered to effect..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/35913749 (version 4) by scripts/import-z88-user-guide.cjs */}
+
+# Document options - OPTIONS
+
+<Shot src="z88-user-guide/pipedream-reference/pipedream-menu-options.webp" alt="Pipedream menu options" width={640} />
+
+The **OPTIONS** menu contains only one command, **Options Page**, or <Key k="diamond" />O, which displays a page of information about the current document together with the global settings which may be altered to effect the way that commands operate on the document.
+
+<Shot src="z88-user-guide/pipedream-reference/pipedream-menu-options1.webp" alt="Pipedream menu options1" width={640} />
+
+You can return to a PipeDream document by pressing the <Key k="esc" /> key.
+
+## Information lines
+
+The right-hand column of the Options Page display gives information about the current document.
+
+### File
+
+The name of the document previously loaded with the **Load** command, or the name assigned to a document by the **Name** command (<Key k="diamond" />FC) on the **FILES** menu. If no name has been specified, it will show
+
+`No File`
+
+The name will also appear on the SUSPENDED ACTIVITIES list in the Index display.
+
+### Page
+
+Shows the current page number of the line containing the cursor. This will correspond to the page numbering when the document is printed unless rows are fixed with the **Fix Row** command on the **LAYOUT** menu, or the Options Page page-length setting has been set to zero.
+
+### Insert/Overtype
+
+Shows the current text entry mode selected by the **Insert/Overtype** command on the **EDIT** menu. The mode initially selected is Insert mode.
+
+### Microspace
+
+Normally blank, displays the word `Microspace` if the microspace option has been selected from the **PRINT** menu.
+
+### Free
+
+Displays the amount of space remaining for characters in the current document, to the nearest multiple of 256 characters. It is inadvisable to continue typing text into a document if there are less than approximately 300 free characters. In such a situation you are advised to make space in memory by freeing activities, or deleting files.
+
+## Option lines
+
+This page is used to determine how text and expressions are displayed in a document (including the default setting for the display of expression results) and to set up the layout of a document ready for printing, specifying headers and footers, and margins at the top, bottom and left of the page. In addition, you can control the length of the page, the spacing of text, and the page numbering.
+
+### Altering options - Next Option
+
+As with many other commands, Next Option, <Key k="diamond" />J will alternate between two available values, for example `Y` and `N` for `Yes` and `No`, or `T` and `N` for `Text` and `Numbers`. Alternatively, these values can be changed by typing the appropriate letter. In the case of options with more than two possible values, <Key k="diamond" />J will set the option back to its default value.
+
+Other options can be altered by moving the cursor to the appropriate item, with the<Key k="up" /> and <Key k="down" /> keys, and then editing the item with the line-editing commands <Key k="left" />, <Key k="right" />, <Key k="del" /> key and <Key k="diamond" />G or <Key k="shift" /> <Key k="del" /> to delete the character under the cursor. In numeric fields, such as **Page length**, Overtype mode is automatically set irrespective of the current Overtype/Insert mode setting.
+
+In the following list of options the default value is shown against each option.
+
+## Text format
+
+Determines the formatting of text in the document.
+
+### Text/Numbers (T)
+
+Set to `T` (Text) to make the default slot format text slots, or `N` (Numbers) for expression slots. In Numbers mode there is no need to type <Key k="diamond" />X before entering an expression, and the cursor keys <Key k="right" /> and <Key k="left" /> will move directly between slots containing expressions; ie behave like <Key k="tab" /> and <Key k="shift" /> <Key k="tab" />.
+
+### Borders (Y)
+
+Set to `Y` (Yes) to display borders, or `N` (No) to hide borders. Hiding the borders allows a larger area of the sheet to be displayed, and can be useful for word-processing applications.
+
+### Justify (N)
+
+Set to `N` (No justify) for ragged right margins, or `Y` (Yes) for even right-hand margins. To reformat a paragraph of text after changing this option, give the `Format Paragraph` command, <Key k="diamond" />R.
+
+### Wrap (Y)
+
+Set to `Y` (Yes) to make text wrap automatically at the wrap point, or `N` (No) for no wrapping.
+
+### Insert on wrap (R)
+
+Set to `R` (Rows) to maintain alignment between adjacent rows, or `C` (Columns) for creating independent columns of text; see **Widths and margins in a multi-column document**, p. 129.
+
+## Recalculation mode
+
+The `Calc` options determine how expression slots are recalculated in the document.
+
+### Auto/Man (A)
+
+Determines the recalculation of expression slots on the document.
+
+Set to `A` (Automatic) to recalculate the document every time an expression slot changes or `M` (Manual) for recalculation only with the <Key k="diamond" />A command. This option can be set to `M` to make entering data into a large spreadsheet, or working with large text documents, faster.
+
+### Columns/Rows (C)
+
+Select the order of recalculation: `R` (Rows) across rows first, or `C` (Columns) down columns first.
+
+## Number formats
+
+Determine the default display format for numerical expression slots.
+
+### Decimal places (2)
+
+Select `0` to `9` decimal places or `F` for free format.
+
+### Minus/brackets (M)
+
+Select `M` (Minus) to display negative numbers with a minus sign, or `B` (Brackets) for financial bracketed notation.
+
+### Lead chs. (£) Trail chs. (%)
+
+Specify up to 4 characters to be displayed in front of or after expression slots with <Key k="diamond" />LCL or <Key k="diamond" />LCT set.
+
+## Page format
+
+Determines the spacing and pagination of the document when printed.
+
+### Page length (66)
+
+Set to between `1` and `127` to specify the number of lines on each page, including margins, footer and header, or 0 to suppress page breaks altogether.
+
+### Line spacing (1)
+
+You can specify from `0` to `255` additional blank lines to be inserted between each line of text.
+
+### Start page
+
+You can set the current page number to `0` to `255`.
+
+## Headers, footers, and margins
+
+You can specify an additional header or footer line of text to appear at the top or bottom of each printed page respectively. Each line of text can consist of up to three components, which will be left-aligned, centred, and right-aligned.
+
+The left margin, and the margins above and below the header and footer, and between the header and footer and the page of text, can be separately altered to determine the layout of the printed page.
+
+Note that if a header or footer are specified, the number of lines of text on each page will be reduced accordingly.
+
+<Shot src="z88-user-guide/pipedream-reference/139.webp" alt="Illustration for “Document options - OPTIONS”" width={277} />
+
+The complete page layout, with headers and footers and their associated margins, will be represented on the page map display at the right-hand side of the PipeDream screen.
+
+### Header Footer
+
+You can specify lines of text which will be printed out at the head and foot of each page. Each line has the format
+
+`/left/centre/right/`
+
+where left, centre, and right represent text which will be respectively left-aligned, centred and right-aligned, and '/' represents an arbitrary delimiter, which must not occur elsewhere in the line of text.
+
+### Title
+
+A line of up to 244 characters can be entered in this field as a title for the document. The title can be included in the document, or in the footer or header, by giving the @T@ field; see p. 153.
+
+## Margins
+
+You can specify the number of blank lines, from 0 to 255, to be left above the header, between header and text, between text and footer, and below the footer respectively. The left margin can specify a margin of 0 to 255 characters at the left of each page:
+
+`Margins: Top 0` <br /> `Header 2` <br /> `Footer 2` <br /> `Bottom 8` <br /> `Left 0`
+
+For example, a typical set-up might be
+
+`Margins: Top 2` <br /> `Header 2` <br /> `Footer 2` <br /> `Bottom 2` <br /> `Left 6` <br /> `Header /@T@//Maxo Ltd/` <br /> `Footer //Page @P@//`
+
+`Title Quarterly Report`
+
+The @-field `@P@` will be replaced by the current page number, and the @-field `@T@` by the Title. The resulting page layout would be as follows:
+
+<Shot src="z88-user-guide/pipedream-reference/140.webp" alt="Illustration for “Document options - OPTIONS”" width={276} />

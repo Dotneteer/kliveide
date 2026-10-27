@@ -1,0 +1,245 @@
+---
+description: "When the Z88 came out, there was no facility to 'Blow your own ROM,' This was because the Z88 Application software was supplied on an EPROM card. As larger EPROM cards became available, it was..."
+asIndexPage: true
+---
+
+import { Callout, Table } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/57245754 (version 28) by scripts/import-z88-user-guide.cjs */}
+
+# Appendix I - Creating / Updating an Application Card
+
+## Preface
+
+### Z88 Applications
+
+When the Z88 came out, there was no facility to 'Blow your own ROM,' This was because the Z88 Application software was supplied on an EPROM card. As larger EPROM cards became available, it was possible to make compilations but there were only a few people around who had the skills to link the applications together, writing addresses on the back of envelopes and using Hex calculators. This all changed when Garry Lancaster wrote ROMcombiner. This allowed users to combine applications themselves. When the Flash cards become available, blowing those were added, so for example, all the applications for the Z88 could be stored onto one 1M card.
+
+Now that all the companies that wrote software for the Z88 are no longer marketing their products it is now possible to download the ROM image and blow your own.
+
+### Updating Applications and OZ
+
+Updating Flash cards came next with ROMupdate. Fetching the new image from the internet and downloading to the Z88, allowed users to update the applications and eventually the external OZ versions themselves.
+
+From OZ 4.6 this facility was added into OZ, allowing the Z88 Operating System to update itself with the \<\>UPD command.
+
+After OZ 4.7.1 the developers moved on to OZ v5.0 beta allowing the user to update to the latest version. This is a more complex operation as it relies on the user generating additional files beforehand, but this will be described in this section for those who wish to do so in the OZ section. It is important that the Prerequisites are read and understood before preceding otherwise you may get stuck.
+
+## Prerequisites [#prerequisites]
+
+<Callout type="error">
+
+**Caution**
+
+**Note: All data on the flash card will be deleted. Backup this data beforehand if required.**
+
+</Callout>
+
+The Z88 needs to have the following cards as a minimum configuration.
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/128k-ram-0-0.webp" alt="128K" width={452} />
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>
+
+<Shot src="z88-user-guide/external/qg-z88-quick-guide-help-home-page/128k-ram-colour.webp" alt="128K ram colour" width={143} />
+
+</Table.Td>
+<Table.Td>
+
+Slot 1 needs to have at least 128K and at least enough RAM to store the image.
+
+128K may be enough space to store Eazylink and Flashstore, but not enough to store an OZ update of 256K or above. 512K or 1M is highly recommended.
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+<Shot src="z88-user-guide/getting-started/up-and-running/512k-flash.webp" alt="512K Flash" width={150} />
+
+</Table.Td>
+<Table.Td>
+
+If you are running OZ 4.5 or above in slot 1, with 512K of RAM, that may enough RAM to store most images.
+
+OZ 4.5 also has Eazylink installed on it so the additional Computer link pop-down may not be required.
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+<Shot src="z88-user-guide/external/eazugv10-using-the-eazylink2-suite/pc-link-rom.webp" alt="pc link rom" width={150} />
+
+</Table.Td>
+<Table.Td>Slot 2 may have another EPROM or Flash card with the **[Computer Link](https://cambridgez88.jira.com/wiki/display/QG/3+-+Good+Housekeeping#id-3-GoodHousekeeping-ComputerLinks)** in it</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+<Shot src="z88-user-guide/external/qg-z88-quick-guide-help-home-page/32k-eprom-grey.webp" alt="32K eprom grey" width={400} />
+
+</Table.Td>
+<Table.Td>A blank EPROM or Flash Card to store the applications or files.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+<Shot src="z88-user-guide/external/qg-additional-storage/z88-eprom-eraser.webp" alt="Z88 EPROM Eraser" width={193} />
+
+</Table.Td>
+<Table.Td>(Optional) EPROM Eraser to erase the EPROM card (if required).</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+<Shot src="z88-user-guide/external/qg-z88-quick-guide-help-home-page/pc-serial.webp" alt="pc serial" width={300} />
+
+</Table.Td>
+<Table.Td>
+
+Connecting the Z88 to the Desktop to transfer the programs to the Z88.
+
+See **[Computer Links](https://cambridgez88.jira.com/wiki/display/QG/3+-+Good+Housekeeping#id-3-GoodHousekeeping-ComputerLinks)** for more details
+
+</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+### Making an Eazylink/Flashstore ROM
+
+If you have
+
+- 32K EPROM (this can be a MAC LINK or PC LINK card)
+- EPROM ERASER
+
+consider building a copy of this first, so that you can use Eazylink to transfer the OZ image, see [Creating Eazylink/Flashstore](/en/z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore) rather than using the slower Imp/Export pop-down.
+
+If you unable to use a separate card, you can temporary use it in same flashcard that OZ will be in. The procedure would be:-
+
+- Save Eazylink ROM to the Flashcard
+- Download the Files to RAM
+- Delete the Eazylink image from the Flash card.
+- Save the OZ image from RAM to the Flash card.
+
+## Check List
+
+Before doing a procedure like this it is prudent to do some preliminary checks.
+
+### Check RAM
+
+To do these tests, please select the INDEX screen with either the <Key k="index" /> key or <Key k="square" /> I.
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/index-diary.webp" alt="Main INDEX Page" width={640} />
+
+If you have any extra RAM, the largest size you have should be used in Slot 1, unless you are running OZ 4.5 in which case it needs to be in Slot 2. This is to ensure that the Z88 "type" is an "Expanded Machine." This can be checked using the <Key k="diamond" /> INFO command.
+
+<Shot src="z88-user-guide/getting-started/using-cards/ram-cards/index-info-512.webp" alt="info page" width={640} />
+
+Depending on what configuration you have, the amount of RAM you have should be reflected in the following command. For example, if you had a 512K/512K Flash/RAM card running OZ4.5 in slot 1, 1M RAM in slot 2 and a 1M Flash card in slot 3.
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/512k512k-ram-flash-1m-ram-1m-flash.webp" alt="512K/512K Flash/RAM Slot 1 - 1M RAM Slot 2 - 1M Flash Slot 3" width={450} />
+
+In the INDEX check that the Z88 recognises the extra memory by giving the <Key k="diamond" /> CARD command. You should get the following result.
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/index-card-512k512k-fl-ram-s1-1m-ram-s2-1mffl-s3.webp" alt="Card Display" width={640} />
+
+Here are some other examples on a standard Z88.
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-oz/512k-0k-0k.webp" alt="Illustration for “Appendix I - Creating / Updating an Application Card”" width={452} />
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-oz/index-card-512kram.webp" alt="index card 512kram" width={640} />
+
+<Callout type="warning">
+
+**Note**
+
+The standard Z88 does not recognise the file area.
+
+</Callout>
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-oz/1m-ram-0-0.webp" alt="1M ram 0 0" width={452} />
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-oz/index-card-1m-ram-s1-0-s2-0-s3.webp" alt="index card 1m ram s1 0 s2 0 s3" width={640} />
+
+If the values shown in the RAM do not display these values, Backup the Z88 and give the Z88 a Hard Reset.
+
+<Shot src="z88-user-guide/getting-started/basic-concepts/soft-and-hard-reset/hardreset.webp" alt="hardreset" width={670} />
+
+and keep going around the loop again until the values are correct.
+
+Press <Key k="esc" /> to return to the main screen.
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/oz45-in-diary.webp" alt="Index Diary" width={640} />
+
+### Check Default Device
+
+Check that the default device to the RAM is correct by selecting the Panel <Key k="square" />**S**.
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/oz45-panel-dd1.webp" alt="Panel Default Device Slot 1" width={640} />
+
+In this case the value of `:RAM.1` is correct.
+
+Press <Key k="esc" /> to return to the main screen.
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/oz45-in-diary.webp" alt="Index Diary" width={640} />
+
+### Set Default Device
+
+Set the default device to the RAM that is being used by selecting the Panel <Key k="square" />**S**. Move the cursor down 3 lines (<Key k="down" />, <Key k="down" />, <Key k="down" />) then to the end of the line (<Key k="diamond" /><Key k="right" />) just past the `0` in `:RAM.0` in the Default device field:-
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/panel-default-device-past0.webp" alt="Cursor just past 0" width={640} />
+
+Press the <Key k="del" /> key
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/panel-default-device-del.webp" alt="Delete the 0 in Default Device" width={640} />
+
+and replace it with either a 1 or 2 depending which slot the RAM is in.
+
+### Select Device [#select_device]
+
+Select the Filer <Key k="square" /> **F** .
+
+Press <Key k="diamond" />SV to **S**elect de**V**ice
+
+Move the cursor over to the right (using <Key k="diamond" /> <Key k="right" />, then press the <Key k="del" /> key to remove the number that is there, finally type in the RAM slot number 1 then press <Key k="enter" /> to select it.
+
+<Shot src="z88-user-guide/getting-started/up-and-running/z88-filer-sv.webp" alt="z88 filer sv" width={640} />
+
+## Getting the image
+
+There are different ways of obtaining the image of an application.
+
+- Downloading
+- Writing your own
+
+### Download the Application
+
+Z88 Applications are stored in 16K size files called banks. To keep these files together, they are stored in a zip file, which also compresses the collection. There are a number of steps that need to take place. These are:-
+
+- Download the zip file from the internet
+
+- Unzip the file either on the
+
+  - Desktop or
+  - Z88
+
+- Transfer either the zip or un-ziped files to the Z88
+
+- Run ROMcombiner or ROMupdate on the Z88 to blow the image into the Flash or EPROM.
+
+The examples given here are
+
+| Application / Pop-down |   |   | Notes |
+| --- | --- | --- | --- |
+| [Creating Eazylink/Flashstore](/en/z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore) |   |   | Use your 32K EPROM (this can be a MAC LINK or PC LINK card) and EPROM ERASER to build Eazylink fot transfer, rather than the slower Imp/Export route. Alternatively, use the Flash card temporarily, until the OZ image replaces it. |
+| [Creating OZ](/en/z88-user-guide/appendix-i-creating-updating-an-application-card/creating-oz) |   |   | Update your existing copy or build one from scratch. |
+| [Creating SpellMaster](/en/z88-user-guide/appendix-i-creating-updating-an-application-card/creating-spellmaster) |   |   | An example of building a 3rd party software. |
+
+### Writing your Own Application
+
+If you're a developer, we have all you need too, just read the [Developer's Notes](https://cambridgez88.jira.com/wiki/display/DN/Z88+Developers'+Notes) on our wiki, [https://cambridgez88.jira.com/wiki/display/DN/](https://cambridgez88.jira.com/wiki/display/DN/) (applies to all Z88 ROM releases, including OZ v4.5).

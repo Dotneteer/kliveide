@@ -1,0 +1,111 @@
+---
+description: "The commands on the CURSOR menu aim to provide the greatest possible flexibility for moving around a document. Because they are used so frequently, many of them have simple shorthand equivalents,..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/35913771 (version 9) by scripts/import-z88-user-guide.cjs */}
+
+# Moving about the document - CURSOR
+
+<Shot src="z88-user-guide/pipedream-reference/pipedream-menu-cursor.webp" alt="Pipedream menu cursor" width={640} />
+
+The commands on the **CURSOR** menu aim to provide the greatest possible flexibility for moving around a document. Because they are used so frequently, many of them have simple shorthand equivalents, which can save you a lot of time.
+
+You can move to the left or right a character, word, or column at a time, or to the start or end of a slot, or to the first or last column.
+
+You can move up or down the document a row at a time, a screenful at a time, or to the top or bottom of the column.
+
+You can also go directly to a specified slot by giving its coordinates.
+
+The commands on the **CURSOR** menu do not modify the document in any way, with the exception of the <Key k="enter" /> command which will add a blank row at the bottom of the document if the cursor was previously at the bottom of the document.
+
+## Moving anywhere
+
+### <Key k="diamond" />CGS — Go to Slot
+
+Moves the cursor directly to a specified slot. After the prompt
+
+`Go to slot`
+
+type the coordinates of the slot you want to move to, followed by <Key k="enter" />. If the slot you specify is off the document, the cursor will be moved as far as possible in the direction of the specified slot.
+
+### <Key k="diamond" />CSP — Save Position
+
+Saves the cursor position of the line containing the cursor in PipeDream. If you move to a new position, you can jump back to the previous position with the **Restore Position** command. Up to five positions can be saved.
+
+### <Key k="diamond" />CRP — Restore Position
+
+Moves the cursor to the last position saved. If five positions have already been saved, the **Save Position** command will give a bleep warning.
+
+## Moving within a line/slot
+
+### <Key k="right" /> — Cursor Right
+
+### <Key k="left" /> — Cursor Left
+
+Moves the cursor to the next character in the slot, or the previous character in the slot respectively. **Cursor Left** will have no effect once the cursor reaches the beginning of the slot. **Cursor Right** will continue to move the cursor beyond the end of the slot, scrolling the slot left if it reaches the wrap point for the column.
+
+### Next Word
+
+<Key k="shift" /> <Key k="right" /><Key k="shift" />
+
+### Previous Word
+
+<Key k="shift" /> <Key k="left" />
+
+Moves the cursor to the first character of the next word in the slot, and the previous word in the slot respectively. If there are no more words in the current slot, **Next Word** will move the cursor to the first character of the next slot. Likewise, if the cursor is at the beginning of a slot, **Previous Word** will move the cursor to the end of the previous slot.
+
+### <Key k="diamond" /> <Key k="left" /> — Beginning of Line
+
+Moves the cursor to the first character position in the slot.
+
+### <Key k="diamond" /> <Key k="right" /> — End of Line
+
+Moves the cursor to the position after the last character in the slot.
+
+### Moving within a column
+
+<Key k="enter" />
+
+Moves the cursor down to the next row and to the first character position in the current column. If the cursor is at the bottom of the document, the command will add an extra row to the document.
+
+### <Key k="up" /> — Cursor Up
+
+### <Key k="down" /> — Cursor Down
+
+Moves the cursor to the same horizontal position in the previous line and the next line respectively: the cursor remains in the current column. **Cursor Up** will have no effect if the cursor is already on the top line of the document, and **Cursor Down** will have no effect if the cursor is already on the bottom line of the document.
+
+### Screen Up
+
+<Key k="shift" /><Key k="up" />
+
+### Screen Down
+
+<Key k="shift" /><Key k="down" />
+
+Moves the cursor up or down a screenful at a time. With borders displayed this will be five lines at a time.
+
+### <Key k="diamond" /> <Key k="up" /> — Top of Column
+
+### <Key k="diamond" /> <Key k="down" /> — Bottom of Column
+
+Moves the cursor to the top or bottom of the current column in the document respectively.
+
+## Moving between columns
+
+### <Key k="diamond" />CFC or <Key k="diamond" /><Key k="tab" /> — First Column
+
+### <Key k="diamond" />CLC — Last Column
+
+These commands move the cursor to the first or left-most column on the document, and last or right-most column on the document respectively. The cursor stays in the same row, but will be moved to the first (left-most) character position in the specified column.
+
+### <Key k="tab" /> — Next Column
+
+### Previous Column
+
+<Key k="shift" /> <Key k="tab" />
+
+Moves the cursor to the next column on the right, or the previous column on the left, respectively. The cursor remains in the same row, but moves to the beginning of the slot in the new column.
+
+## Summary of PipeDream cursor operations
+
+<Shot src="z88-user-guide/pipedream-reference/114.webp" alt="Illustration for “Moving about the document - CURSOR”" width={640} />

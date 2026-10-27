@@ -1,0 +1,85 @@
+---
+description: "PipeDream can be used to carry out most of the operations you are likely to want to perform on text and numbers, such as entering and editing, searching, sorting and calculating. However, some..."
+asIndexPage: true
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/35913792 (version 31) by scripts/import-z88-user-guide.cjs */}
+
+# Section Ten - BBC BASIC
+
+PipeDream can be used to carry out most of the operations you are likely to want to perform on text and numbers, such as entering and editing, searching, sorting and calculating. However, some problems would require you to carry out, a sequence of different operations and this might be cumbersome and time-consuming using PipeDream. For this sort of problem you can turn to the BBC BASIC programming language which is provided in your Cambridge Z88
+
+Programming languages are designed to allow you to instruct the computer to carry out a sequence of operations on text or numbers. BASIC is one such general-purpose programming language, and is the most widely used language on microcomputers. BASIC has a significant advantage over many other languages in that it is interactive: you can make changes to a sequence of instructions, and see the result immediately without having to perform any intervening operations. This means that programs can be developed relatively quickly.
+
+This section provides a reference list of all the Cambridge Z88 BBC BASIC language keywords. It is not intended as a tutorial on the BASIC language; many excellent books on this subject already exist.
+
+The keywords are divided into four types:
+
+- **Commands** are instructions that can be typed from the keyboard to assist in creating a program, and testing it out. Commands are typed from the keyboard in immediate mode after the BASIC \> sign prompt, and they may not be used within programs.
+- **Statements** are the special keywords that are used within programs, after a line number, to instruct the computer to do something. Most statements can also be typed directly after the BASIC prompt, and are then executed immediately so that you can try out their effect.
+- The BASIC statements are normally the first keyword after the line number in a program line.<strong><br /><br /></strong>
+- **Functions** can be included in expressions, and will return the result of performing an operation on the arguments enclosed in brackets after their name. They are similar to the functions in PipeDream.
+
+A function can be followed by one or more arguments, and returns a number or a string. Functions which take only one argument require brackets around the argument only if it is a complex expression. If the argument is a simple number, variable, or another function, no brackets are required.
+
+Finally, the **operators** can be used to link the components of expressions.
+
+The following keywords, associated with graphics, sound, and analogue operations in other versions of BBC BASIC, give the error
+
+`Sorry, not implemented`
+
+on the Cambridge Z88:
+
+Graphics: COLOUR, GCOL<br />Sound: ENVELOPE, SOUND<br />Analogue: ADVAL
+
+The BBC BASIC as it is supplied with OZ V4.5, is an updated edition of the original V3.00 BBC BASIC, now integrated with the "Patch" that previously were a stand-alone program that needed to be CHAIN'ed in order to be integrated with the BBC BASIC interpreter. The new commands are:
+
+- \*EDIT, MODE, CLG, DRAW, MOVE, PLOT and POINT; their syntax is compatible with other versions of BBC BASIC.
+
+## Entering BBC BASIC
+
+You enter BBC BASIC by selecting BASIC from the Index APPLICATIONS LIST, or by typing <Key k="square" />B from any application. The initial BASIC screen will then be displayed:
+
+<Shot src="z88-user-guide/bbc-basic/z88-bbcbasic31.webp" alt="z88 bbcbasic31" width={640} />
+
+In an unexpanded machine, BASIC will have a workspace of 8K. If the machine is expanded then it will have a 40K workspace. See **[Expanded/Unexpanded](/en/z88-user-guide/getting-started/using-cards/expanded-unexpanded)**.
+
+## Entering keywords
+
+Many keywords may be abbreviated when entered into a program, and will be expanded by the BASIC interpreter. In such cases the shortest abbreviation is shown in brackets after the full form; eg AUTO (AU.).
+
+All keywords must be entered in capitals, as shown in the following alphabetical list. **Inverted Caps** mode can be selected by typing <Key k="square" /> <Key k="capslock" />. To give capital letters when the Cambridge Z88 keys are typed alone, and lowercase letters when typed with the <Key k="shift" /> key. Press <Key k="diamond" /><Key k="capslock" /> to restore ordinary Caps mode.
+
+## Editing BASIC programs [#editing_basic_programs]
+
+BBC BASIC V3.10 supports a line editor. It works as follows:
+
+1. To edit a line you need to type: \*EDIT *Iine number* <Key k="enter" /><br />The editor will list out the line and put the cursor at the end.
+
+2. You can now use the cursor keys to move within the line and make changes, and most of the edit commands available in PipeDream such as **Delete Word** etc.
+
+3. When you have made all the changes you want, press <Key k="enter" /> to store the line back in the program. If you want to abandon the changes you have made then press <Key k="esc" /> and the line will be left unchanged.
+
+## Printing from BASIC
+
+The following program shows how to print from a BASIC program:
+
+```text
+100 LET PRT_ON$=CHR$(5)+"["
+110 LET PRT_OFF$=CHR$(5)+"]"
+120 LET LF$=CHR$(10)
+130 :
+140 LET PRT=OPENOUT":PRT*
+150 IF PRT=0 THEN PRINT" CAN'T OPEN PRINTER*":STOP
+160 :
+170 PRINT#PRT,PRT_ON$
+180 FOR I=1 TO 4
+190    PRINT#PRT,"Text "+STR$(I*PI)+" and numbers!"+LF$ 200 NEXT I
+210 PRINT#PRT,PRT_OFF$
+220 :
+230 CLOSE#PRT
+```
+
+When run it prints the following:
+
+`Text 3.14159265 and numbers!`<br />`Text 6.28318531 and numbers!` <br />`Text 9.42477796 and numbers!`<br />`Text 12.5663706 and numbers!`
