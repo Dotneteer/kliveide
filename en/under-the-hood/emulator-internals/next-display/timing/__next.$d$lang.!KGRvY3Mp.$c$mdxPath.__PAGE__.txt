@@ -1,0 +1,1005 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/729-9435aeba8bc7b5a7.js"
+f:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-74aa7972a133b7b0.js"
+10:I[826,["545","$b","500","$c","436","$d","729","$e","25","$f"],"TOCProvider"]
+11:I[4637,["545","$b","500","$c","436","$d","729","$e","25","$f"],"Sidebar"]
+12:I[6665,["545","$b","500","$c","436","$d","729","$e","25","$f"],"ClientWrapper"]
+18:"ViewportBoundary"
+19:I[484,[],"$18"]
+1a:"MetadataBoundary"
+1b:I[484,[],"$1a"]
+1c:"$Sreact.suspense"
+1d:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+13:T119f6,---
+description: "How the ZX Spectrum Next counts its picture: the two counters that every part of the screen is timed against, the four display timings that copy the 48K, the 128K, the +3 and the Pentagon, 50 and 60 Hz, the frame and line interrupts, how dots, clock ticks and CPU T-states relate at every CPU speed, and how the picture leaves the machine as RGB, VGA through the scan doubler, or HDMI."
+---
+
+import { Callout } from 'nextra/components'
+
+# ZX Spectrum Next: The Frame and the Beam
+
+A 48K game that changes the border colour at an exact T-state, to draw stripes that line up with the
+picture, works on the Next. So does a 128K demo that does the same on a frame of a different shape,
+and a Pentagon demo on a third. And the same machine sends a sharp picture to a modern monitor over
+HDMI, a standard that was written decades after any of them.
+
+All of it rests on **two counters**. One counts the dots of a line, the other the lines of a frame.
+Every event of the picture, the blanking, the sync pulses, the display area, the interrupts, is a
+moment at which these counters reach a certain value. Change a handful of those values and the
+Next becomes a different machine. This article is about the counters: what they count, the shapes
+of frame they can make, and how the picture they time leaves the machine.
+
+This is the second article of the series. It builds on
+[the first](/en/under-the-hood/emulator-internals/next-display/overview/), and on
+[ZX Spectrum: How the Screen Is Drawn](/en/under-the-hood/emulator-internals/spectrum-display/),
+whose Part 1 explains the original 48K frame. [How a Television Draws a
+Picture](/en/under-the-hood/emulator-internals/crt-display/) explains the beam, blanking and sync.
+
+### How this article is organised
+
+- **Two counters** ([Part 1](#part-1-two-counters)): what they count, and how every part of the
+  frame is a range of their values. If you read only one part, read this one.
+- **Four timings, two frame rates** ([Part 2](#part-2-four-timings-two-frame-rates)): the 48K, the
+  128K, the +3 and the Pentagon, and what 60 Hz does to each.
+- **Interrupts** ([Part 3](#part-3-interrupts)): the frame interrupt, the line interrupt, and how
+  lines are numbered, for the display area and for the wide area.
+- **Dots, ticks and T-states** ([Part 4](#part-4-dots-ticks-and-t-states)): one clock for the
+  picture and the CPU, at every CPU speed.
+- **From counters to cables** ([Part 5](#part-5-from-counters-to-cables)): RGB, the scan doubler
+  and VGA, and HDMI.
+- **The emulator** ([Part 6](#part-6-how-klive-does-it)): how Klive counts the same frame.
+
+<Callout type="info">
+The figures use the **128K/+3 timing at 50 Hz** unless they say otherwise, and the frame rates are
+those of the master clock at exactly 28 MHz (VGA mode 0, or HDMI). Klive emulates every timing of
+this article.
+</Callout>
+
+## Part 1: Two counters
+
+The beam's position is held in two counters. The **horizontal counter** counts the dots of a line at
+7 MHz, one step per dot, from 0 at the start of the line's blanking to the last dot of the line, 455
+in 128K timing, and then starts again. Each time it starts again, the **vertical counter** counts one
+more line, from 0 to the last line of the frame, 310, and then the frame starts again.
+
+That is all the timing there is. Everything else is a **comparison** with these two numbers:
+
+- **Blanking**: dots 0 to 95 of every line, and lines 0 to 7 of every frame. Nothing is shown there;
+  the beam returns.
+- **Sync**: the horizontal sync pulse on dots 16 to 47, the vertical one on lines 1 to 4, inside the
+  blanking, where a monitor looks for them.
+- **The display area**: dots 136 to 391, lines 64 to 255, the Spectrum's 256 × 192.
+- **The wide area**: dots 104 to 423, lines 32 to 287, the 320 × 256 of Layer 2's wide modes, the
+  tilemap and the sprites.
+- **The border**: everything else that is not blanked.
+
+<figure>
+<svg viewBox="0 0 700 410" role="img" aria-label="The Next frame in 128K timing at 50 Hz, drawn to scale: 456 dots across by 311 lines. The horizontal counter runs from 0 to 455: dots 0 to 95 are blanking, with the horizontal sync from 16 to 47; the display area runs from dot 136 to 391, and the wide area from 104 to 423. The vertical counter runs from 0 to 310: lines 0 to 7 are blanking, with the vertical sync on lines 1 to 4; the display area runs from line 64 to 255, and the wide area from line 32 to 287. The frame interrupt is raised on line 1, at dot 128." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
+  <rect x="64" y="54" width="456.0" height="311.0" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.5" />
+  <rect x="64" y="54" width="96.0" height="311.0" fill="currentColor" fillOpacity="0.16" />
+  <rect x="160.0" y="54" width="360.0" height="8.0" fill="currentColor" fillOpacity="0.16" />
+  <rect x="80.0" y="54" width="32.0" height="311.0" fill="currentColor" fillOpacity="0.3" />
+  <rect x="64" y="55.0" width="456.0" height="4.0" fill="currentColor" fillOpacity="0.3" />
+  <rect x="168.0" y="86.0" width="320.0" height="256.0" fill="none" stroke="currentColor" strokeOpacity="0.7" strokeDasharray="5 4" />
+  <rect x="200.0" y="118.0" width="256.0" height="192.0" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" strokeWidth="1.2" />
+  <circle cx="192.0" cy="55.5" r="4" fill="#e5484d" />
+  <line x1="64" y1="48" x2="64" y2="54" stroke="currentColor" strokeOpacity="0.6" />
+  <text x="64" y="44" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">0</text>
+  <line x1="160" y1="48" x2="160" y2="54" stroke="currentColor" strokeOpacity="0.6" />
+  <text x="160" y="44" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">96</text>
+  <line x1="200" y1="48" x2="200" y2="54" stroke="currentColor" strokeOpacity="0.6" />
+  <text x="200" y="44" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">136</text>
+  <line x1="456" y1="48" x2="456" y2="54" stroke="currentColor" strokeOpacity="0.6" />
+  <text x="456" y="44" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">392</text>
+  <text x="519" y="44" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">455</text>
+  <text x="292" y="22" textAnchor="middle" fill="currentColor" fontSize="12">horizontal counter: dots of one line</text>
+  <line x1="58" y1="62" x2="64" y2="62" stroke="currentColor" strokeOpacity="0.6" />
+  <text x="55" y="66" textAnchor="end" fill="currentColor" fontSize="10" fillOpacity="0.8">8</text>
+  <line x1="58" y1="118" x2="64" y2="118" stroke="currentColor" strokeOpacity="0.6" />
+  <text x="55" y="122" textAnchor="end" fill="currentColor" fontSize="10" fillOpacity="0.8">64</text>
+  <line x1="58" y1="310" x2="64" y2="310" stroke="currentColor" strokeOpacity="0.6" />
+  <text x="55" y="314" textAnchor="end" fill="currentColor" fontSize="10" fillOpacity="0.8">256</text>
+  <text x="55" y="368" textAnchor="end" fill="currentColor" fontSize="10" fillOpacity="0.8">310</text>
+  <text x="16" y="214" textAnchor="middle" fill="currentColor" fontSize="12" transform="rotate(-90 16 210)">vertical counter: lines</text>
+  <text x="112" y="254" textAnchor="middle" fill="currentColor" fontSize="11">blanking</text>
+  <text x="96" y="294" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.85" transform="rotate(-90 96 290)">HSYNC</text>
+  <text x="328" y="210" textAnchor="middle" fill="currentColor" fontSize="13" fontWeight="600">display area</text>
+  <text x="328" y="228" textAnchor="middle" fill="currentColor" fontSize="11">dots 136–391, lines 64–255</text>
+  <text x="328" y="102" textAnchor="middle" fill="currentColor" fontSize="11">wide area: dots 104–423, lines 32–287</text>
+  <text x="504" y="354" textAnchor="end" fill="currentColor" fontSize="11" fillOpacity="0.8">border</text>
+  <line x1="196" y1="55" x2="244" y2="76" stroke="#e5484d" strokeWidth="1.2" />
+  <text x="248" y="80" fill="#e5484d" fontSize="11">frame interrupt: line 1, dot 128</text>
+  <text x="536" y="194" fill="currentColor" fontSize="12">one frame:</text>
+  <text x="536" y="210" fill="currentColor" fontSize="12">311 lines</text>
+  <text x="536" y="230" fill="currentColor" fontSize="11" fillOpacity="0.8">one line:</text>
+  <text x="536" y="245" fill="currentColor" fontSize="11" fillOpacity="0.8">456 dots =</text>
+  <text x="536" y="260" fill="currentColor" fontSize="11" fillOpacity="0.8">228 T-states</text>
+  <text x="536" y="275" fill="currentColor" fontSize="11" fillOpacity="0.8">at 3.5 MHz</text>
+</svg>
+<figcaption>The 128K frame at 50 Hz to scale, with the counter values where things begin: one unit across is one dot, one unit down is one line. The grey parts are blanking, the darker bands inside them the sync pulses; the red dot is the frame interrupt.</figcaption>
+</figure>
+
+### Three numbers that make it fit
+
+- **7 MHz dots.** One step of the horizontal counter is one dot of the 256-wide picture, and half a
+  T-state of a 3.5 MHz CPU, exactly as on the Spectrum.
+- **456 dots a line**, 228 T-states: the 128K's line. A 48K line is 448 dots, 224 T-states.
+- **311 lines a frame**: 456 × 311 = 141,816 dots, 70,908 T-states. The 48K's frame is 312 lines,
+  69,888 T-states.
+
+<figure>
+<svg viewBox="0 0 700 250" role="img" aria-label="The two counters of the 128K timing at 50 Hz, as strips. The horizontal counter counts 456 dots, 0 to 455: blanking from 0 to 95 with the sync pulse from 16 to 47, the left border from 96 to 135, the display area from 136 to 391, the right border from 392 to 455; the wide area spans 104 to 423. Then it starts again at 0. The vertical counter counts 311 lines, 0 to 310: blanking on lines 0 to 7 with the sync pulse on lines 1 to 4, the top border to line 63, the display area from 64 to 255, the bottom border from 256 to 310; the wide area spans lines 32 to 287. The frame interrupt is on line 1." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
+  <text x="20" y="26" fill="currentColor" fontSize="12" fontWeight="600">horizontal counter (dots)</text>
+  <rect x="60.0" y="52" width="20.8" height="26" fill="currentColor" fillOpacity="0.16" stroke="currentColor" strokeOpacity="0.45" />
+  <rect x="80.8" y="52" width="41.6" height="26" fill="currentColor" fillOpacity="0.3" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="101.6" y="69" textAnchor="middle" fill="currentColor" fontSize="10">sync</text>
+  <rect x="122.4" y="52" width="62.4" height="26" fill="currentColor" fillOpacity="0.16" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="153.6" y="69" textAnchor="middle" fill="currentColor" fontSize="10">blank</text>
+  <rect x="184.8" y="52" width="52.0" height="26" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.45" />
+  <rect x="236.8" y="52" width="332.8" height="26" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" />
+  <text x="403.2" y="69" textAnchor="middle" fill="currentColor" fontSize="10">display area</text>
+  <rect x="569.6" y="52" width="83.2" height="26" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="611.2" y="69" textAnchor="middle" fill="currentColor" fontSize="10">border</text>
+  <path d="M195.2,48 v-6 H611.2 v6" fill="none" stroke="currentColor" strokeOpacity="0.7" strokeDasharray="4 3" />
+  <text x="403.2" y="39" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.85">wide area 104–423</text>
+  <line x1="60.0" y1="78" x2="60.0" y2="84" stroke="currentColor" strokeOpacity="0.6" />
+  <text x="60.0" y="95" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">0</text>
+  <line x1="184.8" y1="78" x2="184.8" y2="84" stroke="currentColor" strokeOpacity="0.6" />
+  <text x="184.8" y="95" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">96</text>
+  <line x1="236.8" y1="78" x2="236.8" y2="84" stroke="currentColor" strokeOpacity="0.6" />
+  <text x="236.8" y="95" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">136</text>
+  <line x1="569.6" y1="78" x2="569.6" y2="84" stroke="currentColor" strokeOpacity="0.6" />
+  <text x="569.6" y="95" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">392</text>
+  <line x1="651.5" y1="78" x2="651.5" y2="84" stroke="currentColor" strokeOpacity="0.6" />
+  <text x="651.5" y="95" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">455</text>
+  <text x="658.8" y="69" fill="currentColor" fontSize="10" fillOpacity="0.8">→ 0</text>
+  <text x="20" y="144" fill="currentColor" fontSize="12" fontWeight="600">vertical counter (lines)</text>
+  <rect x="60.0" y="170" width="1.9" height="26" fill="currentColor" fillOpacity="0.16" stroke="currentColor" strokeOpacity="0.45" />
+  <rect x="61.9" y="170" width="7.5" height="26" fill="currentColor" fillOpacity="0.3" stroke="currentColor" strokeOpacity="0.45" />
+  <rect x="69.4" y="170" width="5.6" height="26" fill="currentColor" fillOpacity="0.16" stroke="currentColor" strokeOpacity="0.45" />
+  <rect x="75.0" y="170" width="105.3" height="26" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="127.7" y="187" textAnchor="middle" fill="currentColor" fontSize="10">top border</text>
+  <rect x="180.3" y="170" width="361.0" height="26" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" />
+  <text x="360.8" y="187" textAnchor="middle" fill="currentColor" fontSize="10">display area</text>
+  <rect x="541.3" y="170" width="103.4" height="26" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="593.0" y="187" textAnchor="middle" fill="currentColor" fontSize="10">bottom border</text>
+  <path d="M120.2,166 v-6 H601.4 v6" fill="none" stroke="currentColor" strokeOpacity="0.7" strokeDasharray="4 3" />
+  <text x="360.8" y="157" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.85">wide area 32–287</text>
+  <line x1="60.0" y1="196" x2="60.0" y2="202" stroke="currentColor" strokeOpacity="0.6" />
+  <text x="60.0" y="213" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">0</text>
+  <line x1="75.0" y1="196" x2="75.0" y2="202" stroke="currentColor" strokeOpacity="0.6" />
+  <text x="75.0" y="213" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">8</text>
+  <line x1="180.3" y1="196" x2="180.3" y2="202" stroke="currentColor" strokeOpacity="0.6" />
+  <text x="180.3" y="213" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">64</text>
+  <line x1="541.3" y1="196" x2="541.3" y2="202" stroke="currentColor" strokeOpacity="0.6" />
+  <text x="541.3" y="213" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">256</text>
+  <line x1="642.8" y1="196" x2="642.8" y2="202" stroke="currentColor" strokeOpacity="0.6" />
+  <text x="642.8" y="213" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">310</text>
+  <text x="650.7" y="187" fill="currentColor" fontSize="10" fillOpacity="0.8">→ 0</text>
+  <circle cx="62.8" cy="183" r="3.5" fill="#e5484d" />
+  <text x="69.8" y="226" fill="#e5484d" fontSize="10">frame interrupt</text>
+</svg>
+<figcaption>The same counters as two strips, to scale. At the end of each strip the counter goes back to 0; the vertical counter steps once each time the horizontal one does.</figcaption>
+</figure>
+
+### Counters that start early
+
+The producers of the picture do not simply wait for the beam. A dot has to be fetched from memory and
+looked up in a palette before it can be shown, so each producer works a little ahead of the beam,
+with counters of its own that start before the area they draw. The ULA's counter starts 12 dots
+before the display area, the counter of the wide area 16 dots before it and 2 lines above it. The
+picture still appears exactly where the main counters say: the head start is used up by the work.
+
+A program can change the timing at any moment, but the counters take a new timing only **at the end
+of a frame**, when both of them go back to 0. A frame is never half one shape and half another.
+
+## Part 2: Four timings, two frame rates
+
+The Next can count four shapes of frame. Bits 6–4 of the Machine Type register, NextReg `$03`, choose one (with bit 7 set to allow
+the change), and the machine type the Next starts with chooses it at power-on:
+
+| Timing | Dots a line | T-states a line at 3.5 MHz | Lines (50 Hz) | T-states a frame | Display area from line | Frame rate at 28 MHz |
+|---|---|---|---|---|---|---|
+| 48K | 448 | 224 | 312 | 69,888 | 64 | 50.08 Hz |
+| 128K/+2 | 456 | 228 | 311 | 70,908 | 64 | 49.36 Hz |
+| +2A/+2B/+3 | 456 | 228 | 311 | 70,908 | 64 | 49.36 Hz |
+| Pentagon | 448 | 224 | 320 | 71,680 | 80 | 48.83 Hz |
+
+Why copy them so exactly? Because the shape of the frame is a **contract** with the programs. A
+program that changes the border at a counted T-state, or rewrites an attribute just before the beam
+reaches it, is written for one frame. Give it a frame one line longer and its stripes drift. So the
+Next does not have one frame that is "close enough": it has the frame of each machine, to the dot.
+
+The 128K and the +3 share a frame. What differs is small but real: the +3's frame interrupt comes one
+T-state earlier, and the two machines hold up the CPU in different memory banks and in a different
+pattern (Part 4). The Pentagon, a Russian clone, has a taller frame, wider vertical blanking and no
+contention at all.
+
+<figure>
+<svg viewBox="0 0 700 548" role="img" aria-label="Four frames drawn at the same scale. 48K timing: 448 dots by 312 lines, the display area from line 64, the interrupt on line 0. 128K and +3 timing: 456 by 311, the display area from line 64, the interrupt on line 1. Pentagon timing: 448 by 320 with wider vertical blanking, the display area from line 80, the interrupt on the last line. 128K timing at 60 Hz: 456 by 264, the display area from line 40, the interrupt on line 0; the wide area then fills every visible line." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
+  <text x="30" y="22" fill="currentColor" fontSize="12" fontWeight="600">48K: 448 × 312</text>
+  <rect x="30" y="34" width="277.8" height="193.4" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.5" />
+  <rect x="30" y="34" width="59.5" height="193.4" fill="currentColor" fillOpacity="0.16" />
+  <rect x="89.5" y="34" width="218.2" height="5.0" fill="currentColor" fillOpacity="0.16" />
+  <rect x="39.9" y="34" width="19.8" height="193.4" fill="currentColor" fillOpacity="0.3" />
+  <rect x="30" y="34.6" width="277.8" height="2.5" fill="currentColor" fillOpacity="0.3" />
+  <rect x="89.5" y="53.8" width="198.4" height="158.7" fill="none" stroke="currentColor" strokeOpacity="0.7" strokeDasharray="5 4" />
+  <rect x="109.4" y="73.7" width="158.7" height="119.0" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" strokeWidth="1.2" />
+  <circle cx="101.9" cy="34.3" r="4" fill="#e5484d" />
+  <text x="30" y="250.4" fill="currentColor" fontSize="11" fillOpacity="0.8">50.08 Hz · display from line 64</text>
+  <text x="375" y="22" fill="currentColor" fontSize="12" fontWeight="600">128K/+2 and +3: 456 × 311</text>
+  <rect x="375" y="34" width="282.7" height="192.8" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.5" />
+  <rect x="375" y="34" width="59.5" height="192.8" fill="currentColor" fillOpacity="0.16" />
+  <rect x="434.5" y="34" width="223.2" height="5.0" fill="currentColor" fillOpacity="0.16" />
+  <rect x="384.9" y="34" width="19.8" height="192.8" fill="currentColor" fillOpacity="0.3" />
+  <rect x="375" y="34.6" width="282.7" height="2.5" fill="currentColor" fillOpacity="0.3" />
+  <rect x="439.5" y="53.8" width="198.4" height="158.7" fill="none" stroke="currentColor" strokeOpacity="0.7" strokeDasharray="5 4" />
+  <rect x="459.3" y="73.7" width="158.7" height="119.0" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" strokeWidth="1.2" />
+  <circle cx="454.4" cy="34.9" r="4" fill="#e5484d" />
+  <text x="375" y="250.4" fill="currentColor" fontSize="11" fillOpacity="0.8">49.36 Hz · display from line 64</text>
+  <text x="30" y="288" fill="currentColor" fontSize="12" fontWeight="600">Pentagon: 448 × 320</text>
+  <rect x="30" y="300" width="277.8" height="198.4" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.5" />
+  <rect x="30" y="300" width="39.7" height="198.4" fill="currentColor" fillOpacity="0.16" />
+  <rect x="69.7" y="300" width="238.1" height="9.9" fill="currentColor" fillOpacity="0.16" />
+  <rect x="39.9" y="300" width="19.8" height="198.4" fill="currentColor" fillOpacity="0.3" />
+  <rect x="30" y="300.6" width="277.8" height="8.7" fill="currentColor" fillOpacity="0.3" />
+  <rect x="89.5" y="329.8" width="198.4" height="158.7" fill="none" stroke="currentColor" strokeOpacity="0.7" strokeDasharray="5 4" />
+  <rect x="109.4" y="349.6" width="158.7" height="119.0" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" strokeWidth="1.2" />
+  <circle cx="302.2" cy="498.1" r="4" fill="#e5484d" />
+  <text x="30" y="516.4" fill="currentColor" fontSize="11" fillOpacity="0.8">48.83 Hz · display from line 80</text>
+  <text x="375" y="288" fill="currentColor" fontSize="12" fontWeight="600">128K at 60 Hz: 456 × 264</text>
+  <rect x="375" y="300" width="282.7" height="163.7" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.5" />
+  <rect x="375" y="300" width="59.5" height="163.7" fill="currentColor" fillOpacity="0.16" />
+  <rect x="434.5" y="300" width="223.2" height="5.0" fill="currentColor" fillOpacity="0.16" />
+  <rect x="384.9" y="300" width="19.8" height="163.7" fill="currentColor" fillOpacity="0.3" />
+  <rect x="375" y="300.6" width="282.7" height="2.5" fill="currentColor" fillOpacity="0.3" />
+  <rect x="439.5" y="305.0" width="198.4" height="158.7" fill="none" stroke="currentColor" strokeOpacity="0.7" strokeDasharray="5 4" />
+  <rect x="459.3" y="324.8" width="158.7" height="119.0" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" strokeWidth="1.2" />
+  <circle cx="454.4" cy="300.3" r="4" fill="#e5484d" />
+  <text x="375" y="516.4" fill="currentColor" fontSize="11" fillOpacity="0.8">58.15 Hz · display from line 40</text>
+</svg>
+<figcaption>The four frames at the same scale, each with its display area (blue), its wide area (dashed) and its frame interrupt (red). The Pentagon's interrupt is on the last line of its frame, so its head start comes from the bottom.</figcaption>
+</figure>
+
+One column of the table deserves a second look: the frame rate. The Next's dots are exactly 7 MHz,
+a quarter of its 28 MHz clock. The original 128K ran its dots slightly faster, at about 7.09 MHz,
+so its frame took 50.02 per second. The same frame on the Next runs at **49.36 Hz**, 1.3% slower.
+A program cannot see the difference: every frame has the same number of T-states, every line the same
+number of dots. Only a stopwatch can.
+
+### 60 Hz
+
+Bit 2 of the Peripheral 1 Setting register, NextReg `$05`, switches any timing but the Pentagon to **60 Hz**. Nothing changes along the
+line. The frame loses lines: 264 instead of 311 or 312, and the display area starts on line 40
+instead of 64. Above and below it, 32 lines of border are left, exactly the extra lines of the wide
+area, so at 60 Hz the wide area fills every visible line and there is no border above or below it at
+all. The frame rate becomes 58.15 Hz (128K) or 59.19 Hz (48K).
+
+<figure>
+<svg viewBox="0 0 700 290" role="img" aria-label="The 128K frame at 50 Hz and at 60 Hz, side by side at the same scale. At 50 Hz the frame has 311 lines and the display area starts on line 64, with 24 lines of border visible above the wide area and 23 below it. At 60 Hz the frame has 264 lines and the display area starts on line 40: the wide area begins on line 8, the first visible line, and ends on line 263, the last, so no border is left above or below it." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
+  <text x="40" y="22" fill="currentColor" fontSize="12" fontWeight="600">50 Hz: 311 lines</text>
+  <rect x="40" y="34" width="301.0" height="205.3" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.5" />
+  <rect x="40" y="34" width="63.4" height="205.3" fill="currentColor" fillOpacity="0.16" />
+  <rect x="103.4" y="34" width="237.6" height="5.3" fill="currentColor" fillOpacity="0.16" />
+  <rect x="50.6" y="34" width="21.1" height="205.3" fill="currentColor" fillOpacity="0.3" />
+  <rect x="40" y="34.7" width="301.0" height="2.6" fill="currentColor" fillOpacity="0.3" />
+  <rect x="108.6" y="55.1" width="211.2" height="169.0" fill="none" stroke="currentColor" strokeOpacity="0.7" strokeDasharray="5 4" />
+  <rect x="129.8" y="76.2" width="169.0" height="126.7" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" strokeWidth="1.2" />
+  <text x="380" y="22" fill="currentColor" fontSize="12" fontWeight="600">60 Hz: 264 lines</text>
+  <rect x="380" y="34" width="301.0" height="174.2" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.5" />
+  <rect x="380" y="34" width="63.4" height="174.2" fill="currentColor" fillOpacity="0.16" />
+  <rect x="443.4" y="34" width="237.6" height="5.3" fill="currentColor" fillOpacity="0.16" />
+  <rect x="390.6" y="34" width="21.1" height="174.2" fill="currentColor" fillOpacity="0.3" />
+  <rect x="380" y="34.7" width="301.0" height="2.6" fill="currentColor" fillOpacity="0.3" />
+  <rect x="448.6" y="39.3" width="211.2" height="169.0" fill="none" stroke="currentColor" strokeOpacity="0.7" strokeDasharray="5 4" />
+  <rect x="469.8" y="60.4" width="169.0" height="126.7" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" strokeWidth="1.2" />
+  <text x="190.5" y="261.3" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.8">border above and below the wide area</text>
+  <text x="530.5" y="230.2" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.8">the wide area fills every visible line</text>
+</svg>
+<figcaption>The 128K frame at 50 and at 60 Hz, at the same scale. The 60 Hz frame has 47 fewer lines, taken from the border above and below.</figcaption>
+</figure>
+
+Here is the scene of the first article, the same program, drawn by Klive at both rates:
+
+<figure>
+<svg viewBox="0 0 700 300" role="img" aria-label="The scene of the first article, drawn by Klive's Next core at 50 Hz and at 60 Hz, each in the 360 by 288 window Klive shows. At 50 Hz the picture sits in the middle of the window with border all round. At 60 Hz the picture moves up: the display area starts 24 lines into the window instead of 48, the top of the wide area is cut off, the tiles at the bottom reach the last line of the frame, and the window below it stays black because the frame has no more lines." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
+  <image x="20" y="10" width="320" height="256" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/timing/hz50.webp`} />
+  <rect x="20" y="10" width="320" height="256" fill="none" stroke="currentColor" strokeOpacity="0.35" />
+  <image x="360" y="10" width="320" height="256" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/timing/hz60.webp`} />
+  <rect x="360" y="10" width="320" height="256" fill="none" stroke="currentColor" strokeOpacity="0.35" />
+  <text x="180" y="288" textAnchor="middle" fill="currentColor" fontSize="12">50 Hz</text>
+  <text x="520" y="288" textAnchor="middle" fill="currentColor" fontSize="12">60 Hz: the same program, NextReg $05 bit 2 set</text>
+</svg>
+<figcaption>The same window, two frame rates. At 60 Hz the picture moves up and the window has fewer lines to show: the top of the wide area falls outside it, and below the last line of the frame there is nothing to draw.</figcaption>
+</figure>
+
+## Part 3: Interrupts
+
+### The frame interrupt
+
+Once in every frame, at a fixed value of the two counters, the ULA raises the **frame interrupt**,
+the Spectrum's 50 times a second. It comes near the top of the frame, well before the display
+area, so that a program that waits for it with `HALT` has time to update the screen before the beam
+gets there:
+
+- **48K**: on line 0, 64 lines before the display area.
+- **128K/+2** and **+3**: on line 1, 63 lines before it (the +3's one T-state earlier on the line).
+- **60 Hz**: on line 0, only 40 lines before it. A program that needs all of the 50 Hz head start does
+  not get it at 60 Hz.
+- **Pentagon**: on the very last line of the frame, so its 80 lines of head start begin at the bottom.
+
+These are the moments the original machines used, so the T-states between the interrupt and any dot
+of the screen are those of the original; the Spectrum article lists them. The interrupt line is held
+for 32 CPU cycles in 48K and +3 timing and 36 in 128K and Pentagon timing. Bit 2 of the Line Interrupt Control register, NextReg `$22`, switches the frame interrupt off.
+
+### The line interrupt
+
+The Next adds a second one: the **line interrupt**, raised before a line chosen by the program. Bit 1 of the Line Interrupt Control register, NextReg `$22`, switches it on, and the line number is nine bits, bit 0 of NextReg `$22` and the eight bits of the Line Interrupt Value register, NextReg `$23`.
+
+The line numbers are counted from the display area, not from the top of the frame: **line 0 is the
+first line of the display area**, 191 the last, and the numbers go on through the bottom border to the
+end of the frame and then continue at the top of the next one. So the lines of the top border have the
+highest numbers: in 128K timing at 50 Hz, the first line of the frame is 247 and the line just above
+the display area is 310. The Active Video Line registers, NextRegs `$1E` and `$1F`, read the line the beam is on, in the same numbers:
+bit 8 in NextReg `$1E`, the low eight bits in NextReg `$1F`. They are two reads, and the beam can move on between
+them. Read NextReg `$1E` at the end of line 255 and NextReg `$1F` just after the line has become 256, and the two
+halves say 0; the other way round they can say 511. The safe way reads NextReg `$1E`, then `$1F`, then `$1E`
+again, and tries again if the two NextReg `$1E` reads differ.
+
+"Before the line" is meant literally. The interrupt for line *n* is raised on line *n* − 1, near the
+right-hand end of its display area, at its dot 243. From there to the start of line *n*'s display area
+the beam still has the right border, the blanking and the left border to draw: a little over 100
+T-states at 3.5 MHz, enough for a program to set up a change that must be in place when line *n*
+begins.
+
+<figure>
+<svg viewBox="0 0 700 320" role="img" aria-label="The 128K frame with the numbers the line interrupt uses. Line 0 is the first line of the display area; the numbers count down the display area to 191, on through the bottom border to 246, and wrap past the end of the frame, so the lines above the display area are 247 to 310. The frame interrupt is raised on line 1 of the counter, near the top. A line interrupt for line 100 is raised at the end of line 99, near the right edge of its display area, a little before line 100 begins." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
+  <defs>
+    <marker id="tm5-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor" fillOpacity="0.6" />
+    </marker>
+  </defs>
+  <rect x="40" y="30" width="401.3" height="273.7" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.5" />
+  <rect x="40" y="30" width="84.5" height="273.7" fill="currentColor" fillOpacity="0.16" />
+  <rect x="124.5" y="30" width="316.8" height="7.0" fill="currentColor" fillOpacity="0.16" />
+  <rect x="54.1" y="30" width="28.2" height="273.7" fill="currentColor" fillOpacity="0.3" />
+  <rect x="40" y="30.9" width="401.3" height="3.5" fill="currentColor" fillOpacity="0.3" />
+  <rect x="159.7" y="86.3" width="225.3" height="169.0" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" strokeWidth="1.2" />
+  <circle cx="152.6" cy="31.3" r="4" fill="#e5484d" />
+  <rect x="124.5" y="174.3" width="316.8" height="1.4" fill="#e5484d" fillOpacity="0.7" />
+  <circle cx="373.5" cy="173.4" r="4" fill="#e5484d" />
+  <line x1="373.5" y1="173.4" x2="330.4" y2="206.0" stroke="#e5484d" strokeWidth="1.2" />
+  <text x="326.9" y="211.3" textAnchor="end" fill="#e5484d" fontSize="11">line interrupt for line 100:</text>
+  <text x="326.9" y="225.3" textAnchor="end" fill="#e5484d" fontSize="11">raised near the end of line 99</text>
+  <text x="172.0" y="169.0" fill="#e5484d" fontSize="11">line 100</text>
+  <line x1="152.6" y1="31.3" x2="216.0" y2="52.9" stroke="#e5484d" strokeWidth="1.2" />
+  <text x="219.5" y="56.4" fill="#e5484d" fontSize="11">frame interrupt</text>
+  <line x1="445.3" y1="30.4" x2="455.3" y2="30.4" stroke="currentColor" strokeOpacity="0.6" />
+  <text x="459.3" y="34.4" fill="currentColor" fontSize="11">247: the first line of the frame</text>
+  <line x1="445.3" y1="86.8" x2="455.3" y2="86.8" stroke="currentColor" strokeOpacity="0.6" />
+  <text x="459.3" y="90.8" fill="currentColor" fontSize="11">0: the first display line</text>
+  <line x1="445.3" y1="254.8" x2="455.3" y2="254.8" stroke="currentColor" strokeOpacity="0.6" />
+  <text x="459.3" y="258.8" fill="currentColor" fontSize="11">191: the last display line</text>
+  <line x1="445.3" y1="303.2" x2="455.3" y2="303.2" stroke="currentColor" strokeOpacity="0.6" />
+  <text x="459.3" y="307.2" fill="currentColor" fontSize="11">246: the last line of the frame</text>
+  <text x="459.3" y="68.7" fill="currentColor" fontSize="10" fillOpacity="0.7">… 310 is the line just above it</text>
+  <text x="459.3" y="18" fill="currentColor" fontSize="12" fontWeight="600">line numbers (NextRegs $23, $1E, $1F)</text>
+</svg>
+<figcaption>The line numbers of the line interrupt in 128K timing at 50 Hz, and when it is raised: for line 100, near the end of line 99's display area.</figcaption>
+</figure>
+
+### Line numbers for the wide area
+
+Line 0 is the first line of the **display area**, the ULA's 256 × 192. That suits the ULA and Layer 2
+at 256 × 192, whose rows count from the same line. It does not suit the layers of the wide area. The
+tilemap, the sprites and Layer 2 in its 320 × 256 and 640 × 256 modes count their rows from the top of
+the **wide area**, 32 lines higher. Their row 0 is line 279 in 128K timing at 50 Hz, their row 32 is line
+0, and their last 32 rows are lines 192 to 223. A program that wants an interrupt before row *r* of
+the wide area has to ask for line *r* − 32, wrapped round the frame: a different number in every
+timing, because the frames have different numbers of lines (row 0 is line 280 in 48K timing, 288 in
+Pentagon timing, and 232 at 60 Hz).
+
+The Vertical Line Count Offset register, NextReg `$64`, removes the problem. It is an **offset** added to the line numbers: the first line of
+the display area gets the number the offset says, instead of 0. Set it to **32**, and line 0 becomes
+the first line of the wide area, so the line numbers are exactly the rows of the 320 × 256 layers, in
+every timing. The offset applies to everything that uses the numbers: the line interrupt, the active
+line read through NextRegs `$1E` and `$1F`, and the Copper. A new offset takes effect when the beam next reaches the
+first line of the display area, so it can take up to a frame.
+
+<figure>
+<svg viewBox="0 0 700 262" role="img" aria-label="The 128K frame at 50 Hz with two numberings of its lines side by side. Without an offset, NextReg 64 at 0, line 0 is the first line of the display area: the first line of the wide area is then 279, the display area runs from 0 to 191, the wide area ends on line 223, and the frame ends on line 246. With an offset of 32, line 0 is the first line of the wide area: the display area runs from 32 to 223, the wide area ends on line 255, and the line numbers match the 320 by 256 coordinates of the tilemap, the sprites and the wide Layer 2 modes." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
+  <rect x="40" y="40" width="301.0" height="205.3" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.5" />
+  <rect x="40" y="40" width="63.4" height="205.3" fill="currentColor" fillOpacity="0.16" />
+  <rect x="103.4" y="40" width="237.6" height="5.3" fill="currentColor" fillOpacity="0.16" />
+  <rect x="50.6" y="40" width="21.1" height="205.3" fill="currentColor" fillOpacity="0.3" />
+  <rect x="40" y="40.7" width="301.0" height="2.6" fill="currentColor" fillOpacity="0.3" />
+  <rect x="108.6" y="61.1" width="211.2" height="169.0" fill="none" stroke="currentColor" strokeOpacity="0.7" strokeDasharray="5 4" />
+  <rect x="129.8" y="82.2" width="169.0" height="126.7" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" strokeWidth="1.2" />
+  <text x="380.96000000000004" y="22" textAnchor="middle" fill="currentColor" fontSize="12" fontWeight="600">NextReg $64 = 0</text>
+  <text x="460.96000000000004" y="22" textAnchor="middle" fill="#e5484d" fontSize="12" fontWeight="600">NextReg $64 = 32</text>
+  <line x1="343.0" y1="40.3" x2="483.0" y2="40.3" stroke="currentColor" strokeOpacity="0.2" strokeDasharray="2 3" />
+  <text x="380.96000000000004" y="44.3" textAnchor="middle" fill="currentColor" fontSize="12">247</text>
+  <text x="460.96000000000004" y="44.3" textAnchor="middle" fill="#e5484d" fontSize="12" fontWeight="600">279</text>
+  <text x="489.0" y="44.3" fill="currentColor" fontSize="10" fillOpacity="0.75">first line of the frame</text>
+  <line x1="343.0" y1="61.5" x2="483.0" y2="61.5" stroke="currentColor" strokeOpacity="0.2" strokeDasharray="2 3" />
+  <text x="380.96000000000004" y="65.5" textAnchor="middle" fill="currentColor" fontSize="12">279</text>
+  <text x="460.96000000000004" y="65.5" textAnchor="middle" fill="#e5484d" fontSize="12" fontWeight="600">0</text>
+  <text x="489.0" y="65.5" fill="currentColor" fontSize="10" fillOpacity="0.75">first line of the wide area</text>
+  <line x1="343.0" y1="82.6" x2="483.0" y2="82.6" stroke="currentColor" strokeOpacity="0.2" strokeDasharray="2 3" />
+  <text x="380.96000000000004" y="86.6" textAnchor="middle" fill="currentColor" fontSize="12">0</text>
+  <text x="460.96000000000004" y="86.6" textAnchor="middle" fill="#e5484d" fontSize="12" fontWeight="600">32</text>
+  <text x="489.0" y="86.6" fill="currentColor" fontSize="10" fillOpacity="0.75">first line of the display area</text>
+  <line x1="343.0" y1="208.6" x2="483.0" y2="208.6" stroke="currentColor" strokeOpacity="0.2" strokeDasharray="2 3" />
+  <text x="380.96000000000004" y="212.6" textAnchor="middle" fill="currentColor" fontSize="12">191</text>
+  <text x="460.96000000000004" y="212.6" textAnchor="middle" fill="#e5484d" fontSize="12" fontWeight="600">223</text>
+  <text x="489.0" y="212.6" fill="currentColor" fontSize="10" fillOpacity="0.75">last line of the display area</text>
+  <line x1="343.0" y1="229.8" x2="483.0" y2="229.8" stroke="currentColor" strokeOpacity="0.2" strokeDasharray="2 3" />
+  <text x="380.96000000000004" y="233.8" textAnchor="middle" fill="currentColor" fontSize="12">223</text>
+  <text x="460.96000000000004" y="233.8" textAnchor="middle" fill="#e5484d" fontSize="12" fontWeight="600">255</text>
+  <text x="489.0" y="233.8" fill="currentColor" fontSize="10" fillOpacity="0.75">last line of the wide area</text>
+  <line x1="343.0" y1="244.9" x2="483.0" y2="244.9" stroke="currentColor" strokeOpacity="0.2" strokeDasharray="2 3" />
+  <text x="380.96000000000004" y="248.9" textAnchor="middle" fill="currentColor" fontSize="12">246</text>
+  <text x="460.96000000000004" y="248.9" textAnchor="middle" fill="#e5484d" fontSize="12" fontWeight="600">278</text>
+  <text x="489.0" y="248.9" fill="currentColor" fontSize="10" fillOpacity="0.75">last line of the frame</text>
+</svg>
+<figcaption>The same frame, two numberings. With the offset at 32 (red), line 0 is the top of the wide area, and a line number is the row of the tilemap, the sprites and the wide Layer 2 modes; the display area then runs from line 32 to 223.</figcaption>
+</figure>
+
+Splitting the screen with the line interrupt has a weakness: the CPU reacts only when its current
+instruction ends, a few T-states later or earlier from frame to frame. The Copper, which the
+[last article of the series](/en/under-the-hood/emulator-internals/next-display/raster-effects/#part-4-the-copper)
+explains, does the same job without that jitter, with the same line numbers.
+
+## Part 4: Dots, ticks and T-states
+
+The picture and the CPU run on one clock. The **28 MHz master clock** ticks four times for every
+dot; the 14 MHz half dots of the first article's pipeline take two ticks each. The CPU's clock is
+made from the same clock, at the speed set by the CPU Speed register, NextReg `$07`: 3.5, 7, 14 or 28 MHz. So a T-state always
+lasts a whole number of ticks, and the CPU and the beam can never drift apart.
+
+<figure>
+<svg viewBox="0 0 700 330" role="img" aria-label="Sixteen ticks of the 28 MHz master clock, which make four dots of the beam. Below them: 14 MHz half dots, two per dot; 7 MHz dots, four ticks each; and the CPU's T-states at its four speeds. At 3.5 MHz one T-state lasts two dots, at 7 MHz one dot, at 14 MHz half a dot, and at 28 MHz one tick." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
+  <text x="178" y="53" textAnchor="end" fill="currentColor" fontSize="12">28 MHz master clock</text>
+  <rect x="191" y="34" width="28" height="28" rx="3" fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="205.0" y="52" textAnchor="middle" fill="currentColor" fontSize="10">tick</text>
+  <rect x="221" y="34" width="28" height="28" rx="3" fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeOpacity="0.45" />
+  <rect x="251" y="34" width="28" height="28" rx="3" fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeOpacity="0.45" />
+  <rect x="281" y="34" width="28" height="28" rx="3" fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeOpacity="0.45" />
+  <rect x="311" y="34" width="28" height="28" rx="3" fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeOpacity="0.45" />
+  <rect x="341" y="34" width="28" height="28" rx="3" fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeOpacity="0.45" />
+  <rect x="371" y="34" width="28" height="28" rx="3" fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeOpacity="0.45" />
+  <rect x="401" y="34" width="28" height="28" rx="3" fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeOpacity="0.45" />
+  <rect x="431" y="34" width="28" height="28" rx="3" fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeOpacity="0.45" />
+  <rect x="461" y="34" width="28" height="28" rx="3" fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeOpacity="0.45" />
+  <rect x="491" y="34" width="28" height="28" rx="3" fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeOpacity="0.45" />
+  <rect x="521" y="34" width="28" height="28" rx="3" fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeOpacity="0.45" />
+  <rect x="551" y="34" width="28" height="28" rx="3" fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeOpacity="0.45" />
+  <rect x="581" y="34" width="28" height="28" rx="3" fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeOpacity="0.45" />
+  <rect x="611" y="34" width="28" height="28" rx="3" fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeOpacity="0.45" />
+  <rect x="641" y="34" width="28" height="28" rx="3" fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="178" y="93" textAnchor="end" fill="currentColor" fontSize="12">14 MHz: half dots</text>
+  <rect x="191" y="74" width="58" height="28" rx="3" fill="currentColor" fillOpacity="0.12" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="220.0" y="92" textAnchor="middle" fill="currentColor" fontSize="10">½ dot</text>
+  <rect x="251" y="74" width="58" height="28" rx="3" fill="currentColor" fillOpacity="0.12" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="280.0" y="92" textAnchor="middle" fill="currentColor" fontSize="10">½ dot</text>
+  <rect x="311" y="74" width="58" height="28" rx="3" fill="currentColor" fillOpacity="0.12" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="340.0" y="92" textAnchor="middle" fill="currentColor" fontSize="10">½ dot</text>
+  <rect x="371" y="74" width="58" height="28" rx="3" fill="currentColor" fillOpacity="0.12" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="400.0" y="92" textAnchor="middle" fill="currentColor" fontSize="10">½ dot</text>
+  <rect x="431" y="74" width="58" height="28" rx="3" fill="currentColor" fillOpacity="0.12" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="460.0" y="92" textAnchor="middle" fill="currentColor" fontSize="10">½ dot</text>
+  <rect x="491" y="74" width="58" height="28" rx="3" fill="currentColor" fillOpacity="0.12" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="520.0" y="92" textAnchor="middle" fill="currentColor" fontSize="10">½ dot</text>
+  <rect x="551" y="74" width="58" height="28" rx="3" fill="currentColor" fillOpacity="0.12" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="580.0" y="92" textAnchor="middle" fill="currentColor" fontSize="10">½ dot</text>
+  <rect x="611" y="74" width="58" height="28" rx="3" fill="currentColor" fillOpacity="0.12" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="640.0" y="92" textAnchor="middle" fill="currentColor" fontSize="10">½ dot</text>
+  <text x="178" y="133" textAnchor="end" fill="currentColor" fontSize="12">7 MHz: dots</text>
+  <rect x="191" y="114" width="118" height="28" rx="3" fill="#3b82f6" fillOpacity="0.2" stroke="#3b82f6" />
+  <text x="250.0" y="132" textAnchor="middle" fill="currentColor" fontSize="10">dot</text>
+  <rect x="311" y="114" width="118" height="28" rx="3" fill="#3b82f6" fillOpacity="0.2" stroke="#3b82f6" />
+  <text x="370.0" y="132" textAnchor="middle" fill="currentColor" fontSize="10">dot</text>
+  <rect x="431" y="114" width="118" height="28" rx="3" fill="#3b82f6" fillOpacity="0.2" stroke="#3b82f6" />
+  <text x="490.0" y="132" textAnchor="middle" fill="currentColor" fontSize="10">dot</text>
+  <rect x="551" y="114" width="118" height="28" rx="3" fill="#3b82f6" fillOpacity="0.2" stroke="#3b82f6" />
+  <text x="610.0" y="132" textAnchor="middle" fill="currentColor" fontSize="10">dot</text>
+  <text x="178" y="173" textAnchor="end" fill="currentColor" fontSize="12">CPU at 3.5 MHz</text>
+  <rect x="191" y="154" width="238" height="28" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
+  <text x="310.0" y="172" textAnchor="middle" fill="currentColor" fontSize="10">1 T-state</text>
+  <rect x="431" y="154" width="238" height="28" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
+  <text x="550.0" y="172" textAnchor="middle" fill="currentColor" fontSize="10">1 T-state</text>
+  <text x="178" y="213" textAnchor="end" fill="currentColor" fontSize="12">CPU at 7 MHz</text>
+  <rect x="191" y="194" width="118" height="28" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
+  <text x="250.0" y="212" textAnchor="middle" fill="currentColor" fontSize="10">1 T</text>
+  <rect x="311" y="194" width="118" height="28" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
+  <text x="370.0" y="212" textAnchor="middle" fill="currentColor" fontSize="10">1 T</text>
+  <rect x="431" y="194" width="118" height="28" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
+  <text x="490.0" y="212" textAnchor="middle" fill="currentColor" fontSize="10">1 T</text>
+  <rect x="551" y="194" width="118" height="28" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
+  <text x="610.0" y="212" textAnchor="middle" fill="currentColor" fontSize="10">1 T</text>
+  <text x="178" y="253" textAnchor="end" fill="currentColor" fontSize="12">CPU at 14 MHz</text>
+  <rect x="191" y="234" width="58" height="28" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
+  <text x="220.0" y="252" textAnchor="middle" fill="currentColor" fontSize="10">1 T</text>
+  <rect x="251" y="234" width="58" height="28" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
+  <text x="280.0" y="252" textAnchor="middle" fill="currentColor" fontSize="10">1 T</text>
+  <rect x="311" y="234" width="58" height="28" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
+  <text x="340.0" y="252" textAnchor="middle" fill="currentColor" fontSize="10">1 T</text>
+  <rect x="371" y="234" width="58" height="28" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
+  <text x="400.0" y="252" textAnchor="middle" fill="currentColor" fontSize="10">1 T</text>
+  <rect x="431" y="234" width="58" height="28" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
+  <text x="460.0" y="252" textAnchor="middle" fill="currentColor" fontSize="10">1 T</text>
+  <rect x="491" y="234" width="58" height="28" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
+  <text x="520.0" y="252" textAnchor="middle" fill="currentColor" fontSize="10">1 T</text>
+  <rect x="551" y="234" width="58" height="28" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
+  <text x="580.0" y="252" textAnchor="middle" fill="currentColor" fontSize="10">1 T</text>
+  <rect x="611" y="234" width="58" height="28" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
+  <text x="640.0" y="252" textAnchor="middle" fill="currentColor" fontSize="10">1 T</text>
+  <text x="178" y="293" textAnchor="end" fill="currentColor" fontSize="12">CPU at 28 MHz</text>
+  <rect x="191" y="274" width="28" height="28" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
+  <text x="205.0" y="292" textAnchor="middle" fill="currentColor" fontSize="10">T</text>
+  <rect x="221" y="274" width="28" height="28" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
+  <rect x="251" y="274" width="28" height="28" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
+  <rect x="281" y="274" width="28" height="28" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
+  <rect x="311" y="274" width="28" height="28" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
+  <rect x="341" y="274" width="28" height="28" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
+  <rect x="371" y="274" width="28" height="28" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
+  <rect x="401" y="274" width="28" height="28" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
+  <rect x="431" y="274" width="28" height="28" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
+  <rect x="461" y="274" width="28" height="28" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
+  <rect x="491" y="274" width="28" height="28" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
+  <rect x="521" y="274" width="28" height="28" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
+  <rect x="551" y="274" width="28" height="28" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
+  <rect x="581" y="274" width="28" height="28" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
+  <rect x="611" y="274" width="28" height="28" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
+  <rect x="641" y="274" width="28" height="28" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
+  <text x="430" y="20" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.8">16 ticks of 35.7 ns = 4 dots = 0.57 µs</text>
+</svg>
+<figcaption>Four dots of the beam in ticks of the master clock, and how long a CPU T-state lasts at each speed. At 3.5 MHz, the Spectrum's speed, a T-state is two dots.</figcaption>
+</figure>
+
+What changes with the CPU speed is only how much a program can do in a line: 228 T-states in a 128K
+line at 3.5 MHz, 456 at 7 MHz, 912 at 14 MHz and 1,824 at 28 MHz. The beam does not care: it counts
+its 7 MHz dots whatever the CPU does.
+
+**Contention**, the ULA holding up the CPU when both want the screen memory, exists only at
+**3.5 MHz**, the speed the old programs were written for. It follows the pattern of the chosen timing,
+the 48K's, the 128K's or the +3's, and the Pentagon has none. At 7 MHz and above the CPU is never held
+up, and bit 6 of the Peripheral 3 Setting register, NextReg `$08`, switches contention off at 3.5 MHz too. How contention works is explained
+in [Part 5 of the Spectrum
+article](/en/under-the-hood/emulator-internals/spectrum-display/#part-5-sharing-the-memory); the Next
+reproduces it exactly.
+
+## Part 5: From counters to cables
+
+The video pipeline of the first article puts out a **9-bit colour** at 14 MHz, together with the
+blanking and the two sync signals. Its lines come at about 15.5 kHz (7 MHz divided by 448 or 456
+dots), the line rate of a European television. That is fine for a television, and much too slow for a
+computer monitor. The Next has three ways out.
+
+<figure>
+<svg viewBox="0 0 700 300" role="img" aria-label="The road from the video pipeline to the connectors. The pipeline puts out a 9-bit colour at 14 MHz with blanking and sync, in lines of about 15.5 kHz. Three outputs take it from there. With the scan doubler off, NextReg 05 bit 0 clear, it goes out as RGB at 15 kHz, as a television expects. With the scan doubler on, every line is sent twice at double speed for a VGA monitor at 31 kHz, with optional scanlines from NextReg 09. The HDMI output takes a 360 by 288 window, sends every line twice, and becomes 720 by 576 at about 50 Hz, or 720 by 480 at 60 Hz. VGA modes 0 to 6, NextReg 11, set the master clock from 28 to 33 MHz; HDMI works only in modes 0 and 1." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
+  <defs>
+    <marker id="tm7-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor" fillOpacity="0.6" />
+    </marker>
+  </defs>
+  <rect x="20" y="110" width="170" height="80" rx="6" fill="#e5484d" fillOpacity="0.08" stroke="#e5484d" />
+  <text x="105" y="136" textAnchor="middle" fill="currentColor" fontSize="12" fontWeight="600">video pipeline</text>
+  <text x="105" y="154" textAnchor="middle" fill="currentColor" fontSize="11">9-bit RGB at 14 MHz</text>
+  <text x="105" y="170" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.8">lines at ~15.5 kHz</text>
+  <rect x="300" y="28" width="260" height="64" rx="6" fill="currentColor" fillOpacity="0.05" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="314" y="48" fill="currentColor" fontSize="12" fontWeight="600">RGB, 15 kHz</text>
+  <text x="314" y="65" fill="currentColor" fontSize="11">scan doubler off (NextReg $05 bit 0 = 0)</text>
+  <text x="314" y="81" fill="currentColor" fontSize="11" fillOpacity="0.75">a television or a CRT monitor</text>
+  <line x1="190" y1="150" x2="298" y2="60" stroke="currentColor" strokeOpacity="0.6" markerEnd="url(#tm7-arrow)" />
+  <line x1="560" y1="60" x2="600" y2="60" stroke="currentColor" strokeOpacity="0.6" markerEnd="url(#tm7-arrow)" />
+  <rect x="602" y="48" width="12" height="24" rx="2" fill="currentColor" fillOpacity="0.35" />
+  <rect x="300" y="118" width="260" height="64" rx="6" fill="currentColor" fillOpacity="0.05" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="314" y="138" fill="currentColor" fontSize="12" fontWeight="600">scan doubler → VGA, 31 kHz</text>
+  <text x="314" y="155" fill="currentColor" fontSize="11">each line twice (NextReg $05 bit 0 = 1)</text>
+  <text x="314" y="171" fill="currentColor" fontSize="11" fillOpacity="0.75">scanlines: NextReg $09 bits 1–0</text>
+  <line x1="190" y1="150" x2="298" y2="150" stroke="currentColor" strokeOpacity="0.6" markerEnd="url(#tm7-arrow)" />
+  <line x1="560" y1="150" x2="600" y2="150" stroke="currentColor" strokeOpacity="0.6" markerEnd="url(#tm7-arrow)" />
+  <rect x="602" y="138" width="12" height="24" rx="2" fill="currentColor" fillOpacity="0.35" />
+  <rect x="300" y="208" width="260" height="64" rx="6" fill="currentColor" fillOpacity="0.05" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="314" y="228" fill="currentColor" fontSize="12" fontWeight="600">HDMI: 720 × 576 (720 × 480)</text>
+  <text x="314" y="245" fill="currentColor" fontSize="11">the 360 × 288 window, lines twice</text>
+  <text x="314" y="261" fill="currentColor" fontSize="11" fillOpacity="0.75">VGA modes 0 and 1 only</text>
+  <line x1="190" y1="150" x2="298" y2="240" stroke="currentColor" strokeOpacity="0.6" markerEnd="url(#tm7-arrow)" />
+  <line x1="560" y1="240" x2="600" y2="240" stroke="currentColor" strokeOpacity="0.6" markerEnd="url(#tm7-arrow)" />
+  <rect x="602" y="228" width="12" height="24" rx="2" fill="currentColor" fillOpacity="0.35" />
+  <text x="105" y="230" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.8">VGA modes 0–6 (NextReg $11):</text>
+  <text x="105" y="246" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.8">master clock 28–33 MHz</text>
+</svg>
+<figcaption>The three outputs. The video pipeline's picture is the same for all of them; what differs is how its lines are sent.</figcaption>
+</figure>
+
+### RGB at 15 kHz
+
+With the **scan doubler off**, that is with bit 0 of the Peripheral 1 Setting register, NextReg `$05`, clear, the picture leaves exactly as the counters
+time it: one line per line, 15.5 kHz, 50 frames a second. A television or an old monitor with an RGB
+(SCART) input shows it the way it showed a Spectrum.
+
+### The scan doubler and VGA
+
+A VGA monitor wants lines at least twice as fast, about 31 kHz. The **scan doubler** gets there
+without changing the frame. It writes each line into a line buffer as the pipeline makes it, at
+14 MHz, and reads it out **twice**, each time at 28 MHz, double speed. Two output lines fit into the
+time of one input line, so the monitor gets a 31 kHz picture with every line shown twice, one line
+behind the original.
+
+<figure>
+<svg viewBox="0 0 700 220" role="img" aria-label="Scan doubling over time. The input lines 1, 2 and 3 arrive one after the other, each taking one line time of about 65 microseconds. While line 2 is being written into the line buffer, line 1 is read out of it twice, each time at double speed, so two output lines fit into one input line time. The output runs one line behind the input, and its lines are half as long, at about 31 kHz instead of 15.5 kHz. With scanlines on, the second copy of each line is darkened." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
+  <defs>
+    <marker id="tm8-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor" fillOpacity="0.6" />
+    </marker>
+  </defs>
+  <text x="138" y="62" textAnchor="end" fill="currentColor" fontSize="12">in, 15 kHz</text>
+  <text x="138" y="140" textAnchor="end" fill="currentColor" fontSize="12">out, 31 kHz</text>
+  <rect x="151" y="44" width="168" height="30" rx="4" fill="#3b82f6" fillOpacity="0.12" stroke="#3b82f6" />
+  <text x="235.0" y="64" textAnchor="middle" fill="currentColor" fontSize="12">line 1</text>
+  <rect x="321" y="44" width="168" height="30" rx="4" fill="#3b82f6" fillOpacity="0.2" stroke="#3b82f6" />
+  <text x="405.0" y="64" textAnchor="middle" fill="currentColor" fontSize="12">line 2</text>
+  <rect x="491" y="44" width="168" height="30" rx="4" fill="#3b82f6" fillOpacity="0.28" stroke="#3b82f6" />
+  <text x="575.0" y="64" textAnchor="middle" fill="currentColor" fontSize="12">line 3</text>
+  <rect x="321.0" y="122" width="83.0" height="30" rx="4" fill="#3b82f6" fillOpacity="0.12" stroke="#3b82f6" />
+  <text x="362.5" y="142" textAnchor="middle" fill="currentColor" fontSize="11">line 1</text>
+  <rect x="406.0" y="122" width="83.0" height="30" rx="4" fill="#3b82f6" fillOpacity="0.06" stroke="#3b82f6" strokeDasharray="4 3" />
+  <text x="447.5" y="142" textAnchor="middle" fill="currentColor" fontSize="11">line 1</text>
+  <rect x="491.0" y="122" width="83.0" height="30" rx="4" fill="#3b82f6" fillOpacity="0.20" stroke="#3b82f6" />
+  <text x="532.5" y="142" textAnchor="middle" fill="currentColor" fontSize="11">line 2</text>
+  <rect x="576.0" y="122" width="83.0" height="30" rx="4" fill="#3b82f6" fillOpacity="0.10" stroke="#3b82f6" strokeDasharray="4 3" />
+  <text x="617.5" y="142" textAnchor="middle" fill="currentColor" fontSize="11">line 2</text>
+  <line x1="235.0" y1="76" x2="362.5" y2="120" stroke="currentColor" strokeOpacity="0.6" markerEnd="url(#tm8-arrow)" />
+  <line x1="235.0" y1="76" x2="447.5" y2="120" stroke="currentColor" strokeOpacity="0.6" markerEnd="url(#tm8-arrow)" />
+  <path d="M152,166 v6 H318 v-6" fill="none" stroke="currentColor" strokeOpacity="0.6" />
+  <text x="235.0" y="188" textAnchor="middle" fill="currentColor" fontSize="11">one line time, ~65 µs</text>
+  <text x="405.0" y="188" textAnchor="middle" fill="currentColor" fontSize="11">written once, read twice</text>
+  <text x="405.0" y="204" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.75">the dashed copy is the one scanlines darken</text>
+  <text x="475.0" y="30" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.8">time →</text>
+</svg>
+<figcaption>Scan doubling: each input line is written once and read out twice at double speed, while the next line is being written.</figcaption>
+</figure>
+
+Twice as many lines, each repeated, look smoother than a television ever did. For those who miss the
+dark gaps between the lines of a CRT, bits 1–0 of the Peripheral 4 Setting register, NextReg `$09`, darken one of each pair of lines by
+50%, 25% or 12.5%: **scanlines**.
+
+Some monitors refuse the Next's 50 Hz frame. For them there are seven **VGA modes**, chosen in the Video Timing register, NextReg `$11`: modes 0 to 6 set the master clock from 28 MHz in steps up to 33 MHz. Everything is
+timed by that clock, so everything speeds up together, the CPU, the beam, the frame rate, by up to
+18%, until the monitor accepts it.
+
+### HDMI
+
+HDMI does not accept a television's timing at all: it carries fixed television standards, and the
+Next uses two, **720 × 576 at 50 Hz** and **720 × 480 at 60 Hz**. The Next fits its picture into them
+without changing the frame. It takes a **window** of 360 × 288 dots around the wide area, 720 pixels of
+14 MHz across, and sends every line twice: 576 lines. (At 60 Hz the window is 360 × 240 and the lines
+become 480.)
+
+The pixels pass through a small buffer of 8,192 pixels, about eleven lines, which is written at
+14 MHz and read at the HDMI pixel clock. And here is the trick that keeps it small: the HDMI clock is
+not a free-running 27 MHz. It is **made from the Next's own 28 MHz clock**, with a ratio chosen for
+each timing and frame rate, so that one HDMI frame lasts exactly as long as one Next frame. The two
+never drift apart, and the buffer never fills or runs dry. The price is a frame rate a little away
+from the standard one, the Next's own 49.36 Hz in 128K timing, which monitors accept. HDMI works in
+VGA modes 0 and 1 only; the higher modes switch it off.
+
+<figure>
+<svg viewBox="0 0 700 250" role="img" aria-label="The HDMI path. From the Next's frame, a window of 360 by 288 dots is taken: 720 pixels of 14 MHz across and 288 lines. The pixels are written into a buffer of 8,192 pixels, about eleven lines, at 14 MHz, and read out at the HDMI clock, each line twice, giving 720 by 576 pixels. The HDMI clock, about 27 MHz, is made from the Next's own 28 MHz clock with a ratio chosen for each timing, so that one HDMI frame takes exactly as long as one Next frame and the two never drift apart." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
+  <defs>
+    <marker id="tm9-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor" fillOpacity="0.6" />
+    </marker>
+  </defs>
+  <rect x="20" y="40" width="164.2" height="112.0" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.5" />
+  <rect x="20" y="40" width="34.6" height="112.0" fill="currentColor" fillOpacity="0.16" />
+  <rect x="54.6" y="40" width="129.6" height="2.9" fill="currentColor" fillOpacity="0.16" />
+  <rect x="25.8" y="40" width="11.5" height="112.0" fill="currentColor" fillOpacity="0.3" />
+  <rect x="20" y="40.4" width="164.2" height="1.4" fill="currentColor" fillOpacity="0.3" />
+  <rect x="57.4" y="51.5" width="115.2" height="92.2" fill="none" stroke="currentColor" strokeOpacity="0.7" strokeDasharray="5 4" />
+  <rect x="69.0" y="63.0" width="92.2" height="69.1" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" strokeWidth="1.2" />
+  <rect x="51.7" y="45.8" width="129.6" height="103.7" fill="none" stroke="#e5484d" strokeWidth="1.5" strokeDasharray="5 3" />
+  <text x="102" y="28" textAnchor="middle" fill="currentColor" fontSize="12" fontWeight="600">the Next's frame</text>
+  <text x="102" y="174" textAnchor="middle" fill="#e5484d" fontSize="11">a 360 × 288 window</text>
+  <text x="102" y="190" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.8">720 × 288 pixels of 14 MHz</text>
+  <rect x="250" y="70" width="170" height="70" rx="6" fill="currentColor" fillOpacity="0.05" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="335" y="94" textAnchor="middle" fill="currentColor" fontSize="12" fontWeight="600">pixel buffer</text>
+  <text x="335" y="111" textAnchor="middle" fill="currentColor" fontSize="11">8,192 pixels: ~11 lines</text>
+  <text x="335" y="127" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.75">in at 14 MHz, out at ~27</text>
+  <line x1="190" y1="105" x2="248" y2="105" stroke="currentColor" strokeOpacity="0.6" markerEnd="url(#tm9-arrow)" />
+  <line x1="420" y1="105" x2="478" y2="105" stroke="currentColor" strokeOpacity="0.6" markerEnd="url(#tm9-arrow)" />
+  <rect x="480" y="50" width="200" height="110" rx="4" fill="currentColor" fillOpacity="0.05" stroke="currentColor" strokeOpacity="0.45" />
+  <rect x="490" y="60" width="180" height="9" fill="#3b82f6" fillOpacity="0.3" />
+  <rect x="490" y="71" width="180" height="9" fill="#3b82f6" fillOpacity="0.18" />
+  <rect x="490" y="82" width="180" height="9" fill="#3b82f6" fillOpacity="0.3" />
+  <rect x="490" y="93" width="180" height="9" fill="#3b82f6" fillOpacity="0.18" />
+  <rect x="490" y="104" width="180" height="9" fill="#3b82f6" fillOpacity="0.3" />
+  <rect x="490" y="115" width="180" height="9" fill="#3b82f6" fillOpacity="0.18" />
+  <rect x="490" y="126" width="180" height="9" fill="#3b82f6" fillOpacity="0.3" />
+  <rect x="490" y="137" width="180" height="9" fill="#3b82f6" fillOpacity="0.18" />
+  <text x="580" y="180" textAnchor="middle" fill="currentColor" fontSize="12" fontWeight="600">720 × 576, every line twice</text>
+  <text x="580" y="196" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.8">(720 × 480 at 60 Hz)</text>
+  <rect x="250" y="190" width="170" height="44" rx="6" fill="currentColor" fillOpacity="0.05" stroke="currentColor" strokeOpacity="0.45" strokeDasharray="4 3" />
+  <text x="335" y="208" textAnchor="middle" fill="currentColor" fontSize="11">HDMI clock: made from</text>
+  <text x="335" y="224" textAnchor="middle" fill="currentColor" fontSize="11">28 MHz, set per timing</text>
+  <line x1="335" y1="190" x2="335" y2="142" stroke="currentColor" strokeOpacity="0.5" strokeDasharray="3 3" markerEnd="url(#tm9-arrow)" />
+</svg>
+<figcaption>The HDMI path: a 360 × 288 window of the Next's frame, a small buffer, and every line sent twice. The HDMI clock is made from the Next's clock, so one HDMI frame lasts exactly one Next frame.</figcaption>
+</figure>
+
+HDMI also carries 8 bits per colour channel, not 3. The Next makes 8 from 3 by repeating them:
+level 5, `101`, becomes `10110110`. [The palette article](/en/under-the-hood/emulator-internals/next-display/palettes/#part-7-from-palette-to-screen) of the series comes back to this.
+
+## Part 6: How Klive does it
+
+### Counting in ticks
+
+Klive's Next core counts time the way the machine does: in **ticks of the 28 MHz clock**. A frame is
+the dots of a line, times the lines of the frame, times four ticks: 567,264 ticks in 128K timing. Each
+CPU T-state moves the count on by as many ticks as it lasts at the current speed, eight at 3.5 MHz,
+one at 28 MHz, and the beam's position is the count divided by four. Contention, the line interrupt,
+the Copper and the raster of the first article all read this one count.
+
+### The timing of each frame
+
+At the start of every frame, `zxnextTimingSelect` reads the timing from the Machine Type register, NextReg `$03`, and the frame rate from the Peripheral 1 Setting register, NextReg `$05`, as the machine does at the end of the previous frame, and sets the frame's numbers: the
+dots of a line and the lines of the frame, where the display area starts, where and for how many
+cycles the frame interrupt is raised, and which contention pattern applies. A timing change made in
+the middle of a frame waits for the next one, as on the machine.
+
+### The picture window
+
+The picture Klive shows is the **360 × 288** window that HDMI shows, stored as 720 × 288 pixels, one for
+each 14 MHz half dot. At 60 Hz the frame ends after line 263, so the window's last 40 rows have no
+frame to show and stay black, as the 60 Hz picture of Part 2 shows. What the real machine does after
+the pipeline, the scan doubler, scanlines, the HDMI buffer, is not emulated: Klive's picture is the
+pipeline's own output.
+
+### Where to read the code
+
+| What | Where |
+|---|---|
+| The frame numbers of each timing, chosen at every frame start (`zxnextTimingSelect`) | `src/emu/machines/zxNext/wasm/zxnext/zxnext-nextreg.c` |
+| The timing variables, the picture buffer's size, ticks per frame | `zxnext.c` in the same folder |
+| The frame loop and the tick count | `zxnext-frame.c`, `zxnext-cpu.c` |
+| The frame interrupt and the interrupt status registers | `zxnext-interrupts.c` |
+| The line interrupt, with the line counter it shares with the Copper | `zxnext-copper.c` |
+
+## Summary
+
+- Two counters time the whole picture: one counts the **7 MHz dots** of a line, the other the **lines**
+  of a frame. Blanking, sync, the display area, the wide area and the interrupts are all ranges or
+  moments of their values.
+- The Next has the frames of four machines, **48K** (448 × 312), **128K/+2** and **+3** (456 × 311) and
+  **Pentagon** (448 × 320), chosen by NextReg `$03` and taken only at the end of a frame. Programs that
+  count T-states find exactly the frame they were written for.
+- **60 Hz** (NextReg `$05` bit 2) shortens the frame to 264 lines; the wide area then fills every visible line.
+- At exactly 7 MHz dots, the frames run at **50.08, 49.36 and 48.83 Hz**: the 128K's frame is 1.3% slower
+  than on the original, with the same T-states.
+- The **frame interrupt** comes where the originals had it; the **line interrupt** (NextRegs `$22` and `$23`) comes
+  just before a chosen line, numbered from the first line of the display area. An offset of 32 in
+  NextReg `$64` numbers the lines from the top of the wide area instead, the rows of the 320 × 256
+  layers.
+- One **28 MHz** clock ticks four times per dot and drives the CPU at 3.5, 7, 14 or 28 MHz. Contention
+  exists only at 3.5 MHz.
+- The picture leaves as **RGB at 15 kHz**, through the **scan doubler** as VGA at 31 kHz, or as **HDMI**
+  720 × 576, a 360 × 288 window with every line twice, on a clock made from the Next's own so that the
+  frames never drift.
+- Klive counts the same frame in **28 MHz ticks**, chooses each frame's timing at its start, and shows
+  the window HDMI shows.a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$L10",null,{"value":[{"value":"How this article is organised","id":"how-this-article-is-organised","depth":3},{"value":"Part 1: Two counters","id":"part-1-two-counters","depth":2},{"value":"Three numbers that make it fit","id":"three-numbers-that-make-it-fit","depth":3},{"value":"Counters that start early","id":"counters-that-start-early","depth":3},{"value":"Part 2: Four timings, two frame rates","id":"part-2-four-timings-two-frame-rates","depth":2},{"value":"60 Hz","id":"60-hz","depth":3},{"value":"Part 3: Interrupts","id":"part-3-interrupts","depth":2},{"value":"The frame interrupt","id":"the-frame-interrupt","depth":3},{"value":"The line interrupt","id":"the-line-interrupt","depth":3},{"value":"Line numbers for the wide area","id":"line-numbers-for-the-wide-area","depth":3},{"value":"Part 4: Dots, ticks and T-states","id":"part-4-dots-ticks-and-t-states","depth":2},{"value":"Part 5: From counters to cables","id":"part-5-from-counters-to-cables","depth":2},{"value":"RGB at 15 kHz","id":"rgb-at-15-khz","depth":3},{"value":"The scan doubler and VGA","id":"the-scan-doubler-and-vga","depth":3},{"value":"HDMI","id":"hdmi","depth":3},{"value":"Part 6: How Klive does it","id":"part-6-how-klive-does-it","depth":2},{"value":"Counting in ticks","id":"counting-in-ticks","depth":3},{"value":"The timing of each frame","id":"the-timing-of-each-frame","depth":3},{"value":"The picture window","id":"the-picture-window","depth":3},{"value":"Where to read the code","id":"where-to-read-the-code","depth":3},{"value":"Summary","id":"summary","depth":2}],"children":[["$","$L11",null,{}],["$","$L12",null,{"metadata":{"description":"How the ZX Spectrum Next counts its picture: the two counters that every part of the screen is timed against, the four display timings that copy the 48K, the 128K, the +3 and the Pentagon, 50 and 60 Hz, the frame and line interrupts, how dots, clock ticks and CPU T-states relate at every CPU speed, and how the picture leaves the machine as RGB, VGA through the scan doubler, or HDMI.","title":"ZX Spectrum Next: The Frame and the Beam","filePath":"content/en/under-the-hood/emulator-internals/next-display/timing.mdx","timestamp":1792315833000},"sourceCode":"$13","children":["$L14","$L15"]}]]}]}],null,"$L16"]}],"p":"$@17","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"under-the-hood/emulator-internals/next-display/timing","s":["z88-user-guide"]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L19",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1b",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1c",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"ZX Spectrum Next: The Frame and the Beam - Klive IDE"}],["$","meta","1",{"name":"description","content":"How the ZX Spectrum Next counts its picture: the two counters that every part of the screen is timed against, the four display timings that copy the 48K, the 128K, the +3 and the Pentagon, 50 and 60 Hz, the frame and line interrupts, how dots, clock ticks and CPU T-states relate at every CPU speed, and how the picture leaves the machine as RGB, VGA through the scan doubler, or HDMI."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/under-the-hood/emulator-internals/next-display/timing/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1d","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1e","v":null,"s":"$9"}},"a":"$@1f","u":"$@20","b":"KU66RqaS4NZfaqAn8ySo3"}
+21:I[8500,["545","$b","500","$c","436","$d","729","$e","25","$f"],""]
+22:I[721,["545","$b","500","$c","436","$d","729","$e","25","$f"],"HeadingAnchor"]
+6d:I[484,[],"OutletBoundary"]
+14:["$","div",null,{"id":"nextra-skip-nav"}]
+15:["$","main",null,{"data-pagefind-body":true,"children":[false,[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["ZX Spectrum Next: The Frame and the Beam","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A 48K game that changes the border colour at an exact T-state, to draw stripes that line up with the\npicture, works on the Next. So does a 128K demo that does the same on a frame of a different shape,\nand a Pentagon demo on a third. And the same machine sends a sharp picture to a modern monitor over\nHDMI, a standard that was written decades after any of them."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["All of it rests on ",["$","strong",null,{"children":"two counters"}],". One counts the dots of a line, the other the lines of a frame.\nEvery event of the picture, the blanking, the sync pulses, the display area, the interrupts, is a\nmoment at which these counters reach a certain value. Change a handful of those values and the\nNext becomes a different machine. This article is about the counters: what they count, the shapes\nof frame they can make, and how the picture they time leaves the machine."]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["This is the second article of the series. It builds on\n",["$","$L21",null,{"href":"/en/under-the-hood/emulator-internals/next-display/overview/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"the first"}],", and on\n",["$","$L21",null,{"href":"/en/under-the-hood/emulator-internals/spectrum-display/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"ZX Spectrum: How the Screen Is Drawn"}],",\nwhose Part 1 explains the original 48K frame. ",["$","$L21",null,{"href":"/en/under-the-hood/emulator-internals/crt-display/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"How a Television Draws a\nPicture"}]," explains the beam, blanking and sync."]}],"\n",["$","h3",null,{"id":"how-this-article-is-organised","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["How this article is organised",["$","$L22",null,{"id":"how-this-article-is-organised"}]]}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Two counters"}]," (",["$","a",null,{"href":"#part-1-two-counters","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Part 1"}],"): what they count, and how every part of the\nframe is a range of their values. If you read only one part, read this one."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Four timings, two frame rates"}]," (",["$","a",null,{"href":"#part-2-four-timings-two-frame-rates","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Part 2"}],"): the 48K, the\n128K, the +3 and the Pentagon, and what 60 Hz does to each."]}],"\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n"]}],"\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41","\n","$L42","\n","$L43","\n","$L44","\n","$L45","\n","$L46","\n","$L47","\n","$L48","\n","$L49","\n","$L4a","\n","$L4b","\n","$L4c","\n","$L4d","\n","$L4e","\n","$L4f","\n","$L50","\n","$L51","\n","$L52","\n","$L53","\n","$L54","\n","$L55","\n","$L56","\n","$L57","\n","$L58","\n","$L59","\n","$L5a","\n","$L5b","\n","$L5c","\n","$L5d","\n","$L5e","\n","$L5f","\n","$L60","\n","$L61","\n","$L62","\n","$L63","\n","$L64","\n","$L65","\n","$L66","\n","$L67","\n","$L68","\n","$L69","\n","$L6a","\n","$L6b","\n","$L6c"]]}]
+16:["$","$L6d",null,{"children":["$","$1c",null,{"name":"Next.MetadataOutlet","children":"$@6e"}]}]
+20:true
+9:300
+23:["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Interrupts"}]," (",["$","a",null,{"href":"#part-3-interrupts","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Part 3"}],"): the frame interrupt, the line interrupt, and how\nlines are numbered, for the display area and for the wide area."]}]
+24:["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Dots, ticks and T-states"}]," (",["$","a",null,{"href":"#part-4-dots-ticks-and-t-states","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Part 4"}],"): one clock for the\npicture and the CPU, at every CPU speed."]}]
+25:["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"From counters to cables"}]," (",["$","a",null,{"href":"#part-5-from-counters-to-cables","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Part 5"}],"): RGB, the scan doubler\nand VGA, and HDMI."]}]
+26:["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"The emulator"}]," (",["$","a",null,{"href":"#part-6-how-klive-does-it","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Part 6"}],"): how Klive counts the same frame."]}]
+27:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":["$","svg",null,{"viewBox":"0 0 16 16","fill":"currentColor","height":".8em","className":"x:mt-[.3em]","children":["$","path",null,{"d":"M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"}]}]}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The figures use the ",["$","strong",null,{"children":"128K/+3 timing at 50 Hz"}]," unless they say otherwise, and the frame rates are\nthose of the master clock at exactly 28 MHz (VGA mode 0, or HDMI). Klive emulates every timing of\nthis article."]}]}]]}]
+28:["$","h2",null,{"id":"part-1-two-counters","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Part 1: Two counters",["$","$L22",null,{"id":"part-1-two-counters"}]]}]
+29:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The beam’s position is held in two counters. The ",["$","strong",null,{"children":"horizontal counter"}]," counts the dots of a line at\n7 MHz, one step per dot, from 0 at the start of the line’s blanking to the last dot of the line, 455\nin 128K timing, and then starts again. Each time it starts again, the ",["$","strong",null,{"children":"vertical counter"}]," counts one\nmore line, from 0 to the last line of the frame, 310, and then the frame starts again."]}]
+2a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["That is all the timing there is. Everything else is a ",["$","strong",null,{"children":"comparison"}]," with these two numbers:"]}]
+2b:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Blanking"}],": dots 0 to 95 of every line, and lines 0 to 7 of every frame. Nothing is shown there;\nthe beam returns."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Sync"}],": the horizontal sync pulse on dots 16 to 47, the vertical one on lines 1 to 4, inside the\nblanking, where a monitor looks for them."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"The display area"}],": dots 136 to 391, lines 64 to 255, the Spectrum’s 256 × 192."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"The wide area"}],": dots 104 to 423, lines 32 to 287, the 320 × 256 of Layer 2’s wide modes, the\ntilemap and the sprites."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"The border"}],": everything else that is not blanked."]}],"\n"]}]
+2c:["$","figure",null,{"children":[["$","svg",null,{"viewBox":"0 0 700 410","role":"img","aria-label":"The Next frame in 128K timing at 50 Hz, drawn to scale: 456 dots across by 311 lines. The horizontal counter runs from 0 to 455: dots 0 to 95 are blanking, with the horizontal sync from 16 to 47; the display area runs from dot 136 to 391, and the wide area from 104 to 423. The vertical counter runs from 0 to 310: lines 0 to 7 are blanking, with the vertical sync on lines 1 to 4; the display area runs from line 64 to 255, and the wide area from line 32 to 287. The frame interrupt is raised on line 1, at dot 128.","style":{"width":"100%","maxWidth":"700px","height":"auto"},"children":[["$","rect",null,{"x":"64","y":"54","width":"456.0","height":"311.0","fill":"currentColor","fillOpacity":"0.06","stroke":"currentColor","strokeOpacity":"0.5"}],["$","rect",null,{"x":"64","y":"54","width":"96.0","height":"311.0","fill":"currentColor","fillOpacity":"0.16"}],["$","rect",null,{"x":"160.0","y":"54","width":"360.0","height":"8.0","fill":"currentColor","fillOpacity":"0.16"}],["$","rect",null,{"x":"80.0","y":"54","width":"32.0","height":"311.0","fill":"currentColor","fillOpacity":"0.3"}],["$","rect",null,{"x":"64","y":"55.0","width":"456.0","height":"4.0","fill":"currentColor","fillOpacity":"0.3"}],["$","rect",null,{"x":"168.0","y":"86.0","width":"320.0","height":"256.0","fill":"none","stroke":"currentColor","strokeOpacity":"0.7","strokeDasharray":"5 4"}],["$","rect",null,{"x":"200.0","y":"118.0","width":"256.0","height":"192.0","fill":"#3b82f6","fillOpacity":"0.25","stroke":"#3b82f6","strokeWidth":"1.2"}],["$","circle",null,{"cx":"192.0","cy":"55.5","r":"4","fill":"#e5484d"}],["$","line",null,{"x1":"64","y1":"48","x2":"64","y2":"54","stroke":"currentColor","strokeOpacity":"0.6"}],["$","text",null,{"x":"64","y":"44","textAnchor":"middle","fill":"currentColor","fontSize":"10","fillOpacity":"0.8","children":"0"}],["$","line",null,{"x1":"160","y1":"48","x2":"160","y2":"54","stroke":"currentColor","strokeOpacity":"0.6"}],["$","text",null,{"x":"160","y":"44","textAnchor":"middle","fill":"currentColor","fontSize":"10","fillOpacity":"0.8","children":"96"}],["$","line",null,{"x1":"200","y1":"48","x2":"200","y2":"54","stroke":"currentColor","strokeOpacity":"0.6"}],["$","text",null,{"x":"200","y":"44","textAnchor":"middle","fill":"currentColor","fontSize":"10","fillOpacity":"0.8","children":"136"}],["$","line",null,{"x1":"456","y1":"48","x2":"456","y2":"54","stroke":"currentColor","strokeOpacity":"0.6"}],["$","text",null,{"x":"456","y":"44","textAnchor":"middle","fill":"currentColor","fontSize":"10","fillOpacity":"0.8","children":"392"}],["$","text",null,{"x":"519","y":"44","textAnchor":"middle","fill":"currentColor","fontSize":"10","fillOpacity":"0.8","children":"455"}],["$","text",null,{"x":"292","y":"22","textAnchor":"middle","fill":"currentColor","fontSize":"12","children":"horizontal counter: dots of one line"}],["$","line",null,{"x1":"58","y1":"62","x2":"64","y2":"62","stroke":"currentColor","strokeOpacity":"0.6"}],["$","text",null,{"x":"55","y":"66","textAnchor":"end","fill":"currentColor","fontSize":"10","fillOpacity":"0.8","children":"8"}],["$","line",null,{"x1":"58","y1":"118","x2":"64","y2":"118","stroke":"currentColor","strokeOpacity":"0.6"}],["$","text",null,{"x":"55","y":"122","textAnchor":"end","fill":"currentColor","fontSize":"10","fillOpacity":"0.8","children":"64"}],["$","line",null,{"x1":"58","y1":"310","x2":"64","y2":"310","stroke":"currentColor","strokeOpacity":"0.6"}],["$","text",null,{"x":"55","y":"314","textAnchor":"end","fill":"currentColor","fontSize":"10","fillOpacity":"0.8","children":"256"}],["$","text",null,{"x":"55","y":"368","textAnchor":"end","fill":"currentColor","fontSize":"10","fillOpacity":"0.8","children":"310"}],["$","text",null,{"x":"16","y":"214","textAnchor":"middle","fill":"currentColor","fontSize":"12","transform":"rotate(-90 16 210)","children":"vertical counter: lines"}],["$","text",null,{"x":"112","y":"254","textAnchor":"middle","fill":"currentColor","fontSize":"11","children":"blanking"}],["$","text",null,{"x":"96","y":"294","textAnchor":"middle","fill":"currentColor","fontSize":"10","fillOpacity":"0.85","transform":"rotate(-90 96 290)","children":"HSYNC"}],["$","text",null,{"x":"328","y":"210","textAnchor":"middle","fill":"currentColor","fontSize":"13","fontWeight":"600","children":"display area"}],["$","text",null,{"x":"328","y":"228","textAnchor":"middle","fill":"currentColor","fontSize":"11","children":"dots 136–391, lines 64–255"}],["$","text",null,{"x":"328","y":"102","textAnchor":"middle","fill":"currentColor","fontSize":"11","children":"wide area: dots 104–423, lines 32–287"}],["$","text",null,{"x":"504","y":"354","textAnchor":"end","fill":"currentColor","fontSize":"11","fillOpacity":"0.8","children":"border"}],["$","line",null,{"x1":"196","y1":"55","x2":"244","y2":"76","stroke":"#e5484d","strokeWidth":"1.2"}],"$L6f","$L70","$L71","$L72","$L73","$L74","$L75"]}],"$L76"]}]
+2d:["$","h3",null,{"id":"three-numbers-that-make-it-fit","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Three numbers that make it fit",["$","$L22",null,{"id":"three-numbers-that-make-it-fit"}]]}]
+2e:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"7 MHz dots."}]," One step of the horizontal counter is one dot of the 256-wide picture, and half a\nT-state of a 3.5 MHz CPU, exactly as on the Spectrum."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"456 dots a line"}],", 228 T-states: the 128K’s line. A 48K line is 448 dots, 224 T-states."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"311 lines a frame"}],": 456 × 311 = 141,816 dots, 70,908 T-states. The 48K’s frame is 312 lines,\n69,888 T-states."]}],"\n"]}]
+2f:["$","figure",null,{"children":[["$","svg",null,{"viewBox":"0 0 700 250","role":"img","aria-label":"The two counters of the 128K timing at 50 Hz, as strips. The horizontal counter counts 456 dots, 0 to 455: blanking from 0 to 95 with the sync pulse from 16 to 47, the left border from 96 to 135, the display area from 136 to 391, the right border from 392 to 455; the wide area spans 104 to 423. Then it starts again at 0. The vertical counter counts 311 lines, 0 to 310: blanking on lines 0 to 7 with the sync pulse on lines 1 to 4, the top border to line 63, the display area from 64 to 255, the bottom border from 256 to 310; the wide area spans lines 32 to 287. The frame interrupt is on line 1.","style":{"width":"100%","maxWidth":"700px","height":"auto"},"children":[["$","text",null,{"x":"20","y":"26","fill":"currentColor","fontSize":"12","fontWeight":"600","children":"horizontal counter (dots)"}],["$","rect",null,{"x":"60.0","y":"52","width":"20.8","height":"26","fill":"currentColor","fillOpacity":"0.16","stroke":"currentColor","strokeOpacity":"0.45"}],["$","rect",null,{"x":"80.8","y":"52","width":"41.6","height":"26","fill":"currentColor","fillOpacity":"0.3","stroke":"currentColor","strokeOpacity":"0.45"}],["$","text",null,{"x":"101.6","y":"69","textAnchor":"middle","fill":"currentColor","fontSize":"10","children":"sync"}],["$","rect",null,{"x":"122.4","y":"52","width":"62.4","height":"26","fill":"currentColor","fillOpacity":"0.16","stroke":"currentColor","strokeOpacity":"0.45"}],["$","text",null,{"x":"153.6","y":"69","textAnchor":"middle","fill":"currentColor","fontSize":"10","children":"blank"}],["$","rect",null,{"x":"184.8","y":"52","width":"52.0","height":"26","fill":"currentColor","fillOpacity":"0.06","stroke":"currentColor","strokeOpacity":"0.45"}],["$","rect",null,{"x":"236.8","y":"52","width":"332.8","height":"26","fill":"#3b82f6","fillOpacity":"0.25","stroke":"#3b82f6"}],["$","text",null,{"x":"403.2","y":"69","textAnchor":"middle","fill":"currentColor","fontSize":"10","children":"display area"}],["$","rect",null,{"x":"569.6","y":"52","width":"83.2","height":"26","fill":"currentColor","fillOpacity":"0.06","stroke":"currentColor","strokeOpacity":"0.45"}],["$","text",null,{"x":"611.2","y":"69","textAnchor":"middle","fill":"currentColor","fontSize":"10","children":"border"}],["$","path",null,{"d":"M195.2,48 v-6 H611.2 v6","fill":"none","stroke":"currentColor","strokeOpacity":"0.7","strokeDasharray":"4 3"}],["$","text",null,{"x":"403.2","y":"39","textAnchor":"middle","fill":"currentColor","fontSize":"10","fillOpacity":"0.85","children":"wide area 104–423"}],["$","line",null,{"x1":"60.0","y1":"78","x2":"60.0","y2":"84","stroke":"currentColor","strokeOpacity":"0.6"}],["$","text",null,{"x":"60.0","y":"95","textAnchor":"middle","fill":"currentColor","fontSize":"10","fillOpacity":"0.8","children":"0"}],["$","line",null,{"x1":"184.8","y1":"78","x2":"184.8","y2":"84","stroke":"currentColor","strokeOpacity":"0.6"}],["$","text",null,{"x":"184.8","y":"95","textAnchor":"middle","fill":"currentColor","fontSize":"10","fillOpacity":"0.8","children":"96"}],["$","line",null,{"x1":"236.8","y1":"78","x2":"236.8","y2":"84","stroke":"currentColor","strokeOpacity":"0.6"}],["$","text",null,{"x":"236.8","y":"95","textAnchor":"middle","fill":"currentColor","fontSize":"10","fillOpacity":"0.8","children":"136"}],["$","line",null,{"x1":"569.6","y1":"78","x2":"569.6","y2":"84","stroke":"currentColor","strokeOpacity":"0.6"}],["$","text",null,{"x":"569.6","y":"95","textAnchor":"middle","fill":"currentColor","fontSize":"10","fillOpacity":"0.8","children":"392"}],["$","line",null,{"x1":"651.5","y1":"78","x2":"651.5","y2":"84","stroke":"currentColor","strokeOpacity":"0.6"}],["$","text",null,{"x":"651.5","y":"95","textAnchor":"middle","fill":"currentColor","fontSize":"10","fillOpacity":"0.8","children":"455"}],["$","text",null,{"x":"658.8","y":"69","fill":"currentColor","fontSize":"10","fillOpacity":"0.8","children":"→ 0"}],["$","text",null,{"x":"20","y":"144","fill":"currentColor","fontSize":"12","fontWeight":"600","children":"vertical counter (lines)"}],["$","rect",null,{"x":"60.0","y":"170","width":"1.9","height":"26","fill":"currentColor","fillOpacity":"0.16","stroke":"currentColor","strokeOpacity":"0.45"}],["$","rect",null,{"x":"61.9","y":"170","width":"7.5","height":"26","fill":"currentColor","fillOpacity":"0.3","stroke":"currentColor","strokeOpacity":"0.45"}],["$","rect",null,{"x":"69.4","y":"170","width":"5.6","height":"26","fill":"currentColor","fillOpacity":"0.16","stroke":"currentColor","strokeOpacity":"0.45"}],["$","rect",null,{"x":"75.0","y":"170","width":"105.3","height":"26","fill":"currentColor","fillOpacity":"0.06","stroke":"currentColor","strokeOpacity":"0.45"}],["$","text",null,{"x":"127.7","y":"187","textAnchor":"middle","fill":"currentColor","fontSize":"10","children":"top border"}],"$L77","$L78","$L79","$L7a","$L7b","$L7c","$L7d","$L7e","$L7f","$L80","$L81","$L82","$L83","$L84","$L85","$L86","$L87","$L88","$L89"]}],"$L8a"]}]
+30:["$","h3",null,{"id":"counters-that-start-early","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Counters that start early",["$","$L22",null,{"id":"counters-that-start-early"}]]}]
+31:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The producers of the picture do not simply wait for the beam. A dot has to be fetched from memory and\nlooked up in a palette before it can be shown, so each producer works a little ahead of the beam,\nwith counters of its own that start before the area they draw. The ULA’s counter starts 12 dots\nbefore the display area, the counter of the wide area 16 dots before it and 2 lines above it. The\npicture still appears exactly where the main counters say: the head start is used up by the work."}]
+32:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A program can change the timing at any moment, but the counters take a new timing only ",["$","strong",null,{"children":"at the end\nof a frame"}],", when both of them go back to 0. A frame is never half one shape and half another."]}]
+33:["$","h2",null,{"id":"part-2-four-timings-two-frame-rates","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Part 2: Four timings, two frame rates",["$","$L22",null,{"id":"part-2-four-timings-two-frame-rates"}]]}]
+34:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The Next can count four shapes of frame. Bits 6–4 of the Machine Type register, NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$03"}],", choose one (with bit 7 set to allow\nthe change), and the machine type the Next starts with chooses it at power-on:"]}]
+35:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"Timing","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Dots a line","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"T-states a line at 3.5 MHz","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Lines (50 Hz)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"T-states a frame","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Display area from line","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Frame rate at 28 MHz","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":"48K","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"448","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"224","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"312","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"69,888","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"64","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"50.08 Hz","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"128K/+2","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"456","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"228","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"311","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"70,908","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"64","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"49.36 Hz","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"+2A/+2B/+3","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"456","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"228","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"311","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"70,908","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],"$L8b","$L8c"],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],"$L8d"]}]]}]
+36:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Why copy them so exactly? Because the shape of the frame is a ",["$","strong",null,{"children":"contract"}]," with the programs. A\nprogram that changes the border at a counted T-state, or rewrites an attribute just before the beam\nreaches it, is written for one frame. Give it a frame one line longer and its stripes drift. So the\nNext does not have one frame that is “close enough”: it has the frame of each machine, to the dot."]}]
+37:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The 128K and the +3 share a frame. What differs is small but real: the +3’s frame interrupt comes one\nT-state earlier, and the two machines hold up the CPU in different memory banks and in a different\npattern (Part 4). The Pentagon, a Russian clone, has a taller frame, wider vertical blanking and no\ncontention at all."}]
+38:["$","figure",null,{"children":[["$","svg",null,{"viewBox":"0 0 700 548","role":"img","aria-label":"Four frames drawn at the same scale. 48K timing: 448 dots by 312 lines, the display area from line 64, the interrupt on line 0. 128K and +3 timing: 456 by 311, the display area from line 64, the interrupt on line 1. Pentagon timing: 448 by 320 with wider vertical blanking, the display area from line 80, the interrupt on the last line. 128K timing at 60 Hz: 456 by 264, the display area from line 40, the interrupt on line 0; the wide area then fills every visible line.","style":{"width":"100%","maxWidth":"700px","height":"auto"},"children":[["$","text",null,{"x":"30","y":"22","fill":"currentColor","fontSize":"12","fontWeight":"600","children":"48K: 448 × 312"}],["$","rect",null,{"x":"30","y":"34","width":"277.8","height":"193.4","fill":"currentColor","fillOpacity":"0.06","stroke":"currentColor","strokeOpacity":"0.5"}],["$","rect",null,{"x":"30","y":"34","width":"59.5","height":"193.4","fill":"currentColor","fillOpacity":"0.16"}],["$","rect",null,{"x":"89.5","y":"34","width":"218.2","height":"5.0","fill":"currentColor","fillOpacity":"0.16"}],["$","rect",null,{"x":"39.9","y":"34","width":"19.8","height":"193.4","fill":"currentColor","fillOpacity":"0.3"}],["$","rect",null,{"x":"30","y":"34.6","width":"277.8","height":"2.5","fill":"currentColor","fillOpacity":"0.3"}],["$","rect",null,{"x":"89.5","y":"53.8","width":"198.4","height":"158.7","fill":"none","stroke":"currentColor","strokeOpacity":"0.7","strokeDasharray":"5 4"}],["$","rect",null,{"x":"109.4","y":"73.7","width":"158.7","height":"119.0","fill":"#3b82f6","fillOpacity":"0.25","stroke":"#3b82f6","strokeWidth":"1.2"}],["$","circle",null,{"cx":"101.9","cy":"34.3","r":"4","fill":"#e5484d"}],["$","text",null,{"x":"30","y":"250.4","fill":"currentColor","fontSize":"11","fillOpacity":"0.8","children":"50.08 Hz · display from line 64"}],["$","text",null,{"x":"375","y":"22","fill":"currentColor","fontSize":"12","fontWeight":"600","children":"128K/+2 and +3: 456 × 311"}],["$","rect",null,{"x":"375","y":"34","width":"282.7","height":"192.8","fill":"currentColor","fillOpacity":"0.06","stroke":"currentColor","strokeOpacity":"0.5"}],["$","rect",null,{"x":"375","y":"34","width":"59.5","height":"192.8","fill":"currentColor","fillOpacity":"0.16"}],["$","rect",null,{"x":"434.5","y":"34","width":"223.2","height":"5.0","fill":"currentColor","fillOpacity":"0.16"}],["$","rect",null,{"x":"384.9","y":"34","width":"19.8","height":"192.8","fill":"currentColor","fillOpacity":"0.3"}],["$","rect",null,{"x":"375","y":"34.6","width":"282.7","height":"2.5","fill":"currentColor","fillOpacity":"0.3"}],["$","rect",null,{"x":"439.5","y":"53.8","width":"198.4","height":"158.7","fill":"none","stroke":"currentColor","strokeOpacity":"0.7","strokeDasharray":"5 4"}],["$","rect",null,{"x":"459.3","y":"73.7","width":"158.7","height":"119.0","fill":"#3b82f6","fillOpacity":"0.25","stroke":"#3b82f6","strokeWidth":"1.2"}],["$","circle",null,{"cx":"454.4","cy":"34.9","r":"4","fill":"#e5484d"}],["$","text",null,{"x":"375","y":"250.4","fill":"currentColor","fontSize":"11","fillOpacity":"0.8","children":"49.36 Hz · display from line 64"}],["$","text",null,{"x":"30","y":"288","fill":"currentColor","fontSize":"12","fontWeight":"600","children":"Pentagon: 448 × 320"}],["$","rect",null,{"x":"30","y":"300","width":"277.8","height":"198.4","fill":"currentColor","fillOpacity":"0.06","stroke":"currentColor","strokeOpacity":"0.5"}],["$","rect",null,{"x":"30","y":"300","width":"39.7","height":"198.4","fill":"currentColor","fillOpacity":"0.16"}],["$","rect",null,{"x":"69.7","y":"300","width":"238.1","height":"9.9","fill":"currentColor","fillOpacity":"0.16"}],["$","rect",null,{"x":"39.9","y":"300","width":"19.8","height":"198.4","fill":"currentColor","fillOpacity":"0.3"}],["$","rect",null,{"x":"30","y":"300.6","width":"277.8","height":"8.7","fill":"currentColor","fillOpacity":"0.3"}],["$","rect",null,{"x":"89.5","y":"329.8","width":"198.4","height":"158.7","fill":"none","stroke":"currentColor","strokeOpacity":"0.7","strokeDasharray":"5 4"}],["$","rect",null,{"x":"109.4","y":"349.6","width":"158.7","height":"119.0","fill":"#3b82f6","fillOpacity":"0.25","stroke":"#3b82f6","strokeWidth":"1.2"}],["$","circle",null,{"cx":"302.2","cy":"498.1","r":"4","fill":"#e5484d"}],["$","text",null,{"x":"30","y":"516.4","fill":"currentColor","fontSize":"11","fillOpacity":"0.8","children":"48.83 Hz · display from line 80"}],["$","text",null,{"x":"375","y":"288","fill":"currentColor","fontSize":"12","fontWeight":"600","children":"128K at 60 Hz: 456 × 264"}],["$","rect",null,{"x":"375","y":"300","width":"282.7","height":"163.7","fill":"currentColor","fillOpacity":"0.06","stroke":"currentColor","strokeOpacity":"0.5"}],["$","rect",null,{"x":"375","y":"300","width":"59.5","height":"163.7","fill":"currentColor","fillOpacity":"0.16"}],"$L8e","$L8f","$L90","$L91","$L92","$L93","$L94"]}],"$L95"]}]
+39:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["One column of the table deserves a second look: the frame rate. The Next’s dots are exactly 7 MHz,\na quarter of its 28 MHz clock. The original 128K ran its dots slightly faster, at about 7.09 MHz,\nso its frame took 50.02 per second. The same frame on the Next runs at ",["$","strong",null,{"children":"49.36 Hz"}],", 1.3% slower.\nA program cannot see the difference: every frame has the same number of T-states, every line the same\nnumber of dots. Only a stopwatch can."]}]
+3a:["$","h3",null,{"id":"60-hz","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["60 Hz",["$","$L22",null,{"id":"60-hz"}]]}]
+3b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Bit 2 of the Peripheral 1 Setting register, NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$05"}],", switches any timing but the Pentagon to ",["$","strong",null,{"children":"60 Hz"}],". Nothing changes along the\nline. The frame loses lines: 264 instead of 311 or 312, and the display area starts on line 40\ninstead of 64. Above and below it, 32 lines of border are left, exactly the extra lines of the wide\narea, so at 60 Hz the wide area fills every visible line and there is no border above or below it at\nall. The frame rate becomes 58.15 Hz (128K) or 59.19 Hz (48K)."]}]
+3c:["$","figure",null,{"children":[["$","svg",null,{"viewBox":"0 0 700 290","role":"img","aria-label":"The 128K frame at 50 Hz and at 60 Hz, side by side at the same scale. At 50 Hz the frame has 311 lines and the display area starts on line 64, with 24 lines of border visible above the wide area and 23 below it. At 60 Hz the frame has 264 lines and the display area starts on line 40: the wide area begins on line 8, the first visible line, and ends on line 263, the last, so no border is left above or below it.","style":{"width":"100%","maxWidth":"700px","height":"auto"},"children":[["$","text",null,{"x":"40","y":"22","fill":"currentColor","fontSize":"12","fontWeight":"600","children":"50 Hz: 311 lines"}],["$","rect",null,{"x":"40","y":"34","width":"301.0","height":"205.3","fill":"currentColor","fillOpacity":"0.06","stroke":"currentColor","strokeOpacity":"0.5"}],["$","rect",null,{"x":"40","y":"34","width":"63.4","height":"205.3","fill":"currentColor","fillOpacity":"0.16"}],["$","rect",null,{"x":"103.4","y":"34","width":"237.6","height":"5.3","fill":"currentColor","fillOpacity":"0.16"}],["$","rect",null,{"x":"50.6","y":"34","width":"21.1","height":"205.3","fill":"currentColor","fillOpacity":"0.3"}],["$","rect",null,{"x":"40","y":"34.7","width":"301.0","height":"2.6","fill":"currentColor","fillOpacity":"0.3"}],["$","rect",null,{"x":"108.6","y":"55.1","width":"211.2","height":"169.0","fill":"none","stroke":"currentColor","strokeOpacity":"0.7","strokeDasharray":"5 4"}],["$","rect",null,{"x":"129.8","y":"76.2","width":"169.0","height":"126.7","fill":"#3b82f6","fillOpacity":"0.25","stroke":"#3b82f6","strokeWidth":"1.2"}],["$","text",null,{"x":"380","y":"22","fill":"currentColor","fontSize":"12","fontWeight":"600","children":"60 Hz: 264 lines"}],["$","rect",null,{"x":"380","y":"34","width":"301.0","height":"174.2","fill":"currentColor","fillOpacity":"0.06","stroke":"currentColor","strokeOpacity":"0.5"}],["$","rect",null,{"x":"380","y":"34","width":"63.4","height":"174.2","fill":"currentColor","fillOpacity":"0.16"}],["$","rect",null,{"x":"443.4","y":"34","width":"237.6","height":"5.3","fill":"currentColor","fillOpacity":"0.16"}],["$","rect",null,{"x":"390.6","y":"34","width":"21.1","height":"174.2","fill":"currentColor","fillOpacity":"0.3"}],["$","rect",null,{"x":"380","y":"34.7","width":"301.0","height":"2.6","fill":"currentColor","fillOpacity":"0.3"}],["$","rect",null,{"x":"448.6","y":"39.3","width":"211.2","height":"169.0","fill":"none","stroke":"currentColor","strokeOpacity":"0.7","strokeDasharray":"5 4"}],["$","rect",null,{"x":"469.8","y":"60.4","width":"169.0","height":"126.7","fill":"#3b82f6","fillOpacity":"0.25","stroke":"#3b82f6","strokeWidth":"1.2"}],["$","text",null,{"x":"190.5","y":"261.3","textAnchor":"middle","fill":"currentColor","fontSize":"11","fillOpacity":"0.8","children":"border above and below the wide area"}],["$","text",null,{"x":"530.5","y":"230.2","textAnchor":"middle","fill":"currentColor","fontSize":"11","fillOpacity":"0.8","children":"the wide area fills every visible line"}]]}],["$","figcaption",null,{"children":"The 128K frame at 50 and at 60 Hz, at the same scale. The 60 Hz frame has 47 fewer lines, taken from the border above and below."}]]}]
+3d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Here is the scene of the first article, the same program, drawn by Klive at both rates:"}]
+3e:["$","figure",null,{"children":[["$","svg",null,{"viewBox":"0 0 700 300","role":"img","aria-label":"The scene of the first article, drawn by Klive's Next core at 50 Hz and at 60 Hz, each in the 360 by 288 window Klive shows. At 50 Hz the picture sits in the middle of the window with border all round. At 60 Hz the picture moves up: the display area starts 24 lines into the window instead of 48, the top of the wide area is cut off, the tiles at the bottom reach the last line of the frame, and the window below it stays black because the frame has no more lines.","style":{"width":"100%","maxWidth":"700px","height":"auto"},"children":[["$","image",null,{"x":"20","y":"10","width":"320","height":"256","preserveAspectRatio":"none","style":{"imageRendering":"pixelated"},"href":"/images/en/under-the-hood/next-display/timing/hz50.webp"}],["$","rect",null,{"x":"20","y":"10","width":"320","height":"256","fill":"none","stroke":"currentColor","strokeOpacity":"0.35"}],["$","image",null,{"x":"360","y":"10","width":"320","height":"256","preserveAspectRatio":"none","style":{"imageRendering":"pixelated"},"href":"/images/en/under-the-hood/next-display/timing/hz60.webp"}],["$","rect",null,{"x":"360","y":"10","width":"320","height":"256","fill":"none","stroke":"currentColor","strokeOpacity":"0.35"}],["$","text",null,{"x":"180","y":"288","textAnchor":"middle","fill":"currentColor","fontSize":"12","children":"50 Hz"}],["$","text",null,{"x":"520","y":"288","textAnchor":"middle","fill":"currentColor","fontSize":"12","children":"60 Hz: the same program, NextReg $05 bit 2 set"}]]}],["$","figcaption",null,{"children":"The same window, two frame rates. At 60 Hz the picture moves up and the window has fewer lines to show: the top of the wide area falls outside it, and below the last line of the frame there is nothing to draw."}]]}]
+3f:["$","h2",null,{"id":"part-3-interrupts","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Part 3: Interrupts",["$","$L22",null,{"id":"part-3-interrupts"}]]}]
+40:["$","h3",null,{"id":"the-frame-interrupt","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["The frame interrupt",["$","$L22",null,{"id":"the-frame-interrupt"}]]}]
+41:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Once in every frame, at a fixed value of the two counters, the ULA raises the ",["$","strong",null,{"children":"frame interrupt"}],",\nthe Spectrum’s 50 times a second. It comes near the top of the frame, well before the display\narea, so that a program that waits for it with ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"HALT"}]," has time to update the screen before the beam\ngets there:"]}]
+42:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"48K"}],": on line 0, 64 lines before the display area."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"128K/+2"}]," and ",["$","strong",null,{"children":"+3"}],": on line 1, 63 lines before it (the +3’s one T-state earlier on the line)."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"60 Hz"}],": on line 0, only 40 lines before it. A program that needs all of the 50 Hz head start does\nnot get it at 60 Hz."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Pentagon"}],": on the very last line of the frame, so its 80 lines of head start begin at the bottom."]}],"\n"]}]
+43:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["These are the moments the original machines used, so the T-states between the interrupt and any dot\nof the screen are those of the original; the Spectrum article lists them. The interrupt line is held\nfor 32 CPU cycles in 48K and +3 timing and 36 in 128K and Pentagon timing. Bit 2 of the Line Interrupt Control register, NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$22"}],", switches the frame interrupt off."]}]
+44:["$","h3",null,{"id":"the-line-interrupt","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["The line interrupt",["$","$L22",null,{"id":"the-line-interrupt"}]]}]
+45:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The Next adds a second one: the ",["$","strong",null,{"children":"line interrupt"}],", raised before a line chosen by the program. Bit 1 of the Line Interrupt Control register, NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$22"}],", switches it on, and the line number is nine bits, bit 0 of NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$22"}]," and the eight bits of the Line Interrupt Value register, NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$23"}],"."]}]
+46:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The line numbers are counted from the display area, not from the top of the frame: ",["$","strong",null,{"children":"line 0 is the\nfirst line of the display area"}],", 191 the last, and the numbers go on through the bottom border to the\nend of the frame and then continue at the top of the next one. So the lines of the top border have the\nhighest numbers: in 128K timing at 50 Hz, the first line of the frame is 247 and the line just above\nthe display area is 310. The Active Video Line registers, NextRegs ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$1E"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$1F"}],", read the line the beam is on, in the same numbers:\nbit 8 in NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$1E"}],", the low eight bits in NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$1F"}],". They are two reads, and the beam can move on between\nthem. Read NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$1E"}]," at the end of line 255 and NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$1F"}]," just after the line has become 256, and the two\nhalves say 0; the other way round they can say 511. The safe way reads NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$1E"}],", then ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$1F"}],", then ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$1E"}],"\nagain, and tries again if the two NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$1E"}]," reads differ."]}]
+47:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["“Before the line” is meant literally. The interrupt for line ",["$","em",null,{"children":"n"}]," is raised on line ",["$","em",null,{"children":"n"}]," − 1, near the\nright-hand end of its display area, at its dot 243. From there to the start of line ",["$","em",null,{"children":"n"}],"’s display area\nthe beam still has the right border, the blanking and the left border to draw: a little over 100\nT-states at 3.5 MHz, enough for a program to set up a change that must be in place when line ",["$","em",null,{"children":"n"}],"\nbegins."]}]
+48:["$","figure",null,{"children":[["$","svg",null,{"viewBox":"0 0 700 320","role":"img","aria-label":"The 128K frame with the numbers the line interrupt uses. Line 0 is the first line of the display area; the numbers count down the display area to 191, on through the bottom border to 246, and wrap past the end of the frame, so the lines above the display area are 247 to 310. The frame interrupt is raised on line 1 of the counter, near the top. A line interrupt for line 100 is raised at the end of line 99, near the right edge of its display area, a little before line 100 begins.","style":{"width":"100%","maxWidth":"700px","height":"auto"},"children":[["$","defs",null,{"children":["$","marker",null,{"id":"tm5-arrow","viewBox":"0 0 10 10","refX":"9","refY":"5","markerWidth":"7","markerHeight":"7","orient":"auto-start-reverse","children":["$","path",null,{"d":"M0,0 L10,5 L0,10 z","fill":"currentColor","fillOpacity":"0.6"}]}]}],["$","rect",null,{"x":"40","y":"30","width":"401.3","height":"273.7","fill":"currentColor","fillOpacity":"0.06","stroke":"currentColor","strokeOpacity":"0.5"}],["$","rect",null,{"x":"40","y":"30","width":"84.5","height":"273.7","fill":"currentColor","fillOpacity":"0.16"}],["$","rect",null,{"x":"124.5","y":"30","width":"316.8","height":"7.0","fill":"currentColor","fillOpacity":"0.16"}],["$","rect",null,{"x":"54.1","y":"30","width":"28.2","height":"273.7","fill":"currentColor","fillOpacity":"0.3"}],["$","rect",null,{"x":"40","y":"30.9","width":"401.3","height":"3.5","fill":"currentColor","fillOpacity":"0.3"}],["$","rect",null,{"x":"159.7","y":"86.3","width":"225.3","height":"169.0","fill":"#3b82f6","fillOpacity":"0.25","stroke":"#3b82f6","strokeWidth":"1.2"}],["$","circle",null,{"cx":"152.6","cy":"31.3","r":"4","fill":"#e5484d"}],["$","rect",null,{"x":"124.5","y":"174.3","width":"316.8","height":"1.4","fill":"#e5484d","fillOpacity":"0.7"}],["$","circle",null,{"cx":"373.5","cy":"173.4","r":"4","fill":"#e5484d"}],["$","line",null,{"x1":"373.5","y1":"173.4","x2":"330.4","y2":"206.0","stroke":"#e5484d","strokeWidth":"1.2"}],["$","text",null,{"x":"326.9","y":"211.3","textAnchor":"end","fill":"#e5484d","fontSize":"11","children":"line interrupt for line 100:"}],["$","text",null,{"x":"326.9","y":"225.3","textAnchor":"end","fill":"#e5484d","fontSize":"11","children":"raised near the end of line 99"}],["$","text",null,{"x":"172.0","y":"169.0","fill":"#e5484d","fontSize":"11","children":"line 100"}],["$","line",null,{"x1":"152.6","y1":"31.3","x2":"216.0","y2":"52.9","stroke":"#e5484d","strokeWidth":"1.2"}],["$","text",null,{"x":"219.5","y":"56.4","fill":"#e5484d","fontSize":"11","children":"frame interrupt"}],["$","line",null,{"x1":"445.3","y1":"30.4","x2":"455.3","y2":"30.4","stroke":"currentColor","strokeOpacity":"0.6"}],["$","text",null,{"x":"459.3","y":"34.4","fill":"currentColor","fontSize":"11","children":"247: the first line of the frame"}],["$","line",null,{"x1":"445.3","y1":"86.8","x2":"455.3","y2":"86.8","stroke":"currentColor","strokeOpacity":"0.6"}],["$","text",null,{"x":"459.3","y":"90.8","fill":"currentColor","fontSize":"11","children":"0: the first display line"}],["$","line",null,{"x1":"445.3","y1":"254.8","x2":"455.3","y2":"254.8","stroke":"currentColor","strokeOpacity":"0.6"}],["$","text",null,{"x":"459.3","y":"258.8","fill":"currentColor","fontSize":"11","children":"191: the last display line"}],["$","line",null,{"x1":"445.3","y1":"303.2","x2":"455.3","y2":"303.2","stroke":"currentColor","strokeOpacity":"0.6"}],["$","text",null,{"x":"459.3","y":"307.2","fill":"currentColor","fontSize":"11","children":"246: the last line of the frame"}],["$","text",null,{"x":"459.3","y":"68.7","fill":"currentColor","fontSize":"10","fillOpacity":"0.7","children":"… 310 is the line just above it"}],["$","text",null,{"x":"459.3","y":"18","fill":"currentColor","fontSize":"12","fontWeight":"600","children":"line numbers (NextRegs $23, $1E, $1F)"}]]}],["$","figcaption",null,{"children":"The line numbers of the line interrupt in 128K timing at 50 Hz, and when it is raised: for line 100, near the end of line 99’s display area."}]]}]
+49:["$","h3",null,{"id":"line-numbers-for-the-wide-area","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Line numbers for the wide area",["$","$L22",null,{"id":"line-numbers-for-the-wide-area"}]]}]
+4a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Line 0 is the first line of the ",["$","strong",null,{"children":"display area"}],", the ULA’s 256 × 192. That suits the ULA and Layer 2\nat 256 × 192, whose rows count from the same line. It does not suit the layers of the wide area. The\ntilemap, the sprites and Layer 2 in its 320 × 256 and 640 × 256 modes count their rows from the top of\nthe ",["$","strong",null,{"children":"wide area"}],", 32 lines higher. Their row 0 is line 279 in 128K timing at 50 Hz, their row 32 is line\n0, and their last 32 rows are lines 192 to 223. A program that wants an interrupt before row ",["$","em",null,{"children":"r"}]," of\nthe wide area has to ask for line ",["$","em",null,{"children":"r"}]," − 32, wrapped round the frame: a different number in every\ntiming, because the frames have different numbers of lines (row 0 is line 280 in 48K timing, 288 in\nPentagon timing, and 232 at 60 Hz)."]}]
+4b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The Vertical Line Count Offset register, NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$64"}],", removes the problem. It is an ",["$","strong",null,{"children":"offset"}]," added to the line numbers: the first line of\nthe display area gets the number the offset says, instead of 0. Set it to ",["$","strong",null,{"children":"32"}],", and line 0 becomes\nthe first line of the wide area, so the line numbers are exactly the rows of the 320 × 256 layers, in\nevery timing. The offset applies to everything that uses the numbers: the line interrupt, the active\nline read through NextRegs ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$1E"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$1F"}],", and the Copper. A new offset takes effect when the beam next reaches the\nfirst line of the display area, so it can take up to a frame."]}]
+4c:["$","figure",null,{"children":[["$","svg",null,{"viewBox":"0 0 700 262","role":"img","aria-label":"The 128K frame at 50 Hz with two numberings of its lines side by side. Without an offset, NextReg 64 at 0, line 0 is the first line of the display area: the first line of the wide area is then 279, the display area runs from 0 to 191, the wide area ends on line 223, and the frame ends on line 246. With an offset of 32, line 0 is the first line of the wide area: the display area runs from 32 to 223, the wide area ends on line 255, and the line numbers match the 320 by 256 coordinates of the tilemap, the sprites and the wide Layer 2 modes.","style":{"width":"100%","maxWidth":"700px","height":"auto"},"children":[["$","rect",null,{"x":"40","y":"40","width":"301.0","height":"205.3","fill":"currentColor","fillOpacity":"0.06","stroke":"currentColor","strokeOpacity":"0.5"}],["$","rect",null,{"x":"40","y":"40","width":"63.4","height":"205.3","fill":"currentColor","fillOpacity":"0.16"}],["$","rect",null,{"x":"103.4","y":"40","width":"237.6","height":"5.3","fill":"currentColor","fillOpacity":"0.16"}],["$","rect",null,{"x":"50.6","y":"40","width":"21.1","height":"205.3","fill":"currentColor","fillOpacity":"0.3"}],["$","rect",null,{"x":"40","y":"40.7","width":"301.0","height":"2.6","fill":"currentColor","fillOpacity":"0.3"}],["$","rect",null,{"x":"108.6","y":"61.1","width":"211.2","height":"169.0","fill":"none","stroke":"currentColor","strokeOpacity":"0.7","strokeDasharray":"5 4"}],["$","rect",null,{"x":"129.8","y":"82.2","width":"169.0","height":"126.7","fill":"#3b82f6","fillOpacity":"0.25","stroke":"#3b82f6","strokeWidth":"1.2"}],["$","text",null,{"x":"380.96000000000004","y":"22","textAnchor":"middle","fill":"currentColor","fontSize":"12","fontWeight":"600","children":"NextReg $64 = 0"}],["$","text",null,{"x":"460.96000000000004","y":"22","textAnchor":"middle","fill":"#e5484d","fontSize":"12","fontWeight":"600","children":"NextReg $64 = 32"}],["$","line",null,{"x1":"343.0","y1":"40.3","x2":"483.0","y2":"40.3","stroke":"currentColor","strokeOpacity":"0.2","strokeDasharray":"2 3"}],["$","text",null,{"x":"380.96000000000004","y":"44.3","textAnchor":"middle","fill":"currentColor","fontSize":"12","children":"247"}],["$","text",null,{"x":"460.96000000000004","y":"44.3","textAnchor":"middle","fill":"#e5484d","fontSize":"12","fontWeight":"600","children":"279"}],["$","text",null,{"x":"489.0","y":"44.3","fill":"currentColor","fontSize":"10","fillOpacity":"0.75","children":"first line of the frame"}],["$","line",null,{"x1":"343.0","y1":"61.5","x2":"483.0","y2":"61.5","stroke":"currentColor","strokeOpacity":"0.2","strokeDasharray":"2 3"}],["$","text",null,{"x":"380.96000000000004","y":"65.5","textAnchor":"middle","fill":"currentColor","fontSize":"12","children":"279"}],["$","text",null,{"x":"460.96000000000004","y":"65.5","textAnchor":"middle","fill":"#e5484d","fontSize":"12","fontWeight":"600","children":"0"}],["$","text",null,{"x":"489.0","y":"65.5","fill":"currentColor","fontSize":"10","fillOpacity":"0.75","children":"first line of the wide area"}],["$","line",null,{"x1":"343.0","y1":"82.6","x2":"483.0","y2":"82.6","stroke":"currentColor","strokeOpacity":"0.2","strokeDasharray":"2 3"}],["$","text",null,{"x":"380.96000000000004","y":"86.6","textAnchor":"middle","fill":"currentColor","fontSize":"12","children":"0"}],["$","text",null,{"x":"460.96000000000004","y":"86.6","textAnchor":"middle","fill":"#e5484d","fontSize":"12","fontWeight":"600","children":"32"}],["$","text",null,{"x":"489.0","y":"86.6","fill":"currentColor","fontSize":"10","fillOpacity":"0.75","children":"first line of the display area"}],["$","line",null,{"x1":"343.0","y1":"208.6","x2":"483.0","y2":"208.6","stroke":"currentColor","strokeOpacity":"0.2","strokeDasharray":"2 3"}],["$","text",null,{"x":"380.96000000000004","y":"212.6","textAnchor":"middle","fill":"currentColor","fontSize":"12","children":"191"}],["$","text",null,{"x":"460.96000000000004","y":"212.6","textAnchor":"middle","fill":"#e5484d","fontSize":"12","fontWeight":"600","children":"223"}],["$","text",null,{"x":"489.0","y":"212.6","fill":"currentColor","fontSize":"10","fillOpacity":"0.75","children":"last line of the display area"}],["$","line",null,{"x1":"343.0","y1":"229.8","x2":"483.0","y2":"229.8","stroke":"currentColor","strokeOpacity":"0.2","strokeDasharray":"2 3"}],["$","text",null,{"x":"380.96000000000004","y":"233.8","textAnchor":"middle","fill":"currentColor","fontSize":"12","children":"223"}],["$","text",null,{"x":"460.96000000000004","y":"233.8","textAnchor":"middle","fill":"#e5484d","fontSize":"12","fontWeight":"600","children":"255"}],["$","text",null,{"x":"489.0","y":"233.8","fill":"currentColor","fontSize":"10","fillOpacity":"0.75","children":"last line of the wide area"}],"$L96","$L97","$L98","$L99"]}],"$L9a"]}]
+4d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Splitting the screen with the line interrupt has a weakness: the CPU reacts only when its current\ninstruction ends, a few T-states later or earlier from frame to frame. The Copper, which the\n",["$","$L21",null,{"href":"/en/under-the-hood/emulator-internals/next-display/raster-effects/#part-4-the-copper","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"last article of the series"}],"\nexplains, does the same job without that jitter, with the same line numbers."]}]
+4e:["$","h2",null,{"id":"part-4-dots-ticks-and-t-states","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Part 4: Dots, ticks and T-states",["$","$L22",null,{"id":"part-4-dots-ticks-and-t-states"}]]}]
+4f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The picture and the CPU run on one clock. The ",["$","strong",null,{"children":"28 MHz master clock"}]," ticks four times for every\ndot; the 14 MHz half dots of the first article’s pipeline take two ticks each. The CPU’s clock is\nmade from the same clock, at the speed set by the CPU Speed register, NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$07"}],": 3.5, 7, 14 or 28 MHz. So a T-state always\nlasts a whole number of ticks, and the CPU and the beam can never drift apart."]}]
+50:["$","figure",null,{"children":[["$","svg",null,{"viewBox":"0 0 700 330","role":"img","aria-label":"Sixteen ticks of the 28 MHz master clock, which make four dots of the beam. Below them: 14 MHz half dots, two per dot; 7 MHz dots, four ticks each; and the CPU's T-states at its four speeds. At 3.5 MHz one T-state lasts two dots, at 7 MHz one dot, at 14 MHz half a dot, and at 28 MHz one tick.","style":{"width":"100%","maxWidth":"700px","height":"auto"},"children":[["$","text",null,{"x":"178","y":"53","textAnchor":"end","fill":"currentColor","fontSize":"12","children":"28 MHz master clock"}],["$","rect",null,{"x":"191","y":"34","width":"28","height":"28","rx":"3","fill":"currentColor","fillOpacity":"0.08","stroke":"currentColor","strokeOpacity":"0.45"}],["$","text",null,{"x":"205.0","y":"52","textAnchor":"middle","fill":"currentColor","fontSize":"10","children":"tick"}],["$","rect",null,{"x":"221","y":"34","width":"28","height":"28","rx":"3","fill":"currentColor","fillOpacity":"0.08","stroke":"currentColor","strokeOpacity":"0.45"}],["$","rect",null,{"x":"251","y":"34","width":"28","height":"28","rx":"3","fill":"currentColor","fillOpacity":"0.08","stroke":"currentColor","strokeOpacity":"0.45"}],["$","rect",null,{"x":"281","y":"34","width":"28","height":"28","rx":"3","fill":"currentColor","fillOpacity":"0.08","stroke":"currentColor","strokeOpacity":"0.45"}],["$","rect",null,{"x":"311","y":"34","width":"28","height":"28","rx":"3","fill":"currentColor","fillOpacity":"0.08","stroke":"currentColor","strokeOpacity":"0.45"}],["$","rect",null,{"x":"341","y":"34","width":"28","height":"28","rx":"3","fill":"currentColor","fillOpacity":"0.08","stroke":"currentColor","strokeOpacity":"0.45"}],["$","rect",null,{"x":"371","y":"34","width":"28","height":"28","rx":"3","fill":"currentColor","fillOpacity":"0.08","stroke":"currentColor","strokeOpacity":"0.45"}],["$","rect",null,{"x":"401","y":"34","width":"28","height":"28","rx":"3","fill":"currentColor","fillOpacity":"0.08","stroke":"currentColor","strokeOpacity":"0.45"}],["$","rect",null,{"x":"431","y":"34","width":"28","height":"28","rx":"3","fill":"currentColor","fillOpacity":"0.08","stroke":"currentColor","strokeOpacity":"0.45"}],["$","rect",null,{"x":"461","y":"34","width":"28","height":"28","rx":"3","fill":"currentColor","fillOpacity":"0.08","stroke":"currentColor","strokeOpacity":"0.45"}],["$","rect",null,{"x":"491","y":"34","width":"28","height":"28","rx":"3","fill":"currentColor","fillOpacity":"0.08","stroke":"currentColor","strokeOpacity":"0.45"}],["$","rect",null,{"x":"521","y":"34","width":"28","height":"28","rx":"3","fill":"currentColor","fillOpacity":"0.08","stroke":"currentColor","strokeOpacity":"0.45"}],["$","rect",null,{"x":"551","y":"34","width":"28","height":"28","rx":"3","fill":"currentColor","fillOpacity":"0.08","stroke":"currentColor","strokeOpacity":"0.45"}],["$","rect",null,{"x":"581","y":"34","width":"28","height":"28","rx":"3","fill":"currentColor","fillOpacity":"0.08","stroke":"currentColor","strokeOpacity":"0.45"}],["$","rect",null,{"x":"611","y":"34","width":"28","height":"28","rx":"3","fill":"currentColor","fillOpacity":"0.08","stroke":"currentColor","strokeOpacity":"0.45"}],["$","rect",null,{"x":"641","y":"34","width":"28","height":"28","rx":"3","fill":"currentColor","fillOpacity":"0.08","stroke":"currentColor","strokeOpacity":"0.45"}],["$","text",null,{"x":"178","y":"93","textAnchor":"end","fill":"currentColor","fontSize":"12","children":"14 MHz: half dots"}],["$","rect",null,{"x":"191","y":"74","width":"58","height":"28","rx":"3","fill":"currentColor","fillOpacity":"0.12","stroke":"currentColor","strokeOpacity":"0.45"}],["$","text",null,{"x":"220.0","y":"92","textAnchor":"middle","fill":"currentColor","fontSize":"10","children":"½ dot"}],["$","rect",null,{"x":"251","y":"74","width":"58","height":"28","rx":"3","fill":"currentColor","fillOpacity":"0.12","stroke":"currentColor","strokeOpacity":"0.45"}],["$","text",null,{"x":"280.0","y":"92","textAnchor":"middle","fill":"currentColor","fontSize":"10","children":"½ dot"}],["$","rect",null,{"x":"311","y":"74","width":"58","height":"28","rx":"3","fill":"currentColor","fillOpacity":"0.12","stroke":"currentColor","strokeOpacity":"0.45"}],["$","text",null,{"x":"340.0","y":"92","textAnchor":"middle","fill":"currentColor","fontSize":"10","children":"½ dot"}],["$","rect",null,{"x":"371","y":"74","width":"58","height":"28","rx":"3","fill":"currentColor","fillOpacity":"0.12","stroke":"currentColor","strokeOpacity":"0.45"}],["$","text",null,{"x":"400.0","y":"92","textAnchor":"middle","fill":"currentColor","fontSize":"10","children":"½ dot"}],["$","rect",null,{"x":"431","y":"74","width":"58","height":"28","rx":"3","fill":"currentColor","fillOpacity":"0.12","stroke":"currentColor","strokeOpacity":"0.45"}],["$","text",null,{"x":"460.0","y":"92","textAnchor":"middle","fill":"currentColor","fontSize":"10","children":"½ dot"}],["$","rect",null,{"x":"491","y":"74","width":"58","height":"28","rx":"3","fill":"currentColor","fillOpacity":"0.12","stroke":"currentColor","strokeOpacity":"0.45"}],"$L9b","$L9c","$L9d","$L9e","$L9f","$La0","$La1","$La2","$La3","$La4","$La5","$La6","$La7","$La8","$La9","$Laa","$Lab","$Lac","$Lad","$Lae","$Laf","$Lb0","$Lb1","$Lb2","$Lb3","$Lb4","$Lb5","$Lb6","$Lb7","$Lb8","$Lb9","$Lba","$Lbb","$Lbc","$Lbd","$Lbe","$Lbf","$Lc0","$Lc1","$Lc2","$Lc3","$Lc4","$Lc5","$Lc6","$Lc7","$Lc8","$Lc9","$Lca","$Lcb","$Lcc","$Lcd","$Lce","$Lcf","$Ld0","$Ld1","$Ld2","$Ld3","$Ld4","$Ld5","$Ld6","$Ld7","$Ld8","$Ld9","$Lda"]}],"$Ldb"]}]
+51:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"What changes with the CPU speed is only how much a program can do in a line: 228 T-states in a 128K\nline at 3.5 MHz, 456 at 7 MHz, 912 at 14 MHz and 1,824 at 28 MHz. The beam does not care: it counts\nits 7 MHz dots whatever the CPU does."}]
+52:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Contention"}],", the ULA holding up the CPU when both want the screen memory, exists only at\n",["$","strong",null,{"children":"3.5 MHz"}],", the speed the old programs were written for. It follows the pattern of the chosen timing,\nthe 48K’s, the 128K’s or the +3’s, and the Pentagon has none. At 7 MHz and above the CPU is never held\nup, and bit 6 of the Peripheral 3 Setting register, NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$08"}],", switches contention off at 3.5 MHz too. How contention works is explained\nin ",["$","$L21",null,{"href":"/en/under-the-hood/emulator-internals/spectrum-display/#part-5-sharing-the-memory","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Part 5 of the Spectrum\narticle"}],"; the Next\nreproduces it exactly."]}]
+53:["$","h2",null,{"id":"part-5-from-counters-to-cables","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Part 5: From counters to cables",["$","$L22",null,{"id":"part-5-from-counters-to-cables"}]]}]
+54:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The video pipeline of the first article puts out a ",["$","strong",null,{"children":"9-bit colour"}]," at 14 MHz, together with the\nblanking and the two sync signals. Its lines come at about 15.5 kHz (7 MHz divided by 448 or 456\ndots), the line rate of a European television. That is fine for a television, and much too slow for a\ncomputer monitor. The Next has three ways out."]}]
+55:["$","figure",null,{"children":[["$","svg",null,{"viewBox":"0 0 700 300","role":"img","aria-label":"The road from the video pipeline to the connectors. The pipeline puts out a 9-bit colour at 14 MHz with blanking and sync, in lines of about 15.5 kHz. Three outputs take it from there. With the scan doubler off, NextReg 05 bit 0 clear, it goes out as RGB at 15 kHz, as a television expects. With the scan doubler on, every line is sent twice at double speed for a VGA monitor at 31 kHz, with optional scanlines from NextReg 09. The HDMI output takes a 360 by 288 window, sends every line twice, and becomes 720 by 576 at about 50 Hz, or 720 by 480 at 60 Hz. VGA modes 0 to 6, NextReg 11, set the master clock from 28 to 33 MHz; HDMI works only in modes 0 and 1.","style":{"width":"100%","maxWidth":"700px","height":"auto"},"children":[["$","defs",null,{"children":["$","marker",null,{"id":"tm7-arrow","viewBox":"0 0 10 10","refX":"9","refY":"5","markerWidth":"7","markerHeight":"7","orient":"auto-start-reverse","children":["$","path",null,{"d":"M0,0 L10,5 L0,10 z","fill":"currentColor","fillOpacity":"0.6"}]}]}],["$","rect",null,{"x":"20","y":"110","width":"170","height":"80","rx":"6","fill":"#e5484d","fillOpacity":"0.08","stroke":"#e5484d"}],["$","text",null,{"x":"105","y":"136","textAnchor":"middle","fill":"currentColor","fontSize":"12","fontWeight":"600","children":"video pipeline"}],["$","text",null,{"x":"105","y":"154","textAnchor":"middle","fill":"currentColor","fontSize":"11","children":"9-bit RGB at 14 MHz"}],["$","text",null,{"x":"105","y":"170","textAnchor":"middle","fill":"currentColor","fontSize":"11","fillOpacity":"0.8","children":"lines at ~15.5 kHz"}],["$","rect",null,{"x":"300","y":"28","width":"260","height":"64","rx":"6","fill":"currentColor","fillOpacity":"0.05","stroke":"currentColor","strokeOpacity":"0.45"}],["$","text",null,{"x":"314","y":"48","fill":"currentColor","fontSize":"12","fontWeight":"600","children":"RGB, 15 kHz"}],["$","text",null,{"x":"314","y":"65","fill":"currentColor","fontSize":"11","children":"scan doubler off (NextReg $05 bit 0 = 0)"}],["$","text",null,{"x":"314","y":"81","fill":"currentColor","fontSize":"11","fillOpacity":"0.75","children":"a television or a CRT monitor"}],["$","line",null,{"x1":"190","y1":"150","x2":"298","y2":"60","stroke":"currentColor","strokeOpacity":"0.6","markerEnd":"url(#tm7-arrow)"}],["$","line",null,{"x1":"560","y1":"60","x2":"600","y2":"60","stroke":"currentColor","strokeOpacity":"0.6","markerEnd":"url(#tm7-arrow)"}],["$","rect",null,{"x":"602","y":"48","width":"12","height":"24","rx":"2","fill":"currentColor","fillOpacity":"0.35"}],["$","rect",null,{"x":"300","y":"118","width":"260","height":"64","rx":"6","fill":"currentColor","fillOpacity":"0.05","stroke":"currentColor","strokeOpacity":"0.45"}],["$","text",null,{"x":"314","y":"138","fill":"currentColor","fontSize":"12","fontWeight":"600","children":"scan doubler → VGA, 31 kHz"}],["$","text",null,{"x":"314","y":"155","fill":"currentColor","fontSize":"11","children":"each line twice (NextReg $05 bit 0 = 1)"}],["$","text",null,{"x":"314","y":"171","fill":"currentColor","fontSize":"11","fillOpacity":"0.75","children":"scanlines: NextReg $09 bits 1–0"}],["$","line",null,{"x1":"190","y1":"150","x2":"298","y2":"150","stroke":"currentColor","strokeOpacity":"0.6","markerEnd":"url(#tm7-arrow)"}],["$","line",null,{"x1":"560","y1":"150","x2":"600","y2":"150","stroke":"currentColor","strokeOpacity":"0.6","markerEnd":"url(#tm7-arrow)"}],["$","rect",null,{"x":"602","y":"138","width":"12","height":"24","rx":"2","fill":"currentColor","fillOpacity":"0.35"}],["$","rect",null,{"x":"300","y":"208","width":"260","height":"64","rx":"6","fill":"currentColor","fillOpacity":"0.05","stroke":"currentColor","strokeOpacity":"0.45"}],["$","text",null,{"x":"314","y":"228","fill":"currentColor","fontSize":"12","fontWeight":"600","children":"HDMI: 720 × 576 (720 × 480)"}],["$","text",null,{"x":"314","y":"245","fill":"currentColor","fontSize":"11","children":"the 360 × 288 window, lines twice"}],["$","text",null,{"x":"314","y":"261","fill":"currentColor","fontSize":"11","fillOpacity":"0.75","children":"VGA modes 0 and 1 only"}],["$","line",null,{"x1":"190","y1":"150","x2":"298","y2":"240","stroke":"currentColor","strokeOpacity":"0.6","markerEnd":"url(#tm7-arrow)"}],["$","line",null,{"x1":"560","y1":"240","x2":"600","y2":"240","stroke":"currentColor","strokeOpacity":"0.6","markerEnd":"url(#tm7-arrow)"}],["$","rect",null,{"x":"602","y":"228","width":"12","height":"24","rx":"2","fill":"currentColor","fillOpacity":"0.35"}],["$","text",null,{"x":"105","y":"230","textAnchor":"middle","fill":"currentColor","fontSize":"11","fillOpacity":"0.8","children":"VGA modes 0–6 (NextReg $11):"}],"$Ldc"]}],"$Ldd"]}]
+56:["$","h3",null,{"id":"rgb-at-15-khz","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["RGB at 15 kHz",["$","$L22",null,{"id":"rgb-at-15-khz"}]]}]
+57:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["With the ",["$","strong",null,{"children":"scan doubler off"}],", that is with bit 0 of the Peripheral 1 Setting register, NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$05"}],", clear, the picture leaves exactly as the counters\ntime it: one line per line, 15.5 kHz, 50 frames a second. A television or an old monitor with an RGB\n(SCART) input shows it the way it showed a Spectrum."]}]
+58:["$","h3",null,{"id":"the-scan-doubler-and-vga","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["The scan doubler and VGA",["$","$L22",null,{"id":"the-scan-doubler-and-vga"}]]}]
+59:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A VGA monitor wants lines at least twice as fast, about 31 kHz. The ",["$","strong",null,{"children":"scan doubler"}]," gets there\nwithout changing the frame. It writes each line into a line buffer as the pipeline makes it, at\n14 MHz, and reads it out ",["$","strong",null,{"children":"twice"}],", each time at 28 MHz, double speed. Two output lines fit into the\ntime of one input line, so the monitor gets a 31 kHz picture with every line shown twice, one line\nbehind the original."]}]
+5a:["$","figure",null,{"children":[["$","svg",null,{"viewBox":"0 0 700 220","role":"img","aria-label":"Scan doubling over time. The input lines 1, 2 and 3 arrive one after the other, each taking one line time of about 65 microseconds. While line 2 is being written into the line buffer, line 1 is read out of it twice, each time at double speed, so two output lines fit into one input line time. The output runs one line behind the input, and its lines are half as long, at about 31 kHz instead of 15.5 kHz. With scanlines on, the second copy of each line is darkened.","style":{"width":"100%","maxWidth":"700px","height":"auto"},"children":[["$","defs",null,{"children":["$","marker",null,{"id":"tm8-arrow","viewBox":"0 0 10 10","refX":"9","refY":"5","markerWidth":"7","markerHeight":"7","orient":"auto-start-reverse","children":["$","path",null,{"d":"M0,0 L10,5 L0,10 z","fill":"currentColor","fillOpacity":"0.6"}]}]}],["$","text",null,{"x":"138","y":"62","textAnchor":"end","fill":"currentColor","fontSize":"12","children":"in, 15 kHz"}],["$","text",null,{"x":"138","y":"140","textAnchor":"end","fill":"currentColor","fontSize":"12","children":"out, 31 kHz"}],["$","rect",null,{"x":"151","y":"44","width":"168","height":"30","rx":"4","fill":"#3b82f6","fillOpacity":"0.12","stroke":"#3b82f6"}],["$","text",null,{"x":"235.0","y":"64","textAnchor":"middle","fill":"currentColor","fontSize":"12","children":"line 1"}],["$","rect",null,{"x":"321","y":"44","width":"168","height":"30","rx":"4","fill":"#3b82f6","fillOpacity":"0.2","stroke":"#3b82f6"}],["$","text",null,{"x":"405.0","y":"64","textAnchor":"middle","fill":"currentColor","fontSize":"12","children":"line 2"}],["$","rect",null,{"x":"491","y":"44","width":"168","height":"30","rx":"4","fill":"#3b82f6","fillOpacity":"0.28","stroke":"#3b82f6"}],["$","text",null,{"x":"575.0","y":"64","textAnchor":"middle","fill":"currentColor","fontSize":"12","children":"line 3"}],["$","rect",null,{"x":"321.0","y":"122","width":"83.0","height":"30","rx":"4","fill":"#3b82f6","fillOpacity":"0.12","stroke":"#3b82f6"}],["$","text",null,{"x":"362.5","y":"142","textAnchor":"middle","fill":"currentColor","fontSize":"11","children":"line 1"}],["$","rect",null,{"x":"406.0","y":"122","width":"83.0","height":"30","rx":"4","fill":"#3b82f6","fillOpacity":"0.06","stroke":"#3b82f6","strokeDasharray":"4 3"}],["$","text",null,{"x":"447.5","y":"142","textAnchor":"middle","fill":"currentColor","fontSize":"11","children":"line 1"}],["$","rect",null,{"x":"491.0","y":"122","width":"83.0","height":"30","rx":"4","fill":"#3b82f6","fillOpacity":"0.20","stroke":"#3b82f6"}],["$","text",null,{"x":"532.5","y":"142","textAnchor":"middle","fill":"currentColor","fontSize":"11","children":"line 2"}],["$","rect",null,{"x":"576.0","y":"122","width":"83.0","height":"30","rx":"4","fill":"#3b82f6","fillOpacity":"0.10","stroke":"#3b82f6","strokeDasharray":"4 3"}],["$","text",null,{"x":"617.5","y":"142","textAnchor":"middle","fill":"currentColor","fontSize":"11","children":"line 2"}],["$","line",null,{"x1":"235.0","y1":"76","x2":"362.5","y2":"120","stroke":"currentColor","strokeOpacity":"0.6","markerEnd":"url(#tm8-arrow)"}],["$","line",null,{"x1":"235.0","y1":"76","x2":"447.5","y2":"120","stroke":"currentColor","strokeOpacity":"0.6","markerEnd":"url(#tm8-arrow)"}],["$","path",null,{"d":"M152,166 v6 H318 v-6","fill":"none","stroke":"currentColor","strokeOpacity":"0.6"}],["$","text",null,{"x":"235.0","y":"188","textAnchor":"middle","fill":"currentColor","fontSize":"11","children":"one line time, ~65 µs"}],["$","text",null,{"x":"405.0","y":"188","textAnchor":"middle","fill":"currentColor","fontSize":"11","children":"written once, read twice"}],["$","text",null,{"x":"405.0","y":"204","textAnchor":"middle","fill":"currentColor","fontSize":"10","fillOpacity":"0.75","children":"the dashed copy is the one scanlines darken"}],["$","text",null,{"x":"475.0","y":"30","textAnchor":"middle","fill":"currentColor","fontSize":"11","fillOpacity":"0.8","children":"time →"}]]}],["$","figcaption",null,{"children":"Scan doubling: each input line is written once and read out twice at double speed, while the next line is being written."}]]}]
+5b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Twice as many lines, each repeated, look smoother than a television ever did. For those who miss the\ndark gaps between the lines of a CRT, bits 1–0 of the Peripheral 4 Setting register, NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$09"}],", darken one of each pair of lines by\n50%, 25% or 12.5%: ",["$","strong",null,{"children":"scanlines"}],"."]}]
+5c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Some monitors refuse the Next’s 50 Hz frame. For them there are seven ",["$","strong",null,{"children":"VGA modes"}],", chosen in the Video Timing register, NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$11"}],": modes 0 to 6 set the master clock from 28 MHz in steps up to 33 MHz. Everything is\ntimed by that clock, so everything speeds up together, the CPU, the beam, the frame rate, by up to\n18%, until the monitor accepts it."]}]
+5d:["$","h3",null,{"id":"hdmi","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["HDMI",["$","$L22",null,{"id":"hdmi"}]]}]
+5e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["HDMI does not accept a television’s timing at all: it carries fixed television standards, and the\nNext uses two, ",["$","strong",null,{"children":"720 × 576 at 50 Hz"}]," and ",["$","strong",null,{"children":"720 × 480 at 60 Hz"}],". The Next fits its picture into them\nwithout changing the frame. It takes a ",["$","strong",null,{"children":"window"}]," of 360 × 288 dots around the wide area, 720 pixels of\n14 MHz across, and sends every line twice: 576 lines. (At 60 Hz the window is 360 × 240 and the lines\nbecome 480.)"]}]
+5f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The pixels pass through a small buffer of 8,192 pixels, about eleven lines, which is written at\n14 MHz and read at the HDMI pixel clock. And here is the trick that keeps it small: the HDMI clock is\nnot a free-running 27 MHz. It is ",["$","strong",null,{"children":"made from the Next’s own 28 MHz clock"}],", with a ratio chosen for\neach timing and frame rate, so that one HDMI frame lasts exactly as long as one Next frame. The two\nnever drift apart, and the buffer never fills or runs dry. The price is a frame rate a little away\nfrom the standard one, the Next’s own 49.36 Hz in 128K timing, which monitors accept. HDMI works in\nVGA modes 0 and 1 only; the higher modes switch it off."]}]
+60:["$","figure",null,{"children":[["$","svg",null,{"viewBox":"0 0 700 250","role":"img","aria-label":"The HDMI path. From the Next's frame, a window of 360 by 288 dots is taken: 720 pixels of 14 MHz across and 288 lines. The pixels are written into a buffer of 8,192 pixels, about eleven lines, at 14 MHz, and read out at the HDMI clock, each line twice, giving 720 by 576 pixels. The HDMI clock, about 27 MHz, is made from the Next's own 28 MHz clock with a ratio chosen for each timing, so that one HDMI frame takes exactly as long as one Next frame and the two never drift apart.","style":{"width":"100%","maxWidth":"700px","height":"auto"},"children":[["$","defs",null,{"children":["$","marker",null,{"id":"tm9-arrow","viewBox":"0 0 10 10","refX":"9","refY":"5","markerWidth":"7","markerHeight":"7","orient":"auto-start-reverse","children":["$","path",null,{"d":"M0,0 L10,5 L0,10 z","fill":"currentColor","fillOpacity":"0.6"}]}]}],["$","rect",null,{"x":"20","y":"40","width":"164.2","height":"112.0","fill":"currentColor","fillOpacity":"0.06","stroke":"currentColor","strokeOpacity":"0.5"}],["$","rect",null,{"x":"20","y":"40","width":"34.6","height":"112.0","fill":"currentColor","fillOpacity":"0.16"}],["$","rect",null,{"x":"54.6","y":"40","width":"129.6","height":"2.9","fill":"currentColor","fillOpacity":"0.16"}],["$","rect",null,{"x":"25.8","y":"40","width":"11.5","height":"112.0","fill":"currentColor","fillOpacity":"0.3"}],["$","rect",null,{"x":"20","y":"40.4","width":"164.2","height":"1.4","fill":"currentColor","fillOpacity":"0.3"}],["$","rect",null,{"x":"57.4","y":"51.5","width":"115.2","height":"92.2","fill":"none","stroke":"currentColor","strokeOpacity":"0.7","strokeDasharray":"5 4"}],["$","rect",null,{"x":"69.0","y":"63.0","width":"92.2","height":"69.1","fill":"#3b82f6","fillOpacity":"0.25","stroke":"#3b82f6","strokeWidth":"1.2"}],["$","rect",null,{"x":"51.7","y":"45.8","width":"129.6","height":"103.7","fill":"none","stroke":"#e5484d","strokeWidth":"1.5","strokeDasharray":"5 3"}],["$","text",null,{"x":"102","y":"28","textAnchor":"middle","fill":"currentColor","fontSize":"12","fontWeight":"600","children":"the Next’s frame"}],["$","text",null,{"x":"102","y":"174","textAnchor":"middle","fill":"#e5484d","fontSize":"11","children":"a 360 × 288 window"}],["$","text",null,{"x":"102","y":"190","textAnchor":"middle","fill":"currentColor","fontSize":"11","fillOpacity":"0.8","children":"720 × 288 pixels of 14 MHz"}],["$","rect",null,{"x":"250","y":"70","width":"170","height":"70","rx":"6","fill":"currentColor","fillOpacity":"0.05","stroke":"currentColor","strokeOpacity":"0.45"}],["$","text",null,{"x":"335","y":"94","textAnchor":"middle","fill":"currentColor","fontSize":"12","fontWeight":"600","children":"pixel buffer"}],["$","text",null,{"x":"335","y":"111","textAnchor":"middle","fill":"currentColor","fontSize":"11","children":"8,192 pixels: ~11 lines"}],["$","text",null,{"x":"335","y":"127","textAnchor":"middle","fill":"currentColor","fontSize":"11","fillOpacity":"0.75","children":"in at 14 MHz, out at ~27"}],["$","line",null,{"x1":"190","y1":"105","x2":"248","y2":"105","stroke":"currentColor","strokeOpacity":"0.6","markerEnd":"url(#tm9-arrow)"}],["$","line",null,{"x1":"420","y1":"105","x2":"478","y2":"105","stroke":"currentColor","strokeOpacity":"0.6","markerEnd":"url(#tm9-arrow)"}],["$","rect",null,{"x":"480","y":"50","width":"200","height":"110","rx":"4","fill":"currentColor","fillOpacity":"0.05","stroke":"currentColor","strokeOpacity":"0.45"}],["$","rect",null,{"x":"490","y":"60","width":"180","height":"9","fill":"#3b82f6","fillOpacity":"0.3"}],["$","rect",null,{"x":"490","y":"71","width":"180","height":"9","fill":"#3b82f6","fillOpacity":"0.18"}],["$","rect",null,{"x":"490","y":"82","width":"180","height":"9","fill":"#3b82f6","fillOpacity":"0.3"}],["$","rect",null,{"x":"490","y":"93","width":"180","height":"9","fill":"#3b82f6","fillOpacity":"0.18"}],["$","rect",null,{"x":"490","y":"104","width":"180","height":"9","fill":"#3b82f6","fillOpacity":"0.3"}],["$","rect",null,{"x":"490","y":"115","width":"180","height":"9","fill":"#3b82f6","fillOpacity":"0.18"}],["$","rect",null,{"x":"490","y":"126","width":"180","height":"9","fill":"#3b82f6","fillOpacity":"0.3"}],["$","rect",null,{"x":"490","y":"137","width":"180","height":"9","fill":"#3b82f6","fillOpacity":"0.18"}],["$","text",null,{"x":"580","y":"180","textAnchor":"middle","fill":"currentColor","fontSize":"12","fontWeight":"600","children":"720 × 576, every line twice"}],["$","text",null,{"x":"580","y":"196","textAnchor":"middle","fill":"currentColor","fontSize":"11","fillOpacity":"0.8","children":"(720 × 480 at 60 Hz)"}],["$","rect",null,{"x":"250","y":"190","width":"170","height":"44","rx":"6","fill":"currentColor","fillOpacity":"0.05","stroke":"currentColor","strokeOpacity":"0.45","strokeDasharray":"4 3"}],["$","text",null,{"x":"335","y":"208","textAnchor":"middle","fill":"currentColor","fontSize":"11","children":"HDMI clock: made from"}],"$Lde","$Ldf"]}],"$Le0"]}]
+61:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["HDMI also carries 8 bits per colour channel, not 3. The Next makes 8 from 3 by repeating them:\nlevel 5, ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"101"}],", becomes ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"10110110"}],". ",["$","$L21",null,{"href":"/en/under-the-hood/emulator-internals/next-display/palettes/#part-7-from-palette-to-screen","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"The palette article"}]," of the series comes back to this."]}]
+62:["$","h2",null,{"id":"part-6-how-klive-does-it","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Part 6: How Klive does it",["$","$L22",null,{"id":"part-6-how-klive-does-it"}]]}]
+63:["$","h3",null,{"id":"counting-in-ticks","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Counting in ticks",["$","$L22",null,{"id":"counting-in-ticks"}]]}]
+64:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Klive’s Next core counts time the way the machine does: in ",["$","strong",null,{"children":"ticks of the 28 MHz clock"}],". A frame is\nthe dots of a line, times the lines of the frame, times four ticks: 567,264 ticks in 128K timing. Each\nCPU T-state moves the count on by as many ticks as it lasts at the current speed, eight at 3.5 MHz,\none at 28 MHz, and the beam’s position is the count divided by four. Contention, the line interrupt,\nthe Copper and the raster of the first article all read this one count."]}]
+65:["$","h3",null,{"id":"the-timing-of-each-frame","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["The timing of each frame",["$","$L22",null,{"id":"the-timing-of-each-frame"}]]}]
+66:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["At the start of every frame, ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"zxnextTimingSelect"}]," reads the timing from the Machine Type register, NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$03"}],", and the frame rate from the Peripheral 1 Setting register, NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$05"}],", as the machine does at the end of the previous frame, and sets the frame’s numbers: the\ndots of a line and the lines of the frame, where the display area starts, where and for how many\ncycles the frame interrupt is raised, and which contention pattern applies. A timing change made in\nthe middle of a frame waits for the next one, as on the machine."]}]
+67:["$","h3",null,{"id":"the-picture-window","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["The picture window",["$","$L22",null,{"id":"the-picture-window"}]]}]
+68:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The picture Klive shows is the ",["$","strong",null,{"children":"360 × 288"}]," window that HDMI shows, stored as 720 × 288 pixels, one for\neach 14 MHz half dot. At 60 Hz the frame ends after line 263, so the window’s last 40 rows have no\nframe to show and stay black, as the 60 Hz picture of Part 2 shows. What the real machine does after\nthe pipeline, the scan doubler, scanlines, the HDMI buffer, is not emulated: Klive’s picture is the\npipeline’s own output."]}]
+69:["$","h3",null,{"id":"where-to-read-the-code","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Where to read the code",["$","$L22",null,{"id":"where-to-read-the-code"}]]}]
+6a:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"What","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Where","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":["The frame numbers of each timing, chosen at every frame start (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"zxnextTimingSelect"}],")"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"src/emu/machines/zxNext/wasm/zxnext/zxnext-nextreg.c"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"The timing variables, the picture buffer’s size, ticks per frame","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"zxnext.c"}]," in the same folder"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"The frame loop and the tick count","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"zxnext-frame.c"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"zxnext-cpu.c"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"The frame interrupt and the interrupt status registers","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"zxnext-interrupts.c"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"The line interrupt, with the line counter it shares with the Copper","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"zxnext-copper.c"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}]]}]
+6b:["$","h2",null,{"id":"summary","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Summary",["$","$L22",null,{"id":"summary"}]]}]
+6c:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["Two counters time the whole picture: one counts the ",["$","strong",null,{"children":"7 MHz dots"}]," of a line, the other the ",["$","strong",null,{"children":"lines"}],"\nof a frame. Blanking, sync, the display area, the wide area and the interrupts are all ranges or\nmoments of their values."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["The Next has the frames of four machines, ",["$","strong",null,{"children":"48K"}]," (448 × 312), ",["$","strong",null,{"children":"128K/+2"}]," and ",["$","strong",null,{"children":"+3"}]," (456 × 311) and\n",["$","strong",null,{"children":"Pentagon"}]," (448 × 320), chosen by NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$03"}]," and taken only at the end of a frame. Programs that\ncount T-states find exactly the frame they were written for."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"60 Hz"}]," (NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$05"}]," bit 2) shortens the frame to 264 lines; the wide area then fills every visible line."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["At exactly 7 MHz dots, the frames run at ",["$","strong",null,{"children":"50.08, 49.36 and 48.83 Hz"}],": the 128K’s frame is 1.3% slower\nthan on the original, with the same T-states."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["The ",["$","strong",null,{"children":"frame interrupt"}]," comes where the originals had it; the ",["$","strong",null,{"children":"line interrupt"}]," (NextRegs ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$22"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$23"}],") comes\njust before a chosen line, numbered from the first line of the display area. An offset of 32 in\nNextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$64"}]," numbers the lines from the top of the wide area instead, the rows of the 320 × 256\nlayers."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["One ",["$","strong",null,{"children":"28 MHz"}]," clock ticks four times per dot and drives the CPU at 3.5, 7, 14 or 28 MHz. Contention\nexists only at 3.5 MHz."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["The picture leaves as ",["$","strong",null,{"children":"RGB at 15 kHz"}],", through the ",["$","strong",null,{"children":"scan doubler"}]," as VGA at 31 kHz, or as ",["$","strong",null,{"children":"HDMI"}],"\n720 × 576, a 360 × 288 window with every line twice, on a clock made from the Next’s own so that the\nframes never drift."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["Klive counts the same frame in ",["$","strong",null,{"children":"28 MHz ticks"}],", chooses each frame’s timing at its start, and shows\nthe window HDMI shows."]}],"\n"]}]
+6e:null
+9:C
+6f:["$","text",null,{"x":"248","y":"80","fill":"#e5484d","fontSize":"11","children":"frame interrupt: line 1, dot 128"}]
+70:["$","text",null,{"x":"536","y":"194","fill":"currentColor","fontSize":"12","children":"one frame:"}]
+71:["$","text",null,{"x":"536","y":"210","fill":"currentColor","fontSize":"12","children":"311 lines"}]
+72:["$","text",null,{"x":"536","y":"230","fill":"currentColor","fontSize":"11","fillOpacity":"0.8","children":"one line:"}]
+73:["$","text",null,{"x":"536","y":"245","fill":"currentColor","fontSize":"11","fillOpacity":"0.8","children":"456 dots ="}]
+74:["$","text",null,{"x":"536","y":"260","fill":"currentColor","fontSize":"11","fillOpacity":"0.8","children":"228 T-states"}]
+75:["$","text",null,{"x":"536","y":"275","fill":"currentColor","fontSize":"11","fillOpacity":"0.8","children":"at 3.5 MHz"}]
+76:["$","figcaption",null,{"children":"The 128K frame at 50 Hz to scale, with the counter values where things begin: one unit across is one dot, one unit down is one line. The grey parts are blanking, the darker bands inside them the sync pulses; the red dot is the frame interrupt."}]
+77:["$","rect",null,{"x":"180.3","y":"170","width":"361.0","height":"26","fill":"#3b82f6","fillOpacity":"0.25","stroke":"#3b82f6"}]
+78:["$","text",null,{"x":"360.8","y":"187","textAnchor":"middle","fill":"currentColor","fontSize":"10","children":"display area"}]
+79:["$","rect",null,{"x":"541.3","y":"170","width":"103.4","height":"26","fill":"currentColor","fillOpacity":"0.06","stroke":"currentColor","strokeOpacity":"0.45"}]
+7a:["$","text",null,{"x":"593.0","y":"187","textAnchor":"middle","fill":"currentColor","fontSize":"10","children":"bottom border"}]
+7b:["$","path",null,{"d":"M120.2,166 v-6 H601.4 v6","fill":"none","stroke":"currentColor","strokeOpacity":"0.7","strokeDasharray":"4 3"}]
+7c:["$","text",null,{"x":"360.8","y":"157","textAnchor":"middle","fill":"currentColor","fontSize":"10","fillOpacity":"0.85","children":"wide area 32–287"}]
+7d:["$","line",null,{"x1":"60.0","y1":"196","x2":"60.0","y2":"202","stroke":"currentColor","strokeOpacity":"0.6"}]
+7e:["$","text",null,{"x":"60.0","y":"213","textAnchor":"middle","fill":"currentColor","fontSize":"10","fillOpacity":"0.8","children":"0"}]
+7f:["$","line",null,{"x1":"75.0","y1":"196","x2":"75.0","y2":"202","stroke":"currentColor","strokeOpacity":"0.6"}]
+80:["$","text",null,{"x":"75.0","y":"213","textAnchor":"middle","fill":"currentColor","fontSize":"10","fillOpacity":"0.8","children":"8"}]
+81:["$","line",null,{"x1":"180.3","y1":"196","x2":"180.3","y2":"202","stroke":"currentColor","strokeOpacity":"0.6"}]
+82:["$","text",null,{"x":"180.3","y":"213","textAnchor":"middle","fill":"currentColor","fontSize":"10","fillOpacity":"0.8","children":"64"}]
+83:["$","line",null,{"x1":"541.3","y1":"196","x2":"541.3","y2":"202","stroke":"currentColor","strokeOpacity":"0.6"}]
+84:["$","text",null,{"x":"541.3","y":"213","textAnchor":"middle","fill":"currentColor","fontSize":"10","fillOpacity":"0.8","children":"256"}]
+85:["$","line",null,{"x1":"642.8","y1":"196","x2":"642.8","y2":"202","stroke":"currentColor","strokeOpacity":"0.6"}]
+86:["$","text",null,{"x":"642.8","y":"213","textAnchor":"middle","fill":"currentColor","fontSize":"10","fillOpacity":"0.8","children":"310"}]
+87:["$","text",null,{"x":"650.7","y":"187","fill":"currentColor","fontSize":"10","fillOpacity":"0.8","children":"→ 0"}]
+88:["$","circle",null,{"cx":"62.8","cy":"183","r":"3.5","fill":"#e5484d"}]
+89:["$","text",null,{"x":"69.8","y":"226","fill":"#e5484d","fontSize":"10","children":"frame interrupt"}]
+8a:["$","figcaption",null,{"children":"The same counters as two strips, to scale. At the end of each strip the counter goes back to 0; the vertical counter steps once each time the horizontal one does."}]
+8b:["$","td",null,{"children":"64","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
+8c:["$","td",null,{"children":"49.36 Hz","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
+8d:["$","tr",null,{"children":[["$","td",null,{"children":"Pentagon","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"448","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"224","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"320","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"71,680","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"80","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"48.83 Hz","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+8e:["$","rect",null,{"x":"434.5","y":"300","width":"223.2","height":"5.0","fill":"currentColor","fillOpacity":"0.16"}]
+8f:["$","rect",null,{"x":"384.9","y":"300","width":"19.8","height":"163.7","fill":"currentColor","fillOpacity":"0.3"}]
+90:["$","rect",null,{"x":"375","y":"300.6","width":"282.7","height":"2.5","fill":"currentColor","fillOpacity":"0.3"}]
+91:["$","rect",null,{"x":"439.5","y":"305.0","width":"198.4","height":"158.7","fill":"none","stroke":"currentColor","strokeOpacity":"0.7","strokeDasharray":"5 4"}]
+92:["$","rect",null,{"x":"459.3","y":"324.8","width":"158.7","height":"119.0","fill":"#3b82f6","fillOpacity":"0.25","stroke":"#3b82f6","strokeWidth":"1.2"}]
+93:["$","circle",null,{"cx":"454.4","cy":"300.3","r":"4","fill":"#e5484d"}]
+94:["$","text",null,{"x":"375","y":"516.4","fill":"currentColor","fontSize":"11","fillOpacity":"0.8","children":"58.15 Hz · display from line 40"}]
+95:["$","figcaption",null,{"children":"The four frames at the same scale, each with its display area (blue), its wide area (dashed) and its frame interrupt (red). The Pentagon’s interrupt is on the last line of its frame, so its head start comes from the bottom."}]
+96:["$","line",null,{"x1":"343.0","y1":"244.9","x2":"483.0","y2":"244.9","stroke":"currentColor","strokeOpacity":"0.2","strokeDasharray":"2 3"}]
+97:["$","text",null,{"x":"380.96000000000004","y":"248.9","textAnchor":"middle","fill":"currentColor","fontSize":"12","children":"246"}]
+98:["$","text",null,{"x":"460.96000000000004","y":"248.9","textAnchor":"middle","fill":"#e5484d","fontSize":"12","fontWeight":"600","children":"278"}]
+99:["$","text",null,{"x":"489.0","y":"248.9","fill":"currentColor","fontSize":"10","fillOpacity":"0.75","children":"last line of the frame"}]
+9a:["$","figcaption",null,{"children":"The same frame, two numberings. With the offset at 32 (red), line 0 is the top of the wide area, and a line number is the row of the tilemap, the sprites and the wide Layer 2 modes; the display area then runs from line 32 to 223."}]
+9b:["$","text",null,{"x":"520.0","y":"92","textAnchor":"middle","fill":"currentColor","fontSize":"10","children":"½ dot"}]
+9c:["$","rect",null,{"x":"551","y":"74","width":"58","height":"28","rx":"3","fill":"currentColor","fillOpacity":"0.12","stroke":"currentColor","strokeOpacity":"0.45"}]
+9d:["$","text",null,{"x":"580.0","y":"92","textAnchor":"middle","fill":"currentColor","fontSize":"10","children":"½ dot"}]
+9e:["$","rect",null,{"x":"611","y":"74","width":"58","height":"28","rx":"3","fill":"currentColor","fillOpacity":"0.12","stroke":"currentColor","strokeOpacity":"0.45"}]
+9f:["$","text",null,{"x":"640.0","y":"92","textAnchor":"middle","fill":"currentColor","fontSize":"10","children":"½ dot"}]
+a0:["$","text",null,{"x":"178","y":"133","textAnchor":"end","fill":"currentColor","fontSize":"12","children":"7 MHz: dots"}]
+a1:["$","rect",null,{"x":"191","y":"114","width":"118","height":"28","rx":"3","fill":"#3b82f6","fillOpacity":"0.2","stroke":"#3b82f6"}]
+a2:["$","text",null,{"x":"250.0","y":"132","textAnchor":"middle","fill":"currentColor","fontSize":"10","children":"dot"}]
+a3:["$","rect",null,{"x":"311","y":"114","width":"118","height":"28","rx":"3","fill":"#3b82f6","fillOpacity":"0.2","stroke":"#3b82f6"}]
+a4:["$","text",null,{"x":"370.0","y":"132","textAnchor":"middle","fill":"currentColor","fontSize":"10","children":"dot"}]
+a5:["$","rect",null,{"x":"431","y":"114","width":"118","height":"28","rx":"3","fill":"#3b82f6","fillOpacity":"0.2","stroke":"#3b82f6"}]
+a6:["$","text",null,{"x":"490.0","y":"132","textAnchor":"middle","fill":"currentColor","fontSize":"10","children":"dot"}]
+a7:["$","rect",null,{"x":"551","y":"114","width":"118","height":"28","rx":"3","fill":"#3b82f6","fillOpacity":"0.2","stroke":"#3b82f6"}]
+a8:["$","text",null,{"x":"610.0","y":"132","textAnchor":"middle","fill":"currentColor","fontSize":"10","children":"dot"}]
+a9:["$","text",null,{"x":"178","y":"173","textAnchor":"end","fill":"currentColor","fontSize":"12","children":"CPU at 3.5 MHz"}]
+aa:["$","rect",null,{"x":"191","y":"154","width":"238","height":"28","rx":"3","fill":"#e8912d","fillOpacity":"0.2","stroke":"#e8912d"}]
+ab:["$","text",null,{"x":"310.0","y":"172","textAnchor":"middle","fill":"currentColor","fontSize":"10","children":"1 T-state"}]
+ac:["$","rect",null,{"x":"431","y":"154","width":"238","height":"28","rx":"3","fill":"#e8912d","fillOpacity":"0.2","stroke":"#e8912d"}]
+ad:["$","text",null,{"x":"550.0","y":"172","textAnchor":"middle","fill":"currentColor","fontSize":"10","children":"1 T-state"}]
+ae:["$","text",null,{"x":"178","y":"213","textAnchor":"end","fill":"currentColor","fontSize":"12","children":"CPU at 7 MHz"}]
+af:["$","rect",null,{"x":"191","y":"194","width":"118","height":"28","rx":"3","fill":"#e8912d","fillOpacity":"0.2","stroke":"#e8912d"}]
+b0:["$","text",null,{"x":"250.0","y":"212","textAnchor":"middle","fill":"currentColor","fontSize":"10","children":"1 T"}]
+b1:["$","rect",null,{"x":"311","y":"194","width":"118","height":"28","rx":"3","fill":"#e8912d","fillOpacity":"0.2","stroke":"#e8912d"}]
+b2:["$","text",null,{"x":"370.0","y":"212","textAnchor":"middle","fill":"currentColor","fontSize":"10","children":"1 T"}]
+b3:["$","rect",null,{"x":"431","y":"194","width":"118","height":"28","rx":"3","fill":"#e8912d","fillOpacity":"0.2","stroke":"#e8912d"}]
+b4:["$","text",null,{"x":"490.0","y":"212","textAnchor":"middle","fill":"currentColor","fontSize":"10","children":"1 T"}]
+b5:["$","rect",null,{"x":"551","y":"194","width":"118","height":"28","rx":"3","fill":"#e8912d","fillOpacity":"0.2","stroke":"#e8912d"}]
+b6:["$","text",null,{"x":"610.0","y":"212","textAnchor":"middle","fill":"currentColor","fontSize":"10","children":"1 T"}]
+b7:["$","text",null,{"x":"178","y":"253","textAnchor":"end","fill":"currentColor","fontSize":"12","children":"CPU at 14 MHz"}]
+b8:["$","rect",null,{"x":"191","y":"234","width":"58","height":"28","rx":"3","fill":"#e8912d","fillOpacity":"0.2","stroke":"#e8912d"}]
+b9:["$","text",null,{"x":"220.0","y":"252","textAnchor":"middle","fill":"currentColor","fontSize":"10","children":"1 T"}]
+ba:["$","rect",null,{"x":"251","y":"234","width":"58","height":"28","rx":"3","fill":"#e8912d","fillOpacity":"0.2","stroke":"#e8912d"}]
+bb:["$","text",null,{"x":"280.0","y":"252","textAnchor":"middle","fill":"currentColor","fontSize":"10","children":"1 T"}]
+bc:["$","rect",null,{"x":"311","y":"234","width":"58","height":"28","rx":"3","fill":"#e8912d","fillOpacity":"0.2","stroke":"#e8912d"}]
+bd:["$","text",null,{"x":"340.0","y":"252","textAnchor":"middle","fill":"currentColor","fontSize":"10","children":"1 T"}]
+be:["$","rect",null,{"x":"371","y":"234","width":"58","height":"28","rx":"3","fill":"#e8912d","fillOpacity":"0.2","stroke":"#e8912d"}]
+bf:["$","text",null,{"x":"400.0","y":"252","textAnchor":"middle","fill":"currentColor","fontSize":"10","children":"1 T"}]
+c0:["$","rect",null,{"x":"431","y":"234","width":"58","height":"28","rx":"3","fill":"#e8912d","fillOpacity":"0.2","stroke":"#e8912d"}]
+c1:["$","text",null,{"x":"460.0","y":"252","textAnchor":"middle","fill":"currentColor","fontSize":"10","children":"1 T"}]
+c2:["$","rect",null,{"x":"491","y":"234","width":"58","height":"28","rx":"3","fill":"#e8912d","fillOpacity":"0.2","stroke":"#e8912d"}]
+c3:["$","text",null,{"x":"520.0","y":"252","textAnchor":"middle","fill":"currentColor","fontSize":"10","children":"1 T"}]
+c4:["$","rect",null,{"x":"551","y":"234","width":"58","height":"28","rx":"3","fill":"#e8912d","fillOpacity":"0.2","stroke":"#e8912d"}]
+c5:["$","text",null,{"x":"580.0","y":"252","textAnchor":"middle","fill":"currentColor","fontSize":"10","children":"1 T"}]
+c6:["$","rect",null,{"x":"611","y":"234","width":"58","height":"28","rx":"3","fill":"#e8912d","fillOpacity":"0.2","stroke":"#e8912d"}]
+c7:["$","text",null,{"x":"640.0","y":"252","textAnchor":"middle","fill":"currentColor","fontSize":"10","children":"1 T"}]
+c8:["$","text",null,{"x":"178","y":"293","textAnchor":"end","fill":"currentColor","fontSize":"12","children":"CPU at 28 MHz"}]
+c9:["$","rect",null,{"x":"191","y":"274","width":"28","height":"28","rx":"3","fill":"#e8912d","fillOpacity":"0.2","stroke":"#e8912d"}]
+ca:["$","text",null,{"x":"205.0","y":"292","textAnchor":"middle","fill":"currentColor","fontSize":"10","children":"T"}]
+cb:["$","rect",null,{"x":"221","y":"274","width":"28","height":"28","rx":"3","fill":"#e8912d","fillOpacity":"0.2","stroke":"#e8912d"}]
+cc:["$","rect",null,{"x":"251","y":"274","width":"28","height":"28","rx":"3","fill":"#e8912d","fillOpacity":"0.2","stroke":"#e8912d"}]
+cd:["$","rect",null,{"x":"281","y":"274","width":"28","height":"28","rx":"3","fill":"#e8912d","fillOpacity":"0.2","stroke":"#e8912d"}]
+ce:["$","rect",null,{"x":"311","y":"274","width":"28","height":"28","rx":"3","fill":"#e8912d","fillOpacity":"0.2","stroke":"#e8912d"}]
+cf:["$","rect",null,{"x":"341","y":"274","width":"28","height":"28","rx":"3","fill":"#e8912d","fillOpacity":"0.2","stroke":"#e8912d"}]
+d0:["$","rect",null,{"x":"371","y":"274","width":"28","height":"28","rx":"3","fill":"#e8912d","fillOpacity":"0.2","stroke":"#e8912d"}]
+d1:["$","rect",null,{"x":"401","y":"274","width":"28","height":"28","rx":"3","fill":"#e8912d","fillOpacity":"0.2","stroke":"#e8912d"}]
+d2:["$","rect",null,{"x":"431","y":"274","width":"28","height":"28","rx":"3","fill":"#e8912d","fillOpacity":"0.2","stroke":"#e8912d"}]
+d3:["$","rect",null,{"x":"461","y":"274","width":"28","height":"28","rx":"3","fill":"#e8912d","fillOpacity":"0.2","stroke":"#e8912d"}]
+d4:["$","rect",null,{"x":"491","y":"274","width":"28","height":"28","rx":"3","fill":"#e8912d","fillOpacity":"0.2","stroke":"#e8912d"}]
+d5:["$","rect",null,{"x":"521","y":"274","width":"28","height":"28","rx":"3","fill":"#e8912d","fillOpacity":"0.2","stroke":"#e8912d"}]
+d6:["$","rect",null,{"x":"551","y":"274","width":"28","height":"28","rx":"3","fill":"#e8912d","fillOpacity":"0.2","stroke":"#e8912d"}]
+d7:["$","rect",null,{"x":"581","y":"274","width":"28","height":"28","rx":"3","fill":"#e8912d","fillOpacity":"0.2","stroke":"#e8912d"}]
+d8:["$","rect",null,{"x":"611","y":"274","width":"28","height":"28","rx":"3","fill":"#e8912d","fillOpacity":"0.2","stroke":"#e8912d"}]
+d9:["$","rect",null,{"x":"641","y":"274","width":"28","height":"28","rx":"3","fill":"#e8912d","fillOpacity":"0.2","stroke":"#e8912d"}]
+da:["$","text",null,{"x":"430","y":"20","textAnchor":"middle","fill":"currentColor","fontSize":"11","fillOpacity":"0.8","children":"16 ticks of 35.7 ns = 4 dots = 0.57 µs"}]
+db:["$","figcaption",null,{"children":"Four dots of the beam in ticks of the master clock, and how long a CPU T-state lasts at each speed. At 3.5 MHz, the Spectrum’s speed, a T-state is two dots."}]
+dc:["$","text",null,{"x":"105","y":"246","textAnchor":"middle","fill":"currentColor","fontSize":"11","fillOpacity":"0.8","children":"master clock 28–33 MHz"}]
+dd:["$","figcaption",null,{"children":"The three outputs. The video pipeline’s picture is the same for all of them; what differs is how its lines are sent."}]
+de:["$","text",null,{"x":"335","y":"224","textAnchor":"middle","fill":"currentColor","fontSize":"11","children":"28 MHz, set per timing"}]
+df:["$","line",null,{"x1":"335","y1":"190","x2":"335","y2":"142","stroke":"currentColor","strokeOpacity":"0.5","strokeDasharray":"3 3","markerEnd":"url(#tm9-arrow)"}]
+e0:["$","figcaption",null,{"children":"The HDMI path: a 360 × 288 window of the Next’s frame, a small buffer, and every line sent twice. The HDMI clock is made from the Next’s clock, so one HDMI frame lasts exactly one Next frame."}]
+1f:0
+7:"$undefined"
+1e:"$undefined"
+17:"$undefined"
