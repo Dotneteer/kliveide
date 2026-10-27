@@ -530,7 +530,7 @@ Scrolling and clip windows work together. The clip window belongs to the screen,
 to the layer's picture, so a layer can scroll inside a window that stays put, and a status panel
 on another layer can stay exactly where it is. The [ULA article](/en/under-the-hood/emulator-internals/next-display/ula/#part-7-scrolling-by-the-dot) and the articles on the other layers
 give the details of each layer's offsets; changing them in the middle of a frame, for a screen that
-is split into bands that scroll separately, is the subject of article 10.
+is split into bands that scroll separately, is the subject of [article 10](/en/under-the-hood/emulator-internals/next-display/raster-effects/#a-split-scroll).
 
 ## Part 4: Two answers for every dot
 
@@ -750,9 +750,11 @@ Here is the road from the beam's counters to those two colours, in four stages:
 The beam's counters reach a position, and each producer offers its two answers for it. In the
 same tick, the pipeline **latches the registers** that steer everything after it: the layer order,
 the transparency and fallback colours, which palettes are shown, which layers are on. They are
-held for this dot while it travels through the stages. That is how a write to a register in the
-middle of a line takes effect: from the next dot the beam reaches, and never half-way through one.
-Article 10 of the series is about using that.
+held for this dot while it travels through the stages. That is how a write to one of these registers in
+the middle of a line takes effect: from the next dot the beam reaches, and never half-way through one.
+A few settings are taken less often, the ULA's scroll per 8-dot cell, the sprites a line ahead;
+[article 10](/en/under-the-hood/emulator-internals/next-display/raster-effects/#part-2-when-a-write-shows)
+of the series lists them, and is about using all of this.
 
 ### Stage 1: look up
 
@@ -1729,7 +1731,8 @@ Next's ULA. What the Next changes about the ULA is the subject of the [ULA artic
 | 10 | [Changing the picture mid-frame](/en/under-the-hood/emulator-internals/next-display/raster-effects/) | the Copper, line interrupts, and how Klive keeps up with the beam |
 
 Articles 2 and 3 come before all the others, and article 9 after the layer articles. Articles 4 to 8
-can be read in any order.
+can be read in any order. Article 10 comes last: it changes the settings of all the others while a frame
+is drawn.
 
 ## Part 9: How Klive does it
 

@@ -4,6 +4,9 @@ A series of *Under the hood* articles that explain, in the style of
 `spectrum-display.mdx` and `zx81-display.mdx`, how the ZX Spectrum Next produces its picture:
 every video mode, the palettes, the layers and how they are composed into one pixel.
 
+The style and the review lessons of this series are collected in `.ai/hardware-articles-guide.md`
+for future articles.
+
 Status: **all ten articles written** (`next-display/overview.mdx`, `timing.mdx`, `palettes.mdx`,
 `ula.mdx`, `lores.mdx`, `layer2.mdx`, `tilemap.mdx`, `sprites.mdx`, `composition.mdx`,
 `raster-effects.mdx`). The series is complete.
