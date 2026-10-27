@@ -733,13 +733,25 @@ static void zxnextUlaProcessSprites(uint32_t drawPixels, uint32_t detectCollisio
 static void zxnextUlaRenderSpritesScreen(void) { zxnextUlaProcessSprites(1u, 0u); }
 
 /*
- * The first sprite the engine does not get to on each sprite line (128: all of them), by sprites.vhd's time
- * rules as NextComposedScreenDevice.renderSpritesPixel applies them: one 28 MHz clock per sprite qualified,
- * two more plus one per pixel for a sprite drawn on the line; a drawable sprite is not started while the
- * wide counter (511 + (clock + 2) / 4) is in 288-319 under the mask of the previous drawn sprite's X wrap
- * (spr_cur_notime); the line has totalHc * 4 clocks. Either time-out sets $303B bit 1.
+ * The sprite engine's time budget (sprites.vhd's state machine), per sprite line: the first sprite the
+ * engine does not finish (128: it finishes all of them) and how many of that sprite's pixels it wrote
+ * before it stopped (0: none).
+ *
+ * Checked against the simulated FPGA core (nvc, sprites.vhd alone, random sprite tables at 456- and
+ * 448-dot lines, the pixels written per sprite compared one for one). In 28 MHz clocks from the
+ * clock on which the wide counter reaches 511 (the line-buffer swap):
+ * - sprite 0 is decided on clock 3; every sprite after it one clock after the previous one ends;
+ * - a sprite not on the line (hidden, or its rows elsewhere) takes 1 clock (S_QUALIFY), whatever its X;
+ * - a sprite on the line takes 1 clock plus one per position it walks (S_PROCESS): its width, or fewer
+ *   when it runs off the right of the 320-dot line without wrapping (`drawn` below);
+ * - it is refused, and so is every sprite after it, when its decision falls while the wide counter
+ *   (511 + clock / 4) is in the last 4, 8, 16 or 32 dots before 320 - its own width's drawing time
+ *   (spr_cur_notime, with the X wrap of the sprite being decided);
+ * - the next swap, totalHc * 4 + 1 clocks later, stops the engine wherever it is, part-way through a
+ *   sprite too. Both time-outs set $303B bit 1.
  */
 static uint8_t zxnextUlaSpriteLineCut[ZXNEXT_SPRITE_SPACE_HEIGHT];
+static uint8_t zxnextUlaSpriteLineCutPixels[ZXNEXT_SPRITE_SPACE_HEIGHT];
 
 /*
  * `renderedRowsOnly`: compute only the lines the current render window draws. Each line's cut is
@@ -749,43 +761,47 @@ static uint8_t zxnextUlaSpriteLineCut[ZXNEXT_SPRITE_SPACE_HEIGHT];
  */
 static uint32_t zxnextUlaComputeSpriteLineCuts(uint32_t lastVisible, uint32_t renderedRowsOnly) {
   static const uint32_t wrapMasks[4] = {0x1cu, 0x18u, 0x10u, 0x00u};
-  uint32_t lineClocks = zxnextTimingTotalHc * 4u;
+  uint32_t lineClocks = zxnextTimingTotalHc * 4u + 1u;
   uint32_t overtime = 0u;
   for (uint32_t v = 0u; v < ZXNEXT_SPRITE_SPACE_HEIGHT; v++) {
     if (renderedRowsOnly && zxnextRenderRowOff(ZXNEXT_LAYER2_WIDE_SCREEN_Y + v)) continue;
-    uint32_t clock = 0u;
-    uint32_t lastMask = 0x1cu;
+    uint32_t clock = 3u;
     uint32_t cut = 128u;
+    uint32_t cutPixels = 0u;
     for (uint32_t i = 0u; i < 128u; i++) {
-      const ZxnextResolvedSprite* r = &zxnextUlaResolvedSprites[i];
-      uint32_t drawable = 0u;
-      uint32_t width = 16u << (i <= lastVisible ? r->scaleX : 0u);
-      if (i <= lastVisible && r->visible) {
-        int32_t sx = (int32_t)r->x;
-        int32_t sy = (int32_t)r->y;
-        if (sx > 319) sx -= 512;
-        if (sy > 255) sy -= 512;
-        int32_t height = (int32_t)(16u << r->scaleY);
-        drawable = (int32_t)v >= sy && (int32_t)v < sy + height && sx <= 319 && sx + (int32_t)width > 0;
+      if (clock >= lineClocks) {
+        cut = i;
+        break;
       }
-      if (!drawable) {
+      const ZxnextResolvedSprite* r = &zxnextUlaResolvedSprites[i];
+      if (i > lastVisible || !r->visible || ((v - (uint32_t)r->y) & 0x1ffu) >= (16u << r->scaleY)) {
         clock++;
         continue;
       }
-      uint32_t whc = (511u + ((clock + 2u) >> 2u)) & 0x1ffu;
-      uint32_t mask = lastMask;
-      lastMask = wrapMasks[r->scaleX & 3u];
+      uint32_t whc = (511u + (clock >> 2u)) & 0x1ffu;
+      uint32_t mask = wrapMasks[r->scaleX & 3u];
       if (whc >= 288u && whc < 320u && (whc & 0x20u) != 0u && (whc & 0x1fu & mask) == mask) {
         cut = i;
         break;
       }
-      if (clock + 2u + width > lineClocks) {
+      // --- The positions walked: the width, unless the sprite runs off the right without wrapping.
+      uint32_t width = 16u << r->scaleX;
+      uint32_t x = r->x;
+      uint32_t drawn = width;
+      if (x < 320u) {
+        if (x + width > 320u) drawn = 320u - x;
+      } else if (x < 511u - width) {
+        drawn = 1u;
+      }
+      if (clock + drawn > lineClocks) {
         cut = i;
+        cutPixels = lineClocks - clock;
         break;
       }
-      clock += 2u + width;
+      clock += drawn + 1u;
     }
     zxnextUlaSpriteLineCut[v] = (uint8_t)cut;
+    zxnextUlaSpriteLineCutPixels[v] = (uint8_t)cutPixels;
     if (cut < 128u) overtime = 1u;
   }
   return overtime;
@@ -868,7 +884,10 @@ static void zxnextUlaProcessSprites(uint32_t drawPixels, uint32_t detectCollisio
     for (uint32_t py = 0u; py < height; py++) {
       int32_t displayY = spriteY + (int32_t)py;
       if (displayY < 0 || displayY >= (int32_t)ZXNEXT_LAYER2_WIDE_SCREEN_HEIGHT) continue;
-      if ((uint32_t)sprite >= zxnextUlaSpriteLineCut[displayY]) continue; /* out of time on this line */
+      /* Out of time on this line: the sprites after the cut, and the cut sprite past the pixels it got */
+      uint32_t lineCut = zxnextUlaSpriteLineCut[displayY];
+      uint32_t pxEnd = (uint32_t)sprite == lineCut ? zxnextUlaSpriteLineCutPixels[displayY] : width;
+      if ((uint32_t)sprite > lineCut || pxEnd == 0u) continue;
       if (drawPixels && !detectCollisions && zxnextRenderRowOff(ZXNEXT_LAYER2_WIDE_SCREEN_Y + (uint32_t)displayY)) continue;
       /*
        * Clipping applies to what is *shown*, not to what the sprite engine writes: the FPGA fills its
@@ -882,7 +901,7 @@ static void zxnextUlaProcessSprites(uint32_t drawPixels, uint32_t detectCollisio
         ZXNEXT_SCREEN_WIDTH + ZXNEXT_LAYER2_WIDE_SCREEN_X;
       uint32_t coverageRow = (uint32_t)displayY * ZXNEXT_SPRITE_SPACE_WIDTH;
 
-      for (uint32_t px = 0u; px < width; px++) {
+      for (uint32_t px = 0u; px < pxEnd; px++) {
         int32_t displayX = spriteX + (int32_t)px;
         if (displayX < 0 || displayX >= (int32_t)ZXNEXT_LAYER2_320_SCREEN_WIDTH) continue;
 
@@ -2049,6 +2068,7 @@ static uint16_t zxnextBeamSaveTm[ZXNEXT_PIXEL_COUNT];
 static uint16_t zxnextBeamSaveL2[ZXNEXT_PIXEL_COUNT];
 static uint16_t zxnextBeamSaveSpr[ZXNEXT_PIXEL_COUNT];
 static uint8_t zxnextBeamSaveLineCut[ZXNEXT_SPRITE_SPACE_HEIGHT];
+static uint8_t zxnextBeamSaveLineCutPixels[ZXNEXT_SPRITE_SPACE_HEIGHT];
 static ZxnextResolvedSprite zxnextBeamSaveResolved[128];
 /*
  * The two small ones are C `volatile` so the compiler keeps them in memory: promoted to registers
@@ -2119,6 +2139,7 @@ static uint32_t zxnextBeamRenderPreview(uint32_t keep) {
     zxnextBeamSaveSpr[i] = zxnextLayerSpr[i];
   }
   for (uint32_t i = 0u; i < ZXNEXT_SPRITE_SPACE_HEIGHT; i++) zxnextBeamSaveLineCut[i] = zxnextUlaSpriteLineCut[i];
+  for (uint32_t i = 0u; i < ZXNEXT_SPRITE_SPACE_HEIGHT; i++) zxnextBeamSaveLineCutPixels[i] = zxnextUlaSpriteLineCutPixels[i];
   for (uint32_t i = 0u; i < 128u; i++) zxnextBeamSaveResolved[i] = zxnextUlaResolvedSprites[i];
   for (uint32_t i = 0u; i < ZXNEXT_ULA_LATCH_COUNT; i++) zxnextBeamSaveShown[i] = ulaShown[i];
 
@@ -2148,6 +2169,7 @@ static uint32_t zxnextBeamRenderPreview(uint32_t keep) {
     zxnextLayerSpr[i] = zxnextBeamSaveSpr[i];
   }
   for (uint32_t i = 0u; i < ZXNEXT_SPRITE_SPACE_HEIGHT; i++) zxnextUlaSpriteLineCut[i] = zxnextBeamSaveLineCut[i];
+  for (uint32_t i = 0u; i < ZXNEXT_SPRITE_SPACE_HEIGHT; i++) zxnextUlaSpriteLineCutPixels[i] = zxnextBeamSaveLineCutPixels[i];
   for (uint32_t i = 0u; i < 128u; i++) zxnextUlaResolvedSprites[i] = zxnextBeamSaveResolved[i];
   for (uint32_t i = 0u; i < ZXNEXT_ULA_LATCH_COUNT; i++) ulaShown[i] = zxnextBeamSaveShown[i];
   return beam;

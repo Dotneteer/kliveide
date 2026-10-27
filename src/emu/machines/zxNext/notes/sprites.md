@@ -142,9 +142,12 @@ written against an engine abstraction.
   completion — not when the display is drawn, which only happens when a display asks for it. The
   scenarios are `test/wasm/zxNext/sprite-collision-scenarios.ts`.
 - **bit 1, too many sprites per line** — set by the hardware when the sprite engine runs out of time
-  on a line (`sprites_overtime`). The whole-frame engine has no per-line time budget and never sets
-  it. The per-line budget described under *Performance Optimizations* below is the FPGA's, and was
-  also modelled by the removed TypeScript renderer; it is not emulated today.
+  on a line (`sprites_overtime`). The whole-frame engine reproduces the per-line budget with a cut
+  table (`zxnextUlaComputeSpriteLineCuts` in `wasm/zxnext/zxnext-ula.c`, whose header states the rule),
+  checked against `sprites.vhd` simulated under nvc; `test/zxnext-hw/sprites/sprite-time-budget.test.ts`
+  pins its results. *Performance Optimizations* below is wrong about the budget and is kept only as
+  history: the engine works through the whole line, from one line-buffer swap to the next, not only
+  in the blanking interval, and a drawn 1x sprite costs 17 clocks.
 
 **Pattern memory** is one 16K block written through port `$5B`, one byte per address, at
 `patternIndex << 8 | subIndex` (port `$303B` sets the index and, with bit 7, sub-index `$80`).
