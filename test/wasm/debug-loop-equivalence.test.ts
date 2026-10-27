@@ -90,6 +90,12 @@ const MACHINES: Record<string, () => Promise<Setup>> = {
     const s = await createNextSession();
     return { machine: s.machine as unknown as Machine, prefix: "zxnext", base: 0x8000, counter: 0x9000, di: true, port: 0x7ffe };
   },
+  // --- A Pi streams a square wave routed to EAR: the port reads see bit 6 change (PI_I2S_AUDIO_PLAN §6)
+  "zxnext (Pi I2S)": async () => {
+    const s = await createNextSession();
+    s.setNextReg(0xa2, 0xc1).piI2sConnect({ rate: 44_100, sample: (k) => (k % 40 < 20 ? [0x7fff, 0x7fff] : [-0x8000, -0x8000]) });
+    return { machine: s.machine as unknown as Machine, prefix: "zxnext", base: 0x8000, counter: 0x9000, di: true, port: 0x7ffe };
+  },
   z88: async () => {
     const s = await createZ88Session({ audioSampleRate: 44100 });
     const x = (s.machine as unknown as Machine).wasmV2Runtime!.exports;

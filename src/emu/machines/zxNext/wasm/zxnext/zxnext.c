@@ -213,6 +213,7 @@ static uint8_t earBit;
 static uint8_t micBit;
 
 #include "zxnext-beeper.h"
+#include "zxnext-pi-i2s.h"
 #include "zxnext-frame.c"
 #include "zxnext-debug.c"
 #include "zxnext-memory.c"
@@ -235,6 +236,7 @@ static uint8_t micBit;
 #include "zxnext-audio-mixer.c"
 #include "zxnext-ctc.c"
 #include "zxnext-clock28.c"
+#include "zxnext-pi-i2s.c"
 #include "zxnext-uart.c"
 #include "zxnext-i2c.c"
 #include "zxnext-input.c"
@@ -269,6 +271,7 @@ static void clearMachineBuffers(void) {
   zxnextAudioMixerReset();
   zxnextCtcReset();
   zxnextUartHardReset(); /* a hard reset reloads the FPGA core */
+  zxnextPiI2sHardReset();
   zxnextI2cReset();
   zxnextInputReset();
   zxnextJoystickHardReset(); /* a core load initialises the key-joystick map */
@@ -322,6 +325,7 @@ void zxnextReset(void) {
   zxnextAudioMixerReset();
   zxnextCtcReset();
   zxnextUartReset();
+  zxnextPiI2sHardReset(); /* NR $A2 resets to 0: the receiver is held in reset */
   zxnextI2cReset();
   zxnextInputReset();
   zxnextExpansionReset();

@@ -191,6 +191,8 @@ const JOURNALED = new RegExp(
       "Joystick",
       "Expansion",
       "Rtc",
+      // --- The Pi I2S sample source (`zxnext-pi-i2s.c`): connect, deliver, end
+      "PiI2s",
       "Ctc",
       "Copper",
       // --- Test-only hooks that move clocks

@@ -51,6 +51,9 @@ import { createCore, readNextRegDirect } from "../core/machines";
 import { evaluateProbe, type Probe } from "../cases/probes";
 import { InMemorySdMessenger, MemorySdCard, type SdCardBacking } from "./sd-card";
 import { uartPeerOf, type UartFrame, type UartIndex } from "./uart-peer";
+import { piI2sSourceOf, type PiI2sSamples } from "./pi-i2s";
+import type { PiI2sSource } from "@emu/machines/zxNext/piI2s/PiI2sSource";
+import type { PiI2sStatus } from "@common/zxnext/piI2s";
 import { keyCode, type NextKey } from "./keys";
 import { joyBits, setJoystickState, type JoyButton, type JoySide } from "./joystick";
 import { mouseButtonBits, sendMousePacket, type MouseEvent } from "./mouse";
@@ -437,6 +440,41 @@ export class NextTestSession {
   /** The bytes the Next has transmitted on the UART since power-on, whole frames only (the last 4096). */
   uartOutput(uart: UartIndex): number[] {
     return uartPeerOf(this.machine).output(uart);
+  }
+
+  // ==========================================================================================
+  // Pi I2S: the Raspberry Pi's audio stream on the Next's I2S input
+
+  /**
+   * The Pi starts streaming: a source (`TonePiI2sSource`, `PcmPiI2sSource`, ...) or a function of the
+   * sample index. Sample 0 starts now and the machine delivers the samples frame by frame, as the IDE
+   * does; NextReg $A2 decides what the Next makes of them. Each sample's left word lands half a sample
+   * period after it starts, the right word at its end. A stream with a length stops clocking after its
+   * last sample, and the receiver holds its last words.
+   */
+  piI2sConnect(stream: PiI2sSource | PiI2sSamples): this {
+    this.machine.connectPiI2sSource(piI2sSourceOf(stream));
+    return this;
+  }
+
+  /** The Pi stops clocking: the receiver holds its last words. */
+  piI2sDisconnect(): this {
+    this.machine.connectPiI2sSource(undefined);
+    return this;
+  }
+
+  /** The stream's state: rate, the sample the receiver latches next, ended. Device state, for assertions. */
+  piI2sStatus(): PiI2sStatus | undefined {
+    return this.machine.getPiI2sStatus();
+  }
+
+  /**
+   * The receiver's latched words as they stand now (10-bit offset binary, $200 at rest) and its EAR
+   * bit, before NextReg $A2's selection and muting. Device state, for assertions.
+   */
+  piI2sReceiver(): { left: number; right: number; ear: boolean } {
+    const ex = this.machine.wasmV2Runtime!.exports;
+    return { left: ex.zxnextGetPiI2sLatchLeft(), right: ex.zxnextGetPiI2sLatchRight(), ear: ex.zxnextGetPiI2sFeEar() !== 0 };
   }
 
   // ==========================================================================================

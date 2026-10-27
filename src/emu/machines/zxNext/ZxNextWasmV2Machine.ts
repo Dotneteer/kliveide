@@ -83,6 +83,8 @@ import {
   type MachineStateParts
 } from "../state/wasmStateImage";
 import { writeCoreBytes } from "@emu/machines/reverse/coreMemoryWrites";
+import { PI_I2S_MAX_RATE, type PiI2sSource } from "./piI2s/PiI2sSource";
+import type { PiI2sStatus } from "@common/zxnext/piI2s";
 import { revertSdWrites, type SdRevertResult, type SdUndoEntry, type SdUndoLog } from "@emu/machines/reverse/SdUndoLog";
 
 const WASM_AUDIO_SAMPLE_SCALE = 32768.0;
@@ -198,6 +200,9 @@ export class ZxNextWasmV2Machine
   private wasmV2AudioSampleRate = -1;
   private readonly wasmV2AudioSamples: AudioSample[] = [];
   private wasmV2Checkpoint?: ZxNextWasmV2Checkpoint;
+  /** What stands in for the Raspberry Pi on the I2S link (`.plans/PI_I2S_AUDIO_PLAN.md`) */
+  private piI2sSource?: PiI2sSource;
+  private piI2sScratch = new Int16Array(0);
   /** The core's since-pause contention count when the IDE last restarted it (see resetContentionDelaySincePause). */
   private wasmV2ContentionPauseBase = 0;
   constructor(
@@ -577,6 +582,7 @@ export class ZxNextWasmV2Machine
     }
 
     this.emulateKeystroke();
+    this.feedPiI2s(runtime);
     runtime.exports.zxnextExecuteFrame();
     this.syncCpuFromWasmV2(runtime);
     this.syncWasmV2StorageFrameCommand(runtime);
@@ -895,6 +901,64 @@ export class ZxNextWasmV2Machine
   }
 
   /**
+   * Connects a sample source to the Next's I2S input in place of the Raspberry Pi, or with undefined
+   * disconnects it (the receiver then holds its last words, as when a Pi stops clocking). The stream
+   * starts now; NextReg $A2 decides what the Next makes of it. Connecting is a journaled input; the
+   * held checkpoint goes, as it cannot bring back the stream it was captured with.
+   */
+  connectPiI2sSource(source: PiI2sSource | undefined): void {
+    const runtime = this.requireWasmV2Runtime();
+    this.piI2sSource = source;
+    const rate = source ? Math.max(1, Math.min(PI_I2S_MAX_RATE, Math.round(source.rate))) : 0;
+    runtime.exports.zxnextPiI2sConnect(rate);
+    this.invalidateCheckpoints();
+    this.feedPiI2s(runtime);
+  }
+
+  /** The connected I2S source and where its stream stands */
+  getPiI2sStatus(): PiI2sStatus | undefined {
+    const ex = this.wasmV2Runtime?.exports;
+    if (!ex || ex.zxnextGetPiI2sConnected() === 0) return undefined;
+    return {
+      name: this.piI2sSource?.name,
+      rate: ex.zxnextGetPiI2sRate(),
+      position: ex.zxnextGetPiI2sPosition(),
+      length: this.piI2sSource?.length,
+      ended: ex.zxnextGetPiI2sEnded() !== 0
+    };
+  }
+
+  /**
+   * Delivers the samples the core asks for (`zxnextGetPiI2sWant`) into its ring: journaled writes, so
+   * a reverse-debugging replay delivers the same samples at the same point (plan D4). A stream the
+   * core holds without a source here (a state saved while one played) ends where it stands.
+   */
+  private feedPiI2s(runtime: ZxNextWasmV2Runtime): void {
+    const ex = runtime.exports;
+    if (ex.zxnextGetPiI2sConnected() === 0) return;
+    const want = ex.zxnextGetPiI2sWant();
+    if (want === 0) return;
+    const source = this.piI2sSource;
+    if (!source) {
+      ex.zxnextPiI2sEnd();
+      return;
+    }
+    if (this.piI2sScratch.length < want * 2) this.piI2sScratch = new Int16Array(want * 2);
+    const from = ex.zxnextGetPiI2sFilled();
+    const got = Math.max(0, Math.min(want, source.fill(from, want, this.piI2sScratch)));
+    if (got > 0) {
+      const capacity = ex.zxnextPiI2sRingCapacity();
+      const ring = new Int16Array(runtime.memoryBuffer, ex.zxnextPiI2sRingPtr(), capacity * 2);
+      const start = from % capacity;
+      const first = Math.min(got, capacity - start);
+      writeCoreBytes(runtime, ring, this.piI2sScratch.subarray(0, first * 2), start * 2);
+      if (got > first) writeCoreBytes(runtime, ring, this.piI2sScratch.subarray(first * 2, got * 2), 0);
+      ex.zxnextPiI2sAppend(got);
+    }
+    if (got < want) ex.zxnextPiI2sEnd();
+  }
+
+  /**
    * Drops the held checkpoint, because something it was captured against has changed underneath it.
    */
   invalidateCheckpoints(): void {
@@ -989,6 +1053,10 @@ export class ZxNextWasmV2Machine
           wasm.zxnextBeginAudioFrame();
           this.frameCompleted = false;
         }
+
+        // --- The Pi I2S samples this frame needs, as the fast path delivers them (idempotent: a run that
+        // --- resumes mid-frame finds them there already)
+        this.feedPiI2s(runtime);
 
         // --- Queued keystrokes are timed in tacts and held for whole frames, so the fast path above
         // --- plays them once per frame. Do the same here instead of once per instruction: the queue

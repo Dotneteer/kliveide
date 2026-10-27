@@ -363,6 +363,21 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & ConditionCoreExports & Z
   zxnextI2cWriteSclPort: ZxNextWasmV2ExportFunction;
   zxnextI2cWriteSdaPort: ZxNextWasmV2ExportFunction;
   zxnextRtcSetTime: ZxNextWasmV2ExportFunction;
+  zxnextPiI2sConnect: ZxNextWasmV2ExportFunction;
+  zxnextPiI2sDisconnect: ZxNextWasmV2ExportFunction;
+  zxnextPiI2sAppend: ZxNextWasmV2ExportFunction;
+  zxnextPiI2sEnd: ZxNextWasmV2ExportFunction;
+  zxnextPiI2sRingPtr: ZxNextWasmV2ExportFunction;
+  zxnextPiI2sRingCapacity: ZxNextWasmV2ExportFunction;
+  zxnextGetPiI2sConnected: ZxNextWasmV2ExportFunction;
+  zxnextGetPiI2sEnded: ZxNextWasmV2ExportFunction;
+  zxnextGetPiI2sRate: ZxNextWasmV2ExportFunction;
+  zxnextGetPiI2sFilled: ZxNextWasmV2ExportFunction;
+  zxnextGetPiI2sPosition: ZxNextWasmV2ExportFunction;
+  zxnextGetPiI2sWant: ZxNextWasmV2ExportFunction;
+  zxnextGetPiI2sLatchLeft: ZxNextWasmV2ExportFunction;
+  zxnextGetPiI2sLatchRight: ZxNextWasmV2ExportFunction;
+  zxnextGetPiI2sFeEar: ZxNextWasmV2ExportFunction;
   zxnextSetJoystickLeftState: ZxNextWasmV2ExportFunction;
   zxnextSetJoystickRightState: ZxNextWasmV2ExportFunction;
   zxnextJoystickReadPort1f: ZxNextWasmV2ExportFunction;
@@ -798,6 +813,21 @@ const requiredV2Exports = [
   "zxnextI2cWriteSclPort",
   "zxnextI2cWriteSdaPort",
   "zxnextRtcSetTime",
+  "zxnextPiI2sConnect",
+  "zxnextPiI2sDisconnect",
+  "zxnextPiI2sAppend",
+  "zxnextPiI2sEnd",
+  "zxnextPiI2sRingPtr",
+  "zxnextPiI2sRingCapacity",
+  "zxnextGetPiI2sConnected",
+  "zxnextGetPiI2sEnded",
+  "zxnextGetPiI2sRate",
+  "zxnextGetPiI2sFilled",
+  "zxnextGetPiI2sPosition",
+  "zxnextGetPiI2sWant",
+  "zxnextGetPiI2sLatchLeft",
+  "zxnextGetPiI2sLatchRight",
+  "zxnextGetPiI2sFeEar",
   "zxnextSetJoystickLeftState",
   "zxnextSetJoystickRightState",
   "zxnextJoystickReadPort1f",

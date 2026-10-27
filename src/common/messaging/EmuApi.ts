@@ -50,6 +50,7 @@ import type {
   SpectrumSnapshotLoadResult
 } from "@common/spectrum/snapshot/spectrumSnapshotLoadTypes";
 import type { SpectrumSnapshotSaveResult } from "@common/spectrum/snapshot/spectrumSnapshotSaveTypes";
+import type { PiI2sSourceSpec, PiI2sStatus } from "@common/zxnext/piI2s";
 import type { SpectrumSnapshotFormat } from "@common/spectrum/snapshot/spectrumSnapshot";
 import type { SzxCreator } from "@common/spectrum/snapshot/szxWriter";
 import type {
@@ -364,6 +365,22 @@ class EmuApiImpl {
    * @param _protect True to enable write protection.
    */
   async setDiskWriteProtection(_index: number, _protect: boolean): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Puts a sample source on a ZX Spectrum Next's Raspberry Pi I2S input in place of the Pi, or takes it
+   * off (`.plans/PI_I2S_AUDIO_PLAN.md` §4). The stream starts at once.
+   * @param _spec The source: off, a tone, or a WAV file's bytes
+   * @returns The stream's state afterwards
+   * @throws when the machine is not a Next, or the WAV file cannot be decoded (the message names why)
+   */
+  async setPiI2sSource(_spec: PiI2sSourceSpec): Promise<PiI2sStatus | undefined> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /** The Next's Pi I2S stream, or undefined when nothing streams (or the machine is not a Next) */
+  async getPiI2sStatus(): Promise<PiI2sStatus | undefined> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 

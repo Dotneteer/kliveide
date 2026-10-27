@@ -158,6 +158,7 @@ import { SpectrumSnapshotSaveCommand } from "./commands/SpectrumSnapshotSaveComm
 import { StateLoadCommand, StateSaveCommand } from "./commands/MachineStateCommands";
 import { DebugRecordingLoadCommand, DebugRecordingSaveCommand } from "./commands/DebugRecordingCommands";
 import { TapeLoadCommand } from "./commands/TapeLoadCommand";
+import { PiAudioCommand } from "./commands/PiAudioCommand";
 import { RunToCursorCommand } from "./commands/RunToCursorCommand";
 import { LabelCommand } from "./commands/LabelCommand";
 import { AnnDetectCommand } from "./commands/AnnDetectCommand";
@@ -338,6 +339,7 @@ export function registerIdeCommands(cmdSrv: IIdeCommandService): void {
   cmdSrv.registerCommand(new DebugRecordingSaveCommand());
   cmdSrv.registerCommand(new DebugRecordingLoadCommand());
   cmdSrv.registerCommand(new TapeLoadCommand());
+  cmdSrv.registerCommand(new PiAudioCommand());
   cmdSrv.registerCommand(new RunToCursorCommand());
   cmdSrv.registerCommand(new LabelCommand());
   cmdSrv.registerCommand(new AnnDetectCommand());

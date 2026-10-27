@@ -242,7 +242,7 @@ async function sp48Machine(): Promise<Driver> {
  * reads the whole keyboard and writes what it read through banked memory, and counts interrupts on
  * the border.
  */
-async function nextMachine(): Promise<Driver> {
+async function nextMachine(piI2s = false): Promise<Driver> {
   const s = await createNextSession();
   await s.loadCode(`
       .org $8000
@@ -287,6 +287,11 @@ handler:
   for (let i = 0; i <= 0x100; i++) s.poke(0x9000 + i, 0x91);
   s.pokeWord(0xa000, 0xc000);
   s.runFrames(2);
+  if (piI2s) {
+    // --- A Pi streams a square wave, routed to EAR and into the mix: the samples reach the core as
+    // --- journaled ring writes each frame (PI_I2S_AUDIO_PLAN D4)
+    s.setNextReg(0xa2, 0xc1).piI2sConnect({ rate: 44_100, sample: (k) => (k % 50 < 25 ? [0x7fff, 0x6000] : [-0x8000, -0x6000]) });
+  }
   return {
     rig: new ReverseRig("zxnext", s.machine),
     executeFrame: () => s.machine.executeMachineFrame(),
@@ -527,7 +532,8 @@ const SEEDS = (() => {
 /** Core id, machine, keys, and a name when one core runs several machines */
 const cores: [SpikeCoreId, MachineFactory, string[], string?][] = [
   ["sp48", sp48Machine, SP48_KEYS],
-  ["zxnext", nextMachine, NEXT_KEYS],
+  ["zxnext", () => nextMachine(), NEXT_KEYS],
+  ["zxnext", () => nextMachine(true), NEXT_KEYS, "zxnext (Pi I2S)"],
   ["sp128", sp128FamilyMachine("sp128", "sp128"), SP128_KEYS],
   ["sp128", sp128FamilyMachine("pentagon", "sp128"), SP128_KEYS, "pentagon"],
   // --- Without its own ROM the Scorpion boots the 128K ROMs, on its own memory map and timing

@@ -52,6 +52,7 @@ static uint32_t zxnextPortsRead(uint32_t address) {
   if ((normalized & 0xffffu) == 0x243bu) {
     lastPortValue = zxnextNextRegGetIndex();
   } else if ((normalized & 0xffffu) == 0x253bu) {
+    zxnextPiI2sOnNextRegRead(zxnextNextRegGetIndex());
     lastPortValue = zxnextNextRegGetValue();
   } else if ((normalized & 0xffffu) == 0x133bu ||
              (normalized & 0xffffu) == 0x143bu ||
@@ -220,6 +221,8 @@ static void zxnextPortsWrite(uint32_t address, uint32_t value) {
     }
   } else if ((normalized & 0x0001u) == 0) {
     zxnextUlaWritePortFe(byteValue);
+    /* The Pi I2S EAR bit's MIC transitions so far go first: the beeper keeps them in order */
+    zxnextPiI2sSync();
     zxnextBeeperSetOutput((byteValue & 0x10u) != 0u, (byteValue & 0x08u) != 0u);
   } else if ((normalized & 0xc002u) == 0xc000u) {
     if (zxnextPortsGroupEnabled(2, 0)) zxnextPsgSetRegisterIndex(byteValue);

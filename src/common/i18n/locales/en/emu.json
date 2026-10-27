@@ -1058,5 +1058,29 @@
     "placeholders": {
       "drive": "The drive number, 1 or 2 (never translated)"
     }
+  },
+  "emu.piI2s.notNext": "The machine is not a ZX Spectrum Next",
+  "@emu.piI2s.notNext": {
+    "context": "Error of the ZX Spectrum Next's Raspberry Pi audio input (the 'pi-audio' IDE command), shown after 'Cannot play it on the Pi audio input: '. The selected machine has no such input."
+  },
+  "emu.piI2s.wav.notWav": "The file is not a WAV file",
+  "@emu.piI2s.wav.notWav": {
+    "context": "Error of the ZX Spectrum Next's Raspberry Pi audio input (the 'pi-audio' IDE command), shown after 'Cannot play it on the Pi audio input: '. "
+  },
+  "emu.piI2s.wav.noFormat": "The WAV file has no format chunk",
+  "@emu.piI2s.wav.noFormat": {
+    "context": "Error of the ZX Spectrum Next's Raspberry Pi audio input (the 'pi-audio' IDE command), shown after 'Cannot play it on the Pi audio input: '. 'format chunk' is the part of a WAV file describing its sample format."
+  },
+  "emu.piI2s.wav.noData": "The WAV file has no sound data",
+  "@emu.piI2s.wav.noData": {
+    "context": "Error of the ZX Spectrum Next's Raspberry Pi audio input (the 'pi-audio' IDE command), shown after 'Cannot play it on the Pi audio input: '. "
+  },
+  "emu.piI2s.wav.unsupportedFormat": "Only uncompressed PCM (8, 16, 24 or 32 bits) and 32-bit float WAV files can be played",
+  "@emu.piI2s.wav.unsupportedFormat": {
+    "context": "Error of the ZX Spectrum Next's Raspberry Pi audio input (the 'pi-audio' IDE command), shown after 'Cannot play it on the Pi audio input: '. PCM is a technical term; keep it."
+  },
+  "emu.piI2s.wav.badRate": "The WAV file's sample rate is not valid",
+  "@emu.piI2s.wav.badRate": {
+    "context": "Error of the ZX Spectrum Next's Raspberry Pi audio input (the 'pi-audio' IDE command), shown after 'Cannot play it on the Pi audio input: '. "
   }
 }
