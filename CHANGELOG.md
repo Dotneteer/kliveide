@@ -1,5 +1,361 @@
 # Klive IDE Changelog
 
+## 0.65.0 (2026-10-27)
+
+### Highlights
+
+- **The HT-1080Z**, the Hungarian school computer: Series I, Series II and the /64.
+- **The ZX Interface 1 with two Microdrives** on the ZX Spectrum 48K and 128K.
+
+### Features
+
+- **One colour set for every disassembly:** the Disassembly view, every file viewer and ROM page
+  (read-only ones included), the execution history, the Breakpoints panel, the annotation dialogs,
+  the
+  Copper list and the `dis` and `history` commands now show an instruction the same way: the address
+  and opcodes in the accent colours, the instruction in bold, every label (generated or named) in
+  the
+  label colour, a name in an operand in the operand colour, data in the directive colour and
+  comments
+  green and italic.
+- **ZX80 ROM annotations:** Klive now ships the whole ZX80 ROM annotated, as it does the ZX81's: a
+  label on every call and jump target, a synopsis for each of its 314 labels, its data regions, and
+  its tables (keys and keywords, the syntax table and operand classes, the editing keys, operator
+  priorities, the functions and the character set), so the ZX80's ROM reads by name in the
+  Disassembly view and in the ROM annotation editor.
+- **Export ROM annotations as source:** the ROM annotation editor's **Export as source…** button
+  (and
+  the new `rom-ann-export` command) writes a whole ROM — every page its annotations name, with their
+  labels and comments — as one Klive Z80 assembly file, then assembles it and says whether it gives
+  back the ROM byte for byte, naming the first bytes that differ when it does not.
+- **Export as source from a button and the Debug menu, always verified:** the Disassembly view and a
+  bank document have an **Export as source** button in their header, and **Debug › Export
+  Disassembly as Source...** does the same from the menu. Every export — these, the tools menu, a
+  named graphic's and the ROM annotation editor's — is assembled afterwards and the verdict is shown
+  in a message box: an error that names the first failing line or differing bytes when the file does
+  not give back the same bytes. The save dialog opens in an export folder — `SourceExports` in a
+  Klive project, `KliveExports/source` in your home folder otherwise — and remembers the folder you
+  choose in the project's settings, or in your user settings without a project
+  (`export.sourceFolder`). `export-asm` and `rom-ann-export` no longer take `-noverify`, and fail
+  when the check fails.
+- **A redesigned ROM annotation editor:** the file's details — where it is, whether it is ready to
+  ship, how new entries are recorded, and the source export — sit in a column beside the list of its
+  pages, and each pane scrolls on its own with the app's scrollbars. Each page row shows the ROM's
+  name
+  and CRC, its size, its labels, how many call and jump targets still need a label (**To label**,
+  with
+  a **next $xxxx** link that steps through them and keeps its place when you come back) and its
+  completeness level. A shipped, read-only file offers **Make working copy**. In a narrow document
+  the
+  details stack above the pages.
+- **The 128K editor ROM's calls into ROM 1 decoded:** in the ZX Spectrum 128K's editor ROM (ROM 0),
+  `RST $28` calls a routine in the 48K BASIC ROM whose address follows the instruction. The
+  Disassembly view, ROM annotation pages and Export as source now list that address as a `.defw`
+  after the `RST $28` instead of decoding it as instructions, so the code after each call lines up.
+  Likewise the report code after each `CALL $05AC`, the editor ROM's way of stopping with an error,
+  is listed as a `.defb` with its error code. The 48K BASIC ROM keeps its own decoding of `RST $28`
+  as the calculator.
+- **The 128K's editor ROM fully annotated:** the ZX Spectrum 128K's editor ROM (ROM 0) now has
+  annotations of its own, at the same completeness as the 48K ROM's: every routine is labelled and
+  described and its lines are commented, from start-up and the main menu to the full-screen editor
+  and its menus, Renumber, the Tape Tester, the RAM disk, PLAY and MIDI, the RS232 and printer
+  commands, and the tape commands. Export as source reassembles it byte for byte.
+- **The 128K's ROM 1 fully annotated:** the ZX Spectrum 128K's ROM 1 now has annotations of its own,
+  at the same completeness as the 48K ROM's. It takes the 48K ROM's labels and comments wherever its
+  bytes are the same, and describes what the 128K changed: the six routines it patched, and the new
+  code where the 48K ROM is empty, such as the keypad routines, the hooks that pass control to the
+  128K's other ROM, and the SPECTRUM and PLAY keywords. ROM annotations that build on another ROM's
+  now work everywhere: the Disassembly view, the pages the ROM annotation editor opens (which list
+  the inherited names under the page's own), the editor's label count, readiness check and
+  completeness level, and Export as source, which reassembles ROM 1 byte for byte.
+- **The +2A/+3's 48K BASIC ROMs fully annotated:** ROM 3 of the ZX Spectrum +2A and +3, in the v4.0,
+  v4.1 and Spanish versions (the +3E's ROM 3 is v4.0's), now has annotations of its own at the same
+  completeness as the 48K ROM's. Each takes the 48K and 128K ROMs' labels and comments wherever its
+  bytes are the same, and describes what Amstrad changed: the disk motor's time-out in the frame
+  interrupt, the NMI, the routines that switch to another ROM, the hooks into the editor ROM (which
+  v4.1 turns off), and the messages, including the Spanish texts and characters. Export as source
+  reassembles each one byte for byte.
+- **The 48K ROM fully annotated:** the ZX Spectrum 48K BASIC ROM's annotations, written for Klive
+  from the ROM's own bytes, now cover the whole ROM: every call and jump target has a label (1,043
+  labels in all), every labelled routine has a synopsis saying what it does, takes and returns, and
+  the lines whose purpose is not obvious carry a comment (4,886). Tables, messages and calculator
+  literals are marked as data, and the character set is listed one binary pixel row per line with
+  each character named, as in the ZX80 and ZX81 ROMs, so the Disassembly view reads the ROM as code
+  and data throughout, and Export as source turns it into a commented listing that reassembles byte
+  for byte. The labels also apply to the 128K's copy of the 48K BASIC ROM, wherever its bytes match.
+- **Bit-7 text and fill regions in annotations:** mark a table of strings whose last character has
+  bit 7 set — such as the ZX Spectrum ROM's keyword and message tables — with **Mark As Bit-7 Text
+  (.defc)**, and the Disassembly view lists one `.defc "TEXT"` row per string; mark padding or
+  unused space with **Mark As Fill (.fillb)**, and each run of one repeated byte is a single
+  `.fillb 1170,$FF` row. Every region kind a machine supports — Text, Bit-7 Text, Fill, and Copper
+  and DMA on the Next — is now in both annotation menus, the Disassembly view's row menu and the
+  NEX/ROM annotation editor's, and in the region dialogs, whose type choices now sit in two rows.
+  Export as source writes `.defc` and `.fillb` and still reassembles byte for byte; the SkoolKit
+  export writes them as `DEFM "AB","C"+128` and `DEFS 1170,$FF`, and the SkoolKit import now reads
+  both forms. Bit-7 text is offered on every machine but the ZX80 and ZX81.
+- **Completeness level hover card in the ROM annotation editor:** rest the pointer on the readiness
+  chip, the "records level" text, the Completeness column head or a page's level meter, and a card
+  explains the three levels, marks which ones are reached and which comes next, and counts what is
+  still missing: the call and jump targets without a label and the labels without a synopsis. The
+  card opens after a short pause, stays open while you move onto it, and closes on Escape; it also
+  opens when the keyboard focuses one of those places.
+- **The +2A/+3 and +2E/+3E ROMs fully annotated:** the editor ROM (ROM 0), the syntax ROM (ROM 1)
+  and the +3DOS ROM (ROM 2) of the ZX Spectrum +2A/+3, in the v4.0, v4.1 and Spanish versions, and
+  of the +2E/+3E now have annotations at the same completeness as the 48K ROM's: every routine is
+  labelled and described and its lines are commented, from start-up, the menus and the editor to +3
+  BASIC's commands, the disk operating system's calls, the floppy and hard disk drivers, and the
+  +3E's streams, partitions and drive letters. Calls from one of these ROMs into another are listed
+  with the address they pass as a `.defw`, so the code after them lines up, and Export as source
+  reassembles each ROM byte for byte.
+- **The ZX Spectrum Next's ROMs fully annotated:** the four pages of NextZXOS, the alternate ROM,
+  the DivMMC ROM and the Multiface ROM now have annotations at the same completeness as the 48K
+  ROM's: every routine is labelled and described and its lines are commented, from start-up, the
+  menus and the Browser to NextBASIC's commands and editor, sprites, tiles, layers and PLAY, the DOS
+  calls and the SD card driver, the FAT file system and the NMI menu. The Disassembly view lists the
+  address or byte that follows a call into another ROM or into the DivMMC's memory as data, so the
+  code after it lines up, and Export as source reassembles each ROM byte for byte. The enNextLG.rom
+  variant shares them.
+- **C with z88dk.** Klive builds, runs, debugs and exports C programs with z88dk: a z88dk
+  Integration dialog (Settings › Integrations or `z88dk-setup`) finds an installation or downloads a
+  release from GitHub, `.c` build roots compile for the running machine (every ZX Spectrum family
+  machine, from the 48K, 128K, Pentagon 128 and +2A/+3/+2E/+3E to the Timex models, the Scorpion and
+  the Next, and the ZX80/ZX81 and Cambridge Z88 application cards), errors reach the Problems view,
+  breakpoints stop on C lines, Step Into/Over/Out step C statements, the Call Stack and Variables
+  panels show functions, parameters, locals and globals, Export copies the native file z88dk wrote,
+  new `z88-dk` project templates cover every supported machine, and a build warns when z88dk's ZX
+  Spectrum Next startup code would run into `printf`'s format table, which can stop the program from
+  starting.
+- **The HT-1080Z:** Klive emulates the Hungarian school computer in five models - Series I,
+  Series II and the HT-1080Z/64, and Series I and II with 48K - with their ROMs, Level II BASIC and
+  character sets, the accented letters and the /64's Hungarian and mathematical characters, the
+  /64's AY sound chip, and a virtual keyboard in the original's colours. Programs load from `.cas`,
+  `.cmd` and `.bas` tapes (Load and Run, `tape-load`, the Explorer, drag and drop, `klive run`),
+  fast or in real time, and `CSAVE` writes `.cas` files. The screen is drawn against the CPU clock,
+  with the black dashes a video-memory access leaves, VIDEO CUT and PAGE. Debugging, the BASIC
+  Listing, the disassembly of the ROM's tables, execution history, reverse debugging, code coverage,
+  the beam position overlay and state files work as on the other machines.
+- **Machine code for the HT-1080Z:** the assembler takes `.model HT1080Z`, and Run and Debug
+  start the code in the emulated machine as its `SYSTEM` command would: Klive answers the power-on
+  question so BASIC keeps below the code, writes it into RAM and starts it, and a `RET` goes back to
+  BASIC. Inject leaves the code for `X=USR(0)`. Export writes a `.cmd` load module or a `.cas` tape
+  that loads with `SYSTEM`. A new project template prints a welcome on the screen; `klive run` and
+  the Z80 unit-test runner take HT-1080Z projects too.
+- **HT-1080Z tape file viewer:** clicking a `.cas`, `.cmd` or tokenised `.bas` file shows what it
+  holds instead of its hex bytes - a summary (name, program or code, start address, play time,
+  whether it fits a 16K model), a timeline of the tape, a memory map of where it loads, and its
+  parts
+  with their bytes explained field by field. BASIC programs are listed with their keywords picked
+  out, in the Series I, Series II or /64 characters, and every part pops out as a BASIC listing, a
+  disassembly or memory. A machine-code tape can be debugged from its start address - a button on
+  its tab, an Explorer entry, or the new `tape-load -e` - and clicking the summary's start address
+  selects the record that holds it. A `.bas` file is now an HT-1080Z program only when its content
+  is a
+  tokenised one: BASIC source text with the same extension opens in the code editor, as in the other
+  machines' projects, and the HT-1080Z's deck refuses it with a clear message.
+- **HT-1080Z ROM annotations:** Klive now ships every HT-1080Z ROM annotated: the Level II BASIC of
+  Series I and II and of the HT-1080Z/64, the extension ROM of each model and the three character
+  generators. Every call and jump target has a label and every label a synopsis, the tables,
+  messages
+  and number constants are marked as data, and each character is described, so the ROMs read by name
+  in the Disassembly view of a running HT-1080Z (the extension at `$3000` included) and in the ROM
+  annotation editor.
+- **Late ULA timing:** the ZX Spectrum 16K, 48K and 128K can run with the "late" (alternate) ULA
+  timing of many real machines, everything the ULA does one T-state later against the interrupt.
+  Switch it on with **Machine › ZX Spectrum 48K / 128K › Late ULA Timing** or in Settings ›
+  Emulator; an `.szx` snapshot sets the timing its machine ran, and saving one records it.
+- **Snow effect:** the ZX Spectrum 16K, 48K and 128K show the "snow" of the real machine when a
+  program points the I register at contended memory: the CPU's memory refresh disturbs the ULA's
+  screen reads. It is on by default; **Machine › ZX Spectrum 48K / 128K › Snow Effect** or Settings
+  › Emulator turns it off.
+- **ZX Spectrum accuracy, published:** a new documentation page, "ZX Spectrum: how Klive's accuracy
+  is tested", lists the community's timing test programs Klive's 48K, 128K and +2A/+3 pass - ZX
+  Spectrum Timing Tests 48K and 128K, HALT2INT, Float48K, FloatSpy, Border Time, Screen Time, Timing
+  Test, the ULA 48/128/128E +3 picture tests and IR Contention - with what each one checks and
+  Klive's own screen running it. HALT2INT's results stand beside its author's photos of a real early
+  and a real late 48K, the picture tests are checked against real machines' photos, and the page
+  says what is not proven yet. The landing page links to it under "Tested against real hardware".
+- **Disk Explorer:** .dsk (+3DOS), .trd and .scl (TR-DOS) disk images open as their files. List
+  them,
+  preview BASIC listings, screens and code (as memory or disassembly), add files by dragging them
+  from
+  the project explorer or the desktop (a .tap's files with their headers, a .scr as a screen, a .bas
+  text file tokenised, anything else as code), save them to the host, rename and delete them, set
+  +3DOS attributes, and compact a TR-DOS disk. The Layout view shows every track and sector coloured
+  by what it holds. A disk in the running machine's drive can be edited too: the machine pauses, the
+  disk is written and put back, and the machine runs on. The new `disk` command (`ls`, `info`,
+  `add`,
+  `get`, `rm`, `mv`, `compact`, `new`) does the same from the command prompt and automation, and
+  `klive disk` does it headless on image files; `-start` gives a BASIC program its auto-run line, so
+  the +3's Loader runs it. Export Code (`expc -f dsk` or `-f trd`) writes a disk that boots the
+  program: the +3's Loader runs its DISK loader, and TR-DOS its boot loader. The Create Disk File
+  dialog and `crd` put a new disk into the open project's `disks` folder, or into `Klive/Disks` when
+  no project is open, unless you name another folder. A new tutorial, *Working with disks*, walks
+  through making, booting and inspecting a disk and an SD card.
+- **Hard-disk images and the DivMMC:** the Disk Explorer opens .img, .hdf and .cim hard-disk images
+  and SD cards with FAT16 or FAT32 file systems: browse their folders and long file names, pick a
+  partition, add files and whole folders as they are, save, rename and delete them, and see the
+  volume's areas and a cluster map with the selected file's clusters outlined. The Next's SD card
+  opens there too. The `disk` command and `klive disk` make (`new card.img fat16 64`), list and fill
+  these images (`mkdir`, adding a folder). The ZX Spectrum 48K, 128K and +2A/+3 can have a DivMMC
+  interface (Machine › SD Card › DivMMC Interface), which boots esxDOS from your own ROM (Settings ›
+  Machine › esxDOS ROM) and reads an .img, .hdf or .cim SD card; its NMI button is in the same menu,
+  the debugger shows its ROM and RAM banks as memory partitions, and reverse debugging undoes the
+  card writes it discards.
+- **Hardened +3 disks:** Klive now reads and writes standard and extended `.dsk` images byte for
+  byte,
+  including weak sectors, CRC-error and deleted-data sectors, mixed sector sizes and 80-track
+  double-sided disks, and the +3's disk controller keeps every sector's own ID, size and status, so
+  protected disks behave as on the real drive and +3 BASIC's `FORMAT` works. Create Disk adds a 720K
+  double-sided, 80-track type, and its blank disks are what the +3's own `FORMAT` lays down. This
+  also
+  fixes several faults: a double-sided disk from Create Disk came out single-sided; a +3 save could
+  land on the wrong sector of a CPC data-format disk, a disk with repeated sector IDs or one with
+  mixed sector sizes; disks with more than 42 tracks could not be opened; the disk viewer always
+  reported weak sectors; and every TR-DOS disk save on the Pentagon and Scorpion also reported
+  "Updating attached disk media failed".
+- **BASIC listings from the Disk Explorer:** a BASIC program on a `.dsk`, `.trd`, `.scl` or `.mdr`
+  opens in its own BASIC listing tab, as a tape's BASIC block does, with the Spectrum font and its
+  autostart line.
+- **ZX Interface 1 and Microdrives:** the ZX Spectrum 16K, 48K, 128K and +2 can have an Interface 1
+  with two Microdrives (Machine › Interfaces), running the shipped second-edition ROM or your own.
+  `.mdr` cartridges are inserted, created blank (into the project's `cartridges` folder when a
+  project
+  is open), write-protected and saved as; what the Spectrum writes goes back into the file sector by
+  sector. FORMAT, CAT, SAVE *, LOAD *, VERIFY *, ERASE, MOVE and the OPEN # streams work as on the
+  real drive, at its speed or with Fast Microdrive. Boot Cartridge in Microdrive 1 runs a
+  cartridge's
+  `run` program. The Disk Explorer and `disk` open `.mdr` files, `crd mdr` and `crd mdrblank` make
+  cartridges (in the same folder), and Export Code (`expc -f mdr`) writes one that boots your
+  program.
+  `.z80` and `.szx` snapshots keep the interface and its paging (`.szx` also links the cartridges),
+  and RZX recordings and reverse debugging work with it. RS232 and the network are not connected.
+  The
+  Interface 1 and the DivMMC are connected one at a time.
+- **Boriel BASIC 2.0.0-beta29:** Klive now comes with Boriel's `zxbc` 2.0.0-beta29 instead of
+  beta25, and offers to update an older version you have installed.
+- **One code generator for every language Klive compiles, and a source-level debugger for any
+  language:** Klive BASIC's optimiser, Z80 code generator, runtime and debug-information builder are
+  now a shared back end that Klive's future compilers (Pascal first) build on as they are, and the
+  source-level debugger no longer assumes BASIC — it reads every compiler's debug information in one
+  language-neutral form. As a first result, z88dk C programs get watch expressions in the Variables
+  panel, with C's operators and meanings: `total / 2` divides whole numbers, `a == 3 && b != 0`
+  gives 1 or 0, `&count` is an address. Klive BASIC programs compile to the same code as before; its
+  `'@emit-ir` listing now names instructions in the back end's terms (`routine`, `localcall`,
+  `exit`), and a program that uses `READ` is one byte shorter.
+
+### Fixes
+
+- Disassembly: on the ZX80, the byte after each `RST $08` in the 4K ROM was listed as an
+  instruction,
+  which threw the following code out of step, and the 4K ROM was decoded with the ZX81 ROM's
+  calculator rules. The byte now shows as the error code with its report number; a ZX80 with the 8K
+  ROM keeps the ZX81 decoding.
+- Annotations: with no project open, `ann-new`, `ann-open` and the `rom-ann-*` commands took a
+  relative
+  file name as relative to Klive's own folder, so `ann-new zx80.rom.dis` wrote an annotation set
+  among
+  Klive's application files. A relative path now needs an open project, and the command says so;
+  `ann-new` with a `.rom.dis` name also points to `rom-ann-new` for a ROM's own annotations.
+- Source export: `export-asm` could write a file that did not assemble, or assembled to the wrong
+  bytes. A floating-point literal after `RST $28` in 48K or ZX81 ROM code was counted as one byte,
+  an
+  end-of-line comment of more than one line had its second line written as code, and a relative jump
+  near `$FFFF` that wraps round to low memory was rejected by the assembler; it is now written as
+  its
+  bytes.
+- Project templates: the ZX Spectrum Next's `default` template was a copy of the ZX Spectrum 48K's
+  (`.model Spectrum48`, calls into the 48K ROM), so it did not work on the Next. It is now a Next
+  program: it runs at 28 MHz, prints with the Next's pixel instructions and ends in a loop, as a
+  `.nex` program must.
+- Tape viewer: a `.tap` or `.tzx` file scrolled as a whole page besides its block list and details,
+  and the mouse wheel did nothing over a details pane too short to scroll. The block browser now
+  fills
+  the space below the timeline, so the list and the details are the only scrollers, and a block's
+  title and Pop out button stay at the top of its details while they scroll.
+- Klive BASIC on the ZX Spectrum +3: a program could crash into the editor when an interrupt arrived
+  while the runtime was switching to the 48K BASIC ROM (for Float arithmetic, SCREEN$ or print42).
+  On models with a disk drive, the interrupt routine paged the wrong ROM in from the half-updated
+  BANKM and BANK678 system variables. The switch now runs with interrupts disabled.
+- Z80: a halted CPU fetched the HALT instruction's own address over and over instead of the byte
+  after it, so on the ZX Spectrum a HALT at `$7FFF` was contended on every halted cycle. HALT2INT
+  now matches its author's photos of real 48Ks.
+- Z80: the operand and data accesses of CB-, ED-, DD- and FD-prefixed instructions (`LD (nn),BC`,
+  `LD A,(IX+d)`, `BIT b,(HL)`...) happened one T-state early, so the ZX Spectrum contended them at
+  the wrong T-state and code using them in contended memory ran at the wrong speed; a repeated DD/FD
+  prefix also took 3 T-states instead of 4. ZX Spectrum Timing Tests 48K now passes every test.
+- ZX Spectrum 128K: the contention table was wrong on every display line but the first (a delay
+  missing before the line's first cell, a stray one after its last), and the frame interrupt lasted
+  32 T-states instead of 35. With late timing (its authors' machine), ZX Spectrum Timing Tests 128K
+  now passes every test.
+- ZX Spectrum +2A/+3: the gate array's timing followed the older machines' ULA. Port $FE and the
+  instructions' internal cycles were contended, which the gate array never does, and a border colour
+  change appeared 4 T-states (8 pixels) late. Timed border effects such as ULA 128E +3 Test now draw
+  what a real +3 shows.
+- ZX Spectrum 48K and 128K: a border colour change could start in the middle of a character's width
+  and landed up to 14 pixels to the right of where a real machine puts it. The border now changes
+  once per 8 pixels, exactly where the hardware does.
+- ZX Spectrum 48K and 128K: when the I register pointed into contended memory, the CPU was held
+  during the refresh at the end of every instruction fetch, which the ULA cannot do. Code running
+  that way, such as IM 2 interrupt tables in the lower RAM, ran too slowly while the screen was
+  drawn; IR Contention and ULA 128 Timing Test now draw the pictures real machines do.
+- ZX Spectrum 48K and 128K: a write to the screen memory reached the picture a few T-states too late
+  against the ULA's reads, so beam-racing code that writes a cell just before the ULA reads it
+  showed the old byte.
+- Dialogs: a field's label, its input box and its error message were packed too tightly - in the
+  Rename and New File dialogs the prompt and the error touched the box. Every dialog now spaces them
+  8px (label to field) and 6px (field to error), with 16px between fields.
+- Disk Explorer: a disk image or cartridge changed with the `disk` command (`disk add`, `disk rm`,
+  ...) kept showing its old files in an already open Disk Explorer until it was opened again. Every
+  open view of the image now reloads after any edit.
+- Memory dumps (the Disk Explorer's sector view and file previews, and other static dumps): when the
+  bytes did not fill the last row's section of eight, its characters were drawn too far left, out of
+  line with the rows above.
+- Debugger: a BASIC watch expression using `MOD` with a negative operand showed a different result
+  from the program's: `-100 MOD 3` was shown as -1, while the compiled program computes 1 (the
+  remainder of the magnitudes). Watches now compute `MOD` as the program does.
+- Profiler: the routine table said its routines came from Klive BASIC for every program with
+  source-level debug information, z88dk C and Boriel BASIC programs included. It now names the
+  compiler that built the program.
+- An automation request waiting for the IDE to start sometimes failed with a `timeout` error instead
+  of `not-ready` when its timeout ran out; it now always reports `not-ready`.
+- ZX Spectrum Next: the CPU set some flags the way a Zilog Z80 does, not the way the Next's own FPGA
+  CPU (the T80N) does. `BIT n,(HL)`, `BIT n,(IX+d)`, `IN r,(C)`, `LD A,I`, `LD A,R`,
+  `CPI`/`CPD`/`CPIR`/`CPDR`, the block I/O instructions and the Z80N block copies (`LDIX`, `LDDX`,
+  `LDIRX`, `LDDRX`, `LDPIRX`) now set the same flags as the hardware, and `IN r,(C)` sets parity.
+  `PIXELDN` now wraps at the bottom pixel row as the hardware does, and the undocumented `ED B6`
+  runs
+  as `LDIRX` instead of doing nothing. All 115,854 cases of a new CPU comparison against the
+  simulated
+  FPGA source now match.
+- ZX Spectrum Next: several timings differed from the Next's FPGA core. `NEXTREG reg,A` took
+  14 T-states instead of 17; an NMI requested through NextReg $02 was taken one instruction late;
+  `IN` and `OUT` acted at the end of the I/O cycle instead of in its middle, so a program read the
+  line counter, the interrupt flag, the CTC counter and the floating bus too early; the CPU took the
+  frame and line interrupts 1 T-state too early, and their pulses were half a T-state too long; a
+  switch to Pentagon timing raised an extra interrupt; the line counter jumped to the new timing's
+  values in the first frame after a timing change; a CPU speed change took effect at the wrong
+  moment; +3 memory contention was decided 1 T-state late; and the DMA handed the bus over and back
+  at the wrong moments, timed prescaled and burst transfers short, missed interrupt flags during a
+  long transfer and let an NMI that broke into a transfer run one instruction late. Each now matches
+  the simulated FPGA source to the T-state, checked by probe programs run on both, and 877 of the
+  893
+  replayed Next hardware test programs now end in the same state on both, against 728 before.
+- ZX Spectrum Next: the floating bus (a read of port `$FF` during the display) showed the bytes of
+  the unscrolled standard screen at `$4000`, whatever the ULA's hardware scroll (NextRegs
+  `$26`/`$27`) or Timex screen mode (port `$FF`); it now shows the bytes the ULA actually reads, as
+  the hardware does.
+- ZX Spectrum Next: with port `$123B` mapping Layer 2 into memory, a 16K part and a bank offset that
+  added up to 8 or more wrapped round to the picture's first banks (part 2 with offset 7 reached
+  bank +1 instead of +9); they now add up as on the hardware.
+- On the ZX Spectrum Next, LoRes in Radastan mode with ULA+ on used the whole palette offset as the
+  high nibble of each dot's colour index; it now takes the ULA+ palette's group as the hardware does
+  (`11` and offset bits 1–0), so Radastan pictures under ULA+ show the right colours.
+- ZX Spectrum Next: the sprite engine ran out of time on a crowded line at the wrong sprite. Klive
+  counted 18 clocks for a 1× sprite instead of 17, refused a sprite by the previous sprite's scale
+  instead of its own, let sprites parked off the right cost nothing, and never cut a sprite part-way
+  at the end of a line, so a line with every sprite on it showed 71 sprites instead of 75; the line
+  budget now matches the hardware, checked clock by clock against its simulated sprite engine.
+
 ## 0.64.0 (2026-10-18)
 
 ### Highlights
