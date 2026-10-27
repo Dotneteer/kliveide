@@ -977,6 +977,179 @@ describe("next-display sprites: orientations, scale, anchors, the time budget, t
   });
 });
 
+describe("next-display lores: LoRes and Radastan", () => {
+  /*
+   * The LoRes article's pictures: one 128 x 96 sunset, written straight into bank 5 by the test, shown
+   * as LoRes (a byte per pixel, the ULA palette holding RGB332 colour i at entry i) and as Radastan (a
+   * nibble per pixel, the nearest of 16 colours placed at entries 0-15).
+   */
+  const IDLE = ".org $8000\n di\n jr $\n";
+  const LEVEL = ["00", "24", "49", "6D", "92", "B6", "DB", "FF"];
+  /** The colour an RGB332 palette entry shows: the ninth blue bit is B1 OR B0 */
+  const rgb332Hex = (v: number) => {
+    const b = v & 3;
+    return `#${LEVEL[v >> 5]}${LEVEL[(v >> 2) & 7]}${LEVEL[(b << 1) | (b !== 0 ? 1 : 0)]}`;
+  };
+  const toRgb332 = ([r, g, b]: number[]) =>
+    (Math.round(r * 7) << 5) | (Math.round(g * 7) << 2) | Math.round(b * 3);
+  const mix = (a: number[], b: number[], t: number) => a.map((v, i) => v + (b[i] - v) * t);
+
+  /** The sun's glow: 1 at its centre (92, 50), fading to 0 at 60 pixels */
+  const glow = (x: number, y: number) => Math.max(0, 1 - Math.hypot(x - 92, (y - 50) * 1.4) / 60) ** 1.5;
+  /** The sunset at LoRes pixel (x, y), 128 x 96: RGB, each 0-1 */
+  const sunset = (x: number, y: number): number[] => {
+    const HORIZON = 62;
+    const ridge = 50 + 6 * Math.sin(x / 9) + 4 * Math.sin(x / 4 + 1);
+    if (y < HORIZON) {
+      if (y > ridge && x < 70) return [0.2, 0.05, 0.25]; // the hills, a dark purple silhouette
+      if ((x - 92) ** 2 + (y - 50) ** 2 <= 13 ** 2) return [1, 0.9, 0.2]; // the sun
+      const t = y / HORIZON;
+      const sky = t < 0.5 ? mix([0.1, 0.05, 0.4], [0.75, 0.2, 0.55], t * 2) : mix([0.75, 0.2, 0.55], [1, 0.6, 0.15], (t - 0.5) * 2);
+      return mix(sky, [1, 0.85, 0.4], glow(x, y) * 0.85);
+    }
+    // --- the sea, darker further down, with the sun's reflection in broken bands
+    const d = (y - HORIZON) / (96 - HORIZON);
+    const glitter = Math.abs(x - 92) < 14 - d * 6 && (y + (x >> 3)) % 3 !== 0;
+    return glitter ? [1, 0.7, 0.2] : mix(mix([0.15, 0.25, 0.6], [0.02, 0.06, 0.25], d), [0.9, 0.5, 0.3], glow(x, 2 * 62 - y) * 0.5);
+  };
+  /** Radastan's 16 colours: the 16 most common colours of the LoRes picture */
+  const RADASTAN_COLOURS = (() => {
+    const count = new Map<number, number>();
+    for (let y = 0; y < 96; y++) {
+      for (let x = 0; x < 128; x++) {
+        const v = toRgb332(sunset(x, y));
+        count.set(v, (count.get(v) ?? 0) + 1);
+      }
+    }
+    return [...count.entries()].sort((a, b) => b[1] - a[1] || a[0] - b[0]).slice(0, 16).map(([v]) => v);
+  })();
+  const nearest = (rgb: number[]) => {
+    const parts = (v: number) => [(v >> 5) / 7, ((v >> 2) & 7) / 7, (v & 3) / 3];
+    let best = 0;
+    let bestD = Infinity;
+    RADASTAN_COLOURS.forEach((v, i) => {
+      const d = parts(v).reduce((acc, c, k) => acc + (c - rgb[k]) ** 2, 0);
+      if (d < bestD) [best, bestD] = [i, d];
+    });
+    return best;
+  };
+
+  /** A session with the ULA layer alone, its palette set by `entry`, the border `border` */
+  const loresOnly = async (entry: (i: number) => number, border = 0): Promise<NextTestSession> => {
+    const s = await createSession();
+    await s.loadCode(IDLE);
+    s.setNextReg(0x43, 0x00).setNextReg(0x40, 0);
+    for (let i = 0; i < 256; i++) s.setNextReg(0x41, entry(i));
+    s.setNextReg(0x14, 0xe3); // the global transparency colour, which this picture never uses
+    s.out(0xfe, border);
+    return s;
+  };
+  /** LoRes: row y at $4000 + 128y for y < 48, at $6000 + 128(y - 48) below */
+  const loresBytes = (): Uint8Array => {
+    const mem = new Uint8Array(0x4000);
+    for (let y = 0; y < 96; y++) {
+      for (let x = 0; x < 128; x++) {
+        const v = toRgb332(sunset(x, y));
+        mem[(y < 48 ? 0 : 0x2000) + (y % 48) * 128 + x] = v === 0xe3 ? 0xe2 : v;
+      }
+    }
+    return mem;
+  };
+  /** Radastan: row y at $4000 + 64y, two pixels a byte, the left one in the high nibble */
+  const radastanBytes = (): Uint8Array => {
+    const mem = new Uint8Array(0x1800);
+    for (let y = 0; y < 96; y++) {
+      for (let x = 0; x < 128; x += 2) mem[y * 64 + x / 2] = (nearest(sunset(x, y)) << 4) | nearest(sunset(x + 1, y));
+    }
+    return mem;
+  };
+  const loresScene = async (): Promise<{ s: NextTestSession; mem: Uint8Array }> => {
+    const s = await loresOnly((i) => i);
+    const mem = loresBytes();
+    s.poke(0x4000, mem);
+    s.setNextReg(0x15, 0x80);
+    s.runFrames(2);
+    return { s, mem };
+  };
+  /** The colour of LoRes pixel (x, y) with nothing scrolled */
+  const loresColour = (mem: Uint8Array, x: number, y: number) =>
+    rgb332Hex(mem[(y < 48 ? 0 : 0x2000) + (y % 48) * 128 + x]);
+
+  it("shows one byte per 2 x 2-dot pixel, the top half from $4000 and the bottom half from $6000", async () => {
+    const { s, mem } = await loresScene();
+    const f = s.screen();
+    // --- every LoRes pixel covers dots 2x, 2x + 1 on lines 2y, 2y + 1, all four its byte's colour
+    for (const [x, y] of [[0, 0], [10, 5], [92, 50], [40, 47], [40, 48], [127, 95], [60, 70]]) {
+      for (const [dx, dy] of [[0, 0], [1, 0], [0, 1], [1, 1]]) {
+        expect(at(f, paper(2 * x + dx, 2 * y + dy))).toBe(loresColour(mem, x, y));
+      }
+    }
+    // --- the sun and the sea are where the picture puts them
+    expect(at(f, paper(2 * 92, 2 * 50))).toBe(rgb332Hex(toRgb332([1, 0.9, 0.2])));
+    // --- the border is the ULA's border, not LoRes: port $FE's colour 0, ULA palette entry 16
+    expect(at(f, wide(4, 100))).toBe(rgb332Hex(16));
+    const out = process.env.NEXT_DISPLAY_SHOTS;
+    if (out) {
+      await writeCrop(join(out, "en/under-the-hood/next-display/lores/lores.webp"), f, 96, 48, 512, 192);
+      // --- LoRes pixels 34-49 across, 37-48 down: the hilltop against the sky
+      await writeCrop(join(out, "en/under-the-hood/next-display/lores/blocks.webp"), f, 96 + 4 * 34, 48 + 2 * 37, 64, 24);
+    }
+  });
+
+  it("shows the same picture in Radastan: a nibble per pixel, 16 colours, 6K", async () => {
+    const s = await loresOnly((i) => (i < 16 ? RADASTAN_COLOURS[i] : i));
+    const mem = radastanBytes();
+    s.poke(0x4000, mem);
+    s.setNextReg(0x6a, 0x20).setNextReg(0x15, 0x80);
+    s.runFrames(2);
+    const f = s.screen();
+    for (const [x, y] of [[0, 0], [11, 5], [92, 50], [40, 47], [127, 95], [60, 70]]) {
+      const byte = mem[y * 64 + (x >> 1)];
+      const nibble = x & 1 ? byte & 0x0f : byte >> 4;
+      expect(at(f, paper(2 * x, 2 * y))).toBe(rgb332Hex(RADASTAN_COLOURS[nibble]));
+      expect(at(f, paper(2 * x + 1, 2 * y + 1))).toBe(rgb332Hex(RADASTAN_COLOURS[nibble]));
+    }
+    // --- at most 16 colours in the picture
+    const seen = new Set<string>();
+    for (let y = 0; y < 192; y += 2) for (let x = 0; x < 256; x += 2) seen.add(at(f, paper(x, y)));
+    expect(seen.size).toBeLessThanOrEqual(16);
+    const out = process.env.NEXT_DISPLAY_SHOTS;
+    if (out) await writeCrop(join(out, "en/under-the-hood/next-display/lores/radastan.webp"), f, 96, 48, 512, 192);
+  });
+
+  it("scrolls in half-pixel steps and wraps at 256 x 192 dots", async () => {
+    const { s, mem } = await loresScene();
+    s.setNextReg(0x32, 101).setNextReg(0x33, 75);
+    s.runFrames(2);
+    const f = s.screen();
+    // --- display dot (x, y) shows the dot (x + 101, y + 75) of the unscrolled picture, wrapped: with an
+    // --- odd X scroll, a LoRes pixel's two dots land in two neighbouring 2 x 2 blocks of the screen
+    for (const [x, y] of [[0, 0], [1, 0], [154, 116], [155, 117], [200, 150], [255, 191]]) {
+      const sx = (x + 101) % 256;
+      const sy = (y + 75) % 192;
+      expect(at(f, paper(x, y))).toBe(loresColour(mem, sx >> 1, sy >> 1));
+    }
+    const out = process.env.NEXT_DISPLAY_SHOTS;
+    if (out) await writeCrop(join(out, "en/under-the-hood/next-display/lores/scroll.webp"), f, 96, 48, 512, 192);
+  });
+
+  it("is clipped by the ULA's clip window; the border stays the ULA's", async () => {
+    const { s } = await loresScene();
+    s.out(0xfe, 7);
+    s.setNextReg(0x4a, 0x6d); // the fallback colour, which shows where nothing is opaque
+    s.setNextReg(0x1c, 0x04).setNextReg(0x1a, 32).setNextReg(0x1a, 223).setNextReg(0x1a, 24).setNextReg(0x1a, 167);
+    s.runFrames(2);
+    const f = s.screen();
+    const fallback = rgb332Hex(0x6d);
+    expect(at(f, paper(10, 10))).toBe(fallback); // outside the window: transparent, the fallback shows
+    expect(at(f, paper(240, 180))).toBe(fallback);
+    expect(at(f, paper(32, 24))).not.toBe(fallback); // the window's corner is LoRes
+    expect(at(f, wide(4, 100))).toBe(rgb332Hex(16 + 7)); // the border: port $FE's colour 7, ULA palette entry 23
+    const out = process.env.NEXT_DISPLAY_SHOTS;
+    if (out) await writeWebp(join(out, "en/under-the-hood/next-display/lores/clip.webp"), f);
+  });
+});
+
 /** One picture as lossless WebP, alpha forced opaque */
 async function writeWebp(path: string, frame: Frame): Promise<void> {
   await writeCrop(path, frame, 0, 0, frame.width, frame.height);

@@ -796,7 +796,7 @@ Every layer with dots keeps its offset somewhere else:
 | Sprites, 8-bit patterns | 8-bit | in each sprite's attributes, one per sprite | the dot, offset added to the first digit |
 | Sprites, 4-bit patterns | 4-bit, two per byte | in each sprite's attributes | offset, then the dot |
 | Tilemap | 4-bit, two per byte | in each tile's attribute byte, one per tile | offset, then the dot |
-| LoRes | 8-bit | none | the byte itself |
+| LoRes | 8-bit | NextReg `$6A` bits 3–0, one for the whole screen | the byte, offset added to the first digit |
 | LoRes, Radastan mode | 4-bit, two per byte | NextReg `$6A` bits 3–0 | offset, then the dot |
 
 The tilemap's **text mode** is the extreme case. Its dots are a single bit, on or off, so nearly the

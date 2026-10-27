@@ -4,9 +4,9 @@ A series of *Under the hood* articles that explain, in the style of
 `spectrum-display.mdx` and `zx81-display.mdx`, how the ZX Spectrum Next produces its picture:
 every video mode, the palettes, the layers and how they are composed into one pixel.
 
-Status: **articles 1, 2, 3, 4, 6, 7, 8 and 9 written** (`next-display/overview.mdx`, `timing.mdx`,
-`palettes.mdx`, `ula.mdx`, `layer2.mdx`, `tilemap.mdx`, `sprites.mdx`, `composition.mdx`). Articles 5
-and 10 to go, in the writing order of §1 (next: 5, LoRes and Radastan).
+Status: **articles 1 to 9 written** (`next-display/overview.mdx`, `timing.mdx`, `palettes.mdx`,
+`ula.mdx`, `lores.mdx`, `layer2.mdx`, `tilemap.mdx`, `sprites.mdx`, `composition.mdx`). Article 10 to
+go (Changing the picture mid-frame).
 
 ### As built (article 1)
 
@@ -82,6 +82,16 @@ and 10 to go, in the writing order of §1 (next: 5, LoRes and Radastan).
   X free) and was fixed with the article; `test/zxnext-hw/sprites/sprite-time-budget.test.ts` pins the
   simulation's results. Klive raises both `$303B` flags at frame completion, not per line; the article
   says so. Article 10 can rely on: attributes are read as each line is drawn, one line ahead of the beam.
+- Article 5 (LoRes and Radastan): the machine pictures are one procedural 128 × 96 sunset (written into
+  bank 5 by the test, the ULA palette holding RGB332 colour i at entry i) in LoRes and in Radastan (the
+  16 most common colours of the LoRes picture at entries 0–15), a close-up of the 2 × 2 blocks, the
+  picture scrolled by (101, 75) and clipped by the ULA's window. Facts it established: LoRes reads bank 5
+  only, a byte per 7 MHz dot through the **CPU's** port (CPU first, never delayed); the ULA keeps running
+  underneath, only its pixel is replaced; the palette offset applies to plain LoRes too (added to the
+  high nibble), so `palettes.mdx`'s table, which said "none", was corrected; the scroll counts dots, half
+  a pixel a step. **Klive's Radastan ignored ULA+** (the hardware uses `11` & offset(1:0) as the high
+  nibble with ULA+ on and ULANext off); the existing test used offset `$0E`, for which both rules agree,
+  so it could not see it. Fixed with the article, and `lores.test.ts` checks offset 3 too.
 - The plan's figure list for article 4 was cut to ten (no ULA+/ULANext machine pictures, the register
   bit strips are a table); the clip window and scroll basics stay in article 1 and are only linked.
 
