@@ -282,7 +282,8 @@ static inline uint32_t zxnextMemoryResolveLayer2Offset(uint32_t address, uint32_
     ? zxnextLayer2GetShadowRamBank()
     : zxnextLayer2GetActiveRamBank();
   uint32_t offsetPre = mapSegment == 3u ? ((normalized >> 14u) & 0x03u) : mapSegment;
-  uint32_t bankOffset = (offsetPre + zxnextLayer2GetBankOffset()) & 0x07u;
+  /* ~2923: ("00" & segment) + ('0' & offset), a 4-bit sum: segment 2 + offset 7 is 9, not 1 */
+  uint32_t bankOffset = offsetPre + (zxnextLayer2GetBankOffset() & 0x07u);
   uint32_t layer2Page = (((activeBank + bankOffset) & 0x7fu) << 1u) | ((normalized >> 13u) & 0x01u);
   /* layer2_A21_A13 = ("0001" + page(7:5)) & page(4:0) is the SRAM page, i.e. RAM page + 32: bit 8 (no
      SRAM cycle) is set for pages $E0-$FF. RAM page p lives at ZXNEXT_OFFS_NEXT_RAM + p x 8K. */

@@ -8,5 +8,6 @@ export default {
   "zx81-tape": "ZX81: how programs go to tape",
   "spectrum-display": "ZX Spectrum: how the screen is drawn",
   "spectrum-accuracy": "ZX Spectrum: how Klive's accuracy is tested",
+  "next-display": "ZX Spectrum Next: how the screen is drawn",
   "ht1080z-video": "HT-1080Z: how the screen is drawn"
 };

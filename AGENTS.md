@@ -115,6 +115,12 @@ React 19 + Next 16.
 - **Links in `docs/content/` are absolute** (`/en/guides/...`): pages are served with a trailing slash,
   so a relative `./sibling` link resolves *under* the page; `doc:check:links` now resolves and fails them.
 
+- **Before planning or writing an "Under the hood" article about how a machine works** (like the ZX
+  Spectrum Next screen series in `docs/content/en/under-the-hood/emulator-internals/next-display/`),
+  **read `.ai/hardware-articles-guide.md`**: the structure, the explaining and figure rules, and the
+  corrections the project author made while reviewing that series. Fold any new lesson from a review into
+  that file.
+
 - **Screenshots can be generated rather than hand-captured.** `scripts/doc-shots/` launches
   Klive under Playwright's Electron driver, drives it through the IDE's own command prompt,
   and captures element-scoped PNGs — no manual cropping, no window chrome. Output stages to

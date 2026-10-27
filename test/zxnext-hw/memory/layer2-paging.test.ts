@@ -166,6 +166,37 @@ describe("Layer 2 paging", () => {
     expect(hex(results(s, 3))).toBe(hex([0x01, 0x51, 0x52]));
   });
 
+  it("MEM-020: the segment and the bank offset add up past 7 without wrapping", async () => {
+    // --- ~2923: the offset is ("00" & segment) + ('0' & offset), four bits: 2 + 7 = 9, 2 + 6 = 8
+    const s = await runCode(
+      `
+        ${writePage(34, 0x00)}
+        ${writePage(32, 0x00)}
+        ${writePage(18, 0x00)}
+        ${writePage(16, 0x00)}
+        ${L2}$81${OUT}           ; segment 10, writes mapped
+        ld a,$17                 ; offset 7
+        out (c),a
+        ld a,$71
+        ld ($0000),a             ; bank 8 + 2 + 7 = 17: page 34
+        ld a,$c1                 ; segment 11
+        out (c),a
+        ld a,$16                 ; offset 6
+        out (c),a
+        ld a,$72
+        ld ($8000),a             ; bank 8 + 2 + 6 = 16: page 32
+        xor a
+        out (c),a
+        ld a,$10
+        out (c),a
+        ${readPage(34, 0xa000)}
+        ${readPage(32, 0xa001)}
+        ${readPage(18, 0xa002)}
+        ${readPage(16, 0xa003)}`
+    );
+    expect(hex(results(s, 4))).toBe(hex([0x71, 0x72, 0x00, 0x00]));
+  });
+
   it("MEM-019: NextReg $12 moves the mapped bank", async () => {
     const s = await runCode(
       `
