@@ -135,7 +135,8 @@ describe("LoRes / Radastan", () => {
     expect(colours(s, [PAPER_LEFT, PAPER_LEFT + 511], [PAPER_TOP, PAPER_TOP + 191]), "ULA off").toBe(hex8(0x03));
   });
 
-  for (const [offset, ulaPlus] of [[0, false], [3, false], [0x0e, false], [0x0e, true]] as const) {
+  // --- offset 3 with ULA+ tells the two rules apart (high nibble $F, not 3); $0E gives $E under both
+  for (const [offset, ulaPlus] of [[0, false], [3, false], [0x0e, false], [0x0e, true], [3, true]] as const) {
     it(`LOR-006: Radastan, offset ${offset}${ulaPlus ? ", ULA+ on" : ""}`, async () => {
       const { s, mem } = await loresScreen();
       if (ulaPlus) s.out(0xbf3b, 0x40).out(0xff3b, 0x01);

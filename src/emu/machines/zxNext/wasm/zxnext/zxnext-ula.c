@@ -417,7 +417,12 @@ static void zxnextUlaRenderLoResScreen(void) {
         uint32_t blockAddr = zxnextLoResRadastanAddress(sourceX >> 2u, sourceY >> 1u, radastanDFile);
         uint8_t block = (uint8_t)zxnextMemoryReadPhysical(ZXNEXT_LORES_BANK_05_OFFSET + (blockAddr & 0x3fffu));
         uint32_t nibble = (sourceX & 0x02u) ? (block & 0x0fu) : ((block >> 4u) & 0x0fu);
-        paletteIndex = ((paletteOffset & 0x0fu) << 4u) | nibble;
+        // --- lores.vhd: with ULA+ on (and ULANext off) the high nibble is "11" & offset(1:0), so a
+        // --- Radastan dot indexes one of the four 16-colour groups of the ULA+ palette (entries 192-255)
+        uint32_t high = (ulaPlusEnabled && !zxnextPaletteGetUlaNextEnabled())
+          ? (0x0cu | (paletteOffset & 0x03u))
+          : (paletteOffset & 0x0fu);
+        paletteIndex = (high << 4u) | nibble;
       }
       zxnextLayerUla[pixelOffset] = zxnextUlaPx(paletteIndex);
     }
