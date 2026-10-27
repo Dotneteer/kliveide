@@ -4,9 +4,9 @@ A series of *Under the hood* articles that explain, in the style of
 `spectrum-display.mdx` and `zx81-display.mdx`, how the ZX Spectrum Next produces its picture:
 every video mode, the palettes, the layers and how they are composed into one pixel.
 
-Status: **articles 1, 2, 3, 4, 6 and 9 written** (`next-display/overview.mdx`, `timing.mdx`,
-`palettes.mdx`, `ula.mdx`, `layer2.mdx`, `composition.mdx`). Articles 5, 7, 8 and 10 to go, in the
-writing order of §1 (next: 7, the tilemap).
+Status: **articles 1, 2, 3, 4, 6, 7 and 9 written** (`next-display/overview.mdx`, `timing.mdx`,
+`palettes.mdx`, `ula.mdx`, `layer2.mdx`, `tilemap.mdx`, `composition.mdx`). Articles 5, 8 and 10 to go,
+in the writing order of §1 (next: 8, sprites).
 
 ### As built (article 1)
 
@@ -59,6 +59,13 @@ writing order of §1 (next: 7, the tilemap).
   sprite and tilemap palettes set the ninth blue bit to B1, where the 8-bit rule gives B1 OR B0 (they
   differ for blue `01`); the defaults come from the firmware, not the FPGA, so the hardware sources
   cannot settle it.
+- Article 7 (the tilemap): the machine pictures are one tile in its eight orientations (the test checks
+  the marked dot of each against "rotate a quarter turn clockwise, then mirror", which is what the
+  hardware's address swap amounts to) and 80-column text mode with four colour pairs. Facts it
+  established: the tilemap reads bank 5 through the ULA's port, after the ULA, one character ahead
+  into a two-half buffer, a read per dot; its settings are taken per cell fetched; a two-byte map and
+  256 tiles (10,752 bytes) do not fit beside the ULA's screen in bank 5. Klive's renderer matched the
+  hardware rule for rule; no core change.
 - The plan's figure list for article 4 was cut to ten (no ULA+/ULANext machine pictures, the register
   bit strips are a table); the clip window and scroll basics stay in article 1 and are only linked.
 

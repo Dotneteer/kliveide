@@ -4,5 +4,6 @@ export default {
   palettes: "Colours and palettes",
   ula: "The ULA layer, extended",
   layer2: "Layer 2",
+  tilemap: "The tilemap",
   composition: "Putting it together"
 };

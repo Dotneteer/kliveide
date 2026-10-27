@@ -613,6 +613,112 @@ describe("next-display layer2: one byte per dot, in three resolutions", () => {
   });
 });
 
+describe("next-display tilemap: orientations and text mode", () => {
+  /*
+   * The tilemap article's pictures: the tilemap alone (the ULA off, the fallback colour black), its map,
+   * tiles and palette written from the test into bank 5 and the tilemap's first palette.
+   */
+  const IDLE = ".org $8000\n di\n jr $\n";
+  const tilemapOnly = async (): Promise<NextTestSession> => {
+    const s = await createSession();
+    await s.loadCode(IDLE);
+    s.setNextReg(0x68, 0x80);
+    s.setNextReg(0x4a, 0x00);
+    return s;
+  };
+  /** 8-bit colours into the tilemap's first palette from entry `first` */
+  const tilemapPalette = (s: NextTestSession, first: number, colours: number[]) => {
+    s.setNextReg(0x43, 0x30).setNextReg(0x40, first);
+    for (const c of colours) s.setNextReg(0x41, c);
+    s.setNextReg(0x43, 0x00);
+  };
+
+  it("draws one tile in its eight orientations: rotate clockwise, then mirror", async () => {
+    const s = await tilemapOnly();
+    // --- tile 0: all nibble $F, transparent; tile 1: an F on grey with a red top-left dot
+    const F = [
+      "21111100", "01000000", "01000000", "01111000",
+      "01000000", "01000000", "01000000", "00000000"
+    ];
+    const tile1 = F.flatMap((row) => [0, 2, 4, 6].map((i) => (Number(row[i]) << 4) | Number(row[i + 1])));
+    // --- the tiles at $6C00, past the map at $6000 (40 x 32 entries of two bytes: 2,560 bytes)
+    s.poke(0x6c00, new Uint8Array(32).fill(0xff));
+    s.poke(0x6c20, tile1);
+    // --- the map at $6000: 40 x 32 entries of (tile, attribute), all empty but eight; tile k (0-7) at
+    // --- column 1 + 2 * (k mod 4), row 1 + 2 * floor(k / 4), attribute bits 3-1 = k
+    const map = new Uint8Array(40 * 32 * 2);
+    const at8 = (k: number) => ({ col: 1 + 2 * (k % 4), row: 1 + 2 * Math.floor(k / 4) });
+    for (let k = 0; k < 8; k++) {
+      const { col, row } = at8(k);
+      map[(row * 40 + col) * 2] = 1;
+      map[(row * 40 + col) * 2 + 1] = k << 1;
+    }
+    s.poke(0x6000, map);
+    tilemapPalette(s, 0, [0x49, 0xff, 0xe0]); // 0 grey, 1 white, 2 red
+    s.setNextReg(0x6e, 0x20).setNextReg(0x6f, 0x2c).setNextReg(0x6b, 0x80);
+    s.runFrames(2);
+    const f = s.screen();
+    // --- where the red dot goes: rotate (bit 1) moves tile dot (u, v) to (7 - v, u), then X mirror
+    // --- (bit 3) takes x to 7 - x, and Y mirror (bit 2) y to 7 - y
+    for (let k = 0; k < 8; k++) {
+      let [x, y] = [0, 0];
+      if (k & 1) [x, y] = [7 - y, x];
+      if (k & 4) x = 7 - x;
+      if (k & 2) y = 7 - y;
+      const { col, row } = at8(k);
+      expect(`attr ${k << 1}: ${at(f, wide(col * 8 + x, row * 8 + y))}`).toBe(`attr ${k << 1}: #FF0000`);
+    }
+    const out = process.env.NEXT_DISPLAY_SHOTS;
+    if (out) {
+      // --- columns 0-8 and rows 0-4: 72 x 40 dots
+      await writeCrop(join(out, "en/under-the-hood/next-display/tilemap/orientations.webp"), f, 32, 16, 144, 40);
+    }
+  });
+
+  it("shows 80 columns of text in text mode, two colours per character", async () => {
+    const s = await createSession();
+    await s.prepareBasic();
+    const font = s.peekBytes(0x3d00, 96 * 8);
+    await s.loadCode(IDLE);
+    s.setNextReg(0x68, 0x80);
+    s.setNextReg(0x4a, 0x00);
+    const lines: Array<[string, number]> = [
+      ["TILEMAP TEXT MODE: 80 X 32 CHARACTERS, ONE BIT A DOT, 8 BYTES A CHARACTER.", 0x00],
+      ["A MAP ENTRY IS A CHARACTER CODE AND AN ATTRIBUTE: ITS TOP 7 BITS PICK 2 COLOURS.", 0x02],
+      ["THE WHOLE SCREEN: 5,120 BYTES OF MAP AND 768 BYTES OF FONT, ALL IN BANK 5.", 0x04],
+      ["NO MIRRORING OR ROTATION HERE: THOSE BITS OF THE ATTRIBUTE ARE COLOUR NOW.", 0x06]
+    ];
+    // --- the map at $6000 (80 x 32 x 2 = 5,120 bytes), the font as tiles 32-127 from $7400
+    const map = new Uint8Array(80 * 32 * 2);
+    for (let i = 0; i < 80 * 32; i++) map[2 * i] = 0x20;
+    for (const [row, [text, attr]] of lines.entries()) {
+      for (let col = 0; col < 80; col++) {
+        map[(row * 80 + col) * 2] = col < text.length ? text.charCodeAt(col) : 0x20;
+        map[(row * 80 + col) * 2 + 1] = attr;
+      }
+    }
+    s.poke(0x6000, map);
+    s.poke(0x7400 + 32 * 8, font);
+    // --- entry pairs (paper, ink): black/white, dark blue/yellow, dark red/cyan, black/green
+    tilemapPalette(s, 0, [0x00, 0xff, 0x02, 0xfc, 0xa0, 0x1f, 0x00, 0x1c]);
+    s.setNextReg(0x6e, 0x20).setNextReg(0x6f, 0x34).setNextReg(0x6b, 0xc8); // on, 80 x 32, text mode
+    s.runFrames(2);
+    const f = s.screen();
+    const paperInk = [["#000000", "#FFFFFF"], ["#0000B6", "#FFFF00"], ["#B60000", "#00FFFF"], ["#000000", "#00FF00"]];
+    for (const [row, [text]] of lines.entries()) {
+      // --- glyph row 0 is blank in this font: paper; the first character's first ink dot on its row 1
+      expect(pixelHex(f, 32 + 3, 16 + row * 8)).toBe(paperInk[row][0]);
+      const g = font[(text.charCodeAt(0) - 0x20) * 8 + 1];
+      expect(pixelHex(f, 32 + Math.clz32(g) - 24, 16 + row * 8 + 1)).toBe(paperInk[row][1]);
+    }
+    const out = process.env.NEXT_DISPLAY_SHOTS;
+    if (out) {
+      // --- the left half, 40 of the 80 columns, four rows: 320 dots of 640 x 32 lines
+      await writeCrop(join(out, "en/under-the-hood/next-display/tilemap/text.webp"), f, 32, 16, 320, 32);
+    }
+  });
+});
+
 /** One picture as lossless WebP, alpha forced opaque */
 async function writeWebp(path: string, frame: Frame): Promise<void> {
   await writeCrop(path, frame, 0, 0, frame.width, frame.height);

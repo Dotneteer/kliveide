@@ -171,6 +171,8 @@
 /images/en/under-the-hood/next-display/palettes/entry.webp
 /images/en/under-the-hood/next-display/palettes/offset.webp
 /images/en/under-the-hood/next-display/palettes/transparent.webp
+/images/en/under-the-hood/next-display/tilemap/orientations.webp
+/images/en/under-the-hood/next-display/tilemap/text.webp
 /images/en/under-the-hood/next-display/timing/hz50.webp
 /images/en/under-the-hood/next-display/timing/hz60.webp
 /images/en/under-the-hood/next-display/ula/hicolour.webp
