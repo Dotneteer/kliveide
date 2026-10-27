@@ -13,6 +13,7 @@ import { borielKitLocation, locateBundledKit } from "@main/boriel-integration/bo
 import { defaultOptions, OPTION_SPECS } from "@main/kbasic/options/options";
 import type { HeaderOption } from "@main/kbasic/options/header";
 import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
+import { zxbcFarRecords } from "@common/utils/source-debug-upgrade";
 
 const header = (...names: string[]): HeaderOption[] =>
   names.map((name) => ({ name, span: { file: 0, start: 0, end: 0 } }) as HeaderOption);
@@ -472,7 +473,8 @@ describe("BorielCompiler with the real zxbc", () => {
       const lines = output.listFileItems.filter((li: any) => li.fileIndex === big3);
       expect(lines.length, machineId).toBeGreaterThan(0);
       expect(lines.every((li: any) => output.segments[li.segmentIndex].bank === banks[1]), machineId).toBe(true);
-      expect(output.sourceLevelDebug.extensions.codebank.shadowStackKind).toBe("zxbc");
+      // --- zxbc's far-call records; the 128K saves BANKM (bank in bits 0-2), the Next the MMU page
+      expect(output.sourceLevelDebug.extensions.codebank.records, machineId).toEqual(zxbcFarRecords(machineId === "zxnext" ? 0xff : 0x07));
       if (machineId === "zxnext") {
         expect(Buffer.from(output.prebuiltNex).subarray(0, 4).toString()).toBe("Next");
         expect(output.nexConfig).toEqual({ filename: "program.nex" });
