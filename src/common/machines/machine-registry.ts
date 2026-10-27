@@ -38,7 +38,8 @@ import {
   MI_TIMEX,
   MI_SCORPION,
   MI_HT1080Z,
-  MC_HT_MODEL
+  MC_HT_MODEL,
+  MI_TVC
 } from "./constants";
 import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_DOCK, MEDIA_MICRODRIVE_1, MEDIA_MICRODRIVE_2, MEDIA_TAPE } from "@common/structs/project-const";
 import { Ht1080zChars, type Ht1080zCharSetId, ht1080zCharsFor, Zx80Chars, Zx81Chars, ZxNextChars, ZxSpectrumChars } from "./char-codes";
@@ -63,6 +64,7 @@ import {
 } from "@renderer/appIde/disassemblers/z80-disassembler/rom-gated-disassembler";
 import { ZX80_MODELS, ZX81_MODELS } from "@emu/machines/zx8081/zx8081MachineInfo";
 import { HT1080Z_MODELS } from "@emu/machines/ht1080z/ht1080zMachineInfo";
+import { TVC_MODELS } from "@emu/machines/tvc/tvcMachineInfo";
 import { SCORPION_MODELS, SP128_MODELS } from "@emu/machines/zxSpectrum128/sp128Timings";
 import { P3_MODELS } from "@emu/machines/zxSpectrumP3e/p3RomSets";
 import { TIMEX_MODELS } from "@emu/machines/timex/timexModels";
@@ -673,6 +675,35 @@ export const machineRegistry: MachineInfo[] = [
       ) => new Z80Disassembler(memorySections, memoryContents, partitionLabels, options),
       // --- The ROM is never paged out: the decoder gates itself on the BASIC ROM's addresses
       [CT_CUSTOM_DISASSEMBLER]: () => new Ht1080zCustomDisassembler(),
+      [CT_DISASSEMBLER_VIEW]: {
+        showRamOption: false,
+        showScreenOption: false
+      }
+    }
+  },
+  {
+    // --- `.plans/VIDEOTON_TVC_PLAN.md`: the 64K and the 64K+ (D2); injection and the IDE panels follow
+    // --- in Phases 6-7.
+    machineId: MI_TVC,
+    displayName: "Videoton TVC",
+    charSet: ZxSpectrumChars,
+    features: {
+      [MF_Z80]: true,
+      // --- .cas tapes, played in real time or with fast load, and SAVE back to .cas (§9)
+      [MF_TAPE_SUPPORT]: true,
+      // --- Built code cannot run on it yet: injection is Phase 7
+      [MF_INJECT_SUPPORT]: false,
+      [MF_ALLOW_SCAN_LINES]: false
+    },
+    models: TVC_MODELS,
+    mediaIds: [MEDIA_TAPE],
+    toolInfo: {
+      [CT_DISASSEMBLER]: (
+        memorySections: MemorySection[],
+        memoryContents: Uint8Array,
+        partitionLabels?: string[],
+        options?: DisassemblyOptions
+      ) => new Z80Disassembler(memorySections, memoryContents, partitionLabels, options),
       [CT_DISASSEMBLER_VIEW]: {
         showRamOption: false,
         showScreenOption: false

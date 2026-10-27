@@ -531,6 +531,25 @@ Z80_ALWAYS_INLINE uint8_t readCodeMemory(uint16_t address) {
   return readOpcodeMemory(address, 0u);
 }
 
+#ifdef Z80_DELAY_OPCODE_FETCH
+/*
+ * An M1 opcode fetch, for a machine that times it differently from a data read (the Videoton TVC's
+ * clock stretch holds the clock in T2 of an M1 but in T3 of a read, and its WAIT circuit adds a wait
+ * state to every M1; `.plans/VIDEOTON_TVC_PLAN.md` §5, hook H1). The hook replaces the fetch's
+ * memory-read delay: it must add the fetch's first three tacts itself, as `Z80_DELAY_MEMORY_READ`
+ * does; the refresh tact follows as usual. Only a core that defines it compiles this path.
+ */
+Z80_ALWAYS_INLINE uint8_t readM1Memory(uint16_t address, uint8_t m1) {
+  Z80_PROFILE_FETCH(address, m1);
+  Z80_DELAY_OPCODE_FETCH(address);
+#ifdef Z80_READ_MEMORY
+  return Z80_READ_MEMORY(address);
+#else
+  return memory[address];
+#endif
+}
+#endif
+
 /* A data read: logged while the machine captures bus events */
 Z80_ALWAYS_INLINE uint8_t readMemory(uint16_t address) {
   delayMemoryRead(address);
@@ -3550,7 +3569,12 @@ void z80ExecuteCpuCycle(void) {
      * that is PC + 1): a HALT at $7FFF on the 48K is contended once, its halted cycles are not.
      * HALT2INT's real-machine results show it (`.plans/SPECTRUM_ULA_ACCURACY_PLAN.md` Phase 4).
      */
+#ifdef Z80_DELAY_OPCODE_FETCH
+    /* A halted cycle is an M1 too (/M1 is low), so a machine timing M1s on its own sees it */
+    Z80_DELAY_OPCODE_FETCH((uint16_t)(cpu.pc + 1));
+#else
     delayMemoryRead((uint16_t)(cpu.pc + 1));
+#endif
     Z80_REFRESH(IR);
     refreshMemory();
     Z80_DELAY_REFRESH_BUS_ACCESS(IR);
@@ -3566,7 +3590,15 @@ void z80ExecuteCpuCycle(void) {
   }
   /* The profile's fetch hook runs after the fetch-time paging of BEFORE_OPCODE_FETCH (the 128K's
      TR-DOS ROM), so the instruction is credited to the ROM it runs from */
+#ifdef Z80_DELAY_OPCODE_FETCH
+  /* Every fetch here is an M1 (the unprefixed opcode, the byte after a CB/ED/DD/FD prefix, a
+     repeated DD/FD) except the displacement of DDCB/FDCB, which is a plain read */
+  cpu.opCode = cpu.prefix == PREFIX_DDCB || cpu.prefix == PREFIX_FDCB
+                   ? readOpcodeMemory(cpu.pc, m1Active)
+                   : readM1Memory(cpu.pc, m1Active);
+#else
   cpu.opCode = readOpcodeMemory(cpu.pc, m1Active);
+#endif
   if (m1Active) {
     Z80_REFRESH(IR);
     refreshMemory();

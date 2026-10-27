@@ -1773,6 +1773,10 @@
   "@commands.tapeLoad.entryHtOnly": {
     "context": "Validation error of 'tape-load' when -e is given for a file that is not an HT-1080Z tape. Keep the option name -e."
   },
+  "commands.tapeLoad.tvcInsertOnly": "On the Videoton TVC a tape can only be inserted: type LOAD in BASIC to load it (-r, -d and -e are not available yet).",
+  "@commands.tapeLoad.tvcInsertOnly": {
+    "context": "Validation error of 'tape-load' on the Videoton TV Computer (TVC) when -r, -d or -e is given: the emulator cannot start the load itself yet, the user types the BASIC command LOAD. Keep LOAD and the option names -r, -d, -e."
+  },
   "commands.tapeLoad.entryNotSystem": "{file} holds a BASIC program, which has no start address to stop at: -e needs a machine-code (SYSTEM) tape or a .cmd file.",
   "@commands.tapeLoad.entryNotSystem": {
     "context": "Error of 'tape-load -e' when the HT-1080Z tape holds BASIC. SYSTEM is the machine's command: not translated. Keep the option name -e.",

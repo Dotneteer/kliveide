@@ -9,7 +9,7 @@ describe("NewProjectViewModel — dropdowns", () => {
     const vm = selectViewModel(aState({ machineId: "z88", modelId: "OZ47" }));
 
     expect(vm.machineType.value).toBe("z88");
-    expect(vm.machineType.options.length).toBe(11);
+    expect(vm.machineType.options.length).toBe(12);
     // --- The model groups by family id; the view model shows the family's label.
     expect(vm.machineType.options[0].group).toBe("ZX Spectrum");
     expect(vm.machineType.options.find((o) => o.value === "c64")?.group).toBe("Other");
