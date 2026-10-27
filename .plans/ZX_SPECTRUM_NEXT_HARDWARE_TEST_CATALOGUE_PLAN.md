@@ -101,6 +101,7 @@ exists (add it per README "Adding a method", with a self-test on both cores).
 | `AY` | AY-3-8912 / TurboSound | `audio/turbosound.vhd`, `audio/ym2149.vhd` | `test/zxnext-hw/audio/ay-psg.test.ts`, `ay-stereo-mode.test.ts` (shared measurements in `audio/_audio-helpers.ts`) |
 | `DAC` | Soundrive / Covox / Specdrum DACs | `audio/soundrive.vhd` | `test/zxnext-hw/audio/dac.test.ts`, `dac-enable.test.ts` |
 | `BEEP` | Beeper, MIC, EAR, audio mixer | `audio/audio_mixer.vhd` | `test/zxnext-hw/audio/beeper-mixer.test.ts` |
+| `I2S` | Raspberry Pi I2S audio input | `audio/i2s.vhd`, `audio/i2s/`, `zxnext.vhd` ~2239-2330 | `test/zxnext-hw/audio/pi-i2s.test.ts` (2026-10-27, `.plans/PI_I2S_AUDIO_PLAN.md`) |
 | `CTC` | Z80 CTC (4 channels) | `device/ctc*.vhd` | `test/zxnext-hw/ctc/ctc.test.ts` (replaced the machine-level half of the mock `test/zxnext/CtcDevice.test.ts` and two of the three `test/wasm/zxNext/wasm-next-ctc.test.ts` tests, 2026-09-18; the per-clock channel test stays in `wasm-next-ctc`, on the WASM CTC clock export since 2026-09-19) |
 | `DMA` | ZXN DMA / Z80 DMA | `device/dma.vhd` | `test/zxnext-hw/dma/dma.test.ts` (replaced the 30 MAME-model mocks `test/zxnext/DmaDevice*.test.ts`, 2026-09-18; bug B82) |
 | `DIV` | DivMMC paging and automap | `device/divmmc.vhd` | `test/zxnext-hw/divmmc/divmmc.test.ts` (2026-09-18, bug B83); the mocks `test/zxnext/DivMmcDevice-*.test.ts`, `DivMmmc.test.ts` still pass and stay (NMI/Multiface interplay) |
@@ -589,7 +590,7 @@ behaviour inside the whole machine on both cores (memory paging, contention off,
 | DAC-008 | Specdrum `$DF` | A | 1 | | Mono A+D; enable bit 23; interaction with mouse port. | ✅ `audio/dac` (also: `$DF` reads Kempston with the mouse ports off; DAC ports read `$FF`) |
 | DAC-009 | DAC value → amplitude linearity | A | 1 | | Writing 0, `$80`, `$FF` gives proportional sample levels. | ✅ `audio/dac` |
 | DAC-010 | 8-bit sample playback rate | A | 2 | | Z80 loop writing a ramp at a fixed rate: ramp visible in samples. | ✅ `audio/dac` (B76 fixed: TS played the end-of-frame DAC value for the whole frame) |
-| DAC-011 | DAC via NextReg mirrors `$2C`–`$2E` | A | 3 | | soundrive.vhd ~48-95: `$2C` writes channel B (left), `$2E` channel C (right), `$2D` channels A and D (mono); reads return the I2S input, not the DAC value (zxnext.vhd read mux). Both halves are testable. | ✅ `audio/dac` (B75 fixed: TS mirrors wrote while disabled; reads gave 0 / the DACs instead of the I2S sample) |
+| DAC-011 | DAC via NextReg mirrors `$2C`–`$2E` | A | 3 | | soundrive.vhd ~48-95: `$2C` writes channel B (left), `$2E` channel C (right), `$2D` channels A and D (mono); reads return the I2S input, not the DAC value (zxnext.vhd read mux). Both halves are testable. | ✅ `audio/dac` (B75 fixed: TS mirrors wrote while disabled; reads gave 0 / the DACs instead of the I2S sample); the I2S half with a stream connected: I2S-002 - I2S-004) |
 | DAC-012 | DAC reset value | A | 2 | | After reset all DAC channels are `$80` (silence midpoint) per `soundrive.vhd`. | ✅ `audio/dac-enable`, `audio/dac` (soft reset) |
 | DAC-013 | DMA-driven DAC playback | A | 2 | | See DMA-020. | ✅ `dma/dma` (DMA-020) |
 
@@ -817,6 +818,27 @@ keep their hardware tests.
 | ID | Name | FE | Pri | Needs | Description | Status |
 |---|---|---|---|---|---|---|
 | IDE-001 | Panel state after a program | S | 2 | | A program writes every palette, the palette control and transparency registers, MMU slots 6-7, the border and EAR/MIC, and holds a key; `ideState()` (Next Registers, Memory Mapping, Palettes, ULA & I/O) shows exactly those writes. | ✅ `ide/ide-state` (until 2026-09-19 a cross-core comparison, which found P7, P9-P13 on both cores) |
+
+### 4.39 `I2S` – Raspberry Pi I2S audio input
+
+The Pi is replaced by a sample source fed into the core (`.plans/PI_I2S_AUDIO_PLAN.md`); nothing of the
+Pi itself is emulated. Hardware: `audio/i2s.vhd`, `audio/i2s/i2s_receive.vhd`, `zxnext.vhd` ~2239-2330,
+~3456, ~5952-5961, ~6410; `audio/audio_mixer.vhd`:89-100.
+
+| ID | Name | FE | Pri | Needs | Description | Status |
+|---|---|---|---|---|---|---|
+| I2S-001 | Rest values with no Pi | S | 2 | | `$2C`/`$2D`/`$2E` read `$80`/`$00`/`$80` for every `$A2`. | ✅ `audio/pi-i2s` |
+| I2S-002 | Sample conversion | S | 1 | | A signed sample s reads back as `((s >> 6) & $3FF) ^ $200` (top 13 bits, top 10 kept, sign inverted). | ✅ `audio/pi-i2s` |
+| I2S-003 | `$2D` latch | S | 2 | | A `$2C`/`$2E` read latches the word's bits 1-0 into `$2D` bits 7-6; a `$2D` read latches nothing. | ✅ `audio/pi-i2s` |
+| I2S-004 | Enables, duplication, mute | S | 1 | | `$A2` bits 7/6 select; a side whose enable is clear takes the other's word; bits 3/2 mute; bit 0 or off gives the rest word. | ✅ `audio/pi-i2s` |
+| I2S-005 | Latch timing | S | 2 | | The left word lands half a sample period before the right one (WS rising / falling). | ✅ `audio/pi-i2s` |
+| I2S-006 | Reset while disabled | S | 2 | | Clearing both enables resets the receiver to `$200`. | ✅ `audio/pi-i2s` |
+| I2S-007 | A stream that stops | S | 3 | | No more SCK: the receiver holds its last words. | ✅ `audio/pi-i2s` |
+| I2S-008 | EAR routing | S | 1 | | `$FE` bit 6 rises at top bits `11`, falls at `00`, holds otherwise; 0 when not routed. | ✅ `audio/pi-i2s` |
+| I2S-009 | Mixer weight | A | 2 | | One unit per step, a quarter of a DAC step; muted, it leaves the mix. | ✅ `audio/pi-i2s` |
+| I2S-010 | A tone in the mix | A | 3 | | A 1 kHz tone on the left reaches the left output as a 1 kHz tone. | ✅ `audio/pi-i2s` |
+| I2S-011 | Checkpoint replay | S | 2 | | A checkpoint restored mid-stream replays the same reads and audio. | ✅ `audio/pi-i2s`; reverse replay: `wasm/reverse/journal-replay-determinism` ("zxnext (Pi I2S)"), debug loop: `wasm/debug-loop-equivalence` |
+| I2S-012 | Connect drops the checkpoint | S | 3 | | A new stream cannot be rewound to. | ✅ `audio/pi-i2s` |
 
 ---
 

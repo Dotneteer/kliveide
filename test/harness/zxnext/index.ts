@@ -26,6 +26,7 @@ export {
 } from "./script/session";
 export { MemorySdCard, SD_SECTOR_BYTES, type SdCardBacking } from "./script/sd-card";
 export { type UartFrame, type UartIndex } from "./script/uart-peer";
+export { piI2sWord, type PiI2sSamples } from "./script/pi-i2s";
 export { type MouseButton, type MouseEvent } from "./script/mouse";
 export { JOY_BUTTONS, type JoyButton, type JoySide } from "./script/joystick";
 export { MATRIX_KEYS, NEXT_EXTRA_KEYS, type ExtraKey, type MatrixKey, type NextKey } from "./script/keys";

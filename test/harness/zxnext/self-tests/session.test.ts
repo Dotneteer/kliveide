@@ -286,6 +286,20 @@ Cmd:    .defb $51,0,0,0,3,$01`;
     expect(() => t.runUntilReady()).toThrow(/frame command/);
   });
 
+  it("piI2sConnect / piI2sStatus / piI2sReceiver / piI2sDisconnect: the stream reaches $2C and holds when it stops", async () => {
+    const s = await createSession();
+    await s.loadCode(" .org $8000\n di\n jr $");
+    expect(s.piI2sStatus(), "no Pi").toBeUndefined();
+    s.setNextReg(0xa2, 0xc0).piI2sConnect({ rate: 48_000, sample: () => [0x7fff, -0x8000] }).runFrames(1);
+    expect(s.piI2sStatus()).toMatchObject({ rate: 48_000, ended: false });
+    expect(s.piI2sStatus()!.position).toBeGreaterThan(900);
+    expect(s.piI2sReceiver()).toEqual({ left: 0x3ff, right: 0x000, ear: false });
+    expect([s.readNextReg(0x2c), s.readNextReg(0x2e)]).toEqual([0xff, 0x00]);
+    s.piI2sDisconnect().runFrames(1);
+    expect(s.piI2sStatus()).toBeUndefined();
+    expect(s.piI2sReceiver().left, "held").toBe(0x3ff);
+  });
+
   it("mouse: packets move the Kempston counters; buttons stay held until the next packet names them", async () => {
     const s = await createSession();
     await s.loadCode(" .org $8000\n di\n jr $");

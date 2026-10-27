@@ -1976,5 +1976,82 @@
       "offset": "The offset inside the bank, e.g. '$0100'",
       "address": "The entry address, e.g. '$C100'"
     }
+  },
+  "commands.piAudio.description": "Plays a WAV file or a tone into the ZX Spectrum Next's Raspberry Pi audio input (I2S) in place of a Pi; -off stops it, no argument shows its state",
+  "@commands.piAudio.description": {
+    "context": "Help text of the 'pi-audio' IDE command. Keep the option name -off. I2S is the name of a digital audio link; keep it. Raspberry Pi is a product name."
+  },
+  "commands.piAudio.notNext": "The Raspberry Pi audio input exists only on a ZX Spectrum Next machine.",
+  "@commands.piAudio.notNext": {
+    "context": "IDE command 'pi-audio', which plays a sound file or a tone into the ZX Spectrum Next's Raspberry Pi audio input (I2S) in place of a real Raspberry Pi. Validation error when another machine is selected."
+  },
+  "commands.piAudio.oneSource": "Give one source: a WAV file, -tone or -off.",
+  "@commands.piAudio.oneSource": {
+    "context": "IDE command 'pi-audio', which plays a sound file or a tone into the ZX Spectrum Next's Raspberry Pi audio input (I2S) in place of a real Raspberry Pi. Validation error when more than one source is given. Keep -tone and -off."
+  },
+  "commands.piAudio.toneOnly": "-level, -left and -right go with -tone only.",
+  "@commands.piAudio.toneOnly": {
+    "context": "IDE command 'pi-audio', which plays a sound file or a tone into the ZX Spectrum Next's Raspberry Pi audio input (I2S) in place of a real Raspberry Pi. Validation error. Keep the option names."
+  },
+  "commands.piAudio.oneSide": "Use either -left or -right, not both.",
+  "@commands.piAudio.oneSide": {
+    "context": "IDE command 'pi-audio', which plays a sound file or a tone into the ZX Spectrum Next's Raspberry Pi audio input (I2S) in place of a real Raspberry Pi. Validation error. Keep the option names."
+  },
+  "commands.piAudio.readFailed": "Cannot read {file}: {error}",
+  "@commands.piAudio.readFailed": {
+    "context": "IDE command 'pi-audio', which plays a sound file or a tone into the ZX Spectrum Next's Raspberry Pi audio input (I2S) in place of a real Raspberry Pi. Error when the WAV file cannot be read.",
+    "placeholders": {
+      "file": "The file's full path",
+      "error": "The system's error message (may be English)"
+    }
+  },
+  "commands.piAudio.failed": "Cannot play it on the Pi audio input: {error}",
+  "@commands.piAudio.failed": {
+    "context": "IDE command 'pi-audio', which plays a sound file or a tone into the ZX Spectrum Next's Raspberry Pi audio input (I2S) in place of a real Raspberry Pi. Error when the emulator refuses the source, e.g. a WAV file it cannot decode.",
+    "placeholders": {
+      "error": "Why, e.g. 'The file is not a WAV file'"
+    }
+  },
+  "commands.piAudio.idle": "No sound is playing on the Pi audio input.",
+  "@commands.piAudio.idle": {
+    "context": "IDE command 'pi-audio', which plays a sound file or a tone into the ZX Spectrum Next's Raspberry Pi audio input (I2S) in place of a real Raspberry Pi. Shown by 'pi-audio' with no argument when nothing plays."
+  },
+  "commands.piAudio.stopped": "The Pi audio input is silent now.",
+  "@commands.piAudio.stopped": {
+    "context": "IDE command 'pi-audio', which plays a sound file or a tone into the ZX Spectrum Next's Raspberry Pi audio input (I2S) in place of a real Raspberry Pi. Shown after 'pi-audio -off'."
+  },
+  "commands.piAudio.enableHint": "The Next hears it once a program enables I2S audio in NextReg $A2.",
+  "@commands.piAudio.enableHint": {
+    "context": "IDE command 'pi-audio', which plays a sound file or a tone into the ZX Spectrum Next's Raspberry Pi audio input (I2S) in place of a real Raspberry Pi. Hint shown after a source starts. NextReg $A2 is a hardware register name; keep it."
+  },
+  "commands.piAudio.unnamed": "a stream from a saved machine state",
+  "@commands.piAudio.unnamed": {
+    "context": "IDE command 'pi-audio', which plays a sound file or a tone into the ZX Spectrum Next's Raspberry Pi audio input (I2S) in place of a real Raspberry Pi. Stands in for the source's name when the machine state was loaded from a file and the original sound is not known; used as {name} in the status lines."
+  },
+  "commands.piAudio.status": "Pi audio: {name}, {rate} Hz, at {position} s of {length} s",
+  "@commands.piAudio.status": {
+    "context": "IDE command 'pi-audio', which plays a sound file or a tone into the ZX Spectrum Next's Raspberry Pi audio input (I2S) in place of a real Raspberry Pi. Status line of a sound file playing.",
+    "placeholders": {
+      "name": "The source: a file name",
+      "rate": "Samples per second, e.g. 44100",
+      "position": "Seconds played, one decimal",
+      "length": "The file's length in seconds, one decimal"
+    }
+  },
+  "commands.piAudio.statusEndless": "Pi audio: {name}, {rate} Hz",
+  "@commands.piAudio.statusEndless": {
+    "context": "IDE command 'pi-audio', which plays a sound file or a tone into the ZX Spectrum Next's Raspberry Pi audio input (I2S) in place of a real Raspberry Pi. Status line of an endless source (a tone).",
+    "placeholders": {
+      "name": "The source, e.g. '440 Hz'",
+      "rate": "Samples per second, e.g. 44100"
+    }
+  },
+  "commands.piAudio.statusEnded": "Pi audio: {name}, {rate} Hz, finished",
+  "@commands.piAudio.statusEnded": {
+    "context": "IDE command 'pi-audio', which plays a sound file or a tone into the ZX Spectrum Next's Raspberry Pi audio input (I2S) in place of a real Raspberry Pi. Status line of a sound file that has played to its end.",
+    "placeholders": {
+      "name": "The source: a file name",
+      "rate": "Samples per second, e.g. 44100"
+    }
   }
 }

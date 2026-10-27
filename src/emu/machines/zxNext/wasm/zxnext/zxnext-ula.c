@@ -179,6 +179,8 @@ static inline uint32_t zxnextUlaReadPortFe(uint32_t address) {
   uint8_t bit6 = 0u;
   if (bit4Sensed) bit6 = 0x40u;
   if (micBit && ((zxnextNextRegs[0x08u] & 0x01u) != 0u)) bit6 = 0x40u;
+  /* zxnext.vhd ~3456: (i_AUDIO_EAR xor pi_fe_ear) or ...; the physical tape input is not modelled */
+  if (zxnextPiI2sGetFeEar()) bit6 = 0x40u;
   return (portValue & 0xbfu) | bit6;
 }
 

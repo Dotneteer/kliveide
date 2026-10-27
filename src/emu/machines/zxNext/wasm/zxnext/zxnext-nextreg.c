@@ -503,6 +503,8 @@ static void zxnextNextRegSetDirect(uint32_t reg, uint32_t value) {
     zxnextNextRegs[reg & 0xffu] = (uint8_t)zxnextInterruptsGetNextRegister(reg);
     return;
   }
+  /* $A2: the Pi I2S receiver's latch events before the write ran under the old settings */
+  if (normalized == 0xa2u) zxnextPiI2sBeforeNextRegA2Write();
   if (normalized == 0x02u) {
     zxnextNmiNextReg02Write(value);
     if ((value & 0x02u) != 0u) zxnextResetRequest = 2u;
@@ -619,6 +621,8 @@ static void zxnextNextRegSetDirect(uint32_t reg, uint32_t value) {
   if (normalized == 0x28u || normalized == 0x29u || normalized == 0x2bu) zxnextJoystickWriteKeymapRegister(normalized, value);
   /* $C6 bits 1 / 5 (near full only) change the UART RX request level itself (zxnext.vhd ~1898) */
   if (normalized == 0xc6u) zxnextUartOnInterruptEnableChanged();
+  /* $A2 bits 7-6 both 0 hold the I2S entity in reset; bit 0 moves the EAR bit (zxnext.vhd ~6415, ~2322) */
+  if (normalized == 0xa2u) zxnextPiI2sAfterNextRegA2Write();
 }
 
 static uint32_t zxnextNextRegGetDirect(uint32_t reg) {

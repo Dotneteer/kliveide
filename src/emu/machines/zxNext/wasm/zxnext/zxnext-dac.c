@@ -43,14 +43,9 @@ static void zxnextDacSetNextReg(uint32_t reg, uint32_t value) {
 }
 
 /* zxnext.vhd ~5952-5961: $2C/$2E read bits 9-2 of the Pi I2S sample and $2D its latched bits 1-0 - not
-   the DACs. With I2S off the sample is "10" & X"00" (~2314): $80, $80 and $00. */
+   the DACs (zxnext-pi-i2s.c). With I2S off the sample is "10" & X"00" (~2314): $80, $80 and $00. */
 static uint32_t zxnextDacGetNextReg(uint32_t reg) {
-  switch (reg & 0xffu) {
-    case 0x2cu: return 0x80u;
-    case 0x2du: return 0x00u;
-    case 0x2eu: return 0x80u;
-    default: return 0xffu;
-  }
+  return zxnextPiI2sGetNextReg(reg);
 }
 
 /* internal_port_enable bit n: $82 + n / 8, bit n % 8 (zxnext.vhd ~2348) */

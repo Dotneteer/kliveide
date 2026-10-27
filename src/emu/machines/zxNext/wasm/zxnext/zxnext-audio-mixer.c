@@ -11,6 +11,9 @@ static int32_t zxnextMixerEarLevel;
 static int32_t zxnextMixerMicLevel;
 static double zxnextMixerPsgLeft;
 static double zxnextMixerPsgRight;
+/* The Pi I2S sample per side, about its $200 rest (zxnext-pi-i2s.c) */
+static int32_t zxnextMixerPiLeft;
+static int32_t zxnextMixerPiRight;
 static uint32_t zxnextMixerVolumeScaleMilli;
 static uint32_t zxnextMixerSampleCount;
 /* The next sample's time: frame 28 MHz clocks x sample rate. It carries across the frame wrap
@@ -63,6 +66,8 @@ static void zxnextAudioMixerReset(void) {
   zxnextMixerMicLevel = 0;
   zxnextMixerPsgLeft = 0.0;
   zxnextMixerPsgRight = 0.0;
+  zxnextMixerPiLeft = 0;
+  zxnextMixerPiRight = 0;
   zxnextMixerVolumeScaleMilli = 1000u;
   zxnextMixerBeeperDcPrevInputEar = 0.0;
   zxnextMixerBeeperDcPrevInputMic = 0.0;
@@ -119,8 +124,8 @@ static void zxnextAudioMixerSetVolumeScaleMilli(uint32_t scale) {
 /*
  * audio_mixer.vhd: pcm = ear + mic + ay + dac + i2s, each side on its own, in these units: EAR 512 and
  * MIC 128 while high, a full YM channel 255 (the PSG output is that table x 257), one DAC channel 4 per
- * step. The beeper arrives DC-filtered and the DACs are taken about their $80 centre, so silence is 0;
- * the AY stays unipolar. ZXNEXT_MIXER_GAIN maps the sum to 16 bits: chosen (2026-09-18) so that a full
+ * step, the Pi I2S sample 1 per step (0-1023). The beeper arrives DC-filtered and the DACs and I2S are
+ * taken about their centres ($80, $200), so silence is 0; the AY stays unipolar. ZXNEXT_MIXER_GAIN maps the sum to 16 bits: chosen (2026-09-18) so that a full
  * AY channel keeps the level it had before the mixer followed the VHDL proportions. Mirrors
  * AudioMixerDevice.getMixedOutput.
  */
@@ -130,6 +135,7 @@ static int32_t zxnextAudioMixerGetMixedSide(uint32_t isRight) {
   mixed += (isRight ? zxnextMixerPsgRight : zxnextMixerPsgLeft) / 257.0;
   uint32_t dacSide = isRight ? zxnextDacGetStereoRight() : zxnextDacGetStereoLeft();
   mixed += ((double)dacSide - 256.0) * 4.0;
+  mixed += (double)(isRight ? zxnextMixerPiRight : zxnextMixerPiLeft);
   /* AudioMixerDevice.getMixedOutput: trunc(mixed x gain), then floor(x volume), then the clamp */
   double scaled = zxnextMixerTrunc(mixed * ZXNEXT_MIXER_GAIN);
   scaled = zxnextMixerFloor(scaled * ((double)zxnextMixerVolumeScaleMilli / 1000.0));
@@ -155,6 +161,10 @@ static uint32_t zxnextAudioMixerAppendCurrentSample(void) {
 }
 
 static void zxnextAudioMixerRefreshCurrentSources(double sampleEndTact, double sampleEndFrameTacts28) {
+  /* The Pi I2S receiver up to now, first: its EAR bit's MIC transitions reach the beeper before the
+     beeper's sample is taken. A sample-end in the past sees the words latched since, at most one
+     audio sample late (zxnext-pi-i2s.c keeps time lazily and never runs backwards). */
+  zxnextPiI2sSync();
   /* AudioMixerDevice.setEarLevel / setMicLevel: round(level x 512) / round(level x 128) of the
      DC-filtered time-weighted fractions */
   int32_t ear = zxnextMixerRound(zxnextAudioMixerFilterBeeper(
@@ -178,6 +188,8 @@ static void zxnextAudioMixerRefreshCurrentSources(double sampleEndTact, double s
   zxnextMixerMicLevel = mic;
   zxnextMixerPsgLeft = zxnextPsgGetSampleLeftExact();
   zxnextMixerPsgRight = zxnextPsgGetSampleRightExact();
+  zxnextMixerPiLeft = zxnextPiI2sGetMixLeft();
+  zxnextMixerPiRight = zxnextPiI2sGetMixRight();
 }
 
 static void zxnextAudioMixerSetNextSample(uint32_t frameTacts28) {

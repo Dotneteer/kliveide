@@ -123,6 +123,10 @@ import type {
 } from "@common/spectrum/snapshot/spectrumSnapshotLoadTypes";
 import type { Z88SnapshotLoadMode, Z88SnapshotLoadResult } from "@common/z88/z88SnapshotLoadTypes";
 import { t } from "@common/i18n/i18n";
+import type { PiI2sSourceSpec, PiI2sStatus } from "@common/zxnext/piI2s";
+import { isPiI2sMachine } from "@emu/machines/zxNext/piI2s/PiI2sSource";
+import { piI2sSourceFromSpec } from "@emu/machines/zxNext/piI2s/piI2sSourceFromSpec";
+import { WavDecodeError, type WavDecodeFailure } from "@emu/machines/zxNext/piI2s/wavDecoder";
 
 const borderColors = ULA_BORDER_COLOR_NAMES;
 
@@ -749,6 +753,29 @@ class EmuMessageProcessor {
     getCachedStore().dispatch(setMediaAction(MEDIA_MICRODRIVES[drive], { diskFile: file, writeProtected }), "emu");
     this.setMicrodriveWriteProtection(drive, writeProtected);
     await this.setMicrodriveFile(drive, file, contents);
+  }
+
+  async setPiI2sSource(spec: PiI2sSourceSpec): Promise<PiI2sStatus | undefined> {
+    const controller = this.machineService.getMachineController();
+    const machine = controller?.machine;
+    if (!isPiI2sMachine(machine)) {
+      throw new Error(t("emu.piI2s.notNext"));
+    }
+    let source;
+    try {
+      source = piI2sSourceFromSpec(spec);
+    } catch (err) {
+      throw new Error(err instanceof WavDecodeError ? wavFailureText(err.reason) : String(err));
+    }
+    // --- A new stream acts on the present (REVERSE_DEBUGGING_PLAN D12)
+    controller?.clearHistoryCursor?.();
+    machine.connectPiI2sSource(source);
+    return machine.getPiI2sStatus();
+  }
+
+  async getPiI2sStatus(): Promise<PiI2sStatus | undefined> {
+    const machine = this.machineService.getMachineController()?.machine;
+    return isPiI2sMachine(machine) ? machine.getPiI2sStatus() : undefined;
   }
 
   async setMicrodriveFile(drive: number, file?: string, contents?: Uint8Array) {
@@ -2325,6 +2352,22 @@ function getEmuScriptRunner(): EmuScriptRunner {
     emuScriptRunner = new EmuScriptRunner(getCachedStore(), getCachedMessenger());
   }
   return emuScriptRunner;
+}
+
+/** Why a WAV file cannot be played on the Pi I2S input */
+function wavFailureText(reason: WavDecodeFailure): string {
+  switch (reason) {
+    case "notWav":
+      return t("emu.piI2s.wav.notWav");
+    case "noFormat":
+      return t("emu.piI2s.wav.noFormat");
+    case "noData":
+      return t("emu.piI2s.wav.noData");
+    case "unsupportedFormat":
+      return t("emu.piI2s.wav.unsupportedFormat");
+    case "badRate":
+      return t("emu.piI2s.wav.badRate");
+  }
 }
 
 /**

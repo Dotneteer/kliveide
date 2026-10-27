@@ -1,7 +1,50 @@
 # ZX Spectrum Next Pi I2S Audio — Implementation Plan
 
-**Status:** not started. **Start at §5 Phase 1.**
+**Status:** Phases 1-3 built (2026-10-27), except the Guides page with screenshots and an IDE status
+indicator (see "As built"). Phase 4 (NextPi commands) is a separate, later plan.
 **Written 2026-10-27.**
+
+## As built (2026-10-27)
+
+- **Core:** `src/emu/machines/zxNext/wasm/zxnext/zxnext-pi-i2s.c/.h`, included after `zxnext-clock28.c`.
+  Hooks: the `$2C`/`$2E` reads in `zxnext-dac.c`, the `$253B` read (`zxnext-ports.c`, latches `$2D`), the
+  `$A2` write (`zxnext-nextreg.c`), port `$FE` bit 6 (`zxnext-ula.c`), the mixer
+  (`zxnext-audio-mixer.c`) and the beeper's MIC line, now `port_fe_mic xor pi_fe_ear`
+  (`zxnext-beeper.c`).
+- **Pure reads stay pure:** `Sync` advances the receiver on the paths that may change state. The getters
+  and the NextReg read mux compute the same values on a copy (`zxnextPiI2sPeek`), so
+  `zxnextGetNextRegisterDirect` and the `zxnextGetPiI2s*` exports leave the image unchanged
+  (`test/wasm/reverse/export-contract.test.ts`).
+- **Replay (D4) works through the input journal, not through a pure source.** The machine writes the
+  samples into the ring with `writeCoreBytes` and calls `zxnextPiI2sAppend`. `PiI2s` is a journaled
+  device noun in `exportContract.ts`. A reverse-debugging replay re-applies both where they happened,
+  so the host's source is never consulted again. The journal grows by about 3.5 KB per frame at
+  44.1 kHz stereo while a stream plays.
+- **Trap found:** the amount to deliver (`zxnextGetPiI2sWant`) must not depend on *when* in a frame the
+  host asks. The debug loop enters a frame at other moments than the fast path, so the first version
+  (counted from now) delivered different amounts, and the debug-path replay test failed on
+  `zxnextPiI2sFilled`. The target is now counted from the current frame's start: up to three frames
+  past it. The ring holds 16384 samples, more than three frames at 192 kHz.
+- **Host:** `src/emu/machines/zxNext/piI2s/` (`PiI2sSource.ts`: silence, tone, PCM, the machine guard;
+  `wavDecoder.ts`; `piI2sSourceFromSpec.ts`), and `ZxNextWasmV2Machine.connectPiI2sSource` /
+  `getPiI2sStatus` / `feedPiI2s`. The feed runs before the fast frame and at every debug-loop entry.
+- **IDE:** the `pi-audio` command (`src/renderer/appIde/commands/PiAudioCommand.ts`) through
+  `EmuApi.setPiI2sSource` / `getPiI2sStatus`. The WAV file is decoded in the emulator, which reports
+  why a file is refused. The command is documented in `docs/content/en/reference/commands.mdx`.
+- **Not done:**
+  - a status indicator in the emulator's UI (the command with no argument shows the state)
+  - the Guides page with generated screenshots
+  - lines 130-131 and 579 of `.plans/NEXT_AUDIO_ARTICLES_PLAN.md`, which still say I2S is not
+    emulated (that file had uncommitted edits of the author's)
+  - checking the change by hand in the running IDE
+- **Tests:**
+  - `test/zxnext-hw/audio/pi-i2s.test.ts` (I2S-001 - I2S-012, catalogue §4.39)
+  - `test/audio/pi-i2s-sources.test.ts`
+  - `test/commands/PiAudioCommand.test.ts`
+  - the session self-test
+  - a "zxnext (Pi I2S)" machine in `test/wasm/debug-loop-equivalence.test.ts` and in
+    `test/wasm/reverse/journal-replay-determinism.test.ts` (slow tier)
+
 
 The Next can take digital audio from the Raspberry Pi accelerator over I2S, and can send its own mix
 the other way. Klive emulates the Next's side of the link only up to NextReg `$A2`: the register
@@ -30,6 +73,8 @@ What the Pi *does* to make sound (NextPi's software and its UART commands) is a 
   and is part of the state image. None of it is volatile. A sample source is a pure function of the
   sample index, so after a restore the host can refill it from the cursor stored in the core. This
   keeps reverse debugging and `debug-loop-equivalence` honest (`src/emu/z80/wasm/README.md`, "volatile").
+  *As built:* reverse debugging replays the journaled sample writes rather than asking the source
+  again (see "As built").
 - **D5 — No source means no Pi.** With nothing connected, SCK never toggles and nothing is latched.
   The receiver keeps its reset value, which reads as the rest level ($80/$00/$80, as today). This is
   the default and changes no existing behaviour or golden.

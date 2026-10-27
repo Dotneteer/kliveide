@@ -4,6 +4,10 @@
 
 static uint8_t zxnextBeeperEar;
 static uint8_t zxnextBeeperMic;
+/* The MIC line is port_fe_mic xor pi_fe_ear (zxnext.vhd ~6449 beep_mic_final; i_AUDIO_EAR, the
+   physical tape input, is not modelled): the port's bit and the Pi I2S EAR bit, kept apart */
+static uint8_t zxnextBeeperPortMic;
+static uint8_t zxnextBeeperPiEar;
 static uint32_t zxnextBeeperTacts;
 static double zxnextBeeperFrameStartTact;
 static double zxnextBeeperSampleWindowStartTact;
@@ -21,6 +25,8 @@ static uint8_t zxnextBeeperCachedSampleValid;
 static void zxnextBeeperReset(void) {
   zxnextBeeperEar = 0u;
   zxnextBeeperMic = 0u;
+  zxnextBeeperPortMic = 0u;
+  zxnextBeeperPiEar = 0u;
   zxnextBeeperTacts = 0u;
   zxnextBeeperFrameStartTact = 0.0;
   zxnextBeeperSampleWindowStartTact = 0.0;
@@ -76,13 +82,11 @@ static inline void zxnextBeeperDiscardTransitions(uint32_t count) {
   zxnextBeeperTransitionCount = remaining;
 }
 
-static inline void zxnextBeeperSetOutput(uint32_t ear, uint32_t mic) {
-  uint8_t nextEar = ear != 0u;
-  uint8_t nextMic = mic != 0u;
+static inline void zxnextBeeperRecord(uint8_t nextEar, uint8_t nextMic, double tact) {
   if (nextEar != zxnextBeeperEar || nextMic != zxnextBeeperMic) {
     if (zxnextBeeperTransitionCount < ZXNEXT_BEEPER_TRANSITION_CAPACITY) {
       const uint32_t index = zxnextBeeperTransitionCount++;
-      zxnextBeeperTransitionTacts[index] = (double)zxnextBeeperTacts;
+      zxnextBeeperTransitionTacts[index] = tact;
       zxnextBeeperTransitionEar[index] = nextEar;
       zxnextBeeperTransitionMic[index] = nextMic;
     }
@@ -90,6 +94,24 @@ static inline void zxnextBeeperSetOutput(uint32_t ear, uint32_t mic) {
   }
   zxnextBeeperEar = nextEar;
   zxnextBeeperMic = nextMic;
+}
+
+static inline void zxnextBeeperSetOutput(uint32_t ear, uint32_t mic) {
+  zxnextBeeperPortMic = mic != 0u;
+  zxnextBeeperRecord(ear != 0u, zxnextBeeperPortMic ^ zxnextBeeperPiEar, (double)zxnextBeeperTacts);
+}
+
+/* The Pi I2S EAR bit changed at `tact`, which may lie a little in the past (the receiver is brought
+   up to date lazily): kept after the transitions already recorded, so they stay in order */
+static void zxnextBeeperSetPiEarAt(uint32_t on, double tact) {
+  zxnextBeeperPiEar = on != 0u;
+  double at = tact;
+  if (at < zxnextBeeperSampleWindowStartTact) at = zxnextBeeperSampleWindowStartTact;
+  if (zxnextBeeperTransitionCount > 0u && at < zxnextBeeperTransitionTacts[zxnextBeeperTransitionCount - 1u]) {
+    at = zxnextBeeperTransitionTacts[zxnextBeeperTransitionCount - 1u];
+  }
+  if (at > (double)zxnextBeeperTacts) at = (double)zxnextBeeperTacts;
+  zxnextBeeperRecord(zxnextBeeperEar, zxnextBeeperPortMic ^ zxnextBeeperPiEar, at);
 }
 
 static uint32_t zxnextBeeperGetEar(void) { return zxnextBeeperEar; }

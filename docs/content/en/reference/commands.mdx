@@ -1030,6 +1030,32 @@ tape-load "tapes/game.tzx"
 tape-load "tapes/game.tzx" -r
 ```
 
+## `pi-audio`
+
+This command plays a WAV file or a tone into the ZX Spectrum Next's Raspberry Pi audio input (I2S), taking the place of a real Raspberry Pi.
+
+```
+pi-audio <wav-file>
+pi-audio -tone <hz> [-level <percent>] [-left | -right]
+pi-audio -off
+pi-audio
+```
+
+The sound starts at once and runs with the emulated machine. It slows down, speeds up and pauses with the machine, and stays in step with reverse debugging. The Next hears it only as the hardware would: a program has to enable I2S audio in NextReg `$A2`. Then the sound goes into the mix, NextRegs `$2C`–`$2E` read its samples, and with bit 0 of `$A2` set it reaches the EAR bit of port `$FE`.
+
+- `<wav-file>`: an uncompressed WAV file (8, 16, 24 or 32-bit PCM, or 32-bit float) at any sample rate. A mono file plays on both sides. When the file ends, the input holds its last sample. A relative path is taken from the project folder.
+- `-tone <hz>`: an endless sine tone of 1 to 20000 Hz. `-level` sets its loudness in percent of full scale (50 by default). `-left` or `-right` plays it on one side only.
+- `-off`: stops the sound. The input keeps its last sample, as when a Raspberry Pi stops sending.
+- With no argument, the command shows what is playing.
+
+The command works on the ZX Spectrum Next only. Nothing of the Raspberry Pi itself is emulated: NextPi commands sent over the Pi's UART get no answer.
+
+```text
+pi-audio "sounds/intro.wav"
+pi-audio -tone 440 -level 25 -left
+pi-audio -off
+```
+
 ## `label`
 
 This command adds a label to the active annotation set, at the address the machine is stopped at
