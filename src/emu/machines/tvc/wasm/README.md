@@ -16,8 +16,11 @@ The hardware facts come from the research pack `_input/videoton-tvc/`: `TVC_HARD
 - `tvc/tvc.c`: the translation unit. It holds the state, the time base, the `Z80_*` hook wiring, the
   frame loop and the exports, plus the shared debug loop, condition evaluator, history recorder and
   access profile.
-- `tvc/tvc-memory.c`: the mapper (port 02h, the 64K+'s port 0Ch), as eight 8K slots over one
-  physical array (`tvcMemory`: U0-U3, VID0-VID3, SYS, CART, EXTH, the card window).
+- `tvc/tvc-memory.c`: the mapper (port 02h, the 64K+'s port 0Ch, the card port 03h), as sixteen 4K
+  slots over one physical array (`tvcMemory`: U0-U3, VID0-VID3, SYS, CART, the card window, EXTH,
+  the HBF card's ROM and RAM).
+- `tvc/tvc-hbf.c`: the HBF floppy interface card in slot 0, on the shared WD1793
+  (`src/emu/machines/common/wasm/wd1793.c`, also the Beta 128's).
 - `tvc/tvc-keyboard.c`: the 11 x 8 active-low matrix (port 03h selects the row, port 58h reads it).
 - `tvc/tvc-crtc.c`: the 6845 (Hitachi type 0 by default, D6; `tvcCrtcSetMotorola` for the MC6845).
 - `tvc/tvc-video.c`: the pixel pipeline, blanking, the sync-driven TV window and the interrupt
@@ -115,6 +118,22 @@ interrupt, toggle, reload the divider, restart. Its divisors give 42 (pilot), 34
 The ROM reads both, because it calibrates on each tape's pilot. A real recording's frequencies would
 settle Q2.
 
+## The HBF card and VT-DOS (plan §9.4)
+
+`MC_TVC_HBF` plugs the card into slot 0: its 16K VT-DOS ROM shows a 4K page (port 18h bits 5-4) at
+C000h of the EXT page and its 4K RAM at D000h, its controller answers at 10h-13h, the status (DRQ,
+INTRQ) and drive register at 14h, and port 5Ah reports type 2 in slot 0. That is why the slots are
+4K: the card splits the 8K window.
+
+The controller is the Beta 128's WD1793, extracted into a shared file with its geometry as
+parameters: here two drives of 82 cylinders, two sides, nine 512-byte sectors (720K). A raw `.dsk`
+is read by its FAT12 boot sector (`TvcDiskImage.ts`); a single-sided one is spread over side 0. The
+guest's writes go back as the whole image (`TvcHbfDisks.ts`).
+
+VT-DOS hooks the cassette calls, so `LOAD"name"` and `SAVE"name"` use the disk, and `EXT2` starts its
+command line (`DIR`, `CD`, ...). It moves the cursor, and with it the interrupt, from 0EFFh to 0AFFh:
+scan line 175 instead of 239 (`test/tvc-hw/hbf.test.ts`).
+
 ## Testing
 
 `test/harness/tvc/` scripts the real core: `bootToBasic`, frames, stepping, the CRTC and the picture.
@@ -128,7 +147,9 @@ settle Q2.
 - `tape.test.ts`: SAVE to `.cas`, then LOAD and RUN in a fresh machine, at both timings, with and
   without fast load;
 - `keyboard.test.ts`: the typer's characters, found unchanged in the program BASIC stored;
-- `plus.test.ts`: the 64K+'s BASIC 2.2 boot, its video banks and the bank it shows.
+- `plus.test.ts`: the 64K+'s BASIC 2.2 boot, its video banks and the bank it shows;
+- `hbf.test.ts`: VT-DOS's directory listing, SAVE and LOAD through the disk (and through the image
+  the drive publishes), write protection, the moved cursor interrupt.
 
 Most of these run on a "bare" machine, with the CPU parked in RAM and the CRTC set by the test
 (`bare.ts`).

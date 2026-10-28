@@ -102,7 +102,8 @@ on request from a rights holder. The details and the file list are kept beside t
 ## The Videoton TV Computer ROMs
 
 `src/public/roms/tvc12-*.rom` and `tvc22-*.rom` (shipped under `roms/`) are the BASIC 1.2 (TVC 64K)
-and BASIC 2.2 (TVC 64K+) system and extension ROMs of the Videoton TV Computer, unmodified. They are
+and BASIC 2.2 (TVC 64K+) system and extension ROMs of the Videoton TV Computer, and `tvc-vtdos.rom`
+is the VT-DOS ROM of its HBF floppy interface card, unmodified. They are
 not covered by the MIT licence above, nor by Klive's own. Their rights belong to Videoton. No
 explicit permission to redistribute them is known: they are included because the TVC community
 publishes them openly (taken from the rtvc emulator's repository, each image matching MAME's tvc64

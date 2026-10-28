@@ -3106,6 +3106,7 @@ export type MessageKey =
   | "menu.timex.joysticks"
   | "menu.timex.kempstonJoystick"
   | "menu.timex.sideDrivenBy"
+  | "menu.tvc.hbf"
   | "menu.view.actualSize"
   | "menu.view.commandAndOutput"
   | "menu.view.darkTheme"

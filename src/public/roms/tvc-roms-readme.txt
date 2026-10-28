@@ -1,4 +1,4 @@
-Videoton TV Computer ROMs (tvc12-*.rom, tvc22-*.rom)
+Videoton TV Computer ROMs (tvc12-*.rom, tvc22-*.rom, tvc-vtdos.rom)
 
 These are the system ROMs of the Videoton TV Computer (TVC), the Hungarian
 home and school computer Videoton made in the second half of the 1980s: the BASIC 1.2 ROMs of
@@ -22,6 +22,11 @@ tvc64p BIOS v2.2).
   tvc22-d6.rom    TVC22_D6.64K     BASIC 2.2 system ROM, low 8K of SYS
   tvc22-d4.rom    TVC22_D4.64K     BASIC 2.2 system ROM, high 8K of SYS
   tvc22-d7.rom    TVC22_D7.64K     BASIC 2.2 extension ROM, EXTH
+  tvc-vtdos.rom   VT-DOS12-DISK.ROM  VT-DOS, the HBF floppy interface card's 16K ROM
+
+tvc-vtdos.rom is the ROM of Videoton's HBF floppy disk interface card. rtvc's file
+name says version 1.2; its CRC32 and SHA1 are those of MAME's tvc_hbf "vtdos11"
+image (d_tvcdos.128, VT-DOS v1.1). Its rights belong to Videoton, as above.
 
 Sizes and CRC32s are checked by test/machines/tvc-rom-images.test.ts.
 This notice must be retained.

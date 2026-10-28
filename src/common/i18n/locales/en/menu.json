@@ -848,6 +848,11 @@
     "context": "Machine menu (ZX Spectrum 48K and 128K): submenu of the add-on interfaces that plug into the edge connector - the DivMMC (an SD card interface) and the ZX Interface 1 with its Microdrives (small tape-loop cartridge drives); one of them at a time.",
     "maxChars": 30
   },
+  "menu.tvc.hbf": "HBF Floppy Interface (VT-DOS)",
+  "@menu.tvc.hbf": {
+    "context": "Checkbox in the Videoton TVC's Machine menu: plugs the HBF floppy disk interface card (with its VT-DOS ROM) into the machine, which restarts it. HBF and VT-DOS are product names.",
+    "maxChars": 40
+  },
   "menu.if1.connect": "Interface 1",
   "@menu.if1.connect": {
     "context": "Checkbox, the first item of Machine › Microdrives on the ZX Spectrum 48K and 128K: connects the ZX Interface 1 (Sinclair's add-on that drives Microdrives), which restarts the machine. A product name; usually left untranslated.",

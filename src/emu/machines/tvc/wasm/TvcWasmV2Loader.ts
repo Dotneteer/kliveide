@@ -50,6 +50,10 @@ export type TvcWasmV2Views = {
   readonly exthRom: Uint8Array;
   /** The 16K cartridge ROM (FFh: no cartridge) */
   readonly cartRom: Uint8Array;
+  /** The HBF card's 16K ROM (`tvc-hbf.c`) */
+  readonly hbfRom: Uint8Array;
+  /** The HBF card's two drives, each a canonical disk image (`tvcHbfDiskGetCapacity` bytes) */
+  readonly hbfDisks: readonly Uint8Array[];
   /** The TV picture, 608 x 288 */
   readonly pixelBuffer: Uint32Array;
   readonly pixelBufferBytes: Uint8ClampedArray;
@@ -126,6 +130,29 @@ export const tvcWasmV2RequiredExports = [
   "tvcGetHalfClock",
   "tvcGetInterruptDepth",
   "tvcGetIsPlus",
+  "tvcHbfClearDirty",
+  "tvcHbfDiskDataPtr",
+  "tvcHbfDiskEject",
+  "tvcHbfDiskGetCapacity",
+  "tvcHbfGetDiskCylinders",
+  "tvcHbfGetDiskPresent",
+  "tvcHbfGetDiskSides",
+  "tvcHbfDiskInsert",
+  "tvcHbfDiskSetWriteProtected",
+  "tvcHbfGetDirtyRevision",
+  "tvcHbfGetDriveCylinder",
+  "tvcHbfGetDriveRegister",
+  "tvcHbfGetFdcCommand",
+  "tvcHbfGetFdcData",
+  "tvcHbfGetFdcSector",
+  "tvcHbfGetFdcStatus",
+  "tvcHbfGetFdcTrack",
+  "tvcHbfGetPresent",
+  "tvcHbfGetRomPage",
+  "tvcHbfGetSectorCount",
+  "tvcHbfGetSectorDirty",
+  "tvcHbfRomPtr",
+  "tvcHbfSetPresent",
   "tvcGetItPending",
   "tvcGetKeyboardLine",
   "tvcGetLastPortAddress",
@@ -265,6 +292,9 @@ export function createTvcWasmV2Views(exports: TvcWasmV2Exports, artifactName = T
   check("sysRom", exports.tvcSysRomPtr(), TVC_WASM_V2_ROM_BANK_SIZE);
   check("exthRom", exports.tvcExthRomPtr(), TVC_WASM_V2_EXTH_SIZE);
   check("cartRom", exports.tvcCartRomPtr(), TVC_WASM_V2_ROM_BANK_SIZE);
+  check("hbfRom", exports.tvcHbfRomPtr(), TVC_WASM_V2_ROM_BANK_SIZE);
+  const diskSize = exports.tvcHbfDiskGetCapacity();
+  for (const drive of [0, 1]) check(`hbfDisk${drive}`, exports.tvcHbfDiskDataPtr(drive), diskSize);
   check("pixelBuffer", exports.tvcPixelBufferPtr(), pixelWords * 4);
   check("keyboardLines", exports.tvcKeyboardLinesPtr(), TVC_WASM_V2_KEYBOARD_LINE_COUNT);
   const audioDoubles = exports.tvcGetAudioSampleCapacity() * 2;
@@ -282,6 +312,8 @@ export function createTvcWasmV2Views(exports: TvcWasmV2Exports, artifactName = T
     sysRom: new Uint8Array(memoryBuffer, exports.tvcSysRomPtr(), TVC_WASM_V2_ROM_BANK_SIZE),
     exthRom: new Uint8Array(memoryBuffer, exports.tvcExthRomPtr(), TVC_WASM_V2_EXTH_SIZE),
     cartRom: new Uint8Array(memoryBuffer, exports.tvcCartRomPtr(), TVC_WASM_V2_ROM_BANK_SIZE),
+    hbfRom: new Uint8Array(memoryBuffer, exports.tvcHbfRomPtr(), TVC_WASM_V2_ROM_BANK_SIZE),
+    hbfDisks: [0, 1].map((drive) => new Uint8Array(memoryBuffer, exports.tvcHbfDiskDataPtr(drive), diskSize)),
     pixelBuffer: new Uint32Array(memoryBuffer, exports.tvcPixelBufferPtr(), pixelWords),
     pixelBufferBytes: new Uint8ClampedArray(memoryBuffer, exports.tvcPixelBufferPtr(), pixelWords * 4),
     keyboardLines: new Uint8Array(memoryBuffer, exports.tvcKeyboardLinesPtr(), TVC_WASM_V2_KEYBOARD_LINE_COUNT),

@@ -40,7 +40,7 @@
 
 /*
  * The physical memory, one array: every bank the mapper can show (plan §2; rtvc/info/tvc.md
- * "Memory Map"). The CPU sees it through eight 8K slots (`tvc-memory.c`). It is eleven 16K
+ * "Memory Map"). The CPU sees it through sixteen 4K slots (`tvc-memory.c`). It is eleven 16K
  * partitions in the IDE's numbering (`TvcWasmV2Machine.ts`): U0-U3 and VID0-VID3 are partitions
  * 0-7 at 16K times their number, then SYS, CART, and EXT - the card window and EXTH in the order the
  * EXT page shows them (C000-DFFF, E000-FFFF), so the page is one partition.
@@ -51,7 +51,12 @@
 #define TVC_CART 0x24000u
 #define TVC_EXT_CARD 0x28000u
 #define TVC_EXTH 0x2a000u
-#define TVC_PHYS_SIZE 0x2c000u
+/* The HBF card (tvc-hbf.c): its 16K ROM, four 4K pages, and its 4K RAM */
+#define TVC_HBF_ROM 0x2c000u
+#define TVC_HBF_RAM 0x30000u
+#define TVC_HBF_ROM_PAGE_SIZE 0x1000u
+#define TVC_HBF_TYPE 2u
+#define TVC_PHYS_SIZE 0x31000u
 #define TVC_BANK_SIZE 0x4000u
 
 /* The TV picture (plan §7, D4): 76 characters of 8 dots, 288 lines */
@@ -64,6 +69,10 @@
 // Machine state
 // -----------------------------------------------------------------------------
 
+/* The HBF card in slot 0 (tvc-hbf.c): plugged in, its ROM page (port 18h) and drive register (14h) */
+static uint8_t tvcHbfPresent;
+static uint8_t tvcHbfRomPage;
+static uint8_t tvcHbfDriveReg;
 static uint8_t tvcMemory[TVC_PHYS_SIZE];
 static uint32_t tvcPixelBuffer[TVC_SCREEN_WIDTH * TVC_SCREEN_HEIGHT];
 /* The keyboard matrix: one byte per row, a set bit is a pressed key (rows 0-10, columns 0-7) */
@@ -151,6 +160,7 @@ static void tvcCrtcFrameStarted(uint32_t charStart);
 static void tvcFrameEnds(uint32_t newStart);
 
 #include "tvc-memory.c"
+#include "tvc-hbf.c"
 #include "tvc-keyboard.c"
 #include "tvc-crtc.c"
 #include "tvc-audio.c"
@@ -295,6 +305,7 @@ static void tvcResetMachine(void) {
   tvcItPending = 0u;
   cpu.tacts = 0u;
   tvcResetKeyboard();
+  tvcHbfReset();
   tvcResetMemoryMap();
   tvcResetPorts();
   tvcCrtcReset();
@@ -316,6 +327,7 @@ void tvcReset(void) {
 void tvcHardReset(void) {
   for (uint32_t i = TVC_U0; i < TVC_SYS; i++) tvcMemory[i] = 0u;
   for (uint32_t i = TVC_EXT_CARD; i < TVC_EXTH; i++) tvcMemory[i] = 0xffu;
+  for (uint32_t i = TVC_HBF_RAM; i < TVC_HBF_RAM + 0x1000u; i++) tvcMemory[i] = 0u;
   z80Reset();
   tvcCrtcPowerOn();
   tvcVideoPowerOn();
@@ -371,6 +383,8 @@ uint32_t tvcGetItPending(void) { return tvcItPending; }
 //   0    bit 0 the 64K+; bit 1 the video bank shown on the 64K+ is not 0
 //   1    port 02h (the main paging register)
 //   2    port 0Ch (the 64K+ video paging register)
+//   3    port 03h (bits 7-6: the card the EXT page shows)
+//   4    bits 1-0 the HBF card's ROM page; bit 7 the card is plugged in
 // -----------------------------------------------------------------------------
 
 static inline void tvcHistoryContext(uint32_t kind, uint8_t *out) {
@@ -378,7 +392,9 @@ static inline void tvcHistoryContext(uint32_t kind, uint8_t *out) {
   out[0] = (uint8_t)(tvcIsPlus | (tvcDisplayBank != 0u ? 0x02u : 0u));
   out[1] = tvcPort02;
   out[2] = tvcPort0c;
-  for (uint32_t i = 3u; i < 16u; i++) out[i] = 0u;
+  out[3] = tvcPort03;
+  out[4] = (uint8_t)(tvcHbfRomPage | (tvcHbfPresent ? 0x80u : 0u));
+  for (uint32_t i = 5u; i < 16u; i++) out[i] = 0u;
 }
 
 #define Z80_HISTORY_CAPACITY 65536u
@@ -395,7 +411,7 @@ static inline void tvcHistoryContext(uint32_t kind, uint8_t *out) {
 
 static inline int32_t tvcProfilePhys(uint32_t address, uint32_t write) {
   const uint32_t phys = tvcPhysicalAddress((uint16_t)address);
-  if (write != 0u && !tvcSlotWritable[(address >> 13) & 7u]) return -1;
+  if (write != 0u && !tvcSlotWritable[(address >> 12) & 15u]) return -1;
   return (int32_t)phys;
 }
 

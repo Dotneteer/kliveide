@@ -7,22 +7,25 @@
  *   page 1 (4000-7FFF)  U1; on the 64K+ with M bit 2 set, the video bank port 0Ch bits 1-0 choose
  *   page 2 (8000-BFFF)  M bit 5: 0 video RAM (on the 64K+ the bank port 0Ch bits 3-2 choose), 1 U2
  *   page 3 (C000-FFFF)  M bits 7-6: 00 CART, 01 SYS, 10 U3, 11 EXT: the selected card's 8K window at
- *                       C000-DFFF (port 03h bits 7-6) and the EXTH ROM at E000-FFFF
+ *                       C000-DFFF (port 03h bits 7-6) and the EXTH ROM at E000-FFFF. Slot 0's HBF card
+ *                       shows a 4K page of its ROM at C000 and its 4K RAM at D000 (tvc-hbf.c).
  *
  * On the 64K+, port 0Ch (mirrored at 0Dh-0Fh) bits 5-4 also choose the bank the video circuit shows,
  * independently of the CPU's (HW pp.94-95). The 64K has one video bank, VID0.
  *
- * The map is kept as eight 8K slots, each an offset into `tvcMemory` and a writable flag, so an
+ * The map is kept as sixteen 4K slots, each an offset into `tvcMemory` and a writable flag, so an
  * access is one table lookup. ROM writes and writes to an empty card window are ignored; an empty
  * card window and an empty cartridge read FFh.
  */
 
-static uint32_t tvcSlotBase[8];
-static uint8_t tvcSlotWritable[8];
+#define TVC_SLOT_SIZE 0x1000u
+
+static uint32_t tvcSlotBase[16];
+static uint8_t tvcSlotWritable[16];
 /* Bit n set: slot n shows video RAM (the clock stretch's one test, tvc-timing.c) */
-static uint8_t tvcVramSlots;
+static uint16_t tvcVramSlots;
 /* Bit n set: an M1 from slot n takes the WAIT circuit's wait state (64K only; tvc-timing.c) */
-static uint8_t tvcSlowSlots;
+static uint16_t tvcSlowSlots;
 
 static uint8_t tvcPort02;
 static uint8_t tvcPort0c;
@@ -37,10 +40,10 @@ static inline uint32_t tvcCpuVideoBank(uint32_t shift) {
 }
 
 static void tvcSetPage(uint32_t page, uint32_t base, uint8_t writable) {
-  tvcSlotBase[page * 2u] = base;
-  tvcSlotBase[page * 2u + 1u] = base + 0x2000u;
-  tvcSlotWritable[page * 2u] = writable;
-  tvcSlotWritable[page * 2u + 1u] = writable;
+  for (uint32_t i = 0u; i < 4u; i++) {
+    tvcSlotBase[page * 4u + i] = base + i * TVC_SLOT_SIZE;
+    tvcSlotWritable[page * 4u + i] = writable;
+  }
 }
 
 static void tvcRemap(void) {
@@ -70,19 +73,24 @@ static void tvcRemap(void) {
     case 1u: tvcSetPage(3u, TVC_SYS, 0u); break;
     case 2u: tvcSetPage(3u, TVC_U0 + 3u * TVC_BANK_SIZE, 1u); break;
     default:
-      // --- EXT: the selected card's window (no card: FFh) and EXTH
-      tvcSlotBase[6] = TVC_EXT_CARD;
-      tvcSlotWritable[6] = 0u;
-      tvcSlotBase[7] = TVC_EXTH;
-      tvcSlotWritable[7] = 0u;
+      // --- EXT: the selected card's window and EXTH. Slot 0's HBF card: a ROM page and its RAM;
+      // --- any other slot is empty (FFh)
+      tvcSetPage(3u, TVC_EXT_CARD, 0u);
+      if (tvcExtCard == 0u && tvcHbfPresent) {
+        tvcSlotBase[12] = TVC_HBF_ROM + (uint32_t)tvcHbfRomPage * TVC_HBF_ROM_PAGE_SIZE;
+        tvcSlotBase[13] = TVC_HBF_RAM;
+        tvcSlotWritable[13] = 1u;
+      }
+      tvcSlotBase[14] = TVC_EXTH;
+      tvcSlotBase[15] = TVC_EXTH + TVC_SLOT_SIZE;
       break;
   }
   tvcVramSlots = 0u;
   tvcSlowSlots = 0u;
-  for (uint32_t slot = 0u; slot < 8u; slot++) {
+  for (uint32_t slot = 0u; slot < 16u; slot++) {
     const uint32_t base = tvcSlotBase[slot];
-    if (base >= TVC_VID0 && base < TVC_SYS) tvcVramSlots |= (uint8_t)(1u << slot);
-    if (!tvcIsPlus && base >= TVC_CART && base < TVC_EXT_CARD) tvcSlowSlots |= (uint8_t)(1u << slot);
+    if (base >= TVC_VID0 && base < TVC_SYS) tvcVramSlots |= (uint16_t)(1u << slot);
+    if (!tvcIsPlus && base >= TVC_CART && base < TVC_EXT_CARD) tvcSlowSlots |= (uint16_t)(1u << slot);
   }
   tvcDisplayBank = tvcIsPlus ? (uint8_t)((tvcPort0c >> 4) & 3u) : 0u;
 }
@@ -95,7 +103,7 @@ static void tvcResetMemoryMap(void) {
 }
 
 static inline uint32_t tvcPhysicalAddress(uint16_t address) {
-  return tvcSlotBase[address >> 13] + (address & 0x1fffu);
+  return tvcSlotBase[address >> 12] + (address & 0x0fffu);
 }
 
 static inline uint8_t tvcPeekMemory(uint16_t address) { return tvcMemory[tvcPhysicalAddress(address)]; }
@@ -103,7 +111,7 @@ static inline uint8_t tvcPeekMemory(uint16_t address) { return tvcMemory[tvcPhys
 static uint8_t tvcCpuReadMemory(uint16_t address) { return tvcPeekMemory(address); }
 
 static void tvcCpuWriteMemory(uint16_t address, uint8_t value) {
-  if (tvcSlotWritable[address >> 13]) tvcMemory[tvcPhysicalAddress(address)] = value;
+  if (tvcSlotWritable[address >> 12]) tvcMemory[tvcPhysicalAddress(address)] = value;
 }
 
 /* The IDE's writes: RAM as the CPU writes it, and the ROMs too (the memory editor may patch them) */

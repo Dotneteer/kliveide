@@ -553,7 +553,7 @@ phase.
 | **5. 64K+** | The `tvc64p` model, BASIC 2.2, four video banks, no WAIT. | Done 2026-10-27: `plus.test.ts` (the boot picture's hash, checked by eye; port 0Ch's CPU and display banks; page 0 = U3); the 64K+ boots and loads a tape in the running app. |
 | **6. IDE** | Partitions, the TVC video panel, BASIC listing, charset, disassembler, menus, state files, history, profile, CLI. | Done 2026-10-28 (§17): `test/tvc-hw/debug.test.ts`, `profile.test.ts`, `basic-listing.test.ts`, `charset.test.ts`; the TVC in every cross-core suite (history, profile, state determinism, export contract, journal replay, debug recordings, hardware specs); `MF_EXEC_HISTORY`, `MF_PROFILE` and `MF_REVERSE_DEBUG` on. |
 | **7. Assembler** | `.model TVC`, injection, `.cas` export, project template. | Done 2026-10-28 (§17): `test/tvc-hw/code-injection.test.ts`, `project-templates.test.ts` (both runs checked by eye), `tape-load-flow.test.ts`; `klive run` and `klive test` on the TVC. |
-| **8. HBF + VT-DOS** | §9.4: the WD1793 extraction (its own commit, Beta 128 tests identical), the HBF card, `.dsk`. | VT-DOS boots and lists a directory; a file round-trips; the video tests still pass after VT-DOS moves the cursor. |
+| **8. HBF + VT-DOS** | §9.4: the WD1793 extraction (its own commit, Beta 128 tests identical), the HBF card, `.dsk`. | Done 2026-10-28 (§17): the extraction (605e69775) rebuilds the 128K core byte-identical; `test/tvc-hw/hbf.test.ts` lists the system disk's directory (checked by eye), round-trips a program through the disk and through the published image, and finds the interrupt on line 175. |
 | **9. Ship** | Notices (`THIRD_PARTY_NOTICES.md`, the ROM readme), docs pages, an `AGENTS.md` section, the landing-page machine table (also missing the HT-1080Z), `README.md`'s machine list, a `.ai/` note in `wasm-migration-intent-and-lessons.md`, one `feature` changeset. Run `npm run test:slow` before release. | A packaged build runs both models; `build:check`, `lint:renderer`, `i18n:check`, `doc:build` + `doc:check` are green. |
 
 The changeset comes with the commit that completes the plan (AGENTS.md). Phase commits before that
@@ -760,4 +760,32 @@ and its sign-on needs the picture to be checked.
   The runner's "wrapper in ROM" guard now uses 1A30h on the TVC instead of the Spectrum's 4000h.
 - **Not done:** the virtual keyboard (as before), and a TVC tape viewer: a `.cas` document still opens
   in the HT-1080Z tape viewer, which cannot show a TVC file.
+
+### Phase 8 (2026-10-28)
+
+- **The WD1793 is shared** (`src/emu/machines/common/wasm/wd1793.c`, its own commit). The includer
+  sets a name prefix, the geometry (drives, cylinders, sectors, sector size and its ID code, the slot
+  pitch on the raw track) and four lines it reads from its interface (drive, side, master reset,
+  head-load timing). The Beta 128 keeps its symbol names, and the 128K core rebuilds
+  **byte-identical**. The test tiers now count every `test/*-hw` folder as a core input (§11's note).
+- **The HBF card** (`tvc-hbf.c`, MAME's `hbf.cpp` and rtvc's notes read for facts): slot 0, I/O
+  10h-1Fh (10-13 the controller, 14 status / drive register, 18 the ROM page), type 2 in port 5Ah.
+  Its 16K ROM shows a 4K page at C000h and its 4K RAM at D000h. **The mapper went from eight 8K to
+  sixteen 4K slots** for it, and port 03h's card bits now remap. The core's memory grew to 10 MiB for
+  the two drives.
+- **The ROM is VT-DOS v1.1 by MAME's CRC** (`d_tvcdos.128`), though the pack's file says 1.2; it
+  ships as `tvc-vtdos.rom` with the other TVC ROMs (readme, notices, CRC test).
+- **Disks:** a raw `.dsk`, its geometry from the FAT12 boot sector; the pack's system disk is 720K
+  (80 x 2 x 9 x 512) and `tvball.dsk` is single-sided (80 x 1), spread over side 0 in the controller.
+  The guest's writes are published as the whole image (`DSK_WHOLE_IMAGE_KEY`): the main process
+  writes it beside the file and renames it over.
+- **What VT-DOS does:** with the card in, BASIC boots as before ("42255 bytes free"), `EXT2` starts
+  "VT-DOS CLI 1.2" and `DIR` lists the system disk (13 files, 528K free); `SAVE"KLIVE"`, `NEW`,
+  `LOAD"KLIVE"` round-trip a program. It moves the cursor address from 0EFFh to 0AFFh, so the
+  interrupt comes on scan line 175 instead of 239, as the model predicts.
+- **The IDE:** Machine > Disks has the "HBF Floppy Interface (VT-DOS)" switch (`MC_TVC_HBF`, a
+  restart) and, with it on, drives A and B (insert, eject, write-protect); the media strip shows both
+  drives. The HBF ROM pages are partitions -4 to -7 ("HBF0"-"HBF3") and its RAM -8 ("HBFR"), in the
+  profile layout and the history context (which now records port 03h and the card's page).
+- **Not done:** the annotation bank space does not know the HBF partitions; a TVC disk viewer.
 

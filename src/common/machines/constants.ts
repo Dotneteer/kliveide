@@ -97,6 +97,8 @@ export const MC_SCORPION = "scorpion";
 export const MC_HT_MODEL = "htModel";
 /** Videoton TVC only: the model the core runs (`tvcMachineInfo.ts`): "64" or "64p" */
 export const MC_TVC_MODEL = "tvcModel";
+/** The Videoton TVC's HBF floppy interface card in slot 0, with VT-DOS (true: plugged in) */
+export const MC_TVC_HBF = "tvcHbf";
 /**
  * The 48K, the 128K (its own timing, not the Pentagon's or the Scorpion's) and the +2A/+3/+2E/+3E: a
  * DivMMC is connected (`.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md` C5). It boots the esxDOS ROM the
