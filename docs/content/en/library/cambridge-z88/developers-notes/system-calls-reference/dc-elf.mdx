@@ -1,0 +1,146 @@
+---
+description: "This call implements the ELF low level interface with OZ. Refer to GN_Elf for user level interfacing."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/116359178 (version 25) by scripts/import-z88-wiki.cjs */}
+
+# DC_Elf, Executable and Linkable Format (ELF) Interface
+
+## Register parameters
+
+**RST 20H, DEFB $260C**
+
+```text
+ IN:
+     A = reason code
+		EL_Op ($00), open ELF file
+		EL_Hi ($02), get ELF header information
+		EL_Pi ($04), get program header information for memory allocation
+		EL_Ld ($06), load ELF segment to memory
+		EL_Ex ($08), execute ELF
+		EL_Cl ($0A), close ELF file
+     IX = handle
+     Other register parameters depend on reason code
+OUT:
+     Depends on reason code, see below.
+```
+
+## Notes
+
+Internal operating system usage.
+
+This call implements the ELF low level interface with OZ. Refer to GN\_Elf for user level interfacing.
+
+## EL\_Op
+
+```text
+ IN: 	A  = 0
+	 	IX = file handle
+
+OUT: Fc = 0, successful
+		IX = ELF handle
+		A  = ELF type
+		BC = number of program header
+		DE = number of section header
+		HL = information header buffer address
+
+	 Fc = 1, failure and A = error
+
+Registers changed after return:
+     ......../..IY same
+     AFBCDEHL/IX.. different
+```
+
+## <strong>EL\_Hi </strong>
+
+```text
+ IN:
+     	A = 2
+     	IX = ELF handle
+
+OUT: Fc = 0, successful
+		A  = ELF type
+		BC = number of program header
+		DE = number of section header
+		HL = information header buffer address
+
+	 Fc = 1, failure and A = error
+
+Registers changed after return:
+     ......../IXIY same
+     AFBCDEHL/.... different
+```
+
+## <strong>EL\_Pi </strong>
+
+```text
+ IN:
+     A = 4
+	 C = program header index (ELF segment)
+     IX = ELF handle
+
+OUT: Fc = 0, successful
+		A = program type
+		BC = program address requested
+		DE = memory size requested
+		HL = program header information buffer address
+
+	 Fc = 1, failure and A = error
+
+Registers changed after return:
+     ......../IXIY same
+     AFBCDEHL/.... different
+```
+
+## <strong>EL\_Ld </strong>
+
+```text
+ IN:
+     A = 6
+	 C = program header index (ELF segment)
+     IX = ELF handle
+
+OUT: Fc = 0, successful
+		A = bank allocated
+		BC = address allocated
+		DE = memory size allocated
+		HL = program header information buffer address
+
+	 Fc = 1, failure and A = error
+
+Registers changed after return:
+     ......../IXIY same
+     AFBCDEHL/.... different
+```
+
+## <strong>EL\_Ex </strong>
+
+```text
+ IN:
+     A = 8
+     IX = ELF handle
+
+OUT: 
+	 -
+
+Return from execution is performed by DC_Rte.
+```
+
+## <strong>EL\_Cl </strong>
+
+```text
+ IN:
+     A = $0A
+	 IX = ELF handle
+
+OUT: Fc = 0, successful
+	 Fc = 1, failure and A = error
+
+Registers changed after return:
+     A.BCDEHL/IXIY same
+     .F....../.... different
+```
+
+## Related calls
+
+[**DC\_Rte**](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-rte), Return from ELF<br />[**GN\_Elf**](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-elf), Enter ELF program

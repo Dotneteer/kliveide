@@ -1,0 +1,44 @@
+---
+description: "Internal operating system usage.OS_Bix and OS_Box are called from GN_ or OS_ 2 byte calls. Binds in extended or local address, identified by BHL (B=0 local) into segment 1. The (offset) address is..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7471382 (version 5) by scripts/import-z88-wiki.cjs */}
+
+# OS_Bix, Bind in extended address for availability
+
+## Register parameters
+
+```text
+IN:
+     B = 0, bind in physical address in HL
+     BHL = extended pointer to bind into physical address space
+     IY points at OSPUSH frame (preserved by previous OZ call) containing:
+
+     offset:  contents:
+     10       <RETurn address to caller>
+     0E       <original bank bindings for segment 2 & 3>
+     0C       <HL>
+     0A       <DE>
+     08       <BC>
+     06       <AF>
+     04       <pointer to OZ call address>
+     02       <original bank bindings for segment 2 & 3>
+     00       <IY>
+
+OUT:
+     DE = old binding of segment 1 in E, and segment 2 in D.
+     B = 0, always, identifying a converted local pointer
+     HL = (possibly modified) address for segment 1.
+
+Registers changed after return:
+     A..C..../IXIY same
+     .FB.DEHL/.... different
+```
+
+## Notes
+
+Internal operating system usage.<br /><br />**OS\_Bix** and **[OS\_Box](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-box)** are called from *GN\_* or *OS\_* 2 byte calls. Binds in extended or local address, identified by BHL (B=0 local) into segment 1. The (offset) address is automatically forced to segment 1, if necessary. If the address already are in segment 1 or 0, no binding occur (the bindings are still returned in DE). B = 0 always returned to indicate a local address in segment 1 or segment 0.<br /><br />If request address was in segment 3 then segment 2 was not affected.
+
+## Related calls
+
+**[OS\_Box](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-box)**, restore bindings after OS\_Bix <br />**[OS\_Fc](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fc)**, select fast code (fast bank switching) <br />**[OS\_Mal](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mal)**, allocate memory <br />**[OS\_Mcl](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mcl)**, close memory (free memory pool) <br />**[OS\_Mfr](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mfr)**, free (previously allocated block) memory <br />**[OS\_Mgb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mgb)**, get current bank binding in segment <br />**[OS\_Mop](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mop)**, open memory (allocate memory pool) <br />**[OS\_Mpb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mpb)**, set new bank binding in segment<br />**[OZ\_Mgb](/en/library/cambridge-z88/developers-notes/system-calls-reference/oz-mgb)**, get current bank binding in segment<br />**[OZ\_Mpb](/en/library/cambridge-z88/developers-notes/system-calls-reference/oz-mpb)**, set new bank binding in segment

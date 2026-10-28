@@ -1,0 +1,50 @@
+---
+description: "Write a block of bytes to the Flash Eprom Card, from address DE to BHL of block size IX. If a block will cross a bank boundary, it is automatically continued on the next adjacent bank of the card...."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7962653 (version 5) by scripts/import-z88-wiki.cjs */}
+
+# FEP_WRBL ($12), Write a block of bytes to Flash Memory
+
+## Register Parameters
+
+```text
+In:
+        A = FEP_WRBL
+        C = FE_28F, FE_29F or 0 (poll card for blowing algorithm)
+        DE = local pointer to start of block (located in current address space)
+        BHL = extended address to start of destination (pointer into card)
+             (bits 7,6 of B is the slot mask)
+             (bits 7,6 of H = MM_Sx segment mask for BHL)
+        IX = size of block (at DE) to blow
+Out:
+        Success:
+             Fc = 0
+             C = FE_28F or FE_29F (depending on found card)
+             BHL updated
+        Failure:
+             Fc = 1
+             A = RC_BWR (block not blown properly)
+             A = RC_NFE (not a recognized Flash Memory Chip)
+             A = RC_UNK (chip type is unknown: use only FE_28F, FE_29F or 0)
+
+Registers changed on return:
+   ....DE../IXIY same
+   AFBC..HL/.... different
+```
+
+## Notes
+
+Write a block of bytes to the Flash Eprom Card, from address DE to BHL of block size IX. If a block will cross a bank boundary, it is automatically continued on the next adjacent bank of the card. On return, BHL points at the byte after the last written byte.
+
+<u>This system call is regarded as internal operating system usage but may be used by applications</u>. This system call is used by the File Eprom Management Interface, [**OS\_Epr**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-epr), but is well suited for other application purposes.
+
+The routine can be told which programming algorithm to use (by specifying the FE\_28F or FE\_29F mnemonic in C); these parameters can be fetched when investigating which Flash Memory chip is available in the slot, using the [**OS\_Fep**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fep), A = FEP\_CDID that reports these constants.
+
+However, if neither of the constants are provided in A, the routine can be specified with C = 0 which internally polls the Flash Memory for identification and intelligently use the correct programming algorithm. The identified FE\_28F or FE\_29F constant is returned to the caller in C for future reference (when the block was successfully programmed to the card).<br /><br />Uses the segment mask of HL (where BHL memory will be bound into the Z80 address space to blow the block of bytes (MM\_S0 - MM\_S3), which has to be in a different segment than DE is referring.<br /><br />BHL points to an absolute bank (which is part of the slot that the Flash Memory Card have been inserted into). Further, the local buffer must be available in local address space and not part of the segment used for blowing bytes.<br /><br />**Important:**<br />Third generation AMD Flash Memory chips may be programmed in all available slots (0-3). Only INTEL I28Fxxxx series Flash chips require the 12V VPP pin in slot 3 to successfully blow data on the memory chip. If the Intel Flash Eprom card is inserted in slot 1 or 2, this routine will report a programming failure.<br /><br />It is the responsibility of the application (before using this call) to evaluate the Flash Memory (using the [**OS\_Fep**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fep), FEP\_CDID routine) and warn the user that an INTEL Flash Memory Card requires the Z88 slot 3 hardware, so this type of unnecessary error can be avoided.
+
+It is also the responsibility of the application (before using this call) to turn off the screen while writing to a card which contains the running OZ ROM. During writing, no interference should happen from Blink, because the Blink reads the font bitmaps each 1/100 second:
+
+If the screen were enabled while formatting inside the address space that is part of OZ ROM chip, the font bitmaps would suddenly be unavailable which would create violent screen flickering during chip command mode. Further, and most importantly, to avoid the Blink doing read-cycles while chip is in command mode.
+
+By switching off the screen, the Blink doesn't read the font bit maps in OZ ROM, and the Flash chip can be in command mode without being disturbed by the Blink.

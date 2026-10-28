@@ -1,0 +1,28 @@
+---
+description: "This provides text for the 'Your Ref.' column in the Index. Up to 15 characters can be displayed. Screen driver codes are ignored (Bold, underlined, etc.). Applications may use this call to define..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7471343 (version 4) by scripts/import-z88-wiki.cjs */}
+
+# DC_Nam, Name current application
+
+## Register parameters
+
+```text
+IN:
+     HL = pointer to a null terminated name
+
+OUT: -
+
+Registers affected after return:
+     A.BCDEHL/IXIY same
+     .F....../.... different
+```
+
+## Notes
+
+This provides text for the 'Your Ref.' column in the Index. Up to 15 characters can be displayed. Screen driver codes are ignored (Bold, underlined, etc.). Applications may use this call to define a "point-of-reference" description for it self when the Index popdown will be activated at a later time and the various running applications are listed. Pointer can be terminated with any control char ($00-$1F).
+
+## Related calls
+
+**[OS\_Poll](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-poll)**, poll for an application <br />**[DC\_Pol](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-pol)**, poll for card usage <br />**[OS\_Ent](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-ent)**, enter an application <br />**[DC\_Ent](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-ent)**, enter new application <br />**[OS\_Exit](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-exit)**, exit an application <br />**[OS\_Bye](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-bye)**, exit application <br />**[DC\_Bye](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-bye)**, exiting current application <br />**[OS\_Stk](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-stk)**, stack current process (application) <br />**[OS\_Use](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-use)**, process card usage<br />**[DC\_Alt](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-alt)**, pass an alternative character

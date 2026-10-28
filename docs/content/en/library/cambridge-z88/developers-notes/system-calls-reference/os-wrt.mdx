@@ -1,0 +1,28 @@
+---
+description: "This will write the \"menu topic help\" token if a local token table has not been established with OS_Wtb.The screen drivers icons (MENU, ENTER...) and ISO characters ($80-$FF) are not handled by..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8618010 (version 5) by scripts/import-z88-wiki.cjs */}
+
+# OS_Wrt, Write token
+
+## Register parameters
+
+```text
+IN:
+     A = token (A7 = 1 always)
+OUT:
+     Fc = 0
+
+Registers changed after return:
+     A.BCDEHL/IXIY same
+     .F....../.... different
+```
+
+## Notes
+
+This will write the "menu topic help" token if a local token table has not been established with **[OS\_Wtb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-wtb)**.<br />The screen drivers icons (MENU, ENTER...) and [ISO characters](/en/library/cambridge-z88/developers-notes/internationalization/iso-character-table) ($80-$FF) are not handled by this call.
+
+## Related calls
+
+**[OS\_Wtb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-wtb)**, write token base<br />[**OS\_Wts**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-wts), write tokenized string

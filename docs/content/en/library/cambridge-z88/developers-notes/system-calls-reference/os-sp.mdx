@@ -1,0 +1,187 @@
+---
+description: "Please refer to OS_Nq for other system resources that may be only be read."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8617988 (version 14) by scripts/import-z88-wiki.cjs */}
+
+# OS_Sp, Specify
+
+## Register parameters
+
+```text
+IN:
+     IX = argument
+     BC = reason code
+     HL = pointer to data
+     A = length (size) of data
+OUT, if call succeeded:
+     Fc = 0
+
+OUT, if call failed:
+     Fc = 1
+     A = return code:
+          RC_BAD ($04), incorrect reason code or parameter
+          RC_UNK ($03), unknown request
+```
+
+## Notes
+
+Please refer to [OS\_Nq](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-nq) for other system resources that may be only be read.
+
+## Related calls
+
+**[DC\_Sp](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-sp)**, DC specify<br />**[DC\_Nq](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-nq)**, DC enquire<br />[**OS\_Nq**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-nq), enquire
+
+## Reason codes
+
+The following is the list of reason codes for manipulating the Panel and Printer Editor.
+
+Codes marked with \* are preserved by soft reset.
+
+### System codes
+
+System codes below are preserved and re-installed after a soft reset.
+
+```text
+Symbol (reason code) Size      Meaning
+PA_Gfi ($8000)        0         Install changed settings
+PA_Mct ($8001) *      1         Timeout in minutes
+PA_Rep ($8002) *      1         Repeat rate
+PA_Kcl ($8003) *      1         Keyclick 'Y' or 'N'
+PA_Snd ($8004) *      1         Sound 'Y' or 'N'
+PA_Bad ($8005) *      1         Default bad process size in K
+PA_Loc ($8006) *      1         Keyboard localization, identified by country letter (OZ 4.2 and newer)
+
+ CL_US  'A'  United states
+ CL_FR  'F'  France
+ CL_DE  'G'  Germany
+ CL_UK  'U'  England
+ CL_DK  'D'  Denmark
+ CL_SE  'S'  Sweden
+ CL_IT  'I'  Italy
+ CL_SP  'P'  Spain
+ CL_JP  'J'  Japan
+ CL_IS  'C'  Iceland
+ CL_NO  'N'  Norway
+ CL_CH  'W'  Chweiss
+ CL_TR  'T'  Turkey
+ CL_FI  'L'  Finland
+
+PA_Psw ($8007) *      8 (max)   Lockup password (OZ 5.0 and newer)
+```
+
+### Application values
+
+```text
+Symbol (reason code) Size      Meaning
+PA_Iov ($8010)        1         Insert/Overtype 'I' or 'O'
+PA_Dat ($8011)        1         Date format 'E' or 'A' (European, American)
+PA_Map ($8012)        1         PipeDream map 'Y' or 'N'
+PA_Msz ($8013)        1         Map size in pixels
+PA_Dir ($8014)        12        Default directory
+PA_Dev ($8015)        16        Default device
+```
+
+### Serial port values
+
+```text
+Symbol (reason code) Size      Meaning
+PA_Txb ($8016)        2 (or 1)  Transmit baud rate - binary
+PA_Rxb ($8017)        2 (or 1)  Receive baud rate - binary
+PA_Xon ($8018)        1         Xon/Xoff 'Y' or 'N'
+PA_Par ($8019)        1         Parity 'O', 'E', 'M', 'S' or 'N'
+PA_Mdm ($801A)        1         Transmission protocol (reserved for Imp-Export, OZ 5.0 and newer)
+```
+
+### Printer Editor values (highlights & translation tables)
+
+```text
+Symbol (reason code) Size      Meaning
+PA_Ptr ($8020)        9         Printer name
+PA_Alf ($8021)        1         Allow Linefeed, 'Y' or 'N'
+PA_Pon ($8022)        31 (max)  Printer On sequence
+PA_Pof ($8023)        31 (max)  Printer Off sequence
+PA_Eop ($8024)        31 (max)  End of page sequence
+
+PA_Mip ($8025)        31 (max)  HMI prefix sequence
+PA_Mis ($8026)        31 (max)  HMI suffix sequence
+PA_Mio ($8027)        31 (max)  HMI offset sequence
+```
+
+#### Highlight bases
+
+```text
+PA_On1 ($8028)                Underline
+PA_On2 ($802C)                Bold
+PA_On3 ($8030)                Extended sequence
+PA_On4 ($8034)                Italics
+PA_On5 ($8038)                Subscript
+PA_On6 ($803C)                Superscript
+PA_On7 ($8040)                Alternate font
+PA_On8 ($8044)                User Defined
+```
+
+#### Translations
+
+```text
+Symbol (reason code)       Meaning
+PA_Tr1 ($8048)                Row 1, Entry A
+PA_Tr2 ($804A)                B
+PA_Tr3 ($804C)                C
+PA_Tr4 ($804E)                Row 2, Entry A
+PA_Tr5 ($8050)                B
+PA_Tr6 ($8052)                C
+PA_Tr7 ($8054)                Row 3, Entry A
+PA_Tr8 ($8056)                B
+PA_Tr9 ($8058)                C
+
+ISO translations 1 - 28 (International Z88 versions):
+```
+
+```text
+Symbol (reason code)       Meaning
+PA_Tr10 ($8080)               Row 1, Entry 1 (ISO 1)
+PA_Tr11 ($8082)               2 (ISO 2)
+PA_Tr12 ($8084)               3 (ISO 3)
+PA_Tr13 ($8086)               4
+PA_Tr14 ($8088)               5
+PA_Tr15 ($808A)               6
+PA_Tr16 ($808C)               7
+PA_Tr17 ($808E)               8
+PA_Tr18 ($8090)               Row 2, Entry 1
+PA_Tr19 ($8092)               2
+PA_Tr20 ($8094)               3
+PA_Tr21 ($8096)               4
+PA_Tr22 ($8098)               5
+PA_Tr23 ($809A)               6
+PA_Tr24 ($809C)               7
+PA_Tr25 ($809E)               8
+PA_Tr26 ($80A0)               Row 3, Entry 1
+PA_Tr27 ($80A2)               2
+PA_Tr28 ($80A4)               3
+PA_Tr29 ($80A6)               4
+PA_Tr30 ($80A8)               5
+PA_Tr31 ($80AA)               6
+PA_Tr32 ($80AC)               7
+PA_Tr33 ($80AE)               8
+PA_Tr34 ($80B0)               Row 4, Entry 1
+PA_Tr35 ($80B2)               2
+PA_Tr36 ($80B4)               3
+PA_Tr37 ($80B6)               4
+PA_Tr38 ($80B8)               5
+PA_Tr39 ($80BA)               6
+PA_Tr40 ($80BC)               7
+PA_Tr41 ($80BE)               8
+```
+
+PA\_Tr\<n\> will normally be one character long. If there are more characters in this sequence then the first character is replaced by the translation string, but the others are printed as well. PA\_Tr38 to 41 have been added since OZ 4.7.
+
+In addition to the Panel and Printer Editor, the following parameters can be set. They expect HL to point to a null-terminated string:
+
+```text
+SP_Dev ($8C00)                Set current device
+SP_Dir ($8C03)                Set current directory
+                              Note: Use always a '/' in front of the path name,
+                              otherwise OS_Nq can crash when reading the parameter.
+SP_Fnm ($8C06)                Set current name match
+```

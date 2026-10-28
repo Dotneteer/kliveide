@@ -1,0 +1,30 @@
+---
+description: "Sets up a local token table (independent of the \"menu topic help\" tokens). The token table is of the same structure format as the MTH. Please refer to Application Static Structure for further details."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8618015 (version 5) by scripts/import-z88-wiki.cjs */}
+
+# OS_Wtb, Write token base
+
+## Register parameters
+
+```text
+IN:
+     BHL = pointer to token table base address (-1 for default system token table)
+
+OUT, if call successful:
+     Fc = 0
+     BHL = old token base
+
+Registers changed after return:
+     ....DE../IXIY same
+     AFBC..HL/.... different
+```
+
+## Notes
+
+Sets up a local token table (independent of the "menu topic help" tokens). The token table is of the same structure format as the MTH. Please refer to [Application Static Structure](/en/library/cambridge-z88/developers-notes/application-static-structures) for further details.
+
+## Related calls
+
+**[OS\_Wrt](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-wrt)**, write token<br />[**OS\_Wts**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-wts), write tokenized string

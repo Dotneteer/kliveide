@@ -1,0 +1,39 @@
+---
+description: "OS_Out, write character to standard outputOS_Sout, write local string to standard outputOS_Bout,write string at (B)HL to standard output OS_Pout, write embedded null-terminated string at caller..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7962877 (version 9) by scripts/import-z88-wiki.cjs */}
+
+# OS_Pout, Write embedded string at (PC) to standard output.
+
+## Register parameters
+
+```text
+IN:  -
+
+OUT: Fc = 0, always (error handler is never provoked)
+
+Registers changed after return:
+   A.BCDEHL/IXIY same
+   .F....../.... different
+```
+
+## Notes
+
+- This call displays the null-terminated string following the call.
+- This system call is only available in OZ release 4.2 and newer.
+- Example :
+
+```text
+  ...
+  OZ  OS_Pout
+  defm 1,"7#4",$20+1,$20+0,$20+18,$20+8,$83
+  defm 1,"2C4"
+  defm 1,"2JC", 0
+  ...
+  ret
+```
+
+## Related calls
+
+**[OS\_Out](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-out)**, write character to standard output<br />**OS\_Sout**, write local string to standard output<br />[**OS\_Bout**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-bout),write string at (B)HL to standard output <br />**OS\_Pout**, write embedded null-terminated string at caller (PC) to standard output<br />[**OS\_Hout**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-hout), write hexadecimal byte to standard output<br />[**OS\_Nln**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-nln), send newline (CR/LF) to standard output<br />**[GN\_Sop](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-sop)**, write local string to standard output<br />**[GN\_Soe](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-soe)**, write string at extended address to standard output<br />**[GN\_Nln](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-nln)**, send newline (CR/LF) to standard output

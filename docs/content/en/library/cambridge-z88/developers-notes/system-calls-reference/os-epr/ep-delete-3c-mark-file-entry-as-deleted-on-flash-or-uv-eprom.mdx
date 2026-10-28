@@ -1,0 +1,35 @@
+---
+description: "Mark File Entry as deleted in file area located on Flash or UV Eprom Card, identified by BHL pointer, B=00h-FFh (bits 7,6 is the slot mask), HL=0000h-3FFFh is the bank offset.The screen is turned..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7471553 (version 4) by scripts/import-z88-wiki.cjs */}
+
+# EP_Delete ($3C) - Mark File Entry as deleted on Flash or UV Eprom
+
+## Register Parameters
+
+```text
+IN:
+          A = EP_DELETE
+        BHL = pointer to File Entry (B=00h-FFh, HL=0000h-3FFFh bank offset)
+              (bits 7,6 of B is the slot mask)
+OUT:
+        Fc = 0,
+             Marked as deleted.
+
+        Fc = 1,
+             A = RC_Onf, File (Flash) Eprom or File Entry not found in slot
+             A = RC_VPL, RC_BWR, Flash/UV Eprom  Write Error
+
+Registers changed on return:
+   A.BCDEHL/IXIY same
+   .F....../.... different
+```
+
+## Notes
+
+Mark File Entry as deleted in file area located on Flash or UV Eprom Card, identified by BHL pointer, B=00h-FFh (bits 7,6 is the slot mask), HL=0000h-3FFFh is the bank offset.<br /><br />The screen is turned off while byte is being written when the address f the byte in the same slot as the OZ ROM. During writing, no interference should happen from Blink, because the Blink reads the font bitmaps each 1/100 second:
+
+If the screen were enabled when a byte is written to an address space that is part of OZ ROM chip, the font bitmaps would suddenly be unavailable which would create violent screen flickering during chip command mode. Further, and most importantly, to avoid the Blink doing read-cycles while chip is in command mode.
+
+By switching off the screen, the Blink doesn't read the font bit maps in OZ ROM, and the Flash chip can be in command mode without being disturbed by the Blink.<br /><br />**Important:**<br />INTEL I28Fxxxx series Flash chips require the 12V VPP pin in slot 3 to successfully blow data to the memory chip. If the Flash Eprom card is inserted in slot 1 or 2, this routine will report a programming failure. It is the responsibility of the application (before using this call) to evaluate the Flash Memory (using the [**OS\_Fep**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fep), A=FEP\_CDID call) and warn the user that an INTEL Flash Memory Card requires the Z88 slot 3 hardware, so this type of unnecessary error can be avoided. Equally, the application should evaluate that saving to a file that is on an UV Eprom only can be performed in slot 3. This routine will report failure if saving a file to slots 0, 1 or 2.

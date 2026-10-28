@@ -1,0 +1,29 @@
+---
+description: "The Shell is a command line user interface implemented for OZ 5.0. It provides an environment for binary execution with a fully access to all OZ services. The Shell is a good application, multiple..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/69632005 (version 47) by scripts/import-z88-wiki.cjs */}
+
+# Shell environment and ELF
+
+The Shell is a command line user interface implemented for OZ 5.0. It provides an environment for binary execution with a fully access to all OZ services. The Shell is a good application, multiple instances can be suspend or revived at any time. Some commands are internal, integrated in the application : exit, cd, pwd, cls. The external commands are binaries. By default, basic commands have been implemented. They are stored in the internal file area (:EPR.0/bin/). Those commands manipulates :
+
+- filesystem : ls, rm, cp, mv, mkdir, rmdir
+
+- process : ps, kill, cli
+
+- tools : mw, dz, crc32, readelf, uname
+
+- help : man
+
+  Example screenshots :
+
+  <Shot src="z88-developers-notes/shell-environment-and-elf/ps.webp" alt="Illustration for “Shell environment and ELF”" width={640} />
+
+  <Shot src="z88-developers-notes/shell-environment-and-elf/mancd.webp" alt="mancd" width={640} />
+
+The execution environment follows the ELF specification like in many modern Unix operating systems. A specific API has been developed to interface with ELF standard : **[GN\_Elf](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-elf)**. This general user interface call does all the magic to open, allocate memory and handles, load binary segments, execute, release resources and close the ELF file. This is performed by using the ELF low-level interface [**DC\_Elf**](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-elf) and [**DC\_Rte**](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-rte). [**GN\_Elf**](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-elf) allows arguments to be passed to the executable. They are passed via the stack, following the SDCC convention. Binary executables can be written in C language and compiled with the SDCC compiler suite (with a modified crt0.s loader). They are actually limited to 56K and will be unlimited in a near future.
+
+Preliminary relocatable Z80 machine code is implemented. ELF allocates memory from any free pages available. This powerful feature allows several instances of Shell running on an unexpanded 32K machine.
+
+<Shot src="z88-developers-notes/shell-environment-and-elf/readelf.webp" alt="readelf" width={640} />

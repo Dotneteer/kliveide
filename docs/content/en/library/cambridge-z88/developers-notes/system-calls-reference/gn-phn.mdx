@@ -1,0 +1,52 @@
+---
+description: "GN_D16, 16bit unsigned division GN_M16, 16bit unsigned multiplication GN_D24, 24bit unsigned division GN_M24, 24bit unsigned multiplication GN_Gdn, convert an ASCII string to a binary..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/122814445 (version 6) by scripts/import-z88-wiki.cjs */}
+
+# GN_Phn, Convert 32 bits integer to hexadecimal ascii string
+
+## Register parameters
+
+```text
+IN:
+      HL = 2, convert DEBC to stream IX
+      HL > 255, pointer to 32 bits integer to convert
+
+      DE = 0, write string to stream IX
+      DE = 1, write string to filter IX
+      DE > 255, string is written at (DE)
+
+      A = formatting specifier
+              A0 = 1, disable leading zero
+              A1 = 1, output leading '$'
+              A2 = 1, output trailing 'h'
+              A3 = 1, lower case (a-f)
+              A7-A6, output range
+                     @00, 32 bits (DEBC if HL = 2)
+                     @11, 24 bits ( EBC if HL = 2)
+                     @10, 16 bits (  BC if HL = 2)
+                     @01,  8 bits (   C if HL = 2)
+
+      IX = optional output handle (if DE = 0,1 or HL = 2)
+
+OUT, if call successful:
+      Fc = 0, DE points to character after result (if DE(in) > 255)
+
+OUT, if call failed:
+      Fc = 1, A = RC_Fail (bad source address)
+              A = RC_Hnd (bad handle for stream IX or filter IX)
+
+Registers changed after return:
+      A.BC..HL/IXIY same
+      .F..DE../.... different
+```
+
+## Notes
+
+- PHN stands for Put Hex Number
+- API call implemented in OZ 5.0
+
+## Related calls
+
+**[GN\_D16](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-d16)**, 16bit unsigned division <br />**[GN\_M16](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-m16)**, 16bit unsigned multiplication <br />**[GN\_D24](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-d24)**, 24bit unsigned division <br />**[GN\_M24](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-m24)**, 24bit unsigned multiplication <br />**[GN\_Gdn](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-gdn)**, convert an ASCII string to a binary number<br />**[GN\_Ghn](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-ghn)**, convert an hexadecimal string to a 32 bits integrer<br />**[GN\_Pdn](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-pdn)**, write number as decimal ASCII string

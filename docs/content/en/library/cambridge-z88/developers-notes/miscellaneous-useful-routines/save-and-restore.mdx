@@ -1,0 +1,69 @@
+---
+description: "The OS_Sr call was designed for internal use, but has a three rather handy features which can be used by applications:"
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/2752714 (version 5) by scripts/import-z88-wiki.cjs */}
+
+# Save and restore
+
+The **[OS\_Sr](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-sr)** call was designed for internal use, but has a three rather handy features which can be used by applications:
+
+```text
+RST 20H, DEFB $6C
+
+IN:
+            A = reason code:
+            SR_SUS ($01)            Save user screen
+            SR_RUS ($02)            Restore user screen
+            SR_WPD ($03)            Write parameter data (mailbox)
+            SR_RPD ($04)            Read parameter data (mailbox)
+            SR_FUS ($05)            Free user screen
+            SR_CRM ($06)            Remove card (system use only)
+            SR_CIN ($07)            Insert card (system use only)
+            SR_PWT ($08)            Page wait
+            SR_RND ($09)            Occasionally a random number (system use)
+
+            BC = arguments
+            DE = arguments
+            HL = arguments
+            IX = arguments
+ 
+OUT, if call successful:
+            Fc = 0
+            returned values depend on A(in)
+ 
+OUT, if call failed:
+            Fc = 1
+            A = error code:
+                        RC_UNK ($03), unknown request
+                        RC_BAD ($04), bad arguments
+                        RC_HAND ($08), bad handle
+                        RC_ROOM ($07), no room
+                        RC_SUSP ($69), with SR_PWT
+                        RC_DRAW ($66), with SR_PWT
+                        RC_QUIT ($67), with SR_PWT
+```
+
+## SR\_SUS ($01), Save user screen
+
+This is a very powerful call, but should not be over used. Most of the time it is perfectly possible to regenerate a screen without resorting to this kind of sledge-hammer approach, requiring around 2K a time. It is probably preferable to use this call, rather than making your application one which has its screen saved automatically (as BBC BASIC), if there are only a few situations in your application where saving the screen is essential. One final point is that it is essential to check that the call was successful and to try and cope if it fails, as it is likely to do on an unexpanded heavily used machine. Please refer to **[OS\_Sr](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-sr)** reference for parameter call details.
+
+## SR\_RUS ($02), Restore user screen
+
+Restores the previously saved image and releases the corresponding memory. Please refer to **[OS\_Sr](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-sr)** reference for parameter call details.
+
+## SR\_FUS ($05), Free user screen
+
+This performs the function of freeing the memory that was used to save a screen but without actually affecting the screen image. Please refer to **[OS\_Sr](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-sr)** reference for parameter call details.
+
+## SR\_WPD ($03), Write parameter data (mailbox) SR\_RPD ($04), Read parameter data (mailbox)
+
+Please refer to **[OS\_Sr](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-sr)** reference for parameter call details. Mailboxing is explained in greater detail in [Application Static Structures](/en/library/cambridge-z88/developers-notes/application-static-structures/mailboxes).
+
+## SR\_PWT ($08), Page wait
+
+This call displays the page-wait message at the edge of the screen and then does the equivalent of **[OS\_In](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-in)**. It is very important that you check for all pre-emption codes, especially RC\_QUIT, when using this call if they are not coped within an error handler. Please note that a successfull return only return keyboard output with A = \<BACKSPACE\> ($08), and otherwise the error return codes. When output is redirected, page waits are conveniently surpressed. Please refer to **[OS\_Sr](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-sr)** reference for parameter call details.
+
+## SR\_RND ($09), Occasionally a random number (system use)
+
+The return value (random number) only changes when certain operating system functions occur in between calls to **[OS\_Sr](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-sr)**. Repeated fetching a random number may well result in the same value being returned!

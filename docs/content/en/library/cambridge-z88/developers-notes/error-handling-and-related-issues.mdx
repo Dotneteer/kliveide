@@ -1,0 +1,153 @@
+---
+description: "Before we can look at the details of constructing applications it is necessary to look at the way in which the Z88 deals with errors. System calls are accessed by using a Z80 RST instruction..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/262241 (version 12) by scripts/import-z88-wiki.cjs */}
+
+# Error handling and related issues
+
+Before we can look at the details of constructing applications it is necessary to look at the way in which the Z88 deals with errors. System calls are accessed by using a Z80 RST instruction followed by one or two bytes which determine the system function to be accessed. If an error occurs the routine will return with the Carry of the flags register F (Fc) to be set = 1 and a return code in register A. The return codes are symbolically represented by "RC\_xxxx", where "xxxx" is a mnemonic for the error. Most errors may be handled in a straightforward way, with the Carry flag being examined and appropriate action being taken depending on the value of register A. However, a mechanism exists to trap errors before they return to the part of code from which they were called. This mechanism is called an 'error handler' and the programmer may install one or more of these for use with the application. More than one error handler could be used if different parts of the application had different error handling requirements. An error handler will in general ignore most errors, returning to the code from which the call originated with Fc = 1 and the error code intact in A, however other errors may be trapped, dealt with and whatever return code is thought fit can be returned to the running program. The error handler should perform a RET instruction when it has finished it's work. Note that this returns control to the operating system and not to the program which made the original call.
+
+If an error occurs in a system call, then after the call has finished, insofar as it is able, the error handler is called with Fc = 1, and a return code in A, and possibly Fz = 1 to indicate a fatal error. Fatal errors, such as RC\_HAND, are so called because the system can take no reasonable action to recover. On exit from the error handler a fatal error will generate an interactive error box and following this RC\_QUIT will be returned. For non-fatal errors the error handler may take whatever action it wishes, such as displaying an error message, but must always return control to the error handler supervisor, with Fc = 0, by a RET instruction. This will then pass control back to the program just after the call.
+
+NOTE: The error handler is programmer defined. The reference section of these notes describes in detail which registers will be affected by system calls on return to your application. When you install an error handler, possibly other registers will be affected as well (which you use in the error handler). If you wish the error handler to act neutral, then preserve the Z80 registers before executing your error handler, and restore them when the error handler has finished its work.
+
+Some errors occur because of some action by the user, such as pressing the \<ESC\> key or switching between applications. The causes of these kind of errors are:
+
+**An Escape condition occurs.**
+
+The \<ESC\> key has been pressed while Escape detection is enabled, eg. file transfer calls can be interrupted by \<ESC\>. This condition gives rise to the RC\_ESC code.
+
+**Possibility of pre-emption or suspension.**
+
+This can happen when the SQUARE or DIAMOND keys are used, menu or help access has occurred, the machine has been switched off and back on, or genuine pre-emption has occurred, ie. the user has switched tasks and subsequently returned. This condition can give rise to RC\_SUSP,RC\_DRAW or RC\_QUIT.
+
+**RC\_SUSP**
+
+Suspicion of pre-emption, the computer was switched off. This code indicates that the screen is intact, but unsafe workspace may be changed.
+
+**RC\_DRAW**
+
+Similar to RC\_SUSP except that the application's screen has been corrupted and the application should attempt to redraw it. Applications which might find it very difficult to redraw a screen can ask the operating system to preserve it for them before they are pre-empted. This can only take place if there is enough memory to do so - some way of dealing with RC\_DRAW is still required. Note, it is also possible for applications to save a particular screen image and restore it later - see **[OS\_Sr](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-sr)** in "Miscellaneous useful routines".
+
+**RC\_QUIT**
+
+The process has been pre-empted and a KILL request made for it from the INDEX (or by own suicide request). The reader may have noticed from the screen that a KILL request causes the relevant process to be re-entered momentarily - processes are always expected to kill themselves off in resonse to this error; they are not killed BY the INDEX. RC\_QUIT may also be returned when after a fatal error has occurred.
+
+**RC\_ESC**
+
+An Escape condition has been detected. This means \<ESC\> has been pressed while Escape Detection is enabled. Note the Escape condition must be acknowledged by **[OS\_Esc](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-esc)**, otherwise the Escape condition will continue to flag errors - acknowledging Escape is an ideal job for an error handler.
+
+## Pre-emptable Calls
+
+Only calls which read the keyboard can be pre-empted. Since the keyboard is usually bound to standard input the most common pre-emptable calls are:
+
+```text
+            OS_In       get character from standard input
+            OS_Tin      as OS_In, but with timeout
+            GN_Sip      get line from standard input
+            OS_Sr       used to generate a "Page Wait"
+```
+
+However, if file I/O is bound to the keyboard, then file read operations will also be pre-emptable. Primarily the suspendable calls are all file I/O and the delay routine (**[OS\_Dly](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-dly)**), but again other calls may be if they take their input from a stream which is opened to the keyboard device. Remember some re-binding may be done by the user using the CLI, covered later in "Standard I/O and the CLI".
+
+```text
+            OS_Gb       get byte from file or stream
+            OS_Gbt      get byte from file or stream, with timeout
+            OS_Pb       put byte to file or stream
+            OS_Pbt      put byte to file or stream, with timeout
+            OS_Mv       move bytes between memory and file or stream
+            OS_Dly      delay a certain period
+```
+
+## System error routines
+
+The system provides four routines to handle errors:
+
+**[OS\_Erh](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-erh)**
+
+Set error handler. This call installs a new error handler, returnning the address of the old handler so that it may be re-installed at a later date if required.
+
+**[OS\_Esc](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-esc)**
+
+Examine special conditions. This call covers the details of working with the Escape key, which can generate errors if required.
+
+**[GN\_Esp](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-esp)**
+
+Return a pointer to a system error message. A subset of error codes have messages associated with them. This call returns an extended pointer to an error message in the operating system ROM, if it exists.
+
+**[GN\_Err](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-err)**
+
+Display system error box. This draws an error box on screen which asks the user to press \<ESC\> to continue, RC\_DRAW or RC\_SUSP will be returned. In the case of fatal errors, eg. RC\_BAD or RC\_HAND, the user is asked to press Q to quit and the routine exits with an RC\_QUIT error. The routine always exits with Fc = 1, ie. an error condition.
+
+An error handling routine may be set up by using the system **[OS\_Erh](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-erh)** whose specification is:
+
+```text
+IN:
+     A = 0, other values reserved for system use
+     B = 0
+     HL = address of new error handler
+     HL = 0, use default system error handler (in lower 8K of segment 0)
+
+OUT:
+     Fc = 0
+     A = old call level
+     HL = address of old error handler
+
+Registers changed after return:
+     ...CDE../IXIY same
+     AFB...HL/.... different
+```
+
+We can now consider the code the error handler should include. Fatal errors may be ignored (include a RET Z at the start), because there is no reasonable action to take anyway except termination of this instantiation of the application. An RC\_SUSP error code will generally be completely ignored by the error handler whereas RC\_ESC may want to be acknowledged using OS\_Esc, or left pending for the main part of the application to acknowledge. RC\_DRAW could be responded to by calling a routine to regenerate the screen and then quitting the error handler with A = RC\_SUSP and Fc = 0 as though nothing had ever happended. Other errors may want to be reported, by outputting an error message.
+
+Finally, the error handler, rather than the main application, will generally respond to a KILL request in the form of the RC\_QUIT code. It must close down it's application using [**OS\_Bye**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-bye), but it is first essential to close open resources like files, filters, streams and de-allocate memory. If an application has not properly closed resources, in the form of memory, handles and buffers, will be lost to the system. Files left open will be permantently marked as "In Use" and so cannot be deleted or opened for updating. To regain lost handles and resources to the system, a soft reset must be issued.
+
+## Example
+
+The following example illustrates the structure of an error handler with a few responding error codes:
+
+```text
+
+```
+
+```text
+include "errors.def"                ; error call/code definitions
+include "stdio.def"                 ; standard input/output definitions
+include "director.def"              ; director call definitions
+
+.install    xor  a                  ; zero A
+            ld   b,a                ; zero B
+            ld   hl,error_han       ; address of error handler
+            oz   OS_Erh             ; install new error handler...
+            ...                     ; main application goes here...
+; 
+; error handler entry:
+
+.error_han  ret  z                  ; error is fatal, so exit back to system
+            cp   RC_ESC             ; check for <ESC>
+            jr   nz, not_escape
+            ld   a, SC_ACK          ; acknowledge RC_ESC = SC_ACK
+            oz   OS_Esc             ; escape processing call
+            ld   a, RC_ESC          ; error code
+            oz   GN_Esp             ; get extended address to error message
+            oz   GN_Soe             ; write message to standard output
+            or   a                  ; Fc = 0, Fz = 0
+            ret
+
+.not_escape cp   rc_quit            ; check for KILL request
+            jr   nz, not_quit
+                                    ; code to close files and de-allocate
+                                    ; memory goes here...
+            xor  a                  ; no error message on exit...
+            oz   OS_Bye             ; force remove application from system
+
+.not_quit   or   a                  ; Fc = 0, Fz = 0
+            ret
+```
+
+The error handler above responds to an Escape condition and a KILL request. All other errors are 'ignored' with a display of the system message corresponding to the error code. Please note that no registers are changed, except Fc (Carry) and Fz (Zero) flags. Your error handler might respond to RC\_DRAW and issue a routine to redraw the application windows. Remember that your routines might change registers that they're not supposed to regarding the outside world of the error handler.
+
+NOTE: When an error handler is installed, the system relies on having it available in the corresponding segment (which the address of the error handler identifies). If you change the bank binding state in the segment of the error handler, thereby removing the original code, a call to that address by the system would most likely crash the machine (executing random instructions)!
+
+Further, we suspect a bug in OZ that crashes popdowns if the error handler is resided in segment 2. Always keep error handlers in segment 3 - all system applications do it.

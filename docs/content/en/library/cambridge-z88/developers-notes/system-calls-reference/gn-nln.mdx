@@ -1,0 +1,35 @@
+---
+description: "This call is deprecated, use OS_Nln."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8618138 (version 6) by scripts/import-z88-wiki.cjs */}
+
+# GN_Nln, Send newline (CR/LF) to standard output
+
+## Register parameters
+
+```text
+IN:
+     -
+OUT, if call successful:
+     Fc = 0
+OUT, if call failed:
+     Fc = 1
+     A = error code:
+          RC_HAND ($08), bad handle (during re-direction)
+          RC_WP ($14), write protected (during re-direction)
+
+Registers changed after return:
+     ..BCDEHL/IXIY same
+     AF....../.... different
+```
+
+## Notes
+
+This call is deprecated, use [**OS\_Nln**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-nln).
+
+Error will only occur if rebinding has occurred.
+
+## Related calls
+
+**[OS\_Out](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-out)**, write character to standard output<br />**OS\_Sout**, write local string to standard output<br />[**OS\_Bout**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-bout),write string at (B)HL to standard output <br />**[OS\_Pout](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-pout)**, write embedded null-terminated string at caller (PC) to standard output<br />[**OS\_Hout**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-hout), write hexadecimal byte to standard output<br />[**OS\_Nln**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-nln), send newline (CR/LF) to standard output<br />**[GN\_Sop](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-sop)**, write local string to standard output<br />**[GN\_Soe](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-soe)**, write string at extended address to standard output<br />**GN\_Nln**, send newline (CR/LF) to standard output

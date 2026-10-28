@@ -1,0 +1,45 @@
+---
+description: "DC_NQ is a subcall of OS_NQ, use OS_NQ instead. Can not be called directly (OS pushframe corruption)."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7471345 (version 8) by scripts/import-z88-wiki.cjs */}
+
+# DC_Nq, Handle Director/CLI enquiries
+
+## Register parameters
+
+```text
+IN:
+    B = 0, always
+    C = reason code
+    	DQ_Dev ($00), get default device
+    	DQ_Dir ($03), get default directory
+    	DQ_Fnm ($06), get filename match string
+    	DQ_Dmh ($09), get the director memory handle
+    	DQ_Inp ($0C), get std. input handle
+    	DQ_Out ($1F), get std. output handle
+    	DQ_Prt ($12), get printer stream handle
+    	DQ_Tin ($15), get input-T handle
+    	DQ_Tot ($18), get output-T handle
+    	DQ_Tpr ($1B), get printer-T handle
+    	DQ_Chn ($1E), reset serial port and get NQ_Chn
+		DQ_Prc ($21), get process environment address
+		DQ_Fmh ($24), get the filesystem memory handle
+	HL = OSFrame
+
+OUT:
+    Fc = 0, success
+    result in IX for DQ_Dmh, DQ_Fmh, DQ_Inp, DQ_Out, DQ_Prt, DQ_Tin, DQ_Tot, DQ_Tpr, DQ_Chn
+    result in BHL for DQ_Dev, DQ_Dir, DQ_Fnm, DQ_Prc
+    Fc = 1, A = RC_UNK ($03)
+```
+
+## Notes
+
+Internal operating system usage.
+
+**[DC\_NQ](https://cambridgez88.jira.com/wiki/pages/viewpage.action?pageId=96403545)** is a <u>subcall</u> of **[OS\_NQ](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-nq)**, use **[OS\_NQ](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-nq)** instead. Can not be called directly (OS pushframe corruption).
+
+## Related calls
+
+**[DC\_Sp](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-sp)**, DC specify<br />**[OS\_Sp](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-sp)**, specify<br />**[OS\_NQ](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-nq)**, enquire

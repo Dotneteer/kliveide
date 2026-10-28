@@ -1,0 +1,49 @@
+---
+description: "In its Z88 incarnation, BASIC occupies a memory map with the following form:"
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/3112968 (version 1) by scripts/import-z88-wiki.cjs */}
+
+# BASIC's Workspace
+
+In its Z88 incarnation, BASIC occupies a memory map with the following form:
+
+```text
+$0000 - $1FFF           Operating system use (and occasional application stack)
+$2000 - $3FFF           BASIC program/workspace
+$4000 - $BFFF           (additional 32K of program/workspace, expanded Z88)
+$C000 - $FFFF           BBC BASIC interpreter application
+```
+
+BASIC's program/workspace is arranged in the following manner:
+
+```text
+            +-------------------+   $FFFF
+            | BASIC interpreter |
+            .                   .
+            .                   .
+HIMEM       +-------------------+   $BFFF or $3FFF
+            | Stack             |
+            +-------------------+   Current limit of the stack
+            .                   .   (Stack expands downwards)
+            . Unused memory     .
+            .                   .
+            +-------------------+   Current limit of the heap
+            | Heap              |   (Heap expands upwards)
+LOMEM       +-------------------+
+            .                   .
+            .                   .
+TOP         +-------------------+
+            | Program           |
+PAGE        +-------------------+   $2300
+            | Workspace for     |
+            | interpreter       |
+            +-------------------+   $2000
+            | Operating system  |
+            | system usage      |
+            +-------------------+   $0000
+```
+
+HIMEM, LOMEM and PAGE are pseudo variables whose values can be read and also set. TOP is a read-only pseudo-variable. If you intend to change the values of these pseudo-variables, then you must bear in mind that the "Unused Memory" area in BASIC's memory map will not necessarily be constant. If task switching occurs, this memory may be used for other purposes and when you return to BASIC its contents may have changed. Therefore any memory which you want to stay constant through task switching must either be in or below this heap. This memory is readily allocated within the heap using the DIM statement, explained below. LOMEM, the start of the heap, defaults to the value of TOP, the end of the program, although it is possible to increase LOMEM, thus providing some safe memory between the end of the program and the start of the variables. The value of PAGE is always set on a page (256 byte) boundary, ie. the less significant byte is ignored.
+
+By changing the value of PAGE, it is possible to have more than one program resident at once, within the same instantiation of BASIC. The difficulty with this technique on the Z88 is the inconstancy of the unused memory. It is possible to set LOMEM to some high value, but extreme care is required, because whenever a program is RUN, LOMEM is reset to TOP. TOP, however, is not reset when PAGE is changed unless part of the program is altered or OLD is used. If you attempt this technique, keep in mind that whenever task switching could occur, all the memory used for programs should be allocated to BASIC and therefore safe.

@@ -1,0 +1,54 @@
+---
+description: "Block allocation (more than one page or 256 bytes) is implemented since OZ 4.7. Up to one bank can be requested (16384 bytes)."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7962710 (version 16) by scripts/import-z88-wiki.cjs */}
+
+# OS_Mal, Allocate memory
+
+## Register parameters
+
+```text
+ IN:
+     A = 0, always (see notes below)
+     BC = requested size of reserved memory in bytes (2 to 16384)
+     IX = memory handle (returned from OS_Mop)
+OUT, if call successful:
+     Fc = 0
+     HL = address of memory allocated (H14 & H15 are memory mask)
+     B = bank number of allocated memory
+     C = segment specifier implied by HL (H14 & H15)
+
+OUT, if call failed:
+     Fc = 1
+     A = error code:
+          RC_HAND ($08), IX is not a valid memory handle
+          RC_ROOM ($07), no room to allocate block in MEMORY POOL
+          RC_ERR ($0F), if BC > 256 bytes, fatal error
+
+Registers changed after return:
+     ....DE../IXIY same
+     AFBC..HL/.... different
+```
+
+## Notes
+
+Block allocation (more than one page or 256 bytes) is implemented since OZ 4.7. Up to one bank can be requested (16384 bytes).
+
+If such a block is requested (more than 256 bytes), **MM\_MUL** has to be specified in **[OS\_Mop](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mop)**.
+
+If **MM\_MUL** has not been specified, a "No Room" error means the pool is exhausted, and not the whole of memory. If a subsequent **[OS\_Mop](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mop)** cannot allocate a pool, then memory is definitively exhausted.
+
+The call **WILL NOT** automatically bind in the allocated memory into the Z80 address space.
+
+Address of memory allocated (HL) is **always adjusted** to segment mask.
+
+Normally memory is allocated from slots 1-2-3-0 in that order.
+
+If **MM\_MUL** is not specified in [**OS\_Mop**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mop), all memory allocated from that pool is guaranteed to be in same bank. Additionally, memory area returned from OS\_Mal is guaranteed to be in single page.
+
+If **MM\_MUL** is specified in [**OS\_Mop**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mop), slot 1-3 can be forced during first OS\_Mal by loading A with slot number ORed with MA\_SLT.
+
+## Related calls
+
+**[OS\_Bix](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-bix)**, Bind in extended address <br />**[OS\_Box](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-box)**, restore bindings after OS\_Bix <br />**[OS\_Fc](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fc)**, select fast code (fast bank switching) <br />**[OS\_Mcl](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mcl)**, close memory (free memory pool) <br />**[OS\_Mfr](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mfr)**, free (previously allocated block) memory <br />**[OS\_Mgb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mgb)**, get current bank binding in segment <br />**[OS\_Mop](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mop)**, open memory (allocate memory pool) <br />**[OS\_Mpb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mpb)**, set new bank binding in segment<br />**[OZ\_Mgb](/en/library/cambridge-z88/developers-notes/system-calls-reference/oz-mgb)**, get current bank binding in segment<br />**[OZ\_Mpb](/en/library/cambridge-z88/developers-notes/system-calls-reference/oz-mpb)**, set new bank binding in segment

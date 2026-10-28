@@ -1,0 +1,68 @@
+---
+description: "If only destination segment is specified, you get memory from bank with most free space. Pool is limited to one bank."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7962733 (version 10) by scripts/import-z88-wiki.cjs */}
+
+# OS_Mop, Open memory (allocate memory pool)
+
+## Register parameters
+
+```text
+IN:
+     A = memory mask arguments (several arguments OR'ed together):
+
+          Destination segment (allocated memory addressed for segment):
+          MM_S0 ($00), segment 0
+          MM_S1 ($40), segment 1
+          MM_S2 ($80), segment 2
+          MM_S3 ($C0), segment 3
+
+          Source of memory (to be allocated):
+          MM_FIX ($02), fixed workspace (not subject to swapping)
+          MM_SLT ($04), explicit slot usage
+          MM_EXC ($10), exclusive use of bank
+          MM_MUL ($20), use multiple banks
+
+     B = 0, always
+     C = bank or slot number if MM_SLT = 1 and MM_MUL = 0
+		  MC_AS ($00), find an exclusive bank in any slot
+          MC_CI ($10), internal memory
+          MC_C1 ($01), card 1
+          MC_C2 ($02), card 2
+          MC_C3 ($03), card 3
+		  or ($20-$ff), explicit bank
+
+OUT, if call successful:
+     Fc = 0
+     IX = memory pool handle
+OUT, if call failed:
+     Fc = 1
+     A = error code:
+          RC_NA ($06), handle not available
+          RC_ROOM ($07), no room
+
+Registers changed after return:
+     A.FBCDEHL/..IY same
+     .F......./IX.. different
+```
+
+## Notes
+
+If only destination segment is specified, you get memory from bank with most free space. Pool is limited to one bank.
+
+**OS\_Mop** doesn't allocate any memory, so even the very first **OS\_Mal** can fail.
+
+If **MM\_MUL** is specified, memory is allocated from all the memory available (pool is not limited to one bank).
+
+If **MM\_EXC** is specified, memory is allocated from free banks in priority, pool is not limited to one bank (OZ 5.0 and newer).
+
+If **MM\_FIX** is specified, only memory not subject to swap is allocated.
+
+If **MM\_SLT** is specified, C holds bank number ($20-$FF) or slot.
+
+If you specified **MM\_MUL**, you can force slot 1-3 during first **OS\_Mal** by loading A with slot number.
+
+## Related calls
+
+**[OS\_Bix](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-bix)**, Bind in extended address <br />**[OS\_Box](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-box)**, restore bindings after OS\_Bix <br />**[OS\_Fc](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fc)**, select fast code (fast bank switching) <br />**[OS\_Mal](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mal)**, allocate memory <br />**[OS\_Mcl](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mcl)**, close memory (free memory pool) <br />**[OS\_Mfr](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mfr)**, free (previously allocated block) memory <br />**[OS\_Mgb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mgb)**, get current bank binding in segment <br />**[OS\_Mpb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mpb)**, set new bank binding in segment

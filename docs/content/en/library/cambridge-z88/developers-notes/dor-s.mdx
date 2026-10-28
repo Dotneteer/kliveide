@@ -1,0 +1,177 @@
+---
+description: "DOR may be thought of as standing for \"Directory Object Record\" - although DOR was not intended as an acronym for this, this does provide quite a good explanation. DORs are a fairly general record..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/2752576 (version 8) by scripts/import-z88-wiki.cjs */}
+
+# DOR's
+
+DOR may be thought of as standing for "Directory Object Record" - although DOR was not intended as an acronym for this, this does provide quite a good explanation. DORs are a fairly general record structure well suited to displaying hierarchically organized information. They are used in the RAM filening system, but unfortunately not in the EPROM filing system, and in application definitions. Some degree of understanding of them is necessary to extract certain information, such as last updated dates, from the filing system.
+
+## Format
+
+A DOR starts with the three link pointers which point to the parent, brother and child respectively. The links are of the form of a 2 byte offset within a bank followed by a bank number, ie. an extended address. If relatives do not exist then the link pointers are set to 0 (three zeroes). The remainder of the DOR consists of a series of keyed subrecords.
+
+```text
+3 bytes     Link to parent, three zeroes indicates a null (pointer) link
+3 bytes     Link to brother, three zeroes indicates a null (pointer) link
+3 bytes     Link to son, three zeroes indicates a null (pointer) link
+1 byte      DOR type, eg. DM_ROM
+1 byte      Length of DOR in bytes
+
+1 byte      Record key. This is usually a mnemonic, eg. DT_NAM
+1 byte      Length of record entry in bytes
+n bytes     Data specific to record (type)
+...
+...         More record entries (in the same form as above)
+...
+1 byte      The DOR terminator, $FF
+```
+
+The above format may be useful if you want to set up a static DOR structure. For example the header for application cards, and the headers for the internal applications, use a static DOR structure. On the whole, however, the internal arrangement of the DOR is transparent to the user and the DOR interface can be used throughout. This interface works with the following types and record keys:
+
+NOTE: In the following descriptions the ASCII character corresponding to a hexadecimal value is sometimes placed next to it within brackets. This is done to indicate the mnemonic nature of the values used. For example ($4E,"N") represents the single hexadecimal value $4E, the "N" is mnemonic for DT\_NAM, the name record type.
+
+## Major types
+
+```text
+DM_DEV ($81)            RAM device (internal use only)
+DM_CHD ($82)            Character Device (pseudo type, internal use only)
+                        (SCR.0, PRT.0, COM.0, NUL.0, INP.0, OUT.0)
+DM_ROM ($83)            ROM Information, consists of three record types:
+                        DT_INF ($40,"@")        application information
+                        DT_HLP ($48,"H")        help information
+                        DT_NAM ($4E,"N")        name of application
+DM_EPR ($84)            EPR device (eprom file area)
+```
+
+NOTE: It is not possible to add external device drivers to the system via a DOR, despite the major types shown above. This is because device drivers are not integrated into the DOR system.
+
+## Minor Types
+
+```text
+DN_FIL ($11)            File type, consists of four record types:
+                        DT_NAM ($4E,"N")        file name
+                        DT_CRE ($43,"C")        creation time
+                        DT_UPD ($55,"U")        update time
+                        DT_EXT ($58,"X")        extent (size of file)
+
+DN_DIR ($12)            Directory type, consists of three record types:
+                        DT_NAM ($4E,"N")        directory name
+                        DT_CRE ($43,"C")        creation time
+                        DT_UPD ($55,"U")        update time
+
+DN_APL ($13)            Application Front DOR Type, consists of record type:
+                        DT_NAM ($4E,"N")        Name of front DOR; the name
+                                                will be "APPL" for applications
+                                                and "HELP" for help.
+
+DN_DEL ($7F)            Deleted Entry Type
+```
+
+## Record Types
+
+```text
+DT_NAM ($4E,"N")        Name type. Name must be null-terminated. Filenames have
+                        a fixed length of 17 characters so, if the real
+                        filename is shorter, you will need to ignore excess
+                        characters (beyond the null-terminator). A name record
+                        might look like this:
+
+                                    DEFM $4E & $05 & "Paul" & 0
+
+DT_UPD ($55,"U")        Last Updated Date. 6 bytes. 3 bytes internal time
+                        followed by 3 bytes internal date.
+
+DT_CRE ($43,"C")        Creation Date. 6 bytes. 3 bytes internal time
+                        followed by 3 bytes internal date.
+
+DT_EXT ($58,"X")        Extent of file. 4 byte long word (low byte first)
+
+DT_ATR ($41,"A")        Attributes. Not currently used. 2 bytes.
+
+DT_HLP ($48,"H")        Help type. 12 bytes: four 3 byte link pointers
+                        (offset+bank): Topics, command, help and tokens. See an
+                        example in "Application Static Strucures" section.
+
+DT_INF ($40,"@")        Information. See an example in "Application Static
+                        Structures" section for details of format.
+```
+
+## The DOR interface
+
+DORs are manipulated using the **[OS\_Dor](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-dor)** call, which is supplied with various reason codes, one for each DOR operation. The possible operations are:
+
+```text
+DR_GET ($01)            get a handle for a DOR name (system use)
+DR_DUP ($02)            duplicate DOR
+DR_SIB ($03)            return brother DOR
+DR_SON ($04)            return child DOR
+DR_FRE ($05)            free DOR handle
+DR_CRE ($06)            create blank DOR
+DR_DEL ($07)            delete DOR
+DR_INS ($08)            insert DOR
+DR_RD ($09)             read DOR record
+DR_WR ($0A)             write DOR record
+DR_RD2 ($0B)            read DOR record (system use only)
+```
+
+The following is the interface system call definition:
+
+```text
+RST 20H, DEFB $87
+
+In:
+            A = reason code
+            HL, IX arguments
+            Other register usage depends on reason code
+
+ Out, if call successful:
+            Fc = 0
+            returned values depend on A(in)
+
+ Out, if call failed:
+            Fc = 1
+            A = error code:
+                        RC_BAD ($04), bad arguments
+                        RC_HAND ($08), bad handle
+                        RC_ROOM ($07), no room
+                        RC_EOF ($09), end of file
+```
+
+Each reason code operation action is described in detail with the **[OS\_Dor](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-dor)** call in the "System Calls Reference" section.
+
+## Example
+
+The following example reads the last updated date of a file, which can only be done by reading the DOR of the file. To get a DOR handle for a file, the user must use the **[GN\_Opf](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-opf)** call with A = OP\_DOR ($06). This differs from the other options of **[GN\_Opf](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-opf)** in that:
+
+1\) It does not open the file. 2) It returns a DOR handle rather than a file handle
+
+Note that the file should be closed before the call is made, and that it is necessary to free the DOR handle after you have finished, by using **[OS\_Dor](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-dor)** with reason code DR\_FRE.
+
+```text
+include "fileio.def"                ; file I/O call definitions & parameters
+include "dor.def"                   ; DOR interface call definitions
+include "time.def"                  ; Date & time call definitions
+include "stdio.def"                 ; standard I/O call defs. & parameters
+
+; assume HL points to local filename and DE points to a dummy buffer 
+; and 'buff' is at least 6 bytes of temporary workspace 
+; note, 'buff' must not occur in segment 2, or GN_Sdo will fail 
+
+.start      ld   b, 0               ; HL is a local pointer
+            ld   c, 20              ; max. size of expanded filename
+            ld   a, OP_DOR          ; get DOR handle
+            oz   GN_Opf             ; get DOR information
+            ld   a, DR_RD           ; read DOR record
+            ld   b, DT_UPD          ; look at record 'U' (update time)
+            ld   c, 6               ; return time information
+            ld   de, buff           ; return data at (DE)
+            oz   OS_Dor             ; fetch DOR information
+            ld   a, DR_FRE
+            oz   OS_Dor             ; free DOR handle
+            ld   hl, buff           ; HL points to internal time, date format
+            oz   GN_Sdo             ; write time & date to standard output
+            oz   GN_Nln             ; new line
+            ret
+```

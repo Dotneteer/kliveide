@@ -1,0 +1,306 @@
+---
+description: "When the last DOR record in a list has been read, an RC_EOF is reported and the handle is immediatly released, ie. it will not be necessary to release the handle with a DR_FRE call."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7471408 (version 25) by scripts/import-z88-wiki.cjs */}
+
+# OS_Dor, The DOR interface
+
+## Register parameters
+
+```text
+IN:
+     A = reason code
+     HL, IX arguments
+
+     Reason codes are as follows:
+
+     DR_GET ($01)   get handle for a DOR name (internal use)
+     DR_DUP ($02)   duplicate DOR
+     DR_SIB ($03)   return brother DOR
+     DR_SON ($04)   return child DOR
+     DR_FRE ($05)   free DOR handle
+     DR_CRE ($06)   create blank DOR
+     DR_DEL ($07)   delete DOR
+     DR_INS ($08)   insert DOR
+     DR_RD  ($09)   read DOR record
+     DR_WR  ($0A)   write DOR record
+	 DR_OP  ($0B)   open explicit filename (OZ 5.0 and newer)
+     DR_USE ($0C)   handle in use (OZ 5.0 and newer)
+
+OUT, if call successful:
+     Fc = 0
+     returned values depend on A(in)
+
+OUT, if call failed:
+     Fc = 1
+     A = error code:
+          RC_HAND ($08), bad handle
+          RC_BAD ($04), bad argument
+          RC_ROOM ($07), no room
+          RC_EOF ($09), end of file
+
+Registers changed after return:
+     not documented.
+```
+
+## Notes
+
+When the last DOR record in a list has been read, an RC\_EOF is reported and the handle is immediatly released, ie. it will not be necessary to release the handle with a DR\_FRE call.
+
+## Bugs
+
+Corrupts the stack pointer SP when called with an old handle, e.g. when a previous DR\_ call resulted in a "End of list" error (RC\_EOF).
+
+## Reason code specifications
+
+```text
+ IN: -
+
+OUT, if call successful:
+     Fc = 0
+     IX = DOR handle
+     A = minor type (device, always)
+
+Registers changed after return:
+     ..BCDEHL/..IY same
+     AF....../IX.. different
+```
+
+## Note
+
+- Operating system only. Do not use this call.
+- Instead use OS\_Dor / DR\_OP or GN\_Opf / OP\_DOR to obtain a DOR handle.
+
+```text
+IN:
+     IX = DOR handle
+OUT, if call successful:
+     Fc = 0
+     BC = duplicate DOR handle (IX is still valid)
+
+OUT, if call failed:
+     Fc = 1
+     BC = 0 (IX is still valid)
+     A = error code
+          RC_HAND ($08), bad DOR handle
+
+Registers changed after return:
+     ....DEHL/IXIY same
+     AFBC..../.... different
+```
+
+```text
+IN:
+     IX = DOR handle
+
+OUT, if call successful:
+     Fc = 0
+     IX = next DOR handle (original IX invalid)
+     A = minor type
+
+OUT, if call failed:
+     Fc = 1
+     A = error code
+          RC_HAND ($08), bad DOR handle
+
+Registers changed after return:
+     ..BCDEHL/..IY same
+     AF....../IX.. different
+```
+
+```text
+IN:
+     IX = DOR handle
+
+OUT, if call successful:
+     Fc = 0
+     IX = child DOR handle (original IX invalid)
+     A = minor type
+
+OUT, if call failed:
+     Fc = 1
+     A = error code
+          RC_HAND ($08), bad DOR handle
+
+Registers changed after return:
+     ..BCDEHL/..IY same
+     AF....../IX.. different
+```
+
+```text
+IN:
+     IX = DOR handle
+
+OUT, if call successful:
+     Fc = 0
+     IX = 0
+
+OUT, if call failed:
+     Fc = 1
+     A = error code
+          RC_HAND ($08), bad DOR handle
+
+Registers changed after return:
+     ..BCDEHL/..IY same
+     AF....../IX.. different
+```
+
+```text
+IN:
+     IX = parent DOR handle
+     B = minor type
+
+OUT, if call successful:
+     Fc = 0
+     IX = new DOR handle (original IX invalid)
+
+OUT, if call failed:
+     Fc = 1
+     A = error code
+          RC_HAND ($08), bad DOR handle
+          RC_BAD ($04), bad argument
+          RC_ROOM ($07), no room
+
+Registers changed after return:
+     ..BCDEHL/..IY same
+     AF....../IX.. different
+```
+
+```text
+IN:
+     IX = DOR handle
+
+OUT, if call successful:
+     Fc = 0, DOR deleted
+     IX = 0
+
+OUT, if call failed:
+     Fc = 1
+     A = error code
+          RC_HAND ($08), bad DOR handle
+
+Registers changed after return:
+     ..BCDEHL/..IY same
+     AF....../IX.. different
+```
+
+## Note
+
+This call deletes a DOR node and deallocates its memory used by filesystem (DN\_Fil minor type only)
+
+```text
+IN:
+     BC = parent DOR handle
+     IX = DOR handle
+
+OUT, if call successful:
+     Fc = 0
+     original BC and IX DOR handles are still valid
+
+OUT, if call failed:
+     Fc = 1
+     BC and IX is still valid
+     A = error code
+          RC_HAND ($08), bad DOR handle
+
+Registers changed after return:
+     ..BCDEHL/IXIY same
+     AF....../.... different
+```
+
+```text
+IN:
+     B = record type
+     C = buffer length
+     DE = user buffer address (to store information of read, always local, in S0 or S1)
+     IX = DOR handle
+
+OUT, if call successful:
+     Fc = 0
+     original IX DOR handle is still valid
+     C = actual length of information
+
+OUT, if call failed:
+     Fc = 1
+     original IX is still valid
+     A = error code
+          RC_HAND ($08), bad DOR handle
+          RC_BAD ($04), bad argument
+          RC_FAIL ($16), information is not present
+
+Registers changed after return:
+     ..B.DEHL/IXIY same
+     AF.C..../.... different
+```
+
+```text
+IN:
+     B = record type
+     C = buffer length
+     DE = user buffer address (to store information to be written, always local, in S0 or S1)
+     IX = DOR handle
+
+OUT, if call successful:
+     Fc = 0
+     original IX DOR handle is still valid
+     C = length of information written
+
+OUT, if call failed:
+     Fc = 1
+     original IX is still valid
+     A = error code
+          RC_HAND ($08), bad DOR handle
+          RC_BAD ($04), bad argument
+          RC_FAIL ($16), information is not present
+
+Registers changed after return:
+     ..B.DEHL/IXIY same
+     AF.C..../.... different
+```
+
+```text
+IN:
+     C = number of segment to parse (0 for all, default)
+     DE = filename buffer (always local, in S0 or S1)
+
+OUT, if call successful:
+     Fc = 0
+        IX = handle (device type, always)
+        A  = DOR type (device, file, directory, EPROM)
+        B  = segment count in explicit filename
+        HL = last character parsed in filename (separator or null terminator)
+
+OUT, if call failed:
+     Fc = 1
+     	A  = RC_Fail, buffer not in S0 or S1
+        A  = RC_Onf, filename does not exist
+
+Registers changed after return:
+     ...CDE.. / ..IY same
+     AFB...HL / IX.. different
+```
+
+## Notes
+
+- This call is the optimized equivalent of GN\_Opf / OP\_DOR. It is used by GN\_Opf itself and allows a faster file open.
+- It is recommended to use this call before making file DOR operation like reading filename, timestamp...
+- It always create a device type handle ($01) which is required to perform DOR header operation. Type can be changed by calling OS\_Fn / FN\_CH (in order to perform file I/O).
+- API call implemented in OZ 5.0
+
+```text
+IN:
+     IX = DOR handle
+
+OUT, if call successful:
+     Fc = 0, handle or device is NOT already in use
+
+OUT, if call failed:
+     Fc = 1, original IX is still valid
+     A = error code
+          RC_USE, already in use
+
+Registers changed after return:
+     ..BCDEHL/IXIY same
+     .F....../.... different
+```

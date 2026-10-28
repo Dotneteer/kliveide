@@ -1,0 +1,29 @@
+---
+description: "The system timeout is also reset, ie. running a loop with OS_Pur and OS_Tin in a loop never switches the machine off, even though the user never touches the keyboard."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7962884 (version 4) by scripts/import-z88-wiki.cjs */}
+
+# OS_Pur, Purge keyboard buffer
+
+## Register parameters
+
+```text
+IN:
+     -
+
+OUT, if call successful:
+     Fc = 0, keyboard purged
+
+Registers changed after return:
+     A.BCDEHL/IXIY same
+     .F....../.... different
+```
+
+## Notes
+
+The system timeout is also reset, ie. running a loop with OS\_Pur and OS\_Tin in a loop never switches the machine off, even though the user never touches the keyboard.
+
+## Related calls
+
+**[GN\_Sip](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-sip)**, system input line routine <br />**[OS\_In](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-in)**, read (wait for) character from standard input <br />**[OS\_Tin](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-tin)**, read character from standard input, with timeout <br />**[OS\_Xin](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-xin)**, examine input

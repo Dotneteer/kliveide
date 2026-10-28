@@ -1,0 +1,33 @@
+---
+description: "GN_D16, 16bit unsigned division GN_M16, 16bit unsigned multiplication GN_D24, 24bit unsigned division GN_M24, 24bit unsigned multiplication GN_Gdn, convert an ASCII string to a binary..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/122812433 (version 6) by scripts/import-z88-wiki.cjs */}
+
+# GN_Ghn, Convert hexadecimal string to 32 bits integer
+
+## Register parameters
+
+```text
+IN :  HL = local source pointer
+      DE = 2, return integer in DEBC
+      DE > 255, return integer at (DE) and (DE)=LSB, (DE+3)=MSB
+
+OUT:  Fc = 0, success 
+      Fc = 1, A = RC_Bdn (bad hexadecimal string)
+              A = RC_Fail (bad destination)
+              A = RC_Hnd (bad handle for stream IX or filter IX)
+
+Registers changed after return:
+      A.BCDEHL/IXIY same
+      .F....../.... different
+```
+
+## Notes
+
+- GHN stands for Get Hex Number
+- API call implemented in OZ 5.0
+
+## Related calls
+
+**[GN\_D16](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-d16)**, 16bit unsigned division <br />**[GN\_M16](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-m16)**, 16bit unsigned multiplication <br />**[GN\_D24](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-d24)**, 24bit unsigned division <br />**[GN\_M24](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-m24)**, 24bit unsigned multiplication <br />**[GN\_Gdn](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-gdn)**, convert an ASCII string to a binary number<br />**[GN\_Pdn](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-pdn)**, write number as decimal ASCII string<br />**[GN\_Phn](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-phn)**, convert 32 bits integer to hexadecimal string

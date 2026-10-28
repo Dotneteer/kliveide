@@ -1,0 +1,44 @@
+---
+description: "Some operations, such as bank switching, can take up quite a lot of processing time. In order to speed up such tasks the operating system provides a facility for making certain system calls..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/2752720 (version 4) by scripts/import-z88-wiki.cjs */}
+
+# Fast code
+
+Some operations, such as bank switching, can take up quite a lot of processing time. In order to speed up such tasks the operating system provides a facility for making certain system calls operate more rapidly. The fast code interface call provides a fragment of code to perform a particular task and places it an address supplied by the application. The current version of the Z88 has only one fast code routine which is to rapidly switch bank bindings.
+
+```text
+RST 20H, DEFB $8A
+
+IN:
+            A = 1, for fast bank switching
+            DE = address to copy fast bank code into
+            HL = 0, for code to terminate with RET
+            HL <> 0, for code to terminate with JP (HL)
+            C = segment for bank switching (MS_Sx)
+ 
+OUT:
+            Fc = 0
+            A = code size
+ 
+Registers changed after return:
+            ..BCDEHL/IXIY same
+            AF....../.... different
+```
+
+The **[OS\_Fc](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fc)** fast bank switching code has now been established. Subsequent calls to **[OS\_Fc](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fc)** with:
+
+```text
+IN:         
+            A = bank to bind to segment specified by OS_Fc initialization
+OUT: 
+            AFBCDEHL/IXIY/afbcdehl same
+            ......../..../........ different
+```
+
+**[OS\_Fc](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fc)** has only been implemented with the above bank switching routine.
+
+The bank switching code can now be accessed at the address supplied in DE(in). If HL(in) = 0 then use CALL DE(in), else use JP DE(in).
+
+Bank switching is a fairly simple process of updating a softcopy and writing to a hardware register. The reason for using the fast-code interface is that on any future versions of the machine the application will still work even though the bank switching process may be different. For this reason at least 30 bytes should be available for the code. Since the actual length is returned, memory can be reclaimed if necessary. One final point to bear in mind is that you must not place the fast code in the segment which it is rebinding! Think of cutting the branch you are sitting on...

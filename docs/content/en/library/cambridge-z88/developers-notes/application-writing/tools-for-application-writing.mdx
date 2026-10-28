@@ -1,0 +1,55 @@
+---
+description: "Although it is possible to use the BBC BASIC as a development environment for Z88 applications, the limited memory capacity of BASIC make this task somewhat arduous. Moreover during development..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/64094323 (version 8) by scripts/import-z88-wiki.cjs */}
+
+# Tools for application writing
+
+## Introduction
+
+Although it is possible to use the BBC BASIC as a development environment for Z88 applications, the limited memory capacity of BASIC make this task somewhat arduous. Moreover during development the Z88 is likely to crash fairly often, so much time would be spent in backing up source files to EPROM or another computer. The Z88 however, is not easy to break down. It depends on the type of crash. Software could be developed on the original computer - with a brave spirit and plenty of time! However, these things have become much easier on modern desktop computers - cross-platform developing and testing, and final upload and validation on the real Z88.
+
+For application writing and publishing on EPROM and FLASH cards, it is needed to have a unique application card id, if you are going to produce software for application cards. When Cambridge Computer still were manufacturing the Z88, they administrated the card id's. When the company folded, card id registrations were lost. Many years since a new method has been developed; the Z88 development team has now implemented a card builder tool which generates unique ID's using CRC-32 checksum on the binary application code. Chances of card ID conflicts are small and guarantees safe installation of application cards on the Z88. Applications can also be developed to be targeted for installation in RAM, which requires no special card ID's.
+
+Z88 Assembler Workbench
+
+Targeted for modern desktop systems, the Z88 development project provides a fully featured Z80 macro assembler tool-chain containing a Z80 CPU cross assembler / linker / library manager, application card builder tool and Z88 computer emulator, commonly labelled as the Z88 Assembler Workbench. This toolchain is used to compile large assembler application projects such as the OZ operating system (more than 130.000 lines of assember source code!). The tools are available for Windows, Linux, Mac OSX and other Unix operating systems.
+
+The Z88 computer emulator and debugging environment - OZvm - supports tracing, breakpoints and many other features to run and analyse your applications both on simulated EPROM, Flash or RAM.
+
+RomUpdate, an application EPROM & FLASH card programming utility, has been implemented on the Z88 to produce application cards natively.
+
+The project also provides a file transfer utility, EazyLink2, in order to be able to test the code on real Z88 computers.
+
+All tools are available for download here: **[https://sourceforge.net/projects/z88/files/Z88%20Assembler%20Workbench/](https://sourceforge.net/projects/z88/files/Z88%20Assembler%20Workbench/)**
+
+Source code for all Z88 Assembler workbench tools are available here:
+
+<strong>[https://gitlab.com/b4works](https://gitlab.com/b4works)<br /></strong>
+
+If you have ideas, bug reports, suggestions for new applications or features of the Z88 operating system, or have an itch to develop software, you can contact the project on **[https://cambridgez88.jira.com/wiki](https://cambridgez88.jira.com/wiki)**.
+
+### mpm
+
+...
+
+### z88card
+
+...
+
+### romupdate
+
+...
+
+## OZvm - a Z88 computer emulator and debugger tool
+
+...
+
+## Abundance of existing source code of Z88 applications
+
+...
+
+## The final frontier - Z88 ROM development
+
+...

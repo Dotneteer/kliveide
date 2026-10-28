@@ -1,5 +1,5 @@
 /**
- * Inline notation for the Cambridge Z88 User Guide (`content/en/z88-user-guide/`), following the
+ * Inline notation for the Cambridge Z88 User Guide (`content/en/library/cambridge-z88/`), following the
  * manual's own "Conventions in this manual" page:
  *
  *   <Key k="enter" />            a key legend, drawn as a keycap (the manual's key pictures)

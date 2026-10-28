@@ -1,0 +1,40 @@
+---
+description: "GN_Cl, close file GN_Del, delete a file from memoryGN_Opf, open file/resource (wildcard search)GN_Ren, rename file OS_Cl, internal close (OZ usage) OS_Del, file delete (internal OZ usage) OS_Frm,..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/123470099 (version 9) by scripts/import-z88-wiki.cjs */}
+
+# GN_Dir, Create a directory path
+
+## Register parameters
+
+```text
+IN:     BHL = pointer to null-terminated directory path name
+
+out, if successful:
+        Fc = 0, directory successfully created
+
+out, if failed:
+        Fc = 1, unable to create directory
+        A = error code:
+             RC_IVF, Invalid directory path name
+             RC_USE, Directory in use
+             RC_EXIS, Directory already exists
+
+   registers changed after return:
+        A.BCDEHL/IXIY  same
+        .F....../....  different
+```
+
+## Notes
+
+- API call implemented in OZ 5.0
+- Several sub-directories are accepted (eg. :RAM.0/dir1/dir2/dir3 ) up to 205 characters
+- Only accept explicit filenames (wildcard are not allowed)
+- However, if a RAM device is not specified, it will automatically be included (the current) into the directory name.
+- The buffer of the directory name must have space enough to get itself expanded with a device name (additional 6 bytes).
+- The filename must be terminated by a control character, eg. null (0) or CR (13).
+
+## Related calls
+
+**[GN\_Cl](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-cl)**, close file <br />**[GN\_Del](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-del)**, delete a file from memory<br />**[GN\_Opf](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-opf)**, open file/resource (wildcard search)<br />**[GN\_Ren](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-ren)**, rename file <br />**[OS\_Cl](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-cl)**, internal close (OZ usage) <br />**[OS\_Del](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-del)**, file delete (internal OZ usage) <br />**[OS\_Frm](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-frm)**, file read miscellaneous <br />**[OS\_Fwm](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fwm)**, file write miscellaneous <br />**[OS\_Gb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-gb)**, get byte from file (or device) <br />**[OS\_Gbt](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-gbt)**, get byte from file (or device) with timeout <br />**[OS\_Mv](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mv)**, move bytes between stream and memory <br />**[OS\_Op](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-op)**, internal open (OZ usage) <br />**[OS\_Pb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-pb)**, write byte to file, device <br />**[OS\_Pbt](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-pbt)**, write byte to file, device with timeout <br />**[OS\_Ren](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-ren)**, file rename (internal OZ usage)

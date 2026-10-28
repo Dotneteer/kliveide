@@ -1,0 +1,33 @@
+---
+description: "Date strings are fully country localized since OZ 4.5. It displays today, yesterday or tomorrow using the localized string."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8618172 (version 4) by scripts/import-z88-wiki.cjs */}
+
+# GN_Sdo, send date and time to standard output
+
+## Register parameters
+
+```text
+IN:
+     HL = pointer to 6 byte date and time. First 3 bytes are time in
+     internal format, second 3 bytes are date in internal format.
+OUT:
+     -
+
+Registers changed after return:
+     AFBCDEHL/IXIY same
+     ......../.... different
+```
+
+## Notes
+
+Date strings are fully country localized since OZ 4.5. It displays today, yesterday or tomorrow using the localized string.
+
+## Bugs
+
+Will fail if address pointer is in segment 2.
+
+## Related calls
+
+**[GN\_Gmt](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-gmt)**, get (read) machine time in internal format <br />**[GN\_Gtm](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-gtm)**, convert an ASCII string to a time in internal format <br />**[GN\_Msc](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-msc)**, miscellaneous time operations <br />**[GN\_Pmt](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-pmt)**, put (set) machine time <br />**[GN\_Ptm](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-ptm)**, write internal time as ASCII string <br />**[OS\_Dly](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-dly)**, delay a given period

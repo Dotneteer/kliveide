@@ -1,0 +1,32 @@
+---
+description: "GN_Flc, close filter GN_Flf, flush filter GN_Flo, open filter GN_Flr, read from filter GN_Fpb, push back into filter"
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8618115 (version 3) by scripts/import-z88-wiki.cjs */}
+
+# GN_Flw, Write character to filter
+
+## Register parameters
+
+```text
+IN:
+     IX = filter handle
+     A = character to write to filter
+
+OUT, if call successful:
+     Fc = 0
+     A = A(in)
+OUT, if call failed:
+     Fc = 1
+     A = error code:
+          RC_HAND ($08), bad filter handle
+          RC_FLF ($0A), filter is full
+
+Registers changed after return:
+     A.BCDEHL/IXIY same
+     .F....../.... different
+```
+
+## Related calls
+
+**[GN\_Flc](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-flc)**, close filter <br />**[GN\_Flf](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-flf)**, flush filter <br />**[GN\_Flo](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-flo)**, open filter <br />**[GN\_Flr](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-flr)**, read from filter <br />**[GN\_Fpb](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-fpb)**, push back into filter

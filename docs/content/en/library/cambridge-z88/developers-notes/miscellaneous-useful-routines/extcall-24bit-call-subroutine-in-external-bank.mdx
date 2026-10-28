@@ -1,0 +1,39 @@
+---
+description: "OZ v4.1 and later provides an advanced CALL subroutine mechanism that allows the application to execute a subroutine call in a 24bit address context, making it possible to reach executable code..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/68386883 (version 7) by scripts/import-z88-wiki.cjs */}
+
+# EXTCALL - 24bit Call Subroutine in external bank
+
+**OZ v4.1** and later provides an advanced CALL subroutine mechanism that allows the application to execute a subroutine call in a 24bit address context, making it possible to reach executable code anywhere in the 4Mbit address space that is available in the Z88 machine hardware. Bank binding and restoration is automatically handled, if the subroutine to be called exist in another bank that is currently bound. EXTCALL helps to scale execution of large applications that span more than 32K of code mapped into the Z80 address space (typically, an application needs at least one segment to access dynamic memory).
+
+EXTCALL has been implemented for application card usage; this means that an application which want to call a subroutine as part of it's bank code setup, uses slot-relative bank numbers ($00-$3ff). EXTCALL will map the current slot where the code is running, so the subroutine is reached successfully, no matter into which slot the card has been inserted.
+
+**The EXTCALL does not destroy any register call arguments or return values. EXTCALL is to be regarded as a normal ZIlog Z80 CALL instruction, but for 24bit address range.**
+
+The EXTCALL functionality is mapped via the RST 28H vector and is located in LOWRAM (lower 8K address space). This ensures that application code can use EXTCALL in all segments while OZ is running. The 24bit address is available in low byte - high byte order following the RST 28H instruction opcode, and stored as a complete 32bit address. The segment specifier (bits 15,14) of the lower 16bit address automatically identifies where the bank will be bound into the Z80 address space. The bank number of the 24bit address may be specified as absolute or as slot relative ($00 - $3F).
+
+Example in Z80 assembler, macro notation (this is defined in the "macros.def" include file, available in the Z88 and OZ Git repositories), available for assembler source code that uses Mpm v1.5 or later:
+
+```text
+macro extcall (offset, bank)
+  if \% = 2                                     ; only generate code if offset and bank is specified
+        rst     28h                             ; EXTCALL <address>
+        defw    \offset
+        defw    \bank                           ; 16bit bank number (reserved for future hardware) 
+  else
+        error "EXTCALL: missing or incomplete address"
+  endif
+endmacro
+
+extcall $C000,$FE                               ; (a RST 28H followed by 24bit address - 32bit padded)
+```
+
+Execute code in bank $FE at address $C000 bound into segment 3 (the instruction opcode sequence in memory is $EF, $00, $C0, $FE, $00). This call instruction uses an absolute bank (located in slot 3) in the 24bit address, ie. a piece of code in slot 2 might want to execute a subroutine in slot 3.
+
+Slot relative subroutine calls defines the bank number in the range $00 - $3F (same principle as for DOR pointers in application cards). A instantiated large application using more than 32K code space (that typically needs the remaining free segments in the Z80 address space for dynamic data structure management) would use the 24bit slot relative call to execute subroutines in banks that are not bound in the Z80 address by default as defined by the Application DOR).
+
+Managing preservation of registers and bank binding induces an execution overhead, of course. A temporary stack-frame of 14 bytes is allocated on the CPU stack when using EXTCALL. Application writers must consider this when using EXTCALL.
+
+Using the RST 28H on OZ ROM's V2.2 - V4.0, has no effect - it will simply return immediately with Fc = 1.

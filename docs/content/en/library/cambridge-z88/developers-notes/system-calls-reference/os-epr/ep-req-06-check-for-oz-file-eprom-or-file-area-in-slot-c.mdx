@@ -1,0 +1,110 @@
+---
+description: "Check for \"oz\" File Eprom (on a conventional Eprom or on a Flash Memory)"
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7471437 (version 8) by scripts/import-z88-wiki.cjs */}
+
+# EP_REQ ($06) - Check for "oz" File Eprom or File Area in slot C
+
+## Register parameters
+
+```text
+In:
+        A = EP_REQ
+        C = slot number (0, 1, 2 or 3)
+
+Out:
+   Success, File Area (or potential) available:
+        Fc = 0,
+             BHL = pointer to File Header for slot C (B = absolute bank of slot).
+                   (or pointer to free space in potential new File Area).
+               C = size of File Eprom Area in 16K banks
+             Fz = 1, File Header found
+                  A = "oz" File Eprom sub type
+                  D = size of card in 16K banks (0 - 64)
+             Fz = 0, File Header not found
+                  A undefined
+                  D undefined
+   Failure:
+        Fc = 1,
+             C = C(in)
+             A = RC_ONF (File Eprom Card/Area not available; possibly no card in slot)
+             A = RC_ROOM (No room for File Area; all banks used for applications)
+
+Registers changed after return:
+   .....E../IXIY same
+   AFBCD.HL/.... different
+```
+
+## Notes
+
+Check for "oz" File Eprom (on a conventional Eprom or on a Flash Memory)
+
+1. Check for a standard "oz" File Eprom, if that fails -
+
+2. Check if that slot contains an Application ROM, then check for the Header Identifier below the application bank area. For Flash Cards, the File Header might be on first top bank of a free 64K sector. For UV Eproms, the File Header might be on the first top bank below the application bank area.
+
+3. If a Rom Front Dor is located in a RAM Card, then this slot is regarded as a non-valid card as a File Eprom, ie. not present.
+
+4. Check for embedded 'oz' watermark inside an 'OZ' application header. If found, then this indicates that a file area is located at the top of a card above an application area or at the top of an OZ ROM.
+
+   1. A standard 'oz' header is recognized by the top two watermark bytes in the top bank of the file area (either typically at the top of the card, in modulus 64K sectors in Flash Cards or modulus 16K banks on traditional EPROM's. The complete header has the following format:
+   
+      ```text
+      $3FC0  $00's until
+      $3FF7  $01
+      $3FF8  4 byte random id
+      $3FFC  size of card in banks (2=32K, 8=128K, 16=256K, 64=1Mb)
+      $3FFD  sub-type: $7E, $7C, $7A for UV 32K, 128K & 256K cards. $77, $6F for Intel and Amd Flash
+      $3FFE  'o'
+      $3FFF  'z' (file eprom identifier, lower case 'oz')
+      ```
+   
+      in hex dump (example)
+   
+      ```text
+      00003fc0h: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ; ................
+      00003fd0h: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ; ................
+      00003fe0h: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ; ................
+      00003ff0h: 00 00 00 00 00 00 00 01 73 D1 4B 3C 02 7E 6F 7A ; .........s?<.~oz
+      ```
+   
+   2. A sub-standard 'oz' header is recognized at offset $3FEE inside an application 'OZ' header that is always placed at the top of the card, with the following format (Application Front DOR):
+   
+      ```text
+      $3FC0         0 0 0           Link to parent
+      $3FC3         0 0 0           Link to brother - this may point to the HELP front DOR
+      $3FC6         x x x           Link to son - this points to the first application DOR
+      $3FC9         $13             DOR type, ROM Front DOR
+      $3FCA         8               DOR length
+      $3FCB         'N'             Key for name field (DT_NAM)
+      $3FCC         5               Length of name and terminator
+      $3FCD         'APPL', 0       NULL-terminated name
+      $3FD2         $FF             DOR terminator
+      
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      Optional file area at top card, above application area:
+      $3FEC         x               Size of file area in banks, eg. $02 for a 32K size
+      $3FED         $00             64K Reclaim Sector (0=not used)
+      $3FEE         'oz'            Application/ROM Card holds file area
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      
+      $3FF8         @0xxxxxxx       Low byte of card ID
+      $3FF9         @0xxxxxxx       High byte of card ID
+      $3FFA         @0000xxxx       4 bit country code
+      $3FFB         $80             Marks external application
+      $3FFC         x               Size of card in banks, eg. $02 for a 32K card
+      $3FFD         $00             Subtype of card - future expansion
+      $3FFE         'OZ'            Card holds applications
+      ```
+   
+      in hex dump (example):
+   
+      ```text
+      00003fc0h: 00 00 00 00 00 00 48 25 08 13 08 4E 05 41 50 50 ; ......H%...N.APP
+      00003fd0h: 4C 00 FF 00 00 00 00 00 00 00 00 00 00 00 00 00 ; L...............
+      00003fe0h: 00 00 00 00 00 00 00 00 00 00 00 00 14 00 6F 7A ; ..............oz
+      00003ff0h: 00 00 00 00 00 00 00 00 54 43 4C 81 20 00 4F 5A ; .........TCL .OZ
+      ```
+
+On partial success, if a Header is not found, Fz = 0 and the returned BHL pointer indicates that the card might hold a file area, beginning at this location.<br />If the routine returns Fz = 1, it's an identified File Area Header (pointing to 64 byte header in the top of bank B).

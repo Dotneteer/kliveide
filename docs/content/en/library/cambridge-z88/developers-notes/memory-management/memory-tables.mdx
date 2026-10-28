@@ -1,0 +1,52 @@
+---
+description: "The purpose of this description is just for the understanding of memory allocation in the Z88. Programmer have to use the provided system calls to properly allocate memory. He should not bypass..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/60653617 (version 9) by scripts/import-z88-wiki.cjs */}
+
+# Memory Tables
+
+The purpose of this description is just for the understanding of memory allocation in the Z88. Programmer have to use the provided system calls to properly allocate memory. He should not bypass the operating system and tweak directly in the memory tables.
+
+Memory tables are located in the first bank of each slot, except for internal memory tables which are in bank $21.
+
+**Swap memory**
+
+On reset, special memory area is marked as SWAP memory : 8K on unexpanded Z88, 40K on expanded ones. This memory area is allocated to bad or ugly applications when they're entered. On exit, this memory is released by copying used swap memory to fixed memory allocated for process storage. When normal memory becomes full, this swap area can be used for other purposes.
+
+**Out-of-memory flags - one for each bank**
+
+If all memory in a bank is used, OZ sets flags in the first bank, except for seg0 addressed allocations. These flags go backward, $00ff is the first bank of slot, $00c0 is the last ($00e0 is the last for internal RAM). Only two bits are used:
+
+OOM\_B\_NORMAL =0<br />OOM\_B\_FIXED =1
+
+These flags are used to speed up memory allocation by skipping full banks. Flags are cleared when full bank is freed.
+
+**Memory Allocation Tables, MATs - one for each page**
+
+MATs start at $0100. There is one word for each page in slot, ie. 64 entries per bank, max. 4096 entries for 1MB card. Entries are sorted in natural order.
+
+```text
+PAGE WORD in MAT
+bits 0-11 Offset of next MAT entry in chain
+bit 0 only set (MAT_SYSTEM) page is used by OZ (eg. screen file, see examples below)
+
+bit 12 MAT_LAST : this page is last in chain, bits 0-11 are MemHandle>>4
+bit 13 MAT_FULL : page fully used, can't be split in chunks (see below)
+bit 14 MAT_ALLOCFIXED : if reset page is allocated as fixed memory
+bit 15 MAT_SWAP : page is used by OZ for bad application memory
+Some examples :
+00xx-0Fxx tagged as 0001 - system variables and such
+10xx-17xx tagged as 8000 - swap area for bad apps
+1800-1fff tagged as 0001 - stack
+```
+
+**Page allocation scheme for chunk (\<256 byte) allocations (MAT\_FULL (bit 13) not set in MAT)**
+
+XX00: yy offset to the first free chunk, 00 if no free chunks in page<br />if y=255 then page is invalid -\> fail
+
+XXyy: sz nx sz=chunk size, 02-FF bytes<br />if yy+sz\>nx then page is invalid -\> fail<br />nx=offset to the next free chunk, 00 if no more chunks in page<br />if nx\<=yy then page is invalid -\> fail
+
+Page with 255 bytes free:
+
+XX00: 01 FF 00 ...

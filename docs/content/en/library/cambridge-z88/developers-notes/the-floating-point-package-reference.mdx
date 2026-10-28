@@ -1,0 +1,667 @@
+---
+description: "The floating point package (hereinafter referred to as the FPP) uses a different RST call from the main system calls, the format of a floating point call is as follows:"
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7471117 (version 4) by scripts/import-z88-wiki.cjs */}
+
+# The floating point package reference
+
+The floating point package (hereinafter referred to as the FPP) uses a different RST call from the main system calls, the format of a floating point call is as follows:
+
+```text
+    RST  $18
+   DEFB <function code>
+```
+
+so apart from the different restart number, much the same as the OS calls. In the text we will assume a macro has been defined and use the following:
+
+```text
+    FPP <function mnemonic>
+```
+
+Parameters are passed to and from the FPP in a rather bizarre collection of registers. The main register group is HLhlC (remember, lower case for alternate set), and where a second parameter is required it is passed in DEdeB. These divide into mantissa and exponent as follows:
+
+| Parameter 1 | Parameter 2 | Significance |
+| --- | --- | --- |
+| H | D | Most significant byte of mantissa |
+| L | E |   |
+| h | d |   |
+| l | e | Least significant byte of mantissa |
+| C | B | Exponent byte |
+
+There are certain exceptions, which are explained where relevant (for instance one operation returns the numeric value of a string, so takes a pointer to the string in HL as its parameter). Here is the full list of parameter bytes and the FPP functions which they invoke. First number is the index number of the operation for FP\_BAS. Second number is the RST 18H function code:
+
+<Table>
+<thead>
+<Table.Tr>
+<Table.Th>Mnemonic</Table.Th>
+<Table.Th>Function Index Number</Table.Th>
+<Table.Th>Function Code</Table.Th>
+<Table.Th>Functionality</Table.Th>
+<Table.Th>Description</Table.Th>
+</Table.Tr>
+</thead>
+<tbody>
+<Table.Tr>
+<Table.Td>FP\_AND</Table.Td>
+<Table.Td>0</Table.Td>
+<Table.Td>$21</Table.Td>
+<Table.Td>
+
+```text
+Bitwise logical AND
+```
+
+</Table.Td>
+<Table.Td>(Integer only) Input parameters in HLhlC and DEdeB. Result in HLhlC.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>FP\_IDV</Table.Td>
+<Table.Td>1</Table.Td>
+<Table.Td>$24</Table.Td>
+<Table.Td>
+
+```text
+Quotient after division
+```
+
+</Table.Td>
+<Table.Td>(Integer only) Input parameters in HLhlC and DEdeB (returns HLhlC / DEdeB). Result in HLhlC.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>FP\_EOR</Table.Td>
+<Table.Td>2</Table.Td>
+<Table.Td>$27</Table.Td>
+<Table.Td>
+
+```text
+Bitwise logical excusive OR
+```
+
+</Table.Td>
+<Table.Td>(Integer only) Input parameters in HLhlC and DEdeB. Result in HLhlC.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>FP\_MOD</Table.Td>
+<Table.Td>3</Table.Td>
+<Table.Td>$2A</Table.Td>
+<Table.Td>
+
+```text
+Remainder after division
+```
+
+</Table.Td>
+<Table.Td>(Integer only) Input parameters in HLhlC and DEdeB (returns the remainder of HLhlC / DEdeB). Result in HLhlC.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>FP\_OR</Table.Td>
+<Table.Td>4</Table.Td>
+<Table.Td>$2D</Table.Td>
+<Table.Td>
+
+```text
+Bitwise logical OR
+```
+
+</Table.Td>
+<Table.Td>(Integer only) Input parameters in HLhlC and DEdeB. Result in HLhlC.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>FP\_LEQ</Table.Td>
+<Table.Td>5</Table.Td>
+<Table.Td>$30</Table.Td>
+<Table.Td>
+
+```text
+Test for less than or equal to
+```
+
+</Table.Td>
+<Table.Td>Input parameters in HLhlC and DEdeB (test is HLhlC \<= DEdeB). Result in HLhlC (-1 for TRUE; 0 for FALSE).</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>FP\_NEQ</Table.Td>
+<Table.Td>6</Table.Td>
+<Table.Td>$33</Table.Td>
+<Table.Td>
+
+```text
+Test for not equal to
+```
+
+</Table.Td>
+<Table.Td>Input parameters in HLhlC and DEdeB. Result in HLhlC (-1 for TRUE; 0 for FALSE).</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>FP\_GEQ</Table.Td>
+<Table.Td>7</Table.Td>
+<Table.Td>$36</Table.Td>
+<Table.Td>
+
+```text
+Test for greater than or equal to
+```
+
+</Table.Td>
+<Table.Td>Input parameters in HLhlC and DEdeB (test is HLhlC \>= DEdeB). Result in HLhlC (-1 for TRUE; 0 for FALSE).</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>FP\_LT</Table.Td>
+<Table.Td>8</Table.Td>
+<Table.Td>$39</Table.Td>
+<Table.Td>
+
+```text
+Test for less than
+```
+
+</Table.Td>
+<Table.Td>Input parameters in HLhlC and DEdeB (test is HLhlC \< DEdeB). Result in HLhlC (-1 for TRUE; 0 for FALSE).</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>FP\_EQ</Table.Td>
+<Table.Td>9</Table.Td>
+<Table.Td>$3C</Table.Td>
+<Table.Td>
+
+```text
+Test for equality
+```
+
+</Table.Td>
+<Table.Td>Input parameters in HLhlC and DEdeB. Result in HLhlC (-1 for TRUE; 0 for FALSE).</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>FP\_MUL</Table.Td>
+<Table.Td>10</Table.Td>
+<Table.Td>$3F</Table.Td>
+<Table.Td>
+
+```text
+Multiplication
+```
+
+</Table.Td>
+<Table.Td>Input parameters in HLhlC and DEdeB. Result in HLhlC.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>FP\_ADD</Table.Td>
+<Table.Td>11</Table.Td>
+<Table.Td>$42</Table.Td>
+<Table.Td>
+
+```text
+Addition
+```
+
+</Table.Td>
+<Table.Td>Input parameters in HLhlC and DEdeB. Result in HLhlC.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>FP\_GT</Table.Td>
+<Table.Td>12</Table.Td>
+<Table.Td>$45</Table.Td>
+<Table.Td>
+
+```text
+Test for greater than
+```
+
+</Table.Td>
+<Table.Td>Input parameters in HLhlC and DEdeB (test is HLhlC \> DEdeB). Result in HLhlC (-1 for TRUE; 0 for FALSE).</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>FP\_SUB</Table.Td>
+<Table.Td>13</Table.Td>
+<Table.Td>$48</Table.Td>
+<Table.Td>
+
+```text
+Subtraction
+```
+
+</Table.Td>
+<Table.Td>Input parameters in HLhlC and DEdeB (returns HLhlC - DEdeB). Result in HLhlC.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>FP\_PWR</Table.Td>
+<Table.Td>14</Table.Td>
+<Table.Td>$4B</Table.Td>
+<Table.Td>
+
+```text
+Raise to power
+```
+
+</Table.Td>
+<Table.Td>Input parameters in HLhlC and DEdeB (returns HLhlC ^ DEdeB). Result in HLhlC.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>FP\_DIV</Table.Td>
+<Table.Td>15</Table.Td>
+<Table.Td>$4E</Table.Td>
+<Table.Td>
+
+```text
+Division
+```
+
+</Table.Td>
+<Table.Td>Input parameters in HLhlC and DEdeB (returns HLhlC / DEdeB). Result in HLhlC.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>FP\_ABS</Table.Td>
+<Table.Td>16</Table.Td>
+<Table.Td>$51</Table.Td>
+<Table.Td>
+
+```text
+Magnitude (ABSolute value)
+```
+
+</Table.Td>
+<Table.Td>Input parameters in HLhlC. Result in HLhlC.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>FP\_ACS</Table.Td>
+<Table.Td>17</Table.Td>
+<Table.Td>$54</Table.Td>
+<Table.Td>
+
+```text
+Inverse cosine (Arc CoSine)
+```
+
+</Table.Td>
+<Table.Td>Input parameters in HLhlC. Result in HLhlC, in radians.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>FP\_ASN</Table.Td>
+<Table.Td>18</Table.Td>
+<Table.Td>$57</Table.Td>
+<Table.Td>
+
+```text
+Inverse sine (Arc SiNe)
+```
+
+</Table.Td>
+<Table.Td>Input parameters in HLhlC. Result in HLhlC, in radians.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>FP\_ATN</Table.Td>
+<Table.Td>19</Table.Td>
+<Table.Td>$5A</Table.Td>
+<Table.Td>
+
+```text
+Inverse tangent (Arc TaNgent)
+```
+
+</Table.Td>
+<Table.Td>Input parameters in HLhlC. Result in HLhlC, in radians.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>FP\_COS</Table.Td>
+<Table.Td>20</Table.Td>
+<Table.Td>$5D</Table.Td>
+<Table.Td>
+
+```text
+Cosine
+```
+
+</Table.Td>
+<Table.Td>Input parameters in HLhlC, in radians. Result in HLhlC.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>FP\_DEG</Table.Td>
+<Table.Td>21</Table.Td>
+<Table.Td>$60</Table.Td>
+<Table.Td>
+
+```text
+Convert radians to degrees
+```
+
+</Table.Td>
+<Table.Td>Input parameters in HLhlC, in radians. Result in HLhlC, in degrees.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>FP\_EXP</Table.Td>
+<Table.Td>22</Table.Td>
+<Table.Td>$63</Table.Td>
+<Table.Td>
+
+```text
+Exponentiation
+```
+
+</Table.Td>
+<Table.Td>Raise 'e' \[2.718...\] to power of. Input parameters in HLhlC. Result in HLhlC.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>FP\_INT</Table.Td>
+<Table.Td>23</Table.Td>
+<Table.Td>$66</Table.Td>
+<Table.Td>
+
+```text
+Integer truncation
+```
+
+</Table.Td>
+<Table.Td>(floor truncation, not rounding) Input parameters in HLhlC. Result in HLhlC.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>FP\_LN</Table.Td>
+<Table.Td>24</Table.Td>
+<Table.Td>$69</Table.Td>
+<Table.Td>
+
+```text
+Natural logarithm
+```
+
+</Table.Td>
+<Table.Td>(Naperian or base 'e') Input parameters in HLhlC. Result in HLhlC.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>FP\_LOG</Table.Td>
+<Table.Td>25</Table.Td>
+<Table.Td>$6C</Table.Td>
+<Table.Td>
+
+```text
+Common (base 10) logarithm
+```
+
+</Table.Td>
+<Table.Td>Input parameters in HLhlC. Result in HLhlC.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>FP\_NOT</Table.Td>
+<Table.Td>26</Table.Td>
+<Table.Td>$6F</Table.Td>
+<Table.Td>
+
+```text
+Bitwise logical NOT
+```
+
+</Table.Td>
+<Table.Td>(Integer only) Input parameters in HLhlC. Result in HLhlC.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>FP\_RAD</Table.Td>
+<Table.Td>27</Table.Td>
+<Table.Td>$72</Table.Td>
+<Table.Td>
+
+```text
+Convert degrees to radians
+```
+
+</Table.Td>
+<Table.Td>Input parameters in HLhlC, in degrees. Result in HLhlC, in radians.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>FP\_SGN</Table.Td>
+<Table.Td>28</Table.Td>
+<Table.Td>$75</Table.Td>
+<Table.Td>
+
+```text
+Sign (signum)
+```
+
+</Table.Td>
+<Table.Td>Input parameters in HLhlC. Result in HLhlC.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>FP\_SIN</Table.Td>
+<Table.Td>29</Table.Td>
+<Table.Td>$78</Table.Td>
+<Table.Td>
+
+```text
+Sine
+```
+
+</Table.Td>
+<Table.Td>Input parameters in HLhlC, in radians. Result in HLhlC.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>FP\_SQR</Table.Td>
+<Table.Td>30</Table.Td>
+<Table.Td>$7B</Table.Td>
+<Table.Td>
+
+```text
+Square root
+```
+
+</Table.Td>
+<Table.Td>Input parameters in HLhlC. Result in HLhlC.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>FP\_TAN</Table.Td>
+<Table.Td>31</Table.Td>
+<Table.Td>$7E</Table.Td>
+<Table.Td>
+
+```text
+Tangent
+```
+
+</Table.Td>
+<Table.Td>Input parameters in HLhlC, in radians. Result in HLhlC.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>FP\_ZER</Table.Td>
+<Table.Td>32</Table.Td>
+<Table.Td>$81</Table.Td>
+<Table.Td>
+
+```text
+Return the constant zero
+```
+
+</Table.Td>
+<Table.Td>(as an integer) Input irrelevant. Result in HLhlC (all zero).</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>FP\_ONE</Table.Td>
+<Table.Td>33</Table.Td>
+<Table.Td>$84</Table.Td>
+<Table.Td>
+
+```text
+Return the floating point constant 1
+```
+
+</Table.Td>
+<Table.Td>Input irrelevant. Result in HLhlC (HL=hl=0, C=$80)</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>FP\_TRU</Table.Td>
+<Table.Td>34</Table.Td>
+<Table.Td>$87</Table.Td>
+<Table.Td>
+
+```text
+Return the integer constant -1
+```
+
+</Table.Td>
+<Table.Td>Input irrelevant. Result in HLhlC (HL=hl=$FFFF, C=$00)</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>FP\_PI</Table.Td>
+<Table.Td>35</Table.Td>
+<Table.Td>$8A</Table.Td>
+<Table.Td>
+
+```text
+Returns pi
+```
+
+</Table.Td>
+<Table.Td>(the floating point representation of pi) Input irrelevant. Result in HLhlC.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>FP\_VAL</Table.Td>
+<Table.Td>36</Table.Td>
+<Table.Td>$8D</Table.Td>
+<Table.Td>
+
+```text
+Returns the numeric value of a string
+```
+
+</Table.Td>
+<Table.Td>HL points to start of string (null-terminated). Result in HLhlC, and DE points to last character read; if the call succeeded, this will be the terminator byte. If the call failed, HLhlC = 0.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>FP\_STR</Table.Td>
+<Table.Td>37</Table.Td>
+<Table.Td>$90</Table.Td>
+<Table.Td>
+
+```text
+Return string representation of number
+```
+
+</Table.Td>
+<Table.Td>
+
+Number to convert to string, in in HLhlC.
+
+DE points to space to insert string. DE points to character after string when call returns. The de (alternate) register pair contains a format control variable which has the effect of the two middle bytes of the BBC BASIC format control variable @%:
+
+1. The contents of e determine the maximum number of digits (ie. number of characters apart from decimal point or 'E') to be printed. The allowed range of values depends on the format selected (see below):
+
+   1. General format
+   
+      1. Exponential format: 1-255 (leading zeros added beyond the 10th significant figure).
+      
+      2. Fixed format: 0-10 (in this case the number of digits printed after the decimal point).
+
+2. The contents of d determine the format of the resultant string for a given number; the options are:
+
+   1. d=0: General format
+   
+      1. Integers are printed without a decimal point or exponent. Numbers between 0.1 and 1 will be printed with a decimal point but no exponent. Numbers less than 0.1 will be printed with a decimal point and exponent. Numbers greater than 1 will be printed without exponent unless this would involve more digits than allowed by the contents of the 'e' register (se above), and outside this range, will be printed with an exponent.
+   
+   2. d=1: Exponential format
+   
+      1. All numbers printed in exponential notation, eg. 1.0E0.
+   
+   3. d=2: Fixed format
+   
+      1. All numbers are printed with a fixed number of decimal places.
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>FP\_FIX</Table.Td>
+<Table.Td>38</Table.Td>
+<Table.Td>$93</Table.Td>
+<Table.Td>
+
+```text
+Round a number to integer
+```
+
+</Table.Td>
+<Table.Td>Input parameters in HLhlC (the call has no effect with C=0). Result in HLhlC.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>FP\_FLT</Table.Td>
+<Table.Td>39</Table.Td>
+<Table.Td>$96</Table.Td>
+<Table.Td>
+
+```text
+Convert from integer to floating point
+```
+
+</Table.Td>
+<Table.Td>Input parameters in HLhlC (the call has no effect with C\<\>0). Result in HLhlC.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>FP\_TST</Table.Td>
+<Table.Td>40</Table.Td>
+<Table.Td>$99</Table.Td>
+<Table.Td>
+
+```text
+Test a number for zero and sign
+```
+
+</Table.Td>
+<Table.Td>Input parameters in HLhlC. Result in A (0 for zero; $40 for positive; $C0 for negative).</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>FP\_CMP</Table.Td>
+<Table.Td>41</Table.Td>
+<Table.Td>$9C</Table.Td>
+<Table.Td>
+
+```text
+Compare two numeric values
+```
+
+</Table.Td>
+<Table.Td>
+
+Input parameters in HLhlC (left) and DEdeB (right). Result in A:
+
+- 0 if HLhlC = DEdeB.
+- $40 if HLhlC \> DEdeB.
+- $C0 if HLhlC \< DEdeB.
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>FP\_NEG</Table.Td>
+<Table.Td>42</Table.Td>
+<Table.Td>$9F</Table.Td>
+<Table.Td>
+
+```text
+Negate number, ie. result = -input
+```
+
+</Table.Td>
+<Table.Td>Input parameters in HLhlC. Result in HLhlC.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>FP\_BAS</Table.Td>
+<Table.Td />
+<Table.Td>$A2</Table.Td>
+<Table.Td>
+
+```text
+Execute operation using index number
+```
+
+</Table.Td>
+<Table.Td>
+
+Perform one of the above functions using the operation index number in A, eg.:
+
+```text
+ld  a, 33
+fpp FP_BAS
+```
+
+should call FP\_ONE and return 1 (floating point). This facility can be useful if the operation depends on some parameter, to avoid writing selfmodifying code.
+
+</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>

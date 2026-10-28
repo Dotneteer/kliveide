@@ -1,0 +1,55 @@
+---
+description: "The aim of these notes is to provide a comprehensive description of the hardware and software of the Z88 portable. The machine has a powerful operating system which provides facilities for..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/262222 (version 10) by scripts/import-z88-wiki.cjs */}
+
+# Introduction
+
+## Preamble
+
+The aim of these notes is to provide a comprehensive description of the hardware and software of the Z88 portable. The machine has a powerful operating system which provides facilities for software to be added on external cards, and integrated into the same environment which cares for the built-in programs. External software can take full advantage of the Z88's facility to switch between tasks, can use automatically generated command menus with optional help pages, and is provided with a large number of useful operating system calls, to access the screen, serial port, internal filing system, printer driver, etc.
+
+## Who these notes are for
+
+These notes are primarily targeted at the software author interested in writing applications for the Z88 using Z80 assembler, although it will also be useful to anyone developing hardware. The emphasis is placed on authors whose programs are destined for application cards, but a programmer using BASIC and needing to exploit the facilities of the operating system will find what he or she needs here.
+
+The notes assumes the reader is reasonably familiar with the Z88, and that the User Guide supplied with it has been read and is available for reference. Further, some basic knowledge of Z80 assembly language programming has to be assumed, for while it would be perfectly possible to develop software for the Z88 using a high level language compiler such as the [z88dk](http://www.z88dk.org/) compiler. The information here, therefore, is from the point of view of an application writer developing in assembly language. Of course, this means that there is more than enough information for customising a compiler if this is the preferred route.
+
+## Recommended tools for building Z88 Applications
+
+We recommend to use a Z80 cross assembler tool running on a desktop computer, a good text editor and a software emulation of the Cambridge Z88 for core development. Then, final upload of the executable files to the Z88 to be blown into EPROM's or FLASH cards. For simple development testing of code snippets, you may use the BB BASIC language which comes with the machine and includes an in-line Z80 assembler. How to use BASIC as a development environment is detailed in the "BBC BASIC and the Assembler" section of these notes.
+
+The Z88 Development Project supplies the Z88 Assembler Workbench software which is a complete developers package that has all the necessary facilities for both OZ operating system development and application programming for the Cambridge Z88. It contains a Z80 macro assembler, card builder tool and Z88 emulator - OZvm, found at [http://cambridgez88.jira.com](http://cambridgez88.jira.com), which takes the Z88 application development to another level. Combined with a good text editor and the emulator, this development cycle ensures a fast an easy way to test application development, before finally running stable on the real machine. The team has also released a new, much improved OZ operating system, V4.5, easily inserted in slot 1 of the Z88. All source code is publicly available and under GPL V2 license, built using the Z88 Assembler Workbench tools. You can browse the repositories online clicking on [this link](https://bitbucket.org/cambridge).
+
+A more detailed explanation about installing and using these tools can be found in the [Tools for application writing](/en/library/cambridge-z88/developers-notes/application-writing/tools-for-application-writing) section of these notes.
+
+Alternatively, the z88dk project has developed Z88 Development Kit for desktop computers which consists of Small C+ pre-processor, compiler, optimizer, libraries, examples and more. This package is regularly updated with new features, including the capability of producing full-blown Z88 applications. This C development system now runs on several Z80 based systems, including Sinclair Spectrum clones. For the latest release, point your browser to [http://www.z88dk.org/](http://www.z88dk.org/)
+
+Yet another alternative high-level development environment is Z88 CamelForth by Garry Lancaster. This also allows for full application development. You can find the latest version at [http://www.worldofspectrum.org/z88forever/camelforth/rom-camel.html](http://www.worldofspectrum.org/z88forever/camelforth/rom-camel.html).
+
+## Structure of these notes
+
+The notes begins with a general overview of the Z88. It is important to study this carefully as many important concepts are dealt with, and a good understanding of this section will make the rest of the notes much easier to follow. Applications are talked about and guidelines for their construction are given. Application construction is then covered in detail, with the necessary static structure needed in the ROM card to let the system know the size of the card, what applications it contains etc. In this section the data structure for generating menus, command sequences and help pages is also discussed. Before moving on to discussing the main body of system calls, and how they are useful to the application writer, two important subjects are tackled. Firstly the way in which errors are handled; some errors include a request for an application to close itself down, and require serious immediate action, whereas others might simply inform the application that it may have been interrupted - perhaps the Z88 was switched off for a while. Secondly the memory architecture of the Z88 and the system memory management routines are explained.
+
+Understanding the memory organisation is the key to successful application writing, so this section needs to be studied with care.
+
+Following from this material individual calls can be discussed in some detail, starting with the most basic and commonly used and gravitating towards the more esoteric. Before the extensive calls reference part of the notes, Z88 hardware is discussed. The appendices include details of internal application file formats (ie. PipeDream and Diary), hardware connections and other general information. A glossary and index is provided.
+
+## Important notice
+
+lf you write an application which contains bugs or tries to circumnavigate the operating system, then it is likely that all the other applications in the Z88 will be affected. The effect may not be immediate, some indiscretions take weeks or even months to become apparent, but will usually be in the form of a system crash. You must always remember that the resources of the Z88 are not devoted exclusively to your application and therefore only use legal interfaces. Please note that all the internal applications follow all the rules and use no 'back door' techniques.
+
+## Disclaimer
+
+The authors will not in any event be liable for any loss, including consequential loss, caused by any error, defect or inaccuracy in this information, including but not limited to loss of profit or loss of contracts.
+
+If you find any inaccuracies or inconsistencies, or if you have any comments on the style and presentation of these documents, then please pass these on in writing to:
+
+*Gunther Strube, Spain, email [hello@bits4fun.net](mailto:hello@bits4fun.net)* <br />*Thierry Peycru, France, email [elpekos@gmail.com](mailto:elpekos@gmail.com)*
+
+Finally, many thanks to Vic Gerhardi, [Rakewell Ltd](http://www.rakewell.com/), for his early support of these notes. Many details have come to light because of those VERY old system printouts he had received from the birth of the OZ operating system in the early days.
+
+Z88 forever!
+
+The Authors..

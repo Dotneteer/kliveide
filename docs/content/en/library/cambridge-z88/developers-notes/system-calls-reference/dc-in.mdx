@@ -1,0 +1,38 @@
+---
+description: "Handles .[;<>=DJST] and [#|~] and also produces input tee. cli_instreamT stream might have been closed before returning."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7471336 (version 4) by scripts/import-z88-wiki.cjs */}
+
+# DC_In, Read from CLI
+
+## Register parameters
+
+```text
+IN:
+    BC = timeout for OS_Cli ( CL_RIM / OS_Pbt )
+
+OUT, if call successful:
+    DE = cli_instreamT 
+OUT, if call failed:
+    Fc = 1
+    A = Error code (RC_Eof, RC_Time, RC_Susp, RC_Esc)
+
+Registers affected after return:
+    ..BC..HL/IXIY same
+    AF..DE../.... different
+```
+
+## Notes
+
+Internal operating system usage.
+
+Handles .\[;\*\<\>=DJST\] and \[\#\|\~\] and also produces input tee. cli\_instreamT stream might have been closed before returning.
+
+## Bugs
+
+".T\[;DS\]" are not flagged as errors but act like ".\[;DS\]" <br />".." doesn't stand for "." as documented.
+
+## Related calls
+
+**[DC\_Icl](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-icl)**, Invoke new CLI<br />**[DC\_Out](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-out)**, Write to CLI<br />**[DC\_Prt](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-prt)**, Print to CLI<br />**[DC\_Xin](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-xin)**, Examine CLI input<br />**[DC\_Rbd](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-rbd)**, Rebind streams<br />**[DC\_Gen](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-gen)**, screen driver SOH call<br />**[OS\_Cli](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-cli)**, CLI interface

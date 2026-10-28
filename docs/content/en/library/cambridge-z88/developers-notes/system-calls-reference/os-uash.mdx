@@ -1,0 +1,30 @@
+---
+description: "Internal operating system usage (OZ 4.6 and newer)."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/64880644 (version 8) by scripts/import-z88-wiki.cjs */}
+
+# OS_Uash, Update application static handle in stacked process environment
+
+## Register parameters
+
+```text
+IN:
+    IX = stacked process environment handle
+    BC = new application static handle
+ 
+OUT: -
+Registers changed after return:
+    A.BCDEHL/IXIY same 
+    .F....../.... different
+```
+
+### Notes
+
+Internal operating system usage (OZ 4.6 and newer).
+
+This routine is used by Index to update suspended processes after removal of applications.
+
+### Related calls
+
+**[OS\_Poll](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-poll)**, poll for an application <br />**[OS\_Stk](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-stk)**, stack the current process (application) <br />**[OS\_Ent](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-ent)**, enter an application <br />**[DC\_Ent](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-ent)**, enter new application <br />**[DC\_Nam](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-nam)**, name current application <br />**[OS\_Exit](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-exit)**, exit an application <br />**[OS\_Bye](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-bye)**, exit application <br />**[DC\_Bye](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-bye)**, exiting current application <br />**[OS\_Use](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-use)**, process card usage<br />**[DC\_Alt](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-alt)**, pass an alternative character

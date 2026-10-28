@@ -1,0 +1,34 @@
+---
+description: "This is used by Alarm popdown to get the first alarm block and save alarms in a file. This system call is only available in OZ release V4.5 and newer."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/60653665 (version 9) by scripts/import-z88-wiki.cjs */}
+
+# GN_Gab, Get first alarm block
+
+## Register parameters
+
+```text
+IN: - 
+ 
+OUT, if call successful:
+     Fc = 0
+     BHL = first alarm block in list
+ 
+OUT, if call failed:
+     Fc = 1
+     A = error code:
+          RC_Fail, no existing alarm list
+ 
+Registers changed after return:
+     ...CDE../IXIY same
+     AFB...HL/.... different
+```
+
+## Notes
+
+This is used by Alarm popdown to get the first alarm block and save alarms in a file. This system call is only available in OZ release V4.5 and newer.
+
+## Related calls
+
+**[GN\_Aab](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-aab)**, allocate alarm block <br />**[GN\_Alp](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-alp)**, process an expired alarm (internal OZ usage) <br />**[GN\_Lab](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-lab)**, link an alarm block into the alarm chain <br />**[GN\_Uab](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-uab)**, unlink an alarm block from the alarm chain <br />**[OS\_Alm](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-alm)**, alarm manipulation (internal OZ usage)

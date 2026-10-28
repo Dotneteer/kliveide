@@ -1,0 +1,70 @@
+---
+description: "GN_Aab, allocate alarm block GN_Alp, process an expired alarm (internal OZ usage) GN_Fab, free alarm block GN_Lab, link an alarm block into the alarm chain GN_Uab, unlink an alarm block from the..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7471368 (version 6) by scripts/import-z88-wiki.cjs */}
+
+# OS_Alm, Alarm manipulation
+
+## Register parameters
+
+```text
+IN:
+     A =
+          AH_SUSP ($01), suspend alarm
+          AH_REV ($02), revive alarms
+          AH_RES ($03), reset alarm enable state
+          AH_SINC ($04), display symbol
+          AH_SDEC ($05), remove symbol (subject to use count)
+          AH_SRES ($06), reset symbol
+
+          AH_SET ($07), Set a new alarm:
+               BDE = routine address to be called on expiry:
+                    B=0, DE   call OS_Alm with (A = AH_CNC ???) IX=handle
+                    B<>0, DE  call BDE
+               HL = 6 byte date, time.
+
+          AH_CNC ($08), Cancel an alarm:
+               IX = alarm handle
+
+          AH_DG1 ($09), Ding-dong type 1
+          AH_DG2 ($0A), Ding-dong type 2
+          AH_AINC ($0B), action count increment
+          AH_ADEC ($0C), action count decrement
+          AH_ARES ($0D), action count reset
+
+OUT, always; AH_SUSP, AH_REV, AH_RES, AH_SINC, AH_SDEC, AH_SRES, AH_DG1, AH_DG2, AH_AINC, AH_ADEC, AH_ARES:
+     Fc = 0
+
+     Registers changed after return:
+          A.BCDEHL/IXIY same
+          .F....../.... different
+
+OUT, AH_SET, if call succeeded:     
+     Fc = 0
+     IX = alarm handle
+
+OUT, AH_SET, if call failed:     
+     Fc = 1
+     A = error code.
+
+OUT, AH_CNC, if call succeeded:     
+     Fc = 0
+     IX = 0
+
+OUT, AH_CNC, if call failed:     
+     Fc = 1
+     A = error code.
+
+     Registers changed after return, AH_SET, AH_CNC:
+          A.BCDEHL/..IY same
+          .F....../IX.. different
+```
+
+## Notes
+
+Internal operating system usage.
+
+## Related calls
+
+**[GN\_Aab](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-aab)**, allocate alarm block <br />**[GN\_Alp](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-alp)**, process an expired alarm (internal OZ usage) <br />**[GN\_Fab](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-fab)**, free alarm block <br />**[GN\_Lab](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-lab)**, link an alarm block into the alarm chain <br />**[GN\_Uab](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-uab)**, unlink an alarm block from the alarm chain

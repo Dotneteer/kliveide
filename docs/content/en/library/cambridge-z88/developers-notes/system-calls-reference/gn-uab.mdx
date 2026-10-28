@@ -1,0 +1,33 @@
+---
+description: "The system only does limited error checking. If the alarm is done, the symbol counter is decremented, and the done flag is reset. If the alarm is pending it is cancelled,"
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8618194 (version 3) by scripts/import-z88-wiki.cjs */}
+
+# GN_Uab, Unlink an alarm block from the alarm chain
+
+## Register parameters
+
+```text
+IN:
+     BHL = extended pointer of alarm block
+OUT, if call successful:
+     Fc = 0
+     Fz = 1, Alarm block dequeued.
+OUT, if call failed:
+     Fc = 1
+     A = error code:
+          RC_BAD ($04), bad arguments
+
+Registers changed after return:
+     ..BCDEHL/IXIY same
+     AF....../.... different
+```
+
+## Notes
+
+The system only does limited error checking. If the alarm is done, the symbol counter is decremented, and the done flag is reset. If the alarm is pending it is cancelled,
+
+## Related calls
+
+**[GN\_Aab](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-aab)**, allocate alarm block <br />**[GN\_Alp](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-alp)**, process an expired alarm (internal OZ usage) <br />**[GN\_Fab](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-fab)**, free alarm block <br />**[GN\_Lab](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-lab)**, link an alarm block into the alarm chain <br />**[OS\_Alm](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-alm)**, alarm manipulation (internal OZ usage)

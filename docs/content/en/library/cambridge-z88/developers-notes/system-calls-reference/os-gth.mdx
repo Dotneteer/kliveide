@@ -1,0 +1,41 @@
+---
+description: "This call specifies a code area to be called followed by a reason code (the low byte address). When using this call, IX is the handle. Those values are remembered by calling OS_Vth with the..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7962694 (version 4) by scripts/import-z88-wiki.cjs */}
+
+# OS_Gth, Allocate tri-handle
+
+## Register parameters
+
+```text
+IN:
+     A = tri-handle subtype
+           TH_FILT ($F0), allocate filter handle
+           TH_WMG ($F1), allocate wildcard manager handle
+           TH_ALM ($F2), allocate alarm handle
+     B = Bank where code is to be called
+     H = High byte of adress (Low byte is given by the reason code)
+     L = Segment where to bind bank
+
+OUT, if call successful:
+     Fc = 0
+     IX = tri-handle
+OUT, if call failed:
+     Fc = 1
+          A = RC_ROOM, failed to allocate tri-handle
+
+Registers changed after return:
+     ..BCDEHL/..IY same
+     AF....../IX.. different
+```
+
+## Notes
+
+Internal operating system usage.
+
+This call specifies a code area to be called followed by a reason code (the low byte address). When using this call, IX is the handle. Those values are remembered by calling [**OS\_Vth**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-vth) with the correct handle (IX) and the correct subtype (A).
+
+## Related calls
+
+[**OS\_Vth**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-vth), verify tri-handle <br />**[OS\_Fth](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fth)**, free tri-handle

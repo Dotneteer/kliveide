@@ -1,0 +1,49 @@
+---
+description: "The wildcard string must be explicit. Eg. to match \"L\" in :RAM.0 you will need \":RAM.0/L\". If necessary use GN_Fex to expand the non-explicit wildcard string before calling GN_Opw. The full path..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8618147 (version 5) by scripts/import-z88-wiki.cjs */}
+
+# GN_Opw, Open wildcard handler
+
+## Register parameters
+
+```text
+IN:
+     BHL = pointer to wildcard string
+     HL = 0, 1, 2; not allowed
+     (B = 0, HL is local when HL > 255)
+
+     A = wildcard file information specifier
+          A0 = 0, forward scan, A returned before A/B
+          A0 = 1, backward scan, A/B returned before A
+          A1 = 0, do not return full path on each match
+          A1 = 1, return full path on each match
+          A2->A7 should all be reset
+
+OUT, if call successful:
+     Fc = 0
+     IX = wildcard handle for this wildcard string
+
+OUT, if call failed:
+     Fc = 1
+     A = error code:
+          RC_ROOM ($07), insufficient memory
+          RC_IVF ($17), invalid wildcard string
+
+Registers changed after return:
+     ..BCDEHL/..IY same
+     AF....../IX.. different
+```
+
+## Notes
+
+The wildcard string must be explicit. Eg. to match "L\*" in :RAM.0 you will need ":RAM.0/L\*". If necessary use **[GN\_Fex](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-fex)** to expand the non-explicit wildcard string before calling **[GN\_Opw](https://cambridgez88.jira.com/wiki/pages/viewpage.action?pageId=96403543)**. The full path option means that all filename segment are returned. eg. :ram.0/def/\*.def returns all def files then :ram.0/def, then:ram.0
+
+## Bugs
+
+**OZ V2.2 - OZ V4.7**: If HL addresses segment 2 then this call will fail (B=0). Further, using segment 3 will return no matches with **[GN\_Wfn](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-wfn)** (fetching matches of **[GN\_Opw](https://cambridgez88.jira.com/wiki/pages/viewpage.action?pageId=96403543)** wildcard search specifier).<br />**OZ V5.0**: Local address segment 2+3 bug has been fixed (B = 0). Application code may now use **GN\_Opw** + **GN\_Wfn** in full 64K local address space successfully.
+
+## Related calls
+
+**[GN\_Esa](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-esa)**, read & write to filename segments <br />**[GN\_Fcm](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-fcm)**, compress a filename <br />**[GN\_Fex](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-fex)**, expand a filename <br />**[GN\_Pfs](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-pfs)**, parse filename segment <br />**[GN\_Prs](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-prs)**, parse filename <br />**[GN\_Wcl](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-wcl)**, close wildcard handle <br />**[GN\_Wfn](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-wfn)**, fetch next match for wildcard string (handle) <br />**[GN\_Wsm](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-wsm)**, match filename segment to wildcard string

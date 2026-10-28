@@ -1,0 +1,30 @@
+---
+description: "Internal operating system usage. If unable to start, the stack remains at constant level."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7471412 (version 5) by scripts/import-z88-wiki.cjs */}
+
+# OS_Ent, Enter an application
+
+## Register parameters
+
+```text
+IN:
+     IX = application handle returned from a previous OS_Poll call.
+     C = dynamic process ID
+     BHL = B <> 0, start instantiation of HL process handle returned by OS_Stk
+     B = 0, start new process (application)
+
+OUT, if call failed:
+     Fc = 1
+          A = RC_ROOM, no room to start application
+          A = RC_HAND, bad handle
+```
+
+## Notes
+
+Internal operating system usage. If unable to start, the stack remains at constant level.
+
+## Related system calls
+
+**[OS\_Poll](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-poll)**, poll for an application <br />**[DC\_Pol](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-pol)**, poll for card usage <br />**[OS\_Stk](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-stk)**, stack the current process (application) <br />**[OS\_Exit](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-exit)**, exit an application <br />**[OS\_Bye](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-bye)**, exit application <br />**[DC\_Bye](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-bye)**, exiting current application <br />**[OS\_Use](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-use)**, process card usage <br />**[DC\_Ent](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-ent)**, enter new application <br />**[DC\_Nam](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-nam)**, name current application

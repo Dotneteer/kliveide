@@ -1,0 +1,32 @@
+---
+description: "The first EPR_DIR call will return the first file name, if available. Subsequent calls will return the next filenames in chronological order (as the files were stored on EPROM). It is necessary to..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7471494 (version 3) by scripts/import-z88-wiki.cjs */}
+
+# EP_DIR ($0F) - Fetch filename from Eprom in slot 3
+
+## Register parameters
+
+```text
+IN:    A = EP_DIR
+     BHL = pointer to store returned filename (B=0 means local pointer).
+
+OUT: Fc = 0:
+          Filename returned at (HL), null-terminated.
+     Fc = 1:
+          A = RC_EOF ($09), no more filenames on File EPROM.
+          A = RC_FAIL ($16), File EPROM not available.
+
+Registers changed after return:
+  ..BCDEHL/IXIY same 
+  AF....../.... different
+```
+
+## Notes
+
+The first EPR\_DIR call will return the first file name, if available. Subsequent calls will return the next filenames in chronological order (as the files were stored on EPROM). It is necessary to read all file names to the end, if you want to re-read the filenames from start at a later time. The buffer to receive the filenames from EPR\_DIR must be sufficiently large, e.g. 128 bytes.
+
+The FILER uses this system call to display all available filenames on EPROM.
+
+Filenames never contains RAM device references, but always reflect the complete path from the filing system (when blown to EPROM). Old 'deleted' files are not reflected in the list of filenames. This call also works with sub file areas (a file area available on an application card in slot 3 - implemented in OZ V4.2 and newer).

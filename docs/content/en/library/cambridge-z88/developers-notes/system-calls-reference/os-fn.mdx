@@ -1,0 +1,101 @@
+---
+description: "Internal operating system usage. This call is used to allocate all I/O type handles. The handle type and structure is documented in handle.def file."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7962674 (version 25) by scripts/import-z88-wiki.cjs */}
+
+# OS_Fn, Handle functions
+
+## Register parameters
+
+```text
+IN:
+     A = reason code
+     Other register parameters depend on reason code
+OUT:
+     Depends on reason code, see below.
+```
+
+## Notes
+
+Internal operating system usage. This call is used to allocate all I/O type handles. The handle type and structure is documented in handle.def file.
+
+```text
+IN:  A = FN_AH ($01)
+	 B = handle type
+     B = 0, returns the first free handle, does not allocate it properly
+
+OUT, if successful:
+     Fc = 0, IX = handle
+
+OUT, if failed:
+     Fc = 1, A = RC_ROOM
+
+Registers changed after return:
+     ..BCDEHL/..IY same
+     AF....../IX.. different
+```
+
+```text
+IN:  A = FN_VH ($02)
+     B = handle type
+     IX = handle
+
+OUT, if successful:
+     Fc = 0
+
+OUT, if failed
+     Fc = 1, A = RC_ROOM
+
+Registers changed after return:
+     ..BCDEHL/IXIY same
+     AF....../.... different
+```
+
+```text
+IN:  A = FN_FH ($03)
+     B = handle type
+     IX = handle
+
+OUT, if successful:
+     Fc = 0, IX = 0
+
+OUT, if failed:
+     Fc = 1, A = RC_HAND
+
+Registers changed after return:
+     ..BCDEHL/..IY same
+     AF....../IX.. different
+```
+
+```text
+IN:  A = FN_GH ($04)
+     IX = first handle to test, 0 to begin with top handle
+     B = handle type, 0 for any type
+     C = dyn id, 0 for any dyn id
+
+OUT, if successful:
+     Fc = 0, IX = handle
+
+OUT, if failed:
+     Fc = 1, A = RC_EOF
+
+Registers changed after return:
+     ..BCDEHL/..IY same
+     AF....../IX.. different
+```
+
+```text
+IN:  A = FN_CH ($05)
+	 B = old type
+	 C = new type
+     IX = handle
+OUT, if successful:
+     Fc = 0, IX = same handle
+OUT, if failed:
+     Fc = 1, A = RC_Hand (old type wrong)
+
+Registers changed after return:
+     A.BCDEHL/IXIY same
+     .F....../.... different
+```

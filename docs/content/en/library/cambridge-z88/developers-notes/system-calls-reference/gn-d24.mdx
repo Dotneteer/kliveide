@@ -1,0 +1,33 @@
+---
+description: "GN_D16, 16bit unsigned division GN_Gdn, convert an ASCII string to a binary number GN_M16, 16bit unsigned multiplication GN_M24, 24bit unsigned multiplication GN_Pdn, write number as decimal ASCII..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8618067 (version 4) by scripts/import-z88-wiki.cjs */}
+
+# GN_D24, 24bit unsigned division
+
+## Register parameters
+
+```text
+IN:
+     BHL = dividend
+     CDE = divisor
+
+OUT, if call successful:
+     Fc = 0
+     BHL = quotient
+     CDE = remainder
+
+OUT, if call failed:
+     Fc = 1
+     A = error code:
+          RC_FAIL ($16), division by zero attempted)
+
+Registers changed after return:
+     ......../IXIY same
+     AFBCDEHL/.... different
+```
+
+## Related calls
+
+**[GN\_D16](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-d16)**, 16bit unsigned division <br />**[GN\_Gdn](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-gdn)**, convert an ASCII string to a binary number <br />**[GN\_M16](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-m16)**, 16bit unsigned multiplication <br />**[GN\_M24](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-m24)**, 24bit unsigned multiplication <br />**[GN\_Pdn](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-pdn)**, write number as decimal ASCII string

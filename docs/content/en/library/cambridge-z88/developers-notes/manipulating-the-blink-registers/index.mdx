@@ -1,0 +1,50 @@
+---
+description: "It is good programming practice to use the operating system calls provided, rather than trying to manipulate the hardware directly. This avoids compatibility problems with future releases and..."
+asIndexPage: true
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/3112997 (version 6) by scripts/import-z88-wiki.cjs */}
+
+# Manipulating the Blink Registers
+
+It is good programming practice to use the operating system calls provided, rather than trying to manipulate the hardware directly. This avoids compatibility problems with future releases and leaving the operating system in an unstable state. We are therefore NOT encouraging the reader to 'poke to the screen' or 'disable the operating system!' We will encourage you to use these good programming practise and attempt to give as full a description of the hardware that exists as we understand it.
+
+## Overview of the BLINK registers
+
+The following table lists all the registers in the BLINK chip, which are accessed through the Z80 I/O ports. Not all of the registers are useful to programmers, but they are all included for completeness. Some are described in more detail later in this section.
+
+The hardware registers have only one function. They can either be written to, or read from, (but not both). With this constraint it would have been possible to lose track of register contents. To get around this potential problem, the operating system duplicates these values by using soft copies of that can always be read, to check out the contents of the hardware registers. Addresses $0400 to $04FF are used to store the 'soft copies' of the values in the BLINK registers, with the low byte of the address being taken from the address of the I/O port. Operating system always write to the soft copy of a register before writing to the hardware register itself to ensure that the duplicate entry is valid. Reasons are explained below.
+
+```text
+I/O port    WRITE                   READ
+$70         PB0, pixel base reg.0   -
+$71         PB1, pixel base reg.1   -
+$72         PB2, pixel base reg.2   -
+$73         PB3, pixel base reg.3   -
+$74         SBR, screen base reg.   -
+
+$B0         COM, command register   -
+$B1         INT, mask & control     STA, interrupt status
+$B2         -                       KBD, keyboard
+$B3         EPR, EPROM programming  -
+$B4         TACK, RTC ack.          -
+$B5         TMK, RTC int. mask      TSTA, RTC int. status
+$B6         ACK, main int. mask     -
+
+$D0         SR0, segment reg. 0     TIM0, RTC 5ms counter
+$D1         SR1, segment reg. 1     TIM1, RTC seconds counter (6 bits)
+$D2         SR2, segment reg. 2     TIM2, RTC minutes counter
+$D3         SR3, segment reg. 3     TIM3, RTC minutes/256 counter
+$D4         -                       TIM4, RTC minutes/64K counter (5 bits)
+
+$E0         -                       RXD, UART receive data register
+$E1         -                       RXE, extended receiver data
+$E2         RXC, receiver control   -
+$E3         TXD, transmit data      -
+$E4         TXC, transmit control   -
+$E5         UMK, UART int. mask     UIT, UART int. status
+$E6         UAK, UART int. mask     -
+Note :
+```
+
+*RTC* Real Time Clock<br />*UART* Universal Asynchronous Receiver Transmitter<br />*INT* Interrupt<br />*ACK* Acknowledge

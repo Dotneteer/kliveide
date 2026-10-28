@@ -1,0 +1,39 @@
+---
+description: "This gives the CLI a string to execute. It is used by BASIC's CLI command and by the Alarm popdown. Via this call all the CLI facilities can be accessed, though often it will be necessary to use..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7471318 (version 12) by scripts/import-z88-wiki.cjs */}
+
+# DC_Icl, Invoke new CLI
+
+## Register parameters
+
+```text
+IN:
+   BHL = null terminated CLI string, B = 0 local
+     C = length of string
+    IX = input stream if BHL=0
+
+OUT:
+   Fc = 0, successful
+   Fc = 1, A = RC_ROOM ($07) if no memory or no free handle.
+		   A = RC_FAIL ($16) if stream input is :INP
+
+Registers affected after return:
+     ..BCDEHL/IXIY same
+     AF....../.... different
+```
+
+## Notes
+
+This gives the CLI a string to execute. It is used by BASIC's \*CLI command and by the Alarm popdown. Via this call all the CLI facilities can be accessed, though often it will be necessary to use the call to execute a file containing a list of CLI commands.
+
+## Bugs
+
+- Does not work when HL string is in segment 2 (fixed since OZ 5.0)
+- Does not handle B = 0 as local address for segment 2 and 3 (fixed since OZ 5.0)
+- Returns no error when IX stream is :INP (fixed since OZ 5.0)
+
+## Related calls
+
+**[DC\_In](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-in)**, Read from CLI<br />**[DC\_Out](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-out)**, Write to CLI<br />**[DC\_Prt](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-prt)**, Print to CLI<br />**[DC\_Xin](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-xin)**, Examine CLI input<br />**[DC\_Rbd](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-rbd)**, Rebind streams<br />**[DC\_Gen](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-gen)**, screen driver SOH call<br />**[OS\_Cli](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-cli)**, CLI interface

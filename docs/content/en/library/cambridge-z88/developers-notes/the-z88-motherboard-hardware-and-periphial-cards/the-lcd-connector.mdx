@@ -1,0 +1,31 @@
+---
+description: "The most common LCD module is the DMF690N produced by OPTREX. Some previous versions exist, with more failure and less contrast. This unit has its own PCB. The LCD panel is a dot matrix of 64064..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/3113067 (version 3) by scripts/import-z88-wiki.cjs */}
+
+# The LCD connector
+
+The most common LCD module is the DMF690N produced by OPTREX. Some previous versions exist, with more failure and less contrast. This unit has its own PCB. The LCD panel is a dot matrix of 640\*64 pixels, the NRD7482. It is driven by nine CMS chips. One SED1610 : a 86 lines driver and eight SED1600 : 80 rows dirvers. Another IC is devoted to voltage generation. The module is connected by a special ribbon with 14 links on SK5.
+
+<strong>*LCD Ribbon signals:*</strong> <br />14 is the left one, 1 is on the right in top view.
+
+```text
+Pin     Symbol  Level   Function
+1       VDD     -       Base supply (0V)
+2       VSS     -       Power supply for Logic
+3       VLCD    -       Power supply for LCD driving
+4       LP      H>L     Date Latch signal
+5       FR      H/L     Alternate signal for LCD driving
+6       YDIS    L       Display off signal
+7       NC      -       No connection
+8       DIN     H       Frame signal
+9       XSCL    H>L     Clock signal for shifting serial data
+10      NC      -       No connection
+11      D0      H/L     Display data
+12      D1      H/L     Display data
+13      D2      H/L     Display data
+14      D3      H/L     Display data
+```
+
+All of these signals are directly managed by the blink. Refer to [The Screen Files](/en/library/cambridge-z88/developers-notes/the-screen-files) section for more informations.

@@ -1,0 +1,35 @@
+---
+description: "A badly formed block is likely to crash the machine. The routine does not check the vality of the alarm block."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8618129 (version 4) by scripts/import-z88-wiki.cjs */}
+
+# GN_Lab, Link an alarm block into the alarm chain
+
+## Register parameters
+
+```text
+ IN:
+     BHL = pointer to alarm block (to be linked). 
+     Must have been previously allocated by GN_Aab.
+
+OUT, if call successful:
+     Fc = 0
+
+OUT, if call failed:
+     Fc = 1, time/date already passed
+     A = error code:
+          RC_BAD ($04), bad parameters
+
+Registers changed after return:
+     ..BCDEHL/IXIY same
+     AF....../.... different
+```
+
+## Notes
+
+A badly formed block is likely to crash the machine. The routine does not check the vality of the alarm block.
+
+## Related calls
+
+**[GN\_Aab](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-aab)**, allocate alarm block <br />**[GN\_Alp](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-alp)**, process an expired alarm (internal OZ usage) <br />**[GN\_Fab](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-fab)**, free alarm block <br />**[GN\_Uab](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-uab)**, unlink an alarm block from the alarm chain <br />**[OS\_Alm](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-alm)**, alarm manipulation (internal OZ usage)

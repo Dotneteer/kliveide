@@ -1,0 +1,33 @@
+---
+description: "Internal operating system usage. Internal alarm manipulation."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8618057 (version 4) by scripts/import-z88-wiki.cjs */}
+
+# GN_Alp, Process an expired alarm
+
+## Register parameters
+
+```text
+IN:  IX = Alarm handle of alarm just expired.
+
+OUT: -
+```
+
+## Notes
+
+Internal operating system usage. Internal alarm manipulation.
+
+This routine will carry out the following:
+
+1. Send a flashing alarm symbol to the OZ screen area.
+
+2. Send one or other of the ding-dongs if needed.
+
+3. Call the CLI if required.
+
+4. Re-submit the alarm if required.
+
+## Related calls
+
+**[GN\_Aab](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-aab)**, allocate alarm block <br />**[GN\_Fab](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-fab)**, free alarm block <br />**[GN\_Lab](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-lab)**, link an alarm block into the alarm chain <br />**[GN\_Uab](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-uab)**, unlink an alarm block from the alarm chain <br />**[OS\_Alm](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-alm)**, alarm manipulation (internal OZ usage)

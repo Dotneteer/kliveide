@@ -1,0 +1,63 @@
+---
+description: "To write a segment a valid filename must be placed in the buffer pointed to by DE and the replacement segment is point to by HL. If the new segment is an extension then the first three characters..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8618081 (version 3) by scripts/import-z88-wiki.cjs */}
+
+# GN_Esa, Read & write to filename segments
+
+## Register parameters
+
+```text
+IN:
+     A = manipulator command
+          A7:  1 = write, 0 read
+          A0:  1 = extension, 0 = name
+     HL/DE = filename and buffer pointers
+
+     A7 = 0 (reading): HL = filename, DE = buffer
+     A7 = 1 (writing): HL = new segment, DE = buffer
+
+     B = segment number (+/- 64)
+     Positive indexes start at the device name (B=0). Negative indexes start
+     at the filename (B=255,-1).
+
+     C = Limit of buffer space to use (only relevant for writing). C should
+     not be zero.
+
+A7 = 0 (reading):OUT, if call successful:
+     Fc = 0
+OUT, if call failed:
+     Fc = 1
+     A = error code:
+          RC_IVF ($17), bad filename
+
+Registers changed after return:
+     ..BCDEHL/IXIY same
+     AF....../.... different
+
+A7 = 1 (writing):OUT, if call successful:
+     Fc = 0
+     B = number of filename segments returned
+     C = number of characters returned
+     DE = indexes terminating null of filename
+
+OUT, if call failed:
+     Fc = 1
+
+Registers changed after return:
+     ......HL/IXIY same
+     AFBCDE../.... different
+```
+
+## Notes
+
+To write a segment a valid filename must be placed in the buffer pointed to by DE and the replacement segment is point to by HL. If the new segment is an extension then the first three characters are used.
+
+## Bugs
+
+Unreliable with small filenames.
+
+## Related calls
+
+**[GN\_Fcm](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-fcm)**, compress a filename <br />**[GN\_Fex](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-fex)**, expand a filename <br />**[GN\_Opw](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-opw)**, Open wildcard handler <br />**[GN\_Pfs](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-pfs)**, parse filename segment <br />**[GN\_Prs](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-prs)**, parse filename <br />**[GN\_Wcl](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-wcl)**, close wildcard handle <br />**[GN\_Wfn](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-wfn)**, fetch next match for wildcard string (handle) <br />**[GN\_Wsm](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-wsm)**, match filename segment to wildcard string

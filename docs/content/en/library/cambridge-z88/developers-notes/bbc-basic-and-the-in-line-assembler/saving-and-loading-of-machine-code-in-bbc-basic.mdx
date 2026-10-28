@@ -1,0 +1,183 @@
+---
+description: "The simplest method of loading a machine code is having it stored in DATA statements as byte opcode sequenses. However, this emplies a lot of work, converting an assembled code into DATA..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/3112976 (version 4) by scripts/import-z88-wiki.cjs */}
+
+# Saving and loading of machine code in BBC BASIC
+
+The simplest method of loading a machine code is having it stored in DATA statements as byte opcode sequenses. However, this emplies a lot of work, converting an assembled code into DATA statements (you could make a BASIC program that generates a simple text file that later could could be typed in by CLI). Another way is simply to have the in-line assembler source included together with the rest of the BBC BASIC program. However, large assembler source tends to use much memory, especially if it is well-commented. It is usually sufficient with small assembler routines.
+
+When you use pre-compiled code ready to execute, you face another obstacle; you must always place the code at the same location. Using DIM will probably not return the same address of allocated memory, so it is needed to move down HIMEM to ensure a static position for your code. If you have the source in-line then it is no problem, since you always can re-compile for a specifically allocated memory area.
+
+The two BASIC procedures below implements a simple interface to both load and save machine code in binary files. Both procedures use a small machine code routine to save/load the code in BASIC's memory. To ensure compact BASIC procedures, the machine code have been put into DATA statements, placed inside the procedures. The mnemonic assembler source are found below the procedures. Both procedures locate the machine code routine at the bottom of the stack, beginning at $1800. This area is not touched by BBC BASIC and is therefore safe. However, when BBC BASIC has been pre-empted the bottom of the stack might have changed. Please note that both routines null-terminate the filename strings.
+
+```text
+65515 DEF PROC_lbytes(f$,addr%) 
+65516 LOCAL b%,i% 
+65517 f$=f$+CHR$0 
+65518 RESTORE 65520: FOR i%=0 TO 66: READ b%: ?(&1800+i%)=b%: NEXT i% 
+65519 CALL &1800,f$,addr% 
+65520 DATA &21,0,0,&39,&ED,&7B,&FE,&1F,&E5,&CD,&0F,&18,&E1,&F9,&C9 
+65521 DATA &DD,&E5,&FD,&E1,&FD,&6E,2,&FD,&66,3,&23,&23,&5E,&23,&56,&62 
+65522 DATA &6B,1,2,0,&3E,1,&E7,9,&60,&38,&15,&FD,&6E,5,&FD,&66,6 
+65523 DATA &5E,&23,&56,&21,0,0,1,&FF,&FF,&E7,&45,&E7,9,&62,&C9,&E7,9,&4A,&C9 
+65524 ENDPROC
+
+65525 DEF PROC_sbytes(f$,addr%,length%) 
+65526 LOCAL b%,i% 
+65527 f$=f$+CHR$0 
+65528 RESTORE 65530: FOR i%=0 TO 73: READ b%: ?(&1800+i%)=b%: NEXT i% 
+65529 CALL &1800,f$,addr%,length% 
+65530 DATA &21,0,0,&39,&ED,&7B,&FE,&1F,&E5,&CD,&0F,&18,&E1,&F9,&C9 
+65531 DATA &DD,&E5,&FD,&E1,&FD,&6E,2,&FD,&66,3,&23,&23,&5E,&23,&56,&62 
+65532 DATA &6B,1,2,0,&3E,2,&E7,9,&60,&38,&1C,&FD,&6E,5,&FD,&66,6 
+65533 DATA &5E,&23,&56,&FD,&6E,8,&FD,&66,9,&4E,&23,&46,&EB,&11,0,0 
+65534 DATA &E7,&45,&E7,9,&62,&C9,&E7,9,&4A,&C9 
+65535 ENDPROC
+```
+
+```text
+MODULE Lbytes 
+ 
+
+include "fileio.def"                ; standard file I/O definitions
+include "error.def"                 ; error code definitions
+
+ORG $1800                           ; subroutine resided at $1800
+
+;**************************************************************************** 
+; BBC BASIC 'load bytes' machine code routine. The routine always loads the 
+; complete file (length), 
+; which is not specified in the CALL parameter list. 
+; 
+;           1st parameter is the string pointer
+;           2nd parameter is the start address integer 
+; 
+; IN: IX = pointer to BASIC parameter block: 
+;           (IX+0)      number of parameters:               2
+;           (IX+1)      type of 1st parameter:              129 (mov. string)
+;           (IX+2,3)    address of movable string:          xx
+;           (IX+4)      type of 2nd parameter:              4 (32bit integer)
+;           (IX+5,6)    address of 2nd parameter:           xx
+;           The movable string parameter block:
+;           (xx+0)      current length
+;           (xx+1)      max. length
+;           (xx+2,3)    start address of string
+;**************************************************************************** 
+.InitLbytes ld   hl,0
+            add  hl,sp              ; get current BASIC stack pointer
+            ld   sp,($1FFE)         ; install safe stack pointer
+            push hl                 ; preserve BASIC stack pointer
+            call Lbytes
+            pop  hl
+            ld   sp,hl              ; restore BASIC stack
+            ret                     ; return to BASIC interpreter
+
+.Lbytes     push ix
+            pop  iy                 ; iy points at CALL parameter block
+            ld   l,(iy+2)
+            ld   h,(iy+3)           ; get pointer to moveable string par. block
+            inc  hl
+            inc  hl                 ; point at string start address pointer
+            ld   e,(hl)
+            inc  hl
+            ld   d,(hl)
+
+            ld   h,d                ; HL & DE = pointer to start of filename
+            ld   l,e
+            ld   bc,2               ; local pointer, C = 2 byte scratch buffer
+            ld   a, OP_IN
+            oz   GN_Opf
+            jr   c, file_err        ; Ups, file couldn't be opened
+
+            ld   l,(iy+5)           ; IX = file handle
+            ld   h,(iy+6)
+            ld   e,(hl)
+            inc  hl
+            ld   d,(hl)             ; start address to load machine code
+            ld   hl,0
+            ld   bc, $FFFF          ; max. file length (probably much snaller!)
+            oz   OS_Mv              ; load file image at (DE) onwards...
+            oz   GN_Cl              ; close file
+            ret
+
+.file_err   oz   GN_Err             ; display error box...
+            ret
+```
+
+```text
+MODULE Sbytes 
+ 
+
+include "fileio.def"                ; standard file I/O definitions
+include "error.def"                 ; error code definitions
+
+ORG $1800                           ; subroutine resided at $1800
+
+;**************************************************************************** 
+; BBC BASIC 'save bytes' machine code routine. 
+;           1st parameter is the string pointer
+;           2nd parameter is the start address integer
+;           3rd parameter is length of memory block
+; 
+; IN: IX = pointer to BASIC parameter block: 
+;           (IX+0)      number of parameters:               2
+;           (IX+1)      type of 1st parameter:              129 (mov. string)
+;           (IX+2,3)    address of movable string:          xx
+;           (IX+4)      type of 2nd parameter:              4 (32bit integer)
+;           (IX+5,6)    address of 2nd parameter:           xx
+;           (IX+7)      type of 3rd parameter:              4 (32bit integer)
+;           (IX+8,9)    address of 3rd parameter:           xx
+;
+;           The movable string parameter block:
+;           (xx+0)      current length
+;           (xx+1)      max. length
+;           (xx+2,3)    start address of string
+;
+;**************************************************************************** 
+.InitSbytes ld   hl,0
+            add  hl,sp              ; get current BASIC stack pointer
+            ld   sp,($1FFE)         ; install safe stack pointer
+            push hl                 ; preserve BASIC stack pointer
+            call Sbytes
+            pop  hl
+            ld   sp,hl              ; restore BASIC stack
+            ret                     ; return to BASIC interpreter
+
+.Sbytes     push ix
+            pop  iy                 ; iy points at CALL parameter block
+            ld   l,(iy+2)
+            ld   h,(iy+3)           ; get pointer to moveable string par. block
+            inc  hl
+            inc  hl                 ; point at string start address pointer
+            ld   e,(hl)
+            inc  hl
+            ld   d,(hl)
+
+            ld   h,d                ; HL & DE = pointer to start of filename
+            ld   l,e
+            ld   bc,2               ; local pointer, C = 2 byte scratch buffer
+            ld   a, OP_OUT
+            oz   GN_Opf
+            jr   c, file_err        ; Ups, file couldn't be created
+
+            ld   l,(iy+5)           ; IX = file handle
+            ld   h,(iy+6)           ; HL = pointer to pointer to start address
+            ld   e,(hl)
+            inc  hl
+            ld   d,(hl)             ; DE = start addr. of memory block to save
+            ld   l,(iy+8)
+            ld   h,(iy+9)           ; HL = pointer to pointer to length
+            ld   c,(hl)
+            inc  hl
+            ld   b,(hl)             ; BC = length of memory block to save
+            ex   de,hl
+            ld   de,0
+            oz   OS_Mv              ; save memory block from (HL) onwards...
+            oz   GN_Cl              ; close file
+            ret
+
+.file_err   oz   GN_Err             ; display error box...
+            ret
+```

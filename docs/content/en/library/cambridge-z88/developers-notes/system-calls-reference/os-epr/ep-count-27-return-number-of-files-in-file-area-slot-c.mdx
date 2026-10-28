@@ -1,0 +1,33 @@
+---
+description: "Count total of active and deleted files on File Eprom in slot C (excl. NULL file on Intel Flash card)."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7471532 (version 2) by scripts/import-z88-wiki.cjs */}
+
+# EP_Count ($27) - Return number of files in File Area slot C
+
+## Register Parameters
+
+```text
+IN:
+   A = EP_COUNT
+   C = slot number containing File Eprom Area
+
+OUT:
+   Fc = 0, File Eprom available
+        HL = total of active (visible) files
+        DE = total of (marked as) deleted files
+        (HL + DE are total files in the file area)
+
+   Fc = 1, File Eprom was not found at slot C
+
+Registers changed after return:
+   ..BC..../IXIY same
+   AF..DEHL/.... different
+```
+
+## Notes
+
+Count total of active and deleted files on File Eprom in slot C (excl. NULL file on Intel Flash card).
+
+Due to a strange side effect with Intel Flash Chips, a special "NULL" file is saved as the first file to the Card. These bytes occupies the first bytes that otherwise could be interpreted as a random boot command for the Intel chip - the behaviour is an Intel chip suddenly gone into command mode for no particular reason. The NULL file prevents this behaviour by saving a file that avoids any kind of boot commands which sends the chip into command mode when the card has been inserted into a Z88 slot. The NULL file is not part of the total active count.

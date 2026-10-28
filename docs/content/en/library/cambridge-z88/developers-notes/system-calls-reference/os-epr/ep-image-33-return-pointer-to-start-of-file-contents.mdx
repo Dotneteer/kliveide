@@ -1,0 +1,31 @@
+---
+description: "Return pointer to start of file image of File Entry at BHL (B=00h-FFh embedded slot mask, HL=0000h-3FFFh bank offset)."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7471546 (version 2) by scripts/import-z88-wiki.cjs */}
+
+# EP_Image ($33) - Return pointer to start of file contents
+
+## Register Parameters
+
+```text
+IN:
+     A = EP_IMAGE
+   BHL = pointer to Eprom File Entry in card at slot (B contains embedded slot mask)
+
+OUT:
+   Fc = 0, File Eprom available, File Entry available
+        BHL = pointer to start of file image
+
+   Fc = 1,
+        A = RC_Onf
+        File Eprom was not found in slot, or File Entry not available
+
+Registers changed after return:
+   ...CDE../IXIY same
+   AFB...HL/.... different
+```
+
+## Notes
+
+Return pointer to start of file image of File Entry at BHL (B=00h-FFh embedded slot mask, HL=0000h-3FFFh bank offset).

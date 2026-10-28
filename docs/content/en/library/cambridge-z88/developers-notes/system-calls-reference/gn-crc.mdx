@@ -1,0 +1,333 @@
+---
+description: "GN_Crc allows to generate a CRC–32 (Cyclic Redundancy Check) for memory area, RAM files and File Entries on File Cards. Various methods are available:"
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/37683211 (version 32) by scripts/import-z88-wiki.cjs */}
+
+# GN_Crc, Get CRC-32 of ressource
+
+GN\_Crc allows to generate a CRC–32 (Cyclic Redundancy Check) for memory area, RAM files and File Entries on File Cards. Various methods are available:
+
+1. Generate CRC–32 of a local memory area (for example a string)
+
+2. Generate CRC–32 of complete RAM file
+
+3. Generate partial CRC–32 of RAM file. This enables the application to process CRC-32 across file entry while other activites are done
+
+4. Generate CRC–32 from a File Entry in a File Area on an Eprom or Flash card
+
+5. Generate partial CRC–32 a File Entry in a File Area on an Eprom or Flash card. Process CRC-32 across file entry while other activites are done
+
+## Register parameters
+
+```text
+OZ GN_Crc - RST 20H, DEFW $7C09
+
+IN:
+    A = CRC_MEMA (0)
+    HL = pointer to buffer (local memory)
+    BC = buffer size
+    DE = 0, Initialize CRC-32 with FFFFFFFFh
+    DE > 0, (local) pointer to initial 4-byte CRC-32
+
+OUT, if call successful:
+     Fc = 0
+     DEBC = CRC-32 result (DE = high-word, BC = low-word)
+OUT, if call failed:
+     Fc = 1
+     A = RC_BAD ($04) - bad argument
+
+Registers changed after return:
+     ......HL/IXIY same
+     AFBCDE../.... different
+```
+
+```text
+OZ GN_Crc - RST 20H, DEFW $7C09
+
+IN:
+    A = CRC_FILE (1)
+    HL = pointer to file buffer (local memory) 
+    BC = buffer size
+    DE = 0, Initialize CRC-32 with FFFFFFFFh
+    DE > 0, (local) pointer to initial 4-byte CRC-32
+    IX = file handle of open file (using GN_Opf)
+
+OUT, if call successful:
+    Fc = 0,
+    DEBC = CRC-32
+
+OUT, if call failed:
+    Fc = 1,
+	A = RC_BAD ($04) - bad argument
+    A = RC_xxx (file & handle related errors)
+
+Registers changed after return:
+    ......HL/IXIY same
+    AFBCDE../.... different
+```
+
+```text
+OZ GN_Crc - RST 20H, DEFW $7C09
+
+IN:
+    A = CRC_PARTFILEBYTE (2)
+    HL = max bytes to read for this partial scan, or -1 for rest of file
+    DEBC = Initial CRC-32 or input from result of previous partial CRC-32 scan
+    IX = file handle of open file (using GN_Opf)
+
+OUT, if call successful:
+    Fc = 0
+    DEBC = partial CRC-32 result (DE = high-word, BC = low-word), to be used for next scan iteration 
+
+    Fc = 1, A _RC_Eof
+    DEBC = final CRC-32 result (DE = high-word, BC = low-word) 
+
+OUT, if call failed:
+    Fc = 1,
+	A = RC_BAD ($04) - bad argument
+    A = RC_xxx (file & handle related errors)
+
+Registers changed after return:
+    ......HL/IXIY same
+    AFBCDE../.... different
+```
+
+```text
+OZ GN_Crc - RST 20H, DEFW $7C09
+
+IN:
+    A = CRC_PARTFILEBUF (3)
+    HL = pointer to file buffer (local memory), 
+    BC = buffer size 
+    DE = 0, Initialize CRC-32 with FFFFFFFFh
+    DE > 0, (local) pointer to 4-byte CRC-32 (initial CRC-32 or input from result of previous partial scan)
+    IX = file handle of open file (using GN_Opf)
+
+OUT, if call successful:
+    Fc = 0
+    DEBC = partial CRC-32 result (DE = high-word, BC = low-word), to be used for next scan iteration
+
+    Fc = 1, A _RC_Eof
+    DEBC = final CRC-32 result (DE = high-word, BC = low-word) 
+
+OUT, if call failed:
+    Fc = 1,
+	A = RC_BAD ($04) - bad argument
+    A = RC_xxx (file & handle related errors)
+
+Registers changed after return:
+    ......HL/IXIY same
+    AFBCDE../.... different
+```
+
+```text
+OZ GN_Crc - RST 20H, DEFW $7C09
+
+IN:
+    A = CRC_EPFILE (4)
+    BHL = pointer to file entry
+    DE = 0, Initialize CRC-32 with FFFFFFFFh
+    DE > 0, (local) pointer to initial 4-byte CRC-32
+
+OUT, if call successful:
+    Fc = 0,
+    DEBC = CRC-32
+OUT, if call failed:
+    Fc = 1,
+	A = RC_BAD ($04) - bad argument
+    A = RC_xxx (file card related errors)
+
+ Registers changed after return:
+    ......HL/IXIY same
+    AFBCDE../.... different
+```
+
+```text
+OZ GN_Crc - RST 20H, DEFW $7C09
+
+IN:
+    A = CRC_PARTEPFILE (5)
+
+    Initial call:
+    BHL = pointer to File Entry
+    DE = max. size of bytes to read per partial scan
+    IX = pointer to local memory (allocated in application/popdown workspace, 12 bytes):
+    (IX + 0,3)   : Initial CRC-32 or input from result of previous partial CRC-32 scan
+    (IX + 4,6)   : Reserved for 24bit file pointer (initialized after first call)
+    (IX + 7,9)   : Reserved for size of file entry (initialized after first call)
+    (IX + 10,11) : Reserved for max. bytes to read per partial scan
+
+    Subsequent calls:
+    BHL = 0 (this is returned automatically after initial call to this method)
+    IX = pointer to updated local memory of CRC-32 variables (12 bytes):
+
+ OUT:
+    BHL = 0, always
+
+    Fc = 0
+    (IX + 0,3)   : partial CRC-32 result, low-byte, high-byte order
+    (IX + 4,6)   : 24bit file pointer updated for next partial scan
+    (IX + 7,9)   : Remaining file size updated for next partial scan
+    (IX + 10,11) : max. bytes to read per partial scan = DE (initial input)
+
+    Fc = 1
+    A = RC_Eof (complete file scanned)
+    (IX + 0,3)   : final CRC-32 result, low-byte, high-byte order;
+
+    Fc = 1
+    A = RC_xxx (System error occurred - file entry corrupt, not found, etc.)
+
+Registers changed on return:
+    ......../IXIY same
+    AFBCDEHL/.... different
+```
+
+## Related calls
+
+None.
+
+## Notes
+
+GN\_Crc was implemented in OZ V4.5. It is used by the integrated EazyLink popdown to validate uploaded file content. FlashStore also uses it to display the checksum of a File Entry to be fetched to RAM. GN\_Crc will be used more in future OZ developments.
+
+If this system call is used in stand-alone applications, it is necessary to validate which OZ version the application is running on:
+
+```text
+include "fileio.def"
+
+      ld   a,FA_PTR
+      ld   ix,ffffh
+      ld   de,0          ; result in DEBC
+      oz   OS_Frm
+      ld   a,44h         ; OZ versions are embedded as hexnibbles in C register.
+      cp   c
+      jr   nc, not_ozv45 ; Check for OZ V4.5 failed (44h-45h gives Fc = 1)
+```
+
+```text
+include "crc32.def"
+      ld   a,CRC_MEMA
+      ld   hl,crctext
+      ld   bc,crctext_end - crctext
+      ld   de,0
+      oz   GN_Crc
+      ; CRC–32 returned is 0x414FA339 (DE = 0x414F, BC = 0xA339)
+
+.crctext       
+      defm "The quick brown fox jumps over the lazy dog"
+.crctext_end
+```
+
+```text
+include "crc32.def"
+include "fileio.def"
+
+DEFC FileBufferSize = 1280
+DEFVARS $2000                          ; "popdown" workspace from 2000H onwards
+        FileBuffer ds.b FileBufferSize ; buffer for file I/O
+ENDDEF
+
+        LD   A, OP_IN
+        LD   BC,128
+        LD   HL,filename               ; pointer to local filename
+        LD   D,H
+        LD   E,L
+        OZ   GN_Opf 
+        JR   C,not_available
+
+        ld   a, CRC_FILE
+        ld   hl,FileBuffer             ; use buffer
+        ld   bc,FileBufferSize             
+        ld   de,0                      ; Use FFFFFFFFh as initial Crc-32
+        oz   GN_Crc                    ; get CRC-32 of Open file (with buffer), returned in DEBC
+        oz   GN_Cl                     ; close file
+```
+
+```text
+include "crc32.def"
+include "fileio.def"
+include "error.def"
+
+        LD   A, OP_IN
+        LD   BC,128
+        LD   HL,filename               ; pointer to local filename
+        LD   D,H
+        LD   E,L
+        OZ   GN_Opf 
+        JR   C,not_available
+
+        ld   a, CRC_PARTFILEBYTE
+        ld   hl,1024                   ; read 1024 bytes at a time from file
+        ld   bc,$ffff
+        ld   d,b
+        ld   e,c                       ; Use FFFFFFFFh as initial Crc-32
+
+.scan_file
+        oz   GN_Crc                    ; get CRC-32 of Open file (no buffer)
+        jr   c,check_eof
+        push bc
+        push de
+        push hl
+
+        call do_task
+
+        pop  hl
+        pop  de
+        pop  bc
+        jr   scan_file
+
+.check_eof
+        oz   GN_Cl                     ; close file
+        cp   Rc_eof
+        ret  z                         ; CRC-32 completed, return DEBC to caller
+        scf                            ; other error occurred - signal Fc = 1, A = RC_xxx
+        ret
+```
+
+```text
+include "crc32.def"
+include "eprom.def"
+
+        ld   c,2               
+        ld   de,epfilename             ; search for filename in filea area of slot 2
+        ld   a, EP_Find
+        oz   OS_Epr                     
+        ret  c                         ; file area not there
+        ret  nz                        ; file entry not found
+
+        ld   a, CRC_EPFILE
+        ld   de,0                      ; Use FFFFFFFFh as initial Crc-32
+        oz   GN_Crc                    ; get CRC-32 of File Entry returned in DEBC
+```
+
+```text
+include "crc32.def"
+include "eprom.def"
+
+DEFVARS $2000                          ; "popdown" workspace from 2000H onwards
+        FE_CRC32VARS ds.b 12 
+ENDDEF
+
+        ld   c,2               
+        ld   de,epfilename             ; search for filename in filea area of slot 2
+        ld   a, EP_Find
+        oz   OS_Epr                     
+        ret  c                         ; file area not there
+        ret  nz                        ; file entry not found
+
+        ld   a, CRC_PARTEPFILE
+        ld   ix, FE_CRC32VARS          ; variable space for partial GN_Crc
+        ld   de,1024                   ; Scan max. 1024 bytes per loop iteration, initial Crc-32 is FFFFFFFFh
+.crc32_fe_loop
+        oz   GN_Crc                    ; get partial CRC-32 of File Entry in BHL (or BHL = 0 for next partial block)
+        jr   c, final_crc32
+        ...
+        call do_task
+        ...
+        jr   crc32_fe_loop
+.final_crc
+        ; CRC-32 is available in (IX+0)
+        call display_crc32
+        ret
+```

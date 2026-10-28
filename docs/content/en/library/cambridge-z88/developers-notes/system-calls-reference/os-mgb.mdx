@@ -1,0 +1,34 @@
+---
+description: "If your application is designed to run in OZ V4.1 or newer, use RST OZ_MGB for faster execution."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7962731 (version 5) by scripts/import-z88-wiki.cjs */}
+
+# OS_Mgb, Get current bank binding in segment
+
+## Register parameters
+
+```text
+IN:
+     C = memory segment specifier (MS_S0, MS_S1, MS_S2 & MS_S3)
+OUT, if call successful:
+     Fc = 0
+     B = bank number currently bound to that segment
+     C = C(in)
+OUT, if call failed:
+     Fc = 1
+     A = error code:
+          RC_ERR ($0F), C was not valid
+
+Registers changed after return:
+     ...CDEHL/IXIY same
+     AFB...../.... different
+```
+
+## Notes
+
+If your application is designed to run in OZ V4.1 or newer, use <strong>`RST OZ_MGB`</strong> for faster execution.
+
+## Related calls
+
+**[OS\_Bix](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-bix)**, Bind in extended address <br />**[OS\_Box](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-box)**, restore bindings after OS\_Bix <br />**[OS\_Fc](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fc)**, select fast code (fast bank switching) <br />**[OS\_Mal](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mal)**, allocate memory <br />**[OS\_Mcl](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mcl)**, close memory (free memory pool) <br />**[OS\_Mfr](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mfr)**, free (previously allocated block) memory <br />**[OS\_Mop](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mop)**, open memory (allocate memory pool) <br />**[OS\_Mpb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mpb)**, set new bank binding in segment<br />**[OZ\_Mgb](/en/library/cambridge-z88/developers-notes/system-calls-reference/oz-mgb)**, get current bank binding in segment<br />**[OZ\_Mpb](/en/library/cambridge-z88/developers-notes/system-calls-reference/oz-mpb)**, set new bank binding in segment

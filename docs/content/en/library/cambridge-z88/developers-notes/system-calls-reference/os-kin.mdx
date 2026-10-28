@@ -1,0 +1,31 @@
+---
+description: "This call returns the key code corresponding to a keyboard input. Qualifiers (SHIFT, DIAMOND and SQUARE) and foreign keyboard mappings are implemented. The operating system MTH is bypassed. Thus..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/120983397 (version 7) by scripts/import-z88-wiki.cjs */}
+
+# OS_Kin, Keyboard input
+
+## Register parameters
+
+```text
+IN:  BC = timeout in centiseconds (-1, no timeout)
+OUT: Fc = 0, success and A = key code
+     Fc = 1, failure and A = RC_TIME, timeout elapsed
+ 
+Registers changed after return:
+     ....DEHL/IXIY same
+     AFBC..../.... different
+```
+
+Notes
+
+Internal operating system usage only.
+
+This call returns the [key code](/en/library/cambridge-z88/developers-notes/internationalization/iso-key-translation-table) corresponding to a keyboard input. Qualifiers (SHIFT, DIAMOND and SQUARE) and foreign keyboard mappings are implemented. The operating system MTH is bypassed. Thus the menu commands, the application swapping are inactive. This call should not be used at application level.
+
+Conversion of key code to ISO character is performed by OS\_Iso API.
+
+## Related calls
+
+**[GN\_Sip](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-sip)**, system input line routine <br />**[OS\_In](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-in)**, read (wait for) character from standard input <br />**[OS\_Pur](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-pur)**, purge keyboard buffer <br />**[OS\_Tin](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-tin)**, read character from standard input, with timeout<br />**[OS\_Xin](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-xin)**, examine input

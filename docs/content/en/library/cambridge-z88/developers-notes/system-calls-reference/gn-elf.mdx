@@ -1,0 +1,46 @@
+---
+description: "This call is the main interface to execute an ELF file. It is used by the Shell application to execute an ELF program (in this case Z80 relocatable code, loaded into any available space of RAM and..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/116359215 (version 12) by scripts/import-z88-wiki.cjs */}
+
+# GN_Elf, Enter ELF program
+
+## Register parameters
+
+```text
+IN:  BHL = pointer to null-terminated filename (B = 0, local)
+	 CDE = pointer to null-terminated arguments string, optional (C = 0, local always and DE < $2000 in OS stack)
+     A   = execution mode (A0=0: execute, A0=1:debug)
+
+OUT: Fc = 0, success
+	 Fc = 1, failure and A = error
+
+Registers affected after return:
+     AFBCDEHL depends on ELF execution
+	 IXIY changed by the call
+```
+
+## Notes
+
+This call is the main interface to execute an ELF file. It is used by the Shell application to execute an ELF program (in this case Z80 relocatable code, loaded into any available space of RAM and executed). Any code can execute an Elf program, from anywhere. Argument string is actually limited to the stack space (C=0 and DE \< $2000).
+
+If the program has no need of arguments, simply let CDE point to a null-terminator (0).
+
+Arguments in the argument string are space separated, this string is null terminated.
+
+For example, using 'rm' command should set up BHL pointing to ":epr.0/bin/rm",0 and CDE to "rm -f filename.ext",0 (C=0 and DE below $2000).
+
+Arguments passing to ELF program is performed by this call. The call push the arguments from right to left according SDCC convention.
+
+```text
+(SP+00) Ret to caller     managed internally by DC_Rte
+(SP+02) Argc              number of arguments including program (file) name
+(SP+04) *Argv[0]          pointer to first argument string, the program name (null-terminated)
+(SP+06) *Argv[1]          pointer to second argument string (first argument for program) (null-terminated)
+...
+```
+
+## Related calls
+
+**[DC\_Elf](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-elf)**, ELF interface<br />**[DC\_Rte](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-rte)**, return from ELF

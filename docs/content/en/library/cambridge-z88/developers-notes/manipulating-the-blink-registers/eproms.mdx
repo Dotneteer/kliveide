@@ -1,0 +1,76 @@
+---
+description: "IN OZ ROM's before V4.2, no convenient system call is provided for blowing individual bytes to EPROM; however, elaborate functionality was added in V4.2 by the Z88 development team. We detail a..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/3113003 (version 3) by scripts/import-z88-wiki.cjs */}
+
+# EPROMs
+
+IN OZ ROM's before V4.2, no convenient system call is provided for blowing individual bytes to EPROM; however, elaborate functionality was added in V4.2 by the Z88 development team. We detail a method for doing so here to illustrate the hardware of EPROM's by directly manipulating the gate array registers.
+
+To write a byte to EPROM, the relevant physical address must be in slot 3, ie. banks $C0 to $FF. The user first sets up the correct programming signals for the type of EPROM concerned. This is done by writing to the BLINK register EPR, addressed by I/O port $B3.
+
+**EPR ($B3)**, EPROM programming register:
+
+```text
+BIT         NAME        FUNCTION
+7           PD1         Two bits representing the length of delay period
+6           PD0
+5           PGMD        State of program pulse during delay period
+4           EOED        State of EOE during delay period
+3           SE3D        State of slot 3 select during delay period
+2           PGMP        State of program pulse during porch period
+1           EOEP        State of EOE during porch period
+0           SE3P        State of slot 3 select during porch period
+```
+
+NOTE: For 32K EPROMs write $48 (@01001000) to EPR and for 128K, 256K EPROMs use $69 (@01101001).
+
+The delay periods are as follows, but note that during overprogramming (when OVERP is set in COM) the period is tripled. The porch period is not exact but is never less than 2.4us.
+
+```text
+PD1         PD0         Period
+0           0           4.88us
+0           1           312.5us
+1           0           2.5ms
+1           1           10ms
+```
+
+To enter EPROM-programming mode, the user must set VPPON and PROGRAM in the COM register, addressed by I/O port $B0, and also switch off the LCD by clearing the LCDON bit. When this is done, programming can be achieved by writing to the relevant address (which obviously needs to be a physical address in slot 3 ie. banks $C0 to $FF) as though it were RAM. However, writing to slot 3 addresses in program mode causes BLINK to take over. BLINK will hold the data and address busses with the appropriate data and then do a porch cycle, followed by a delay cycle and then another porch cycle before returning control to the processor. Once a byte has been programmed, it needs to be verified. This is done by exiting programming mode - clear VPPON and PROGRAM - and reading the byte back to see if it has been successfully blown. No more than 75 attempts should be made to blow any byte, and if it has not been blown by that stage, something is clearly wrong. Note that a byte will usually be successfully blown in one attempt. Once a byte has been successfully programmed, OVERP (in COM) should be set and the byte overprogrammed. Each byte should be overprogrammed the same number of times as it first took to program.
+
+A code fragment to blow a byte in register C to logical address (HL) - assumed to be bound to an EPROM address - is reproduced below. Note that when the Filer writes to the EPROM it does so by blowing blocks of bytes, rather than writing one byte at a time, and so operates a little faster than blowing each byte individually.
+
+```text
+.start      ld   b, 75              ; Max. number of attempts
+            ld   a, $48             ; for 32K EPROMs
+            out  ($B3),a            ; Set EPROM programming signals
+
+.proloop    ld   a, $0E
+            out  ($B0),a            ; Set VPP and PROGRAM bits
+            ld   (hl),c             ; write byte to EPROM (address)
+            ld   a, $04
+            out  ($B0),a            ; Reset VPP and PROGRAM bits
+            ld   a,(hl)
+            cp   c                  ; verify byte
+            jr   z, byteok
+            djnz proloop
+; handle failure to write byte here...
+            ret
+
+.byte       ld   a, 76              ; one more than maximum number of attempts
+            sub  b                  ; same number of times it took to program
+            ld   a,b
+
+.ovploop    ld   a, $2E             ; Reset VPP, PROGRAM
+            out  ($B0),a            ; and OVERPROGRAM
+            ld   (hl),c             ; write byte
+            ld   a, $04
+            out  ($B0),a            ; reset VPP, PROGRAM and OVERPROGRAM
+            djnz ovploop
+
+            ld   a, $05             ; set COM register to
+            out  ($B0),a            ; turn screen back on
+            ret
+```
+
+The **Zprom** application uses the above algorithm in principle, but blows to EPROM in blocks of max. 16K in one go (depending of the user defined range) by using the standard Z80 instruction LDIR.

@@ -1,0 +1,33 @@
+---
+description: "This call converts the key code into an ISO character."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/307036199 (version 5) by scripts/import-z88-wiki.cjs */}
+
+# OS_Iso, key to ISO conversion
+
+## Register parameters
+
+```text
+IN:  A = key code
+
+OUT:  Fc=0, always
+             Fz = 1, converted, A = ISO character
+             Fz = 0, not converted, A unchanged
+
+Registers changed after return:
+     ....DEHL/IXIY same
+     AFBC..../.... different
+```
+
+## Notes
+
+Internal operating system usage only.
+
+This call converts the [key code](/en/library/cambridge-z88/developers-notes/internationalization/iso-key-translation-table) into an [ISO character](/en/library/cambridge-z88/developers-notes/internationalization/iso-character-table).
+
+It is useful following a key code returned by OS\_Kin.
+
+## Related calls
+
+**[OS\_Kin](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-kin)**, keyboard input

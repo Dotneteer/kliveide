@@ -1,0 +1,49 @@
+---
+description: "Will fail if source or destination pointers are in segment 2."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8618166 (version 3) by scripts/import-z88-wiki.cjs */}
+
+# GN_Ptm, Convert (and display) internal time to an ASCII string
+
+## Register parameters
+
+```text
+IN:
+     HL = 0, 1, 2, not allowed
+     HL > 255, source pointer
+     DE = 0, output result to stream IX
+     DE = 1, output result to filter IX
+     DE = 2, not allowed
+     DE > 255, output result at (DE)
+
+     A0 = 1, display leading zeroes
+     A1 = 1, output leading spaces
+     A2 = 1, output trailing spaces
+     A3 = 0, always 0
+     A4 = 1, display centiseconds (only if A5 = 1)
+     A5 = 1, display seconds
+     A6 = 1, military format (ie. no delimiters)
+     A7 = 1, force AM/PM (as opposed to 24 hour format)
+
+OUT, if call successful:
+     Fc = 0
+     DE = points to character after result (if DE(in) > 255)
+
+OUT, if call failed:
+     Fc = 1
+     A = error code:
+          RC_ROOM ($07), there is not enough room to convert time
+
+Registers changed after return:
+     ..BC..HL/IXIY same
+     AF..DE../.... different
+```
+
+## Bugs
+
+Will fail if source or destination pointers are in segment 2.
+
+## Related calls
+
+**[GN\_Gmt](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-gmt)**, get (read) machine time in internal format <br />**[GN\_Gtm](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-gtm)**, convert an ASCII string to a time in internal format <br />**[GN\_Msc](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-msc)**, miscellaneous time operations <br />**[GN\_Pmt](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-pmt)**, put (set) machine time <br />**[GN\_Sdo](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-sdo)**, send date and time to standard output <br />**[OS\_Dly](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-dly)**, delay a given period

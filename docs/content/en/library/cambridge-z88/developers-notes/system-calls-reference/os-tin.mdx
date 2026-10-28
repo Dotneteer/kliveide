@@ -1,0 +1,43 @@
+---
+description: "Application use this when it is convenient to toggle between reading keyboard a short while and do other house keeping tasks."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8617998 (version 4) by scripts/import-z88-wiki.cjs */}
+
+# OS_Tin, Read character from standard input, with timeout
+
+## Register parameters
+
+```text
+IN:
+     BC = timeout in 1/100 seconds
+
+OUT, if call successful:
+     Fc = 0
+     A = character read from standard input
+     BC = time remaining in 1/100 seconds
+
+OUT, if call failed:     Fc = 1
+     A = error code:
+          RC_SUSP ($69), suspension
+          RC_DRAW ($66), application pre-empted and screen corrupted
+          RC_QUIT ($67), KILL request
+          RC_ESC ($01), escape condition detected
+          RC_TIME ($02), call has timed out
+
+Registers changed after return:
+     ....DEHL/IXIY same
+     AFBC..../.... different
+```
+
+## Notes
+
+Application use this when it is convenient to toggle between reading keyboard a short while and do other house keeping tasks.
+
+## Bugs
+
+Crashes OZ while in a popdown with safe workspace more than 32 bytes, and the popdown gets pre-empted (RC\_QUIT).
+
+## Related calls
+
+**[GN\_Sip](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-sip)**, system input line routine <br />**[OS\_In](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-in)**, read (wait for) character from standard input <br />**[OS\_Pur](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-pur)**, purge keyboard buffer <br />**[OS\_Xin](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-xin)**, examine input

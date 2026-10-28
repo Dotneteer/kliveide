@@ -1,0 +1,91 @@
+---
+description: "The Z88 has a single serial port which has to be shared by all applications, so it is important that applications use the system to access the port to avoid interfering with the correct operation..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/2752572 (version 9) by scripts/import-z88-wiki.cjs */}
+
+# The Serial Interface
+
+The Z88 has a single serial port which has to be shared by all applications, so it is important that applications use the system to access the port to avoid interfering with the correct operation of other applications running in the machine. The system runs the serial port using interrupts and buffering, so most of its operation is transparent, but there are certain operations, such as directly controlling the RTS line (required for auto-dialing by some modems), which the system calls do not support and in these cases the hardware is accessed more directly - see the "Hardware" section of these notes. The serial port specification is reproduced here for convenience:
+
+| Function | Details |
+| --- | --- |
+| **Baud rates** | 75, 300, 600, 1200, 2400, 9600, 19200, 38400. Send and receive rates are independent. |
+| **Parity** | None, Odd, Even, Mark, Space. Note the Z88 generates the appropriate parity, and will ignore, but not strip, the parity of incoming data |
+| **Flow** | Hardware handshaking with or without XON/XOFF |
+| **Timeout** | **Output**: 10 minutes is the default value **Input**: Infinite is the default value |
+| **Buffer** | OZ 2.x and 3.x : **Output**: 95 bytes, **Input**: 127 bytes<br />OZ 4.2 - 4.4 : **Output**: 256 bytes, **Input**: 256 bytes<br />OZ 4.5 : **Output**: unbuffered, **Input**: 256 bytes |
+
+## Using the Serial Port
+
+The serial port is accessed by opening the device **:COM.0**, using **[GN\_Opf](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-opf)**, and then using the standard file I/O routines: **[OS\_Gb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-gb)**, **[OS\_Gbt](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-gbt)**, **[OS\_Pb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-pb)**, **[OS\_Pbt](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-pbt)** and **[OS\_Mv](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mv)**. The device should be closed after the operation is complete. For most application this level of access should be sufficient, however, it may be necessary to change the serial port parameters from within an application. This is done by writing new values to the Panel, using the **[OS\_Sp](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-sp)** call, and then issuing a soft reset command to the serial driver. Changing the Panel setting may affect other software in the machine, so should not be undertaken lightly. It would be appropriate to reset the Panel to its original setting after serial port operations are complete. This can be achieved by first reading the Panel settings with **[OS\_Nq](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-nq)**. The "EazyLink" and "PCLINK II" popdowns use this technique. **[OS\_Sp](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-sp)** and **[OS\_Nq](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-nq)** are covered in detail in the "Miscellaneous useful routines" section.
+
+The serial soft reset operation is carried out by opening the **[OS\_Si](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-si)** call. The **[OS\_Si](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-si)** call provides a low level access to the serial port. The call can perform nine different operations depending on the reason code passed to it:
+
+```text
+Reason code    Action
+SI_HRD ($00)   Hard reset the serial port
+SI_SFT ($03)   Soft reset the serial port
+SI_INT ($06)   Interrupt entry point (System use only).
+SI_GBT ($09)   Get byte from serial port
+SI_PBT ($0C)   Put byte to serial port
+SI_ENQ ($0F)   Status enquiry
+SI_FTX ($12)   Flush Tx (transmit) buffer
+SI_FRX ($15)   Flush Rx (receive) buffer
+SI_TMO ($18)   Set timeout
+SI_GX  ($1B)   Get multiple bytes from serial port, using default timeout (OZ 4.5)
+SI_PX  ($1E)   Put multiple bytes to serial port, using default timeout (OZ 4.5)
+SI_GXT ($21)   Get multiple bytes from serial port until terminator using default timeout (OZ 4.5)
+```
+
+SI\_GBT and SI\_PBT are low-level interface for OS\_Gbt and OS\_Pbt API's. SI\_GBT and SI\_PBT are unstable for application level in all OZ ROM releases until V4.4. With OZ V4.4 and later, they can be used by applications directly (no need to open a handle to the serial port). The built-in Imp/Export and EazyLink popdowns now uses this interface.
+
+This operating system call used for low level serial port communication uses the following interface and is mainly used by the operating system:
+
+```text
+RST 20H, DEFB $8D
+
+IN:
+
+   IX = handle returned from GN_Opf of ":COM.0"
+   L = reason code
+   Other register usage depends on L
+ 
+OUT:
+
+   Depends on reason code
+   IX will always be unchanged
+```
+
+The various reason code parameters are described in detail in the [System calls Reference for **OS\_SI**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-si) section.
+
+## Flow Control
+
+Flow control can be controlled either be software or hardware. The hardware handshaking is always active, so if you want to use software exclusively you will need to wire a cable to set the handshaking lines high at all times - ie. pins 5, 8 and 9 together on the Z88 D-connector.
+
+An external device can ask the Z88 to stop sending by either sending an XOFF character or by de-asserting (bringing low) the CTS line. With software flow control, transmission can only stop when the XOFF character has been processed, so there is potentially a slight delay in response, while previously sent characters are read. With hardware control, transmission stops on the next character boundary. Transmission is resumed on the receipt of an XON character, in the case of software control, or be re-asserting CTS, ie. bringing it high. The output buffer is around 95 bytes long.
+
+If software control is used, the Z88 will send an XOFF to an external device once the receive buffer is more than half full. Characters will continue to be received until there are only 15 character spaces left in the buffer. At this point an XOFF will be sent for every character subsequently sent by the external device. If the receive buffer overflows then data is lost forever. The Z88 will send an XON when the receive buffer has been cleared to less than a quarter full. Under hardware control, the Z88 will de-assert (bring low) RTS when the receive buffer is more than half full and the re-assert (bring high) when it has become less than a quarter full. The input buffer is around 127 bytes long.
+
+NOTE: When working with software handshaking the performance of the serial port is seriously reduced. When working at speeds of 9600 baud or above, the software handshaking will not work unless there is an intercharacter gap, ie. some time is left between the sending of each character. The gap allows the Z88 to catch up with serial operations, and without it the machine may loose characters.
+
+After OZ 4.0, the driver has been seriously optimized to avoid such bytes lost. In 4.5, all the input put are unbuffered if no handshaking is set. It allows fast transfer up to 38400 bauds. To optimize speed transfer, three reason calls perform block transfer.
+
+## Serial Port Lines
+
+The following table describes the 9-pin D-connector of the Z88:
+
+```text
+Pin    Signal type              direction
+1 -    unswitched +5V at 10µA   output
+2 TxD  transmit data            output
+3 RxD  receive data             input
+4 RTS  ready to send            output
+5 CTS  clear to send            input
+6 -    not used
+7 GND  Ground
+8 DCD  data carrier detect      input
+9 DTR  switched +5V at 10mA     output
+```
+
+NOTE: DTR is high when the machine is awake. The machine is always awake when the the screen is active, but even if asleep, the machine will wake every minute or so to carry out various housekeeping tasks, such as checking for alarms, and at these times DTR will go high. Pin 1 will show a signal if there is power available to the machine.

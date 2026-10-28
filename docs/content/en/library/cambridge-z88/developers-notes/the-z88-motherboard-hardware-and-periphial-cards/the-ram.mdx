@@ -1,0 +1,75 @@
+---
+description: "Disassembly the box without batteries. Deconnect the two keyboard ribbons, the screen ribbon. Put your motherboard on a dry table without metal. Unsolder the old chip. Solder a 32 pins flat..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/3113047 (version 3) by scripts/import-z88-wiki.cjs */}
+
+# The RAM
+
+<strong>*RAM types*</strong> <br />The serial chip is a NEC uPD42832C. This is a 32K pseudo-static RAM chip. These chips are like dynamic RAM but have the ability to retain data under a standby voltage (around 2V) with a self refresh circuitry.Dynamic RAM chip are incompatible. Static RAM chip can be use without any problem. The replacement is recommended because their power drain is the lowest (1/10 ratio).
+
+<strong>*RAM socket*</strong> <br />The motherboard layout has 32 pins. It is tracked for a 128K chip. On issue 4 machine a 32K chip is soldier using the 28 low pins. Here is the socket pinout from the component side view.
+
+```text
+    +--------------+
+POE |1    +--+   32| VCC
+A16 |2           31| A15
+A14 |3           30| VCC
+A12 |4           29| WE
+A7  |5           28| A13
+A6  |6           27| A8
+A5  |7    Z88    26| A9
+A4  |8    RAM    25| A11
+A3  |9    PCB    24| POE
+A2  |10          23| A10
+A1  |11          22| CE
+A0  |12          21| D7
+D0  |13          20| D6
+D1  |14          19| D5
+D2  |15          18| D4
+VSS |16          17| D3
+    +--------------+
+
+This table describes the 128K chip pinout and Blink signals.
+
+Pin     Chip    Blink   Pin     Chip    Blink
+1       POE     POE     32      -       VCC
+2       A16     MA16    31      A15     MA15
+3       A14     MA14    30      [CS]    VCC
+4       A12     MA12    29      [WE]    WRB
+5       A7      MA7     28      A13     MA13
+6       A6      MA6     27      A8      MA8
+7       A5      MA5     26      A9      MA9
+8       A4      MA4     25      A11     MA11
+9       A3      MA3     24      [OE]    POE
+10      A2      MA2     23      A10     MA10
+11      A1      MA1     22      [CE]    IRCE (internal RAM chip enable)
+12      A0      MA0     21      D7      MDH
+13      D0      MDA     20      D6      MDG
+14      D1      MDB     19      D5      MDF
+15      D2      MDC     18      D4      MDE
+16      VSS     GND     17      D3      MDD
+```
+
+<strong>*Internal RAM upgrade*</strong> <br />It is easily possible to upgrade the internal RAM to 128K. For a 512K upgrade some hardware modification are needed. The OZ version 4 is the only one able to recognize a 512K internal upgrade. For a 128K upgrade you can put a Toshiba TC551001 static RAM chip. Obviously, a backup of your Z88 is required before upgrading.
+
+Disassembly the box without batteries. Deconnect the two keyboard ribbons, the screen ribbon. Put your motherboard on a dry table without metal. Unsolder the old chip. Solder a 32 pins flat socket, and insert the new chip. You will have to cut some plastic structures (like an X) in the keyboard plastic support.
+
+For a 512K upgrade, you will have to wire the A17 and A18 pins with a link directly to address lines on to corresponding slot connector pins.
+
+Replacing the old 42832 Ram will spare your battery life time. The slowest rams consumes the least (120 or 150 ns). For example :
+
+```text
+Size  Chip    Type            Speed           Power (mW)      Manufacturer
+(K)                            (ns)            Act/Stdby
+32K   (PS)    uPD42832C        -15L (150)      220 / 2.75      Nec
+128K  (S)     TC551001BPL      -10L (100)      27.5/ 0.02      Toshiba
+512K  (S)     TC554001BPL      -70 (70)        50.0/ 0.30      Toshiba
+128K  (PS)    TC518128PL       -12 (120)       275 / 0.55      Toshiba
+512K  (PS)    TC518512PL       -10 (100)       275 / 1.00      Toshiba
+128K  (PS)    HM658128ALP                                      Hitachi
+512K  (PS)    HM658512LP                                       Hitachi
+512K  (S)     BS62LV4006PCP55  -55 (55)        290 / 0.15      Brilliance Semiconductor, Inc.
+
+(PS=Pseudo-static RAM chip, S=Static RAM chip)
+```

@@ -1,0 +1,45 @@
+---
+description: "Return file pointer to file entry image as extended address in BHL(B=00h-FFh embedded slot mask, HL=0000h-3FFFh bank offset)."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/49414206 (version 2) by scripts/import-z88-wiki.cjs */}
+
+# EP_Fptr ($48), Get file pointer via offset into file entry image
+
+## Register Parameters
+
+```text
+IN:
+      A = EP_FPTR
+    BHL = pointer to Eprom File Entry in card at slot
+    CDE = offset into file image (24bit), 0 = first byte of file
+
+OUT:
+    Fc = 0, File Eprom available, File Entry available
+         BHL = file pointer into File Entry
+
+    Fc = 1,
+         A = RC_Onf
+         File Eprom was not found in slot, or File Entry not available
+
+ Registers changed after return:
+    ...CDE../IXIY same
+    AFB...HL/.... different
+```
+
+## Notes
+
+Return file pointer to file entry image as extended address in BHL(B=00h-FFh embedded slot mask, HL=0000h-3FFFh bank offset).
+
+```text
+; BHL points to File Entry definition
+
+        ld      de,512                          ; CDE = file pointer to the 512th position of the file image
+        ld      c,0
+        ld      a,EP_Fptr
+        oz      OS_Epr                          ; get ext address to file entry data
+
+        ld      c,128
+        ld      de,Buffer                       ; copy 128 bytes from file entry location into (DE)
+        oz      OS_Bhl
+```

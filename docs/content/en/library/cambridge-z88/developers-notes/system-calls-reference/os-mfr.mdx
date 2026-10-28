@@ -1,0 +1,43 @@
+---
+description: "RC_BAD may occur if the IX is the handle for another pool, or if A does not match pool bank number, or HL is not allocated in that pool."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7962726 (version 7) by scripts/import-z88-wiki.cjs */}
+
+# OS_Mfr, Free (previously allocated block) memory
+
+## Register parameters
+
+```text
+IN:
+     IX = memory pool handle (returned from OS_Mop)
+     BC = size of memory to release
+     AHL = extended pointer address to beginning of memory block (A = bank)
+
+OUT, if call successful:
+     Fc = 0
+OUT, if call failed:
+     Fc = 1
+     A = error code:
+          RC_HAND ($08), bad handle
+          RC_BAD ($04), invalid AHL/BC/IX combination
+          RC_ERR ($0F), internal error (fatal)
+
+Registers changed after return:
+     ..BCDEHL/IXIY same
+     AF....../.... different
+```
+
+## Notes
+
+RC\_BAD may occur if the IX is the handle for another pool, or if A does not match pool bank number, or HL is not allocated in that pool.
+
+## Bugs
+
+Z88 crashes with a blinking "FAIL" message if you try to free memory that was already released with a previous **OS\_Mfr**.
+
+Unrecoverable error returns a RC\_ERR fatal error since OZ 4.6
+
+## Related calls
+
+**[OS\_Bix](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-bix)**, Bind in extended address <br />**[OS\_Box](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-box)**, restore bindings after OS\_Bix <br />**[OS\_Fc](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fc)**, select fast code (fast bank switching) <br />**[OS\_Mal](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mal)**, allocate memory <br />**[OS\_Mcl](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mcl)**, close memory (free memory pool) <br />**[OS\_Mgb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mgb)**, get current bank binding in segment <br />**[OS\_Mop](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mop)**, open memory (allocate memory pool) <br />**[OS\_Mpb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mpb)**, set new bank binding in segment<br />**[OZ\_Mgb](/en/library/cambridge-z88/developers-notes/system-calls-reference/oz-mgb)**, get current bank binding in segment<br />**[OZ\_Mpb](/en/library/cambridge-z88/developers-notes/system-calls-reference/oz-mpb)**, set new bank binding in segment

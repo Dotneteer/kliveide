@@ -1,0 +1,198 @@
+---
+description: "If the brother Extended pointer in the application front DOR is not set to zero it is taken as pointing to a help front DOR."
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8618244 (version 6) by scripts/import-z88-wiki.cjs */}
+
+# Help Front DOR
+
+If the brother Extended pointer in the application front DOR is not set to zero it is taken as pointing to a help front DOR.
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td style={{ whiteSpace: "nowrap" }}>**The Help front DOR**</Table.Td>
+<Table.Td>
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>3 bytes</Table.Td>
+<Table.Td>0 0 0</Table.Td>
+<Table.Td>Extended pointer to parent</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>3 bytes</Table.Td>
+<Table.Td>0 0 0</Table.Td>
+<Table.Td>Extended pointer to brother</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>3 bytes</Table.Td>
+<Table.Td>x x x</Table.Td>
+<Table.Td>Extended pointer to son - this points to the first Help DOR</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td />
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>1 byte</Table.Td>
+<Table.Td>$13</Table.Td>
+<Table.Td>DOR type, Application Front DOR</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>1 byte</Table.Td>
+<Table.Td>8</Table.Td>
+<Table.Td>DOR length</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td />
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>1 byte</Table.Td>
+<Table.Td>'N'</Table.Td>
+<Table.Td>Key for name field (DT\_NAM)</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>1 byte</Table.Td>
+<Table.Td>5</Table.Td>
+<Table.Td>Length of name and terminator</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>5 bytes</Table.Td>
+<Table.Td>"HELP", 0</Table.Td>
+<Table.Td>NULL-terminated name</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>1 byte</Table.Td>
+<Table.Td>$FF</Table.Td>
+<Table.Td>DOR terminator</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+A help DOR entry looks like an application DOR entry, but without the information record.
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td style={{ whiteSpace: "nowrap" }}>**The Help DOR**</Table.Td>
+<Table.Td>
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>3 bytes</Table.Td>
+<Table.Td>0 0 0</Table.Td>
+<Table.Td>Extended pointer to parent</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>3 bytes</Table.Td>
+<Table.Td>x x x</Table.Td>
+<Table.Td>Extended pointer to brother - points to another Help DOR or set to 0</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>3 bytes</Table.Td>
+<Table.Td>0 0 0</Table.Td>
+<Table.Td>Extended pointer to son</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td />
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>1 byte</Table.Td>
+<Table.Td>$83</Table.Td>
+<Table.Td>DOR type, Application ROM</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>1 byte</Table.Td>
+<Table.Td>X</Table.Td>
+<Table.Td>Total DOR length</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td />
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>1 byte</Table.Td>
+<Table.Td>'H'</Table.Td>
+<Table.Td>Key to Help section</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>1 byte</Table.Td>
+<Table.Td>x</Table.Td>
+<Table.Td>Length of Help section</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>3 bytes</Table.Td>
+<Table.Td>x x x</Table.Td>
+<Table.Td>Extended pointer to Topics</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>3 bytes</Table.Td>
+<Table.Td>x x x</Table.Td>
+<Table.Td>Extended pointer to Commands</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>3 bytes</Table.Td>
+<Table.Td>x x x</Table.Td>
+<Table.Td>Extended pointer to Application Help</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>3 bytes</Table.Td>
+<Table.Td>x x x</Table.Td>
+<Table.Td>Extended pointer to Token Base ($000000 for no token, $FFFFFF for system tokens)</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td />
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>1 byte</Table.Td>
+<Table.Td>'N'</Table.Td>
+<Table.Td>Key to Name section</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>1 byte</Table.Td>
+<Table.Td>x</Table.Td>
+<Table.Td>Length of name</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>x bytes</Table.Td>
+<Table.Td>"xxxx",0</Table.Td>
+<Table.Td>Null-terminated application name. <br />Must be the name of an existing application</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>1 byte</Table.Td>
+<Table.Td>$FF</Table.Td>
+<Table.Td>DOR terminator byte</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+The Help in a Help DOR takes priority over the Help in the application DOR, but for ROM applications it is not necessary to use a separate DOR. The use of the Help DOR is mainly in providing Help for internal applications or applications in other ROM cards.
+
+If you intend to provide Help for an internal application you will need to provide all the same command codes for the commands. Therefore, it will be necessary to examine the structure of the internal application carefully.
+
+This is readily achieved by opening the application with [**GN\_Opf**](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-opf) and A = OP\_DOR to get a DOR handle, and reading the addresses of the Help structures out of the Help record.
+
+The application name can be retrieved by letting FILER provide the filename: try listing all application names with the ":ROM.\*//\*" wildcard.

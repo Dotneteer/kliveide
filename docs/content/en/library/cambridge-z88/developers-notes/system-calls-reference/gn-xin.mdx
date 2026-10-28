@@ -1,0 +1,44 @@
+---
+description: "Algorithm: Assuming inserting entry I between entries X and Y (for more details, read Linked lists):"
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8618213 (version 4) by scripts/import-z88-wiki.cjs */}
+
+# GN_Xin, Insert an entry into a linked list
+
+## Register parameters
+
+```text
+IN:
+     HL = pointer to a 9-byte parameter block (usually on the stack):
+     (HL+0) ... (HL+2) = pointer of block to insert
+     (HL+3) ... (HL+5) = pointer to previous block
+     (HL+6) ... (HL+8) = pointer to next block
+
+OUT, if call successful:
+     Fc = 0
+OUT, if call failed:
+     Fc = 1
+     A = error code:
+          RC_BAD ($04), if pointer to block to insert = 0.
+
+Registers changed after return:
+     ..BCDEHL/IXIY same
+     AF....../.... different
+```
+
+## Notes
+
+Algorithm: Assuming inserting entry I between entries X and Y (for more details, read [Linked lists](/en/library/cambridge-z88/developers-notes/linked-lists)):
+
+```text
+*I = X XOR Y
+*X = *X XOR Y XOR I
+*Y = *Y XOR X XOR I
+```
+
+If X and Y are zero then the link is cleared.
+
+## Related calls
+
+**[GN\_Xdl](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-xdl)**, delete an entry from a linked list <br />**[GN\_Xnx](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-xnx)**, index next entry in linked list

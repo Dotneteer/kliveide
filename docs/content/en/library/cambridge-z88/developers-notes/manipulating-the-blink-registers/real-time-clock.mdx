@@ -1,0 +1,68 @@
+---
+description: "The clock is reset to zero by settings RESTIM in the COM register. The clock will be held in reset, ie. it won't count until RESTIM is cleared again. In order to guarantee a valid result from any..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/3113032 (version 15) by scripts/import-z88-wiki.cjs */}
+
+# Real Time Clock
+
+## TIM0-4, $D0-4
+
+```text
+Register    Period      Counts to   Width in bits
+TIM0        5ms         199         8
+TIM1        1 second    59          6
+TIM2        1 minute    255         8
+TIM3        256 minutes 255         8
+TIM4        64K minutes 31          5
+```
+
+The clock is reset to zero by settings RESTIM in the COM register. The clock will be held in reset, ie. it won't count until RESTIM is cleared again. In order to guarantee a valid result from any of these registers, software needs to read until two equal values are returned. This should always occur within three read cycles (see notes below). When RESTIM is high, TIM0-TIM4 are reset.
+
+There are three interrupts that the real time clock can generate and these are <u>TICK</u> (100 times a second - **10ms**), <u>SEC</u> (once a second) and <u>MIN</u> (once a minute).
+
+- A tick interrupt is fired when TIM0 is odd (bit 0 set), TIM0 continues to count to 199 then wraps to 0.
+- A second interrupt is fired when TIM0 = 128 (bit 7 set), TIM0 continues to count to 199 then wraps to 0.
+- A minute interrupt is fired when TIM1 = 32 (bit 5 set), TIM1 continues to count to 59 then wraps to 0.
+
+TSTA may never be set for all three events at once. Tick occurs on a 10ms pace when TIM0 is odd, second or minute interrupt occur when TIM0 is even (bit 0 reset). Second interrupt occurs 59 times a minute. When a minute interrupt is fired, a second interrupt has to be handled (but is not flagged in TSTA).
+
+STA.TIME is set when TSTA.MIN or TSTA.SEC or TSTA.TICK are set according TMK mask. When all TSTA interrupts have been acknowledged, STA.TIME is reset. This logic is detailed in [blink interrupts](/en/library/cambridge-z88/developers-notes/manipulating-the-blink-registers/blink-interrupts).
+
+- on tick interrupt, TSTA.TICK is set (TIM0 = @xxxxxxx1).
+- on second interrupt, TSTA.SEC is set (TIM0 = @1xxxxxx0 and TIM1 \<\> 32). TSTA.TICK is reset.
+- on minute interrupt, TSTA.MIN is set (TIM0 = @1xxxxxx0 and TIM1 = 32). TSTA.TICK and TSTA.SEC are reset.
+
+Three registers are associated with these interrupts:
+
+## TSTA ($B5), Timer interrupt status
+
+```text
+BIT         NAME        Function
+7 - 3       -           -
+2           MIN         Set if minute interrupt has occurred
+1           SEC         Set if second interrupt has occurred
+0           TICK        Set if tick interrupt has occurred
+```
+
+## TMK ($B5), Timer interrupt mask
+
+```text
+BIT         NAME        Function
+7 - 3       -           -
+2           MIN         Set to enable minute interrupt
+1           SEC         Set to enable second interrupt
+0           TICK        Set to enable tick interrupt
+```
+
+## TACK ($B4), Timer interrupt acknowledge
+
+```text
+BIT         NAME        Function
+7 - 3       -           -
+2           MIN         Set to acknowledge minute interrupt
+1           SEC         Set to acknowledge second interrupt
+0           TICK        Set to acknowledge tick interrupt
+```
+
+**Notes :** the blink RTC interrupt has a special implementation and those findings have been verified after testing. My assumptions are that this implementation is probably for a minimal logic footprint. The designer used simply a bit set to fire an interrupt instead of using a comparator. Moreover, the carry propagation is certainly slow, thus it is necessary to read register 2 times and get the same value to validate the data.

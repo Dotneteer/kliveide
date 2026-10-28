@@ -1,0 +1,30 @@
+---
+description: "When using system calls from BBC BASIC there are various important things to bear in mind. The main restart code itself needs to page memory banks in and out of the address space; for instance one..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/3112974 (version 2) by scripts/import-z88-wiki.cjs */}
+
+# Using system calls from BBC BASIC
+
+When using system calls from BBC BASIC there are various important things to bear in mind. The main restart code itself needs to page memory banks in and out of the address space; for instance one of the first things it does is bind bank 0 (which contains the vector table for the OZ calls) to segment 3; but it expects the stack to perform properly when it has done so. So in general, any program, the BASIC interpreter included, should not place its stack where it is liable to be paged out. To be safe, it should be in the bottom 8K of the logical address space, which is never paged out. The BBC BASIC application stack has to be fairly large as it is used for parameter-passing during BASIC execution, and so cannot be placed in the bottom 8K by default. It is in a very vulnerable position, typically at the top of segment 2, and so it is advisable to select a safer stack if any system calls are to be used. This may reliably be done by loading the stack pointer from the location $1FFE. For example, if the main user code starts at 'main' then the program as a whole might look like:
+
+```text
+            exx                     ; use alternate registers
+            ld   hl,0               ; to preserve hl
+            add  hl,sp              ; get current stack pointer in HL
+            ld   sp,(&1FFE)         ; load new (safe) stack pointer
+            push hl                 ; preserve old stack pointer on new stack
+            exx                     ; back to main registers
+            call main               ; execute main machine code
+            exx                     ; back to alternate registers
+            pop  hl                 ; get old BASIC stack pointer
+            ld   sp,hl              ; and restore it
+            exx                     ; back to main registers
+            ret                     ; return to BBC BASIC interpreter
+
+.main       ...                     ; main machine code...
+            ...
+            ret
+```
+
+The use of the alternate register set avoids corrupting the main set, thus allowing parameter passing with HL (by using the BASIC variables H% and L%), but this may be dispensed with, if the contents of HL are not important. The old stack pointer is pushed onto the new stack so it can be re-called at the end. The old stack pointer could also be saved in a static memory location and this technique is used in some of the other examples.

@@ -1,0 +1,30 @@
+---
+description: "Writes char to both outstream and outstreamT - close output streams if write error. If there is no CLI, outputs to screen."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7471349 (version 5) by scripts/import-z88-wiki.cjs */}
+
+# DC_Out, Write to CLI
+
+## Register parameters
+
+```text
+IN:
+    A = character to output
+
+OUT: -
+
+Registers affected after return:
+    AFBCDEHL/IXIY same
+    ......../.... different
+```
+
+## Notes
+
+Internal operating system usage.
+
+Writes char to both outstream and outstreamT - close output streams if write error. If there is no CLI, outputs to screen.
+
+## Related calls
+
+**[DC\_Icl](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-icl)**, Invoke new CLI<br />**[DC\_In](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-in)**, Read from CLI<br />**[DC\_Prt](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-prt)**, Print to CLI<br />**[DC\_Xin](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-xin)**, Examine CLI input<br />**[DC\_Rbd](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-rbd)**, Rebind streams<br />**[DC\_Gen](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-gen)**, screen driver SOH call<br />**[OS\_Cli](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-cli)**, CLI interface

@@ -1,0 +1,66 @@
+---
+description: "GN_Cl, close file GN_Del, delete a file from memoryGN_Opf, open file/resource (wildcard search)GN_Ren, rename fileGN_Mov, move file OS_Cl, internal close (OZ usage) OS_Del, file delete (internal..."
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/125727465 (version 5) by scripts/import-z88-wiki.cjs */}
+
+# GN_Cpy, Copy a file
+
+## Register parameters
+
+**RST 20H, DEFW $8C09**
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>
+
+`IN: A = reason code`
+
+`CP_TODIR = $00, copy file to a directory (keep same filename)`
+
+`CP_TOFILE = $01, copy file as new file target`
+
+`BHL = pointer to` `null``-terminated source filename (B=0, local)`
+
+`CDE = pointer to a null-terminated target directory or filename (C=0, local)`
+
+`out,` `if` `successful:`
+
+`Fc =` `0``, file successfully copied to target`
+
+`out,` `if` `failed:`
+
+`Fc =` `1``, unable to copy file`
+
+`A = error code:`
+
+`RC_IVF, Invalid directory or filename`
+
+`RC_ONF, File Object was not found`
+
+`RC_USE, File in use`
+
+`RC_EXIS, File already exists`
+
+`registers changed after` `return``:`
+
+`A.BCDEHL/IXIY same`
+
+`.F....../.... different`
+
+</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+## Notes
+
+- API call implemented in **OZ 5.0**.
+- Specified target directory will automatically be recursively created if not found (CP\_TODIR). When copying as new file (CP\_TOFILE), the target directory must exist.
+
+## Related calls
+
+**[GN\_Cl](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-cl)**, close file <br />**[GN\_Del](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-del)**, delete a file from memory<br />**[GN\_Opf](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-opf)**, open file/resource (wildcard search)<br />**[GN\_Ren](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-ren)**, rename file<br />[**GN\_Mov**](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-mov), move file <br />**[OS\_Cl](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-cl)**, internal close (OZ usage) <br />**[OS\_Del](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-del)**, file delete (internal OZ usage) <br />**[OS\_Frm](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-frm)**, file read miscellaneous <br />**[OS\_Fwm](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fwm)**, file write miscellaneous <br />**[OS\_Gb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-gb)**, get byte from file (or device) <br />**[OS\_Gbt](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-gbt)**, get byte from file (or device) with timeout <br />**[OS\_Mv](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mv)**, move bytes between stream and memory<br />**[OS\_Fdp](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fdp)**, fast sector-level duplication of source file to target file<br />**[OS\_Op](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-op)**, internal open (OZ usage) <br />**[OS\_Pb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-pb)**, write byte to file, device <br />**[OS\_Pbt](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-pbt)**, write byte to file, device with timeout <br />**[OS\_Ren](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-ren)**, file rename (internal OZ usage)

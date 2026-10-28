@@ -1,0 +1,96 @@
+---
+description: "BBC BASIC provides the '&' symbol to prefix a hexadecimal number, as distinct from the more usual '$' used in these notes, which is used in BBC BASIC for string indirection. For printing an..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/3112970 (version 1) by scripts/import-z88-wiki.cjs */}
+
+# Numbers and Indirection Operators
+
+BBC BASIC provides the '&' symbol to prefix a hexadecimal number, as distinct from the more usual '$' used in these notes, which is used in BBC BASIC for string indirection. For printing an expression in hex form, prefix it with '\~', eg.
+
+```text
+            PRINT &AF               gives 175
+```
+
+while
+
+```text
+            PRINT ~27               gives 1B
+```
+
+The indirection operators provided by BBC BASIC are used to find the contents of a cell or cells at a given address. The ? (query) operator represents byte indirection, so:
+
+```text
+            ?pointer
+```
+
+represents the byte addressed by 'pointer'. This can be used either on the right or left of an expression; the statement:
+
+```text
+            ?address = contents
+```
+
+sets the contents of the byte-sized cell addressed by 'address' to the value 'contents'. In most BASIC's this would have been written as:
+
+```text
+            POKE address,contents
+```
+
+whereas the statement
+
+```text
+            contents = ?address
+```
+
+is equivalent to
+
+```text
+            contents = PEEK(address)
+```
+
+The ! ('pling') operator represents word (32bit and not 16bit) indirection, so the expression:
+
+```text
+            !pointer
+```
+
+represents the value of the 32bit word, the address of whose first byte is 'pointer'. Thus, !a (on the righthand side of an expression) is equivalent to:
+
+```text
+            a?0 + 256*a?1 + 256*256*a?2 + 256*256*256+a?3
+```
+
+Notice that the least significant byte comes first; this is generally true for the Z88 system, an extension to four bytes of the standard two byte Z80 order.
+
+The query and pling operators may also be used in a dyadic context, which is often more natural (cf. array indexing, which actually works similarly)
+
+```text
+            base?offset             equivalent of ?(base+offset)
+            base!offset             equivalent of !(base+offset)
+```
+
+In this case 'base' must be a simple variable, but 'offset' may be any expression. Thus "!x" will not work. Remember also that the operators in a dyadic context are symmetric, so a!1 addresses a word starting at a+1 and NOT a+4, as some people might expect. Finally, note that ! and ? have the highest level of priority in an expression, equal to unary plus, minus and the logical NOT, above binary arithmetical, relational and logical operators, so for example a?1^2 will be interpreted as (a?1)^2.
+
+The operator $ ('dollar') implements string indirection: $a refers to a string which begins at address 'a' and is terminated by carriage return (CR). Thus:
+
+```text
+            $a = "hello"
+```
+
+sets up successive bytes, starting at address 'a', with these five letters and a 13.
+
+Note that the maximum length of a string in BBC BASIC is 255 characters. This is not because the string storage uses a length byte - it does not - but simply for convenience of internal manipulation on an 8bit machine.
+
+Space for a machine code routine, strings and memory to be used with indirection operators may conveniently be reserved using a special form of the DIM statement, without any brackets. The BASIC statement:
+
+```text
+            DIM code 255
+```
+
+reserves a block of 256 continuous bytes of memory and sets the variable 'code' to point to the start of this block. The elements of the block therefore start at address 'code' and finish at 'code+255'. This is quite distinct from the statement:
+
+```text
+            DIM code(255)
+```
+
+which reserves space for 256 floating point variables - which will be considerably more than 256 bytes, actually 256\*5 bytes!

@@ -1,0 +1,44 @@
+---
+description: "Filter table must be addressed in segment 1, or this call will fail. The filter table must not cross a 16K segment boundary otherwise the call will crash the operating system."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8618105 (version 3) by scripts/import-z88-wiki.cjs */}
+
+# GN_Flo, Open a filter
+
+## Register parameters
+
+```text
+ IN:
+     HL = local pointer to filter table
+     A = attribute byte; some combination of
+               A0 = 1: ($01) allow case equivalence on input
+          A1 = 1: ($02) use table in reverse mode
+          A2 = 1: ($04) force maximum buffer size to B bytes
+
+     B = maximum buffer size. Must be <= 128, and is only relevant if
+     A2 = 1.
+
+OUT, if call successful:
+     Fc = 0
+     IX = filter handle
+
+OUT, if call failed:
+     Fc = 1
+     A = error code:
+          RC_ROOM ($07), out of memory
+          RC_BAD ($04), FDT structure invalid
+          RC_HAND ($08), can't allocate handle
+
+Registers changed after return:
+     A.BCDEHL/IXIY same
+     .F....../.... different
+```
+
+## Bugs
+
+Filter table <u>must</u> be addressed in segment 1, or this call will fail. The filter table must not cross a 16K segment boundary otherwise the call will crash the operating system.
+
+## Related calls
+
+**[GN\_Flc](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-flc)**, close filter <br />**[GN\_Flf](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-flf)**, flush filter <br />**[GN\_Flr](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-flr)**, read from filter <br />**[GN\_Flw](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-flw)**, write character to filter <br />**[GN\_Fpb](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-fpb)**, push back into filter

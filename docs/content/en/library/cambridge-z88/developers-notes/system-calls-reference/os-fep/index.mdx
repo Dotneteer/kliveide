@@ -1,0 +1,59 @@
+---
+description: "The OS_Fep manages the Flash Card hardware in OZ V4.2 and later versions. It is based on the original driver software developed by Thierry Peycru in 1996."
+asIndexPage: true
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7471575 (version 9) by scripts/import-z88-wiki.cjs */}
+
+# OS_Fep, Flash Card Interface
+
+## Register parameters
+
+```text
+IN:
+     A = reason code:
+          FEP_CDID = $00 - Identify Flash Memory Chip in slot
+          FEP_CDDT = $03 - Get Flash Card Data
+          FEP_SCER = $06 - Erase sector in Flash Memory
+          FEP_CDER = $09 - Erase entire Flash Memory
+          FEP_FFMT = $0C - Flash Memory File Area Formatting
+          FEP_WRBT = $0F - Write byte to the Flash Memory
+          FEP_WRBL = $12 - Write a block of bytes to Flash Memory
+          FEP_CPFL = $15 - Copy file entry between two File Areas
+          FEP_RDFA = $18 - Reduce an existing "oz" File Area
+
+     BC, DE, HL, IX arguments.
+OUT:
+     Fc = 1, A = error code.
+     Fc = 0, reason code action successfully ended.
+```
+
+## Notes
+
+The **OS\_Fep** manages the Flash Card hardware in OZ V4.2 and later versions. It is based on the original driver software developed by Thierry Peycru in 1996.
+
+He built a prototype 1Mb Flash Card using the Intel 28F series chip and soldered it onto an original 32K EPROM card PCB. To use this chip he wrote a BBC BASIC program with an embedded driver software to manage its operation. This program was designed to be a simple file manager, to format a file area and to save/backup files to the cards inserted in slot 3.
+
+Later, in 1997, Rakewell started to build these cards, and the software to drive the card was open sourced by Thierry Peycru. The Flashstore code base was re-written by Gunter Strube who separated it as an end-user application. This was linked to a new set of standard library routines to manage the Flash chip hardware and to implement high level File Card routines using the File EPROM format. This enabled all Z88 applications to be able to use the Flash Cards through the standard library (which is still maintained and available today).
+
+Around 2001, Intel stopped manufacturing the 1Mb flash chip. Fortunately, the AMD 29F generation of Flash chips became available. These were pin for pin compatible with the Intel chips, which enabled Rakewell to keep using the existing PCB and continue production of the 1Mb Flash Cards for the Z88. Further, this 3rd generation flash technology only required 5V to erase and blow bytes to the memory which allowed the card to be used in all slots of the Z88 hardware (the Intel flash chip required 12V on the VPP pin which was only available in slot 3). Rakewell is still using this hardware today (since 2007). Additional software was required to use this new chip.
+
+The new **OS\_Fep** interface is based upon the code base of the standard flash library routines, and is tightly integrated into OZ V4.2 and above for compactness and speed efficiency.
+
+In 2010 a new dual memory card was launched by Rakewell. This contains 512K RAM and 512K Flash, making it possible to host the OZ V4.3 operating system, with a File Area and supply an extended Z88 with 512K RAM. Another Flash chip from AMIC was added. This is hardware compatible with the AMD AM29F0x0B family. The ID & manufacturer ID has been included as part of OZ V4.3 release.
+
+The complete reference documentation for all these chips can be found here:-
+
+- INTEL I28F008S5 (1Mb) chip can be read [in this PDF document](https://cambridgez88.jira.com/wiki/download/attachments/7471575/I28F008S5.pdf?version=1&modificationDate=1336288490788) .
+- AMD AM29F080B (1Mb) chip can be read [in this PDF document](https://cambridgez88.jira.com/wiki/download/attachments/7471575/AM29F080B.pdf?version=1&modificationDate=1336288444271).
+- AMIC A29F040B (512K) chip can be read [in this PDF document](https://cambridgez88.jira.com/wiki/download/attachments/7471575/AMIC29040B.pdf?version=1&modificationDate=1336299806622).
+
+The software to drive these chips were based on these documents.
+
+All the **OS\_Fep** routines that are used in FlashStore popdown have been integrated into OZ V4.2. The Filer popdown has also been optimized to use **OS\_Fep** for transparent access to the Flash based file cards. **OS\_Fep** should be regarded as low-level routine and used responsibly.
+
+Details of each reason code action are described in the subsequent pages.
+
+## Related system calls
+
+[**OS\_Epr**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-epr), File Eprom Interface

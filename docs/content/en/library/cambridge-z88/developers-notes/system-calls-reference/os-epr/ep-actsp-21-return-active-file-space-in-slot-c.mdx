@@ -1,0 +1,32 @@
+---
+description: "Return amount of active (visible) file space in File Eprom Area, inserted in slot C (API wrapper of EP_TotSp)."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7471526 (version 2) by scripts/import-z88-wiki.cjs */}
+
+# EP_ActSp ($21) - Return active file space in slot C
+
+## Register Parameters
+
+```text
+IN:
+   A = EP_ACTSP
+   C = slot number containing File Eprom Area
+
+OUT:
+   Fc = 0, File Eprom available
+        DEBC = Active space (amount of visible files) in bytes
+               (DE = high 16bit, BC = low 16bit)
+
+   Fc = 1,
+        A = RC_ONF
+        File Eprom was not found in slot C.
+
+Registers changed after (succesful) return:
+   A.....HL/IXIY same
+   .FBCDE../.... different
+```
+
+## Notes
+
+Return amount of active (visible) file space in File Eprom Area, inserted in slot C (API wrapper of EP\_TotSp).

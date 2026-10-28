@@ -1,0 +1,242 @@
+---
+description: "The commands on the BLOCKS menu enable you to manipulate documents to control exactly which areas are affected by a particular operation. A block can include anything from a single slot to a..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/35913772 (version 13) by scripts/import-z88-user-guide.cjs */}
+
+# Operations on blocks of slots - BLOCKS
+
+<Shot src="z88-user-guide/pipedream-reference/pipedream-menu-blocks.webp" alt="Pipedream menu blocks" width={640} />
+
+## Marking
+
+The commands on the **BLOCKS** menu enable you to manipulate documents to control exactly which areas are affected by a particular operation. A block can include anything from a single slot to a complete document.
+
+Before giving any block command you identify the slots you wish to operate on using the **Mark Block** command. You can mark a single slot, a row of slots, a column of slots, or a rectangular block of slots spanning several rows and columns.
+
+You identify which block of slots you want to operate on by giving the **Mark Block** command at the top left-hand corner and bottom right-hand corner of the block. After giving the two **Mark Block** commands, all the selected slots in the block will be shown highlighted on the screen.
+
+### <Key k="diamond" />Z Mark Block
+
+Marks a single slot, or the top left-hand corner and bottom right-hand corner of a rectangular block of slots, to identify the slots to be operated on by subsequent block commands.
+
+### <Key k="diamond" />Q Clear Marks
+
+Clears any marked block previously set up with the **Mark Block** command.
+
+## Replicating slots
+
+### <Key k="diamond" />BRE Replicate
+
+Reproduces the contents of a slot, or block of slots, in any part of the document. The following options are displayed:
+
+`Range to copy from`<br />`Range to copy to`
+
+Each range is a block of slots identified by specifying the coordinates of its top left-hand corner and bottom right-hand corner. If necessary, extra rows and/or columns are created in the document to accommodate the new slots.
+
+The ranges can be one of the following forms:
+
+#### 1. Single slot to area
+
+*Range to copy from*: a single slot, eg A1.<br />*Range to copy to*: an area, eg B3 D7, or just a row or column range. The area can include the original slot, if required.
+
+The contents of the slot are copied over the entire area, as represented symbolically in the following diagram:
+
+<Shot src="z88-user-guide/pipedream-reference/103.webp" alt="Illustration for “Operations on blocks of slots - BLOCKS”" width={439} />
+
+#### 2. Column to area
+
+*Range to copy from*: a column array, eg A1 A3.<br />*Range to copy to*: a single slot or a row array, eg B5 D5.
+
+The column is copied to the target column starting at either the single slot, or the range of slots given by the target row.
+
+<Shot src="z88-user-guide/pipedream-reference/104.webp" alt="Illustration for “Operations on blocks of slots - BLOCKS”" width={441} />
+
+#### 3. Row to area
+
+*Range to copy from*: a row array, eg A1C1.<br />*Range to copy to*: a single slot or a column array, eg B5 B7.
+
+The row is copied to the target row, starting either at the single slot or at the range of slots given by the target column, as shown on the following page:
+
+<Shot src="z88-user-guide/pipedream-reference/104-2.webp" alt="Illustration for “Operations on blocks of slots - BLOCKS”" width={443} />
+
+#### 4. Area to area
+
+*Range to copy from*: an area, eg A1 B2.<br />*Range to copy to*: a single slot, eg C5.
+
+The area is copied to the area with the top left-hand corner defined by the single slot.
+
+<Shot src="z88-user-guide/pipedream-reference/105.webp" alt="Illustration for “Operations on blocks of slots - BLOCKS”" width={441} />
+
+If the slots contain slot references, the references are updated to take account of their altered position, unless they are fixed with the $ operator.
+
+## Copy, Move, and Delete
+
+### <Key k="diamond" />BC Copy
+
+Copies a marked block of slots to the position in the document indicated by the cursor. Slots in the document will be moved apart to make space for the block being copied, in contrast with the **Replicate** command which overwrites the target area.
+
+Slot references in the new block are updated as for the **Replicate** command, but references to slots within the block are not altered.
+
+### <Key k="diamond" />BM Move
+
+Moves a marked block of slots from its original position to the position indicated by the cursor. All slot references are updated as appropriate.
+
+Note that if you attempt to move a block of slots to a new position which overlaps the same rows or columns as the original block, the error
+
+`Overlap`
+
+will be displayed.
+
+### <Key k="diamond" />BD Delete
+
+Deletes a marked block of slots from the document. Since you will lose the information previously in those slots, it is a good idea to save a copy of your document before deleting a large area, so that you can revert to this if you accidentally delete valuable information.
+
+## Sorting
+
+### <Key k="diamond" />BSO Sort
+
+Sorts a marked block of slots. Text slots are sorted into alphabetical order, expression slots into numeric order, and date slots into date order. The following options are displayed:
+
+`Sort on column`<br />`Sort in reverse order No`<br />`Don't update references No`
+
+*Sort on column*: set to a column label (A, B, C etc) to specify which column within the marked block should be used to determine the ordering of the slots.
+
+*Sort in reverse order*: by default, the marked block is sorted into ascending order, and any slot references are updated as appropriate. Setting this option to `Yes` will sort the specified column in descending order.
+
+*Don't update references*: setting this option to `Yes` inhibits the updating of slot references within the block being sorted. This gives a faster sort operation, and can be used provided no slots within the sorted block are referred to either from within or from outside the sorted block.
+
+## Searching and replacing
+
+### <Key k="diamond" />BSE Search
+
+Search is for a specified string within a single document, or a multi-file document. The following options are available:
+
+`String to search for`<br />`Search only range of columns No`<br />`Equate upper and lower case Yes`<br />`Search only marked block No`<br />`Search from current file No`<br />`Search all files in list No`
+
+The string to be searched for is specified in the same way as for the **Replace** command, and the equivalent options have the same effect; see below.
+
+When the search is completed, a message such as
+
+`27 found`
+
+will be displayed where 27 is the number of matches since the last **Search** command.
+
+### <Key k="diamond" />BNM Next Match
+
+Following a **Search** command, the **Next match** command can be used to find the next occurrence of the specified string starting at the current cursor position.
+
+### <Key k="diamond" />BRP Replace
+
+Searches for and replaces occurrences of one specified string by another. The following options are displayed:
+
+`String to search for`<br />`Replace with`<br />`Search only range of columns No`<br />`Equate upper and lower case Yes`<br />`Ask for confirmation Yes`<br />`Search only marked block No`<br />`Search all files in list No`
+
+By default, the **Replace** command replaces all occurrences of the first specified string with the second specified string throughout the current document, equating upper- and lower-case letters and prompting for confirmation before each replacement. For example
+
+`String to search for Cat`<br />`Replace with Dog`
+
+will replace Cat with Dog, cat with dog, and CAT with DOG.
+
+On each occurrence of the search string, the prompt
+
+`Replace: N, Y?`
+
+will be displayed at the top of the screen. Answer <Typed>Y</Typed> to perform the replacement, <Typed>N</Typed> to proceed to the next occurrence of the search string, or press the <Key k="esc" /> key to cancel the command. When the command is completed, the message
+
+`27 found`
+
+(or as appropriate) will be displayed to show the total number of replacements that have been made.
+
+*String to search for*: specifies the search string, which can be up to 240 characters in length.
+
+Certain special sequences of characters can be used in the search string to represent characters which cannot be typed at the keyboard, or classes of search string:
+
+| **Sequence** | **Matches** |
+| --- | --- |
+| `^1..^8` | Highlight character |
+| ^^ | ^ |
+| ^? | A single character – not space |
+| ^\# | Any number of non-space characters (ie a word) |
+| ^S | A space |
+| ^Rref | Slot reference ref |
+| ^R\# | Any slot reference |
+| space | One or more spaces, or across slots |
+| ^B | Beginning of a slot (or line) |
+
+*Replace with*: specifies the string to replace each occurrence of the search string. The following special sequences of characters can be used:
+
+| **Sequence** | **Substitutes** |
+| --- | --- |
+| ^1..^8 | Highlight character |
+| ^^ | ^ |
+| ^?n | Character matching nth ^? in search |
+| ^\#n | String matching nth ^\# in search |
+| ^S | A space |
+| ^Rref | Slot reference ref |
+| ^R\#n | Slot reference matching nth ^R\# |
+| space | Matching spaces or slot boundary |
+
+Up to nine ^? fields, nine ^\# fields and nine ^R\# fields, numbered 1 to 9, can be used in the same replace string.
+
+The ^\# wild field will match zero characters, as long as the string which has been searched for contains at least one character (otherwise the wild field would match all spaces).\#
+
+### Search and Replace examples
+
+The sequences ^1 to ^8 represent highlight codes 1 to 8. For example, all occurrences of <Typed>PipeDream</Typed> could be put into bold with the options
+
+`String to search for PipeDream`<br />`Replace with ^2PipeDream^2`
+
+The sequence ^B forces the search string to start at the beginning of a line. For example, all single spaces could be removed from the beginnings of lines with the options
+
+`String to search for ^B^S`<br />`Replace with`
+
+The sequence ^\# will match a sequence of characters not containing a space; ie a word, or a number. For example, to strip line numbers from spooled BASIC programs:
+
+`String to search for ^B ^#`<br />`Replace with ^S`
+
+Where ^\# or ^? have been used to search for any words or characters, the words or characters that were found can be inserted in the *Replace with* string using ^\#1 to ^\#9, or ^?1 to ^?9 respectively. For example,
+
+`String to search for c^?r^?` <br />`Replace with ^?2^?1ck`
+
+will change <Typed>cart</Typed> to <Typed>tack</Typed> and <Typed>cord</Typed> to <Typed>dock</Typed>.
+
+The sequence ^Rref and ^R\# respectively match a specific slot reference, and any slot reference, in an expression slot. Thus,
+
+`String to search for ^R#`<br />`Replace with ^R#1+1`
+
+will replace all slot reference A1 by A1+1, and so on.
+
+*Search only range of columns*: enables you to specify a column range by entering a pair of column labels separated by a space: eg A G. The command is then restricted to the specified range of columns, inclusive.
+
+*Equate upper and lower case*: by default, upper- and lower-case letters are treated as equivalent in the search string and the cases of letters in the replace string are altered to match the cases of the letters in corresponding positions of the matched string. Setting this option to `No` forces matches to be identical case. This means that, for example, specifying `Dog` to replace `Cat` will have no effect on cat or CAT.
+
+*Ask for confirmation*: setting this option to `No` causes all strings to be replaced without prompting.
+
+*Search only marked block*: setting this option to `Yes` restricts the search to a marked block of slots.
+
+*Search from current file*: setting this option to `Yes` performs the search and replace operation throughout a multi-file document, starting at the top of the current file.
+
+*Search all files in list*: setting this option to `Yes` performs the search and replace operation throughout a multi-file document, starting at the top of the first file. See **[Multi-file documents](/en/library/cambridge-z88/user-guide/pipedream-reference/working-with-files-files#multi-file_documents)**,
+
+## Other block operations
+
+### <Key k="diamond" />BWC Word Count
+
+Counts the words in the whole document, or in a block of slots if one has been marked, and displays the number of words, for example
+
+`127 words`
+
+at the top of the screen. Note that numbers and other symbols separated by spaces will contribute towards the word count.
+
+### <Key k="diamond" />BNEW New
+
+Clears the entire document. The query
+
+`Overwrite text?`
+
+is given. If you clear the document (by answering `Yes`), this will cancel all file names and multi-file mode, resetting the Options Page options to their defaults, and resetting the screen display to its starting state of six columns, each 12 characters wide.
+
+### <Key k="diamond" />A Recalculate
+
+Recalculates all expression slots throughout the entire document. The order of recalculation is determined by the columns/rows Options Page setting.

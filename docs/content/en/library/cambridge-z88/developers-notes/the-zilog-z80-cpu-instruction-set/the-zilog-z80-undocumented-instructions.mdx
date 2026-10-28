@@ -1,0 +1,77 @@
+---
+description: "The undocumented Z80 instructions are corresponding to 'holes' in the opcodes."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/9568467 (version 5) by scripts/import-z88-wiki.cjs */}
+
+# The Zilog Z80 Undocumented instructions
+
+The undocumented Z80 instructions are corresponding to 'holes' in the opcodes.
+
+## Undocumented index operations
+
+In this section, IX operations will be described. <br />IY operations, obtained by replacing DDs with FDs, behave identically. <br />A DD preceding an instruction causes, in general, the following ('main') instruction to be processed as normal, except that:
+
+\- any access to (HL) gets treated as an access to (IX+d) <br />- any access to HL gets treated as an access to IX <br />- any access to H gets treated as an access to IXh <br />- any access to L gets treated as an access to IXl
+
+If the main instruction does not access any of (HL), HL, H and L, then the DD effectively acts as a NOP. (In addition, a series of DDs and FDs acts as a series of NOPs with the DD/FD actually obeyed being the <br />last one in the series.)
+
+There are exceptions to the general rule, however. These are:
+
+`Main instruction Effect of preceding DD`
+
+`LD H,(HL) Causes LD H,(IX+d)` <br />`LD (HL),H Causes LD (IX+d),H` <br />`LD L,(HL) Causes LD L,(IX+d)` <br />`LD (HL),L Causes LD (IX+d),L` <br />`EX DE,HL None (left as EX DE,HL)` <br />`EXX None (left as EXX)` <br />`EDxx None (left as EDxx)` <br />`CBxx See below`
+
+DDCB sequences always cause the byte following the CB to be taken as a displacement, and always cause an access to (IX+d). If the sequence produces output other than in the flags (i.e. all except BIT), then the result gets placed both into (IX+d) and the register one would normally expect to be altered.
+
+For example,
+
+DDCB0100 causes RLC (IX+1) and copies the result into B. <br />DDCB02FF causes SET 7,(IX+2) and copies the result into A. <br />DDCB0373 causes BIT 6,(IX+3).
+
+## Undocumented shift operations
+
+There are 248 different CB opcodes. The block CB 30 to CB 37 is missing from the official list. These instructions, usually denoted by the mnemonic SLL, Shift Left Logical, shift left the operand and make bit 0 always one. The effect is therefore like SLA except b0 is set instead of being reset. These instructions are quite commonly used.
+
+## Undocumented EDxx operations
+
+Instructions in the range ED00 to ED3F have no effect. <br />Instructions in the range ED80 to EDBF, except those documented as block loads, compares, ins or outs, have no effect. <br />Instructions in the range EDC0 to EDFF have no effect. <br />The holes in the range ED40 to ED7F typically duplicate documented instructions:
+
+`NEG at ED4C, ED54, ED5C, ED64, ED6C, ED74, ED7C` <br />`NOP at ED77, ED7F` <br />`RETN at ED55, ED65, ED75` <br />`RETI at ED5D, ED6D, ED7D` <br />`IM ? at ED4E, ED6E` <br />`IM 0 at ED66` <br />`IM 1 at ED76` <br />`IM 2 at ED7E` <br />`IN F,(C) at ED70` <br />`OUT (C),0 at ED71`
+
+IM ? sets the interrupt mode flip-flops to an undefined state, which seems to act like IM 0 or IM 1. <br />IN F,(C) performs the input operation, setting the flags as normal, but throws the input value away. <br />OUT (C),0 outputs $FF to the port.
+
+Note : it would output zero if the Z80 used were the NMOS variant rather than the CMOS variant used in the Z88.
+
+The complete list: (\* = not official)
+
+`ED40 IN B,(C) ED60 IN H,(C)` <br /> `ED41 OUT (C),B ED61 OUT (C),H` <br /> `ED42 SBC HL,BC ED62 SBC HL,HL` <br /> `ED43 LD (nn),BC ED63 LD (nn),HL` <br /> `ED44 NEG ED64 * NEG` <br /> `ED45 RETN ED65 * RET` <br /> `ED46 IM 0 ED66 * IM 0` <br /> `ED47 LD I,A ED67 RRD` <br /> `ED48 IN C,(C) ED68 IN L,(C)` <br /> `ED49 OUT (C),C ED69 OUT (C),L` <br /> `ED4A ADC HL,BC ED6A ADC HL,HL` <br /> `ED4B LD BC,(nn) ED6B LD HL,(nn)` <br /> `ED4C * NEG ED6C * NEG` <br /> `ED4D RETI ED6D * RET` <br /> `ED4E * IM 0/1 ED6E * IM 0/1` <br /> `ED4F LD R,A ED6F RLD` <br /> `ED50 IN D,(C) ED70 * IN (C)` <br /> `ED51 OUT (C),D ED71 * OUT (C),0` <br /> `ED52 SBC HL,DE ED72 SBC HL,SP` <br /> `ED53 LD (nn),DE ED73 LD (nn),SP` <br /> `ED54 * NEG ED74 * NEG` <br /> `ED55 * RET ED75 * RET` <br /> `ED56 IM 1 ED76 * IM` <br /> `ED57 LD A,I ED77 * NOP` <br /> `ED58 IN E,(C) ED78 IN A,(C)` <br /> `ED59 OUT (C),E ED79 OUT (C),A` <br /> `ED5A ADC HL,DE ED7A ADC HL,SP` <br /> `ED5B LD DE,(nn) ED7B LD SP,(nn)` <br /> `ED5C * NEG ED7C * NEG` <br /> `ED5D * RET ED7D * RET` <br /> `ED5E IM 2 ED7E * IM 2` <br /> `ED5F LD A,R ED7F * NOP`
+
+## About the R register
+
+This is not really an undocumented feature, although I have never seen any thorough description of it anywhere. The R register is a counter that is updated every instruction, where DD, FD, ED and CB are to be regarded as separate instructions. So shifted instruction will increase R by two. There's an interesting exception: doubly-shifted opcodes, the DDCB and FDCB ones, increase R by two too. LDI increases R by two, LDIR increases it by 2 times BC, as does LDDR etcetera. The sequence LD R,A/LD A,R increases A by two, except for the highest bit: this bit of the R register is never changed. This is because in the old days everyone used 16 Kbit chips. Inside the chip the bits where grouped in a 128x128 matrix, needing a 7 bit refresh cycle. Therefore ZiLOG decided to count only the lowest 7 bits.
+
+## Undocumented flags F3 and F5
+
+Bits 3 and 5 of the F register are not used. They can contain information, as you can readily figure out by PUSHing AF onto the stack and then POPping some it into another pair of registers. Furthermore, sometimes their values change. The values of bits 7, 5 and 3 follow the values of the corresponding bits of the last 8 bit result of an instruction that changed the usual flags. <br />For instance, after an ADD A,B those bits will be identical to the bits of the A register (Bit 7 of F is the sign flag, and fits the rule exactly). An exception is the CP x instruction (x=register, (HL) or direct argument). In this case the bits are copied from the argument. If the instruction is one that operates on a 16 bit word, the 8 bits of the rule are the highest 8 bits of the 16 bit result - that was to be expected since the S flag is extracted from bit 15.
+
+## Interrupt flip-flops IFF1 and IFF2
+
+There seems to be a little confusion about these. These flip flops are simultaneously set or reset by the EI and DI instructions. IFF1 determines whether interrupts are allowed, but its value cannot be read. The value of IFF2 is copied to the P/V flag by LD A,I and LD A,R. When an NMI occurs, IFF1 is reset, thereby disallowing further \[maskable\] interrupts, but IFF2 is left unchanged. This enables the NMI service routine to check whether the interrupted program had enabled or disabled maskable interrupts.
+
+## Interrupt Modes (IM x)
+
+Interrupt modes can be set with the IM x instructions. They only affect mask-able interrupts. When a mask-able interrupt occurs, the interrupting device must supply a value. The Z88 only uses the IM1. All maskable interrupts are managed by the RST $38. The Non-Maskable Interrupt causes a jump to $0066.
+
+IM 0: The value the interrupting device supplies is interpreted as an 8 bit opcode which is executed (usually RST p) <br />IM 1: A call is made to address 38h. The value the interrupting device supplies is ignored. <br />IM 2: A call is made to an address read from address (register I × 256 + value from interrupting device).
+
+## Z80 hardware bugs
+
+There are several bugs in the NMOS version of the CPU. One of them is with regard to the buggy IFF2-\>parity flag performance in the LD A,I and LD A,R instructions. An error can occur when an INTACK runs near these instructions, the parity flag will be showing 0 when it should have been 1. We are not sure but this bug concerns the CMOS Z80 too. A Zilog app. note is around somewhere talking about this.
+
+## Information source
+
+This page is based on combined information from articles written by
+
+Sean Young, [syoung@cs.vu.nl](mailto:syoung@cs.vu.nl) <br />Mark Rison, [mrison@acorn.co.uk](mailto:mrison@acorn.co.uk) <br />Marat Fayzullin, [fms@freeflight.com](mailto:fms@freeflight.com)
+
+The original PDF contains more details, click on link to read / download, **[z80-documented-v0.91.pdf](https://cambridgez88.jira.com/wiki/download/attachments/9568467/z80-documented-v0.91.pdf)**.

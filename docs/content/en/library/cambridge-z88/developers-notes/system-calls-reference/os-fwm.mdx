@@ -1,0 +1,41 @@
+---
+description: "FA_EOF and FA_RWD apply to OZ5 and newer. They allow to set quickly file pointer to the top or bottom of the specified file."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7962681 (version 6) by scripts/import-z88-wiki.cjs */}
+
+# OS_Fwm, File write miscellaneous
+
+## Register parameters
+
+```text
+IN:
+     A = reason code
+          FA_PTR ($01)   sequential pointer
+          FA_EXT ($02)   extent (size) of file
+		  FA_EOF ($03) 	 goto end of file
+		  FA_RWD ($04)   rewind to beginning of file
+     HL = pointer to a 4 byte (32bit) vector (only for FA_PTR and FA_EXT)
+          (contains value to be written, low byte first)
+     IX = file handle (previously obtained using GN_Opf)
+
+OUT, if call successful:
+     Fc = 0
+OUT, if call failed:
+     Fc = 1
+     A = error code:
+          RC_HAND ($08), bad handle
+          RC_BAD ($04), bad reason code
+
+Registers changed after return:
+     ..BCDEHL/IXIY same
+     AF....../.... different
+```
+
+## Notes
+
+FA\_EOF and FA\_RWD apply to OZ5 and newer. They allow to set quickly file pointer to the top or bottom of the specified file.
+
+## Related calls
+
+**[GN\_Cl](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-cl)**, close file <br />**[GN\_Del](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-del)**, delete a file from memory <br />**[GN\_Opf](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-opf)**, open file/resource (wildcard search) <br />**[GN\_Ren](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-ren)**, rename file <br />**[OS\_Cl](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-cl)**, internal close (OZ usage) <br />**[OS\_Del](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-del)**, file delete (internal OZ usage) <br />**[OS\_Frm](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-frm)**, file read miscellaneous <br />**[OS\_Gb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-gb)**, get byte from file (or device) <br />**[OS\_Gbt](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-gbt)**, get byte from file (or device) with timeout <br />**[OS\_Mv](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mv)**, move bytes between stream and memory <br />**[OS\_Op](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-op)**, internal open (OZ usage) <br />**[OS\_Pb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-pb)**, write byte to file, device <br />**[OS\_Pbt](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-pbt)**, write byte to file, device with timeout <br />**[OS\_Ren](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-ren)**, file rename (internal OZ usage)

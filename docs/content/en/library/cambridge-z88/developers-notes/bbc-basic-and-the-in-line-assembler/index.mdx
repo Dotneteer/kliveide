@@ -1,0 +1,26 @@
+---
+description: "The Z80 in-line assembler is not covered explicitly in the Z88 User Guide, so a short explanation is provided here. The definitive source of information about the assembler, and BBC BASIC in..."
+asIndexPage: true
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/3112966 (version 1) by scripts/import-z88-wiki.cjs */}
+
+# BBC BASIC and the in-line assembler
+
+The Z80 in-line assembler is not covered explicitly in the Z88 User Guide, so a short explanation is provided here. The definitive source of information about the assembler, and BBC BASIC in general, is the BBC BASIC (Z80) manual by Richard Russell, which is available from M-Tec. A generic [BBC BASIC (Z80) Manual](http://www.bbcbasic.co.uk/bbcbasic/mancpm/bbc1.html) is also available online, however it references CP/M but is sufficient to match the Z88 functionality.
+
+Some useful BASIC commands are:
+
+```text
+LOAD "filename"         loads a BBC BASIC program
+SAVE "filename"         saves a BASIC program
+NEW                     clears out BASIC workspace for a new program
+OLD                     attempts to recover a program lost through NEW
+RUN                     execute a BASIC program
+LIST                    list out a BASIC program to the screen
+RENUMBER [a,[b]]        renumbers the lines of a BASIC program
+DELETE a,b              delete the lines between a and b
+CALL x                  execute a machine code routine at address x
+```
+
+Before moving on to the assembler properly, we cover a few unusual features of BBC BASIC.

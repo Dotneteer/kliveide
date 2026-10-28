@@ -1,0 +1,23 @@
+---
+description: "The keyboard is just 8 8 matrix between the Z80 address and data buses. It is connected on SK6 and SK7. In theory it is possible to replace the membrane by a PCB with mechanical keys (and..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/3113065 (version 2) by scripts/import-z88-wiki.cjs */}
+
+# The keyboard connectors
+
+The keyboard is just 8 \* 8 matrix between the Z80 address and data buses. It is connected on SK6 and SK7. In theory it is possible to replace the membrane by a PCB with mechanical keys (and resistors in serial). The rubber keyboard technology seems to consume a lot of power.
+
+```text
+SK6 signals     SK7 signals
+1       A14     1       D5
+2       A15     2       D4
+3       A13     3       D3
+4       A12     4       D1
+5       A11     5       D7
+6       A10     6       D0
+7       A9      7       D6
+8       A8      8       D2
+```
+
+There are two issues for the keyboard membrane : a red one, the first, and the green one which is the last and the most common. The first issue (red) seems to be often unreliable with a lot of short circuits which sends a lot of unexpected characters... It is impossible to repair them. The green issues are very good. The keyboard is probably the only part with which you encountered troubles. You can keep the same for all your life if you think to clean the contacts sometimes. After a long time, some carbon particle agglomerate on the membrane and generate short-circuits. The only thing to do is to clean the contact surfaces with some alcohol. Unscrew the case, deconnect the keyboard ribbons. Pull out the rubber and be very careful of the three slot. Clean all the keys surfaces on the rubber and the membrane with a tissue with a few standard alcohol (90°). Dry it before reassembling. Do it carefully especially on the cursor, tab, diamond, square, enter and shift keys.

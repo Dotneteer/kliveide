@@ -1,0 +1,100 @@
+---
+description: "The Z88 supports a fairly uniform device-independent I/O system, so although calls do exist wich will explicitly send data to, say, the screen or the serial port, for all operations other than..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/2392154 (version 12) by scripts/import-z88-wiki.cjs */}
+
+# File Input - Output
+
+The Z88 supports a fairly uniform device-independent I/O system, so although calls do exist wich will explicitly send data to, say, the screen or the serial port, for all operations other than reading from standard input and writing to standard output, it is usual to regard such devices as files and use a standard file I/O interface.
+
+This section will cover file access for applications, while noting that the approach remains the same if device names are substituted for the filename, thus opening a stream to the device. Major pseudo-file are:
+
+```text
+:SCR.0      The screen. Write only.
+:PRT.0      The printer. Write only.
+:COM.0      The serial interface
+:NUL.0      Null device. Output discarded, always end of file for input.
+:INP.0      Standard input. Read only. Normally the keyboard, but may be
+            redirected by the CLI.
+:OUT.0      Standard output. Write only. Normally the screen, but again, may be
+            redirected.
+```
+
+Note that the terminating numbers are optional, ie. ':COM' is equivalent to ':COM.0'. As an example of how devices are accessed using file I/O look at this BBC BASIC program:
+
+`10 LF$ = CHR$10` <br />`20 X% = OPENOUT(":COM.0")` <br />`30 PRINT#X%,"Hello"+LF$` <br />`40 CLOSE#X%`
+
+The program sends 'Hello' to the serial port. The extra line feed character is necessary as both \<CR\> and \<LF\> are necessary for a true newline when writing to an actual display device and BBC BASIC's PRINT\# command only sends a \<CR\>.
+
+## Accessing files
+
+This can be broken into three basic stages:
+
+- Opening
+
+The open file call must be provided with a filename and an access mode. The access mode is open for input, output or update, although other options are available for working with directories and DOR's. The call returns a handle which is unique to the particular access of the file, but note that more than one handle may be associated with any particular file. A file may be open for input from several source, but may only be opened for update or output by one source. An attempt to open a file for output or updating, which is already open for output or updating will result in an "In use" error, RC\_USE. Other reasons for not being able to open files are poor filenames, read or write protection of a device, non-existence (in the case of opening for input or update), a lack of memory or lack of handles. There are only a finite supply of handles - about 150. The call used for opening files and is **[GN\_Opf](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-opf)**.
+
+- Access
+
+All file access is referenced by the file handle. Access to RAM files is random with a sequential pointer into the file which can be both read and written. Both byte by byte transfer, and transfer of whole blocks is possible. Calls for file access are **[OS\_Pb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-pb)** (put byte), **[OS\_Gb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-gb)** (get byte) and **[OS\_Mv](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mv)** (move bytes between a file and memory). Timed versions of the byte transfer calls exists (**[OS\_Pbt](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-pbt)** and **[OS\_Gbt](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-gbt)**) for use with devices like the printer and serial port. Three file attributes can be read, and two written. PTR (pointer) is the file pointer and gives the location wthin the file. EXT (extent) gives the size of the file and finally EOF (end of file) is the read only attribute which is true when the file pointer is at the end of the file ie. when PTR = EXT. These attributes may be read using **[OS\_Frm](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-frm)** (file read miscellaneous) and written with **[OS\_Fwm](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fwm)** (file write miscellaneous).
+
+- Closing
+
+The close call needs only be supplied with the file handle. When closed, a file is free for updates from other sources, its handle is released, any memory used for buffers is freed, etc. The call used to close files and streams is **[GN\_Cl](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-cl)**.
+
+An open file may not be deleted and an attempt to do this will result in an "In use" (RC\_USE) error. Note that because opening a file for output will attempt delete the file if it already exists, the "In use" error also occurs in this context.
+
+## Filenames
+
+Filenames come in two forms, only one of which is actually given a name. Ordinary, as it were, filenames can have as much or as little information as is required to uniquely identify a file. For example "fred.txt" is an ordinary filename, or even "fred.\*", which will probably be sufficient to find the same file. An explicit filename, on the other hand, is one which includes all the information associated with the file, including it's full name, any directory within which it resides, and any in which that may reside, and finally the device where the file is stored. So we might have ":RAM.1/maindir/fred.txt" as an explicit filename.
+
+Each part of the explicit filename divided by slashes (or backslashes) is called a segment, so the above name consists of three segments which are a device, a directory and a filename respectively. Segments will always come in this order, but there may be several directories in the explicit name. Each segment consists of a name which is up to twelve characters long and an optional extension, separated from the name by a full stop, which may be up to three characters long. All device names are preceeded by a colon. The system provides various calls for breaking down and assembling filenames in terms of segments, such as **[GN\_Esa](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-esa)** (read and write specific segments), **[GN\_Fex](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-fex)** (produce explicit filename) and **[GN\_Fcm](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-fcm)** (compress an explicit filename). The open file call, **[GN\_Opf](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-opf)**, in the course of its operation produces from the filename supplied an explicit filename which can be returned in full, or in a cut down form, to the user. Other useful filename processing calls are **[GN\_Pfs](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-pfs)** (parse filename segment) and **[GN\_Prs](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-prs)** (parse filename), which not only check for correct syntax, but also return information as to what has been specified in the filename, eg. whether wildcards have been used, or a specific device mentioned. The wildcard facilities are covered later in "Wildcards".
+
+## File Devices
+
+The above rules apply to the RAM filing system accessed with the :RAM.x device (x stands for the slot number 0-3). The [EPROM file area](/en/library/cambridge-z88/developers-notes/eprom-file-area) can be accessed directly by the :EPR.x device.
+
+## Suspension
+
+The file transfer calls may be suspended in circumstances. If the stream being used is associated either the serial port or printer then RC\_SUSP will be returned if the machine is switched off and on again, or if a battery low interrupt occurs. If escape detection is enabled then \<ESC\> will cause file transfer to abort and RC\_ESC to be returned. A more serious case is where the stream is associated with the keyboard. If this is the situation, pre-emption can occur when reading from the stream and the possible return codes will be RC\_SUSP, RC\_DRAW and RC\_QUIT.
+
+## Block Transfer
+
+If a lot of data is to be transferred between memory and a stream then doing the work a byte at a time can be quite a slow process. Each time a byte is transferred with these calls, the operating system must be paged in and various checks and action carried out, all of which generates a considerable overhead. The **[OS\_Mv](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mv)** call reduces this overhead by transferring a large number of bytes between memory and a stream all in one go, and so can operate much more quickly. It can be useful for operations like loading and saving files.
+
+## Summary
+
+`GN_Opf` Open a file, returns a file handle used for subsequent access<br />`GN_Cl` Close a file or stream<br />`OS_Gb` Get byte from file or stream<br />`OS_Gbt` As OS\_Gb but with timeout<br />`OS_Pb` Put byte to file or stream<br />`OS_Pbt` As OS\_Pb but with timeout<br />`OS_Mv` Move bytes from stream to memory, or from memory to stream<br />`OS_Frm` Read file or stream parameters PTR, EXT and EOF<br />`OS_Fwm` Write file parameters PTR and EXT<br /><br />`GN_Esa` Read and write filename segments<br />`GN_Fex` Produce explicit filename<br />`GN_Fcm` Compress explicit filename<br />`GN_Pfs` Parse filename segment<br />`GN_Prs` Parse filename
+
+```text
+; very simple example of opening and closing a file 
+; open a file and display full filename assumes that on entry 
+; HL points to filename and that DE points to a 40 byte buffer 
+; entry point is main
+ 
+include "fileio.def"                ; file I/O definition calls, parameters
+include "stdio.def"                 ; standard I/O definition calls, parameters
+include "errors.def"                ; error code definitions
+
+.main       push de                 ; save DE for future reference
+            ld   b, 0               ; indicate HL a local address
+            ld   c, 40              ; size of expanded name buffer
+            ld   a, OP_IN           ; open file for input
+            oz   GN_Opf             ; open...
+            jr   nc, no_error
+            oz   GN_Err             ; display error in error box
+            pop  de                 ; balance stack
+            ret
+
+.no_error   xor  a
+            ld   (de),a             ; terminate explicit filename
+            ld   hl, file_mess
+            oz   GN_Sop             ; output constant string
+            pop  hl                 ; get start address of expanded name
+            oz   GN_Sop             ; output expanded name
+            oz   GN_Nln             ; newline
+            oz   GN_Cl              ; now close the file
+
+.file_mess  defm "Using: ", 0
+```

@@ -1,0 +1,28 @@
+---
+description: "Write RAM file to UV Eprom card hardware in slot 3 (or available Flash hardware). If a file area does not exist on the card in slot 3, it will be created on the card (if possible). If a file..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7471428 (version 6) by scripts/import-z88-wiki.cjs */}
+
+# EP_SAVE ($00) - blow RAM file to Eprom in slot 3
+
+## Register parameters
+
+```text
+IN:  A = EP_SAVE
+     BHL = pointer to filename, (B=0 means local pointer)
+
+OUT: Fc = 0, file successfully blown on File EPROM.
+     Fc = 1:
+          A = RC_FAIL ($16), file couldn't be blown on EPROM.
+
+Registers changed after return:
+  ..BCDEHL/IXIY same 
+  AF....../.... different
+```
+
+## Notes
+
+Write RAM file to UV Eprom card hardware in slot 3 (or available Flash hardware). If a file area does not exist on the card in slot 3, it will be created on the card (if possible). If a file already exists in the file area with the same path/filename, it will automatically marked as deleted.
+
+OZ versions up until V4.0 only supports writing files to UV Eproms using this reason code. OZ V4.2 and newer also supports writing files to Flash cards (automatically detected).

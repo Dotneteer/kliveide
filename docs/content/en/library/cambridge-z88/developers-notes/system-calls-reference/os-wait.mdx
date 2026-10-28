@@ -1,0 +1,25 @@
+---
+description: "OS_Wait, Wait for event"
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8618008 (version 3) by scripts/import-z88-wiki.cjs */}
+
+# OS_Wait, Wait for event
+
+## Register parameters
+
+```text
+IN:
+     A = WT_ANY ($FF)
+     BC = 0
+
+OUT: -
+
+Registers changed after return:
+     A.BCDEHL/IXIY same
+     .F....../.... different
+```
+
+## Notes
+
+Internal operating system usage.

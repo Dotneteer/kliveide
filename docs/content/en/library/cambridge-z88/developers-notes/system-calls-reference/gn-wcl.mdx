@@ -1,0 +1,29 @@
+---
+description: "GN_Esa, read & write to filename segments GN_Fcm, compress a filename GN_Fex, expand a filename GN_Opw, Open wildcard handler GN_Pfs, parse filename segment GN_Prs, parse filename GN_Wfn, fetch..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8618198 (version 3) by scripts/import-z88-wiki.cjs */}
+
+# GN_Wcl, Close wildcard handle
+
+## Register parameters
+
+```text
+IN:
+     IX = wildcard handle
+OUT, if call successful:
+     Fc = 0
+     IX = 0
+OUT, if call failed:
+     Fc = 1
+     A = error code:
+          RC_HAND ($08), bad handle
+
+Registers changed after return:
+     ...C..HL/..IY same
+     AFB.DE../IX.. different
+```
+
+## Related calls
+
+**[GN\_Esa](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-esa)**, read & write to filename segments <br />**[GN\_Fcm](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-fcm)**, compress a filename <br />**[GN\_Fex](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-fex)**, expand a filename <br />**[GN\_Opw](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-opw)**, Open wildcard handler <br />**[GN\_Pfs](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-pfs)**, parse filename segment <br />**[GN\_Prs](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-prs)**, parse filename <br />**[GN\_Wfn](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-wfn)**, fetch next match for wildcard string (handle) <br />**[GN\_Wsm](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-wsm)**, match filename segment to wildcard string

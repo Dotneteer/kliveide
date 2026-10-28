@@ -1,0 +1,56 @@
+---
+description: "This system call has been implemented in OZ v4.5."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/62193794 (version 9) by scripts/import-z88-wiki.cjs */}
+
+# GN_Ldm, Localized Date Manipulation
+
+## Register parameters
+
+```text
+IN:
+A = desired string with
+     A7 = 1 get day of the week
+     A6 = 1 get month name
+     A5 = 0 full string, 1 short string
+     A4 = 0 get moment (no short string available)
+     A0-A3 day of the week from 1-7 (Monday-Sunday)
+           or month name 1-12 (January_December)
+           or moment : 1=today, 2=yesterday, 3=tomorrow
+
+HL = Destination buffer (at least 16 bytes required)
+     HL has to be in segment 2 or 3
+
+OUT, if call successful:
+     Fc = 0
+     HL = null terminated string desired
+     DE = zero at the end of the string
+     B = number of characters written to buffer (except trailing zero)
+
+OUT, if call failed:
+     Fc = 1
+     A = error code
+ 
+Registers changed after return:
+     ...C..HL/IXIY same
+     AFB.DEHL/.... different
+```
+
+## Notes
+
+This system call has been implemented in OZ v4.5.
+
+The call is useful to get country localized full or short string of day of the week or month name. An example of the usage can be read in Calendar popdown source code.
+
+The localized string of 'Today, Yesterday or Tomorrow' is available. It is used by GN\_Sdo to output today instead of formatted date as seen in Index application.
+
+The buffer on entry has to be in segment 2 or 3, segment 1 is used by the Date Filter Definition Table (FDT).
+
+Bugs
+
+\-
+
+## Related calls
+
+**[GN\_Dei](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-dei)**, convert zoned format date to internal format <br />**[GN\_Die](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-die)**, convert internal format date to zoned format <br />**[GN\_Gdt](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-gdt)**, convert an ASCII string to an internal binary date<br />**[GN\_Pdn](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-pdn)**, write number as decimal ASCII string<br />**[GN\_Gmd](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-gmd)**, Get (read) machine date in internal format <br />**[GN\_Pmd](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-pmd)**, put (set) machine date

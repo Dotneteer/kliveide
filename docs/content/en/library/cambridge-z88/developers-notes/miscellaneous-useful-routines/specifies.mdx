@@ -1,0 +1,155 @@
+---
+description: "The OS_Sp call is a companion to the OS_Nq and is used to set system parameters, notably the Panel and the PrinterEd settings. A call is made by loading register pair BC with a reason code and the..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/2752710 (version 7) by scripts/import-z88-wiki.cjs */}
+
+# Specifies
+
+The **[OS\_Sp](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-sp)** call is a companion to the **[OS\_Nq](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-nq)** and is used to set system parameters, notably the Panel and the PrinterEd settings. A call is made by loading register pair BC with a reason code and the other registers with values specific to that reason code. Register changes and output specifications are different for each reason code. The **[OS\_Sp](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-sp)** interface call is as follows:
+
+```text
+RST 20H, DEFB $69
+
+IN:
+            BC = reason code
+            HL = pointer to data
+            A = length (size) of data
+ 
+OUT, if call succeeded:
+            Fc = 0
+ 
+OUT, if call failed:
+            Fc = 1
+            A = return code:
+                        RC_BAD ($04), incorrect reason code or parameter
+                        RC_UNK ($03), unknown request
+```
+
+## System Values
+
+```text
+Symbol (reason code)    Size        Meaning
+PA_Gfi ($8000)          0           Install changed settings
+PA_Mct ($8001)          1           Timeout in minutes
+PA_Rep ($8002)          1           Repeat rate
+PA_Kcl ($8003)          1           Keyclick 'Y' or 'N'
+PA_Snd ($8004)          1           Sound 'Y' or 'N'
+PA_Bad ($8005)          1           Default bad process size in K
+PA_Loc ($8006)          1           Country keyboard letter
+                  CL_US = 'A' United states
+                  CL_FR = 'F' France
+                  CL_DE = 'G' Germany
+                  CL_UK = 'U' England
+                  CL_DK = 'D' Denmark
+                  CL_SE = 'S' Sweden
+                  CL_IT = 'I' Italy
+                  CL_SP = 'P' Spain
+                  CL_JP = 'J' Japan (not implemented)
+                  CL_IS = 'C' Iceland (not implemented)
+                  CL_NO = 'N' Norway
+                  CL_CH = 'W' Chweiss
+                  CL_TR = 'T' Turkey (not implemented)
+                  CL_FI = 'L' Finland
+```
+
+## Application values
+
+```text
+Symbol (reason code)    Size        Meaning
+PA_Iov ($8010)          1           Insert/Overtype 'I' or 'O'
+PA_Dat ($8011)          1           Date format 'E' or 'A' (European, American)
+PA_Map ($8012)          1           PipeDream map 'Y' or 'N'
+PA_Msz ($8013)          1           Map size in pixels
+PA_Dir ($8014)          12          Default directory
+PA_Dev ($8015)          16          Default device
+```
+
+## Serial port values
+
+```text
+Symbol (reason code)    Size        Meaning
+PA_Txb ($8016)          2 (or 1)    Transmit baud rate - binary
+PA_Rxb ($8017)          2 (or 1)    Receive baud rate - binary
+PA_Xon ($8018)          1           Xon/Xoff 'Y' or 'N'
+PA_Par ($8019)          1           Parity 'O', 'E', 'M', 'S' or 'N'
+```
+
+## **Printer Editor values** (highlights & translation tables)
+
+```text
+Symbol (reason code)    Size        Meaning
+PA_Ptr ($8020)          9           Printer name
+PA_Alf ($8021)          1           Allow Linefeed, 'Y' or 'N'
+PA_Pon ($8022)          31 (max)    Printer On sequence
+PA_Pof ($8023)          31 (max)    Printer Off sequence
+PA_Eop ($8024)          31 (max)    End of page sequence
+
+PA_Mip ($8025)          31 (max)    HMI prefix sequence
+PA_Mis ($8026)          31 (max)    HMI suffix sequence
+PA_Mio ($8027)          31 (max)    HMI offset sequence
+```
+
+The format of each highlight sequence is as follows:
+
+```text
+PA_On<n>                31 (max)    Highlight ON sequence
+PA_On<n>+1              31 (max)    Highlight OFF sequence
+PA_On<n>+2              1           OFF at CR 'Y' or 'N'
+PA_On<n>+3              1           Highlight n special character
+```
+
+The printer editor has a facility for overprinting characters, which is most often used to implement underlining on certain printers, by printing a character followed by a backspace and an underline character. The user enter a ? (query), to represent the character being printed, in the ON sequence (the OFF sequence being blank), and this sequence is output for every character with the current character being substituted for the query. Internally the Printer Editor usually represents the current character as an $FF (it will show up like this in the Printer Editor, if a string is installed, updated, and the Printer Editor is KILL'ed and re-entered). However, because it might be necessary to use an $FF in your overprinting sequence, it is possible to change the internal representation of the current character to some other value. If you want to use an overprinting sequense you must set up PA\_SP\<n\> yourself and use your value in the ON string to represent the current character. To implement backspace underlining you might set the ON sequence and special character like this:
+
+```text
+PA_ON1      255,8,95                eg. ?, BS, "_"
+PA_SP1      255                     special highlight character
+```
+
+## Highlight bases
+
+```text
+PA_On1 ($8028)                      Underline
+PA_On2 ($802C)                      Bold
+PA_On3 ($8030)                      Extended sequence
+PA_On4 ($8034)                      Italics
+PA_On5 ($8038)                      Subscript
+PA_On6 ($803C)                      Superscript
+PA_On7 ($8040)                      Alternate font
+PA_On8 ($8044)                      User Defined
+```
+
+## Translations
+
+The format of each translation code sequence is as follows:
+
+```text
+Symbol (reason code)    Size        Meaning
+PA_Fr<n> (base+0)       31 (max)    Translate from character
+PA_To<n> (base+1)       31 (max)    Translate to sequence
+
+Symbol (reason code)    Size        Meaning
+PA_Tr1 ($8048)                      Row 1, Entry A
+PA_Tr2 ($804A)                      B
+PA_Tr3 ($804C)                      C
+PA_Tr4 ($804E)                      Row 2, Entry A
+PA_Tr5 ($8050)                      B
+PA_Tr6 ($8052)                      C
+PA_Tr7 ($8054)                      Row 3, Entry A
+PA_Tr8 ($8056)                      B
+PA_Tr9 ($8058)                      C
+```
+
+PA\_Fr\<n\> will normally be one character long. If there are more characters in this sequence then the first character is replaced by the translation string, nut the others are printed as well.
+
+International versions of the machine have an extra page of 28 translations (using the \<\>ISO command). The reason codes for these translations start at $8080 up to $80B6. Four extra translations (PA\_Tr38 to PA\_Tr41) have been added since OZ 4.7 porting ISO translations to 32 ($80B8 to $80BE).
+
+The settings do not come into effect until **[OS\_Sp](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-sp)** is called with the reason code PA\_GFI and A = 0, which installs both the Panel and Printer Editor values. No error checking is done, so make sure the values are valid.
+
+In addition to the Panel and Printer Editor, the following parameters can be set. They expect HL to point to a null-terminated string:
+
+```text
+SP_Dev ($8C00)                      Set current device
+SP_Dir ($8C03)                      Set current directory
+SP_Fnm ($8C06)                      Set current name match
+```

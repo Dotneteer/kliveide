@@ -1,0 +1,38 @@
+---
+description: "Create file area header in UV Eprom Card (or Flash card, if available) in slot C. On UV Eprom, only the 64 byte header is created - on Flash Card, the complete file area is formatted and a header..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7471555 (version 6) by scripts/import-z88-wiki.cjs */}
+
+# EP_Format ($3f) - Create File Area in slot C, on UV Eprom or Flash Card
+
+## Register Parameters
+
+```text
+IN:
+        A = EP_FORMAT
+        C = slot number
+OUT:
+        Fc = 0,
+             File Area created in slot C.
+
+        Fc = 1,
+             A = RC_VPL, RC_BWR, Flash/UV Eprom Write Error
+             A = RC_EPNE (UV Eprom file area not empty)
+
+ Registers changed on return:
+   A.BCDEHL/IXIY same
+   .F....../.... different
+```
+
+## Notes
+
+Create file area header in UV Eprom Card (or Flash card, if available) in slot C. On UV Eprom, only the 64 byte header is created - on Flash Card, the complete file area is formatted and a header created.
+
+On OZ V4.5 and later, the complete file are is also checked to be empty (all bytes = FFh) after the header has been created on an UV Eprom. Fc = 1, A = RC\_EPNE is returned if the file area contains bytes not completely erased.
+
+The screen is turned off while file area header & area is being formatted, when file area is in the same slot as the OZ ROM. During formatting, no interference must happen from Blink, because the Blink reads the font bitmaps each 1/100 second:
+
+If the screen were enabled while formatting inside the address space that is part of OZ ROM chip, the font bitmaps would suddenly be unavailable which would create violent screen flickering during chip command mode. Further, and most importantly, to avoid the Blink doing read-cycles while chip is in command mode.
+
+By switching off the screen, the Blink doesn't read the font bit maps in OZ ROM, and the Flash chip can be in command mode (writing file area header and formatting area) without being disturbed by the Blink.<br /><br />**Important:**<br />INTEL I28Fxxxx series Flash chips require the 12V VPP pin in slot 3 to successfully blow data to the memory chip. If the Flash Eprom card is inserted in slot 1 or 2, this routine will report a programming failure. It is the responsibility of the application (before using this call) to evaluate the Flash Memory (using the [**OS\_Fep**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fep), A=FEP\_CDID call) and warn the user that an INTEL Flash Memory Card requires the Z88 slot 3 hardware, so this type of unnecessary error can be avoided. Equally, the application should evaluate that saving to a file that is on an UV Eprom only can be performed in slot 3. This routine will report failure if creating a file area header in slots 0, 1 or 2.

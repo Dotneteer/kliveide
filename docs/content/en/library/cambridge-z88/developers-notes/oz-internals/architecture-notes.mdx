@@ -1,0 +1,557 @@
+---
+description: "OZ 5.0 requires 512K of ROM and a minimum of 32K RAM. The ROM is divided in a core of 128K, an application space of 128K and a 256K file area."
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/307036207 (version 18) by scripts/import-z88-wiki.cjs */}
+
+# Architecture Notes
+
+OZ 5.0 requires 512K of ROM and a minimum of 32K RAM. The ROM is divided in a core of 128K, an application space of 128K and a 256K file area.
+
+This document describes the bank organisation and details their acronyms. Acronyms are followed by a \_BNK suffix in OZ definition files.
+
+## The core
+
+It contains the kernel, static structures, API calls.
+
+Kernel calls are done by OS API, it fits in 3 banks.
+
+- KN0 stands for primary kernel bank, accessed by OS 1 byte calls
+- KN1 for secondary kernel bank, accessed by OS (06) 2 bytes calls
+- KN2 for auxiliary kernel bank, accessed by OS (03) 2 bytes calls
+
+The core static structures are held in STS bank and contains fonts, keyboard maps, localized texts.
+
+API calls are DC (12), GN (09) and FP calls. DC stands for director/CLI, GN for general, FP for floating point.
+
+## OZ Memory segment configuration
+
+Memory configuration during calls are described below :
+
+<Table>
+<thead>
+<Table.Tr>
+<Table.Th>
+
+```text
+Segment
+```
+
+</Table.Th>
+<Table.Th />
+<Table.Th>
+
+```text
+HARD
+
+Reset
+```
+
+</Table.Th>
+<Table.Th>
+
+```text
+SOFT
+
+Reset
+```
+
+</Table.Th>
+<Table.Th>
+
+```text
+OS
+
+RST 20h+
+byte
+```
+
+</Table.Th>
+<Table.Th>
+
+```text
+OS*
+
+RST 20h+
+06+byte
+```
+
+</Table.Th>
+<Table.Th>
+
+```text
+OS*
+
+RST 20h+
+03+byte
+```
+
+</Table.Th>
+<Table.Th>
+
+```text
+DC*
+
+RST 20h+
+12+byte
+```
+
+</Table.Th>
+<Table.Th>
+
+```text
+GN*
+
+RST 20h+
+09+byte
+```
+
+</Table.Th>
+<Table.Th>
+
+```text
+FP
+
+RST 18h+
+byte
+```
+
+</Table.Th>
+</Table.Tr>
+</thead>
+<tbody>
+<Table.Tr>
+<Table.Td>
+
+```text
+S0L
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+$0000 - $1FFF
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+KN0L
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+R20L
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+R20L
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+R20L
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+R20L
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+R20L
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+R20L
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+R20L
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+S0H
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+$2000 - $3FFF
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+KN0H
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+R20H
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+Usr
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+Usr
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+Usr
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+Usr
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+Usr
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+Usr
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+S1
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+$4000 - $7FFF
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+KN0
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+Usr
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+Usr
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+Usr
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+Usr
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+Usr
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+Usr
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+Usr
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+S2
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+$8000 - $BFFF
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+KN0
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+KN2
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+Usr
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+KN1
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+KN2
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+Usr
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+Usr
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+Usr
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+S3
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+$C000 - $FFFF
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+KN0
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+KN0
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+KN0
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+KN0
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+KN0
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+DC
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+GN
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+FP
+```
+
+</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+\* = OZ push frame established
+
+## RAM
+
+The system ram is a minimum of 2 banks designated by :
+
+- R20 main system bank, its lower part is always bound to S0L
+- R21 holds the MAT for :RAM.0 device and other filing system device DORs
+
+When inserted, additionnal system ram banks are :
+
+- R40 holds the MAT for :RAM.1 device
+- R80 holds the MAT for :RAM.2 device
+- RC0 holds the MAT for :RAM.3 device
+
+## API
+
+OZ API is addressed by RST 20h followed by 1 or 2 bytes identifier. The FP package is an exception due to register design constraints and uses RST 18h.
+
+The 1 byte calls are always OS API. They are intend to provide a fast response (screen driver, handles, memory allocation...). OZ push frame is not invoked. Alternate register set is set on entry. An exchange instruction is required to read input values.
+
+The 2 bytes calls always set up the OZ Push frame before entering the call. Direct register set and input value are exposed on entry. Those values can be reclaimed using pushframe index added to IY.
+
+This clever design stands for all the OS 2 bytes, DC and GN calls.
+
+## OZ Push frame
+
+On entry of all two bytes calls, IY holds a frame of 16 bytes pushed to the stack.
+
+This frame contains environment : caller PC, previous segment 2 and 3 bindings, contents of AF, BC, DE, HL, IY registers.
+
+Notice that IX is not preserved.
+
+Exiting is performed by LSB = 0 of the API table in segment 3.
+
+On exit, segment 2 and 3 are restored, thus any change of segment 2 has not to be restored by the call.
+
+This powerful design gives a kind of temporary variable area for the call.
+
+Elf code heavily rely on this stack frame.
+
+Debug interface extend this push frame to all Z80 registers.
+
+## The applications
+
+They are divided in system applications :
+
+- Shell
+- Panel/PrinterEd
+- Filer
+- Clock/Calendar/Alarm
+
+And optional ones which could be removed :
+
+- Pipedream
+- Diary
+- BBC Basic
+- Calculator
+- Terminal
+- Imp-Export
+- Eazylink
+- FlashStore
+
+An additional MTH bank holds all the menu commands, help and system tokens.
+
+Notice that Index belongs to the core, its code is mixed with DC API in DC bank.
+
+## The file area
+
+The system file area is named :EPR.0 or :EPR.1 if OZ runs from slot 1. Its directory layout follows the unix convention, Shell commands stand in :EPR.x/bin/, man pages in :EPR.x/usr/man/, ...

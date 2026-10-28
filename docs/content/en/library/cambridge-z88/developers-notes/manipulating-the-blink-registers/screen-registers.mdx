@@ -1,0 +1,46 @@
+---
+description: "The addresses of the screen files are held in BLINK registers PB0 to PB3 and SBR. These registers tell the blink where are the screen files in physical memory. Thus the blink can generate the data..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/3113036 (version 2) by scripts/import-z88-wiki.cjs */}
+
+# Screen registers
+
+**Screen registers**
+
+The addresses of the screen files are held in BLINK registers PB0 to PB3 and SBR. These registers tell the blink where are the screen files in physical memory. Thus the blink can generate the data stream sent to the LCD. These registers are write-only and are more than 8 bits wide. Their softcopies are stored at ($046x) for the most significant bits and ($047x) for the 8 right bits. They are set by OS\_Sci call which is using OUT (C),A instructions. B always contains the left bits of data (more than 8), A the data, C the port. So, A is ($047x) and B is ($046x). Please, refer to the Screen Files chapter for more about their structure.Their width determine the file granularity in a bank. For example, the LORES1 can be stored at 0, 4, 8 or 12K. The role of these registers is as follows:
+
+```text
+Register  Name   Role   Length     Granularity  Width    Softcopies ($046x)       ($047x)
+PB0 ($70) SC_LR0 LORES0 512 bytes  512 bytes    13 bits             5 bits right  8 bits right
+PB1 ($71) SC_LR1 LORES1 3.5K bytes 4K bytes     10 bits             2 bits right  8 bits right
+PB2 ($72) SC_HR0 HIRES0 6K bytes   8K bytes     9 bits              1 bit right   8 bits right
+PB3 ($73) SC_HR1 HIRES1 2K bytes   2K bytes     11 bits             3 bits right  8 bits right
+SBR ($74) SC_SBR SBF    2K bytes   2K bytes     11 bits             3 bits right  8 bits right
+```
+
+*How to generate address from blink screen register softcopies* (iner of the OS\_SCI call)
+
+```text
+h : bit from $046x
+l : bit from $047x
+                          Insert 00 bits here
+                          ||
+                          vv
+PB0 : 13 bits : hhhh hlll 00ll lll0
+PB1 : 10 bits : hhll llll 00ll 0000
+PB2 :  9 bits : hlll llll 00l0 0000
+PB3 : 11 bits : hhhl llll 00ll l000
+SBR : 11 bits : hhhl llll 00ll l000
+```
+
+Example, on an Expanded machine :
+
+```text
+Register : ($046x) ($047x) -> Offset
+  PB0      $04     $31     -> $212200
+  PB1      $00     $1C     -> $070000
+  PB2      $00     $43     -> $212000
+  PB3      $00     $39     -> $070400
+  SBR      $01     $0F     -> $213800
+```

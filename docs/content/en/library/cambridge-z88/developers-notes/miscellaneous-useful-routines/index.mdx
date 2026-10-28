@@ -1,0 +1,22 @@
+---
+description: "This section explains how to manipulate system parameters, i.e. from the Panel, the Printer Editor and other system resources. The rest of this section displays useful routines which does not..."
+asIndexPage: true
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/2752701 (version 2) by scripts/import-z88-wiki.cjs */}
+
+# Miscellaneous useful routines
+
+This section explains how to manipulate system parameters, i.e. from the Panel, the Printer Editor and other system resources. The rest of this section displays useful routines which does not conveniently fit in any of the other sections.
+
+## System resource parameters
+
+These parameters are divided into 5 groups. Their mnemonic identifier is a 16bit identifier code where the high byte of the code identifies the related group:
+
+```text
+$80xx       PANEL system parameters (timeout, baud rates, date format...)
+$83xx       Window management parameters.
+$86xx       Process management parameters.
+$89xx       Memory management parameters.
+$8Cxx       Director/CLI parameters.
+```

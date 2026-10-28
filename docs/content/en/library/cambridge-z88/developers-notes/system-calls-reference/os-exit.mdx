@@ -1,0 +1,32 @@
+---
+description: "OS_Ent, enter an application DC_Ent, enter new application DC_Nam, name current application OS_Poll, poll for an application DC_Pol, poll for card usage OS_Stk, stack the current process..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7471568 (version 4) by scripts/import-z88-wiki.cjs */}
+
+# OS_Exit, Quit process (application)
+
+## Register parameters
+
+```text
+IN:
+     IX = application handle returned from a previous OS_Poll
+     BHL = pointer to stacked process information:
+          B = 0, exit current process
+          B <> 0, start instantiation of HL process handle and force OS_Bye via RC_QUIT
+
+OUT, if call failed:
+     Fc = 1
+          A = RC_???
+Registers changed after return:
+     ..BCDEHL/IXIY same
+     AF....../.... different
+```
+
+## Notes
+
+Internal operating system usage.
+
+## Related system calls
+
+**[OS\_Ent](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-ent)**, enter an application <br />**[DC\_Ent](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-ent)**, enter new application <br />**[DC\_Nam](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-nam)**, name current application <br />**[OS\_Poll](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-poll)**, poll for an application <br />**[DC\_Pol](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-pol)**, poll for card usage <br />**[OS\_Stk](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-stk)**, stack the current process (application) <br />**[OS\_Use](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-use)**, process card usage <br />**[OS\_Bye](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-bye)**, exit application <br />**[DC\_Bye](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-bye)**, exiting current application

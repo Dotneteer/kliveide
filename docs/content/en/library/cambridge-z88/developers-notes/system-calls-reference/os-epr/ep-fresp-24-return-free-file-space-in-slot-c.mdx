@@ -1,0 +1,31 @@
+---
+description: "Return free space in Standard File Eprom Area, inserted in slot C."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7471530 (version 2) by scripts/import-z88-wiki.cjs */}
+
+# EP_FreSp ($24) - Return free file space in slot C
+
+## Register Parameters
+
+```text
+IN:
+   A = EP_FRESP
+   C = slot number containing File Eprom Area
+
+OUT:
+   Fc = 0, File Area available
+        DEBC = Free space available
+               (DE = high 16bit, BC = low 16bit)
+
+   Fc = 1, File Area was not found in slot C
+        A = RC_ONF
+
+Registers changed after (successful) return:
+   ......HL/IXIY same
+   AFBCDE../.... different
+```
+
+## Notes
+
+Return free space in Standard File Eprom Area, inserted in slot C.

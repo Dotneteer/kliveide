@@ -1,0 +1,61 @@
+---
+description: "If IX(in) = $FFFF then the following information is obtained: FA_PTR: DE = number of free handles BC = OZ version number (OZ version is embedded in C register as two hex nibbles - i.e. 44H for OZ..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7962677 (version 10) by scripts/import-z88-wiki.cjs */}
+
+# OS_Frm, File read miscellaneous
+
+## Register parameters
+
+```text
+IN:  
+     A = reason code
+     FA_PTR ($01)   return sequential pointer (32bit integer)
+     FA_EXT ($02)   return extent (size) of file (32bit integer)
+     FA_EOF ($03)   end of file enquiry
+     FA_BST ($04)   buffer status (internal OZ usage)
+
+     DE = 0, return result in DEBC registers (D = MSB, C = LSB)
+	 DE < $8000, return result in (DE)
+    
+     IX = file handle (previously obtained with GN_Opf)
+     IX = $FFFF then system values are returned
+
+OUT, if call successful:
+     Fc = 0
+     Fz = 1, end of file (FA_EOF)
+     Fz = 0, not end of file (FA_EOF)
+
+     DEBC = 32bit result (returned by FA_PTR, FA_EXT, FA_BST)
+     (D = most significant byte, C = least significant byte)
+
+OUT, if call failed:
+     Fc = 1
+     A = error code:
+          RC_HAND ($08), bad handle
+
+Registers changed after return:
+     ......HL/IXIY same
+     AFBCDE../.... different
+```
+
+## Notes
+
+System information:
+
+If IX(in) = $FFFF then the following information is obtained:<br /><br /> FA\_PTR:<br /> DE = number of free handles<br /> BC = OZ version number (OZ version is embedded in C register as two hex nibbles - i.e. 44H for OZ V4.4 - however it's 03H for OZ 2.x & OZ 3.x, and 04H for OZ 4.0)<br /><br /> FA\_EXT:<br /> DEBC = estimate of free memory<br /><br /> FA\_EOF:<br /> Fz = 1, if Z88 is expanded, else Fz = 0
+
+Buffer status
+
+FA\_BST only works with serial comms handle in IX (else Fc=1 and A=RC\_Hand). It returns:<br />D = Tx buffer used slots<br />E = Tx buffer free slots<br />H = Rx buffer used slots<br />L = Rx buffer used slots
+
+This information can also be obtained by [**OS\_Si**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-si)/SI\_Enq.
+
+## Bugs
+
+DE must be in segment 0 or 1, otherwise the call is unreliable.
+
+## Related calls
+
+**[GN\_Cl](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-cl)**, close file <br />**[GN\_Del](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-del)**, delete a file from memory <br />**[GN\_Opf](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-opf)**, open file/resource (wildcard search) <br />**[GN\_Ren](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-ren)**, rename file <br />**[OS\_Cl](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-cl)**, internal close (OZ usage) <br />**[OS\_Del](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-del)**, file delete (internal OZ usage) <br />**[OS\_Fwm](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fwm)**, file write miscellaneous <br />**[OS\_Gb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-gb)**, get byte from file (or device) <br />**[OS\_Gbt](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-gbt)**, get byte from file (or device) with timeout <br />**[OS\_Mv](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mv)**, move bytes between stream and memory <br />**[OS\_Op](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-op)**, internal open (OZ usage) <br />**[OS\_Pb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-pb)**, write byte to file, device <br />**[OS\_Pbt](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-pbt)**, write byte to file, device with timeout <br />**[OS\_Ren](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-ren)**, file rename (internal OZ usage)

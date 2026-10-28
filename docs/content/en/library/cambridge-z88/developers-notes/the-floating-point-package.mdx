@@ -1,0 +1,66 @@
+---
+description: "Floating point numbers in the Z88 are stored as a 4-byte mantissa and a 1 byte exponent. The exponent byte is simply the exponent plus 127. The mantissa is a binary fraction in a standard form..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/2752566 (version 3) by scripts/import-z88-wiki.cjs */}
+
+# The floating point package
+
+Floating point numbers in the Z88 are stored as a 4-byte mantissa and a 1 byte exponent. The exponent byte is simply the exponent plus 127. The mantissa is a binary fraction in a standard form where the most significant bit is assumed 1 (ie. the number is greater than or equal to 0.5 and less than 1). This is analogous to a base 10 standard from where the mantissa is of the form 0.xyz... (the usual choice is x.yz... but this is a matter of human convention) - x cannot be zero, as if it were then the number would be represented with a mantissa of 0.yz... and the exponent incremented. Hence the most significant bit of the mantissa may be taken to be 1 when calculating its magnitude, and can actually store other information. It is used as the mantissa sign bit, where 1 means a negative number. For example the decimal number 13 is binary 1101 or 0.1101\*10^100; this would be represented as a mantissa of 01010000.....0000 (32bits - note the zero msb for positive number) and an exponent of 10000011 (131 decimal).
+
+An exponent of zero is taken to mean that the mantissa is an integer - this allows integers which will fit in four bytes to be manipulated differently, avoiding irritating features such as 10 becomming 9.999998, whilst retaining the ability to cope with the large ranges which come with the floating point representative.
+
+Floating point numbers are conventionally stored with the least significant bit of the mantissa at the lowest address, and the exponent at the highest. However, since numbers are represented to and returned from the floating point package in registers, this convention may be flouted at the programmer's discretion.
+
+As mentioned earlier, the floating point package (hereinafter referred to as the FPP) uses a different `RST` call from the main system calls, the format of a floating point call is as follows:
+
+```text
+            RST  $18
+            DEFB <function code>
+```
+
+so apart from the different restart number, much the same as the OS calls. In the Z80 assembler notation we use:
+
+```text
+            FPP <function symbol>
+```
+
+Parameters are passed to and from the FPP in a rather bizarre collection of registers. The main register group is HLhlC (remember, lower case for alternate set), and where a second parameter is required it is passed in DEdeB. These divide into mantissa and exponent as follows:
+
+```text
+Param1      Param2      Significance
+H           D           Most significant byte of mantissa
+L           E
+h           d
+l           e           Least significant byte of mantissa
+C           B           Exponent byte
+```
+
+There are certain exceptions, which are explained where relevant (for instance one operation returns the numeric value of a string, so takes a pointer to the string in HL as its parameter). Please refer to "System calls reference" for details of the specific function calls.
+
+## Example
+
+The following is a simple example program, which prints out the mathematical constant PI. It makes two [FPP calls](/en/library/cambridge-z88/developers-notes/the-floating-point-package-reference), one **FP\_PI** to get the value, then a **FP\_STR** to convert it to a string. This is then printed via the standard **[GN\_Sop](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-sop)** routine.
+
+```text
+include "stdio.def"                 ; standard I/O definitions 
+include "fpp.def"                   ; floating point definitions 
+
+; routine assumes that IY points to small buffer on entry 
+; buffer size at least 15 bytes
+
+.print_pi   fpp  FP_PI              ; get value of PI in HLhlC
+            push iy
+            pop  de                 ; buffer address in DE
+            exx                     ; swap to alternate registers
+            ld   de, $000A          ; format control variable (10 digits)
+            exx
+            fpp  FP_STR             ; convert number to ASCII string
+            xor  a
+            ld   (de),a             ; null-terminate string
+            push iy
+            pop  hl                 ; buffer address in HL
+            oz   GN_Sop             ; display number to standard output
+            oz   GN_Nln             ; newline
+            ret                     ; finished (return to caller)
+```

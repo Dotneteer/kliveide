@@ -1,0 +1,231 @@
+---
+description: "The following codes use/return system handles:"
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7962750 (version 30) by scripts/import-z88-wiki.cjs */}
+
+# Process Management and OZ information
+
+The following codes use/return system handles:
+
+## NQ\_Ain
+
+```text
+IN:
+     BC = NQ_Ain
+     IX = application handle from OS_Poll
+
+OUT, if call successful:
+     Fc = 0
+     BHL = pointer to application name (null-terminated)
+     BDE = pointer to application DOR
+     A = CLI-related attributes
+     C = preferred code letter.
+
+OUT, if call failed:
+     Fc = 1
+     A = RC_HAND
+
+Registers changed after return:
+     ......../IXIY same
+     AFBCDEHL/.... different
+```
+
+### Notes
+
+CLI-related attributes refer to Application Type Byte 1 in [application DOR](/en/library/cambridge-z88/developers-notes/application-static-structures/the-application-dor).
+
+## NQ\_Khn
+
+```text
+IN:  BC = NQ_Khn
+OUT: IX = keyboard handle
+
+Registers changed after return:
+     A.BCDEHL/..IY same
+     .F....../IX.. different
+```
+
+### Notes
+
+Use ":INP" device instead.
+
+## NQ\_Shn
+
+```text
+IN:  BC = NQ_Shn
+OUT: IX = screen handle
+
+Registers changed after return:
+     A.BCDEHL/..IY same
+     .F....../IX.. different
+```
+
+### Notes
+
+Use ":SCR" device instead.
+
+## NQ\_Phn
+
+```text
+IN:  BC = NQ_Phn
+OUT: IX = printer indirected handle
+
+Registers changed after return:
+     A.BCDEHL/..IY same
+     .F....../IX.. different
+```
+
+## NQ\_Nhn
+
+```text
+IN:  BC = NQ_Hhn
+OUT: IX = null handle
+
+Registers changed after return:
+     A.BCDEHL/..IY same
+     .F....../IX.. different
+```
+
+### Notes
+
+Use ":NUL" device instead
+
+## NQ\_Wai
+
+```text
+IN:  BC = NQ_Wai
+OUT: IX = static process handle
+     C = dynamic process handle (PID)
+	 B = 0
+
+Registers changed after return:
+     A...DEHL/..IY same
+     .FBC..../IX.. different
+```
+
+### Notes
+
+- Static process handle is unique to each application. It follows slot number and application order in slot (1-31 for internal slot, 32-63 for slot 1, 64-95 for slot 2, 96-127 for slot 3, 128-255 for installed applications). Index handle is always 1, Pipedream handle is 3...
+- Dynamic process handle (PID equivalent) is unique to each suspended or running process (range 2-127, Index PID is always number 1).
+
+## NQ\_Com
+
+```text
+IN:  BC = NQ_Com
+OUT: IX = comms handle
+
+Registers changed after return:
+     A.BCDEHL/..IY same
+     .F....../IX.. different
+```
+
+### Notes
+
+Use ":COM" device instead.
+
+## NQ\_Ihn
+
+```text
+IN:  BC = NQ_Ihn
+OUT: IX = IN handle
+
+Registers changed after return:
+     A.BCDEHL/..IY same
+     .F....../IX.. different
+```
+
+### Notes
+
+Use ":INP" device instead.
+
+## NQ\_Ohn
+
+```text
+IN:  BC = NQ_Ohn
+OUT: IX = OUT handle
+
+Registers changed after return:
+     A.BCDEHL/..IY same
+     .F....../IX.. different
+```
+
+### Notes
+
+Use ":OUT" device instead.
+
+## NQ\_Rhn
+
+```text
+IN:  BC = NQ_Rhn
+OUT: IX = printer direct handle
+
+Registers changed after return:
+     A.BCDEHL/..IY same
+     .F....../IX.. different
+```
+
+## NQ\_Voz
+
+```text
+IN:
+    A  = OZ version required (for example $45 for OZ V4.5)
+    BC = NQ_Voz
+ 
+OUT, if call successful:
+     Fc = 0
+     Running OZ is equal to or higher than specified version
+
+OUT, if call reported incompatible OZ ROM:
+     Fc = 1
+     A = RC_VOZ ($38), OZ version not compatible
+ 
+Registers changed after return:
+     A.BCDEHL/IXIY same
+     .F....../.... different
+```
+
+**Notes:**
+
+If OS\_Nq, NQ\_Voz is used on OZ ROM's earlier than V4.5, a standard "Internal Error" popup window is displayed to prompt the user to press ESC (the NQ\_Voz doesnt exist).
+
+For OZ V5.0 and later, the "OZ version not compatible" message is displayed as a fatal error using a OS\_BYE with A unchanged if Fc = 1.
+
+## NQ\_Roz
+
+```text
+IN:
+    -
+  
+OUT:
+     DEBC = OZ revision number
+  
+Registers changed after return:
+     AF....HL/IXIY same
+     ..BCDE../.... different
+```
+
+**Notes:**
+
+Used by system information page in Index.
+
+## NQ\_Btl
+
+```text
+IN:
+    -
+  
+OUT:
+     Fz = 0, Battery is good
+	 Fz = 1, Battery is low
+  
+Registers changed after return:
+     A.BCDEHL/IXIY same
+     .F....../.... different
+```
+
+**Notes:**
+
+Battery low condition is set when under 4.2V. Coma state is entered by NMI when battery voltage falls under 3.2V.
+
+This call is used by system information page in Index.

@@ -1,0 +1,209 @@
+---
+description: "Input from the keyboard can be achieved by treating it as a device and using the file I/O calls. Four calls read from the standard input, which unless it has been rebound by the CLI, will be the..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/2654210 (version 5) by scripts/import-z88-wiki.cjs */}
+
+# Input and the keyboard decoder
+
+Input from the keyboard can be achieved by treating it as a device and using the file I/O calls. Four calls read from the standard input, which unless it has been rebound by the CLI, will be the keyboard. These calls are:
+
+```text
+OS_In         read a character from the standard input
+OS_Tin        read a character from the standard input, with timeout
+GN_Sip        standard input line routine
+OS_Sr         reads a character when doing a "Page Wait". Returns always ASCII 8
+              or an RC_ error code.
+```
+
+**[GN\_Sip](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-sip)** is described later in this section and **[OS\_Sr](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-sr)** is discussed in "Miscellaneous useful routines". **[OS\_In](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-in)** and **[OS\_Tin](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-tin)** return the character read in register A and Fc = 0 to indicate success. Since these are pre-emptable calls they may return Fc = 1 and any of RC\_SUSP, RC\_DRAW, RC\_ESC, RC\_QUIT and, in the case of **[OS\_Tin](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-tin)**, RC\_TIME. These calls usually returns ASCII values, but for special Z88 keys and menu commands, some other encoding is required. The solution is that when a special key or menu command occurrs, the **[OS\_In](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-in)** or **[OS\_Tin](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-tin)** will return a zero. The call is then made again and the value returned by this second call corresponds to the special key or menu command. The codes for the special keyboard sequences are shown below, those marked \* are not zero prefixed. Keys marked with \*\* are internal keycodes and not available to applications. Finally, note that register pair AF and the alternate registers are corrupted by **[OS\_In](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-in)** (as almost all system calls). **[OS\_Tin](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-tin)** waits for keyboard input for as long as the number of centiseconds specified in the BC(in) register pair, and on exit BC will be the centiseconds of the timeout remaining, and so BC will have changed as well as AF and the alternate register set.
+
+```text
+Key           normal           <SQUARE>       <DIAMOND>      <SHIFT>
+<SQUARE>      IN_SQU, $B8 **
+<DIAMOND>     IN_DIA, $C8 **
+<SHIFT>       IN_SHI, $D8 **
+<CAPS LOCK>   IN_CAPS, $E8 ***
+
+<SPACE>       IN_SPC, $20      IN_ASPC, $B0   IN_DSPC, $C0   -
+<ENTER>       IN_ENT, $0D *    IN_AENT, $B1   IN_DENT, $C1   IN_SENT, $D1
+<TAB>         IN_TAB, $09 *    IN_ATAB, $B2   IN_DTAB, $C2   IN_STAB, $D2
+<DEL>         IN_DEL, $7F *    IN_ADEL, $B3   IN_DDEL, $C3   IN_SDEL, $D3
+<ESC>         IN_ESC, $1B *    IN_AESC, $B4   IN_DESC, $C4   IN_SESC, $D4 **
+<MENU>        IN_MEN, $E5 **   IN_AMEN, $B5   IN_DMEN, $C5   IN_SMEN, $D5
+<INDEX>       IN_IDX, $E6 **   IN_AIDX, $B6   IN_DIDX, $C6   IN_SIDX, $D6
+<HELP>        IN_HLP, $E7 **   IN_AHEL, $B7   IN_DHEL, $C7   IN_SHEL, $D7
+<LEFT>        IN_LFT, $FC      IN_ALFT, $F0   IN_DLFT, $F4   IN_SLFT, $F8
+<RIGHT>       IN_RGT, $FD      IN_ARGT, $F1   IN_DRGT, $F5   IN_SRGT, $F9
+<DOWN>        IN_DWN, $FE      IN_ADWN, $F2   IN_DDWN, $F6   IN_SDWN, $FA
+<UP>          IN_UP, $FF       IN_AUP, $F3    IN_DUP, $F7    IN_SUP, $FB
+```
+
+\*\*\*) This 'key' is the forces Lock out state produced by switching the machine on, and while holding both \<SHIFT\> keys down, pressing the \<CAPS\> lock key.
+
+Note that the diamond key operates like a \<CTRL\> key on a conventional keyboard and can be used to generate the sub-32 control characters, eg. \<\>G for BEL,
+
+provided the key in question is not a menu command. The following is a list of obtainable control characters:
+
+```text
+HEX           DECIMAL          SYMBOL         KEYS           DESCRIPTION
+$00           0                NUL            <>=            NULL
+$01           1                SOH            <>A            Start of header
+$02           2                STX            <>B            Start of text
+$03           3                ETX            <>C            End of text
+$04           4                EOT            <>D            End of transmission
+$05           5                ENQ            <>E            Enquiry
+$06           6                ACK            <>F            Acknowledge
+$07           7                BEL            <>G            Bell
+$08           8                BS             <>H            Backspace
+$09           9                HT             <>I            Horizontal tabulation
+$0A           10               LF             <>J            Line feed
+$0B           11               VT             <>K            Vertical tabulation
+$0C           12               FF             <>L            Form feed
+$0D           13               CR             <>M            Carriage return
+$0E           14               SO             <>N            Shift out
+$0F           15               SI             <>O            Shift in
+$10           16               DLE            <>P            Data link escape
+$11           17               DC1            <>Q            Device control 1 (XON)
+$12           18               DC2            <>R            Device control 2
+$13           19               DC3            <>S            Device control 1 (XOFF)
+$14           20               DC4            <>T            Device control 4
+$15           21               NAK            <>U            Negative acknowledge
+$16           22               SYN            <>V            Synchronous idle
+$17           23               ETB            <>W            End of transmitted block
+$18           24               CAN            <>X            Cancel line
+$19           25               EM             <>Y            End of medium
+$1A           26               SUB            <>Z            Substitute (End of file)
+$1B           27               ESC            <>[ or ESC     Escape
+$1C           28               FS             <>\            File separator
+$1D           29               GS             <>]            Group separator
+$1E           30               RS             <>`            Record separator
+$1F           31               US             <>-            Unit separator
+```
+
+## The Input Line Routine
+
+**[GN\_Sip](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-sip)** is the standard system input line routine and used by most of the applications (Diary uses it for editing individual lines on a date page). It provides access to all the standard editing commands which are:
+
+```text
+<>DEL                          Delete line
+<>D                            Delete to end of line
+<>G                            Delete character under cursor, rightward
+<>M                            <ENTER>
+<>S                            Swap case
+<>T                            Delete word under cursor
+<>U                            Insert character
+<>V                            Insert/Overtype (see below for complications)
+<><LEFT>                       Start of line
+<><RIGHT>                      End of line
+<SHIFT><LEFT>                  Previous word
+<SHIFT><RIGHT>                 Next word
+```
+
+Where appropriate the following editing commands should be implemented (this is machine conventions):
+
+```text
+<>J                            Next option , where input is limited all the option can
+                               be cycled through using this command
+<><UP>                         Top of current page
+<><DOWN>                       Bottom of current page
+<SHIFT><UP>                    Move up a screenful
+<SHIFT><DOWN>                  Move down a screenful
+<TAB>                          Next column or TAB
+<SHIFT><TAB>                   Previous column or TAB
+```
+
+The basic specifications of **[GN\_Sip](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-sip)** is as follows:
+
+```text
+RST 20H, DEFW $3909
+
+IN:
+
+              DE = buffer for input string
+
+              A0 = 1, buffer already contains data to be edited
+              A1 = 1, force insert/overwrite mode (see A2)
+              A2 = 1, if A1 = 1, 0 = insert mode, 1 = overwrite mode
+              A3 = 1, return unexpected characters
+              A4 = 1, return if wrap occurs
+              A5 = 1, single line lock control
+              A6 = 1, disply in reverse video
+              A7 = 1, if A3 = 1, allow for insert/overwrite return
+
+              B = length of buffer
+              C = cursor position, if A0 = 1
+              L = width of line, if A5 = 1 (incl. null-terminator)
+OUT, if call successful:
+
+              Fc = 0
+              B = length of line entered, including terminating null
+              C = cursor position on exit
+              A = character which caused end of input
+OUT, if call failed:
+              Fc = 1
+              A = error code:
+                               RC_BAD ($04), bad arguments
+                               RC_WRAP ($0D), wrapping has occurred (only if A4 = 1)
+                               RC_SUSP ($69), suspicion of suspension
+                               RC_DRAW ($66), application screen needs redrawing
+                               RC_QUIT ($67), kill request (e.g. from INDEX)
+                               RC_ESC ($01), if escape detection is enabled
+Registers changed after return:
+              ....DEHL/IXIY same
+              AFBC..../.... different
+```
+
+If bit 0 of register A is set then DE should point to a null-terminated string which is no greater than the buffer length specified in B. **[GN\_Sip](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-sip)** will write this string to standard output starting at the cursor position and then place the cursor at the position in the buffer indicated by C. If C is greater than B, then the cursor is placed at the end of the buffer. Note that if **[GN\_Sip](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-sip)** is suspended then to continue editing the cursor needs to be re-positioned to the start of the input line and **[GN\_Sip](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-sip)** called again with A0 set and the buffer length reset to its initial value. Unless this is done suspension will not be transparent, eg. whenever \<DIAMOND\> is inadvertently pressed during input, the input would be terminated or ots output would be corrupted.
+
+Setting A1 allows you to force insert or overtype mode, with A2, as the mode to be used in the input line, rather than using the default as set by the Panel. This can be useful in its own right and in addition can be used to implement a local insert or overtype mode.
+
+If A3 is not set then input is terminated only by \<ENTER\>, A = IN\_ENT, or \<ESC\>. \<ESC\> will return with A = IN\_ESC if escape detection is disabled, or A = RC\_ESC and Fc = 1 if escape detection is enabled. However, if A3 is set then many more key sequences will cause the routine to exit. All the single letter Diamond codes will return their control character, except for \<\>D, \<\>G, \<\>S, \<\>T, \<\>U and \<\>V, which carry out their normal editing functions. Menu commands in the form of diamond sequences, excepting those starting with D, G, S, T, U and V, will return their command code. \<\>S and the \<LEFT\> and \<RIGHT\> arrows, with or without \<SHIFT\> or \<DIAMOND\>, will return their codes if an attempt is made to move outside of the buffer and A4 is not set. Any other key sequence which has no meaning in the input line routine will cause an exit, eg. \<SHIFT\>\<UP\> will return with A = IN\_SUP. Note that if A7 is set then \<\>V will cause an exit, thus allowing a local inseert/overtype mode to be established, as is done in PipeDream.
+
+If A4 is set then an attempt to move outside the limits of the buffer will cause an exit with A = RC\_WRAP, and the key which caused the wrapping will be lost.
+
+A5 is set to select single line lock mode. This sets up a horizontal window of length L and will scroll the input buffer, if necessary, within this window. This feature is useful if you have a limited space to display the input line, but may need a long input string.
+
+## Example
+
+The following example uses a locked line width of 15 characters. When \<ENTER\> is pressed the full input line is displayed. When the buffer is nearly full, try suspending **[GN\_Sip](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-sip)**, eg. by pressing the Square key twice, and you will see a slight flicker as **[GN\_Sip](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-sip)** re-displays and scrolls the line.
+
+```text
+include "stdio.def"                           ; get standard I/O definitions
+include "errors.def"                          ; get error code definitions
+
+defc init = 32                                ; mode for GN_Sip (single line lock)
+
+; assume that on entry IY points to 40 bytes of free space ; code starts here...
+.main         ld   a, 12
+              oz   OS_Out                     ; clear screen
+              call fetch                      ; fetch the line
+                                              ; may need to check errors here...
+              push iy
+              pop  hl                         ; HL points at start of input buffer
+              oz   GN_Nln                     ; output a newline
+              oz   GN_Sop                     ; display input buffer
+              oz   GN_Nln                     ; terminate with another newline
+              ret
+; actual input line subroutine
+.fetch        ld   a, init                    ; initial mode of GN_Sip
+              push iy
+              pop  de                         ; DE points at input buffer
+              ld   b, 30                      ; max. buffer size
+              ld   c, 0                       ; cursor position at beginning
+
+.sip          ld   hl, pos                    ; input prompt text
+              oz   GN_Sop                     ; to standard output
+              ld   l, 15                      ; max. line width
+              oz   GN_Sip                     ; edit line buffer...
+              ret  nc                         ; return if no errors
+              cp   RC_SUSP                    ; check for suspension
+              ret  nz                         ; return if some other error
+              ld   b, 30                      ; reset buffer length
+              ld   a, init | 1                ; buffer contains data
+              jr   sip                        ; re-enter GN_Sip
+; define constant string
+.pos          defm 1, "3@", 32, 35            ; cursor at (0,3)
+              defm "Input: "                  ; prompt
+              defb 0                          ; null-terminator
+```

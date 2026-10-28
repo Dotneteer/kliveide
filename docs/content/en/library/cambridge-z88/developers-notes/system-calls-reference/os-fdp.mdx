@@ -1,0 +1,37 @@
+---
+description: "Internal operating system usage, however may be useful for applications. Use GN_Opf with OP_IN for source file, and OP_OUT for target file."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/125730242 (version 4) by scripts/import-z88-wiki.cjs */}
+
+# OS_Fdp, File duplicate (sector-level)
+
+## Register parameters
+
+```text
+IN:
+   DE = OP_IN file handle
+   IX = OP_OUT file handle
+
+OUT:
+   Fc = 0,
+        File copied successfully to destination
+   Fc = 1,
+        A = RC_Hand, DE or IX is not a file handle
+        A = RC_Wp, destination file is write protected
+        A = RC_xxx, No Room, I/O error during copying process.
+
+Registers changed after return:
+   ..BCDEHL/IXIY same
+   AF....../.... different
+```
+
+## Notes
+
+API call implemented in **OZ 5.0**.
+
+Internal operating system usage, however may be useful for applications. Use **GN\_Opf** with **OP\_IN** for source file, and **OP\_OUT** for target file.
+
+## Related calls
+
+**[GN\_Cl](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-cl)**, close file <br />**[GN\_Del](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-del)**, delete a file from memory <br />**[GN\_Opf](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-opf)**, open file/resource (wildcard search) <br />**[GN\_Ren](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-ren)**, rename file<br />[**GN\_Cpy**](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-cpy), copy a file<br />[**GN\_Mov**](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-mov), move a file<br />**[OS\_Cl](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-cl)**, internal close (OZ usage) <br />**[OS\_Frm](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-frm)**, file read miscellaneous <br />**[OS\_Fwm](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fwm)**, file write miscellaneous <br />**[OS\_Gb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-gb)**, get byte from file (or device) <br />**[OS\_Gbt](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-gbt)**, get byte from file (or device) with timeout <br />**[OS\_Mv](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mv)**, move bytes between stream and memory <br />**[OS\_Op](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-op)**, internal open (OZ sage) <br />**[OS\_Pb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-pb)**, write byte to file, device <br />**[OS\_Pbt](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-pbt)**, write byte to file, device with timeout <br />**[OS\_Ren](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-ren)**, file rename (internal OZ usage)

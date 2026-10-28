@@ -1,0 +1,51 @@
+---
+description: "The bit to be tested by the BIT instruction is first inverted before copied to Fz, ie. Fz = 1 if the corresponding bit is zero. Fz = 0 if the corresponding bit is 1."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/9568451 (version 5) by scripts/import-z88-wiki.cjs */}
+
+# Bit Manipulation Group
+
+```text
+__________________________________________________________________________________________________________________________
+Mnemonic        Symbolic           Flags (bit 7-0)   Instruction        Number      Number of  Number of   Comments
+                operation          S Z . H . V N C   opcode             of bytes    M cycles    T states
+__________________________________________________________________________________________________________________________
+BIT b,r         Fz <- NOT rb        X ? X 1 X X 0 *   11 001 011 (CBh)    2           2           8           r:
+                                                      01 <b> <r>                                              000  C
+                                                                                                              001  B
+BIT b,(HL)      Fz <- NOT (HL)b     X ? X 1 X X 0 *   11 001 011 (CBh)    2           3           12          010  E
+                                                      01 <b> 110                                              011  D
+                                                                                                              100  L
+BIT b,(IX+d)    Fz <- NOT (IX+d)b   X ? X 1 X X 0 *   11 011 101 (DDh)    4           5           20          101  H
+BIT b,(IY+d)    Fz <- NOT (IY+d)b   X ? X 1 X X 0 *   11 111 101 (FDh)    4           5           20          111  A
+                                                      11 001 011 (CBh)
+                                                      -- <d> ---
+                                                      01 <b> 110                                              b:
+                                                                                                              000  0
+                                                                                                              001  1
+SET b,r         rb <- 1             * * X * X * * *   11 001 011 (CBh)    2           2           8           010  2
+                                                      11 <b> <r>                                              011  3
+                                                                                                              100  4
+SET b,(HL)      (HL)b <- 1          * * X * X * * *   11 001 011 (CBh)    2           4           15          101  5
+                                                      11 <b> 110                                              110  6
+                                                                                                              111  7
+SET b,(IX+d)    (IX+d)b <- 1        * * X * X * * *   11 011 101 (DDh)    4           6           23
+SET b,(IY+d)    (IY+d)b <- 1        * * X * X * * *   11 111 101 (FDh)    4           6           23
+                                                      11 001 011 (CBh)
+                                                      -- <d> ---
+                                                      11 <b> 110
+RES b,r         rb <- 0             * * X * X * * *   11 001 011 (CBh)    2           2           8
+                                                      10 <b> <r>
+RES b,(HL)      (HL)b <- 0          * * X * X * * *   11 001 011 (CBh)    2           4           15
+                                                      10 <b> 110
+RES b,(IX+d)    (IX+d)b <- 0        * * X * X * * *   11 011 101 (DDh)    4           6           23
+RES b,(IY+d)    (IY+d)b <- 0        * * X * X * * *   11 111 101 (FDh)    4           6           23
+                                                      11 001 011 (CBh)
+                                                      -- <d> ---
+                                                      10 <b> 110
+```
+
+Please note:
+
+The bit to be tested by the BIT instruction is first inverted before copied to Fz, ie. Fz = 1 if the corresponding bit is zero. Fz = 0 if the corresponding bit is 1.

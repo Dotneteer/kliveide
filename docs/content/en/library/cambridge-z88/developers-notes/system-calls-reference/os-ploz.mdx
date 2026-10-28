@@ -1,0 +1,36 @@
+---
+description: "OZ can only run in slot 0 or 1. Using this call for slots 2 and 3 will always return Fz = 1. This call is used internally by OZ in the Flash card management sub-system, when it is necessary to..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7962867 (version 8) by scripts/import-z88-wiki.cjs */}
+
+# OS_Ploz, Poll for running OZ
+
+## Register parameters
+
+```text
+IN:
+     A = slot number (0 to 3)
+
+OUT, if call successfull:
+     Fz = 0, OZ is running in slot
+     Fz = 1, OZ is not running in slot.
+
+OUT, if call failed:
+     Fc = 1
+     A = RC_ONF, no card found
+
+Registers changed after return:
+     A.BCDEHL/IXIY same
+     .F....../.... different
+```
+
+## Notes
+
+OZ can only run in slot 0 or 1. Using this call for slots 2 and 3 will always return Fz = 1. This call is used internally by OZ in the Flash card management sub-system, when it is necessary to turn off the screen during Flash hardware operations on the same card as a running OZ. Applications may benefit from this system call too.
+
+This system call is only available in OZ release 4.2 and newer.
+
+## Related calls
+
+**[DC\_Pol](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-pol)**, poll for card usage<br />**[OS\_Poll](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-poll)**, poll for an application<br />**[OS\_Use](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-use)**, process card usage

@@ -1,0 +1,25 @@
+---
+description: "GN_Cme, compare null-terminated strings, one local, one extended GN_Wbe, write byte at extended address OS_Bde, copy bytes to extended address OS_Bhl, copy bytes from extended address"
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8618168 (version 3) by scripts/import-z88-wiki.cjs */}
+
+# GN_Rbe, Read byte at extended address
+
+## Register parameters
+
+```text
+IN:
+     BHL = pointer to the byte to read (B = 0, local byte)
+
+OUT, if call successful:
+     A = byte at address
+
+Registers changed after return:
+     .FBCDEHL/IXIY same
+     A......./.... different
+```
+
+## Related calls
+
+**[GN\_Cme](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-cme)**, compare null-terminated strings, one local, one extended <br />**[GN\_Wbe](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-wbe)**, write byte at extended address <br />**[OS\_Bde](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-bde)**, copy bytes to extended address <br />**[OS\_Bhl](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-bhl)**, copy bytes from extended address

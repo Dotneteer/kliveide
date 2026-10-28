@@ -1,0 +1,248 @@
+---
+description: "Full details of this call's reason codes are found below. This interface is used by OZ internally. For Application level serial port I/O, use GN_Opf to get serial port handle and use OS_Gb / OS_Pb..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7962890 (version 17) by scripts/import-z88-wiki.cjs */}
+
+# OS_Si, Low level serial interface
+
+## Register parameters
+
+```text
+IN:
+     L = reason code
+     Other register parameters depend on reason code
+OUT:
+     Depends on reason code, see below.
+     IX will always be unchanged.
+```
+
+## Notes
+
+Full details of this call's reason codes are found below. This interface is used by OZ internally. For Application level serial port I/O, use **[GN\_Opf](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-opf)** to get serial port handle and use **[OS\_Gb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-gb)** / **[OS\_Pb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-pb)** to transmit data. Applications might use OS\_Si to reset serial port buffers, and interact with the Panel. Block transfer is implemented since OZ version 4.5.
+
+Other information of this call can be found in the [The Serial Interface](/en/library/cambridge-z88/developers-notes/the-serial-interface) section.
+
+## SI\_HRD
+
+```text
+IN:  -
+OUT: Fc = 0
+
+Registers changed after return:
+     ..BCDEHL/IXIY same
+     AF....../.... different
+```
+
+This resets the UART in the gate array. This call should not need to be used.
+
+## SI\_SFT
+
+```text
+IN:  -
+OUT: -
+
+Registers changed after return:
+     ......../IXIY same
+     AFBCDEHL/.... different
+```
+
+This call should be useful to install new panel settings or when starting low level (ie. using SI\_GBT, SI\_PBT etc.) serial operations. It carries out the following: <br /><br />1. Empty receive and transmit buffers.<br />2. Reset the XON/XOFF flags.<br />3. Reset baud rates, parity and flow control settings to the PANEL values.<br />4. Assert RTS.<br />5. Resets the serial port timeout to its default of 10 minutes.
+
+## SI\_INT
+
+```text
+IN:  -
+OUT: -
+
+Registers changed after return:
+     AFBCDEHL/IXIY same
+     ......../.... different
+```
+
+Internal operating system usage only.<br />This call is used by the serial port driver to send XOFF when software handshaking is active.
+
+## SI\_GBT
+
+```text
+IN:  BC = timeout in centiseconds
+
+Out if call succeeded:
+     Fc = 0
+     A = byte received
+     BC = remaining time
+Out if call failed:
+     Fc = 1
+     A = RC_TIME ($02) (if no data available before timeout)
+
+Registers changed after return:
+     ....DE../IXIY same
+     AFBC..HL/.... different
+```
+
+## SI\_PBT
+
+```text
+IN:  BC = timeout in centiseconds. If BC = $FFFF then default timeout.
+     A = byte to send
+
+Out if call succeeded:
+     Fc = 0
+     BC = remaining time
+Out if call failed:
+     Fc = 1
+     A = RC_TIME ($02)
+
+Registers changed after return:
+     ....DE../IXIY same
+     AFBC..HL/.... different
+```
+
+This call will return immediatly if there is space in the transmit buffer, otherwise it will wait until there is space for as long as the timeout. If the timeout is exceeded it will return with an error.
+
+## SI\_ENQ
+
+```text
+IN:  -
+OUT: 
+     B = number of full slots in the Tx (transmit) buffer
+     C = number of empty slots in the Tx (transmit) buffer
+     D = number of full slots in the Rx (receive) buffer
+     E = number of empty slots in the Rx (receive) buffer
+
+     A0 = 1, CTS level (inverse of the value on the D-connector)
+     A1 = 1, DCD level (inverse of the value on the D-connector)
+     A2 = 1, Rx register full
+     A3 =    undefined
+     A4 = 1, Tx Register empty
+     A5 = 1, CTS interrupt
+     A6 = 1, DCD interrupt
+     A7 = 1, Rx shift register full
+
+Registers changed after return:
+     ......../IXIY same
+     AFBCDEHL/.... different
+```
+
+A slot, in this context, is the set of bits required to transmit on character. This will include 8 data bits plus start and stop bits.
+
+## SI\_FTX
+
+```text
+IN:  -
+OUT: Fc = 0
+
+Registers changed after return:
+     A.BCDEHL/IXIY same
+     .F....../.... different
+```
+
+## SI\_FRX
+
+```text
+IN:  -
+OUT: Fc = 0
+
+Registers changed after return:
+     A.BCDEHL/IXIY same
+     .F....../.... different
+```
+
+## SI\_TMO
+
+```text
+IN:  BC = new value for default timeout
+OUT: Fc = 0
+
+Registers changed after return:
+     A.BCDEHL/IXIY same
+     .F....../.... different
+```
+
+If you set the default to $FFFF then when the default is used (by setting a timeout value of $FFFF in get and put byte routines) then the system will wait forever. A soft reset sets the default timeout to 10 minutes. This timeout is completely independent of the system timeout, which is set by the Panel.
+
+## SI\_GX
+
+```text
+IN:  
+      BC = number of byte to get from serial port, maximum 16384, one bank
+      DE = destination
+          DE = 0, write bytes to a file opened with its handle in IX 
+          DE > 0, write bytes to memory at (DE)
+      IX = file handle (if DE = 0)
+
+Out if call succeeded:
+      Fc = 0
+      BC = remaining time (SI_TMO)
+      DE = points at last byte fetched + 1 (if DE(IN) > 0)
+
+Out if call failed:
+ Fc = 1
+      A = RC_TIME, timeout elapsed
+      A = RC_EOF, end of file reached
+      A = RC_WP, input device is read protected
+ 
+      BC = number of bytes not read
+
+Registers changed after return:
+      ......../IXIY same
+      AFBCDEHL/.... different
+```
+
+## SI\_PX
+
+```text
+IN:  
+      BC = number of byte to write to serial port, maximum 16384, one bank
+      DE = input
+          DE = 0, input is a file/device opened with its handle in IX 
+          DE > 0, input is memory at (DE)
+      IX = file handle (if DE = 0)
+
+Out if call succeeded:
+      Fc = 0
+      BC = remaining time (SI_TMO)
+ 
+Out if call failed:
+      Fc = 1
+      A = RC_TIME, timeout elapsed
+      A = RC_EOF, end of file reached
+      A = RC_RP, input device is read protected
+
+      BC = number of bytes not written
+
+Registers changed after return:
+      ......../IXIY same
+      AFBCDEHL/.... different
+```
+
+## SI\_GXT
+
+```text
+IN:  
+      BC = number of byte to get from serial port, maximum 16384, one bank
+      DE = destination
+          DE = 0, write bytes to a file opened with its handle in IX 
+          DE > 0, write bytes to memory at (DE)
+      IX = file handle (if DE = 0)
+
+Out if call succeeded, Fc = 0:
+       Fz = 1,
+               BC <> 0, A = ESC terminator encountered, number of bytes not read
+       Fz = 0,
+               A = FFh
+               BC = 0, all bytes read, no terminator encountered
+       DE = points at last byte fetched + 1 (if DE(in) > 0)
+
+Out if call failed:
+ Fc = 1
+      A = RC_TIME, timeout elapsed
+      A = RC_EOF, end of file reached
+      A = RC_WP, input device is read protected
+ 
+      BC = number of bytes not read
+
+Registers changed after return:
+      ......../IXIY same
+      AFBCDEHL/.... different
+```

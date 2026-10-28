@@ -1,0 +1,91 @@
+---
+description: "Rotate And Shift Group"
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/9568449 (version 4) by scripts/import-z88-wiki.cjs */}
+
+# Rotate And Shift Group
+
+```text
+__________________________________________________________________________________________________________________________
+Mnemonic        Symbolic            Flags (bit 7-0)   Instruction         Number      Number of   Number of   Comments
+                operation           S Z . H . V N C   opcode              of bytes    M cycles    T states
+__________________________________________________________________________________________________________________________
+
+                     +-----------+
+                     | +------+  |
+RLCA            CY <-+-|7 <- 0|<-+  * * X 0 X * 0 ?   00 000 111 (07h)    1           1           4
+                       +- A --+
+Rotate left circular accumulator
+                +---------------+
+                |     +------+  |
+RLA             +-CY<-|7 <- 0|<-+   * * X 0 X * 0 ?   00 010 111 (17h)    1           1           4
+                      +- A --+
+Rotate left accumulator
+                +-----------+
+                |  +------+ |
+RRCA            +->|7 -> 0|-+-> CY  * * X 0 X * 0 ?   00 001 111 (0Fh)    1           1           4
+                   +- A --+
+Rotate right circular accumulator
+                +---------------+
+                |  +------+     |
+RRA             +->|7 -> 0|->CY-+   * * X 0 X * 0 ?   00 011 111 (1Fh)    1           1           4
+                   +- A --+
+Rotate right accumulator
+RLC r    ---+                       ? ? X 0 X P 0 ?   11 001 011 (CBh)    2           2           8           r:
+            |                                         00 000 <r>                                              000  C
+            |       +-----------+                                                                             001  B
+RLC (HL) ---+--     | +------+  |   ? ? X 0 X P 0 ?   11 001 011 (CBh)    2           4           15          010  E
+            |   CY<-+-|7 <- 0|<-+                     00 000 110                                              011  D
+            |         +------+                                                                                100  L
+            |   r,(HL),(IX+d),(IY+d)                                                                          101  H
+RLC (IX+d) -+                       ? ? X 0 X P 0 ?   11 011 101 (DDh)    4           6           23          111  A
+RLC (IY+d) -+                       ? ? X 0 X P 0 ?   11 111 101 (FDh)    4           6           23
+                                                      11 001 011 (CBh)
+                                                      -- <d> ---
+                                                      00 000 110
+
+                +---------------+
+RL m            |     +------+  |   ? ? X 0 X P 0 ?   .. 010 ...          Please refer to RLC template
+                +-CY<-|7 <- 0|<-+
+                      +- m --+
+
+                +-----------+
+RRC m           |  +------+ |       ? ? X 0 X P 0 ?   .. 001 ...          Please refer to RLC template
+                +->|7 -> 0|-+-> CY
+                   +- m --+
+
+                +---------------+
+RR m            |  +------+     |   ? ? X 0 X P 0 ?   .. 011 ...          Please refer to RLC template
+                +->|7 -> 0|->CY-+
+                   +- m --+
+
+                     +------+
+SLA m           CY <-|7 <- 0|<- 0   ? ? X 0 X P 0 ?   .. 100 ...          Please refer to RLC template
+                     +- m --+
+
+                   +------+
+SRA m           +->|7 -> 0|-> CY    ? ? X 0 X P 0 ?   .. 101 ...          Please refer to RLC template
+                |  ++ m --+
+                +---+
+
+                    +------+
+SRL m           0 ->|7 -> 0|-> CY   ? ? X 0 X P 0 ?   .. 111 ...          Please refer to RLC template
+                    +- m --+
+
+                       +--->----+
+                    A  |    (HL)|
+                +------++ +-----+-+
+RLD             |7-4|3-0| |7-4|3-0| ? ? X 0 X P 0 *   11 101 101 (EDh)    2           5           18
+                +------++ ++-+--+-+                   01 101 111 (6Fh)
+                       |   | |  |
+                       +<--+ +<-+   Rotate digit left between the accumulator and location (HL)
+
+                      +--->+ +->+
+                      |    | |  |
+                +-----+-+ ++-+--+-+
+RRD             |7-4|3-0| |7-4|3-0| ? ? X 0 X P 0 *   11 101 101 (EDh)    2           5           18
+                +-----+-+ +-----+-+                   01 100 111 (67h)
+                    A |     (HL)|
+                      +---<-----+   Rotate digit right between the accumulator and location (HL)
+```

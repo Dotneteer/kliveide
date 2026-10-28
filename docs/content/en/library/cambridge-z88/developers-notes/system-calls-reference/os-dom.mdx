@@ -1,0 +1,31 @@
+---
+description: "OS_Dom, Open director memory"
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7471402 (version 4) by scripts/import-z88-wiki.cjs */}
+
+# OS_Dom, Open director memory
+
+## Register parameters
+
+```text
+IN:
+     - 
+
+OUT, if successful:
+     Fc = 0
+     IX = handle for Director memory
+
+OUT, if failed:
+     Fc = 1
+     A = RC_ROOM
+     IX = 0
+
+Registers changed after return:
+     ..BCDEHL/..IY same
+     AF....../IX.. different
+```
+
+## Notes
+
+Internal operating system usage.

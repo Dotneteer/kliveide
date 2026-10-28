@@ -1,0 +1,56 @@
+---
+description: "The 38 pin proprietary format connectors are for the external cards. Each slot is able to address 1024K. Slot 3 has an additional Vpp (12V) line which is used for Eprom programming. Pseudo-static..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/3113055 (version 4) by scripts/import-z88-wiki.cjs */}
+
+# The slot connectors
+
+The 38 pin proprietary format connectors are for the external cards. Each slot is able to address 1024K. Slot 3 has an additional Vpp (12V) line which is used for Eprom programming. Pseudo-static RAM, static RAM, EPROM and Flash EPROM can also be used.
+
+The 1M RAM chip connections have been changed. All the data and address lines are used, but the order of these have been altered to suit the layout of the Z88's edge connector..
+
+```text
+Slot    RAM/ROM RAM/ROM Eprom   Pins for
+pins    Slot 1  Slot 2  Slot 3  32K     128K    32K      512K        1M
+        Signals Signals Signals EPROM   EPROM   RAM      FLASH       RAM
+                                                M27C256B AM29F040B   BS62LV800
+1       A16     A16     A16     -       24      -        2            18
+2       A15     A15     A15     -       3       -        3            1
+3       A12     A12     A12     2       4       2        4            4
+4       A7      A7      A7      3       5       3        5            5
+5       A6      A6      A6      4       6       4        6            2
+6       A5      A5      A5      5       7       5        7            19
+7       A4      A4      A4      6       8       6        8            20
+8       A3      A3      A3      7       9       7        9            21
+9       A2      A2      A2      8       10      8        10           22
+10      A1      A1      A1      9       11      9        11           3
+11      A0      A0      A0      10      12      10       12           24
+12      D0      D0      D0      11      13      11       13           9
+13      D1      D1      D1      12      14      12       14           10
+14      D2      D2      D2      13      15      13       15           13
+15      SNSL    SNSL    SNSL    -       -       -        -            -
+16      GND     GND     GND     14      16      14       16           34
+17      GND     GND     GND     14      16      14       16           12
+18      A14     A14     A14     27      29      1        29           23
+19      VCC     VCC     VPP     1       1       -        -            -
+20      VCC     VCC     VCC     28      32      -        32           11,40
+21      VCC     VCC     VCC     -       -       28       -            33
+22      WEL     WEL     PGML    -       31      -        31           17
+23      A13     A13     A13     26      28      26       28           25
+24      A8      A8      A8      25      27      25       27           26
+25      A9      A9      A9      24      26      24       26           27
+26      A11     A11     A11     23      25      23       25           28
+27      POE     POE     POE     -       -       22       -            -
+28      ROE     ROE     EOE     22      2       -        24           41
+29      A10     A10     A10     21      23      21       23           39
+30      SE1     SE2     SE3     20      22      20       22           6
+31      D7      D7      D7      19      21      19       21           21
+32      D6      D6      D6      18      20      18       20           20
+33      D3      D3      D3      15      17      15       17           17
+34      D4      D4      D4      16      18      16       18           18
+35      D5      D5      D5      17      19      17       19           19
+36      A17     A17     A17     -       -       -        30           42
+37      A18     A18     A18     -       -       -        1            43
+38      A19     A19     A19     -       -       -        -            44
+```

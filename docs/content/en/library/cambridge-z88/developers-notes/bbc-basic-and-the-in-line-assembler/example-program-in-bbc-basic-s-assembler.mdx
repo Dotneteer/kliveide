@@ -1,0 +1,158 @@
+---
+description: "We present here a short example program in BASIC. The error handler copes with pre-emption, responding to RC_QUIT by calling BASIC's own error handler. This will not close files, filters..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/3112993 (version 9) by scripts/import-z88-wiki.cjs */}
+
+# Example program in BBC BASIC's assembler
+
+We present here a short example program in BASIC. The error handler copes with pre-emption, responding to RC\_QUIT by calling BASIC's own error handler. This will not close files, filters wildcards, or memory however, so if you use these features you must modify the error handler to close these things first before calling BASIC. The program here does something which BASIC cannot normally do, which is to read the update date of a file. When the program is run it assembles the code and asks for a filename. It attempts to open the file for DOR access, indicating failure with a system error box, and then reads the update date. Finally, having released the DOR handle, the program displays the explicit filename, expanded by **[GN\_Opf](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-opf)**, and the update date.
+
+This listing can be 'loaded' by CLI. Copy this source code as save as text file as 'example.bas' on your desktop, then upload to :RAM.0 on your Z88. Start BBC BASIC application, execute command `*CLI .*:RAM.0/example.bas` to "type it in". Finally, `RUN`.
+
+```text
+.J
+AUTO
+
+DIM code 512                   : REM space for program
+GN_Esp=&4C09                   : REM return pointer to system error message
+GN_Soe=&3C09                   : REM Write string at extended address to standard output
+GN_Nln=&2E09                   : REM carriage return, linefeed to std. output
+GN_Sop=&3A09                   : REM output string to std. output
+GN_Opf=&6009                   : REM open file
+OS_Erh=&75                     : REM install error handler
+OS_Esc=&6F                     : REM examine special condition
+GN_Err=&4A09                   : REM standard system error box
+GN_Sdo=&0E09                   : REM date and time to standard output
+OS_Dor=&87                     : REM DOR interface
+dr_rd=&09                      : REM read DOR record
+dr_fre=&05                     : REM free DOR handle
+op_dor=&06                     : REM open file for DOR access
+rc_quit=&67                    : REM KILL request error code
+rc_esc=&01                     : REM escape detection error code
+
+FOR pass=0 TO 2 STEP 2
+P%=code
+[
+OPT  pass
+LD   HL,0
+ADD  HL,SP                     \ get current BASIC stack pointer
+LD   (bstk),HL                 \ preserve it
+LD   SP,(&1FFE)                \ install system (safe) stack pointer
+XOR  A
+LD   B,A
+LD   HL,errhan                 \ address of error handler
+OPT  FNsys(OS_Erh)             \ install new error handler
+LD   (obou),A                  \ save old error handler call level
+LD   (oerr),HL                 \ save old error handler address
+
+\ Here is the call to your assembler language routine which should be
+\ included at the end of this code.
+CALL main                      \ call main routine
+
+.exit
+LD   HL,(oerr)                 \ address of old error handler
+LD   A,(obou)                  \ old call level
+LD   B,0
+OPT  FNsys(OS_Erh)             \ restore previous error handler
+LD   SP,(bstk)                 \ restore BASIC stack pointer
+RET                            \ return to BBC BASIC interpreter
+
+.errhan
+RET  Z
+CP   rc_esc                    \ ESC pressed?
+JR   NZ,err1
+OPT  FNsys(OS_Esc)             \ acknowledge ESC
+LD   A,rc_esc
+OR   A                         \ return rc_esc back to main program
+RET                            \ Fc = 0, Fz = 0
+
+.err1
+CP   rc_quit                   \ KILL request?
+JR   NZ,err2
+
+LD   HL,(oerr)                 \ re-install old error handler
+LD   A,(obou)                  \ old call level
+OPT  FNsys(OS_Erh)
+
+LD   SP,(bstk)                 \ install BASIC stack pointer
+LD   HL,(oerr)
+
+LD   A, rc_quit                \ reload A with RC_QUIT
+OR   A                         \ Fz = 0
+SCF                            \ Fc = 1
+JP   (HL)                      \ jump to BASIC's error handler
+
+.err2                          \ write error message if possible
+OPT  FNsys(GN_Esp)             \ Get ext. pointer to system error message
+OPT  FNsys(GN_Soe)             \ Write error message to std. output
+OPT  FNsys(GN_Nln)             \ New line to std. output
+OR   A                         \ Fc = 0
+RET
+
+.bstk DEFW 0                   \ storage for BASIC stack pointer
+.obou DEFB 0                   \ storage for old call level
+.oerr DEFW 0                   \ storage for old error handler address
+
+\ ----------------------------------------------------------------------
+\ main routine starts here
+.main
+LD   HL,scratch_1              \ holds address of file to open
+LD   DE,scratch_2              \ explicit name buffer
+LD   C,40                      \ size of explicit name buffer
+LD   B,0                       \ HL string pointer is local
+LD   a, op_dor                 \ get DOR handle
+OPT  FNsys(GN_Opf)             \ open...
+JR   NC,opened_OK
+OPT  FNsys(GN_Err)             \ report error in standard window
+RET
+.opened_OK
+LD   A,dr_rd                   \ read DOR record
+LD   B,ASC"U"                  \ read update information
+LD   C,6                       \ 3 byte internal date, 3 byte int. time
+LD   DE,scratch_1              \ store returned information at (DE)
+OPT  FNsys(OS_Dor)             \ fetch update date
+LD   A,dr_fre
+OPT  FNsys(OS_Dor)             \ free DOR handle
+LD   HL,scratch_2              \ display explicit filename
+OPT  FNsys(GN_Sop)             \ to standard output
+LD   HL,tab_str
+OPT  FNsys(GN_Sop)             \ tab to column 40
+LD   HL,scratch_1
+OPT  FNsys(GN_Sdo)             \ output returned update date
+OPT  FNsys(GN_Nln)             \ display newline
+RET                            \ back to BASIC
+
+.scratch_1 DEFM STRING$(40,"X")
+.scratch_2 DEFM STRING$(40,"X")
+.tab_str DEFM CHR$1+"2X"+CHR$(32+40)+CHR$0
+\ main routine ends here
+\ ----------------------------------------------------------------------
+]
+NEXT pass
+
+CLS
+PRINT "Read File Update Date and Time"
+INPUT "Filename:"A$
+IF LEN(A$)>40 THEN PRINT "String too long": END
+
+A$=A$+CHR$0  : REM null-terminate filename string
+$scratch_1=A$
+CALL code
+END
+:
+DEF FNsys(arg)
+IF arg>255 THEN PROC_Rst20Defw(arg) ELSE PROC_Rst20Defb(arg)
+=pass
+:
+DEF PROC_Rst20Defw(arg)
+[OPT pass
+RST &20: DEFW arg
+]
+ENDPROC
+DEF PROC_Rst20Defb(arg)
+[OPT pass
+RST &20: DEFB arg
+]
+ENDPROC
+```

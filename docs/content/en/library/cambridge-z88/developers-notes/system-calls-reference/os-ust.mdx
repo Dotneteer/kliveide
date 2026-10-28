@@ -1,0 +1,24 @@
+---
+description: "The timer latches at $0000. An initial value of $FFFF will not be decremented. The timer decrements once per centiseconds. This code uses same timer as OS_Tin and OS_Dly."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8618002 (version 4) by scripts/import-z88-wiki.cjs */}
+
+# OS_Ust, Update small timer
+
+## Register parameters
+
+```text
+IN:  BC = new timer value
+OUT:
+     Fc = 0
+     Fz = 0, old time value non-zero
+     Fz = 1, old time value zero
+     BC = old time value
+```
+
+## Notes
+
+Internal operating system usage.
+
+The timer latches at $0000. An initial value of $FFFF will not be decremented. The timer decrements once per centiseconds. This code uses same timer as [OS\_Tin](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-tin) and [OS\_Dly](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-dly).

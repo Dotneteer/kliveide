@@ -1,0 +1,37 @@
+---
+description: "Algorithm: Assuming deleting entry I between entries X and Y (for more details, read Linked lists):"
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8618208 (version 5) by scripts/import-z88-wiki.cjs */}
+
+# GN_Xdl, Delete an entry from a linked list
+
+## Register parameters
+
+```text
+IN:
+     CDE = pointer to previous entry
+     BHL = pointer to entry to delete
+OUT, if call successful:
+     Fc = 0
+     CDE = pointer to prior entry
+     BHL = entry after deleted entry
+OUT, if call failed:
+     Fc = 1
+     A = error code:
+          RC_BAD ($04), if BHL(in) = 0
+
+Registers changed after return:
+     ...CDE../IXIY same
+     AFB...HL/.... different
+```
+
+## Notes
+
+Algorithm: Assuming deleting entry I between entries X and Y (for more details, read [Linked lists](/en/library/cambridge-z88/developers-notes/linked-lists)):
+
+`*X = *X XOR I XOR Y`<br />`*Y = *Y XOR I XOR X`
+
+## Related calls
+
+**[GN\_Xin](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-xin)**, insert an entry into a linked list <br />**[GN\_Xnx](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-xnx)**, index next entry in linked list

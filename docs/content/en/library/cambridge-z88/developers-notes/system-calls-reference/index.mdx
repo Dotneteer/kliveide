@@ -1,0 +1,146 @@
+---
+description: "The following section is a complete reference of all the Z88 operating system calls. This brief list of topics is intended to make it easier to find a system call to perform the required function...."
+asIndexPage: true
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7471113 (version 29) by scripts/import-z88-wiki.cjs */}
+
+# System Calls Reference
+
+The following section is a complete reference of all the Z88 operating system calls. This brief list of topics is intended to make it easier to find a system call to perform the required function. The calls are listed in alphabetical order in the main body of System calls Reference.
+
+Many of the available calls were designed for use by the system and are of no help to the application author. Such calls are marked "Internal operating system usage". Some of the more esoteric calls will not work in all segments, where segment 3 is considered to be the most reliable. If you have some very bizarre bugs you may want to suspect a system call is not working to specifications. Where bugs are known about, or strongly suspected, this information is included with the system call specification. Feel free to contact us if you have discovered new information about OZ.
+
+DC (director) calls are very low level, hence only three of the sixteen available are of use to applications. OS (operating system) calls are more reliable, but because of their power, they'r easily able to disrupt the system - many are not for application use at all. The GN (general) calls are safe and used for applications in that they are unlikely to corrupt the system, but a little unreliable.
+
+## Alarms
+
+**[OS\_Alm](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-alm)**, alarm manipulation (OZ usage)<br />**[GN\_Aab](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-aab)**, allocate alarm block<br />**[GN\_Alp](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-alp)**, process an expired alarm<br />**[GN\_Fab](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-fab)**, free alarm block<br />**[GN\_Gab](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-gab)**, get first alarm block<br />**[GN\_Lab](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-lab)**, link an alarm block into the alarm chain<br />[**GN\_Uab**](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-uab), unlink an alarm block from the alarm chain
+
+## Application
+
+**[DC\_Nam](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-nam)**, Name current application<br />**[OS\_Poll](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-poll)**, poll for an application (OZ usage)<br />**[DC\_Pol](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-pol)**, poll for card usage (extended API in OZ 4.6 and newer)<br />**[OS\_Ent](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-ent)**, enter an application (OZ usage)<br />**[DC\_Ent](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-ent)**, enter new application (low level OZ usage)<br />**[OS\_Exit](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-exit)**, exit an application (OZ usage)<br />**[DC\_Bye](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-bye)**, exiting current application (OZ usage)<br />**[OS\_Bye](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-bye)**, exit application<br />**[OS\_Stk](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-stk)**, stack current process / application (OZ usage)<br />**[OS\_Uash](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-uash)**, Update application static handle in stacked process environment (OZ usage, OZ 4.6 and newer)<br />**[OS\_Use](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-use)**, process card usage (OZ usage)
+
+## Arithmetic
+
+**[GN\_D16](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-d16)**, 16bit unsigned division<br />**[GN\_D24](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-d24)**, 24bit unsigned division<br />**[GN\_Gdn](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-gdn)**, convert an ASCII string to a binary number<br />**[GN\_M16](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-m16)**, 16bit unsigned multiplication<br />**[GN\_M24](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-m24)**, 24bit unsigned multiplication<br />**[GN\_Pdn](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-pdn)**, write number as decimal ASCII string<br />[**FP\_**](/en/library/cambridge-z88/developers-notes/the-floating-point-package-reference) Floating point arithmetic
+
+## Binding
+
+**[OS\_Mgb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mgb)**, get old bank binding<br />**[OS\_Mpb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mpb)**, set (put) new bank binding<br />**[OS\_Fc](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fc)**, fast code (bank binding)<br />**[OZ\_Mgb](/en/library/cambridge-z88/developers-notes/system-calls-reference/oz-mgb)**, get old bank binding (OZ V4.1 and newer)<br />**[OZ\_Mpb](/en/library/cambridge-z88/developers-notes/system-calls-reference/oz-mpb)**, set new bank binding (OZ V4.1 and newer)
+
+## Characters
+
+**[GN\_Cls](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-cls)**, classify a character<br />**[GN\_Skc](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-skc)**, skip character<br />**[GN\_Skd](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-skd)**, skip to delimiter<br />**[GN\_Skt](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-skt)**, skip to value
+
+## CLI
+
+**[DC\_Icl](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-icl)**, invoke new CLI<br />**[DC\_In](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-in)**, read from CLI<br />**[DC\_Xin](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-xin)**, examine CLI input<br />**[DC\_Rbd](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-rbd)**, rebind streams in CLI layer<br />**[OS\_Cli](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-cli)**, CLI interface (OZ usage)
+
+## Close
+
+**[GN\_Cl](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-cl)**, close file<br />**[OS\_Cl](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-cl)**, internal close (OZ usage)<br />**[GN\_Flc](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-flc)**, close filter<br />**[OS\_Mcl](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mcl)**, close (free) memory pool<br />[**GN\_Wcl**](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-wcl), close wildcard handler
+
+## Dates
+
+**[GN\_Gdt](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-gdt)**, convert ASCII to internal date<br />**[GN\_Dei](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-dei)**, convert zoned format date to internal format<br />**[GN\_Die](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-die)**, convert internal format date to zoned format<br />**[GN\_Gmd](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-gmd)**, get (read) machine date in internal format<br />**[GN\_Ldm](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-ldm)**, Country localized date manipulation (OZ 4.5 and newer)<br />**[GN\_Pdt](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-pdt)**, write internal date as ASCII string<br />**[GN\_Pmd](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-pmd)**, put (set) machine date
+
+## Delay
+
+[**OS\_Dly**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-dly), fixed time delay
+
+## DOR manipulation
+
+[**OS\_Dor**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-dor), DOR interface
+
+## Executable and Linkable Format (ELF)
+
+**[DC\_Elf](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-elf)**, ELF low level interface (OZ usage, OZ 5.0 and newer)<br />[**DC\_Rte**](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-rte), return from ELF (OZ usage, OZ 5.0 and newer)<br />[**GN\_Elf**](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-elf), enter ELF program (OZ 5.0 and newer)
+
+## Errors
+
+**[GN\_Err](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-err)**, display system error box<br />**[GN\_Esp](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-esp)**, return an extended pointer to a system error message<br />**[OS\_Erc](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-erc)**, get error context<br />**[OS\_Erh](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-erh)**, set error handler<br />**[OS\_Esc](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-esc)**, examine special condition
+
+## Extended addresses
+
+**[OS\_Bhl](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-bhl)**, copy bytes from extended address<br />**[GN\_Cme](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-cme)**, compare null-terminated strings, one local, one extended<br />**[GN\_Rbe](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-rbe)**, read byte at extended address<br />[**GN\_Wbe**](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-wbe), write byte at extended address<br />**[OS\_Bde](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-bde)**, copy bytes to extended address
+
+## File and stream operations
+
+[**GN\_Opf**](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-opf), file or stream open<br />**[GN\_Cl](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-cl)**, close file<br />**[GN\_Del](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-del)**, delete a file from memory<br />**[GN\_Ren](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-ren)**, rename file<br />**[OS\_Cl](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-cl)**, internal close (OZ usage)<br />**[OS\_Del](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-del)**, file delete (OZ usage)<br />**[OS\_Frm](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-frm)**, file read miscellaneous<br />**[OS\_Fwm](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fwm)**, file write miscellaneous<br />**[OS\_Gb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-gb)**, get byte from file (or device)<br />**[OS\_Gbt](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-gbt)**, get byte from file (or device) with timeout<br />**[OS\_Mv](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mv)**, move bytes between stream and memory<br />[**GN\_Crc**](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-crc), get CRC–32 of open file (OZ V4.5 and newer)<br />**[OS\_Op](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-op)**, internal open (OZ usage)<br />**[OS\_Pb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-pb)**, write byte to file, device<br />**[OS\_Pbt](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-pbt)**, write byte to file, device with timeout<br />**[OS\_Ren](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-ren)**, file rename (OZ usage)
+
+## Serial port stream operations
+
+**[OS\_Pb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-pb)**, write byte to serial port device (IX handle)<br />**[OS\_Pbt](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-pbt)**, write byte to serial port device (IX handle), with timeout<br />**[OS\_Gb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-gb)**, get byte from serial port device (IX handle)<br />**[OS\_Gbt](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-gbt)**, get byte from serial port device (IX handle) with timeout<br />[**OS\_Si**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-si), low level serial port interface
+
+## Filenames
+
+[**GN\_Esa**](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-esa), read & write to filename segments<br />[**GN\_Fcm**](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-fcm), produce compressed filename<br />**[GN\_Fex](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-fex)**, expand a filename<br />[**GN\_Opw**](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-opw), open wildcard handler<br />**[GN\_Pfs](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-pfs)**, parse filename segment<br />**[GN\_Prs](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-prs)**, parse filename<br />[**GN\_Wcl**](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-wcl), close wildcard handle<br />[**GN\_Wfn**](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-wfn), fetch next match for wildcard string (handle)<br />[**GN\_Wsm**](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-wsm), match filename segment to wildcard string
+
+## Filters
+
+**[GN\_Flo](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-flo)**, open a filter<br />**[GN\_Flc](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-flc)**, close filter<br />**[GN\_Flf](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-flf)**, flush filter<br />**[GN\_Flr](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-flr)**, read from filter<br />**[GN\_Flw](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-flw)**, write character to filter<br />**[GN\_Fpb](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-fpb)**, push back into filter
+
+## Handles
+
+**[OS\_Fn](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fn)**, handle functions (OZ usage, extended API in OZ 4.6 and newer)**[<br />OS\_Gth](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-gth)**, get tri-handle (OZ usage)<br />**[OS\_Vth](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-vth)**, verify tri-handle (OZ usage)<br />**[OS\_Fth](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fth)**, free tri-handle (OZ usage)
+
+## Input
+
+**[GN\_Sip](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-sip)**, system input line routine<br />**[OS\_In](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-in)**, wait for character from standard input<br />[**OS\_Kin**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-kin), keyboard input (OZ usage, OZ 5.0 and newer)<br />**[OS\_Pur](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-pur)**, purge keyboard buffer<br />**[OS\_Tin](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-tin)**, read character from standard input, with timeout<br />**[OS\_Xin](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-xin)**, examine input
+
+## Integer conversion
+
+**[GN\_Gdn](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-gdn)**, convert an ASCII string to a binary number<br />**[GN\_Pdn](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-pdn)**, write number as decimal ASCII string
+
+## Linked lists
+
+[**GN\_Xnx**](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-xnx), index next entry in a linked list<br />[**GN\_Xdl**](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-xdl), delete an entry from a linked list<br />[**GN\_Xin**](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-xin), insert an entry into a linked list
+
+## Mailboxes
+
+[**OS\_Sr**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-sr), save & restore
+
+## Miscellaneous
+
+**[OS\_Ploz](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-ploz)**, Poll for running OZ<br />**[OS\_Off](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-off)**, Switch machine off<br />**[OS\_Blp](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-blp)**, Bleep generation<br />**[OS\_Sr](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-sr)**, Page Wait<br />[**GN\_Crc**](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-crc), get CRC–32 of ressource (OZ V4.5 and newer)<br />[**DC\_Upd**](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-upd), Update Operating System (OZ 4.7 and newer)
+
+## Persistent Memory Cards
+
+[**OS\_Epr**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-epr), File Card Interface (extended API in OZ V4.2)<br />[**OS\_Fep**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fep), Flash Card Interface (OZ V4.2 and newer)
+
+## Memory
+
+**[OS\_Axm](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-axm),** allocate explicit memory (OZ 4.6 and newer)**[<br />OS\_Axp](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-axp)**[,](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-bix) allocate explicit page (OZ 4.6 and newer)**[<br />OS\_Bix](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-bix)**, bind in extended address<br />[**OS\_Box**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-box), restore bindings after OS\_Bix OS\_Fc, select fast code (fast bank switching)<br />[**OS\_Fma**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fma), find memory for allocation (OZ 4.6 and newer)<br />**[OS\_Fxm](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fxm)**, free explicit memory (OZ 4.6 and newer)<br />**[OS\_Mal](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mal)**, allocate memory (extended API in OZ 4.7 and newer)<br />**[OS\_Mcl](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mcl)**, close memory (free memory pool)<br />**[OS\_Mfr](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mfr)**, free (previously allocated block) memory<br />**[OS\_Mop](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mop)**, open memory (allocate memory pool)<br />[**GN\_Crc**](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-crc), get CRC–32 of local memory area (OZ V4.5 and newer)
+
+## Open
+
+**[GN\_Opf](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-opf)**, open file, device<br />**[GN\_Flo](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-flo)**, open filter<br />**[GN\_Opw](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-opw)**, open wildcard handler<br />**[OS\_Mop](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mop)**, open memory (pool)
+
+## Output
+
+**[GN\_Nln](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-nln)**, send newline (CR/LF) to standard output (deprecated)<br />**[GN\_Soe](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-soe)**, write string at extended address to standard output (deprecated)<br />**[GN\_Sop](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-sop)**, write local string to standard output (deprecated)<br />**[OS\_Bout](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-bout)**, write string at extended or local address to standard output (OZ V4.2 and newer)<br />[**OS\_Hout**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-hout), write a hexadecimal byte to std. output (OZ 4.5 and newer)<br />[**OS\_Nln**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-nln), send newline (CR/LF) to standard output (OZ 5.0 and newer)<br />**[OS\_Out](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-out)**, write character to standard output<br />**[OS\_Pout](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-pout)**, write embedded string at PC to standard output (OZ V4.2 and newer)<br />**[OS\_Prt](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-prt)**, output character to printer<br />[**OS\_Sout**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-sout), write local string to standard output (OZ 5.0 and newer)
+
+## Screen
+
+**[OS\_Map](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-map)**, high resolution graphics manipulation<br />**[OS\_Sr](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-sr)**, save & restore screen file<br />**[OS\_Sci](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-sci)**, low level screen hardware interface<br />**[OS\_Nq](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-nq)**, fetch low level window information settings, System parameters <br />**[OS\_Sp](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-sp)**, set Panel and PrinterEd values **[GN\_Win](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-win)**, Generic Window create interface
+
+## Settings, System parameters
+
+**[OS\_Sp](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-sp)**, set Panel and PrinterEd values<br />**[OS\_Nq](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-nq)**, read Panel and PrinterEd values (extended API in OZ 4.5 and newer)
+
+## Time
+
+**[GN\_Gmt](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-gmt)**, fetch machine time<br />**[GN\_Gtm](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-gtm)**, convert an ASCII string to a time in internal format<br />**[GN\_Msc](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-msc)**, miscellaneous time operations<br />**[GN\_Pmt](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-pmt)**, put (set) machine time<br />**[GN\_Ptm](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-ptm)**, write internal time as ASCII string<br />**[GN\_Sdo](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-sdo)**, send date and time to standard output<br />**[OS\_Dly](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-dly)**, delay a given period
+
+## Tokens
+
+[**OS\_Wrt**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-wrt), write token<br />[**OS\_Wtb**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-wtb), write token base<br />[**OS\_Wts**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-wts), write tokenized string (OZ 5.0 and newer)
+
+## Wildcards
+
+**[GN\_Opw](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-opw)**, open wildcard handler<br />**[GN\_Wcl](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-wcl)**, close wildcard handle<br />**[GN\_Wfn](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-wfn)**, fetch next match for wildcard string (handle)<br />**[GN\_Wsm](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-wsm)**, match filename segment to wildcard string
+
+```text
+
+```

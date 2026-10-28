@@ -1,0 +1,33 @@
+---
+description: "Make sure that the error handler is not paged out of the corresponding segment, when calling OZ. If an error occurs random information will be executed, since the original code of the particular..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7471564 (version 8) by scripts/import-z88-wiki.cjs */}
+
+# OS_Erh, Set error handler
+
+## Register parameters
+
+```text
+IN:
+     A = 0, always (call level, other values reserved for system use)
+     HL = address of new error handler
+     HL = 0, use default system error handler (in lower 8K of segment 0)
+
+OUT:
+     Fc = 0, always
+     A  = old call level
+     HL = address of old error handler
+
+Registers changed after return:
+     ..BCDE../IXIY same
+     AF....HL/.... different
+```
+
+## Notes
+
+Make sure that the error handler is not paged out of the corresponding segment, when calling OZ. If an error occurs random information will be executed, since the original code of the particular bank has been paged out.
+
+## Related system calls
+
+**[GN\_Err](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-err)**, display an interactive error box <br />**[GN\_Esp](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-esp)**, return an extended pointer to a system error message <br />**[OS\_Erc](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-erc)**, get error context <br />**[OS\_Esc](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-esc)**, examine special condition

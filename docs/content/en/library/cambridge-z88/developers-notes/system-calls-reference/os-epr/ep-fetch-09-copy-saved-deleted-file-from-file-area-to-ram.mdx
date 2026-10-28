@@ -1,0 +1,34 @@
+---
+description: "Fetch file (image) from File Eprom Card, identified by File Entry at BHL (B=00h-FFh embedded slot mask, HL=0000h-3FFFh bank offset) and store it into an open file (enabled for writing) in the RAM..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7471443 (version 7) by scripts/import-z88-wiki.cjs */}
+
+# EP_Fetch ($09) - Copy saved/deleted file from File Area to RAM
+
+## Register parameters
+
+```text
+IN:
+     A = EP_FETCH
+    IX = handle of file stream (opened previously with GN_Opf, A=OP_OUT)
+   BHL = pointer to Eprom File Entry (bits 7,6 of B is the slot mask)
+
+OUT:
+   Fc = 0,
+        File Image transferred successfully to RAM file.
+
+   Fc = 1,
+        A = RC_ONF, File Eprom or File Entry was not found in slot
+        A = RC_xxx, I/O error during saving process.
+
+Registers changed after return:
+   ..BCDEHL/IXIY same
+   AF....../.... different
+```
+
+## Notes
+
+Fetch file (image) from File Eprom Card, identified by File Entry at BHL (B=00h-FFh embedded slot mask, HL=0000h-3FFFh bank offset) and store it into an open file (enabled for writing) in the RAM file system (using the IX handle).
+
+The application is responsible for opening/creating a RAM file, then using this library routine to transfer the contents from the File Eprom to the RAM file system, and then finally close the new RAM file.

@@ -1,0 +1,36 @@
+---
+description: "Blow block of data to UV Eprom in slot 3. Screen will be switched off during operation. Blockable CPU interrupts are also disabled during this system call (DI / EI)."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7471559 (version 4) by scripts/import-z88-wiki.cjs */}
+
+# EP_WrBlk ($45), Write a block of bytes to UV Eprom in slot 3
+
+## Register Parameters
+
+```text
+IN:
+      A = EP_WRBLK
+      C = Blowing algorithm context (also known as File Area sub type)
+      DE = source address (local address space pointer)
+      IX = length of block
+      BHL = destination address in slot 3
+OUT:
+      Fc = 0 (block blown successfully to UV Eprom)
+              BHL updated
+      Fc = 1,
+              A = RC_BWR (write error)
+              A = RC_Onf (unknown blowing algorithm context)
+
+Registers changed after return:
+   ...CDE../IXIY same
+   AFB...HL/.... different
+```
+
+## Notes
+
+Blow block of data to UV Eprom in slot 3. Screen will be switched off during operation. Blockable CPU interrupts are also disabled during this system call (DI / EI).
+
+<u>This system call is regarded as internal operating system usage but may be used by applications</u>.
+
+This new interface utilizes the original algorithm that has been part of all OZ ROM versions, now available formally to applications running OZ V4.2 or newer. The blowing algorithm context is found in the "card.def" definition file; CB\_EP1 (32K) or CB\_EP2 (128K or more).

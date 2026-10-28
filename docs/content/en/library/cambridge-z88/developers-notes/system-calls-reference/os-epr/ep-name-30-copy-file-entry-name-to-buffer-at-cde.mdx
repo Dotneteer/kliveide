@@ -1,0 +1,35 @@
+---
+description: "Return file name of File Entry at BHL (B=00h-FFh embedded slot mask, HL=0000h-3FFFh bank offset)."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7471544 (version 2) by scripts/import-z88-wiki.cjs */}
+
+# EP_Name ($30) - Copy File entry name to buffer at (CDE)
+
+## Register Parameters
+
+```text
+IN:
+     A = EP_NAME
+   CDE = buffer to hold returned filename, (C = 0, local pointer)
+   BHL = pointer to Eprom File Entry in card (B contains embedded slot mask)
+
+OUT:
+   Fc = 0, File Eprom available
+        Fz = 1, File Entry marked as deleted
+        Fz = 0, File Entry marked as active
+        A = length of filename
+        (CDE) contains a copy of filename, null-terminated.
+
+   Fc = 1,
+        A = RC_Onf
+        File Eprom was not found in slot, or File Entry not available
+
+Registers changed after return:
+   ..BCDEHL/IXIY same
+   AF...../.... different
+```
+
+## Notes
+
+Return file name of File Entry at BHL (B=00h-FFh embedded slot mask, HL=0000h-3FFFh bank offset).
