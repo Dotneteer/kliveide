@@ -33,6 +33,7 @@ import { decodeHistoryPage, type HistoryRecord } from "@common/history/historyRe
 import type { ExecutionHistoryInfo } from "@common/history/historyTypes";
 import type { ProfileCounts, ProfileEdge, ProfileInfo, ProfileTouchedByte } from "@common/profile/profileTypes";
 import { DebugSupport } from "@emu/machines/DebugSupport";
+import { NEXT_AUDIO_OUTPUT } from "@emu/machines/machine-props";
 import {
   beginSourceStep,
   type MachineView,
@@ -1377,6 +1378,16 @@ export class NextTestSession {
   startAudio(): this {
     if (!this.options.audioSampleRate) throw new Error("Create the session with { audioSampleRate } to record audio.");
     this.recording = [];
+    return this;
+  }
+  /**
+   * Chooses which of the Next's outputs the audio stream plays, as the IDE's Sound Output setting
+   * does: `"jack"` (the default: the sum's low 12 bits, wrapping past 4,095), `"speaker"` (the mono
+   * speaker mix, NextReg $08 bit 4 and $06 bit 6) or `"hdmi"` (the whole sum, point-sampled, NextReg
+   * $09 bit 2). A host setting, not machine state: no reset changes it.
+   */
+  audioOutput(output: "jack" | "speaker" | "hdmi"): this {
+    this.machine.setMachineProperty(NEXT_AUDIO_OUTPUT, output);
     return this;
   }
   /** The samples recorded since `startAudio` (left/right, the mixer's output range). */

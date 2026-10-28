@@ -75,7 +75,8 @@ import {
 import { ZxNextWasmHost } from "./ZxNextWasmHost";
 import { NEXT_ROM_FLAGS } from "./nextMachineInfo";
 import { rtcRegistersFromDate } from "./nextRtc";
-import { AUDIO_SAMPLE_RATE } from "../machine-props";
+import { AUDIO_SAMPLE_RATE, NEXT_AUDIO_OUTPUT } from "../machine-props";
+import { nextAudioOutputIndex } from "@common/settings/next-audio-output";
 import { importAccessLog } from "../wasmAccessLog";
 import {
   captureWasmImage,
@@ -564,6 +565,9 @@ export class ZxNextWasmV2Machine
     if (runtime != null && key === AUDIO_SAMPLE_RATE) {
       this.syncAudioSampleRateToWasmV2(runtime);
     }
+    if (runtime != null && key === NEXT_AUDIO_OUTPUT) {
+      this.syncAudioOutputToWasmV2(runtime);
+    }
   }
 
   override executeMachineFrame(): FrameTerminationMode {
@@ -583,6 +587,7 @@ export class ZxNextWasmV2Machine
 
     this.emulateKeystroke();
     this.feedPiI2s(runtime);
+    this.syncAudioOutputToWasmV2(runtime);
     runtime.exports.zxnextExecuteFrame();
     this.syncCpuFromWasmV2(runtime);
     this.syncWasmV2StorageFrameCommand(runtime);
@@ -990,6 +995,7 @@ export class ZxNextWasmV2Machine
   private wasmV2DebugLoopHost?: { runtime: ZxNextWasmV2Runtime; host: WasmDebugLoopHost };
 
   private executeWasmV2DebugLoop(runtime: ZxNextWasmV2Runtime): FrameTerminationMode {
+    this.syncAudioOutputToWasmV2(runtime);
     const cached = this.wasmV2DebugLoopHost;
     if (cached?.runtime !== runtime) {
       this.wasmV2DebugLoopHost = { runtime, host: this.createWasmV2DebugLoopHost(runtime) };
@@ -2320,6 +2326,15 @@ export class ZxNextWasmV2Machine
   }
 
 
+
+  /**
+   * Which output the audio stream plays (`next-audio-output.ts`). It lives in the core's memory, so
+   * restoring a checkpoint or a reverse-debugging state would bring back an older choice: every frame
+   * sets it again, one export call.
+   */
+  private syncAudioOutputToWasmV2(runtime: ZxNextWasmV2Runtime): void {
+    runtime.exports.zxnextSetAudioOutput(nextAudioOutputIndex(this.getMachineProperty(NEXT_AUDIO_OUTPUT)));
+  }
 
   private syncAudioSampleRateToWasmV2(runtime: ZxNextWasmV2Runtime): void {
     const audioRate = this.getMachineProperty(AUDIO_SAMPLE_RATE);

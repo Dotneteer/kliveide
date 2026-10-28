@@ -16,6 +16,15 @@ static int32_t zxnextMixerPiLeft;
 static int32_t zxnextMixerPiRight;
 static uint32_t zxnextMixerVolumeScaleMilli;
 static uint32_t zxnextMixerSampleCount;
+/* Which of the Next's outputs the stream plays (ZXNEXT_AUDIO_OUT_*): a host setting, so no reset
+   touches it. The jack wraps the sum past 4,095, the speaker plays one mono mix, HDMI the whole sum. */
+static uint32_t zxnextMixerOutput = ZXNEXT_AUDIO_OUT_JACK;
+/* The beeper as the hardware sums it, unfiltered (EAR 0-512, MIC 0-128; 0 while diverted to the
+   speaker), for the jack's 12-bit wrap; and EAR + MIC filtered but not diverted, for the speaker */
+static double zxnextMixerEarRaw;
+static double zxnextMixerMicRaw;
+static int32_t zxnextMixerSpeakerBeeper;
+static uint8_t zxnextMixerBeeperDiverted;
 /* The next sample's time: frame 28 MHz clocks x sample rate. It carries across the frame wrap
    (zxnextAudioMixerOnFrameWrap), so a frame yields rate x frame length / 28 MHz samples on average -
    restarting it every frame dropped the fraction of a sample at each frame end (0.45 at 48 kHz). */
@@ -68,6 +77,10 @@ static void zxnextAudioMixerReset(void) {
   zxnextMixerPsgRight = 0.0;
   zxnextMixerPiLeft = 0;
   zxnextMixerPiRight = 0;
+  zxnextMixerEarRaw = 0.0;
+  zxnextMixerMicRaw = 0.0;
+  zxnextMixerSpeakerBeeper = 0;
+  zxnextMixerBeeperDiverted = 0u;
   zxnextMixerVolumeScaleMilli = 1000u;
   zxnextMixerBeeperDcPrevInputEar = 0.0;
   zxnextMixerBeeperDcPrevInputMic = 0.0;
@@ -134,19 +147,85 @@ static void zxnextAudioMixerSetVolumeScaleMilli(uint32_t scale) {
  * volume, 1530 units.)
  */
 #define ZXNEXT_MIXER_GAIN 12.8
-static int32_t zxnextAudioMixerGetMixedSide(uint32_t isRight) {
+/*
+ * The other outputs keep the same idea, each output's room above its silence mapped to 16 bits:
+ * - The internal speaker (zxnext_top_issue4.vhd ~1313-1320) plays L(11..0) + R(11..0), the two jack
+ *   values, through a 13-bit converter: silence 3,072, room 2 x 2,559 = 5,118, x 6.4 = 32,755. With the
+ *   beeper diverted ($06 bit 6 and $08 bit 4) its word is EAR at bit 10 and MIC at bit 8 (1,024 and 256)
+ *   and nothing else. $08 bit 4 off holds its pin low: silence. Issue 2 boards bias the speaker word
+ *   for their transistor; Klive follows issue 4.
+ * - HDMI (~1522) carries the whole 13-bit sum, so it never wraps: every source at its largest is 4,462
+ *   above silence, x 7.34 = 32,751. It takes the sum's value at each sample (no averaging), so the
+ *   beeper and the PSGs are point-sampled; $09 bit 2 silences it.
+ */
+#define ZXNEXT_SPEAKER_GAIN 6.4
+#define ZXNEXT_HDMI_GAIN 7.34
+#define ZXNEXT_SUM_SILENCE 1536.0
+
+/* The mix about silence (0): the DC-filtered beeper, the AY, the DACs and the Pi about their rests */
+static double zxnextAudioMixerCentredSide(uint32_t isRight) {
   double mixed = (double)zxnextMixerEarLevel + (double)zxnextMixerMicLevel;
   mixed += (isRight ? zxnextMixerPsgRight : zxnextMixerPsgLeft) / 257.0;
   uint32_t dacSide = isRight ? zxnextDacGetStereoRight() : zxnextDacGetStereoLeft();
   mixed += ((double)dacSide - 256.0) * 4.0;
   mixed += (double)(isRight ? zxnextMixerPiRight : zxnextMixerPiLeft);
+  return mixed;
+}
+
+/* audio_mixer.vhd's unsigned sum, 0-5,998: the beeper unfiltered, the DACs x 4, the Pi from 0 */
+static double zxnextAudioMixerHardwareSum(uint32_t isRight) {
+  double sum = zxnextMixerEarRaw + zxnextMixerMicRaw;
+  sum += (isRight ? zxnextMixerPsgRight : zxnextMixerPsgLeft) / 257.0;
+  sum += (double)(isRight ? zxnextDacGetStereoRight() : zxnextDacGetStereoLeft()) * 4.0;
+  sum += (double)(isRight ? zxnextMixerPiRight : zxnextMixerPiLeft) + 512.0;
+  return sum;
+}
+
+/* The jack's side about silence: the jack takes the sum's low 12 bits, so a sum of 4,096 or more
+   loses 4,096 for each time it passed (zxnext_top_issue4.vhd ~1279, `zxn_audio_L(11 downto 0)`) */
+static double zxnextAudioMixerJackSide(uint32_t isRight) {
+  double mixed = zxnextAudioMixerCentredSide(isRight);
+  const double sum = zxnextAudioMixerHardwareSum(isRight);
+  if (sum >= 4096.0) mixed -= 4096.0 * zxnextMixerFloor(sum / 4096.0);
+  return mixed;
+}
+
+static int32_t zxnextAudioMixerGetMixedSide(uint32_t isRight) {
+  double mixed;
+  double gain;
+  switch (zxnextMixerOutput) {
+    case ZXNEXT_AUDIO_OUT_SPEAKER:
+      gain = ZXNEXT_SPEAKER_GAIN;
+      if ((zxnextNextRegs[0x08u] & 0x10u) == 0u) {
+        mixed = 0.0;
+      } else if (zxnextMixerBeeperDiverted) {
+        mixed = 2.0 * (double)zxnextMixerSpeakerBeeper;
+      } else {
+        mixed = zxnextAudioMixerJackSide(0u) + zxnextAudioMixerJackSide(1u);
+      }
+      break;
+    case ZXNEXT_AUDIO_OUT_HDMI:
+      gain = ZXNEXT_HDMI_GAIN;
+      mixed = (zxnextNextRegs[0x09u] & 0x04u) != 0u ? 0.0 : zxnextAudioMixerCentredSide(isRight);
+      break;
+    default:
+      gain = ZXNEXT_MIXER_GAIN;
+      mixed = zxnextAudioMixerJackSide(isRight);
+      break;
+  }
   /* AudioMixerDevice.getMixedOutput: trunc(mixed x gain), then floor(x volume), then the clamp */
-  double scaled = zxnextMixerTrunc(mixed * ZXNEXT_MIXER_GAIN);
+  double scaled = zxnextMixerTrunc(mixed * gain);
   scaled = zxnextMixerFloor(scaled * ((double)zxnextMixerVolumeScaleMilli / 1000.0));
   if (scaled > 32767.0) scaled = 32767.0;
   if (scaled < -32768.0) scaled = -32768.0;
   return (int32_t)scaled;
 }
+
+static void zxnextAudioMixerSetOutput(uint32_t output) {
+  zxnextMixerOutput = output <= ZXNEXT_AUDIO_OUT_HDMI ? output : ZXNEXT_AUDIO_OUT_JACK;
+}
+
+static uint32_t zxnextAudioMixerGetOutput(void) { return zxnextMixerOutput; }
 
 static int32_t zxnextAudioMixerGetMixedLeftWord(void) {
   return zxnextAudioMixerGetMixedSide(0u);
@@ -169,29 +248,43 @@ static void zxnextAudioMixerRefreshCurrentSources(double sampleEndTact, double s
      beeper's sample is taken. A sample-end in the past sees the words latched since, at most one
      audio sample late (zxnext-pi-i2s.c keeps time lazily and never runs backwards). */
   zxnextPiI2sSync();
+  /* HDMI takes the sum's value at the sample's moment (no averaging): the beeper's level at the
+     window's end instead of its time-weighted share, and the PSGs' current output */
+  const uint32_t pointSampled = zxnextMixerOutput == ZXNEXT_AUDIO_OUT_HDMI;
+  double earIn = zxnextBeeperGetSampleLeft(sampleEndTact);
+  double micIn = zxnextBeeperGetSampleRight(sampleEndTact);
+  if (pointSampled) {
+    earIn = zxnextBeeperSampleWindowStartEar ? 1.0 : 0.0;
+    micIn = zxnextBeeperSampleWindowStartMic ? 1.0 : 0.0;
+  }
   /* AudioMixerDevice.setEarLevel / setMicLevel: round(level x 512) / round(level x 128) of the
      DC-filtered time-weighted fractions */
   int32_t ear = zxnextMixerRound(zxnextAudioMixerFilterBeeper(
-    zxnextBeeperGetSampleLeft(sampleEndTact),
+    earIn,
     &zxnextMixerBeeperDcPrevInputEar,
     &zxnextMixerBeeperDcPrevOutputEar
   ) * 512.0);
   int32_t mic = zxnextMixerRound(zxnextAudioMixerFilterBeeper(
-    zxnextBeeperGetSampleRight(sampleEndTact),
+    micIn,
     &zxnextMixerBeeperDcPrevInputMic,
     &zxnextMixerBeeperDcPrevOutputMic
   ) * 128.0);
   zxnextPsgPrepareAudioSample(sampleEndFrameTacts28);
   /* ~6450 `beep_spkr_excl`: with $06 bit 6 and the internal speaker ($08 bit 4) on, the beeper goes
      to the speaker only - EAR and MIC leave the mix */
-  if ((zxnextNextRegs[0x06u] & 0x40u) != 0u && (zxnextNextRegs[0x08u] & 0x10u) != 0u) {
+  zxnextMixerSpeakerBeeper = ear + mic;
+  zxnextMixerBeeperDiverted =
+    (zxnextNextRegs[0x06u] & 0x40u) != 0u && (zxnextNextRegs[0x08u] & 0x10u) != 0u ? 1u : 0u;
+  if (zxnextMixerBeeperDiverted) {
     ear = 0;
     mic = 0;
   }
   zxnextMixerEarLevel = ear;
   zxnextMixerMicLevel = mic;
-  zxnextMixerPsgLeft = zxnextPsgGetSampleLeftExact();
-  zxnextMixerPsgRight = zxnextPsgGetSampleRightExact();
+  zxnextMixerEarRaw = zxnextMixerBeeperDiverted ? 0.0 : earIn * 512.0;
+  zxnextMixerMicRaw = zxnextMixerBeeperDiverted ? 0.0 : micIn * 128.0;
+  zxnextMixerPsgLeft = pointSampled ? (double)zxnextPsgCurrentLeft : zxnextPsgGetSampleLeftExact();
+  zxnextMixerPsgRight = pointSampled ? (double)zxnextPsgCurrentRight : zxnextPsgGetSampleRightExact();
   zxnextMixerPiLeft = zxnextPiI2sGetMixLeft();
   zxnextMixerPiRight = zxnextPiI2sGetMixRight();
 }

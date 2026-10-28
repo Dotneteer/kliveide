@@ -255,9 +255,8 @@ Facts the article established, beyond §11:
   chip, hence 2,295 for three. In stereo a chip's side is at most 510.
 - The jack's converters are first-order one-bit delta-sigma at 28 MHz; issue 4's speaker takes L + R
   (no offset; issue 2 adds one); HDMI is the 13-bit sum as a 16-bit word, 48 kHz.
-- Klive: the speaker-only beeper ($06 bit 6 with $08 bit 4) is silent, since only one stream (the
-  jack's) is made; the speaker and HDMI's silence bit are not emulated. Mode `10` behaves as YM in
-  Klive too (only bit 0 reaches the PSGs).
+- Klive (superseded, see article 7's as-built note): at first only the jack's stream was made, so the
+  speaker-only beeper was silent. Mode `10` behaves as YM in Klive too (only bit 0 reaches the PSGs).
 - Not claimed: the beeper's pitch at 14/28 MHz (wait states not checked) — the article gives 3.5 and
   7 MHz only.
 
@@ -651,6 +650,22 @@ the hardware. The author chose a gain of **12.8**, matching Klive's headroom to 
 The AY stays unipolar (a filter would not add headroom: a step passes it whole). Test BEEP-009 in
 `beeper-mixer.test.ts`; two tests pinning absolute words were updated. This settles Q4: Klive keeps its
 centred mix and the article describes the difference.
+
+**Outputs emulated (author's decision, after the article): a Sound Output setting.** Klive's one stream
+plays the output chosen under Machine › Sound › Output (setting
+`emuOptions.nextAudioOutput`, `next-audio-output.ts`): the jack (default; the 12-bit wrap, computed from
+the hardware's sum beside the centred mix, bit-identical below 4,096), the internal speaker (L + R jack
+values × 6.4, `$08` bit 4 gates it, `$06` bit 6 plays EAR 1,024 / MIC 256 only; issue 4's speaker) or
+HDMI (the whole sum × 7.34, point-sampled beeper and PSGs, `$09` bit 2 silences it). Tests OUT-001 to
+OUT-005 in `audio-outputs.test.ts`. The tape input stays out: the Next has no tape player in Klive, a
+separate task.
+
+Klive's samples stand for the sound **after the jack's capacitor**, not the FPGA's digital sum: the
+article says so beside the beeper figure (author's review). The remaining inaudible differences are
+listed in its "What Klive leaves out": only the beeper is DC-filtered (an AY held at a fixed volume stays
+as an offset; filtering the whole sum would cost headroom, since a step passes a filter whole), the
+filter's time constant is Klive's (the board's RC values are not in the design), and Klive's HDMI is
+centred where the real words carry 6,144.
 
 ---
 

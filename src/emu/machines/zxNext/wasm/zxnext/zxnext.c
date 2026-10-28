@@ -937,6 +937,9 @@ void zxnextSetAudioMixerEarLevelMilli(int32_t level) { zxnextAudioMixerSetEarLev
 void zxnextSetAudioMixerMicLevelMilli(int32_t level) { zxnextAudioMixerSetMicLevelMilli(level); }
 void zxnextSetAudioMixerPsgOutput(uint32_t left, uint32_t right) { zxnextAudioMixerSetPsgOutput(left, right); }
 void zxnextSetAudioMixerVolumeScaleMilli(uint32_t scale) { zxnextAudioMixerSetVolumeScaleMilli(scale); }
+/* Which output the audio stream plays: 0 the jack, 1 the internal speaker, 2 HDMI */
+void zxnextSetAudioOutput(uint32_t output) { zxnextAudioMixerSetOutput(output); }
+uint32_t zxnextGetAudioOutput(void) { return zxnextAudioMixerGetOutput(); }
 int32_t zxnextGetAudioMixerMixedLeftWord(void) { return zxnextAudioMixerGetMixedLeftWord(); }
 int32_t zxnextGetAudioMixerMixedRightWord(void) { return zxnextAudioMixerGetMixedRightWord(); }
 uint32_t zxnextAppendAudioMixerCurrentSample(void) { return zxnextAudioMixerAppendCurrentSample(); }

@@ -308,6 +308,8 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & ConditionCoreExports & Z
   zxnextSetAudioMixerMicLevelMilli: ZxNextWasmV2ExportFunction;
   zxnextSetAudioMixerPsgOutput: ZxNextWasmV2ExportFunction;
   zxnextSetAudioMixerVolumeScaleMilli: ZxNextWasmV2ExportFunction;
+  zxnextSetAudioOutput: ZxNextWasmV2ExportFunction;
+  zxnextGetAudioOutput: ZxNextWasmV2ExportFunction;
   zxnextGetAudioMixerMixedLeftWord: ZxNextWasmV2ExportFunction;
   zxnextGetAudioMixerMixedRightWord: ZxNextWasmV2ExportFunction;
   zxnextAppendAudioMixerCurrentSample: ZxNextWasmV2ExportFunction;
@@ -758,6 +760,8 @@ const requiredV2Exports = [
   "zxnextSetAudioMixerMicLevelMilli",
   "zxnextSetAudioMixerPsgOutput",
   "zxnextSetAudioMixerVolumeScaleMilli",
+  "zxnextSetAudioOutput",
+  "zxnextGetAudioOutput",
   "zxnextGetAudioMixerMixedLeftWord",
   "zxnextGetAudioMixerMixedRightWord",
   "zxnextAppendAudioMixerCurrentSample",

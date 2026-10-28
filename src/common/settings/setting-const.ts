@@ -28,6 +28,8 @@ export const SETTING_EMU_HT_CPU_DASH = "emuOptions.ht1080zCpuDash";
 export const SETTING_EMU_ULA_LATE_TIMING = "emuOptions.ulaLateTiming";
 /** ZX Spectrum 16K/48K/128K: the snow effect (Phase 5): on */
 export const SETTING_EMU_ULA_SNOW = "emuOptions.ulaSnow";
+// --- The ZX Spectrum Next output Klive plays: "jack", "speaker" or "hdmi" (`next-audio-output.ts`)
+export const SETTING_EMU_NEXT_AUDIO_OUTPUT = "emuOptions.nextAudioOutput";
 /** Reverse debugging in debug sessions (`.plans/REVERSE_DEBUGGING_PLAN.md` D2): on by default */
 export const SETTING_EMU_REVERSE_DEBUGGING = "emuOptions.reverseDebugging";
 /** The reverse-debugging keyframe budget in MB (D6); 0: the smaller of 512 MB and 1/16 of memory */

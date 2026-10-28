@@ -12,12 +12,14 @@ import {
   DEFAULT_MOUSE_POINTER_DISPLAY
 } from "@common/settings/mouse-capture";
 import { DEFAULT_JOYSTICK_BINDINGS } from "@common/settings/joystick-bindings";
+import { DEFAULT_NEXT_AUDIO_OUTPUT } from "@common/settings/next-audio-output";
 import {
   SETTING_EMU_FAST_LOAD,
   SETTING_EMU_HT_CPU_DASH,
   SETTING_EMU_HT_VIDEO_CUT,
   SETTING_EMU_ULA_LATE_TIMING,
   SETTING_EMU_ULA_SNOW,
+  SETTING_EMU_NEXT_AUDIO_OUTPUT,
   SETTING_EMU_REVERSE_DEBUGGING,
   SETTING_EMU_REVERSE_DEBUG_MEMORY_MB,
   SETTING_EMU_PROFILE_RESET_ON_START,
@@ -198,6 +200,19 @@ const settingDefinitions: Setting[] = [
       "and the floating bus all move by one T-state. Off: the documented (\"early\") timings.",
     type: "boolean",
     defaultValue: false,
+    saveWithIde: true,
+    boundTo: "emu"
+  },
+  {
+    id: SETTING_EMU_NEXT_AUDIO_OUTPUT,
+    title: "ZX Spectrum Next Sound Output",
+    description:
+      "Which of the Next's sound outputs Klive plays: the audio jack (the default; a very loud mix " +
+      "wraps around as on the real jack), the internal speaker (one mono mix, switched by NextReg $08 " +
+      "bit 4, or only the beeper with NextReg $06 bit 6), or HDMI (the whole sum, silenced by NextReg " +
+      "$09 bit 2).",
+    type: "string",
+    defaultValue: DEFAULT_NEXT_AUDIO_OUTPUT,
     saveWithIde: true,
     boundTo: "emu"
   },

@@ -253,5 +253,17 @@
   "@common.filter.mdrFiles": {
     "context": "Filter name in a file dialog: ZX Microdrive cartridge image files (.mdr).",
     "maxChars": 40
+  },
+  "common.nextAudioOutput.jack": "Audio jack",
+  "@common.nextAudioOutput.jack": {
+    "context": "Choice of which ZX Spectrum Next sound output the emulator plays: the 3.5 mm headphone/line socket. Shown in the Machine menu's 'Sound output' submenu and the Settings dialog."
+  },
+  "common.nextAudioOutput.speaker": "Internal speaker",
+  "@common.nextAudioOutput.speaker": {
+    "context": "Choice of which ZX Spectrum Next sound output the emulator plays: the small speaker inside the machine's case. Shown in the Machine menu and the Settings dialog."
+  },
+  "common.nextAudioOutput.hdmi": "HDMI",
+  "@common.nextAudioOutput.hdmi": {
+    "context": "Choice of which ZX Spectrum Next sound output the emulator plays: the sound sent over the HDMI cable. HDMI is a name: keep it. Shown in the Machine menu and the Settings dialog."
   }
 }

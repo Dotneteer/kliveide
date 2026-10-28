@@ -254,7 +254,7 @@ const fmt = (v) => Math.round(v).toLocaleString("en-US");
   const klive = d.left.map((w) => w / unit);
   const half = 1000 / d.hz / 2; // ms
   const hw = (t) => 1536 + (Math.floor(t / half) % 2 === 0 ? 512 : 0);
-  const out = [svgOpen(700, 360, "The same scene twice over 0.4 seconds: the beeper switched on from silence, a square wave of 104 Hz. Above, the hardware's sum: the wave moves between 1,536 and 2,048, with silence at 1,536, all of it above zero. Below, Klive's mix, captured from the machine: the same 512-unit square, which starts with its top at 512 above zero and drifts down over about a tenth of a second until it is centred on zero, from +256 to −256, as the capacitor after a real converter would leave it.")];
+  const out = [svgOpen(700, 360, "The same scene twice over 0.4 seconds: the beeper switched on from silence, a square wave of 104 Hz. Above, the hardware's digital sum inside the FPGA: the wave moves between 1,536 and 2,048, with silence at 1,536, all of it above zero. Below, Klive's mix, captured from the machine, which stands for the sound after the jack's capacitor: the same 512-unit square, which starts with its top at 512 above zero and drifts down over about a tenth of a second until it is centred on zero, from +256 to −256, as the capacitor after the jack's converter leaves the real machine's sound too.")];
   out.push(arrows("mx-klive", ["currentColor"]));
   const draw = (b, fn, colour) => {
     const pts = [];
@@ -262,14 +262,14 @@ const fmt = (v) => Math.round(v).toLocaleString("en-US");
     out.push(pathEl(poly(b, pts), { stroke: colour, width: 1.1 }));
   };
   const b1 = box(90, 30, 590, 120, 0, T, 0, 2300);
-  out.push(text(10, 24, "the hardware's sum (worked out from the rules)", { size: 12.5, bold: true }));
+  out.push(text(10, 24, "the hardware's digital sum, inside the FPGA (worked out from the rules)", { size: 12.5, bold: true }));
   for (const v of [0, 1536, 2048]) {
     out.push(line(b1.x, b1.py(v), b1.x + b1.w, b1.py(v), { opacity: v ? 0.25 : 0.5 }));
     out.push(text(b1.x - 6, b1.py(v) + 4, fmt(v), { anchor: "end", size: 11 }));
   }
   draw(b1, (i) => hw(i * dt), BEEPER);
   const b2 = box(90, 200, 590, 120, 0, T, -600, 600);
-  out.push(text(10, 194, "Klive's mix (captured)", { size: 12.5, bold: true }));
+  out.push(text(10, 194, "Klive's mix (captured): the sound after the jack's capacitor", { size: 12.5, bold: true }));
   for (const v of [-256, 0, 256, 512]) {
     out.push(line(b2.x, b2.py(v), b2.x + b2.w, b2.py(v), { opacity: v ? 0.25 : 0.5 }));
     out.push(text(b2.x - 6, b2.py(v) + 4, v > 0 ? `+${v}` : v < 0 ? `−${-v}` : "0", { anchor: "end", size: 11 }));

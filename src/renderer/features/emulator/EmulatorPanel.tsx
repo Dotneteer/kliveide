@@ -4,7 +4,7 @@ import { getGlobalSetting, useGlobalSetting, useSelector, useStore } from "@rend
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { EmulatorOverlay } from "./EmulatorOverlay";
-import { FAST_LOAD, HT_VIDEO_CUT, HT_VIDEO_DASH, ULA_LATE_TIMING, ULA_SNOW } from "@emu/machines/machine-props";
+import { FAST_LOAD, HT_VIDEO_CUT, HT_VIDEO_DASH, NEXT_AUDIO_OUTPUT, ULA_LATE_TIMING, ULA_SNOW } from "@emu/machines/machine-props";
 import { FrameCompletedArgs, IMachineController } from "../../abstractions/IMachineController";
 import { reportMessagingError } from "@renderer/reportError";
 import { toHexa4 } from "@renderer/appIde/services/ide-commands";
@@ -18,6 +18,7 @@ import {
   SETTING_EMU_HT_VIDEO_CUT,
   SETTING_EMU_ULA_LATE_TIMING,
   SETTING_EMU_ULA_SNOW,
+  SETTING_EMU_NEXT_AUDIO_OUTPUT,
   SETTING_EMU_MOUSE_SHOW_POINTER,
   SETTING_EMU_SHOW_BEAM_POSITION,
   SETTING_EMU_SHOW_INSTANT_SCREEN
@@ -103,6 +104,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   const htCpuDash = useGlobalSetting(SETTING_EMU_HT_CPU_DASH);
   const ulaLateTiming = useGlobalSetting(SETTING_EMU_ULA_LATE_TIMING);
   const ulaSnow = useGlobalSetting(SETTING_EMU_ULA_SNOW);
+  const nextAudioOutput = useGlobalSetting(SETTING_EMU_NEXT_AUDIO_OUTPUT);
   const showInstantScreen = useGlobalSetting(SETTING_EMU_SHOW_INSTANT_SCREEN);
   const showBeamPosition = !!useGlobalSetting(SETTING_EMU_SHOW_BEAM_POSITION);
   // --- Counts the stops, so the beam overlay redraws at each one, stepping included (T9)
@@ -478,6 +480,11 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     controller?.machine?.setMachineProperty(ULA_LATE_TIMING, !!ulaLateTiming);
     controller?.machine?.setMachineProperty(ULA_SNOW, ulaSnow !== false);
   }, [controller, ulaLateTiming, ulaSnow]);
+
+  // --- The ZX Spectrum Next's sound output (other machines ignore the property)
+  useEffect(() => {
+    controller?.machine?.setMachineProperty(NEXT_AUDIO_OUTPUT, nextAudioOutput);
+  }, [controller, nextAudioOutput]);
 
   // --- Respond to shadow screen changes
   useEffect(() => {

@@ -361,6 +361,8 @@ const productionExports = [
   "zxnextSetAudioMixerMicLevelMilli",
   "zxnextSetAudioMixerPsgOutput",
   "zxnextSetAudioMixerVolumeScaleMilli",
+  "zxnextSetAudioOutput",
+  "zxnextGetAudioOutput",
   "zxnextGetAudioMixerMixedLeftWord",
   "zxnextGetAudioMixerMixedRightWord",
   "zxnextAppendAudioMixerCurrentSample",

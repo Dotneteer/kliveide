@@ -857,10 +857,11 @@ Klive's sum keeps the hardware's **proportions**, but not its zero:
 You hear the same thing; a waveform drawn from Klive's samples sits at a different level than one
 measured on the hardware, which is why this series' captures are drawn about their middle.
 
-Klive makes **one** stream, the one the audio jack would play. It does not model the outputs separately:
-the internal speaker, HDMI's silence bit and the converters are not emulated, and with NextReg `$06`
-bit 6 set the beeper, which then belongs to the speaker alone, is not heard at all. The tape input's
-sound is not added to the MIC line either.
+Klive makes **one** stream for your computer's speakers, so it plays **one** of the Next's outputs: the
+audio jack, the internal speaker or HDMI, chosen under **Machine › Sound › Output**
+(the jack unless you choose otherwise), each built as on the hardware
+([article 7](/en/under-the-hood/emulator-internals/next-audio/mixer/#the-three-outputs)). The tape input's
+sound is not added to the MIC line: Klive's Next has no tape player yet.
 
 ### Where to read the code
 

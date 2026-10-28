@@ -247,6 +247,20 @@ describe("harness session", () => {
     expect(n).toBeLessThan(6 * 900);
   });
 
+  it("audioOutput: picks the output the stream plays", async () => {
+    // --- DAC A at $FF on the left, the internal speaker switched off ($08 = DACs only): the jack
+    // --- plays the DAC, the speaker is silent
+    const s = await createSession({ audioSampleRate: 44_100 });
+    await s.loadCode(` .org $8000\n jr $`);
+    s.setNextReg(0x08, 0x08).out(0x1f, 0xff);
+    const last = () => s.startAudio().runFrames(1).audio().at(-1)!.left;
+    expect(last()).toBeGreaterThan(0.1);
+    s.audioOutput("speaker");
+    expect(last()).toBe(0);
+    s.audioOutput("jack");
+    expect(last()).toBeGreaterThan(0.1);
+  });
+
   it("attachSdCard: a sector read's frame command is answered from the image; sync runs refuse it", async () => {
     // --- select SD card 0, CMD17 for sector 3, poll for the $FE token, read 512 bytes to $A000
     const program = `

@@ -127,7 +127,7 @@ Methods returning `this` chain.
 | Checkpoints | `captureCheckpoint(key)` `restoreCheckpoint(key)` | The whole machine (the core's linear memory), mid-frame or not; one checkpoint at a time. |
 | CPU | `registers()` `setRegisters({...})` `tacts` `frames` | `registers()` has 16-bit pairs (`bc`, not `b`). |
 | Screen | `screen()` `pixel(x, y)` `rowRuns(y)` `expectProbe(probe)` `saveScreenPng(path)` | The last *displayed* 720x288 frame. Probe and colour notation as in `case.json` (`ula:N`, `next8:0xNN`, `rgb333:R,G,B`, `#RRGGBB`). |
-| Audio | `startAudio()` `audio()` | Mixed left/right samples of each completed frame; needs `audioSampleRate`. |
+| Audio | `startAudio()` `audio()` `audioOutput(output)` | Mixed left/right samples of each completed frame; needs `audioSampleRate`. `audioOutput` picks the output the stream plays, as the IDE's Sound Output setting: `"jack"` (default), `"speaker"`, `"hdmi"`. |
 | Escape hatch | `s.machine` | Do not use in tests; add a method instead (below). |
 
 Lower-level helpers (`createCore`, `captureFrame`, `compileNexFile`, `loadNexDirect`, beam and

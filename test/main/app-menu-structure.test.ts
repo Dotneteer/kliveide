@@ -241,6 +241,8 @@ describe("the application menu", () => {
     ]);
     expect(labels(submenu(machine, "Input"))).toEqual(["Joystick", "Mouse", "Input Settings..."]);
     expect(labels(submenu(machine, "ZX Spectrum Next"))[0]).toMatch(/^F1 /);
+    // --- The Next's sound output choice, after the levels (next-audio-output.ts)
+    expect(labels(submenu(machine, "Sound")).at(-1)).toBe("Output");
     expect(labels(machine)).not.toContain("Layers");
     expect(labels(menu(template, "Debug"))).toContain("Step Copper");
     // --- Every machine with MF_EXEC_HISTORY (EXECUTION_HISTORY_VIEWER_PLAN §4.5): every Z80 machine

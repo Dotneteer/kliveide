@@ -42,13 +42,17 @@ export function createSpeedMenu(context: MenuContext): MenuItemConstructorOption
 /** Machine › Sound */
 export function createSoundMenu(context: MenuContext): MenuItemConstructorOptions[] {
   const current = context.appState?.emulatorState?.soundLevel;
-  return SOUND_LEVELS.map((v) => ({
+  const levels: MenuItemConstructorOptions[] = SOUND_LEVELS.map((v) => ({
     id: `sound_level_${v.value}`,
     label: v.label,
     type: "checkbox" as const,
     checked: current === v.value,
     click: async () => await setSoundLevel(v.value)
   }));
+  const machineItems = tidySeparators(
+    context.machineMenus?.soundItems?.(windowInfoOf(context), context.currentMachine, context.currentModel) ?? []
+  ) as MenuItemConstructorOptions[];
+  return hasVisibleItems(machineItems) ? [...levels, { type: "separator" }, ...machineItems] : levels;
 }
 
 /** The device submenus (Tape, Program, Disks, Cartridge, SD Card, Input), in their fixed order */
