@@ -8,6 +8,8 @@ import { edgeStep, side } from "../audio/_audio-helpers";
 /*
  * The Next's tape (`.plans/NEXT_TAPE_PLAN.md`; catalogue TAPE-001 - TAPE-008).
  *
+ * (TAPE-009 is the audio series' beeper article, `.plans/NEXT_AUDIO_ARTICLES_PLAN.md` §4.)
+ *
  * Hardware (`_input/next-fpga/src`):
  * - zxnext_top_issue4.vhd ~620-690: the EAR socket goes through `debounce` (COUNTER_SIZE 1 on the
  *   1.75 MHz enable: a level must hold for two enables) and `relaxation` (a 1 held for 64 enables of
@@ -44,13 +46,13 @@ async function basic(): Promise<NextTestSession> {
 }
 
 /** Calls LD-BYTES for `length` bytes of flag $FF to `dest` at the given CPU speed; result at $BF00 (1 = loaded) */
-async function loadProgram(s: NextTestSession, dest: number, length: number, speed = 0): Promise<void> {
+async function loadProgram(s: NextTestSession, dest: number, length: number, speed = 0, nr08 = 0x50): Promise<void> {
   await s.loadCode(
     `
         .org $8000
 Start:  di
         nextreg $07,${speed}
-        nextreg $08,$50       ; contention off, speaker on
+        nextreg $08,$${nr08.toString(16)}       ; contention off, speaker on (and maybe the issue 2 keyboard)
         ld ix,$${dest.toString(16)}
         ld de,${length}
         ld a,$ff
@@ -139,6 +141,20 @@ describe("Next tape", () => {
     s.runUntilReady({ maxFrames: 200 });
     expect(s.peek(0xbf00)).toBe(1);
     expect([...s.peekBytes(0xc000, PAYLOAD.length)]).toEqual([...PAYLOAD]);
+  });
+
+  it("TAPE-009: real-time loading fails with the issue 2 keyboard: LD-BYTES keeps MIC at 1, so bit 6 reads 1", async () => {
+    // --- zxnext.vhd ~3456: bit 6 = ... or (port_fe_mic and nr_08_keyboard_issue2); the ROM's loader
+    //     writes $FE with bit 3 set ("MIC off") all along
+    const loads = async (nr08: number) => {
+      const s = await basic();
+      await loadProgram(s, 0xc000, PAYLOAD.length, 0, nr08);
+      s.insertTape(tapOf(PAYLOAD), { fastLoad: false });
+      s.runFrames(250);
+      return s.peek(0xbf00) === 1 && [...s.peekBytes(0xc000, PAYLOAD.length)].every((b, i) => b === PAYLOAD[i]);
+    };
+    expect(await loads(0x50), "issue 3").toBe(true);
+    expect(await loads(0x51), "issue 2").toBe(false);
   });
 
   it("TAPE-003: real-time loading fails at 7 MHz, as the ROM's timing runs faster than the tape", async () => {

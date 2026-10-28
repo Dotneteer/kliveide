@@ -298,7 +298,7 @@ with an EAR bit the Pi's audio can produce: you hear a tape load at MIC's level,
 machine. The same line goes out of the MIC socket, so a program saves to tape by switching bit 3.
 
 The beeper costs the CPU all its time while it plays, and its pitch depends on how fast the CPU runs
-(Part 6). The beeper article (article 2) explains the bits, the tape input and how
+(Part 6). [The beeper article](/en/under-the-hood/emulator-internals/next-audio/beeper/) (article 2) explains the bits, the tape input and how
 one bit can play two voices.
 
 ### Three AY chips
@@ -810,7 +810,7 @@ machine that sounds exactly like a 128K until something asks for more.
 | # | Article | What it explains |
 |---|---|---|
 | 1 | The big picture | this article |
-| 2 | The beeper, EAR and MIC | port `$FE`, the tape input, the speaker-only beeper, and music from one bit |
+| 2 | [The beeper, EAR and MIC](/en/under-the-hood/emulator-internals/next-audio/beeper/) | port `$FE`, the tape input, the speaker-only beeper, and music from one bit |
 | 3 | One AY chip | tone counters, noise, the envelope, the volume tables, AY against YM |
 | 4 | TurboSound Next | three chips behind two ports, panning, ABC, ACB and mono |
 | 5 | The 8-bit DACs | the six sound cards on four channels, the port families, feeding samples on time |

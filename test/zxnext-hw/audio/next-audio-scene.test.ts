@@ -156,6 +156,85 @@ async function pi(): Promise<AudioSample[]> {
   return record(s);
 }
 
+// --- The beeper article (article 2): the note loop of the overview at another CPU speed (NextReg $07)
+//     and with contention on or off (NextReg $08 bit 6), the loop at `org`
+async function beeperAt(speed: number, contention: boolean, org = 0x8000): Promise<AudioSample[]> {
+  const s = await session();
+  const nr08 = contention ? NR08 & ~0x40 : NR08;
+  await s.loadCode(
+    `
+        .org $${org.toString(16)}
+Start:  di
+        nextreg $07,${speed}
+        nextreg $08,$${nr08.toString(16)}
+        ld c,$fe
+        ld a,$10
+Loop:   out (c),a         ; 12
+        xor $10           ; 7
+        ld b,${BEEPER_N}  ; 7
+Dly:    djnz Dly          ; 13 * (n - 1) + 8
+        jp Loop           ; 10
+`,
+    { entry: "Start" }
+  );
+  return record(s);
+}
+
+// --- Two voices from one bit: every pass of a 112 T-state loop gives each voice a 34 T-state slot.
+//     An 8-bit phase per voice gains its step each pass; a carry out of it switches EAR on for that
+//     voice's slot. Steps 4 and 5: 31,250 passes a second x 4 / 256 = 488.3 Hz and x 5 / 256 = 610.4 Hz,
+//     a major third. The slots never overlap, so the bit is the two pulse trains added.
+const TWO_PASS = 112;
+const TWO_SLOT = 34;
+const TWO_STEPS = [4, 5];
+async function twoVoices(): Promise<AudioSample[]> {
+  const s = await session();
+  await s.loadCode(
+    `
+        .org $8000
+Start:  di
+        nextreg $07,0
+        nextreg $08,$${NR08.toString(16)}
+        ld hl,0               ; H, L: the two voices' phases
+        ld de,$${((TWO_STEPS[0] << 8) | TWO_STEPS[1]).toString(16).padStart(4, "0")}           ; D, E: their steps
+Loop:   ld a,h            ; 4
+        add a,d           ; 4
+        ld h,a            ; 4
+        sbc a,a           ; 4   $FF on a carry
+        and $10           ; 7
+        out ($fe),a       ; 11  voice 1's slot begins
+        ld a,l            ; 4
+        add a,e           ; 4
+        ld l,a            ; 4
+        sbc a,a           ; 4
+        and $10           ; 7
+        out ($fe),a       ; 11  voice 2's slot begins
+        ld a,0            ; 7
+        nop               ; 4
+        nop               ; 4
+        nop               ; 4
+        nop               ; 4
+        out ($fe),a       ; 11  both off
+        jp Loop           ; 10
+`,
+    { entry: "Start" }
+  );
+  return record(s);
+}
+
+/** The magnitude of one frequency in a signal (a single DFT bin, mean removed), per sample */
+function magnitudeAt(values: number[], hz: number, rate: number): number {
+  const mean = values.reduce((a, b) => a + b, 0) / values.length;
+  let re = 0;
+  let im = 0;
+  values.forEach((v, i) => {
+    const w = (2 * Math.PI * hz * i) / rate;
+    re += (v - mean) * Math.cos(w);
+    im += (v - mean) * Math.sin(w);
+  });
+  return Math.hypot(re, im) / values.length;
+}
+
 describe("Audio series scenes", () => {
   it("overview: every source plays its tone at the rate its settings give, on both sides, in the mixer's proportions", async () => {
     const scenes = { beeper: await beeper(), psg: await psg(), dac: await dac(), pi: await pi() };
@@ -227,5 +306,43 @@ Inner:  djnz Inner        ; 13 * 255 + 8
     expect(Math.abs(mean / unit)).toBeLessThan(30);
     expect(relativeError(frequency(late, RATE), CPU_HZ / (2 * SLOW_HALF))).toBeLessThan(0.01);
     save("mixer", "beeper-start", samples, { hz: CPU_HZ / (2 * SLOW_HALF) }, Math.round(0.4 * RATE));
+  });
+  // --- The beeper (article 2): a note's pitch is the loop's length; double the CPU's speed, double the
+  //     pitch; contention stretches the loop and lowers it
+  it("beeper: the note loop plays 994 Hz at 3.5 MHz, twice that at 7 MHz, and lower with contention on", async () => {
+    const at35 = side(await beeperAt(0, false), "left");
+    const at7 = side(await beeperAt(1, false), "left");
+    const contended = side(await beeperAt(0, true), "left");
+    const contendedLow = side(await beeperAt(0, true, 0x6000), "left");
+    const f35 = frequency(at35, RATE);
+    expect(relativeError(f35, CPU_HZ / (2 * BEEPER_HALF))).toBeLessThan(0.005);
+    expect(relativeError(frequency(at7, RATE), (2 * CPU_HZ) / (2 * BEEPER_HALF))).toBeLessThan(0.005);
+    const fc = frequency(contended, RATE);
+    const fcl = frequency(contendedLow, RATE);
+    expect(fcl).toBeLessThan(f35 * 0.99);
+    const extra = { hz: f35, hz7: frequency(at7, RATE), hzContended: fc, hzContendedLow: fcl, halfTacts: BEEPER_HALF };
+    const samples = { "note-35": await beeperAt(0, false), "note-7": await beeperAt(1, false), "note-contended": await beeperAt(0, true, 0x6000) };
+    for (const [name, v] of Object.entries(samples)) save("beeper", name, v, extra);
+  });
+
+  it("beeper: two voices from one bit carry both pitches, 488.3 Hz and 610.4 Hz", async () => {
+    const samples = await twoVoices();
+    const left = side(samples, "left");
+    const passHz = CPU_HZ / TWO_PASS;
+    const [f1, f2] = TWO_STEPS.map((st) => (passHz * st) / 256);
+    const m1 = magnitudeAt(left, f1, RATE);
+    const m2 = magnitudeAt(left, f2, RATE);
+    // --- Both notes are there, of similar strength, far above what lies between and around them
+    for (const hz of [300, 400, 549, 700, 800]) {
+      expect(magnitudeAt(left, hz, RATE), `${hz} Hz`).toBeLessThan(Math.min(m1, m2) / 5);
+    }
+    expect(m2 / m1).toBeGreaterThan(0.7);
+    expect(m2 / m1).toBeLessThan(1.4);
+    expect(side(samples, "right")).toEqual(left);
+    const spectrum = [...Array(241)].map((_, i) => {
+      const hz = 100 + i * 5;
+      return [hz, magnitudeAt(left, hz, RATE)];
+    });
+    save("beeper", "two-voices", samples, { passTacts: TWO_PASS, slotTacts: TWO_SLOT, steps: TWO_STEPS, hz: [f1, f2], spectrum });
   });
 });

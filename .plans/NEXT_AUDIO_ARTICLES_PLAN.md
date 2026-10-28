@@ -11,8 +11,8 @@ structure, the explaining and figure rules, and the corrections the project auth
 reviewing the screen series; this plan does not repeat them, it only adds what is specific to sound.
 Fold any new lesson from this series' reviews into that file.
 
-Status: **the background page (§3) and articles 1 (§2) and 7 (§9) are written; articles 2–6 and 8 are
-planned.** Open questions
+Status: **the background page (§3) and articles 1 (§2), 2 (§4) and 7 (§9) are written; articles 3–6
+and 8 are planned.** Open questions
 are in §13.
 
 ---
@@ -147,7 +147,7 @@ Found while surveying for this plan; each article decides "fix the core" or "sta
   offset, HDMI audio at 48 kHz) are not emulated; Klive hands its own sample stream to the host. Stated
   the way the screen series stated "Klive emulates none of the output stage".
 - **The tape input conditioning** (the debounce that rejects pulses under ~1.14 µs, the stuck-at-one
-  relaxation after ~1000 µs): check whether Klive's tape path models either.
+  relaxation after ~1.15 ms): *settled* — Klive models both (article 2's as-built note).
 - **Side finding**: the book placeholder `17-ay.mdx` says the AY chip is selected through NextReg `$06`
   and the stereo mode is NextReg `$08` bits 4–3. Both are wrong (selection is a port `$FFFD` write with
   bit 7 set; stereo is NextReg `$08` bit 5 and NextReg `$09` bits 7–5). Correct the placeholder in the
@@ -378,6 +378,33 @@ Figures (≈ 9):
 
 Verify: port `$FE` read formula; EAR/MIC volumes; issue-2 keyboard; the debounce length and the relax
 time in the top-level files; Klive's tape path against both.
+
+**As built.** `next-audio/beeper.mdx`, eight Parts and nine figures (`docs/authoring/next-audio/beeper-figures.cjs`).
+Captures from `next-audio-scene.test.ts` (scenes "beeper": the note loop at 3.5 MHz, 7 MHz and in
+contended memory; two voices from one bit, with its spectrum); the two-voice timeline is the program's own
+arithmetic, and the input stage is simulated from its rules. Figures 5 and 9 of the list became one diagram
+of the beeper's lines (input stage, bit 6, the MIC line). Facts established:
+- **Core fix (own commit, `fix` changeset):** Klive's port `$FE` bit 6 kept reading 1 for up to 2,800
+  T-states after bit 4 was cleared, the 48K's analogue EAR decay carried over from the Spectrum cores. The
+  Next's bit 6 is a plain OR at the read, so it drops with the write. Tests FE-READ-001–003
+  (`port-fe-read.test.ts`); the pinned parity test in `wasm-next-keyboard-ula.test.ts` was rewritten.
+- Port `$FE` is any even port; bits 7–5 of a write are ignored; reset clears bits 4–0. A read gives 1 in
+  bits 7 and 5, `$BF` with no key and bit 6 low.
+- Bit 6 = (tape input XOR Pi EAR) OR EAR out OR (MIC out AND issue 2) — the *port* MIC bit, not the MIC
+  line. The MIC socket and the mixer's MIC both get port bit 3 XOR tape input XOR Pi EAR.
+- **With the issue 2 keyboard on, real-time loading through the ROM fails**: LD-BYTES holds MIC at 1, so bit
+  6 reads 1 throughout (TAPE-009, with an issue 3 control that loads).
+- Pitch: the loop of 44 + 13 × (B − 1) T-states per half period, 1,760 → 994.3 Hz; 7 MHz 1,989 Hz; the same
+  loop at `$6000` with contention on about 918 Hz (at `$8000` no measurable change). Contention only at
+  3.5 MHz (and not in Pentagon timing); the article gives 3.5 and 7 MHz only, as before.
+- Two voices: a 112 T-state constant-time pass, two 34 T-state slots, 8-bit phases with steps 4 and 5:
+  488.3 Hz and 610.4 Hz. The spectrum has both notes and their second harmonics almost as strong (pulse
+  trains); nothing between.
+- Input stage: noise rejection needs two 1.75 MHz enables without a change, 0.6–1.14 µs (a 0.5 µs glitch
+  is dropped; an edge passes 1.04 µs late in the simulation); relaxation 64 enables of 512 clocks,
+  1.15–1.17 ms (1.166 ms in the simulation). Klive models both (`zxnext-tape.c`, TAPE-006/007), settling
+  §0.6's tape bullet.
+- Klive's jack/speaker beeper is the time-weighted share of each level per sample; HDMI point-samples it.
 
 ---
 

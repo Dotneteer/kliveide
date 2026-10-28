@@ -27,6 +27,10 @@ to and replace what it supersedes.
   changeset. Existing tests can be blind to a difference (a Radastan test used offset `$0E`, for which
   the right and the wrong rule agree): when a test passes but you doubt it, add a case that tells the two
   rules apart and watch it fail first.
+- **Suspect behaviour inherited from another machine's emulator.** A core that grew out of an older one
+  can keep that machine's quirks: the Next's port `$FE` bit 6 kept the 48K's analogue EAR decay, which the
+  Next's logic does not have, and a parity test pinned it. Check every read-back and timing rule an article
+  states against the reference, even where an existing test agrees with Klive.
 - **Prove subtle claims on the emulated machine before writing them**, with a checked test (for the Next,
   `test/zxnext-hw/layers/next-display-scene.test.ts`). A claim such as "the left border still counts as
   the line above" gets a test that turns a colour on exactly there. Make the test able to fail: a check on
