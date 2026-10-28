@@ -34,6 +34,8 @@ indicator (see "As built"). Phase 4 (NextPi commands) is a separate, later plan.
 - **Not done:**
   - a status indicator in the emulator's UI (the command with no argument shows the state)
   - the Guides page with generated screenshots
+  - lines 130-131 and 579 of `.plans/NEXT_AUDIO_ARTICLES_PLAN.md`, which still say I2S is not
+    emulated (that file had uncommitted edits of the author's)
   - checking the change by hand in the running IDE
 - **Tests:**
   - `test/zxnext-hw/audio/pi-i2s.test.ts` (I2S-001 - I2S-012, catalogue §4.39)
