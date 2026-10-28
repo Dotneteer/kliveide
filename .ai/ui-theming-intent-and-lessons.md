@@ -3044,6 +3044,10 @@ drift. Change a neutral or the default accent in the app, and the site changes w
 - **The landing page is a data sheet:** headline beside an "At a glance" table, the carousel full
   width, then tables (machines, also included, the four steps) and feature rows that are always
   text left, picture right. Sections are divided by a 2px rule in the text colour.
+- **The landing header is one row that never scrolls the page sideways:** its links mirror the docs'
+  navbar tabs and hide below the width the longest language needs (`.lp-nav` in
+  `docs/landing/landing.css`, 900px for German's 855px with five links). Adding a link or a language
+  means measuring every language again, at each width just above the cut-off, in the running site.
 - **Every landing picture opens full size** (`docs/landing/ImageViewer.tsx`): an inset panel over
   the dimmed page, dark in both themes, the picture always fitted - never scrolled, no "actual size".
   A full-screen viewer felt strange. The pictures stay plain links to their files, so they work
