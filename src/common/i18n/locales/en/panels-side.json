@@ -41,6 +41,13 @@
       "step": "The history step, e.g. '−12' (a minus sign and a count of steps back)"
     }
   },
+  "panels.side.historyPresent.tvcVideo": "The video circuit shows the present, not history step {step}",
+  "@panels.side.historyPresent.tvcVideo": {
+    "context": "Warning band at the top of the TVC Video panel (the Videoton TVC's CRTC, palette and video banks) while the debugger's history cursor is in the past.",
+    "placeholders": {
+      "step": "The history step, e.g. '−12' (a minus sign and a count of steps back)"
+    }
+  },
   "panels.side.historyPresent.listedBytes": "The listed bytes show the present, not history step {step}",
   "@panels.side.historyPresent.listedBytes": {
     "context": "Warning band at the top of the Disassembly view while the debugger's history cursor is in the past: the disassembled bytes are the current memory.",
@@ -3612,5 +3619,136 @@
     "placeholders": {
       "key": "The breakpoint's place, e.g. '$8000' or 'R3:$0100'"
     }
+  },
+  "panels.side.tvcVideo.r0": "Horizontal total: characters in a line, less one",
+  "@panels.side.tvcVideo.r0": {
+    "context": "Tooltip of the TVC Video panel's R0 value: R0, the 6845 CRTC's horizontal total register. 'CRTC' and '6845' are chip names, keep them."
+  },
+  "panels.side.tvcVideo.r1": "Horizontal displayed: characters of paper in a line",
+  "@panels.side.tvcVideo.r1": {
+    "context": "Tooltip of the TVC Video panel's R1 value: R1, the CRTC's horizontal displayed register. 'CRTC' and '6845' are chip names, keep them."
+  },
+  "panels.side.tvcVideo.r2": "Horizontal sync position: the character the line sync starts at",
+  "@panels.side.tvcVideo.r2": {
+    "context": "Tooltip of the TVC Video panel's R2 value: R2, the CRTC's horizontal sync position register. 'CRTC' and '6845' are chip names, keep them."
+  },
+  "panels.side.tvcVideo.r3": "Sync widths: the line sync in bits 3-0, the frame sync in bits 7-4",
+  "@panels.side.tvcVideo.r3": {
+    "context": "Tooltip of the TVC Video panel's R3 value: R3, the CRTC's sync width register. 'CRTC' and '6845' are chip names, keep them."
+  },
+  "panels.side.tvcVideo.r4": "Vertical total: character rows in a frame, less one",
+  "@panels.side.tvcVideo.r4": {
+    "context": "Tooltip of the TVC Video panel's R4 value: R4, the CRTC's vertical total register. 'CRTC' and '6845' are chip names, keep them."
+  },
+  "panels.side.tvcVideo.r5": "Vertical total adjust: extra lines at the end of the frame",
+  "@panels.side.tvcVideo.r5": {
+    "context": "Tooltip of the TVC Video panel's R5 value: R5, the CRTC's vertical total adjust register. 'CRTC' and '6845' are chip names, keep them."
+  },
+  "panels.side.tvcVideo.r6": "Vertical displayed: character rows of paper",
+  "@panels.side.tvcVideo.r6": {
+    "context": "Tooltip of the TVC Video panel's R6 value: R6, the CRTC's vertical displayed register. 'CRTC' and '6845' are chip names, keep them."
+  },
+  "panels.side.tvcVideo.r7": "Vertical sync position: the row the frame sync starts at",
+  "@panels.side.tvcVideo.r7": {
+    "context": "Tooltip of the TVC Video panel's R7 value: R7, the CRTC's vertical sync position register. 'CRTC' and '6845' are chip names, keep them."
+  },
+  "panels.side.tvcVideo.r8": "Interlace and skew",
+  "@panels.side.tvcVideo.r8": {
+    "context": "Tooltip of the TVC Video panel's R8 value: R8, the CRTC's interlace mode register. 'CRTC' and '6845' are chip names, keep them."
+  },
+  "panels.side.tvcVideo.r9": "Maximum raster address: lines in a character row, less one",
+  "@panels.side.tvcVideo.r9": {
+    "context": "Tooltip of the TVC Video panel's R9 value: R9, the CRTC's maximum scan line register. 'CRTC' and '6845' are chip names, keep them."
+  },
+  "panels.side.tvcVideo.r10": "Cursor start line and blink mode",
+  "@panels.side.tvcVideo.r10": {
+    "context": "Tooltip of the TVC Video panel's R10 value: R10, the CRTC's cursor start register. 'CRTC' and '6845' are chip names, keep them."
+  },
+  "panels.side.tvcVideo.r11": "Cursor end line",
+  "@panels.side.tvcVideo.r11": {
+    "context": "Tooltip of the TVC Video panel's R11 value: R11, the CRTC's cursor end register. 'CRTC' and '6845' are chip names, keep them."
+  },
+  "panels.side.tvcVideo.r12": "Start address, high byte",
+  "@panels.side.tvcVideo.r12": {
+    "context": "Tooltip of the TVC Video panel's R12 value: R12, the CRTC's display start address (high). 'CRTC' and '6845' are chip names, keep them."
+  },
+  "panels.side.tvcVideo.r13": "Start address, low byte",
+  "@panels.side.tvcVideo.r13": {
+    "context": "Tooltip of the TVC Video panel's R13 value: R13, the CRTC's display start address (low). 'CRTC' and '6845' are chip names, keep them."
+  },
+  "panels.side.tvcVideo.r14": "Cursor address, high byte: the TVC takes its interrupt from the cursor",
+  "@panels.side.tvcVideo.r14": {
+    "context": "Tooltip of the TVC Video panel's R14 value: R14, the CRTC's cursor address (high). On the TVC the cursor signal drives the interrupt.. 'CRTC' and '6845' are chip names, keep them."
+  },
+  "panels.side.tvcVideo.r15": "Cursor address, low byte",
+  "@panels.side.tvcVideo.r15": {
+    "context": "Tooltip of the TVC Video panel's R15 value: R15, the CRTC's cursor address (low). 'CRTC' and '6845' are chip names, keep them."
+  },
+  "panels.side.tvcVideo.r16": "Light pen address, high byte",
+  "@panels.side.tvcVideo.r16": {
+    "context": "Tooltip of the TVC Video panel's R16 value: R16, the CRTC's light pen register (high). 'CRTC' and '6845' are chip names, keep them."
+  },
+  "panels.side.tvcVideo.r17": "Light pen address, low byte",
+  "@panels.side.tvcVideo.r17": {
+    "context": "Tooltip of the TVC Video panel's R17 value: R17, the CRTC's light pen register (low). 'CRTC' and '6845' are chip names, keep them."
+  },
+  "panels.side.tvcVideo.crtcAddress": "CRTC address register: the register port 70h selected",
+  "@panels.side.tvcVideo.crtcAddress": {
+    "context": "Tooltip of the TVC Video panel's AR value: which CRTC register the next write to port 71h sets."
+  },
+  "panels.side.tvcVideo.h": "Character counter: the character the CRTC runs next in the line",
+  "@panels.side.tvcVideo.h": {
+    "context": "Tooltip of the TVC Video panel's CH value: the CRTC's horizontal character counter."
+  },
+  "panels.side.tvcVideo.raster": "Raster counter: the line within the character row",
+  "@panels.side.tvcVideo.raster": {
+    "context": "Tooltip of the TVC Video panel's RA value: the CRTC's scan line counter within a character row."
+  },
+  "panels.side.tvcVideo.row": "Row counter: the character row of the frame",
+  "@panels.side.tvcVideo.row": {
+    "context": "Tooltip of the TVC Video panel's ROW value: the CRTC's vertical character row counter."
+  },
+  "panels.side.tvcVideo.ma": "Memory address: the refresh address the CRTC puts out",
+  "@panels.side.tvcVideo.ma": {
+    "context": "Tooltip of the TVC Video panel's MA value: the CRTC's current refresh memory address (14 bits)."
+  },
+  "panels.side.tvcVideo.inAdjust": "In the vertical total adjust lines",
+  "@panels.side.tvcVideo.inAdjust": {
+    "context": "Tooltip of the TVC Video panel's ADJ flag: whether the CRTC is in the extra lines at the end of a frame."
+  },
+  "panels.side.tvcVideo.mode": "Video mode (port 06h bits 1-0): 2, 4 or 16 colours",
+  "@panels.side.tvcVideo.mode": {
+    "context": "Tooltip of the TVC Video panel's MODE value, which shows the number of colours of the current graphics mode."
+  },
+  "panels.side.tvcVideo.palette": "Palette register {index} (ports 60h-63h), IGRB in bits 6, 4, 2, 0",
+  "@panels.side.tvcVideo.palette": {
+    "context": "Tooltip of a TVC Video panel's P0-P3 value: one of the four palette registers. IGRB = intensity, green, red, blue bits.",
+    "placeholders": {
+      "index": "The palette register's number, 0-3"
+    }
+  },
+  "panels.side.tvcVideo.border": "Border colour (port 00h), IGRB in bits 6, 4, 2, 0",
+  "@panels.side.tvcVideo.border": {
+    "context": "Tooltip of the TVC Video panel's BOR value: the colour outside the paper. IGRB = intensity, green, red, blue bits."
+  },
+  "panels.side.tvcVideo.verticalBlank": "Vertical blank: the latch that blanks the picture around the frame sync",
+  "@panels.side.tvcVideo.verticalBlank": {
+    "context": "Tooltip of the TVC Video panel's VBL flag."
+  },
+  "panels.side.tvcVideo.itPending": "Interrupt pending: the cursor or the sound generator raised the INT line",
+  "@panels.side.tvcVideo.itPending": {
+    "context": "Tooltip of the TVC Video panel's IT flag: the interrupt flip-flop set by the CRTC's cursor signal or the sound interrupt, cleared by the program."
+  },
+  "panels.side.tvcVideo.port02": "Memory paging (port 02h)",
+  "@panels.side.tvcVideo.port02": {
+    "context": "Tooltip of the TVC Video panel's P02 value: the main paging register, which chooses what each 16K page of memory shows."
+  },
+  "panels.side.tvcVideo.port0c": "Video paging (port 0Ch, 64K+): the video banks of the CPU and of the picture",
+  "@panels.side.tvcVideo.port0c": {
+    "context": "Tooltip of the TVC Video panel's P0C value, on the 64K+ model only."
+  },
+  "panels.side.tvcVideo.displayBank": "The video bank the picture shows (64K+)",
+  "@panels.side.tvcVideo.displayBank": {
+    "context": "Tooltip of the TVC Video panel's VB value: which of the four video RAM banks the video circuit reads."
   }
 }

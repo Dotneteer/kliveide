@@ -7,11 +7,17 @@ import { useGlobalSetting, useSelector } from "@renderer/core/RendererProvider";
 import { useMainApi } from "@renderer/core/MainApi";
 import { analyzeHt1080zFile } from "@renderer/appIde/DocumentPanels/Ht1080zTape/ht1080zTapeView";
 import { SETTING_EMU_FAST_LOAD } from "@common/settings/setting-const";
+import { MI_HT1080Z } from "@common/machines/constants";
 
 import type { AppServices } from "@renderer/abstractions/AppServices";
 import type { ContextMenuInfo } from "@renderer/abstractions/ContextMenuIfo";
 
-import { htTapeLoadGuard, programLoadGuard, tapeLoadGuard } from "@renderer/appIde/commands/TapeLoadCommand";
+import {
+  casTapeLoadGuard,
+  htTapeLoadGuard,
+  programLoadGuard,
+  tapeLoadGuard
+} from "@renderer/appIde/commands/TapeLoadCommand";
 
 /*
  * **Load and run** / **Insert** / **Load and debug** for a `.tap` or `.tzx` file: the Explorer's
@@ -62,10 +68,23 @@ export function getProgramLaunchContextMenuInfo(services: AppServices): ContextM
  * @param services The app services
  */
 export function getHtTapeLaunchContextMenuInfo(services: AppServices): ContextMenuInfo[] {
+  return htTapeLaunchMenuInfo(services, htTapeLoadGuard);
+}
+
+/**
+ * The Explorer's entries for a `.cas`, the HT-1080Z's and the Videoton TVC's tape alike: Run, Insert
+ * and Debug on either machine, and the start-address stop on the HT-1080Z only
+ * @param services The app services
+ */
+export function getCasTapeLaunchContextMenuInfo(services: AppServices): ContextMenuInfo[] {
+  return htTapeLaunchMenuInfo(services, casTapeLoadGuard);
+}
+
+function htTapeLaunchMenuInfo(services: AppServices, guard: LoadGuard): ContextMenuInfo[] {
   // --- A menu cannot read the file, so the entry is offered for every HT tape; `tape-load -e` says
   // --- why a BASIC one has no start address
   return [
-    ...launchMenuInfo(services, htTapeLoadGuard),
+    ...launchMenuInfo(services, guard),
     {
       text: t("documents.tape.menu.entry"),
       disabled: (store) => !!htTapeLoadGuard(store.getState()),
@@ -197,7 +216,16 @@ const HtTapeLaunchCommandBar = ({ path }: { path: string }) => {
       cancelled = true;
     };
   }, [mainApi, path]);
-  return <TapeLaunchCommandBar path={path} guard={htTapeLoadGuard} withEntry={withEntry} />;
+  // --- A .cas is the TVC's tape too: it loads there, but names no start address
+  const machineId = useSelector((s) => s.emulatorState?.machineId);
+  const isCas = /\.cas$/i.test(path);
+  return (
+    <TapeLaunchCommandBar
+      path={path}
+      guard={isCas ? casTapeLoadGuard : htTapeLoadGuard}
+      withEntry={withEntry && machineId === MI_HT1080Z}
+    />
+  );
 };
 
 export const tapeLaunchCommandBarRenderer = (path: string) => (

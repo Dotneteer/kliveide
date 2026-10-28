@@ -1202,9 +1202,9 @@ export class MachineController implements IMachineController {
 
         case "TypeText": {
           const text = typeof step.text === "function" ? step.text(codeToInject) : step.text;
-          const typer = (m as unknown as { typeText?: (text: string) => void }).typeText;
+          const typer = (m as unknown as { typeText?: (text: string, delayFrames?: number) => void }).typeText;
           if (!typer) throw new Error("This machine cannot type text.");
-          typer.call(m, text);
+          typer.call(m, text, step.delayFrames ?? 0);
           break;
         }
 

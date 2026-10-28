@@ -1,8 +1,16 @@
 import type { MachineConfigSet, MachineModel } from "@common/machines/info-types";
 import type { MessengerBase } from "@common/messaging/MessengerBase";
-import type { CpuState } from "@common/messaging/EmuApi";
+import type { CpuState, TvcVideoState } from "@common/messaging/EmuApi";
 import type { TvcWasmV2LoaderOptions, TvcWasmV2Runtime } from "./wasm/TvcWasmV2Loader";
 
+import type { IExecutionHistorySource } from "@emu/abstractions/IExecutionHistorySource";
+import type { IAccessProfileSource } from "@emu/abstractions/IAccessProfileSource";
+import type { ProfileCounts, ProfileEdge, ProfileInfo, ProfileTouchedByte } from "@common/profile/profileTypes";
+import type { ExecutionHistoryInfo, ExecutionHistoryPage } from "@common/history/historyTypes";
+import type { HistoryServiceSpan } from "@common/history/serviceSpans";
+
+import { WasmHistorySource } from "../history/WasmHistorySource";
+import { WasmProfileSource } from "../profile/WasmProfileSource";
 import { conditionStoreOf, type ConditionStore } from "../conditionStore";
 import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
@@ -14,11 +22,25 @@ import {
   stepOutAddressFromCore
 } from "../wasmDebugLoop";
 import { importAccessLog } from "../wasmAccessLog";
+import { captureWasmImage, restoreWasmImage, type MachineStateParts } from "../state/wasmStateImage";
 import { fillCoreBytes, writeCoreBytes } from "@emu/machines/reverse/coreMemoryWrites";
 import { loadTvcWasmV2 } from "./wasm/TvcWasmV2Loader";
 import { TvcWasmHost } from "./TvcWasmHost";
 import { TVC_ROM_SETS } from "./TvcRoms";
-import { TVC_PHYS_SYS, TVC_PIXEL_ASPECT } from "./tvcMachineInfo";
+import {
+  TVC_BANK_SIZE,
+  TVC_PARTITION_CART,
+  TVC_PARTITION_EXT,
+  TVC_PARTITION_SYS,
+  TVC_PHYS_CART,
+  TVC_PHYS_EXT_CARD,
+  TVC_PHYS_SYS,
+  TVC_PIXEL_ASPECT,
+  TVC12_KEY_WAIT_ROUTINE,
+  TVC22_KEY_WAIT_ROUTINE
+} from "./tvcMachineInfo";
+import { TvcKeyCode } from "./TvcKeyCode";
+import type { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
 import { beamAt, drawnUpTo, type BeamPosition, type BeamTiming } from "@common/utils/beamGeometry";
 import type { AudioSample } from "@emu/abstractions/IAudioDevice";
 import { AUDIO_SAMPLE_RATE, FAST_LOAD, REWIND_REQUESTED, SAVED_TO_TAPE } from "../machine-props";
@@ -34,6 +56,9 @@ const DC_FILTER_CUTOFF_HZ = 1.4;
  * behaves exactly as at normal speed, only sooner. The sound of the skipped frames is dropped.
  */
 const FAST_LOAD_FRAMES = 25;
+
+/** Frames a tape-load script waits for BASIC's prompt before it is dropped (two minutes) */
+const LOAD_SCRIPT_TIMEOUT_FRAMES = 6000;
 
 /**
  * The raster as the beam overlay sees it (`getBeamPosition`), for the BASIC ROM's CRTC values (100
@@ -64,10 +89,96 @@ const TVC_BEAM_TIMING: BeamTiming = {
  * instruction by instruction, or - when the stop policy can only stop at known addresses - the core
  * runs on to the next candidate, exactly as on the HT-1080Z.
  *
- * The core carries the shared execution-history recorder and access profile; the IDE reads them
- * from Phase 6, with the partitions, state files and the TVC video panel.
+ * The core carries the shared execution-history recorder and access profile, and its whole state is
+ * its linear memory: state files and reverse debugging save and restore that image.
  */
-export class TvcWasmV2Machine extends TvcWasmHost {
+export class TvcWasmV2Machine extends TvcWasmHost implements IExecutionHistorySource, IAccessProfileSource {
+  // ==============================================================================================
+  // Execution history: the shared recorder in the core, read through the shared reader; the
+  // machine id names the context decoder (`contexts/tvcContext.ts`)
+
+  get historyMachineId(): string {
+    return this.machineId;
+  }
+
+  private readonly wasmV2History = new WasmHistorySource(
+    () => this.wasmV2Runtime?.exports,
+    () => this.historyMachineId
+  );
+
+  getHistoryInfo(): ExecutionHistoryInfo | undefined {
+    return this.wasmV2History.info();
+  }
+
+  readHistory(fromSequence: number, count: number): ExecutionHistoryPage | undefined {
+    return this.wasmV2History.read(fromSequence, count);
+  }
+
+  getHistoryServiceSpans(): HistoryServiceSpan[] | undefined {
+    return this.wasmV2History.serviceSpans();
+  }
+
+  clearHistory(): void {
+    this.wasmV2History.clear();
+  }
+
+  setHistoryEnabled(enabled: boolean): void {
+    this.wasmV2History.setEnabled(enabled);
+  }
+
+  // ==============================================================================================
+  // The access profile: the shared module in the core; both models share one layout
+  // (`layouts/tvc.ts`)
+
+  get profileMachineId(): string {
+    return this.machineId;
+  }
+
+  private readonly wasmV2Profile = new WasmProfileSource(
+    () => this.wasmV2Runtime?.exports,
+    () => this.profileMachineId
+  );
+
+  getProfileInfo(): ProfileInfo | undefined {
+    return this.wasmV2Profile.info();
+  }
+
+  setProfiling(enabled: boolean, counters: boolean): void {
+    this.wasmV2Profile.setEnabled(enabled, counters);
+  }
+
+  resetProfile(): void {
+    this.wasmV2Profile.reset();
+  }
+
+  readProfileFlags(start: number, length: number): Uint8Array | undefined {
+    return this.wasmV2Profile.flags(start, length);
+  }
+
+  readProfileCounts(start: number, length: number): ProfileCounts | undefined {
+    return this.wasmV2Profile.counts(start, length);
+  }
+
+  readProfileTouched(mask?: number): ProfileTouchedByte[] | undefined {
+    return this.wasmV2Profile.touched(mask);
+  }
+
+  mergeProfile(bytes: readonly ProfileTouchedByte[], totals: { instructions: number; timeTotal: number }): void {
+    this.wasmV2Profile.merge(bytes, totals);
+  }
+
+  setProfileCalls(on: boolean): void {
+    this.wasmV2Profile.setCalls(on);
+  }
+
+  armProfileWindow(start: number | undefined, stop: number | undefined): void {
+    this.wasmV2Profile.arm(start, stop);
+  }
+
+  readProfileEdges(): ProfileEdge[] | undefined {
+    return this.wasmV2Profile.edges();
+  }
+
   public readonly implementation = "wasm" as const;
   public wasmV2Runtime?: TvcWasmV2Runtime;
 
@@ -75,6 +186,13 @@ export class TvcWasmV2Machine extends TvcWasmHost {
   private screenPixelBytes?: Uint8ClampedArray;
   /** The core's SAVE revision already published (`tvcTapeGetSavedRevision`) */
   private savedTapeRevision = 0;
+  /**
+   * The tape-load flow's commands still to type, each once BASIC is idle at its prompt again (RUN
+   * after a program that does not start itself), and how long the script has waited
+   */
+  private loadScript: string[] = [];
+  private loadScriptIdleFrames = 0;
+  private loadScriptAge = 0;
   /** The current frame's samples; the array and its objects are reused, as the HT-1080Z's are */
   private readonly wasmV2AudioSamples: AudioSample[] = [];
 
@@ -377,6 +495,58 @@ export class TvcWasmV2Machine extends TvcWasmHost {
     runtime.exports.tvcTapeSetLength(value.program.length);
   }
 
+  /**
+   * Load and Run (`tape-load -r`): power on, dismiss the sign-on, type `LOAD` at the prompt. A program
+   * that starts itself (the autostart flag, as Klive's export writes) runs once loaded; for any other,
+   * `RUN` is typed when BASIC is back at its prompt.
+   * @throws when there is no TVC tape in the deck
+   */
+  getTapeLoadFlow(): CodeInjectionFlow {
+    const tape = this.getMachineProperty(MEDIA_TAPE);
+    if (!isTvcTapeFile(tape)) throw new Error("There is no Videoton TVC tape in the deck.");
+    this.loadScript = tape.autostart ? [] : ["RUN\n"];
+    this.loadScriptIdleFrames = 0;
+    this.loadScriptAge = 0;
+    return [
+      { type: "ReachExecPoint", rom: 0, execPoint: this.signOnLoop, message: "The TVC shows its sign-on screen" },
+      { type: "QueueKey", primary: TvcKeyCode.Space, delayFrames: 10, wait: 0 },
+      { type: "Start" },
+      { type: "WaitKeyQueue" },
+      { type: "ReachExecPoint", rom: 0, execPoint: this.keyWaitLoop, message: "BASIC is at its prompt" },
+      { type: "TypeText", text: "LOAD\n", delayFrames: 10 },
+      { type: "KeepPc" }
+    ];
+  }
+
+  /** The tape-load commands still to type (the tests read it) */
+  get pendingLoadCommands(): readonly string[] {
+    return this.loadScript;
+  }
+
+  /**
+   * Types the load script's next command once BASIC is idle at its prompt: in its key wait at the
+   * end of two frames in a row, with nothing being typed and the recorder's motor off. A
+   * reverse-debugging replay types nothing (the journal replays the keys the live run typed); a script
+   * that never finishes is dropped.
+   */
+  private advanceLoadScript(runtime: TvcWasmV2Runtime): void {
+    if (this.loadScript.length === 0 || this.executionContext.isReplayingHistory?.()) return;
+    if (++this.loadScriptAge > LOAD_SCRIPT_TIMEOUT_FRAMES) {
+      this.loadScript = [];
+      return;
+    }
+    const w = runtime.exports;
+    const [from, to] = this.hardware.romSet === "22" ? TVC22_KEY_WAIT_ROUTINE : TVC12_KEY_WAIT_ROUTINE;
+    const pc = w.tvcGetCpuPc();
+    const idle =
+      pc >= from && pc < to && ((w.tvcGetPort02() >> 6) & 3) === 1 && this.getKeyQueueLength() === 0 && w.tvcTapeGetMotor() === 0;
+    this.loadScriptIdleFrames = idle ? this.loadScriptIdleFrames + 1 : 0;
+    if (this.loadScriptIdleFrames >= 2) {
+      this.loadScriptIdleFrames = 0;
+      this.typeText(this.loadScript.shift()!, 10);
+    }
+  }
+
   /** Whether the tape plays with its motor on: fast load runs several frames for each one shown */
   private get isTapeLoading(): boolean {
     const w = this.wasmV2Runtime?.exports;
@@ -474,6 +644,7 @@ export class TvcWasmV2Machine extends TvcWasmHost {
     this.publishSavedTape(runtime);
     this.syncFrameCounters(runtime);
     this.frameCompleted = runtime.exports.tvcGetFrameCompleted() !== 0;
+    this.advanceLoadScript(runtime);
     this.executionContext.lastTerminationReason = FrameTerminationMode.Normal;
     return FrameTerminationMode.Normal;
   }
@@ -534,7 +705,7 @@ export class TvcWasmV2Machine extends TvcWasmHost {
       importBusAccess: () => this.importBusAccess(runtime),
       hasAccessBreakpoint: () => this.hasAccessBreakpoint(),
       shouldStopAtBreakpoint: (instructionsExecuted) => this.shouldStopAtBreakpoint(instructionsExecuted),
-      onFrameEnd: () => {},
+      onFrameEnd: () => this.advanceLoadScript(runtime),
       finish: (termination) => this.finishDebugLoop(termination)
     };
   }
@@ -601,6 +772,71 @@ export class TvcWasmV2Machine extends TvcWasmHost {
 
   override doWriteMemory(address: number, value: number): void {
     this.requireWasmV2Runtime().exports.tvcWriteMemory(address & 0xffff, value & 0xff);
+  }
+
+  // ==========================================================================================
+  // Partitions (`.plans/VIDEOTON_TVC_PLAN.md` §11): the physical memory as 16K partitions - U0-U3
+  // and VID0-VID3 are 0-7, SYS -1, CART -2, EXT -3 (the card window and EXTH, as page 3 shows them)
+
+  /** The partition a physical offset is in */
+  private partitionOfPhysical(physical: number): number {
+    if (physical < TVC_PHYS_SYS) return physical >> 14;
+    if (physical < TVC_PHYS_CART) return TVC_PARTITION_SYS;
+    if (physical < TVC_PHYS_EXT_CARD) return TVC_PARTITION_CART;
+    return TVC_PARTITION_EXT;
+  }
+
+  /** The first physical offset of a partition */
+  private physicalOfPartition(partition: number): number {
+    if (partition >= 0) return (partition & 0x07) * TVC_BANK_SIZE;
+    if (partition === TVC_PARTITION_SYS) return TVC_PHYS_SYS;
+    if (partition === TVC_PARTITION_CART) return TVC_PHYS_CART;
+    return TVC_PHYS_EXT_CARD;
+  }
+
+  /** The partition of each 8K slot, as the paging shows it now */
+  override getCurrentPartitions(): number[] {
+    const wasm = this.wasmV2Runtime?.exports;
+    if (!wasm) return [];
+    return [0, 1, 2, 3, 4, 5, 6, 7].map((slot) => this.partitionOfPhysical(wasm.tvcGetPhysicalAddress(slot * 0x2000)));
+  }
+
+  override getCurrentPartitionLabels(): string[] {
+    const labels = this.getPartitionLabels();
+    return this.getCurrentPartitions().map((partition) => labels[partition] ?? "");
+  }
+
+  /** U0-U3, the video banks (one on the 64K, four on the 64K+), SYS, CART and EXT */
+  override getPartitionLabels(): Record<number, string> {
+    const labels: Record<number, string> = {
+      [TVC_PARTITION_EXT]: "EXT",
+      [TVC_PARTITION_CART]: "CART",
+      [TVC_PARTITION_SYS]: "SYS",
+      0: "U0",
+      1: "U1",
+      2: "U2",
+      3: "U3",
+      4: "V0"
+    };
+    if (this.hardware.plus) Object.assign(labels, { 5: "V1", 6: "V2", 7: "V3" });
+    return labels;
+  }
+
+  override parsePartitionLabel(label: string): number | undefined {
+    const wanted = label.trim().toUpperCase();
+    const found = Object.entries(this.getPartitionLabels()).find(([, l]) => l === wanted);
+    return found ? Number(found[0]) : undefined;
+  }
+
+  /** A partition's 16K, straight from the core's physical memory */
+  override getMemoryPartition(index: number): Uint8Array {
+    const runtime = this.requireWasmV2Runtime();
+    const start = this.physicalOfPartition(index);
+    return runtime.memory.subarray(start, start + TVC_BANK_SIZE);
+  }
+
+  override getPartition(address: number): number | undefined {
+    return this.getCurrentPartitions()[(address >>> 13) & 0x07];
   }
 
   /** The 64K as eight 8K pages: a page is ROM when the paging shows SYS, CART or EXTH (or an empty card) there */
@@ -674,9 +910,101 @@ export class TvcWasmV2Machine extends TvcWasmHost {
     return this.getPixelBuffer();
   }
 
+  /** The video circuit, for the TVC Video panel */
+  getTvcVideoState(): TvcVideoState {
+    const w = this.requireWasmV2Runtime().exports;
+    const counters = w.tvcCrtcGetCounters();
+    const h = counters & 0xff;
+    return {
+      crtc: Array.from({ length: 18 }, (_, i) => w.tvcCrtcGetRegister(i)),
+      crtcAddress: w.tvcCrtcGetAddressRegister(),
+      h,
+      raster: (counters >> 8) & 0xff,
+      row: (counters >> 16) & 0xff,
+      ma: (w.tvcCrtcGetRowStart() + h) & 0x3fff,
+      inAdjust: ((counters >> 24) & 1) !== 0,
+      mode: w.tvcGetVideoMode(),
+      palette: Array.from({ length: 4 }, (_, i) => w.tvcGetPalette(i)),
+      border: w.tvcGetBorder(),
+      verticalBlank: w.tvcGetVerticalBlank() !== 0,
+      itPending: w.tvcGetItPending() !== 0,
+      plus: w.tvcGetIsPlus() !== 0,
+      port02: w.tvcGetPort02(),
+      port0c: w.tvcGetPort0c(),
+      displayBank: w.tvcGetDisplayBank()
+    };
+  }
+
   getConditionStore(): ConditionStore | undefined {
     return this.wasmV2Runtime ? conditionStoreOf(this.wasmV2Runtime) : undefined;
   }
+
+  // ==========================================================================================
+  // State files and reverse debugging (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.5,
+  // `.plans/REVERSE_DEBUGGING_PLAN.md` §4.2)
+
+  /**
+   * Captures the machine's whole state: the core's memory image, which holds the tape deck and its
+   * SAVE recording too. The machine must be paused.
+   */
+  saveMachineState(): MachineStateParts {
+    const runtime = this.requireWasmV2Runtime();
+    return {
+      ...captureWasmImage("tvc", runtime.module, runtime.exports.memory.buffer),
+      host: this.captureHostState()
+    };
+  }
+
+  /**
+   * Puts the machine back into a saved state; the wrapper's mirrors of core state are re-read from it.
+   * @throws MachineStateMismatchError when the state was saved by another core or layout
+   */
+  loadMachineState(parts: MachineStateParts): void {
+    const runtime = this.requireWasmV2Runtime();
+    restoreWasmImage(parts, "tvc", runtime.module, runtime.exports.memory.buffer);
+    this.restoreHostState(parts.host);
+    // --- The audio rate is the host's, not the saved machine's
+    this.syncAudioSampleRate(runtime);
+  }
+
+  /** The core, as the export contract names it */
+  get reverseCoreId(): string {
+    return "tvc";
+  }
+
+  get reverseRuntime(): TvcWasmV2Runtime | undefined {
+    return this.wasmV2Runtime;
+  }
+
+  readonly reverseFrameExport = "tvcExecuteFrame";
+
+  isAtFrameBoundary(): boolean {
+    return this.wasmV2Runtime?.exports.tvcGetFrameCompleted() !== 0;
+  }
+
+  /** The wrapper keeps no state of its own a keyframe needs: the core holds it all */
+  captureHostState(): Record<string, unknown> {
+    return {};
+  }
+
+  /**
+   * After the core changed under the wrapper (a state load, a replay, a return to the present): the
+   * mirrors re-read from the core, nothing pushed, queued keystrokes dropped
+   */
+  restoreHostState(_state: unknown): void {
+    const runtime = this.requireWasmV2Runtime();
+    const w = runtime.exports;
+    this.emulatedKeyStrokes.length = 0;
+    this.loadScript = [];
+    // --- What the core already holds must not be published again as new
+    this.savedTapeRevision = w.tvcTapeGetSavedRevision();
+    this.frameCompleted = w.tvcGetFrameCompleted() !== 0;
+    this.syncCpuFromWasmV2(runtime);
+  }
+
+  /** Nothing is pushed into the core lazily (it has no clock multiplier), so there is nothing to forget */
+  invalidateHostSync(): void {}
+
 
   // ==========================================================================================
   // Helpers

@@ -831,5 +831,10 @@
     "placeholders": {
       "count": "Number of open documents"
     }
+  },
+  "panels.sideBar.tvcVideo": "TVC Video",
+  "@panels.sideBar.tvcVideo": {
+    "context": "Side-bar panel heading (Debug activity): the Videoton TVC's video circuit - its 6845 CRTC, palette, border and video banks. 'TVC' is the machine name, keep it.",
+    "maxChars": 27
   }
 }

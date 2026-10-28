@@ -501,6 +501,20 @@
       "0": "A name, token, number or file name from the source code or the build, shown verbatim"
     }
   },
+  "compiler.asm.Z0384": "Code at ${0} is in the TVC's system area (below $1A30): BASIC and the ROM use it, and Run and Export refuse it. Start the code at $1A30 or above.",
+  "@compiler.asm.Z0384": {
+    "context": "Z80 assembler message Z0384, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.Z0385": "Code at ${0} is too high for the TVC: BASIC needs $BC00-$BFFF, and the ROM is from $C000. Run and Export refuse it; end the code at $BBFF or below.",
+  "@compiler.asm.Z0385": {
+    "context": "Z80 assembler message Z0385, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
   "compiler.asm.Z0401": "Unexpected error when emitting code for mnemonic ''{0}'.",
   "@compiler.asm.Z0401": {
     "context": "Z80 assembler message Z0401, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",

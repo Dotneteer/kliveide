@@ -9,6 +9,7 @@ import {
   MI_SPECTRUM_128,
   MI_SPECTRUM_3E,
   MI_SPECTRUM_48,
+  MI_TVC,
   MI_Z88,
   MI_ZXNEXT
 } from "@common/machines/constants";
@@ -186,7 +187,18 @@ describe("Tape launch - HT-1080Z tapes (.cas, .cmd)", () => {
     render(<>{htTapeLaunchCommandBarRenderer(CAS)}</>);
     for (const button of screen.getAllByRole("button")) {
       expect(button).toBeDisabled();
-      expect(button.getAttribute("aria-label")).toMatch(/\(requires an HT-1080Z machine\)/);
+      // --- A .cas is the Videoton TVC's tape too
+      expect(button.getAttribute("aria-label")).toMatch(/\(requires an HT-1080Z or a Videoton TVC machine\)/);
     }
+  });
+
+  it("enables a .cas on the Videoton TVC, without the start-address stop", async () => {
+    const { htTapeLaunchCommandBarRenderer } = await loadModule(MI_TVC);
+    render(<>{htTapeLaunchCommandBarRenderer(CAS)}</>);
+    await screen.findAllByRole("button");
+    await new Promise((r) => setTimeout(r, 20));
+    const buttons = screen.getAllByRole("button");
+    expect(buttons).toHaveLength(3);
+    for (const button of buttons) expect(button).toBeEnabled();
   });
 });

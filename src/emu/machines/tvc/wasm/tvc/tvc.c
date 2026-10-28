@@ -40,14 +40,17 @@
 
 /*
  * The physical memory, one array: every bank the mapper can show (plan §2; rtvc/info/tvc.md
- * "Memory Map"). The CPU sees it through eight 8K slots (`tvc-memory.c`).
+ * "Memory Map"). The CPU sees it through eight 8K slots (`tvc-memory.c`). It is eleven 16K
+ * partitions in the IDE's numbering (`TvcWasmV2Machine.ts`): U0-U3 and VID0-VID3 are partitions
+ * 0-7 at 16K times their number, then SYS, CART, and EXT - the card window and EXTH in the order the
+ * EXT page shows them (C000-DFFF, E000-FFFF), so the page is one partition.
  */
 #define TVC_U0 0x00000u
 #define TVC_VID0 0x10000u
 #define TVC_SYS 0x20000u
 #define TVC_CART 0x24000u
-#define TVC_EXTH 0x28000u
-#define TVC_EXT_CARD 0x2a000u
+#define TVC_EXT_CARD 0x28000u
+#define TVC_EXTH 0x2a000u
 #define TVC_PHYS_SIZE 0x2c000u
 #define TVC_BANK_SIZE 0x4000u
 
@@ -312,7 +315,7 @@ void tvcReset(void) {
  */
 void tvcHardReset(void) {
   for (uint32_t i = TVC_U0; i < TVC_SYS; i++) tvcMemory[i] = 0u;
-  for (uint32_t i = TVC_EXT_CARD; i < TVC_PHYS_SIZE; i++) tvcMemory[i] = 0xffu;
+  for (uint32_t i = TVC_EXT_CARD; i < TVC_EXTH; i++) tvcMemory[i] = 0xffu;
   z80Reset();
   tvcCrtcPowerOn();
   tvcVideoPowerOn();

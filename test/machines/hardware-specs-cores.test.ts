@@ -14,6 +14,10 @@ import { Ht1080zWasmV2Machine } from "@emu/machines/ht1080z/Ht1080zWasmV2Machine
 import { HT1080Z_MODELS } from "@emu/machines/ht1080z/ht1080zMachineInfo";
 import { MI_HT1080Z } from "@common/machines/constants";
 import { buildHt1080zWasm, productionOutput as ht1080zWasm } from "../../scripts/build-ht1080z-wasm.cjs";
+import { TvcWasmV2Machine } from "@emu/machines/tvc/TvcWasmV2Machine";
+import { TVC_MODELS } from "@emu/machines/tvc/tvcMachineInfo";
+import { MI_TVC } from "@common/machines/constants";
+import { buildTvcWasm, productionOutput as tvcWasm } from "../../scripts/build-tvc-wasm.cjs";
 
 /*
  * The hardware sheet's figures against the running cores, for the machines that only report their
@@ -118,5 +122,17 @@ describe("hardware specs against the cores", () => {
       readArtifact: async () => readFileSync(ht1080zWasm)
     });
     await expectMatches(machine, MI_HT1080Z, modelId);
+  });
+
+  it.each(TVC_MODELS.map((m) => m.modelId!))("Videoton TVC %s", async (modelId) => {
+    buildTvcWasm();
+    const model = TVC_MODELS.find((m) => m.modelId === modelId)!;
+    // --- The ROMs from the shipped files, as the harness reads them
+    const machine = new (class extends TvcWasmV2Machine {
+      protected override async loadRomFromResource(romName: string): Promise<Uint8Array> {
+        return new Uint8Array(readFileSync(`src/public/roms/${romName}.rom`));
+      }
+    })(MI_TVC, model, model.config, undefined, { readArtifact: async () => readFileSync(tvcWasm) });
+    await expectMatches(machine, MI_TVC, modelId);
   });
 });

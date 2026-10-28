@@ -52,7 +52,7 @@ import { CommonAsmParser } from "@main/compiler-common/common-asm-parser";
 /**
  * The valid Spectrum model values
  */
-const VALID_MODELS = ["SPECTRUM48", "SPECTRUM128", "SPECTRUMP3", "NEXT", "ZX80", "ZX81", "HT1080Z"];
+const VALID_MODELS = ["SPECTRUM48", "SPECTRUM128", "SPECTRUMP3", "NEXT", "ZX80", "ZX81", "HT1080Z", "TVC"];
 
 /**
  * This class provides the functionality of the Z80 Assembler

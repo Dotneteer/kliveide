@@ -62,6 +62,7 @@ import {
   MACHINE_NOT_AVAILABLE_MESSAGE,
   type MachineStopInfo,
   type ScreenImage,
+  type TvcVideoState,
   ULA_BORDER_COLOR_NAMES,
   VicState
 } from "@common/messaging/EmuApi";
@@ -936,6 +937,21 @@ class EmuMessageProcessor {
       throw new Error("PSG device is not available");
     }
     return psgDevice.getPsgState();
+  }
+
+  /**
+   * Gets the Videoton TVC's video circuit state.
+   */
+  getTvcVideoState() {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    const machine = controller.machine as Partial<{ getTvcVideoState(): TvcVideoState }>;
+    if (typeof machine.getTvcVideoState !== "function") {
+      throw new Error("The TVC video circuit is not available");
+    }
+    return machine.getTvcVideoState();
   }
 
   /**

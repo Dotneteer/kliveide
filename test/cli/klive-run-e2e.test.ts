@@ -11,6 +11,8 @@ import { buildSp48Wasm } from "../../scripts/build-sp48-wasm.cjs";
 import { buildSp128Wasm } from "../../scripts/build-sp128-wasm.cjs";
 import { buildZx8081Wasm } from "../../scripts/build-zx8081-wasm.cjs";
 import { buildHt1080zWasm } from "../../scripts/build-ht1080z-wasm.cjs";
+import { buildTvcWasm } from "../../scripts/build-tvc-wasm.cjs";
+import { tvcExportFile } from "@renderer/appIde/utils/tvc-code";
 import { buildZxNextWasmArtifact } from "../wasm/zxNext/wasm-next-test-helpers";
 
 /*
@@ -267,6 +269,25 @@ describe("klive run: inputs", () => {
     expect(run.result.stop).toBe("pc");
     expect(bytesOf("ht.bin")).toEqual(new Uint8Array([10]));
     expect(run.result.registers.pc).toBe(0x7009);
+  }, 120_000);
+
+  it("builds a TVC project, and BASIC calls it above LOMEM", async () => {
+    const run = await kliveJson(["run", "runtvc", "--until-pc", "Done", "--dump-mem", `Counter:1=${file("tvc.bin")}`]);
+    expect(run.code).toBe(0);
+    expect(run.result.stop).toBe("pc");
+    expect(bytesOf("tvc.bin")).toEqual(new Uint8Array([10]));
+    expect(run.result.registers.pc).toBe(0x1a39);
+  }, 120_000);
+
+  it("loads a TVC .cas with LOAD, and it starts itself", async () => {
+    // --- At 1A30h: LD A,2Ah / LD (6000h),A / JR $, as Klive exports it (the launcher line first)
+    const cas = tvcExportFile({ segments: [{ startAddress: 0x1a30, emittedCode: [0x3e, 0x2a, 0x32, 0x00, 0x60, 0x18, 0xfe] }] });
+    if ("error" in cas) throw new Error(cas.error);
+    fs.writeFileSync(file("tvctest.cas"), cas.data);
+    const run = await klive(["run", file("tvctest.cas"), "--machine", "tvc", "--until-pc", "$1A35", "--timeout", "120", "--dump-mem", `$6000:1=${file("tvc.bin")}`]);
+    expect(run.code).toBe(0);
+    expect(run.out[0]).toMatch(/^tvctest\.cas \(TVC tape\): stopped/);
+    expect(bytesOf("tvc.bin")).toEqual(new Uint8Array([0x2a]));
   }, 120_000);
 
   it("loads an HT-1080Z .cmd with SYSTEM and starts it", async () => {

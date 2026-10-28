@@ -15,6 +15,7 @@ import {
   MI_ZX80,
   MI_ZX81,
   MI_HT1080Z,
+  MI_TVC,
   MI_ZXNEXT
 } from "@common/machines/constants";
 import { machineRegistry, resolveModelId } from "@common/machines/machine-registry";
@@ -41,7 +42,8 @@ export const STATE_MACHINES = [
   MI_Z88,
   MI_ZX80,
   MI_ZX81,
-  MI_HT1080Z
+  MI_HT1080Z,
+  MI_TVC
 ];
 
 /** Is this a Klive state file path (`.kls`, any case)? */
