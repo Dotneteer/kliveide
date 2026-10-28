@@ -2181,3 +2181,31 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
 - **Merge fixes**: label references swapped for names with paragraphs re-flowed; a duplicated name and the
   RESUME synopsis repaired; every "probably" removed. Checked in the running IDE (Playwright harness): the /64
   shows its own MEMORY_TEXT and the extension's labels at $3000; Series I shows READY_TEXT.
+
+### 2026-10-28 — Videoton TVC: `tvc12-d4.rom` (BASIC 1.2, SYS low chip) to level 2
+
+- **Sources:** the ROM bytes through Klive's disassembler (`tools/tvc-dis.cjs`, the `tvc-sys-low` kind decoded at
+  $C000 with `RST $30`'s code byte as data); the SYS high chip's and EXTH's bytes where this chip calls them;
+  Klive's TVC core (`tvc-memory.c` paging, ports) for hardware facts; runs on the real core. Not used: anything
+  under `_input/` (rtvc's ROM listings and symbols, `TVC_ROM_20190616.pdf`, `tvcrom.pdf`), the web, and the
+  routine names in Klive's own TVC code (`KB_CHIN` there is rtvc's; $1618 is KBD_READ_KEY from its code). The OS
+  manual (`operaciosrendszer.pdf`) has no text layer and was not used. No `manual` entries.
+- **Coverage probe** (throwaway, deleted): the core's profile over boot and ~60 typed commands marked code
+  ($0229-$0478, $098F-$1E6C) and data (the times table, statement words, constants, CRTC values, device table,
+  font, key maps, token table, inline strings) before drafting; 51 regions from it and the bytes.
+- **Helpers:** six, one per range, with `helper-briefs/tvc-draft-a-range.md` (no `_input/`, no web, no names from
+  Klive's TVC code), `dispatch.txt` (built from the bytes) and the coverage map. Two ran probes (deleted): the
+  flood fill ($0D48, reached only by `PLOT PAINT`; with put mode AND it filled a box), SET CHARACTER's RAM glyphs,
+  the cursor-to-cell function. A helper found the dispatch file's statement tokens off by one: $1B97 indexes
+  the table by `token XOR $FF`; checked from the code and corrected.
+- **Settling probe** (throwaway, deleted): `PRINT ATN(1)` alone reaches the SYS high chip's $EAF1 and `EXP(1)`
+  alone its $EBB8/$EBED (LOG, SQR, SIN, TAN reach neither), naming the two constant blocks; `SAVE "P"` calls
+  device 5's functions 0-4 repeatedly (the cassette); `A=5` reaches $E3BC and `LET B=5` does not; after `FOR`
+  and `GOSUB` the IY stack held a 6-byte entry of type $06 above a 43-byte entry of type $2B. Read from the code:
+  a line number has an exponent byte of $40-$43 (1-9999); D bit 6 of the number reader marks an exponent
+  overflow.
+- **Merge fixes:** 30 labels given synopses, numeric references to labelled code swapped for names (RAM
+  addresses kept), START_BASIC renamed BOOT_TO_BASIC (too close to BASIC_START), every "probably" settled.
+- **Level:** 2, measured and recorded (471 labels, 1,802 annotated lines, 75 regions, 3,249 instructions; 2
+  targets inside an instruction, each explained). Checked in the running IDE (Playwright harness, `dis` at
+  $C229, $D9EF, $DB80 with the labels; $E000 unlabelled, as the SYS high chip has no sidecar yet).

@@ -1,6 +1,6 @@
 import { MemorySectionType } from "@abstractions/MemorySection";
 import type { RomDecoder, RomInstruction } from "@common/roms/romAnnotationTools";
-import { romKindOrigin, romKindUsesZ80N, type RomPageKind } from "@common/roms/romIdentity";
+import { romKindIsTvc, romKindOrigin, romKindUsesZ80N, type RomPageKind } from "@common/roms/romIdentity";
 
 import { MemorySection } from "@renderer/appIde/disassemblers/common-types";
 import { Z80Disassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z80-disassembler";
@@ -13,6 +13,7 @@ import { nextZxOsDecoderFor } from "@renderer/appIde/disassemblers/z80-disassemb
 import { Zx80CustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/zx80-disassembler";
 import { Zx81CustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/zx81-disassembler";
 import { Ht1080zCustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/ht1080z-disassembler";
+import { TvcCustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/tvc-disassembler";
 
 /**
  * Install the ROM's own decoding on a disassembler: the report code after `RST $08` and the
@@ -20,7 +21,8 @@ import { Ht1080zCustomDisassembler } from "@renderer/appIde/disassemblers/z80-di
  * 128K's and the +3's editor ROMs, the inline words and bytes after NextZXOS's restarts and
  * stub calls on its pages 0-2, the ZX81's equivalents on its ROM, the
  * error code after `RST $08` on the ZX80's 4K ROM, the syntax-check byte after `RST $08` (and the
- * tables the IDE lists as data) on the HT-1080Z's BASIC ROM. Any
+ * tables the IDE lists as data) on the HT-1080Z's BASIC ROM, the function code after `RST $30` on the
+ * TVC's BASIC ROMs. Any
  * other page decodes as plain Z80. Shared by the authoring tools and the ROM page documents, so a
  * listing and the level report never disagree about where the code is.
  */
@@ -41,6 +43,7 @@ export function prepareRomDisassembler(
   if (kind === "zx81") disassembler.setCustomDisassembler(new Zx81CustomDisassembler());
   if (kind === "zx80") disassembler.setCustomDisassembler(new Zx80CustomDisassembler());
   if (kind === "ht1080z-basic") disassembler.setCustomDisassembler(new Ht1080zCustomDisassembler());
+  if (romKindIsTvc(kind)) disassembler.setCustomDisassembler(new TvcCustomDisassembler());
 }
 
 /**
@@ -50,23 +53,26 @@ export function prepareRomDisassembler(
  * `RST $08`, calculator literals after `RST $28` — so they are not taken for code.
  */
 export function romDecoderFor(kind: RomPageKind | undefined): RomDecoder {
+  const decode = decoderAtZero(kind);
   const origin = romKindOrigin(kind);
-  if (origin) {
-    // --- A page that runs above $0000 is decoded at its own address, so that its absolute jumps
-    // --- name its own offsets; a target outside the page (into the ROM below) is not the page's
-    const decode = romDecoderFor(undefined);
-    return async (bytes, start, end) => {
-      const memory = new Uint8Array(origin + bytes.length);
-      memory.set(bytes, origin);
-      return (await decode(memory, origin + start, origin + end)).map(({ offset, length, target }) => ({
-        offset: offset - origin,
-        length,
-        ...(target !== undefined && target >= origin && target < origin + bytes.length
-          ? { target: target - origin }
-          : {})
-      }));
-    };
-  }
+  if (!origin) return decode;
+  // --- A page that runs above $0000 is decoded at its own address (with its own custom decoding),
+  // --- so that its absolute jumps name its own offsets; a target outside the page is not the page's
+  return async (bytes, start, end) => {
+    const memory = new Uint8Array(origin + bytes.length);
+    memory.set(bytes, origin);
+    return (await decode(memory, origin + start, origin + end)).map(({ offset, length, target }) => ({
+      offset: offset - origin,
+      length,
+      ...(target !== undefined && target >= origin && target < origin + bytes.length
+        ? { target: target - origin }
+        : {})
+    }));
+  };
+}
+
+/** The decoder that lists `bytes` from address 0 with the kind's custom decoding. */
+function decoderAtZero(kind: RomPageKind | undefined): RomDecoder {
   return async (bytes, start, end) => {
     const disassembler = new Z80Disassembler(
       [new MemorySection(start, end, MemorySectionType.Disassemble)],

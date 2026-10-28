@@ -47,6 +47,11 @@ export type RomPageKind =
   | "ht1080z-basic"
   // --- The HT-1080Z's 2K extension ROM, at $3000-$37FF: plain Z80, listed at its own address
   | "ht1080z-ext"
+  // --- The Videoton TVC's 8K BASIC ROM chips, each listed where BASIC runs it: the low half of the
+  // --- SYS bank at $C000, its high half and the EXTH ROM at $E000. Their RST $30 takes an inline byte
+  | "tvc-sys-low"
+  | "tvc-sys-high"
+  | "tvc-exth"
   // --- The ZX Spectrum Next: NextZXOS's pages (and the alternate ROM's), the DivMMC and Multiface ROMs
   | "next-basic"
   // --- NextZXOS's pages 0-2, each with its own restarts and inline data (`nextzxos-disassembler.ts`)
@@ -105,16 +110,42 @@ export const KNOWN_ROM_PAGES: Readonly<
   "48985a30": { file: "ht1080z-s64.rom", kind: "ht1080z-basic" },
   "2a851e33": { file: "ht1080z-s1-ext.rom", kind: "ht1080z-ext" },
   "07415ac6": { file: "ht1080z-s2-ext.rom", kind: "ht1080z-ext" },
-  "fc12bd28": { file: "ht1080z-s64-ext.rom", kind: "ht1080z-ext" }
+  "fc12bd28": { file: "ht1080z-s64-ext.rom", kind: "ht1080z-ext" },
+  // --- The Videoton TVC: BASIC 1.2 (the 64K) and BASIC 2.2 (the 64K+), three 8K chips each
+  // --- (`TvcRoms.ts`). The HBF card's VT-DOS ROM has no kind yet: its four 4K pages all run at $C000
+  "834ca9be": { file: "tvc12-d4.rom", kind: "tvc-sys-low" },
+  "71753d02": { file: "tvc12-d3.rom", kind: "tvc-sys-high" },
+  "1cbbeac6": { file: "tvc12-d7.rom", kind: "tvc-exth" },
+  "05ac3a34": { file: "tvc22-d6.rom", kind: "tvc-sys-low" },
+  ba6ad589: { file: "tvc22-d4.rom", kind: "tvc-sys-high" },
+  "05e1c3a8": { file: "tvc22-d7.rom", kind: "tvc-exth" }
 };
 
 /**
  * The address a page of this kind runs at, when it is not $0000: the HT-1080Z's extension ROM sits
  * at $3000, so its `JP $3005` is a jump to its own offset 5. The ROM annotation tools decode such a
  * page at that address and count offsets and targets from it.
+ *
+ * The TVC's SYS chips run at $C000 and $E000 once BASIC has paged SYS into page 3. Its first bytes
+ * also run at $0000 after a reset (page 0 shows SYS then); a jump there is not counted as the page's.
  */
 export function romKindOrigin(kind: RomPageKind | undefined): number {
-  return kind === "ht1080z-ext" ? 0x3000 : 0;
+  switch (kind) {
+    case "ht1080z-ext":
+      return 0x3000;
+    case "tvc-sys-low":
+      return 0xc000;
+    case "tvc-sys-high":
+    case "tvc-exth":
+      return 0xe000;
+    default:
+      return 0;
+  }
+}
+
+/** Whether a page of this kind is one of the TVC's, whose `RST $30` is followed by a function code. */
+export function romKindIsTvc(kind: RomPageKind | undefined): boolean {
+  return kind !== undefined && kind.startsWith("tvc-");
 }
 
 /** Whether a page of this kind is the Next's, whose code uses the Z80N's extra opcodes. */

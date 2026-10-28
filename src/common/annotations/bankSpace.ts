@@ -42,8 +42,10 @@ import {
  *   $0000-$2FFF) and the extension (`-2`, $3000-$37FF), each counted from its own start; RAM from
  *   $4000 as 16K blocks 1-3. The keyboard and the video RAM ($3800-$3FFF) cannot be annotated.
  * - `tvc`: the Videoton TVC's 16K partitions, as the 128K's (`.plans/VIDEOTON_TVC_PLAN.md` §11): U0-U3
- *   are banks 0-3, the video banks 4 (and 5-7 on the 64K+); ROM partitions SYS (-1), CART (-2) and
- *   EXT (-3, the card window and EXTH as page 3 shows them).
+ *   are banks 0-3, the video banks 4 (and 5-7 on the 64K+). The ROM is named by chip, each its own file
+ *   and so its own sidecar (`TVC_ROM_PAGES`): SYS's low half (-1) and high half (-9), and EXTH (-3, the
+ *   high half of EXT; the card window below it is no ROM page). CART (-2) and the HBF card's pages stay
+ *   the machine's partitions.
  */
 
 /** Which bank space a machine's annotations are numbered in. Not a machine model. */
@@ -106,7 +108,8 @@ export interface BankSpace {
   defaultOffsetIndex(bank: number): 0 | 1 | 2 | 3;
   /**
    * The address a ROM page starts at, on a machine whose ROM pages sit at fixed addresses and do
-   * not all start at $0000 (the HT-1080Z's extension ROM). Absent: every ROM page starts at $0000.
+   * not all start at $0000 (the HT-1080Z's extension ROM, the TVC's chips at $C000 and $E000). Absent:
+   * every ROM page starts at $0000.
    */
   romBase?(partition: number): number | undefined;
 }
@@ -405,6 +408,22 @@ export function ht1080zBankSpace(ramKb: 16 | 48): BankSpace {
 // ------------------------------------------------------------------------------------------------
 // The Videoton TVC: 16K partitions, each 8K slot reporting its own (EXT's halves are one partition)
 
+/**
+ * The TVC's ROM chips as the ROM annotations name them: the partition each is reported as, the machine
+ * partition and 8K half it sits in, and the address BASIC runs it at (page 3, where it pages SYS and
+ * EXT). SYS's low half keeps SYS's partition number; its high half takes one no machine partition has.
+ * At a reset page 0 shows SYS, so the low chip also runs at $0000 for a while: an address picks the chip
+ * by its bit 13, whichever page shows it.
+ */
+export const TVC_ROM_PAGES = [
+  { partition: -1, machinePartition: -1, high: false, start: 0xc000, size: 0x2000 },
+  { partition: -9, machinePartition: -1, high: true, start: 0xe000, size: 0x2000 },
+  { partition: -3, machinePartition: -3, high: true, start: 0xe000, size: 0x2000 }
+] as const;
+
+/** The TVC partition SYS's high chip is reported as (no machine partition uses it). */
+export const TVC_ROM_PAGE_SYS_HIGH = -9;
+
 /** The TVC bank space: U0-U3 and one video bank (the 64K), or four (the 64K+) */
 export function tvcBankSpace(plus: boolean): BankSpace {
   const ramBanks = plus ? [0, 1, 2, 3, 4, 5, 6, 7] : [0, 1, 2, 3, 4];
@@ -419,7 +438,13 @@ export function tvcBankSpace(plus: boolean): BankSpace {
       const partition = slotPartition(slots, address);
       if (partition === undefined) return undefined;
       const offset = address & 0x3fff;
-      return partition < 0 ? { kind: "rom", partition, offset } : { kind: "bank", bank: partition, offset };
+      if (partition >= 0) return { kind: "bank", bank: partition, offset };
+      const high = (address & 0x2000) !== 0;
+      const chip = TVC_ROM_PAGES.find((page) => page.machinePartition === partition && page.high === high);
+      if (chip) return { kind: "rom", partition: chip.partition, offset: address & 0x1fff };
+      // --- EXT's low half is the card window: with no card there, nothing to annotate
+      if (TVC_ROM_PAGES.some((page) => page.machinePartition === partition)) return undefined;
+      return { kind: "rom", partition, offset };
     },
     addressesOf(site, slots) {
       const result: number[] = [];
@@ -431,7 +456,8 @@ export function tvcBankSpace(plus: boolean): BankSpace {
     partitionOf: (site) => site.bank,
     candidateAddresses: (site) => [0, 1, 2, 3].map((slot16) => slot16 * 0x4000 + site.offset),
     // --- U0-U3 where BASIC pages them (U0 at $0000 ... U3 at $C000); a video bank at $8000
-    defaultOffsetIndex: (bank) => (bank < 4 ? bank : 2) as 0 | 1 | 2 | 3
+    defaultOffsetIndex: (bank) => (bank < 4 ? bank : 2) as 0 | 1 | 2 | 3,
+    romBase: (partition) => TVC_ROM_PAGES.find((page) => page.partition === partition)?.start
   };
 }
 
