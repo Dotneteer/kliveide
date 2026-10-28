@@ -1,6 +1,6 @@
 /**
- * Layout for the documentation pages (/<lang>/...): the chrome is `../docs-shell.tsx`, shared
- * with the unlisted areas in `../(unlisted)/`. The <html> shell is `../layout.tsx`.
+ * Layout for the documentation pages (/<lang>/...): the chrome is `../docs-shell.tsx`.
+ * The <html> shell is `../layout.tsx`.
  */
 import type { Metadata } from "next";
 import { DocsShell, docsMetadata } from "../docs-shell";
