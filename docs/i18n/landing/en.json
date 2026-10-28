@@ -27,6 +27,10 @@
   "@nav.underTheHood": {
     "context": "Header link to the articles on how the emulators work inside. Same as the documentation's 'Under the Hood' tab."
   },
+  "nav.library": "Library",
+  "@nav.library": {
+    "context": "Header link to the machines' own manuals (for example the Cambridge Z88 User Guide), written by their makers and communities, not by Klive. Same as the documentation's 'Library' tab."
+  },
   "nav.github": "GitHub",
   "@nav.github": {
     "context": "Header link to the project's source code on GitHub. Product name: never translated."
@@ -77,11 +81,11 @@
   },
   "glance.languages": "Languages",
   "@glance.languages": {
-    "context": "Row label in the 'At a glance' table: the programming languages Klive compiles."
+    "context": "Row label in the 'At a glance' table: the programming languages you can write your programs in with Klive."
   },
-  "glance.languagesValue": "Z80 assembly, ZX BASIC",
+  "glance.languagesValue": "Z80 assembly, ZX BASIC, C",
   "@glance.languagesValue": {
-    "context": "The value of the 'Languages' row. 'Z80' and 'ZX BASIC' are never translated."
+    "context": "The value of the 'Languages' row. 'Z80', 'ZX BASIC' and 'C' (the programming language) are never translated."
   },
   "glance.worksWith": "Works with",
   "@glance.worksWith": {

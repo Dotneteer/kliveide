@@ -105,6 +105,7 @@ export default function LandingPage({ lang }: Readonly<{ lang: string }>) {
             <Link href={docsHref(lang, "guides")}>{t("nav.guides")}</Link>
             <Link href={docsHref(lang, "reference")}>{t("nav.reference")}</Link>
             <Link href={docsHref(lang, "under-the-hood")}>{t("nav.underTheHood")}</Link>
+            <Link href={docsHref(lang, "library")}>{t("nav.library")}</Link>
           </nav>
           <div className="lp-tools">
             <LanguageSelect current={lang} label={t("nav.language")} languages={languages} />

@@ -795,11 +795,15 @@ div.lp-body {
   }
 }
 
-@media (max-width: 760px) {
+/* --- The header is one row that cannot wrap: below the width the longest language needs (German,
+   855px with five links), the links give way rather than scroll the page sideways */
+@media (max-width: 900px) {
   .lp-nav {
     display: none;
   }
+}
 
+@media (max-width: 760px) {
   /* --- The four steps stack: each column becomes a row */
   .lp-loop thead {
     display: none;
