@@ -19,11 +19,11 @@ import { createTvcSession, REPO_ROOT, type TvcTestSession } from "../harness/tvc
 const SYSTEM_DISK = new Uint8Array(readFileSync(join(REPO_ROOT, "_input/videoton-tvc/rtvc/progs/VTDOS-SYSTEM.DSK")));
 
 /** The directory listing's picture, checked by eye */
-const DIR_PICTURE = "9a368531c2c1fb04db2aadbc69bde718c66e6515";
+const DIR_PICTURE = "a2537818cc2d2a5cb46b8d91148288d4509d1a6a";
 
 function save(s: TvcTestSession, name: string): void {
   const dir = process.env.TVC_HBF_PNG;
-  if (dir) writeFileSync(join(dir, `${name}.png`), encodePng(s.screenPixels(), 608, 288));
+  if (dir) writeFileSync(join(dir, `${name}.png`), encodePng(s.screenPixels(), 560, 288));
 }
 
 function hashOf(s: TvcTestSession): string {

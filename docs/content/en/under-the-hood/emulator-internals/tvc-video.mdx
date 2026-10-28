@@ -223,8 +223,9 @@ the blanking and the sync timers, places the character in the television's windo
 next byte from the displayed bank. A palette, border, mode or video RAM write therefore lands at the
 character it happens in.
 
-The television is modelled too: it finds the line and frame syncs, and the picture is the 608 × 288
-dots around the paper that a TV would show, with the paper centred. A dot is drawn 7/12.5 as wide as
+The television is modelled too: it finds the line and frame syncs, and the picture is the 560 × 288
+dots around the paper that a TV would show, with the paper centred. It starts just after the
+horizontal blank ends, so the 2.5 blanked characters a real TV hides in its overscan stay hidden. A dot is drawn 7/12.5 as wide as
 a ZX Spectrum dot, its true width.
 
 The **TVC Video** panel in the Debug activity shows the 6845's registers and counters, the mode, the

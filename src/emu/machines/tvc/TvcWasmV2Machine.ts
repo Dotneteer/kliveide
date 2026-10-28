@@ -80,8 +80,8 @@ const LOAD_SCRIPT_TIMEOUT_FRAMES = 6000;
 
 /**
  * The raster as the beam overlay sees it (`getBeamPosition`), for the BASIC ROM's CRTC values (100
- * characters of 2 T, 314 lines). Buffer pixel (0, 0) is drawn at character 95 of line 289, 25 lines
- * and 190 T before the frame starts (`tvc-video.c`: the window starts 18 characters after the line
+ * characters of 2 T, 314 lines). Buffer pixel (0, 0) is drawn at character 98 of line 289, 25 lines
+ * and 196 T before the frame starts (`tvc-video.c`: the window starts 21 characters after the line
  * sync, 26 line syncs after the frame sync); a dot is a quarter T-state. A program that reprograms
  * the CRTC moves the picture, and this map then no longer matches it.
  */
@@ -89,11 +89,11 @@ const TVC_BEAM_TIMING: BeamTiming = {
   unit: "T",
   tactsPerLine: 200,
   linesPerFrame: 314,
-  firstVisibleTact: -25 * 200 + 95 * 2,
+  firstVisibleTact: -25 * 200 + 98 * 2,
   tactsPerBufferPixel: 0.25,
-  bufferWidth: 608,
+  bufferWidth: 560,
   bufferHeight: 288,
-  paperLeft: 48,
+  paperLeft: 24,
   paperTop: 24,
   paperWidth: 512,
   paperHeight: 240

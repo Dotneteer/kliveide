@@ -13,9 +13,10 @@
  *     characters, 180 dots at 12.5 MHz), and a latch set by the VS monostable and cleared while MA9
  *     is 1.
  *  4. The TV (Part 9, plan D4): the line sync starts on HS falling, the frame sync on VS rising. The
- *     picture is 76 characters by 288 lines, placed as a television would with the ROM's values:
- *     18 characters after the line sync and 26 line syncs after the frame sync, which centres the
- *     512 x 240 paper with 48 dots and 24 lines of border around it.
+ *     picture is 70 characters by 288 lines, placed as a television would with the ROM's values:
+ *     21 characters after the line sync and 26 line syncs after the frame sync, which centres the
+ *     512 x 240 paper with 24 dots and 24 lines of border around it. The window starts just after
+ *     the horizontal blank ends (20.5 characters after the line sync), so no blanked dot shows.
  *  5. The byte for this character is fetched from video RAM (the displayed bank on the 64K+):
  *     address bits 0-5 = MA0-5, 6-7 = RA0-1, 8-13 = MA6-11 (Part 4).
  *  6. The interrupt flip-flop is clocked by NOR(cursor, sound IT): it is set when the cursor pulse
@@ -36,7 +37,7 @@
 /* The frame-sync monostable: 0.45 * 30k * 10n = 135 us = 211 characters */
 #define TVC_VSYNC_CHARS 211u
 /* Where the TV window sits after its syncs (D4) */
-#define TVC_TV_FIRST_CHAR 18u
+#define TVC_TV_FIRST_CHAR 21u
 #define TVC_TV_FIRST_LINE 26u
 /* Without a line sync this long, or a frame sync, the TV has lost the picture */
 #define TVC_TV_LOST_CHARS 300u

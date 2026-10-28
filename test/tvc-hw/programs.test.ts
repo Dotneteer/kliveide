@@ -10,7 +10,7 @@ import { bareMachine, PAPER_TOP, pictureHash, pixel, RGB, writeShotIfAsked } fro
  * echoes `print "hello"` and prints `hello` in lower case (its default), then `ok`.
  */
 
-const PRINT_HELLO_SHA1 = "e18056599b0156487df6438a21a92b7509a886f2";
+const PRINT_HELLO_SHA1 = "d4a8a689f1ac8994937d4046cbfc430ec7079995";
 
 describe("TVC programs", () => {
   it('BASIC runs PRINT "HELLO" typed on the keyboard', async () => {
@@ -54,7 +54,7 @@ describe("TVC programs", () => {
     const s = await createTvcSession();
     bareMachine(s, { halt: false });
     const beam = s.machine.getBeamPosition();
-    expect(beam.paperLeft).toBe(48);
-    expect(beam.firstVisibleTact + PAPER_TOP * beam.tactsPerLine + 48 * beam.tactsPerBufferPixel).toBe(2);
+    expect(beam.paperLeft).toBe(24);
+    expect(beam.firstVisibleTact + PAPER_TOP * beam.tactsPerLine + 24 * beam.tactsPerBufferPixel).toBe(2);
   });
 });

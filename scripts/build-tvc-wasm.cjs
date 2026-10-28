@@ -176,7 +176,7 @@ const productionExports = [
 
 
 /*
- * The 176K of physical memory and the 608 x 288 picture (700 KB) fit in 2 MiB with room for the
+ * The 176K of physical memory and the 560 x 288 picture (645 KB) fit in 2 MiB with room for the
  * stack; the 4 MiB execution-history ring (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` D2, D3) and
  * the access profile's flags and counter pool (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D5) make
  * it 8 MiB, as the HT-1080Z's. Raise this only with a recorded reason.

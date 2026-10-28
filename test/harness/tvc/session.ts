@@ -339,7 +339,7 @@ export class TvcTestSession {
     return this;
   }
 
-  /** The published picture, as a copy (0xAABBGGRR words, 608 x 288) */
+  /** The published picture, as a copy (0xAABBGGRR words, 560 x 288) */
   screenPixels(): Uint32Array {
     return this.machine.getPixelBuffer().slice();
   }

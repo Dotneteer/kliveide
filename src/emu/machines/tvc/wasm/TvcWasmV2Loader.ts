@@ -54,7 +54,7 @@ export type TvcWasmV2Views = {
   readonly hbfRom: Uint8Array;
   /** The HBF card's two drives, each a canonical disk image (`tvcHbfDiskGetCapacity` bytes) */
   readonly hbfDisks: readonly Uint8Array[];
-  /** The TV picture, 608 x 288 */
+  /** The TV picture, 560 x 288 */
   readonly pixelBuffer: Uint32Array;
   readonly pixelBufferBytes: Uint8ClampedArray;
   /** The keyboard matrix rows (a set bit is a pressed key) */

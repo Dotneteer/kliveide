@@ -72,7 +72,7 @@ describe("TVC video: from byte to pixels (Part 6)", () => {
 });
 
 describe("TVC video: paper, border and blanking (Part 8)", () => {
-  it("places the paper 48 dots and 24 lines into the picture, the border around it", async () => {
+  it("places the paper 24 dots and 24 lines into the picture, the border around it", async () => {
     const s = await createTvcSession();
     bareMachine(s);
     s.wasm.tvcWritePort(0x06, 0x00);
@@ -92,14 +92,13 @@ describe("TVC video: paper, border and blanking (Part 8)", () => {
     expect(pixel(s, 300, PAPER_TOP + 240)).toBe(red);
   });
 
-  it("the 14.4 us horizontal blank from HS ends 20 dots into the picture: black there, border after", async () => {
+  it("the 14.4 us horizontal blank from HS ends just before the picture: its first dot shows border", async () => {
     const s = await createTvcSession();
     bareMachine(s);
     s.wasm.tvcWritePort(0x00, 0x08);
     s.runFrames(2);
-    // --- HS rises at character 75; 180 dots later is character 97, dot 4; the window starts at 95
-    expect(pixel(s, 19, PAPER_TOP)).toBe(RGB.black);
-    expect(pixel(s, 20, PAPER_TOP)).toBe(RGB.darkRed);
+    // --- HS rises at character 75; 180 dots later is character 97, dot 4; the window starts at 98
+    for (let y = 0; y < 288; y += 47) expect(pixel(s, 0, y)).toBe(RGB.darkRed);
   });
 
   it("vertical blank: set at VS (line 264), released when MA9 first goes high - later for start 0000h", async () => {

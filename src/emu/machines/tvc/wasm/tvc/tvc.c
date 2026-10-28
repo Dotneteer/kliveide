@@ -59,8 +59,8 @@
 #define TVC_PHYS_SIZE 0x31000u
 #define TVC_BANK_SIZE 0x4000u
 
-/* The TV picture (plan §7, D4): 76 characters of 8 dots, 288 lines */
-#define TVC_SCREEN_WIDTH 608u
+/* The TV picture (plan §7, D4): 70 characters of 8 dots, 288 lines */
+#define TVC_SCREEN_WIDTH 560u
 #define TVC_SCREEN_HEIGHT 288u
 
 #define TVC_KEYBOARD_ROWS 16u
