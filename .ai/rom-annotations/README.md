@@ -94,7 +94,10 @@ traps, the level-2 comment pass and the tools added for it (`annotated-view.py`,
 helper scripts in `tools/` (a listing through Klive's disassembler, applying a batch through the
 formatter, the IDE's readiness check, a harness probe template) and the state of the work. For the HT-1080Z ROMs,
 `ht1080z-authoring-guide.md` carries the order of work, `tools/ht1080z-dis.cjs` (the BASIC through the
-`ht1080z-basic` decoding), the probe recipe, the facts read so far and the state of the work.
+`ht1080z-basic` decoding), the probe recipe, the facts read so far and the state of the work. For the Videoton TVC's ROMs,
+`tvc-authoring-guide.md` carries the chips and how the machine names them (8K pages at $C000/$E000), the
+order of work, `tools/tvc-dis.cjs` (`RST $30`'s inline function code), the sources that are off limits
+there and the facts read so far.
 
 ```
 npm run rom:annotations                    # format every sidecar, regenerate the CRC index
@@ -172,4 +175,5 @@ makes the work faster, not the sources wider.
 (done, at level 2; `sp48-authoring-guide.md` explains `inherits`), then the +3 ROM 3s by inheritance
 plus their differing routines, `sp128-0`, the +3 ROMs 0–2 (the +3DOS call
 table from the +3 manual first), and the ZX81 and ZX80 ROMs. The HT-1080Z's are done, every one at level 2: the BASIC ROMs, the extension ROMs and the
-character generators (`ht1080z-authoring-guide.md`).
+character generators (`ht1080z-authoring-guide.md`). The Videoton TVC's are next: BASIC 1.2's SYS chips, its EXTH, BASIC 2.2's three chips,
+then VT-DOS (`tvc-authoring-guide.md`).

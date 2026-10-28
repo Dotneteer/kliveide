@@ -46,6 +46,7 @@ import {
 } from "./tvcMachineInfo";
 import { TvcKeyCode } from "./TvcKeyCode";
 import type { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
+import { TVC_ROM_PAGES } from "@common/annotations/bankSpace";
 import { beamAt, drawnUpTo, type BeamPosition, type BeamTiming } from "@common/utils/beamGeometry";
 import type { AudioSample } from "@emu/abstractions/IAudioDevice";
 import {
@@ -920,6 +921,20 @@ export class TvcWasmV2Machine extends TvcWasmHost implements IExecutionHistorySo
   override getPartition(address: number): number | undefined {
     const wasm = this.wasmV2Runtime?.exports;
     return wasm ? this.partitionOfPhysical(wasm.tvcGetPhysicalAddress(address & 0xffff)) : undefined;
+  }
+
+  /**
+   * The ROM partitions as the ROM annotations see them: each 8K chip its own page (`TVC_ROM_PAGES`), so
+   * its own file's sidecar applies to it: SYS's halves (-1, -9) and EXTH (-3). CART and the HBF card's
+   * pages stay whole partitions.
+   */
+  protected override getRomPartitionImages(): Map<number, Uint8Array> {
+    const images = super.getRomPartitionImages();
+    for (const chip of TVC_ROM_PAGES) {
+      const start = this.physicalOfPartition(chip.machinePartition) + (chip.high ? 0x2000 : 0);
+      images.set(chip.partition, this.requireWasmV2Runtime().memory.slice(start, start + chip.size));
+    }
+    return images;
   }
 
   /** The 64K as eight 8K pages: a page is ROM when the paging shows SYS, CART or EXTH (or an empty card) there */
