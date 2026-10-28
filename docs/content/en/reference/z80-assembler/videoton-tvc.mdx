@@ -1,0 +1,108 @@
+---
+description: "Assemble, run, debug, and export machine code for the Videoton TVC with the Klive assembler: .model TVC, how Run starts the code, the memory rules, the operating system's calls, and .cas export."
+---
+
+# Videoton TVC Development
+
+Klive assembles machine code for the Videoton TVC, runs it in the emulated machine, debugs it at the
+source level, and exports it as a `.cas` program that `LOAD` runs on the TVC.
+
+*Applies to: Videoton TVC 64K, Videoton TVC 64K+*
+
+## Quick Start
+
+Create a project for the TVC and its `code/code.kz80.asm` is a program that prints a welcome
+through the operating system:
+
+```z80klive
+; A Videoton TVC machine-code program. Run (or Debug) boots BASIC, writes the code into RAM, moves
+; BASIC's program space above it (LOMEM) and calls it with C=USR(6704), so RET goes back to BASIC.
+; Export writes a .cas program file: a one-line BASIC launcher and this code. LOAD runs it.
+    .model TVC
+    .org $1A30
+
+Start:
+    ld hl,Message
+NextChar:
+    ld a,(hl)
+    or a
+    ret z               ; back to BASIC
+    ld c,a
+    push hl             ; the system call keeps neither HL nor BC
+    rst $30             ; the operating system's call...
+    .defb $21           ; ...function 21h: the editor prints the character in C at the cursor
+    pop hl
+    inc hl
+    jr NextChar
+
+; The editor takes 13 (CR) back to the start of the line and 10 (LF) down a line: CR LF is a new line
+Message:
+    .defm "Welcome to Klive IDE"
+    .defb 13, 10
+    .defm "on the Videoton TVC"
+    .defb 13, 10, 0
+```
+
+Press **Run**: the welcome appears under the commands Klive typed, and BASIC answers `ok`.
+
+## The model
+
+`.model TVC` (any case) assembles for the TVC; a source with no `.model` takes the running machine's.
+`#ifmod TVC` and `#ifnmod TVC` pick TVC-only parts. Code with no `.org` goes to $1A30. `.bank` is not
+available: the TVC's paging is the program's own business (port $02, and port $0C on the 64K+).
+
+## How the code gets into the machine
+
+Run and Debug have BASIC call your code, as a TVC program does:
+
+1. Klive switches the machine on and, when the sign-on animation runs, presses a key.
+2. At BASIC's `ok` it writes the code where it was assembled.
+3. It types `LOMEM` with the address after your code, in decimal: BASIC moves its program, variables
+   and stack above that address, so it never overwrites your code.
+4. It types `C=USR(entry)`, the `.ent` address (else the start of the lowest segment). BASIC calls
+   the code, so a `RET` from it goes back to BASIC's `ok`, with HL as `USR`'s value.
+
+Debug works the same way; the debugger stops at your breakpoints once BASIC has called the code.
+**Inject** writes the code into the running machine without starting it: type `C=USR(entry)` to call
+it. Inject does not move `LOMEM`.
+
+## Rules of the machine
+
+- **Where code goes.** From $1A30 to $BBFF. Below $1A30 are the ROM's work area and the line a TVC
+  program keeps for its BASIC launcher; above $BBFF BASIC would have less than 1K below its top of
+  memory ($BFFF), and from $C000 the ROM is paged in. The assembler warns about code outside the
+  range (Z0384, Z0385), and Run, Inject and Export refuse it.
+- **Paging.** At BASIC's prompt the CPU sees RAM (U0-U2) at $0000-$BFFF and the system ROM at
+  $C000-$FFFF; the video RAM is not paged in. Code that pages (port $02) must restore BASIC's paging,
+  $70, before it returns.
+- **Interrupts.** The video chip's cursor signal interrupts the CPU once a frame, and BASIC's handler
+  runs through the RAM vector at $0038. Code that disables interrupts should enable them again.
+
+## The operating system's calls
+
+`RST $30` calls the operating system, with the function's code in the byte after it:
+
+```z80klive
+    ld c,'A'
+    rst $30
+    .defb $21           ; the editor prints the character in C at the cursor
+```
+
+The call returns after that byte, and keeps neither BC nor HL. The ROM's dispatcher takes the
+function code's bits 6-4 as the device (2 is the editor) and bits 3-0 as the function. For the editor, 13 (CR) goes back to the start of the line and 10 (LF) down one line, so a
+new line is 13, 10.
+
+The disassembler lists the byte after `RST $30` as the call's function code, and **Step Over** steps
+over the call and its byte.
+
+## Exporting
+
+**Export** (or `expc <file>`) writes a `.cas` program file, with `-f cas` or by default: the one-line
+BASIC program `10 C=USR(entry)`, then the code where it was assembled. The file starts itself, so
+`LOAD` loads and runs it; `RUN` starts it again. The program file covers everything from BASIC's
+program area ($19EF) to the end of the code, so code assembled at $1A30 makes the smallest file.
+
+## Testing
+
+[Z80 unit tests](/en/guides/testing/unit-tests/) run on the TVC: the runner boots the machine as Run
+does and calls each test. `klive run` runs a TVC project or, with `--machine tvc`, a `.cas` file.

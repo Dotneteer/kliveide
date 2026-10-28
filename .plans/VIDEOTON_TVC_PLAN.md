@@ -1,8 +1,8 @@
 # Videoton TV Computer (TVC) on the WASM Core — Implementation Plan
 
-**Status:** Phases 0-5 done (2026-10-27), except Phase 4's virtual keyboard, which waits for a
-design (§17). Both models boot BASIC in the app; tapes load and save. Next: Phase 6 (IDE). What was
-built and how it differs from this plan is in §17.
+**Status:** Complete (2026-10-28): Phases 0-9 done, except Phase 4's virtual keyboard, which waits
+for a design from the real keyboard's layout (§17). Both models run in the app with tapes, VT-DOS
+disks, Run/Debug/Export and the debugger. What was built and how it differs from this plan is in §17.
 **Input:** the research pack `_input/videoton-tvc/`. Read these three first:
 - `TVC_HARDWARE_OVERVIEW.md`: the machine's blocks, timing, sound, and what the emulators get wrong;
 - `TVC_VIDEO_GENERATION.md`: the video path, checked against the manual and the board schematics;
@@ -554,7 +554,7 @@ phase.
 | **6. IDE** | Partitions, the TVC video panel, BASIC listing, charset, disassembler, menus, state files, history, profile, CLI. | Done 2026-10-28 (§17): `test/tvc-hw/debug.test.ts`, `profile.test.ts`, `basic-listing.test.ts`, `charset.test.ts`; the TVC in every cross-core suite (history, profile, state determinism, export contract, journal replay, debug recordings, hardware specs); `MF_EXEC_HISTORY`, `MF_PROFILE` and `MF_REVERSE_DEBUG` on. |
 | **7. Assembler** | `.model TVC`, injection, `.cas` export, project template. | Done 2026-10-28 (§17): `test/tvc-hw/code-injection.test.ts`, `project-templates.test.ts` (both runs checked by eye), `tape-load-flow.test.ts`; `klive run` and `klive test` on the TVC. |
 | **8. HBF + VT-DOS** | §9.4: the WD1793 extraction (its own commit, Beta 128 tests identical), the HBF card, `.dsk`. | Done 2026-10-28 (§17): the extraction (605e69775) rebuilds the 128K core byte-identical; `test/tvc-hw/hbf.test.ts` lists the system disk's directory (checked by eye), round-trips a program through the disk and through the published image, and finds the interrupt on line 175. |
-| **9. Ship** | Notices (`THIRD_PARTY_NOTICES.md`, the ROM readme), docs pages, an `AGENTS.md` section, the landing-page machine table (also missing the HT-1080Z), `README.md`'s machine list, a `.ai/` note in `wasm-migration-intent-and-lessons.md`, one `feature` changeset. Run `npm run test:slow` before release. | A packaged build runs both models; `build:check`, `lint:renderer`, `i18n:check`, `doc:build` + `doc:check` are green. |
+| **9. Ship** | Notices (`THIRD_PARTY_NOTICES.md`, the ROM readme), docs pages, an `AGENTS.md` section, the landing-page machine table (also missing the HT-1080Z), `README.md`'s machine list, a `.ai/` note in `wasm-migration-intent-and-lessons.md`, one `feature` changeset. Run `npm run test:slow` before release. | Done 2026-10-28 (§17): the gates and `doc:build` + `doc:check` green, `test:slow` run; both models, Run and VT-DOS checked in the built app (not a packaged installer). |
 
 The changeset comes with the commit that completes the plan (AGENTS.md). Phase commits before that
 carry none. Docs for phase 9:
@@ -788,4 +788,20 @@ and its sign-on needs the picture to be checked.
   drives. The HBF ROM pages are partitions -4 to -7 ("HBF0"-"HBF3") and its RAM -8 ("HBFR"), in the
   profile layout and the history context (which now records port 03h and the card's page).
 - **Not done:** the annotation bank space does not know the HBF partitions; a TVC disk viewer.
+
+### Phase 9 (2026-10-28)
+
+- **Docs:** `guides/machines/videoton-tvc.mdx` (models, typing, tapes, the HBF card, Run, debugging),
+  with two shots from `scripts/doc-shots/recipes/guides-tvc.cjs` (Run of the template, the TVC Video
+  panel); `reference/z80-assembler/videoton-tvc.mdx` (the model, how Run starts code, the rules,
+  `RST 30h`, export); the machine-types entry; `.model TVC` in the pragma reference; the BASIC
+  Listing page's "Applies to". The Under the hood article `emulator-internals/tvc-video.mdx` adapts
+  `TVC_VIDEO_GENERATION.md` under `.ai/hardware-articles-guide.md`: no named sources, the emulators'
+  comparison and the open questions left out, one to-scale figure of the frame.
+- **The landing page's machine table** now shows a machine only once the latest release has it, as
+  the features do: the HT-1080Z from 0.65.0, the TVC from 0.66.0 (the next release).
+- **AGENTS.md** has a Videoton TVC section; `.ai/wasm-migration-intent-and-lessons.md` the lessons;
+  `README.md` lists the TVC.
+- **Not checked:** a packaged installer (the built app was run instead). Still open from earlier
+  phases: the virtual keyboard (it needs the real keyboard's layout) and a TVC tape and disk viewer.
 

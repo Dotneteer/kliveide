@@ -73,13 +73,20 @@ export default function LandingPage({ lang }: Readonly<{ lang: string }>) {
     (LOCALE_NAMES as Record<string, string>)[id] ?? id,
     `${basePath}${landingHref(id)}`
   ]);
-  const machines: [string, string][] = [
-    ["ZX Spectrum", t("machines.spectrum")],
-    ["ZX Spectrum Next", ""],
-    ["ZX80 · ZX81", ""],
-    [t("machines.clonesLabel"), t("machines.clones")],
-    ["Cambridge Z88", ""]
-  ];
+  // --- A machine appears once the latest release has it, as the features do (R6)
+  const machines: [string, string][] = (
+    [
+      ["ZX Spectrum", t("machines.spectrum"), "0.1.0"],
+      ["ZX Spectrum Next", "", "0.1.0"],
+      ["ZX80 · ZX81", "", "0.1.0"],
+      [t("machines.clonesLabel"), t("machines.clones"), "0.1.0"],
+      ["Cambridge Z88", "", "0.1.0"],
+      ["HT-1080Z", "", "0.65.0"],
+      ["Videoton TVC", "64K · 64K+", "0.66.0"]
+    ] as [string, string, string][]
+  )
+    .filter(([, , since]) => versionAtMost(since, site.latestRelease))
+    .map(([name, models]) => [name, models]);
 
   return (
     <div className="lp">

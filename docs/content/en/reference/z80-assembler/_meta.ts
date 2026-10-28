@@ -13,5 +13,6 @@ export default {
   "zx-next-dma": ".dma pragma",
   "zx-next-copper": ".copper pragma",
   "zx80-zx81": "ZX80 and ZX81",
-  "ht1080z": "HT-1080Z"
+  "ht1080z": "HT-1080Z",
+  "videoton-tvc": "Videoton TVC"
 };
