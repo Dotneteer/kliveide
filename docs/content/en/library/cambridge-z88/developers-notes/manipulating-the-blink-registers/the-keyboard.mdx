@@ -8,7 +8,18 @@ description: "The keyboard is read by outputting a row on the address line A8 to
 
 The keyboard is read by outputting a row on the address line A8 to A15 and reading the KBD ($B2) register in BLINK. The keyboard matrix looks like this:
 
-`-------------------------------------------------------------------------` <br /> `| D7 D6 D5 D4 D3 D2 D1 D0` <br />`-------------------------------------------------------------------------` <br />`A15 (#7) | RSH SQR ESC INDEX CAPS . / £` <br />`A14 (#6) | HELP LSH TAB DIA MENU , ; '` <br />`A13 (#5) | [ SPACE 1 Q A Z L 0` <br />`A12 (#4) | ] LFT 2 W S X M P` <br />`A11 (#3) | - RGT 3 E D C K 9` <br />`A10 (#2) | = DWN 4 R F V J O` <br />`A9 (#1) | \ UP 5 T G B U I` <br />`A8 (#0) | DEL ENTER 6 Y H N 7 8` <br />`-------------------------------------------------------------------------`
+```
+|          | D7   | D6    | D5   | D4    | D3    | D2   | D1  | D0  |
+|----------|------|-------|------|-------|-------|------|-----|-----|
+| A15 (#7) | RSH  | SQR   | ESC  | INDEX | CAPS  | .    | /   | £   |
+| A14 (#6) | HELP | LSH   | TAB  | DIA   | MENU  | ,    | ;   | '   |
+| A13 (#5) | [    | SPACE | 1    | Q     | A     | Z    | L   | 0   |
+| A12 (#4) | ]    | LFT   | 2    | W     | S     | X    | M   | P   |
+| A11 (#3) | -    | RGT   | 3    | E     | D     | C    | K   | 9   |
+| A10 (#2) | =    | DWN   | 4    | R     | F     | V    | J   | O   |
+| A9  (#1) | \    | UP    | 5    | T     | G     | B    | U   | I   |
+| A8  (#0) | DEL  | ENTER | 6    | Y     | H     | N    | 7   | 8   |
+```
 
 ```text
 DIA         <DIAMOND> key
