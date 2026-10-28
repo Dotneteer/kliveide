@@ -15,6 +15,10 @@
   "@hardware.colours.monochromeLcd": {
     "context": "Value of the Colours row in the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the Cambridge Z88, whose screen is a black-and-white liquid-crystal display."
   },
+  "hardware.colours.tvc": "16; 2, 4 or 16 on screen",
+  "@hardware.colours.tvc": {
+    "context": "Value of the Colours row in the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the Videoton TV Computer (TVC), a Hungarian home and school computer of the 1980s: 16 colours exist; in its three graphics modes 2, 4 or all 16 can be on screen at once."
+  },
   "hardware.attributes.spectrum": "32 × 24 cells of 8 × 8 px, FLASH",
   "@hardware.attributes.spectrum": {
     "context": "Value of the Attributes row in the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts): colour is set per character cell, 32 columns by 24 rows of 8 by 8 pixels, and cells can FLASH. FLASH is a BASIC keyword: keep it."
@@ -38,6 +42,10 @@
   "hardware.text.ht1080z": "64 × 16 characters; 128 × 48 block graphics",
   "@hardware.text.ht1080z": {
     "context": "Value of the Text row in the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the HT-1080Z, a Hungarian school computer compatible with the TRS-80 Model I: a 64-column, 16-row character screen, whose characters can also be 2 × 3 blocks, giving 128 × 48 block graphics."
+  },
+  "hardware.text.tvc": "No text mode: a 512, 256 or 128 × 240 bitmap",
+  "@hardware.text.tvc": {
+    "context": "Value of the Text row in the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the Videoton TV Computer (TVC), a Hungarian home and school computer of the 1980s: it has no character screen; BASIC draws its letters into a bitmap of 512, 256 or 128 dots by 240 lines, depending on the colour mode."
   },
   "hardware.layers.next": "ULA, Layer 2 (up to 320 × 256), tilemap, sprites, copper",
   "@hardware.layers.next": {
@@ -87,6 +95,10 @@
   "hardware.timing.ht1080z": "One T-state per character position; no interrupts",
   "@hardware.timing.ht1080z": {
     "context": "Value of the Timing note row in the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the HT-1080Z, a Hungarian school computer compatible with the TRS-80 Model I: the video circuit draws one character position for every clock cycle (T-state) of the Z80 processor, and the machine has no interrupt source. Keep \"T-state\", the Z80 term for one clock cycle."
+  },
+  "hardware.timing.tvc": "A 6845 CRTC, 2 T-states a character; the CPU waits on video RAM access",
+  "@hardware.timing.tvc": {
+    "context": "Value of the Timing row in the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the Videoton TV Computer (TVC), a Hungarian home and school computer of the 1980s: the video chip is a 6845 CRT controller (keep 6845 and CRTC), which reads one byte every 2 CPU clock cycles (T-states); the CPU is briefly held whenever it reads or writes the video memory."
   },
   "hardware.rom.timexHome": "HOME ROM; your copy, or the 48K ROM",
   "@hardware.rom.timexHome": {
@@ -144,6 +156,14 @@
   "@hardware.rom.htExtension": {
     "context": "Value of the ROM row in the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the HT-1080Z, a Hungarian school computer compatible with the TRS-80 Model I: the role of the 2K ROM that adds commands and keyboard features to the BASIC."
   },
+  "hardware.rom.tvcSys": "system ROM (BASIC)",
+  "@hardware.rom.tvcSys": {
+    "context": "Role of a ROM image in the ROM row of the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the Videoton TV Computer (TVC): one of the two 8K chips holding the operating system and the BASIC interpreter. Lowercase."
+  },
+  "hardware.rom.tvcExth": "extension ROM",
+  "@hardware.rom.tvcExth": {
+    "context": "Role of a ROM image in the ROM row of the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the Videoton TV Computer (TVC): the 8K chip that extends the operating system. Lowercase."
+  },
   "hardware.rom.ozFlash": "OZ, {cardType} flash",
   "@hardware.rom.ozFlash": {
     "context": "Role of the Cambridge Z88's internal ROM in the ROM row of the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) when it sits in a flash chip. OZ is the Z88's operating system: keep it.",
@@ -162,6 +182,10 @@
   "hardware.sound.ayHt1080z": "AY-3-8910 PSG at the CPU clock (ports $1E/$1F), mono",
   "@hardware.sound.ayHt1080z": {
     "context": "An item of the Sound row in the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the HT-1080Z: its AY sound chip, which runs from the processor's clock and whose three channels are mixed into one. Keep chip, port and register names, numbers, $hex values and file extensions as they are."
+  },
+  "hardware.sound.tvc": "Tone generator with a 4-bit volume DAC",
+  "@hardware.sound.tvc": {
+    "context": "Value of the Sound row in the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the Videoton TV Computer (TVC), a Hungarian home and school computer of the 1980s: one programmable square-wave channel whose loudness is set by a 4-bit digital-to-analogue converter, which can also play sampled sound."
   },
   "hardware.sound.nextDac": "4-channel DAC (SpecDrum)",
   "@hardware.sound.nextDac": {
@@ -198,6 +222,10 @@
   "hardware.media.ht1080zTape": "Tape (.CAS, .CMD, .BAS)",
   "@hardware.media.ht1080zTape": {
     "context": "An item of the Media row in the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the HT-1080Z: the file types its tape deck takes. Keep the file extensions as they are."
+  },
+  "hardware.media.tvcTape": "Tape (.CAS)",
+  "@hardware.media.tvcTape": {
+    "context": "Value of the Media row in the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the Videoton TV Computer (TVC): it loads and saves programs on cassette tape, stored as .CAS files."
   },
   "hardware.media.zx80Tape": "Tape (.O)",
   "@hardware.media.zx80Tape": {
@@ -281,6 +309,10 @@
   "hardware.keyboard.ht1080z": "TRS-80 layout",
   "@hardware.keyboard.ht1080z": {
     "context": "Value of the Keyboard row in the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the HT-1080Z, a Hungarian school computer compatible with the TRS-80 Model I: a full-travel keyboard laid out as the TRS-80 Model I's. TRS-80 is a product name: keep it."
+  },
+  "hardware.keyboard.tvc": "Hungarian layout",
+  "@hardware.keyboard.tvc": {
+    "context": "Value of the Keyboard row in the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the Videoton TV Computer (TVC), a Hungarian home and school computer of the 1980s: the keyboard has the Hungarian key layout, with keys for the accented letters."
   },
   "hardware.keyboard.next": "Next, with extended keys",
   "@hardware.keyboard.next": {

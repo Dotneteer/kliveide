@@ -2442,6 +2442,11 @@
     "context": "Export Code dialog, a choice in the Format list: a machine-code load module for the HT-1080Z (a Hungarian school computer, a TRS-80 Model I relative). .cmd is a file extension: keep it.",
     "maxChars": 24
   },
+  "dialog.exportCode.format.tvcCas": "TVC tape (.cas)",
+  "@dialog.exportCode.format.tvcCas": {
+    "context": "Export Code dialog, a choice in the Format list: a cassette tape image for the Videoton TVC whose program LOAD runs. .cas is a file extension: keep it.",
+    "maxChars": 24
+  },
   "dialog.exportCode.format.ht1080zCas": "HT-1080Z tape (.cas)",
   "@dialog.exportCode.format.ht1080zCas": {
     "context": "Export Code dialog, a choice in the Format list: a cassette tape image for the HT-1080Z that loads with SYSTEM. .cas is a file extension: keep it.",

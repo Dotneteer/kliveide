@@ -37,6 +37,8 @@ import { ZX8081_KEY } from "@emu/machines/zx8081/Zx8081KeyCode";
 import { MI_ZX80, MI_ZX81 } from "@common/machines/constants";
 import { createHtSession } from "../../harness/ht1080z";
 import { Ht1080zKeyCode } from "@emu/machines/ht1080z/Ht1080zKeyCode";
+import { createTvcSession } from "../../harness/tvc";
+import { TvcKeyCode } from "@emu/machines/tvc/TvcKeyCode";
 import { ReverseRig, seededRandom, type SpikeCoreId } from "../../harness/reverseSupport";
 import { expectSameBytes } from "../../expectBytes";
 
@@ -482,6 +484,49 @@ async function ht1080zMachine(): Promise<Driver> {
 }
 
 /**
+ * The Videoton TVC 64K+ at BASIC 2.2's prompt (`.plans/VIDEOTON_TVC_PLAN.md` §13): the cursor and
+ * sound interrupts, the clock stretch on video RAM. Inputs besides keys: memory edits, the border
+ * and palette ports, the paging ports 02h/0Ch and the sound divider and its restart.
+ */
+async function tvcMachine(): Promise<Driver> {
+  const s = (await createTvcSession({ model: "tvc64p" })).bootToBasic();
+  return {
+    rig: new ReverseRig("tvc", s.machine),
+    executeFrame: () => s.machine.executeMachineFrame(),
+    key: (key, down) => (down ? s.keyDown(TvcKeyCode[key]) : s.keyUp(TvcKeyCode[key])),
+    input: (n) => {
+      switch (n & 7) {
+        case 0:
+        case 1:
+          // --- U1, above BASIC's program
+          s.poke(0x6000 + ((n >> 3) & 0xff), n >> 11);
+          return;
+        case 2:
+          s.machine.doWritePort(0x00, (n >> 3) & 0xff);
+          return;
+        case 3:
+          s.machine.doWritePort(0x60 + ((n >> 3) & 3), (n >> 5) & 0xff);
+          return;
+        case 4:
+          // --- The video bank the circuit shows and the CPU's, BASIC's paging kept
+          s.machine.doWritePort(0x0c, (n >> 3) & 0x3f);
+          return;
+        case 5:
+          s.machine.doWritePort(0x04, (n >> 3) & 0xff);
+          s.machine.doWritePort(0x05, (n >> 11) & 0x0f);
+          return;
+        default:
+          s.machine.doReadPort(0x5b);
+          return;
+      }
+    },
+    setStepMode: (mode) => (s.machine.executionContext.debugStepMode = mode),
+    saveState: () => s.machine.saveMachineState(),
+    loadState: (parts) => s.machine.loadMachineState(parts)
+  };
+}
+
+/**
  * The Timex TC2048 at the BASIC editor (the 48K's frame loop with the SCLD): inputs besides keys are
  * memory edits, the clock multiplier, and the screen-mode port $FF - standard, second screen, hi-colour,
  * hi-res and its ink colours.
@@ -519,6 +564,7 @@ const Z88_KEYS = ["Down", "Up", "Enter", "Escape", "A", "N1", "ShiftL", "Index"]
 const SP128_KEYS = ["N6", "N7", "Enter", "Space", "CShift", "SShift", "A", "P"];
 const NEXT_KEYS = ["A", "Q", "1", "ENTER", "SPACE", "CAPS", "SYM", "P"];
 const HT1080Z_KEYS = ["A", "P", "N1", "Enter", "Space", "Shift", "Break", "Clear"];
+const TVC_KEYS = ["A", "P", "N1", "Return", "Space", "Shift", "Esc", "Up"];
 
 /** Two seeds per variant in CI; `KLIVE_REVERSE_SEEDS=1-40` runs more locally */
 const SEEDS = (() => {
@@ -544,7 +590,8 @@ const cores: [SpikeCoreId, MachineFactory, string[], string?][] = [
   ["zx8081", zx8081Machine(MI_ZX81), ZX8081_KEYS, "zx81"],
   // --- The ZX80 runs on the same core with its own ROM and display timing
   ["zx8081", zx8081Machine(MI_ZX80), ZX8081_KEYS, "zx80"],
-  ["ht1080z", ht1080zMachine, HT1080Z_KEYS]
+  ["ht1080z", ht1080zMachine, HT1080Z_KEYS],
+  ["tvc", tvcMachine, TVC_KEYS]
 ];
 
 /** The cores whose layout stamp names frame-boundary scratch (T5): only they get the scratch proof */

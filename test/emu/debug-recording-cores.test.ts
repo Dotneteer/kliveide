@@ -27,6 +27,7 @@ import { createTimexSession } from "../harness/timex";
 import { createZ88Session } from "../harness/z88";
 import { createZx81Session } from "../harness/zx81";
 import { createHtSession } from "../harness/ht1080z";
+import { createTvcSession } from "../harness/tvc";
 import { createCore, createSession as createNextSession } from "../harness/zxnext";
 
 /*
@@ -73,6 +74,7 @@ const MACHINES: { name: string; coreId: string; create(): Promise<AnyWasmMachine
   { name: "ZX81", coreId: "zx8081", create: async () => (await createZx81Session({ machineId: MI_ZX81 })).bootToBasic().machine as never },
   { name: "ZX80", coreId: "zx8081", create: async () => (await createZx81Session({ machineId: MI_ZX80 })).bootToBasic().machine as never },
   { name: "HT-1080Z", coreId: "ht1080z", create: async () => (await createHtSession()).bootToPrompt().machine as never },
+  { name: "Videoton TVC 64K+", coreId: "tvc", create: async () => (await createTvcSession({ model: "tvc64p" })).bootToBasic().machine as never },
   { name: "ZX Spectrum Next", coreId: "zxnext", create: async () => (await createCore({ hardReset: true })) as never }
 ];
 

@@ -99,6 +99,17 @@ publishes them openly (https://ht.homeserver.hu/, dumps by Majzik István), and 
 on request from a rights holder. The details and the file list are kept beside them in
 `ht1080z-roms-readme.txt`.
 
+## The Videoton TV Computer ROMs
+
+`src/public/roms/tvc12-*.rom` and `tvc22-*.rom` (shipped under `roms/`) are the BASIC 1.2 (TVC 64K)
+and BASIC 2.2 (TVC 64K+) system and extension ROMs of the Videoton TV Computer, and `tvc-vtdos.rom`
+is the VT-DOS ROM of its HBF floppy interface card, unmodified. They are
+not covered by the MIT licence above, nor by Klive's own. Their rights belong to Videoton. No
+explicit permission to redistribute them is known: they are included because the TVC community
+publishes them openly (taken from the rtvc emulator's repository, each image matching MAME's tvc64
+and tvc64p sets), and they will be removed on request from a rights holder. The details and the file
+list are kept beside them in `tvc-roms-readme.txt`.
+
 ## The ZX Spectrum +2A/+3 ROMs
 
 `src/public/roms/spp3-40-*.rom`, `spp3-41-*.rom` and `spp3-41es-*.rom` (shipped under `roms/`) are

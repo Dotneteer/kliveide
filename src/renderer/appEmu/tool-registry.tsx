@@ -1,5 +1,6 @@
 import {
   MI_HT1080Z,
+  MI_TVC,
   MI_SCORPION,
   MI_SPECTRUM_128,
   MI_SPECTRUM_3E,
@@ -46,6 +47,8 @@ export const machineEmuToolRegistry: EmuToolInfo[] = [
   spectrumMediaTool(MI_SCORPION),
   // --- The HT-1080Z's tape: the same strip, with no disk drives (`.plans/HT1080Z_PLAN.md` §11)
   spectrumMediaTool(MI_HT1080Z),
+  // --- The Videoton TVC's tape (`.plans/VIDEOTON_TVC_PLAN.md` §9)
+  spectrumMediaTool(MI_TVC),
   // --- The ZX Spectrum Next's Layers strip (`.plans/LAYER_COMPOSITION_PLAN.md` §4.5); off by default (Q3)
   {
     machineId: MI_ZXNEXT,

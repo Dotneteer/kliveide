@@ -13,6 +13,8 @@ export const MI_TIMEX = "timex";
 export const MI_SCORPION = "scorpion";
 /** The HT-1080Z (`.plans/HT1080Z_PLAN.md`): Series I, Series II and the /64 as models */
 export const MI_HT1080Z = "ht1080z";
+/** The Videoton TV Computer (`.plans/VIDEOTON_TVC_PLAN.md`): the 64K and the 64K+ as models */
+export const MI_TVC = "tvc";
 
 /**
  * The machines whose emulator screen can show the media strip (the tape and disk files in use),
@@ -24,12 +26,13 @@ export const MEDIA_INFO_MACHINE_IDS: string[] = [
   MI_SPECTRUM_3E,
   MI_TIMEX,
   MI_SCORPION,
-  MI_HT1080Z
+  MI_HT1080Z,
+  MI_TVC
 ];
 
 /**
  * The machines with a raster beam the emulator can show on its paused screen
- * (`.plans/BEAM_POSITION_OVERLAY_PLAN.md`): the ZX Spectrum family, the Next and the HT-1080Z. Not
+ * (`.plans/BEAM_POSITION_OVERLAY_PLAN.md`): the ZX Spectrum family, the Next, the HT-1080Z and the TVC. Not
  * the Z88 (an LCD, no beam), the ZX80/81 (a CPU-generated display) or the C64. The toolbar button and the View menu
  * item appear only for these.
  */
@@ -40,7 +43,8 @@ export const BEAM_POSITION_MACHINE_IDS: string[] = [
   MI_TIMEX,
   MI_SCORPION,
   MI_ZXNEXT,
-  MI_HT1080Z
+  MI_HT1080Z,
+  MI_TVC
 ];
 
 /**
@@ -91,6 +95,10 @@ export const MC_TIMEX_MODEL = "timexModel";
 export const MC_SCORPION = "scorpion";
 /** HT-1080Z only: the model the core runs (`ht1080zMachineInfo.ts`): "s1", "s2" or "s64" */
 export const MC_HT_MODEL = "htModel";
+/** Videoton TVC only: the model the core runs (`tvcMachineInfo.ts`): "64" or "64p" */
+export const MC_TVC_MODEL = "tvcModel";
+/** The Videoton TVC's HBF floppy interface card in slot 0, with VT-DOS (true: plugged in) */
+export const MC_TVC_HBF = "tvcHbf";
 /**
  * The 48K, the 128K (its own timing, not the Pentagon's or the Scorpion's) and the +2A/+3/+2E/+3E: a
  * DivMMC is connected (`.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md` C5). It boots the esxDOS ROM the

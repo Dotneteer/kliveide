@@ -13,6 +13,8 @@
  * reads, shows up here as a difference. This is also the reusable check the reverse-debugging work
  * (G4.4) builds on.
  */
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import type { MachineStateParts } from "@emu/machines/state/wasmStateImage";
 import { MachineStateMismatchError } from "@emu/machines/state/wasmStateImage";
@@ -22,6 +24,7 @@ import { createTimexSession } from "../../harness/timex";
 import { createZ88Session } from "../../harness/z88";
 import { createZx81Session } from "../../harness/zx81";
 import { createHtSession } from "../../harness/ht1080z";
+import { createTvcSession } from "../../harness/tvc";
 import { createSession as createNextSession } from "../../harness/zxnext";
 import { BANK, buildSzx, state128, state48, szxBlock } from "../../spectrum/snapshot/builders";
 import { expectSameBytes } from "../../expectBytes";
@@ -168,6 +171,28 @@ describe("machine state: save, load into another machine, run = keep running", (
     // --- A program that writes the AY, the cassette port and the video RAM
     a.typeKeys("10 OUT 31,7:OUT 30,56:FOR I=0 TO 9:POKE 15360+I,I:OUT 255,I AND 3:NEXT:GOTO 10\nRUN\n");
     a.runFrames(7).step(333);
+    proveDeterminism(a as unknown as Driver, b as unknown as Driver, 30);
+  });
+
+  it("Videoton TVC 64K+", async () => {
+    const a = await createTvcSession({ model: "tvc64p" });
+    const b = await createTvcSession({ model: "tvc64p" });
+    a.bootToBasic();
+    // --- A program that prints (the stretched video RAM writes) and scrolls
+    a.typeKeys("10 FOR I=1 TO 99:PRINT I;:NEXT:GOTO 10\nRUN\n");
+    a.runFrames(7).step(333);
+    proveDeterminism(a as unknown as Driver, b as unknown as Driver, 30);
+  });
+
+  it("Videoton TVC with the HBF card, reading its disk", async () => {
+    const disk = new Uint8Array(readFileSync(join(__dirname, "../../../_input/videoton-tvc/rtvc/progs/VTDOS-SYSTEM.DSK")));
+    const a = await createTvcSession({ hbf: true });
+    const b = await createTvcSession({ hbf: true });
+    a.insertDisk(0, disk);
+    a.bootToBasic({ maxFrames: 1500 });
+    // --- The controller mid-command: VT-DOS reading the directory
+    a.typeKeys("EXT2\nDIR\n", { settle: 0 });
+    a.runFrames(40).step(333);
     proveDeterminism(a as unknown as Driver, b as unknown as Driver, 30);
   });
 

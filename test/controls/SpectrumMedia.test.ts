@@ -10,7 +10,7 @@ import {
   MI_SPECTRUM_3E,
   MI_SPECTRUM_48,
   MI_TIMEX,
-  MI_HT1080Z,
+  MI_HT1080Z, MI_TVC,
   MI_SCORPION,
   MI_Z88
 } from "@common/machines/constants";
@@ -86,8 +86,8 @@ describe("Spectrum media strip", () => {
     expect(describeSpectrumMedia({}, 1).map((c) => c.title)).toEqual(["Tape", "Drive A"]);
   });
 
-  it("registers a switchable strip for the Spectrum models and the HT-1080Z, and keeps the Z88 strip fixed", () => {
-    expect(MEDIA_INFO_MACHINE_IDS).toEqual([MI_SPECTRUM_48, MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_TIMEX, MI_SCORPION, MI_HT1080Z]);
+  it("registers a switchable strip for the Spectrum models, the HT-1080Z and the TVC, and keeps the Z88 strip fixed", () => {
+    expect(MEDIA_INFO_MACHINE_IDS).toEqual([MI_SPECTRUM_48, MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_TIMEX, MI_SCORPION, MI_HT1080Z, MI_TVC]);
     for (const id of MEDIA_INFO_MACHINE_IDS) {
       const entry = machineEmuToolRegistry.find((t) => t.machineId === id);
       expect(entry?.visibilitySetting).toBe(SETTING_EMU_SHOW_MEDIA_INFO);

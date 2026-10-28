@@ -4,7 +4,7 @@ import { useSelector } from "@renderer/core/RendererProvider";
 import { useMainApi } from "@renderer/core/MainApi";
 import { reportMessagingError } from "@renderer/reportError";
 import { useT } from "@common/i18n/useT";
-import { MC_DISK_SUPPORT, MI_TIMEX } from "@common/machines/constants";
+import { MC_DISK_SUPPORT, MC_TVC_HBF, MI_TIMEX } from "@common/machines/constants";
 import { MEDIA_DOCK, MEDIA_MICRODRIVES, MEDIA_TAPE } from "@common/structs/project-const";
 import { hasInterface1 } from "@common/machines/interface1";
 import { getTimexModel } from "@emu/machines/timex/timexModels";
@@ -24,7 +24,10 @@ export const SpectrumMediaToolArea = () => {
   // --- The cards' titles are translated when described, so a language change re-renders them
   useT();
   const media = useSelector((s) => s.media);
-  const diskDrives = useSelector((s) => s.emulatorState?.config?.[MC_DISK_SUPPORT] ?? 0);
+  // --- The Videoton TVC's two drives come with its HBF card
+  const diskDrives = useSelector(
+    (s) => s.emulatorState?.config?.[MC_DISK_SUPPORT] ?? (s.emulatorState?.config?.[MC_TVC_HBF] === true ? 2 : 0)
+  );
   // --- The Timex 2068s' DOCK
   const dock = useSelector(
     (s) => s.emulatorState?.machineId === MI_TIMEX && getTimexModel(s.emulatorState?.config).is2068

@@ -6,7 +6,7 @@ emphasis on timing between the CPU, the video circuit and the sound generator.
 **Where this comes from.** Three sources in this folder, cited inline:
 
 - **[HW]** `tvchardver.pdf` — the 1988 Hungarian hardware manual (Benedek–Monok). Page numbers are
-  the book's printed numbers (PDF page = book page + 1). Chapter 2.2.4 (pp. 47–55) covers timing.
+  the book's printed numbers (PDF page = book page − 1: printed page 72 is PDF page 71). Chapter 2.2.4 (pp. 47–55) covers timing.
 - **[MAME]** `mame/src/mame/videoton/tvc.cpp` and `tvc_a.cpp` (sound).
 - **[rtvc]** `rtvc/info/tvc.md` (rtvc's hardware reference) and `rtvc/src/emulator/sound.rs`.
 

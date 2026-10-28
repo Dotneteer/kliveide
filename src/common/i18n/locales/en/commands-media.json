@@ -755,6 +755,23 @@
       "format": "The format the user asked for, e.g. 'tap'"
     }
   },
+  "commands.compile.tvcFormat": "Videoton TVC code exports as a .cas file (or Intel HEX), not as {format}.",
+  "@commands.compile.tvcFormat": {
+    "context": "Error of the IDE's export command (expc) when Videoton TVC code is asked for a format of another machine. .cas and Intel HEX are file formats: keep them.",
+    "placeholders": {
+      "format": "The format the user asked for, e.g. 'tap'"
+    }
+  },
+  "commands.compile.injectedTvc": "Successfully injected {bytes, plural, one {# byte} other {# bytes}} in {segments, plural, one {# segment} other {# segments}} from start address {address}. Type C=USR({entry}) to call it; Run also keeps BASIC away from the code (LOMEM).",
+  "@commands.compile.injectedTvc": {
+    "context": "Result message of the IDE's inject command on the Videoton TVC (a Hungarian home computer). 'C=USR(...)' and 'LOMEM' are BASIC the user types: keep them exactly. 'Run' is the IDE's Run command.",
+    "placeholders": {
+      "bytes": "Code length in bytes",
+      "segments": "Number of code segments",
+      "address": "The first segment's start address, e.g. '$1A30'",
+      "entry": "The code's entry address in decimal, e.g. '6704'"
+    }
+  },
   "commands.compile.injectedHt1080z": "Successfully injected {bytes, plural, one {# byte} other {# bytes}} in {segments, plural, one {# segment} other {# segments}} from start address {address}. Type X=USR(0) to call it; Run also keeps BASIC away from the code.",
   "@commands.compile.injectedHt1080z": {
     "context": "Result message of the IDE's inject command on the HT-1080Z (a Hungarian school computer). 'X=USR(0)' is BASIC the user types: keep it exactly. 'Run' is the IDE's Run command.",
@@ -1757,6 +1774,10 @@
   "@commands.tapeLoad.guard.htTape": {
     "context": "Why an HT-1080Z tape (.cas, .cmd) cannot be loaded now: shown in brackets after a disabled button's tooltip. HT-1080Z is a Hungarian school computer's name. Starts in lower case in English because it continues the tooltip."
   },
+  "commands.tapeLoad.guard.casTape": "requires an HT-1080Z or a Videoton TVC machine",
+  "@commands.tapeLoad.guard.casTape": {
+    "context": "Why a .cas tape cannot be loaded now: shown in brackets after a disabled button's tooltip. Both machines use .cas tapes. HT-1080Z and Videoton TVC are machine names. Starts in lower case in English because it continues the tooltip."
+  },
   "commands.tapeLoad.emptyPath": "The tape file path cannot be empty.",
   "@commands.tapeLoad.emptyPath": {
     "context": "Validation error of 'tape-load'."
@@ -1772,6 +1793,10 @@
   "commands.tapeLoad.entryHtOnly": "-e stops at the start address of an HT-1080Z machine-code tape (.cas or .cmd); this file is not one.",
   "@commands.tapeLoad.entryHtOnly": {
     "context": "Validation error of 'tape-load' when -e is given for a file that is not an HT-1080Z tape. Keep the option name -e."
+  },
+  "commands.tapeLoad.tvcNoEntry": "A Videoton TVC tape names no start address to stop at: use -r or -d, and a breakpoint where the program starts.",
+  "@commands.tapeLoad.tvcNoEntry": {
+    "context": "Validation error of 'tape-load' on the Videoton TV Computer (TVC) when -e is given: -e stops at a tape's start address, which a TVC tape does not record. Keep the option names -r, -d and -e."
   },
   "commands.tapeLoad.entryNotSystem": "{file} holds a BASIC program, which has no start address to stop at: -e needs a machine-code (SYSTEM) tape or a .cmd file.",
   "@commands.tapeLoad.entryNotSystem": {

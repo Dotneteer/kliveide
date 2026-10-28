@@ -237,6 +237,13 @@
       "file": "The file's path"
     }
   },
+  "emu.media.tape.tvcNotCas": "{file} is not a Videoton TVC tape (.cas).",
+  "@emu.media.tape.tvcNotCas": {
+    "context": "Error message when a file inserted as a tape on the Videoton TV Computer (TVC) is not a valid .cas tape image. {file} is the file's path.",
+    "placeholders": {
+      "file": "The file's path"
+    }
+  },
   "emu.media.tape.ht1080z.highSpeed": "{file} is a 1500-baud (Model III) tape; the HT-1080Z reads 500-baud tapes only.",
   "@emu.media.tape.ht1080z.highSpeed": {
     "context": "Message box text when a tape file cannot be put in the HT-1080Z's tape deck: the chosen .cas tape image was recorded at 1500 baud for the TRS-80 Model III, a speed the HT-1080Z's ROM cannot read. Keep \"1500-baud\", \"500-baud\" and \"Model III\".",
@@ -1037,6 +1044,26 @@
     "placeholders": {
       "address": "A hexadecimal address",
       "lowest": "The lowest allowed hexadecimal address, $46E9"
+    }
+  },
+  "emu.tvc.code.empty": "The build has no code to put into the Videoton TVC.",
+  "@emu.tvc.code.empty": {
+    "context": "Error when building code for the Videoton TVC (a Hungarian home computer) produced no bytes."
+  },
+  "emu.tvc.code.tooLow": "Code at {address} is in the TVC's system area. Start it at {lowest} or above, after BASIC's launcher line.",
+  "@emu.tvc.code.tooLow": {
+    "context": "Error: assembled code lies below the lowest address code may use on the Videoton TVC (the ROM's work area and the one-line BASIC program that starts the code). Keep the addresses.",
+    "placeholders": {
+      "address": "A hexadecimal address such as $1000",
+      "lowest": "The lowest allowed hexadecimal address, $1A30"
+    }
+  },
+  "emu.tvc.code.tooHigh": "Code at {address} leaves BASIC less than 1K of memory, or reaches the ROM. End it at {highest} or below.",
+  "@emu.tvc.code.tooHigh": {
+    "context": "Error: assembled code reaches so high in the Videoton TVC's memory that BASIC would have no room left, or into the ROM at $C000. Keep the addresses.",
+    "placeholders": {
+      "address": "A hexadecimal address",
+      "highest": "The highest allowed hexadecimal address, $BBFF"
     }
   },
   "emu.media.microdrive.title": "Microdrive {drive}",

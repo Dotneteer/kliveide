@@ -6,10 +6,12 @@ import type { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
 import type { ValidationMessage } from "@renderer/abstractions/ValidationMessage";
 
 import { MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_SPECTRUM_48, MI_TIMEX, MI_SCORPION, MI_ZX80, MI_ZX81,
-  MI_HT1080Z
+  MI_HT1080Z,
+  MI_TVC
 } from "@common/machines/constants";
 import { isZx8081ProgramFileName, parseZxProgramFile } from "@emu/machines/zx8081/ZxPFile";
 import { ht1080zTapeErrorKey, isHt1080zTapeFor, parseHt1080zTapeFile } from "@emu/machines/ht1080z/Ht1080zTapeFile";
+import { isTvcCasFileName, parseTvcCasFile } from "@emu/machines/tvc/TvcCasFile";
 import { analyzeHt1080zFile } from "../DocumentPanels/Ht1080zTape/ht1080zTapeView";
 import { machineRegistry } from "@common/machines/machine-registry";
 import { analyzeTape } from "../DocumentPanels/Tape/tapeView";
@@ -47,6 +49,16 @@ export const TAPE_LOAD_MACHINES: readonly string[] = [
  */
 export function htTapeLoadGuard(state: { emulatorState?: { machineId?: string } }): string | undefined {
   return state.emulatorState?.machineId === MI_HT1080Z ? undefined : t("commands.tapeLoad.guard.htTape");
+}
+
+/**
+ * Why a `.cas` cannot be loaded into the current machine, or undefined when it can: the HT-1080Z and
+ * the Videoton TVC both keep their tapes in `.cas` files, each its own format.
+ * @param state The IDE's state (the part read here)
+ */
+export function casTapeLoadGuard(state: { emulatorState?: { machineId?: string } }): string | undefined {
+  const machineId = state.emulatorState?.machineId;
+  return machineId === MI_HT1080Z || machineId === MI_TVC ? undefined : t("commands.tapeLoad.guard.casTape");
 }
 
 /** The machines a ZX80/ZX81 program file (`.p`, `.81`, `.o`, `.80`) loads into */
@@ -148,6 +160,16 @@ export class TapeLoadCommand extends IdeCommandBase<TapeLoadCommandArgs> {
         basBytes = undefined;
       }
     }
+    // --- A .cas on the Videoton TVC is the TVC's tape: it goes in the deck, and -r/-d boot BASIC and
+    // --- type LOAD (`TvcWasmV2Machine.getTapeLoadFlow`). It names no start address for -e.
+    if (currentMachine === MI_TVC && !!args.file?.trim() && isTvcCasFileName(args.file.trim())) {
+      if ([args["-r"], args["-d"], args["-e"]].filter(Boolean).length > 1) {
+        messages.push(validationError(t("commands.tapeLoad.oneMode")));
+      } else if (args["-e"]) {
+        messages.push(validationError(t("commands.tapeLoad.tvcNoEntry")));
+      }
+      return messages;
+    }
     const isHtTape = !!args.file?.trim() && isHt1080zTapeFor(args.file.trim(), currentMachine, basBytes);
     if (!args.file?.trim()) {
       messages.push(validationError(t("commands.tapeLoad.emptyPath")));
@@ -199,6 +221,30 @@ export class TapeLoadCommand extends IdeCommandBase<TapeLoadCommandArgs> {
       bytes = await context.mainApi.readBinaryFile(file);
     } catch (err) {
       return commandError(t("commands.tapeLoad.readFailed", { file, error: messageOf(err) }));
+    }
+    // --- A Videoton TVC tape: checked as the emulator reads it, then inserted
+    if (context.store.getState().emulatorState?.machineId === MI_TVC && isTvcCasFileName(file)) {
+      try {
+        parseTvcCasFile(bytes, file);
+      } catch {
+        return commandError(t("emu.media.tape.tvcNotCas", { file }));
+      }
+      const tvcError = await context.mainApi.setTapeFile(file);
+      if (tvcError) return commandError(tvcError);
+      if (!args["-r"] && !args["-d"]) return commandSuccessWith(t("commands.tapeLoad.inserted", { file }));
+      try {
+        await context.emuApi.startTapeLoad(!!args["-d"]);
+      } catch (err) {
+        return commandError(t("commands.tapeLoad.startFailed", { file, error: messageOf(err) }));
+      }
+      try {
+        await context.mainApi.focusEmuWindow();
+      } catch {
+        // --- Intentionally ignored, as below
+      }
+      return commandSuccessWith(
+        args["-d"] ? t("commands.tapeLoad.loadingDebug", { file }) : t("commands.tapeLoad.loading", { file })
+      );
     }
     // --- An HT-1080Z tape: checked as the emulator reads it, so a bad one is refused here with its reason
     const isHtTape = isHt1080zTapeFor(file, context.store.getState().emulatorState?.machineId, bytes);

@@ -126,6 +126,8 @@
 /images/en/guides/machines/timex-scorpion/scorpion.webp
 /images/en/guides/machines/timex-scorpion/timex-rom-setting.webp
 /images/en/guides/machines/timex-scorpion/timex-ts2068.webp
+/images/en/guides/machines/videoton-tvc/tvc-run.webp
+/images/en/guides/machines/videoton-tvc/tvc-video-panel.webp
 /images/en/guides/machines/zx81-zx80/p-file-listing.webp
 /images/en/guides/machines/zx81-zx80/p-file-viewer.webp
 /images/en/guides/media/microdrives/cat.webp

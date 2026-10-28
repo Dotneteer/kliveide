@@ -1,0 +1,106 @@
+import type { KeyMapping } from "@abstractions/KeyMapping";
+
+/**
+ * The host keyboard on the TVC matrix (`.plans/VIDEOTON_TVC_PLAN.md` §8), by key position. Letters
+ * and digits are on their own keys, as a non-Hungarian host labels them. The punctuation keys sit on
+ * the host keys with the same symbol where there is one. The Hungarian accented letters, which a
+ * non-Hungarian host has no keys for, are on F1-F9 (í ö ü ó ő ú é á ű); the virtual keyboard
+ * (Phase 4) shows every key in its own place.
+ *
+ * Enter is RETURN, Backspace and Delete are DEL, Escape is ESC, Caps Lock is LOCK, Tab is TAB (the
+ * joystick's fire), the arrows are the cursor keys, both shifts SHIFT, both controls CTRL and Alt
+ * ALT. Text typed by the IDE goes by character instead (Phase 4's typer).
+ */
+export const tvcKeyMappings: KeyMapping = {
+  Digit1: "N1",
+  Digit2: "N2",
+  Digit3: "N3",
+  Digit4: "N4",
+  Digit5: "N5",
+  Digit6: "N6",
+  Digit7: "N7",
+  Digit8: "N8",
+  Digit9: "N9",
+  Digit0: "N0",
+  Numpad1: "N1",
+  Numpad2: "N2",
+  Numpad3: "N3",
+  Numpad4: "N4",
+  Numpad5: "N5",
+  Numpad6: "N6",
+  Numpad7: "N7",
+  Numpad8: "N8",
+  Numpad9: "N9",
+  Numpad0: "N0",
+
+  KeyQ: "Q",
+  KeyW: "W",
+  KeyE: "E",
+  KeyR: "R",
+  KeyT: "T",
+  KeyY: "Y",
+  KeyU: "U",
+  KeyI: "I",
+  KeyO: "O",
+  KeyP: "P",
+  KeyA: "A",
+  KeyS: "S",
+  KeyD: "D",
+  KeyF: "F",
+  KeyG: "G",
+  KeyH: "H",
+  KeyJ: "J",
+  KeyK: "K",
+  KeyL: "L",
+  KeyZ: "Z",
+  KeyX: "X",
+  KeyC: "C",
+  KeyV: "V",
+  KeyB: "B",
+  KeyN: "N",
+  KeyM: "M",
+
+  Minus: "Minus",
+  NumpadSubtract: "Minus",
+  Equal: "Caret",
+  NumpadMultiply: "Asterisk",
+  Backquote: "Asterisk",
+  Semicolon: "Semicolon",
+  Quote: "At",
+  Backslash: "Backslash",
+  IntlBackslash: "Less",
+  BracketLeft: "LBracket",
+  BracketRight: "RBracket",
+  Comma: "Comma",
+  Period: "Period",
+  NumpadDecimal: "Period",
+
+  F1: "IAcute",
+  F2: "OUml",
+  F3: "UUml",
+  F4: "OAcute",
+  F5: "ODblAcute",
+  F6: "UAcute",
+  F7: "EAcute",
+  F8: "AAcute",
+  F9: "UDblAcute",
+
+  Enter: "Return",
+  NumpadEnter: "Return",
+  Backspace: "Del",
+  Delete: "Del",
+  Escape: "Esc",
+  CapsLock: "Lock",
+  Tab: "Tab",
+  ArrowUp: "Up",
+  ArrowDown: "Down",
+  ArrowLeft: "Left",
+  ArrowRight: "Right",
+  Space: "Space",
+  ShiftLeft: "Shift",
+  ShiftRight: "Shift",
+  ControlLeft: "Ctrl",
+  ControlRight: "Ctrl",
+  AltLeft: "Alt",
+  AltRight: "Alt"
+};

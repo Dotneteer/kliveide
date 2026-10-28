@@ -11,7 +11,8 @@ import type {
   UnitTestSummary
 } from "@common/unit-tests/unitTestTypes";
 
-import { MI_ZXNEXT } from "@common/machines/constants";
+import { MI_TVC, MI_ZXNEXT } from "@common/machines/constants";
+import { TVC_CODE_START } from "@common/tvc/codePlacement";
 import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import { DebugSupport } from "@emu/machines/DebugSupport";
@@ -101,7 +102,7 @@ export type UnitTestRunInput = {
  * the machine's own flow otherwise, as the IDE's run does
  * @param machineId The machine
  * @param modelType The compilation's `SpectrumModelType` (`Spectrum48` is 1, `ZX80` 5, `ZX81` 6,
- *   `HT1080Z` 7)
+ *   `HT1080Z` 7, `TVC` 8)
  */
 export function bootModelFor(machineId: string, modelType: number | undefined): string {
   // --- The ZX80/ZX81 flow checks the code's model against the ROM (`ZX8081_CODE_INJECTION_PLAN.md`)
@@ -109,6 +110,8 @@ export function bootModelFor(machineId: string, modelType: number | undefined): 
   if (modelType === 6) return "zx81";
   // --- The HT-1080Z boots through its own flow on every model (`HT1080Z_CODE_INJECTION_PLAN.md` D9)
   if (modelType === 7) return "ht1080z";
+  // --- The TVC's flow boots BASIC on both models
+  if (modelType === 8) return "tvc";
   return modelType === 1 && machineId !== MI_ZXNEXT ? "sp48" : machineId;
 }
 
@@ -150,8 +153,10 @@ export async function runUnitTests(
 
   const isNext = machine.machineId === MI_ZXNEXT;
 
-  // --- The wrapper must be in RAM: the runner patches its CALL (T6)
-  if (labels.callAddr.address < 0x4000 && labels.callAddr.partition === undefined && !isNext) {
+  // --- The wrapper must be in RAM: the runner patches its CALL (T6). Below $4000 is ROM on the
+  // --- Spectrums; on the TVC it is RAM from where its code may start (`common/tvc/codePlacement.ts`)
+  const lowestRam = machine.machineId === MI_TVC ? TVC_CODE_START : 0x4000;
+  if (labels.callAddr.address < lowestRam && labels.callAddr.partition === undefined && !isNext) {
     onEvent({ kind: "problem", message: "UNITTEST_CALL_ADDR is in ROM: the test wrapper must be in RAM." });
     return finish();
   }

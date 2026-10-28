@@ -1,6 +1,7 @@
 import {
   MI_C64,
   MI_HT1080Z,
+  MI_TVC,
   MI_SPECTRUM_128,
   MI_SPECTRUM_3E,
   MI_SPECTRUM_48,
@@ -23,6 +24,7 @@ const SPP3E_WASM_V2_ARTIFACT_NAME = "zx-spectrum-p3e.wasm";
 const ZXNEXT_WASM_V2_ARTIFACT_NAME = "zx-spectrum-next.wasm";
 const ZX8081_WASM_V2_ARTIFACT_NAME = "zx8081.wasm";
 const HT1080Z_WASM_V2_ARTIFACT_NAME = "ht1080z.wasm";
+const TVC_WASM_V2_ARTIFACT_NAME = "tvc.wasm";
 
 /** The display names of the machines, for refusal messages */
 export const HEADLESS_MACHINE_NAMES: Record<string, string> = {
@@ -36,11 +38,12 @@ export const HEADLESS_MACHINE_NAMES: Record<string, string> = {
   zx80: "the Sinclair ZX80",
   zx81: "the Sinclair ZX81",
   ht1080z: "the HT-1080Z",
+  tvc: "the Videoton TVC",
   c64: "the Commodore 64"
 };
 
-/** The machines `HeadlessMachineFactory` creates (protocol 1's list: the Spectrums, ZX80/81, Next; the HT-1080Z) */
-export const HEADLESS_MACHINES = [MI_SPECTRUM_48, MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_ZXNEXT, MI_ZX80, MI_ZX81, MI_HT1080Z];
+/** The machines `HeadlessMachineFactory` creates (protocol 1's list: the Spectrums, ZX80/81, Next; the HT-1080Z, the TVC) */
+export const HEADLESS_MACHINES = [MI_SPECTRUM_48, MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_ZXNEXT, MI_ZX80, MI_ZX81, MI_HT1080Z, MI_TVC];
 
 /** Why a machine cannot run headless, or `undefined` when it can */
 export function headlessUnsupportedMessage(machineId: string | undefined): string | undefined {
@@ -48,7 +51,7 @@ export function headlessUnsupportedMessage(machineId: string | undefined): strin
   const name = (machineId && HEADLESS_MACHINE_NAMES[machineId]) ?? machineId ?? "this machine";
   return (
     `The command line does not run ${name} yet: it runs the ZX Spectrum 48K, 128K, +2A/+3/+2E/+3E, ` +
-    "the ZX Spectrum Next, the ZX80, the ZX81 and the HT-1080Z."
+    "the ZX Spectrum Next, the ZX80, the ZX81, the HT-1080Z and the Videoton TVC."
   );
 }
 
@@ -68,6 +71,8 @@ export function artifactNameOf(machineId: string): string {
       return ZX8081_WASM_V2_ARTIFACT_NAME;
     case MI_HT1080Z:
       return HT1080Z_WASM_V2_ARTIFACT_NAME;
+    case MI_TVC:
+      return TVC_WASM_V2_ARTIFACT_NAME;
     default:
       throw new Error(
         machineId === MI_C64 ? "The Commodore 64 has no headless core." : headlessUnsupportedMessage(machineId)

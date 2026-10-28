@@ -136,9 +136,9 @@ export function playInjectionFlow(
         }
         break;
       case "TypeText": {
-        const typer = (machine as unknown as { typeText?: (text: string) => void }).typeText;
+        const typer = (machine as unknown as { typeText?: (text: string, delayFrames?: number) => void }).typeText;
         if (!typer) throw new Error("This machine cannot type text.");
-        typer.call(machine, typeof step.text === "function" ? step.text(code) : step.text);
+        typer.call(machine, typeof step.text === "function" ? step.text(code) : step.text, step.delayFrames ?? 0);
         break;
       }
       case "SetReturn":

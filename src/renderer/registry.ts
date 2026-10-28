@@ -85,6 +85,7 @@ import { OpenEditorsPanel } from "@renderer/features/openEditors/OpenEditorsPane
 import { OpenEditorsBadge } from "@renderer/features/openEditors/OpenEditorsBadge";
 import { SysVarsPanel } from "./appIde/SideBarPanels/SysVarsPanel";
 import { UlaPanel } from "./appIde/SideBarPanels/UlaPanel";
+import { TvcVideoPanel } from "./appIde/SideBarPanels/TvcVideoPanel";
 import {
   CommandPanel,
   CommandPanelHeader
@@ -111,6 +112,7 @@ import {
   MF_ULA,
   MF_VIC,
   MF_Z80,
+  MI_TVC,
   MI_ZXNEXT
 } from "@common/machines/constants";
 import { BlinkPanel } from "./appIde/SideBarPanels/BlinkPanel";
@@ -180,6 +182,7 @@ import {
   z88SnapshotLaunchCommandBarRenderer
 } from "@renderer/features/documents/Z88SnapshotLaunchMenu";
 import {
+  getCasTapeLaunchContextMenuInfo,
   getHtTapeLaunchContextMenuInfo,
   getProgramLaunchContextMenuInfo,
   getTapeLaunchContextMenuInfo,
@@ -307,6 +310,14 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     initialSize: 500,
     requireFeature: [MF_ULA]
   },
+  withTexts({
+    // --- The Videoton TVC's CRTC, palette, border and video banks (`.plans/VIDEOTON_TVC_PLAN.md` §11)
+    id: "tvcVideoPanel",
+    hostActivity: ACTIVITY_DEBUG_ID,
+    renderer: TvcVideoPanel,
+    initialSize: 500,
+    restrictTo: [MI_TVC]
+  }, { title: "panels.sideBar.tvcVideo" }),
   {
     id: "vicPanel",
     title: "VIC",
@@ -863,7 +874,8 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     matchType: "ends",
     pattern: ".cas",
     // --- An HT-1080Z tape (`.plans/HT1080Z_PLAN.md` §9): its parts in the HT tape viewer
-    // --- (`.plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D5), Run/Insert/Debug
+    // --- (`.plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D5), Run/Insert/Debug - which load a Videoton TVC
+    // --- tape on the TVC too (`.plans/VIDEOTON_TVC_PLAN.md` Phase 7)
     ignoreCase: true,
     editor: HT1080Z_TAPE_VIEWER,
     icon: "@file-tap-tzx",
@@ -871,7 +883,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     isReadOnly: true,
     openPermanent: true,
     documentTabRenderer: htTapeLaunchCommandBarRenderer,
-    contextMenuInfo: getHtTapeLaunchContextMenuInfo
+    contextMenuInfo: getCasTapeLaunchContextMenuInfo
   },
   {
     matchType: "ends",

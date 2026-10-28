@@ -128,6 +128,10 @@ export type ErrorCodes =
   | "Z0382"
   | "Z0383"
 
+  // --- Videoton TVC model
+  | "Z0384"
+  | "Z0385"
+
   // --- Instructions
   | "Z0401"
   | "Z0402"

@@ -10,6 +10,7 @@ import { createSp128Session } from "../harness/sp128";
 import { createSession as createNextSession } from "../harness/zxnext";
 import { createZ88Session, Z88_FLAT_RAM_LAYOUT } from "../harness/z88";
 import { createZx81Session } from "../harness/zx81";
+import { createTvcSession } from "../harness/tvc";
 
 /**
  * The debugger's in-core loop decides exactly as the instruction-by-instruction loop does
@@ -109,6 +110,14 @@ const MACHINES: Record<string, () => Promise<Setup>> = {
     const s = await createZx81Session();
     s.bootToBasic();
     return { machine: s.machine as unknown as Machine, prefix: "zx8081", base: 0x6000, counter: 0x6200, di: true, port: 0xfffe };
+  },
+  // --- The program and its counter in video RAM (page 2, port 02h = 50h): every opcode fetch and
+  // --- counter access is clock-stretched by its half-T phase (`.plans/VIDEOTON_TVC_PLAN.md` §6)
+  tvc: async () => {
+    const s = await createTvcSession();
+    s.runFrames(20);
+    s.wasm.tvcWritePort(0x02, 0x50);
+    return { machine: s.machine as unknown as Machine, prefix: "tvc", base: 0x8000, counter: 0x9000, di: true, port: 0x0058 };
   }
 };
 

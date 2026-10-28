@@ -43,7 +43,8 @@ import {
   MI_ZX80,
   MI_ZX81,
   MI_ZXNEXT,
-  MI_HT1080Z
+  MI_HT1080Z,
+  MI_TVC
 } from "./constants";
 import {
   ZX80_ROM,
@@ -67,6 +68,15 @@ import {
   HT1080Z_TACTS_PER_LINE
 } from "@emu/machines/ht1080z/ht1080zMachineInfo";
 import { HT1080Z_ROM_SETS, type Ht1080zRomSetId } from "@emu/machines/ht1080z/Ht1080zRoms";
+import {
+  TVC_CLOCK,
+  TVC_LINES_PER_FRAME,
+  TVC_SCREEN_HEIGHT,
+  TVC_SCREEN_WIDTH,
+  TVC_TACTS_IN_FRAME,
+  TVC_TACTS_PER_LINE
+} from "@emu/machines/tvc/tvcMachineInfo";
+import { TVC_ROM_SETS, type TvcRomSetId } from "@emu/machines/tvc/TvcRoms";
 import { getP3RomSet } from "@emu/machines/zxSpectrumP3e/p3RomSets";
 import { TIMEX_MODELS_INFO } from "@emu/machines/timex/timexModels";
 import { SP128_TIMINGS } from "@emu/machines/zxSpectrum128/sp128Timings";
@@ -225,6 +235,15 @@ function ht1080zRoms(id: Ht1080zRomSetId): RomSource[] {
     { id: set.basic.name, kb: set.basic.size / 1024, role: tx("hardware.rom.htBasic") },
     { id: set.extension.name, kb: set.extension.size / 1024, role: tx("hardware.rom.htExtension") },
     { id: set.chargen.name, kb: set.chargen.size / 1024, role: tx("hardware.rom.characterSet") }
+  ];
+}
+
+function tvcRoms(id: TvcRomSetId): RomSource[] {
+  const set = TVC_ROM_SETS[id];
+  return [
+    { id: set.sysLow.name, kb: set.sysLow.size / 1024, role: tx("hardware.rom.tvcSys") },
+    { id: set.sysHigh.name, kb: set.sysHigh.size / 1024, role: tx("hardware.rom.tvcSys") },
+    { id: set.exth.name, kb: set.exth.size / 1024, role: tx("hardware.rom.tvcExth") }
   ];
 }
 
@@ -486,6 +505,36 @@ export const HARDWARE_SPECS: Readonly<Record<string, MachineSpecs>> = {
       "ht1080z-s1-48k": { rom: ht1080zRoms("s1"), ramKb: 48 },
       "ht1080z-s2-48k": { ramKb: 48 }
     }
+  },
+  [MI_TVC]: {
+    // --- tvcMachineInfo.ts, TvcRoms.ts, wasm/tvc/tvc.c (`.plans/VIDEOTON_TVC_PLAN.md`)
+    base: {
+      cpu: "Zilog Z80",
+      clockHz: TVC_CLOCK,
+      rom: tvcRoms("12"),
+      ramKb: 64,
+      display: {
+        kind: "crt",
+        width: 512,
+        height: 240,
+        rasterWidth: TVC_SCREEN_WIDTH,
+        rasterHeight: TVC_SCREEN_HEIGHT,
+        colours: tx("hardware.colours.tvc"),
+        text: tx("hardware.text.tvc")
+      },
+      timing: {
+        unit: "T-states",
+        perLine: TVC_TACTS_PER_LINE,
+        linesPerFrame: TVC_LINES_PER_FRAME,
+        perFrame: TVC_TACTS_IN_FRAME,
+        note: tx("hardware.timing.tvc")
+      },
+      sound: [tx("hardware.sound.tvc")],
+      media: [{ text: tx("hardware.media.tvcTape"), chip: TAPE_CHIP }],
+      input: [{ label: KEYBOARD, value: tx("hardware.keyboard.tvc") }]
+    },
+    // --- The 64K+: BASIC 2.2 (and four 16K video banks, which the sheet has no row for)
+    models: { tvc64p: { rom: tvcRoms("22") } }
   },
   [MI_ZX80]: {
     base: {

@@ -4,6 +4,7 @@ import { scorpionProfileLayout, sp128ProfileLayout } from "./sp128";
 import { sp48ProfileLayout } from "./sp48";
 import { spp3eProfileLayout } from "./spp3e";
 import { timexProfileLayout } from "./timex";
+import { tvcProfileLayout } from "./tvc";
 import { z88ProfileLayout } from "./z88";
 import { zx8081ProfileLayout } from "./zx8081";
 import { zxnextProfileLayout } from "./zxnext";
@@ -22,7 +23,8 @@ const layouts: Record<string, ProfileLayout> = {
   zxnext: zxnextProfileLayout,
   zx80: zx8081ProfileLayout,
   zx81: zx8081ProfileLayout,
-  ht1080z: ht1080zProfileLayout
+  ht1080z: ht1080zProfileLayout,
+  tvc: tvcProfileLayout
 };
 
 /** The profile layout of a machine; undefined for a machine whose core does not profile */

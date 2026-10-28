@@ -194,6 +194,19 @@ const wasmCpuContract = [
       "ht1080zGetCpuPc",
       "ht1080zGetCpuSp"
     ]
+  },
+  {
+    id: "tvc",
+    label: "Videoton TVC",
+    mode: "z80",
+    buildScript: resolve(root, "scripts/build-tvc-wasm.cjs"),
+    buildEntrySource: resolve(root, "src/emu/machines/tvc/wasm/tvc/tvc.c"),
+    cpuAdapterSource: resolve(root, "src/emu/machines/tvc/wasm/tvc/tvc.c"),
+    artifact: resolve(root, "src/emu/machines/tvc/wasm/dist/tvc.wasm"),
+    include: '#include "../../../../z80/wasm/z80.c"',
+    // --- No Spectrum device: the TVC's sound and tape are its own (`.plans/VIDEOTON_TVC_PLAN.md` §10)
+    forbiddenIncludeFragments: ["zxSpectrum/wasm/common/"],
+    requiredExports: ["tvcGetCpuAf", "tvcGetCpuBc", "tvcGetCpuDe", "tvcGetCpuHl", "tvcGetCpuPc", "tvcGetCpuSp"]
   }
 ];
 
@@ -236,7 +249,12 @@ function validateSharedCpuSource() {
   for (const hookDefault of [
     "#define Z80_REFRESH(address) ((void)(address))",
     "#define Z80_INT_ACK() ((void)0)",
-    "#ifdef Z80_NMI_ACK_WAIT"
+    "#ifdef Z80_NMI_ACK_WAIT",
+    // --- The Videoton TVC's M1 timing hook (`.plans/VIDEOTON_TVC_PLAN.md` §5, H1): compiled only
+    // --- when defined, with the old memory-read delay as the fallback on both M1 paths
+    "#ifdef Z80_DELAY_OPCODE_FETCH",
+    "cpu.opCode = readOpcodeMemory(cpu.pc, m1Active);",
+    "delayMemoryRead((uint16_t)(cpu.pc + 1));"
   ]) {
     if (!source.includes(hookDefault)) {
       errors.push(`shared CPU source does not declare the default-no-op hook: ${hookDefault}`);

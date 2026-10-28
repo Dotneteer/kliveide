@@ -433,6 +433,13 @@ class EmuApiImpl {
   }
 
   /**
+   * Gets the Videoton TVC's video circuit state.
+   */
+  async getTvcVideoState(): Promise<TvcVideoState> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
    * Gets the current Blink device state.
    */
   async getBlinkState(): Promise<BlinkState> {
@@ -1494,6 +1501,33 @@ export type UlaState = {
   keyLines: number[];
   romP: number;
   ramB: number;
+};
+
+/** The Videoton TVC's video circuit, for the TVC Video panel (`.plans/VIDEOTON_TVC_PLAN.md` §11) */
+export type TvcVideoState = {
+  /** The 6845's R0-R17 and its address register */
+  crtc: number[];
+  crtcAddress: number;
+  /** The counters: the character in the line, the raster in the row, the row, and the MA */
+  h: number;
+  raster: number;
+  row: number;
+  ma: number;
+  /** In the vertical total adjust lines */
+  inAdjust: boolean;
+  /** Port 06h bits 1-0: 0 two colours, 1 four, 2-3 sixteen */
+  mode: number;
+  /** The four palette registers and the border (IGRB bits 6/4/2/0) */
+  palette: number[];
+  border: number;
+  /** The vertical blank latch, and the interrupt flip-flop (the cursor or sound IT) */
+  verticalBlank: boolean;
+  itPending: boolean;
+  /** The paging ports, and the bank the video circuit shows (0 on the 64K) */
+  plus: boolean;
+  port02: number;
+  port0c: number;
+  displayBank: number;
 };
 
 export type BlinkState = {
