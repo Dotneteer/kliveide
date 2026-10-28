@@ -11,7 +11,8 @@ structure, the explaining and figure rules, and the corrections the project auth
 reviewing the screen series; this plan does not repeat them, it only adds what is specific to sound.
 Fold any new lesson from this series' reviews into that file.
 
-Status: **planned, nothing written.** Open questions are in §13.
+Status: **planned, nothing written.** Eight series articles plus one standalone background page,
+"How a computer makes sound" (§3), written first. Open questions are in §13.
 
 ---
 
@@ -35,7 +36,8 @@ Everything in §0.1 of the screen plan holds here unchanged; in short:
 - **The articles never name the VHDL or its files, signals, comments or line numbers** — anywhere,
   including figures, alt texts and "Where to read the code". Klive's own C files are named in "How
   Klive does it" only.
-- **Builds on what exists, does not repeat it**: `crt-display.mdx` and `spectrum-display.mdx` (port
+- **Builds on what exists, does not repeat it**: the background page `computer-sound.mdx` (§3, written
+  first: samples, DACs, filters, one-bit sound), `crt-display.mdx` and `spectrum-display.mdx` (port
   `$FE`, contention, the floating bus), `next-core.mdx`, and the screen series (`next-display/timing`
   for the clocks and the frame, `next-display/raster-effects` for the line interrupt and the Copper).
 
@@ -127,8 +129,16 @@ Found while surveying for this plan; each article decides "fix the core" or "sta
   DC. Klive DC-filters the beeper, centres the DACs on `$80`, keeps the AY unipolar and scales by a
   fixed gain to 16 bits (`zxnext-audio-mixer.c`). Same proportions, different zero; the article on the
   mixer explains both.
-- **Raspberry Pi I2S audio is not emulated**: Klive returns the "I2S off" values from NextRegs
-  `$2C`–`$2E` (`zxnext-dac.c`) and has no Pi. The I2S article is hardware-only and says so.
+- **Raspberry Pi I2S audio: the Next's receiving half is emulated, the Pi is not**
+  (`.plans/PI_I2S_AUDIO_PLAN.md`, commit `70fc95d97`). A *sample source* (a WAV file or a tone, the
+  IDE's `pi-audio` command) stands in for the Pi and is fed into the core frame by frame;
+  `zxnext-pi-i2s.c` latches the words at the hardware's moments, turns them into 10-bit offset binary,
+  and feeds NextReg `$A2`'s selection and muting, the NextReg `$2C`–`$2E` reads with the `$2D` latch,
+  the mixer, and the EAR hysteresis into port `$FE` bit 6 and the beeper's MIC line. **Not emulated**,
+  and stated in article 6: the Pi itself (NextPi's software, its UART commands), the Next → Pi direction
+  (the Next's own mix sent to the Pi), and the deliberate simplifications of that plan's §2.1 (no garbage
+  first word after enabling, latch timing within about one SCK period). Klive's mixer adds the Pi's word
+  as `v − 512` per side (centred, like the DACs).
 - **Audio chip mode `10` ("ZXN-8950")**: the register list names it, but only bit 0 of the mode reaches
   the PSGs, so `10` behaves as YM. Verify Klive does the same, and that the article states it without
   promising a chip that does not exist.
@@ -140,7 +150,7 @@ Found while surveying for this plan; each article decides "fix the core" or "sta
 - **Side finding**: the book placeholder `17-ay.mdx` says the AY chip is selected through NextReg `$06`
   and the stereo mode is NextReg `$08` bits 4–3. Both are wrong (selection is a port `$FFFD` write with
   bit 7 set; stereo is NextReg `$08` bit 5 and NextReg `$09` bits 7–5). Correct the placeholder in the
-  change that writes article 5, since the book is not linked from the articles.
+  change that writes article 4, since the book is not linked from the articles.
 
 ---
 
@@ -149,20 +159,20 @@ Found while surveying for this plan; each article decides "fix the core" or "sta
 | # | Slug | Title | Core question it answers |
 |---|---|---|---|
 | 1 | `overview` | The big picture | What makes sound on the Next, and how do six sources become one stereo signal? |
-| 2 | `sound-basics` | From numbers to air | What is a waveform, a sample, a level? (the `crt-display` of this series) |
-| 3 | `beeper` | The beeper, EAR and MIC | How does one bit make music, and how does the tape share it? |
-| 4 | `psg` | One AY chip | How do counters, a noise register and an envelope make three voices? |
-| 5 | `turbosound` | TurboSound Next | How are three AY chips addressed through two ports, panned and mixed? |
-| 6 | `dacs` | The 8-bit DACs | How do four DAC channels emulate six peripherals, and how are samples fed to them? |
-| 7 | `pi-audio` | Audio from the Raspberry Pi | How does an I2S link carry sound both ways, and into the tape input? |
-| 8 | `mixer` | The mixer and the outputs | How are the sources summed, and how does the sum reach the jack, the speaker and HDMI? |
-| 9 | `klive-audio` | From the machine to your speakers | How does an emulator turn a 28 MHz machine into 48,000 samples a second? |
+| 2 | `beeper` | The beeper, EAR and MIC | How does one bit make music, and how does the tape share it? |
+| 3 | `psg` | One AY chip | How do counters, a noise register and an envelope make three voices? |
+| 4 | `turbosound` | TurboSound Next | How are three AY chips addressed through two ports, panned and mixed? |
+| 5 | `dacs` | The 8-bit DACs | How do four DAC channels emulate six peripherals, and how are samples fed to them? |
+| 6 | `pi-audio` | Audio from the Raspberry Pi | How does an I2S link carry sound both ways, and into the tape input? |
+| 7 | `mixer` | The mixer and the outputs | How are the sources summed, and how does the sum reach the jack, the speaker and HDMI? |
+| 8 | `klive-audio` | From the machine to your speakers | How does an emulator turn a 28 MHz machine into 48,000 samples a second? |
 
-Reading order is the table order. 1 is a prerequisite for all; 2 for readers new to digital sound;
-3–7 can be read in any order after 1; 8 needs 3–7 (it adds up their levels); 9 needs 8.
+Reading order is the table order. 1 is a prerequisite for all; 2–6 can be read in any order after 1;
+7 needs 2–6 (it adds up their levels); 8 needs 7. Readers new to digital sound read the background page
+"How a computer makes sound" (§3) first; it sits outside the series, beside `crt-display.mdx`.
 
-Writing order: 1 → 2 → 8 (the mixer early, so the device articles can point at a finished
-description of where their output goes and its units) → 3 → 4 → 5 → 6 → 7 → 9.
+Writing order: the background page → 1 → 7 (the mixer early, so the device articles can point at a
+finished description of where their output goes and its units) → 2 → 3 → 4 → 5 → 6 → 8.
 
 ---
 
@@ -176,6 +186,14 @@ loads a tape by listening to it. Where does each of those sounds come from?
 speech, and on a Spectrum, loading and saving — and why a computer with several independent sound
 sources frees the CPU.
 
+**Audience (the paragraph after that):** as the screen overview does with the CRT article, it says
+what to read first and links it: [How a Computer Makes Sound](/en/under-the-hood/emulator-internals/computer-sound/)
+explains samples, the DAC, the filter that makes the result analogue, and one-bit sound, and this series
+does not explain them again; [ZX Spectrum: How the Screen Is Drawn](/en/under-the-hood/emulator-internals/spectrum-display/)
+for port `$FE`, and [The ZX Spectrum Next Core and the FPGA](/en/under-the-hood/emulator-internals/next-core/).
+Until the background page exists, the overview names it in plain text and gets the link when it is
+published.
+
 Topics:
 - **From one bit to six sources.** The 48K: port `$FE` bit 4 drives a speaker. The 128K added the AY.
   The Next keeps both and adds two more AYs, four 8-bit DACs and an audio link to its Raspberry Pi.
@@ -185,7 +203,7 @@ Topics:
   PSGs) and *level writers* where the CPU (or DMA) sets the output level every sample (beeper, DACs).
   This framing carries the series: it decides how much CPU time a sound costs.
 - **One mixer, two sides**: every source has a left and a right contribution; the mixer adds them.
-  First look at the level bar (who gets how much of the range); details in article 8.
+  First look at the level bar (who gets how much of the range); details in article 7.
 - **Three outputs** (and the tape): the audio jack, the internal speaker, HDMI — plus MIC to the tape
   output and the Pi.
 - **Clocks**: the 28 MHz master clock, the 1.75 MHz PSG clock (the 128K's AY clock, kept for
@@ -214,44 +232,71 @@ clock enable's rate in the top-level clock divider.
 
 ---
 
-## 3. Article 2 — From numbers to air
+## 3. The background page — How a computer makes sound
 
-**Hook:** A loudspeaker can only do one thing: move its cone in and out. Everything you have ever heard
-from a computer — a beep, a chord, a voice — is a list of positions for that cone. How can a list of
-numbers sound like a voice?
+**Not part of the series.** A standalone, machine-neutral page beside `crt-display.mdx`, at
+`docs/content/en/under-the-hood/emulator-internals/computer-sound.mdx`, listed in the parent `_meta.ts`
+right after "How a television draws a picture" as "How a computer makes sound". It is to the audio
+series what the CRT article is to the screen series: the background every audio article can link to
+instead of explaining it again. The overview (article 1) refers to it in its audience paragraph, and
+later articles link it where a term from it first appears (sample, sample rate, DAC, filter, one-bit
+sound).
 
-The general background article for the series, as `crt-display.mdx` is for the screen series. Short
-(≈ 6 figures), machine-neutral, linked from every Next audio article where a term first appears.
+**Brief and easy to understand** — a decision of the project author. Far shorter than the CRT article:
+about 1,500–2,500 words and 5–6 figures, no formulas beyond one division, no Next registers, no
+machine-specific numbers except as passing examples ("the Spectrum's beeper", "a CD's 44,100 samples a
+second"). Plain words throughout; every term defined in the sentence that introduces it. Its one
+question: **how does a list of numbers inside a computer become a sound you can hear?**
 
-Topics:
-- **Sound as pressure over time**; the waveform; amplitude (loudness) and period/frequency (pitch);
-  the audible range.
-- **Square, triangle, sawtooth, noise**: the shapes cheap hardware makes, and why a square wave sounds
-  "chip-like" (its harmonics).
-- **Loudness is not linear**: why volume tables are logarithmic (preview of the AY's volume table).
-- **Sampling**: a level written at regular times; sample rate and resolution (bits); the Nyquist limit
-  and aliasing in one picture.
-- **One-bit sound** and pulse width: why a speaker driven by one bit can still play several notes.
-- **Mixing is adding**; clipping when the sum exceeds the range; why unsigned levels carry a DC
-  offset and how a capacitor (or a filter) removes it.
-- **From a number to a voltage**: a DAC, and the delta-sigma trick of making a level from fast one-bit
-  pulses plus a low-pass filter (preview of article 8).
+**Hook:** A loudspeaker can do only one thing: push its cone out and pull it back in. Everything you
+have ever heard from a computer — a beep, a chord, a voice — is a list of positions for that cone. How
+can a list of numbers sound like a voice?
 
-Figures (≈ 7):
-1. Pressure wave and the cone, with amplitude and period marked.
-2. Four basic shapes, same frequency, with their harmonics as bars.
-3. Linear vs logarithmic volume steps (perceived loudness curve).
-4. Sampling a sine: sample points, the staircase, and an under-sampled case that aliases.
-5. Pulse width: duty cycles 50 %, 25 %, 12.5 % and what they average to.
-6. Mixing two waveforms by adding, with a clipped region.
-7. Delta-sigma: a target level, the one-bit pulse train, and the filtered result.
+Parts:
+- **Sound is air pushed back and forth.** Pressure over time is a waveform; how far the cone moves is
+  loudness, how often it moves is pitch. A speaker turns a voltage into a cone position, so making sound
+  means making a voltage that changes the right way.
+- **A sample is one number for one moment.** The computer cannot output a smooth curve, only a value
+  now, then another a moment later. Sample rate (how often) and resolution (how many different values)
+  — with the CD as the everyday example.
+- **From a number to a voltage: the DAC.** A digital-to-analogue converter turns each number into a
+  voltage and holds it until the next one, so its output is a staircase.
+- **From a staircase to a smooth wave: the filter.** The steps are much faster than anything in the
+  wanted sound; a low-pass filter (in the simplest case a resistor and a capacitor) and the speaker's own
+  sluggishness smooth them away. This is the heart of the page: the step that makes the result
+  *analogue*.
+- **Fast enough, or it sounds wrong.** A sample rate must be more than twice the highest pitch, or a
+  high note comes out as a wrong, lower one (aliasing) — one picture, no theory.
+- **Sound from a single bit.** Only "on" and "off": a square wave at the right speed is a note (the
+  Spectrum's beeper), and switching very fast with more or less time "on" averages to any level in
+  between once filtered (pulse width, and the delta-sigma converters modern chips use). This connects
+  back to the filter part: the same smoothing makes it work.
+- **Several sounds at once are added together**: mixing is adding the numbers (or voltages); too large a
+  sum is clipped; a level that never goes below zero carries a constant offset that a capacitor removes
+  before the speaker.
+- **Back to the computer**: the whole chain in one line — numbers → DAC → filter → amplifier → speaker →
+  air — and where a sound chip fits (it makes the numbers itself instead of the CPU). Links to the audio
+  series.
 
-Verify: nothing machine-specific; every number recomputed by script (harmonic amplitudes, alias
-frequency in the example).
+Figures (≈ 6):
+1. The chain: numbers → DAC → filter → amplifier → speaker → air, with a small waveform at each step.
+2. A sound wave and its samples: sample points on a smooth curve, at two sample rates.
+3. The DAC's staircase and the filtered smooth wave, overlaid.
+4. Aliasing: a fast wave sampled too slowly, and the slower wave the samples describe.
+5. One-bit sound: a pulse train with changing on-time and the level it averages to after the filter.
+6. Mixing: two waves added, and the sum clipped at the top of the range.
+
+No machine captures: the figures are generated from computed waveforms (a small generator in the
+scratchpad), so they stay exact and to scale. If listening clips are adopted (Q3), this page gets the
+most useful ones: a note at two sample rates, an aliased note, a square vs a smoothed wave.
+
+Verify: nothing machine-specific; every number recomputed by script (the alias frequency in the
+example, the CD rate arithmetic). Mechanics as for the series (§0.5), but the page lives directly in
+`emulator-internals/` and needs its own routes/assets golden entries.
 
 ---
 
-## 4. Article 3 — The beeper, EAR and MIC
+## 4. Article 2 — The beeper, EAR and MIC
 
 **Hook:** Manic Miner plays a two-voice tune from a single bit. The same bit tells the tape recorder
 what to save, and the same port reads back what the tape plays. How do music and data share one wire?
@@ -265,7 +310,7 @@ Topics:
   resistors); both on both sides.
 - **The tape output**: MIC goes to the MIC jack, combined with the tape input and the Pi (an XOR,
   explain what that means for monitoring).
-- **Port `$FE` reads**: bit 6 is the tape input — EAR in, XOR the Pi's EAR (article 7), OR the EAR
+- **Port `$FE` reads**: bit 6 is the tape input — EAR in, XOR the Pi's EAR (article 6), OR the EAR
   output bit, OR the MIC bit when the issue-2 keyboard is set (NextReg `$08` bit 0) — the famous
   issue 2/issue 3 difference and why some old games depend on it.
 - **The tape input's conditioning**: rejecting pulses shorter than about 1.14 µs, and relaxing a stuck
@@ -293,7 +338,7 @@ time in the top-level files; Klive's tape path against both.
 
 ---
 
-## 5. Article 4 — One AY chip
+## 5. Article 3 — One AY chip
 
 **Hook:** Sixteen registers. Write three numbers and the chip plays a chord forever, with no further
 help from the CPU. The 128K's whole soundtrack was made from three counters, a random-number generator
@@ -316,7 +361,7 @@ Topics:
 - **AY vs YM mode differences visible to software**: register read-back masks (unused bits read 0 in AY
   mode), envelope resolution.
 - **Ports**: `$FFFD` select, `$BFFD` data, reading back; port `$BFF5` (chip ID and register number,
-  previewing article 5).
+  previewing article 4).
 - **I/O ports A/B (R14/R15)**: present, but unconnected on the Next — what reading them returns.
 - **Effects from the envelope**: buzzer bass (envelope as a waveform), vibrato/tremolo by rewriting
   registers each frame.
@@ -343,7 +388,7 @@ inputs, `$BFF5` format. Every period/frequency recomputed by script.
 
 ---
 
-## 6. Article 5 — TurboSound Next
+## 6. Article 4 — TurboSound Next
 
 **Hook:** Two ports, three chips. A 128K tune that knows nothing about the Next plays on chip 0 as it
 always did — while a Next tracker plays nine channels, each chip panned to its own place in the stereo
@@ -385,7 +430,7 @@ paths.
 
 ---
 
-## 7. Article 6 — The 8-bit DACs
+## 7. Article 5 — The 8-bit DACs
 
 **Hook:** Sampled drums, speech, even a whole song from a file — the Next plays them through four
 8-bit DACs, and answers on the ports of six different Spectrum and Pentagon sound cards so their old
@@ -404,7 +449,7 @@ Topics:
   (bits 17–23), and the clashes they resolve: `$DF` with the Kempston alias and the mouse, `$FB` with
   Soundrive mode 2, `$1F` with Kempston joystick.
 - **The NextReg mirrors**: NextRegs `$2C` (B, left), `$2D` (A and D), `$2E` (C, right) write the DACs
-  from the Copper or code that has no free port; read side belongs to article 7.
+  from the Copper or code that has no free port; read side belongs to article 6.
 - **Feeding samples on time**: a CPU loop (and why its rate depends on CPU speed and contention), the
   CTC interrupt, the DMA with its prescaler writing one byte per tick to a fixed port, and the Copper
   through the mirrors — each with the sample rate it can reach and its CPU cost.
@@ -430,14 +475,28 @@ channel each mirror reaches and reset values; the DMA prescaler's time base and 
 
 ---
 
-## 8. Article 7 — Audio from the Raspberry Pi
+## 8. Article 6 — Audio from the Raspberry Pi
 
 **Hook:** Inside the Next sits a Raspberry Pi Zero. It can play MP3s, speak, emulate other sound chips
 — and its sound arrives as a stream of samples on four wires, mixed with everything else, or even fed
 into the tape input so the Next can load from it.
 
-Hardware-only: Klive emulates no Pi (§0.6); the article says so in its callout and in "How Klive does
-it".
+Klive emulates the Next's receiving half of the link (§0.6): a sample source stands in for the Pi.
+The article's callout says so — the Pi's *sound* is real samples, the Pi's *software* is not emulated —
+and so does "How Klive does it". The Next → Pi direction is described as hardware only.
+
+Machine pictures, from the scene test through the harness's Pi I2S methods (`piI2sConnect`,
+`piI2sReceiver`, `piI2sStatus`; `test/harness/zxnext/README.md`), first asserting what the text says:
+- a tone streamed in stereo, then with NextReg `$A2` set to mono from the left and from the right, and
+  one side muted — the mixer's left and right side each time;
+- the two latch moments per sample period (left word at mid-period, right word at its end) on one time
+  axis, from a slow stream with distinct left/right values;
+- the EAR bit following a slow wave through the hysteresis band (the receiver's latched words and its
+  EAR bit, read as device state, under the wave);
+- a tape tone streamed with EAR routing on, read back from port `$FE` bit 6.
+
+`test/zxnext-hw/audio/pi-i2s.test.ts` (I2S-001–012) already pins these facts; the scene test reuses its
+setups rather than restating them.
 
 Topics:
 - **I2S in one paragraph**: bit clock, word select (left/right), serial data; who drives the clock.
@@ -450,9 +509,22 @@ Topics:
   with hysteresis (top two bits all ones → 1, all zeros → 0) — why hysteresis.
 - **Reading samples**: NextRegs `$2C`/`$2E` return the top 8 bits of the current sample and latch the
   low 2 bits for NextReg `$2D` — a two-read protocol, and why reads and DAC writes share these numbers.
+- **The sample word**: the receiver keeps the top 13 bits of each word whatever its slot width, and the
+  Next uses the top 10 with the sign bit inverted (signed → offset binary): 0 → `$200`, full negative →
+  `$000`, full positive → `$3FF`; why a 16-, 24- or 32-bit Pi stream all work.
+- **When a sample arrives**: word select framing — the left word is latched at the edge in the middle of
+  a sample period, the right word at its end; enabling from off starts at the rest value, disabling
+  resets the receiver.
+- **Into the speaker as one bit**: with EAR routing on, the Pi's EAR bit is XORed into the MIC line, so
+  the stream is heard as a one-bit signal (link to article 2).
 - **Practical uses**: loading TAPs streamed by the Pi, MP3 playback, sampling the Next's output.
+- How Klive does it: the sample source in place of the Pi (`src/emu/machines/zxNext/piI2s/`:
+  `PiI2sSource.ts`, `wavDecoder.ts`); the receiver in `zxnext-pi-i2s.c` with lazy sync to the 28 MHz
+  clock; samples delivered per frame, counted from the frame's start so the fast path and the debug loop
+  deliver the same; reverse debugging replays the journaled samples instead of asking the source again;
+  the `pi-audio` command (link `/en/reference/commands/`, and the Guides page once it exists).
 
-Figures (≈ 8):
+Figures (≈ 10):
 1. The Pi on the Next: signal flow both ways.
 2. I2S timing: SCK, WS, SD for one left/right pair.
 3. NextReg `$A2` bit strip.
@@ -461,13 +533,15 @@ Figures (≈ 8):
 6. The EAR threshold with hysteresis on a slow, noisy waveform.
 7. The `$2C`/`$2D`/`$2E` read protocol: two reads, latched low bits.
 8. Pin direction setting: data in/out on the two pins.
+9. Signed sample → 10-bit offset binary, as a bit strip (16-bit slot, top 10 bits kept, sign inverted).
+10. Machine captures: stereo / mono-left / mono-right / muted, left and right sides (see above).
 
 Verify: the enable encoding, pin direction, mute and EAR routing; sample width and rest level; the
 threshold rule; the read/latch protocol; clocking (master/slave; the slave bit is disabled).
 
 ---
 
-## 9. Article 8 — The mixer and the outputs
+## 9. Article 7 — The mixer and the outputs
 
 **Hook:** Every source adds its number to one sum, many million times a second. Nothing is ever
 subtracted, so silence is not zero — and the sum still has to come out of a 3.5 mm jack, a tiny
@@ -510,7 +584,7 @@ board issues.
 
 ---
 
-## 10. Article 9 — From the machine to your speakers
+## 10. Article 8 — From the machine to your speakers
 
 **Hook:** The Next's sound changes on any of 28 million clock ticks a second; a sound card wants
 48,000 numbers a second, delivered in time, while the emulator runs in bursts of whole frames — or
@@ -576,8 +650,12 @@ Recorded here so the articles start from checked numbers (each still re-checked 
   bit 6 = EAR in XOR Pi EAR, OR EAR out, OR (MIC out AND issue-2).
 - Pi I2S: NextReg `$A2`; 10-bit samples; rest level when off/muted/routed to EAR; EAR by hysteresis on
   the top two bits.
-- Klive: has beeper, tape, PSG, TurboSound, DACs, mixer; no Pi I2S; mixer signed and DC-filtered
-  (§0.6).
+- Klive: has beeper, tape, PSG, TurboSound, DACs, mixer, and the Next's Pi I2S receiver fed by a sample
+  source (no Pi, no Next → Pi direction); mixer signed and DC-filtered (§0.6).
+- Pi I2S word: top 13 bits of the slot kept, top 10 used with the sign bit inverted
+  (`((s >> 6) & $3FF) ^ $200` for a signed 16-bit `s`); left latched mid-period, right at its end; a
+  side whose enable is clear takes the other side's sample; EAR routing uses the raw latches, not the
+  muted selection; with EAR routing on, the mixer gets the rest level.
 
 ---
 
@@ -597,13 +675,13 @@ Recorded here so the articles start from checked numbers (each still re-checked 
 ## 13. Open questions for the author
 
 - **Q1** — Subfolder `next-audio/` (proposed), mirroring `next-display/`?
-- **Q2** — Nine articles as listed, or merge: `sound-basics` into the overview (or make it a standalone
-  machine-neutral page beside `crt-display.mdx`, proposed), Pi audio into the DAC article (it is short
-  and Klive does not emulate it), TurboSound into the AY article?
+- **Q2** — Eight articles as listed, or merge TurboSound into the AY article? *(Pi audio stays its own
+  article now that Klive emulates the receiving half and it has machine captures.)* *(Settled: the sound background is a standalone
+  page beside `crt-display.mdx`, §3, and the overview links it.)*
 - **Q3** — Listening examples: embed short generated clips (`<audio controls>`) next to the waveforms?
   It needs a new asset kind in `doc:check`, but sound is hard to understand from pictures alone.
 - **Q4** — Klive's mixer differs from the hardware's (signed, DC-filtered vs unsigned): keep Klive's
   (it sounds the same) and describe the difference, or change the core to sum like the hardware and
   filter once at the end?
-- **Q5** — Is Article 9 (Klive's audio pipeline) in scope for this series, or a separate
+- **Q5** — Is Article 8 (Klive's audio pipeline) in scope for this series, or a separate
   `emulator-internals` page, since it is about the emulator rather than the Next?
