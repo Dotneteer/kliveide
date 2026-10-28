@@ -520,13 +520,16 @@ The sum is a 13-bit number, 0 to 8,191. Here is how much of that range each sour
   <line x1="20" y1="226" x2="680" y2="226" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
 </svg>
 {/* /fig:budget */}
-<figcaption>The mixer's range per side, drawn to scale. Top: every source at its largest adds up to 5,998, so even all of them at once never reach the top. Bottom: what the mixer adds when every source is silent.</figcaption>
+<figcaption>The mixer's range per side, drawn to scale. Top: every source at its largest adds up to 5,998, so even all of them at once never reach the top of the sum's range. Bottom: what the mixer adds when every source is silent.</figcaption>
 </figure>
 
 Two things in the figure are worth a sentence each.
 
-**The sum always fits.** Every source at its loudest adds up to 5,998, well below 8,191, so the mixer
-never has to clip: nothing is lost even when every source plays at full volume at once.
+**The sum always fits.** Every source at its loudest adds up to 5,998, well below 8,191, so the sum
+itself never overflows. The audio jack is tighter: it takes only the sum's lowest 12 bits, up to 4,095,
+which is plenty for loud music with the beeper on top but not for every source at full scale at once.
+The [mixer article](/en/under-the-hood/emulator-internals/next-audio/mixer/#part-3-headroom) shows how
+much room real mixes need, and what the jack does past 4,095.
 
 **Silence is not zero.** Every input is a number from 0 upwards; nothing is ever subtracted. A DAC at
 rest holds `$80`, the middle of its range, so that a sample can swing both ways from it; the two on
@@ -535,7 +538,7 @@ middle of its range too, 512. So a silent Next sits at 1,536, and every sound mo
 whatever constant level its sources add. The background page's part on
 [mixing](/en/under-the-hood/emulator-internals/computer-sound/#several-sounds-at-once-are-added-together)
 explains why that does no harm: a capacitor after the converters removes any constant level before the
-sound reaches a speaker. Article 7, on the mixer, takes all of this apart.
+sound reaches a speaker. [Article 7, on the mixer](/en/under-the-hood/emulator-internals/next-audio/mixer/), takes all of this apart.
 
 ## Part 5: Where the sound goes
 
@@ -580,8 +583,8 @@ The two sums leave the machine by four ways at once:
 <figcaption>The outputs. The jack and the speaker turn the sum into a voltage inside the FPGA, with one-bit converters; HDMI sends it as numbers.</figcaption>
 </figure>
 
-- **The audio jack** gets each side through a **one-bit converter**: a single pin of the FPGA switched
-  on and off at 28 MHz, more often "on" the larger the number, and a resistor and a capacitor on the
+- **The audio jack** gets each side's lowest 12 bits through a **one-bit converter**: a single pin of
+  the FPGA switched on and off at 28 MHz, more often "on" the larger the number, and a resistor and a capacitor on the
   board that smooth the pulses into a voltage. It is the converter the background page calls
   [delta-sigma](/en/under-the-hood/emulator-internals/computer-sound/#sound-from-a-single-bit).
 - **The internal speaker** gets one mono signal, the left and right sums added together, through one
@@ -597,7 +600,7 @@ One line goes out separately: **the MIC line**, port `$FE` bit 3 combined with t
 Pi's EAR bit, drives the MIC socket, the tape recorder's input. That is how a program saves to tape.
 
 The jack and the speaker have no sample rate: their converters follow the sum as it changes, 28 million
-times a second. Only HDMI samples it, because HDMI carries sound as numbers. Article 7 explains each
+times a second. Only HDMI samples it, because HDMI carries sound as numbers. [Article 7](/en/under-the-hood/emulator-internals/next-audio/mixer/) explains each
 output.
 
 ## Part 6: Clocks
@@ -812,7 +815,7 @@ machine that sounds exactly like a 128K until something asks for more.
 | 4 | TurboSound Next | three chips behind two ports, panning, ABC, ACB and mono |
 | 5 | The 8-bit DACs | the six sound cards on four channels, the port families, feeding samples on time |
 | 6 | Audio from the Raspberry Pi | the I2S link in both directions, and the tape input from the Pi |
-| 7 | The mixer and the outputs | the sum in full, the jack, the speaker and HDMI |
+| 7 | [The mixer and the outputs](/en/under-the-hood/emulator-internals/next-audio/mixer/) | the sum in full, the jack, the speaker and HDMI |
 | 8 | From the machine to your speakers | how an emulator turns all this into 48,000 samples a second |
 
 Article 1 comes first, and article 7 after the source articles, since it adds up their levels. Articles
@@ -848,7 +851,8 @@ Klive's sum keeps the hardware's **proportions**, but not its zero:
 - The beeper's EAR and MIC pass through a filter that removes their constant level, as the capacitor
   after the hardware's converters does.
 - The AY chips stay as they are, 0 upwards.
-- The sum is scaled to a signed 16-bit sample, the form a sound card takes.
+- The sum is scaled to a signed 16-bit sample, the form a sound card takes, by a factor that gives it
+  the jack's room above silence ([article 7](/en/under-the-hood/emulator-internals/next-audio/mixer/#part-7-how-klive-does-it)).
 
 You hear the same thing; a waveform drawn from Klive's samples sits at a different level than one
 measured on the hardware, which is why this series' captures are drawn about their middle.
@@ -880,8 +884,8 @@ All in `src/emu/machines/zxNext/wasm/zxnext/`:
 - Sources are **generators** (the AY chips play by themselves once set up) or **level writers** (the
   beeper and the DACs need a write for every step). That decides what a sound costs the CPU.
 - One **mixer** adds every source on a **left** and a **right** side: EAR 512, MIC 128, the AY chips up
-  to 2,295, the DACs up to 2,040, the Pi up to 1,023 units. The sum, at most 5,998, fits the 13-bit
-  range of 8,191 without clipping. Silence is 1,536, not zero.
+  to 2,295, the DACs up to 2,040, the Pi up to 1,023 units. The sum, at most 5,998, fits its 13-bit
+  range of 8,191; the jack takes its lowest 12 bits, up to 4,095. Silence is 1,536, not zero.
 - The sums leave through the **audio jack** and the **internal speaker** (one-bit converters at 28 MHz)
   and **HDMI** (48,000 samples a second), and go to the **Pi**.
 - The AY chips run from a fixed **1.75 MHz**; the beeper's and the DACs' timing is the **program's**, so

@@ -18,10 +18,9 @@ const PAGE = path.join(__dirname, "../../content/en/under-the-hood/emulator-inte
 const CAPTURES = path.join(__dirname, "captures/overview");
 const capture = (name) => JSON.parse(fs.readFileSync(path.join(CAPTURES, `${name}.json`), "utf8"));
 
-// Klive's mixer scales the hardware's sum by this gain to 16-bit words (zxnext-audio-mixer.c,
-// ZXNEXT_MIXER_GAIN), so word / GAIN is back in the hardware's mixer units.
-const GAIN = 29.44;
-const units = (words) => words.map((w) => w / GAIN);
+// Klive's mixer scales the hardware's sum by a gain to 16-bit words (zxnext-audio-mixer.c,
+// ZXNEXT_MIXER_GAIN; each capture records it), so word / gain is back in the hardware's mixer units.
+const units = (d) => d.left.map((w) => w / d.gain);
 
 // The hardware's mixer, per side: these inputs, in these units (the audio mixer of the FPGA design).
 const LEVELS = { ear: 512, mic: 128, ay: 2295, dac: 2040, pi: 1023 };
@@ -150,7 +149,7 @@ function risingEdge(values, from = 0) {
     { name: "a DAC sine", data: dac, c: DAC, y: 175 }
   ];
   for (const row of rows) {
-    const v = units(row.data.left);
+    const v = units(row.data);
     const start = risingEdge(v, 50);
     const w = v.slice(start, start + n);
     const mean = (Math.max(...w) + Math.min(...w)) / 2;
@@ -200,7 +199,7 @@ function risingEdge(values, from = 0) {
   list.forEach((s, i) => {
     const d = capture(s.name);
     const dt = 1000 / d.rate;
-    const v = units(d.left);
+    const v = units(d);
     const start = risingEdge(v, 50);
     const w = v.slice(start, start + Math.round(T / dt));
     const mean = (Math.max(...w) + Math.min(...w)) / 2;

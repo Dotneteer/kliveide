@@ -17,3 +17,6 @@ published to the site or indexed by search.
   figures of `next-audio/overview.mdx`, drawn from the machine captures in
   `next-audio/captures/`, which `test/zxnext-hw/audio/next-audio-scene.test.ts`
   writes with `NEXT_AUDIO_SHOTS=docs/authoring/next-audio/captures`.
+- `next-audio/mixer-figures.cjs` — the figures of `next-audio/mixer.mdx`:
+  computed from the hardware's rules, plus the Klive capture
+  `next-audio/captures/mixer/beeper-start.json`.

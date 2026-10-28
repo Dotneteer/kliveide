@@ -33,6 +33,11 @@ const CPU_HZ = 3_500_000;
 /** NextReg $08: contention off, internal speaker on, DACs on */
 const NR08 = 0x58;
 const FRAMES = 3;
+/** Klive's mixer: hardware mixer units to 16-bit words (zxnext-audio-mixer.c, ZXNEXT_MIXER_GAIN) */
+const MIXER_GAIN = 12.8;
+/** The slow beeper loop of the mixer scene: 3,346 * d + 31 T-states per half period */
+const SLOW_D = 5;
+const SLOW_HALF = 3346 * SLOW_D + 31; // --- 16,761 T-states: 104.4 Hz
 
 async function session(): Promise<NextTestSession> {
   return createSession({ audioSampleRate: RATE });
@@ -46,17 +51,23 @@ function record(s: NextTestSession): AudioSample[] {
 
 /** The first `KEEP` samples of a side as Klive's signed 16-bit words */
 const KEEP = 960; // --- 20 ms at 48 kHz
-const word = (samples: AudioSample[], which: "left" | "right") =>
-  side(samples, which).slice(0, KEEP).map((v) => Math.round(v * 32768));
+const word = (samples: AudioSample[], which: "left" | "right", keep = KEEP) =>
+  side(samples, which).slice(0, keep).map((v) => Math.round(v * 32768));
 
-function save(article: string, scene: string, samples: AudioSample[], extra: Record<string, unknown> = {}): void {
+function save(
+  article: string,
+  scene: string,
+  samples: AudioSample[],
+  extra: Record<string, unknown> = {},
+  keep = KEEP
+): void {
   const out = process.env.NEXT_AUDIO_SHOTS;
   if (!out) return;
   const dir = join(out, article);
   mkdirSync(dir, { recursive: true });
   writeFileSync(
     join(dir, `${scene}.json`),
-    JSON.stringify({ rate: RATE, ...extra, left: word(samples, "left"), right: word(samples, "right") }) + "\n"
+    JSON.stringify({ rate: RATE, gain: MIXER_GAIN, ...extra, left: word(samples, "left", keep), right: word(samples, "right", keep) }) + "\n"
   );
 }
 
@@ -174,5 +185,47 @@ describe("Audio series scenes", () => {
       const extra = name === "dac" ? { writePeriodTacts: DAC_PERIOD, cpuHz: CPU_HZ, steps: DAC_STEPS } : {};
       save("overview", name, samples, { hz: expected[name as keyof typeof expected], ...extra });
     }
+  });
+
+  // --- The mixer (article 7): the beeper switched on from silence, about 104 Hz, recorded from its
+  //     first edge. Klive's mix removes the beeper's constant level (a 1.4 Hz high-pass, what the
+  //     capacitor after the hardware's converters does), so the square starts 512 units above silence
+  //     and settles about zero; the hardware's sum would sit at 1,536 and 2,048 all along.
+  it("mixer: Klive centres the beeper: it starts 512 units above silence and settles about zero", async () => {
+    const s = await session();
+    await s.loadCode(
+      `
+        .org $8000
+Start:  di
+        nextreg $07,0
+        nextreg $08,$${NR08.toString(16)}
+        ld c,$fe
+        ld a,$10
+Loop:   out (c),a         ; 12
+        xor $10           ; 7
+        ld d,${SLOW_D}    ; 7
+Outer:  ld b,0            ; 7
+Inner:  djnz Inner        ; 13 * 255 + 8
+        dec d             ; 4
+        jr nz,Outer       ; 12 / 7
+        jp Loop           ; 10
+`,
+      { entry: "Start" }
+    );
+    const samples = s.startAudio().runFrames(20).audio();
+    const left = side(samples, "left");
+    const unit = MIXER_GAIN / 32768; // --- one mixer unit as a normalised sample
+    const half = Math.round((RATE * SLOW_HALF) / CPU_HZ); // --- samples per half period
+    // --- The first half period: the full step above silence (the filter has barely moved)
+    const first = left.slice(half / 4, half / 2);
+    expect(Math.max(...first) / unit).toBeGreaterThan(500);
+    expect(Math.max(...first) / unit).toBeLessThan(513);
+    // --- After about 0.3 s: still a 512-unit square, now about zero
+    const late = left.slice(Math.round(0.3 * RATE), Math.round(0.3 * RATE) + 4 * half);
+    expect(edgeStep(late) / unit).toBeCloseTo(512, -1);
+    const mean = late.reduce((a, b) => a + b, 0) / late.length;
+    expect(Math.abs(mean / unit)).toBeLessThan(30);
+    expect(relativeError(frequency(late, RATE), CPU_HZ / (2 * SLOW_HALF))).toBeLessThan(0.01);
+    save("mixer", "beeper-start", samples, { hz: CPU_HZ / (2 * SLOW_HALF) }, Math.round(0.4 * RATE));
   });
 });

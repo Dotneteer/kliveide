@@ -11,7 +11,8 @@ structure, the explaining and figure rules, and the corrections the project auth
 reviewing the screen series; this plan does not repeat them, it only adds what is specific to sound.
 Fold any new lesson from this series' reviews into that file.
 
-Status: **the background page (§3) and article 1 (§2) are written; articles 2–8 are planned.** Open questions
+Status: **the background page (§3) and articles 1 (§2) and 7 (§9) are written; articles 2–6 and 8 are
+planned.** Open questions
 are in §13.
 
 ---
@@ -625,6 +626,32 @@ Verify: every input width and shift; the maximum sum; the jack DAC's input bits 
 the speaker mix (sum, offset, the exclusive case); the HDMI sample rate and word placement in both
 board issues.
 
+**As built.** `next-audio/mixer.mdx`, seven Parts and seven figures (`docs/authoring/next-audio/mixer-figures.cjs`).
+The hardware's sum and outputs are not emulated, so six figures are computed from the hardware's rules
+(the one-bit converter simulated exactly as built); the seventh puts the hardware's sum beside a Klive
+capture (`next-audio-scene.test.ts`, scene "mixer": the beeper switched on from silence, about 104 Hz).
+Figure 10 (the control bits) dropped: the overview's register figure has them. Facts established:
+- **The jack takes the sum's low 12 bits** (both board issues), so a sum of 4,096 or more *wraps*
+  (4,343 plays as 247); HDMI gets all 13 bits. The overview's "the sum always fits, never clips" was
+  corrected in the same change. Room above silence on the jack: 2,559. Worked mixes: one chip full 2,046;
+  TurboSound stereo full 3,066, + EAR and MIC 3,706 (fit); three chips mono full + EAR 4,343 (wraps).
+- The jack's converter is first-order delta-sigma at 28 MHz: a 14-bit total, the pin is its top bit, 4,096
+  taken off when it is set; the share of on-ticks is input / 4,096 (checked by simulation).
+- Speaker: issue 4, L(11..0) + R(11..0) into a 13-bit converter; beeper only: EAR bit 10 (1,024), MIC
+  bit 8 (256). Issue 2 biases the speaker word for its transistor. `$08` bit 4 gates the pin.
+- HDMI: 16-bit word `0 & sum & 00`, 48 kHz, the sum's value at each sample with no averaging; the
+  constant level stays in the words.
+- Rest levels avoid clicks: DACs held at `$80` while disabled, the Pi at 512 while off or muted.
+- RC values of the board are not in the design, so the article gives none.
+
+**Core fix found while writing (its own commit, `fix` changeset): Klive's mixer gain.** At 29.44 Klive
+clamped 1,113 units above silence, so three AY chips at full volume (1,530) clipped in Klive but not on
+the hardware. The author chose a gain of **12.8**, matching Klive's headroom to the jack's (2,559 × 12.8
+= 32,755): what the jack plays cleanly Klive plays cleanly; a mix that wraps on the jack clamps in Klive.
+The AY stays unipolar (a filter would not add headroom: a step passes it whole). Test BEEP-009 in
+`beeper-mixer.test.ts`; two tests pinning absolute words were updated. This settles Q4: Klive keeps its
+centred mix and the article describes the difference.
+
 ---
 
 ## 10. Article 8 — From the machine to your speakers
@@ -723,8 +750,7 @@ Recorded here so the articles start from checked numbers (each still re-checked 
   page beside `crt-display.mdx`, §3, and the overview links it.)*
 - **Q3** — Listening examples: embed short generated clips (`<audio controls>`) next to the waveforms?
   It needs a new asset kind in `doc:check`, but sound is hard to understand from pictures alone.
-- **Q4** — Klive's mixer differs from the hardware's (signed, DC-filtered vs unsigned): keep Klive's
-  (it sounds the same) and describe the difference, or change the core to sum like the hardware and
-  filter once at the end?
+- **Q4** — *Settled:* Klive keeps its centred, DC-filtered mix and the mixer article describes the
+  difference; its gain is 12.8, the jack's headroom (article 7's as-built note).
 - **Q5** — Is Article 8 (Klive's audio pipeline) in scope for this series, or a separate
   `emulator-internals` page, since it is about the emulator rather than the Next?
