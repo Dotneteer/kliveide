@@ -61,6 +61,7 @@ import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { machineRegistry } from "@common/machines/machine-registry";
 import { MC_DISK_SUPPORT } from "@common/machines/constants";
 import { setLanguage } from "@common/i18n/i18n";
+import { ROM_ANNOTATION_CATALOG } from "@common/roms/romAnnotationCatalog";
 
 const window = { isDestroyed: () => false, isFullScreen: () => false, isFocused: () => true } as any;
 
@@ -262,6 +263,9 @@ describe("the application menu", () => {
     expect(debugLabels).toContain("Save Debug Recording...");
     expect(debugLabels).toContain("Open Debug Recording...");
     expect(labels(menu(buildMenu("c64"), "Debug"))).not.toContain("Open Debug Recording...");
+    // --- ROM Annotations: every machine, whatever runs (ROM_ANNOTATIONS_MENU_PLAN D1)
+    expect(labels(menu(buildMenu("c64"), "Debug"))).toContain("ROM Annotations");
+    expect(labels(menu(buildMenu("zxnext", undefined, "emu", false), "Debug"))).toContain("ROM Annotations");
     const saveItem = (template: MenuItemConstructorOptions[]) => menu(template, "Debug").find((i) => i.id === "save_debug_recording");
     expect(saveItem(buildMenu("sp48"))?.enabled).toBe(false);
     buildMenu("zxnext");
@@ -393,12 +397,14 @@ describe("the menu while a dialog is open", () => {
 /*
  * The menus in another language (`.plans/LOCALIZATION_PLAN.md` step 3): in the pseudo-locale every
  * label is pseudo text, except the names that are never translated (D9) - the app name, machine
- * and model names, the Z88's LCD sizes. Untranslated English here is a label that was missed.
+ * and model names, the Z88's LCD sizes, the ROM file names of Debug › ROM Annotations. Untranslated
+ * English here is a label that was missed.
  */
 describe("the menu in the pseudo-locale", () => {
   const NEVER_TRANSLATED = new Set<string>([
     "Klive",
-    ...machineRegistry.flatMap((m) => [m.displayName, ...(m.models ?? []).map((mo) => mo.displayName)])
+    ...machineRegistry.flatMap((m) => [m.displayName, ...(m.models ?? []).map((mo) => mo.displayName)]),
+    ...ROM_ANNOTATION_CATALOG.flatMap((m) => m.groups.flat().map((entry) => entry.file))
   ]);
   const isPseudo = (label: string) => /^\[.*~+\]$/.test(label);
 
