@@ -147,6 +147,24 @@ from a listing. Addresses are where BASIC 1.2 runs them; check a 2.2 chip's own 
   <n>". Message words are tokens $93-$8F.
 - **ROM quirks observed**: XOR ORs the high bytes (256 XOR 256 = 256); a division that overflows gives 0
   with no error; a shorter string compares as smaller whatever its characters ("B" < "AA").
+- **EXTH and SYS never see each other.** With EXT in page 3 ($C000-$DFFF the card window, $E000-$FFFF
+  EXTH) the SYS chips are paged out, so EXTH's own calls to $E000-$FFFF stay in EXTH; each side reaches the
+  other only through its own $FFF0 with HL = the target (SYS writes $F0 to port 02h and $0003, EXTH $70). A
+  SYS chip's `CALL $Fxxx` is a SYS high address, never EXTH's.
+- **Expansion cards**: port 5Ah gives 2 bits per slot: 3 a card whose ROM has "MOPS" at $C000 and a
+  length-prefixed name at $C004, 0 "RS232", 1 "VGB", 2 "DISK" (the HBF card). Slot records of 48 bytes at RAM
+  $0040 + 48n (name, then at byte 7 the card's number among cards of that name); a card ROM's $C00B is its
+  initialisation, $C00D its function list (count, words). An RS232 slot uses EXTH's own driver instead.
+- **The cassette (device 5, EXTH)**: codes $51/$D1 a character, $52/$D2 a block, $53/$D3 open output/input,
+  $54/$D4 close, $D5 verify (bit 7 = the input side; observed for SAVE, VERIFY, LOAD, OPEN and PRINT #).
+  Writing times each half-period with the sound timer (divisors $D6 pilot, $DE a 1, $CE a 0, $BC sync);
+  reading calibrates on the pilot and counts polls of port 59h bit 5. Errors $E6-$EB, $EC (reported
+  already), $F5 break.
+- **The RAM character set** ($0740, codes $80-$DF) is copied from EXTH at boot: $80-$88 the Hungarian
+  accented capitals, $90-$98 the small ones, box-drawing lines, inverse A/C/S ($8F/$9E/$9F, the lock
+  cursors), blanks from $A0.
+- **PRINT USING** (EXTH $FCB5 numbers, $FF9C strings) is `PRINT USING "fmt":value`; the format characters
+  and observed outputs are in the sidecar's USING_NUMBER and USING_STRING synopses.
 - **The token tables**: 1.2 at $DE6D, 2.2 at $D73A, tokens $FE down to $95 (BASIC listing work).
 - **BASIC 2.2 waits for a key** in $CA9F-$CAAB (observed only).
 - **The frame interrupt** is the CRTC cursor at $0EFF (scan line 239); VT-DOS moves it to $0AFF.
@@ -156,6 +174,7 @@ from a listing. Addresses are where BASIC 1.2 runs them; check a 2.2 chip's own 
 - **Overlapping entries.** `LD BC,nn`, `LD D,n` and the like hide entry points one byte in: $026B and
   $0348 (targets inside an instruction, explained in comments), and labels the tools accepted at $0A89,
   $0BFF and $1D94 (DELETE enters at $1D93, which cannot carry a label).
+- **To see EXTH in the IDE**, stop where EXT is paged in: `bp-set $F000` then `em-debug` stops in the boot.
 - **Inline data after calls**: every `RST $08` code byte, `RST $18` stream and `CALL $FE79` string is a
   region; a stream hidden by a misdecode shows only after the one before it is marked ($0B3C in d3): rerun
   the scan until nothing new appears.
@@ -173,7 +192,8 @@ from a listing. Addresses are where BASIC 1.2 runs them; check a 2.2 chip's own 
 |---|---|---|---|
 | `tvc12-d4.rom.dis` | **2** | 471 | 75 regions, 1,802 annotated lines; checked in the running IDE (labels at $C000-$DFFF) |
 | `tvc12-d3.rom.dis` | **2** | 607 | 285 regions (function entries, calculator streams, error table); checked in the running IDE |
-| the others | 0 | | next: `tvc12-d7.rom` (BASIC 1.2's EXTH: half of it filler), then BASIC 2.2's chips |
+| `tvc12-d7.rom.dis` | **2** | 287 | 39 regions; checked in the running IDE at the boot's breakpoint on $F000 (EXT paged in) |
+| the others | 0 | | next: BASIC 2.2's chips (`tvc22-d6`, `tvc22-d4`, `tvc22-d7`), reusing 1.2's names where the code matches |
 
 **Method that worked (tvc12-d4, repeated for tvc12-d3 with seven helpers).** A profile run first (the core's `setProfiling` over boot and ~60 typed
 commands: what runs as code, what is read as data) marked the big data blocks before any helper started;

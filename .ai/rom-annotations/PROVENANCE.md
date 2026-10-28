@@ -2237,3 +2237,25 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
 - **Level:** 2, measured and recorded (607 labels, 285 regions, 4,279 instructions; 4 targets inside an
   instruction, each explained). Checked in the running IDE (Playwright harness, `dis` at $E002, $E570, $EAF1,
   $FB82, $FE79 with the labels and calls named).
+
+### 2026-10-28 — Videoton TVC: `tvc12-d7.rom` (BASIC 1.2, EXTH) to level 2
+
+- **Sources:** as for the SYS chips (the bytes through `tools/tvc-dis.cjs`, the SYS chips' sidecars for the
+  routines EXTH calls and is called from, Klive's TVC core and its README's tape description, `TvcCasFile.ts`,
+  runs). Not used: anything under `_input/`, the web, routine names from Klive's TVC code. No `manual` entries.
+- **Base regions** from the bytes and the earlier profile run (which covered EXTH): the $FF filler
+  ($0000-$0FFF), the RAM table defaults, the card names, the RAM glyphs (320 bytes and the fill glyph, read
+  from the boot's copy loop) and the tail. No inline restarts or `CALL $FE79` sites (the $CF/$DF bytes are
+  operands). A cross-reference built from `LD HL,nn` + `$FFF0` pairs in both directions, since EXTH and SYS
+  never see each other.
+- **Helpers:** three, one per range. Probes (deleted): the cassette codes SAVE, VERIFY, LOAD, OPEN OUTPUT,
+  PRINT # and CLOSE use (DE/BC observed, the 16-byte program header); PRINT USING with 16 number formats and
+  string alignments (e.g. `##,###.##` with 12345.678 prints "12,345.67"; numbers are truncated; `##` with 999
+  is error 4). Glyphs read from their dots. The RS232 card is not emulated: its driver is described from the
+  code only, without saying what the card does with the bytes.
+- **Merge fixes:** the card-name region split; $1FE8 renamed BAUD_DEFAULT (it sets the RS232 speed index 4);
+  references to EXTH's own routines swapped for names ($FFF0 left as a number: both chips have one); every
+  "probably" settled from another helper's evidence or removed.
+- **Level:** 2, measured and recorded (287 labels, 39 regions, 1,977 instructions; 3 targets inside an
+  instruction, each explained). Checked in the running IDE: `bp-set $F000`, `em-debug`, then `dis` at $F000,
+  $F3D8 and $FFF0 show EXTH's labels (EXTH_BOOT, CASX_CHAR, EXTH_TO_SYS).
