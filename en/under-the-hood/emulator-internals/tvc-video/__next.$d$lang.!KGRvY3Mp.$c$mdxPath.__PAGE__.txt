@@ -1,0 +1,355 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/729-9435aeba8bc7b5a7.js"
+f:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-74aa7972a133b7b0.js"
+10:I[826,["545","$b","500","$c","436","$d","729","$e","25","$f"],"TOCProvider"]
+11:I[4637,["545","$b","500","$c","436","$d","729","$e","25","$f"],"Sidebar"]
+12:I[6665,["545","$b","500","$c","436","$d","729","$e","25","$f"],"ClientWrapper"]
+18:"ViewportBoundary"
+19:I[484,[],"$18"]
+1a:"MetadataBoundary"
+1b:I[484,[],"$1a"]
+1c:"$Sreact.suspense"
+1d:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+13:T4b5c,---
+description: "How the Videoton TVC makes its picture: a 6845 that only counts, a video RAM the CPU and the display take turns at, the shift registers behind the 2-, 4- and 16-colour modes, the palette and the border, blanking and sync made in TTL, the cursor that is really a frame interrupt, and how Klive's core draws the same picture against the CPU's clock."
+---
+
+import { Callout } from 'nextra/components'
+
+# Videoton TVC: How the Picture Is Made
+
+A program on the Videoton TV Computer can change the palette in the middle of a scan line and see the
+colours split exactly there. It can also find that writing to the screen makes it slower, wherever
+the beam is, even in the border. Both come from the same design: the TVC's video chip, a 6845,
+only counts, and everything that turns its count into a picture is built from small logic chips
+around it, sharing one video memory with the CPU.
+
+This matters to anyone who writes graphics for the machine: a game that races the beam, flips
+between pictures on the 64K+, or times a raster effect from the frame interrupt depends on these
+details. You should know what a scan line and a frame are ([How a television draws a
+picture](/en/under-the-hood/emulator-internals/crt-display/)) and the Z80's T-states.
+
+## How this article is organised
+
+- [Part 1](#part-1-one-character-two-t-states): the clocks, and why a character is two T-states.
+- [Part 2](#part-2-the-6845-and-the-frame-it-counts): the 6845 and the frame the ROM programs.
+- [Part 3](#part-3-from-the-count-to-a-video-ram-address): how the count becomes a video RAM address.
+- [Part 4](#part-4-one-video-ram-two-users): the CPU and the display taking turns.
+- [Part 5](#part-5-from-a-byte-to-dots): the three graphics modes.
+- [Part 6](#part-6-colour-the-palette-and-the-border): colour, the palette and the border.
+- [Part 7](#part-7-border-blanking-and-sync): border, blanking and sync.
+- [Part 8](#part-8-the-frame-interrupt): the frame interrupt.
+- [How Klive does it](#how-klive-does-it) and the [Summary](#summary).
+
+If you read only one part, read Part 4: it explains why video memory is slow.
+
+<Callout type="info">
+The numbers are for the CRTC settings the BASIC ROM programs at power-on, which every program starts
+from: 100 characters a line, 314 lines a frame. The behaviour described is the emulated machine's,
+checked by Klive's tests on its TVC core.
+</Callout>
+
+## Part 1: One character, two T-states
+
+A 25 MHz crystal feeds a chain of dividers: 12.5 MHz, 6.25 MHz and 3.125 MHz. The **CPU clock** is
+3.125 MHz, so one T-state is 320 ns. The video circuit halves 3.125 MHz once more and gets its
+**character clock**: one character every 640 ns, two T-states.
+
+Each character is split into two halves of 320 ns. In the first the video memory belongs to the CPU,
+in the second to the 6845, the video chip. So a scan line of 100 characters takes 64 µs, **200
+T-states**, and whatever the CPU does, the display gets its turn at the memory on every character.
+
+Everything in the picture runs from this fixed clock tree. The CPU's clock is the only one that is
+ever held back (Part 4); the beam never waits for the CPU.
+
+## Part 2: The 6845 and the frame it counts
+
+The **6845 CRT controller** sits at ports `70h` (select a register) and `71h` (write or read it). It
+keeps three counters: the **character** within a line, the **raster** (the scan line within a row)
+and the **row**. From them it puts out a memory address, and it marks three moments: display enable
+(paper here), the line and frame syncs, and the cursor.
+
+At power-on the ROM programs it like this:
+
+- R0 = 99: a line is 100 characters, 64 µs.
+- R1 = 64: 64 characters of each line are paper.
+- R2 = 75: the line sync signal starts at character 75.
+- R4 = 77 and R5 = 2: 78 rows and 2 extra lines, **314 lines** a frame.
+- R6 = 60 and R9 = 3: 60 rows of 4 scan lines are paper, **240 lines**.
+- R7 = 66: the frame sync signal starts at row 66, line 264.
+- R10, R11 = 3 and R14, R15 = `0Eh`, `FFh`: a one-line cursor at address `0EFFh` (Part 8).
+
+So a frame is 314 × 200 = **62,800 T-states, 49.76 frames a second**, and it is not interlaced:
+every frame draws the same lines. The "rows" of 4 lines are only the 6845's bookkeeping; BASIC's text
+lines are 10 scan lines high, drawn by software into a bitmap.
+
+<figure><svg viewBox="0 0 700 326" role="img" aria-label="The TVC frame to scale, 100 characters wide and 314 lines high: the paper fills characters 1 to 64 of lines 0 to 239; the line is blanked from character 75 for about 22 characters, with the line sync from character 77 for 7 characters; the frame is blanked from line 264 to line 284, with the frame sync in its first two lines; the interrupt comes at the end of line 239, character 64; everything else is border." style={{ width: "100%", maxWidth: "700px", height: "auto" }}><rect x="60.0" y="30.0" width="560.0" height="251.2" fill="currentColor" fill-opacity="0.12" stroke="currentColor" stroke-width="1"/><rect x="65.6" y="30.0" width="358.4" height="192.0" fill="#3b82f6" fill-opacity="0.55"/><rect x="480.0" y="30.0" width="126.0" height="251.2" fill="currentColor" fill-opacity="0.55"/><rect x="60.0" y="241.2" width="560.0" height="16.0" fill="currentColor" fill-opacity="0.55"/><rect x="491.2" y="30.0" width="39.2" height="251.2" fill="#e8912d" fill-opacity="0.9"/><rect x="60.0" y="241.2" width="560.0" height="1.68" fill="#e8912d" fill-opacity="0.9"/><circle cx="424.0" cy="221.6" r="5" fill="#e5484d" stroke="white" stroke-width="1.5"/><text x="244.8" y="126.0" text-anchor="middle" fill="currentColor" font-size="13">paper: 64 bytes × 240 lines</text><text x="244.8" y="231.6" text-anchor="middle" fill="currentColor" font-size="11">bottom border</text><text x="244.8" y="271.6" text-anchor="middle" fill="currentColor" font-size="11">top border</text><text x="432.0" y="225.6" fill="currentColor" font-size="11">interrupt</text><line x1="60.0" y1="281.2" x2="60.0" y2="286.2" stroke="currentColor"/><text x="60.0" y="298.2" text-anchor="middle" fill="currentColor" font-size="11">0</text><line x1="418.4" y1="281.2" x2="418.4" y2="286.2" stroke="currentColor"/><text x="418.4" y="298.2" text-anchor="middle" fill="currentColor" font-size="11">64</text><line x1="480.0" y1="281.2" x2="480.0" y2="286.2" stroke="currentColor"/><text x="480.0" y="298.2" text-anchor="middle" fill="currentColor" font-size="11">75</text><line x1="620.0" y1="281.2" x2="620.0" y2="286.2" stroke="currentColor"/><text x="620.0" y="298.2" text-anchor="middle" fill="currentColor" font-size="11">100</text><text x="340.0" y="313.2" text-anchor="middle" fill="currentColor" font-size="11">character in the line (2 T-states each)</text><line x1="55.0" y1="30.0" x2="60.0" y2="30.0" stroke="currentColor"/><text x="52.0" y="34.0" text-anchor="end" fill="currentColor" font-size="11">0</text><line x1="55.0" y1="222.0" x2="60.0" y2="222.0" stroke="currentColor"/><text x="52.0" y="226.0" text-anchor="end" fill="currentColor" font-size="11">240</text><line x1="55.0" y1="241.2" x2="60.0" y2="241.2" stroke="currentColor"/><text x="52.0" y="245.2" text-anchor="end" fill="currentColor" font-size="11">264</text><line x1="55.0" y1="257.2" x2="60.0" y2="257.2" stroke="currentColor"/><text x="52.0" y="261.2" text-anchor="end" fill="currentColor" font-size="11">284</text><line x1="55.0" y1="281.2" x2="60.0" y2="281.2" stroke="currentColor"/><text x="52.0" y="285.2" text-anchor="end" fill="currentColor" font-size="11">314</text><rect x="630.0" y="38.0" width="14" height="14" fill="#3b82f6" fill-opacity="0.55" stroke="currentColor" stroke-width="0.5"/><text x="650.0" y="49.0" fill="currentColor" font-size="12">paper</text><rect x="630.0" y="60.0" width="14" height="14" fill="currentColor" fill-opacity="0.12" stroke="currentColor" stroke-width="0.5"/><text x="650.0" y="71.0" fill="currentColor" font-size="12">border</text><rect x="630.0" y="82.0" width="14" height="14" fill="currentColor" fill-opacity="0.55" stroke="currentColor" stroke-width="0.5"/><text x="650.0" y="93.0" fill="currentColor" font-size="12">blanked</text><rect x="630.0" y="104.0" width="14" height="14" fill="#e8912d" fill-opacity="0.9" stroke="currentColor" stroke-width="0.5"/><text x="650.0" y="115.0" fill="currentColor" font-size="12">sync</text></svg><figcaption>One frame with the ROM's settings, to scale: a column is a character (640 ns), a row a scan line.</figcaption></figure>
+
+The figure shows the whole frame the 6845 counts. Parts 7 and 8 explain the blanked areas, the
+syncs and the interrupt.
+
+## Part 3: From the count to a video RAM address
+
+The 6845 counts its address in characters, and the raster separately. The board wires them into a
+14-bit video RAM address with the raster in the middle:
+
+```text
+ video RAM address bit:  13 12 11 10  9  8   7   6   5  4  3  2  1  0
+ from the 6845:          the row (address bits 11-6)  raster  the character in the row
+```
+
+With 64 characters a row, row *r*'s first address is 64 × *r*, so the wiring gives
+256 · row + 64 · raster + character, which is 64 · line + character: **the bitmap is linear**, 64 bytes
+a scan line, top to bottom. At `8000h`, where page 2 shows the video RAM, line *L*, byte *C* is at
+`8000h` + 64 · *L* + *C*. The 16K hold 256 lines, of which 240 are shown.
+
+The linear layout holds only for 64 characters a row. A program that changes R1 changes the layout
+too, because the wiring stays the same.
+
+The **64K+** has four 16K video banks. Port `0Ch` (repeated at `0Dh`-`0Fh`) chooses them: bits 1-0 the
+bank the CPU sees through page 1, bits 3-2 the one it sees through page 2, and **bits 5-4 the bank the
+display shows**, whichever banks the CPU uses. A program draws the next frame in one bank while
+another is on the screen, then flips by rewriting bits 5-4; the display reads the new bank from its
+next character on, even in the middle of a line.
+
+## Part 4: One video RAM, two users
+
+The CPU's half of each character is the only time it can reach the video RAM. The memory's output
+goes through one latch that both users share, so the CPU's byte is there only for a moment, until the
+display's half of the character overwrites it. The CPU must take the byte in that moment, and an
+instruction can start its memory access at any of four points within the character.
+
+So a **clock stretch** circuit holds the CPU's clock until the CPU's slot comes round: for one to four
+half-T-states, depending on where in the character the access starts.
+
+- A read or write of video RAM is stretched by 2, 1, 4 or 3 half-T-states, for the four phases the
+  access can start in.
+- An opcode fetch from video RAM is stretched by 3, 2, 1 or 4, because the Z80 samples an opcode at
+  another point of its cycle.
+- I/O, interrupt acknowledges and refresh cycles are never stretched.
+- **The stretch does not depend on the beam.** It applies in the border and during blanking as well
+  as on the paper, which sets the TVC apart from the ZX Spectrum, whose contention applies only while
+  the picture is drawn.
+
+One consequence is that code which keeps touching video RAM locks to the slots: after the first
+stretch every access starts at the same phase. A run of `NOP`s executed from video RAM settles at
+6 T-states each.
+
+The other consequence is good: the CPU and the display never use the memory at the same moment, so
+the TVC shows no "snow". The CPU's half comes first in each character, so a byte the CPU writes is
+already in memory when the display reads the same character's address. **The finest step for racing
+the beam with memory writes is one character, two T-states.**
+
+## Part 5: From a byte to dots
+
+At the end of the display's half, the byte goes into two 4-bit shift registers chained together. A
+**shift clock** moves the bits out, and port `06h` bits 1-0 choose its rate and so the mode:
+
+- `00`, **2 colours**: 12.5 MHz, 8 dots a byte, 512 dots a line. Each dot is one bit, bit 7 leftmost:
+  0 shows palette entry 0, 1 palette entry 1.
+- `01`, **4 colours**: 6.25 MHz, 4 dots a byte, 256 a line. The two bits of a dot are four apart:
+  dot *n* (0 leftmost) shows palette entry 2 × bit(3 − *n*) + bit(7 − *n*).
+- `10` or `11`, **16 colours**: 3.125 MHz, 2 dots a byte, 128 a line. The palette is bypassed and the
+  bits are the colour itself: the left dot is bits 7, 5, 3, 1 as intensity, green, red, blue, and the
+  right dot bits 6, 4, 2, 0.
+
+The 4- and 16-colour orders come from where the colour logic taps the two shift registers, not from a
+choice of format. Take the byte `B4h`, binary `1011 0100`:
+
+1. In 2-colour mode it shows palette entries 1, 0, 1, 1, 0, 1, 0, 0.
+2. In 4-colour mode the dots are 2·b3 + b7 = 1, 2·b2 + b6 = 2, 2·b1 + b5 = 1 and 2·b0 + b4 = 1.
+3. In 16-colour mode the left dot is I = 1, G = 1, R = 0, B = 0, bright green; the right dot I = 0,
+   G = 1, R = 1, B = 0, dark yellow.
+
+Every mode takes one character per byte, so the line is the same length in all three.
+
+## Part 6: Colour, the palette and the border
+
+A TVC colour is four bits: **I**ntensity, **G**reen, **R**ed and **B**lue. The **palette** is four
+4-bit registers at ports `60h`-`63h`; the display reads them while the CPU writes them, so a palette
+write recolours every following dot that uses the entry, from the next dot on, in the middle of a line
+too. It is the TVC's main tool for colour splits. The **border** register at port `00h` works the
+same way for the border.
+
+The two expect their bits in different places:
+
+```text
+ bit:                  7   6   5   4   3   2   1   0
+ palette, 60h-63h      -   I   -   G   -   R   -   B
+ border, 00h           I   -   G   -   R   -   B   -
+```
+
+Each gun gets two levels from its colour bit and its colour bit ANDed with intensity. So intensity
+brightens only the guns that are on: a bright colour is its dark version, brighter, and **"bright
+black" is black**. Klive draws a dark gun at `92h` and a bright one at `FFh`.
+
+## Part 7: Border, blanking and sync
+
+None of the 6845's own signals reach the television as they are. Small logic around it makes the
+border, the blanking and the syncs:
+
+- **Paper or border.** The 6845's display enable is delayed by one character before it chooses
+  between the paper's colour and the border's. The byte for a character is shifted out during the
+  next character, so the delay keeps the edge of the paper in line with its first and last byte.
+- **Horizontal blanking.** A timer started when the line sync signal rises (character 75) blanks the
+  picture for 14.4 µs, until partway through character 97.
+- **Line sync.** Another timer, started when the 6845's sync signal falls (character 77), makes a
+  4.5 µs pulse. So the line has a front porch of 1.3 µs, close to broadcast PAL's.
+- **Vertical blanking.** A latch is set by the frame sync, at line 264, and cleared when address bit 9
+  of the still-counting 6845 goes high, at character 64 of line 284. About 20 lines are blanked.
+- **Frame sync.** A third timer, started by the frame sync signal, makes a 135 µs pulse, about two
+  lines. Only its start comes from the 6845, so the 6845's own frame sync width does not matter.
+
+With the ROM's settings this leaves 24 lines of border below the paper and about 29 above it, 10
+characters of border to the right and 3.5 to the left.
+
+Two of these depend on the program's settings in ways that are easy to miss. The end of vertical
+blanking is an address bit, so a program that moves the start address (R12-R13) to scroll also moves
+the end of the blanking. And a program that sets R2 or R7 so that a sync never comes leaves the
+television without a picture to lock to.
+
+## Part 8: The frame interrupt
+
+The TVC never shows the 6845's cursor: the cursor BASIC shows is drawn into the bitmap. The cursor
+signal has one job, to **request an interrupt**. The ROM puts the cursor at address `0EFFh` on raster 3
+only, which is the last byte of the last paper line, so the pulse comes once a frame.
+
+The cursor and the sound generator's interrupt share an interrupt flip-flop through one gate:
+
+1. The flip-flop is set when the cursor pulse ends, at character 64 of line 239.
+2. It holds the Z80's INT line until a program writes any value to port `07h`. BASIC's handler does,
+   on every interrupt; port `59h` bit 4 shows the request (0 while it is pending).
+3. While one source holds the gate's input, the other cannot set the flip-flop: one can mask the
+   other.
+
+The interrupt is wherever the cursor registers put it. VT-DOS, the disk system, moves the cursor to
+`0AFFh`, and after it has started, the interrupt comes at the end of line 175. A raster effect timed
+from "the frame interrupt" must set the cursor itself or measure from the interrupt it gets.
+
+## How Klive does it
+
+Klive's TVC core keeps the CPU and the picture on one clock: it counts whole T-states and, beside them,
+a half-T-state clock, because the stretch moves the CPU by half-T-states. At the start of every
+character as the CPU's clock passes it, the core runs the 6845's tick, the delayed display enable,
+the blanking and the sync timers, places the character in the television's window, and fetches the
+next byte from the displayed bank. A palette, border, mode or video RAM write therefore lands at the
+character it happens in.
+
+The television is modelled too: it finds the line and frame syncs, and the picture is the 608 × 288
+dots around the paper that a TV would show, with the paper centred. A dot is drawn 7/12.5 as wide as
+a ZX Spectrum dot, its true width.
+
+The **TVC Video** panel in the Debug activity shows the 6845's registers and counters, the mode, the
+palette, the border, the blanking latch and the interrupt flip-flop of the running machine (see [The
+Videoton TVC](/en/guides/machines/videoton-tvc/)).
+
+| File | What it holds |
+|---|---|
+| `src/emu/machines/tvc/wasm/tvc/tvc-crtc.c` | The 6845's counters, registers and signals |
+| `src/emu/machines/tvc/wasm/tvc/tvc-video.c` | The dots, the palette and border, blanking, sync, the TV window, the interrupt flip-flop |
+| `src/emu/machines/tvc/wasm/tvc/tvc-timing.c` | The clock stretch on video RAM |
+| `src/emu/machines/tvc/wasm/tvc/tvc.c` | The half-T-state clock and the frame loop |
+| `test/tvc-hw/video.test.ts`, `timing.test.ts` | The modes, the colour bits, the paper's position, the blanking, the interrupt's moment, the stretch at every phase |
+
+## Summary
+
+- One character is 640 ns, two T-states: half for the CPU, half for the display. The ROM's frame is
+  100 × 314 characters, 62,800 T-states, 49.76 Hz, with 64 × 240 bytes of paper.
+- The bitmap is linear, 64 bytes a line, while the 6845's rows are 64 characters wide. On the 64K+,
+  port `0Ch` bits 5-4 choose the bank on the screen.
+- The CPU is held for 1-4 half-T-states on every video RAM access, wherever the beam is; in return
+  there is no snow, and a write races the beam to the character.
+- Two shift registers make the three modes: 2 colours bit by bit, 4 colours from bits four apart,
+  16 colours from the odd and even bits.
+- Colour is IGRB; the palette (even bits) and the border (odd bits) can change mid-line; "bright
+  black" is black.
+- Border, blanking and sync are made around the 6845 by timers and a latch.
+- The frame interrupt is the cursor: set at the end of the cursor pulse, cleared by port `07h`, moved
+  by whoever moves the cursor.a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$L10",null,{"value":[{"value":"How this article is organised","id":"how-this-article-is-organised","depth":2},{"value":"Part 1: One character, two T-states","id":"part-1-one-character-two-t-states","depth":2},{"value":"Part 2: The 6845 and the frame it counts","id":"part-2-the-6845-and-the-frame-it-counts","depth":2},{"value":"Part 3: From the count to a video RAM address","id":"part-3-from-the-count-to-a-video-ram-address","depth":2},{"value":"Part 4: One video RAM, two users","id":"part-4-one-video-ram-two-users","depth":2},{"value":"Part 5: From a byte to dots","id":"part-5-from-a-byte-to-dots","depth":2},{"value":"Part 6: Colour, the palette and the border","id":"part-6-colour-the-palette-and-the-border","depth":2},{"value":"Part 7: Border, blanking and sync","id":"part-7-border-blanking-and-sync","depth":2},{"value":"Part 8: The frame interrupt","id":"part-8-the-frame-interrupt","depth":2},{"value":"How Klive does it","id":"how-klive-does-it","depth":2},{"value":"Summary","id":"summary","depth":2}],"children":[["$","$L11",null,{}],["$","$L12",null,{"metadata":{"description":"How the Videoton TVC makes its picture: a 6845 that only counts, a video RAM the CPU and the display take turns at, the shift registers behind the 2-, 4- and 16-colour modes, the palette and the border, blanking and sync made in TTL, the cursor that is really a frame interrupt, and how Klive's core draws the same picture against the CPU's clock.","title":"Videoton TVC: How the Picture Is Made","filePath":"content/en/under-the-hood/emulator-internals/tvc-video.mdx","timestamp":1792315833000},"sourceCode":"$13","children":["$L14","$L15"]}]]}]}],null,"$L16"]}],"p":"$@17","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"under-the-hood/emulator-internals/tvc-video","s":["z88-user-guide"]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L19",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1b",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1c",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Videoton TVC: How the Picture Is Made - Klive IDE"}],["$","meta","1",{"name":"description","content":"How the Videoton TVC makes its picture: a 6845 that only counts, a video RAM the CPU and the display take turns at, the shift registers behind the 2-, 4- and 16-colour modes, the palette and the border, blanking and sync made in TTL, the cursor that is really a frame interrupt, and how Klive's core draws the same picture against the CPU's clock."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/under-the-hood/emulator-internals/tvc-video/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1d","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1e","v":null,"s":"$9"}},"a":"$@1f","u":"$@20","b":"2MFmgnvMmlrEoCWdXLeNr"}
+21:I[8500,["545","$b","500","$c","436","$d","729","$e","25","$f"],""]
+22:I[721,["545","$b","500","$c","436","$d","729","$e","25","$f"],"HeadingAnchor"]
+5b:I[484,[],"OutletBoundary"]
+14:["$","div",null,{"id":"nextra-skip-nav"}]
+15:["$","main",null,{"data-pagefind-body":true,"children":[false,[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Videoton TVC: How the Picture Is Made","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A program on the Videoton TV Computer can change the palette in the middle of a scan line and see the\ncolours split exactly there. It can also find that writing to the screen makes it slower, wherever\nthe beam is, even in the border. Both come from the same design: the TVC’s video chip, a 6845,\nonly counts, and everything that turns its count into a picture is built from small logic chips\naround it, sharing one video memory with the CPU."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["This matters to anyone who writes graphics for the machine: a game that races the beam, flips\nbetween pictures on the 64K+, or times a raster effect from the frame interrupt depends on these\ndetails. You should know what a scan line and a frame are (",["$","$L21",null,{"href":"/en/under-the-hood/emulator-internals/crt-display/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"How a television draws a\npicture"}],") and the Z80’s T-states."]}],"\n",["$","h2",null,{"id":"how-this-article-is-organised","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["How this article is organised",["$","$L22",null,{"id":"how-this-article-is-organised"}]]}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","a",null,{"href":"#part-1-one-character-two-t-states","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Part 1"}],": the clocks, and why a character is two T-states."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","a",null,{"href":"#part-2-the-6845-and-the-frame-it-counts","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Part 2"}],": the 6845 and the frame the ROM programs."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","a",null,{"href":"#part-3-from-the-count-to-a-video-ram-address","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Part 3"}],": how the count becomes a video RAM address."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","a",null,{"href":"#part-4-one-video-ram-two-users","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Part 4"}],": the CPU and the display taking turns."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","a",null,{"href":"#part-5-from-a-byte-to-dots","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Part 5"}],": the three graphics modes."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","a",null,{"href":"#part-6-colour-the-palette-and-the-border","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Part 6"}],": colour, the palette and the border."]}],"\n","$L23","\n","$L24","\n","$L25","\n"]}],"\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41","\n","$L42","\n","$L43","\n","$L44","\n","$L45","\n","$L46","\n","$L47","\n","$L48","\n","$L49","\n","$L4a","\n","$L4b","\n","$L4c","\n","$L4d","\n","$L4e","\n","$L4f","\n","$L50","\n","$L51","\n","$L52","\n","$L53","\n","$L54","\n","$L55","\n","$L56","\n","$L57","\n","$L58","\n","$L59","\n","$L5a"]]}]
+16:["$","$L5b",null,{"children":["$","$1c",null,{"name":"Next.MetadataOutlet","children":"$@5c"}]}]
+20:true
+5f:"ToggleWordWrapButton"
+60:I[9023,["545","$b","500","$c","436","$d","729","$e","25","$f"],"$5f"]
+61:I[7976,["545","$b","500","$c","436","$d","729","$e","25","$f"],"CopyToClipboard"]
+9:300
+23:["$","li",null,{"className":"x:my-[.5em]","children":[["$","a",null,{"href":"#part-7-border-blanking-and-sync","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Part 7"}],": border, blanking and sync."]}]
+24:["$","li",null,{"className":"x:my-[.5em]","children":[["$","a",null,{"href":"#part-8-the-frame-interrupt","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Part 8"}],": the frame interrupt."]}]
+25:["$","li",null,{"className":"x:my-[.5em]","children":[["$","a",null,{"href":"#how-klive-does-it","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"How Klive does it"}]," and the ",["$","a",null,{"href":"#summary","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Summary"}],"."]}]
+26:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If you read only one part, read Part 4: it explains why video memory is slow."}]
+27:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":["$","svg",null,{"viewBox":"0 0 16 16","fill":"currentColor","height":".8em","className":"x:mt-[.3em]","children":["$","path",null,{"d":"M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"}]}]}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The numbers are for the CRTC settings the BASIC ROM programs at power-on, which every program starts\nfrom: 100 characters a line, 314 lines a frame. The behaviour described is the emulated machine’s,\nchecked by Klive’s tests on its TVC core."}]}]]}]
+28:["$","h2",null,{"id":"part-1-one-character-two-t-states","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Part 1: One character, two T-states",["$","$L22",null,{"id":"part-1-one-character-two-t-states"}]]}]
+29:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A 25 MHz crystal feeds a chain of dividers: 12.5 MHz, 6.25 MHz and 3.125 MHz. The ",["$","strong",null,{"children":"CPU clock"}]," is\n3.125 MHz, so one T-state is 320 ns. The video circuit halves 3.125 MHz once more and gets its\n",["$","strong",null,{"children":"character clock"}],": one character every 640 ns, two T-states."]}]
+2a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Each character is split into two halves of 320 ns. In the first the video memory belongs to the CPU,\nin the second to the 6845, the video chip. So a scan line of 100 characters takes 64 µs, ",["$","strong",null,{"children":"200\nT-states"}],", and whatever the CPU does, the display gets its turn at the memory on every character."]}]
+2b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Everything in the picture runs from this fixed clock tree. The CPU’s clock is the only one that is\never held back (Part 4); the beam never waits for the CPU."}]
+2c:["$","h2",null,{"id":"part-2-the-6845-and-the-frame-it-counts","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Part 2: The 6845 and the frame it counts",["$","$L22",null,{"id":"part-2-the-6845-and-the-frame-it-counts"}]]}]
+2d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ",["$","strong",null,{"children":"6845 CRT controller"}]," sits at ports ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"70h"}]," (select a register) and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"71h"}]," (write or read it). It\nkeeps three counters: the ",["$","strong",null,{"children":"character"}]," within a line, the ",["$","strong",null,{"children":"raster"}]," (the scan line within a row)\nand the ",["$","strong",null,{"children":"row"}],". From them it puts out a memory address, and it marks three moments: display enable\n(paper here), the line and frame syncs, and the cursor."]}]
+2e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"At power-on the ROM programs it like this:"}]
+2f:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"R0 = 99: a line is 100 characters, 64 µs."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"R1 = 64: 64 characters of each line are paper."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"R2 = 75: the line sync signal starts at character 75."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["R4 = 77 and R5 = 2: 78 rows and 2 extra lines, ",["$","strong",null,{"children":"314 lines"}]," a frame."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["R6 = 60 and R9 = 3: 60 rows of 4 scan lines are paper, ",["$","strong",null,{"children":"240 lines"}],"."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"R7 = 66: the frame sync signal starts at row 66, line 264."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["R10, R11 = 3 and R14, R15 = ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"0Eh"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"FFh"}],": a one-line cursor at address ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"0EFFh"}]," (Part 8)."]}],"\n"]}]
+30:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["So a frame is 314 × 200 = ",["$","strong",null,{"children":"62,800 T-states, 49.76 frames a second"}],", and it is not interlaced:\nevery frame draws the same lines. The “rows” of 4 lines are only the 6845’s bookkeeping; BASIC’s text\nlines are 10 scan lines high, drawn by software into a bitmap."]}]
+31:["$","figure",null,{"children":[["$","svg",null,{"viewBox":"0 0 700 326","role":"img","aria-label":"The TVC frame to scale, 100 characters wide and 314 lines high: the paper fills characters 1 to 64 of lines 0 to 239; the line is blanked from character 75 for about 22 characters, with the line sync from character 77 for 7 characters; the frame is blanked from line 264 to line 284, with the frame sync in its first two lines; the interrupt comes at the end of line 239, character 64; everything else is border.","style":{"width":"100%","maxWidth":"700px","height":"auto"},"children":[["$","rect",null,{"x":"60.0","y":"30.0","width":"560.0","height":"251.2","fill":"currentColor","fill-opacity":"0.12","stroke":"currentColor","stroke-width":"1"}],["$","rect",null,{"x":"65.6","y":"30.0","width":"358.4","height":"192.0","fill":"#3b82f6","fill-opacity":"0.55"}],["$","rect",null,{"x":"480.0","y":"30.0","width":"126.0","height":"251.2","fill":"currentColor","fill-opacity":"0.55"}],["$","rect",null,{"x":"60.0","y":"241.2","width":"560.0","height":"16.0","fill":"currentColor","fill-opacity":"0.55"}],["$","rect",null,{"x":"491.2","y":"30.0","width":"39.2","height":"251.2","fill":"#e8912d","fill-opacity":"0.9"}],["$","rect",null,{"x":"60.0","y":"241.2","width":"560.0","height":"1.68","fill":"#e8912d","fill-opacity":"0.9"}],["$","circle",null,{"cx":"424.0","cy":"221.6","r":"5","fill":"#e5484d","stroke":"white","stroke-width":"1.5"}],["$","text",null,{"x":"244.8","y":"126.0","text-anchor":"middle","fill":"currentColor","font-size":"13","children":"paper: 64 bytes × 240 lines"}],["$","text",null,{"x":"244.8","y":"231.6","text-anchor":"middle","fill":"currentColor","font-size":"11","children":"bottom border"}],["$","text",null,{"x":"244.8","y":"271.6","text-anchor":"middle","fill":"currentColor","font-size":"11","children":"top border"}],["$","text",null,{"x":"432.0","y":"225.6","fill":"currentColor","font-size":"11","children":"interrupt"}],["$","line",null,{"x1":"60.0","y1":"281.2","x2":"60.0","y2":"286.2","stroke":"currentColor"}],["$","text",null,{"x":"60.0","y":"298.2","text-anchor":"middle","fill":"currentColor","font-size":"11","children":"0"}],["$","line",null,{"x1":"418.4","y1":"281.2","x2":"418.4","y2":"286.2","stroke":"currentColor"}],["$","text",null,{"x":"418.4","y":"298.2","text-anchor":"middle","fill":"currentColor","font-size":"11","children":"64"}],["$","line",null,{"x1":"480.0","y1":"281.2","x2":"480.0","y2":"286.2","stroke":"currentColor"}],["$","text",null,{"x":"480.0","y":"298.2","text-anchor":"middle","fill":"currentColor","font-size":"11","children":"75"}],["$","line",null,{"x1":"620.0","y1":"281.2","x2":"620.0","y2":"286.2","stroke":"currentColor"}],["$","text",null,{"x":"620.0","y":"298.2","text-anchor":"middle","fill":"currentColor","font-size":"11","children":"100"}],["$","text",null,{"x":"340.0","y":"313.2","text-anchor":"middle","fill":"currentColor","font-size":"11","children":"character in the line (2 T-states each)"}],["$","line",null,{"x1":"55.0","y1":"30.0","x2":"60.0","y2":"30.0","stroke":"currentColor"}],["$","text",null,{"x":"52.0","y":"34.0","text-anchor":"end","fill":"currentColor","font-size":"11","children":"0"}],["$","line",null,{"x1":"55.0","y1":"222.0","x2":"60.0","y2":"222.0","stroke":"currentColor"}],["$","text",null,{"x":"52.0","y":"226.0","text-anchor":"end","fill":"currentColor","font-size":"11","children":"240"}],["$","line",null,{"x1":"55.0","y1":"241.2","x2":"60.0","y2":"241.2","stroke":"currentColor"}],["$","text",null,{"x":"52.0","y":"245.2","text-anchor":"end","fill":"currentColor","font-size":"11","children":"264"}],["$","line",null,{"x1":"55.0","y1":"257.2","x2":"60.0","y2":"257.2","stroke":"currentColor"}],["$","text",null,{"x":"52.0","y":"261.2","text-anchor":"end","fill":"currentColor","font-size":"11","children":"284"}],["$","line",null,{"x1":"55.0","y1":"281.2","x2":"60.0","y2":"281.2","stroke":"currentColor"}],["$","text",null,{"x":"52.0","y":"285.2","text-anchor":"end","fill":"currentColor","font-size":"11","children":"314"}],["$","rect",null,{"x":"630.0","y":"38.0","width":"14","height":"14","fill":"#3b82f6","fill-opacity":"0.55","stroke":"currentColor","stroke-width":"0.5"}],["$","text",null,{"x":"650.0","y":"49.0","fill":"currentColor","font-size":"12","children":"paper"}],["$","rect",null,{"x":"630.0","y":"60.0","width":"14","height":"14","fill":"currentColor","fill-opacity":"0.12","stroke":"currentColor","stroke-width":"0.5"}],["$","text",null,{"x":"650.0","y":"71.0","fill":"currentColor","font-size":"12","children":"border"}],["$","rect",null,{"x":"630.0","y":"82.0","width":"14","height":"14","fill":"currentColor","fill-opacity":"0.55","stroke":"currentColor","stroke-width":"0.5"}],["$","text",null,{"x":"650.0","y":"93.0","fill":"currentColor","font-size":"12","children":"blanked"}],["$","rect",null,{"x":"630.0","y":"104.0","width":"14","height":"14","fill":"#e8912d","fill-opacity":"0.9","stroke":"currentColor","stroke-width":"0.5"}],"$L5d"]}],"$L5e"]}]
+32:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The figure shows the whole frame the 6845 counts. Parts 7 and 8 explain the blanked areas, the\nsyncs and the interrupt."}]
+33:["$","h2",null,{"id":"part-3-from-the-count-to-a-video-ram-address","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Part 3: From the count to a video RAM address",["$","$L22",null,{"id":"part-3-from-the-count-to-a-video-ram-address"}]]}]
+34:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The 6845 counts its address in characters, and the raster separately. The board wires them into a\n14-bit video RAM address with the raster in the middle:"}]
+35:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L60",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L61",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":" video RAM address bit:  13 12 11 10  9  8   7   6   5  4  3  2  1  0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" from the 6845:          the row (address bits 11-6)  raster  the character in the row"}]}]]}]]}]]}]
+36:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["With 64 characters a row, row ",["$","em",null,{"children":"r"}],"’s first address is 64 × ",["$","em",null,{"children":"r"}],", so the wiring gives\n256 · row + 64 · raster + character, which is 64 · line + character: ",["$","strong",null,{"children":"the bitmap is linear"}],", 64 bytes\na scan line, top to bottom. At ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"8000h"}],", where page 2 shows the video RAM, line ",["$","em",null,{"children":"L"}],", byte ",["$","em",null,{"children":"C"}]," is at\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"8000h"}]," + 64 · ",["$","em",null,{"children":"L"}]," + ",["$","em",null,{"children":"C"}],". The 16K hold 256 lines, of which 240 are shown."]}]
+37:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The linear layout holds only for 64 characters a row. A program that changes R1 changes the layout\ntoo, because the wiring stays the same."}]
+38:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ",["$","strong",null,{"children":"64K+"}]," has four 16K video banks. Port ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"0Ch"}]," (repeated at ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"0Dh"}],"-",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"0Fh"}],") chooses them: bits 1-0 the\nbank the CPU sees through page 1, bits 3-2 the one it sees through page 2, and ",["$","strong",null,{"children":"bits 5-4 the bank the\ndisplay shows"}],", whichever banks the CPU uses. A program draws the next frame in one bank while\nanother is on the screen, then flips by rewriting bits 5-4; the display reads the new bank from its\nnext character on, even in the middle of a line."]}]
+39:["$","h2",null,{"id":"part-4-one-video-ram-two-users","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Part 4: One video RAM, two users",["$","$L22",null,{"id":"part-4-one-video-ram-two-users"}]]}]
+3a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The CPU’s half of each character is the only time it can reach the video RAM. The memory’s output\ngoes through one latch that both users share, so the CPU’s byte is there only for a moment, until the\ndisplay’s half of the character overwrites it. The CPU must take the byte in that moment, and an\ninstruction can start its memory access at any of four points within the character."}]
+3b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["So a ",["$","strong",null,{"children":"clock stretch"}]," circuit holds the CPU’s clock until the CPU’s slot comes round: for one to four\nhalf-T-states, depending on where in the character the access starts."]}]
+3c:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"A read or write of video RAM is stretched by 2, 1, 4 or 3 half-T-states, for the four phases the\naccess can start in."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"An opcode fetch from video RAM is stretched by 3, 2, 1 or 4, because the Z80 samples an opcode at\nanother point of its cycle."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"I/O, interrupt acknowledges and refresh cycles are never stretched."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"The stretch does not depend on the beam."}]," It applies in the border and during blanking as well\nas on the paper, which sets the TVC apart from the ZX Spectrum, whose contention applies only while\nthe picture is drawn."]}],"\n"]}]
+3d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["One consequence is that code which keeps touching video RAM locks to the slots: after the first\nstretch every access starts at the same phase. A run of ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"NOP"}],"s executed from video RAM settles at\n6 T-states each."]}]
+3e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The other consequence is good: the CPU and the display never use the memory at the same moment, so\nthe TVC shows no “snow”. The CPU’s half comes first in each character, so a byte the CPU writes is\nalready in memory when the display reads the same character’s address. ",["$","strong",null,{"children":"The finest step for racing\nthe beam with memory writes is one character, two T-states."}]]}]
+3f:["$","h2",null,{"id":"part-5-from-a-byte-to-dots","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Part 5: From a byte to dots",["$","$L22",null,{"id":"part-5-from-a-byte-to-dots"}]]}]
+40:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["At the end of the display’s half, the byte goes into two 4-bit shift registers chained together. A\n",["$","strong",null,{"children":"shift clock"}]," moves the bits out, and port ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"06h"}]," bits 1-0 choose its rate and so the mode:"]}]
+41:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"00"}],", ",["$","strong",null,{"children":"2 colours"}],": 12.5 MHz, 8 dots a byte, 512 dots a line. Each dot is one bit, bit 7 leftmost:\n0 shows palette entry 0, 1 palette entry 1."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"01"}],", ",["$","strong",null,{"children":"4 colours"}],": 6.25 MHz, 4 dots a byte, 256 a line. The two bits of a dot are four apart:\ndot ",["$","em",null,{"children":"n"}]," (0 leftmost) shows palette entry 2 × bit(3 − ",["$","em",null,{"children":"n"}],") + bit(7 − ",["$","em",null,{"children":"n"}],")."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"10"}]," or ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"11"}],", ",["$","strong",null,{"children":"16 colours"}],": 3.125 MHz, 2 dots a byte, 128 a line. The palette is bypassed and the\nbits are the colour itself: the left dot is bits 7, 5, 3, 1 as intensity, green, red, blue, and the\nright dot bits 6, 4, 2, 0."]}],"\n"]}]
+42:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The 4- and 16-colour orders come from where the colour logic taps the two shift registers, not from a\nchoice of format. Take the byte ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"B4h"}],", binary ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"1011 0100"}],":"]}]
+43:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"In 2-colour mode it shows palette entries 1, 0, 1, 1, 0, 1, 0, 0."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"In 4-colour mode the dots are 2·b3 + b7 = 1, 2·b2 + b6 = 2, 2·b1 + b5 = 1 and 2·b0 + b4 = 1."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"In 16-colour mode the left dot is I = 1, G = 1, R = 0, B = 0, bright green; the right dot I = 0,\nG = 1, R = 1, B = 0, dark yellow."}],"\n"]}]
+44:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Every mode takes one character per byte, so the line is the same length in all three."}]
+45:["$","h2",null,{"id":"part-6-colour-the-palette-and-the-border","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Part 6: Colour, the palette and the border",["$","$L22",null,{"id":"part-6-colour-the-palette-and-the-border"}]]}]
+46:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A TVC colour is four bits: ",["$","strong",null,{"children":"I"}],"ntensity, ",["$","strong",null,{"children":"G"}],"reen, ",["$","strong",null,{"children":"R"}],"ed and ",["$","strong",null,{"children":"B"}],"lue. The ",["$","strong",null,{"children":"palette"}]," is four\n4-bit registers at ports ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"60h"}],"-",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"63h"}],"; the display reads them while the CPU writes them, so a palette\nwrite recolours every following dot that uses the entry, from the next dot on, in the middle of a line\ntoo. It is the TVC’s main tool for colour splits. The ",["$","strong",null,{"children":"border"}]," register at port ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"00h"}]," works the\nsame way for the border."]}]
+47:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The two expect their bits in different places:"}]
+48:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L60",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L61",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":" bit:                  7   6   5   4   3   2   1   0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" palette, 60h-63h      -   I   -   G   -   R   -   B"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" border, 00h           I   -   G   -   R   -   B   -"}]}]]}]]}]]}]
+49:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Each gun gets two levels from its colour bit and its colour bit ANDed with intensity. So intensity\nbrightens only the guns that are on: a bright colour is its dark version, brighter, and ",["$","strong",null,{"children":"“bright\nblack” is black"}],". Klive draws a dark gun at ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"92h"}]," and a bright one at ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"FFh"}],"."]}]
+4a:["$","h2",null,{"id":"part-7-border-blanking-and-sync","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Part 7: Border, blanking and sync",["$","$L22",null,{"id":"part-7-border-blanking-and-sync"}]]}]
+4b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"None of the 6845’s own signals reach the television as they are. Small logic around it makes the\nborder, the blanking and the syncs:"}]
+4c:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Paper or border."}]," The 6845’s display enable is delayed by one character before it chooses\nbetween the paper’s colour and the border’s. The byte for a character is shifted out during the\nnext character, so the delay keeps the edge of the paper in line with its first and last byte."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Horizontal blanking."}]," A timer started when the line sync signal rises (character 75) blanks the\npicture for 14.4 µs, until partway through character 97."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Line sync."}]," Another timer, started when the 6845’s sync signal falls (character 77), makes a\n4.5 µs pulse. So the line has a front porch of 1.3 µs, close to broadcast PAL’s."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Vertical blanking."}]," A latch is set by the frame sync, at line 264, and cleared when address bit 9\nof the still-counting 6845 goes high, at character 64 of line 284. About 20 lines are blanked."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Frame sync."}]," A third timer, started by the frame sync signal, makes a 135 µs pulse, about two\nlines. Only its start comes from the 6845, so the 6845’s own frame sync width does not matter."]}],"\n"]}]
+4d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"With the ROM’s settings this leaves 24 lines of border below the paper and about 29 above it, 10\ncharacters of border to the right and 3.5 to the left."}]
+4e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Two of these depend on the program’s settings in ways that are easy to miss. The end of vertical\nblanking is an address bit, so a program that moves the start address (R12-R13) to scroll also moves\nthe end of the blanking. And a program that sets R2 or R7 so that a sync never comes leaves the\ntelevision without a picture to lock to."}]
+4f:["$","h2",null,{"id":"part-8-the-frame-interrupt","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Part 8: The frame interrupt",["$","$L22",null,{"id":"part-8-the-frame-interrupt"}]]}]
+50:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The TVC never shows the 6845’s cursor: the cursor BASIC shows is drawn into the bitmap. The cursor\nsignal has one job, to ",["$","strong",null,{"children":"request an interrupt"}],". The ROM puts the cursor at address ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"0EFFh"}]," on raster 3\nonly, which is the last byte of the last paper line, so the pulse comes once a frame."]}]
+51:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The cursor and the sound generator’s interrupt share an interrupt flip-flop through one gate:"}]
+52:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"The flip-flop is set when the cursor pulse ends, at character 64 of line 239."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["It holds the Z80’s INT line until a program writes any value to port ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"07h"}],". BASIC’s handler does,\non every interrupt; port ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"59h"}]," bit 4 shows the request (0 while it is pending)."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"While one source holds the gate’s input, the other cannot set the flip-flop: one can mask the\nother."}],"\n"]}]
+53:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The interrupt is wherever the cursor registers put it. VT-DOS, the disk system, moves the cursor to\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"0AFFh"}],", and after it has started, the interrupt comes at the end of line 175. A raster effect timed\nfrom “the frame interrupt” must set the cursor itself or measure from the interrupt it gets."]}]
+54:["$","h2",null,{"id":"how-klive-does-it","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["How Klive does it",["$","$L22",null,{"id":"how-klive-does-it"}]]}]
+55:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Klive’s TVC core keeps the CPU and the picture on one clock: it counts whole T-states and, beside them,\na half-T-state clock, because the stretch moves the CPU by half-T-states. At the start of every\ncharacter as the CPU’s clock passes it, the core runs the 6845’s tick, the delayed display enable,\nthe blanking and the sync timers, places the character in the television’s window, and fetches the\nnext byte from the displayed bank. A palette, border, mode or video RAM write therefore lands at the\ncharacter it happens in."}]
+56:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The television is modelled too: it finds the line and frame syncs, and the picture is the 608 × 288\ndots around the paper that a TV would show, with the paper centred. A dot is drawn 7/12.5 as wide as\na ZX Spectrum dot, its true width."}]
+57:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ",["$","strong",null,{"children":"TVC Video"}]," panel in the Debug activity shows the 6845’s registers and counters, the mode, the\npalette, the border, the blanking latch and the interrupt flip-flop of the running machine (see ",["$","$L21",null,{"href":"/en/guides/machines/videoton-tvc/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"The\nVideoton TVC"}],")."]}]
+58:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"File","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"What it holds","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"src/emu/machines/tvc/wasm/tvc/tvc-crtc.c"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The 6845’s counters, registers and signals","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"src/emu/machines/tvc/wasm/tvc/tvc-video.c"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The dots, the palette and border, blanking, sync, the TV window, the interrupt flip-flop","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"src/emu/machines/tvc/wasm/tvc/tvc-timing.c"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The clock stretch on video RAM","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"src/emu/machines/tvc/wasm/tvc/tvc.c"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The half-T-state clock and the frame loop","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"test/tvc-hw/video.test.ts"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"timing.test.ts"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The modes, the colour bits, the paper’s position, the blanking, the interrupt’s moment, the stretch at every phase","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}]]}]
+59:["$","h2",null,{"id":"summary","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Summary",["$","$L22",null,{"id":"summary"}]]}]
+5a:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"One character is 640 ns, two T-states: half for the CPU, half for the display. The ROM’s frame is\n100 × 314 characters, 62,800 T-states, 49.76 Hz, with 64 × 240 bytes of paper."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["The bitmap is linear, 64 bytes a line, while the 6845’s rows are 64 characters wide. On the 64K+,\nport ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"0Ch"}]," bits 5-4 choose the bank on the screen."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"The CPU is held for 1-4 half-T-states on every video RAM access, wherever the beam is; in return\nthere is no snow, and a write races the beam to the character."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Two shift registers make the three modes: 2 colours bit by bit, 4 colours from bits four apart,\n16 colours from the odd and even bits."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Colour is IGRB; the palette (even bits) and the border (odd bits) can change mid-line; “bright\nblack” is black."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Border, blanking and sync are made around the 6845 by timers and a latch."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["The frame interrupt is the cursor: set at the end of the cursor pulse, cleared by port ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"07h"}],", moved\nby whoever moves the cursor."]}],"\n"]}]
+5c:null
+9:C
+5d:["$","text",null,{"x":"650.0","y":"115.0","fill":"currentColor","font-size":"12","children":"sync"}]
+5e:["$","figcaption",null,{"children":"One frame with the ROM’s settings, to scale: a column is a character (640 ns), a row a scan line."}]
+1f:0
+7:"$undefined"
+1e:"$undefined"
+17:"$undefined"
