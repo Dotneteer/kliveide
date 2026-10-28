@@ -1,6 +1,6 @@
 import type { MachineConfigSet, MachineModel } from "@common/machines/info-types";
 
-import { MC_TVC_MODEL } from "@common/machines/constants";
+import { MC_TVC_HBF, MC_TVC_MODEL } from "@common/machines/constants";
 import type { TvcRomSetId } from "./TvcRoms";
 
 /**
@@ -37,10 +37,17 @@ export const TVC_PHYS_SYS = 0x20000;
 export const TVC_PHYS_CART = 0x24000;
 export const TVC_PHYS_EXT_CARD = 0x28000;
 export const TVC_PHYS_EXTH = 0x2a000;
+/** The HBF card (`tvc-hbf.c`): its ROM's four 4K pages, then its 4K RAM */
+export const TVC_PHYS_HBF_ROM = 0x2c000;
+export const TVC_PHYS_HBF_RAM = 0x30000;
+export const TVC_HBF_PAGE_SIZE = 0x1000;
 export const TVC_BANK_SIZE = 0x4000;
 export const TVC_PARTITION_SYS = -1;
 export const TVC_PARTITION_CART = -2;
 export const TVC_PARTITION_EXT = -3;
+/** The HBF card's ROM pages 0-3 are partitions -4 to -7, its RAM -8 (4K each) */
+export const TVC_PARTITION_HBF_ROM0 = -4;
+export const TVC_PARTITION_HBF_RAM = -8;
 
 /**
  * The loop BASIC waits for a key in at its prompt, with SYS in page 3: 1.2's at D61Bh (inside KB_CHIN,
@@ -83,10 +90,12 @@ export const TVC_MODELS: MachineModel[] = [
 export type TvcHardware = {
   /** The 64K+: four video banks (port 0Ch), no WAIT circuit, BASIC 2.2 */
   plus: boolean;
+  /** The HBF floppy interface in slot 0, with VT-DOS (`MC_TVC_HBF`) */
+  hbf: boolean;
   romSet: TvcRomSetId;
 };
 
 export function resolveTvcHardware(config: MachineConfigSet | undefined): TvcHardware {
   const plus = config?.[MC_TVC_MODEL] === "64p";
-  return { plus, romSet: plus ? "22" : "12" };
+  return { plus, hbf: config?.[MC_TVC_HBF] === true, romSet: plus ? "22" : "12" };
 }

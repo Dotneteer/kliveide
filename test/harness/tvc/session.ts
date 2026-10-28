@@ -3,7 +3,7 @@ import { join } from "node:path";
 
 import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
-import { MI_TVC } from "@common/machines/constants";
+import { MC_TVC_HBF, MI_TVC } from "@common/machines/constants";
 import { connectConditionSupport } from "@emu/machines/conditionStore";
 import { DebugSupport } from "@emu/machines/DebugSupport";
 import { TvcWasmV2Machine } from "@emu/machines/tvc/TvcWasmV2Machine";
@@ -11,7 +11,7 @@ import { TvcKeyCode } from "@emu/machines/tvc/TvcKeyCode";
 import { TVC_MODELS } from "@emu/machines/tvc/tvcMachineInfo";
 import { parseTvcCasFile, type TvcTapeFile } from "@emu/machines/tvc/TvcCasFile";
 import { FAST_LOAD, SAVED_TO_TAPE } from "@emu/machines/machine-props";
-import { MEDIA_TAPE } from "@common/structs/project-const";
+import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_TAPE } from "@common/structs/project-const";
 
 import { buildTvcWasm, productionOutput } from "../../../scripts/build-tvc-wasm.cjs";
 
@@ -33,7 +33,11 @@ export const TVC22_KEY_WAIT = 0xca9f;
 export const TVC22_KEY_WAIT_END = 0xcaac;
 
 export type RunLimit = { maxFrames?: number };
-export type TvcSessionOptions = { model?: string };
+export type TvcSessionOptions = {
+  model?: string;
+  /** The HBF floppy interface in slot 0, with VT-DOS (`MC_TVC_HBF`) */
+  hbf?: boolean;
+};
 
 /** The CRTC as the harness reads it */
 export type TvcCrtcState = {
@@ -46,10 +50,10 @@ export type TvcCrtcState = {
 };
 
 class HarnessTvcMachine extends TvcWasmV2Machine {
-  constructor(modelId: string) {
+  constructor(modelId: string, hbf = false) {
     const model = TVC_MODELS.find((m) => m.modelId === modelId);
     if (!model) throw new Error(`Unknown TVC model '${modelId}'`);
-    super(MI_TVC, model, undefined, undefined, {
+    super(MI_TVC, model, hbf ? { [MC_TVC_HBF]: true } : undefined, undefined, {
       artifactName: "harness-tvc.wasm",
       readArtifact: async () => readFileSync(productionOutput)
     });
@@ -72,7 +76,7 @@ export async function createTvcSession(options: TvcSessionOptions = {}): Promise
     buildTvcWasm();
     wasmBuilt = true;
   }
-  const machine = new HarnessTvcMachine(options.model ?? "tvc64");
+  const machine = new HarnessTvcMachine(options.model ?? "tvc64", options.hbf);
   await machine.setup();
   return new TvcTestSession(machine);
 }
@@ -325,6 +329,14 @@ export class TvcTestSession {
       inAdjust: ((counters >> 24) & 1) !== 0,
       rowStart: w.tvcCrtcGetRowStart()
     };
+  }
+
+  /** Puts a raw `.dsk` in an HBF drive (0 is A:), as the IDE's disk menu does */
+  insertDisk(drive: number, bytes: Uint8Array | undefined): this {
+    this.machine.setMachineProperty(drive ? MEDIA_DISK_B : MEDIA_DISK_A, bytes);
+    const problem = this.machine.diskProblems[drive];
+    if (problem) throw new Error(`The disk does not go in drive ${drive}: ${problem}`);
+    return this;
   }
 
   /** The published picture, as a copy (0xAABBGGRR words, 608 x 288) */

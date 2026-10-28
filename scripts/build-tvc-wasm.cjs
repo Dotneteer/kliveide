@@ -92,6 +92,29 @@ const productionExports = [
   "tvcGetFrames",
   "tvcGetHalfClock",
   "tvcGetIsPlus",
+  "tvcHbfClearDirty",
+  "tvcHbfDiskDataPtr",
+  "tvcHbfDiskEject",
+  "tvcHbfDiskGetCapacity",
+  "tvcHbfGetDiskCylinders",
+  "tvcHbfGetDiskPresent",
+  "tvcHbfGetDiskSides",
+  "tvcHbfDiskInsert",
+  "tvcHbfDiskSetWriteProtected",
+  "tvcHbfGetDirtyRevision",
+  "tvcHbfGetDriveCylinder",
+  "tvcHbfGetDriveRegister",
+  "tvcHbfGetFdcCommand",
+  "tvcHbfGetFdcData",
+  "tvcHbfGetFdcSector",
+  "tvcHbfGetFdcStatus",
+  "tvcHbfGetFdcTrack",
+  "tvcHbfGetPresent",
+  "tvcHbfGetRomPage",
+  "tvcHbfGetSectorCount",
+  "tvcHbfGetSectorDirty",
+  "tvcHbfRomPtr",
+  "tvcHbfSetPresent",
   "tvcGetItPending",
   "tvcGetKeyboardLine",
   "tvcGetMemoryCapacity",
@@ -157,8 +180,11 @@ const productionExports = [
  * stack; the 4 MiB execution-history ring (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` D2, D3) and
  * the access profile's flags and counter pool (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D5) make
  * it 8 MiB, as the HT-1080Z's. Raise this only with a recorded reason.
+ *
+ * 10 MiB since Phase 8: the HBF card's two drives hold their 720K disks in the core's memory
+ * (`tvc-hbf.c`, 2 x 82 x 2 x 9 x 512 bytes, 1.5 MiB).
  */
-const TVC_WASM_MEMORY_BYTES = 8 * 1024 * 1024;
+const TVC_WASM_MEMORY_BYTES = 10 * 1024 * 1024;
 
 function normalizeOptimization(optimization = process.env.TVC_WASM_OPTIMIZATION || "speed") {
   if (optimizationProfiles[optimization] == null) {

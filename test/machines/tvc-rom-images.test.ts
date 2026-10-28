@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { TVC_ROM_SETS, type TvcRomImage } from "@emu/machines/tvc/TvcRoms";
+import { TVC_HBF_ROM_IMAGE, TVC_ROM_SETS, type TvcRomImage } from "@emu/machines/tvc/TvcRoms";
 
 /*
  * The Videoton TVC ROM images (`.plans/VIDEOTON_TVC_PLAN.md` D3). A replaced or corrupted image fails
@@ -32,6 +32,12 @@ const read = (image: TvcRomImage) => new Uint8Array(readFileSync(join(ROM_DIR, `
 const latin1 = (bytes: Uint8Array, from: number, to: number) => Buffer.from(bytes.subarray(from, to)).toString("latin1");
 
 describe("Videoton TVC ROM images", () => {
+  it("VT-DOS: tvc-vtdos has the recorded size and CRC32 (MAME's d_tvcdos.128)", () => {
+    const bytes = read(TVC_HBF_ROM_IMAGE);
+    expect(bytes.length).toBe(TVC_HBF_ROM_IMAGE.size);
+    expect(crc32(bytes).toString(16)).toBe(TVC_HBF_ROM_IMAGE.crc32.toString(16));
+  });
+
   for (const [setId, romSet] of Object.entries(TVC_ROM_SETS)) {
     for (const image of [romSet.sysLow, romSet.sysHigh, romSet.exth]) {
       it(`BASIC ${setId}: ${image.name} has the recorded size and CRC32`, () => {

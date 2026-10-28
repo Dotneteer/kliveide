@@ -26,7 +26,7 @@ import { captureWasmImage, restoreWasmImage, type MachineStateParts } from "../s
 import { fillCoreBytes, writeCoreBytes } from "@emu/machines/reverse/coreMemoryWrites";
 import { loadTvcWasmV2 } from "./wasm/TvcWasmV2Loader";
 import { TvcWasmHost } from "./TvcWasmHost";
-import { TVC_ROM_SETS } from "./TvcRoms";
+import { TVC_HBF_ROM_IMAGE, TVC_ROM_SETS } from "./TvcRoms";
 import {
   TVC_BANK_SIZE,
   TVC_PARTITION_CART,
@@ -35,6 +35,11 @@ import {
   TVC_PHYS_CART,
   TVC_PHYS_EXT_CARD,
   TVC_PHYS_SYS,
+  TVC_PHYS_HBF_ROM,
+  TVC_PHYS_HBF_RAM,
+  TVC_HBF_PAGE_SIZE,
+  TVC_PARTITION_HBF_ROM0,
+  TVC_PARTITION_HBF_RAM,
   TVC_PIXEL_ASPECT,
   TVC12_KEY_WAIT_ROUTINE,
   TVC22_KEY_WAIT_ROUTINE
@@ -43,8 +48,20 @@ import { TvcKeyCode } from "./TvcKeyCode";
 import type { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
 import { beamAt, drawnUpTo, type BeamPosition, type BeamTiming } from "@common/utils/beamGeometry";
 import type { AudioSample } from "@emu/abstractions/IAudioDevice";
-import { AUDIO_SAMPLE_RATE, FAST_LOAD, REWIND_REQUESTED, SAVED_TO_TAPE } from "../machine-props";
-import { MEDIA_TAPE } from "@common/structs/project-const";
+import {
+  AUDIO_SAMPLE_RATE,
+  DISK_A_CHANGES,
+  DISK_A_WP,
+  DISK_B_CHANGES,
+  DISK_B_WP,
+  FAST_LOAD,
+  REWIND_REQUESTED,
+  SAVED_TO_TAPE
+} from "../machine-props";
+import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_TAPE } from "@common/structs/project-const";
+import type { SectorChanges } from "@emu/abstractions/IFloppyDiskDrive";
+import { DSK_WHOLE_IMAGE_KEY } from "../disk/disk-changes";
+import { TvcHbfDisks } from "./TvcHbfDisks";
 import { isTvcTapeFile, tvcSavedFileOf } from "./TvcCasFile";
 
 /** The DC filter's cut-off, as the other cores' (`AudioDeviceBase.DC_FILTER_CUTOFF_HZ`); the core has no `exp` */
@@ -193,6 +210,10 @@ export class TvcWasmV2Machine extends TvcWasmHost implements IExecutionHistorySo
   private loadScript: string[] = [];
   private loadScriptIdleFrames = 0;
   private loadScriptAge = 0;
+  /** The HBF card's drives (`MEDIA_DISK_A/B`), once the core is loaded */
+  private hbfDisks?: TvcHbfDisks;
+  /** Why the last disk inserted could not go in a drive (`TvcDiskImage.ts`), per drive */
+  diskProblems: (string | undefined)[] = [undefined, undefined];
   /** The current frame's samples; the array and its objects are reused, as the HT-1080Z's are */
   private readonly wasmV2AudioSamples: AudioSample[] = [];
 
@@ -447,6 +468,14 @@ export class TvcWasmV2Machine extends TvcWasmHost implements IExecutionHistorySo
     writeCoreBytes(runtime, runtime.exthRom, exth.subarray(0, romSet.exth.size));
     // --- No cartridge: the CART bank reads FFh
     fillCoreBytes(runtime, runtime.cartRom, 0xff);
+    // --- The HBF card in slot 0, with its VT-DOS ROM (`MC_TVC_HBF`)
+    fillCoreBytes(runtime, runtime.hbfRom, 0xff);
+    if (hw.hbf) {
+      const hbf = await this.loadRomFromResource(TVC_HBF_ROM_IMAGE.name);
+      writeCoreBytes(runtime, runtime.hbfRom, hbf.subarray(0, TVC_HBF_ROM_IMAGE.size));
+    }
+    runtime.exports.tvcHbfSetPresent(hw.hbf ? 1 : 0);
+    this.hbfDisks ??= new TvcHbfDisks(runtime.exports);
     const words = runtime.exports.tvcGetScreenWidth() * runtime.exports.tvcGetScreenHeight();
     this.screenPixels = runtime.pixelBuffer.subarray(0, words);
     this.screenPixelBytes = runtime.pixelBufferBytes.subarray(0, words * 4);
@@ -456,7 +485,36 @@ export class TvcWasmV2Machine extends TvcWasmHost implements IExecutionHistorySo
     this.syncAudioSampleRate(runtime);
     this.savedTapeRevision = runtime.exports.tvcTapeGetSavedRevision();
     this.uploadTape(runtime, this.getMachineProperty(MEDIA_TAPE));
+    this.insertDisk(0, this.getMachineProperty(MEDIA_DISK_A));
+    this.insertDisk(1, this.getMachineProperty(MEDIA_DISK_B));
     this.syncCpuFromWasmV2(runtime);
+  }
+
+  // ==========================================================================================
+  // The HBF card's disks (`TvcHbfDisks.ts`, `tvc-hbf.c`)
+
+  private insertDisk(drive: number, contents: unknown): void {
+    if (!this.hbfDisks) return;
+    this.diskProblems[drive] = this.hbfDisks.insert(drive, contents, !!this.getMachineProperty(drive ? DISK_B_WP : DISK_A_WP));
+  }
+
+  /** The guest's writes, as the drives' whole new images, for the main process to write back */
+  private publishDiskChanges(): void {
+    const published = this.hbfDisks?.publish();
+    if (!published) return;
+    published.forEach((image, drive) => {
+      if (image) super.setMachineProperty(drive ? DISK_B_CHANGES : DISK_A_CHANGES, new Map([[DSK_WHOLE_IMAGE_KEY, image]]) as SectorChanges);
+    });
+  }
+
+  /** The controller asks for the pending writes before it reads them (a pause, a stop) */
+  flushDiskChanges(): void {
+    this.publishDiskChanges();
+  }
+
+  /** The disk in a drive as a raw `.dsk` image, the guest's writes included */
+  exportDisk(drive: number): Uint8Array | undefined {
+    return this.hbfDisks?.image(drive);
   }
 
   override setMachineProperty(key: string, value?: any): void {
@@ -472,6 +530,14 @@ export class TvcWasmV2Machine extends TvcWasmHost implements IExecutionHistorySo
         break;
       case REWIND_REQUESTED:
         if (value === true || value === undefined) runtime.exports.tvcTapeRewind();
+        break;
+      case MEDIA_DISK_A:
+      case MEDIA_DISK_B:
+        this.insertDisk(key === MEDIA_DISK_A ? 0 : 1, value);
+        break;
+      case DISK_A_WP:
+      case DISK_B_WP:
+        this.hbfDisks?.setWriteProtected(key === DISK_A_WP ? 0 : 1, !!value);
         break;
     }
   }
@@ -642,6 +708,7 @@ export class TvcWasmV2Machine extends TvcWasmHost implements IExecutionHistorySo
       for (let i = 1; i < FAST_LOAD_FRAMES && this.isTapeLoading; i++) runtime.exports.tvcExecuteFrame();
     }
     this.publishSavedTape(runtime);
+    this.publishDiskChanges();
     this.syncFrameCounters(runtime);
     this.frameCompleted = runtime.exports.tvcGetFrameCompleted() !== 0;
     this.advanceLoadScript(runtime);
@@ -715,6 +782,7 @@ export class TvcWasmV2Machine extends TvcWasmHost implements IExecutionHistorySo
     this.syncCpuFromWasmV2(runtime);
     this.importBusAccess(runtime);
     this.publishSavedTape(runtime);
+    this.publishDiskChanges();
     this.executionContext.lastTerminationReason = termination;
     return termination;
   }
@@ -775,15 +843,18 @@ export class TvcWasmV2Machine extends TvcWasmHost implements IExecutionHistorySo
   }
 
   // ==========================================================================================
-  // Partitions (`.plans/VIDEOTON_TVC_PLAN.md` §11): the physical memory as 16K partitions - U0-U3
-  // and VID0-VID3 are 0-7, SYS -1, CART -2, EXT -3 (the card window and EXTH, as page 3 shows them)
+  // Partitions (`.plans/VIDEOTON_TVC_PLAN.md` §11): the physical memory as partitions - U0-U3
+  // and VID0-VID3 (16K) are 0-7, SYS -1, CART -2, EXT -3 (the card window and EXTH, as page 3 shows
+  // them), and the HBF card's ROM pages -4 to -7 and RAM -8 (4K)
 
   /** The partition a physical offset is in */
   private partitionOfPhysical(physical: number): number {
     if (physical < TVC_PHYS_SYS) return physical >> 14;
     if (physical < TVC_PHYS_CART) return TVC_PARTITION_SYS;
     if (physical < TVC_PHYS_EXT_CARD) return TVC_PARTITION_CART;
-    return TVC_PARTITION_EXT;
+    if (physical < TVC_PHYS_HBF_ROM) return TVC_PARTITION_EXT;
+    if (physical < TVC_PHYS_HBF_RAM) return TVC_PARTITION_HBF_ROM0 - ((physical - TVC_PHYS_HBF_ROM) >> 12);
+    return TVC_PARTITION_HBF_RAM;
   }
 
   /** The first physical offset of a partition */
@@ -791,7 +862,14 @@ export class TvcWasmV2Machine extends TvcWasmHost implements IExecutionHistorySo
     if (partition >= 0) return (partition & 0x07) * TVC_BANK_SIZE;
     if (partition === TVC_PARTITION_SYS) return TVC_PHYS_SYS;
     if (partition === TVC_PARTITION_CART) return TVC_PHYS_CART;
+    if (partition === TVC_PARTITION_HBF_RAM) return TVC_PHYS_HBF_RAM;
+    if (partition <= TVC_PARTITION_HBF_ROM0) return TVC_PHYS_HBF_ROM + (TVC_PARTITION_HBF_ROM0 - partition) * TVC_HBF_PAGE_SIZE;
     return TVC_PHYS_EXT_CARD;
+  }
+
+  /** A partition's size: 16K, or 4K for the HBF card's ROM pages and RAM */
+  private partitionSize(partition: number): number {
+    return partition <= TVC_PARTITION_HBF_ROM0 ? TVC_HBF_PAGE_SIZE : TVC_BANK_SIZE;
   }
 
   /** The partition of each 8K slot, as the paging shows it now */
@@ -819,6 +897,10 @@ export class TvcWasmV2Machine extends TvcWasmHost implements IExecutionHistorySo
       4: "V0"
     };
     if (this.hardware.plus) Object.assign(labels, { 5: "V1", 6: "V2", 7: "V3" });
+    if (this.hardware.hbf) {
+      Object.assign(labels, { [TVC_PARTITION_HBF_RAM]: "HBFR" });
+      for (let page = 0; page < 4; page++) labels[TVC_PARTITION_HBF_ROM0 - page] = `HBF${page}`;
+    }
     return labels;
   }
 
@@ -832,11 +914,12 @@ export class TvcWasmV2Machine extends TvcWasmHost implements IExecutionHistorySo
   override getMemoryPartition(index: number): Uint8Array {
     const runtime = this.requireWasmV2Runtime();
     const start = this.physicalOfPartition(index);
-    return runtime.memory.subarray(start, start + TVC_BANK_SIZE);
+    return runtime.memory.subarray(start, start + this.partitionSize(index));
   }
 
   override getPartition(address: number): number | undefined {
-    return this.getCurrentPartitions()[(address >>> 13) & 0x07];
+    const wasm = this.wasmV2Runtime?.exports;
+    return wasm ? this.partitionOfPhysical(wasm.tvcGetPhysicalAddress(address & 0xffff)) : undefined;
   }
 
   /** The 64K as eight 8K pages: a page is ROM when the paging shows SYS, CART or EXTH (or an empty card) there */

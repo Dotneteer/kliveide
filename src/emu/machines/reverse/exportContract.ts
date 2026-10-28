@@ -186,6 +186,8 @@ const JOURNALED = new RegExp(
       "Fdc",
       "Dock",
       "DivMmc",
+      // --- The Videoton TVC's HBF floppy card (`tvc-hbf.c`): the card, its disks, their write-back
+      "Hbf",
       // --- The Interface 1 (`zx-spectrum-if1.c`): connect, ROM, paging, cartridges, write-back
       "If1",
       "Dma",

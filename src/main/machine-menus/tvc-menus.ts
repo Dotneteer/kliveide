@@ -10,7 +10,11 @@ import { mainStore } from "@main/main-store";
 import { saveKliveProject } from "@main/projects";
 import { appSettings } from "@main/settings-utils";
 import { dialog, app } from "electron";
-import { ejectMediaFile, setSelectedTapeFile } from "./zx-specrum-menus";
+import { MC_DISK_SUPPORT, MC_TVC_HBF } from "@common/machines/constants";
+import { getModelConfig } from "@common/machines/machine-registry";
+import { incMenuVersionAction } from "@state/actions";
+import { logEmuEvent, setMachineType } from "@main/registeredMachines";
+import { diskMenuRenderer, ejectMediaFile, setSelectedTapeFile } from "./zx-specrum-menus";
 import { t } from "@common/i18n/i18n";
 
 const TAPE_FILE_FOLDER = "tapeFileFolder";
@@ -65,3 +69,45 @@ export const tvcTapeMenuRenderer: MachineMenuRenderer = (windowInfo) => {
   ];
   return items;
 };
+
+/**
+ * The HBF floppy interface (`.plans/VIDEOTON_TVC_PLAN.md` §9.4): a switch that plugs the card into
+ * slot 0 (the machine config's `MC_TVC_HBF`, which restarts the machine), and with it the two
+ * drives' items - the Spectrum's disk menu, without its "create a disk" (that makes a +3 image).
+ */
+export const tvcDiskMenuRenderer: MachineMenuRenderer = (windowInfo, machine, model, config) => {
+  const effective = config ?? mainStore.getState()?.emulatorState?.config ?? model?.config;
+  const hbf = effective?.[MC_TVC_HBF] === true;
+  const items: MachineMenuItem[] = [
+    {
+      id: "tvc_hbf",
+      label: t("menu.tvc.hbf"),
+      type: "checkbox",
+      checked: hbf,
+      click: async () => {
+        await setTvcHbf(!hbf);
+      }
+    }
+  ];
+  if (!hbf) return items;
+  const disks = diskMenuRenderer(windowInfo, machine, { ...model, config: { [MC_DISK_SUPPORT]: 2 } } as any, config);
+  const floppy = disks.find((item) => item.id === "floppy_menu");
+  const drives = (floppy?.submenu ?? []).filter((item) => item.id !== "create_disk_file");
+  while (drives[0]?.type === "separator") drives.shift();
+  return [...items, { type: "separator" }, ...drives];
+};
+
+/** Plugs the HBF card in or out: the machine restarts with the new configuration */
+async function setTvcHbf(on: boolean): Promise<void> {
+  const emulatorState = mainStore.getState()?.emulatorState;
+  const machineId = emulatorState?.machineId;
+  const modelId = emulatorState?.modelId;
+  if (!machineId) return;
+  const config = { ...(emulatorState?.config ?? getModelConfig(machineId, modelId) ?? {}) };
+  if (on) config[MC_TVC_HBF] = true;
+  else delete config[MC_TVC_HBF];
+  await setMachineType(machineId, modelId, config);
+  mainStore.dispatch(incMenuVersionAction());
+  await saveKliveProject();
+  await logEmuEvent(on ? "HBF floppy interface plugged in" : "HBF floppy interface removed");
+}

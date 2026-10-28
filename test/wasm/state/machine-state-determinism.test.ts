@@ -13,6 +13,8 @@
  * reads, shows up here as a difference. This is also the reusable check the reverse-debugging work
  * (G4.4) builds on.
  */
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import type { MachineStateParts } from "@emu/machines/state/wasmStateImage";
 import { MachineStateMismatchError } from "@emu/machines/state/wasmStateImage";
@@ -179,6 +181,18 @@ describe("machine state: save, load into another machine, run = keep running", (
     // --- A program that prints (the stretched video RAM writes) and scrolls
     a.typeKeys("10 FOR I=1 TO 99:PRINT I;:NEXT:GOTO 10\nRUN\n");
     a.runFrames(7).step(333);
+    proveDeterminism(a as unknown as Driver, b as unknown as Driver, 30);
+  });
+
+  it("Videoton TVC with the HBF card, reading its disk", async () => {
+    const disk = new Uint8Array(readFileSync(join(__dirname, "../../../_input/videoton-tvc/rtvc/progs/VTDOS-SYSTEM.DSK")));
+    const a = await createTvcSession({ hbf: true });
+    const b = await createTvcSession({ hbf: true });
+    a.insertDisk(0, disk);
+    a.bootToBasic({ maxFrames: 1500 });
+    // --- The controller mid-command: VT-DOS reading the directory
+    a.typeKeys("EXT2\nDIR\n", { settle: 0 });
+    a.runFrames(40).step(333);
     proveDeterminism(a as unknown as Driver, b as unknown as Driver, 30);
   });
 

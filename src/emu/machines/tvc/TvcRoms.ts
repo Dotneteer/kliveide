@@ -29,6 +29,12 @@ export const TVC_ROM_CHIP_SIZE = 0x2000;
 
 const image = (name: string, crc32: number): TvcRomImage => ({ name, size: TVC_ROM_CHIP_SIZE, crc32 });
 
+/**
+ * The HBF floppy interface card's 16K ROM: VT-DOS (`tvc-hbf.c`). Its CRC32 is MAME's `d_tvcdos.128`,
+ * which MAME names VT-DOS v1.1; the research pack's file calls it 1.2.
+ */
+export const TVC_HBF_ROM_IMAGE: TvcRomImage = { name: "tvc-vtdos", size: 0x4000, crc32: 0x2acf8477 };
+
 /** The CRC32s are MAME's tvc64 and tvc64p (BIOS v2.2) sets' */
 export const TVC_ROM_SETS: Readonly<Record<TvcRomSetId, TvcRomSet>> = {
   "12": {

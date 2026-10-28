@@ -701,7 +701,8 @@ export const machineRegistry: MachineInfo[] = [
       [MF_REVERSE_DEBUG]: true
     },
     models: TVC_MODELS,
-    mediaIds: [MEDIA_TAPE],
+    // --- The disks need the HBF card (`MC_TVC_HBF`); without it the drives hold nothing the ROM sees
+    mediaIds: [MEDIA_TAPE, MEDIA_DISK_A, MEDIA_DISK_B],
     toolInfo: {
       [CT_DISASSEMBLER]: (
         memorySections: MemorySection[],

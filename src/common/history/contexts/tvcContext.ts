@@ -4,24 +4,38 @@
  *   0    bit 0 the 64K+; bit 1 the video bank the video circuit shows is not 0
  *   1    port 02h, the main paging register
  *   2    port 0Ch, the 64K+'s video paging register
+ *   3    port 03h (bits 7-6: the card the EXT page shows)
+ *   4    bits 1-0 the HBF card's ROM page; bit 7 the card is plugged in
  *
  * The partitions are the machine's (`TvcWasmV2Machine.getPartitionLabels`): U0-U3 are 0-3, the video
- * banks VID0-VID3 4-7, SYS -1, CART -2 and EXT -3 (the card window and EXTH).
+ * banks VID0-VID3 4-7, SYS -1, CART -2 and EXT -3 (the card window and EXTH); the HBF card's ROM
+ * pages -4 to -7 and its RAM -8 (`tvc-hbf.c`).
  */
 
 export type TvcHistoryContext = {
   plus: boolean;
   port02: number;
   port0c: number;
+  /** The card the EXT page shows (port 03h bits 7-6) */
+  card: number;
+  hbf: boolean;
+  hbfPage: number;
 };
 
 export function decodeTvcContext(context: Uint8Array): TvcHistoryContext {
-  return { plus: (context[0] & 0x01) !== 0, port02: context[1], port0c: context[2] };
+  return {
+    plus: (context[0] & 0x01) !== 0,
+    port02: context[1],
+    port0c: context[2],
+    card: context[3] >> 6,
+    hbf: (context[4] & 0x80) !== 0,
+    hbfPage: context[4] & 0x03
+  };
 }
 
 /** The partition the mapper (`tvc-memory.c`) showed at an address */
 export function tvcPartitionFor(context: Uint8Array, address: number): number | undefined {
-  const { plus, port02: m, port0c } = decodeTvcContext(context);
+  const { plus, port02: m, port0c, card, hbf, hbfPage } = decodeTvcContext(context);
   const a = address & 0xffff;
   switch (a >> 14) {
     case 0:
@@ -40,7 +54,10 @@ export function tvcPartitionFor(context: Uint8Array, address: number): number | 
         case 0: return -2;
         case 1: return -1;
         case 2: return 3;
-        default: return -3;
+        default:
+          // --- EXT: slot 0's HBF card shows a ROM page at C000h and its RAM at D000h
+          if (card === 0 && hbf && a < 0xe000) return a < 0xd000 ? -4 - hbfPage : -8;
+          return -3;
       }
   }
 }

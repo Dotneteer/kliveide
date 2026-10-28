@@ -40,7 +40,7 @@ static void tvcStretch(uint32_t halves) {
 }
 
 static void TVC_NOINLINE tvcDelayMemory(uint16_t address, uint32_t m1) {
-  const uint32_t slot = address >> 13;
+  const uint32_t slot = address >> 12;
   if (tvcVramSlots & (1u << slot)) {
     /* Where T1 starts in the character: the current character began 4 half-T before the next one */
     const uint32_t phase = (tvcHalfClock - (tvcNextCharHalf - TVC_CHAR_HALVES)) & 3u;

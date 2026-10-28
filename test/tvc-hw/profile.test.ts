@@ -90,6 +90,8 @@ describe("the TVC's access profile", () => {
     expect(profileOffsetOf(tvcProfileLayout, 6, 0x8000)).toBe(0x18000);
     expect(profileLocationOf(tvcProfileLayout, 0x18000)).toEqual({ partition: 6, address: 0, rom: false });
     expect(profileLocationOf(tvcProfileLayout, 0x2a000)).toEqual({ partition: -3, address: 0x2000, rom: true });
+    expect(profileLocationOf(tvcProfileLayout, 0x2e123)).toEqual({ partition: -6, address: 0x123, rom: true });
+    expect(profileLocationOf(tvcProfileLayout, 0x30010)).toEqual({ partition: -8, address: 0x10, rom: false });
   });
 });
 
@@ -106,7 +108,7 @@ describe("the TVC's history partitions", () => {
         context[0] = 1;
         context[1] = port02;
         context[2] = port0c;
-        for (const address of [0x0000, 0x4000, 0x8000, 0xc000, 0xe000]) {
+        for (const address of [0x0000, 0x4000, 0x8000, 0xc000, 0xd000, 0xe000]) {
           expect(decoder.partitionFor(context, address), `P02 ${port02} P0C ${port0c} at ${address}`).toBe(
             s.machine.getPartition(address)
           );
@@ -114,6 +116,32 @@ describe("the TVC's history partitions", () => {
       }
     }
     s.wasm.tvcWritePort(0x02, 0x10);
+  });
+
+  it("decode the HBF card's ROM page and RAM in the EXT page", async () => {
+    const s = await createTvcSession({ model: "tvc64", hbf: true });
+    bareMachine(s, { halt: false });
+    const decoder = historyContextDecoder("tvc")!;
+    s.wasm.tvcWritePort(0x02, 0xd0);
+    for (const page of [0, 1, 2, 3]) {
+      for (const port03 of [0x00, 0x40]) {
+        s.wasm.tvcWritePort(0x03, port03);
+        s.wasm.tvcWritePort(0x18, page << 4);
+        const context = new Uint8Array(16);
+        context[1] = 0xd0;
+        context[3] = port03;
+        context[4] = 0x80 | page;
+        for (const address of [0xc000, 0xcfff, 0xd000, 0xe000]) {
+          expect(decoder.partitionFor(context, address), `page ${page} card ${port03 >> 6} at ${address}`).toBe(
+            s.machine.getPartition(address)
+          );
+        }
+      }
+    }
+    expect(s.machine.getPartition(0xc000)).toBe(-3);
+    s.wasm.tvcWritePort(0x03, 0x00);
+    expect(s.machine.getPartition(0xc000)).toBe(-7);
+    expect(s.machine.getPartitionLabels()[-7]).toBe("HBF3");
   });
 
   it("describe the context", () => {
