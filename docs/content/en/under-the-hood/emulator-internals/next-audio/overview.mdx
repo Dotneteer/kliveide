@@ -860,8 +860,9 @@ measured on the hardware, which is why this series' captures are drawn about the
 Klive makes **one** stream for your computer's speakers, so it plays **one** of the Next's outputs: the
 audio jack, the internal speaker or HDMI, chosen under **Machine › Sound › Output**
 (the jack unless you choose otherwise), each built as on the hardware
-([article 7](/en/under-the-hood/emulator-internals/next-audio/mixer/#the-three-outputs)). The tape input's
-sound is not added to the MIC line: Klive's Next has no tape player yet.
+([article 7](/en/under-the-hood/emulator-internals/next-audio/mixer/#the-three-outputs)). A tape in
+Klive's deck reaches the MIC line through the Next's own EAR input stage, so a loading tape is heard as
+on the real machine.
 
 ### Where to read the code
 
@@ -873,7 +874,7 @@ All in `src/emu/machines/zxNext/wasm/zxnext/`:
 | The three AY chips, TurboSound's selection and stereo modes | `zxnext-psg.c` |
 | The four DACs, their port decoding and the NextReg mirrors | `zxnext-dac.c` |
 | The Pi's audio: the receiving half of the I2S link | `zxnext-pi-i2s.c` (the sample source: `src/emu/machines/zxNext/piI2s/`) |
-| The tape's EAR and MIC bits | `zxnext-tape.c` |
+| The tape: the deck, fast load, SAVE capture and the EAR input stage | `zxnext-tape.c` (the player is the Spectrum cores' `src/emu/machines/zxSpectrum/wasm/common/zx-spectrum-tape.c`) |
 | The sum, its scaling and the sampling | `zxnext-audio-mixer.c` |
 
 ## Summary

@@ -248,6 +248,8 @@ static void zxnextAudioMixerRefreshCurrentSources(double sampleEndTact, double s
      beeper's sample is taken. A sample-end in the past sees the words latched since, at most one
      audio sample late (zxnext-pi-i2s.c keeps time lazily and never runs backwards). */
   zxnextPiI2sSync();
+  /* The tape input up to now too: its changes reach the MIC line before the beeper's sample is taken */
+  (void)zxnextTapeGetInput();
   /* HDMI takes the sum's value at the sample's moment (no averaging): the beeper's level at the
      window's end instead of its time-weighted share, and the PSGs' current output */
   const uint32_t pointSampled = zxnextMixerOutput == ZXNEXT_AUDIO_OUT_HDMI;

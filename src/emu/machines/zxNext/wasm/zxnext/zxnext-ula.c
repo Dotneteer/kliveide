@@ -179,8 +179,8 @@ static inline uint32_t zxnextUlaReadPortFe(uint32_t address) {
   uint8_t bit6 = 0u;
   if (bit4Sensed) bit6 = 0x40u;
   if (micBit && ((zxnextNextRegs[0x08u] & 0x01u) != 0u)) bit6 = 0x40u;
-  /* zxnext.vhd ~3456: (i_AUDIO_EAR xor pi_fe_ear) or ...; the physical tape input is not modelled */
-  if (zxnextPiI2sGetFeEar()) bit6 = 0x40u;
+  /* zxnext.vhd ~3456: (i_AUDIO_EAR xor pi_fe_ear) or ...: the conditioned tape input (zxnext-tape.c) */
+  if (zxnextTapeGetInput() ^ zxnextPiI2sGetFeEar()) bit6 = 0x40u;
   return (portValue & 0xbfu) | bit6;
 }
 
@@ -194,6 +194,8 @@ static inline void zxnextUlaWritePortFe(uint32_t value) {
     zxnextUlaScheduleLatch(ZXNEXT_ULA_LATCH_BORDER, borderColor, zxnextRasterBorderTact(currentFrameTact));
   }
   micBit = (byteValue & 0x08u) != 0u;
+  /* The SAVE capture follows port $FE bit 3 (the player's SA-BYTES trap; zxnext-tape.c) */
+  zxnextTapeProcessMicBit(micBit);
   uint8_t bit4 = (byteValue & 0x10u) != 0u;
   if (earBit && !bit4) {
     ulaPortBit4ChangedFrom1Tacts = tacts;

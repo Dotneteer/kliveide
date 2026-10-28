@@ -657,8 +657,8 @@ plays the output chosen under Machine › Sound › Output (setting
 the hardware's sum beside the centred mix, bit-identical below 4,096), the internal speaker (L + R jack
 values × 6.4, `$08` bit 4 gates it, `$06` bit 6 plays EAR 1,024 / MIC 256 only; issue 4's speaker) or
 HDMI (the whole sum × 7.34, point-sampled beeper and PSGs, `$09` bit 2 silences it). Tests OUT-001 to
-OUT-005 in `audio-outputs.test.ts`. The tape input stays out: the Next has no tape player in Klive, a
-separate task.
+OUT-005 in `audio-outputs.test.ts`. The tape input followed (`.plans/NEXT_TAPE_PLAN.md`): Klive's deck
+feeds the EAR socket through the Next's input stage into port `$FE` bit 6 and the MIC line.
 
 Klive's samples stand for the sound **after the jack's capacitor**, not the FPGA's digital sum: the
 article says so beside the beeper figure (author's review). The remaining inaudible differences are

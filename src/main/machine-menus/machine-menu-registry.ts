@@ -138,6 +138,7 @@ export const machineMenuRegistry: Record<string, MachineMenuInfo> = {
   },
   [MI_ZXNEXT]: {
     devices: {
+      tape: tapeMenuRenderer,
       sdCard: sdCardMenuRenderer,
       input: combine(joystickMenuRenderer, mouseMenuRenderer)
     },

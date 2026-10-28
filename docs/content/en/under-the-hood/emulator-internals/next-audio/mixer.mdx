@@ -705,10 +705,10 @@ the machine.
 
 ### What Klive leaves out
 
-- The **tape input** is not added to the MIC line: Klive's ZX Spectrum Next has no tape player yet, so
-  there is no tape signal to add.
-
-Three smaller differences come from Klive's way of removing the constant level. None of them can be
+Klive's tape deck feeds the Next's EAR socket: its level passes the machine's own input stage (the
+debounce that drops pulses under about 1.14 µs, the relaxation that turns a level held at 1 into 0
+after about 1.15 ms), and the result reaches port `$FE` bit 6 and the MIC line, so a loading tape is
+heard at MIC's level as on the real machine. What remains are three small differences that come from Klive's way of removing the constant level. None of them can be
 heard, since a constant level is never heard:
 
 - **Only the beeper is filtered.** The real capacitor removes the constant level of the whole sum. Klive
@@ -730,6 +730,7 @@ heard, since a constant level is never heard:
 | The three outputs, the jack's wrap and the beeper-only switch | the same file |
 | The sound output setting | `src/common/settings/next-audio-output.ts` |
 | Each source's level | `zxnext-beeper.c`, `zxnext-psg.c`, `zxnext-dac.c`, `zxnext-pi-i2s.c` in the same folder |
+| The tape deck and the EAR input stage | `zxnext-tape.c` in the same folder |
 
 ## Summary
 

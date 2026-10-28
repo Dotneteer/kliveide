@@ -174,6 +174,29 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & ConditionCoreExports & Z
   zxnextGetTapeEarBit: ZxNextWasmV2ExportFunction;
   zxnextGetTapeMicBit: ZxNextWasmV2ExportFunction;
   zxnextProcessTapeMicBit: ZxNextWasmV2ExportFunction;
+  zxnextTapeDataPtr: ZxNextWasmV2ExportFunction;
+  zxnextTapeGetDataCapacity: ZxNextWasmV2ExportFunction;
+  zxnextTapeGetMaxBlocks: ZxNextWasmV2ExportFunction;
+  zxnextTapeBeginUpload: ZxNextWasmV2ExportFunction;
+  zxnextTapeSetBlock: ZxNextWasmV2ExportFunction;
+  zxnextTapeFinishUpload: ZxNextWasmV2ExportFunction;
+  zxnextTapeClear: ZxNextWasmV2ExportFunction;
+  zxnextTapeRewind: ZxNextWasmV2ExportFunction;
+  zxnextTapeSetFastLoad: ZxNextWasmV2ExportFunction;
+  zxnextTapeGetFastLoad: ZxNextWasmV2ExportFunction;
+  zxnextTapeGetLoaded: ZxNextWasmV2ExportFunction;
+  zxnextTapeGetBlockCount: ZxNextWasmV2ExportFunction;
+  zxnextTapeGetCurrentBlockIndex: ZxNextWasmV2ExportFunction;
+  zxnextTapeGetEof: ZxNextWasmV2ExportFunction;
+  zxnextTapeGetLoadStartCount: ZxNextWasmV2ExportFunction;
+  zxnextTapeGetSaveStartCount: ZxNextWasmV2ExportFunction;
+  zxnextTapeGetInputBit: ZxNextWasmV2ExportFunction;
+  zxnextTapeSaveDataPtr: ZxNextWasmV2ExportFunction;
+  zxnextTapeGetSaveDataCapacity: ZxNextWasmV2ExportFunction;
+  zxnextTapeGetSavedBlockCount: ZxNextWasmV2ExportFunction;
+  zxnextTapeGetSavedRevision: ZxNextWasmV2ExportFunction;
+  zxnextTapeGetSavedBlockOffset: ZxNextWasmV2ExportFunction;
+  zxnextTapeGetSavedBlockLength: ZxNextWasmV2ExportFunction;
   zxnextGetUlaFlashCounter: ZxNextWasmV2ExportFunction;
   zxnextGetUlaFlashFlag: ZxNextWasmV2ExportFunction;
   zxnextAdvanceUlaFrameState: ZxNextWasmV2ExportFunction;
@@ -626,6 +649,29 @@ const requiredV2Exports = [
   "zxnextGetTapeEarBit",
   "zxnextGetTapeMicBit",
   "zxnextProcessTapeMicBit",
+  "zxnextTapeDataPtr",
+  "zxnextTapeGetDataCapacity",
+  "zxnextTapeGetMaxBlocks",
+  "zxnextTapeBeginUpload",
+  "zxnextTapeSetBlock",
+  "zxnextTapeFinishUpload",
+  "zxnextTapeClear",
+  "zxnextTapeRewind",
+  "zxnextTapeSetFastLoad",
+  "zxnextTapeGetFastLoad",
+  "zxnextTapeGetLoaded",
+  "zxnextTapeGetBlockCount",
+  "zxnextTapeGetCurrentBlockIndex",
+  "zxnextTapeGetEof",
+  "zxnextTapeGetLoadStartCount",
+  "zxnextTapeGetSaveStartCount",
+  "zxnextTapeGetInputBit",
+  "zxnextTapeSaveDataPtr",
+  "zxnextTapeGetSaveDataCapacity",
+  "zxnextTapeGetSavedBlockCount",
+  "zxnextTapeGetSavedRevision",
+  "zxnextTapeGetSavedBlockOffset",
+  "zxnextTapeGetSavedBlockLength",
   "zxnextGetUlaFlashCounter",
   "zxnextGetUlaFlashFlag",
   "zxnextAdvanceUlaFrameState",

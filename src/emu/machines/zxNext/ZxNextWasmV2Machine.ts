@@ -75,7 +75,17 @@ import {
 import { ZxNextWasmHost } from "./ZxNextWasmHost";
 import { NEXT_ROM_FLAGS } from "./nextMachineInfo";
 import { rtcRegistersFromDate } from "./nextRtc";
-import { AUDIO_SAMPLE_RATE, NEXT_AUDIO_OUTPUT } from "../machine-props";
+import {
+  AUDIO_SAMPLE_RATE,
+  FAST_LOAD,
+  NEXT_AUDIO_OUTPUT,
+  REWIND_REQUESTED,
+  SAVED_TO_TAPE,
+  TAPE_MODE
+} from "../machine-props";
+import { MEDIA_TAPE } from "@common/structs/project-const";
+import type { TapeDataBlock } from "@common/structs/TapeDataBlock";
+import { savedTapeTzx } from "../tape/savedTapeTzx";
 import { nextAudioOutputIndex } from "@common/settings/next-audio-output";
 import { importAccessLog } from "../wasmAccessLog";
 import {
@@ -228,7 +238,7 @@ export class ZxNextWasmV2Machine
         wasmSelf.wasmV2Runtime?.exports.zxnextSetTapeMode(value);
       },
       updateTapeMode() {
-        // Full ROM tape routine detection remains in TypeScript until storage/tape block migration.
+        // --- The core traps LD-BYTES and SA-BYTES itself, before every instruction (zxnext-tape.c)
       },
       getTapeEarBit() {
         return wasmSelf.wasmV2Runtime?.exports.zxnextGetTapeEarBit() !== 0;
@@ -534,6 +544,7 @@ export class ZxNextWasmV2Machine
     // --- The DS1307 holds the host's time, as the battery-backed clock of a machine set up before
     this.wasmV2Runtime.exports.zxnextRtcSetTime(...rtcRegistersFromDate(new Date()));
     this.syncAudioSampleRateToWasmV2(this.wasmV2Runtime);
+    this.syncTapeStateToWasmV2(this.wasmV2Runtime);
     this.syncCpuFromWasmV2(this.wasmV2Runtime);
   }
 
@@ -568,6 +579,7 @@ export class ZxNextWasmV2Machine
     if (runtime != null && key === NEXT_AUDIO_OUTPUT) {
       this.syncAudioOutputToWasmV2(runtime);
     }
+    if (runtime != null) this.syncTapePropertyToWasmV2(runtime, key, value);
   }
 
   override executeMachineFrame(): FrameTerminationMode {
@@ -590,6 +602,7 @@ export class ZxNextWasmV2Machine
     this.syncAudioOutputToWasmV2(runtime);
     runtime.exports.zxnextExecuteFrame();
     this.syncCpuFromWasmV2(runtime);
+    this.publishSavedTapeFromWasmV2(runtime);
     this.syncWasmV2StorageFrameCommand(runtime);
     this.frameCompleted = runtime.exports.zxnextGetFrameCompleted() !== 0;
     this.applyWasmV2ResetRequest(runtime);
@@ -1000,7 +1013,9 @@ export class ZxNextWasmV2Machine
     if (cached?.runtime !== runtime) {
       this.wasmV2DebugLoopHost = { runtime, host: this.createWasmV2DebugLoopHost(runtime) };
     }
-    return runWasmDebugLoop(this.wasmV2DebugLoopHost!.host);
+    const result = runWasmDebugLoop(this.wasmV2DebugLoopHost!.host);
+    this.publishSavedTapeFromWasmV2(runtime);
+    return result;
   }
 
   private createWasmV2DebugLoopHost(runtime: ZxNextWasmV2Runtime): WasmDebugLoopHost {
@@ -2326,6 +2341,118 @@ export class ZxNextWasmV2Machine
   }
 
 
+
+  // --- The tape (`.plans/NEXT_TAPE_PLAN.md`): the core plays the deck's blocks while ROM 3's LD-BYTES
+  // --- runs, fast-loads by trapping it, and captures what SA-BYTES writes. This side uploads the
+  // --- inserted tape and publishes a SAVE, as the Spectrum machines do.
+  private wasmV2SavedTapeRevision = 0;
+
+  private syncTapeStateToWasmV2(runtime: ZxNextWasmV2Runtime): void {
+    const tapeBlocks = this.getMachineProperty(MEDIA_TAPE);
+    if (Array.isArray(tapeBlocks)) {
+      this.uploadTapeToWasmV2(runtime, tapeBlocks);
+    } else {
+      runtime.exports.zxnextTapeClear();
+      this.wasmV2SavedTapeRevision = 0;
+    }
+    this.syncTapeControlPropertiesToWasmV2(runtime);
+  }
+
+  private syncTapePropertyToWasmV2(runtime: ZxNextWasmV2Runtime, key: string, value?: any): void {
+    switch (key) {
+      case MEDIA_TAPE:
+        if (Array.isArray(value)) {
+          this.uploadTapeToWasmV2(runtime, value);
+        } else {
+          runtime.exports.zxnextTapeClear();
+          this.wasmV2SavedTapeRevision = 0;
+        }
+        this.syncTapeControlPropertiesToWasmV2(runtime);
+        break;
+      case TAPE_MODE:
+        runtime.exports.zxnextSetTapeMode(this.normalizeTapeMode(value));
+        break;
+      case REWIND_REQUESTED:
+        if (value === true || value === undefined) {
+          runtime.exports.zxnextTapeRewind();
+          this.syncTapeControlPropertiesToWasmV2(runtime);
+        }
+        break;
+      case FAST_LOAD:
+        runtime.exports.zxnextTapeSetFastLoad(value ? 1 : 0);
+        break;
+    }
+  }
+
+  private syncTapeControlPropertiesToWasmV2(runtime: ZxNextWasmV2Runtime): void {
+    runtime.exports.zxnextTapeSetFastLoad(this.getMachineProperty(FAST_LOAD) ? 1 : 0);
+    runtime.exports.zxnextSetTapeMode(this.normalizeTapeMode(this.getMachineProperty(TAPE_MODE)));
+  }
+
+  private uploadTapeToWasmV2(runtime: ZxNextWasmV2Runtime, blocks: TapeDataBlock[]): void {
+    const wasm = runtime.exports;
+    const capacity = wasm.zxnextTapeGetDataCapacity();
+    const totalDataLength = blocks.reduce((sum, block) => sum + block.data.length, 0);
+    if (totalDataLength > capacity) {
+      throw new Error(`ZX Spectrum Next tape is too large: ${totalDataLength} bytes. Capacity: ${capacity}.`);
+    }
+    if (wasm.zxnextTapeBeginUpload(blocks.length, totalDataLength) === 0) {
+      throw new Error(`ZX Spectrum Next rejected a tape of ${blocks.length} blocks.`);
+    }
+    const tapeData = new Uint8Array(wasm.memory.buffer, wasm.zxnextTapeDataPtr(), capacity);
+    let offset = 0;
+    for (let i = 0; i < blocks.length; i++) {
+      const block = blocks[i];
+      // --- Journaled, so a reverse-debugging replay sees the upload where it happened
+      writeCoreBytes(runtime, tapeData, block.data, offset);
+      if (
+        wasm.zxnextTapeSetBlock(
+          i,
+          offset,
+          block.data.length,
+          block.pauseAfter,
+          block.pilotPulseLength,
+          block.sync1PulseLength,
+          block.sync2PulseLength,
+          block.zeroBitPulseLength,
+          block.oneBitPulseLength,
+          block.endSyncPulseLength,
+          block.lastByteUsedBits ?? 8,
+          block.pilotPulseCount ?? 0
+        ) === 0
+      ) {
+        throw new Error(`ZX Spectrum Next rejected tape block ${i}.`);
+      }
+      offset += block.data.length;
+    }
+    if (wasm.zxnextTapeFinishUpload() === 0) {
+      throw new Error("ZX Spectrum Next could not finish the tape upload.");
+    }
+    this.wasmV2SavedTapeRevision = 0;
+  }
+
+  /** A SAVE the core captured since the last call, as a TZX the IDE offers to store */
+  private publishSavedTapeFromWasmV2(runtime: ZxNextWasmV2Runtime): void {
+    const wasm = runtime.exports;
+    const revision = wasm.zxnextTapeGetSavedRevision();
+    if (revision === this.wasmV2SavedTapeRevision || revision === 0) return;
+    this.wasmV2SavedTapeRevision = revision;
+    const blockCount = wasm.zxnextTapeGetSavedBlockCount();
+    if (blockCount === 0) return;
+    const saveData = new Uint8Array(wasm.memory.buffer, wasm.zxnextTapeSaveDataPtr(), wasm.zxnextTapeGetSaveDataCapacity());
+    const blocks: Uint8Array[] = [];
+    for (let i = 0; i < blockCount; i++) {
+      const offset = wasm.zxnextTapeGetSavedBlockOffset(i);
+      blocks.push(saveData.slice(offset, offset + wasm.zxnextTapeGetSavedBlockLength(i)));
+    }
+    super.setMachineProperty(SAVED_TO_TAPE, savedTapeTzx(blocks));
+  }
+
+  private normalizeTapeMode(value: unknown): TapeMode {
+    return typeof value === "number" && value >= TapeMode.Passive && value <= TapeMode.Save
+      ? value
+      : TapeMode.Passive;
+  }
 
   /**
    * Which output the audio stream plays (`next-audio-output.ts`). It lives in the core's memory, so

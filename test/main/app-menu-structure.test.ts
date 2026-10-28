@@ -234,6 +234,8 @@ describe("the application menu", () => {
       "Restart",
       // --- No Speed: the Next sets its own CPU speed (MF_ALLOW_CLOCK_MULTIPLIER)
       "Sound",
+      // --- The 48K ROM's tape routines through the Next's EAR input (NEXT_TAPE_PLAN)
+      "Tape",
       "SD Card",
       "Input",
       "ZX Spectrum Next",
@@ -241,6 +243,7 @@ describe("the application menu", () => {
     ]);
     expect(labels(submenu(machine, "Input"))).toEqual(["Joystick", "Mouse", "Input Settings..."]);
     expect(labels(submenu(machine, "ZX Spectrum Next"))[0]).toMatch(/^F1 /);
+    expect(labels(submenu(machine, "Tape"))).toContain("Rewind");
     // --- The Next's sound output choice, after the levels (next-audio-output.ts)
     expect(labels(submenu(machine, "Sound")).at(-1)).toBe("Output");
     expect(labels(machine)).not.toContain("Layers");

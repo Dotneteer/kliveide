@@ -214,6 +214,7 @@ static uint8_t micBit;
 
 #include "zxnext-beeper.h"
 #include "zxnext-pi-i2s.h"
+#include "zxnext-tape.h"
 #include "zxnext-frame.c"
 #include "zxnext-debug.c"
 #include "zxnext-memory.c"
@@ -223,7 +224,6 @@ static uint8_t micBit;
 #include "zxnext-nmi.c"
 #include "zxnext-interrupts.c"
 #include "zxnext-keyboard.c"
-#include "zxnext-tape.c"
 #include "zxnext-ula.c"
 #include "zxnext-palette.c"
 #include "zxnext-layer2.c"
@@ -246,6 +246,8 @@ static uint8_t micBit;
 #include "zxnext-ports.c"
 #include "zxnext-multiface.c"
 #include "zxnext-cpu.c"
+/* The tape player uses the shared Z80 registers for fast load: after the CPU (z80.c) */
+#include "zxnext-tape.c"
 #include "zxnext-trace.c"
 
 uint32_t zxnextMemoryPtr(void) { return (uint32_t)(uintptr_t)zxnextMemory; }
@@ -667,6 +669,43 @@ uint32_t zxnextGetTapeMode(void) { return zxnextTapeGetMode(); }
 uint32_t zxnextGetTapeEarBit(void) { return zxnextTapeGetEarBit(); }
 uint32_t zxnextGetTapeMicBit(void) { return zxnextTapeGetMicBit(); }
 void zxnextProcessTapeMicBit(uint32_t value) { zxnextTapeProcessMicBit(value); }
+/* The tape (zxnext-tape.c, `.plans/NEXT_TAPE_PLAN.md`): the deck's blocks uploaded by the IDE, fast
+   load, rewind, the conditioned EAR input, and the blocks a SAVE captured */
+uint8_t *zxnextTapeDataPtr(void) { return sp48TapeDataPtr(); }
+uint32_t zxnextTapeGetDataCapacity(void) { return sp48TapeGetDataCapacity(); }
+uint32_t zxnextTapeGetMaxBlocks(void) { return sp48TapeGetMaxBlocks(); }
+uint32_t zxnextTapeBeginUpload(uint32_t blockCount, uint32_t totalDataLength) {
+  return sp48TapeBeginUpload(blockCount, totalDataLength);
+}
+uint32_t zxnextTapeSetBlock(uint32_t index, uint32_t offset, uint32_t length, uint32_t pauseAfter,
+                            uint32_t pilotPulseLength, uint32_t sync1PulseLength, uint32_t sync2PulseLength,
+                            uint32_t zeroBitPulseLength, uint32_t oneBitPulseLength, uint32_t endSyncPulseLength,
+                            uint32_t lastByteUsedBits, uint32_t pilotPulseCount) {
+  return sp48TapeSetBlock(index, offset, length, pauseAfter, pilotPulseLength, sync1PulseLength, sync2PulseLength,
+                          zeroBitPulseLength, oneBitPulseLength, endSyncPulseLength, lastByteUsedBits, pilotPulseCount);
+}
+uint32_t zxnextTapeFinishUpload(void) { return sp48TapeFinishUpload(); }
+void zxnextTapeClear(void) { sp48TapeClear(); }
+void zxnextTapeRewind(void) {
+  zxnextTapeNowTacts = (uint32_t)(zxnextTapeClockNow() >> 3u);
+  sp48TapeRewind();
+}
+void zxnextTapeSetFastLoad(uint32_t enabled) { sp48TapeSetFastLoad(enabled); }
+uint32_t zxnextTapeGetFastLoad(void) { return sp48TapeGetFastLoad(); }
+uint32_t zxnextTapeGetLoaded(void) { return sp48TapeGetLoaded(); }
+uint32_t zxnextTapeGetBlockCount(void) { return sp48TapeGetBlockCount(); }
+uint32_t zxnextTapeGetCurrentBlockIndex(void) { return sp48TapeGetCurrentBlockIndex(); }
+uint32_t zxnextTapeGetEof(void) { return sp48TapeGetEof(); }
+uint32_t zxnextTapeGetLoadStartCount(void) { return sp48TapeGetLoadStartCount(); }
+uint32_t zxnextTapeGetSaveStartCount(void) { return sp48TapeGetSaveStartCount(); }
+/* As of the last instruction (pure: reading it never steps the input stage) */
+uint32_t zxnextTapeGetInputBit(void) { return zxnextTapeInput; }
+uint8_t *zxnextTapeSaveDataPtr(void) { return sp48TapeSaveDataPtr(); }
+uint32_t zxnextTapeGetSaveDataCapacity(void) { return sp48TapeGetSaveDataCapacity(); }
+uint32_t zxnextTapeGetSavedBlockCount(void) { return sp48TapeGetSavedBlockCount(); }
+uint32_t zxnextTapeGetSavedRevision(void) { return sp48TapeGetSavedRevision(); }
+uint32_t zxnextTapeGetSavedBlockOffset(uint32_t index) { return sp48TapeGetSavedBlockOffset(index); }
+uint32_t zxnextTapeGetSavedBlockLength(uint32_t index) { return sp48TapeGetSavedBlockLength(index); }
 uint32_t zxnextGetUlaFlashCounter(void) { return zxnextUlaGetFlashCounter(); }
 uint32_t zxnextGetUlaFlashFlag(void) { return zxnextUlaGetFlashFlag(); }
 void zxnextAdvanceUlaFrameState(void) { zxnextUlaOnFrameCompleted(); }

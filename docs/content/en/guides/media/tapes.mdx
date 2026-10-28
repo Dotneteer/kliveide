@@ -50,7 +50,13 @@ inserts the tape, `-r` loads and runs it, and `-d` loads it with breakpoints arm
 
 These actions work on the ZX Spectrum 48K, 128K and +2A/+3/+2E/+3E, the Timex machines and the
 Scorpion (where the Timex and Scorpion ROMs allow; see [Custom ROMs](/en/guides/emulator/custom-roms/#machines-with-a-known-rom)).
-On other machines, such as the ZX Spectrum Next, they are disabled, and the tooltip says why.
+On other machines they are disabled, and the tooltip says why.
+
+The **ZX Spectrum Next** has a tape deck too, but no one-click loading, since it boots NextZXOS
+rather than a BASIC prompt. Insert the tape with **Machine › Tape › Insert**; it loads whenever a
+program uses the 48K ROM's tape routines, as `LOAD ""` in the Next's 48K BASIC does, with fast load
+or in real time. In real time, as on the real machine, a load only works with the CPU at 3.5 MHz.
+A `SAVE` is captured the same way and offered as a `.tzx`.
 
 ## Fast load
 

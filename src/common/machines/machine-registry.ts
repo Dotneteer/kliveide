@@ -431,7 +431,8 @@ export const machineRegistry: MachineInfo[] = [
     charSet: ZxNextChars,
     features: {
       [MF_Z80]: true,
-      [MF_TAPE_SUPPORT]: false,
+      // --- The 48K ROM's tape routines in ROM 3, through the Next's EAR input (`.plans/NEXT_TAPE_PLAN.md`)
+      [MF_TAPE_SUPPORT]: true,
       // --- A Next build is delivered as a .nex file the machine loads itself; there is no
       // --- inject-into-memory path, so the Inject button is not offered for it.
       [MF_INJECT_SUPPORT]: false,
