@@ -1,11 +1,9 @@
 /**
  * Imports the Cambridge Z88 User Guide (the Confluence space "UG" at cambridgez88.jira.com) into
- * the documentation site as MDX, under the unlisted area `docs/content/en/z88-user-guide/`.
+ * the documentation site as MDX, under the area `docs/content/en/z88-user-guide/`.
  *
- * The space's owner agreed to the import and reviews the result. The area is reachable by URL only
- * (like the book, decision D6): `display: "hidden"` in `content/en/_meta.ts`, and
- * `build-doc-search-scope.cjs` keeps it out of the site search. Its own sidebar follows the
- * space's page tree.
+ * The space's owner agreed to the import and reviewed the result. The area is a navbar tab of its
+ * own (`content/en/_meta.ts`) and is in the site search; its sidebar follows the space's page tree.
  *
  * What the conversion does with the manual's Confluence markup:
  * - key legend pictures (enter-key.png, symb_diamond.png, ...) -> <Key k="..." /> keycaps

@@ -1,6 +1,6 @@
 /**
- * Renders an MDX page under `content/<lang>/`: shared by the catch-all route,
- * `(docs)/[...mdxPath]/page.tsx`, and the unlisted areas' routes in `(unlisted)/`.
+ * Renders an MDX page under `content/<lang>/` for the catch-all route,
+ * `(docs)/[...mdxPath]/page.tsx`.
  *
  * This is Nextra 4's "content directory convention", with i18n: `generateStaticParamsFor` emits
  * one page per locale and route, and `importPage(path, lang)` loads `content/<lang>/<path>`.

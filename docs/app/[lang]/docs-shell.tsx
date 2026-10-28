@@ -1,7 +1,6 @@
 /**
- * The documentation chrome (Nextra's <Layout>, navbar, search, footer) shared by the docs route
- * groups: `(docs)` renders every listed page, `(unlisted)` the areas that are reachable by URL only
- * but keep their own sidebar. The <html> shell is `./layout.tsx`.
+ * The documentation chrome (Nextra's <Layout>, navbar, search, footer) of the docs pages, the
+ * `(docs)` route group. The <html> shell is `./layout.tsx`.
  *
  * Nextra 4 removed `theme.config.tsx`; everything it configured is now props on
  * <Layout>, <Navbar>, <Footer> and <Search>. The chrome's text comes from docs/i18n/ui/<lang>.json
@@ -44,35 +43,14 @@ function routesOf(nodes: PageMapNode[], out: string[] = []): string[] {
   return out;
 }
 
-/**
- * Areas reachable by URL only that still get their own sidebar, each with its own route in the
- * `(unlisted)` group. `_meta.ts` declares them `display: "hidden"`, which keeps them off the
- * navbar and out of every other page's menus - but Nextra then drops their whole page tree,
- * sidebar included. So only the area's own layout lifts the flag, for its own pages.
- */
-export const UNLISTED_WITH_SIDEBAR = ["z88-user-guide"];
-
-type PageMapItem = { data?: Record<string, { display?: string }> };
-
-/** The page map with one hidden area shown, so its pages get a sidebar */
-function showArea<T>(pageMap: T[], area: string): T[] {
-  const [first, ...rest] = pageMap as PageMapItem[];
-  if (!first?.data?.[area]) return pageMap;
-  const data = { ...first.data, [area]: { ...first.data[area], display: "normal" } };
-  return [{ ...first, data }, ...rest] as T[];
-}
-
 type DocsShellProps = Readonly<{
   children: React.ReactNode;
   lang: string;
-  /** An unlisted area whose pages this renders, with their sidebar */
-  area?: string;
 }>;
 
-export async function DocsShell({ children, lang, area }: DocsShellProps) {
+export async function DocsShell({ children, lang }: DocsShellProps) {
   const t = uiTranslator(lang);
-  const fullMap = await getPageMap(`/${lang}`);
-  const pageMap = area ? showArea(fullMap, area) : fullMap;
+  const pageMap = await getPageMap(`/${lang}`);
   const routes: Record<string, string[]> = {};
   for (const locale of LOCALES) routes[locale] = routesOf((await getPageMap(`/${locale}`)) as PageMapNode[]);
   const languages: [string, string][] = LOCALES.map((id: string) => [id, (LOCALE_NAMES as Record<string, string>)[id] ?? id]);
