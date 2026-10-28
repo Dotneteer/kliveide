@@ -82,7 +82,7 @@ static void tvcRemap(void) {
   for (uint32_t slot = 0u; slot < 8u; slot++) {
     const uint32_t base = tvcSlotBase[slot];
     if (base >= TVC_VID0 && base < TVC_SYS) tvcVramSlots |= (uint8_t)(1u << slot);
-    if (!tvcIsPlus && base >= TVC_CART && base < TVC_EXTH) tvcSlowSlots |= (uint8_t)(1u << slot);
+    if (!tvcIsPlus && base >= TVC_CART && base < TVC_EXT_CARD) tvcSlowSlots |= (uint8_t)(1u << slot);
   }
   tvcDisplayBank = tvcIsPlus ? (uint8_t)((tvcPort0c >> 4) & 3u) : 0u;
 }
@@ -109,7 +109,7 @@ static void tvcCpuWriteMemory(uint16_t address, uint8_t value) {
 /* The IDE's writes: RAM as the CPU writes it, and the ROMs too (the memory editor may patch them) */
 static void tvcPokeMemory(uint16_t address, uint8_t value) {
   const uint32_t phys = tvcPhysicalAddress(address);
-  if (phys < TVC_EXT_CARD) tvcMemory[phys] = value;
+  if (phys < TVC_EXT_CARD || phys >= TVC_EXTH) tvcMemory[phys] = value;
 }
 
 /* Side-effect-free reads and writes for the IDE */

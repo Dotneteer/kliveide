@@ -117,7 +117,7 @@ describe("klive run: inputs and outputs", () => {
   });
 
   it("runs the Spectrums, the Next and the ZX80/81 headless, and names the others", () => {
-    expect(HEADLESS_MACHINES).toEqual(["sp48", "sp128", "spp3e", "zxnext", "zx80", "zx81", "ht1080z"]);
+    expect(HEADLESS_MACHINES).toEqual(["sp48", "sp128", "spp3e", "zxnext", "zx80", "zx81", "ht1080z", "tvc"]);
     expect(artifactNameOf("zx81")).toBe("zx8081.wasm");
     expect(artifactNameOf("zx80")).toBe("zx8081.wasm");
     expect(headlessUnsupportedMessage("zx81")).toBeUndefined();

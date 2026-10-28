@@ -656,3 +656,23 @@ export function ht1080zCharsFor(set: Ht1080zCharSetId): Record<number, CharDescr
 
 /** The machine's default character set: Series II, the default model's. */
 export const Ht1080zChars: Record<number, CharDescriptor> = ht1080zCharsFor("s2");
+
+/*
+ * The Videoton TVC's character set for the memory panel (`.plans/VIDEOTON_TVC_PLAN.md` §11): ASCII
+ * at 20h-7Eh, and the Hungarian accented letters where both BASIC ROMs store them - Á É Í Ó Ö Ő Ú Ü Ű
+ * at 00h-08h and the lowercase ones at 10h-18h (typed into a BASIC string and read back from the
+ * program, `test/tvc-hw/charset.test.ts`). Other codes have no glyph here.
+ */
+const TVC_HUNGARIAN_UPPER = "ÁÉÍÓÖŐÚÜŰ";
+const TVC_HUNGARIAN_LOWER = "áéíóöőúüű";
+
+function buildTvcChars(): Record<number, CharDescriptor> {
+  const chars: Record<number, CharDescriptor> = {};
+  [...TVC_HUNGARIAN_UPPER].forEach((v, i) => (chars[i] = { v }));
+  [...TVC_HUNGARIAN_LOWER].forEach((v, i) => (chars[0x10 + i] = { v }));
+  chars[0x20] = { v: "\xa0", t: "(space)" };
+  for (let code = 0x21; code < 0x7f; code++) chars[code] = { v: String.fromCharCode(code) };
+  return chars;
+}
+
+export const TvcChars: Record<number, CharDescriptor> = buildTvcChars();

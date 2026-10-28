@@ -4,6 +4,8 @@ import { join } from "node:path";
 import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import { MI_TVC } from "@common/machines/constants";
+import { connectConditionSupport } from "@emu/machines/conditionStore";
+import { DebugSupport } from "@emu/machines/DebugSupport";
 import { TvcWasmV2Machine } from "@emu/machines/tvc/TvcWasmV2Machine";
 import { TvcKeyCode } from "@emu/machines/tvc/TvcKeyCode";
 import { TVC_MODELS } from "@emu/machines/tvc/tvcMachineInfo";
@@ -131,12 +133,58 @@ export class TvcTestSession {
     return this;
   }
 
+  // ==========================================================================================
+  // The debugger, driven as the IDE drives it
+
+  /** Gives the machine a breakpoint store, as the IDE's debug run does */
+  attachDebugSupport(): DebugSupport {
+    const debugSupport = new DebugSupport(undefined, []);
+    connectConditionSupport(debugSupport, this.machine);
+    this.machine.executionContext.debugSupport = debugSupport;
+    return debugSupport;
+  }
+
+  /** Continues, or steps into, over or out, until the debugger stops; returns the PC */
+  debug(action: "continue" | "stepInto" | "stepOver" | "stepOut", { maxFrames = 100 }: RunLimit = {}): number {
+    const modes = {
+      continue: DebugStepMode.StopAtBreakpoint,
+      stepInto: DebugStepMode.StepInto,
+      stepOver: DebugStepMode.StepOver,
+      stepOut: DebugStepMode.StepOut
+    };
+    const m = this.machine;
+    if (!m.executionContext.debugSupport) this.attachDebugSupport();
+    if (action === "stepOut") m.markStepOutAddress();
+    const ctx = m.executionContext;
+    ctx.frameTerminationMode = FrameTerminationMode.DebugEvent;
+    ctx.debugStepMode = modes[action];
+    const limit = this.frames + maxFrames;
+    try {
+      while (m.executeMachineFrame() !== FrameTerminationMode.DebugEvent) {
+        this.frames++;
+        if (this.frames >= limit) {
+          throw new Error(`Timed out after ${maxFrames} frames in debug ${action} (PC $${m.pc.toString(16)})`);
+        }
+      }
+      return m.pc;
+    } finally {
+      ctx.frameTerminationMode = FrameTerminationMode.Normal;
+      ctx.debugStepMode = DebugStepMode.NoDebug;
+    }
+  }
+
+  /** An execution breakpoint */
+  breakpoint(address: number): this {
+    (this.machine.executionContext.debugSupport ?? this.attachDebugSupport()).addBreakpoint({ address, exec: true });
+    return this;
+  }
+
   /**
    * Boots BASIC (1.2 on the 64K, 2.2 on the 64K+) to its prompt. The ROM first tests every RAM page (about 5 seconds, 250 frames),
    * then shows the animated VIDEOTON sign-on (blue paper) and waits for any key; after the key it
    * finishes the animation, clears the screen to black paper and prints its banner and `ok`. The
-   * sign-on polls the keyboard through the same keyboard-read routine BASIC waits in, so the prompt
-   * is: palette 0 black, and the ROM looping in that routine with SYS in page 3.
+   * animation reads the keyboard without the key wait (`TVC12_SIGN_ON_LOOP`), so the prompt is: palette
+   * 0 black, and the ROM looping in the key wait with SYS in page 3.
    */
   bootToBasic(limit: RunLimit = { maxFrames: 600 }): this {
     this.runUntil(() => this.isShowingSignOn(), limit, "the sign-on screen");

@@ -3,6 +3,8 @@ import {
   MC_MEM_SIZE,
   MC_ZX80_ROM8K,
   MI_HT1080Z,
+  MI_TVC,
+  MC_TVC_MODEL,
   MI_SCORPION,
   MI_SPECTRUM_128,
   MI_SPECTRUM_3E,
@@ -39,6 +41,9 @@ import {
  * - `ht1080z`: no partitions, no mirrors. Two ROM pages at fixed addresses, the BASIC (`-1`,
  *   $0000-$2FFF) and the extension (`-2`, $3000-$37FF), each counted from its own start; RAM from
  *   $4000 as 16K blocks 1-3. The keyboard and the video RAM ($3800-$3FFF) cannot be annotated.
+ * - `tvc`: the Videoton TVC's 16K partitions, as the 128K's (`.plans/VIDEOTON_TVC_PLAN.md` §11): U0-U3
+ *   are banks 0-3, the video banks 4 (and 5-7 on the 64K+); ROM partitions SYS (-1), CART (-2) and
+ *   EXT (-3, the card window and EXTH as page 3 shows them).
  */
 
 /** Which bank space a machine's annotations are numbered in. Not a machine model. */
@@ -52,6 +57,7 @@ export type AnnotationMachine =
   | "zx81"
   | "zx80"
   | "ht1080z"
+  | "tvc"
   | "rom";
 
 /** One partition index per 8K slot, as `resolveMem64kPartitions` / `getCurrentPartitions` give it. */
@@ -397,6 +403,39 @@ export function ht1080zBankSpace(ramKb: 16 | 48): BankSpace {
 }
 
 // ------------------------------------------------------------------------------------------------
+// The Videoton TVC: 16K partitions, each 8K slot reporting its own (EXT's halves are one partition)
+
+/** The TVC bank space: U0-U3 and one video bank (the 64K), or four (the 64K+) */
+export function tvcBankSpace(plus: boolean): BankSpace {
+  const ramBanks = plus ? [0, 1, 2, 3, 4, 5, 6, 7] : [0, 1, 2, 3, 4];
+  return {
+    id: "tvc",
+    bankSize: BANK_SIZE,
+    maxBank: 7,
+    ramBanks,
+    extendedSet: false,
+    bankBreakpoints: true,
+    siteAt(address, slots) {
+      const partition = slotPartition(slots, address);
+      if (partition === undefined) return undefined;
+      const offset = address & 0x3fff;
+      return partition < 0 ? { kind: "rom", partition, offset } : { kind: "bank", bank: partition, offset };
+    },
+    addressesOf(site, slots) {
+      const result: number[] = [];
+      for (let slot16 = 0; slot16 < 4; slot16++) {
+        if (slots?.[slot16 * 2] === site.bank) result.push(slot16 * 0x4000 + site.offset);
+      }
+      return result;
+    },
+    partitionOf: (site) => site.bank,
+    candidateAddresses: (site) => [0, 1, 2, 3].map((slot16) => slot16 * 0x4000 + site.offset),
+    // --- U0-U3 where BASIC pages them (U0 at $0000 ... U3 at $C000); a video bank at $8000
+    defaultOffsetIndex: (bank) => (bank < 4 ? bank : 2) as 0 | 1 | 2 | 3
+  };
+}
+
+// ------------------------------------------------------------------------------------------------
 // Choosing one
 
 /** The ZX80/ZX81 model a machine configuration describes (`resolveZx8081Hardware`'s rule). */
@@ -440,6 +479,8 @@ export function bankSpaceFor(
       return zx8081BankSpace(machineId, zx8081MemoryModelOf(machineId, config));
     case MI_HT1080Z:
       return ht1080zBankSpace(Number(config?.[MC_MEM_SIZE] ?? 16) >= 48 ? 48 : 16);
+    case MI_TVC:
+      return tvcBankSpace(config?.[MC_TVC_MODEL] === "64p");
     default:
       return undefined;
   }
@@ -466,6 +507,8 @@ export function bankSpaceForAnnotationMachine(machine: AnnotationMachine): BankS
       return zx8081BankSpace("zx80", { ramKb: 16, rom8k: false });
     case "ht1080z":
       return ht1080zBankSpace(48);
+    case "tvc":
+      return tvcBankSpace(true);
     default:
       return undefined;
   }

@@ -4,6 +4,7 @@ import { createTimexSession, type TimexSessionOptions } from "../../harness/time
 import { createZ88Session } from "../../harness/z88";
 import { createZx81Session } from "../../harness/zx81";
 import { createHtSession } from "../../harness/ht1080z";
+import { createTvcSession } from "../../harness/tvc";
 import type { HistoryCoreDriver, HistoryTestMachine } from "./historyCoreSuite";
 
 /*
@@ -68,4 +69,9 @@ export async function zx8081Driver(machineId: "zx80" | "zx81" = "zx81"): Promise
 /** The HT-1080Z (Series II) at its `>` prompt */
 export async function ht1080zDriver(model = "ht1080z-s2"): Promise<HistoryCoreDriver> {
   return driver((await createHtSession({ model })).bootToPrompt(), "ht1080zGetCpuPrefix");
+}
+
+/** The Videoton TVC (the 64K+ by default) at BASIC's prompt */
+export async function tvcDriver(model = "tvc64p"): Promise<HistoryCoreDriver> {
+  return driver((await createTvcSession({ model })).bootToBasic(), "tvcGetCpuPrefix");
 }

@@ -37,7 +37,7 @@ import { nexFileNameOf, sdCardNexName } from "@renderer/appIde/utils/nex-file-na
 import { createSourceDebugSidecar, sidecarProgramOf, sourceDebugSidecarPath } from "@common/utils/source-debug-sidecar";
 import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
 import { machineRegistry } from "@common/machines/machine-registry";
-import { MF_INJECT_SUPPORT, MI_Z88, MI_ZX80, MI_ZX81, MI_HT1080Z, MI_ZXNEXT } from "@common/machines/constants";
+import { MF_INJECT_SUPPORT, MI_Z88, MI_ZX80, MI_ZX81, MI_HT1080Z, MI_TVC, MI_ZXNEXT } from "@common/machines/constants";
 import {
   zx8081ExportFile,
   zx8081ExportFormatOf,
@@ -56,8 +56,10 @@ import {
   isHt1080zPlacementProblem,
   placeHt1080zCode
 } from "@common/ht1080z/codePlacement";
+import { describeTvcPlacementProblem, isTvcPlacementProblem, placeTvcCode } from "@common/tvc/codePlacement";
 import { resolveHt1080zHardware } from "@emu/machines/ht1080z/ht1080zMachineInfo";
 import { ht1080zExportFile, ht1080zExportFormatOf, ht1080zFormatProblem } from "../utils/ht1080z-code";
+import { tvcExportFile, tvcExportFormatOf, tvcFormatProblem } from "../utils/tvc-code";
 
 const EXPORT_FILE_FOLDER = "KliveExports";
 
@@ -227,6 +229,24 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
           emulatorState?.config,
           args["-n"] ?? args.filename
         );
+        if ("error" in file) return commandError(file.error);
+        try {
+          const filePath = await context.mainApi.saveBinaryFile(args.filename, file.data, `kliveHome:${EXPORT_FILE_FOLDER}`);
+          return commandSuccessWith(t("commands.compile.exported", { file: filePath }), { file: filePath });
+        } catch (err) {
+          return commandError(err.toString());
+        }
+      }
+    }
+
+    // --- TVC code exports as a .cas program file that LOAD runs (`renderer/appIde/utils/tvc-code.ts`)
+    const tvcFormat = tvcExportFormatOf((output as CompilerOutput).modelType, emulatorState?.machineId);
+    if (tvcFormat) {
+      const tvcRequested = args["-f"] ?? tvcFormat;
+      const problem = tvcFormatProblem(tvcRequested);
+      if (problem) return commandError(problem);
+      if (tvcRequested === "cas") {
+        const file = tvcExportFile(output as CompilerOutput);
         if ("error" in file) return commandError(file.error);
         try {
           const filePath = await context.mainApi.saveBinaryFile(args.filename, file.data, `kliveHome:${EXPORT_FILE_FOLDER}`);
@@ -1467,6 +1487,13 @@ export async function injectCode(
     if (isHt1080zPlacementProblem(placement)) return commandError(describeHt1080zPlacementProblem(placement));
   }
 
+  // --- The TVC takes code between BASIC's launcher line and the room BASIC needs (`common/tvc/codePlacement.ts`)
+  const isTvc = emulatorState?.machineId === MI_TVC;
+  if (isTvc && (result.modelType === undefined || result.modelType === SpectrumModelType.TVC)) {
+    const placement = placeTvcCode(result.segments, result.entryAddress);
+    if (isTvcPlacementProblem(placement)) return commandError(describeTvcPlacementProblem(placement));
+  }
+
   if (isZxNext && operationType === "inject") {
     if (context.store.getState().emulatorState?.machineState !== MachineControllerState.Paused) {
       return commandError(t("commands.compile.mustBePaused"));
@@ -1525,7 +1552,9 @@ export async function injectCode(
           ? t("commands.compile.injectedRem", injected)
           : isHt1080z
             ? t("commands.compile.injectedHt1080z", injected)
-            : t("commands.compile.injected", injected);
+            : isTvc
+              ? t("commands.compile.injectedTvc", { ...injected, entry: placeTvcEntry(result) })
+              : t("commands.compile.injected", injected);
       }
       break;
 
@@ -1586,3 +1615,9 @@ const NUMB_SIGN = 0x0e;
 const NEW_LINE = 0x0d;
 const PAUSE_TKN = 0xf2;
 const BORDER_TKN = 0xe7;
+
+/** The decimal entry the TVC's `USR` calls, for the inject message */
+function placeTvcEntry(result: { segments: { startAddress: number; emittedCode: ArrayLike<number> }[]; entryAddress?: number }): number {
+  const placement = placeTvcCode(result.segments, result.entryAddress);
+  return isTvcPlacementProblem(placement) ? 0 : placement.entry;
+}

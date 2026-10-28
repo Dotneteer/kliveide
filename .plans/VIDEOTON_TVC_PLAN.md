@@ -551,8 +551,8 @@ phase.
 | **3. Video + timing** | §6 and §7: the pixel pipeline, blanking, sync, TV window, beam position, the stretch and WAIT. | Done 2026-10-27: the boot picture's hash (checked by eye); `video.test.ts`, `timing.test.ts`, `programs.test.ts` (`PRINT "HELLO"`, a stable interrupt-driven border band); the TVC in `debug-loop-equivalence.test.ts`. |
 | **4. Sound + tape + keyboard** | §8, §9.1–9.3, §10: host mapping, the virtual keyboard (after its design is approved), `.cas` open, fast and real-time load, SAVE, motor, sound. | Done 2026-10-27, except the virtual keyboard: `sound.test.ts`, `tape.test.ts` (SAVE to `.cas`, LOAD + RUN in a fresh machine), `keyboard.test.ts`; a `.cas` inserted from the IDE loads with BASIC's `LOAD` in the running app. |
 | **5. 64K+** | The `tvc64p` model, BASIC 2.2, four video banks, no WAIT. | Done 2026-10-27: `plus.test.ts` (the boot picture's hash, checked by eye; port 0Ch's CPU and display banks; page 0 = U3); the 64K+ boots and loads a tape in the running app. |
-| **6. IDE** | Partitions, the TVC video panel, BASIC listing, charset, disassembler, menus, state files, history, profile, CLI. | A debug-step test like `wasm-z88-debug-step.test.ts`; the panel checked in the running app (CDP recipe in the theming lessons file); every cross-core suite green. |
-| **7. Assembler** | `.model TVC`, injection, `.cas` export, project template. | Inject-and-run and export tests in `test/tvc-hw/`; a template project builds and runs. |
+| **6. IDE** | Partitions, the TVC video panel, BASIC listing, charset, disassembler, menus, state files, history, profile, CLI. | Done 2026-10-28 (§17): `test/tvc-hw/debug.test.ts`, `profile.test.ts`, `basic-listing.test.ts`, `charset.test.ts`; the TVC in every cross-core suite (history, profile, state determinism, export contract, journal replay, debug recordings, hardware specs); `MF_EXEC_HISTORY`, `MF_PROFILE` and `MF_REVERSE_DEBUG` on. |
+| **7. Assembler** | `.model TVC`, injection, `.cas` export, project template. | Done 2026-10-28 (§17): `test/tvc-hw/code-injection.test.ts`, `project-templates.test.ts` (both runs checked by eye), `tape-load-flow.test.ts`; `klive run` and `klive test` on the TVC. |
 | **8. HBF + VT-DOS** | §9.4: the WD1793 extraction (its own commit, Beta 128 tests identical), the HBF card, `.dsk`. | VT-DOS boots and lists a directory; a file round-trips; the video tests still pass after VT-DOS moves the cursor. |
 | **9. Ship** | Notices (`THIRD_PARTY_NOTICES.md`, the ROM readme), docs pages, an `AGENTS.md` section, the landing-page machine table (also missing the HT-1080Z), `README.md`'s machine list, a `.ai/` note in `wasm-migration-intent-and-lessons.md`, one `feature` changeset. Run `npm run test:slow` before release. | A packaged build runs both models; `build:check`, `lint:renderer`, `i18n:check`, `doc:build` + `doc:check` are green. |
 
@@ -711,3 +711,53 @@ and its sign-on needs the picture to be checked.
   photograph or the manual's keyboard figure) before a mockup can be approved (§8).
 - **Phase 5:** BASIC 2.2 boots on the 64K+ to "42155 bytes free". The harness finds its prompt by
   where the ROM was seen looping (CA9Fh-CAABh); there is no 2.2 listing.
+
+### Phases 6-7 (2026-10-28)
+
+- **Partitions:** U0-U3 are 0-3, VID0-VID3 4-7 (physical offset = partition x 16K), SYS -1, CART -2,
+  EXT -3 (the card window, then EXTH). The history context decoder, the profile layout and the
+  annotation bank space all use them; `test/tvc-hw/profile.test.ts` checks the decoder against the
+  machine's own `getPartition` for every paging.
+- **State, reverse debugging, history, profile:** the whole state is the core's image, so these came
+  with the export contract's one new entry (`CrtcSetMotorola` is journaled). The journal-replay
+  determinism test passes, so `MF_REVERSE_DEBUG` is on. Fast load runs extra core frames inside one
+  displayed frame; the replay counts core frames, so it is not a problem.
+- **RST 30h is a 2-byte call.** Both ROMs vector it through RAM (0030h: JP 0B23h) to a handler that
+  takes the byte after the RST and returns past it. The dispatcher at C363h (1.2) splits the code:
+  bit 7 a table, bits 6-4 the device (BASIC's peripheral numbers: 2 is the editor), bits 3-0 the
+  function. 21h prints C at the cursor; CR (13) is column 0, LF (10) a line down. Two consequences:
+  - the custom disassembler lists the byte after it as data, everywhere (not gated on the ROM);
+  - `getCallInstructionLength` returns 2 for it, or Step Over never stopped (it waited at RST+1).
+- **Charset:** the Hungarian letters are where BASIC stores them, read back from a typed string:
+  ÁÉÍÓÖŐÚÜŰ at 00h-08h, the lower case at 10h-18h.
+- **BASIC listing:** the token tables are the ROMs' (1.2 at DE6Dh, 2.2 at D73Ah, tokens FEh down to
+  95h; 2.2 fills seven free slots: AUTO, FKEY, RENUMBER, EXCEPTION, ELLIPSE, RECTANGLE, POLYGON).
+  Spaces are stored as typed; `:` is a token; REM/`!` tails, strings and DATA up to an unquoted colon
+  are literal. The program starts at TEXT (1722h), which `LOMEM` moves. rtvc's `basic.rs` was not
+  needed.
+- **The typer** waits 12 frames after RETURN: BASIC 2.2 dropped the first keys of a line typed while
+  it was still storing a long one.
+- **The TVC Video panel** (Debug activity, TVC only): R0-R17 and the address register, the counters
+  and MA, the mode, palette, border, vertical blank latch, the IT flip-flop, ports 02h/0Ch and the
+  displayed bank (the last two on the 64K+). Values in `--color-state-value` from the start.
+- **Run and Debug: BASIC calls the code (a deviation from §11's "set PC").** The flow:
+  1. waits for the sign-on animation (1.2 CAB7h, 2.2 F2EEh; it does *not* use the key wait, and is
+     first reached at frame 252/254, after the RAM test) and presses Space 10 frames in;
+  2. waits for the prompt's key wait (1.2 D61Bh, 2.2 CA9Fh) and writes the code;
+  3. types `LOMEM <end>` and `C=USR(<entry>)` 10 frames later (a key arriving the moment BASIC starts
+     to wait is lost). The `TypeText` step got a `delayFrames` for this.
+
+  So a `RET` lands in BASIC with no ROM return address to know, and BASIC never reaches the code. The
+  code must lie in 1A30h-BBFFh (`common/tvc/codePlacement.ts`), Z0384/Z0385 warn about the rest, and
+  `.model TVC` puts code with no `.org` at 1A30h.
+- **Export:** a `.cas` program file with autostart: the one-line launcher `10 C=USR(entry)` at 19EFh
+  (rtvc's `BASIC_START` layout), zeros, and the code where it was assembled. `LOAD` runs it.
+- **Load and Run** (`tape-load -r`/`-d`, the `.cas` tab bar and Explorer menu, `klive run --machine
+  tvc x.cas`): the same boot, then `LOAD`; `RUN` is typed once BASIC is idle again unless the tape
+  starts itself. `-e` is refused: a TVC tape names no start address.
+- **CLI and unit tests:** `klive run` takes a TVC project (the fixture `test/cli/fixtures/runtvc`) or a
+  `.cas` with `--machine tvc` (a bare `.cas` stays the HT-1080Z's); `klive test` runs on both models.
+  The runner's "wrapper in ROM" guard now uses 1A30h on the TVC instead of the Spectrum's 4000h.
+- **Not done:** the virtual keyboard (as before), and a TVC tape viewer: a `.cas` document still opens
+  in the HT-1080Z tape viewer, which cannot show a TVC file.
+

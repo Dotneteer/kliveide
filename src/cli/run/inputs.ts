@@ -7,7 +7,7 @@ import type { MachineConfigSet } from "@common/machines/info-types";
 import type { ConditionSymbols } from "@common/utils/breakpoint-condition/condition-types";
 import type { HeadlessMachine } from "@common/headless/HeadlessMachineFactory";
 import type { MachineStatePorts } from "@renderer/appEmu/machines/machineStateFile";
-import { MI_HT1080Z, MI_SPECTRUM_48, MI_ZX80, MI_ZX81, MI_ZXNEXT } from "@common/machines/constants";
+import { MI_HT1080Z, MI_SPECTRUM_48, MI_TVC, MI_ZX80, MI_ZX81, MI_ZXNEXT } from "@common/machines/constants";
 import { MEDIA_TAPE } from "@common/structs/project-const";
 import { integerSymbolsOfOutput } from "@common/utils/breakpoint-condition/integer-symbols";
 import { playInjectionFlow, type FrameMachine } from "@common/headless/frameRunner";
@@ -16,6 +16,7 @@ import { tapeBlocksOf } from "@common/headless/tapeBlocks";
 import { FAST_LOAD } from "@emu/machines/machine-props";
 import { parseZxProgramFile, ZX80_FILE_EXTENSIONS, ZX81_FILE_EXTENSIONS } from "@emu/machines/zx8081/ZxPFile";
 import { isHt1080zTapeFileName, parseHt1080zTapeFile } from "@emu/machines/ht1080z/Ht1080zTapeFile";
+import { isTvcCasFileName, parseTvcCasFile } from "@emu/machines/tvc/TvcCasFile";
 import { bootModelFor } from "@main/unit-tests/UnitTestRunner";
 import { loadSpectrumSnapshot } from "@renderer/appEmu/machines/spectrumSnapshotLoad";
 import { loadMachineStateFile } from "@renderer/appEmu/machines/machineStateFile";
@@ -31,7 +32,7 @@ import { machineOf, parseMachineOption } from "../verbs/test";
 /*
  * What `klive run` starts (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D15): a project's build, injected
  * as the IDE's `run` does it, or a file - a tape, a snapshot, a Klive state, a NEX file, a ZX80/81
- * program or an HT-1080Z tape (`.cas`, `.cmd`, `.bas`). The loads are the IDE's own where they do not need the emulator window: the snapshot and
+ * program, an HT-1080Z tape (`.cas`, `.cmd`, `.bas`) or, with `--machine tvc`, a Videoton TVC `.cas`. The loads are the IDE's own where they do not need the emulator window: the snapshot and
  * state loaders (`spectrumSnapshotLoad.ts`, `machineStateFile.ts`) run against a headless controller,
  * and tapes play through the machine's own tape-load flow.
  */
@@ -126,6 +127,20 @@ export async function loadRunInput(target: string, options: RunInputOptions, io:
     }
 
     case "httape": {
+      // --- Both machines' tapes are .cas: the TVC's is chosen by name (`--machine tvc`)
+      if (machineOption?.machineId === MI_TVC && isTvcCasFileName(name)) {
+        let tape;
+        try {
+          tape = parseTvcCasFile(bytes, name);
+        } catch {
+          throw usageError(`${name} is not a Videoton TVC .cas file.`);
+        }
+        const machine = await create(MI_TVC, machineOption.modelId);
+        machine.setMachineProperty(FAST_LOAD, true);
+        machine.setMachineProperty(MEDIA_TAPE, tape);
+        playTapeLoad(machine, name);
+        return { machine, machineId: MI_TVC, modelId: machineOption.modelId, description: `${name} (TVC tape)`, notes: [] };
+      }
       const machineId = machineOption?.machineId ?? MI_HT1080Z;
       if (machineId !== MI_HT1080Z) throw usageError(`${name} is an HT-1080Z tape; it runs on --machine ht1080z.`);
       let tape;

@@ -58,6 +58,11 @@ interface SetReturnStep extends CodeInjectionStepBase {
 export interface TypeTextStep extends CodeInjectionStepBase {
   type: "TypeText";
   text: string | ((code: CodeToInject | undefined) => string);
+  /**
+   * Emulated frames before the first key (default 0), for a ROM that drops a key arriving the moment
+   * it starts to wait (the TVC's BASIC at its prompt)
+   */
+  delayFrames?: number;
 }
 
 interface QueueKeyStep extends CodeInjectionStepBase {

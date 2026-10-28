@@ -1,0 +1,8 @@
+{
+  "kliveVersion": "0.65.0",
+  "machineType": "tvc",
+  "modelId": "tvc64",
+  "builder": {
+    "roots": ["code/main.kz80.asm"]
+  }
+}

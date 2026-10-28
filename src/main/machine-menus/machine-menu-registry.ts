@@ -54,7 +54,9 @@ export const machineMenuRegistry: Record<string, MachineMenuInfo> = {
     viewItems: spectrumIdeRenderer
   },
   [MI_TVC]: {
-    devices: { tape: tvcTapeMenuRenderer }
+    devices: { tape: tvcTapeMenuRenderer },
+    // --- The BASIC Listing view lists TVC BASIC 1.2 and 2.2 programs (`tvcBasicListing.ts`)
+    viewItems: spectrumIdeRenderer
   },
   [MI_HT1080Z]: {
     devices: { tape: ht1080zTapeMenuRenderer },

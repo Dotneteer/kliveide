@@ -217,7 +217,7 @@ const pragmas: StaticCompletionItem[] = [
   { label: ".defs",       kind: "pragma", detail: "Define space (long form)",        insertText: ".defs ${1:size}" },
   { label: ".fillb",      kind: "pragma", detail: "Fill with byte value",            insertText: ".fillb ${1:count}, ${2:value}" },
   { label: ".fillw",      kind: "pragma", detail: "Fill with word value",            insertText: ".fillw ${1:count}, ${2:value}" },
-  { label: ".model",      kind: "pragma", detail: "Set model type", insertText: ".model ${1|Spectrum48,Spectrum128,SpectrumP3,Next,ZX80,ZX81|}" },
+  { label: ".model",      kind: "pragma", detail: "Set model type", insertText: ".model ${1|Spectrum48,Spectrum128,SpectrumP3,Next,ZX80,ZX81,HT1080Z,TVC|}" },
   { label: ".align",      kind: "pragma", detail: "Align to boundary",               insertText: ".align ${1:boundary}" },
   { label: ".trace",      kind: "pragma", detail: "Emit trace value",                insertText: ".trace ${1:expr}" },
   { label: ".tracehex",   kind: "pragma", detail: "Emit trace value (hex)",          insertText: ".tracehex ${1:expr}" },

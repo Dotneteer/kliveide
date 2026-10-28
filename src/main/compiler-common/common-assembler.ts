@@ -143,6 +143,7 @@ import { CommonAsmParser } from "./common-asm-parser";
 import {
   findModelTypeByName,
   isHt1080zModelType,
+  isTvcModelType,
   isZx8081ModelType,
   SpectrumModelType
 } from "@main/z80-compiler/SpectrumModelTypes";
@@ -1126,6 +1127,26 @@ export abstract class CommonAssembler<
     }
   }
 
+  /**
+   * On the TVC, code below $1A30 is in BASIC's and the ROM's work area or the launcher line, and code
+   * above $BBFF leaves BASIC no room or reaches the ROM (`common/tvc/codePlacement.ts`). Warned once
+   * per segment and area; Run and Export refuse both.
+   */
+  protected checkTvcCodeRange(): void {
+    const model = this._output.modelType ?? this._options.currentModel;
+    if (!isTvcModelType(model) || !this._currentSegment) return;
+    const address = this.getCurrentAssemblyAddress();
+    const segment = this._currentSegment as any;
+    const hex = address.toString(16).toUpperCase().padStart(4, "0");
+    if (address < 0x1a30) {
+      if (!segment.tvcLowWarned) this.reportAssemblyWarning("Z0384", this._currentSourceLine, null, hex);
+      segment.tvcLowWarned = true;
+    } else if (address > 0xbbff) {
+      if (!segment.tvcHighWarned) this.reportAssemblyWarning("Z0385", this._currentSourceLine, null, hex);
+      segment.tvcHighWarned = true;
+    }
+  }
+
   protected checkUnbankedCodeRange(): void {
     // Only check if in Next auto mode and current segment is unbanked
     if (!this._output.isNextAutoMode || !this._currentSegment || this._currentSegment.bank !== undefined) {
@@ -1365,6 +1386,9 @@ export abstract class CommonAssembler<
       // --- Free RAM on every HT-1080Z model, above BASIC (`.plans/HT1080Z_CODE_INJECTION_PLAN.md` D8)
       case SpectrumModelType.HT1080Z:
         return 0x7000;
+      // --- After the BASIC launcher line, where TVC machine code is loaded (`common/tvc/codePlacement.ts`)
+      case SpectrumModelType.TVC:
+        return 0x1a30;
       default:
         return 0x8000;
     }
@@ -5773,6 +5797,7 @@ export abstract class CommonAssembler<
     this.checkUnbankedCodeRange();
     this.checkZx8081CodeRange();
     this.checkHt1080zCodeRange();
+    this.checkTvcCodeRange();
     const overflow = this._currentSegment.emitByte(data);
     if (overflow) {
       this.reportAssemblyError(overflow, this._currentSourceLine);

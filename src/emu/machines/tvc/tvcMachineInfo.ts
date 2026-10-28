@@ -26,14 +26,44 @@ export const TVC_SCREEN_HEIGHT = 288;
  */
 export const TVC_PIXEL_ASPECT = 7_000_000 / 12_500_000;
 
-/** The physical memory's layout in the core (`tvc.c`): every bank the mapper can show */
+/**
+ * The physical memory's layout in the core (`tvc.c`): every bank the mapper can show, as the IDE's
+ * partitions - U0-U3 and VID0-VID3 are 0-7 (partition * 16K), SYS is -1, CART -2, and EXT -3 (the
+ * card window, then EXTH, as the EXT page shows them)
+ */
 export const TVC_PHYS_U0 = 0x00000;
 export const TVC_PHYS_VID0 = 0x10000;
 export const TVC_PHYS_SYS = 0x20000;
 export const TVC_PHYS_CART = 0x24000;
-export const TVC_PHYS_EXTH = 0x28000;
-export const TVC_PHYS_EXT_CARD = 0x2a000;
+export const TVC_PHYS_EXT_CARD = 0x28000;
+export const TVC_PHYS_EXTH = 0x2a000;
 export const TVC_BANK_SIZE = 0x4000;
+export const TVC_PARTITION_SYS = -1;
+export const TVC_PARTITION_CART = -2;
+export const TVC_PARTITION_EXT = -3;
+
+/**
+ * The loop BASIC waits for a key in at its prompt, with SYS in page 3: 1.2's at D61Bh (inside KB_CHIN,
+ * D618h, which loads HL with 0BE5h first), 2.2's at CA9Fh. Behaviour facts read from the ROMs
+ * (`.plans/VIDEOTON_TVC_PLAN.md` §0.1).
+ */
+export const TVC12_KEY_WAIT_LOOP = 0xd61b;
+export const TVC22_KEY_WAIT_LOOP = 0xca9f;
+
+/**
+ * The whole key-wait routine, start and end (exclusive): where BASIC is while it is idle at its prompt.
+ * 1.2's is KB_CHIN (read from the ROM); 2.2's is where the ROM was seen looping after its banner.
+ */
+export const TVC12_KEY_WAIT_ROUTINE: readonly [number, number] = [0xd618, 0xd62d];
+export const TVC22_KEY_WAIT_ROUTINE: readonly [number, number] = [0xca9f, 0xcaac];
+
+/**
+ * An address of the sign-on animation's loop, which runs until a key is pressed and does not use the
+ * key wait: 1.2's at CAB7h (SYS), 2.2's at F2EEh (EXTH). Observed on the core: neither is reached
+ * before the RAM test ends (frame 252 and 254 after power-on).
+ */
+export const TVC12_SIGN_ON_LOOP = 0xcab7;
+export const TVC22_SIGN_ON_LOOP = 0xf2ee;
 
 /** The models (D2): the 64K runs BASIC 1.2 with one video bank; the 64K+ BASIC 2.2 with four */
 export const TVC_MODELS: MachineModel[] = [

@@ -15,10 +15,13 @@ import { BasicLine, BasicLineSpan, BasicProgramBuffer, getMemoryWord } from "./B
 import { decodeBasicProgram } from "./basicListing";
 import { decodeZx8081Program, type Zx8081BasicKind, zx8081ProgramArea } from "./zx8081BasicListing";
 import { decodeHt1080zProgram, ht1080zProgramArea } from "./ht1080zBasicListing";
+import { decodeTvcProgram } from "./tvcBasicListing";
 import {
   MC_HT_MODEL,
+  MC_TVC_MODEL,
   MC_ZX80_ROM8K,
   MI_HT1080Z,
+  MI_TVC,
   MI_ZX80,
   MI_ZX81
 } from "@common/machines/constants";
@@ -75,6 +78,14 @@ const BasicPanel = ({ document, viewState }: DocumentProps<BasicViewState>) => {
   );
   const htModelRef = useRef(htModel);
   htModelRef.current = htModel;
+  // --- The Videoton TVC's BASIC: 1.2 on the 64K, 2.2 (more keywords) on the 64K+
+  const tvcModel = useSelector((s) =>
+    s.emulatorState?.machineId === MI_TVC ? (s.emulatorState?.config?.[MC_TVC_MODEL] ?? "64") : undefined
+  );
+  const tvcModelRef = useRef(tvcModel);
+  tvcModelRef.current = tvcModel;
+  // --- Machines whose listing is shown in the monospace font, never a Sinclair one
+  const ownFont = !!htModel || !!tvcModel;
   const charSetRef = useRef(machineCharSet);
   charSetRef.current = machineCharSet;
 
@@ -102,7 +113,14 @@ const BasicPanel = ({ document, viewState }: DocumentProps<BasicViewState>) => {
     const getWord = (address: number) => getMemoryWord(memory.current, address);
     const kind = zx8081KindRef.current;
     let lines: BasicLine[];
-    if (htModelRef.current && charSetRef.current) {
+    if (tvcModelRef.current && charSetRef.current) {
+      ({ lines } = decodeTvcProgram(memory.current, {
+        charSet: charSetRef.current,
+        basic22: tvcModelRef.current === "64p",
+        showCodes: useCodes.current,
+        buffer: programBuffer.current
+      }));
+    } else if (htModelRef.current && charSetRef.current) {
       const { start, end } = ht1080zProgramArea(memory.current);
       ({ lines } = decodeHt1080zProgram(memory.current, start, end, {
         charSet: charSetRef.current,
@@ -194,7 +212,7 @@ const BasicPanel = ({ document, viewState }: DocumentProps<BasicViewState>) => {
   // --- Whenever the state of view options change, or the machine does
   useEffect(() => {
     refreshBasicView();
-  }, [autoRefresh, showCodes, showSpectrumFont, zx8081Kind, htModel]);
+  }, [autoRefresh, showCodes, showSpectrumFont, zx8081Kind, htModel, tvcModel]);
 
   // --- Take care of refreshing the screen
   useEmuStateListener(emuApi, async () => {
@@ -248,9 +266,9 @@ const BasicPanel = ({ document, viewState }: DocumentProps<BasicViewState>) => {
           title={t("panels.doc.basic.showCodesTitle")}
           clicked={setShowCodes}
         />
-        {/* --- The Sinclair fonts have no HT-1080Z glyphs (accents, the /64's mathematical signs) */}
-        {!htModel && <ToolbarSeparator small={true} />}
-        {!htModel && (
+        {/* --- The Sinclair fonts have no HT-1080Z or TVC glyphs (accents, the /64's mathematical signs) */}
+        {!ownFont && <ToolbarSeparator small={true} />}
+        {!ownFont && (
           <LabeledSwitch
             value={showSpectrumFont}
             label={t(
@@ -290,7 +308,7 @@ const BasicPanel = ({ document, viewState }: DocumentProps<BasicViewState>) => {
               >
                 <BasicLineDisplay
                   spans={basicLines[idx]?.spans}
-                  showSpectrumFont={showSpectrumFont && !htModel}
+                  showSpectrumFont={showSpectrumFont && !ownFont}
                 />
               </div>
             );

@@ -17,6 +17,7 @@ import { createTimexSession } from "../../harness/timex";
 import { createZ88Session } from "../../harness/z88";
 import { createZx81Session } from "../../harness/zx81";
 import { createHtSession } from "../../harness/ht1080z";
+import { createTvcSession } from "../../harness/tvc";
 import { createSession as createNextSession } from "../../harness/zxnext";
 
 type Runtime = { module: WebAssembly.Module; exports: Record<string, unknown> & { memory: WebAssembly.Memory } };
@@ -97,6 +98,14 @@ loop:
     async () => {
       const s = await createHtSession();
       s.bootToPrompt();
+      return s.machine.wasmV2Runtime as unknown as Runtime;
+    }
+  ],
+  [
+    "tvc",
+    async () => {
+      const s = await createTvcSession({ model: "tvc64p" });
+      s.bootToBasic();
       return s.machine.wasmV2Runtime as unknown as Runtime;
     }
   ]

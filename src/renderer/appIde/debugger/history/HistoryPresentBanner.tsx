@@ -19,6 +19,7 @@ const PRESENT_SUBJECTS = {
   watchedMemory: "panels.side.historyPresent.watchedMemory",
   memoryMapping: "panels.side.historyPresent.memoryMapping",
   ula: "panels.side.historyPresent.ula",
+  tvcVideo: "panels.side.historyPresent.tvcVideo",
   listedBytes: "panels.side.historyPresent.listedBytes",
   variables: "panels.side.historyPresent.variables",
   stackMemory: "panels.side.historyPresent.stackMemory"

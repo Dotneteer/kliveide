@@ -6,6 +6,7 @@ import {
   MI_SPECTRUM_128,
   MI_SPECTRUM_3E,
   MI_SPECTRUM_48,
+  MI_TVC,
   MI_Z88,
   MI_ZX80,
   MI_ZX81,
@@ -42,7 +43,9 @@ describe("MF_INJECT_SUPPORT", () => {
     ["Commodore 64", MI_C64],
     // --- A 1 REM program and RUN (`.plans/ZX8081_CODE_INJECTION_PLAN.md`)
     ["Sinclair ZX81", MI_ZX81],
-    ["Sinclair ZX80", MI_ZX80]
+    ["Sinclair ZX80", MI_ZX80],
+    // --- BASIC calls the code with USR, above LOMEM (`common/tvc/codePlacement.ts`)
+    ["Videoton TVC", MI_TVC]
   ])("is declared true for %s", (_name, machineId) => {
     expect(featureOf(machineId)).toBe(true);
   });

@@ -4,6 +4,7 @@ import { describeSp128Context, sp128PartitionFor } from "./sp128Context";
 import { describeSp48Context, sp48PartitionFor } from "./sp48Context";
 import { describeSpP3eContext, spp3ePartitionFor } from "./spp3eContext";
 import { describeTimexContext, timexPartitionFor } from "./timexContext";
+import { describeTvcContext, tvcPartitionFor } from "./tvcContext";
 import { describeZ88Context, z88PartitionFor } from "./z88Context";
 import { describeZx8081Context, zx8081PartitionFor } from "./zx8081Context";
 import { describeZxNextContext, describeZxNextDmaHold, zxNextPartitionFor } from "./zxnextContext";
@@ -45,6 +46,7 @@ const decoders: Record<string, HistoryContextDecoder> = {
   zx80: tStates(zx8081PartitionFor, describeZx8081Context),
   zx81: tStates(zx8081PartitionFor, describeZx8081Context),
   ht1080z: tStates(ht1080zPartitionFor, describeHt1080zContext),
+  tvc: tStates(tvcPartitionFor, describeTvcContext),
   zxnext: {
     partitionFor: zxNextPartitionFor,
     describe: describeZxNextContext,

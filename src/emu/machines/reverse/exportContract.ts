@@ -31,7 +31,8 @@ export const CORE_EXPORT_PREFIXES: Record<string, readonly string[]> = {
   zxnext: ["zxnext"],
   z88: ["z88"],
   zx8081: ["zx8081"],
-  ht1080z: ["ht1080z"]
+  ht1080z: ["ht1080z"],
+  tvc: ["tvc"]
 };
 
 /** Exports shared by every Z80 core, by exact name prefix */
@@ -132,6 +133,10 @@ const CORE_OVERRIDES: Record<string, Record<string, ExportClass>> = {
     ReadScreenMemoryOffset: "journaled",
     // --- Brings the PSG up to the current tact first (test-only)
     GetPsgCurrentOutput: "journaled"
+  },
+  tvc: {
+    // --- Picks the CRTC type (Hitachi or Motorola 6845), machine state the image holds
+    CrtcSetMotorola: "journaled"
   }
 };
 

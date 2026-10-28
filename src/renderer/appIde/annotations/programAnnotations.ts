@@ -39,6 +39,7 @@ export const ANNOTATION_MACHINE_MAX_BANK: Record<AnnotationMachine, number> = {
   zx81: 3,
   zx80: 3,
   ht1080z: 3,
+  tvc: 7,
   rom: 7
 };
 

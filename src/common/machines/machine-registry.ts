@@ -42,7 +42,7 @@ import {
   MI_TVC
 } from "./constants";
 import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_DOCK, MEDIA_MICRODRIVE_1, MEDIA_MICRODRIVE_2, MEDIA_TAPE } from "@common/structs/project-const";
-import { Ht1080zChars, type Ht1080zCharSetId, ht1080zCharsFor, Zx80Chars, Zx81Chars, ZxNextChars, ZxSpectrumChars } from "./char-codes";
+import { Ht1080zChars, type Ht1080zCharSetId, ht1080zCharsFor, TvcChars, Zx80Chars, Zx81Chars, ZxNextChars, ZxSpectrumChars } from "./char-codes";
 import { DisassemblyOptions, MemorySection } from "@renderer/appIde/disassemblers/common-types";
 import { Z80Disassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z80-disassembler";
 import { ZxSpectrum48CustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/zx-spectrum-48-disassembler";
@@ -52,6 +52,7 @@ import { Z88CustomDisassembler } from "@renderer/appIde/disassemblers/z80-disass
 import { Zx80CustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/zx80-disassembler";
 import { Zx81CustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/zx81-disassembler";
 import { Ht1080zCustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/ht1080z-disassembler";
+import { TvcCustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/tvc-disassembler";
 import {
   plus3SyntaxDecoder,
   ZxSpectrum128EditorCustomDisassembler
@@ -682,18 +683,22 @@ export const machineRegistry: MachineInfo[] = [
     }
   },
   {
-    // --- `.plans/VIDEOTON_TVC_PLAN.md`: the 64K and the 64K+ (D2); injection and the IDE panels follow
-    // --- in Phases 6-7.
+    // --- `.plans/VIDEOTON_TVC_PLAN.md`: the 64K and the 64K+ (D2)
     machineId: MI_TVC,
     displayName: "Videoton TVC",
-    charSet: ZxSpectrumChars,
+    charSet: TvcChars,
     features: {
       [MF_Z80]: true,
       // --- .cas tapes, played in real time or with fast load, and SAVE back to .cas (§9)
       [MF_TAPE_SUPPORT]: true,
-      // --- Built code cannot run on it yet: injection is Phase 7
-      [MF_INJECT_SUPPORT]: false,
-      [MF_ALLOW_SCAN_LINES]: false
+      // --- Run boots BASIC, puts the code above LOMEM and calls it with USR (`common/tvc/codePlacement.ts`)
+      [MF_INJECT_SUPPORT]: true,
+      [MF_ALLOW_SCAN_LINES]: false,
+      // --- The shared execution-history recorder and the access profile
+      [MF_EXEC_HISTORY]: true,
+      [MF_PROFILE]: true,
+      // --- Passes the journal-replay determinism test (REVERSE_DEBUGGING_PLAN D19)
+      [MF_REVERSE_DEBUG]: true
     },
     models: TVC_MODELS,
     mediaIds: [MEDIA_TAPE],
@@ -704,6 +709,8 @@ export const machineRegistry: MachineInfo[] = [
         partitionLabels?: string[],
         options?: DisassemblyOptions
       ) => new Z80Disassembler(memorySections, memoryContents, partitionLabels, options),
+      // --- RST 30h's function byte, in every program (the OS vectors it through RAM)
+      [CT_CUSTOM_DISASSEMBLER]: () => new TvcCustomDisassembler(),
       [CT_DISASSEMBLER_VIEW]: {
         showRamOption: false,
         showScreenOption: false
