@@ -172,31 +172,42 @@ export class RomAnnotationNewCommand extends IdeCommandBase<RomArgs> {
   async execute(context: IdeCommandContext, args: RomArgs): Promise<IdeCommandResult> {
     const target = await romTargetOf(context, args.rom!, args["-page"] ?? 0);
     if ("error" in target) return commandError(target.error);
-    const result = await createWorkingCopy(context.mainApi, context.service.projectService, target);
-    if ("reason" in result) return commandError(t("commands.romAnn.newRefused", { reason: result.reason, rom: args.rom }));
-    requestRomAnnotationsReload();
-    await openRomAnnotationEditor(context.service.projectService.getActiveDocumentHubService(), result.path);
-    return commandSuccessWith(
-      result.from === "shipped"
-        ? t("commands.romAnn.copiedShipped", { sidecar: target.shippedSidecar, path: result.path })
-        : t("commands.romAnn.createdEmpty", { path: result.path, rom: target.romName })
-    );
+    return createAndOpenWorkingCopy(context, target, args.rom!);
   }
 }
 
-export class RomAnnotationOpenCommand extends IdeCommandBase<RomArgs> {
+/** Make the working copy of a ROM page (`rom-ann-new`) and open it in the ROM annotation editor. */
+async function createAndOpenWorkingCopy(
+  context: IdeCommandContext,
+  target: WorkingCopyTarget,
+  rom: string
+): Promise<IdeCommandResult> {
+  const result = await createWorkingCopy(context.mainApi, context.service.projectService, target);
+  if ("reason" in result) return commandError(t("commands.romAnn.newRefused", { reason: result.reason, rom }));
+  requestRomAnnotationsReload();
+  await openRomAnnotationEditor(context.service.projectService.getActiveDocumentHubService(), result.path);
+  return commandSuccessWith(
+    result.from === "shipped"
+      ? t("commands.romAnn.copiedShipped", { sidecar: target.shippedSidecar, path: result.path })
+      : t("commands.romAnn.createdEmpty", { path: result.path, rom: target.romName })
+  );
+}
+
+type OpenArgs = RomArgs & { "-create"?: boolean };
+
+export class RomAnnotationOpenCommand extends IdeCommandBase<OpenArgs> {
   readonly id = "rom-ann-open";
   get description() {
     return t("commands.romAnn.openDescription");
   }
-  readonly usage = "rom-ann-open <rom>|<sidecar.dis> [-page <n>]";
-  readonly argumentInfo = ROM_ARGUMENTS;
+  readonly usage = "rom-ann-open <rom>|<sidecar.dis> [-page <n>] [-create]";
+  readonly argumentInfo: CommandArgumentInfo = { ...ROM_ARGUMENTS, commandOptions: ["-create"] };
 
-  validateCommandArgs(_context: IdeCommandContext, args: RomArgs): Promise<ValidationMessage[]> {
+  validateCommandArgs(_context: IdeCommandContext, args: OpenArgs): Promise<ValidationMessage[]> {
     return validateRom(args, true);
   }
 
-  async execute(context: IdeCommandContext, args: RomArgs): Promise<IdeCommandResult> {
+  async execute(context: IdeCommandContext, args: OpenArgs): Promise<IdeCommandResult> {
     const hub = context.service.projectService.getActiveDocumentHubService();
     if (/\.dis$/i.test(args.rom!)) {
       const resolved = resolveCommandFilePath(context, args.rom!);
@@ -220,6 +231,9 @@ export class RomAnnotationOpenCommand extends IdeCommandBase<RomArgs> {
         t("commands.romAnn.openedReadOnly", { sidecar: target.shippedSidecar, rom: args.rom })
       );
     }
+    // --- `-create` (the Debug › ROM Annotations menu): a ROM with no annotations at all gets an
+    // --- empty working copy, as `rom-ann-new` would make
+    if (args["-create"]) return createAndOpenWorkingCopy(context, target, args.rom!);
     return commandError(t("commands.romAnn.noAnnotations", { rom: args.rom }));
   }
 }

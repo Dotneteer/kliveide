@@ -1155,10 +1155,12 @@ beside it. An existing working copy is never overwritten.
 ## `rom-ann-open`
 
 Opens a ROM's annotations in the ROM annotation editor: its working copy, or, when it has none, the
-shipped annotations read-only.
+shipped annotations read-only. With `-create`, a ROM that has neither gets an empty working copy, as
+[`rom-ann-new`](/en/reference/commands#rom-ann-new) would make. The **Debug › ROM Annotations** menu
+runs this command for the ROM you pick.
 
 ```
-rom-ann-open <rom>|<file.rom.dis> [-page <n>]
+rom-ann-open <rom>|<file.rom.dis> [-page <n>] [-create]
 ```
 
 ## `rom-ann-check`

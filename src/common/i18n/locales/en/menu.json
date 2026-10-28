@@ -813,6 +813,23 @@
   "@menu.debug.exportDisassemblySource": {
     "context": "Debug menu: writes the annotated disassembly of the 64K view's RAM ($4000-$FFFF) as a Klive Z80 assembly file, then assembles it to check it gives the same bytes. The trailing '...' means the item opens a dialog; keep it."
   },
+  "menu.debug.romAnnotations": "ROM Annotations",
+  "@menu.debug.romAnnotations": {
+    "context": "Debug menu: a submenu with one submenu per machine type, each listing the ROM files Klive ships for that machine; picking one opens that ROM's annotations (its labels, comments and data regions, which the user can edit) in the ROM annotation editor of the IDE window."
+  },
+  "menu.debug.romAnnotationsPage": "{file}, page {page}",
+  "@menu.debug.romAnnotationsPage": {
+    "context": "Debug › ROM Annotations › (machine type): an item for one 16K page of a ROM file that holds several pages (the ZX Spectrum Next's 64K NextZXOS ROM). Picking it opens that page's annotations.",
+    "placeholders": {
+      "file": "The ROM file's name, shown verbatim, e.g. 'enNextZX.rom'",
+      "page": "The page's number within the file, from 0"
+    }
+  },
+  "menu.debug.romAnnotationsFailed": "ROM Annotations",
+  "@menu.debug.romAnnotationsFailed": {
+    "context": "Title of the error message box shown when an item of Debug › ROM Annotations cannot open the ROM's annotations; the message below it says why. Use the same words as the 'ROM Annotations' submenu.",
+    "maxChars": 40
+  },
   "menu.divMmc.connect": "DivMMC Interface",
   "@menu.divMmc.connect": {
     "context": "Checkbox, an item of the Machine › Interfaces submenu (ZX Spectrum 48K and 128K) or the Machine › SD Card submenu (+2A/+3), where the DivMMC interface (an SD card interface that runs the esxDOS operating system) is set up: connects the DivMMC to the machine, which restarts. Usually left untranslated.",

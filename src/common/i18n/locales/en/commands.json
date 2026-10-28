@@ -1535,7 +1535,7 @@
       "rom": "The ROM's name"
     }
   },
-  "commands.romAnn.openDescription": "Opens a ROM's annotations in the ROM annotation editor: its working copy, or the shipped sidecar read-only",
+  "commands.romAnn.openDescription": "Opens a ROM's annotations in the ROM annotation editor: its working copy, or the shipped sidecar read-only; with '-create', a ROM with neither gets an empty working copy",
   "@commands.romAnn.openDescription": {
     "context": "Description of the 'rom-ann-open' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated. A 'sidecar' is the .dis annotation file that sits beside a ROM; a 'working copy' is the user's editable copy of it; 'shipped' ones come with Klive. Command names (rom-ann-new, rom-ann-open) are never translated."
   },
