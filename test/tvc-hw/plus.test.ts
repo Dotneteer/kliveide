@@ -11,7 +11,7 @@ import { bareMachine, PAL, PAPER_LEFT, PAPER_TOP, pictureHash, pixel, RGB, write
  */
 
 /** "TV COMPUTER BASIC 2.2 / Copyright 1988 VIDEOTON / 42155 bytes free / ok" and the cursor, checked by eye */
-const PLUS_BOOT_SHA1 = "bfd42725e1a1774ed4cd36475cfb7367da6ba402";
+const PLUS_BOOT_SHA1 = "e87311944ccab863581a9d3d5224d5280e4cbe62";
 
 describe("TVC 64K+", () => {
   it("boots BASIC 2.2, the picture checked by eye", async () => {

@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
 
 import { createTvcSession, type TvcTestSession } from "../harness/tvc";
+import { writeShotIfAsked } from "./bare";
 
 /*
  * Booting BASIC 1.2 on the TVC 64K (`.plans/VIDEOTON_TVC_PLAN.md` Phase 2): the ROM tests the RAM,
@@ -10,10 +11,10 @@ import { createTvcSession, type TvcTestSession } from "../harness/tvc";
  * VIDEOTON", "42255 bytes free", "ok" and the block cursor, green on black).
  */
 
-const BOOT_PICTURE_SHA1 = "36a89c43e28b44a5ba749559900aba3246f539f7";
+const BOOT_PICTURE_SHA1 = "3cc0f0be284464ae046ce7154375f14ff6cabc24";
 
 /** The colour of a picture pixel (0xAABBGGRR) */
-const pixelAt = (s: TvcTestSession, x: number, y: number) => s.screenPixels()[y * 608 + x];
+const pixelAt = (s: TvcTestSession, x: number, y: number) => s.screenPixels()[y * 560 + x];
 
 describe("TVC 64K boot", () => {
   it("programs the CRTC with the ROM's values (TVC_VIDEO_GENERATION.md Part 3)", async () => {
@@ -27,11 +28,12 @@ describe("TVC 64K boot", () => {
   it("boots to BASIC's banner and ok, the picture checked by eye", async () => {
     const s = await createTvcSession();
     s.bootToBasic();
+    await writeShotIfAsked(s, "boot");
     const pixels = s.screenPixels();
     const hash = createHash("sha1").update(Buffer.from(pixels.buffer, pixels.byteOffset, pixels.byteLength)).digest("hex");
     // --- Black paper and border, and the banner in bright green (BASIC's default four-colour palette)
     expect(pixelAt(s, 300, 280).toString(16)).toBe("ff000000");
-    const bannerRow = Array.from(pixels.subarray(56 * 608, 57 * 608));
+    const bannerRow = Array.from(pixels.subarray(56 * 560, 57 * 560));
     expect(bannerRow.some((p) => p === 0xff00ff00)).toBe(true);
     expect(hash).toBe(BOOT_PICTURE_SHA1);
   });

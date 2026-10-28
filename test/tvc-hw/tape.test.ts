@@ -15,7 +15,7 @@ const PROGRAM = [0x08, 0x0a, 0x00, 0xdd, 0x20, 0x34, 0x32, 0xff, 0x00];
 /** BASIC 1.2's program area starts at 19EFh (its TEXT pointer) */
 const BASIC_TEXT = 0x19ef;
 /** "load / Searching / Reading: T / ok / run / 42 / ok", checked by eye */
-const LOAD_RUN_SHA1 = "30bd4066acd92b29e4647b62abf6e2ec005def2a";
+const LOAD_RUN_SHA1 = "f791384ec55c0c05e04a9a3b6e4610a4d928b48f";
 
 async function savedProgram(): Promise<{ name: string; contents: Uint8Array }> {
   const s = await createTvcSession();

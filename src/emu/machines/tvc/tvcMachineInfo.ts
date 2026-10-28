@@ -16,8 +16,8 @@ export const TVC_TACTS_PER_LINE = 200;
 export const TVC_LINES_PER_FRAME = 314;
 export const TVC_TACTS_IN_FRAME = TVC_TACTS_PER_LINE * TVC_LINES_PER_FRAME;
 
-/** The TV picture (D4): 76 characters of 8 dots, 288 lines; the core's `TVC_SCREEN_WIDTH`/`HEIGHT` */
-export const TVC_SCREEN_WIDTH = 608;
+/** The TV picture (D4): 70 characters of 8 dots, 288 lines; the core's `TVC_SCREEN_WIDTH`/`HEIGHT` */
+export const TVC_SCREEN_WIDTH = 560;
 export const TVC_SCREEN_HEIGHT = 288;
 
 /**

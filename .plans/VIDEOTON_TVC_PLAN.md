@@ -325,10 +325,13 @@ Every fact here is in `TVC_VIDEO_GENERATION.md`; the part numbers point there.
     the cursor pulse. A held sound IT therefore masks the cursor edge;
   - port `59h` bit 4 reads the flip-flop (active low);
   - any `OUT (07h)` clears it.
-- **TV window (decision D4):** proposal: **608 × 288** (76 characters × 8 pixels, 288 lines).
+- **TV window (decision D4):** **560 × 288** (70 characters × 8 pixels, 288 lines).
   - The window is placed relative to the shaped syncs as a TV would place it, with the paper
-    centred for the ROM's values. With those values the window holds 6 characters of left border,
-    of which about 2.5 are still blanked (black), and 6 characters of right border.
+    centred for the ROM's values: it starts 21 characters after the line sync, just after the
+    horizontal blank ends, and holds 3 characters of border on each side.
+  - *As built (revised):* the first window was 608 × 288 from character 18, which showed the last
+    2.5 blanked characters as a black stripe down the left edge. A TV hides that in overscan, so
+    the window was cropped to start after it.
   - The aspect ratio is about 0.59 (52 µs of active line at 12.5 MHz against 288 lines on 4:3).
   - When a program's sync falls outside a TV's capture range, show the signal-lost picture, as
     the HT-1080Z does with `isVideoSignalLost`.
@@ -582,7 +585,7 @@ All seven recommendations were accepted as written:
   GPL emulators as oracles only; rtvc's ROM listings never used for sidecars.
 - **D2:** one machine ID, `tvc`, with the models `tvc64` and `tvc64p`.
 - **D3:** ship the ROMs with a readme and a notice section, removed on request.
-- **D4:** a 608 × 288 window, aspect about 0.59, paper centred.
+- **D4:** a 560 × 288 window (revised from 608 × 288), aspect about 0.59, paper centred, no blanked dots.
 - **D5:** whole T-states plus a half-T phase bit.
 - **D6:** a Hitachi type-0 6845 by default, with a Motorola flag.
 - **D7:** HBF and VT-DOS as phase 8 of this plan.
@@ -603,7 +606,7 @@ The original questions follow for the record.
     section, and removal on request from a rights holder.
   - The alternative is a user-supplied ROM setting (the Timex pattern). It would also keep the ROMs
     out of CI, which would gut the test plan.
-- **D4 — the visible window: 608 × 288 at the 12.5 MHz dot pitch, aspect about 0.59, paper
+- **D4 — the visible window: 560 × 288 (revised from 608 × 288) at the 12.5 MHz dot pitch, aspect about 0.59, paper
   centred** (§7). *Recommendation: yes.*
 - **D5 — CPU timing as whole T-states plus a half-T phase bit** (§3.1). *Recommendation: yes.*
 - **D6 — the 6845 variant: Hitachi type 0 by default, with a Motorola flag** (Q1). *Recommendation:

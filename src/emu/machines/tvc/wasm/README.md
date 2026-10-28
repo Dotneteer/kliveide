@@ -68,8 +68,9 @@ Each character runs these steps in order:
    clocked by DEB.
 3. The horizontal blank applies: 180 dots (14.4 µs) from HS rising.
 4. The vertical blank latch applies: set by the 135 µs VS monostable, cleared while MA9 is 1.
-5. The TV places the character, 18 characters after the line sync (HS falling) and 26 line syncs
-   after the frame sync (VS rising). That centres the 512 x 240 paper in the 608 x 288 picture.
+5. The TV places the character, 21 characters after the line sync (HS falling) and 26 line syncs
+   after the frame sync (VS rising). That centres the 512 x 240 paper in the 560 x 288 picture. The window
+   starts just after the horizontal blank ends, so no blanked dot shows on its left.
 6. The fetch for this character, from the displayed bank.
 7. The interrupt flip-flop, which is set when NOR(cursor, sound IT) rises: at the end of the cursor
    pulse.

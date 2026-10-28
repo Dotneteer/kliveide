@@ -35,11 +35,11 @@ async function build(source = SOURCE): Promise<CodeToInject> {
 /** The picture rows that are not paper: the text the program and BASIC printed */
 function inkRows(s: TvcTestSession): number {
   const pixels = s.screenPixels();
-  const paper = pixels[60 * 608 + 300];
+  const paper = pixels[60 * 560 + 276];
   let rows = 0;
   for (let y = 24; y < 264; y++) {
-    for (let x = 48; x < 560; x++) {
-      if (pixels[y * 608 + x] !== paper) {
+    for (let x = 24; x < 536; x++) {
+      if (pixels[y * 560 + x] !== paper) {
         rows++;
         break;
       }
@@ -50,7 +50,7 @@ function inkRows(s: TvcTestSession): number {
 
 function save(s: TvcTestSession, name: string): void {
   const dir = process.env.TVC_TEMPLATE_PNG;
-  if (dir) writeFileSync(join(dir, `${name}.png`), encodePng(s.screenPixels(), 608, 288));
+  if (dir) writeFileSync(join(dir, `${name}.png`), encodePng(s.screenPixels(), 560, 288));
 }
 
 /** Two lines of the ROM's characters: the template's text, with no other line moved */

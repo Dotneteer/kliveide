@@ -4,16 +4,16 @@ import type { TvcTestSession } from "../harness/tvc";
  * A TVC without its ROM running: page 0 shows U0 and the CPU sits in `DI; HALT` there, so nothing but
  * the test touches the video. The CRTC gets the BASIC ROM's values (TVC_VIDEO_GENERATION.md Part 3).
  *
- * With those values the TV picture (608 x 288) shows paper line L, byte C at x = 48 + 8C, y = 24 + L:
+ * With those values the TV picture (560 x 288) shows paper line L, byte C at x = 24 + 8C, y = 24 + L:
  * the line sync starts 2 characters after HS (character 77), the window 18 characters after the
  * line sync, and the paper one character after DE (Part 8).
  */
 
 export const ROM_CRTC = [99, 64, 75, 0x32, 77, 2, 60, 66, 0, 3, 3, 3, 0, 0, 0x0e, 0xff];
 
-export const PAPER_LEFT = 48;
+export const PAPER_LEFT = 24;
 export const PAPER_TOP = 24;
-export const SCREEN_WIDTH = 608;
+export const SCREEN_WIDTH = 560;
 
 /** Palette port values (I/G/R/B in bits 6/4/2/0) */
 export const PAL = { black: 0x00, white: 0x55, red: 0x04, green: 0x10, blue: 0x01, brightGreen: 0x50 };
@@ -91,7 +91,7 @@ export async function writeShotIfAsked(s: TvcTestSession, name: string): Promise
   if (!dir) return;
   const { default: sharp } = await import("sharp");
   const pixels = s.screenPixels();
-  await sharp(Buffer.from(pixels.buffer, pixels.byteOffset, pixels.byteLength), { raw: { width: 608, height: 288, channels: 4 } })
+  await sharp(Buffer.from(pixels.buffer, pixels.byteOffset, pixels.byteLength), { raw: { width: SCREEN_WIDTH, height: 288, channels: 4 } })
     .resize(1216, 1152, { kernel: "nearest", fit: "fill" })
     .png()
     .toFile(`${dir}/${name}.png`);
