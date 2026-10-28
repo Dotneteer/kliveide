@@ -4,6 +4,7 @@ export default {
   "next-core": "The ZX Spectrum Next core and the FPGA",
   "reverse-debugging": "How reverse debugging works",
   "crt-display": "How a television draws a picture",
+  "computer-sound": "How a computer makes sound",
   "zx81-display": "ZX81: how the screen is drawn",
   "zx81-tape": "ZX81: how programs go to tape",
   "spectrum-display": "ZX Spectrum: how the screen is drawn",

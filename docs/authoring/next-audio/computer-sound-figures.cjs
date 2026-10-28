@@ -1,0 +1,414 @@
+#!/usr/bin/env node
+// Figures of "How a computer makes sound"
+// (docs/content/en/under-the-hood/emulator-internals/computer-sound.mdx).
+//
+// Every waveform is computed here, so the figures stay exact and to scale. The script rewrites the
+// figures in place, between the markers {/* fig:<name> */} and {/* /fig:<name> */} in the page, and
+// prints the numbers the text quotes. Edit this script, not the generated SVG, then run:
+//
+//   node docs/authoring/next-audio/computer-sound-figures.cjs
+"use strict";
+
+const fs = require("fs");
+const path = require("path");
+
+const PAGE = path.join(
+  __dirname,
+  "../../content/en/under-the-hood/emulator-internals/computer-sound.mdx"
+);
+
+// Colours of the page: the wanted sound blue, samples and the DAC's steps orange, the filtered result
+// green, anything wrong (aliasing, clipping) red; structure in currentColor.
+const BLUE = "#3b82f6";
+const ORANGE = "#e8912d";
+const GREEN = "#30a46c";
+const RED = "#e5484d";
+const PURPLE = "#a855f7";
+
+const r = (v) => Math.round(v * 10) / 10;
+
+/** Maps time and level to a plot box. */
+function box(x, y, w, h, t0, t1, v0, v1) {
+  return {
+    x, y, w, h,
+    px: (t) => r(x + ((t - t0) / (t1 - t0)) * w),
+    py: (v) => r(y + h - ((v - v0) / (v1 - v0)) * h)
+  };
+}
+
+/** A smooth curve of fn over [t0, t1], n segments. */
+function curve(b, fn, t0, t1, n = 400) {
+  const pts = [];
+  for (let i = 0; i <= n; i++) {
+    const t = t0 + ((t1 - t0) * i) / n;
+    pts.push(`${b.px(t)},${b.py(fn(t))}`);
+  }
+  return "M" + pts.join(" L");
+}
+
+/** A polyline through [t, v] points. */
+function poly(b, pts) {
+  return "M" + pts.map(([t, v]) => `${b.px(t)},${b.py(v)}`).join(" L");
+}
+
+/** A staircase: each value held until the next time. */
+function stairs(b, times, values, tEnd) {
+  const pts = [];
+  for (let i = 0; i < values.length; i++) {
+    const tNext = i + 1 < times.length ? times[i + 1] : tEnd;
+    pts.push([times[i], values[i]], [tNext, values[i]]);
+  }
+  return poly(b, pts);
+}
+
+/** First-order low-pass filters in a row, run over a finely sampled input. */
+function lowPass(input, dt, cutoffHz, stages, init = input[0]) {
+  const rc = 1 / (2 * Math.PI * cutoffHz);
+  const a = dt / (rc + dt);
+  let sig = input.slice();
+  for (let s = 0; s < stages; s++) {
+    const out = [];
+    let y = init;
+    for (const x of sig) {
+      y += a * (x - y);
+      out.push(y);
+    }
+    sig = out;
+  }
+  return sig;
+}
+
+const svgOpen = (h, label) =>
+  `<svg viewBox="0 0 700 ${h}" role="img" aria-label="${label}" style={{ width: "100%", maxWidth: "700px", height: "auto" }}>`;
+const text = (x, y, s, opts = {}) =>
+  `  <text x="${r(x)}" y="${r(y)}"${opts.anchor ? ` textAnchor="${opts.anchor}"` : ""} fill="${opts.fill ?? "currentColor"}" fontSize="${opts.size ?? 13}"${opts.bold ? ' fontWeight="bold"' : ""}>${s}</text>`;
+const line = (x1, y1, x2, y2, opts = {}) =>
+  `  <line x1="${r(x1)}" y1="${r(y1)}" x2="${r(x2)}" y2="${r(y2)}" stroke="${opts.stroke ?? "currentColor"}" strokeWidth="${opts.width ?? 1}"${opts.dash ? ` strokeDasharray="${opts.dash}"` : ""}${opts.opacity ? ` strokeOpacity="${opts.opacity}"` : ""}${opts.marker ? ` markerEnd="url(#${opts.marker})"` : ""} />`;
+const pathEl = (d, opts = {}) =>
+  `  <path d="${d}" fill="none" stroke="${opts.stroke ?? "currentColor"}" strokeWidth="${opts.width ?? 2}"${opts.dash ? ` strokeDasharray="${opts.dash}"` : ""}${opts.opacity ? ` strokeOpacity="${opts.opacity}"` : ""} strokeLinejoin="round" />`;
+const dot = (x, y, opts = {}) =>
+  `  <circle cx="${r(x)}" cy="${r(y)}" r="${opts.r ?? 4}" fill="${opts.fill ?? ORANGE}" />`;
+const arrowDefs = (id, color = "currentColor") =>
+  `  <defs>\n    <marker id="${id}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">\n      <path d="M0,0 L10,5 L0,10 z" fill="${color}" />\n    </marker>\n  </defs>`;
+
+/** The zero line and a time axis label under a plot box. */
+function axes(b, opts = {}) {
+  const out = [];
+  if (opts.zero !== undefined) {
+    out.push(line(b.x, b.py(opts.zero), b.x + b.w, b.py(opts.zero), { opacity: 0.35 }));
+  }
+  out.push(line(b.x, b.y, b.x, b.y + b.h, { opacity: 0.5 }));
+  if (opts.time) {
+    out.push(line(b.x, b.y + b.h + 8, b.x + b.w, b.y + b.h + 8, { opacity: 0.5, marker: opts.marker }));
+    out.push(text(b.x + b.w, b.y + b.h + 24, opts.time, { anchor: "end", size: 12 }));
+  }
+  return out;
+}
+
+const figures = {};
+const numbers = [];
+
+// ---------------------------------------------------------------------------------------------
+// Figure: the chain, numbers -> DAC -> filter -> amplifier -> speaker -> air
+{
+  const W = 100, GAP = 16, X0 = 10, Y = 40, H = 120;
+  const steps = ["Numbers", "DAC", "Filter", "Amplifier", "Speaker", "Air"];
+  const out = [svgOpen(200, "The chain from numbers to sound, six boxes left to right: a list of numbers; the DAC, which turns them into a staircase of voltages; the filter, which smooths the staircase into a wave; the amplifier, which makes the wave larger; the speaker, whose cone moves with it; and the air, where the movement travels as bands of higher and lower pressure.")];
+  out.push(arrowDefs("snd-chain-arrow"));
+  const n = 16;
+  const samples = [...Array(n)].map((_, i) => Math.round(128 + 127 * Math.sin((2 * Math.PI * i) / n)));
+  steps.forEach((s, i) => {
+    const x = X0 + i * (W + GAP);
+    out.push(`  <rect x="${x}" y="${Y}" width="${W}" height="${H}" rx="8" fill="none" stroke="currentColor" strokeOpacity="0.5" />`);
+    out.push(text(x + W / 2, Y - 12, s, { anchor: "middle", size: 14, bold: true }));
+    if (i < steps.length - 1) {
+      out.push(line(x + W + 2, Y + H / 2, x + W + GAP - 2, Y + H / 2, { marker: "snd-chain-arrow", width: 1.5 }));
+    }
+  });
+  // 1: numbers
+  {
+    const x = X0;
+    samples.slice(0, 8).forEach((v, k) => {
+      out.push(text(x + W / 2, Y + 22 + k * 13, String(v), { anchor: "middle", size: 12, fill: ORANGE }));
+    });
+    out.push(text(x + W / 2, Y + H - 2, "⋮", { anchor: "middle", size: 12, fill: ORANGE }));
+  }
+  const inner = (i) => box(X0 + i * (W + GAP) + 10, Y + 20, W - 20, H - 40, 0, 1, -1.25, 1.25);
+  // 2: staircase
+  {
+    const b = inner(1);
+    const times = samples.map((_, k) => k / n);
+    out.push(pathEl(stairs(b, times, samples.map((v) => (0.5 * (v - 128)) / 127), 1), { stroke: ORANGE, width: 2 }));
+  }
+  // 3: filtered
+  {
+    const b = inner(2);
+    out.push(pathEl(curve(b, (t) => 0.5 * Math.sin(2 * Math.PI * t), 0, 1), { stroke: GREEN, width: 2.5 }));
+  }
+  // 4: amplified: the filter's wave, twice as tall
+  {
+    const b = inner(3);
+    out.push(pathEl(curve(b, (t) => 1.15 * Math.sin(2 * Math.PI * t), 0, 1), { stroke: GREEN, width: 3 }));
+  }
+  // 5: speaker: a magnet and a cone, seen from the side, with the cone's travel
+  {
+    const x = X0 + 4 * (W + GAP);
+    const cx = x + 38, cy = Y + H / 2;
+    out.push(`  <rect x="${cx - 26}" y="${cy - 14}" width="16" height="28" fill="currentColor" fillOpacity="0.35" />`);
+    out.push(`  <path d="M${cx - 10},${cy - 10} L${cx + 22},${cy - 42} L${cx + 22},${cy + 42} L${cx - 10},${cy + 10} Z" fill="none" stroke="currentColor" strokeWidth="2" />`);
+    out.push(line(cx + 34, cy - 30, cx + 34, cy + 30, { stroke: GREEN, width: 1.5, dash: "3 3" }));
+    out.push(line(cx + 42, cy, cx + 54, cy, { stroke: GREEN, width: 2, marker: "snd-chain-arrow" }));
+    out.push(line(cx + 42, cy, cx + 30, cy, { stroke: GREEN, width: 2, marker: "snd-chain-arrow" }));
+    out.push(text(x + W / 2, Y + H - 8, "cone moves", { anchor: "middle", size: 11 }));
+  }
+  // 6: air: bands of pressure
+  {
+    const x = X0 + 5 * (W + GAP);
+    for (let k = 0; k < 36; k++) {
+      const p = Math.sin(2 * Math.PI * (k / 12));
+      const lx = x + 12 + k * 2.2;
+      out.push(line(lx, Y + 22, lx, Y + H - 26, { width: 1.2, opacity: r(0.25 + 0.35 * (p + 1)) }));
+    }
+    out.push(text(x + W / 2, Y + H - 8, "pressure", { anchor: "middle", size: 11 }));
+  }
+  out.push(text(X0, 192, "digital: a list of numbers", { size: 12, fill: ORANGE }));
+  out.push(text(X0 + 2 * (W + GAP), 192, "analogue: a voltage that changes smoothly", { size: 12, fill: GREEN }));
+  out.push("</svg>");
+  figures.chain = out;
+}
+
+// ---------------------------------------------------------------------------------------------
+// Figure: a wave and its samples at two rates
+{
+  const f = 1000; // Hz
+  const T = 0.002; // two cycles
+  const rates = [16000, 5000];
+  const out = [svgOpen(340, "A 1,000 Hz wave drawn twice over two milliseconds. Above, it is sampled 16,000 times a second: 32 dots sit on the curve and trace it closely. Below, it is sampled 5,000 times a second: only 10 dots, which give a much coarser outline of the same wave.")];
+  out.push(arrowDefs("snd-samples-arrow"));
+  rates.forEach((rate, i) => {
+    const b = box(60, 30 + i * 150, 620, 100, 0, T, -1.15, 1.15);
+    out.push(...axes(b, { zero: 0 }));
+    out.push(pathEl(curve(b, (t) => Math.sin(2 * Math.PI * f * t), 0, T), { stroke: BLUE, width: 1.5, opacity: 0.7 }));
+    const count = Math.round(rate * T);
+    for (let k = 0; k < count; k++) {
+      const t = k / rate;
+      const v = Math.sin(2 * Math.PI * f * t);
+      out.push(line(b.px(t), b.py(0), b.px(t), b.py(v), { stroke: ORANGE, width: 1.5 }));
+      out.push(dot(b.px(t), b.py(v), { r: 3.5 }));
+    }
+    out.push(text(b.x, b.y - 8, rate.toLocaleString("en-US") + " samples a second", { size: 13, fill: ORANGE }));
+    numbers.push(`samples fig: ${rate} Hz -> ${count} samples in 2 ms, ${rate / f} per cycle`);
+  });
+  const b = box(60, 30 + 150, 620, 100, 0, T, -1.15, 1.15);
+  out.push(line(b.x, b.y + b.h + 20, b.x + b.w, b.y + b.h + 20, { opacity: 0.5, marker: "snd-samples-arrow" }));
+  for (let ms = 0; ms <= 2; ms++) {
+    const x = b.px(ms / 1000);
+    out.push(line(x, b.y + b.h + 16, x, b.y + b.h + 24, { opacity: 0.5 }));
+    out.push(text(x, b.y + b.h + 40, `${ms} ms`, { anchor: ms === 0 ? "start" : ms === 2 ? "end" : "middle", size: 12 }));
+  }
+  out.push("</svg>");
+  figures.samples = out;
+}
+
+// ---------------------------------------------------------------------------------------------
+// Figure: the DAC's staircase and the filtered wave
+{
+  const f = 1000, rate = 16000, T = 0.002, levels = 16; // 4-bit numbers: 16 levels, to make steps visible
+  const fine = 200; // simulation steps per sample
+  const dt = 1 / (rate * fine);
+  const N = Math.round(T * 3 / dt); // run three times longer, and show the last two milliseconds settled
+  const quant = (v) => Math.round(((v + 1) / 2) * (levels - 1)); // 0..15
+  const held = [];
+  for (let i = 0; i < N; i++) {
+    const k = Math.floor(i / fine);
+    held.push((quant(Math.sin((2 * Math.PI * f * k) / rate)) / (levels - 1)) * 2 - 1);
+  }
+  const cutoff = 3000, stages = 2;
+  const filtered = lowPass(held, dt, cutoff, stages);
+  const start = N - Math.round(T / dt);
+  const out = [svgOpen(270, "A 1,000 Hz wave as a DAC delivers it: 16 steps a millisecond, each number held as a flat voltage until the next one, so the output is a staircase with only 16 possible heights. Drawn over it, the same output after a low-pass filter: a smooth wave with no steps, arriving slightly later than the staircase.")];
+  out.push(arrowDefs("snd-dac-arrow"));
+  const b = box(60, 20, 620, 180, 0, T, -1.15, 1.15);
+  out.push(...axes(b, { zero: 0 }));
+  // levels grid
+  for (let l = 0; l < levels; l++) {
+    const v = (l / (levels - 1)) * 2 - 1;
+    out.push(line(b.x, b.py(v), b.x + b.w, b.py(v), { opacity: 0.12 }));
+  }
+  const times = [], vals = [];
+  for (let k = 0; k < rate * T; k++) {
+    times.push(k / rate);
+    vals.push(held[start + k * fine]);
+  }
+  out.push(pathEl(stairs(b, times, vals, T), { stroke: ORANGE, width: 2 }));
+  const fpts = [];
+  for (let i = start; i < N; i += 20) fpts.push([(i - start) * dt, filtered[i]]);
+  out.push(pathEl(poly(b, fpts), { stroke: GREEN, width: 3 }));
+  out.push(line(b.x, b.y + b.h + 20, b.x + b.w, b.y + b.h + 20, { opacity: 0.5, marker: "snd-dac-arrow" }));
+  for (let ms = 0; ms <= 2; ms++) {
+    const x = b.px(ms / 1000);
+    out.push(line(x, b.y + b.h + 16, x, b.y + b.h + 24, { opacity: 0.5 }));
+    out.push(text(x, b.y + b.h + 40, `${ms} ms`, { anchor: ms === 0 ? "start" : ms === 2 ? "end" : "middle", size: 12 }));
+  }
+  out.push(text(b.x - 8, b.py(1) + 4, "15", { anchor: "end", size: 11 }));
+  out.push(text(b.x - 8, b.py(-1) + 4, "0", { anchor: "end", size: 11 }));
+  out.push(text(b.x - 30, b.y + b.h / 2, "number", { anchor: "middle", size: 11 }).replace("<text", `<text transform="rotate(-90 ${b.x - 30} ${b.y + b.h / 2})"`));
+  out.push("</svg>");
+  figures.dac = out;
+  // Measure the delay and the amplitude of the filtered wave, for the text.
+  let peakI = start;
+  for (let i = start; i < start + Math.round(1 / f / dt); i++) if (filtered[i] > filtered[peakI]) peakI = i;
+  const delayUs = ((peakI - start) * dt - 0.25 / f) * 1e6;
+  numbers.push(`dac fig: 4-bit, 16 samples/ms, cutoff ${cutoff} Hz x${stages}; filtered peak ${filtered[peakI].toFixed(3)}, delay ${delayUs.toFixed(0)} us`);
+}
+
+// ---------------------------------------------------------------------------------------------
+// Figure: aliasing, 7,000 Hz sampled 8,000 times a second
+{
+  const f = 7000, rate = 8000, T = 0.001;
+  const alias = Math.abs(f - rate);
+  numbers.push(`alias fig: ${f} Hz sampled at ${rate}/s -> looks like ${alias} Hz; limit ${rate / 2} Hz`);
+  const out = [svgOpen(260, "One millisecond of a 7,000 Hz wave, drawn as a thin fast curve with seven cycles. It is sampled 8,000 times a second: nine dots in the millisecond. The dots do not follow the fast wave; they lie on a slow 1,000 Hz wave, drawn as a thick dashed curve, which is what the samples describe and what would be heard.")];
+  out.push(arrowDefs("snd-alias-arrow"));
+  const b = box(60, 30, 620, 160, 0, T, -1.2, 1.2);
+  out.push(...axes(b, { zero: 0 }));
+  out.push(pathEl(curve(b, (t) => Math.sin(2 * Math.PI * f * t), 0, T, 800), { stroke: BLUE, width: 1.5, opacity: 0.8 }));
+  out.push(pathEl(curve(b, (t) => -Math.sin(2 * Math.PI * alias * t), 0, T), { stroke: RED, width: 3, dash: "8 5" }));
+  for (let k = 0; k <= rate * T; k++) {
+    const t = k / rate;
+    out.push(dot(b.px(t), b.py(Math.sin(2 * Math.PI * f * t)), { r: 5 }));
+  }
+  out.push(text(b.x + 6, 18, "7,000 Hz: what goes in", { fill: BLUE, size: 13 }));
+  out.push(text(b.x + 220, 18, "8,000 samples a second", { fill: ORANGE, size: 13 }));
+  out.push(text(b.x + 420, 18, "1,000 Hz: what comes out", { fill: RED, size: 13 }));
+  out.push(line(b.x, b.y + b.h + 20, b.x + b.w, b.y + b.h + 20, { opacity: 0.5, marker: "snd-alias-arrow" }));
+  for (const [t, s, a] of [[0, "0", "start"], [0.0005, "0.5 ms", "middle"], [0.001, "1 ms", "end"]]) {
+    const x = b.px(t);
+    out.push(line(x, b.y + b.h + 16, x, b.y + b.h + 24, { opacity: 0.5 }));
+    out.push(text(x, b.y + b.h + 40, s, { anchor: a, size: 12 }));
+  }
+  out.push("</svg>");
+  figures.alias = out;
+}
+
+// ---------------------------------------------------------------------------------------------
+// Figure: one-bit sound, pulse trains at 25 %, 50 % and 75 % on-time and the filtered level
+{
+  const period = 1; // arbitrary unit: one pulse period
+  const perSeg = 8;
+  const duties = [0.25, 0.5, 0.75];
+  const fine = 400;
+  const total = duties.length * perSeg * period;
+  const dt = period / fine;
+  const input = [];
+  for (let i = 0; i < total * fine; i++) {
+    const t = i * dt;
+    const seg = Math.floor(t / (perSeg * period));
+    const phase = (t % period) / period;
+    input.push(phase < duties[seg] ? 1 : 0);
+  }
+  // A filter whose cut-off is well below the pulse rate, two stages, starting settled at the first level.
+  const filtered = lowPass(input, dt, 0.15 / period, 2, duties[0]);
+  const out = [svgOpen(270, "A one-bit signal that is only ever on or off. For the first eight pulses it is on a quarter of each pulse period, for the next eight half of it, for the last eight three quarters of it. Drawn over it, the filtered output: it rises and settles near a quarter of the full level, then near a half, then near three quarters, with a small ripple left over.")];
+  out.push(arrowDefs("snd-pwm-arrow"));
+  const b = box(60, 30, 620, 170, 0, total, -0.1, 1.1);
+  out.push(line(b.x, b.py(0), b.x + b.w, b.py(0), { opacity: 0.35 }));
+  out.push(line(b.x, b.y, b.x, b.y + b.h, { opacity: 0.5 }));
+  const pts = [];
+  for (let i = 0; i < input.length; i++) {
+    if (i === 0 || input[i] !== input[i - 1]) {
+      if (i > 0) pts.push([i * dt, input[i - 1]]);
+      pts.push([i * dt, input[i]]);
+    }
+  }
+  pts.push([total, input[input.length - 1]]);
+  out.push(pathEl(poly(b, pts), { stroke: BLUE, width: 1.2, opacity: 0.75 }));
+  const fpts = [];
+  for (let i = 0; i < filtered.length; i += 10) fpts.push([i * dt, filtered[i]]);
+  out.push(pathEl(poly(b, fpts), { stroke: GREEN, width: 3.5 }));
+  duties.forEach((d, s) => {
+    const x0 = b.px(s * perSeg), x1 = b.px((s + 1) * perSeg);
+    out.push(line(x0, b.py(d), x1, b.py(d), { stroke: GREEN, dash: "4 4", width: 1 }));
+    out.push(text((x0 + x1) / 2, 20, `on ${d * 100} % of the time`, { anchor: "middle", size: 13 }));
+    if (s > 0) out.push(line(x0, 26, x0, b.y + b.h, { opacity: 0.3, dash: "2 4" }));
+    const end = filtered[Math.round((s + 1) * perSeg * fine) - 1];
+    numbers.push(`pwm fig: duty ${d} -> filtered level at segment end ${end.toFixed(3)}`);
+  });
+  out.push(text(b.x - 8, b.py(1) + 4, "on", { anchor: "end", size: 11 }));
+  out.push(text(b.x - 8, b.py(0) + 4, "off", { anchor: "end", size: 11 }));
+  out.push(line(b.x, b.y + b.h + 16, b.x + b.w, b.y + b.h + 16, { opacity: 0.5, marker: "snd-pwm-arrow" }));
+  out.push(text(b.x + b.w, b.y + b.h + 34, "time: 24 pulse periods", { anchor: "end", size: 12 }));
+  out.push("</svg>");
+  figures.pwm = out;
+}
+
+// ---------------------------------------------------------------------------------------------
+// Figure: mixing, two waves added and the sum clipped
+{
+  const T = 0.002;
+  const a = (t) => 0.6 * Math.sin(2 * Math.PI * 1000 * t);
+  const c = (t) => 0.55 * Math.sin(2 * Math.PI * 3000 * t + Math.PI);
+  const sum = (t) => a(t) + c(t);
+  const clip = (v) => Math.max(-1, Math.min(1, v));
+  const out = [svgOpen(430, "Three plots over the same two milliseconds. Top: a 1,000 Hz wave. Middle: a quieter 3,000 Hz wave. Bottom: their sum, worked out moment by moment, drawn against the top and bottom of the range a converter can deliver. Where the sum would go past the range, the output is flattened against the limit; those clipped stretches are marked.")];
+  out.push(arrowDefs("snd-mix-arrow"));
+  const rows = [
+    { fn: a, label: "1,000 Hz", y: 20, color: BLUE },
+    { fn: c, label: "3,000 Hz", y: 120, color: PURPLE }
+  ];
+  rows.forEach((row) => {
+    const b = box(110, row.y, 570, 70, 0, T, -1.25, 1.25);
+    out.push(...axes(b, { zero: 0 }));
+    out.push(pathEl(curve(b, row.fn, 0, T), { stroke: row.color, width: 2 }));
+    out.push(text(10, row.y + 40, row.label, { fill: row.color, size: 13 }));
+  });
+  out.push(text(30, 108, "+", { size: 20, anchor: "middle" }));
+  out.push(text(30, 212, "=", { size: 20, anchor: "middle" }));
+  const b = box(110, 230, 570, 140, 0, T, -1.35, 1.35);
+  out.push(...axes(b, { zero: 0 }));
+  for (const lim of [1, -1]) out.push(line(b.x, b.py(lim), b.x + b.w, b.py(lim), { stroke: RED, dash: "6 4", width: 1.2 }));
+  out.push(text(b.x + b.w, b.py(1) - 6, "top of the range", { anchor: "end", size: 12, fill: RED }));
+  out.push(text(b.x + b.w, b.py(-1) + 16, "bottom of the range", { anchor: "end", size: 12, fill: RED }));
+  out.push(pathEl(curve(b, sum, 0, T), { stroke: "currentColor", width: 1.2, dash: "3 3", opacity: 0.6 }));
+  out.push(pathEl(curve(b, (t) => clip(sum(t)), 0, T, 800), { stroke: GREEN, width: 2.5 }));
+  // Clipped stretches in red.
+  let runStart = null, peak = 0;
+  const n = 2000;
+  for (let i = 0; i <= n; i++) {
+    const t = (T * i) / n;
+    const over = Math.abs(sum(t)) > 1;
+    peak = Math.max(peak, Math.abs(sum(t)));
+    if (over && runStart === null) runStart = t;
+    if ((!over || i === n) && runStart !== null) {
+      const lim = sum(runStart) > 0 ? 1 : -1;
+      out.push(line(b.px(runStart), b.py(lim), b.px(t), b.py(lim), { stroke: RED, width: 5 }));
+      runStart = null;
+    }
+  }
+  numbers.push(`mix fig: peak of the sum ${peak.toFixed(3)} of range 1`);
+  out.push(text(10, 290, "the sum", { size: 13 }));
+  out.push(line(b.x, b.y + b.h + 16, b.x + b.w, b.y + b.h + 16, { opacity: 0.5, marker: "snd-mix-arrow" }));
+  for (let ms = 0; ms <= 2; ms++) {
+    const x = b.px(ms / 1000);
+    out.push(line(x, b.y + b.h + 12, x, b.y + b.h + 20, { opacity: 0.5 }));
+    out.push(text(x, b.y + b.h + 36, `${ms} ms`, { anchor: ms === 0 ? "start" : ms === 2 ? "end" : "middle", size: 12 }));
+  }
+  out.push("</svg>");
+  figures.mix = out;
+}
+
+// ---------------------------------------------------------------------------------------------
+// Numbers the text quotes, worked out once.
+numbers.push(`CD: 44,100 x 2 sides x 16 bits = ${44100 * 2 * 16} bits/s; 2^16 = ${2 ** 16} values; limit ${44100 / 2} Hz`);
+numbers.push(`telephone: 8,000/s -> limit ${8000 / 2} Hz`);
+numbers.push(`A4 440 Hz: period ${(1000 / 440).toFixed(2)} ms; the bit flips ${2 * 440} times a second`);
+
+// ---------------------------------------------------------------------------------------------
+let page = fs.readFileSync(PAGE, "utf8");
+for (const [name, lines] of Object.entries(figures)) {
+  const re = new RegExp(`(\\{/\\* fig:${name} \\*/\\}\\n)[\\s\\S]*?(\\{/\\* /fig:${name} \\*/\\})`);
+  if (!re.test(page)) throw new Error(`marker for figure "${name}" not found`);
+  page = page.replace(re, (_, open, close) => open + lines.join("\n") + "\n" + close);
+}
+fs.writeFileSync(PAGE, page);
+console.log(numbers.join("\n"));

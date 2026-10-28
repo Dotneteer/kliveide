@@ -9,3 +9,7 @@ published to the site or indexed by search.
 - `book-plan.md` — the chapter plan and outstanding decisions for the author.
   (Was `content/book/toc.md`, which meant its "Open Questions for You" section
   was being served publicly at `/book/toc/` and indexed by Pagefind.)
+- `next-audio/computer-sound-figures.cjs` — generates the figures of
+  `content/en/under-the-hood/emulator-internals/computer-sound.mdx` in place
+  (between its `{/* fig:<name> */}` markers) and prints the numbers its text
+  quotes. Edit the script, not the generated SVG.

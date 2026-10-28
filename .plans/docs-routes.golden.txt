@@ -636,6 +636,7 @@
 /en/under-the-hood/contribute/improve-docs/index.html
 /en/under-the-hood/contribute/translate/index.html
 /en/under-the-hood/contribute/wasm-toolchain/index.html
+/en/under-the-hood/emulator-internals/computer-sound/index.html
 /en/under-the-hood/emulator-internals/crt-display/index.html
 /en/under-the-hood/emulator-internals/debugger-loop/index.html
 /en/under-the-hood/emulator-internals/ht1080z-video/index.html

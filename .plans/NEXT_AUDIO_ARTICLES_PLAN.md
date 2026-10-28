@@ -11,8 +11,8 @@ structure, the explaining and figure rules, and the corrections the project auth
 reviewing the screen series; this plan does not repeat them, it only adds what is specific to sound.
 Fold any new lesson from this series' reviews into that file.
 
-Status: **planned, nothing written.** Eight series articles plus one standalone background page,
-"How a computer makes sound" (§3), written first. Open questions are in §13.
+Status: **the background page (§3) is written; the eight series articles are planned.** Open questions
+are in §13.
 
 ---
 
@@ -294,6 +294,16 @@ Verify: nothing machine-specific; every number recomputed by script (the alias f
 example, the CD rate arithmetic). Mechanics as for the series (§0.5), but the page lives directly in
 `emulator-internals/` and needs its own routes/assets golden entries.
 
+
+**As built.** `computer-sound.mdx`, about 2,000 words of prose and six figures, all computed by
+`docs/authoring/next-audio/computer-sound-figures.cjs`, which rewrites the SVG between the page's
+`{/* fig:<name> */}` markers and prints the numbers the text quotes (edit the script, not the SVG).
+Examples it settled: a 1,000 Hz wave at 16,000 and 5,000 samples a second; a 4-bit DAC staircase at
+16,000 samples a second through two RC stages at 3,000 Hz (the smooth wave lags the staircase by about
+0.1 ms); a 7,000 Hz tone at 8,000 samples a second heard as 1,000 Hz (the telephone example, limit
+4,000 Hz); pulse widths of 25/50/75 % filtered to about those levels; 1,000 Hz + 3,000 Hz summed to
+1.15 of the range and clipped. No listening clips (Q3 still open). The page is the background, so it
+has no "How Klive does it"; the overview (article 1) links it in its audience paragraph.
 ---
 
 ## 4. Article 2 — The beeper, EAR and MIC
