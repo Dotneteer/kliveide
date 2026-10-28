@@ -47,8 +47,8 @@ const CORE_INPUTS = [
   /^scripts\/build-[a-z0-9]+-wasm\.cjs$/,
   "test/harness",
   "test/wasm",
-  "test/zxnext-hw",
-  "test/timex-hw",
+  // --- Every machine's hardware tests (zxnext-hw, timex-hw, sp128-hw, ht1080z-hw, tvc-hw, ...)
+  /^test\/[a-z0-9]+-hw\//,
   "test/zxnext-shared",
   "test/zxSpectrum",
   "test/z88",
