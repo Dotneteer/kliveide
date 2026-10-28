@@ -10,6 +10,7 @@ export default {
   "spectrum-display": "ZX Spectrum: how the screen is drawn",
   "spectrum-accuracy": "ZX Spectrum: how Klive's accuracy is tested",
   "next-display": "ZX Spectrum Next: how the screen is drawn",
+  "next-audio": "ZX Spectrum Next: how the sound is made",
   "ht1080z-video": "HT-1080Z: how the screen is drawn",
   "tvc-video": "Videoton TVC: how the picture is made"
 };

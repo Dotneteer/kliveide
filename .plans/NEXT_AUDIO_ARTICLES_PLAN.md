@@ -11,7 +11,7 @@ structure, the explaining and figure rules, and the corrections the project auth
 reviewing the screen series; this plan does not repeat them, it only adds what is specific to sound.
 Fold any new lesson from this series' reviews into that file.
 
-Status: **the background page (§3) is written; the eight series articles are planned.** Open questions
+Status: **the background page (§3) and article 1 (§2) are written; articles 2–8 are planned.** Open questions
 are in §13.
 
 ---
@@ -229,6 +229,36 @@ Figures (≈ 9):
 
 Verify: every source's range at the mixer; NextReg `$06`/`$08`/`$09` bits and reset values; the PSG
 clock enable's rate in the top-level clock divider.
+
+**As built.** `next-audio/overview.mdx`, nine Parts and eight figures; the series map is a table rather
+than a figure (figure 9 dropped: the hero figure already is the map). The diagrams and the captures are
+drawn by `docs/authoring/next-audio/overview-figures.cjs` (shared helpers `_svg.cjs`). The captures
+come from `test/zxnext-hw/audio/next-audio-scene.test.ts`, which writes JSON (20 ms of Klive's 16-bit
+mix at 48 kHz) to `docs/authoring/next-audio/captures/<article>/` with
+`NEXT_AUDIO_SHOTS=docs/authoring/next-audio/captures`, not to `docs/public/images` (§0.4): the figures
+are inline SVG, so the samples are generator input, not a published asset. Each scene plays about
+1,000 Hz through one source alone, and the test asserts its frequency, that both sides are equal, and
+the swings' ratios to the beeper's 512 units (AY channel 255, Specdrum DAC 254 × 4, the Pi's word 1,000);
+the beeper is measured by its edge, since Klive's DC filter drifts its midpoint for about 0.1 s.
+Facts the article established, beyond §11:
+- "Four kinds of source" (the beeper with its EAR and MIC bits, MIC also carrying the tape input; the
+  AYs; the DACs; the Pi), not six: the author's decision, EAR and MIC are one source. The mixer still
+  adds five inputs per side, two of them the beeper's.
+- The mixer's MIC input is port `$FE` bit 3 XOR the tape input XOR the Pi's EAR bit, so a loading tape
+  is heard at MIC's level; the same line drives the MIC socket. Klive does not add the tape input.
+- Silence is 1,536 per side: the DACs at `$80` add 1,024 (also when disabled: held at `$80`), the Pi
+  512 when off. Every source at its largest: 5,998.
+- The audio port enables are all in NextReg `$84` (bit 0 AY, bits 1–7 the seven DAC families), reset
+  all 1. §11's "bits 16–23 of `$82`–`$85`" is the same thing counted over the four registers.
+- AY stereo per chip: ABC is L = A + B, R = C + B (B on both sides); mono is A + B + C on both, 765 per
+  chip, hence 2,295 for three. In stereo a chip's side is at most 510.
+- The jack's converters are first-order one-bit delta-sigma at 28 MHz; issue 4's speaker takes L + R
+  (no offset; issue 2 adds one); HDMI is the 13-bit sum as a 16-bit word, 48 kHz.
+- Klive: the speaker-only beeper ($06 bit 6 with $08 bit 4) is silent, since only one stream (the
+  jack's) is made; the speaker and HDMI's silence bit are not emulated. Mode `10` behaves as YM in
+  Klive too (only bit 0 reaches the PSGs).
+- Not claimed: the beeper's pitch at 14/28 MHz (wait states not checked) — the article gives 3.5 and
+  7 MHz only.
 
 ---
 

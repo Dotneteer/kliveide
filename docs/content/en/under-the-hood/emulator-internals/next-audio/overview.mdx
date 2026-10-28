@@ -1,0 +1,892 @@
+---
+description: "The ZX Spectrum Next's sound from above: the beeper and the tape, three AY chips, four 8-bit DACs and the Raspberry Pi's audio, the difference between a sound generator and a level the CPU writes, the one mixer that adds them all on two sides, the outputs the sum leaves through, the clocks behind them, the registers that switch them, and how Klive's emulator makes the same sound."
+---
+
+import { Callout } from 'nextra/components'
+
+# ZX Spectrum Next: The Big Picture
+
+A 48K Spectrum had one bit of sound and a speaker the size of a coin. Play a modern game on a ZX
+Spectrum Next and you hear chip music in nine voices, in stereo, with sampled drums and speech on top,
+and the same machine still loads a tape by listening to it. Where does each of those sounds come from,
+and how do they end up in one pair of headphones?
+
+Sound does a lot of work in a program. Music sets the mood and the pace of a game; an effect tells you
+that you jumped, fired or were hit before your eyes have found it on the screen; speech and sampled
+sounds make a game feel larger than its 128K. On a Spectrum, sound had one more job: programs were
+saved to tape and loaded from it as sound. And a machine with several sound sources that run by
+themselves does all this without tying up the CPU, which is busy enough drawing the screen.
+
+This article is the map of the Next's sound. It is the first article of a series; the ones that follow
+take each source apart, and this one shows how they fit together. If digital sound is new to you, read
+[How a Computer Makes Sound](/en/under-the-hood/emulator-internals/computer-sound/) first: it explains
+samples, the DAC, the filter that makes the result smooth, sound from a single bit and mixing, and this
+series does not explain them again. [ZX Spectrum: How the Screen Is Drawn](/en/under-the-hood/emulator-internals/spectrum-display/)
+explains port `$FE`, which the beeper shares with the border, and
+[The ZX Spectrum Next Core and the FPGA](/en/under-the-hood/emulator-internals/next-core/) explains why
+the Next's hardware lives in an FPGA.
+
+### How this article is organised
+
+- **From one bit to four kinds of source** ([Part 1](#part-1-from-one-bit-to-four-kinds-of-source)):
+  what the Next kept from the Spectrum and what it added.
+- **The cast** ([Part 2](#part-2-the-cast)): the whole system in one figure, then each source, with a
+  sample of its sound captured from the machine.
+- **Generators and level writers** ([Part 3](#part-3-generators-and-level-writers)): the one idea that
+  decides how much a sound costs the CPU. If you read only one part, read this one.
+- **One mixer, two sides** ([Part 4](#part-4-one-mixer-two-sides)): how every source is added into a
+  left and a right sum, and how much of the range each one may take.
+- **Where the sound goes** ([Part 5](#part-5-where-the-sound-goes)): the jack, the internal speaker,
+  HDMI, the Pi and the MIC socket.
+- **Clocks** ([Part 6](#part-6-clocks)): why the CPU's speed changes the beeper's pitch but not the AY's.
+- **The switches** ([Part 7](#part-7-the-switches)): the registers that turn each part on and off,
+  which old software never touches.
+- **The series** ([Part 8](#part-8-the-series)) and **the emulator**
+  ([Part 9](#part-9-how-klive-does-it)): the articles that follow, and how Klive makes the same sound.
+
+<Callout type="info">
+The numbers in this series are for the Next's **28 MHz master clock**, with the CPU at **3.5 MHz**
+unless a Part says otherwise. Levels are given in the **units of the Next's mixer**, whose sum runs from
+0 to 8,191 per side (Part 4). The waveforms are captured from Klive's emulated Next at 48,000 samples a
+second, from programs checked to do what the text says; they show Klive's mix of the sound, which keeps
+the hardware's proportions (Part 9).
+</Callout>
+
+## Part 1: From one bit to four kinds of source
+
+The ZX Spectrum 48K makes sound with one bit. Bit 4 of port `$FE`, called **EAR**, drives the speaker:
+the program sets it, clears it, sets it again, and the speaker's cone follows. Bit 3, **MIC**, drives
+the tape output and reaches the same speaker more weakly. Every sound a 48K program makes, from a key
+click to two-voice music, is the program switching those bits on and off at the right moments. The
+speaker is driven *in the program's own time*: while it plays, it can do little else.
+
+The Spectrum 128K added a sound chip, the AY-3-8910, with three voices that play by themselves once
+they are set up. The Next keeps both and adds more beside them:
+
+<figure>
+{/* fig:from */}
+<svg viewBox="0 0 700 300" role="img" aria-label="Two diagrams side by side. Left, the ZX Spectrum 48K: port $FE bits 4 and 3 drive one speaker, and nothing else makes sound. Right, the ZX Spectrum Next: the same port $FE bits, three AY sound chips, four 8-bit DACs and the Raspberry Pi's audio link all feed one mixer, which has a left and a right side." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
+  <defs>
+    <marker id="ov-from-0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
+    </marker>
+    <marker id="ov-from-1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#e5484d" />
+    </marker>
+  </defs>
+  <text x="20" y="22" fill="currentColor" fontSize="14" fontWeight="bold">ZX Spectrum 48K</text>
+  <rect x="20" y="110" width="150" height="56" rx="6" fill="none" stroke="#3b82f6" strokeWidth="2" />
+  <text x="95" y="133" textAnchor="middle" fill="#3b82f6" fontSize="12">port $FE</text>
+  <text x="95" y="148" textAnchor="middle" fill="#3b82f6" fontSize="12">bits 4 and 3</text>
+  <line x1="172" y1="138" x2="205" y2="138" stroke="currentColor" strokeWidth="1.5" markerEnd="url(#ov-from-0)" />
+  <path d="M212,128 L224,128 L240,112 L240,164 L224,148 L212,148 Z" fill="none" stroke="currentColor" strokeWidth="2" />
+  <text x="226" y="186" textAnchor="middle" fill="currentColor" fontSize="12">speaker</text>
+  <line x1="285" y1="20" x2="285" y2="280" stroke="currentColor" strokeWidth="1" strokeDasharray="4 4" strokeOpacity="0.3" />
+  <text x="310" y="22" fill="currentColor" fontSize="14" fontWeight="bold">ZX Spectrum Next</text>
+  <rect x="310" y="40" width="200" height="30" rx="5" fill="none" stroke="#3b82f6" strokeWidth="2" />
+  <text x="410" y="60" textAnchor="middle" fill="#3b82f6" fontSize="12">beeper: port $FE bits 4, 3</text>
+  <line x1="512" y1="55" x2="572" y2="150" stroke="#3b82f6" strokeWidth="1.5" strokeOpacity="0.8" />
+  <rect x="310" y="80" width="200" height="30" rx="5" fill="none" stroke="#e8912d" strokeWidth="2" />
+  <text x="410" y="100" textAnchor="middle" fill="#e8912d" fontSize="12">AY chip 0</text>
+  <line x1="512" y1="95" x2="572" y2="150" stroke="#e8912d" strokeWidth="1.5" strokeOpacity="0.8" />
+  <rect x="310" y="120" width="200" height="30" rx="5" fill="none" stroke="#e8912d" strokeWidth="2" strokeDasharray="6 3" />
+  <text x="410" y="140" textAnchor="middle" fill="#e8912d" fontSize="12">AY chip 1</text>
+  <line x1="512" y1="135" x2="572" y2="150" stroke="#e8912d" strokeWidth="1.5" strokeOpacity="0.8" />
+  <rect x="310" y="160" width="200" height="30" rx="5" fill="none" stroke="#e8912d" strokeWidth="2" strokeDasharray="2 3" />
+  <text x="410" y="180" textAnchor="middle" fill="#e8912d" fontSize="12">AY chip 2</text>
+  <line x1="512" y1="175" x2="572" y2="150" stroke="#e8912d" strokeWidth="1.5" strokeOpacity="0.8" />
+  <rect x="310" y="200" width="200" height="30" rx="5" fill="none" stroke="#30a46c" strokeWidth="2" />
+  <text x="410" y="220" textAnchor="middle" fill="#30a46c" fontSize="12">four 8-bit DACs</text>
+  <line x1="512" y1="215" x2="572" y2="150" stroke="#30a46c" strokeWidth="1.5" strokeOpacity="0.8" />
+  <rect x="310" y="240" width="200" height="30" rx="5" fill="none" stroke="#a855f7" strokeWidth="2" />
+  <text x="410" y="260" textAnchor="middle" fill="#a855f7" fontSize="12">Raspberry Pi audio</text>
+  <line x1="512" y1="255" x2="572" y2="150" stroke="#a855f7" strokeWidth="1.5" strokeOpacity="0.8" />
+  <rect x="575" y="95" width="105" height="110" rx="8" fill="none" stroke="#e5484d" strokeWidth="2.5" />
+  <text x="627" y="128" textAnchor="middle" fill="#e5484d" fontSize="14" fontWeight="bold">mixer</text>
+  <line x1="585" y1="150" x2="670" y2="150" stroke="#e5484d" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="627" y="144" textAnchor="middle" fill="#e5484d" fontSize="12">left</text>
+  <text x="627" y="168" textAnchor="middle" fill="#e5484d" fontSize="12">right</text>
+  <text x="627" y="230" textAnchor="middle" fill="currentColor" fontSize="12">to the outputs</text>
+  <line x1="627" y1="207" x2="627" y2="216" stroke="#e5484d" strokeWidth="1.5" markerEnd="url(#ov-from-1)" />
+</svg>
+{/* /fig:from */}
+<figcaption>Left, the 48K's whole sound system: two bits of a port and a speaker. Right, the Next's: the same bits, three AY chips instead of one, four DACs and the Raspberry Pi's audio, all added together in one mixer that has a left and a right side.</figcaption>
+</figure>
+
+That makes **four kinds of source**: the beeper, with its two bits EAR and MIC (MIC also carries the
+tape input), the AY chips, the DACs and the Pi. The rest of this article and the whole series are about
+these four, the mixer that adds them, and the outputs the sum leaves through.
+
+The Spectrum's sound stays exactly as it was. A 48K program that toggles port `$FE` bit 4 hears the
+same square wave; a 128K tune that writes the AY through ports `$FFFD` and `$BFFD` plays on the first AY
+chip exactly as it did on the 128K. Everything new is switched off or out of the way until a program
+asks for it (Part 7).
+
+## Part 2: The cast
+
+Here is the whole system in one figure. The sources are on the left, each in the colour it keeps
+throughout the series, with the ports and registers a program uses to drive it:
+
+<figure>
+{/* fig:hero */}
+<svg viewBox="0 0 700 470" role="img" aria-label="The Next's whole audio system as a flow from left to right. Sources: the beeper, port $FE bit 4 (EAR); the MIC bit, port $FE bit 3, combined with the tape input and the Pi's EAR bit; three AY chips behind ports $FFFD and $BFFD; four 8-bit DACs written through about a dozen ports and NextRegs $2C to $2E; and the Raspberry Pi's audio, received over I2S and controlled by NextReg $A2. Every source feeds both sides of one mixer, a left sum and a right sum. The sums go to four outputs: the audio jack, the internal speaker, HDMI audio and back to the Pi. The MIC line also goes straight to the MIC socket, for saving to tape." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
+  <defs>
+    <marker id="ov-hero-0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
+    </marker>
+    <marker id="ov-hero-1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#3b82f6" />
+    </marker>
+    <marker id="ov-hero-2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#e8912d" />
+    </marker>
+    <marker id="ov-hero-3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#30a46c" />
+    </marker>
+    <marker id="ov-hero-4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#a855f7" />
+    </marker>
+    <marker id="ov-hero-5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#e5484d" />
+    </marker>
+  </defs>
+  <text x="100" y="20" textAnchor="middle" fill="currentColor" fontSize="13" fontWeight="bold">sources</text>
+  <text x="430" y="20" textAnchor="middle" fill="#e5484d" fontSize="13" fontWeight="bold">mixer</text>
+  <text x="600" y="20" textAnchor="middle" fill="currentColor" fontSize="13" fontWeight="bold">outputs</text>
+  <rect x="10" y="40" width="230" height="48" rx="6" fill="none" stroke="#3b82f6" strokeWidth="2" />
+  <text x="22" y="59" fill="#3b82f6" fontSize="13" fontWeight="bold">beeper (EAR)</text>
+  <text x="22" y="77" fill="currentColor" fontSize="11.5">port $FE bit 4</text>
+  <line x1="242" y1="64" x2="356" y2="64" stroke="#3b82f6" strokeWidth="2" markerEnd="url(#ov-hero-1)" />
+  <rect x="10" y="98" width="230" height="64" rx="6" fill="none" stroke="#3b82f6" strokeWidth="2" />
+  <text x="22" y="117" fill="#3b82f6" fontSize="13" fontWeight="bold">MIC and the tape</text>
+  <text x="22" y="135" fill="currentColor" fontSize="11.5">port $FE bit 3, the tape</text>
+  <text x="22" y="150" fill="currentColor" fontSize="11.5">input, the Pi's EAR bit</text>
+  <line x1="242" y1="130" x2="356" y2="130" stroke="#3b82f6" strokeWidth="2" markerEnd="url(#ov-hero-1)" />
+  <rect x="10" y="172" width="230" height="92" rx="6" fill="none" stroke="#e8912d" strokeWidth="2" />
+  <text x="22" y="191" fill="#e8912d" fontSize="13" fontWeight="bold">three AY chips</text>
+  <text x="22" y="209" fill="currentColor" fontSize="11.5">ports $FFFD, $BFFD</text>
+  <text x="22" y="224" fill="currentColor" fontSize="11.5">NextRegs $06, $08, $09</text>
+  <rect x="162" y="222" width="20" height="20" rx="3" fill="none" stroke="#e8912d" strokeWidth="1.8" />
+  <text x="172" y="236" textAnchor="middle" fill="#e8912d" fontSize="11">0</text>
+  <rect x="187" y="222" width="20" height="20" rx="3" fill="none" stroke="#e8912d" strokeWidth="1.8" strokeDasharray="6 3" />
+  <text x="197" y="236" textAnchor="middle" fill="#e8912d" fontSize="11">1</text>
+  <rect x="212" y="222" width="20" height="20" rx="3" fill="none" stroke="#e8912d" strokeWidth="1.8" strokeDasharray="2 3" />
+  <text x="222" y="236" textAnchor="middle" fill="#e8912d" fontSize="11">2</text>
+  <line x1="242" y1="218" x2="356" y2="218" stroke="#e8912d" strokeWidth="2" markerEnd="url(#ov-hero-2)" />
+  <rect x="10" y="274" width="230" height="64" rx="6" fill="none" stroke="#30a46c" strokeWidth="2" />
+  <text x="22" y="293" fill="#30a46c" fontSize="13" fontWeight="bold">four 8-bit DACs</text>
+  <text x="22" y="311" fill="currentColor" fontSize="11.5">ports $0F … $FB, $DF</text>
+  <text x="22" y="326" fill="currentColor" fontSize="11.5">NextRegs $08, $2C–$2E</text>
+  <line x1="242" y1="306" x2="356" y2="306" stroke="#30a46c" strokeWidth="2" markerEnd="url(#ov-hero-3)" />
+  <rect x="10" y="348" width="230" height="64" rx="6" fill="none" stroke="#a855f7" strokeWidth="2" />
+  <text x="22" y="367" fill="#a855f7" fontSize="13" fontWeight="bold">Raspberry Pi audio</text>
+  <text x="22" y="385" fill="currentColor" fontSize="11.5">I2S link</text>
+  <text x="22" y="400" fill="currentColor" fontSize="11.5">NextReg $A2</text>
+  <line x1="242" y1="380" x2="356" y2="380" stroke="#a855f7" strokeWidth="2" markerEnd="url(#ov-hero-4)" />
+  <rect x="360" y="60" width="140" height="330" rx="10" fill="none" stroke="#e5484d" strokeWidth="2.5" />
+  <text x="430" y="86" textAnchor="middle" fill="#e5484d" fontSize="12">adds every</text>
+  <text x="430" y="102" textAnchor="middle" fill="#e5484d" fontSize="12">source, per side</text>
+  <rect x="375" y="130" width="110" height="80" rx="6" fill="none" stroke="#e5484d" strokeWidth="1.5" />
+  <text x="430" y="168" textAnchor="middle" fill="#e5484d" fontSize="13" fontWeight="bold">left sum</text>
+  <text x="430" y="186" textAnchor="middle" fill="currentColor" fontSize="11">0–8191</text>
+  <rect x="375" y="230" width="110" height="80" rx="6" fill="none" stroke="#e5484d" strokeWidth="1.5" />
+  <text x="430" y="268" textAnchor="middle" fill="#e5484d" fontSize="13" fontWeight="bold">right sum</text>
+  <text x="430" y="286" textAnchor="middle" fill="currentColor" fontSize="11">0–8191</text>
+  <rect x="530" y="60" width="160" height="50" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  <text x="542" y="81" fill="currentColor" fontSize="13" fontWeight="bold">audio jack</text>
+  <text x="542" y="99" fill="currentColor" fontSize="11.5">left and right</text>
+  <line x1="502" y1="85" x2="526" y2="85" stroke="#e5484d" strokeWidth="1.8" markerEnd="url(#ov-hero-5)" />
+  <rect x="530" y="130" width="160" height="50" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  <text x="542" y="151" fill="currentColor" fontSize="13" fontWeight="bold">internal speaker</text>
+  <text x="542" y="169" fill="currentColor" fontSize="11.5">left + right, mono</text>
+  <line x1="502" y1="155" x2="526" y2="155" stroke="#e5484d" strokeWidth="1.8" markerEnd="url(#ov-hero-5)" />
+  <rect x="530" y="200" width="160" height="50" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  <text x="542" y="221" fill="currentColor" fontSize="13" fontWeight="bold">HDMI audio</text>
+  <text x="542" y="239" fill="currentColor" fontSize="11.5">48,000 samples a second</text>
+  <line x1="502" y1="225" x2="526" y2="225" stroke="#e5484d" strokeWidth="1.8" markerEnd="url(#ov-hero-5)" />
+  <rect x="530" y="270" width="160" height="50" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  <text x="542" y="291" fill="currentColor" fontSize="13" fontWeight="bold">to the Pi</text>
+  <text x="542" y="309" fill="currentColor" fontSize="11.5">over the I2S link</text>
+  <line x1="502" y1="295" x2="526" y2="295" stroke="#e5484d" strokeWidth="1.8" markerEnd="url(#ov-hero-5)" />
+  <rect x="530" y="400" width="160" height="50" rx="6" fill="none" stroke="#3b82f6" strokeWidth="1.5" />
+  <text x="542" y="421" fill="#3b82f6" fontSize="13" fontWeight="bold">MIC socket</text>
+  <text x="542" y="439" fill="currentColor" fontSize="11.5">saving to tape</text>
+  <path d="M240,140 L270,140 L270,440 L526,440" fill="none" stroke="#3b82f6" strokeWidth="1.8" strokeDasharray="6 4" markerEnd="url(#ov-hero-1)" strokeLinejoin="round" />
+</svg>
+{/* /fig:hero */}
+<figcaption>The Next's audio system. Every source is added into both sides of one mixer; the two sums leave through four outputs at once. The MIC line also goes straight to the MIC socket, for saving to tape.</figcaption>
+</figure>
+
+Before the sources one by one, here is what each of them sounds like. Each capture below is a program
+playing a tone of about 1,000 Hz through one source alone:
+
+<figure>
+{/* fig:cast */}
+<svg viewBox="0 0 700 400" role="img" aria-label="Four captures from the machine, five milliseconds each, all drawn on the same level scale in the mixer's units. The beeper: a square wave of 994 Hz whose step is 512 units. One AY channel: a square wave of 1,003 Hz, 255 units. A DAC fed a sine through the Specdrum port: a staircase of 16 steps per cycle at 1,003 Hz, 1,016 units from bottom to top. The Raspberry Pi's audio: a smooth 1,000 Hz sine of 1,000 units." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
+  <text x="50" y="24" fill="#3b82f6" fontSize="13" fontWeight="bold">the beeper (EAR)</text>
+  <line x1="50" y1="91" x2="350" y2="91" stroke="currentColor" strokeWidth="1" strokeOpacity="0.25" />
+  <line x1="50" y1="36" x2="50" y2="146" stroke="currentColor" strokeWidth="1" strokeOpacity="0.4" />
+  <line x1="46" y1="140.1" x2="50" y2="140.1" stroke="currentColor" strokeWidth="1" strokeOpacity="0.4" />
+  <text x="44" y="144.1" textAnchor="end" fill="currentColor" fontSize="10">−500</text>
+  <line x1="46" y1="41.9" x2="50" y2="41.9" stroke="currentColor" strokeWidth="1" strokeOpacity="0.4" />
+  <text x="44" y="45.9" textAnchor="end" fill="currentColor" fontSize="10">+500</text>
+  <path d="M50,80 L51.3,80 L51.3,65.8 L52.5,65.8 L52.5,65.8 L53.8,65.8 L53.8,65.8 L55,65.8 L55,65.8 L56.3,65.8 L56.3,65.8 L57.5,65.8 L57.5,65.9 L58.8,65.9 L58.8,65.9 L60,65.9 L60,65.9 L61.3,65.9 L61.3,65.9 L62.5,65.9 L62.5,65.9 L63.8,65.9 L63.8,65.9 L65,65.9 L65,65.9 L66.3,65.9 L66.3,65.9 L67.5,65.9 L67.5,65.9 L68.8,65.9 L68.8,65.9 L70,65.9 L70,65.9 L71.3,65.9 L71.3,65.9 L72.5,65.9 L72.5,65.9 L73.8,65.9 L73.8,65.9 L75,65.9 L75,65.9 L76.3,65.9 L76.3,65.9 L77.5,65.9 L77.5,65.9 L78.8,65.9 L78.8,65.9 L80,65.9 L80,95.2 L81.3,95.2 L81.3,116.2 L82.5,116.2 L82.5,116.2 L83.8,116.2 L83.8,116.2 L85,116.2 L85,116.2 L86.3,116.2 L86.3,116.2 L87.5,116.2 L87.5,116.2 L88.8,116.2 L88.8,116.2 L90,116.2 L90,116.2 L91.3,116.2 L91.3,116.2 L92.5,116.2 L92.5,116.2 L93.8,116.2 L93.8,116.2 L95,116.2 L95,116.2 L96.3,116.2 L96.3,116.2 L97.5,116.2 L97.5,116.2 L98.8,116.2 L98.8,116.2 L100,116.2 L100,116.2 L101.3,116.2 L101.3,116.2 L102.5,116.2 L102.5,116.2 L103.8,116.2 L103.8,116.1 L105,116.1 L105,116.1 L106.3,116.1 L106.3,116.1 L107.5,116.1 L107.5,116.1 L108.8,116.1 L108.8,116.1 L110,116.1 L110,93.8 L111.3,93.8 L111.3,65.8 L112.5,65.8 L112.5,65.8 L113.8,65.8 L113.8,65.8 L115,65.8 L115,65.8 L116.2,65.8 L116.2,65.8 L117.5,65.8 L117.5,65.8 L118.8,65.8 L118.8,65.9 L120,65.9 L120,65.9 L121.3,65.9 L121.3,65.9 L122.5,65.9 L122.5,65.9 L123.7,65.9 L123.7,65.9 L125,65.9 L125,65.9 L126.3,65.9 L126.3,65.9 L127.5,65.9 L127.5,65.9 L128.8,65.9 L128.8,65.9 L130,65.9 L130,65.9 L131.3,65.9 L131.3,65.9 L132.5,65.9 L132.5,65.9 L133.8,65.9 L133.8,65.9 L135,65.9 L135,65.9 L136.3,65.9 L136.3,65.9 L137.5,65.9 L137.5,65.9 L138.8,65.9 L138.8,65.9 L140,65.9 L140,81.4 L141.3,81.4 L141.3,116.2 L142.5,116.2 L142.5,116.2 L143.8,116.2 L143.8,116.2 L145,116.2 L145,116.2 L146.3,116.2 L146.3,116.2 L147.5,116.2 L147.5,116.2 L148.8,116.2 L148.8,116.2 L150,116.2 L150,116.2 L151.3,116.2 L151.3,116.2 L152.5,116.2 L152.5,116.2 L153.8,116.2 L153.8,116.2 L155,116.2 L155,116.2 L156.3,116.2 L156.3,116.2 L157.5,116.2 L157.5,116.2 L158.8,116.2 L158.8,116.2 L160,116.2 L160,116.2 L161.3,116.2 L161.3,116.2 L162.5,116.2 L162.5,116.2 L163.8,116.2 L163.8,116.2 L165,116.2 L165,116.1 L166.3,116.1 L166.3,116.1 L167.5,116.1 L167.5,116.1 L168.8,116.1 L168.8,116.1 L170,116.1 L170,107.5 L171.3,107.5 L171.3,65.8 L172.5,65.8 L172.5,65.8 L173.8,65.8 L173.8,65.8 L175,65.8 L175,65.8 L176.3,65.8 L176.3,65.8 L177.5,65.8 L177.5,65.8 L178.7,65.8 L178.7,65.9 L180,65.9 L180,65.9 L181.3,65.9 L181.3,65.9 L182.5,65.9 L182.5,65.9 L183.8,65.9 L183.8,65.9 L185,65.9 L185,65.9 L186.2,65.9 L186.2,65.9 L187.5,65.9 L187.5,65.9 L188.8,65.9 L188.8,65.9 L190,65.9 L190,65.9 L191.3,65.9 L191.3,65.9 L192.5,65.9 L192.5,65.9 L193.8,65.9 L193.8,65.9 L195,65.9 L195,65.9 L196.3,65.9 L196.3,65.9 L197.5,65.9 L197.5,65.9 L198.8,65.9 L198.8,65.9 L200,65.9 L200,67.6 L201.3,67.6 L201.3,116.2 L202.5,116.2 L202.5,116.2 L203.8,116.2 L203.8,116.2 L205,116.2 L205,116.2 L206.2,116.2 L206.2,116.2 L207.5,116.2 L207.5,116.2 L208.7,116.2 L208.7,116.2 L210,116.2 L210,116.2 L211.3,116.2 L211.3,116.2 L212.5,116.2 L212.5,116.2 L213.7,116.2 L213.7,116.2 L215,116.2 L215,116.2 L216.2,116.2 L216.2,116.2 L217.5,116.2 L217.5,116.2 L218.8,116.2 L218.8,116.2 L220,116.2 L220,116.2 L221.3,116.2 L221.3,116.2 L222.5,116.2 L222.5,116.2 L223.7,116.2 L223.7,116.2 L225,116.2 L225,116.1 L226.3,116.1 L226.3,116.1 L227.5,116.1 L227.5,116.1 L228.8,116.1 L228.8,116.1 L230,116.1 L230,116.1 L231.3,116.1 L231.3,71 L232.5,71 L232.5,65.8 L233.8,65.8 L233.8,65.8 L235,65.8 L235,65.8 L236.3,65.8 L236.3,65.8 L237.5,65.8 L237.5,65.8 L238.8,65.8 L238.8,65.9 L240,65.9 L240,65.9 L241.3,65.9 L241.3,65.9 L242.5,65.9 L242.5,65.9 L243.7,65.9 L243.7,65.9 L245,65.9 L245,65.9 L246.2,65.9 L246.2,65.9 L247.5,65.9 L247.5,65.9 L248.8,65.9 L248.8,65.9 L250,65.9 L250,65.9 L251.2,65.9 L251.2,65.9 L252.5,65.9 L252.5,65.9 L253.7,65.9 L253.7,65.9 L255,65.9 L255,65.9 L256.3,65.9 L256.3,65.9 L257.5,65.9 L257.5,65.9 L258.8,65.9 L258.8,65.9 L260,65.9 L260,65.9 L261.3,65.9 L261.3,104.1 L262.5,104.1 L262.5,116.2 L263.8,116.2 L263.8,116.2 L265,116.2 L265,116.2 L266.3,116.2 L266.3,116.2 L267.5,116.2 L267.5,116.2 L268.8,116.2 L268.8,116.2 L270,116.2 L270,116.2 L271.3,116.2 L271.3,116.2 L272.5,116.2 L272.5,116.2 L273.8,116.2 L273.8,116.2 L275,116.2 L275,116.2 L276.3,116.2 L276.3,116.2 L277.5,116.2 L277.5,116.2 L278.8,116.2 L278.8,116.2 L280,116.2 L280,116.2 L281.3,116.2 L281.3,116.2 L282.5,116.2 L282.5,116.2 L283.8,116.2 L283.8,116.2 L285,116.2 L285,116.1 L286.3,116.1 L286.3,116.1 L287.5,116.1 L287.5,116.1 L288.8,116.1 L288.8,116.1 L290,116.1 L290,116.1 L291.3,116.1 L291.3,84.9 L292.5,84.9 L292.5,65.8 L293.8,65.8 L293.8,65.8 L295,65.8 L295,65.8 L296.3,65.8 L296.3,65.8 L297.5,65.8 L297.5,65.8 L298.8,65.8 L298.8,65.9 L300,65.9 L300,65.9 L301.3,65.9 L301.3,65.9 L302.5,65.9 L302.5,65.9 L303.8,65.9 L303.8,65.9 L305,65.9 L305,65.9 L306.3,65.9 L306.3,65.9 L307.5,65.9 L307.5,65.9 L308.8,65.9 L308.8,65.9 L310,65.9 L310,65.9 L311.2,65.9 L311.2,65.9 L312.5,65.9 L312.5,65.9 L313.8,65.9 L313.8,65.9 L315,65.9 L315,65.9 L316.3,65.9 L316.3,65.9 L317.5,65.9 L317.5,65.9 L318.8,65.9 L318.8,65.9 L320,65.9 L320,65.9 L321.2,65.9 L321.2,90.3 L322.5,90.3 L322.5,116.2 L323.8,116.2 L323.8,116.2 L325,116.2 L325,116.2 L326.2,116.2 L326.2,116.2 L327.5,116.2 L327.5,116.2 L328.8,116.2 L328.8,116.2 L330,116.2 L330,116.2 L331.3,116.2 L331.3,116.2 L332.5,116.2 L332.5,116.2 L333.7,116.2 L333.7,116.2 L335,116.2 L335,116.2 L336.3,116.2 L336.3,116.2 L337.5,116.2 L337.5,116.2 L338.8,116.2 L338.8,116.2 L340,116.2 L340,116.2 L341.2,116.2 L341.2,116.2 L342.5,116.2 L342.5,116.2 L343.8,116.2 L343.8,116.2 L345,116.2 L345,116.2 L346.3,116.2 L346.3,116.1 L347.5,116.1 L347.5,116.1 L348.7,116.1 L348.7,116.1 L350,116.1" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinejoin="round" />
+  <text x="50" y="168" fill="currentColor" fontSize="11.5">994 Hz square wave, 512 units</text>
+  <text x="390" y="24" fill="#e8912d" fontSize="13" fontWeight="bold">one AY channel</text>
+  <line x1="390" y1="91" x2="690" y2="91" stroke="currentColor" strokeWidth="1" strokeOpacity="0.25" />
+  <line x1="390" y1="36" x2="390" y2="146" stroke="currentColor" strokeWidth="1" strokeOpacity="0.4" />
+  <line x1="386" y1="140.1" x2="390" y2="140.1" stroke="currentColor" strokeWidth="1" strokeOpacity="0.4" />
+  <text x="384" y="144.1" textAnchor="end" fill="currentColor" fontSize="10">−500</text>
+  <line x1="386" y1="41.9" x2="390" y2="41.9" stroke="currentColor" strokeWidth="1" strokeOpacity="0.4" />
+  <text x="384" y="45.9" textAnchor="end" fill="currentColor" fontSize="10">+500</text>
+  <path d="M390,78.5 L391.3,78.5 L391.3,78.5 L392.5,78.5 L392.5,78.5 L393.8,78.5 L393.8,78.5 L395,78.5 L395,78.5 L396.3,78.5 L396.3,78.5 L397.5,78.5 L397.5,78.5 L398.8,78.5 L398.8,78.5 L400,78.5 L400,78.5 L401.3,78.5 L401.3,78.5 L402.5,78.5 L402.5,78.5 L403.8,78.5 L403.8,78.5 L405,78.5 L405,78.5 L406.3,78.5 L406.3,78.5 L407.5,78.5 L407.5,78.5 L408.8,78.5 L408.8,78.5 L410,78.5 L410,78.5 L411.3,78.5 L411.3,78.5 L412.5,78.5 L412.5,78.5 L413.8,78.5 L413.8,78.5 L415,78.5 L415,78.5 L416.3,78.5 L416.3,78.5 L417.5,78.5 L417.5,78.5 L418.8,78.5 L418.8,81.6 L420,81.6 L420,103.5 L421.3,103.5 L421.3,103.5 L422.5,103.5 L422.5,103.5 L423.8,103.5 L423.8,103.5 L425,103.5 L425,103.5 L426.3,103.5 L426.3,103.5 L427.5,103.5 L427.5,103.5 L428.8,103.5 L428.8,103.5 L430,103.5 L430,103.5 L431.3,103.5 L431.3,103.5 L432.5,103.5 L432.5,103.5 L433.8,103.5 L433.8,103.5 L435,103.5 L435,103.5 L436.3,103.5 L436.3,103.5 L437.5,103.5 L437.5,103.5 L438.8,103.5 L438.8,103.5 L440,103.5 L440,103.5 L441.3,103.5 L441.3,103.5 L442.5,103.5 L442.5,103.5 L443.8,103.5 L443.8,103.5 L445,103.5 L445,103.5 L446.3,103.5 L446.3,103.5 L447.5,103.5 L447.5,103.5 L448.8,103.5 L448.8,98.3 L450,98.3 L450,78.5 L451.3,78.5 L451.3,78.5 L452.5,78.5 L452.5,78.5 L453.8,78.5 L453.8,78.5 L455,78.5 L455,78.5 L456.3,78.5 L456.3,78.5 L457.5,78.5 L457.5,78.5 L458.8,78.5 L458.8,78.5 L460,78.5 L460,78.5 L461.3,78.5 L461.3,78.5 L462.5,78.5 L462.5,78.5 L463.8,78.5 L463.8,78.5 L465,78.5 L465,78.5 L466.3,78.5 L466.3,78.5 L467.5,78.5 L467.5,78.5 L468.8,78.5 L468.8,78.5 L470,78.5 L470,78.5 L471.3,78.5 L471.3,78.5 L472.5,78.5 L472.5,78.5 L473.8,78.5 L473.8,78.5 L475,78.5 L475,78.5 L476.3,78.5 L476.3,78.5 L477.5,78.5 L477.5,78.5 L478.8,78.5 L478.8,85.8 L480,85.8 L480,103.5 L481.3,103.5 L481.3,103.5 L482.5,103.5 L482.5,103.5 L483.8,103.5 L483.8,103.5 L485,103.5 L485,103.5 L486.3,103.5 L486.3,103.5 L487.5,103.5 L487.5,103.5 L488.8,103.5 L488.8,103.5 L490,103.5 L490,103.5 L491.3,103.5 L491.3,103.5 L492.5,103.5 L492.5,103.5 L493.8,103.5 L493.8,103.5 L495,103.5 L495,103.5 L496.3,103.5 L496.3,103.5 L497.5,103.5 L497.5,103.5 L498.8,103.5 L498.8,103.5 L500,103.5 L500,103.5 L501.3,103.5 L501.3,103.5 L502.5,103.5 L502.5,103.5 L503.8,103.5 L503.8,103.5 L505,103.5 L505,103.5 L506.3,103.5 L506.3,103.5 L507.5,103.5 L507.5,103.5 L508.8,103.5 L508.8,94.2 L510,94.2 L510,78.5 L511.3,78.5 L511.3,78.5 L512.5,78.5 L512.5,78.5 L513.8,78.5 L513.8,78.5 L515,78.5 L515,78.5 L516.3,78.5 L516.3,78.5 L517.5,78.5 L517.5,78.5 L518.8,78.5 L518.8,78.5 L520,78.5 L520,78.5 L521.3,78.5 L521.3,78.5 L522.5,78.5 L522.5,78.5 L523.8,78.5 L523.8,78.5 L525,78.5 L525,78.5 L526.3,78.5 L526.3,78.5 L527.5,78.5 L527.5,78.5 L528.8,78.5 L528.8,78.5 L530,78.5 L530,78.5 L531.3,78.5 L531.3,78.5 L532.5,78.5 L532.5,78.5 L533.8,78.5 L533.8,78.5 L535,78.5 L535,78.5 L536.3,78.5 L536.3,78.5 L537.5,78.5 L537.5,78.5 L538.8,78.5 L538.8,89.9 L540,89.9 L540,103.5 L541.3,103.5 L541.3,103.5 L542.5,103.5 L542.5,103.5 L543.8,103.5 L543.8,103.5 L545,103.5 L545,103.5 L546.3,103.5 L546.3,103.5 L547.5,103.5 L547.5,103.5 L548.8,103.5 L548.8,103.5 L550,103.5 L550,103.5 L551.3,103.5 L551.3,103.5 L552.5,103.5 L552.5,103.5 L553.8,103.5 L553.8,103.5 L555,103.5 L555,103.5 L556.3,103.5 L556.3,103.5 L557.5,103.5 L557.5,103.5 L558.8,103.5 L558.8,103.5 L560,103.5 L560,103.5 L561.3,103.5 L561.3,103.5 L562.5,103.5 L562.5,103.5 L563.8,103.5 L563.8,103.5 L565,103.5 L565,103.5 L566.3,103.5 L566.3,103.5 L567.5,103.5 L567.5,103.5 L568.8,103.5 L568.8,90.1 L570,90.1 L570,78.5 L571.3,78.5 L571.3,78.5 L572.5,78.5 L572.5,78.5 L573.8,78.5 L573.8,78.5 L575,78.5 L575,78.5 L576.3,78.5 L576.3,78.5 L577.5,78.5 L577.5,78.5 L578.8,78.5 L578.8,78.5 L580,78.5 L580,78.5 L581.3,78.5 L581.3,78.5 L582.5,78.5 L582.5,78.5 L583.8,78.5 L583.8,78.5 L585,78.5 L585,78.5 L586.3,78.5 L586.3,78.5 L587.5,78.5 L587.5,78.5 L588.8,78.5 L588.8,78.5 L590,78.5 L590,78.5 L591.3,78.5 L591.3,78.5 L592.5,78.5 L592.5,78.5 L593.8,78.5 L593.8,78.5 L595,78.5 L595,78.5 L596.3,78.5 L596.3,78.5 L597.5,78.5 L597.5,78.5 L598.8,78.5 L598.8,94 L600,94 L600,103.5 L601.3,103.5 L601.3,103.5 L602.5,103.5 L602.5,103.5 L603.8,103.5 L603.8,103.5 L605,103.5 L605,103.5 L606.3,103.5 L606.3,103.5 L607.5,103.5 L607.5,103.5 L608.8,103.5 L608.8,103.5 L610,103.5 L610,103.5 L611.3,103.5 L611.3,103.5 L612.5,103.5 L612.5,103.5 L613.8,103.5 L613.8,103.5 L615,103.5 L615,103.5 L616.3,103.5 L616.3,103.5 L617.5,103.5 L617.5,103.5 L618.8,103.5 L618.8,103.5 L620,103.5 L620,103.5 L621.3,103.5 L621.3,103.5 L622.5,103.5 L622.5,103.5 L623.8,103.5 L623.8,103.5 L625,103.5 L625,103.5 L626.3,103.5 L626.3,103.5 L627.5,103.5 L627.5,103.5 L628.8,103.5 L628.8,86 L630,86 L630,78.5 L631.3,78.5 L631.3,78.5 L632.5,78.5 L632.5,78.5 L633.8,78.5 L633.8,78.5 L635,78.5 L635,78.5 L636.3,78.5 L636.3,78.5 L637.5,78.5 L637.5,78.5 L638.8,78.5 L638.8,78.5 L640,78.5 L640,78.5 L641.3,78.5 L641.3,78.5 L642.5,78.5 L642.5,78.5 L643.8,78.5 L643.8,78.5 L645,78.5 L645,78.5 L646.3,78.5 L646.3,78.5 L647.5,78.5 L647.5,78.5 L648.8,78.5 L648.8,78.5 L650,78.5 L650,78.5 L651.3,78.5 L651.3,78.5 L652.5,78.5 L652.5,78.5 L653.8,78.5 L653.8,78.5 L655,78.5 L655,78.5 L656.3,78.5 L656.3,78.5 L657.5,78.5 L657.5,78.5 L658.8,78.5 L658.8,98.1 L660,98.1 L660,103.5 L661.3,103.5 L661.3,103.5 L662.5,103.5 L662.5,103.5 L663.8,103.5 L663.8,103.5 L665,103.5 L665,103.5 L666.3,103.5 L666.3,103.5 L667.5,103.5 L667.5,103.5 L668.8,103.5 L668.8,103.5 L670,103.5 L670,103.5 L671.3,103.5 L671.3,103.5 L672.5,103.5 L672.5,103.5 L673.8,103.5 L673.8,103.5 L675,103.5 L675,103.5 L676.3,103.5 L676.3,103.5 L677.5,103.5 L677.5,103.5 L678.8,103.5 L678.8,103.5 L680,103.5 L680,103.5 L681.3,103.5 L681.3,103.5 L682.5,103.5 L682.5,103.5 L683.8,103.5 L683.8,103.5 L685,103.5 L685,103.5 L686.3,103.5 L686.3,103.5 L687.5,103.5 L687.5,103.5 L688.8,103.5 L688.8,81.8 L690,81.8" fill="none" stroke="#e8912d" strokeWidth="2" strokeLinejoin="round" />
+  <text x="390" y="168" fill="currentColor" fontSize="11.5">1,003 Hz square wave, 255 units</text>
+  <text x="50" y="204" fill="#30a46c" fontSize="13" fontWeight="bold">one DAC port (Specdrum)</text>
+  <line x1="50" y1="271" x2="350" y2="271" stroke="currentColor" strokeWidth="1" strokeOpacity="0.25" />
+  <line x1="50" y1="216" x2="50" y2="326" stroke="currentColor" strokeWidth="1" strokeOpacity="0.4" />
+  <line x1="46" y1="320.1" x2="50" y2="320.1" stroke="currentColor" strokeWidth="1" strokeOpacity="0.4" />
+  <text x="44" y="324.1" textAnchor="end" fill="currentColor" fontSize="10">−500</text>
+  <line x1="46" y1="221.9" x2="50" y2="221.9" stroke="currentColor" strokeWidth="1" strokeOpacity="0.4" />
+  <text x="44" y="225.9" textAnchor="end" fill="currentColor" fontSize="10">+500</text>
+  <path d="M50,271 L51.3,271 L51.3,271 L52.5,271 L52.5,271 L53.8,271 L53.8,251.8 L55,251.8 L55,251.8 L56.3,251.8 L56.3,251.8 L57.5,251.8 L57.5,235.6 L58.8,235.6 L58.8,235.6 L60,235.6 L60,235.6 L61.3,235.6 L61.3,225 L62.5,225 L62.5,225 L63.8,225 L63.8,225 L65,225 L65,221.1 L66.3,221.1 L66.3,221.1 L67.5,221.1 L67.5,221.1 L68.8,221.1 L68.8,225 L70,225 L70,225 L71.3,225 L71.3,225 L72.5,225 L72.5,235.6 L73.8,235.6 L73.8,235.6 L75,235.6 L75,235.6 L76.3,235.6 L76.3,251.8 L77.5,251.8 L77.5,251.8 L78.8,251.8 L78.8,251.8 L80,251.8 L80,271 L81.3,271 L81.3,271 L82.5,271 L82.5,271 L83.8,271 L83.8,290.2 L85,290.2 L85,290.2 L86.3,290.2 L86.3,290.2 L87.5,290.2 L87.5,306.4 L88.8,306.4 L88.8,306.4 L90,306.4 L90,306.4 L91.3,306.4 L91.3,317 L92.5,317 L92.5,317 L93.8,317 L93.8,317 L95,317 L95,320.9 L96.3,320.9 L96.3,320.9 L97.5,320.9 L97.5,320.9 L98.8,320.9 L98.8,317 L100,317 L100,317 L101.3,317 L101.3,317 L102.5,317 L102.5,306.4 L103.8,306.4 L103.8,306.4 L105,306.4 L105,306.4 L106.3,306.4 L106.3,290.2 L107.5,290.2 L107.5,290.2 L108.8,290.2 L108.8,290.2 L110,290.2 L110,271 L111.3,271 L111.3,271 L112.5,271 L112.5,271 L113.8,271 L113.8,251.8 L115,251.8 L115,251.8 L116.2,251.8 L116.2,251.8 L117.5,251.8 L117.5,235.6 L118.8,235.6 L118.8,235.6 L120,235.6 L120,235.6 L121.3,235.6 L121.3,225 L122.5,225 L122.5,225 L123.7,225 L123.7,225 L125,225 L125,221.1 L126.3,221.1 L126.3,221.1 L127.5,221.1 L127.5,221.1 L128.8,221.1 L128.8,225 L130,225 L130,225 L131.3,225 L131.3,225 L132.5,225 L132.5,235.6 L133.8,235.6 L133.8,235.6 L135,235.6 L135,235.6 L136.3,235.6 L136.3,251.8 L137.5,251.8 L137.5,251.8 L138.8,251.8 L138.8,251.8 L140,251.8 L140,271 L141.3,271 L141.3,271 L142.5,271 L142.5,271 L143.8,271 L143.8,290.2 L145,290.2 L145,290.2 L146.3,290.2 L146.3,290.2 L147.5,290.2 L147.5,306.4 L148.8,306.4 L148.8,306.4 L150,306.4 L150,306.4 L151.3,306.4 L151.3,317 L152.5,317 L152.5,317 L153.8,317 L153.8,317 L155,317 L155,320.9 L156.3,320.9 L156.3,320.9 L157.5,320.9 L157.5,320.9 L158.8,320.9 L158.8,317 L160,317 L160,317 L161.3,317 L161.3,317 L162.5,317 L162.5,306.4 L163.8,306.4 L163.8,306.4 L165,306.4 L165,306.4 L166.3,306.4 L166.3,290.2 L167.5,290.2 L167.5,290.2 L168.8,290.2 L168.8,290.2 L170,290.2 L170,271 L171.3,271 L171.3,271 L172.5,271 L172.5,271 L173.8,271 L173.8,251.8 L175,251.8 L175,251.8 L176.3,251.8 L176.3,251.8 L177.5,251.8 L177.5,235.6 L178.7,235.6 L178.7,235.6 L180,235.6 L180,235.6 L181.3,235.6 L181.3,225 L182.5,225 L182.5,225 L183.8,225 L183.8,225 L185,225 L185,221.1 L186.2,221.1 L186.2,221.1 L187.5,221.1 L187.5,221.1 L188.8,221.1 L188.8,225 L190,225 L190,225 L191.3,225 L191.3,225 L192.5,225 L192.5,235.6 L193.8,235.6 L193.8,235.6 L195,235.6 L195,235.6 L196.3,235.6 L196.3,251.8 L197.5,251.8 L197.5,251.8 L198.8,251.8 L198.8,251.8 L200,251.8 L200,271 L201.3,271 L201.3,271 L202.5,271 L202.5,271 L203.8,271 L203.8,290.2 L205,290.2 L205,290.2 L206.2,290.2 L206.2,290.2 L207.5,290.2 L207.5,306.4 L208.7,306.4 L208.7,306.4 L210,306.4 L210,306.4 L211.3,306.4 L211.3,317 L212.5,317 L212.5,317 L213.7,317 L213.7,317 L215,317 L215,320.9 L216.2,320.9 L216.2,320.9 L217.5,320.9 L217.5,320.9 L218.8,320.9 L218.8,317 L220,317 L220,317 L221.3,317 L221.3,317 L222.5,317 L222.5,306.4 L223.7,306.4 L223.7,306.4 L225,306.4 L225,306.4 L226.3,306.4 L226.3,290.2 L227.5,290.2 L227.5,290.2 L228.8,290.2 L228.8,290.2 L230,290.2 L230,271 L231.3,271 L231.3,271 L232.5,271 L232.5,271 L233.8,271 L233.8,251.8 L235,251.8 L235,251.8 L236.3,251.8 L236.3,251.8 L237.5,251.8 L237.5,235.6 L238.8,235.6 L238.8,235.6 L240,235.6 L240,235.6 L241.3,235.6 L241.3,225 L242.5,225 L242.5,225 L243.7,225 L243.7,225 L245,225 L245,221.1 L246.2,221.1 L246.2,221.1 L247.5,221.1 L247.5,221.1 L248.8,221.1 L248.8,225 L250,225 L250,225 L251.2,225 L251.2,225 L252.5,225 L252.5,235.6 L253.7,235.6 L253.7,235.6 L255,235.6 L255,235.6 L256.3,235.6 L256.3,251.8 L257.5,251.8 L257.5,251.8 L258.8,251.8 L258.8,251.8 L260,251.8 L260,271 L261.3,271 L261.3,271 L262.5,271 L262.5,271 L263.8,271 L263.8,290.2 L265,290.2 L265,290.2 L266.3,290.2 L266.3,290.2 L267.5,290.2 L267.5,306.4 L268.8,306.4 L268.8,306.4 L270,306.4 L270,306.4 L271.3,306.4 L271.3,317 L272.5,317 L272.5,317 L273.8,317 L273.8,317 L275,317 L275,320.9 L276.3,320.9 L276.3,320.9 L277.5,320.9 L277.5,320.9 L278.8,320.9 L278.8,317 L280,317 L280,317 L281.3,317 L281.3,317 L282.5,317 L282.5,306.4 L283.8,306.4 L283.8,306.4 L285,306.4 L285,306.4 L286.3,306.4 L286.3,290.2 L287.5,290.2 L287.5,290.2 L288.8,290.2 L288.8,290.2 L290,290.2 L290,271 L291.3,271 L291.3,271 L292.5,271 L292.5,271 L293.8,271 L293.8,251.8 L295,251.8 L295,251.8 L296.3,251.8 L296.3,251.8 L297.5,251.8 L297.5,235.6 L298.8,235.6 L298.8,235.6 L300,235.6 L300,235.6 L301.3,235.6 L301.3,225 L302.5,225 L302.5,225 L303.8,225 L303.8,225 L305,225 L305,221.1 L306.3,221.1 L306.3,221.1 L307.5,221.1 L307.5,221.1 L308.8,221.1 L308.8,225 L310,225 L310,225 L311.2,225 L311.2,225 L312.5,225 L312.5,235.6 L313.8,235.6 L313.8,235.6 L315,235.6 L315,235.6 L316.3,235.6 L316.3,251.8 L317.5,251.8 L317.5,251.8 L318.8,251.8 L318.8,251.8 L320,251.8 L320,271 L321.2,271 L321.2,271 L322.5,271 L322.5,271 L323.8,271 L323.8,290.2 L325,290.2 L325,290.2 L326.2,290.2 L326.2,290.2 L327.5,290.2 L327.5,306.4 L328.8,306.4 L328.8,306.4 L330,306.4 L330,306.4 L331.3,306.4 L331.3,317 L332.5,317 L332.5,317 L333.7,317 L333.7,317 L335,317 L335,320.9 L336.3,320.9 L336.3,320.9 L337.5,320.9 L337.5,320.9 L338.8,320.9 L338.8,317 L340,317 L340,317 L341.2,317 L341.2,317 L342.5,317 L342.5,306.4 L343.8,306.4 L343.8,306.4 L345,306.4 L345,306.4 L346.3,306.4 L346.3,290.2 L347.5,290.2 L347.5,290.2 L348.7,290.2 L348.7,290.2 L350,290.2" fill="none" stroke="#30a46c" strokeWidth="2" strokeLinejoin="round" />
+  <text x="50" y="348" fill="currentColor" fontSize="11.5">1,003 Hz sine in 16 steps, 1,016 units</text>
+  <text x="390" y="204" fill="#a855f7" fontSize="13" fontWeight="bold">Raspberry Pi audio</text>
+  <line x1="390" y1="271" x2="690" y2="271" stroke="currentColor" strokeWidth="1" strokeOpacity="0.25" />
+  <line x1="390" y1="216" x2="390" y2="326" stroke="currentColor" strokeWidth="1" strokeOpacity="0.4" />
+  <line x1="386" y1="320.1" x2="390" y2="320.1" stroke="currentColor" strokeWidth="1" strokeOpacity="0.4" />
+  <text x="384" y="324.1" textAnchor="end" fill="currentColor" fontSize="10">−500</text>
+  <line x1="386" y1="221.9" x2="390" y2="221.9" stroke="currentColor" strokeWidth="1" strokeOpacity="0.4" />
+  <text x="384" y="225.9" textAnchor="end" fill="currentColor" fontSize="10">+500</text>
+  <path d="M390,271 L391.3,271 L391.3,264.6 L392.5,264.6 L392.5,258.3 L393.8,258.3 L393.8,252.2 L395,252.2 L395,246.4 L396.3,246.4 L396.3,241.1 L397.5,241.1 L397.5,236.3 L398.8,236.3 L398.8,232.1 L400,232.1 L400,228.5 L401.3,228.5 L401.3,225.7 L402.5,225.7 L402.5,223.7 L403.8,223.7 L403.8,222.4 L405,222.4 L405,221.9 L406.3,221.9 L406.3,222.4 L407.5,222.4 L407.5,223.7 L408.8,223.7 L408.8,225.7 L410,225.7 L410,228.5 L411.3,228.5 L411.3,232.1 L412.5,232.1 L412.5,236.3 L413.8,236.3 L413.8,241.1 L415,241.1 L415,246.4 L416.3,246.4 L416.3,252.2 L417.5,252.2 L417.5,258.3 L418.8,258.3 L418.8,264.6 L420,264.6 L420,271 L421.3,271 L421.3,277.5 L422.5,277.5 L422.5,283.8 L423.8,283.8 L423.8,289.9 L425,289.9 L425,295.6 L426.3,295.6 L426.3,301 L427.5,301 L427.5,305.8 L428.8,305.8 L428.8,310 L430,310 L430,313.6 L431.3,313.6 L431.3,316.4 L432.5,316.4 L432.5,318.4 L433.8,318.4 L433.8,319.7 L435,319.7 L435,320.1 L436.3,320.1 L436.3,319.7 L437.5,319.7 L437.5,318.4 L438.8,318.4 L438.8,316.4 L440,316.4 L440,313.6 L441.3,313.6 L441.3,310 L442.5,310 L442.5,305.8 L443.8,305.8 L443.8,301 L445,301 L445,295.6 L446.3,295.6 L446.3,289.9 L447.5,289.9 L447.5,283.8 L448.8,283.8 L448.8,277.5 L450,277.5 L450,271 L451.3,271 L451.3,264.6 L452.5,264.6 L452.5,258.3 L453.8,258.3 L453.8,252.2 L455,252.2 L455,246.4 L456.3,246.4 L456.3,241.1 L457.5,241.1 L457.5,236.3 L458.8,236.3 L458.8,232.1 L460,232.1 L460,228.5 L461.3,228.5 L461.3,225.7 L462.5,225.7 L462.5,223.7 L463.8,223.7 L463.8,222.4 L465,222.4 L465,221.9 L466.3,221.9 L466.3,222.4 L467.5,222.4 L467.5,223.7 L468.8,223.7 L468.8,225.7 L470,225.7 L470,228.5 L471.3,228.5 L471.3,232.1 L472.5,232.1 L472.5,236.3 L473.8,236.3 L473.8,241.1 L475,241.1 L475,246.4 L476.3,246.4 L476.3,252.2 L477.5,252.2 L477.5,258.3 L478.8,258.3 L478.8,264.6 L480,264.6 L480,271 L481.3,271 L481.3,277.5 L482.5,277.5 L482.5,283.8 L483.8,283.8 L483.8,289.9 L485,289.9 L485,295.6 L486.3,295.6 L486.3,301 L487.5,301 L487.5,305.8 L488.8,305.8 L488.8,310 L490,310 L490,313.6 L491.3,313.6 L491.3,316.4 L492.5,316.4 L492.5,318.4 L493.8,318.4 L493.8,319.7 L495,319.7 L495,320.1 L496.3,320.1 L496.3,319.7 L497.5,319.7 L497.5,318.4 L498.8,318.4 L498.8,316.4 L500,316.4 L500,313.6 L501.3,313.6 L501.3,310 L502.5,310 L502.5,305.8 L503.8,305.8 L503.8,301 L505,301 L505,295.6 L506.3,295.6 L506.3,289.9 L507.5,289.9 L507.5,283.8 L508.8,283.8 L508.8,277.5 L510,277.5 L510,271 L511.3,271 L511.3,264.6 L512.5,264.6 L512.5,258.3 L513.8,258.3 L513.8,252.2 L515,252.2 L515,246.4 L516.3,246.4 L516.3,241.1 L517.5,241.1 L517.5,236.3 L518.8,236.3 L518.8,232.1 L520,232.1 L520,228.5 L521.3,228.5 L521.3,225.7 L522.5,225.7 L522.5,223.7 L523.8,223.7 L523.8,222.4 L525,222.4 L525,221.9 L526.3,221.9 L526.3,222.4 L527.5,222.4 L527.5,223.7 L528.8,223.7 L528.8,225.7 L530,225.7 L530,228.5 L531.3,228.5 L531.3,232.1 L532.5,232.1 L532.5,236.3 L533.8,236.3 L533.8,241.1 L535,241.1 L535,246.4 L536.3,246.4 L536.3,252.2 L537.5,252.2 L537.5,258.3 L538.8,258.3 L538.8,264.6 L540,264.6 L540,271 L541.3,271 L541.3,277.5 L542.5,277.5 L542.5,283.8 L543.8,283.8 L543.8,289.9 L545,289.9 L545,295.6 L546.3,295.6 L546.3,301 L547.5,301 L547.5,305.8 L548.8,305.8 L548.8,310 L550,310 L550,313.6 L551.3,313.6 L551.3,316.4 L552.5,316.4 L552.5,318.4 L553.8,318.4 L553.8,319.7 L555,319.7 L555,320.1 L556.3,320.1 L556.3,319.7 L557.5,319.7 L557.5,318.4 L558.8,318.4 L558.8,316.4 L560,316.4 L560,313.6 L561.3,313.6 L561.3,310 L562.5,310 L562.5,305.8 L563.8,305.8 L563.8,301 L565,301 L565,295.6 L566.3,295.6 L566.3,289.9 L567.5,289.9 L567.5,283.8 L568.8,283.8 L568.8,277.5 L570,277.5 L570,271 L571.3,271 L571.3,264.6 L572.5,264.6 L572.5,258.3 L573.8,258.3 L573.8,252.2 L575,252.2 L575,246.4 L576.3,246.4 L576.3,241.1 L577.5,241.1 L577.5,236.3 L578.8,236.3 L578.8,232.1 L580,232.1 L580,228.5 L581.3,228.5 L581.3,225.7 L582.5,225.7 L582.5,223.7 L583.8,223.7 L583.8,222.4 L585,222.4 L585,221.9 L586.3,221.9 L586.3,222.4 L587.5,222.4 L587.5,223.7 L588.8,223.7 L588.8,225.7 L590,225.7 L590,228.5 L591.3,228.5 L591.3,232.1 L592.5,232.1 L592.5,236.3 L593.8,236.3 L593.8,241.1 L595,241.1 L595,246.4 L596.3,246.4 L596.3,252.2 L597.5,252.2 L597.5,258.3 L598.8,258.3 L598.8,264.6 L600,264.6 L600,271 L601.3,271 L601.3,277.5 L602.5,277.5 L602.5,283.8 L603.8,283.8 L603.8,289.9 L605,289.9 L605,295.6 L606.3,295.6 L606.3,301 L607.5,301 L607.5,305.8 L608.8,305.8 L608.8,310 L610,310 L610,313.6 L611.3,313.6 L611.3,316.4 L612.5,316.4 L612.5,318.4 L613.8,318.4 L613.8,319.7 L615,319.7 L615,320.1 L616.3,320.1 L616.3,319.7 L617.5,319.7 L617.5,318.4 L618.8,318.4 L618.8,316.4 L620,316.4 L620,313.6 L621.3,313.6 L621.3,310 L622.5,310 L622.5,305.8 L623.8,305.8 L623.8,301 L625,301 L625,295.6 L626.3,295.6 L626.3,289.9 L627.5,289.9 L627.5,283.8 L628.8,283.8 L628.8,277.5 L630,277.5 L630,271 L631.3,271 L631.3,264.6 L632.5,264.6 L632.5,258.3 L633.8,258.3 L633.8,252.2 L635,252.2 L635,246.4 L636.3,246.4 L636.3,241.1 L637.5,241.1 L637.5,236.3 L638.8,236.3 L638.8,232.1 L640,232.1 L640,228.5 L641.3,228.5 L641.3,225.7 L642.5,225.7 L642.5,223.7 L643.8,223.7 L643.8,222.4 L645,222.4 L645,221.9 L646.3,221.9 L646.3,222.4 L647.5,222.4 L647.5,223.7 L648.8,223.7 L648.8,225.7 L650,225.7 L650,228.5 L651.3,228.5 L651.3,232.1 L652.5,232.1 L652.5,236.3 L653.8,236.3 L653.8,241.1 L655,241.1 L655,246.4 L656.3,246.4 L656.3,252.2 L657.5,252.2 L657.5,258.3 L658.8,258.3 L658.8,264.6 L660,264.6 L660,271 L661.3,271 L661.3,277.5 L662.5,277.5 L662.5,283.8 L663.8,283.8 L663.8,289.9 L665,289.9 L665,295.6 L666.3,295.6 L666.3,301 L667.5,301 L667.5,305.8 L668.8,305.8 L668.8,310 L670,310 L670,313.6 L671.3,313.6 L671.3,316.4 L672.5,316.4 L672.5,318.4 L673.8,318.4 L673.8,319.7 L675,319.7 L675,320.1 L676.3,320.1 L676.3,319.7 L677.5,319.7 L677.5,318.4 L678.8,318.4 L678.8,316.4 L680,316.4 L680,313.6 L681.3,313.6 L681.3,310 L682.5,310 L682.5,305.8 L683.8,305.8 L683.8,301 L685,301 L685,295.6 L686.3,295.6 L686.3,289.9 L687.5,289.9 L687.5,283.8 L688.8,283.8 L688.8,277.5 L690,277.5" fill="none" stroke="#a855f7" strokeWidth="2" strokeLinejoin="round" />
+  <text x="390" y="348" fill="currentColor" fontSize="11.5">1,000 Hz sine, 1,000 units</text>
+  <text x="50" y="392" fill="currentColor" fontSize="11.5">5 ms each; the level scale is the same in all four, in the mixer's units</text>
+</svg>
+{/* /fig:cast */}
+<figcaption>One capture per source, 5 ms each, on one level scale. Each is drawn about its own middle level, so that the four can be compared by their size alone.</figcaption>
+</figure>
+
+The level scale is the point of this figure: it shows how loud each source can be next to the others.
+A DAC or the Pi playing at full scale is about twice as loud as the beeper, and one AY channel is half as
+loud as the beeper.
+
+The four tones are all close to 1,000 Hz, but not equal. Each source gets its pitch from its own clock,
+divided by whole numbers the program chooses, and only some pitches come out of whole numbers:
+
+- **The beeper**: 3,500,000 ÷ (2 × 1,760) = 994 Hz. The CPU's 3.5 MHz clock, divided by the length of
+  the program's loop in T-states, twice per cycle; the loop's length can change only in steps of 13
+  T-states.
+- **The AY channel**: 218,750 ÷ (2 × 109) = 1,003 Hz. The chip's counters, divided by the channel's
+  period; the next period, 110, gives 994 Hz.
+- **The DAC**: 3,500,000 ÷ (218 × 16) = 1,003 Hz. The CPU's clock again, divided by the 218 T-states
+  between two writes and the 16 writes of one cycle.
+- **The Pi**: exactly 1,000 Hz. The Pi sends samples it has already worked out for that pitch, so the
+  Next only plays them back.
+
+Part 6 explains where these clocks come from.
+
+### The beeper, EAR and MIC
+
+The beeper is the 48K's one bit, unchanged: **port `$FE` bit 4**. While the bit is 1, it adds 512 units
+to both sides of the mixer; while it is 0, nothing. A program makes a note by switching it at the
+note's pitch: the capture above is a loop that flips the bit every 1,760 T-states, which at 3.5 MHz is a
+square wave of 3,500,000 ÷ (2 × 1,760) = 994 Hz.
+
+**Port `$FE` bit 3**, MIC, adds 128 units while it is 1: a quarter of EAR, the ratio the 48K's resistors
+gave the two bits. On the Next, the MIC line is more than the port bit. Before it reaches the mixer, it
+is combined with the **tape input**, the signal arriving at the EAR socket from a tape recorder, and
+with an EAR bit the Pi's audio can produce: you hear a tape load at MIC's level, as on the original
+machine. The same line goes out of the MIC socket, so a program saves to tape by switching bit 3.
+
+The beeper costs the CPU all its time while it plays, and its pitch depends on how fast the CPU runs
+(Part 6). The beeper article (article 2) explains the bits, the tape input and how
+one bit can play two voices.
+
+### Three AY chips
+
+The Next has three copies of the 128K's sound chip. Each has **three channels**, A, B and C, and each
+channel plays a square wave at a pitch set by a 12-bit period, mixed with noise if the program wants,
+at one of 16 fixed volumes or following an envelope, a shape that rises or falls by itself. A chip can
+behave as the original General Instrument **AY-3-8910** or as Yamaha's compatible **YM2149**, which has a
+finer envelope.
+
+The 128K's own ports reach them: **port `$FFFD`** selects a register, **port `$BFFD`** writes it. A
+special value written to port `$FFFD` (one with bit 7 set, which no register number has) selects
+*which* chip the following writes go to, and that is all a program needs to play nine channels. This is
+**TurboSound Next**. One full channel adds up to 255 units to the mixer, and with every channel of all
+three chips at full volume a side gets at most 2,295.
+
+The capture above is chip 0's channel B, with period 109: a square wave of 1,003 Hz, written once and
+left alone. The AY chips are explained in article 3 (one chip) and article 4 (three chips, the stereo
+modes and panning).
+
+### Four 8-bit DACs
+
+A **DAC** channel holds an 8-bit number the CPU writes, and adds it to the mixer until the next write.
+The Next has four, **A** and **B** on the left side and **C** and **D** on the right. Each side adds its
+two channels and multiplies them by 4: up to 2,040 units.
+
+The Spectrum and Pentagon world had half a dozen sound cards built on such DACs (Soundrive, Covox,
+Specdrum and others), each on its own ports. The Next answers on all of their ports, so their software
+plays unchanged, and adds three NextRegs, `$2C` to `$2E`, through which the Copper or a program with no
+free port can write them. The capture above is a sine wave, 16 steps per cycle, written to **port `$DF`**,
+Specdrum's port, which writes channels A and D at once and so reaches both sides. It is explained in
+article 5.
+
+### The Raspberry Pi's audio
+
+Inside the Next sits a Raspberry Pi Zero, connected by, among other things, an **I2S** link: a
+connection of a few wires that carries a stream of digital samples, left and right, in both directions.
+The Pi can play anything a small Linux computer can (an MP3, a speech synthesiser, another computer's
+sound chip in software) and send the result to the Next, which adds it to the mixer at 10 bits per side:
+up to 1,023 units. The link also works the other way, sending the Next's own sound to the Pi, and the
+Pi's stream can be turned into the EAR bit of the tape input, so that the Next loads a program the Pi
+plays. The **PI I2S Audio Control register, NextReg `$A2`**, sets it all up.
+
+The capture above is a 1,000 Hz sine, streamed in. It is explained in article 6.
+
+## Part 3: Generators and level writers
+
+The captures of Part 2 look alike, but they are made in two very different ways, and the difference
+decides what a sound costs the program.
+
+- A **generator** makes a waveform by itself from a few settings. The AY chips are generators: the
+  program writes a period, a volume and which channels are on, and the chip plays that tone until it is
+  told otherwise, for a second or for an hour, without any help from the CPU.
+- A **level writer** holds whatever level it was given last. The beeper and the DACs are level writers:
+  they make a waveform only if the CPU (or the DMA, or the Copper) writes a new level at every step of
+  it, on time.
+
+The same two captures, with the CPU's writes marked under them:
+
+<figure>
+{/* fig:generator */}
+<svg viewBox="0 0 700 330" role="img" aria-label="Two captures from the machine over the same four milliseconds. Top: an AY chip's tone at 1,003 Hz, a square wave that goes on by itself; the CPU wrote four registers to start it, before this stretch, and writes nothing while it plays. Bottom: a sine wave at 1,003 Hz played through a DAC; it is a staircase of 16 steps per cycle, and every step is one write by the CPU, marked under the wave: about 64 writes in the four milliseconds." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
+  <line x1="90" y1="75" x2="690" y2="75" stroke="currentColor" strokeWidth="1" strokeOpacity="0.25" />
+  <path d="M90,64.8 L93.1,64.8 L93.1,64.8 L96.3,64.8 L96.3,64.8 L99.4,64.8 L99.4,64.8 L102.5,64.8 L102.5,64.8 L105.6,64.8 L105.6,64.8 L108.8,64.8 L108.8,64.8 L111.9,64.8 L111.9,64.8 L115,64.8 L115,64.8 L118.1,64.8 L118.1,64.8 L121.3,64.8 L121.3,64.8 L124.4,64.8 L124.4,64.8 L127.5,64.8 L127.5,64.8 L130.6,64.8 L130.6,64.8 L133.8,64.8 L133.8,64.8 L136.9,64.8 L136.9,64.8 L140,64.8 L140,64.8 L143.1,64.8 L143.1,64.8 L146.3,64.8 L146.3,64.8 L149.4,64.8 L149.4,64.8 L152.5,64.8 L152.5,64.8 L155.6,64.8 L155.6,64.8 L158.8,64.8 L158.8,64.8 L161.9,64.8 L161.9,67.3 L165,67.3 L165,85.2 L168.1,85.2 L168.1,85.2 L171.3,85.2 L171.3,85.2 L174.4,85.2 L174.4,85.2 L177.5,85.2 L177.5,85.2 L180.6,85.2 L180.6,85.2 L183.8,85.2 L183.8,85.2 L186.9,85.2 L186.9,85.2 L190,85.2 L190,85.2 L193.1,85.2 L193.1,85.2 L196.3,85.2 L196.3,85.2 L199.4,85.2 L199.4,85.2 L202.5,85.2 L202.5,85.2 L205.6,85.2 L205.6,85.2 L208.8,85.2 L208.8,85.2 L211.9,85.2 L211.9,85.2 L215,85.2 L215,85.2 L218.1,85.2 L218.1,85.2 L221.3,85.2 L221.3,85.2 L224.4,85.2 L224.4,85.2 L227.5,85.2 L227.5,85.2 L230.6,85.2 L230.6,85.2 L233.8,85.2 L233.8,85.2 L236.9,85.2 L236.9,81 L240,81 L240,64.8 L243.1,64.8 L243.1,64.8 L246.2,64.8 L246.2,64.8 L249.4,64.8 L249.4,64.8 L252.5,64.8 L252.5,64.8 L255.6,64.8 L255.6,64.8 L258.8,64.8 L258.8,64.8 L261.9,64.8 L261.9,64.8 L265,64.8 L265,64.8 L268.1,64.8 L268.1,64.8 L271.3,64.8 L271.3,64.8 L274.4,64.8 L274.4,64.8 L277.5,64.8 L277.5,64.8 L280.6,64.8 L280.6,64.8 L283.8,64.8 L283.8,64.8 L286.9,64.8 L286.9,64.8 L290,64.8 L290,64.8 L293.1,64.8 L293.1,64.8 L296.3,64.8 L296.3,64.8 L299.4,64.8 L299.4,64.8 L302.5,64.8 L302.5,64.8 L305.6,64.8 L305.6,64.8 L308.8,64.8 L308.8,64.8 L311.9,64.8 L311.9,70.7 L315,70.7 L315,85.2 L318.1,85.2 L318.1,85.2 L321.3,85.2 L321.3,85.2 L324.4,85.2 L324.4,85.2 L327.5,85.2 L327.5,85.2 L330.6,85.2 L330.6,85.2 L333.8,85.2 L333.8,85.2 L336.9,85.2 L336.9,85.2 L340,85.2 L340,85.2 L343.1,85.2 L343.1,85.2 L346.3,85.2 L346.3,85.2 L349.4,85.2 L349.4,85.2 L352.5,85.2 L352.5,85.2 L355.6,85.2 L355.6,85.2 L358.8,85.2 L358.8,85.2 L361.9,85.2 L361.9,85.2 L365,85.2 L365,85.2 L368.1,85.2 L368.1,85.2 L371.3,85.2 L371.3,85.2 L374.4,85.2 L374.4,85.2 L377.5,85.2 L377.5,85.2 L380.6,85.2 L380.6,85.2 L383.8,85.2 L383.8,85.2 L386.9,85.2 L386.9,77.6 L390,77.6 L390,64.8 L393.1,64.8 L393.1,64.8 L396.3,64.8 L396.3,64.8 L399.4,64.8 L399.4,64.8 L402.5,64.8 L402.5,64.8 L405.6,64.8 L405.6,64.8 L408.8,64.8 L408.8,64.8 L411.9,64.8 L411.9,64.8 L415,64.8 L415,64.8 L418.1,64.8 L418.1,64.8 L421.2,64.8 L421.2,64.8 L424.4,64.8 L424.4,64.8 L427.5,64.8 L427.5,64.8 L430.6,64.8 L430.6,64.8 L433.8,64.8 L433.8,64.8 L436.9,64.8 L436.9,64.8 L440,64.8 L440,64.8 L443.1,64.8 L443.1,64.8 L446.3,64.8 L446.3,64.8 L449.4,64.8 L449.4,64.8 L452.5,64.8 L452.5,64.8 L455.6,64.8 L455.6,64.8 L458.7,64.8 L458.7,64.8 L461.9,64.8 L461.9,74.1 L465,74.1 L465,85.2 L468.1,85.2 L468.1,85.2 L471.3,85.2 L471.3,85.2 L474.4,85.2 L474.4,85.2 L477.5,85.2 L477.5,85.2 L480.6,85.2 L480.6,85.2 L483.8,85.2 L483.8,85.2 L486.9,85.2 L486.9,85.2 L490,85.2 L490,85.2 L493.1,85.2 L493.1,85.2 L496.2,85.2 L496.2,85.2 L499.4,85.2 L499.4,85.2 L502.5,85.2 L502.5,85.2 L505.6,85.2 L505.6,85.2 L508.8,85.2 L508.8,85.2 L511.9,85.2 L511.9,85.2 L515,85.2 L515,85.2 L518.1,85.2 L518.1,85.2 L521.3,85.2 L521.3,85.2 L524.4,85.2 L524.4,85.2 L527.5,85.2 L527.5,85.2 L530.6,85.2 L530.6,85.2 L533.8,85.2 L533.8,85.2 L536.9,85.2 L536.9,74.2 L540,74.2 L540,64.8 L543.1,64.8 L543.1,64.8 L546.3,64.8 L546.3,64.8 L549.4,64.8 L549.4,64.8 L552.5,64.8 L552.5,64.8 L555.6,64.8 L555.6,64.8 L558.8,64.8 L558.8,64.8 L561.9,64.8 L561.9,64.8 L565,64.8 L565,64.8 L568.1,64.8 L568.1,64.8 L571.3,64.8 L571.3,64.8 L574.4,64.8 L574.4,64.8 L577.5,64.8 L577.5,64.8 L580.6,64.8 L580.6,64.8 L583.8,64.8 L583.8,64.8 L586.9,64.8 L586.9,64.8 L590,64.8 L590,64.8 L593.1,64.8 L593.1,64.8 L596.3,64.8 L596.3,64.8 L599.4,64.8 L599.4,64.8 L602.5,64.8 L602.5,64.8 L605.6,64.8 L605.6,64.8 L608.8,64.8 L608.8,64.8 L611.9,64.8 L611.9,77.4 L615,77.4 L615,85.2 L618.1,85.2 L618.1,85.2 L621.3,85.2 L621.3,85.2 L624.4,85.2 L624.4,85.2 L627.5,85.2 L627.5,85.2 L630.6,85.2 L630.6,85.2 L633.8,85.2 L633.8,85.2 L636.9,85.2 L636.9,85.2 L640,85.2 L640,85.2 L643.1,85.2 L643.1,85.2 L646.3,85.2 L646.3,85.2 L649.4,85.2 L649.4,85.2 L652.5,85.2 L652.5,85.2 L655.6,85.2 L655.6,85.2 L658.8,85.2 L658.8,85.2 L661.9,85.2 L661.9,85.2 L665,85.2 L665,85.2 L668.1,85.2 L668.1,85.2 L671.3,85.2 L671.3,85.2 L674.4,85.2 L674.4,85.2 L677.5,85.2 L677.5,85.2 L680.6,85.2 L680.6,85.2 L683.8,85.2 L683.8,85.2 L686.9,85.2 L686.9,70.9 L690,70.9" fill="none" stroke="#e8912d" strokeWidth="2" strokeLinejoin="round" />
+  <text x="10" y="70" fill="#e8912d" fontSize="13" fontWeight="bold">an AY tone</text>
+  <text x="10" y="146" fill="currentColor" fontSize="11.5">CPU writes</text>
+  <line x1="90" y1="142" x2="690" y2="142" stroke="currentColor" strokeWidth="1" strokeOpacity="0.25" />
+  <text x="98" y="146" fill="#e8912d" fontSize="11.5">none: four registers were written before this stretch, and the chip plays on by itself</text>
+  <line x1="90" y1="220" x2="690" y2="220" stroke="currentColor" strokeWidth="1" strokeOpacity="0.25" />
+  <path d="M90,220 L93.1,220 L93.1,220 L96.3,220 L96.3,220 L99.4,220 L99.4,204.3 L102.5,204.3 L102.5,204.3 L105.6,204.3 L105.6,204.3 L108.8,204.3 L108.8,191.1 L111.9,191.1 L111.9,191.1 L115,191.1 L115,191.1 L118.1,191.1 L118.1,182.4 L121.3,182.4 L121.3,182.4 L124.4,182.4 L124.4,182.4 L127.5,182.4 L127.5,179.2 L130.6,179.2 L130.6,179.2 L133.8,179.2 L133.8,179.2 L136.9,179.2 L136.9,182.4 L140,182.4 L140,182.4 L143.1,182.4 L143.1,182.4 L146.3,182.4 L146.3,191.1 L149.4,191.1 L149.4,191.1 L152.5,191.1 L152.5,191.1 L155.6,191.1 L155.6,204.3 L158.8,204.3 L158.8,204.3 L161.9,204.3 L161.9,204.3 L165,204.3 L165,220 L168.1,220 L168.1,220 L171.3,220 L171.3,220 L174.4,220 L174.4,235.7 L177.5,235.7 L177.5,235.7 L180.6,235.7 L180.6,235.7 L183.8,235.7 L183.8,248.9 L186.9,248.9 L186.9,248.9 L190,248.9 L190,248.9 L193.1,248.9 L193.1,257.6 L196.3,257.6 L196.3,257.6 L199.4,257.6 L199.4,257.6 L202.5,257.6 L202.5,260.8 L205.6,260.8 L205.6,260.8 L208.8,260.8 L208.8,260.8 L211.9,260.8 L211.9,257.6 L215,257.6 L215,257.6 L218.1,257.6 L218.1,257.6 L221.3,257.6 L221.3,248.9 L224.4,248.9 L224.4,248.9 L227.5,248.9 L227.5,248.9 L230.6,248.9 L230.6,235.7 L233.8,235.7 L233.8,235.7 L236.9,235.7 L236.9,235.7 L240,235.7 L240,220 L243.1,220 L243.1,220 L246.2,220 L246.2,220 L249.4,220 L249.4,204.3 L252.5,204.3 L252.5,204.3 L255.6,204.3 L255.6,204.3 L258.8,204.3 L258.8,191.1 L261.9,191.1 L261.9,191.1 L265,191.1 L265,191.1 L268.1,191.1 L268.1,182.4 L271.3,182.4 L271.3,182.4 L274.4,182.4 L274.4,182.4 L277.5,182.4 L277.5,179.2 L280.6,179.2 L280.6,179.2 L283.8,179.2 L283.8,179.2 L286.9,179.2 L286.9,182.4 L290,182.4 L290,182.4 L293.1,182.4 L293.1,182.4 L296.3,182.4 L296.3,191.1 L299.4,191.1 L299.4,191.1 L302.5,191.1 L302.5,191.1 L305.6,191.1 L305.6,204.3 L308.8,204.3 L308.8,204.3 L311.9,204.3 L311.9,204.3 L315,204.3 L315,220 L318.1,220 L318.1,220 L321.3,220 L321.3,220 L324.4,220 L324.4,235.7 L327.5,235.7 L327.5,235.7 L330.6,235.7 L330.6,235.7 L333.8,235.7 L333.8,248.9 L336.9,248.9 L336.9,248.9 L340,248.9 L340,248.9 L343.1,248.9 L343.1,257.6 L346.3,257.6 L346.3,257.6 L349.4,257.6 L349.4,257.6 L352.5,257.6 L352.5,260.8 L355.6,260.8 L355.6,260.8 L358.8,260.8 L358.8,260.8 L361.9,260.8 L361.9,257.6 L365,257.6 L365,257.6 L368.1,257.6 L368.1,257.6 L371.3,257.6 L371.3,248.9 L374.4,248.9 L374.4,248.9 L377.5,248.9 L377.5,248.9 L380.6,248.9 L380.6,235.7 L383.8,235.7 L383.8,235.7 L386.9,235.7 L386.9,235.7 L390,235.7 L390,220 L393.1,220 L393.1,220 L396.3,220 L396.3,220 L399.4,220 L399.4,204.3 L402.5,204.3 L402.5,204.3 L405.6,204.3 L405.6,204.3 L408.8,204.3 L408.8,191.1 L411.9,191.1 L411.9,191.1 L415,191.1 L415,191.1 L418.1,191.1 L418.1,182.4 L421.2,182.4 L421.2,182.4 L424.4,182.4 L424.4,182.4 L427.5,182.4 L427.5,179.2 L430.6,179.2 L430.6,179.2 L433.8,179.2 L433.8,179.2 L436.9,179.2 L436.9,182.4 L440,182.4 L440,182.4 L443.1,182.4 L443.1,182.4 L446.3,182.4 L446.3,191.1 L449.4,191.1 L449.4,191.1 L452.5,191.1 L452.5,191.1 L455.6,191.1 L455.6,204.3 L458.7,204.3 L458.7,204.3 L461.9,204.3 L461.9,204.3 L465,204.3 L465,220 L468.1,220 L468.1,220 L471.3,220 L471.3,220 L474.4,220 L474.4,235.7 L477.5,235.7 L477.5,235.7 L480.6,235.7 L480.6,235.7 L483.8,235.7 L483.8,248.9 L486.9,248.9 L486.9,248.9 L490,248.9 L490,248.9 L493.1,248.9 L493.1,257.6 L496.2,257.6 L496.2,257.6 L499.4,257.6 L499.4,257.6 L502.5,257.6 L502.5,260.8 L505.6,260.8 L505.6,260.8 L508.8,260.8 L508.8,260.8 L511.9,260.8 L511.9,257.6 L515,257.6 L515,257.6 L518.1,257.6 L518.1,257.6 L521.3,257.6 L521.3,248.9 L524.4,248.9 L524.4,248.9 L527.5,248.9 L527.5,248.9 L530.6,248.9 L530.6,235.7 L533.8,235.7 L533.8,235.7 L536.9,235.7 L536.9,235.7 L540,235.7 L540,220 L543.1,220 L543.1,220 L546.3,220 L546.3,220 L549.4,220 L549.4,204.3 L552.5,204.3 L552.5,204.3 L555.6,204.3 L555.6,204.3 L558.8,204.3 L558.8,191.1 L561.9,191.1 L561.9,191.1 L565,191.1 L565,191.1 L568.1,191.1 L568.1,182.4 L571.3,182.4 L571.3,182.4 L574.4,182.4 L574.4,182.4 L577.5,182.4 L577.5,179.2 L580.6,179.2 L580.6,179.2 L583.8,179.2 L583.8,179.2 L586.9,179.2 L586.9,182.4 L590,182.4 L590,182.4 L593.1,182.4 L593.1,182.4 L596.3,182.4 L596.3,191.1 L599.4,191.1 L599.4,191.1 L602.5,191.1 L602.5,191.1 L605.6,191.1 L605.6,204.3 L608.8,204.3 L608.8,204.3 L611.9,204.3 L611.9,204.3 L615,204.3 L615,220 L618.1,220 L618.1,220 L621.3,220 L621.3,220 L624.4,220 L624.4,235.7 L627.5,235.7 L627.5,235.7 L630.6,235.7 L630.6,235.7 L633.8,235.7 L633.8,248.9 L636.9,248.9 L636.9,248.9 L640,248.9 L640,248.9 L643.1,248.9 L643.1,257.6 L646.3,257.6 L646.3,257.6 L649.4,257.6 L649.4,257.6 L652.5,257.6 L652.5,260.8 L655.6,260.8 L655.6,260.8 L658.8,260.8 L658.8,260.8 L661.9,260.8 L661.9,257.6 L665,257.6 L665,257.6 L668.1,257.6 L668.1,257.6 L671.3,257.6 L671.3,248.9 L674.4,248.9 L674.4,248.9 L677.5,248.9 L677.5,248.9 L680.6,248.9 L680.6,235.7 L683.8,235.7 L683.8,235.7 L686.9,235.7 L686.9,235.7 L690,235.7" fill="none" stroke="#30a46c" strokeWidth="2" strokeLinejoin="round" />
+  <text x="10" y="215" fill="#30a46c" fontSize="13" fontWeight="bold">a DAC sine</text>
+  <text x="10" y="291" fill="currentColor" fontSize="11.5">CPU writes</text>
+  <line x1="90" y1="287" x2="690" y2="287" stroke="currentColor" strokeWidth="1" strokeOpacity="0.25" />
+  <line x1="99.4" y1="280" x2="99.4" y2="294" stroke="#30a46c" strokeWidth="1.5" />
+  <line x1="108.8" y1="280" x2="108.8" y2="294" stroke="#30a46c" strokeWidth="1.5" />
+  <line x1="118.1" y1="280" x2="118.1" y2="294" stroke="#30a46c" strokeWidth="1.5" />
+  <line x1="127.5" y1="280" x2="127.5" y2="294" stroke="#30a46c" strokeWidth="1.5" />
+  <line x1="136.9" y1="280" x2="136.9" y2="294" stroke="#30a46c" strokeWidth="1.5" />
+  <line x1="146.3" y1="280" x2="146.3" y2="294" stroke="#30a46c" strokeWidth="1.5" />
+  <line x1="155.6" y1="280" x2="155.6" y2="294" stroke="#30a46c" strokeWidth="1.5" />
+  <line x1="165" y1="280" x2="165" y2="294" stroke="#30a46c" strokeWidth="1.5" />
+  <line x1="174.4" y1="280" x2="174.4" y2="294" stroke="#30a46c" strokeWidth="1.5" />
+  <line x1="183.8" y1="280" x2="183.8" y2="294" stroke="#30a46c" strokeWidth="1.5" />
+  <line x1="193.1" y1="280" x2="193.1" y2="294" stroke="#30a46c" strokeWidth="1.5" />
+  <line x1="202.5" y1="280" x2="202.5" y2="294" stroke="#30a46c" strokeWidth="1.5" />
+  <line x1="211.9" y1="280" x2="211.9" y2="294" stroke="#30a46c" strokeWidth="1.5" />
+  <line x1="221.3" y1="280" x2="221.3" y2="294" stroke="#30a46c" strokeWidth="1.5" />
+  <line x1="230.6" y1="280" x2="230.6" y2="294" stroke="#30a46c" strokeWidth="1.5" />
+  <line x1="240" y1="280" x2="240" y2="294" stroke="#30a46c" strokeWidth="1.5" />
+  <line x1="249.4" y1="280" x2="249.4" y2="294" stroke="#30a46c" strokeWidth="1.5" />
+  <line x1="258.8" y1="280" x2="258.8" y2="294" stroke="#30a46c" strokeWidth="1.5" />
+  <line x1="268.1" y1="280" x2="268.1" y2="294" stroke="#30a46c" strokeWidth="1.5" />
+  <line x1="277.5" y1="280" x2="277.5" y2="294" stroke="#30a46c" strokeWidth="1.5" />
+  <line x1="286.9" y1="280" x2="286.9" y2="294" stroke="#30a46c" strokeWidth="1.5" />
+  <line x1="296.3" y1="280" x2="296.3" y2="294" stroke="#30a46c" strokeWidth="1.5" />
+  <line x1="305.6" y1="280" x2="305.6" y2="294" stroke="#30a46c" strokeWidth="1.5" />
+  <line x1="315" y1="280" x2="315" y2="294" stroke="#30a46c" strokeWidth="1.5" />
+  <line x1="324.4" y1="280" x2="324.4" y2="294" stroke="#30a46c" strokeWidth="1.5" />
+  <line x1="333.8" y1="280" x2="333.8" y2="294" stroke="#30a46c" strokeWidth="1.5" />
+  <line x1="343.1" y1="280" x2="343.1" y2="294" stroke="#30a46c" strokeWidth="1.5" />
+  <line x1="352.5" y1="280" x2="352.5" y2="294" stroke="#30a46c" strokeWidth="1.5" />
+  <line x1="361.9" y1="280" x2="361.9" y2="294" stroke="#30a46c" strokeWidth="1.5" />
+  <line x1="371.3" y1="280" x2="371.3" y2="294" stroke="#30a46c" strokeWidth="1.5" />
+  <line x1="380.6" y1="280" x2="380.6" y2="294" stroke="#30a46c" strokeWidth="1.5" />
+  <line x1="390" y1="280" x2="390" y2="294" stroke="#30a46c" strokeWidth="1.5" />
+  <line x1="399.4" y1="280" x2="399.4" y2="294" stroke="#30a46c" strokeWidth="1.5" />
+  <line x1="408.8" y1="280" x2="408.8" y2="294" stroke="#30a46c" strokeWidth="1.5" />
+  <line x1="418.1" y1="280" x2="418.1" y2="294" stroke="#30a46c" strokeWidth="1.5" />
+  <line x1="427.5" y1="280" x2="427.5" y2="294" stroke="#30a46c" strokeWidth="1.5" />
+  <line x1="436.9" y1="280" x2="436.9" y2="294" stroke="#30a46c" strokeWidth="1.5" />
+  <line x1="446.3" y1="280" x2="446.3" y2="294" stroke="#30a46c" strokeWidth="1.5" />
+  <line x1="455.6" y1="280" x2="455.6" y2="294" stroke="#30a46c" strokeWidth="1.5" />
+  <line x1="465" y1="280" x2="465" y2="294" stroke="#30a46c" strokeWidth="1.5" />
+  <line x1="474.4" y1="280" x2="474.4" y2="294" stroke="#30a46c" strokeWidth="1.5" />
+  <line x1="483.8" y1="280" x2="483.8" y2="294" stroke="#30a46c" strokeWidth="1.5" />
+  <line x1="493.1" y1="280" x2="493.1" y2="294" stroke="#30a46c" strokeWidth="1.5" />
+  <line x1="502.5" y1="280" x2="502.5" y2="294" stroke="#30a46c" strokeWidth="1.5" />
+  <line x1="511.9" y1="280" x2="511.9" y2="294" stroke="#30a46c" strokeWidth="1.5" />
+  <line x1="521.3" y1="280" x2="521.3" y2="294" stroke="#30a46c" strokeWidth="1.5" />
+  <line x1="530.6" y1="280" x2="530.6" y2="294" stroke="#30a46c" strokeWidth="1.5" />
+  <line x1="540" y1="280" x2="540" y2="294" stroke="#30a46c" strokeWidth="1.5" />
+  <line x1="549.4" y1="280" x2="549.4" y2="294" stroke="#30a46c" strokeWidth="1.5" />
+  <line x1="558.8" y1="280" x2="558.8" y2="294" stroke="#30a46c" strokeWidth="1.5" />
+  <line x1="568.1" y1="280" x2="568.1" y2="294" stroke="#30a46c" strokeWidth="1.5" />
+  <line x1="577.5" y1="280" x2="577.5" y2="294" stroke="#30a46c" strokeWidth="1.5" />
+  <line x1="586.9" y1="280" x2="586.9" y2="294" stroke="#30a46c" strokeWidth="1.5" />
+  <line x1="596.3" y1="280" x2="596.3" y2="294" stroke="#30a46c" strokeWidth="1.5" />
+  <line x1="605.6" y1="280" x2="605.6" y2="294" stroke="#30a46c" strokeWidth="1.5" />
+  <line x1="615" y1="280" x2="615" y2="294" stroke="#30a46c" strokeWidth="1.5" />
+  <line x1="624.4" y1="280" x2="624.4" y2="294" stroke="#30a46c" strokeWidth="1.5" />
+  <line x1="633.8" y1="280" x2="633.8" y2="294" stroke="#30a46c" strokeWidth="1.5" />
+  <line x1="643.1" y1="280" x2="643.1" y2="294" stroke="#30a46c" strokeWidth="1.5" />
+  <line x1="652.5" y1="280" x2="652.5" y2="294" stroke="#30a46c" strokeWidth="1.5" />
+  <line x1="661.9" y1="280" x2="661.9" y2="294" stroke="#30a46c" strokeWidth="1.5" />
+  <line x1="671.3" y1="280" x2="671.3" y2="294" stroke="#30a46c" strokeWidth="1.5" />
+  <line x1="680.6" y1="280" x2="680.6" y2="294" stroke="#30a46c" strokeWidth="1.5" />
+  <line x1="90" y1="308" x2="690" y2="308" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <line x1="90" y1="304" x2="90" y2="312" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="90" y="326" textAnchor="start" fill="currentColor" fontSize="11.5">0 ms</text>
+  <line x1="240" y1="304" x2="240" y2="312" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="240" y="326" textAnchor="middle" fill="currentColor" fontSize="11.5">1 ms</text>
+  <line x1="390" y1="304" x2="390" y2="312" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="390" y="326" textAnchor="middle" fill="currentColor" fontSize="11.5">2 ms</text>
+  <line x1="540" y1="304" x2="540" y2="312" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="540" y="326" textAnchor="middle" fill="currentColor" fontSize="11.5">3 ms</text>
+  <line x1="690" y1="304" x2="690" y2="312" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="690" y="326" textAnchor="end" fill="currentColor" fontSize="11.5">4 ms</text>
+</svg>
+{/* /fig:generator */}
+<figcaption>A generator and a level writer, captured from the machine. The AY's tone needs no writes while it plays; the DAC's sine needs one write for every step, here one every 218 T-states.</figcaption>
+</figure>
+
+The DAC's sine costs 16 writes per cycle, 16,055 a second, each one on time: if a write comes late, the
+step comes late, and the wave is distorted. A program can afford that for a drum hit or a word of
+speech, or hand the job to the DMA, which can copy a sample to a DAC port at a fixed rate on its own
+(article 5). The AY's tone costs nothing while it plays, which is why games of the 128K era played their
+music on the AY: the program can run the game and touch the chip only when the tune moves to the next
+note, typically once every frame.
+
+In return, a level writer can play *anything*: any recorded sound, any waveform the program can compute.
+A generator plays only what its counters can make: square waves, noise and envelope shapes. The Next has
+both kinds, so a program chooses per sound: AY music, with DAC drums over it.
+
+## Part 4: One mixer, two sides
+
+Every source ends in one place: the **mixer**, which adds them. It has two sides, and every source
+gives each side its own number. For the beeper the two numbers are always the same; the AY chips, the
+DACs and the Pi can make them differ, which is what places a sound left or right (stereo is explained in
+the background page's part
+[Two speakers](/en/under-the-hood/emulator-internals/computer-sound/#two-speakers-stereo-and-space)).
+
+On each side, the mixer adds five numbers, **many million times a second**. The beeper gives two of
+them, one for each of its bits, and every other source one:
+
+- **EAR**: 512 while port `$FE` bit 4 is 1, otherwise 0.
+- **MIC**: 128 while the MIC line is 1, otherwise 0.
+- **The AY chips**: 0 to 2,295, the three chips' channels on that side added together.
+- **The DACs**: 0 to 2,040, that side's two channels (each 0–255) added and multiplied by 4.
+- **The Pi**: 0 to 1,023, the side's 10-bit sample.
+
+The sum is a 13-bit number, 0 to 8,191. Here is how much of that range each source can take:
+
+<figure>
+{/* fig:budget */}
+<svg viewBox="0 0 700 250" role="img" aria-label="Two bars drawn to scale on the mixer's range of 0 to 8,191 per side. The first bar stacks every source's largest contribution: the beeper's EAR 512, MIC 128, the three AY chips 2,295, the four DACs' side 2,040 and the Pi 1,023, together 5,998, leaving 2,193 unused at the top. The second bar shows silence: with every source quiet, the DACs still add 1,024 at their rest level and the Pi 512, so silence is 1,536, not zero." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
+  <text x="20" y="30" fill="currentColor" fontSize="13" fontWeight="bold">every source at its largest</text>
+  <rect x="20" y="40" width="41.3" height="34" fill="#3b82f6" fillOpacity="0.8" stroke="#3b82f6" strokeWidth="1" />
+  <text x="40.6" y="62" textAnchor="middle" fill="#ffffff" fontSize="12" fontWeight="bold">EAR</text>
+  <rect x="61.3" y="40" width="10.3" height="34" fill="#3b82f6" fillOpacity="0.45" stroke="#3b82f6" strokeWidth="1" />
+  <rect x="71.6" y="40" width="184.9" height="34" fill="#e8912d" fillOpacity="0.8" stroke="#e8912d" strokeWidth="1" />
+  <text x="164" y="62" textAnchor="middle" fill="#ffffff" fontSize="12" fontWeight="bold">three AY chips</text>
+  <rect x="256.5" y="40" width="164.4" height="34" fill="#30a46c" fillOpacity="0.8" stroke="#30a46c" strokeWidth="1" />
+  <text x="338.7" y="62" textAnchor="middle" fill="#ffffff" fontSize="12" fontWeight="bold">DACs</text>
+  <rect x="420.9" y="40" width="82.4" height="34" fill="#a855f7" fillOpacity="0.8" stroke="#a855f7" strokeWidth="1" />
+  <text x="462.1" y="62" textAnchor="middle" fill="#ffffff" fontSize="12" fontWeight="bold">Pi</text>
+  <rect x="20" y="40" width="660" height="34" fill="none" stroke="currentColor" strokeWidth="1.5" strokeOpacity="0.6" />
+  <line x1="503.3" y1="34" x2="503.3" y2="82" stroke="#e5484d" strokeWidth="2.5" />
+  <text x="503.3" y="98" textAnchor="middle" fill="#e5484d" fontSize="12" fontWeight="bold">5,998</text>
+  <text x="591.6" y="62" textAnchor="middle" fill="currentColor" fontSize="12">unused: 2,193</text>
+  <text x="66.4" y="98" textAnchor="middle" fill="#3b82f6" fontSize="11">MIC</text>
+  <text x="20" y="140" fill="currentColor" fontSize="13" fontWeight="bold">silence</text>
+  <rect x="20" y="150" width="82.5" height="34" fill="#30a46c" fillOpacity="0.8" stroke="#30a46c" strokeWidth="1" />
+  <text x="61.3" y="172" textAnchor="middle" fill="#ffffff" fontSize="12" fontWeight="bold">DACs at rest</text>
+  <rect x="102.5" y="150" width="41.3" height="34" fill="#a855f7" fillOpacity="0.8" stroke="#a855f7" strokeWidth="1" />
+  <text x="123.1" y="172" textAnchor="middle" fill="#ffffff" fontSize="12" fontWeight="bold">Pi</text>
+  <rect x="20" y="150" width="660" height="34" fill="none" stroke="currentColor" strokeWidth="1.5" strokeOpacity="0.6" />
+  <line x1="143.8" y1="144" x2="143.8" y2="192" stroke="#e5484d" strokeWidth="2.5" />
+  <text x="143.8" y="208" textAnchor="middle" fill="#e5484d" fontSize="12" fontWeight="bold">1,536</text>
+  <line x1="20" y1="222" x2="20" y2="230" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="20" y="244" textAnchor="start" fill="currentColor" fontSize="11">0</text>
+  <line x1="185" y1="222" x2="185" y2="230" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="185" y="244" textAnchor="middle" fill="currentColor" fontSize="11">2,048</text>
+  <line x1="350" y1="222" x2="350" y2="230" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="350" y="244" textAnchor="middle" fill="currentColor" fontSize="11">4,096</text>
+  <line x1="515.1" y1="222" x2="515.1" y2="230" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="515.1" y="244" textAnchor="middle" fill="currentColor" fontSize="11">6,144</text>
+  <line x1="680" y1="222" x2="680" y2="230" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="680" y="244" textAnchor="end" fill="currentColor" fontSize="11">8,191</text>
+  <line x1="20" y1="226" x2="680" y2="226" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+</svg>
+{/* /fig:budget */}
+<figcaption>The mixer's range per side, drawn to scale. Top: every source at its largest adds up to 5,998, so even all of them at once never reach the top. Bottom: what the mixer adds when every source is silent.</figcaption>
+</figure>
+
+Two things in the figure are worth a sentence each.
+
+**The sum always fits.** Every source at its loudest adds up to 5,998, well below 8,191, so the mixer
+never has to clip: nothing is lost even when every source plays at full volume at once.
+
+**Silence is not zero.** Every input is a number from 0 upwards; nothing is ever subtracted. A DAC at
+rest holds `$80`, the middle of its range, so that a sample can swing both ways from it; the two on
+each side add 1,024 units even when no program has touched them. The Pi's rest level is the
+middle of its range too, 512. So a silent Next sits at 1,536, and every sound moves up and down around
+whatever constant level its sources add. The background page's part on
+[mixing](/en/under-the-hood/emulator-internals/computer-sound/#several-sounds-at-once-are-added-together)
+explains why that does no harm: a capacitor after the converters removes any constant level before the
+sound reaches a speaker. Article 7, on the mixer, takes all of this apart.
+
+## Part 5: Where the sound goes
+
+The two sums leave the machine by four ways at once:
+
+<figure>
+{/* fig:outputs */}
+<svg viewBox="0 0 700 300" role="img" aria-label="The mixed sum, a 13-bit number per side, goes four ways. To the audio jack: a one-bit converter per side, running at 28 MHz, followed by a resistor and capacitor filter on the board. To the internal speaker: the left and right sums added into one, through one more one-bit converter; NextReg $08 bit 4 switches the speaker on, and with NextReg $06 bit 6 it plays only the beeper. To HDMI: 48,000 samples a second, each a 16-bit word, silenced by NextReg $09 bit 2. And to the Raspberry Pi over the I2S link." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
+  <defs>
+    <marker id="ov-out-0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#e5484d" />
+    </marker>
+    <marker id="ov-out-1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
+    </marker>
+  </defs>
+  <rect x="10" y="95" width="140" height="110" rx="8" fill="none" stroke="#e5484d" strokeWidth="2.5" />
+  <text x="80" y="135" textAnchor="middle" fill="#e5484d" fontSize="12.5">the sum</text>
+  <text x="80" y="150" textAnchor="middle" fill="#e5484d" fontSize="12.5">13 bits per side</text>
+  <text x="80" y="165" textAnchor="middle" fill="#e5484d" fontSize="12.5">left and right</text>
+  <rect x="330" y="10" width="360" height="62" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  <text x="344" y="31" fill="currentColor" fontSize="13" fontWeight="bold">audio jack</text>
+  <text x="344" y="48" fill="currentColor" fontSize="11.5">one-bit converter per side at 28 MHz,</text>
+  <text x="344" y="63" fill="currentColor" fontSize="11.5">then a resistor-capacitor filter</text>
+  <path d="M152,150 C240,150 240,41 326,41" fill="none" stroke="#e5484d" strokeWidth="1.8" markerEnd="url(#ov-out-0)" strokeLinejoin="round" />
+  <rect x="330" y="82" width="360" height="62" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  <text x="344" y="103" fill="currentColor" fontSize="13" fontWeight="bold">internal speaker</text>
+  <text x="344" y="120" fill="currentColor" fontSize="11.5">left + right, one one-bit converter;</text>
+  <text x="344" y="135" fill="currentColor" fontSize="11.5">on: NextReg $08 bit 4; beeper only: $06 bit 6</text>
+  <path d="M152,150 C240,150 240,113 326,113" fill="none" stroke="#e5484d" strokeWidth="1.8" markerEnd="url(#ov-out-0)" strokeLinejoin="round" />
+  <rect x="330" y="154" width="360" height="62" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  <text x="344" y="175" fill="currentColor" fontSize="13" fontWeight="bold">HDMI audio</text>
+  <text x="344" y="192" fill="currentColor" fontSize="11.5">48,000 samples a second, 16-bit words;</text>
+  <text x="344" y="207" fill="currentColor" fontSize="11.5">silenced by NextReg $09 bit 2</text>
+  <path d="M152,150 C240,150 240,185 326,185" fill="none" stroke="#e5484d" strokeWidth="1.8" markerEnd="url(#ov-out-0)" strokeLinejoin="round" />
+  <rect x="330" y="226" width="360" height="62" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  <text x="344" y="247" fill="currentColor" fontSize="13" fontWeight="bold">to the Raspberry Pi</text>
+  <text x="344" y="264" fill="currentColor" fontSize="11.5">over the I2S link (article 6)</text>
+  <path d="M152,150 C240,150 240,257 326,257" fill="none" stroke="#e5484d" strokeWidth="1.8" markerEnd="url(#ov-out-0)" strokeLinejoin="round" />
+</svg>
+{/* /fig:outputs */}
+<figcaption>The outputs. The jack and the speaker turn the sum into a voltage inside the FPGA, with one-bit converters; HDMI sends it as numbers.</figcaption>
+</figure>
+
+- **The audio jack** gets each side through a **one-bit converter**: a single pin of the FPGA switched
+  on and off at 28 MHz, more often "on" the larger the number, and a resistor and a capacitor on the
+  board that smooth the pulses into a voltage. It is the converter the background page calls
+  [delta-sigma](/en/under-the-hood/emulator-internals/computer-sound/#sound-from-a-single-bit).
+- **The internal speaker** gets one mono signal, the left and right sums added together, through one
+  more converter of the same kind. The **Peripheral 3 Setting register, NextReg `$08`**, bit 4 switches
+  it on (and it is on after power-on). With bit 6 of the **Peripheral 2 Setting register, NextReg
+  `$06`**, also set, the speaker plays only the beeper, and EAR and MIC leave the mix: a program can
+  click keys and beep alerts on the speaker without disturbing the music in the headphones.
+- **HDMI audio** sends the sums as numbers, 48,000 samples a second, each a 16-bit word, beside the
+  picture on the HDMI cable. Bit 2 of the **Peripheral 4 Setting register, NextReg `$09`**, silences it.
+- **The Raspberry Pi** receives the sums over the I2S link, when the link is set up to send.
+
+One line goes out separately: **the MIC line**, port `$FE` bit 3 combined with the tape input and the
+Pi's EAR bit, drives the MIC socket, the tape recorder's input. That is how a program saves to tape.
+
+The jack and the speaker have no sample rate: their converters follow the sum as it changes, 28 million
+times a second. Only HDMI samples it, because HDMI carries sound as numbers. Article 7 explains each
+output.
+
+## Part 6: Clocks
+
+Every part of the Next runs from one **master clock of 28 MHz**. Two branches of it time the sound, and
+they behave differently when the CPU's speed changes:
+
+<figure>
+{/* fig:clocks */}
+<svg viewBox="0 0 700 300" role="img" aria-label="The clocks behind the sound. The 28 MHz master clock feeds two separate branches. One divides it by 16 into the 1.75 MHz clock of the AY chips; inside each chip it is divided by 8 again, so the chip's counters step 218,750 times a second, and a tone's pitch is that rate divided by twice its period. The other branch is the CPU clock of 3.5, 7, 14 or 28 MHz, which times the program's loops, and with them the beeper's and the DACs' sound. Separately, HDMI audio is sent as 48,000 samples a second." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
+  <defs>
+    <marker id="ov-clk-0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
+    </marker>
+    <marker id="ov-clk-1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#e8912d" />
+    </marker>
+  </defs>
+  <rect x="10" y="110" width="120" height="52" rx="6" fill="none" stroke="currentColor" strokeWidth="1.8" />
+  <text x="70" y="132" textAnchor="middle" fill="currentColor" fontSize="13" fontWeight="bold">28 MHz</text>
+  <text x="70" y="150" textAnchor="middle" fill="currentColor" fontSize="11.5">master clock</text>
+  <rect x="185" y="30" width="130" height="52" rx="6" fill="none" stroke="#e8912d" strokeWidth="1.8" />
+  <text x="250" y="52" textAnchor="middle" fill="#e8912d" fontSize="13" fontWeight="bold">1.75 MHz</text>
+  <text x="250" y="70" textAnchor="middle" fill="currentColor" fontSize="11.5">AY chips' clock</text>
+  <rect x="370" y="30" width="140" height="52" rx="6" fill="none" stroke="#e8912d" strokeWidth="1.8" />
+  <text x="440" y="52" textAnchor="middle" fill="#e8912d" fontSize="13" fontWeight="bold">218,750 Hz</text>
+  <text x="440" y="70" textAnchor="middle" fill="currentColor" fontSize="11.5">the chip's counters</text>
+  <rect x="565" y="30" width="125" height="52" rx="6" fill="none" stroke="#e8912d" strokeWidth="1.8" />
+  <text x="627.5" y="52" textAnchor="middle" fill="#e8912d" fontSize="13" fontWeight="bold">a tone</text>
+  <text x="627.5" y="70" textAnchor="middle" fill="currentColor" fontSize="11.5">218,750 ÷ (2 × period)</text>
+  <path d="M130,136 L155,136 L155,56 L181,56" fill="none" stroke="#e8912d" strokeWidth="1.8" markerEnd="url(#ov-clk-1)" strokeLinejoin="round" />
+  <text x="158" y="48" fill="#e8912d" fontSize="12">÷ 16</text>
+  <line x1="317" y1="56" x2="366" y2="56" stroke="#e8912d" strokeWidth="1.8" markerEnd="url(#ov-clk-1)" />
+  <text x="341" y="48" textAnchor="middle" fill="#e8912d" fontSize="12">÷ 8</text>
+  <line x1="512" y1="56" x2="561" y2="56" stroke="#e8912d" strokeWidth="1.8" markerEnd="url(#ov-clk-1)" />
+  <rect x="185" y="170" width="130" height="52" rx="6" fill="none" stroke="currentColor" strokeWidth="1.8" />
+  <text x="250" y="192" textAnchor="middle" fill="currentColor" fontSize="13" fontWeight="bold">3.5 / 7 / 14 / 28</text>
+  <text x="250" y="210" textAnchor="middle" fill="currentColor" fontSize="11.5">MHz: the CPU</text>
+  <rect x="370" y="170" width="320" height="52" rx="6" fill="none" stroke="currentColor" strokeWidth="1.8" />
+  <text x="530" y="192" textAnchor="middle" fill="currentColor" fontSize="13" fontWeight="bold">the program's loops</text>
+  <text x="530" y="210" textAnchor="middle" fill="currentColor" fontSize="11.5">time the beeper's edges and the DACs' samples</text>
+  <path d="M130,136 L155,136 L155,196 L181,196" fill="none" stroke="currentColor" strokeWidth="1.8" markerEnd="url(#ov-clk-0)" strokeLinejoin="round" />
+  <line x1="317" y1="196" x2="366" y2="196" stroke="currentColor" strokeWidth="1.8" markerEnd="url(#ov-clk-0)" />
+  <rect x="370" y="245" width="320" height="46" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5" strokeDasharray="5 4" />
+  <text x="530" y="265" textAnchor="middle" fill="currentColor" fontSize="12.5" fontWeight="bold">HDMI audio: 48,000 samples a second</text>
+  <text x="530" y="282" textAnchor="middle" fill="currentColor" fontSize="11.5">how the finished sum is sent, not how it is made</text>
+</svg>
+{/* /fig:clocks */}
+<figcaption>The clocks behind the sound. The AY chips run from a fixed fraction of the master clock; the beeper and the DACs run at whatever speed the program's loops run.</figcaption>
+</figure>
+
+**The AY chips' clock is fixed.** The master clock divided by 16 gives **1.75 MHz**, close to the 1.77 MHz
+of the 128K's AY, and each chip divides that by 8 again: its counters step 218,750 times a second. A tone's
+pitch is that rate divided by twice the channel's period, so period 109 gives 218,750 ÷ 218 = 1,003 Hz,
+and the A of 440 Hz needs a period of 249 (439.3 Hz, as close as a whole number allows). Neither the
+CPU's speed nor anything else a program does changes these clocks, so AY music plays at the same pitch at
+3.5 MHz and at 28 MHz.
+
+**The beeper and the DACs follow the CPU.** They change only when an instruction writes them, so their
+timing is the program's: a loop that flips port `$FE` bit 4 every 1,760 T-states makes 994 Hz at
+3.5 MHz and twice that, 1,989 Hz, at 7 MHz. The Next's CPU can run at 3.5, 7, 14 or 28 MHz
+(the **CPU Speed register, NextReg `$07`**), so a beeper tune written for the 48K plays an octave higher
+at 7 MHz, and a sample player plays its samples faster. Contention, which stops the CPU at certain
+moments when it touches the screen memory at 3.5 MHz (see
+[ZX Spectrum: How the Screen Is Drawn](/en/under-the-hood/emulator-internals/spectrum-display/)), also
+stretches a loop that runs in that memory, and its note comes out lower. A DMA transfer timed by its own prescaler, or the Copper, does not depend on the CPU's speed
+(article 5).
+
+A third rate, **48,000 samples a second**, belongs to HDMI only: it is how the finished sum is sent over
+the cable, not how any sound is made. The background page's part
+[Fast enough, or it sounds wrong](/en/under-the-hood/emulator-internals/computer-sound/#fast-enough-or-it-sounds-wrong)
+explains why that rate is enough.
+
+## Part 7: The switches
+
+Five registers decide which parts of the sound system are on and how they behave. An old 48K or 128K
+program never writes them; a Next program, or NextZXOS, sets them up. The audio bits, coloured by the
+source each one belongs to:
+
+<figure>
+{/* fig:registers */}
+<svg viewBox="0 0 700 350" role="img" aria-label="Five registers as strips of eight bits, bit 7 on the left, each audio bit coloured by the source it controls and the others grey. NextReg $06: bit 6 sends the beeper only to the internal speaker; bits 1 and 0 are the AY chips' mode. NextReg $08: bit 5 ABC or ACB stereo, bit 4 the internal speaker, bit 3 the DACs, bit 1 TurboSound, bit 0 the issue 2 keyboard. NextReg $09: bits 7 to 5 put each AY chip in mono, bit 2 silences HDMI audio. NextReg $84: bit 0 the AY ports, bits 1 to 7 the seven families of DAC ports. NextReg $A2: bits 7 and 6 switch the Pi's audio on, bit 4 sets the direction of its data pins, bits 3 and 2 mute each side, bit 0 sends it to the tape input." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
+  <text x="163" y="22" textAnchor="middle" fill="currentColor" fontSize="11">7</text>
+  <text x="229" y="22" textAnchor="middle" fill="currentColor" fontSize="11">6</text>
+  <text x="295" y="22" textAnchor="middle" fill="currentColor" fontSize="11">5</text>
+  <text x="361" y="22" textAnchor="middle" fill="currentColor" fontSize="11">4</text>
+  <text x="427" y="22" textAnchor="middle" fill="currentColor" fontSize="11">3</text>
+  <text x="493" y="22" textAnchor="middle" fill="currentColor" fontSize="11">2</text>
+  <text x="559" y="22" textAnchor="middle" fill="currentColor" fontSize="11">1</text>
+  <text x="625" y="22" textAnchor="middle" fill="currentColor" fontSize="11">0</text>
+  <text x="10" y="59" fill="currentColor" fontSize="13" fontWeight="bold">NextReg $06</text>
+  <rect x="131" y="34" width="64" height="40" rx="3" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.35" />
+  <text x="163" y="59" textAnchor="middle" fill="currentColor" fontSize="11">hotkeys</text>
+  <rect x="197" y="34" width="64" height="40" rx="3" fill="#3b82f6" fillOpacity="0.12" stroke="#3b82f6" strokeWidth="2" strokeOpacity="1" />
+  <text x="229" y="51" textAnchor="middle" fill="#3b82f6" fontSize="11">beep only</text>
+  <text x="229" y="65" textAnchor="middle" fill="#3b82f6" fontSize="11">speaker</text>
+  <rect x="263" y="34" width="64" height="40" rx="3" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.35" />
+  <text x="295" y="59" textAnchor="middle" fill="currentColor" fontSize="11">hotkey</text>
+  <rect x="329" y="34" width="64" height="40" rx="3" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.35" />
+  <text x="361" y="59" textAnchor="middle" fill="currentColor" fontSize="11">NMI</text>
+  <rect x="395" y="34" width="64" height="40" rx="3" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.35" />
+  <text x="427" y="59" textAnchor="middle" fill="currentColor" fontSize="11">NMI</text>
+  <rect x="461" y="34" width="64" height="40" rx="3" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.35" />
+  <text x="493" y="59" textAnchor="middle" fill="currentColor" fontSize="11">PS/2</text>
+  <rect x="527" y="34" width="130" height="40" rx="3" fill="#e8912d" fillOpacity="0.12" stroke="#e8912d" strokeWidth="2" strokeOpacity="1" />
+  <text x="592" y="51" textAnchor="middle" fill="#e8912d" fontSize="11">chip</text>
+  <text x="592" y="65" textAnchor="middle" fill="#e8912d" fontSize="11">mode</text>
+  <text x="10" y="117" fill="currentColor" fontSize="13" fontWeight="bold">NextReg $08</text>
+  <rect x="131" y="92" width="64" height="40" rx="3" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.35" />
+  <text x="163" y="117" textAnchor="middle" fill="currentColor" fontSize="11">7FFD</text>
+  <rect x="197" y="92" width="64" height="40" rx="3" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.35" />
+  <text x="229" y="117" textAnchor="middle" fill="currentColor" fontSize="11">contend</text>
+  <rect x="263" y="92" width="64" height="40" rx="3" fill="#e8912d" fillOpacity="0.12" stroke="#e8912d" strokeWidth="2" strokeOpacity="1" />
+  <text x="295" y="117" textAnchor="middle" fill="#e8912d" fontSize="11">ACB</text>
+  <rect x="329" y="92" width="64" height="40" rx="3" fill="#e5484d" fillOpacity="0.12" stroke="#e5484d" strokeWidth="2" strokeOpacity="1" />
+  <text x="361" y="109" textAnchor="middle" fill="#e5484d" fontSize="11">speaker</text>
+  <text x="361" y="123" textAnchor="middle" fill="#e5484d" fontSize="11">on</text>
+  <rect x="395" y="92" width="64" height="40" rx="3" fill="#30a46c" fillOpacity="0.12" stroke="#30a46c" strokeWidth="2" strokeOpacity="1" />
+  <text x="427" y="109" textAnchor="middle" fill="#30a46c" fontSize="11">DACs</text>
+  <text x="427" y="123" textAnchor="middle" fill="#30a46c" fontSize="11">on</text>
+  <rect x="461" y="92" width="64" height="40" rx="3" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.35" />
+  <text x="493" y="117" textAnchor="middle" fill="currentColor" fontSize="11">port FF</text>
+  <rect x="527" y="92" width="64" height="40" rx="3" fill="#e8912d" fillOpacity="0.12" stroke="#e8912d" strokeWidth="2" strokeOpacity="1" />
+  <text x="559" y="109" textAnchor="middle" fill="#e8912d" fontSize="11">Turbo-</text>
+  <text x="559" y="123" textAnchor="middle" fill="#e8912d" fontSize="11">Sound</text>
+  <rect x="593" y="92" width="64" height="40" rx="3" fill="#3b82f6" fillOpacity="0.12" stroke="#3b82f6" strokeWidth="2" strokeOpacity="1" />
+  <text x="625" y="117" textAnchor="middle" fill="#3b82f6" fontSize="11">issue 2</text>
+  <text x="10" y="175" fill="currentColor" fontSize="13" fontWeight="bold">NextReg $09</text>
+  <rect x="131" y="150" width="64" height="40" rx="3" fill="#e8912d" fillOpacity="0.12" stroke="#e8912d" strokeWidth="2" strokeOpacity="1" />
+  <text x="163" y="175" textAnchor="middle" fill="#e8912d" fontSize="11">AY 2 mono</text>
+  <rect x="197" y="150" width="64" height="40" rx="3" fill="#e8912d" fillOpacity="0.12" stroke="#e8912d" strokeWidth="2" strokeOpacity="1" />
+  <text x="229" y="175" textAnchor="middle" fill="#e8912d" fontSize="11">AY 1 mono</text>
+  <rect x="263" y="150" width="64" height="40" rx="3" fill="#e8912d" fillOpacity="0.12" stroke="#e8912d" strokeWidth="2" strokeOpacity="1" />
+  <text x="295" y="175" textAnchor="middle" fill="#e8912d" fontSize="11">AY 0 mono</text>
+  <rect x="329" y="150" width="64" height="40" rx="3" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.35" />
+  <text x="361" y="175" textAnchor="middle" fill="currentColor" fontSize="11">sprites</text>
+  <rect x="395" y="150" width="64" height="40" rx="3" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.35" />
+  <text x="427" y="175" textAnchor="middle" fill="currentColor" fontSize="11">divmmc</text>
+  <rect x="461" y="150" width="64" height="40" rx="3" fill="#e5484d" fillOpacity="0.12" stroke="#e5484d" strokeWidth="2" strokeOpacity="1" />
+  <text x="493" y="167" textAnchor="middle" fill="#e5484d" fontSize="11">HDMI</text>
+  <text x="493" y="181" textAnchor="middle" fill="#e5484d" fontSize="11">silent</text>
+  <rect x="527" y="150" width="130" height="40" rx="3" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.35" />
+  <text x="592" y="175" textAnchor="middle" fill="currentColor" fontSize="11">scanlines</text>
+  <text x="10" y="233" fill="currentColor" fontSize="13" fontWeight="bold">NextReg $84</text>
+  <rect x="131" y="208" width="64" height="40" rx="3" fill="#30a46c" fillOpacity="0.12" stroke="#30a46c" strokeWidth="2" strokeOpacity="1" />
+  <text x="163" y="233" textAnchor="middle" fill="#30a46c" fontSize="11">$DF</text>
+  <rect x="197" y="208" width="64" height="40" rx="3" fill="#30a46c" fillOpacity="0.12" stroke="#30a46c" strokeWidth="2" strokeOpacity="1" />
+  <text x="229" y="233" textAnchor="middle" fill="#30a46c" fontSize="11">$B3</text>
+  <rect x="263" y="208" width="64" height="40" rx="3" fill="#30a46c" fillOpacity="0.12" stroke="#30a46c" strokeWidth="2" strokeOpacity="1" />
+  <text x="295" y="233" textAnchor="middle" fill="#30a46c" fontSize="11">$FB</text>
+  <rect x="329" y="208" width="64" height="40" rx="3" fill="#30a46c" fillOpacity="0.12" stroke="#30a46c" strokeWidth="2" strokeOpacity="1" />
+  <text x="361" y="233" textAnchor="middle" fill="#30a46c" fontSize="11">Covox</text>
+  <rect x="395" y="208" width="64" height="40" rx="3" fill="#30a46c" fillOpacity="0.12" stroke="#30a46c" strokeWidth="2" strokeOpacity="1" />
+  <text x="427" y="233" textAnchor="middle" fill="#30a46c" fontSize="11">Profi</text>
+  <rect x="461" y="208" width="64" height="40" rx="3" fill="#30a46c" fillOpacity="0.12" stroke="#30a46c" strokeWidth="2" strokeOpacity="1" />
+  <text x="493" y="233" textAnchor="middle" fill="#30a46c" fontSize="11">SD 2</text>
+  <rect x="527" y="208" width="64" height="40" rx="3" fill="#30a46c" fillOpacity="0.12" stroke="#30a46c" strokeWidth="2" strokeOpacity="1" />
+  <text x="559" y="233" textAnchor="middle" fill="#30a46c" fontSize="11">SD 1</text>
+  <rect x="593" y="208" width="64" height="40" rx="3" fill="#e8912d" fillOpacity="0.12" stroke="#e8912d" strokeWidth="2" strokeOpacity="1" />
+  <text x="625" y="225" textAnchor="middle" fill="#e8912d" fontSize="11">AY</text>
+  <text x="625" y="239" textAnchor="middle" fill="#e8912d" fontSize="11">ports</text>
+  <text x="10" y="291" fill="currentColor" fontSize="13" fontWeight="bold">NextReg $A2</text>
+  <rect x="131" y="266" width="130" height="40" rx="3" fill="#a855f7" fillOpacity="0.12" stroke="#a855f7" strokeWidth="2" strokeOpacity="1" />
+  <text x="196" y="291" textAnchor="middle" fill="#a855f7" fontSize="11">Pi on</text>
+  <rect x="263" y="266" width="64" height="40" rx="3" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.35" />
+  <text x="295" y="291" textAnchor="middle" fill="currentColor" fontSize="11">(0)</text>
+  <rect x="329" y="266" width="64" height="40" rx="3" fill="#a855f7" fillOpacity="0.12" stroke="#a855f7" strokeWidth="2" strokeOpacity="1" />
+  <text x="361" y="291" textAnchor="middle" fill="#a855f7" fontSize="11">pins</text>
+  <rect x="395" y="266" width="64" height="40" rx="3" fill="#a855f7" fillOpacity="0.12" stroke="#a855f7" strokeWidth="2" strokeOpacity="1" />
+  <text x="427" y="291" textAnchor="middle" fill="#a855f7" fontSize="11">mute L</text>
+  <rect x="461" y="266" width="64" height="40" rx="3" fill="#a855f7" fillOpacity="0.12" stroke="#a855f7" strokeWidth="2" strokeOpacity="1" />
+  <text x="493" y="291" textAnchor="middle" fill="#a855f7" fontSize="11">mute R</text>
+  <rect x="527" y="266" width="64" height="40" rx="3" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.35" />
+  <text x="559" y="291" textAnchor="middle" fill="currentColor" fontSize="11">(1)</text>
+  <rect x="593" y="266" width="64" height="40" rx="3" fill="#3b82f6" fillOpacity="0.12" stroke="#3b82f6" strokeWidth="2" strokeOpacity="1" />
+  <text x="625" y="283" textAnchor="middle" fill="#3b82f6" fontSize="11">Pi to</text>
+  <text x="625" y="297" textAnchor="middle" fill="#3b82f6" fontSize="11">EAR</text>
+</svg>
+{/* /fig:registers */}
+<figcaption>The registers that switch the sound, bit 7 on the left. Coloured bits belong to a source (blue the beeper and tape, orange the AY chips, green the DACs, purple the Pi, red the outputs); grey bits do other jobs.</figcaption>
+</figure>
+
+- **The Peripheral 2 Setting register, NextReg `$06`**: bit 6 sends the beeper only to the internal
+  speaker (Part 5). Bits 1–0 are the AY chips' mode: `00` YM2149, `01` AY-3-8910, and `11` holds all
+  three chips silent in reset. The register list also names a mode `10`, but the chips use only bit 0,
+  so `10` behaves as YM2149.
+- **The Peripheral 3 Setting register, NextReg `$08`**: bit 5 chooses how each chip's three channels are
+  spread over the two sides (ABC or ACB), bit 4 switches the internal speaker on, bit 3 the DACs, bit 1
+  TurboSound (with it off, only the selected chip plays, as on a 128K), and bit 0 the issue 2 keyboard,
+  which changes what port `$FE` reads back from the MIC bit.
+- **The Peripheral 4 Setting register, NextReg `$09`**: bits 7–5 put AY chips 2, 1 and 0 in mono, bit 2
+  silences HDMI audio.
+- **NextReg `$84`**, one byte of the four **Internal Port Decoding Enables registers, NextRegs
+  `$82`–`$85`**: bit 0 enables the AY's ports, bits 1–7 the seven families of DAC ports, from Soundrive
+  to Specdrum. Some of those ports collide with other devices (a joystick, the mouse); these bits decide
+  who answers.
+- **The PI I2S Audio Control register, NextReg `$A2`**: bits 7–6 switch the Pi's audio on (left, right
+  or both), bit 4 sets which way the data travels on its two pins, bits 3–2 mute each side, and bit 0
+  sends the Pi's stream to the tape input.
+
+After power-on, the AY chips are in YM mode with TurboSound off, the internal speaker is on, the DACs are
+off and held at `$80`, every port family is enabled, HDMI audio plays and the Pi's audio is off: a
+machine that sounds exactly like a 128K until something asks for more.
+
+## Part 8: The series
+
+| # | Article | What it explains |
+|---|---|---|
+| 1 | The big picture | this article |
+| 2 | The beeper, EAR and MIC | port `$FE`, the tape input, the speaker-only beeper, and music from one bit |
+| 3 | One AY chip | tone counters, noise, the envelope, the volume tables, AY against YM |
+| 4 | TurboSound Next | three chips behind two ports, panning, ABC, ACB and mono |
+| 5 | The 8-bit DACs | the six sound cards on four channels, the port families, feeding samples on time |
+| 6 | Audio from the Raspberry Pi | the I2S link in both directions, and the tape input from the Pi |
+| 7 | The mixer and the outputs | the sum in full, the jack, the speaker and HDMI |
+| 8 | From the machine to your speakers | how an emulator turns all this into 48,000 samples a second |
+
+Article 1 comes first, and article 7 after the source articles, since it adds up their levels. Articles
+2 to 6 can be read in any order. Article 8 is mostly about Klive itself, and comes last.
+
+## Part 9: How Klive does it
+
+Klive's Next core is a C program compiled to WebAssembly, written to behave like the hardware (see
+[The ZX Spectrum Next Core and the FPGA](/en/under-the-hood/emulator-internals/next-core/)). Its sound
+follows the hardware's plan source by source.
+
+### One file per source
+
+Each source is a device of its own that keeps the same state as the hardware: the beeper the EAR and
+MIC bits and the moments they changed, the AY chips their registers and counters, stepped by the
+1.75 MHz clock, the DACs their four channels and the port decoding, the Pi receiver the words latched
+from the link. The Pi itself is not emulated: in its place, a **sample source** (a WAV file or a tone,
+set with the [`pi-audio` command](/en/reference/commands/#pi-audio)) feeds samples into the Next's
+receiving half of the link, frame by frame.
+
+### One stream of samples
+
+The hardware's mixer adds its inputs continuously. Klive adds them only at the moments it needs a
+sample: while a frame runs, every 28,000,000 ÷ 48,000 ≈ 583 master clocks at the usual rate of 48,000
+samples a second, it asks each source for its level at that moment, adds them as the mixer does, and
+stores the result. The frame's samples go to the host's sound card, which plays them while the next
+frame runs. Article 8 follows that path, and what happens to it at a breakpoint.
+
+Klive's sum keeps the hardware's **proportions**, but not its zero:
+
+- The DACs and the Pi are taken about their rest levels (`$80`, 512), so a silent DAC adds 0 rather than
+  1,024.
+- The beeper's EAR and MIC pass through a filter that removes their constant level, as the capacitor
+  after the hardware's converters does.
+- The AY chips stay as they are, 0 upwards.
+- The sum is scaled to a signed 16-bit sample, the form a sound card takes.
+
+You hear the same thing; a waveform drawn from Klive's samples sits at a different level than one
+measured on the hardware, which is why this series' captures are drawn about their middle.
+
+Klive makes **one** stream, the one the audio jack would play. It does not model the outputs separately:
+the internal speaker, HDMI's silence bit and the converters are not emulated, and with NextReg `$06`
+bit 6 set the beeper, which then belongs to the speaker alone, is not heard at all. The tape input's
+sound is not added to the MIC line either.
+
+### Where to read the code
+
+All in `src/emu/machines/zxNext/wasm/zxnext/`:
+
+| What | Where |
+|---|---|
+| The beeper: EAR and MIC, and the moments they changed | `zxnext-beeper.c` |
+| The three AY chips, TurboSound's selection and stereo modes | `zxnext-psg.c` |
+| The four DACs, their port decoding and the NextReg mirrors | `zxnext-dac.c` |
+| The Pi's audio: the receiving half of the I2S link | `zxnext-pi-i2s.c` (the sample source: `src/emu/machines/zxNext/piI2s/`) |
+| The tape's EAR and MIC bits | `zxnext-tape.c` |
+| The sum, its scaling and the sampling | `zxnext-audio-mixer.c` |
+
+## Summary
+
+- The Next keeps the 48K's **beeper** (port `$FE` bit 4, EAR, and bit 3, MIC) and the 128K's **AY chip**,
+  and adds two more AY chips (**TurboSound Next**), **four 8-bit DACs** and the **Raspberry Pi's audio**
+  over an I2S link: four kinds of source.
+- The MIC line also carries the **tape input**, so a loading tape is heard, and drives the MIC socket.
+- Sources are **generators** (the AY chips play by themselves once set up) or **level writers** (the
+  beeper and the DACs need a write for every step). That decides what a sound costs the CPU.
+- One **mixer** adds every source on a **left** and a **right** side: EAR 512, MIC 128, the AY chips up
+  to 2,295, the DACs up to 2,040, the Pi up to 1,023 units. The sum, at most 5,998, fits the 13-bit
+  range of 8,191 without clipping. Silence is 1,536, not zero.
+- The sums leave through the **audio jack** and the **internal speaker** (one-bit converters at 28 MHz)
+  and **HDMI** (48,000 samples a second), and go to the **Pi**.
+- The AY chips run from a fixed **1.75 MHz**; the beeper's and the DACs' timing is the **program's**, so
+  it changes with the CPU's speed.
+- NextRegs **`$06`, `$08`, `$09`, `$84` and `$A2`** switch the parts on and off; after power-on the
+  Next sounds like a 128K.
+- Klive emulates each source in its own file and **adds them at the moments it takes a sample**, with
+  the hardware's proportions, centred and scaled to 16 bits, into one stream.

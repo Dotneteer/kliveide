@@ -13,3 +13,7 @@ published to the site or indexed by search.
   `content/en/under-the-hood/emulator-internals/computer-sound.mdx` in place
   (between its `{/* fig:<name> */}` markers) and prints the numbers its text
   quotes. Edit the script, not the generated SVG.
+- `next-audio/overview-figures.cjs` (helpers in `next-audio/_svg.cjs`) — the
+  figures of `next-audio/overview.mdx`, drawn from the machine captures in
+  `next-audio/captures/`, which `test/zxnext-hw/audio/next-audio-scene.test.ts`
+  writes with `NEXT_AUDIO_SHOTS=docs/authoring/next-audio/captures`.
