@@ -1,0 +1,133 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:Tbda,---
+description: "Switches the text entry mode between Insert mode, in which characters typed are inserted at the cursor position, and Overtype mode, in which characters type over the previous contents of the line."
+---
+
+import { Callout } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/35913739 (version 10) by scripts/import-z88-user-guide.cjs */}
+
+# Editing the Diary - EDIT
+
+<Shot src="z88-user-guide/diary-reference/editing-the-diary-edit/diary-oz-edit.webp" alt="Diary Edit Menu" width={640} />
+
+## Editing within a line
+
+#### Insert/Overtype <Key k="diamond" />V
+
+<Shot src="z88-user-guide/diary-reference/editing-the-diary-edit/diary-date-window.webp" alt="diary date window" width={99} />
+
+Switches the text entry mode between Insert mode, in which characters typed are inserted at the cursor position, and Overtype mode, in which characters type over the previous contents of the line.
+
+The current mode is displayed at the right-hand side of the screen in the <strong>`DIARY DATE`</strong> window.
+
+#### Delete Character <Key k="diamond" />G <Key k="shift" /> <Key k="del" />
+
+Deletes the character at the cursor position. All characters to the right of the cursor will move one position to the left to close up the gap.
+
+#### Delete to End of Line <Key k="diamond" />D
+
+Deletes the text from the cursor position to the end of the line.
+
+#### Delete Word <Key k="diamond" />T
+
+Deletes all characters from the cursor position to the beginning of the next word. If you position the cursor at the beginning of a word before giving this command, it will delete the word.
+
+#### Rubout <Key k="del" />
+
+Deletes to the left. In Insert mode all characters at and to the right of the cursor will move left.
+
+#### Insert Character <Key k="diamond" />U
+
+Inserts a blank space at the cursor position.
+
+#### Swap Case <Key k="diamond" />S
+
+Changes the case of the character at the cursor position and moves the cursor to the next character.
+
+## Editing within a day
+
+#### Delete Line <Key k="diamond" />Y <Key k="diamond" /><Key k="del" />
+
+Deletes the current line. Text on subsequent lines is moved up one line to close up the gap.
+
+#### Join Lines <Key k="diamond" /> EJL
+
+Adds the text on the next line to the end of the text on the current line.
+
+#### Insert Line <Key k="diamond" />N
+
+Inserts a blank line at the cursor position. The text on the current line and all subsequent lines is moved down one line.
+
+#### Split Line <Key k="diamond" />ESL
+
+Splits the current line at the cursor position. All characters at, and to the right of the cursor, will be moved to the next line.
+
+## Miscellaneous
+
+#### Next Option <Key k="diamond" />J
+
+Alternates between the available values of an option.
+
+<Callout type="info">
+
+In previous OZ ROM releases, the <Key k="diamond" />EMF Memory Free command was available. Free memory information is now available in the [Information Page](/en/z88-user-guide/using-the-popdowns/the-index-popdown#systeminformation) in the Index popdown.
+
+</Callout>a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Editing within a line","id":"editing-within-a-line","depth":2},{"value":[["$","$4",".0",{"children":["Insert/Overtype ",["$","kbd",".1",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"V"]}]],"id":"insertovertype-v","depth":4},{"value":[["$","$4",".0",{"children":["Delete Character ",["$","kbd",".1",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"G ",["$","kbd",".3",{"className":"Z88_key__DMNGV","title":"Shift","children":"SHIFT"}]," ",["$","kbd",".5",{"className":"Z88_key__DMNGV","title":"Delete","children":"DEL"}]]}]],"id":"delete-character-g--","depth":4},{"value":[["$","$4",".0",{"children":["Delete to End of Line ",["$","kbd",".1",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"D"]}]],"id":"delete-to-end-of-line-d","depth":4},{"value":[["$","$4",".0",{"children":["Delete Word ",["$","kbd",".1",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"T"]}]],"id":"delete-word-t","depth":4},{"value":[["$","$4",".0",{"children":["Rubout ",["$","kbd",".1",{"className":"Z88_key__DMNGV","title":"Delete","children":"DEL"}]]}]],"id":"rubout-","depth":4},{"value":[["$","$4",".0",{"children":["Insert Character ",["$","kbd",".1",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"U"]}]],"id":"insert-character-u","depth":4},{"value":[["$","$4",".0",{"children":["Swap Case ",["$","kbd",".1",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"S"]}]],"id":"swap-case-s","depth":4},{"value":"Editing within a day","id":"editing-within-a-day","depth":2},{"value":[["$","$4",".0",{"children":["Delete Line ",["$","kbd",".1",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"Y ",["$","kbd",".3",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],["$","kbd",".4",{"className":"Z88_key__DMNGV","title":"Delete","children":"DEL"}]]}]],"id":"delete-line-y-","depth":4},{"value":[["$","$4",".0",{"children":["Join Lines ",["$","kbd",".1",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}]," EJL"]}]],"id":"join-lines--ejl","depth":4},{"value":[["$","$4",".0",{"children":["Insert Line ",["$","kbd",".1",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"N"]}]],"id":"insert-line-n","depth":4},{"value":[["$","$4",".0",{"children":["Split Line ",["$","kbd",".1",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"ESL"]}]],"id":"split-line-esl","depth":4},{"value":"Miscellaneous","id":"miscellaneous","depth":2},{"value":[["$","$4",".0",{"children":["Next Option ",["$","kbd",".1",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"J"]}]],"id":"next-option-j","depth":4}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"Switches the text entry mode between Insert mode, in which characters typed are inserted at the cursor position, and Overtype mode, in which characters type over the previous contents of the line.","title":"Editing the Diary - EDIT","filePath":"content/en/z88-user-guide/diary-reference/editing-the-diary-edit.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"z88-user-guide/diary-reference/editing-the-diary-edit","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Editing the Diary - EDIT - Klive IDE"}],["$","meta","1",{"name":"description","content":"Switches the text entry mode between Insert mode, in which characters typed are inserted at the cursor position, and Overtype mode, in which characters type over the previous contents of the line."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/z88-user-guide/diary-reference/editing-the-diary-edit/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"JRknQ_wk_gMYl0jLYL8vC"}
+20:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+36:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Editing the Diary - EDIT","$undefined"]}],"\n",["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/diary-reference/editing-the-diary-edit/diary-oz-edit.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/diary-reference/editing-the-diary-edit/diary-oz-edit.webp","alt":"Diary Edit Menu","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}],"\n",["$","h2",null,{"id":"editing-within-a-line","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Editing within a line",["$","$L20",null,{"id":"editing-within-a-line"}]]}],"\n",["$","h4",null,{"id":"insertovertype-v","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":[["Insert/Overtype ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"V"],["$","$L20",null,{"id":"insertovertype-v"}]]}],"\n",["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"99px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/diary-reference/editing-the-diary-edit/diary-date-window.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/diary-reference/editing-the-diary-edit/diary-date-window.webp","alt":"diary date window","loading":"lazy","decoding":"async","width":99,"height":64}],[]]}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Switches the text entry mode between Insert mode, in which characters typed are inserted at the cursor position, and Overtype mode, in which characters type over the previous contents of the line."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The current mode is displayed at the right-hand side of the screen in the ",["$","strong",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"DIARY DATE"}]}]," window."]}],"\n",["$","h4",null,{"id":"delete-character-g--","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":[["Delete Character ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"G ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Shift","children":"SHIFT"}]," ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Delete","children":"DEL"}]],["$","$L20",null,{"id":"delete-character-g--"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Deletes the character at the cursor position. All characters to the right of the cursor will move one position to the left to close up the gap."}],"\n",["$","h4",null,{"id":"delete-to-end-of-line-d","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":[["Delete to End of Line ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"D"],["$","$L20",null,{"id":"delete-to-end-of-line-d"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Deletes the text from the cursor position to the end of the line."}],"\n",["$","h4",null,{"id":"delete-word-t","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":[["Delete Word ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"T"],"$L21"]}],"\n","$L22","\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35"]]}]
+15:["$","$L36",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@37"}]}]
+1f:true
+38:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+9:300
+21:["$","$L20",null,{"id":"delete-word-t"}]
+22:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Deletes all characters from the cursor position to the beginning of the next word. If you position the cursor at the beginning of a word before giving this command, it will delete the word."}]
+23:["$","h4",null,{"id":"rubout-","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":[["Rubout ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Delete","children":"DEL"}]],["$","$L20",null,{"id":"rubout-"}]]}]
+24:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Deletes to the left. In Insert mode all characters at and to the right of the cursor will move left."}]
+25:["$","h4",null,{"id":"insert-character-u","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":[["Insert Character ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"U"],["$","$L20",null,{"id":"insert-character-u"}]]}]
+26:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Inserts a blank space at the cursor position."}]
+27:["$","h4",null,{"id":"swap-case-s","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":[["Swap Case ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"S"],["$","$L20",null,{"id":"swap-case-s"}]]}]
+28:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Changes the case of the character at the cursor position and moves the cursor to the next character."}]
+29:["$","h2",null,{"id":"editing-within-a-day","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Editing within a day",["$","$L20",null,{"id":"editing-within-a-day"}]]}]
+2a:["$","h4",null,{"id":"delete-line-y-","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":[["Delete Line ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"Y ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Delete","children":"DEL"}]],["$","$L20",null,{"id":"delete-line-y-"}]]}]
+2b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Deletes the current line. Text on subsequent lines is moved up one line to close up the gap."}]
+2c:["$","h4",null,{"id":"join-lines--ejl","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":[["Join Lines ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}]," EJL"],["$","$L20",null,{"id":"join-lines--ejl"}]]}]
+2d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Adds the text on the next line to the end of the text on the current line."}]
+2e:["$","h4",null,{"id":"insert-line-n","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":[["Insert Line ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"N"],["$","$L20",null,{"id":"insert-line-n"}]]}]
+2f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Inserts a blank line at the cursor position. The text on the current line and all subsequent lines is moved down one line."}]
+30:["$","h4",null,{"id":"split-line-esl","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":[["Split Line ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"ESL"],["$","$L20",null,{"id":"split-line-esl"}]]}]
+31:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Splits the current line at the cursor position. All characters at, and to the right of the cursor, will be moved to the next line."}]
+32:["$","h2",null,{"id":"miscellaneous","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Miscellaneous",["$","$L20",null,{"id":"miscellaneous"}]]}]
+33:["$","h4",null,{"id":"next-option-j","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":[["Next Option ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"J"],["$","$L20",null,{"id":"next-option-j"}]]}]
+34:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Alternates between the available values of an option."}]
+35:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":["$","svg",null,{"viewBox":"0 0 16 16","fill":"currentColor","height":".8em","className":"x:mt-[.3em]","children":["$","path",null,{"d":"M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"}]}]}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["In previous OZ ROM releases, the ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"EMF Memory Free command was available. Free memory information is now available in the ",["$","$L38",null,{"href":"/en/z88-user-guide/using-the-popdowns/the-index-popdown#systeminformation","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Information Page"}]," in the Index popdown."]}]}]]}]
+37:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

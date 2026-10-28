@@ -1,0 +1,963 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T5468,---
+description: "You have fourteen commands. They are selected by using"
+---
+
+import { Callout, Table } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/63701171 (version 8) by scripts/import-z88-user-guide.cjs */}
+
+# Section Eleven - Flashstore reference
+
+## Commands [#commands]
+
+<Shot src="z88-user-guide/flashstore-reference/oz45-fs-menu.webp" alt="Menu" width={640} />
+
+You have fourteen commands. They are selected by using
+
+- the <Key k="menu" /> using cursor keys and the <Key k="enter" /> key
+- or using the <Key k="diamond" /> key command sequence (useful for .cli files)
+- or use the COMMAND window - seven quick access useful commands are here using cursor keys and the <Key k="enter" /> key.
+- There is a 'special case' command View File which is only available when in the FILE AREA window - see above.
+
+Three of the commands - are directly accessible from the FILE AREA window. These commands are displayed in the INFORMATION window to remind you what they are.
+
+<Table>
+<thead>
+<Table.Tr>
+<Table.Th colSpan={3}><Key k="diamond" /> KEYS</Table.Th>
+<Table.Th>DESCRIPTION</Table.Th>
+<Table.Th>FILE AREA COMMANDS<br />(individual files)</Table.Th>
+</Table.Tr>
+</thead>
+<tbody>
+<Table.Tr>
+<Table.Td><a id="menu" /></Table.Td>
+<Table.Td><Key k="diamond" />CE</Table.Td>
+<Table.Td><Key k="diamond" />CF</Table.Td>
+<Table.Td>[Catalogue Card Files](#catalogue_card_files)</Table.Td>
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td><Key k="diamond" />SC</Table.Td>
+<Table.Td />
+<Table.Td>[Select Card](#select_card)</Table.Td>
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td><Key k="diamond" />FS</Table.Td>
+<Table.Td />
+<Table.Td>[Save files to Card](#save_files_to_card)</Table.Td>
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td><Key k="diamond" />FL</Table.Td>
+<Table.Td />
+<Table.Td>[Fetch file from Card](#fetch_file_from_card)</Table.Td>
+<Table.Td><Key k="enter" />or [F](#fetch_file)</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td><Key k="diamond" />BF</Table.Td>
+<Table.Td />
+<Table.Td>[Backup files from RAM](#backup_files_from_ram)</Table.Td>
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td><Key k="diamond" />FC</Table.Td>
+<Table.Td />
+<Table.Td>[Copy all files to Card](#copy_all_files_to_card)</Table.Td>
+<Table.Td>[C](#copy_file)</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td><Key k="diamond" />RF</Table.Td>
+<Table.Td />
+<Table.Td>[Restore files to RAM](#restore_files_to_ram)</Table.Td>
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td><Key k="diamond" />SV</Table.Td>
+<Table.Td />
+<Table.Td>[Select RAM Device](#select_ram_device) (Default RAM)</Table.Td>
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td><Key k="diamond" />TFV</Table.Td>
+<Table.Td />
+<Table.Td>[Toggle File View](#toggle_file_view)</Table.Td>
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td />
+<Table.Td />
+<Table.Td>[View File](#view_file)</Table.Td>
+<Table.Td>V</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td><Key k="diamond" />ER</Table.Td>
+<Table.Td><Key k="diamond" />FE</Table.Td>
+<Table.Td>[Erase file from Card](#erase_file_from_card)</Table.Td>
+<Table.Td><Key k="del" />or [D](#delete_file)</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td><Key k="diamond" />FFA</Table.Td>
+<Table.Td />
+<Table.Td>[Format File Area](#format_file_area)</Table.Td>
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td><Key k="esc" /></Table.Td>
+<Table.Td />
+<Table.Td>[Quits this application](#quit)</Table.Td>
+<Table.Td />
+</Table.Tr>
+</tbody>
+</Table>
+
+<Callout type="warning">
+
+**Note Battery LOW**
+
+If the Z88's battery is low ("BATT LOW" displayed in right hand side of the Z88 screen), you might still be able to save files, but the result may be unreliable. SAVING FILES OR FORMATTING A FLASH CARD WITH A BATTERY LOW CONDITION IS NOT RECOMMENDED.
+
+Before formatting make sure you have saved and have a copy of the files supplied! (See Format) After formatting, you will have the unused space for saving your files.
+
+If the card you have selected does not support any of the commands due to slot position or type, that command will be greyed out.
+
+The <Key k="esc" /> key can interrupt a command at any time (when user input is required).
+
+</Callout>
+
+#### Select RAM Device (Default RAM) [#select_ram_device]
+
+Changes the default RAM device for this session.
+
+FlashStore by default uses the RAM device that is the Default device set in the Panel <Key k="square" />S. This can be changed for this session only, using this command. Instructions on changing the device are given on the screen. All commands that use the RAM will default to the value set here.
+
+#### Toggle File View [#toggle_file_view]
+
+Changes between browsing only saved files or browsing all files (both saved and marked as deleted). The top banner displays which view is being shown.
+
+Normally the FILE AREA window displays saved files only. By using the Toggle File View marked deleted files are displayed, allowing these to be fetched with the cursor.
+
+There are 2 views of the FILE AREA. These are:-
+
+- Cursor selects only saved files and
+
+<Shot src="z88-user-guide/flashstore-reference/oz45-fs-view-2-file-del.webp" alt="2 files deleted" width={640} />
+
+- Cursor selects saved & deleted files
+
+<Shot src="z88-user-guide/flashstore-reference/oz45-fs-view-toggle.webp" alt="Toggle display" width={640} />
+
+Looking at these displays, the top display shows the saved files but when the file view is toggled, the deleted files appear in small text with the D character in grey.
+
+<Shot src="z88-user-guide/flashstore-reference/oz45-fs-view-curs-over-del-file.webp" alt="Cursor over deleted file" width={640} />
+
+This mode allows the cursor to be placed over the file name so the following commands may be selected.
+
+| COMMAND | KEY |
+| --- | --- |
+| [Fetch File](#fetch_file_from_card) | <Key k="enter" /> |
+| [View File](#view_file) | **V** |
+| [Delete File](#erase_file_from_card) | <Key k="del" /> |
+| [Copy to Card](#copy_file) | **C** |
+
+<Callout type="error">
+
+**Deleting a Deleted File**
+
+A file can only be 'marked deleted' once. You can only 'un-mark delete' it using Fetch and the save it again to the Flash Card.Format is necessary to reclaim the space it is using back again.
+
+</Callout>
+
+#### Catalogue Card Files [#catalogue_card_files]
+
+Lists filenames on file card area to a PipeDream file.
+
+This command creates a file (default name filearea.pdd) listing the filenames and size. Loading this file into PipeDream allows it to be viewed or printed. Depending on which File Area view is selected, it will either print saved files or saved and deleted files.
+
+#### Select Card [#select_card]
+
+Selects which file card to use when you have more than one.
+
+<Shot src="z88-user-guide/external/zfs-operation-and-commands/flashstore-select-card.webp" alt="flashstore select card" width={640} />
+
+This allows multiple Flash cards and EPROMs to be read using the same FlashStore application. Highlight the Slot number (0, 1, 2 or 3) with the cursor that you wish to use. You may also press digits '0', '1', '2' or '3' to select the actual slot. The selected device will be displayed at the top of the right-hand window with the file information with current information of file data and space left on the card.
+
+The padlock indicates a read-only device (like an EPROM or an INTEL flash card not in slot 3). 'AMD' or 'INTEL' labels are displayed on top line of each visual card for identified flash chip.
+
+#### Save files to Card [#save_files_to_card]
+
+Saves files from the RAM device to the file card area (both Flash and Eprom cards).
+
+```text
+Wildcards are allowed,
+Filename: :RAM.1
+```
+
+You simply have to enter the filename. Always specify the device. You are allowed to use wildcards. For example, if you want to save all the files including sub-directories, in RAM.1, type :RAM.1//\*.
+
+When files are saved, the file size is shown together with the "header," the amount of space needed for the filename to be stored on the Flash File card. The program checks the data being saved is correct. In the unlikely event of an error, a message will be displayed and the file will be saved again. When the 'no room' message is displayed, the last filename that was trying to be saved can be viewed after pressing the <Key k="esc" /> key.
+
+If the file does NOT save, this is usually because the filename has been mis-spelt or even that it does not exist.
+
+<Callout type="warning">
+
+Normally the display stays on when saving files, but if the file area is on the same device as OZ, the display goes BLANK.
+
+This is quite normal, just wait, the display will return after the file has been saved.
+
+</Callout>
+
+#### Fetch file from Card [#fetch_file_from_card]
+
+Fetches a file from the file card area to the RAM device.
+
+```text
+Enter exact filename (no wildcard).
+Filename:
+```
+
+You have to enter the exact filename, preceded with the slash (/).<br />Wildcards are not allowed.
+
+```text
+Fetch as : /
+```
+
+\[The slash is already there\]
+
+```text
+Overwrite existing file : Yes
+```
+
+\[Yes overwrites, No doesn't\]
+
+```text
+Fetching... Done.
+```
+
+\[The file has been fetched\]
+
+```text
+Completed
+```
+
+```text
+[The Fetch command is finished]
+Press ESC to Resume [ESC returns to Main Menu]
+```
+
+Don't forget you can use the point and shoot option in the FILE AREA window.
+
+#### Copy all files to Card [#copy_all_files_to_card]
+
+<Shot src="z88-user-guide/external/zfs-operation-and-commands/flash-ram-flash.webp" alt="Two Flash Cards" width={500} />
+
+Copy saved files in current file card area to another flash card in a different slot.
+
+<Callout type="info">
+
+**Really useful Command**
+
+Many users overlook this inconspicuous command because they fail to grasp what it really means.
+
+When a flash card has a large number of deleted files, these files take up space. The normal method of getting this space back is to save the files to RAM, Format the Flash card and then save them back onto the Flash card agaon.
+
+With this command, you can save all the files directly to another Flash card (which can already be Formatted) thus saving the need to go through the RAM card.
+
+</Callout>
+
+This command is used when you wish to copy all the files from the current file area, to either an EPROM or flash card, to another flash card without having to load the files into RAM. Using two flash cards you can reclaim the deleted file area from one card by just copying all the files to the other flash card.
+
+Individual files may be copied by using the Copy command whilst in the FILE AREA window.
+
+If you have more than two flash cards to copy to, you will be prompted for its slot number.
+
+#### Copy File [#copy_file]
+
+Pressing the C key will copy the singe selected file to another Flash card.
+
+#### Backup files from RAM [#backup_files_from_ram]
+
+Saves all the files from the RAM device to the file card area.
+
+This backs up all the files (until the flash card is full) in your current RAM device. Instructions on changing the device are given on the screen.
+
+#### Restore files to RAM [#restore_files_to_ram]
+
+Fetches all the files from the file card area to the RAM device.
+
+All files (including sub-directories) on the Flash card are fetched using the sub-menu commands. You might choose to restore all files without checking for existing files. Directories are created automatically in your selected RAM device.
+
+```text
+Enter Device (or path),
+Device :RAM.1
+```
+
+\[Change RAM device and/or path\]
+
+```text
+Overwrite existing RAM files? No
+```
+
+\[Will prompt user to overwrite file\]
+
+```text
+Fetching file to :RAM.1/filename
+Overwrite existing file : Yes
+```
+
+\[Yes overwrites, No doesn't\]
+
+```text
+Fetching... Done.
+```
+
+```text
+[The file has been fetched]
+```
+
+```text
+Completed
+```
+
+\[The Restore command is finished\]
+
+```text
+Press SPACE to Resume
+```
+
+\[SPACE returns to Main Menu\]
+
+#### Erase file from Card [#erase_file_from_card]
+
+Marks a file in the file card area as deleted.
+
+Although files cannot be deleted from the flash card to gain space, this command allows a single file to be marked as deleted. This is useful for getting rid of those obsolete files that do not get overwritten.
+
+Don't forget you can use the point and shoot option in the FILE AREA window.
+
+#### Format File Area [#format_file_area]
+
+Formats and erases the complete file card area.
+
+This erases the File Area of the Flash card and formats it. If you have two (or more) flash cards that can be formatted you will be invited to choose which one you want to format..
+
+When the command is executed, it says:
+
+```text
+CAUTION! All data will be lost.
+Are you really sure? No
+```
+
+\[Yes formats, No returns Main Menu\]
+
+#### Fetch File [#fetch_file]
+
+pressing either
+
+the <Key k="enter" /> or F key will fetch that file to RAM
+
+#### View File [#view_file]
+
+To use this command move the cursor over the file name to be viewed
+
+<Shot src="z88-user-guide/flashstore-reference/oz45-fs-view-whatsnew.webp" alt="View Whats New" width={640} />
+
+Press V to view the file
+
+<Shot src="z88-user-guide/filer-reference/oz45-filer-vf-fileview.webp" alt="viewed file" width={640} />
+
+CRC-32
+
+The [CRC-32](http://en.wikipedia.org/wiki/Cyclic_redundancy_check) value of the file is also displayed.
+
+<Callout type="info">
+
+CRC-32 is the checksum of the file. It is used by several applications on the Z88 (Eazylink2, FlashStore, ROMupdate) to ensure file integrity.
+
+</Callout>
+
+#### Delete File [#delete_file]
+
+pressing either the <Key k="del" /> or D key will mark the file deleted
+
+#### Quit [#quit]
+
+<Key k="esc" /> key quits the application
+
+## Using the Filer, FlashStore & EP-Fetch2 with FLASH cards & EPROMs [#using_the_filer]
+
+These applications are very useful. Here is a summary of what they can do.
+
+<Table>
+<thead>
+<Table.Tr>
+<Table.Th />
+<Table.Th>
+
+```text
+Filer
+```
+
+</Table.Th>
+<Table.Th>
+
+```text
+Filer OZ 4.5
+```
+
+</Table.Th>
+<Table.Th>
+
+```text
+Flashstore
+```
+
+</Table.Th>
+<Table.Th>
+
+```text
+EP-Fetch2
+```
+
+</Table.Th>
+</Table.Tr>
+</thead>
+<tbody>
+<Table.Tr>
+<Table.Td>
+
+```text
+Save a File to an EPROM card
+```
+
+</Table.Td>
+<Table.Td>✓</Table.Td>
+<Table.Td>✓</Table.Td>
+<Table.Td>✓</Table.Td>
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+Save a File to a FLASH card
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td>✓</Table.Td>
+<Table.Td>✓</Table.Td>
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+Save all Files to an EPROM card
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td>✓</Table.Td>
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+Save all Files to a FLASH card
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td>BACKUP</Table.Td>
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Th />
+<Table.Th />
+<Table.Th />
+<Table.Th />
+<Table.Th />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+Copy all or single Files from 
+a FLASH card to a FLASH card 
+an EPROM card to a FLASH card
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td>✓</Table.Td>
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Th />
+<Table.Th />
+<Table.Th />
+<Table.Th />
+<Table.Th />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Fetch a File from an EPROM card</Table.Td>
+<Table.Td>✓</Table.Td>
+<Table.Td>✓</Table.Td>
+<Table.Td>✓</Table.Td>
+<Table.Td>✓</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Fetch a File from a FLASH card</Table.Td>
+<Table.Td>✓</Table.Td>
+<Table.Td>✓</Table.Td>
+<Table.Td>✓</Table.Td>
+<Table.Td>✓</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Th />
+<Table.Th />
+<Table.Th />
+<Table.Th />
+<Table.Th />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+Fetch all Files from an EPROM card
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td>
+
+```text
+RESTORE
+```
+
+</Table.Td>
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+Fetch all Files from a FLASH card
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td>
+
+```text
+RESTORE
+```
+
+</Table.Td>
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Th />
+<Table.Th />
+<Table.Th />
+<Table.Th />
+<Table.Th />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+Fetch deleted Files from EPROM card
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td>✓</Table.Td>
+<Table.Td>✓</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+Fetch deleted Files from FLASH card
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td>✓</Table.Td>
+<Table.Td>✓</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Th />
+<Table.Th />
+<Table.Th />
+<Table.Th />
+<Table.Th />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+Format File area from EPROM card
+```
+
+</Table.Td>
+<Table.Td colSpan={4}>
+
+```text
+[ERASE WITH THE EPROM ERASER]
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+Format File area from FLASH card
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td>✓</Table.Td>
+<Table.Td />
+</Table.Tr>
+</tbody>
+</Table>
+
+### Fetching all Files [#fetching_all_files]
+
+Don't forget the RESTORE function. Sometimes it is easier to fetch all the files and delete a few unwanted files afterwards.
+
+Erasing all files in the RAM card before Restoring
+
+If you are using Directories and you want to erase the complete RAM try using the wildcard //\* in the ERASE command in the Filer. It removes both files and directories.
+
+### Restoring or Saving Files to base directories [#restoring_or_saving_files]
+
+Restore is usually used to restore a complete Device in the root directory of the RAM. You can also add a Directory to restore the files as well. This could be used where you wish to compare files from two Flash Cards provided you have enough space.
+
+### Using two Flash cards [#using_two_flash_cards]
+
+Only one copy of Flashstore is required despite the number of flash cards used. For example, if you have the standard OZ 2.2 version running in slot 0, you could have your Applications (including FlashStore) in slot 2 and read any of your "master" files from there, whilst using another Flash card in slot 3 for current files.
+
+<Shot src="z88-user-guide/external/zfs-operation-and-commands/flash-ram-flash.webp" alt="Two Flash Cards" width={500} />
+
+When running OZ in slot 1and RAM in slot 2 you still have slot 3 to use the additional flash card to do what is described.
+
+To use two Flash cards first prepare the Flash card which you want to use in slot 2, with your master files. This is done by using it in slot 3 to save your files first. You may elect to ZIP these files up beforehand (to save space).
+
+When moving the Flash card from Slot 3 to 2, follow the following rules.
+
+## Deleting Files [#deleting_files]
+
+When files in RAM cards are deleted, the space is returned to OZ. That space may be used by other files.
+
+This is not true in Flash or EPROM cards. When a file is deleted, it is marked individually by writing a bit in the file name. This marks it as a deleted file. Files have not been removed, they are still there, taking up the space they used before. Lets delete some files to see what happens.
+
+<Shot src="z88-user-guide/flashstore-reference/oz45-fs-main.webp" alt="Main display" width={640} />
+
+<Callout type="warning">
+
+On the display above in the INFORMATION Window, (the one on the right) <br />the graphics bar is either solid (for saved files) of clear (empty space).
+
+the last 2 lines state<br />7 FILES SAVED<br />0 FILES DELETED
+
+</Callout>
+
+Move the cursor over the file to be deleted.
+
+<Shot src="z88-user-guide/flashstore-reference/oz45-fs-view-del-whatsnew.webp" alt="Delete whats new" width={640} />
+
+Notice that the INFORMATION Window has now changed, showing the 4 commands that can be used here. One of them is <Key k="del" />, use that now.
+
+<Shot src="z88-user-guide/flashstore-reference/oz45-fs-view-del-whatsnew-n.webp" alt="oz45 fs view del whatsnew n" width={640} />
+
+The 'fail-safe' window is displayed. Select Y, then use the <Key k="enter" /> key.
+
+<Shot src="z88-user-guide/flashstore-reference/oz45-fs-view-del-whatsnew-y.webp" alt="oz45 fs view del whatsnew y" width={640} />
+
+Too late to change your mind now, press <Key k="space" /> or <Key k="enter" /> to resume.
+
+<Shot src="z88-user-guide/flashstore-reference/oz45-fs-view-del-next-file.webp" alt="Delete next file" width={640} />
+
+Delete the next file with the <Key k="del" /> key. Follow the instructions,
+
+<Shot src="z88-user-guide/flashstore-reference/oz45-fs-view-del-2nd-file.webp" alt="2nd file deleted" width={640} />
+
+Move the cursor to the left with the <Key k="left" /> key.
+
+<Shot src="z88-user-guide/flashstore-reference/oz45-fs-view-2-file-del.webp" alt="2 files deleted" width={640} />
+
+This now shows the INFORMATION Window again.
+
+<Callout type="warning">
+
+On the display above in the INFORMATION Window, (the one on the right) <br />the graphics bar is either grey (for deleted files), solid (for saved files) or clear (for free space).
+
+the last 2 lines state
+
+5 FILES SAVED<br />2 FILES DELETED
+
+</Callout>
+
+Toggling the display shows the deleted files.
+
+<Shot src="z88-user-guide/flashstore-reference/oz45-fs-view-toggle.webp" alt="Toggle display" width={640} />
+
+Moving the cursor over a deleted file
+
+<Shot src="z88-user-guide/flashstore-reference/oz45-fs-view-curs-over-del-file.webp" alt="Cursor over deleted file" width={640} />
+
+This mode allows the cursor to be placed over the file name so the following commands may be selected.
+
+| COMMAND | KEY |
+| --- | --- |
+| [Fetch File](#fetch_file_from_card) | <Key k="enter" /> |
+| [View File](#view_file) | **V** |
+| [Delete File](#erase_file_from_card) | <Key k="del" /> |
+| [Copy to Card](#copy_file) | **C** |
+
+<Callout type="error">
+
+**Deleting a Deleted File**
+
+A file can only be deleted once. You can only un-delete it using Fetch and the save it again to the Flash Card.
+
+</Callout>a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Commands","id":"commands","depth":2},{"value":"Select RAM Device (Default RAM)","id":"select_ram_device","depth":4},{"value":"Toggle File View","id":"toggle_file_view","depth":4},{"value":"Catalogue Card Files","id":"catalogue_card_files","depth":4},{"value":"Select Card","id":"select_card","depth":4},{"value":"Save files to Card","id":"save_files_to_card","depth":4},{"value":"Fetch file from Card","id":"fetch_file_from_card","depth":4},{"value":"Copy all files to Card","id":"copy_all_files_to_card","depth":4},{"value":"Copy File","id":"copy_file","depth":4},{"value":"Backup files from RAM","id":"backup_files_from_ram","depth":4},{"value":"Restore files to RAM","id":"restore_files_to_ram","depth":4},{"value":"Erase file from Card","id":"erase_file_from_card","depth":4},{"value":"Format File Area","id":"format_file_area","depth":4},{"value":"Fetch File","id":"fetch_file","depth":4},{"value":"View File","id":"view_file","depth":4},{"value":"Delete File","id":"delete_file","depth":4},{"value":"Quit","id":"quit","depth":4},{"value":"Using the Filer, FlashStore & EP-Fetch2 with FLASH cards & EPROMs","id":"using_the_filer","depth":2},{"value":"Fetching all Files","id":"fetching_all_files","depth":3},{"value":"Restoring or Saving Files to base directories","id":"restoring_or_saving_files","depth":3},{"value":"Using two Flash cards","id":"using_two_flash_cards","depth":3},{"value":"Deleting Files","id":"deleting_files","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"You have fourteen commands. They are selected by using","title":"Section Eleven - Flashstore reference","filePath":"content/en/z88-user-guide/flashstore-reference.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"z88-user-guide/flashstore-reference","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Section Eleven - Flashstore reference - Klive IDE"}],["$","meta","1",{"name":"description","content":"You have fourteen commands. They are selected by using"}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/z88-user-guide/flashstore-reference/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"JRknQ_wk_gMYl0jLYL8vC"}
+20:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+b8:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Section Eleven - Flashstore reference","$undefined"]}],"\n",["$","h2",null,{"id":"commands","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Commands",["$","$L20",null,{"id":"commands"}]]}],"\n",["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/flashstore-reference/oz45-fs-menu.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/flashstore-reference/oz45-fs-menu.webp","alt":"Menu","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You have fourteen commands. They are selected by using"}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["the ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Menu","children":"MENU"}]," using cursor keys and the ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]," key"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["or using the ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}]," key command sequence (useful for .cli files)"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["or use the COMMAND window - seven quick access useful commands are here using cursor keys and the ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]," key."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"There is a ‘special case’ command View File which is only available when in the FILE AREA window - see above."}],"\n"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Three of the commands - are directly accessible from the FILE AREA window. These commands are displayed in the INFORMATION window to remind you what they are."}],"\n",["$","table",null,{"children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"colSpan":3,"children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}]," KEYS"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"DESCRIPTION","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":["FILE AREA COMMANDS",["$","br",null,{}],"(individual files)"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":["$","a",null,{"id":"menu"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"CE"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"CF"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","a",null,{"href":"#catalogue_card_files","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Catalogue Card Files"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],"$L21"],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],"$L22","$L23","$L24","$L25","$L26","$L27","$L28","$L29","$L2a","$L2b","$L2c","$L2d"]}]],"className":"x:block x:overflow-x-auto"}],"\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41","\n","$L42","\n","$L43","\n","$L44","\n","$L45","\n","$L46","\n","$L47","\n","$L48","\n","$L49","\n","$L4a","\n","$L4b","\n","$L4c","\n","$L4d","\n","$L4e","\n","$L4f","\n","$L50","\n","$L51","\n","$L52","\n","$L53","\n","$L54","\n","$L55","\n","$L56","\n","$L57","\n","$L58","\n","$L59","\n","$L5a","\n","$L5b","\n","$L5c","\n","$L5d","\n","$L5e","\n","$L5f","\n","$L60","\n","$L61","\n","$L62","\n","$L63","\n","$L64","\n","$L65","\n","$L66","\n","$L67","\n","$L68","\n","$L69","\n","$L6a","\n","$L6b","\n","$L6c","\n","$L6d","\n","$L6e","\n","$L6f","\n","$L70","\n","$L71","\n","$L72","\n","$L73","\n","$L74","\n","$L75","\n","$L76","\n","$L77","\n","$L78","\n","$L79","\n","$L7a","\n","$L7b","\n","$L7c","\n","$L7d","\n","$L7e","\n","$L7f","\n","$L80","\n","$L81","\n","$L82","\n","$L83","\n","$L84","\n","$L85","\n","$L86","\n","$L87","\n","$L88","\n","$L89","\n","$L8a","\n","$L8b","\n","$L8c","\n","$L8d","\n","$L8e","\n","$L8f","\n","$L90","\n","$L91","\n","$L92","\n","$L93","\n","$L94","\n","$L95","\n","$L96","\n","$L97","\n","$L98","\n","$L99","\n","$L9a","\n","$L9b","\n","$L9c","\n","$L9d","\n","$L9e","\n","$L9f","\n","$La0","\n","$La1","\n","$La2","\n","$La3","\n","$La4","\n","$La5","\n","$La6","\n","$La7","\n","$La8","\n","$La9","\n","$Laa","\n","$Lab","\n","$Lac","\n","$Lad","\n","$Lae","\n","$Laf","\n","$Lb0","\n","$Lb1","\n","$Lb2","\n","$Lb3","\n","$Lb4","\n","$Lb5","\n","$Lb6","\n","$Lb7"]]}]
+15:["$","$Lb8",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@b9"}]}]
+1f:true
+ba:"ToggleWordWrapButton"
+bb:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$ba"]
+bc:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+9:300
+21:["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
+22:["$","tr",null,{"children":[["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"SC"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","a",null,{"href":"#select_card","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Select Card"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+23:["$","tr",null,{"children":[["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"FS"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","a",null,{"href":"#save_files_to_card","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Save files to Card"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+24:["$","tr",null,{"children":[["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"FL"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","a",null,{"href":"#fetch_file_from_card","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Fetch file from Card"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}],"or ",["$","a",null,{"href":"#fetch_file","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"F"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+25:["$","tr",null,{"children":[["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"BF"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","a",null,{"href":"#backup_files_from_ram","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Backup files from RAM"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+26:["$","tr",null,{"children":[["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"FC"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","a",null,{"href":"#copy_all_files_to_card","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Copy all files to Card"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","a",null,{"href":"#copy_file","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"C"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+27:["$","tr",null,{"children":[["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"RF"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","a",null,{"href":"#restore_files_to_ram","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Restore files to RAM"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+28:["$","tr",null,{"children":[["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"SV"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","a",null,{"href":"#select_ram_device","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Select RAM Device"}]," (Default RAM)"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+29:["$","tr",null,{"children":[["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"TFV"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","a",null,{"href":"#toggle_file_view","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Toggle File View"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+2a:["$","tr",null,{"children":[["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","a",null,{"href":"#view_file","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"View File"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"V","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+2b:["$","tr",null,{"children":[["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"ER"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"FE"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","a",null,{"href":"#erase_file_from_card","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Erase file from Card"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Delete","children":"DEL"}],"or ",["$","a",null,{"href":"#delete_file","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"D"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+2c:["$","tr",null,{"children":[["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"FFA"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","a",null,{"href":"#format_file_area","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Format File Area"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+2d:["$","tr",null,{"children":[["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Escape","children":"ESC"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","a",null,{"href":"#quit","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Quits this application"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+2e:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-yellow-50 x:dark:bg-yellow-700/30 x:text-yellow-700 x:dark:text-yellow-500 x:border-yellow-700","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":["$","svg",null,{"viewBox":"0 0 16 16","fill":"currentColor","height":".8em","className":"x:mt-[.3em]","children":["$","path",null,{"d":"M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575Zm1.763.707a.25.25 0 0 0-.44 0L1.698 13.132a.25.25 0 0 0 .22.368h12.164a.25.25 0 0 0 .22-.368Zm.53 3.996v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"}]}]}],["$","div",null,{"className":"x:w-full x:min-w-0","children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Note Battery LOW"}]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If the Z88’s battery is low (“BATT LOW” displayed in right hand side of the Z88 screen), you might still be able to save files, but the result may be unreliable. SAVING FILES OR FORMATTING A FLASH CARD WITH A BATTERY LOW CONDITION IS NOT RECOMMENDED."}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Before formatting make sure you have saved and have a copy of the files supplied! (See Format) After formatting, you will have the unused space for saving your files."}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If the card you have selected does not support any of the commands due to slot position or type, that command will be greyed out."}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Escape","children":"ESC"}]," key can interrupt a command at any time (when user input is required)."]}]]}]]}]
+2f:["$","h4",null,{"id":"select_ram_device","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":["Select RAM Device (Default RAM)",["$","$L20",null,{"id":"select_ram_device"}]]}]
+30:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Changes the default RAM device for this session."}]
+31:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["FlashStore by default uses the RAM device that is the Default device set in the Panel ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],"S. This can be changed for this session only, using this command. Instructions on changing the device are given on the screen. All commands that use the RAM will default to the value set here."]}]
+32:["$","h4",null,{"id":"toggle_file_view","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":["Toggle File View",["$","$L20",null,{"id":"toggle_file_view"}]]}]
+33:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Changes between browsing only saved files or browsing all files (both saved and marked as deleted). The top banner displays which view is being shown."}]
+34:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Normally the FILE AREA window displays saved files only. By using the Toggle File View marked deleted files are displayed, allowing these to be fetched with the cursor."}]
+35:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"There are 2 views of the FILE AREA. These are:-"}]
+36:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"Cursor selects only saved files and"}],"\n"]}]
+37:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/flashstore-reference/oz45-fs-view-2-file-del.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/flashstore-reference/oz45-fs-view-2-file-del.webp","alt":"2 files deleted","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+38:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"Cursor selects saved & deleted files"}],"\n"]}]
+39:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/flashstore-reference/oz45-fs-view-toggle.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/flashstore-reference/oz45-fs-view-toggle.webp","alt":"Toggle display","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+3a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Looking at these displays, the top display shows the saved files but when the file view is toggled, the deleted files appear in small text with the D character in grey."}]
+3b:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/flashstore-reference/oz45-fs-view-curs-over-del-file.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/flashstore-reference/oz45-fs-view-curs-over-del-file.webp","alt":"Cursor over deleted file","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+3c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This mode allows the cursor to be placed over the file name so the following commands may be selected."}]
+3d:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"COMMAND","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"KEY","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":["$","a",null,{"href":"#fetch_file_from_card","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Fetch File"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","a",null,{"href":"#view_file","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"View File"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","strong",null,{"children":"V"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","a",null,{"href":"#erase_file_from_card","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Delete File"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Delete","children":"DEL"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","a",null,{"href":"#copy_file","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Copy to Card"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","strong",null,{"children":"C"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}]]}]
+3e:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-red-100 x:dark:bg-red-900/30 x:text-red-700 x:dark:text-red-500 x:border-red-700 x:dark:border-red-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$2e:props:children:0:props:style","data-pagefind-ignore":"all","children":["$","svg",null,{"viewBox":"0 0 16 16","fill":"currentColor","height":".8em","className":"x:mt-[.3em]","children":["$","path",null,{"d":"M4.47.22A.749.749 0 0 1 5 0h6c.199 0 .389.079.53.22l4.25 4.25c.141.14.22.331.22.53v6a.749.749 0 0 1-.22.53l-4.25 4.25A.749.749 0 0 1 11 16H5a.749.749 0 0 1-.53-.22L.22 11.53A.749.749 0 0 1 0 11V5c0-.199.079-.389.22-.53Zm.84 1.28L1.5 5.31v5.38l3.81 3.81h5.38l3.81-3.81V5.31L10.69 1.5ZM8 4a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 8 4Zm0 8a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"}]}]}],["$","div",null,{"className":"x:w-full x:min-w-0","children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Deleting a Deleted File"}]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A file can only be ‘marked deleted’ once. You can only ‘un-mark delete’ it using Fetch and the save it again to the Flash Card.Format is necessary to reclaim the space it is using back again."}]]}]]}]
+3f:["$","h4",null,{"id":"catalogue_card_files","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":["Catalogue Card Files",["$","$L20",null,{"id":"catalogue_card_files"}]]}]
+40:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Lists filenames on file card area to a PipeDream file."}]
+41:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This command creates a file (default name filearea.pdd) listing the filenames and size. Loading this file into PipeDream allows it to be viewed or printed. Depending on which File Area view is selected, it will either print saved files or saved and deleted files."}]
+42:["$","h4",null,{"id":"select_card","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":["Select Card",["$","$L20",null,{"id":"select_card"}]]}]
+43:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Selects which file card to use when you have more than one."}]
+44:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/external/zfs-operation-and-commands/flashstore-select-card.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/external/zfs-operation-and-commands/flashstore-select-card.webp","alt":"flashstore select card","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+45:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This allows multiple Flash cards and EPROMs to be read using the same FlashStore application. Highlight the Slot number (0, 1, 2 or 3) with the cursor that you wish to use. You may also press digits ‘0’, ‘1’, ‘2’ or ‘3’ to select the actual slot. The selected device will be displayed at the top of the right-hand window with the file information with current information of file data and space left on the card."}]
+46:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The padlock indicates a read-only device (like an EPROM or an INTEL flash card not in slot 3). ‘AMD’ or ‘INTEL’ labels are displayed on top line of each visual card for identified flash chip."}]
+47:["$","h4",null,{"id":"save_files_to_card","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":["Save files to Card",["$","$L20",null,{"id":"save_files_to_card"}]]}]
+48:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Saves files from the RAM device to the file card area (both Flash and Eprom cards)."}]
+49:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$Lbb",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$Lbc",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"Wildcards are allowed,"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Filename: :RAM.1"}]}]]}]]}]]}]
+4a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You simply have to enter the filename. Always specify the device. You are allowed to use wildcards. For example, if you want to save all the files including sub-directories, in RAM.1, type :RAM.1//*."}]
+4b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["When files are saved, the file size is shown together with the “header,” the amount of space needed for the filename to be stored on the Flash File card. The program checks the data being saved is correct. In the unlikely event of an error, a message will be displayed and the file will be saved again. When the ‘no room’ message is displayed, the last filename that was trying to be saved can be viewed after pressing the ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Escape","children":"ESC"}]," key."]}]
+4c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If the file does NOT save, this is usually because the filename has been mis-spelt or even that it does not exist."}]
+4d:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-yellow-50 x:dark:bg-yellow-700/30 x:text-yellow-700 x:dark:text-yellow-500 x:border-yellow-700","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$2e:props:children:0:props:style","data-pagefind-ignore":"all","children":"$2e:props:children:0:props:children"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Normally the display stays on when saving files, but if the file area is on the same device as OZ, the display goes BLANK."}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This is quite normal, just wait, the display will return after the file has been saved."}]]}]]}]
+4e:["$","h4",null,{"id":"fetch_file_from_card","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":["Fetch file from Card",["$","$L20",null,{"id":"fetch_file_from_card"}]]}]
+4f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Fetches a file from the file card area to the RAM device."}]
+50:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$Lbb",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$Lbc",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"Enter exact filename (no wildcard)."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Filename:"}]}]]}]]}]]}]
+51:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["You have to enter the exact filename, preceded with the slash (/).",["$","br",null,{}],"Wildcards are not allowed."]}]
+52:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$Lbb",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$Lbc",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"Fetch as : /"}]}]}]]}]]}]
+53:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"[The slash is already there]"}]
+54:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$Lbb",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$Lbc",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"Overwrite existing file : Yes"}]}]}]]}]]}]
+55:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"[Yes overwrites, No doesn’t]"}]
+56:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$Lbb",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$Lbc",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"Fetching... Done."}]}]}]]}]]}]
+57:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"[The file has been fetched]"}]
+58:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$Lbb",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$Lbc",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"Completed"}]}]}]]}]]}]
+59:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$Lbb",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$Lbc",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"[The Fetch command is finished]"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Press ESC to Resume [ESC returns to Main Menu]"}]}]]}]]}]]}]
+5a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Don’t forget you can use the point and shoot option in the FILE AREA window."}]
+5b:["$","h4",null,{"id":"copy_all_files_to_card","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":["Copy all files to Card",["$","$L20",null,{"id":"copy_all_files_to_card"}]]}]
+5c:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"500px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/external/zfs-operation-and-commands/flash-ram-flash.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/external/zfs-operation-and-commands/flash-ram-flash.webp","alt":"Two Flash Cards","loading":"lazy","decoding":"async","width":450,"height":55}],[]]}]]}]
+5d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Copy saved files in current file card area to another flash card in a different slot."}]
+5e:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$2e:props:children:0:props:style","data-pagefind-ignore":"all","children":["$","svg",null,{"viewBox":"0 0 16 16","fill":"currentColor","height":".8em","className":"x:mt-[.3em]","children":["$","path",null,{"d":"M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"}]}]}],["$","div",null,{"className":"x:w-full x:min-w-0","children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Really useful Command"}]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Many users overlook this inconspicuous command because they fail to grasp what it really means."}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When a flash card has a large number of deleted files, these files take up space. The normal method of getting this space back is to save the files to RAM, Format the Flash card and then save them back onto the Flash card agaon."}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"With this command, you can save all the files directly to another Flash card (which can already be Formatted) thus saving the need to go through the RAM card."}]]}]]}]
+5f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This command is used when you wish to copy all the files from the current file area, to either an EPROM or flash card, to another flash card without having to load the files into RAM. Using two flash cards you can reclaim the deleted file area from one card by just copying all the files to the other flash card."}]
+60:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Individual files may be copied by using the Copy command whilst in the FILE AREA window."}]
+61:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If you have more than two flash cards to copy to, you will be prompted for its slot number."}]
+62:["$","h4",null,{"id":"copy_file","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":["Copy File",["$","$L20",null,{"id":"copy_file"}]]}]
+63:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Pressing the C key will copy the singe selected file to another Flash card."}]
+64:["$","h4",null,{"id":"backup_files_from_ram","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":["Backup files from RAM",["$","$L20",null,{"id":"backup_files_from_ram"}]]}]
+65:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Saves all the files from the RAM device to the file card area."}]
+66:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This backs up all the files (until the flash card is full) in your current RAM device. Instructions on changing the device are given on the screen."}]
+67:["$","h4",null,{"id":"restore_files_to_ram","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":["Restore files to RAM",["$","$L20",null,{"id":"restore_files_to_ram"}]]}]
+68:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Fetches all the files from the file card area to the RAM device."}]
+69:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"All files (including sub-directories) on the Flash card are fetched using the sub-menu commands. You might choose to restore all files without checking for existing files. Directories are created automatically in your selected RAM device."}]
+6a:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$Lbb",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$Lbc",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"Enter Device (or path),"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Device :RAM.1"}]}]]}]]}]]}]
+6b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"[Change RAM device and/or path]"}]
+6c:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$Lbb",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$Lbc",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"Overwrite existing RAM files? No"}]}]}]]}]]}]
+6d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"[Will prompt user to overwrite file]"}]
+6e:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$Lbb",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$Lbc",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"Fetching file to :RAM.1/filename"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Overwrite existing file : Yes"}]}]]}]]}]]}]
+6f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"[Yes overwrites, No doesn’t]"}]
+70:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$Lbb",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$Lbc",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"Fetching... Done."}]}]}]]}]]}]
+71:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$Lbb",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$Lbc",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"[The file has been fetched]"}]}]}]]}]]}]
+72:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$Lbb",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$Lbc",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"Completed"}]}]}]]}]]}]
+73:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"[The Restore command is finished]"}]
+74:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$Lbb",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$Lbc",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"Press SPACE to Resume"}]}]}]]}]]}]
+75:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"[SPACE returns to Main Menu]"}]
+76:["$","h4",null,{"id":"erase_file_from_card","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":["Erase file from Card",["$","$L20",null,{"id":"erase_file_from_card"}]]}]
+77:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Marks a file in the file card area as deleted."}]
+78:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Although files cannot be deleted from the flash card to gain space, this command allows a single file to be marked as deleted. This is useful for getting rid of those obsolete files that do not get overwritten."}]
+79:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Don’t forget you can use the point and shoot option in the FILE AREA window."}]
+7a:["$","h4",null,{"id":"format_file_area","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":["Format File Area",["$","$L20",null,{"id":"format_file_area"}]]}]
+7b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Formats and erases the complete file card area."}]
+7c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This erases the File Area of the Flash card and formats it. If you have two (or more) flash cards that can be formatted you will be invited to choose which one you want to format.."}]
+7d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When the command is executed, it says:"}]
+7e:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$Lbb",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$Lbc",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"CAUTION! All data will be lost."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Are you really sure? No"}]}]]}]]}]]}]
+7f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"[Yes formats, No returns Main Menu]"}]
+80:["$","h4",null,{"id":"fetch_file","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":["Fetch File",["$","$L20",null,{"id":"fetch_file"}]]}]
+81:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"pressing either"}]
+82:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["the ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]," or F key will fetch that file to RAM"]}]
+83:["$","h4",null,{"id":"view_file","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":["View File",["$","$L20",null,{"id":"view_file"}]]}]
+84:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"To use this command move the cursor over the file name to be viewed"}]
+85:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/flashstore-reference/oz45-fs-view-whatsnew.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/flashstore-reference/oz45-fs-view-whatsnew.webp","alt":"View Whats New","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+86:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Press V to view the file"}]
+87:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/filer-reference/oz45-filer-vf-fileview.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/filer-reference/oz45-filer-vf-fileview.webp","alt":"viewed file","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+88:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"CRC-32"}]
+89:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ",["$","a",null,{"href":"http://en.wikipedia.org/wiki/Cyclic_redundancy_check","target":"_blank","rel":"noreferrer","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["CRC-32",[" ",["$","svg",null,{"fill":"none","stroke":"currentColor","strokeLinecap":"round","strokeLinejoin":"round","strokeWidth":1.7,"viewBox":"0 0 24 24","height":"1em","className":"x:inline x:align-baseline x:shrink-0","children":[["$","path",null,{"d":"M7 17L17 7"}],["$","path",null,{"d":"M7 7h10v10"}]]}]]]}]," value of the file is also displayed."]}]
+8a:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$2e:props:children:0:props:style","data-pagefind-ignore":"all","children":"$5e:props:children:0:props:children"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"CRC-32 is the checksum of the file. It is used by several applications on the Z88 (Eazylink2, FlashStore, ROMupdate) to ensure file integrity."}]}]]}]
+8b:["$","h4",null,{"id":"delete_file","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":["Delete File",["$","$L20",null,{"id":"delete_file"}]]}]
+8c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["pressing either the ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Delete","children":"DEL"}]," or D key will mark the file deleted"]}]
+8d:["$","h4",null,{"id":"quit","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":["Quit",["$","$L20",null,{"id":"quit"}]]}]
+8e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Escape","children":"ESC"}]," key quits the application"]}]
+8f:["$","h2",null,{"id":"using_the_filer","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Using the Filer, FlashStore & EP-Fetch2 with FLASH cards & EPROMs",["$","$L20",null,{"id":"using_the_filer"}]]}]
+90:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"These applications are very useful. Here is a summary of what they can do."}]
+91:["$","table",null,{"children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$Lbb",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$Lbc",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"Filer"}]}]}]]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$Lbb",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$Lbc",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"Filer OZ 4.5"}]}]}]]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$Lbb",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$Lbc",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"Flashstore"}]}]}]]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined","$Lbd"]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],"$Lbe"],"className":"x:block x:overflow-x-auto"}]
+92:["$","h3",null,{"id":"fetching_all_files","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Fetching all Files",["$","$L20",null,{"id":"fetching_all_files"}]]}]
+93:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Don’t forget the RESTORE function. Sometimes it is easier to fetch all the files and delete a few unwanted files afterwards."}]
+94:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Erasing all files in the RAM card before Restoring"}]
+95:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If you are using Directories and you want to erase the complete RAM try using the wildcard //* in the ERASE command in the Filer. It removes both files and directories."}]
+96:["$","h3",null,{"id":"restoring_or_saving_files","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Restoring or Saving Files to base directories",["$","$L20",null,{"id":"restoring_or_saving_files"}]]}]
+97:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Restore is usually used to restore a complete Device in the root directory of the RAM. You can also add a Directory to restore the files as well. This could be used where you wish to compare files from two Flash Cards provided you have enough space."}]
+98:["$","h3",null,{"id":"using_two_flash_cards","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Using two Flash cards",["$","$L20",null,{"id":"using_two_flash_cards"}]]}]
+99:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Only one copy of Flashstore is required despite the number of flash cards used. For example, if you have the standard OZ 2.2 version running in slot 0, you could have your Applications (including FlashStore) in slot 2 and read any of your “master” files from there, whilst using another Flash card in slot 3 for current files."}]
+9a:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"500px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/external/zfs-operation-and-commands/flash-ram-flash.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/external/zfs-operation-and-commands/flash-ram-flash.webp","alt":"Two Flash Cards","loading":"lazy","decoding":"async","width":450,"height":55}],[]]}]]}]
+9b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When running OZ in slot 1and RAM in slot 2 you still have slot 3 to use the additional flash card to do what is described."}]
+9c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"To use two Flash cards first prepare the Flash card which you want to use in slot 2, with your master files. This is done by using it in slot 3 to save your files first. You may elect to ZIP these files up beforehand (to save space)."}]
+9d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When moving the Flash card from Slot 3 to 2, follow the following rules."}]
+9e:["$","h2",null,{"id":"deleting_files","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Deleting Files",["$","$L20",null,{"id":"deleting_files"}]]}]
+9f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When files in RAM cards are deleted, the space is returned to OZ. That space may be used by other files."}]
+a0:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This is not true in Flash or EPROM cards. When a file is deleted, it is marked individually by writing a bit in the file name. This marks it as a deleted file. Files have not been removed, they are still there, taking up the space they used before. Lets delete some files to see what happens."}]
+a1:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/flashstore-reference/oz45-fs-main.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/flashstore-reference/oz45-fs-main.webp","alt":"Main display","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+a2:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-yellow-50 x:dark:bg-yellow-700/30 x:text-yellow-700 x:dark:text-yellow-500 x:border-yellow-700","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$2e:props:children:0:props:style","data-pagefind-ignore":"all","children":"$2e:props:children:0:props:children"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["On the display above in the INFORMATION Window, (the one on the right) ",["$","br",null,{}],"the graphics bar is either solid (for saved files) of clear (empty space)."]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["the last 2 lines state",["$","br",null,{}],"7 FILES SAVED",["$","br",null,{}],"0 FILES DELETED"]}]]}]]}]
+a3:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Move the cursor over the file to be deleted."}]
+a4:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/flashstore-reference/oz45-fs-view-del-whatsnew.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/flashstore-reference/oz45-fs-view-del-whatsnew.webp","alt":"Delete whats new","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+a5:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Notice that the INFORMATION Window has now changed, showing the 4 commands that can be used here. One of them is ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Delete","children":"DEL"}],", use that now."]}]
+a6:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/flashstore-reference/oz45-fs-view-del-whatsnew-n.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/flashstore-reference/oz45-fs-view-del-whatsnew-n.webp","alt":"oz45 fs view del whatsnew n","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+a7:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ‘fail-safe’ window is displayed. Select Y, then use the ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]," key."]}]
+a8:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/flashstore-reference/oz45-fs-view-del-whatsnew-y.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/flashstore-reference/oz45-fs-view-del-whatsnew-y.webp","alt":"oz45 fs view del whatsnew y","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+a9:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Too late to change your mind now, press ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Space","children":"SPACE"}]," or ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]," to resume."]}]
+aa:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/flashstore-reference/oz45-fs-view-del-next-file.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/flashstore-reference/oz45-fs-view-del-next-file.webp","alt":"Delete next file","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+ab:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Delete the next file with the ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Delete","children":"DEL"}]," key. Follow the instructions,"]}]
+ac:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/flashstore-reference/oz45-fs-view-del-2nd-file.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/flashstore-reference/oz45-fs-view-del-2nd-file.webp","alt":"2nd file deleted","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+ad:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Move the cursor to the left with the ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor left","children":"←"}]," key."]}]
+ae:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/flashstore-reference/oz45-fs-view-2-file-del.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/flashstore-reference/oz45-fs-view-2-file-del.webp","alt":"2 files deleted","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+af:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This now shows the INFORMATION Window again."}]
+b0:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-yellow-50 x:dark:bg-yellow-700/30 x:text-yellow-700 x:dark:text-yellow-500 x:border-yellow-700","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$2e:props:children:0:props:style","data-pagefind-ignore":"all","children":"$2e:props:children:0:props:children"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["On the display above in the INFORMATION Window, (the one on the right) ",["$","br",null,{}],"the graphics bar is either grey (for deleted files), solid (for saved files) or clear (for free space)."]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"the last 2 lines state"}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["5 FILES SAVED",["$","br",null,{}],"2 FILES DELETED"]}]]}]]}]
+b1:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Toggling the display shows the deleted files."}]
+b2:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/flashstore-reference/oz45-fs-view-toggle.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/flashstore-reference/oz45-fs-view-toggle.webp","alt":"Toggle display","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+b3:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Moving the cursor over a deleted file"}]
+b4:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/flashstore-reference/oz45-fs-view-curs-over-del-file.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/flashstore-reference/oz45-fs-view-curs-over-del-file.webp","alt":"Cursor over deleted file","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+b5:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This mode allows the cursor to be placed over the file name so the following commands may be selected."}]
+b6:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"COMMAND","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"KEY","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":["$","a",null,{"href":"#fetch_file_from_card","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Fetch File"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","a",null,{"href":"#view_file","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"View File"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","strong",null,{"children":"V"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","a",null,{"href":"#erase_file_from_card","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Delete File"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Delete","children":"DEL"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","a",null,{"href":"#copy_file","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Copy to Card"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","strong",null,{"children":"C"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}]]}]
+b7:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-red-100 x:dark:bg-red-900/30 x:text-red-700 x:dark:text-red-500 x:border-red-700 x:dark:border-red-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$2e:props:children:0:props:style","data-pagefind-ignore":"all","children":"$3e:props:children:0:props:children"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Deleting a Deleted File"}]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A file can only be deleted once. You can only un-delete it using Fetch and the save it again to the Flash Card."}]]}]]}]
+b9:null
+9:C
+bd:["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$Lbb",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$Lbc",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"EP-Fetch2"}]}]}]]}]
+be:["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$Lbb",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$Lbc",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"Save a File to an EPROM card"}]}]}]]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"✓","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"✓","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"✓","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$Lbb",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$Lbc",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"Save a File to a FLASH card"}]}]}]]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"✓","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"✓","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":["$Lbf","$Lc0"]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],"$Lc1","$Lc2","$Lc3","$Lc4"],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],"$Lc5","$Lc6","$Lc7","$Lc8","$Lc9","$Lca","$Lcb","$Lcc","$Lcd","$Lce","$Lcf","$Ld0","$Ld1","$Ld2","$Ld3"]}]
+bf:["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$Lbb",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$Lbc",null,{"className":""}]]}]
+c0:["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"Save all Files to an EPROM card"}]}]}]
+c1:["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
+c2:["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
+c3:["$","td",null,{"children":"✓","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
+c4:["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
+c5:["$","tr",null,{"children":[["$","td",null,{"children":["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$Lbb",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$Lbc",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"Save all Files to a FLASH card"}]}]}]]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"BACKUP","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+c6:["$","tr",null,{"children":[["$","th",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+c7:["$","tr",null,{"children":[["$","td",null,{"children":["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$Lbb",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$Lbc",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"Copy all or single Files from "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"a FLASH card to a FLASH card "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"an EPROM card to a FLASH card"}]}]]}]]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"✓","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+c8:["$","tr",null,{"children":[["$","th",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+c9:["$","tr",null,{"children":[["$","td",null,{"children":"Fetch a File from an EPROM card","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"✓","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"✓","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"✓","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"✓","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+ca:["$","tr",null,{"children":[["$","td",null,{"children":"Fetch a File from a FLASH card","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"✓","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"✓","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"✓","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"✓","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+cb:["$","tr",null,{"children":[["$","th",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+cc:["$","tr",null,{"children":[["$","td",null,{"children":["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$Lbb",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$Lbc",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"Fetch all Files from an EPROM card"}]}]}]]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$Lbb",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$Lbc",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"RESTORE"}]}]}]]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+cd:["$","tr",null,{"children":[["$","td",null,{"children":["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$Lbb",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$Lbc",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"Fetch all Files from a FLASH card"}]}]}]]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$Lbb",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$Lbc",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"RESTORE"}]}]}]]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+ce:["$","tr",null,{"children":[["$","th",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+cf:["$","tr",null,{"children":[["$","td",null,{"children":["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$Lbb",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$Lbc",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"Fetch deleted Files from EPROM card"}]}]}]]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"✓","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"✓","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+d0:["$","tr",null,{"children":[["$","td",null,{"children":["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$Lbb",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$Lbc",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"Fetch deleted Files from FLASH card"}]}]}]]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"✓","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"✓","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+d1:["$","tr",null,{"children":[["$","th",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+d2:["$","tr",null,{"children":[["$","td",null,{"children":["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$Lbb",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$Lbc",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"Format File area from EPROM card"}]}]}]]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"colSpan":4,"children":["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$Lbb",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$Lbc",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"[ERASE WITH THE EPROM ERASER]"}]}]}]]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+d3:["$","tr",null,{"children":[["$","td",null,{"children":["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$Lbb",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$Lbc",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"Format File area from FLASH card"}]}]}]]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"✓","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

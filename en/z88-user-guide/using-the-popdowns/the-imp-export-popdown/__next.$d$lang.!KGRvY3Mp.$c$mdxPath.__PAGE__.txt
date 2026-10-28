@@ -1,0 +1,260 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T1be4,---
+description: "The Imp-Export popdown allows you to communicates with other computers or your Desktop using the serial port on the right-hand side of the machine."
+---
+
+import { Callout } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/35913777 (version 39) by scripts/import-z88-user-guide.cjs */}
+
+# The Imp-Export popdown
+
+The Imp-Export popdown allows you to communicates with other computers or your Desktop using the serial port on the right-hand side of the machine.
+
+Prerequisites
+
+To use Import/Export you need either
+
+- Imp-Export feature on Eazylink2 desktop program
+- Terminal desktop program supporting X-MODEM or Y-MODEM protocol
+
+and a
+
+- Z88 to Computer Serial connecting lead
+- USB / Serial Converter (if there is no serial port on your Desktop).
+
+### Before Sending or Receiving Files
+
+<Callout type="error">
+
+**IMPORTANT - Before running Imp-Export**
+
+Use the Panel, and check that the [serial parameters](/en/z88-user-guide/using-the-popdowns/the-panel-popdown#serial_port_parameters) (Baud rate, Stop Bits and X-on/X-off) are the same as the Desktop computer. Also start running the communications software on the machine you wish to communicate with.
+
+</Callout>
+
+You call up Imp-Export by typing <Key k="square" />X or from the INDEX moving the cursor over the Application name and using the <Key k="enter" /> key.
+
+Details of the serial port connections and the protocol used for programmers are given in [Appendix B](/en/z88-user-guide/appendix-b-serial-port-and-transfer-protocols).
+
+<Shot src="z88-user-guide/using-the-popdowns/the-imp-export-popdown/impexport-ozv45.webp" alt="impexport ozv45" width={640} />
+
+## Using Imp-Export
+
+The program recognises the following commands, which are given by typing the first letter of the command followed by <Key k="enter" />: Use the <Key k="esc" /> key to abandon the transfer.
+
+### S)end file
+
+Prompts for the name of the file to be transmitted, and then transmits the name and file to the receiving computer. Wildcards are accepted in the file name.
+
+Imp-Export, Xmodem, <br />Ymodem
+
+<Shot src="z88-user-guide/using-the-popdowns/the-imp-export-popdown/z88-impexp-send.webp" alt="z88 impexp send" width={640} />
+
+### R)eceive file
+
+Prompts for a file name; press <Key k="enter" /> to receive a file and use its transmitted name, or type a name to rename the received file.
+
+Imp-Export, Xmodem, <br />Ymodem
+
+<Shot src="z88-user-guide/using-the-popdowns/the-imp-export-popdown/z88-impexp-receive.webp" alt="z88 impexp receive" width={640} />
+
+### B)atch receive
+
+Receives a sequence of named files, terminated by an end batch code.
+
+Imp-Export
+
+<Shot src="z88-user-guide/using-the-popdowns/the-imp-export-popdown/z88-impexp-b-receive.webp" alt="z88 impexp b receive" width={640} />
+
+To send a batch of files use the following procedure:
+
+1. Give the **Batch receive** command on the receiving computer
+
+2. Send each file with a **Send file** command (or give a '\*' wildcard in the file name)
+
+3. Give an **End batch** command.
+
+### E)nd batch
+
+Sends an end batch code (ESC Z).
+
+Imp-Export
+
+### X)modem
+
+Selects XMODEM
+
+Xmodem
+
+### Y)modem
+
+Selects YMODEM
+
+Ymodem
+
+## X-Y MODEM on Desktop [#x-y_modem_on_desktop]
+
+<Callout type="info">
+
+Even though Eazylink is the preferred choice for end-users sending and receiving files, the XY-MODEM protocol is a tried and trusted terminal communication across all operating system platforms. Minicom, for example, running on both BSD and Linux has built-in support. Zterm for Mac OSX also works reliably with the Z88 XY-modem implementation.
+
+</Callout>
+
+XY-Modem when using Ymodem does preserve file name, size and modification date and time for transfers in both directions if used with a program having a proper Ymodem implementation at the Desktop end.
+
+While developing XY-Modem Dennis Gröning tried many PC programs with bad Ymodem implementations. One that he thought worked as it should was ZOC windows program. For proper tests he used inventor of Ymodem Chuck Forsberg's rb and sb on unix and DSZ, GSZ and ZCOMM on PC.
+
+After finding Chuck's source code for CPM operating system YAM (Yet Another Modem program) program, he used this to compile a Win32 console application hard-coded for COM1 and 38400 baud in the year 2000. When started with a filename as a parameter it sends this file using Ymodem and then exits. When run without parameter it receives files for ever until an "End Batch" is received and it exits.
+
+<Shot src="z88-user-guide/using-the-popdowns/the-imp-export-popdown/ymodem-beta.webp" alt="Ymodem beta" width={833} />
+
+He went on to make a normal Windows program YAS-Link.
+
+Same functionality for sending. COM1 to COM4 can be selected. When receiving it displays received files in a scrolling list. He meant to have similar user interface as his Z88-Xport program, but he wasn't into building Windows user interfaces at the time, so it didn't get any further than that. The last modification was in 2002.
+
+It may be very likely that the PC program used for testing did not have a proper implementation of the Ymodem protocol. To test this further another PC could be set up with the same program and try transferring files between the two PCs to see if file sizes and modification date and times are preserved. Two Z88s (with old OZ for known behaviour) could be connected together and use XY-Modem to do the same test for file size and modification date and time preservation.
+
+Check that you can choose which protocol to use in XY-Modem by pressing key X or Y.
+
+## Using Xmodem
+
+When X is pressed followed by <Key k="enter" />, the display shows that
+
+<Shot src="z88-user-guide/using-the-popdowns/the-imp-export-popdown/z88-impexp-xmodem-checksum.webp" alt="z88 impexp xmodem checksum" width={640} />
+
+### XMODEM Checksum
+
+is selected and is waiting for either a key press of either **R**, R)eceive file or **S**, S\}end file. If the other option,
+
+### XMODEM CRC
+
+is required pressing **C** changes Xmodem to CRC**.**
+
+<Shot src="z88-user-guide/using-the-popdowns/the-imp-export-popdown/z88-impexp-xmodem-crc.webp" alt="z88 impexp xmodem crc" width={640} />
+
+<Callout type="warning">
+
+**Note:**
+
+Use **R**, R)eceive file or **S**, S\}end file after the mode is selected.
+
+</Callout>
+
+## Using Ymodem
+
+When **Y** is pressed followed by <Key k="enter" />, the display shows that
+
+<Shot src="z88-user-guide/using-the-popdowns/the-imp-export-popdown/z88-impexp-ymodem-checksum.webp" alt="z88 impexp ymodem checksum" width={640} />
+
+### YMODEM Checksum
+
+is selected and is waiting for either a key press of either **R**, R)eceive file or **S**, S\}end file. If
+
+### YMODEM CRC
+
+is required pressing **C** changes Xmodem to CRC**.**
+
+<Shot src="z88-user-guide/using-the-popdowns/the-imp-export-popdown/z88-impexp-ymodem-crc.webp" alt="z88 impexp ymodem crc" width={640} />
+
+<Callout type="warning">
+
+**Note:**
+
+The order in which the Checksum and CRC modes occur may be different. Just check which one is selected and if it is wrong, use **C** to toggle the mode.
+
+Use **R**, R)eceive file or **S**, S\}end file after the mode is selected.
+
+</Callout>a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Before Sending or Receiving Files","id":"before-sending-or-receiving-files","depth":3},{"value":"Using Imp-Export","id":"using-imp-export","depth":2},{"value":"S)end file","id":"send-file","depth":3},{"value":"R)eceive file","id":"receive-file","depth":3},{"value":"B)atch receive","id":"batch-receive","depth":3},{"value":"E)nd batch","id":"end-batch","depth":3},{"value":"X)modem","id":"xmodem","depth":3},{"value":"Y)modem","id":"ymodem","depth":3},{"value":"X-Y MODEM on Desktop","id":"x-y_modem_on_desktop","depth":2},{"value":"Using Xmodem","id":"using-xmodem","depth":2},{"value":"XMODEM Checksum","id":"xmodem-checksum","depth":3},{"value":"XMODEM CRC","id":"xmodem-crc","depth":3},{"value":"Using Ymodem","id":"using-ymodem","depth":2},{"value":"YMODEM Checksum","id":"ymodem-checksum","depth":3},{"value":"YMODEM CRC","id":"ymodem-crc","depth":3}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"The Imp-Export popdown allows you to communicates with other computers or your Desktop using the serial port on the right-hand side of the machine.","title":"The Imp-Export popdown","filePath":"content/en/z88-user-guide/using-the-popdowns/the-imp-export-popdown.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"z88-user-guide/using-the-popdowns/the-imp-export-popdown","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"The Imp-Export popdown - Klive IDE"}],["$","meta","1",{"name":"description","content":"The Imp-Export popdown allows you to communicates with other computers or your Desktop using the serial port on the right-hand side of the machine."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/z88-user-guide/using-the-popdowns/the-imp-export-popdown/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"JRknQ_wk_gMYl0jLYL8vC"}
+20:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+21:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+5a:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["The Imp-Export popdown","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The Imp-Export popdown allows you to communicates with other computers or your Desktop using the serial port on the right-hand side of the machine."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Prerequisites"}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"To use Import/Export you need either"}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"Imp-Export feature on Eazylink2 desktop program"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Terminal desktop program supporting X-MODEM or Y-MODEM protocol"}],"\n"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"and a"}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"Z88 to Computer Serial connecting lead"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"USB / Serial Converter (if there is no serial port on your Desktop)."}],"\n"]}],"\n",["$","h3",null,{"id":"before-sending-or-receiving-files","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Before Sending or Receiving Files",["$","$L20",null,{"id":"before-sending-or-receiving-files"}]]}],"\n",["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-red-100 x:dark:bg-red-900/30 x:text-red-700 x:dark:text-red-500 x:border-red-700 x:dark:border-red-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":["$","svg",null,{"viewBox":"0 0 16 16","fill":"currentColor","height":".8em","className":"x:mt-[.3em]","children":["$","path",null,{"d":"M4.47.22A.749.749 0 0 1 5 0h6c.199 0 .389.079.53.22l4.25 4.25c.141.14.22.331.22.53v6a.749.749 0 0 1-.22.53l-4.25 4.25A.749.749 0 0 1 11 16H5a.749.749 0 0 1-.53-.22L.22 11.53A.749.749 0 0 1 0 11V5c0-.199.079-.389.22-.53Zm.84 1.28L1.5 5.31v5.38l3.81 3.81h5.38l3.81-3.81V5.31L10.69 1.5ZM8 4a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 8 4Zm0 8a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"}]}]}],["$","div",null,{"className":"x:w-full x:min-w-0","children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"IMPORTANT - Before running Imp-Export"}]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Use the Panel, and check that the ",["$","$L21",null,{"href":"/en/z88-user-guide/using-the-popdowns/the-panel-popdown#serial_port_parameters","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"serial parameters"}]," (Baud rate, Stop Bits and X-on/X-off) are the same as the Desktop computer. Also start running the communications software on the machine you wish to communicate with."]}]]}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["You call up Imp-Export by typing ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],"X or from the INDEX moving the cursor over the Application name and using the ","$L22"," key."]}],"\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41","\n","$L42","\n","$L43","\n","$L44","\n","$L45","\n","$L46","\n","$L47","\n","$L48","\n","$L49","\n","$L4a","\n","$L4b","\n","$L4c","\n","$L4d","\n","$L4e","\n","$L4f","\n","$L50","\n","$L51","\n","$L52","\n","$L53","\n","$L54","\n","$L55","\n","$L56","\n","$L57","\n","$L58","\n","$L59"]]}]
+15:["$","$L5a",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@5b"}]}]
+1f:true
+9:300
+22:["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]
+23:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Details of the serial port connections and the protocol used for programmers are given in ",["$","$L21",null,{"href":"/en/z88-user-guide/appendix-b-serial-port-and-transfer-protocols","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Appendix B"}],"."]}]
+24:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/using-the-popdowns/the-imp-export-popdown/impexport-ozv45.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/using-the-popdowns/the-imp-export-popdown/impexport-ozv45.webp","alt":"impexport ozv45","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+25:["$","h2",null,{"id":"using-imp-export","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Using Imp-Export",["$","$L20",null,{"id":"using-imp-export"}]]}]
+26:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The program recognises the following commands, which are given by typing the first letter of the command followed by ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}],": Use the ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Escape","children":"ESC"}]," key to abandon the transfer."]}]
+27:["$","h3",null,{"id":"send-file","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["S)end file",["$","$L20",null,{"id":"send-file"}]]}]
+28:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Prompts for the name of the file to be transmitted, and then transmits the name and file to the receiving computer. Wildcards are accepted in the file name."}]
+29:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Imp-Export, Xmodem, ",["$","br",null,{}],"Ymodem"]}]
+2a:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/using-the-popdowns/the-imp-export-popdown/z88-impexp-send.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/using-the-popdowns/the-imp-export-popdown/z88-impexp-send.webp","alt":"z88 impexp send","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+2b:["$","h3",null,{"id":"receive-file","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["R)eceive file",["$","$L20",null,{"id":"receive-file"}]]}]
+2c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Prompts for a file name; press ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]," to receive a file and use its transmitted name, or type a name to rename the received file."]}]
+2d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Imp-Export, Xmodem, ",["$","br",null,{}],"Ymodem"]}]
+2e:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/using-the-popdowns/the-imp-export-popdown/z88-impexp-receive.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/using-the-popdowns/the-imp-export-popdown/z88-impexp-receive.webp","alt":"z88 impexp receive","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+2f:["$","h3",null,{"id":"batch-receive","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["B)atch receive",["$","$L20",null,{"id":"batch-receive"}]]}]
+30:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Receives a sequence of named files, terminated by an end batch code."}]
+31:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Imp-Export"}]
+32:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/using-the-popdowns/the-imp-export-popdown/z88-impexp-b-receive.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/using-the-popdowns/the-imp-export-popdown/z88-impexp-b-receive.webp","alt":"z88 impexp b receive","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+33:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"To send a batch of files use the following procedure:"}]
+34:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Give the ",["$","strong",null,{"children":"Batch receive"}]," command on the receiving computer"]}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Send each file with a ",["$","strong",null,{"children":"Send file"}]," command (or give a ’*’ wildcard in the file name)"]}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Give an ",["$","strong",null,{"children":"End batch"}]," command."]}],"\n"]}],"\n"]}]
+35:["$","h3",null,{"id":"end-batch","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["E)nd batch",["$","$L20",null,{"id":"end-batch"}]]}]
+36:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Sends an end batch code (ESC Z)."}]
+37:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Imp-Export"}]
+38:["$","h3",null,{"id":"xmodem","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["X)modem",["$","$L20",null,{"id":"xmodem"}]]}]
+39:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Selects XMODEM"}]
+3a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Xmodem"}]
+3b:["$","h3",null,{"id":"ymodem","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Y)modem",["$","$L20",null,{"id":"ymodem"}]]}]
+3c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Selects YMODEM"}]
+3d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Ymodem"}]
+3e:["$","h2",null,{"id":"x-y_modem_on_desktop","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["X-Y MODEM on Desktop",["$","$L20",null,{"id":"x-y_modem_on_desktop"}]]}]
+3f:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$14:props:children:1:17:props:children:0:props:style","data-pagefind-ignore":"all","children":["$","svg",null,{"viewBox":"0 0 16 16","fill":"currentColor","height":".8em","className":"x:mt-[.3em]","children":["$","path",null,{"d":"M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"}]}]}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Even though Eazylink is the preferred choice for end-users sending and receiving files, the XY-MODEM protocol is a tried and trusted terminal communication across all operating system platforms. Minicom, for example, running on both BSD and Linux has built-in support. Zterm for Mac OSX also works reliably with the Z88 XY-modem implementation."}]}]]}]
+40:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"XY-Modem when using Ymodem does preserve file name, size and modification date and time for transfers in both directions if used with a program having a proper Ymodem implementation at the Desktop end."}]
+41:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"While developing XY-Modem Dennis Gröning tried many PC programs with bad Ymodem implementations. One that he thought worked as it should was ZOC windows program. For proper tests he used inventor of Ymodem Chuck Forsberg’s rb and sb on unix and DSZ, GSZ and ZCOMM on PC."}]
+42:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"After finding Chuck’s source code for CPM operating system YAM (Yet Another Modem program) program, he used this to compile a Win32 console application hard-coded for COM1 and 38400 baud in the year 2000. When started with a filename as a parameter it sends this file using Ymodem and then exits. When run without parameter it receives files for ever until an “End Batch” is received and it exits."}]
+43:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"833px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/using-the-popdowns/the-imp-export-popdown/ymodem-beta.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/using-the-popdowns/the-imp-export-popdown/ymodem-beta.webp","alt":"Ymodem beta","loading":"lazy","decoding":"async","width":833,"height":544}],[]]}]]}]
+44:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"He went on to make a normal Windows program YAS-Link."}]
+45:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Same functionality for sending. COM1 to COM4 can be selected. When receiving it displays received files in a scrolling list. He meant to have similar user interface as his Z88-Xport program, but he wasn’t into building Windows user interfaces at the time, so it didn’t get any further than that. The last modification was in 2002."}]
+46:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"It may be very likely that the PC program used for testing did not have a proper implementation of the Ymodem protocol. To test this further another PC could be set up with the same program and try transferring files between the two PCs to see if file sizes and modification date and times are preserved. Two Z88s (with old OZ for known behaviour) could be connected together and use XY-Modem to do the same test for file size and modification date and time preservation."}]
+47:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Check that you can choose which protocol to use in XY-Modem by pressing key X or Y."}]
+48:["$","h2",null,{"id":"using-xmodem","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Using Xmodem",["$","$L20",null,{"id":"using-xmodem"}]]}]
+49:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["When X is pressed followed by ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}],", the display shows that"]}]
+4a:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/using-the-popdowns/the-imp-export-popdown/z88-impexp-xmodem-checksum.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/using-the-popdowns/the-imp-export-popdown/z88-impexp-xmodem-checksum.webp","alt":"z88 impexp xmodem checksum","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+4b:["$","h3",null,{"id":"xmodem-checksum","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["XMODEM Checksum",["$","$L20",null,{"id":"xmodem-checksum"}]]}]
+4c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["is selected and is waiting for either a key press of either ",["$","strong",null,{"children":"R"}],", R)eceive file or ",["$","strong",null,{"children":"S"}],", S}end file. If the other option,"]}]
+4d:["$","h3",null,{"id":"xmodem-crc","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["XMODEM CRC",["$","$L20",null,{"id":"xmodem-crc"}]]}]
+4e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["is required pressing ",["$","strong",null,{"children":"C"}]," changes Xmodem to CRC**.**"]}]
+4f:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/using-the-popdowns/the-imp-export-popdown/z88-impexp-xmodem-crc.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/using-the-popdowns/the-imp-export-popdown/z88-impexp-xmodem-crc.webp","alt":"z88 impexp xmodem crc","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+50:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-yellow-50 x:dark:bg-yellow-700/30 x:text-yellow-700 x:dark:text-yellow-500 x:border-yellow-700","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$14:props:children:1:17:props:children:0:props:style","data-pagefind-ignore":"all","children":["$","svg",null,{"viewBox":"0 0 16 16","fill":"currentColor","height":".8em","className":"x:mt-[.3em]","children":["$","path",null,{"d":"M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575Zm1.763.707a.25.25 0 0 0-.44 0L1.698 13.132a.25.25 0 0 0 .22.368h12.164a.25.25 0 0 0 .22-.368Zm.53 3.996v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"}]}]}],["$","div",null,{"className":"x:w-full x:min-w-0","children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Note:"}]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Use ",["$","strong",null,{"children":"R"}],", R)eceive file or ",["$","strong",null,{"children":"S"}],", S}end file after the mode is selected."]}]]}]]}]
+51:["$","h2",null,{"id":"using-ymodem","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Using Ymodem",["$","$L20",null,{"id":"using-ymodem"}]]}]
+52:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["When ",["$","strong",null,{"children":"Y"}]," is pressed followed by ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}],", the display shows that"]}]
+53:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/using-the-popdowns/the-imp-export-popdown/z88-impexp-ymodem-checksum.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/using-the-popdowns/the-imp-export-popdown/z88-impexp-ymodem-checksum.webp","alt":"z88 impexp ymodem checksum","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+54:["$","h3",null,{"id":"ymodem-checksum","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["YMODEM Checksum",["$","$L20",null,{"id":"ymodem-checksum"}]]}]
+55:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["is selected and is waiting for either a key press of either ",["$","strong",null,{"children":"R"}],", R)eceive file or ",["$","strong",null,{"children":"S"}],", S}end file. If"]}]
+56:["$","h3",null,{"id":"ymodem-crc","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["YMODEM CRC",["$","$L20",null,{"id":"ymodem-crc"}]]}]
+57:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["is required pressing ",["$","strong",null,{"children":"C"}]," changes Xmodem to CRC**.**"]}]
+58:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/using-the-popdowns/the-imp-export-popdown/z88-impexp-ymodem-crc.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/using-the-popdowns/the-imp-export-popdown/z88-impexp-ymodem-crc.webp","alt":"z88 impexp ymodem crc","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+59:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-yellow-50 x:dark:bg-yellow-700/30 x:text-yellow-700 x:dark:text-yellow-500 x:border-yellow-700","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$14:props:children:1:17:props:children:0:props:style","data-pagefind-ignore":"all","children":"$50:props:children:0:props:children"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Note:"}]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The order in which the Checksum and CRC modes occur may be different. Just check which one is selected and if it is wrong, use ",["$","strong",null,{"children":"C"}]," to toggle the mode."]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Use ",["$","strong",null,{"children":"R"}],", R)eceive file or ",["$","strong",null,{"children":"S"}],", S}end file after the mode is selected."]}]]}]]}]
+5b:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

@@ -1,0 +1,66 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T9eb,---
+description: "This section describes all of the PipeDream commands that are available in each menu. To understand this chapter, you should already be familiar with the basic concepts of using PipeDream..."
+asIndexPage: true
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/35913784 (version 33) by scripts/import-z88-user-guide.cjs */}
+
+# Section Five - PipeDream Reference
+
+This section describes all of the PipeDream commands that are available in each menu. To understand this chapter, you should already be familiar with the basic concepts of using PipeDream described in **[Section Two - Using PipeDream](/en/z88-user-guide/using-pipedream)**.
+
+All commands can be typed directly from the keyboard, as well as chosen from the appropriate menu. The keyboard equivalent for each command is shown to the right of the command name in the menu. For example, the **Replicate** command on the **BLOCKS** menu appears as
+
+`Replicate` <Key k="diamond" />`BRE`
+
+This means that you can give the Replicate command by typing the <Key k="diamond" /> key followed by the keys <strong><Typed>B R E</Typed></strong>. Note that the letters do not need to be in capitals: <Key k="diamond" /> <Typed><strong>`b r e`</strong></Typed> has the same effect. Also, you can hold down the <Key k="diamond" /> key while typing the letter keys if you prefer.
+
+When, as in this example, the command equivalent is a sequence of two or three letters, the first letter will usually be the first letter of the menu name. For frequently-used commands, the key equivalent is a single letter with the <Key k="diamond" /> key (in a very few cases the <Key k="square" /> key). For example, the Mark Block command on the BLOCKS menu has the equivalent <Key k="diamond" />Z.
+
+Note that in the following screen diagrams the highlighting bar has been omitted for clarity.
+
+## Setting the options
+
+Some commands present you with a table of options which allow you to set up the command to your requirements.
+
+To begin with, the cursor is positioned next to the first option; the cursor keys can be' used as normal to move up and down the list.
+
+Many of the options have only two possible alternatives: `Yes` and `No`. You can change the value shown either by typing <Typed>Y</Typed> or <Typed>N</Typed> as appropriate, or by using the **Next Option** command, <Key k="diamond" />J, which alternates between the available values. In the case of options which take specific values, such as **Page Length**, **Next Option** restores the default value.a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Setting the options","id":"setting-the-options","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"This section describes all of the PipeDream commands that are available in each menu. To understand this chapter, you should already be familiar with the basic concepts of using PipeDream...","asIndexPage":true,"title":"Section Five - PipeDream Reference","filePath":"content/en/z88-user-guide/pipedream-reference/index.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"z88-user-guide/pipedream-reference","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Section Five - PipeDream Reference - Klive IDE"}],["$","meta","1",{"name":"description","content":"This section describes all of the PipeDream commands that are available in each menu. To understand this chapter, you should already be familiar with the basic concepts of using PipeDream..."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/z88-user-guide/pipedream-reference/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"JRknQ_wk_gMYl0jLYL8vC"}
+20:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+21:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+23:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Section Five - PipeDream Reference","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["This section describes all of the PipeDream commands that are available in each menu. To understand this chapter, you should already be familiar with the basic concepts of using PipeDream described in ",["$","strong",null,{"children":["$","$L20",null,{"href":"/en/z88-user-guide/using-pipedream","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Section Two - Using PipeDream"}]}],"."]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["All commands can be typed directly from the keyboard, as well as chosen from the appropriate menu. The keyboard equivalent for each command is shown to the right of the command name in the menu. For example, the ",["$","strong",null,{"children":"Replicate"}]," command on the ",["$","strong",null,{"children":"BLOCKS"}]," menu appears as"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Replicate"}]," ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"BRE"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["This means that you can give the Replicate command by typing the ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}]," key followed by the keys ",["$","strong",null,{"children":["$","span",null,{"className":"Z88_typed___J27m","children":"B R E"}]}],". Note that the letters do not need to be in capitals: ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}]," ",["$","span",null,{"className":"Z88_typed___J27m","children":["$","strong",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"b r e"}]}]}]," has the same effect. Also, you can hold down the ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}]," key while typing the letter keys if you prefer."]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["When, as in this example, the command equivalent is a sequence of two or three letters, the first letter will usually be the first letter of the menu name. For frequently-used commands, the key equivalent is a single letter with the ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}]," key (in a very few cases the ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}]," key). For example, the Mark Block command on the BLOCKS menu has the equivalent ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"Z."]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Note that in the following screen diagrams the highlighting bar has been omitted for clarity."}],"\n",["$","h2",null,{"id":"setting-the-options","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Setting the options",["$","$L21",null,{"id":"setting-the-options"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Some commands present you with a table of options which allow you to set up the command to your requirements."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"To begin with, the cursor is positioned next to the first option; the cursor keys can be’ used as normal to move up and down the list."}],"\n","$L22"]]}]
+15:["$","$L23",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@24"}]}]
+1f:true
+9:300
+22:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Many of the options have only two possible alternatives: ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Yes"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"No"}],". You can change the value shown either by typing ",["$","span",null,{"className":"Z88_typed___J27m","children":"Y"}]," or ",["$","span",null,{"className":"Z88_typed___J27m","children":"N"}]," as appropriate, or by using the ",["$","strong",null,{"children":"Next Option"}]," command, ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"J, which alternates between the available values. In the case of options which take specific values, such as ",["$","strong",null,{"children":"Page Length"}],", ",["$","strong",null,{"children":"Next Option"}]," restores the default value."]}]
+24:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

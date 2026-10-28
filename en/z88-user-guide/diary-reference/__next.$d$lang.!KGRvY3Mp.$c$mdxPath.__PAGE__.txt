@@ -1,0 +1,73 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+20:"ViewportBoundary"
+21:I[484,[],"$20"]
+22:"MetadataBoundary"
+23:I[484,[],"$22"]
+24:"$Sreact.suspense"
+25:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T840,---
+description: "The Diary application can be entered from the Index menu or from any application by typing □D. Only one copy of the Diary can exist in the list of SUSPENDED ACTIVITIES at any time."
+asIndexPage: true
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/35913801 (version 35) by scripts/import-z88-user-guide.cjs */}
+
+# Section Six - Diary Reference
+
+The Diary application can be entered from the Index menu or from any application by typing <Key k="square" />**D**. Only one copy of the Diary can exist in the list of `SUSPENDED ACTIVITIES` at any time.
+
+The Diary displays the Diary page for the current date, or the page previously edited if there is one.
+
+<Shot src="z88-user-guide/diary-reference/diary-march-87.webp" alt="diary march 87" width={640} />
+
+Text can be typed into the diary in a free format, and can be edited using similar cursor-editing facilities as in PipeDream. Text automatically wraps to the next line when it reaches the right-hand margin, but note that unlike PipeDream the Diary does not reformat the remaining text on the page. This is to avoid altering the layout of any subsequent diary entries on the same page.
+
+The <Key k="esc" /> key can be used to escape from any menu option.
+
+If you call the Calendar from within the Diary, you can use the cursor keys to select a new date. Pressing <Key k="esc" /> then returns you to the Diary which will now display the page for the new date selected. (See **Using the Calendar and Diary together**, for details.)
+
+Similarly, if you call the Alarm popdown from the Diary, the date will initially be set to the current date in the Diary. When you return to the Diary, however, the same date will be displayed on the screen as before the Alarm was called.
+
+## Memory low warning
+
+<Shot src="z88-user-guide/diary-reference/diarymemlow.webp" alt="diarymemlow.png" width={149} />
+
+When memory is low, a warning is displayed in the <strong>`DIARY DATE`</strong> window. You should then free memory before proceeding by deleting obselete diary entries with the <Key k="diamond" /><Key k="del" /> command.a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Memory low warning","id":"memory-low-warning","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"The Diary application can be entered from the Index menu or from any application by typing □D. Only one copy of the Diary can exist in the list of SUSPENDED ACTIVITIES at any time.","asIndexPage":true,"title":"Section Six - Diary Reference","filePath":"content/en/z88-user-guide/diary-reference/index.mdx","timestamp":1792315833000},"sourceCode":"$12","children":[["$","div",null,{"id":"nextra-skip-nav"}],["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Section Six - Diary Reference","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The Diary application can be entered from the Index menu or from any application by typing ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],"$L13",". Only one copy of the Diary can exist in the list of ","$L14"," at any time."]}],"\n","$L15","\n","$L16","\n","$L17","\n","$L18","\n","$L19","\n","$L1a","\n","$L1b","\n","$L1c","\n","$L1d"]]}]]}]]}]}],null,"$L1e"]}],"p":"$@1f","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"z88-user-guide/diary-reference","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L21",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L23",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$24",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Section Six - Diary Reference - Klive IDE"}],["$","meta","1",{"name":"description","content":"The Diary application can be entered from the Index menu or from any application by typing □D. Only one copy of the Diary can exist in the list of SUSPENDED ACTIVITIES at any time."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/z88-user-guide/diary-reference/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L25","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@26","v":null,"s":"$9"}},"a":"$@27","u":"$@28","b":"JRknQ_wk_gMYl0jLYL8vC"}
+29:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+2a:I[484,[],"OutletBoundary"]
+13:["$","strong",null,{"children":"D"}]
+14:["$","code",null,{"className":"nextra-code","dir":"ltr","children":"SUSPENDED ACTIVITIES"}]
+15:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The Diary displays the Diary page for the current date, or the page previously edited if there is one."}]
+16:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/diary-reference/diary-march-87.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/diary-reference/diary-march-87.webp","alt":"diary march 87","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+17:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Text can be typed into the diary in a free format, and can be edited using similar cursor-editing facilities as in PipeDream. Text automatically wraps to the next line when it reaches the right-hand margin, but note that unlike PipeDream the Diary does not reformat the remaining text on the page. This is to avoid altering the layout of any subsequent diary entries on the same page."}]
+18:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Escape","children":"ESC"}]," key can be used to escape from any menu option."]}]
+19:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["If you call the Calendar from within the Diary, you can use the cursor keys to select a new date. Pressing ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Escape","children":"ESC"}]," then returns you to the Diary which will now display the page for the new date selected. (See ",["$","strong",null,{"children":"Using the Calendar and Diary together"}],", for details.)"]}]
+1a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Similarly, if you call the Alarm popdown from the Diary, the date will initially be set to the current date in the Diary. When you return to the Diary, however, the same date will be displayed on the screen as before the Alarm was called."}]
+1b:["$","h2",null,{"id":"memory-low-warning","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Memory low warning",["$","$L29",null,{"id":"memory-low-warning"}]]}]
+1c:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"149px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/diary-reference/diarymemlow.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/diary-reference/diarymemlow.webp","alt":"diarymemlow.png","loading":"lazy","decoding":"async","width":149,"height":94}],[]]}]]}]
+1d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["When memory is low, a warning is displayed in the ",["$","strong",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"DIARY DATE"}]}]," window. You should then free memory before proceeding by deleting obselete diary entries with the ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Delete","children":"DEL"}]," command."]}]
+1e:["$","$L2a",null,{"children":["$","$24",null,{"name":"Next.MetadataOutlet","children":"$@2b"}]}]
+28:true
+9:300
+2b:null
+9:C
+27:0
+7:"$undefined"
+26:"$undefined"
+1f:"$undefined"

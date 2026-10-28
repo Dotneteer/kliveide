@@ -1,0 +1,94 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+27:"ViewportBoundary"
+28:I[484,[],"$27"]
+29:"MetadataBoundary"
+2a:I[484,[],"$29"]
+2b:"$Sreact.suspense"
+2c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T8b5,---
+description: "The commands on the FILES menu allow you archive old information in the Diary, or to load a range of entries into the Diary, starting at a different date (such as a year later)."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/35913740 (version 6) by scripts/import-z88-user-guide.cjs */}
+
+# Loading and saving - FILES
+
+<Shot src="z88-user-guide/diary-reference/diary-files.webp" alt="diary files" width={640} />
+
+The commands on the FILES menu allow you archive old information in the Diary, or to load a range of entries into the Diary, starting at a different date (such as a year later).
+
+## Load <Key k="diamond" />FL
+
+Incorporates a diary file of a specified name into the information currently in the Diary.
+
+Gives the prompts:
+
+`- - - - - - - - - - - NAME OF FILE TO LOAD - - - - - - - - - -`
+
+`START LOADING DATA AT DIARY DATE . . . . . . . . . . . . . No`
+
+A block of Diary entries can be copied from one range of dates to another, such as from one year to the next, by saving the block, moving to the same date in the next year (using the Calendar), and then loading the data back with the option set
+
+`START LORDING DATA AT DIARY DATE . . . . . . . . . . . . . Yes`
+
+Because loading appends data to whatever is already in the diary, an additional blank line will be present on the current day after a load.
+
+Instead of typing the file name, the file can be selected from the Filer. After typing <Key k="diamond" />FL call the Filer by typing <Key k="square" />F, and select the required file by marking it (see **[Selecting files](/en/z88-user-guide/using-the-popdowns/the-filer-popdown#selecting_files)**). When you return to the Diary from the Filer by pressing <Key k="esc" /> the selected file name will have been copied to the Load window. You will then just need to press <Key k="enter" /> to load the file.
+
+## Save <Key k="diamond" />FS
+
+Saves the Diary to the current name, or to a name you specify. Normally the whole diary is saved. You can also save part of the Diary by marking the block of text first.
+
+Gives the prompts:
+
+`- - - - - - - - - - - NAME OF FILE TO SAVE - - - - - - - - - -`
+
+`SAVE ONLY MARKED BLOCK . . . . . . . . . . . . . . . . . . . No`
+
+---a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":[["$","$4",".0",{"children":["Load ",["$","kbd",".1",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"FL"]}]],"id":"load-fl","depth":2},{"value":[["$","$4",".0",{"children":["Save ",["$","kbd",".1",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"FS"]}]],"id":"save-fs","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"The commands on the FILES menu allow you archive old information in the Diary, or to load a range of entries into the Diary, starting at a different date (such as a year later).","title":"Loading and saving - FILES","filePath":"content/en/z88-user-guide/diary-reference/loading-and-saving-files.mdx","timestamp":1792315833000},"sourceCode":"$12","children":[["$","div",null,{"id":"nextra-skip-nav"}],["$","main",null,{"data-pagefind-body":true,"children":[false,["\n","$L13","\n","$L14","\n","$L15","\n","$L16","\n","$L17","\n","$L18","\n","$L19","\n","$L1a","\n","$L1b","\n","$L1c","\n","$L1d","\n","$L1e","\n","$L1f","\n","$L20","\n","$L21","\n","$L22","\n","$L23","\n","$L24"]]}]]}]]}]}],null,"$L25"]}],"p":"$@26","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"z88-user-guide/diary-reference/loading-and-saving-files","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L28",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L2a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$2b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Loading and saving - FILES - Klive IDE"}],["$","meta","1",{"name":"description","content":"The commands on the FILES menu allow you archive old information in the Diary, or to load a range of entries into the Diary, starting at a different date (such as a year later)."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/z88-user-guide/diary-reference/loading-and-saving-files/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L2c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@2d","v":null,"s":"$9"}},"a":"$@2e","u":"$@2f","b":"JRknQ_wk_gMYl0jLYL8vC"}
+30:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+31:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+32:I[484,[],"OutletBoundary"]
+13:["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Loading and saving - FILES","$undefined"]}]
+14:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/diary-reference/diary-files.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/diary-reference/diary-files.webp","alt":"diary files","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+15:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The commands on the FILES menu allow you archive old information in the Diary, or to load a range of entries into the Diary, starting at a different date (such as a year later)."}]
+16:["$","h2",null,{"id":"load-fl","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":[["Load ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"FL"],["$","$L30",null,{"id":"load-fl"}]]}]
+17:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Incorporates a diary file of a specified name into the information currently in the Diary."}]
+18:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Gives the prompts:"}]
+19:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"- - - - - - - - - - - NAME OF FILE TO LOAD - - - - - - - - - -"}]}]
+1a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"START LOADING DATA AT DIARY DATE . . . . . . . . . . . . . No"}]}]
+1b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A block of Diary entries can be copied from one range of dates to another, such as from one year to the next, by saving the block, moving to the same date in the next year (using the Calendar), and then loading the data back with the option set"}]
+1c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"START LORDING DATA AT DIARY DATE . . . . . . . . . . . . . Yes"}]}]
+1d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Because loading appends data to whatever is already in the diary, an additional blank line will be present on the current day after a load."}]
+1e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Instead of typing the file name, the file can be selected from the Filer. After typing ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"FL call the Filer by typing ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],"F, and select the required file by marking it (see ",["$","strong",null,{"children":["$","$L31",null,{"href":"/en/z88-user-guide/using-the-popdowns/the-filer-popdown#selecting_files","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Selecting files"}]}],"). When you return to the Diary from the Filer by pressing ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Escape","children":"ESC"}]," the selected file name will have been copied to the Load window. You will then just need to press ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]," to load the file."]}]
+1f:["$","h2",null,{"id":"save-fs","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":[["Save ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"FS"],["$","$L30",null,{"id":"save-fs"}]]}]
+20:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Saves the Diary to the current name, or to a name you specify. Normally the whole diary is saved. You can also save part of the Diary by marking the block of text first."}]
+21:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Gives the prompts:"}]
+22:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"- - - - - - - - - - - NAME OF FILE TO SAVE - - - - - - - - - -"}]}]
+23:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"SAVE ONLY MARKED BLOCK . . . . . . . . . . . . . . . . . . . No"}]}]
+24:["$","hr",null,{"className":"x:my-[2em] nextra-border"}]
+25:["$","$L32",null,{"children":["$","$2b",null,{"name":"Next.MetadataOutlet","children":"$@33"}]}]
+2f:true
+9:300
+33:null
+9:C
+2e:0
+7:"$undefined"
+2d:"$undefined"
+26:"$undefined"

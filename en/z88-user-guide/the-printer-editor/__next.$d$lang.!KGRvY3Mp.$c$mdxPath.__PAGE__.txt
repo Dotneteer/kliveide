@@ -1,0 +1,502 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T36c2,---
+description: "With PipeDream, you can create documents containing highlight codes that specify particular type styles and effects, such as bold and underlined text, superscripts and subscripts, and alternative..."
+---
+
+import { Callout, Table } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/35913788 (version 22) by scripts/import-z88-user-guide.cjs */}
+
+# Section Nine - The Printer Editor
+
+<Callout type="info">
+
+**Printing with a dot-matrix printer?**
+
+With PipeDream, you can create documents containing highlight codes that specify particular type styles and effects, such as bold and underlined text, superscripts and subscripts, and alternative fonts. Because different printers use different techniques to achieve these effects, the Cambridge Z88 uses a printer driver to convert the standard PipeDream highlights to each particular printer's codes. The printer driver can then be altered to suit a particular printer's facilities.
+
+The Cambridge Z88 comes with a built-in driver, which interfaces with the widely-used Epson series of dot-matrix printers, or other printers compatible with this.
+
+</Callout>
+
+With PipeDream, you can create documents containing highlight codes that specify particular type styles and effects, such as bold and underlined text, superscripts and subscripts, and alternative fonts. Because different printers use different techniques to achieve these effects, the Cambridge Z88 uses a printer driver to convert the standard PipeDream highlights to each particular printer's codes. The printer driver can then be altered to suit a particular printer's facilities.
+
+The Cambridge Z88 comes with a built-in driver, which interfaces with the widely-used Epson series of dot-matrix printers, or other printers compatible with this.
+
+## Selecting Printer Editor
+
+<Shot src="z88-user-guide/the-printer-editor/oz45-pe-select.webp" alt="Select Printer Editor" width={640} />
+
+The printer editor may be selected either fron the INDEX by moving the cursor over the Application name and pressing <Key k="enter" /> to select, or by using the short form keys <Key k="square" />**E**.
+
+### PrinterEd CURSOR menu
+
+<Shot src="z88-user-guide/the-printer-editor/oz45-pe-menu.webp" alt="menu cursor" width={640} />
+
+The editing commands are summarised on the PrinterEd **CURSOR** menu, which is selected with the <Key k="menu" /> key.
+
+### PrinterEd FILES menu
+
+The PrinterEd FILES menu provides commands to allow driver definitions to be used for subsequent printing, or to be saved and loaded as named files. You can also reset the driver definition to the standard Epson driver.
+
+<Shot src="z88-user-guide/the-printer-editor/oz45-pe-menu-files.webp" alt="Files Menu" width={640} />
+
+The name of the current driver definition, initially Epson,is displayed on the Printer Editor screen and is shown for the PrinterEd activity in the Index YOUR REF. column.
+
+##### <Key k="diamond" />FL — File Load
+
+Allows a driver definition to be loaded into the Printer Editor. Gives the prompt:
+
+`Filename`
+
+Note that the driver definition is not actually installed until the **Update Driver** command is given.
+
+##### <Key k="diamond" />FS — File Save
+
+Saves the current driver definition with a specified name.
+
+##### <Key k="diamond" />FC — File Name
+
+Sets the name of the current driver definition.
+
+##### <Key k="diamond" />FNEW — File New
+
+Resets the driver definition in the Printer Editor to the options for the default Epson driver, and resets the driver used for printing to this driver.
+
+##### <Key k="diamond" />FU — File Update
+
+Creates a printer driver from the definition currently in the Printer Editor, and installs it for use in subsequent printing.
+
+## Creating a new printer driver or changing an existing one
+
+The Cambridge Z88 PrinterEd application allows you to create your own printer driver definition, editing the options used by the built-in driver to add your own special printing effects to your documents.
+
+Alternatively, you can design a printer driver definition for a make of printer not catered for by the built-in driver. To do this you will need to consult the printer handbook, to find out which codes are needed for each facility you want to use.
+
+Having created a new printer driver definition, you can use this to replace the built-in driver by giving it a Name and then issuing the Update Driver command.
+
+<Callout type="error">
+
+**WARNING**
+
+Failure to use the<Key k="diamond" />FU Update Driver command will result in the existing driver to be used. It is good practise to<br /> <Key k="diamond" />FC Name the Printer<br /> <Key k="diamond" />FS Save the Printer before using the Update Driver command.
+
+</Callout>
+
+### Driver Definition Table
+
+The driver definition is displayed on two pages. You can move between the pages with the following commands:
+
+#### Page 1
+
+<Shot src="z88-user-guide/the-printer-editor/oz45-pe-scr1.webp" alt="Screen 1" width={640} />
+
+<Key k="shift" /><Key k="down" /> move from page 1 to page 2
+
+#### Page 2
+
+<Shot src="z88-user-guide/the-printer-editor/oz45-pe-scr2.webp" alt="Screen 2" width={640} />
+
+<Key k="shift" /><Key k="up" /> move from page 2 to page 1.
+
+While developing and testing a printer driver it is sensible to keep PrinterEd as a suspended activity. On completing a driver definition, and saving it to the filing system, the PrinterEd activity can be deleted from the INDEX with <Key k="diamond" />KILL.
+
+## Editing the driver definition table
+
+The printer driver definition is altered by moving the cursor to the appropriate field on the page with the cursor keys,<Key k="left" />, <Key k="right" />, <Key k="up" /> and <Key k="down" /> and then typing the required value for the option.
+
+Some options take a Yes/No value; in this case you can toggle between the values with the **Next Option** command, <Key k="diamond" />J, or select the appropriate value by typing `Y` or `N`.
+
+Most options take a list of one or more codes, separated by commas.
+
+### Code values
+
+Printer codes can be entered in any of the following forms:
+
+| Type | Example 1 | Example 2 |
+| --- | --- | --- |
+| Decimal number | 90 | 27 |
+| Hexadecimal number | $5A | $1B |
+| ASCII character | "Z" |   |
+| ASCII symbol |   | ESC |
+
+The two examples show equivalent representations of the same values.
+
+Any of the standard ASCII symbols can be used to represent the values 0 to 31, or $0 to $1F.A full list is given in Appendix D - Character Set.
+
+## Highlight codes
+
+Page 1 of the PrinterEd application allows the behaviour of each of the eight PipeDream, highlight codes to be specified.
+
+<Shot src="z88-user-guide/the-printer-editor/oz45-pe-scr1.webp" alt="Screen 1" width={640} />
+
+The recommended assignment of highlight codes to printer functions is as follows:
+
+Code
+
+Function
+
+Printed example
+
+### Underline
+
+1
+
+<u>underlined type</u>
+
+### Bold
+
+2
+
+**bold type**
+
+### Extended sequence
+
+3
+
+### Italic
+
+4
+
+*italic type*
+
+### Subscript
+
+5
+
+H<sub>2</sub>O
+
+### Superscript
+
+6
+
+e=mc<sup>2</sup>
+
+### Alternative font
+
+7
+
+`Alternative font`
+
+### User defined
+
+8
+
+In every case the same highlight turns the facility off, and in all cases except 7 and 8, the facility is also turned off at the end of a slot.
+
+The highlight table contains three columns specifying the following information for each of the eight highlights, 1 to 8:
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>ON String</Table.Td>
+<Table.Td>The sequence of codes needed to turn the facility on</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>OFF String</Table.Td>
+<Table.Td>The sequence of codes needed to turn the facility off</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Off at CR</Table.Td>
+<Table.Td>Ye s or No , to determine whether the facility should be cancelled at the end of a slot.</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+You can move between columns using the cursor keys <Key k="left" /> and <Key k="right" />, and between lines with <Key k="up" /> and <Key k="down" />.
+
+### ON String and OFF String
+
+The ON String specifies the sequence of codes to turn the corresponding printer facility on, and the OFF String the sequence of codes to turn it off. Each of these sequences of codes is output on alternate occurrences of the specified highlight code in the document.
+
+If the facility is toggled on and off by the same sequence of codes, the OFF String can be omitted, and the ON String will be output on every occurrence of the highlight.
+
+### Overprinting
+
+On some printers special effects can be obtained by outputting a sequence of codes for every character printed. For example, some daisy-wheel printers underline by backspacing, and then printing an underscore character, for every character printed.
+
+You can set up highlights that work on this principle by including the special '?' character in the ON String. When the highlight is active, the specified ON String sequence will be output for every character printed, with '?' replaced by that character. This facility is toggled on and off by successive occurrences of the specified highlight code.
+
+For example, to underline by backspacing and overprinting an underscore character, give the sequence
+
+`1 ON Underline ?,BS,"_"`
+
+If '? occurs in the ON String the OFF String is ignored, and should be left blank.
+
+### Off at CR
+
+The final column specifies for each code whether the facility should be turned off automatically at the end of each slot. In general, all highlights which are normally inserted on a word by word basis, such as underlining and bold type, should specify `Yes` (the default) in this column.
+
+Off at CR should also be set to `Yes` if the printer itself turns off the corresponding facility at a carriage return.
+
+Off at CR should be set to `No` in the case of highlights, such as alternative font, which are applied to a large section of a document. Note that in this case headers and footers within the highlighted area will also be affected.
+
+## Printer options
+
+Page 2 of the PrinterEd application allows the driver definition options to be specified, and up to nine character translations to be set up.
+
+<Shot src="z88-user-guide/the-printer-editor/oz45-pe-scr2.webp" alt="Screen 2" width={640} />
+
+### Printer on
+
+Specifies a sequence of codes to be sent to the printer before printing a document. For example, the codes 27,64 in the Epson driver definition initialise the printer.
+
+### Printer off
+
+Can be used to reset the printer to its previous settings so that subsequent printing will not be affected.
+
+### End of page
+
+Specifies a sequence of codes to be sent to the printer at the end of each page. If the sequence contains a form-feed character, 12 (or FF), PipeDream will not output linefeeds to the end of page, resulting in faster and quieter page ejects on printers that support this.
+
+### Allow line feed
+
+Determines whether a line feed code (LF) is sent at the end of each line, in addition to a carriage return (CR). This option is set to `Yes` in the default Epson driver. If unwanted extra line feeds are produced, so that all printing is double-spaced, change the option value to `No` .
+
+Note: With Operating Systems 3.0 and earlier, selecting `No will` cause ASCII 0 (NULL) to be sent instead of ASCII 10 (LF).
+
+### Microspacing - HMI
+
+Certain printers allow the horizontal movement of the print head to be controlled to 1/120th of an inch, which means that text will be justified with an almost perfectly even distribution of the space. The following sample is printed without microspacing:
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>
+
+`This sample of text demonstrates the`
+
+`improvement gained by justifying text with`
+
+`microspacing.`
+
+</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+The same sample with microspacing is shown below:
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>
+
+`This sample of text demonstrates the improvement`
+
+`gained by justifying text with microspacing.`
+
+</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+Microspacing requires a Horizontal Motion Increment, or HMI, to be specified to the printer as the number of 120ths of an inch to be allocated to the printing of subsequent characters. This is normally given after a prefix code, although for some printers a suffix is also required. For example, the Ricoh, Flowriter 1600, and JUKI 6100 use the following prefix:
+
+`HMI prefix ESC,31`
+
+`HMI suffix`
+
+`HMI offset 1`
+
+## Translations
+
+The character translation table allows up to 9 single-character substitutions to be made before printing, so that alterations can be made to the character set supplied by the printer. The sequence may include a string of codes, which will scroll within the window as they are entered.
+
+### ISO Translations
+
+<Shot src="z88-user-guide/the-printer-editor/oz45-pe-iso.webp" alt="iso translation table" width={640} />
+
+An extended ISO translation table has been provided as well, selected using the <Key k="diamond" />ISO command. This gives 14 more single-character substitutions which are additional to the number above.
+
+### Adding the £ translation character
+
+<Callout type="info">
+
+**Printing the £ symbol**
+
+Are you getting \]eMq,M5M=6MBMy\]a7I in-between the £ symbol and the numbers ? This is due to a bug affecting OZ4.4 to 4.6. The default translation is wrong inthe \<\>ISO translations page. It can be fixed by putting back this translation with 27,82,3,35,27,82,0 inline 2.
+
+</Callout>
+
+For example, the default Epson driver uses the following sequence to print a '£' sign, assuming it is set up to use the USA character set:
+
+`27,82,3,35,27,82,0`
+
+which is equivalent to:
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>`ESC R" 3`</Table.Td>
+<Table.Td>select UK character set</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>`35`</Table.Td>
+<Table.Td>print pound sign</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>`ESC R" 0`</Table.Td>
+<Table.Td>restore USA character set</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+Some printers do not print a space for the 'Hard space' character, decimal code 160. To correct this, enter a translation to change character 160 to 32.a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Selecting Printer Editor","id":"selecting-printer-editor","depth":2},{"value":"PrinterEd CURSOR menu","id":"printered-cursor-menu","depth":3},{"value":"PrinterEd FILES menu","id":"printered-files-menu","depth":3},{"value":[["$","$4",".0",{"children":[["$","kbd",".0",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"FL — File Load"]}]],"id":"fl--file-load","depth":5},{"value":[["$","$4",".0",{"children":[["$","kbd",".0",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"FS — File Save"]}]],"id":"fs--file-save","depth":5},{"value":[["$","$4",".0",{"children":[["$","kbd",".0",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"FC — File Name"]}]],"id":"fc--file-name","depth":5},{"value":[["$","$4",".0",{"children":[["$","kbd",".0",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"FNEW — File New"]}]],"id":"fnew--file-new","depth":5},{"value":[["$","$4",".0",{"children":[["$","kbd",".0",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"FU — File Update"]}]],"id":"fu--file-update","depth":5},{"value":"Creating a new printer driver or changing an existing one","id":"creating-a-new-printer-driver-or-changing-an-existing-one","depth":2},{"value":"Driver Definition Table","id":"driver-definition-table","depth":3},{"value":"Page 1","id":"page-1","depth":4},{"value":"Page 2","id":"page-2","depth":4},{"value":"Editing the driver definition table","id":"editing-the-driver-definition-table","depth":2},{"value":"Code values","id":"code-values","depth":3},{"value":"Highlight codes","id":"highlight-codes","depth":2},{"value":"Underline","id":"underline","depth":3},{"value":"Bold","id":"bold","depth":3},{"value":"Extended sequence","id":"extended-sequence","depth":3},{"value":"Italic","id":"italic","depth":3},{"value":"Subscript","id":"subscript","depth":3},{"value":"Superscript","id":"superscript","depth":3},{"value":"Alternative font","id":"alternative-font","depth":3},{"value":"User defined","id":"user-defined","depth":3},{"value":"ON String and OFF String","id":"on-string-and-off-string","depth":3},{"value":"Overprinting","id":"overprinting","depth":3},{"value":"Off at CR","id":"off-at-cr","depth":3},{"value":"Printer options","id":"printer-options","depth":2},{"value":"Printer on","id":"printer-on","depth":3},{"value":"Printer off","id":"printer-off","depth":3},{"value":"End of page","id":"end-of-page","depth":3},{"value":"Allow line feed","id":"allow-line-feed","depth":3},{"value":"Microspacing - HMI","id":"microspacing---hmi","depth":3},{"value":"Translations","id":"translations","depth":2},{"value":"ISO Translations","id":"iso-translations","depth":3},{"value":"Adding the £ translation character","id":"adding-the--translation-character","depth":3}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"With PipeDream, you can create documents containing highlight codes that specify particular type styles and effects, such as bold and underlined text, superscripts and subscripts, and alternative...","title":"Section Nine - The Printer Editor","filePath":"content/en/z88-user-guide/the-printer-editor.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"z88-user-guide/the-printer-editor","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Section Nine - The Printer Editor - Klive IDE"}],["$","meta","1",{"name":"description","content":"With PipeDream, you can create documents containing highlight codes that specify particular type styles and effects, such as bold and underlined text, superscripts and subscripts, and alternative..."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/z88-user-guide/the-printer-editor/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"JRknQ_wk_gMYl0jLYL8vC"}
+20:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+9b:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Section Nine - The Printer Editor","$undefined"]}],"\n",["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":["$","svg",null,{"viewBox":"0 0 16 16","fill":"currentColor","height":".8em","className":"x:mt-[.3em]","children":["$","path",null,{"d":"M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"}]}]}],["$","div",null,{"className":"x:w-full x:min-w-0","children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Printing with a dot-matrix printer?"}]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"With PipeDream, you can create documents containing highlight codes that specify particular type styles and effects, such as bold and underlined text, superscripts and subscripts, and alternative fonts. Because different printers use different techniques to achieve these effects, the Cambridge Z88 uses a printer driver to convert the standard PipeDream highlights to each particular printer’s codes. The printer driver can then be altered to suit a particular printer’s facilities."}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The Cambridge Z88 comes with a built-in driver, which interfaces with the widely-used Epson series of dot-matrix printers, or other printers compatible with this."}]]}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"With PipeDream, you can create documents containing highlight codes that specify particular type styles and effects, such as bold and underlined text, superscripts and subscripts, and alternative fonts. Because different printers use different techniques to achieve these effects, the Cambridge Z88 uses a printer driver to convert the standard PipeDream highlights to each particular printer’s codes. The printer driver can then be altered to suit a particular printer’s facilities."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The Cambridge Z88 comes with a built-in driver, which interfaces with the widely-used Epson series of dot-matrix printers, or other printers compatible with this."}],"\n",["$","h2",null,{"id":"selecting-printer-editor","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Selecting Printer Editor",["$","$L20",null,{"id":"selecting-printer-editor"}]]}],"\n",["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/the-printer-editor/oz45-pe-select.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/the-printer-editor/oz45-pe-select.webp","alt":"Select Printer Editor","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}],"\n","$L21","\n","$L22","\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41","\n","$L42","\n","$L43","\n","$L44","\n","$L45","\n","$L46","\n","$L47","\n","$L48","\n","$L49","\n","$L4a","\n","$L4b","\n","$L4c","\n","$L4d","\n","$L4e","\n","$L4f","\n","$L50","\n","$L51","\n","$L52","\n","$L53","\n","$L54","\n","$L55","\n","$L56","\n","$L57","\n","$L58","\n","$L59","\n","$L5a","\n","$L5b","\n","$L5c","\n","$L5d","\n","$L5e","\n","$L5f","\n","$L60","\n","$L61","\n","$L62","\n","$L63","\n","$L64","\n","$L65","\n","$L66","\n","$L67","\n","$L68","\n","$L69","\n","$L6a","\n","$L6b","\n","$L6c","\n","$L6d","\n","$L6e","\n","$L6f","\n","$L70","\n","$L71","\n","$L72","\n","$L73","\n","$L74","\n","$L75","\n","$L76","\n","$L77","\n","$L78","\n","$L79","\n","$L7a","\n","$L7b","\n","$L7c","\n","$L7d","\n","$L7e","\n","$L7f","\n","$L80","\n","$L81","\n","$L82","\n","$L83","\n","$L84","\n","$L85","\n","$L86","\n","$L87","\n","$L88","\n","$L89","\n","$L8a","\n","$L8b","\n","$L8c","\n","$L8d","\n","$L8e","\n","$L8f","\n","$L90","\n","$L91","\n","$L92","\n","$L93","\n","$L94","\n","$L95","\n","$L96","\n","$L97","\n","$L98","\n","$L99","\n","$L9a"]]}]
+15:["$","$L9b",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@9c"}]}]
+1f:true
+9:300
+21:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The printer editor may be selected either fron the INDEX by moving the cursor over the Application name and pressing ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]," to select, or by using the short form keys ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],["$","strong",null,{"children":"E"}],"."]}]
+22:["$","h3",null,{"id":"printered-cursor-menu","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["PrinterEd CURSOR menu",["$","$L20",null,{"id":"printered-cursor-menu"}]]}]
+23:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/the-printer-editor/oz45-pe-menu.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/the-printer-editor/oz45-pe-menu.webp","alt":"menu cursor","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+24:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The editing commands are summarised on the PrinterEd ",["$","strong",null,{"children":"CURSOR"}]," menu, which is selected with the ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Menu","children":"MENU"}]," key."]}]
+25:["$","h3",null,{"id":"printered-files-menu","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["PrinterEd FILES menu",["$","$L20",null,{"id":"printered-files-menu"}]]}]
+26:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The PrinterEd FILES menu provides commands to allow driver definitions to be used for subsequent printing, or to be saved and loaded as named files. You can also reset the driver definition to the standard Epson driver."}]
+27:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/the-printer-editor/oz45-pe-menu-files.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/the-printer-editor/oz45-pe-menu-files.webp","alt":"Files Menu","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+28:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The name of the current driver definition, initially Epson,is displayed on the Printer Editor screen and is shown for the PrinterEd activity in the Index YOUR REF. column."}]
+29:["$","h5",null,{"id":"fl--file-load","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-lg","children":[[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"FL — File Load"],["$","$L20",null,{"id":"fl--file-load"}]]}]
+2a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Allows a driver definition to be loaded into the Printer Editor. Gives the prompt:"}]
+2b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Filename"}]}]
+2c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Note that the driver definition is not actually installed until the ",["$","strong",null,{"children":"Update Driver"}]," command is given."]}]
+2d:["$","h5",null,{"id":"fs--file-save","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-lg","children":[[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"FS — File Save"],["$","$L20",null,{"id":"fs--file-save"}]]}]
+2e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Saves the current driver definition with a specified name."}]
+2f:["$","h5",null,{"id":"fc--file-name","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-lg","children":[[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"FC — File Name"],["$","$L20",null,{"id":"fc--file-name"}]]}]
+30:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Sets the name of the current driver definition."}]
+31:["$","h5",null,{"id":"fnew--file-new","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-lg","children":[[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"FNEW — File New"],["$","$L20",null,{"id":"fnew--file-new"}]]}]
+32:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Resets the driver definition in the Printer Editor to the options for the default Epson driver, and resets the driver used for printing to this driver."}]
+33:["$","h5",null,{"id":"fu--file-update","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-lg","children":[[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"FU — File Update"],["$","$L20",null,{"id":"fu--file-update"}]]}]
+34:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Creates a printer driver from the definition currently in the Printer Editor, and installs it for use in subsequent printing."}]
+35:["$","h2",null,{"id":"creating-a-new-printer-driver-or-changing-an-existing-one","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Creating a new printer driver or changing an existing one",["$","$L20",null,{"id":"creating-a-new-printer-driver-or-changing-an-existing-one"}]]}]
+36:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The Cambridge Z88 PrinterEd application allows you to create your own printer driver definition, editing the options used by the built-in driver to add your own special printing effects to your documents."}]
+37:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Alternatively, you can design a printer driver definition for a make of printer not catered for by the built-in driver. To do this you will need to consult the printer handbook, to find out which codes are needed for each facility you want to use."}]
+38:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Having created a new printer driver definition, you can use this to replace the built-in driver by giving it a Name and then issuing the Update Driver command."}]
+39:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-red-100 x:dark:bg-red-900/30 x:text-red-700 x:dark:text-red-500 x:border-red-700 x:dark:border-red-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$14:props:children:1:3:props:children:0:props:style","data-pagefind-ignore":"all","children":["$","svg",null,{"viewBox":"0 0 16 16","fill":"currentColor","height":".8em","className":"x:mt-[.3em]","children":["$","path",null,{"d":"M4.47.22A.749.749 0 0 1 5 0h6c.199 0 .389.079.53.22l4.25 4.25c.141.14.22.331.22.53v6a.749.749 0 0 1-.22.53l-4.25 4.25A.749.749 0 0 1 11 16H5a.749.749 0 0 1-.53-.22L.22 11.53A.749.749 0 0 1 0 11V5c0-.199.079-.389.22-.53Zm.84 1.28L1.5 5.31v5.38l3.81 3.81h5.38l3.81-3.81V5.31L10.69 1.5ZM8 4a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 8 4Zm0 8a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"}]}]}],["$","div",null,{"className":"x:w-full x:min-w-0","children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"WARNING"}]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Failure to use the",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"FU Update Driver command will result in the existing driver to be used. It is good practise to",["$","br",null,{}]," ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"FC Name the Printer",["$","br",null,{}]," ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"FS Save the Printer before using the Update Driver command."]}]]}]]}]
+3a:["$","h3",null,{"id":"driver-definition-table","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Driver Definition Table",["$","$L20",null,{"id":"driver-definition-table"}]]}]
+3b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The driver definition is displayed on two pages. You can move between the pages with the following commands:"}]
+3c:["$","h4",null,{"id":"page-1","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":["Page 1",["$","$L20",null,{"id":"page-1"}]]}]
+3d:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/the-printer-editor/oz45-pe-scr1.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/the-printer-editor/oz45-pe-scr1.webp","alt":"Screen 1","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+3e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Shift","children":"SHIFT"}],["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor down","children":"↓"}]," move from page 1 to page 2"]}]
+3f:["$","h4",null,{"id":"page-2","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":["Page 2",["$","$L20",null,{"id":"page-2"}]]}]
+40:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/the-printer-editor/oz45-pe-scr2.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/the-printer-editor/oz45-pe-scr2.webp","alt":"Screen 2","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+41:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Shift","children":"SHIFT"}],["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor up","children":"↑"}]," move from page 2 to page 1."]}]
+42:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["While developing and testing a printer driver it is sensible to keep PrinterEd as a suspended activity. On completing a driver definition, and saving it to the filing system, the PrinterEd activity can be deleted from the INDEX with ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"KILL."]}]
+43:["$","h2",null,{"id":"editing-the-driver-definition-table","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Editing the driver definition table",["$","$L20",null,{"id":"editing-the-driver-definition-table"}]]}]
+44:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The printer driver definition is altered by moving the cursor to the appropriate field on the page with the cursor keys,",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor left","children":"←"}],", ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor right","children":"→"}],", ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor up","children":"↑"}]," and ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor down","children":"↓"}]," and then typing the required value for the option."]}]
+45:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Some options take a Yes/No value; in this case you can toggle between the values with the ",["$","strong",null,{"children":"Next Option"}]," command, ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"J, or select the appropriate value by typing ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Y"}]," or ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"N"}],"."]}]
+46:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Most options take a list of one or more codes, separated by commas."}]
+47:["$","h3",null,{"id":"code-values","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Code values",["$","$L20",null,{"id":"code-values"}]]}]
+48:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Printer codes can be entered in any of the following forms:"}]
+49:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"Type","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Example 1","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Example 2","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":"Decimal number","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"90","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"27","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"Hexadecimal number","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"$$5A","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"$$1B","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"ASCII character","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"“Z”","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"ASCII symbol","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"ESC","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}]]}]
+4a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The two examples show equivalent representations of the same values."}]
+4b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Any of the standard ASCII symbols can be used to represent the values 0 to 31, or $0 to $1F.A full list is given in Appendix D - Character Set."}]
+4c:["$","h2",null,{"id":"highlight-codes","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Highlight codes",["$","$L20",null,{"id":"highlight-codes"}]]}]
+4d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Page 1 of the PrinterEd application allows the behaviour of each of the eight PipeDream, highlight codes to be specified."}]
+4e:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/the-printer-editor/oz45-pe-scr1.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/the-printer-editor/oz45-pe-scr1.webp","alt":"Screen 1","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+4f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The recommended assignment of highlight codes to printer functions is as follows:"}]
+50:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Code"}]
+51:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Function"}]
+52:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Printed example"}]
+53:["$","h3",null,{"id":"underline","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Underline",["$","$L20",null,{"id":"underline"}]]}]
+54:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"1"}]
+55:["$","u",null,{"children":"underlined type"}]
+56:["$","h3",null,{"id":"bold","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Bold",["$","$L20",null,{"id":"bold"}]]}]
+57:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"2"}]
+58:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"bold type"}]}]
+59:["$","h3",null,{"id":"extended-sequence","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Extended sequence",["$","$L20",null,{"id":"extended-sequence"}]]}]
+5a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"3"}]
+5b:["$","h3",null,{"id":"italic","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Italic",["$","$L20",null,{"id":"italic"}]]}]
+5c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"4"}]
+5d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","em",null,{"children":"italic type"}]}]
+5e:["$","h3",null,{"id":"subscript","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Subscript",["$","$L20",null,{"id":"subscript"}]]}]
+5f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"5"}]
+60:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["H",["$","sub",null,{"children":"2"}],"O"]}]
+61:["$","h3",null,{"id":"superscript","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Superscript",["$","$L20",null,{"id":"superscript"}]]}]
+62:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"6"}]
+63:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["e=mc",["$","sup",null,{"children":"2"}]]}]
+64:["$","h3",null,{"id":"alternative-font","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Alternative font",["$","$L20",null,{"id":"alternative-font"}]]}]
+65:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"7"}]
+66:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Alternative font"}]}]
+67:["$","h3",null,{"id":"user-defined","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["User defined",["$","$L20",null,{"id":"user-defined"}]]}]
+68:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"8"}]
+69:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"In every case the same highlight turns the facility off, and in all cases except 7 and 8, the facility is also turned off at the end of a slot."}]
+6a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The highlight table contains three columns specifying the following information for each of the eight highlights, 1 to 8:"}]
+6b:["$","table",null,{"children":["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":"ON String","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The sequence of codes needed to turn the facility on","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"OFF String","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The sequence of codes needed to turn the facility off","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"Off at CR","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Ye s or No , to determine whether the facility should be cancelled at the end of a slot.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}],"className":"x:block x:overflow-x-auto"}]
+6c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["You can move between columns using the cursor keys ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor left","children":"←"}]," and ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor right","children":"→"}],", and between lines with ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor up","children":"↑"}]," and ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor down","children":"↓"}],"."]}]
+6d:["$","h3",null,{"id":"on-string-and-off-string","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["ON String and OFF String",["$","$L20",null,{"id":"on-string-and-off-string"}]]}]
+6e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The ON String specifies the sequence of codes to turn the corresponding printer facility on, and the OFF String the sequence of codes to turn it off. Each of these sequences of codes is output on alternate occurrences of the specified highlight code in the document."}]
+6f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If the facility is toggled on and off by the same sequence of codes, the OFF String can be omitted, and the ON String will be output on every occurrence of the highlight."}]
+70:["$","h3",null,{"id":"overprinting","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Overprinting",["$","$L20",null,{"id":"overprinting"}]]}]
+71:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"On some printers special effects can be obtained by outputting a sequence of codes for every character printed. For example, some daisy-wheel printers underline by backspacing, and then printing an underscore character, for every character printed."}]
+72:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You can set up highlights that work on this principle by including the special ’?’ character in the ON String. When the highlight is active, the specified ON String sequence will be output for every character printed, with ’?’ replaced by that character. This facility is toggled on and off by successive occurrences of the specified highlight code."}]
+73:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"For example, to underline by backspacing and overprinting an underscore character, give the sequence"}]
+74:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"1 ON Underline ?,BS,\"_\""}]}]
+75:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If ’? occurs in the ON String the OFF String is ignored, and should be left blank."}]
+76:["$","h3",null,{"id":"off-at-cr","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Off at CR",["$","$L20",null,{"id":"off-at-cr"}]]}]
+77:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The final column specifies for each code whether the facility should be turned off automatically at the end of each slot. In general, all highlights which are normally inserted on a word by word basis, such as underlining and bold type, should specify ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Yes"}]," (the default) in this column."]}]
+78:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Off at CR should also be set to ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Yes"}]," if the printer itself turns off the corresponding facility at a carriage return."]}]
+79:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Off at CR should be set to ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"No"}]," in the case of highlights, such as alternative font, which are applied to a large section of a document. Note that in this case headers and footers within the highlighted area will also be affected."]}]
+7a:["$","h2",null,{"id":"printer-options","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Printer options",["$","$L20",null,{"id":"printer-options"}]]}]
+7b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Page 2 of the PrinterEd application allows the driver definition options to be specified, and up to nine character translations to be set up."}]
+7c:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/the-printer-editor/oz45-pe-scr2.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/the-printer-editor/oz45-pe-scr2.webp","alt":"Screen 2","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+7d:["$","h3",null,{"id":"printer-on","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Printer on",["$","$L20",null,{"id":"printer-on"}]]}]
+7e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Specifies a sequence of codes to be sent to the printer before printing a document. For example, the codes 27,64 in the Epson driver definition initialise the printer."}]
+7f:["$","h3",null,{"id":"printer-off","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Printer off",["$","$L20",null,{"id":"printer-off"}]]}]
+80:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Can be used to reset the printer to its previous settings so that subsequent printing will not be affected."}]
+81:["$","h3",null,{"id":"end-of-page","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["End of page",["$","$L20",null,{"id":"end-of-page"}]]}]
+82:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Specifies a sequence of codes to be sent to the printer at the end of each page. If the sequence contains a form-feed character, 12 (or FF), PipeDream will not output linefeeds to the end of page, resulting in faster and quieter page ejects on printers that support this."}]
+83:["$","h3",null,{"id":"allow-line-feed","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Allow line feed",["$","$L20",null,{"id":"allow-line-feed"}]]}]
+84:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Determines whether a line feed code (LF) is sent at the end of each line, in addition to a carriage return (CR). This option is set to ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Yes"}]," in the default Epson driver. If unwanted extra line feeds are produced, so that all printing is double-spaced, change the option value to ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"No"}]," ."]}]
+85:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Note: With Operating Systems 3.0 and earlier, selecting ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"No will"}]," cause ASCII 0 (NULL) to be sent instead of ASCII 10 (LF)."]}]
+86:["$","h3",null,{"id":"microspacing---hmi","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Microspacing - HMI",["$","$L20",null,{"id":"microspacing---hmi"}]]}]
+87:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Certain printers allow the horizontal movement of the print head to be controlled to 1/120th of an inch, which means that text will be justified with an almost perfectly even distribution of the space. The following sample is printed without microspacing:"}]
+88:["$","table",null,{"children":["$","tbody",null,{"children":["$","tr",null,{"children":["$","td",null,{"children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"This sample of text demonstrates the"}]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"improvement gained by justifying text with"}]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"microspacing."}]}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],"className":"x:block x:overflow-x-auto"}]
+89:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The same sample with microspacing is shown below:"}]
+8a:["$","table",null,{"children":["$","tbody",null,{"children":["$","tr",null,{"children":["$","td",null,{"children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"This sample of text demonstrates the improvement"}]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"gained by justifying text with microspacing."}]}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],"className":"x:block x:overflow-x-auto"}]
+8b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Microspacing requires a Horizontal Motion Increment, or HMI, to be specified to the printer as the number of 120ths of an inch to be allocated to the printing of subsequent characters. This is normally given after a prefix code, although for some printers a suffix is also required. For example, the Ricoh, Flowriter 1600, and JUKI 6100 use the following prefix:"}]
+8c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"HMI prefix ESC,31"}]}]
+8d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"HMI suffix"}]}]
+8e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"HMI offset 1"}]}]
+8f:["$","h2",null,{"id":"translations","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Translations",["$","$L20",null,{"id":"translations"}]]}]
+90:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The character translation table allows up to 9 single-character substitutions to be made before printing, so that alterations can be made to the character set supplied by the printer. The sequence may include a string of codes, which will scroll within the window as they are entered."}]
+91:["$","h3",null,{"id":"iso-translations","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["ISO Translations",["$","$L20",null,{"id":"iso-translations"}]]}]
+92:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/the-printer-editor/oz45-pe-iso.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/the-printer-editor/oz45-pe-iso.webp","alt":"iso translation table","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+93:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["An extended ISO translation table has been provided as well, selected using the ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"ISO command. This gives 14 more single-character substitutions which are additional to the number above."]}]
+94:["$","h3",null,{"id":"adding-the--translation-character","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Adding the £ translation character",["$","$L20",null,{"id":"adding-the--translation-character"}]]}]
+95:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$14:props:children:1:3:props:children:0:props:style","data-pagefind-ignore":"all","children":"$14:props:children:1:3:props:children:0:props:children"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Printing the £ symbol"}]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Are you getting ]eMq,M5M=6MBMy]a7I in-between the £ symbol and the numbers ? This is due to a bug affecting OZ4.4 to 4.6. The default translation is wrong inthe <>ISO translations page. It can be fixed by putting back this translation with 27,82,3,35,27,82,0 inline 2."}]]}]]}]
+96:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"For example, the default Epson driver uses the following sequence to print a ’£’ sign, assuming it is set up to use the USA character set:"}]
+97:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"27,82,3,35,27,82,0"}]}]
+98:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"which is equivalent to:"}]
+99:["$","table",null,{"children":["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"ESC R\" 3"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"select UK character set","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"35"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"print pound sign","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"ESC R\" 0"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"restore USA character set","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}],"className":"x:block x:overflow-x-auto"}]
+9a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Some printers do not print a space for the ‘Hard space’ character, decimal code 160. To correct this, enter a translation to change character 160 to 32."}]
+9c:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

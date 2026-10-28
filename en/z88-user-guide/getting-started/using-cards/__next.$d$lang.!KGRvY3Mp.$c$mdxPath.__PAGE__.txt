@@ -1,0 +1,260 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T1781,---
+description: "There are four types of card for use with the Cambridge Z88:"
+asIndexPage: true
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/35913746 (version 33) by scripts/import-z88-user-guide.cjs */}
+
+# Using cards
+
+## Types of Cards
+
+There are four types of card for use with the Cambridge Z88:
+
+<Shot src="z88-user-guide/external/qg-check-all-z88-cards/rams-eproms.webp" alt="rams eproms" width={168} />
+
+**RAM** cards are for increasing working memory for the Z88, storing your own information and running additional applications.
+
+**ROM** cards are pre-programmed and are normally called applications; for example PCLINK. EPROM & FLASH cards are used for this
+
+**EPROM** cards allow you to write information once only in the File Area, but retain it even when removed from the machine thus providing a secure way of saving your data.
+
+**FLASH** cards can combine the **ROM** and **EPROM** function on a single card allowing applications to be stored with a File Area.
+
+### Prices
+
+When the Z88 came out, memory was very expensive. This is why RAM & EPROM cards were available in different sizes.
+
+<Table>
+<thead>
+<Table.Tr>
+<Table.Th />
+<Table.Th colSpan={2}>1989</Table.Th>
+<Table.Th colSpan={2}>2015</Table.Th>
+</Table.Tr>
+</thead>
+<tbody>
+<Table.Tr>
+<Table.Th />
+<Table.Th>RAM</Table.Th>
+<Table.Th>EPROM</Table.Th>
+<Table.Th>RAM</Table.Th>
+<Table.Th>FLASH</Table.Th>
+</Table.Tr>
+<Table.Tr>
+<Table.Th>1M</Table.Th>
+<Table.Td>£200</Table.Td>
+<Table.Td />
+<Table.Td>£59</Table.Td>
+<Table.Td>£55</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Th>512K</Table.Th>
+<Table.Td>£99</Table.Td>
+<Table.Td />
+<Table.Td colSpan={2}>£59</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Th>256K</Table.Th>
+<Table.Td />
+<Table.Td>£59</Table.Td>
+<Table.Td />
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Th>128K</Table.Th>
+<Table.Td>£49</Table.Td>
+<Table.Td>£49</Table.Td>
+<Table.Td />
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Th>32K</Table.Th>
+<Table.Td>£25</Table.Td>
+<Table.Td>£25</Table.Td>
+<Table.Td />
+<Table.Td />
+</Table.Tr>
+</tbody>
+</Table>
+
+Prices have fallen and the memory increased.
+
+As the maximum size that each slot can address is 1M, it is recommended that 1M is used so there is no wasted space.
+
+## How they work together
+
+<Shot src="z88-user-guide/getting-started/using-cards/z88-cards.webp" alt="Z88 Cards" width={900} />
+
+It is very important to understand how these cards work together with each other. This diagram shows the 1M Flash/1M RAM / 1M Flash configuration.
+
+<Shot src="z88-user-guide/external/zfs-operation-and-commands/flash-ram-flash.webp" alt="flash ram flash" width={450} />
+
+When using the 512K/512K Flash/RAM card, the sizes may be different but the principle remains the same,
+
+### Main Devices
+
+#### :EPR.1 1M FLASH
+
+This is where the applications OZ4.x are stored. The space that is left over is used for storing files in the File Area. Most Applications (like Pipedream in OZ 4.x) Save and Fetch their files from :RAM, in this example in :RAM.0 and :RAM.2.
+
+#### :RAM.0 INTERNAL 32K RAM
+
+This is the internal RAM. Any RAM that is not used for files is free to be used by any application.
+
+#### :RAM.2 1M RAM
+
+This is where files are saved and memory is used for applications.
+
+#### ;EPR.3 1M FLASH
+
+Another Flash Card can be used here, to save even more files.
+
+### Applications that hold them together
+
+Once a file has been saved to RAM, it should be saved to either a Flash card or to the Desktop computer. These applications allow you to do that.
+
+#### Filer and Flashstore
+
+This saves or load files from and to the RAM, using EPROM or Flash Cards.
+
+#### EP-Fetch2
+
+To fetch files from the EPROMs or Flash Card to RAM selecting from a list, use this 'point & shoot' method.
+
+#### Eazylink
+
+Transfers files to or from the Desktop computer and the Z88. Files can be saved to and fetched from both Flash or RAM cards.
+
+#### OZ 4.7
+
+Before OZ 4.7, files could only be saved and loaded in RAM before they could be used in applications.
+
+OZ 4.7 allows files in the Flash card file areas to be saved and loaded directly to all applications, without needing to save or load them to RAM beforehand.
+
+## Inserting or removing cards
+
+Cards should only be inserted or removed with the Cambridge Z88 switched on.
+
+First enter the Index. Use the <Key k="index" /> key.
+
+<Shot src="z88-user-guide/external/oz-the-z88-operating-system/index.webp" alt="index" width={640} />
+
+Then open the perspex flap at the front of the machine.
+
+<Shot src="z88-user-guide/external/qg-z88-quick-guide-help-home-page/card-slot.webp" alt="card slot" width={265} />
+
+Check that the screen goes blank.
+
+<Shot src="z88-user-guide/getting-started/using-cards/z88-blank-screen.webp" alt="z88 blank screen" width={640} />
+
+The computer should bleep once as you open the flap.
+
+The card can then be pushed in or pulled out. The label on the end of the card should be upright when you push the card home.
+
+When you have completed the operation,
+
+<Shot src="z88-user-guide/getting-started/up-and-running/flash-card-example/z88-512-512-card-shut-card-flap.webp" alt="z88 512 512 card shut card flap" width={900} />
+
+push the Perspex flap back into position.
+
+## Card errors
+
+Errors which occur during the insertion or removal of cards are displayed in the **OZ** position on the right-hand side of the screen.
+
+A **FAIL** message (on the top right-hand corner of the screen) is given if a RAM card is removed, indicating that a soft reset is necessary.
+
+<Shot src="z88-user-guide/external/ug40-using-cards/memory-fail.webp" alt="memory fail" width={640} />
+
+If you remove an application card which a suspended activity is using, the Cambridge Z88 will give a continuous tone and flash `CARD` until the card is replaced. The suspended activity should be removed with <Key k="diamond" />KILL before trying again.
+
+An `INDEX` message is given, together with a continuous tone, if you have attempted to remove an application card while not in the Index.a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Types of Cards","id":"types-of-cards","depth":2},{"value":"Prices","id":"prices","depth":3},{"value":"How they work together","id":"how-they-work-together","depth":2},{"value":"Main Devices","id":"main-devices","depth":3},{"value":":EPR.1 1M FLASH","id":"epr1-1m-flash","depth":4},{"value":":RAM.0 INTERNAL 32K RAM","id":"ram0-internal-32k-ram","depth":4},{"value":":RAM.2 1M RAM","id":"ram2-1m-ram","depth":4},{"value":";EPR.3 1M FLASH","id":"epr3-1m-flash","depth":4},{"value":"Applications that hold them together","id":"applications-that-hold-them-together","depth":3},{"value":"Filer and Flashstore","id":"filer-and-flashstore","depth":4},{"value":"EP-Fetch2","id":"ep-fetch2","depth":4},{"value":"Eazylink","id":"eazylink","depth":4},{"value":"OZ 4.7","id":"oz-47","depth":4},{"value":"Inserting or removing cards","id":"inserting-or-removing-cards","depth":2},{"value":"Card errors","id":"card-errors","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"There are four types of card for use with the Cambridge Z88:","asIndexPage":true,"title":"Using cards","filePath":"content/en/z88-user-guide/getting-started/using-cards/index.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"z88-user-guide/getting-started/using-cards","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Using cards - Klive IDE"}],["$","meta","1",{"name":"description","content":"There are four types of card for use with the Cambridge Z88:"}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/z88-user-guide/getting-started/using-cards/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"JRknQ_wk_gMYl0jLYL8vC"}
+20:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+54:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Using cards","$undefined"]}],"\n",["$","h2",null,{"id":"types-of-cards","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Types of Cards",["$","$L20",null,{"id":"types-of-cards"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"There are four types of card for use with the Cambridge Z88:"}],"\n",["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"168px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/external/qg-check-all-z88-cards/rams-eproms.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/external/qg-check-all-z88-cards/rams-eproms.webp","alt":"rams eproms","loading":"lazy","decoding":"async","width":168,"height":161}],[]]}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"RAM"}]," cards are for increasing working memory for the Z88, storing your own information and running additional applications."]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"ROM"}]," cards are pre-programmed and are normally called applications; for example PCLINK. EPROM & FLASH cards are used for this"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"EPROM"}]," cards allow you to write information once only in the File Area, but retain it even when removed from the machine thus providing a secure way of saving your data."]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"FLASH"}]," cards can combine the ",["$","strong",null,{"children":"ROM"}]," and ",["$","strong",null,{"children":"EPROM"}]," function on a single card allowing applications to be stored with a File Area."]}],"\n",["$","h3",null,{"id":"prices","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Prices",["$","$L20",null,{"id":"prices"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When the Z88 came out, memory was very expensive. This is why RAM & EPROM cards were available in different sizes."}],"\n",["$","table",null,{"children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"colSpan":2,"children":"1989","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"colSpan":2,"children":"2015","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","th",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"RAM","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"EPROM","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"RAM","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"FLASH","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],"$L21","$L22","$L23","$L24","$L25"]}]],"className":"x:block x:overflow-x-auto"}],"\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41","\n","$L42","\n","$L43","\n","$L44","\n","$L45","\n","$L46","\n","$L47","\n","$L48","\n","$L49","\n","$L4a","\n","$L4b","\n","$L4c","\n","$L4d","\n","$L4e","\n","$L4f","\n","$L50","\n","$L51","\n","$L52","\n","$L53"]]}]
+15:["$","$L54",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@55"}]}]
+1f:true
+9:300
+21:["$","tr",null,{"children":[["$","th",null,{"children":"1M","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","td",null,{"children":"£200","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"£59","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"£55","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+22:["$","tr",null,{"children":[["$","th",null,{"children":"512K","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","td",null,{"children":"£99","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"colSpan":2,"children":"£59","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+23:["$","tr",null,{"children":[["$","th",null,{"children":"256K","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"£59","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+24:["$","tr",null,{"children":[["$","th",null,{"children":"128K","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","td",null,{"children":"£49","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"£49","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+25:["$","tr",null,{"children":[["$","th",null,{"children":"32K","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","td",null,{"children":"£25","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"£25","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+26:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Prices have fallen and the memory increased."}]
+27:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"As the maximum size that each slot can address is 1M, it is recommended that 1M is used so there is no wasted space."}]
+28:["$","h2",null,{"id":"how-they-work-together","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["How they work together",["$","$L20",null,{"id":"how-they-work-together"}]]}]
+29:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"900px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/using-cards/z88-cards.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/using-cards/z88-cards.webp","alt":"Z88 Cards","loading":"lazy","decoding":"async","width":900,"height":589}],[]]}]]}]
+2a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"It is very important to understand how these cards work together with each other. This diagram shows the 1M Flash/1M RAM / 1M Flash configuration."}]
+2b:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"450px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/external/zfs-operation-and-commands/flash-ram-flash.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/external/zfs-operation-and-commands/flash-ram-flash.webp","alt":"flash ram flash","loading":"lazy","decoding":"async","width":450,"height":55}],[]]}]]}]
+2c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When using the 512K/512K Flash/RAM card, the sizes may be different but the principle remains the same,"}]
+2d:["$","h3",null,{"id":"main-devices","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Main Devices",["$","$L20",null,{"id":"main-devices"}]]}]
+2e:["$","h4",null,{"id":"epr1-1m-flash","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":[":EPR.1 1M FLASH",["$","$L20",null,{"id":"epr1-1m-flash"}]]}]
+2f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This is where the applications OZ4.x are stored. The space that is left over is used for storing files in the File Area. Most Applications (like Pipedream in OZ 4.x) Save and Fetch their files from :RAM, in this example in :RAM.0 and :RAM.2."}]
+30:["$","h4",null,{"id":"ram0-internal-32k-ram","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":[":RAM.0 INTERNAL 32K RAM",["$","$L20",null,{"id":"ram0-internal-32k-ram"}]]}]
+31:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This is the internal RAM. Any RAM that is not used for files is free to be used by any application."}]
+32:["$","h4",null,{"id":"ram2-1m-ram","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":[":RAM.2 1M RAM",["$","$L20",null,{"id":"ram2-1m-ram"}]]}]
+33:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This is where files are saved and memory is used for applications."}]
+34:["$","h4",null,{"id":"epr3-1m-flash","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":[";EPR.3 1M FLASH",["$","$L20",null,{"id":"epr3-1m-flash"}]]}]
+35:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Another Flash Card can be used here, to save even more files."}]
+36:["$","h3",null,{"id":"applications-that-hold-them-together","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Applications that hold them together",["$","$L20",null,{"id":"applications-that-hold-them-together"}]]}]
+37:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Once a file has been saved to RAM, it should be saved to either a Flash card or to the Desktop computer. These applications allow you to do that."}]
+38:["$","h4",null,{"id":"filer-and-flashstore","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":["Filer and Flashstore",["$","$L20",null,{"id":"filer-and-flashstore"}]]}]
+39:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This saves or load files from and to the RAM, using EPROM or Flash Cards."}]
+3a:["$","h4",null,{"id":"ep-fetch2","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":["EP-Fetch2",["$","$L20",null,{"id":"ep-fetch2"}]]}]
+3b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"To fetch files from the EPROMs or Flash Card to RAM selecting from a list, use this ‘point & shoot’ method."}]
+3c:["$","h4",null,{"id":"eazylink","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":["Eazylink",["$","$L20",null,{"id":"eazylink"}]]}]
+3d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Transfers files to or from the Desktop computer and the Z88. Files can be saved to and fetched from both Flash or RAM cards."}]
+3e:["$","h4",null,{"id":"oz-47","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":["OZ 4.7",["$","$L20",null,{"id":"oz-47"}]]}]
+3f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Before OZ 4.7, files could only be saved and loaded in RAM before they could be used in applications."}]
+40:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"OZ 4.7 allows files in the Flash card file areas to be saved and loaded directly to all applications, without needing to save or load them to RAM beforehand."}]
+41:["$","h2",null,{"id":"inserting-or-removing-cards","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Inserting or removing cards",["$","$L20",null,{"id":"inserting-or-removing-cards"}]]}]
+42:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Cards should only be inserted or removed with the Cambridge Z88 switched on."}]
+43:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["First enter the Index. Use the ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Index","children":"INDEX"}]," key."]}]
+44:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/external/oz-the-z88-operating-system/index.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/external/oz-the-z88-operating-system/index.webp","alt":"index","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+45:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Then open the perspex flap at the front of the machine."}]
+46:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"265px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/external/qg-z88-quick-guide-help-home-page/card-slot.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/external/qg-z88-quick-guide-help-home-page/card-slot.webp","alt":"card slot","loading":"lazy","decoding":"async","width":265,"height":140}],[]]}]]}]
+47:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Check that the screen goes blank."}]
+48:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/using-cards/z88-blank-screen.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/using-cards/z88-blank-screen.webp","alt":"z88 blank screen","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+49:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The computer should bleep once as you open the flap."}]
+4a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The card can then be pushed in or pulled out. The label on the end of the card should be upright when you push the card home."}]
+4b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When you have completed the operation,"}]
+4c:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"900px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/up-and-running/flash-card-example/z88-512-512-card-shut-card-flap.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/up-and-running/flash-card-example/z88-512-512-card-shut-card-flap.webp","alt":"z88 512 512 card shut card flap","loading":"lazy","decoding":"async","width":900,"height":621}],[]]}]]}]
+4d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"push the Perspex flap back into position."}]
+4e:["$","h2",null,{"id":"card-errors","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Card errors",["$","$L20",null,{"id":"card-errors"}]]}]
+4f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Errors which occur during the insertion or removal of cards are displayed in the ",["$","strong",null,{"children":"OZ"}]," position on the right-hand side of the screen."]}]
+50:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A ",["$","strong",null,{"children":"FAIL"}]," message (on the top right-hand corner of the screen) is given if a RAM card is removed, indicating that a soft reset is necessary."]}]
+51:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/external/ug40-using-cards/memory-fail.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/external/ug40-using-cards/memory-fail.webp","alt":"memory fail","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+52:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["If you remove an application card which a suspended activity is using, the Cambridge Z88 will give a continuous tone and flash ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"CARD"}]," until the card is replaced. The suspended activity should be removed with ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"KILL before trying again."]}]
+53:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["An ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"INDEX"}]," message is given, together with a continuous tone, if you have attempted to remove an application card while not in the Index."]}]
+55:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

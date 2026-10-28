@@ -1,0 +1,268 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T31e8,---
+description: "Thierry Peycru from France, decided to put together a 256K Flash card for the Z88 using an INTEL chip. EPROM cards were good, but they needed a separate EPROM Eraser to clear them. Flash chips..."
+---
+
+import { Callout, Table } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/35913748 (version 39) by scripts/import-z88-user-guide.cjs */}
+
+# Flash and EPROM cards
+
+## History & Introduction
+
+Summer 1997
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>
+
+<Shot src="z88-user-guide/getting-started/using-cards/flash-and-eprom-cards/256k-flash-case.webp" alt="256K Flash Case" width={500} />
+
+</Table.Td>
+<Table.Td>
+
+<Shot src="z88-user-guide/getting-started/using-cards/flash-and-eprom-cards/256k-flash-pcb.webp" alt="256K Flash PCB" width={500} />
+
+</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+Thierry Peycru from France, decided to put together a 256K Flash card for the Z88 using an INTEL chip. EPROM cards were good, but they needed a separate EPROM Eraser to clear them. Flash chips could be erased in the Z88 itself, a far more attractive option. The PCB was designed with a CAD software and then homemade, the case was moulded with some dental methacrylate. Using a BBC BASIC program, he was able to start with, save a few bytes and then a complete file. Who could have ever guessed at that time what was to follow?
+
+<Shot src="z88-user-guide/getting-started/using-cards/flash-and-eprom-cards/z88bbcflash1.webp" alt="Original BBC BASIC Flashstore screen" width={640} />
+
+Having a BBC BASIC program was all very well to start with, but this was not ideal. It was stored on an EPROM card. Then with the Filer, that file was fetched to RAM. With BBC BASIC and the program loaded, the program could be started. This was all a very tedious process. What was really needed was for this program to be a Z88 Application, better still, if that Application was on the same Flash card that the files were being stored on. However, before that could be achieved, there were a few software problems to be solved. Normally when an Application runs in a ROM or EPROM card, the card is always there for the Application to run in. That is also true for most of the time when using a Flash card except when writing to it. At that point the card disappears so that the writing can take place.
+
+Enter Gunther Strube from Denmark. He had already written software development tools for the Z88. One of them was called a Workbench, not the four legs and a plank of wood variety, but one that ran on the Z88 itself. He came up with a cunning plan. Before writing to the Flash card, the routine required to do that function could be loaded into RAM before the program jumped there to do the writing. After it had done that, it would jump back into the Flash card. All that was needed now was some better hardware.
+
+<Shot src="z88-user-guide/getting-started/using-cards/flash-and-eprom-cards/z88bbcflash2.webp" alt="Final BBC BASIC Flashstore screen" width={640} />
+
+<Shot src="z88-user-guide/external/zp-rom-flash/flash-inside.webp" alt="flash inside" width={854} />
+
+Enter Vic Gerhardi & Tony Firshman from England. When Cambridge Computer ceased trading Vic bought up a lot of unwanted remaining stock. One of the items he had were the Black 1M RAM cases. These would be ideal to use. He mentioned to Tony about this idea of using flash chips with the Z88 and before you could say "where can we get a PCB?" Tony had designed it on a single sided board using wire links.
+
+So that was how it started. A load of stuff has happened since then.
+
+- Flashstore popdown allowing files stored in RAM to be saved to Flash cards
+- OZ 4.5 (gave a faster serial port and flash cards could be used from Filer & OZ)
+- OZ 4.7 allowing applications to save and load files directly to the Flash card file areas<br />None of this would have been developed without these humble beginnings.
+
+In 2015 the Flash Card came of age 18 years old. The same cases are still being used, the PCB have been upgraded to double-sided with plated through holes. They can be used for three different devices (although not at the same time) 1M Flash, 512K/512K Flash/RAM or 1M RAM.
+
+## Flash & EPROMs
+
+<Shot src="z88-user-guide/external/qg-z88-quick-guide-help-home-page/1m-flash.webp" alt="1M flash" width={166} />
+
+These cards are designed to be used for long term storage of important data or programs. Unlike RAM, they will retain information even when removed from the Cambridge Z88. Thus, in addition to providing a means to make back-up copies of valuable data, they provide a convenient means for transferring data between Cambridge Z88s.
+
+One important fact to note about them is that data cannot be change once it is recorded into them. If you record a file and then make some changes you will be able to record a complete new copy of the file, but this will use up more space within them. The space occupied by the original version will not became available again. When they become completely full in this way you will only be able to re-use it by erasing ALL the data which it contains. EPROMs cannot be partially erased.
+
+Flash cards may be used in any slots and are erased electrically in 64K wide sectors. This means that Applications may be stored in a protected area. When the format command is given, it only formats the file area, leaving the area for applications intact.
+
+They may be inserted or removed at any time, except when they are actually being read or written to. They do not consume much power except when EPROMs are being written to, at which time the Cambridge Z88's screen will be intermittently switched off and on, to conserve power. EPROM cards can only be written to in slot 3
+
+### Inserting a FLASH or EPROM Card
+
+1. Make sure that the Cambridge Z88 is switched ON and the Index is displayed.
+
+2. Open the Perspex flap at the front. The Cambridge Z88 will give a short beep and the screen will go blank.
+
+3. Push the FLASH or EPROM card into the slot making sure that the label is facing outwards and is the correct way up. Make sure that the card is pushed in as far as it will go.
+
+4. Close the flap. The Cambridge Z88 will turn itself back on and re-display the Index. You can check that the card has been recognised by typing <Key k="diamond" />CARD.
+
+### Removing a FLASH or EPROM Card
+
+1. Make sure that the Cambridge Z88 is switched ON and the Index is displayed.
+
+2. Check that the Application you are removing is not still running and displayed in the suspended activities window.
+
+3. Open the Perspex flap at the front. The Cambridge Z88 will give a short beep and the screen will go blank.
+
+4. Remove the FLASH or EPROM card from the slot.
+
+5. Close the flap. The Cambridge Z88 will turn itself back on and re-display the Index. You can check that the card has been removed by typing <Key k="diamond" />CARD.
+
+<Callout type="warning">
+
+It is important to remove any EPROM card from the Cambridge Z88 if you have to re-power a Cambridge Z88 which has been left without power. Otherwise there is a small risk that data on the card may be corrupted. If the EPROM becomes corrupted it will need to be fully erased and all the data will be lost. An EPROM may not be recognised by the Cambridge Z88 when you type <Key k="diamond" />CARD within the Index. It will be shown once you have saved a file to it. If a new EPROM will not catalogue, then try installing it again. If this fails, try erasing the EPROM.
+
+There is a facility on EP-Fetch2 to read corrupt EPROMs but this is not guaranteed to work.
+
+</Callout>
+
+The Flash card's file area is created or erased using Filer's *Create File Card* command or Flashstore's *Format File Area* command.
+
+## FLASH or EPROM cards
+
+The Z88 uses FLASH in two ways. They are the
+
+- EPROM Filing System and as
+- ROM for Applications to run in.
+
+There is not a central point to view or manage FLASH or EPROM cards. Different Applications are used to do this.
+
+| Application | Key | Command | Function |
+| --- | --- | --- | --- |
+| INDEX | <Key k="index" /> | CARDS | <Key k="diamond" />CARD |
+| Flashstore | <Key k="square" />J | SELECT CARD | <Key k="diamond" />SC |
+| Filer | <Key k="square" />F | CAT. FILE CARD | <Key k="diamond" />CE |
+| EP-FetcH | <Key k="square" />H | Re-scan EPROM | <Key k="shift" /> <Key k="enter" /> |
+
+### EPROM Filing System
+
+Files created by Applications and saved in RAM are copied to the FLASH or EPROM using one of the Applications above. To see how much space there is, use the following command.
+
+#### Card information \<\>CARD
+
+The <Key k="diamond" />CARD command, on the Index **COMMANDS** menu, shows the type and size of the card in each slot. However it will not show an erased EPROM until it has been accessed by the Filer.
+
+#### 1M/1M FLASH/RAM
+
+<Shot src="z88-user-guide/getting-started/using-cards/ram-cards/z88card1m.webp" alt="z88card1m" width={640} />
+
+This shows the 1M Flash/1M RAM configuration. The Flash card in Slot 1 shows there is 256K used for Applications (OZ 4.x) leaving the remainder 768K for files. To see how much spare space is in the File Area, use Flashstore. 409K.
+
+<Shot src="z88-user-guide/getting-started/using-cards/flash-and-eprom-cards/z88flashstore768.webp" alt="z88flashstore768" width={640} />
+
+#### 512/512K FLASH/RAM
+
+<Shot src="z88-user-guide/getting-started/using-cards/flash-and-eprom-cards/z88flashstore256.webp" alt="z88flashstore256" width={640} />
+
+This shows the 512K Flash/512K RAM configuration. The Flash card in Slot 1 shows there is 256K used for Applications (OZ 4.x) leaving the remainder 256K for files. To see how much spare space is in the File Area, use Flashstore. 192K.
+
+<Shot src="z88-user-guide/getting-started/up-and-running/flash-card-example/z88-flashstore1.webp" alt="z88 flashstore1" width={640} />
+
+## To erase an EPROM Card
+
+<Shot src="z88-user-guide/external/qg-additional-storage/z88-eprom-eraser.webp" alt="Z88 EPROM Eraser" width={193} />
+
+Use the EPROM eraser, the user needs to be near a mains power point as it runs off 240v.
+
+For this reason, consider either having an unused spare EPROM or use a Flash card that can be erased in the Z88 itself when out in the field.
+
+This will erase all the data or the ROM image stored in the EPROM by exposing the integrated circuit through the round window in the card to ultra-violet light.
+
+#### WARNING
+
+<Callout type="error">
+
+**WARNING**
+
+If the internal light can be seen when there is no card present the EPROM eraser is faulty and should be retuned.
+
+The EPROM eraser produces an intense ultra-violet light which can only be activated by inserting a Cambridge Z88 memory card into the eraser; this safety feature prevents any escape of ultra-violet light.
+
+REMOVE FROM MAINS SUPPLY WHEN NOT IN USE.
+
+Never touch the ultra-violet light source. It gets hot in use and may cause burns; also it is made of quartz and will cloud over due to moisture from the skin.
+
+</Callout>
+
+1. Connect the eraser to the domestic mains supply. The plug should be fitted with either a 1 Amp or a 3 Amp fuse.
+
+2. Fully insert the EPROM card into the slot on the front of the eraser, with the round hole uppermost. The card is correctly inserted if the white label on the end of the card is visible and the printing "32K EPROM" or "128K EPROM" is **upside down**.
+
+3. The action of inserting the card switches the eraser on. The red indicator light on top of the eraser should light and the EPROM will be exposed to ultra-violet light for approximately twenty minutes. After this time the ultraviolet light is automatically switched off and the red light will go out.
+
+4. After the red light goes out, you can remove the card from the eraser. DO NOT REMOVE THE EPROM BEFORE THE RED LIGHT IS OUT. The EPROM card should now be blank and ready for re-use. Removing the card resets the timer, so to erase another card, simply insert it; the red indicator light will again be illuminated, and the process can be repeated.
+
+The ultra-violet light source decreases in efficiency with use and eventually a single 20-minute exposure may not completely erase all the data in the EPROM. In this case it may be a good idea to repeat the process a second time to be absolutely sure that it is thoroughly erased.
+
+There is no means of erasing selected individual parts of data from the EPROM. When the EPROM is exposed to the ultra-violet source all data is affected in the same way.
+
+## EPROM Card fully erased?
+
+The first time a blank EPROM is catalogued in the Filer, the File Area is checked before the Header is blown. If this test fails, a warning will appear:
+
+<Shot src="z88-user-guide/getting-started/using-cards/flash-and-eprom-cards/eprnotempty.webp" alt="eprnotempty" width={640} />
+
+The EPROM may need to be erased several times until it is erased properly.a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"History & Introduction","id":"history--introduction","depth":2},{"value":"Flash & EPROMs","id":"flash--eproms","depth":2},{"value":"Inserting a FLASH or EPROM Card","id":"inserting-a-flash-or-eprom-card","depth":3},{"value":"Removing a FLASH or EPROM Card","id":"removing-a-flash-or-eprom-card","depth":3},{"value":"FLASH or EPROM cards","id":"flash-or-eprom-cards","depth":2},{"value":"EPROM Filing System","id":"eprom-filing-system","depth":3},{"value":"Card information <>CARD","id":"card-information-card","depth":4},{"value":"1M/1M FLASH/RAM","id":"1m1m-flashram","depth":4},{"value":"512/512K FLASH/RAM","id":"512512k-flashram","depth":4},{"value":"To erase an EPROM Card","id":"to-erase-an-eprom-card","depth":2},{"value":"WARNING","id":"warning","depth":4},{"value":"EPROM Card fully erased?","id":"eprom-card-fully-erased","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"Thierry Peycru from France, decided to put together a 256K Flash card for the Z88 using an INTEL chip. EPROM cards were good, but they needed a separate EPROM Eraser to clear them. Flash chips...","title":"Flash and EPROM cards","filePath":"content/en/z88-user-guide/getting-started/using-cards/flash-and-eprom-cards.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"z88-user-guide/getting-started/using-cards/flash-and-eprom-cards","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Flash and EPROM cards - Klive IDE"}],["$","meta","1",{"name":"description","content":"Thierry Peycru from France, decided to put together a 256K Flash card for the Z88 using an INTEL chip. EPROM cards were good, but they needed a separate EPROM Eraser to clear them. Flash chips..."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/z88-user-guide/getting-started/using-cards/flash-and-eprom-cards/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"JRknQ_wk_gMYl0jLYL8vC"}
+20:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+53:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Flash and EPROM cards","$undefined"]}],"\n",["$","h2",null,{"id":"history--introduction","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["History & Introduction",["$","$L20",null,{"id":"history--introduction"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Summer 1997"}],"\n",["$","table",null,{"children":["$","tbody",null,{"children":["$","tr",null,{"children":[["$","td",null,{"children":["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"500px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/using-cards/flash-and-eprom-cards/256k-flash-case.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/using-cards/flash-and-eprom-cards/256k-flash-case.webp","alt":"256K Flash Case","loading":"lazy","decoding":"async","width":500,"height":427}],[]]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"500px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/using-cards/flash-and-eprom-cards/256k-flash-pcb.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/using-cards/flash-and-eprom-cards/256k-flash-pcb.webp","alt":"256K Flash PCB","loading":"lazy","decoding":"async","width":500,"height":480}],[]]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],"className":"x:block x:overflow-x-auto"}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Thierry Peycru from France, decided to put together a 256K Flash card for the Z88 using an INTEL chip. EPROM cards were good, but they needed a separate EPROM Eraser to clear them. Flash chips could be erased in the Z88 itself, a far more attractive option. The PCB was designed with a CAD software and then homemade, the case was moulded with some dental methacrylate. Using a BBC BASIC program, he was able to start with, save a few bytes and then a complete file. Who could have ever guessed at that time what was to follow?"}],"\n",["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/using-cards/flash-and-eprom-cards/z88bbcflash1.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/using-cards/flash-and-eprom-cards/z88bbcflash1.webp","alt":"Original BBC BASIC Flashstore screen","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Having a BBC BASIC program was all very well to start with, but this was not ideal. It was stored on an EPROM card. Then with the Filer, that file was fetched to RAM. With BBC BASIC and the program loaded, the program could be started. This was all a very tedious process. What was really needed was for this program to be a Z88 Application, better still, if that Application was on the same Flash card that the files were being stored on. However, before that could be achieved, there were a few software problems to be solved. Normally when an Application runs in a ROM or EPROM card, the card is always there for the Application to run in. That is also true for most of the time when using a Flash card except when writing to it. At that point the card disappears so that the writing can take place."}],"\n","$L21","\n","$L22","\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41","\n","$L42","\n","$L43","\n","$L44","\n","$L45","\n","$L46","\n","$L47","\n","$L48","\n","$L49","\n","$L4a","\n","$L4b","\n","$L4c","\n","$L4d","\n","$L4e","\n","$L4f","\n","$L50","\n","$L51","\n","$L52"]]}]
+15:["$","$L53",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@54"}]}]
+1f:true
+9:300
+21:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Enter Gunther Strube from Denmark. He had already written software development tools for the Z88. One of them was called a Workbench, not the four legs and a plank of wood variety, but one that ran on the Z88 itself. He came up with a cunning plan. Before writing to the Flash card, the routine required to do that function could be loaded into RAM before the program jumped there to do the writing. After it had done that, it would jump back into the Flash card. All that was needed now was some better hardware."}]
+22:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/using-cards/flash-and-eprom-cards/z88bbcflash2.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/using-cards/flash-and-eprom-cards/z88bbcflash2.webp","alt":"Final BBC BASIC Flashstore screen","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+23:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"854px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/external/zp-rom-flash/flash-inside.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/external/zp-rom-flash/flash-inside.webp","alt":"flash inside","loading":"lazy","decoding":"async","width":854,"height":798}],[]]}]]}]
+24:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Enter Vic Gerhardi & Tony Firshman from England. When Cambridge Computer ceased trading Vic bought up a lot of unwanted remaining stock. One of the items he had were the Black 1M RAM cases. These would be ideal to use. He mentioned to Tony about this idea of using flash chips with the Z88 and before you could say “where can we get a PCB?” Tony had designed it on a single sided board using wire links."}]
+25:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"So that was how it started. A load of stuff has happened since then."}]
+26:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"Flashstore popdown allowing files stored in RAM to be saved to Flash cards"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"OZ 4.5 (gave a faster serial port and flash cards could be used from Filer & OZ)"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["OZ 4.7 allowing applications to save and load files directly to the Flash card file areas",["$","br",null,{}],"None of this would have been developed without these humble beginnings."]}],"\n"]}]
+27:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"In 2015 the Flash Card came of age 18 years old. The same cases are still being used, the PCB have been upgraded to double-sided with plated through holes. They can be used for three different devices (although not at the same time) 1M Flash, 512K/512K Flash/RAM or 1M RAM."}]
+28:["$","h2",null,{"id":"flash--eproms","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Flash & EPROMs",["$","$L20",null,{"id":"flash--eproms"}]]}]
+29:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"166px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/external/qg-z88-quick-guide-help-home-page/1m-flash.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/external/qg-z88-quick-guide-help-home-page/1m-flash.webp","alt":"1M flash","loading":"lazy","decoding":"async","width":166,"height":165}],[]]}]]}]
+2a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"These cards are designed to be used for long term storage of important data or programs. Unlike RAM, they will retain information even when removed from the Cambridge Z88. Thus, in addition to providing a means to make back-up copies of valuable data, they provide a convenient means for transferring data between Cambridge Z88s."}]
+2b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"One important fact to note about them is that data cannot be change once it is recorded into them. If you record a file and then make some changes you will be able to record a complete new copy of the file, but this will use up more space within them. The space occupied by the original version will not became available again. When they become completely full in this way you will only be able to re-use it by erasing ALL the data which it contains. EPROMs cannot be partially erased."}]
+2c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Flash cards may be used in any slots and are erased electrically in 64K wide sectors. This means that Applications may be stored in a protected area. When the format command is given, it only formats the file area, leaving the area for applications intact."}]
+2d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"They may be inserted or removed at any time, except when they are actually being read or written to. They do not consume much power except when EPROMs are being written to, at which time the Cambridge Z88’s screen will be intermittently switched off and on, to conserve power. EPROM cards can only be written to in slot 3"}]
+2e:["$","h3",null,{"id":"inserting-a-flash-or-eprom-card","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Inserting a FLASH or EPROM Card",["$","$L20",null,{"id":"inserting-a-flash-or-eprom-card"}]]}]
+2f:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Make sure that the Cambridge Z88 is switched ON and the Index is displayed."}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Open the Perspex flap at the front. The Cambridge Z88 will give a short beep and the screen will go blank."}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Push the FLASH or EPROM card into the slot making sure that the label is facing outwards and is the correct way up. Make sure that the card is pushed in as far as it will go."}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Close the flap. The Cambridge Z88 will turn itself back on and re-display the Index. You can check that the card has been recognised by typing ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"CARD."]}],"\n"]}],"\n"]}]
+30:["$","h3",null,{"id":"removing-a-flash-or-eprom-card","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Removing a FLASH or EPROM Card",["$","$L20",null,{"id":"removing-a-flash-or-eprom-card"}]]}]
+31:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Make sure that the Cambridge Z88 is switched ON and the Index is displayed."}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Check that the Application you are removing is not still running and displayed in the suspended activities window."}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Open the Perspex flap at the front. The Cambridge Z88 will give a short beep and the screen will go blank."}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Remove the FLASH or EPROM card from the slot."}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Close the flap. The Cambridge Z88 will turn itself back on and re-display the Index. You can check that the card has been removed by typing ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"CARD."]}],"\n"]}],"\n"]}]
+32:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-yellow-50 x:dark:bg-yellow-700/30 x:text-yellow-700 x:dark:text-yellow-500 x:border-yellow-700","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":["$","svg",null,{"viewBox":"0 0 16 16","fill":"currentColor","height":".8em","className":"x:mt-[.3em]","children":["$","path",null,{"d":"M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575Zm1.763.707a.25.25 0 0 0-.44 0L1.698 13.132a.25.25 0 0 0 .22.368h12.164a.25.25 0 0 0 .22-.368Zm.53 3.996v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"}]}]}],["$","div",null,{"className":"x:w-full x:min-w-0","children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["It is important to remove any EPROM card from the Cambridge Z88 if you have to re-power a Cambridge Z88 which has been left without power. Otherwise there is a small risk that data on the card may be corrupted. If the EPROM becomes corrupted it will need to be fully erased and all the data will be lost. An EPROM may not be recognised by the Cambridge Z88 when you type ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"CARD within the Index. It will be shown once you have saved a file to it. If a new EPROM will not catalogue, then try installing it again. If this fails, try erasing the EPROM."]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"There is a facility on EP-Fetch2 to read corrupt EPROMs but this is not guaranteed to work."}]]}]]}]
+33:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The Flash card’s file area is created or erased using Filer’s ",["$","em",null,{"children":"Create File Card"}]," command or Flashstore’s ",["$","em",null,{"children":"Format File Area"}]," command."]}]
+34:["$","h2",null,{"id":"flash-or-eprom-cards","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["FLASH or EPROM cards",["$","$L20",null,{"id":"flash-or-eprom-cards"}]]}]
+35:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The Z88 uses FLASH in two ways. They are the"}]
+36:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"EPROM Filing System and as"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"ROM for Applications to run in."}],"\n"]}]
+37:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"There is not a central point to view or manage FLASH or EPROM cards. Different Applications are used to do this."}]
+38:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"Application","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Key","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Command","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Function","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":"INDEX","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Index","children":"INDEX"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"CARDS","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"CARD"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"Flashstore","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],"J"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"SELECT CARD","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"SC"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"Filer","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],"F"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"CAT. FILE CARD","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"CE"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"EP-FetcH","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],"H"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Re-scan EPROM","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Shift","children":"SHIFT"}]," ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}]]}]
+39:["$","h3",null,{"id":"eprom-filing-system","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["EPROM Filing System",["$","$L20",null,{"id":"eprom-filing-system"}]]}]
+3a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Files created by Applications and saved in RAM are copied to the FLASH or EPROM using one of the Applications above. To see how much space there is, use the following command."}]
+3b:["$","h4",null,{"id":"card-information-card","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":["Card information <>CARD",["$","$L20",null,{"id":"card-information-card"}]]}]
+3c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"CARD command, on the Index ",["$","strong",null,{"children":"COMMANDS"}]," menu, shows the type and size of the card in each slot. However it will not show an erased EPROM until it has been accessed by the Filer."]}]
+3d:["$","h4",null,{"id":"1m1m-flashram","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":["1M/1M FLASH/RAM",["$","$L20",null,{"id":"1m1m-flashram"}]]}]
+3e:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/using-cards/ram-cards/z88card1m.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/using-cards/ram-cards/z88card1m.webp","alt":"z88card1m","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+3f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This shows the 1M Flash/1M RAM configuration. The Flash card in Slot 1 shows there is 256K used for Applications (OZ 4.x) leaving the remainder 768K for files. To see how much spare space is in the File Area, use Flashstore. 409K."}]
+40:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/using-cards/flash-and-eprom-cards/z88flashstore768.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/using-cards/flash-and-eprom-cards/z88flashstore768.webp","alt":"z88flashstore768","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+41:["$","h4",null,{"id":"512512k-flashram","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":["512/512K FLASH/RAM",["$","$L20",null,{"id":"512512k-flashram"}]]}]
+42:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/using-cards/flash-and-eprom-cards/z88flashstore256.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/using-cards/flash-and-eprom-cards/z88flashstore256.webp","alt":"z88flashstore256","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+43:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This shows the 512K Flash/512K RAM configuration. The Flash card in Slot 1 shows there is 256K used for Applications (OZ 4.x) leaving the remainder 256K for files. To see how much spare space is in the File Area, use Flashstore. 192K."}]
+44:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/up-and-running/flash-card-example/z88-flashstore1.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/up-and-running/flash-card-example/z88-flashstore1.webp","alt":"z88 flashstore1","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+45:["$","h2",null,{"id":"to-erase-an-eprom-card","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["To erase an EPROM Card",["$","$L20",null,{"id":"to-erase-an-eprom-card"}]]}]
+46:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"193px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/external/qg-additional-storage/z88-eprom-eraser.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/external/qg-additional-storage/z88-eprom-eraser.webp","alt":"Z88 EPROM Eraser","loading":"lazy","decoding":"async","width":193,"height":183}],[]]}]]}]
+47:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Use the EPROM eraser, the user needs to be near a mains power point as it runs off 240v."}]
+48:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"For this reason, consider either having an unused spare EPROM or use a Flash card that can be erased in the Z88 itself when out in the field."}]
+49:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This will erase all the data or the ROM image stored in the EPROM by exposing the integrated circuit through the round window in the card to ultra-violet light."}]
+4a:["$","h4",null,{"id":"warning","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":["WARNING",["$","$L20",null,{"id":"warning"}]]}]
+4b:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-red-100 x:dark:bg-red-900/30 x:text-red-700 x:dark:text-red-500 x:border-red-700 x:dark:border-red-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$32:props:children:0:props:style","data-pagefind-ignore":"all","children":["$","svg",null,{"viewBox":"0 0 16 16","fill":"currentColor","height":".8em","className":"x:mt-[.3em]","children":["$","path",null,{"d":"M4.47.22A.749.749 0 0 1 5 0h6c.199 0 .389.079.53.22l4.25 4.25c.141.14.22.331.22.53v6a.749.749 0 0 1-.22.53l-4.25 4.25A.749.749 0 0 1 11 16H5a.749.749 0 0 1-.53-.22L.22 11.53A.749.749 0 0 1 0 11V5c0-.199.079-.389.22-.53Zm.84 1.28L1.5 5.31v5.38l3.81 3.81h5.38l3.81-3.81V5.31L10.69 1.5ZM8 4a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 8 4Zm0 8a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"}]}]}],["$","div",null,{"className":"x:w-full x:min-w-0","children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"WARNING"}]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If the internal light can be seen when there is no card present the EPROM eraser is faulty and should be retuned."}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The EPROM eraser produces an intense ultra-violet light which can only be activated by inserting a Cambridge Z88 memory card into the eraser; this safety feature prevents any escape of ultra-violet light."}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"REMOVE FROM MAINS SUPPLY WHEN NOT IN USE."}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Never touch the ultra-violet light source. It gets hot in use and may cause burns; also it is made of quartz and will cloud over due to moisture from the skin."}]]}]]}]
+4c:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Connect the eraser to the domestic mains supply. The plug should be fitted with either a 1 Amp or a 3 Amp fuse."}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Fully insert the EPROM card into the slot on the front of the eraser, with the round hole uppermost. The card is correctly inserted if the white label on the end of the card is visible and the printing “32K EPROM” or “128K EPROM” is ",["$","strong",null,{"children":"upside down"}],"."]}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The action of inserting the card switches the eraser on. The red indicator light on top of the eraser should light and the EPROM will be exposed to ultra-violet light for approximately twenty minutes. After this time the ultraviolet light is automatically switched off and the red light will go out."}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"After the red light goes out, you can remove the card from the eraser. DO NOT REMOVE THE EPROM BEFORE THE RED LIGHT IS OUT. The EPROM card should now be blank and ready for re-use. Removing the card resets the timer, so to erase another card, simply insert it; the red indicator light will again be illuminated, and the process can be repeated."}],"\n"]}],"\n"]}]
+4d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The ultra-violet light source decreases in efficiency with use and eventually a single 20-minute exposure may not completely erase all the data in the EPROM. In this case it may be a good idea to repeat the process a second time to be absolutely sure that it is thoroughly erased."}]
+4e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"There is no means of erasing selected individual parts of data from the EPROM. When the EPROM is exposed to the ultra-violet source all data is affected in the same way."}]
+4f:["$","h2",null,{"id":"eprom-card-fully-erased","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["EPROM Card fully erased?",["$","$L20",null,{"id":"eprom-card-fully-erased"}]]}]
+50:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The first time a blank EPROM is catalogued in the Filer, the File Area is checked before the Header is blown. If this test fails, a warning will appear:"}]
+51:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/using-cards/flash-and-eprom-cards/eprnotempty.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/using-cards/flash-and-eprom-cards/eprnotempty.webp","alt":"eprnotempty","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+52:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The EPROM may need to be erased several times until it is erased properly."}]
+54:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

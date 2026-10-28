@@ -1,0 +1,591 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T41d4,---
+description: "There are two ways to upgrade your Flashcard"
+---
+
+import { Callout, Table } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/63701372 (version 23) by scripts/import-z88-user-guide.cjs */}
+
+# Creating Eazylink/Flashstore
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/oz45-about.webp" alt="oz45 about" width={640} />
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/eazylink-flashstore-32k-eprom.webp" alt="Eazylink and Flashstore from Rakewell" width={888} />
+
+There are two ways to upgrade your Flashcard
+
+1. Get in touch with [Rakewell](http://www.rakewell.com) who offer the service of <br />upgrading (your own EPROM) or <br />supplying EPROMs with Eazylink & Flashstore.
+
+2. Do it yourself
+
+See [Prerequisites](/en/z88-user-guide/appendix-i-creating-updating-an-application-card#prerequisites)
+
+## Prerequisites
+
+<Callout type="info">
+
+**INFO Put the EPROM in the EPROM ERASER NOW**
+
+If you are going to blow the image into an EPROM card, start erasing it now, as it may take several attempts to erase it completely.
+
+</Callout>
+
+- [Desktop Installation](https://cambridgez88.jira.com/wiki/display/EAZUGV10/Desktop+Installation)
+- [Connect the Z88 to the Desktop](https://cambridgez88.jira.com/wiki/display/EAZUGV10/Connect+the+Z88+to+the+Desktop)
+- [Starting EazyLink on the Desktop](https://cambridgez88.jira.com/wiki/display/EAZUGV10/Starting+EazyLink+on+the+Desktop)
+- Extra RAM fitted in slot 1. Large enough to receive and store all the files required.
+- EPROM or Flash card to store the image (as a separate operation)
+
+The Z88 needs to have the following cards as a minimum configuration.
+
+<Shot src="z88-user-guide/external/qg-check-all-z88-cards/128k-ram1-32k-eprom-3.webp" alt="128k RAM Slot 1 32K EPROM Slot 3" width={453} />
+
+- Slot 1 needs to have at least 128K
+- Slot 3 has a blank 32K EPROM card to blow the two applications.
+
+The alternative temporary solution is to use the Flash card that OZ will be loaded into. The Z88's configuration is either the 512K/512 RAM/Flash option:-
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-oz/512k-0k-0k.webp" alt="512K/512K RAM/Flash card in slot 1" width={452} />
+
+- Slot 1 has 512K to saves the files into
+- Slot 1 also has 512K Flash card to blow the two applications into.
+
+or the 512K RAM (minimum)/1M Flash option:-
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/512k-ram-1m-flash-0.webp" alt="512K RAM 1M Flash card" width={452} />
+
+- Slot 1 has 512K to saves the files into
+- Slot 2 is a 1M Flash card to blow the two applications into.
+
+## Downloading Files
+
+Download from the Wiki the files needed to transfer to the Z88. If they are zipped, unzip all the files on the Desktop Computer and save them all in a separate directory.
+
+<Table>
+<thead>
+<Table.Tr>
+<Table.Th colSpan={3}>Download Location</Table.Th>
+</Table.Tr>
+</thead>
+<tbody>
+<Table.Tr>
+<Table.Th />
+<Table.Td>**[Eazylink](https://cambridgez88.jira.com/wiki/display/ZEP/Easy+file+transfer+between+Z88+and+other+computers)**</Table.Td>
+<Table.Td>**[FlashStore](https://cambridgez88.jira.com/wiki/display/ZFS/FlashStore+(Z88+popdown)+Home)**</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Th />
+<Table.Th>Eazylink 5.2.3-06</Table.Th>
+<Table.Th>Flashstore 1.9.3</Table.Th>
+</Table.Tr>
+<Table.Tr>
+<Table.Th>Files<br />Required</Table.Th>
+<Table.Td>eazyLink.63<br />RomCombiner.bas<br />romcombiner.bin<br />RomUtil.bas</Table.Td>
+<Table.Td>flashstore.63</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Th>Imp/Export</Table.Th>
+<Table.Td colSpan={2}>4 minutes 10 seconds</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+For convenience This section has been copied from the [Eazylink2 User Guide](https://cambridgez88.jira.com/wiki/display/EAZUGV10/Imp-Export+Mode) to show how to do this.
+
+## On the Desktop start Eazylink2.
+
+## First time use
+
+The first time Eazylink is connected to the Z88 the Com Port window is displayed.
+
+<Shot src="z88-user-guide/external/eazugv10-imp-export-mode/imp-exp-compref.webp" alt="ImpExp communications preferences" width={610} />
+
+- Clear the 'Open Serial Port on Startup' tick box<br />Select the 'Default Serial Port:' to the device name the Z88 is connected to.<br />Click the 'Refresh' box and click OK.
+
+An intelligent guess is made at which Serial Port is being used. Here is your chance to check that the correct one has been selected. In this case Windows is using COM 5.
+
+Getting control of Eazylink can be difficult to do initially because Eazylink2 is expecting the pop-down to be running on the Z88. Just keep waiting until you receive the Reading Z88 Devices Command Failed Command Error window.
+
+<Shot src="z88-user-guide/external/eazugv10-imp-export-mode/eazylink-hello-command-failed.webp" alt="eazylink_hello_command_failed" width={487} />
+
+**Choose 'Ignore.'**
+
+What you really need to see is the top Eazylink Menu not being greyed out
+
+<Shot src="z88-user-guide/external/eazugv10-imp-export-mode/eazylink-top-menu.webp" alt="eazylink top menu" width={708} />
+
+### Select the Directory to be used
+
+Here is a picture of the blank screen you should see. The left-hand window (normally used to show the Z88 side) is not used in this Imp-Export Mode. The right-hand side window showing the Desktop side is used. Select which Directory is to be used here. The selection of the files are made in a different window later.
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/imp-exp-start-eazyflash.webp" alt="Imp-Export start Eazyflash" width={440} />
+
+## Send to the Z88
+
+On the top menu bar, Select Z88
+
+Communication not established
+
+If all the functions are greyed out in the Z88 Menu, communication to the Z88 has not been established. Check that the cable is connected to the Z88 and [Connect the Z88 to the Desktop](https://cambridgez88.jira.com/wiki/display/EAZUGV10/Connect+the+Z88+to+the+Desktop) has been followed.
+
+<Shot src="z88-user-guide/external/eazugv10-imp-export-mode/eazylink-z88-menu.webp" alt="eazylink z88 menu" width={313} />
+
+- Select - Send files to Z88 Imp-Export popdown
+
+<Shot src="z88-user-guide/external/eazugv10-imp-export-mode/send-to-z88-using-imp-export-popdown.webp" alt="send to z88 using imp export popdown" width={283} />
+
+If 'Show Details...' is selected, you will be presented with a help screen listing instructions (without the screen shots) on how to use the Z88.
+
+On the Z88 it is a good idea to make sure you have additional RAM in slot 1 and [Resetting the Z88](https://cambridgez88.jira.com/wiki/display/EAZUGV10/Problem+Solving+Area) before starting this exercise unless you want to keep the files that are already on the Z88.
+
+### 1. Start Z88
+
+#### Select Panel
+
+Use <Key k="square" />S
+
+<Shot src="z88-user-guide/getting-started/up-and-running/z88-select-panel.webp" alt="z88 select panel" width={640} />
+
+Change Default device to :RAM.1 - You need extra RAM in your Z88 for the file and it needs to be in slot 1.
+
+<Shot src="z88-user-guide/external/eazugv10-imp-export-mode/panel-ram1.webp" alt="panel ram1" width={640} />
+
+**Check** that the Transmit and Receive rates Parity (9600) and **change the default Xon/Xoff settings from (Yes) to (No)** are the correct value as given.
+
+<Shot src="z88-user-guide/external/eazugv10-imp-export-mode/panel-xoff.webp" alt="panel xoff" width={640} />
+
+Scroll down to the next instruction.
+
+### 2. Select Imp-Export
+
+Use <Key k="square" />X
+
+<Shot src="z88-user-guide/external/eazugv10-eazylink2-user-guide/select-impexp.webp" alt="select impexp" width={640} />
+
+Scroll down to the next instruction. 3. the Imp-Export Menu will be displayed
+
+<Shot src="z88-user-guide/external/eazugv10-imp-export-mode/select-impexp-b.webp" alt="select impexp b" width={640} />
+
+### 3. On Z88, select B)atch receive
+
+by pressing 'b' and then press the <Key k="enter" /> key.
+
+On the Desktop, click 'Yes' to 'Is Z88 ready?'
+
+<Shot src="z88-user-guide/external/eazugv10-imp-export-mode/send-to-z88-using-imp-export-popdown.webp" alt="send to z88 using imp export popdown" width={283} />
+
+The Desktop will now display a window for you to select which file(s) to send
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/imp-exp-start-eazyflash2.webp" alt="Select Files" width={439} />
+
+Mark the desired files. These are:-
+
+<Table>
+<thead>
+<Table.Tr>
+<Table.Th colSpan={3}>Download Location</Table.Th>
+</Table.Tr>
+</thead>
+<tbody>
+<Table.Tr>
+<Table.Th />
+<Table.Td>**[Eazylink](https://cambridgez88.jira.com/wiki/display/ZEP/Easy+file+transfer+between+Z88+and+other+computers)**</Table.Td>
+<Table.Td>**[FlashStore](https://cambridgez88.jira.com/wiki/display/ZFS/FlashStore+(Z88+popdown)+Home)**</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Th />
+<Table.Th>Eazylink 5.2.3-06</Table.Th>
+<Table.Th>Flashstore 1.9.3</Table.Th>
+</Table.Tr>
+<Table.Tr>
+<Table.Th>Files<br />Required</Table.Th>
+<Table.Td>eazyLink.63<br />RomCombiner.bas<br />romcombiner.bin<br />RomUtil.bas</Table.Td>
+<Table.Td>flashstore.63</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/imp-export-select-1.webp" alt="Select 1" width={216} />
+
+Select the Z88's destination storage slot (in this case Slot 1).
+
+After press OK the Z88 screen will show
+
+```text
+Using remote name:  :RAM.1/the_filename
+(Incrementing numbers on this row)
+End of file
+```
+
+This will repeat itself until all the files are transferred.
+
+Press <Key k="esc" /> on the Z88 to return to the Imp-Export Menu.
+
+<Callout type="warning">
+
+**Note**
+
+Both these popdowns are 16K each. Might as well put both of them on the same card and use up the spare space if only Eazylink is used.
+
+</Callout>
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/create-eazylink-flashstore1.webp" alt="files" width={640} />
+
+The files are shown here displayed in the Filer are:-
+
+- eazyLink.63 & flashstore.63 - These are the image files for Eazylink and Flashstore.
+- Romcombiner.bas, .bin & RomUtil.bas - These 3 files are required to blow the image to the EPROM card.
+
+## Running RomCombiner
+
+To run the program, do the following:-
+
+- Select BBC BASIC <Key k="square" />B. Type
+- RUN "ROMCOMBINER.BAS"
+
+The following screen is displayed.
+
+<Shot src="z88-user-guide/external/qg-check-all-z88-cards/flashtest1.webp" alt="ROMCOMBINER v2.10" width={640} />
+
+EPROMs can only be programmed in Slot 3.
+
+### If an EPROM is being used in slot 3
+
+#### Verify EPROM banks properly erased
+
+<Shot src="z88-user-guide/external/qg-check-all-z88-cards/128k-ram1-32k-eprom-3.webp" alt="128k RAM Slot 1 32K EPROM Slot 3" width={453} />
+
+Press V. followed by
+
+- F
+- 32 <Key k="enter" />
+
+If the EPROM is properly erased the following screen is displayed.
+
+<Shot src="z88-user-guide/external/qg-check-all-z88-cards/flashtest4.webp" alt="Verify EPROM properly erased" width={640} />
+
+If an error message is displayed,
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/not-erased.webp" alt="EPROM not erased" width={640} />
+
+the EPROM should be removed and erased again with the EPROM Eraser until it passes this test.
+
+<Shot src="z88-user-guide/external/qg-check-all-z88-cards/flashtest1.webp" alt="ROMCOMBINER v2.10" width={640} />
+
+### If a Flash card is being used in slot 2
+
+#### Flash EPROM block erase
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/512k-ram-1m-flash-0.webp" alt="512K RAM 1M Flash card" width={452} />
+
+There is no point in checking whether it is erased or not, it can be erased here straight away.
+
+Press F. followed by
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/rc-erase-s2-success.webp" alt="Success" width={640} />
+
+- 256 <Key k="enter" />
+- 2 <Key k="enter" />
+
+To return to the main display.
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/rc-end.webp" alt="Type 0 to end" width={640} />
+
+Press 0 <Key k="enter" />.
+
+### If a Flash card is being used in slot 1
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-oz/512k-0k-0k.webp" alt="512K/512K RAM/Flash card in slot 1" width={452} />
+
+Follow the instructions as above, except the Flash card is in Slot 1.
+
+Press F. followed by
+
+- 256 <Key k="enter" />
+- 1 <Key k="enter" />
+
+To return to the main display.
+
+Press 0 <Key k="enter" />.
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/rc-end.webp" alt="Type 0 to end" width={640} />
+
+<Shot src="z88-user-guide/external/qg-check-all-z88-cards/flashtest1.webp" alt="ROMCOMBINER v2.10" width={640} />
+
+### Combine image files of cards
+
+Press C. followed by
+
+- A
+- EAZYLINK <Key k="enter" />
+- A
+- FLASHSTORE <Key k="enter" />
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/rc-combine.webp" alt="Combine" width={640} />
+
+Press C. for Create followed by
+
+Destination card name? EAZYFLASH
+
+Delete source images (Y/N)? N
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/rc-finished.webp" alt="Finished" width={640} />
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/create-eazylink-flashstore1.webp" alt="files" width={640} />
+
+### Blow image files to an EPROM
+
+<Shot src="z88-user-guide/external/qg-check-all-z88-cards/128k-ram1-32k-eprom-3.webp" alt="128k RAM Slot 1 32K EPROM Slot 3" width={453} />
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/rc-blow-image-eprom.webp" alt="Blow image inro EPROM" width={640} />
+
+From the main screen, Select
+
+- B
+- 3 <Key k="enter" /> and then the Card name
+- EAZYFLASH <Key k="enter" />
+- F
+
+The screen will flash a few times until the following screen is displayed. If any programming errors are given, the EPROM will need to be erased and this procedure needs to be repeated from [Verify EPROM banks properly erased](https://cambridgez88.jira.com/wiki/pages/viewpage.action?pageId=96403586).
+
+### Blow image files to Flash Card (Slot 2)
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/512k-ram-1m-flash-0.webp" alt="512K RAM 1M Flash card" width={452} />
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/rc-blow-image-flash.webp" alt="Blow Flash card" width={640} />
+
+From the main screen, Select
+
+- B
+- F
+- 2 <Key k="enter" /> and then the Card name
+- EAZYFLASH <Key k="enter" />
+- F
+
+The screen may flash a few times until the following screen is displayed.
+
+### Blow image files to Flash Card (Slot 1)
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-oz/512k-0k-0k.webp" alt="512K/512K RAM/Flash card in slot 1" width={452} />
+
+This is similar to [Blow image files to Flash Card (Slot 2)](https://cambridgez88.jira.com/wiki/pages/viewpage.action?pageId=96403586) except to select Slot 1.
+
+From the main screen, Select
+
+- B
+- F
+- 1 <Key k="enter" /> and then the Card name
+- EAZYFLASH <Key k="enter" />
+- F
+
+The screen may flash a few times until the following screen is displayed.
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/rc-blow-image-eprom-success.webp" alt="Blow EPROM Success" width={640} />
+
+If the 512K/512K Flash/RAM is in Slot 1, do a HARD RESET, otherwise
+
+- Select <Key k="index" />
+- Open the Card Flap
+- Remove the 32K EPROM card from slot 3 or the Flash card from Slot 1 or 2
+- Close the Card Flap
+- Open the Card Flap
+- Insert the 32K EPROM in slot 2
+- Close the Card Flap
+- Press the <Key k="up" />key to display the two new applications at the bottom of the list
+
+<a id="flashstore_in_index_window" />
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/index-flashstore.webp" alt="Index Flashstore" width={640} />
+
+## Running Eazylink
+
+To run Eazylink either select the INDEX with <Key k="square" />I or <Key k="index" />
+
+<Shot src="z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/index-eazylink.webp" alt="select eazylink" width={640} />
+
+or move the cursor over the application name and press <Key k="enter" />.
+
+<Shot src="z88-user-guide/external/zep-easy-file-transfer-between-z88-and-other-computers/el-main.webp" alt="Main Screen" width={640} />a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Prerequisites","id":"prerequisites","depth":2},{"value":"Downloading Files","id":"downloading-files","depth":2},{"value":"On the Desktop start Eazylink2.","id":"on-the-desktop-start-eazylink2","depth":2},{"value":"First time use","id":"first-time-use","depth":2},{"value":"Select the Directory to be used","id":"select-the-directory-to-be-used","depth":3},{"value":"Send to the Z88","id":"send-to-the-z88","depth":2},{"value":"1. Start Z88","id":"1-start-z88","depth":3},{"value":"Select Panel","id":"select-panel","depth":4},{"value":"2. Select Imp-Export","id":"2-select-imp-export","depth":3},{"value":"3. On Z88, select B)atch receive","id":"3-on-z88-select-batch-receive","depth":3},{"value":"Running RomCombiner","id":"running-romcombiner","depth":2},{"value":"If an EPROM is being used in slot 3","id":"if-an-eprom-is-being-used-in-slot-3","depth":3},{"value":"Verify EPROM banks properly erased","id":"verify-eprom-banks-properly-erased","depth":4},{"value":"If a Flash card is being used in slot 2","id":"if-a-flash-card-is-being-used-in-slot-2","depth":3},{"value":"Flash EPROM block erase","id":"flash-eprom-block-erase","depth":4},{"value":"If a Flash card is being used in slot 1","id":"if-a-flash-card-is-being-used-in-slot-1","depth":3},{"value":"Combine image files of cards","id":"combine-image-files-of-cards","depth":3},{"value":"Blow image files to an EPROM","id":"blow-image-files-to-an-eprom","depth":3},{"value":"Blow image files to Flash Card (Slot 2)","id":"blow-image-files-to-flash-card-slot-2","depth":3},{"value":"Blow image files to Flash Card (Slot 1)","id":"blow-image-files-to-flash-card-slot-1","depth":3},{"value":"Running Eazylink","id":"running-eazylink","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"There are two ways to upgrade your Flashcard","title":"Creating Eazylink/Flashstore","filePath":"content/en/z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Creating Eazylink/Flashstore - Klive IDE"}],["$","meta","1",{"name":"description","content":"There are two ways to upgrade your Flashcard"}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"JRknQ_wk_gMYl0jLYL8vC"}
+20:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+21:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+b1:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Creating Eazylink/Flashstore","$undefined"]}],"\n",["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/oz45-about.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/oz45-about.webp","alt":"oz45 about","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}],"\n",["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"888px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/eazylink-flashstore-32k-eprom.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/eazylink-flashstore-32k-eprom.webp","alt":"Eazylink and Flashstore from Rakewell","loading":"lazy","decoding":"async","width":888,"height":615}],[]]}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"There are two ways to upgrade your Flashcard"}],"\n",["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Get in touch with ",["$","a",null,{"href":"http://www.rakewell.com","target":"_blank","rel":"noreferrer","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["Rakewell",[" ",["$","svg",null,{"fill":"none","stroke":"currentColor","strokeLinecap":"round","strokeLinejoin":"round","strokeWidth":1.7,"viewBox":"0 0 24 24","height":"1em","className":"x:inline x:align-baseline x:shrink-0","children":[["$","path",null,{"d":"M7 17L17 7"}],["$","path",null,{"d":"M7 7h10v10"}]]}]]]}]," who offer the service of ",["$","br",null,{}],"upgrading (your own EPROM) or ",["$","br",null,{}],"supplying EPROMs with Eazylink & Flashstore."]}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Do it yourself"}],"\n"]}],"\n"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["See ",["$","$L20",null,{"href":"/en/z88-user-guide/appendix-i-creating-updating-an-application-card#prerequisites","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Prerequisites"}]]}],"\n",["$","h2",null,{"id":"prerequisites","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Prerequisites",["$","$L21",null,{"id":"prerequisites"}]]}],"\n",["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":["$","svg",null,{"viewBox":"0 0 16 16","fill":"currentColor","height":".8em","className":"x:mt-[.3em]","children":["$","path",null,{"d":"M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"}]}]}],"$L22"]}],"\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41","\n","$L42","\n","$L43","\n","$L44","\n","$L45","\n","$L46","\n","$L47","\n","$L48","\n","$L49","\n","$L4a","\n","$L4b","\n","$L4c","\n","$L4d","\n","$L4e","\n","$L4f","\n","$L50","\n","$L51","\n","$L52","\n","$L53","\n","$L54","\n","$L55","\n","$L56","\n","$L57","\n","$L58","\n","$L59","\n","$L5a","\n","$L5b","\n","$L5c","\n","$L5d","\n","$L5e","\n","$L5f","\n","$L60","\n","$L61","\n","$L62","\n","$L63","\n","$L64","\n","$L65","\n","$L66","\n","$L67","\n","$L68","\n","$L69","\n","$L6a","\n","$L6b","\n","$L6c","\n","$L6d","\n","$L6e","\n","$L6f","\n","$L70","\n","$L71","\n","$L72","\n","$L73","\n","$L74","\n","$L75","\n","$L76","\n","$L77","\n","$L78","\n","$L79","\n","$L7a","\n","$L7b","\n","$L7c","\n","$L7d","\n","$L7e","\n","$L7f","\n","$L80","\n","$L81","\n","$L82","\n","$L83","\n","$L84","\n","$L85","\n","$L86","\n","$L87","\n","$L88","\n","$L89","\n","$L8a","\n","$L8b","\n","$L8c","\n","$L8d","\n","$L8e","\n","$L8f","\n","$L90","\n","$L91","\n","$L92","\n","$L93","\n","$L94","\n","$L95","\n","$L96","\n","$L97","\n","$L98","\n","$L99","\n","$L9a","\n","$L9b","\n","$L9c","\n","$L9d","\n","$L9e","\n","$L9f","\n","$La0","\n","$La1","\n","$La2","\n","$La3","\n","$La4","\n","$La5","\n","$La6","\n","$La7","\n","$La8","\n","$La9","\n","$Laa","\n","$Lab","\n","$Lac","\n","$Lad","\n","$Lae","\n","$Laf","\n","$Lb0"]]}]
+15:["$","$Lb1",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@b2"}]}]
+1f:true
+b3:"ToggleWordWrapButton"
+b4:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$b3"]
+b5:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+9:300
+22:["$","div",null,{"className":"x:w-full x:min-w-0","children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"INFO Put the EPROM in the EPROM ERASER NOW"}]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If you are going to blow the image into an EPROM card, start erasing it now, as it may take several attempts to erase it completely."}]]}]
+23:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","a",null,{"href":"https://cambridgez88.jira.com/wiki/display/EAZUGV10/Desktop+Installation","target":"_blank","rel":"noreferrer","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["Desktop Installation",[" ",["$","svg",null,{"fill":"none","stroke":"currentColor","strokeLinecap":"round","strokeLinejoin":"round","strokeWidth":1.7,"viewBox":"0 0 24 24","height":"1em","className":"x:inline x:align-baseline x:shrink-0","children":[["$","path",null,{"d":"M7 17L17 7"}],["$","path",null,{"d":"M7 7h10v10"}]]}]]]}]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","a",null,{"href":"https://cambridgez88.jira.com/wiki/display/EAZUGV10/Connect+the+Z88+to+the+Desktop","target":"_blank","rel":"noreferrer","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["Connect the Z88 to the Desktop",[" ",["$","svg",null,{"fill":"none","stroke":"currentColor","strokeLinecap":"round","strokeLinejoin":"round","strokeWidth":1.7,"viewBox":"0 0 24 24","height":"1em","className":"x:inline x:align-baseline x:shrink-0","children":[["$","path",null,{"d":"M7 17L17 7"}],["$","path",null,{"d":"M7 7h10v10"}]]}]]]}]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","a",null,{"href":"https://cambridgez88.jira.com/wiki/display/EAZUGV10/Starting+EazyLink+on+the+Desktop","target":"_blank","rel":"noreferrer","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["Starting EazyLink on the Desktop",[" ",["$","svg",null,{"fill":"none","stroke":"currentColor","strokeLinecap":"round","strokeLinejoin":"round","strokeWidth":1.7,"viewBox":"0 0 24 24","height":"1em","className":"x:inline x:align-baseline x:shrink-0","children":[["$","path",null,{"d":"M7 17L17 7"}],["$","path",null,{"d":"M7 7h10v10"}]]}]]]}]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Extra RAM fitted in slot 1. Large enough to receive and store all the files required."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"EPROM or Flash card to store the image (as a separate operation)"}],"\n"]}]
+24:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The Z88 needs to have the following cards as a minimum configuration."}]
+25:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"453px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/external/qg-check-all-z88-cards/128k-ram1-32k-eprom-3.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/external/qg-check-all-z88-cards/128k-ram1-32k-eprom-3.webp","alt":"128k RAM Slot 1 32K EPROM Slot 3","loading":"lazy","decoding":"async","width":453,"height":49}],[]]}]]}]
+26:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"Slot 1 needs to have at least 128K"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Slot 3 has a blank 32K EPROM card to blow the two applications."}],"\n"]}]
+27:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The alternative temporary solution is to use the Flash card that OZ will be loaded into. The Z88’s configuration is either the 512K/512 RAM/Flash option:-"}]
+28:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"452px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/appendix-i-creating-updating-an-application-card/creating-oz/512k-0k-0k.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/appendix-i-creating-updating-an-application-card/creating-oz/512k-0k-0k.webp","alt":"512K/512K RAM/Flash card in slot 1","loading":"lazy","decoding":"async","width":452,"height":47}],[]]}]]}]
+29:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"Slot 1 has 512K to saves the files into"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Slot 1 also has 512K Flash card to blow the two applications into."}],"\n"]}]
+2a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"or the 512K RAM (minimum)/1M Flash option:-"}]
+2b:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"452px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/512k-ram-1m-flash-0.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/512k-ram-1m-flash-0.webp","alt":"512K RAM 1M Flash card","loading":"lazy","decoding":"async","width":452,"height":52}],[]]}]]}]
+2c:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"Slot 1 has 512K to saves the files into"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Slot 2 is a 1M Flash card to blow the two applications into."}],"\n"]}]
+2d:["$","h2",null,{"id":"downloading-files","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Downloading Files",["$","$L21",null,{"id":"downloading-files"}]]}]
+2e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Download from the Wiki the files needed to transfer to the Z88. If they are zipped, unzip all the files on the Desktop Computer and save them all in a separate directory."}]
+2f:["$","table",null,{"children":[["$","thead",null,{"children":["$","tr",null,{"children":["$","th",null,{"colSpan":3,"children":"Download Location","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","th",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","td",null,{"children":["$","strong",null,{"children":["$","a",null,{"href":"https://cambridgez88.jira.com/wiki/display/ZEP/Easy+file+transfer+between+Z88+and+other+computers","target":"_blank","rel":"noreferrer","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["Eazylink",[" ",["$","svg",null,{"fill":"none","stroke":"currentColor","strokeLinecap":"round","strokeLinejoin":"round","strokeWidth":1.7,"viewBox":"0 0 24 24","height":"1em","className":"x:inline x:align-baseline x:shrink-0","children":[["$","path",null,{"d":"M7 17L17 7"}],["$","path",null,{"d":"M7 7h10v10"}]]}]]]}]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","strong",null,{"children":["$","a",null,{"href":"https://cambridgez88.jira.com/wiki/display/ZFS/FlashStore+(Z88+popdown)+Home","target":"_blank","rel":"noreferrer","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["FlashStore",[" ",["$","svg",null,{"fill":"none","stroke":"currentColor","strokeLinecap":"round","strokeLinejoin":"round","strokeWidth":1.7,"viewBox":"0 0 24 24","height":"1em","className":"x:inline x:align-baseline x:shrink-0","children":[["$","path",null,{"d":"M7 17L17 7"}],["$","path",null,{"d":"M7 7h10v10"}]]}]]]}]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","th",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Eazylink 5.2.3-06","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Flashstore 1.9.3","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","th",null,{"children":["Files",["$","br",null,{}],"Required"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","td",null,{"children":["eazyLink.63",["$","br",null,{}],"RomCombiner.bas",["$","br",null,{}],"romcombiner.bin",["$","br",null,{}],"RomUtil.bas"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"flashstore.63","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","th",null,{"children":"Imp/Export","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","td",null,{"colSpan":2,"children":"4 minutes 10 seconds","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}]],"className":"x:block x:overflow-x-auto"}]
+30:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["For convenience This section has been copied from the ",["$","a",null,{"href":"https://cambridgez88.jira.com/wiki/display/EAZUGV10/Imp-Export+Mode","target":"_blank","rel":"noreferrer","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["Eazylink2 User Guide",[" ",["$","svg",null,{"fill":"none","stroke":"currentColor","strokeLinecap":"round","strokeLinejoin":"round","strokeWidth":1.7,"viewBox":"0 0 24 24","height":"1em","className":"x:inline x:align-baseline x:shrink-0","children":[["$","path",null,{"d":"M7 17L17 7"}],["$","path",null,{"d":"M7 7h10v10"}]]}]]]}]," to show how to do this."]}]
+31:["$","h2",null,{"id":"on-the-desktop-start-eazylink2","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["On the Desktop start Eazylink2.",["$","$L21",null,{"id":"on-the-desktop-start-eazylink2"}]]}]
+32:["$","h2",null,{"id":"first-time-use","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["First time use",["$","$L21",null,{"id":"first-time-use"}]]}]
+33:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The first time Eazylink is connected to the Z88 the Com Port window is displayed."}]
+34:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"610px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/external/eazugv10-imp-export-mode/imp-exp-compref.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/external/eazugv10-imp-export-mode/imp-exp-compref.webp","alt":"ImpExp communications preferences","loading":"lazy","decoding":"async","width":610,"height":418}],[]]}]]}]
+35:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["Clear the ‘Open Serial Port on Startup’ tick box",["$","br",null,{}],"Select the ‘Default Serial Port:’ to the device name the Z88 is connected to.",["$","br",null,{}],"Click the ‘Refresh’ box and click OK."]}],"\n"]}]
+36:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"An intelligent guess is made at which Serial Port is being used. Here is your chance to check that the correct one has been selected. In this case Windows is using COM 5."}]
+37:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Getting control of Eazylink can be difficult to do initially because Eazylink2 is expecting the pop-down to be running on the Z88. Just keep waiting until you receive the Reading Z88 Devices Command Failed Command Error window."}]
+38:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"487px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/external/eazugv10-imp-export-mode/eazylink-hello-command-failed.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/external/eazugv10-imp-export-mode/eazylink-hello-command-failed.webp","alt":"eazylink_hello_command_failed","loading":"lazy","decoding":"async","width":487,"height":161}],[]]}]]}]
+39:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Choose ‘Ignore.’"}]}]
+3a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"What you really need to see is the top Eazylink Menu not being greyed out"}]
+3b:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"708px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/external/eazugv10-imp-export-mode/eazylink-top-menu.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/external/eazugv10-imp-export-mode/eazylink-top-menu.webp","alt":"eazylink top menu","loading":"lazy","decoding":"async","width":708,"height":53}],[]]}]]}]
+3c:["$","h3",null,{"id":"select-the-directory-to-be-used","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Select the Directory to be used",["$","$L21",null,{"id":"select-the-directory-to-be-used"}]]}]
+3d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Here is a picture of the blank screen you should see. The left-hand window (normally used to show the Z88 side) is not used in this Imp-Export Mode. The right-hand side window showing the Desktop side is used. Select which Directory is to be used here. The selection of the files are made in a different window later."}]
+3e:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"440px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/imp-exp-start-eazyflash.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/imp-exp-start-eazyflash.webp","alt":"Imp-Export start Eazyflash","loading":"lazy","decoding":"async","width":440,"height":291}],[]]}]]}]
+3f:["$","h2",null,{"id":"send-to-the-z88","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Send to the Z88",["$","$L21",null,{"id":"send-to-the-z88"}]]}]
+40:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"On the top menu bar, Select Z88"}]
+41:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Communication not established"}]
+42:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["If all the functions are greyed out in the Z88 Menu, communication to the Z88 has not been established. Check that the cable is connected to the Z88 and ",["$","a",null,{"href":"https://cambridgez88.jira.com/wiki/display/EAZUGV10/Connect+the+Z88+to+the+Desktop","target":"_blank","rel":"noreferrer","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["Connect the Z88 to the Desktop",[" ",["$","svg",null,{"fill":"none","stroke":"currentColor","strokeLinecap":"round","strokeLinejoin":"round","strokeWidth":1.7,"viewBox":"0 0 24 24","height":"1em","className":"x:inline x:align-baseline x:shrink-0","children":[["$","path",null,{"d":"M7 17L17 7"}],["$","path",null,{"d":"M7 7h10v10"}]]}]]]}]," has been followed."]}]
+43:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"313px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/external/eazugv10-imp-export-mode/eazylink-z88-menu.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/external/eazugv10-imp-export-mode/eazylink-z88-menu.webp","alt":"eazylink z88 menu","loading":"lazy","decoding":"async","width":313,"height":247}],[]]}]]}]
+44:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"Select - Send files to Z88 Imp-Export popdown"}],"\n"]}]
+45:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"283px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/external/eazugv10-imp-export-mode/send-to-z88-using-imp-export-popdown.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/external/eazugv10-imp-export-mode/send-to-z88-using-imp-export-popdown.webp","alt":"send to z88 using imp export popdown","loading":"lazy","decoding":"async","width":283,"height":147}],[]]}]]}]
+46:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If ‘Show Details…’ is selected, you will be presented with a help screen listing instructions (without the screen shots) on how to use the Z88."}]
+47:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["On the Z88 it is a good idea to make sure you have additional RAM in slot 1 and ",["$","a",null,{"href":"https://cambridgez88.jira.com/wiki/display/EAZUGV10/Problem+Solving+Area","target":"_blank","rel":"noreferrer","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["Resetting the Z88",[" ",["$","svg",null,{"fill":"none","stroke":"currentColor","strokeLinecap":"round","strokeLinejoin":"round","strokeWidth":1.7,"viewBox":"0 0 24 24","height":"1em","className":"x:inline x:align-baseline x:shrink-0","children":[["$","path",null,{"d":"M7 17L17 7"}],["$","path",null,{"d":"M7 7h10v10"}]]}]]]}]," before starting this exercise unless you want to keep the files that are already on the Z88."]}]
+48:["$","h3",null,{"id":"1-start-z88","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["1. Start Z88",["$","$L21",null,{"id":"1-start-z88"}]]}]
+49:["$","h4",null,{"id":"select-panel","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":["Select Panel",["$","$L21",null,{"id":"select-panel"}]]}]
+4a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Use ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],"S"]}]
+4b:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/up-and-running/z88-select-panel.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/up-and-running/z88-select-panel.webp","alt":"z88 select panel","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+4c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Change Default device to :RAM.1 - You need extra RAM in your Z88 for the file and it needs to be in slot 1."}]
+4d:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/external/eazugv10-imp-export-mode/panel-ram1.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/external/eazugv10-imp-export-mode/panel-ram1.webp","alt":"panel ram1","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+4e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Check"}]," that the Transmit and Receive rates Parity (9600) and ",["$","strong",null,{"children":"change the default Xon/Xoff settings from (Yes) to (No)"}]," are the correct value as given."]}]
+4f:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/external/eazugv10-imp-export-mode/panel-xoff.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/external/eazugv10-imp-export-mode/panel-xoff.webp","alt":"panel xoff","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+50:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Scroll down to the next instruction."}]
+51:["$","h3",null,{"id":"2-select-imp-export","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["2. Select Imp-Export",["$","$L21",null,{"id":"2-select-imp-export"}]]}]
+52:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Use ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],"X"]}]
+53:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/external/eazugv10-eazylink2-user-guide/select-impexp.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/external/eazugv10-eazylink2-user-guide/select-impexp.webp","alt":"select impexp","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+54:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Scroll down to the next instruction. 3. the Imp-Export Menu will be displayed"}]
+55:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/external/eazugv10-imp-export-mode/select-impexp-b.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/external/eazugv10-imp-export-mode/select-impexp-b.webp","alt":"select impexp b","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+56:["$","h3",null,{"id":"3-on-z88-select-batch-receive","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["3. On Z88, select B)atch receive",["$","$L21",null,{"id":"3-on-z88-select-batch-receive"}]]}]
+57:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["by pressing ‘b’ and then press the ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]," key."]}]
+58:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"On the Desktop, click ‘Yes’ to ‘Is Z88 ready?’"}]
+59:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"283px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/external/eazugv10-imp-export-mode/send-to-z88-using-imp-export-popdown.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/external/eazugv10-imp-export-mode/send-to-z88-using-imp-export-popdown.webp","alt":"send to z88 using imp export popdown","loading":"lazy","decoding":"async","width":283,"height":147}],[]]}]]}]
+5a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The Desktop will now display a window for you to select which file(s) to send"}]
+5b:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"439px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/imp-exp-start-eazyflash2.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/imp-exp-start-eazyflash2.webp","alt":"Select Files","loading":"lazy","decoding":"async","width":439,"height":263}],[]]}]]}]
+5c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Mark the desired files. These are:-"}]
+5d:["$","table",null,{"children":[["$","thead",null,{"children":["$","tr",null,{"children":["$","th",null,{"colSpan":3,"children":"Download Location","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","th",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","td",null,{"children":["$","strong",null,{"children":["$","a",null,{"href":"https://cambridgez88.jira.com/wiki/display/ZEP/Easy+file+transfer+between+Z88+and+other+computers","target":"_blank","rel":"noreferrer","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["Eazylink",[" ",["$","svg",null,{"fill":"none","stroke":"currentColor","strokeLinecap":"round","strokeLinejoin":"round","strokeWidth":1.7,"viewBox":"0 0 24 24","height":"1em","className":"x:inline x:align-baseline x:shrink-0","children":[["$","path",null,{"d":"M7 17L17 7"}],["$","path",null,{"d":"M7 7h10v10"}]]}]]]}]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","strong",null,{"children":["$","a",null,{"href":"https://cambridgez88.jira.com/wiki/display/ZFS/FlashStore+(Z88+popdown)+Home","target":"_blank","rel":"noreferrer","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["FlashStore",[" ",["$","svg",null,{"fill":"none","stroke":"currentColor","strokeLinecap":"round","strokeLinejoin":"round","strokeWidth":1.7,"viewBox":"0 0 24 24","height":"1em","className":"x:inline x:align-baseline x:shrink-0","children":[["$","path",null,{"d":"M7 17L17 7"}],["$","path",null,{"d":"M7 7h10v10"}]]}]]]}]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","th",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Eazylink 5.2.3-06","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Flashstore 1.9.3","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","th",null,{"children":["Files",["$","br",null,{}],"Required"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","td",null,{"children":["eazyLink.63",["$","br",null,{}],"RomCombiner.bas",["$","br",null,{}],"romcombiner.bin",["$","br",null,{}],"RomUtil.bas"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"flashstore.63","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}]],"className":"x:block x:overflow-x-auto"}]
+5e:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"216px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/imp-export-select-1.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/imp-export-select-1.webp","alt":"Select 1","loading":"lazy","decoding":"async","width":216,"height":130}],[]]}]]}]
+5f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Select the Z88’s destination storage slot (in this case Slot 1)."}]
+60:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"After press OK the Z88 screen will show"}]
+61:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$Lb4",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$Lb5",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"Using remote name:  :RAM.1/the_filename"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"(Incrementing numbers on this row)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"End of file"}]}]]}]]}]]}]
+62:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This will repeat itself until all the files are transferred."}]
+63:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Press ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Escape","children":"ESC"}]," on the Z88 to return to the Imp-Export Menu."]}]
+64:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-yellow-50 x:dark:bg-yellow-700/30 x:text-yellow-700 x:dark:text-yellow-500 x:border-yellow-700","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$14:props:children:1:15:props:children:0:props:style","data-pagefind-ignore":"all","children":["$","svg",null,{"viewBox":"0 0 16 16","fill":"currentColor","height":".8em","className":"x:mt-[.3em]","children":["$","path",null,{"d":"M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575Zm1.763.707a.25.25 0 0 0-.44 0L1.698 13.132a.25.25 0 0 0 .22.368h12.164a.25.25 0 0 0 .22-.368Zm.53 3.996v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"}]}]}],["$","div",null,{"className":"x:w-full x:min-w-0","children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Note"}]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Both these popdowns are 16K each. Might as well put both of them on the same card and use up the spare space if only Eazylink is used."}]]}]]}]
+65:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/create-eazylink-flashstore1.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/create-eazylink-flashstore1.webp","alt":"files","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+66:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The files are shown here displayed in the Filer are:-"}]
+67:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"eazyLink.63 & flashstore.63 - These are the image files for Eazylink and Flashstore."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Romcombiner.bas, .bin & RomUtil.bas - These 3 files are required to blow the image to the EPROM card."}],"\n"]}]
+68:["$","h2",null,{"id":"running-romcombiner","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Running RomCombiner",["$","$L21",null,{"id":"running-romcombiner"}]]}]
+69:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"To run the program, do the following:-"}]
+6a:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["Select BBC BASIC ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],"B. Type"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"RUN “ROMCOMBINER.BAS”"}],"\n"]}]
+6b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The following screen is displayed."}]
+6c:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/external/qg-check-all-z88-cards/flashtest1.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/external/qg-check-all-z88-cards/flashtest1.webp","alt":"ROMCOMBINER v2.10","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+6d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"EPROMs can only be programmed in Slot 3."}]
+6e:["$","h3",null,{"id":"if-an-eprom-is-being-used-in-slot-3","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["If an EPROM is being used in slot 3",["$","$L21",null,{"id":"if-an-eprom-is-being-used-in-slot-3"}]]}]
+6f:["$","h4",null,{"id":"verify-eprom-banks-properly-erased","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":["Verify EPROM banks properly erased",["$","$L21",null,{"id":"verify-eprom-banks-properly-erased"}]]}]
+70:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"453px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/external/qg-check-all-z88-cards/128k-ram1-32k-eprom-3.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/external/qg-check-all-z88-cards/128k-ram1-32k-eprom-3.webp","alt":"128k RAM Slot 1 32K EPROM Slot 3","loading":"lazy","decoding":"async","width":453,"height":49}],[]]}]]}]
+71:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Press V. followed by"}]
+72:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"F"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["32 ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]]}],"\n"]}]
+73:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If the EPROM is properly erased the following screen is displayed."}]
+74:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/external/qg-check-all-z88-cards/flashtest4.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/external/qg-check-all-z88-cards/flashtest4.webp","alt":"Verify EPROM properly erased","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+75:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If an error message is displayed,"}]
+76:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/not-erased.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/not-erased.webp","alt":"EPROM not erased","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+77:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"the EPROM should be removed and erased again with the EPROM Eraser until it passes this test."}]
+78:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/external/qg-check-all-z88-cards/flashtest1.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/external/qg-check-all-z88-cards/flashtest1.webp","alt":"ROMCOMBINER v2.10","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+79:["$","h3",null,{"id":"if-a-flash-card-is-being-used-in-slot-2","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["If a Flash card is being used in slot 2",["$","$L21",null,{"id":"if-a-flash-card-is-being-used-in-slot-2"}]]}]
+7a:["$","h4",null,{"id":"flash-eprom-block-erase","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":["Flash EPROM block erase",["$","$L21",null,{"id":"flash-eprom-block-erase"}]]}]
+7b:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"452px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/512k-ram-1m-flash-0.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/512k-ram-1m-flash-0.webp","alt":"512K RAM 1M Flash card","loading":"lazy","decoding":"async","width":452,"height":52}],[]]}]]}]
+7c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"There is no point in checking whether it is erased or not, it can be erased here straight away."}]
+7d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Press F. followed by"}]
+7e:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/rc-erase-s2-success.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/rc-erase-s2-success.webp","alt":"Success","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+7f:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["256 ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["2 ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]]}],"\n"]}]
+80:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"To return to the main display."}]
+81:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/rc-end.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/rc-end.webp","alt":"Type 0 to end","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+82:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Press 0 ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}],"."]}]
+83:["$","h3",null,{"id":"if-a-flash-card-is-being-used-in-slot-1","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["If a Flash card is being used in slot 1",["$","$L21",null,{"id":"if-a-flash-card-is-being-used-in-slot-1"}]]}]
+84:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"452px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/appendix-i-creating-updating-an-application-card/creating-oz/512k-0k-0k.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/appendix-i-creating-updating-an-application-card/creating-oz/512k-0k-0k.webp","alt":"512K/512K RAM/Flash card in slot 1","loading":"lazy","decoding":"async","width":452,"height":47}],[]]}]]}]
+85:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Follow the instructions as above, except the Flash card is in Slot 1."}]
+86:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Press F. followed by"}]
+87:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["256 ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["1 ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]]}],"\n"]}]
+88:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"To return to the main display."}]
+89:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Press 0 ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}],"."]}]
+8a:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/rc-end.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/rc-end.webp","alt":"Type 0 to end","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+8b:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/external/qg-check-all-z88-cards/flashtest1.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/external/qg-check-all-z88-cards/flashtest1.webp","alt":"ROMCOMBINER v2.10","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+8c:["$","h3",null,{"id":"combine-image-files-of-cards","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Combine image files of cards",["$","$L21",null,{"id":"combine-image-files-of-cards"}]]}]
+8d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Press C. followed by"}]
+8e:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"A"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["EAZYLINK ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"A"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["FLASHSTORE ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]]}],"\n"]}]
+8f:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/rc-combine.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/rc-combine.webp","alt":"Combine","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+90:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Press C. for Create followed by"}]
+91:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Destination card name? EAZYFLASH"}]
+92:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Delete source images (Y/N)? N"}]
+93:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/rc-finished.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/rc-finished.webp","alt":"Finished","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+94:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/create-eazylink-flashstore1.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/create-eazylink-flashstore1.webp","alt":"files","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+95:["$","h3",null,{"id":"blow-image-files-to-an-eprom","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Blow image files to an EPROM",["$","$L21",null,{"id":"blow-image-files-to-an-eprom"}]]}]
+96:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"453px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/external/qg-check-all-z88-cards/128k-ram1-32k-eprom-3.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/external/qg-check-all-z88-cards/128k-ram1-32k-eprom-3.webp","alt":"128k RAM Slot 1 32K EPROM Slot 3","loading":"lazy","decoding":"async","width":453,"height":49}],[]]}]]}]
+97:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/rc-blow-image-eprom.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/rc-blow-image-eprom.webp","alt":"Blow image inro EPROM","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+98:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"From the main screen, Select"}]
+99:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"B"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["3 ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]," and then the Card name"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["EAZYFLASH ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"F"}],"\n"]}]
+9a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The screen will flash a few times until the following screen is displayed. If any programming errors are given, the EPROM will need to be erased and this procedure needs to be repeated from ",["$","a",null,{"href":"https://cambridgez88.jira.com/wiki/pages/viewpage.action?pageId=96403586","target":"_blank","rel":"noreferrer","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["Verify EPROM banks properly erased",[" ",["$","svg",null,{"fill":"none","stroke":"currentColor","strokeLinecap":"round","strokeLinejoin":"round","strokeWidth":1.7,"viewBox":"0 0 24 24","height":"1em","className":"x:inline x:align-baseline x:shrink-0","children":[["$","path",null,{"d":"M7 17L17 7"}],["$","path",null,{"d":"M7 7h10v10"}]]}]]]}],"."]}]
+9b:["$","h3",null,{"id":"blow-image-files-to-flash-card-slot-2","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Blow image files to Flash Card (Slot 2)",["$","$L21",null,{"id":"blow-image-files-to-flash-card-slot-2"}]]}]
+9c:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"452px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/512k-ram-1m-flash-0.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/512k-ram-1m-flash-0.webp","alt":"512K RAM 1M Flash card","loading":"lazy","decoding":"async","width":452,"height":52}],[]]}]]}]
+9d:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/rc-blow-image-flash.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/rc-blow-image-flash.webp","alt":"Blow Flash card","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+9e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"From the main screen, Select"}]
+9f:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"B"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"F"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["2 ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]," and then the Card name"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["EAZYFLASH ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"F"}],"\n"]}]
+a0:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The screen may flash a few times until the following screen is displayed."}]
+a1:["$","h3",null,{"id":"blow-image-files-to-flash-card-slot-1","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Blow image files to Flash Card (Slot 1)",["$","$L21",null,{"id":"blow-image-files-to-flash-card-slot-1"}]]}]
+a2:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"452px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/appendix-i-creating-updating-an-application-card/creating-oz/512k-0k-0k.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/appendix-i-creating-updating-an-application-card/creating-oz/512k-0k-0k.webp","alt":"512K/512K RAM/Flash card in slot 1","loading":"lazy","decoding":"async","width":452,"height":47}],[]]}]]}]
+a3:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["This is similar to ",["$","a",null,{"href":"https://cambridgez88.jira.com/wiki/pages/viewpage.action?pageId=96403586","target":"_blank","rel":"noreferrer","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["Blow image files to Flash Card (Slot 2)",[" ",["$","svg",null,{"fill":"none","stroke":"currentColor","strokeLinecap":"round","strokeLinejoin":"round","strokeWidth":1.7,"viewBox":"0 0 24 24","height":"1em","className":"x:inline x:align-baseline x:shrink-0","children":[["$","path",null,{"d":"M7 17L17 7"}],["$","path",null,{"d":"M7 7h10v10"}]]}]]]}]," except to select Slot 1."]}]
+a4:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"From the main screen, Select"}]
+a5:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"B"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"F"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["1 ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]," and then the Card name"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["EAZYFLASH ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"F"}],"\n"]}]
+a6:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The screen may flash a few times until the following screen is displayed."}]
+a7:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/rc-blow-image-eprom-success.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/rc-blow-image-eprom-success.webp","alt":"Blow EPROM Success","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+a8:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If the 512K/512K Flash/RAM is in Slot 1, do a HARD RESET, otherwise"}]
+a9:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["Select ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Index","children":"INDEX"}]]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Open the Card Flap"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Remove the 32K EPROM card from slot 3 or the Flash card from Slot 1 or 2"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Close the Card Flap"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Open the Card Flap"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Insert the 32K EPROM in slot 2"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Close the Card Flap"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["Press the ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor up","children":"↑"}],"key to display the two new applications at the bottom of the list"]}],"\n"]}]
+aa:["$","a",null,{"id":"flashstore_in_index_window"}]
+ab:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/index-flashstore.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/index-flashstore.webp","alt":"Index Flashstore","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+ac:["$","h2",null,{"id":"running-eazylink","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Running Eazylink",["$","$L21",null,{"id":"running-eazylink"}]]}]
+ad:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["To run Eazylink either select the INDEX with ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],"I or ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Index","children":"INDEX"}]]}]
+ae:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/index-eazylink.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/appendix-i-creating-updating-an-application-card/creating-eazylink-flashstore/index-eazylink.webp","alt":"select eazylink","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+af:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["or move the cursor over the application name and press ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}],"."]}]
+b0:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/external/zep-easy-file-transfer-between-z88-and-other-computers/el-main.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/external/zep-easy-file-transfer-between-z88-and-other-computers/el-main.webp","alt":"Main Screen","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+b2:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"
