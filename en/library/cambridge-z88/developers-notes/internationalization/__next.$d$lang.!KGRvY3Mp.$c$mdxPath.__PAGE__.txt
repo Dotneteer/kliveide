@@ -1,0 +1,75 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:Tc59,---
+description: "Huge efforts have been made for providing localization to OZ. Initial work were done by Cambridge Computers in the form of several foreign 3.xx versions of OZ. Since OZ v4.2 milestone, foreign OZ..."
+asIndexPage: true
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/85229599 (version 19) by scripts/import-z88-wiki.cjs */}
+
+# Internationalization
+
+Huge efforts have been made for providing localization to OZ. Initial work were done by Cambridge Computers in the form of several foreign 3.xx versions of OZ. Since OZ v4.2 milestone, foreign OZ sources have been merged, rewritten and organized in an API for one standalone OZ version. OZ character set is compatible with [ISO 8859-15 layout (Latin-9)](/en/library/cambridge-z88/developers-notes/internationalization/iso-character-table). It provides a quite good compatibility with modern computers.
+
+## Keyboard
+
+All the produced foreign keyboards except Icelandic and Turkish ones are supported. Keyboard is selected in Panel specifying country letter ([OS\_Sp / PA\_Loc](/en/library/cambridge-z88/developers-notes/miscellaneous-useful-routines/specifies)). It adjusts the keyboard mapping, the language used for dates and the country code letters shown below OZ in the system window.
+
+OZ uses an [internal key table](/en/library/cambridge-z88/developers-notes/internationalization/iso-key-translation-table) to deal between key sequences, ISO and character fonts.
+
+## Character fonts
+
+The different foreign OZ fonts have been merged to provide maximum ISO compatibility. Even if the selected country is UK, the french, danish and other exotic characters are correctly displayed. The layout of the 512 LORES characters are detailed in [this table](/en/library/cambridge-z88/developers-notes/internationalization/iso-character-fonts). New accented characters and the euro symbol have been added. '€' is accessed by pressing \<\>£ and can be altered in bold and tiny fonts.
+
+## Dates
+
+Dates are fully localized thanks to a new [GN\_Ldm, Localized Date Manipulation](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-ldm) API (OZ v4.5). It works as an overlay on filters and provides localized dates in whole system. Output is performed with [GN\_Sdo](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-sdo) handling localization of date and moments (Yesterday, Today and Tomorrow). This function is implemented in Index, Time, Calendar and Alarm applications.
+
+## Printer driver
+
+Printer translations handle ISO to printer sequence translations. They have been increased to 41 ([OS\_Sp / PA\_Tr1...41](/en/library/cambridge-z88/developers-notes/miscellaneous-useful-routines/specifies)). The \<\>ISO Translation page in PrinterEd handles now 32 slots in addition to the 9 translations in page 2. The default Epson driver handles all the supported ISO characters (OZ v4.7).
+
+## Filing system
+
+Thanks to an upgrade of [OS\_Nq / Nq\_Rds](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-nq/window-management-information), the filing system can now handle ISO characters in filenames and directories (OZ v4.7).a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Keyboard","id":"keyboard","depth":2},{"value":"Character fonts","id":"character-fonts","depth":2},{"value":"Dates","id":"dates","depth":2},{"value":"Printer driver","id":"printer-driver","depth":2},{"value":"Filing system","id":"filing-system","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"Huge efforts have been made for providing localization to OZ. Initial work were done by Cambridge Computers in the form of several foreign 3.xx versions of OZ. Since OZ v4.2 milestone, foreign OZ...","asIndexPage":true,"title":"Internationalization","filePath":"content/en/library/cambridge-z88/developers-notes/internationalization/index.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/developers-notes/internationalization","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Internationalization - Klive IDE"}],["$","meta","1",{"name":"description","content":"Huge efforts have been made for providing localization to OZ. Initial work were done by Cambridge Computers in the form of several foreign 3.xx versions of OZ. Since OZ v4.2 milestone, foreign OZ..."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/developers-notes/internationalization/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"cyL0EKA0xNKEZcECA3AIS"}
+20:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+21:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+28:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Internationalization","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Huge efforts have been made for providing localization to OZ. Initial work were done by Cambridge Computers in the form of several foreign 3.xx versions of OZ. Since OZ v4.2 milestone, foreign OZ sources have been merged, rewritten and organized in an API for one standalone OZ version. OZ character set is compatible with ",["$","$L20",null,{"href":"/en/library/cambridge-z88/developers-notes/internationalization/iso-character-table","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"ISO 8859-15 layout (Latin-9)"}],". It provides a quite good compatibility with modern computers."]}],"\n",["$","h2",null,{"id":"keyboard","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Keyboard",["$","$L21",null,{"id":"keyboard"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["All the produced foreign keyboards except Icelandic and Turkish ones are supported. Keyboard is selected in Panel specifying country letter (",["$","$L20",null,{"href":"/en/library/cambridge-z88/developers-notes/miscellaneous-useful-routines/specifies","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OS_Sp / PA_Loc"}],"). It adjusts the keyboard mapping, the language used for dates and the country code letters shown below OZ in the system window."]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["OZ uses an ",["$","$L20",null,{"href":"/en/library/cambridge-z88/developers-notes/internationalization/iso-key-translation-table","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"internal key table"}]," to deal between key sequences, ISO and character fonts."]}],"\n",["$","h2",null,{"id":"character-fonts","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Character fonts",["$","$L21",null,{"id":"character-fonts"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The different foreign OZ fonts have been merged to provide maximum ISO compatibility. Even if the selected country is UK, the french, danish and other exotic characters are correctly displayed. The layout of the 512 LORES characters are detailed in ",["$","$L20",null,{"href":"/en/library/cambridge-z88/developers-notes/internationalization/iso-character-fonts","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"this table"}],". New accented characters and the euro symbol have been added. ’€’ is accessed by pressing <>£ and can be altered in bold and tiny fonts."]}],"\n",["$","h2",null,{"id":"dates","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Dates","$L22"]}],"\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n","$L27"]]}]
+15:["$","$L28",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@29"}]}]
+1f:true
+9:300
+22:["$","$L21",null,{"id":"dates"}]
+23:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Dates are fully localized thanks to a new ",["$","$L20",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-ldm","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"GN_Ldm, Localized Date Manipulation"}]," API (OZ v4.5). It works as an overlay on filters and provides localized dates in whole system. Output is performed with ",["$","$L20",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-sdo","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"GN_Sdo"}]," handling localization of date and moments (Yesterday, Today and Tomorrow). This function is implemented in Index, Time, Calendar and Alarm applications."]}]
+24:["$","h2",null,{"id":"printer-driver","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Printer driver",["$","$L21",null,{"id":"printer-driver"}]]}]
+25:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Printer translations handle ISO to printer sequence translations. They have been increased to 41 (",["$","$L20",null,{"href":"/en/library/cambridge-z88/developers-notes/miscellaneous-useful-routines/specifies","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OS_Sp / PA_Tr1…41"}],"). The <>ISO Translation page in PrinterEd handles now 32 slots in addition to the 9 translations in page 2. The default Epson driver handles all the supported ISO characters (OZ v4.7)."]}]
+26:["$","h2",null,{"id":"filing-system","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Filing system",["$","$L21",null,{"id":"filing-system"}]]}]
+27:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Thanks to an upgrade of ",["$","$L20",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-nq/window-management-information","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OS_Nq / Nq_Rds"}],", the filing system can now handle ISO characters in filenames and directories (OZ v4.7)."]}]
+29:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

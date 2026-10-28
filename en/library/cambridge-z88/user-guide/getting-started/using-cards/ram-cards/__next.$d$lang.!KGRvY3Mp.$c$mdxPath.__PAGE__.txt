@@ -1,0 +1,210 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T1b17,---
+description: "A computer's memory is where it stores all its information. Its initial capacity is already defined, but it can normally be increased when it is needed. This is certainly true of the Z88. Memory..."
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/35913745 (version 14) by scripts/import-z88-user-guide.cjs */}
+
+# RAM cards
+
+## Memory Introduction
+
+A computer's memory is where it stores all its information. Its initial capacity is already defined, but it can normally be increased when it is needed. This is certainly true of the Z88. Memory is not as we tend to think, simply a storage area like a filing cabinet. All tasks or programs need space in the memory to enable the computer to do them. A good analogy is to compare the to our working area say like an organised office. There is some space taken up by the filing system, but there is also a desk which not only provides space to do work, but also space for in/out trays. Then there are those piles of started work waiting to be finished. Well that's what our desks look like anyway! There's also space for you: the job wouldn't be done if you weren't there. That is the same with computers: it wouldn't be able to anything without its various programs and its operating systems. They all take up space in the memory as well as the text and data that is being in-putted.
+
+<Shot src="z88-user-guide/external/qg-z88-quick-guide-help-home-page/1m-ram-grey.webp" alt="1M ram grey" width={400} />
+
+**Memory is fragile** - not fragile in the sense of easy to break, but is very easily lost.
+
+This is the most important thing to remember about computer memory. In the office, when work is done it is somewhere, even if it has been mislaid or filed in the wrong place. **In the computer memory, information may be there one second and gone the next**: areas of memory can be erased much quicker than typing a sentence. The computer is not smart enough to know what is important data, or how long it took to create it. In its memory everything is broken down into minute pieces of digital information , so if something goes awry, everything can be erased and cannot be recovered. **This is why backing up the data in the files is so important.**
+
+## RAM Cards
+
+RAM cards allow you to
+
+- store more data
+- and give more memory for the applications to use
+
+in the Cambridge Z88. There are three slots, each of which may take up to 1 Megabyte of RAM, although it is advisable to use slots 1 and 2 for RAM leaving slot 3 available for EPROM. This is because slot 3 is the only one which can be used to record data onto EPROM. Also RAM cards will consume more power in this slot than in slots 1 and 2 and therefore reduce battery life.
+
+### Inserting a RAM card
+
+1. Make sure that the Cambridge Z88 is switched ON and the Index is displayed.
+
+2. Open the Perspex flap at the front. The Cambridge Z88 will give a short beep and the screen will go blank.
+
+3. Push the RAM pack into the slot making sure that the label is facing outwards and is the correct way up. Make sure that the card is pushed in as far as it will go.
+
+4. Close the flap. The Cambridge Z88 will turn itself back on and re-display the Index. You can check that the card has been recognised by typing <Key k="diamond" />CARD.
+
+## How the Z88 uses RAM
+
+The Z88 uses RAM in two ways. They are the
+
+- RAM Filing System and
+- RAM for Applications to use.
+
+There is not a central point to view or manage RAM. Different Applications are used to do this.
+
+<Table>
+<thead>
+<Table.Tr>
+<Table.Th>Application</Table.Th>
+<Table.Th>Key</Table.Th>
+<Table.Th>Command</Table.Th>
+<Table.Th>Function</Table.Th>
+</Table.Tr>
+</thead>
+<tbody>
+<Table.Tr>
+<Table.Td>INDEX</Table.Td>
+<Table.Td><Key k="index" /></Table.Td>
+<Table.Td>CARDS</Table.Td>
+<Table.Td><Key k="diamond" />CARD</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>INDEX</Table.Td>
+<Table.Td><Key k="index" /></Table.Td>
+<Table.Td>INFORMATION</Table.Td>
+<Table.Td><Key k="diamond" />INFO</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Pipedream</Table.Td>
+<Table.Td><Key k="square" />P</Table.Td>
+<Table.Td>OPTIONS</Table.Td>
+<Table.Td><Key k="diamond" />O</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Flashstore</Table.Td>
+<Table.Td><Key k="square" />J</Table.Td>
+<Table.Td>SELECT CARD</Table.Td>
+<Table.Td><Key k="diamond" />SC</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Eazylink2</Table.Td>
+<Table.Td><Key k="square" />L</Table.Td>
+<Table.Td colSpan={2}>RAM space displayed on<br />Desktop Computer.</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+### RAM Filing System
+
+Files created by Applications, like the word-processor Pipedream, are initially saved in RAM using this filing system. To see how much space there is, use the following command.
+
+### Card information \<\>CARD
+
+The <Key k="diamond" />CARD command, on the Index **COMMANDS** menu, shows the type and size of the card in each slot. However it will not show an erased EPROM until it has been accessed by the Filer.
+
+#### 1M/1M FLASH/RAM
+
+<Shot src="z88-user-guide/getting-started/using-cards/ram-cards/z88card1m.webp" alt="z88card1m" width={640} />
+
+This shows the 1M Flash/1M RAM configuration
+
+#### 512/512K FLASH/RAM
+
+<Shot src="z88-user-guide/getting-started/using-cards/ozcard.webp" alt="ozcard" width={640} />
+
+This shows the 512K Flash/512K RAM configuration
+
+#### Free RAM
+
+Free RAM Is the amount of RAM that may be used by the RAM filing system. It is shown on the right-hand side of the window. The RAM device number is selected with the numbers keys. 0, 1, 2 or 3, or by using <Key k="diamond" />J, the number will increment to the next available RAM device, which in this case doesn't exist.
+
+### System Information \<\>INFO
+
+The <Key k="diamond" />INFO command, on the Index **COMMANDS** menu, shows the Free memory available.
+
+#### 1M/1M FLASH/RAM
+
+<Shot src="z88-user-guide/getting-started/using-cards/ram-cards/index-info-1m.webp" alt="index info 1M" width={640} />
+
+This shows the Free Memory in a1M Flash/1M RAM configuration
+
+#### 512/512K FLASH/RAM
+
+<Shot src="z88-user-guide/getting-started/using-cards/ram-cards/index-info-512.webp" alt="index info 512" width={640} />
+
+This shows the Free Memory in a 512K Flash/512K RAM configuration
+
+### Free Memory
+
+Select Pipedream and the Options Page. There is plenty of free memory here, 698624 bytes.
+
+<Shot src="z88-user-guide/getting-started/using-cards/ram-cards/pd-options.webp" alt="pd options" width={640} />
+
+### Removing RAM Card
+
+If you remove a RAM pack from the Cambridge Z88 any data held in it will be lost instantly. Do not remove a RAM card unless you must. If you do have to remove a RAM card, the Cambridge Z88 will display [FAIL](/en/library/cambridge-z88/user-guide/getting-started/using-cards#carderrors) in the top right hand corner of the screen. You will have to perform a soft-reset on the Cambridge Z88 and any suspended activities will be lost.a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Memory Introduction","id":"memory-introduction","depth":2},{"value":"RAM Cards","id":"ram-cards","depth":2},{"value":"Inserting a RAM card","id":"inserting-a-ram-card","depth":3},{"value":"How the Z88 uses RAM","id":"how-the-z88-uses-ram","depth":2},{"value":"RAM Filing System","id":"ram-filing-system","depth":3},{"value":"Card information <>CARD","id":"card-information-card","depth":3},{"value":"1M/1M FLASH/RAM","id":"1m1m-flashram","depth":4},{"value":"512/512K FLASH/RAM","id":"512512k-flashram","depth":4},{"value":"Free RAM","id":"free-ram","depth":4},{"value":"System Information <>INFO","id":"system-information-info","depth":3},{"value":"1M/1M FLASH/RAM","id":"1m1m-flashram-1","depth":4},{"value":"512/512K FLASH/RAM","id":"512512k-flashram-1","depth":4},{"value":"Free Memory","id":"free-memory","depth":3},{"value":"Removing RAM Card","id":"removing-ram-card","depth":3}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"A computer's memory is where it stores all its information. Its initial capacity is already defined, but it can normally be increased when it is needed. This is certainly true of the Z88. Memory...","title":"RAM cards","filePath":"content/en/library/cambridge-z88/user-guide/getting-started/using-cards/ram-cards.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/user-guide/getting-started/using-cards/ram-cards","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"RAM cards - Klive IDE"}],["$","meta","1",{"name":"description","content":"A computer's memory is where it stores all its information. Its initial capacity is already defined, but it can normally be increased when it is needed. This is certainly true of the Z88. Memory..."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/user-guide/getting-started/using-cards/ram-cards/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"cyL0EKA0xNKEZcECA3AIS"}
+20:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+42:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["RAM cards","$undefined"]}],"\n",["$","h2",null,{"id":"memory-introduction","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Memory Introduction",["$","$L20",null,{"id":"memory-introduction"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A computer’s memory is where it stores all its information. Its initial capacity is already defined, but it can normally be increased when it is needed. This is certainly true of the Z88. Memory is not as we tend to think, simply a storage area like a filing cabinet. All tasks or programs need space in the memory to enable the computer to do them. A good analogy is to compare the to our working area say like an organised office. There is some space taken up by the filing system, but there is also a desk which not only provides space to do work, but also space for in/out trays. Then there are those piles of started work waiting to be finished. Well that’s what our desks look like anyway! There’s also space for you: the job wouldn’t be done if you weren’t there. That is the same with computers: it wouldn’t be able to anything without its various programs and its operating systems. They all take up space in the memory as well as the text and data that is being in-putted."}],"\n",["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"400px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/external/qg-z88-quick-guide-help-home-page/1m-ram-grey.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/external/qg-z88-quick-guide-help-home-page/1m-ram-grey.webp","alt":"1M ram grey","loading":"lazy","decoding":"async","width":400,"height":413}],[]]}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Memory is fragile"}]," - not fragile in the sense of easy to break, but is very easily lost."]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["This is the most important thing to remember about computer memory. In the office, when work is done it is somewhere, even if it has been mislaid or filed in the wrong place. ",["$","strong",null,{"children":"In the computer memory, information may be there one second and gone the next"}],": areas of memory can be erased much quicker than typing a sentence. The computer is not smart enough to know what is important data, or how long it took to create it. In its memory everything is broken down into minute pieces of digital information , so if something goes awry, everything can be erased and cannot be recovered. ",["$","strong",null,{"children":"This is why backing up the data in the files is so important."}]]}],"\n",["$","h2",null,{"id":"ram-cards","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["RAM Cards",["$","$L20",null,{"id":"ram-cards"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"RAM cards allow you to"}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"store more data"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"and give more memory for the applications to use"}],"\n"]}],"\n","$L21","\n","$L22","\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41"]]}]
+15:["$","$L42",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@43"}]}]
+1f:true
+45:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+9:300
+21:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"in the Cambridge Z88. There are three slots, each of which may take up to 1 Megabyte of RAM, although it is advisable to use slots 1 and 2 for RAM leaving slot 3 available for EPROM. This is because slot 3 is the only one which can be used to record data onto EPROM. Also RAM cards will consume more power in this slot than in slots 1 and 2 and therefore reduce battery life."}]
+22:["$","h3",null,{"id":"inserting-a-ram-card","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Inserting a RAM card",["$","$L20",null,{"id":"inserting-a-ram-card"}]]}]
+23:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Make sure that the Cambridge Z88 is switched ON and the Index is displayed."}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Open the Perspex flap at the front. The Cambridge Z88 will give a short beep and the screen will go blank."}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Push the RAM pack into the slot making sure that the label is facing outwards and is the correct way up. Make sure that the card is pushed in as far as it will go."}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Close the flap. The Cambridge Z88 will turn itself back on and re-display the Index. You can check that the card has been recognised by typing ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"CARD."]}],"\n"]}],"\n"]}]
+24:["$","h2",null,{"id":"how-the-z88-uses-ram","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["How the Z88 uses RAM",["$","$L20",null,{"id":"how-the-z88-uses-ram"}]]}]
+25:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The Z88 uses RAM in two ways. They are the"}]
+26:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"RAM Filing System and"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"RAM for Applications to use."}],"\n"]}]
+27:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"There is not a central point to view or manage RAM. Different Applications are used to do this."}]
+28:["$","table",null,{"children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"Application","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Key","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Command","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Function","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":"INDEX","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Index","children":"INDEX"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"CARDS","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"CARD"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"INDEX","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Index","children":"INDEX"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"INFORMATION","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"INFO"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"Pipedream","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],"P"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"OPTIONS","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"O"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"Flashstore","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],"J"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"SELECT CARD","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"SC"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],"$L44"]}]],"className":"x:block x:overflow-x-auto"}]
+29:["$","h3",null,{"id":"ram-filing-system","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["RAM Filing System",["$","$L20",null,{"id":"ram-filing-system"}]]}]
+2a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Files created by Applications, like the word-processor Pipedream, are initially saved in RAM using this filing system. To see how much space there is, use the following command."}]
+2b:["$","h3",null,{"id":"card-information-card","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Card information <>CARD",["$","$L20",null,{"id":"card-information-card"}]]}]
+2c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"CARD command, on the Index ",["$","strong",null,{"children":"COMMANDS"}]," menu, shows the type and size of the card in each slot. However it will not show an erased EPROM until it has been accessed by the Filer."]}]
+2d:["$","h4",null,{"id":"1m1m-flashram","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":["1M/1M FLASH/RAM",["$","$L20",null,{"id":"1m1m-flashram"}]]}]
+2e:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/using-cards/ram-cards/z88card1m.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/using-cards/ram-cards/z88card1m.webp","alt":"z88card1m","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+2f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This shows the 1M Flash/1M RAM configuration"}]
+30:["$","h4",null,{"id":"512512k-flashram","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":["512/512K FLASH/RAM",["$","$L20",null,{"id":"512512k-flashram"}]]}]
+31:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/using-cards/ozcard.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/using-cards/ozcard.webp","alt":"ozcard","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+32:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This shows the 512K Flash/512K RAM configuration"}]
+33:["$","h4",null,{"id":"free-ram","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":["Free RAM",["$","$L20",null,{"id":"free-ram"}]]}]
+34:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Free RAM Is the amount of RAM that may be used by the RAM filing system. It is shown on the right-hand side of the window. The RAM device number is selected with the numbers keys. 0, 1, 2 or 3, or by using ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"J, the number will increment to the next available RAM device, which in this case doesn’t exist."]}]
+35:["$","h3",null,{"id":"system-information-info","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["System Information <>INFO",["$","$L20",null,{"id":"system-information-info"}]]}]
+36:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"INFO command, on the Index ",["$","strong",null,{"children":"COMMANDS"}]," menu, shows the Free memory available."]}]
+37:["$","h4",null,{"id":"1m1m-flashram-1","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":["1M/1M FLASH/RAM",["$","$L20",null,{"id":"1m1m-flashram-1"}]]}]
+38:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/using-cards/ram-cards/index-info-1m.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/using-cards/ram-cards/index-info-1m.webp","alt":"index info 1M","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+39:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This shows the Free Memory in a1M Flash/1M RAM configuration"}]
+3a:["$","h4",null,{"id":"512512k-flashram-1","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":["512/512K FLASH/RAM",["$","$L20",null,{"id":"512512k-flashram-1"}]]}]
+3b:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/using-cards/ram-cards/index-info-512.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/using-cards/ram-cards/index-info-512.webp","alt":"index info 512","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+3c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This shows the Free Memory in a 512K Flash/512K RAM configuration"}]
+3d:["$","h3",null,{"id":"free-memory","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Free Memory",["$","$L20",null,{"id":"free-memory"}]]}]
+3e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Select Pipedream and the Options Page. There is plenty of free memory here, 698624 bytes."}]
+3f:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/using-cards/ram-cards/pd-options.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/using-cards/ram-cards/pd-options.webp","alt":"pd options","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+40:["$","h3",null,{"id":"removing-ram-card","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Removing RAM Card",["$","$L20",null,{"id":"removing-ram-card"}]]}]
+41:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["If you remove a RAM pack from the Cambridge Z88 any data held in it will be lost instantly. Do not remove a RAM card unless you must. If you do have to remove a RAM card, the Cambridge Z88 will display ",["$","$L45",null,{"href":"/en/library/cambridge-z88/user-guide/getting-started/using-cards#carderrors","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"FAIL"}]," in the top right hand corner of the screen. You will have to perform a soft-reset on the Cambridge Z88 and any suspended activities will be lost."]}]
+43:null
+9:C
+44:["$","tr",null,{"children":[["$","td",null,{"children":"Eazylink2","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],"L"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"colSpan":2,"children":["RAM space displayed on",["$","br",null,{}],"Desktop Computer."],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

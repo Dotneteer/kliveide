@@ -1,0 +1,137 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:Te7b,---
+description: "Exchange, Block Transfer And Search Group"
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/9568439 (version 4) by scripts/import-z88-wiki.cjs */}
+
+# Exchange, Block Transfer And Search Group
+
+```text
+__________________________________________________________________________________________________________________________
+Mnemonic        Symbolic            Flags (bit 7-0)   Instruction         Number      Number of   Number of   Comments
+                operation           S Z . H . V N C   opcode              of bytes    M cycles    T states
+__________________________________________________________________________________________________________________________
+
+EX DE,HL        DE <-> HL           * * X * X * * *   11 101 011 (EBh)    1           1           4
+EX AF,AF'       AF <-> AF'          * * X * X * * *   00 001 000 (08h)    1           1           4
+EXX             BC <-> BC'          * * X * X * * *   11 011 001 (D9h)    1           1           4
+                DE <-> DE'
+                HL <-> HL'
+
+EX (SP),HL      L <-> (SP)          * * X * X * * *   11 100 011 (E3h)    1           5           19
+                H <-> (SP+1)
+EX (SP),IX      IXL <-> (SP)        * * X * X * * *   11 011 101 (DDh)    2           6           23
+EX (SP),IY      IXH <-> (SP+1)      * * X * X * * *   11 111 101 (FDh)    2           6           23
+                                                      11 100 011 (E3h)
+
+LDI             (DE) <- (HL)        * * X 0 X ? 0 *   11 101 101 (EDh)    2           4           16
+                BC <- BC-1                   (1)      10 100 000 (A0h)
+                DE <- DE+1
+                HL <- HL+1
+
+LDIR            (DE) <- (HL)        * * X 0 X 0 0 *   11 101 101 (EDh)    2           5           21          if BC<>0
+                BC <- BC-1                            10 110 000 (B0h)    2           4           16          if BC=0
+                DE <- DE+1
+                HL <- HL+1          Repeat until BC=0
+
+LDD             (DE) <- (HL)        * * X 0 X ? 0 *   11 101 101 (EDh)    2           4           16
+                BC <- BC-1                   (1)      10 101 000 (A8h)
+                DE <- DE-1
+                HL <- HL-1
+
+LDDR            (DE) <- (HL)        * * X 0 X 0 0 *   11 101 101 (EDh)    2           5           21          if BC<>0
+                BC <- BC-1                            10 111 000 (B8h)    2           4           16          if BC=0
+                DE <- DE-1
+                HL <- HL-1          Repeat until BC=0
+
+CPI             A = (HL)            ? ? X ? X ? 1 *   11 101 101 (EDh)    2           4           16
+                BC <- BC-1           (2)     (1)      10 100 001 (A1h)
+                HL <- HL+1
+
+CPIR            A = (HL)            ? ? X ? X ? 1 *   11 101 101 (EDh)    2           5           21  if BC<>0 and A<>(HL)
+                BC <- BC-1           (2)     (1)      10 110 001 (B1h)    2           4           16  if BC=0 or A=(HL)
+                HL <- HL+1          Repeat until BC=0 or A=(HL)
+
+CPD             A = (HL)            ? ? X ? X ? 1 *   11 101 101 (EDh)    2           4           16
+                BC <- BC-1           (2)     (1)      10 101 001 (A9h)
+                HL <- HL-1
+
+CPDR            A = (HL)            ? ? X ? X ? 1 *   11 101 101 (EDh)    2           5           21  if BC<>0 and A<>(HL)
+                BC <- BC-1           (2)     (1)      10 111 001 (B9h)    2           4           16  if BC=0 or A=(HL)
+                HL <- HL-1          Repeat until BC=0 or A=(HL)
+
+(1)             P/V = 0, if result of BC-1 = 0, otherwise P/V = 1
+(2)             Fz = 1, if A = (HL), otherwise Fz = 0
+```a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"Exchange, Block Transfer And Search Group","title":"Exchange, Block Transfer And Search Group","filePath":"content/en/library/cambridge-z88/developers-notes/the-zilog-z80-cpu-instruction-set/exchange-block-transfer-and-search-group.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/developers-notes/the-zilog-z80-cpu-instruction-set/exchange-block-transfer-and-search-group","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Exchange, Block Transfer And Search Group - Klive IDE"}],["$","meta","1",{"name":"description","content":"Exchange, Block Transfer And Search Group"}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/developers-notes/the-zilog-z80-cpu-instruction-set/exchange-block-transfer-and-search-group/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"cyL0EKA0xNKEZcECA3AIS"}
+20:"ToggleWordWrapButton"
+21:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$20"]
+22:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+45:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Exchange, Block Transfer And Search Group","$undefined"]}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L21",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L22",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"__________________________________________________________________________________________________________________________"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Mnemonic        Symbolic            Flags (bit 7-0)   Instruction         Number      Number of   Number of   Comments"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                operation           S Z . H . V N C   opcode              of bytes    M cycles    T states"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"__________________________________________________________________________________________________________________________"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"EX DE,HL        DE <-> HL           * * X * X * * *   11 101 011 (EBh)    1           1           4"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"EX AF,AF'       AF <-> AF'          * * X * X * * *   00 001 000 (08h)    1           1           4"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"EXX             BC <-> BC'          * * X * X * * *   11 011 001 (D9h)    1           1           4"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                DE <-> DE'"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                HL <-> HL'"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"EX (SP),HL      L <-> (SP)          * * X * X * * *   11 100 011 (E3h)    1           5           19"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                H <-> (SP+1)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"EX (SP),IX      IXL <-> (SP)        * * X * X * * *   11 011 101 (DDh)    2           6           23"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"EX (SP),IY      IXH <-> (SP+1)      * * X * X * * *   11 111 101 (FDh)    2           6           23"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                                                      11 100 011 (E3h)"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"LDI             (DE) <- (HL)        * * X 0 X ? 0 *   11 101 101 (EDh)    2           4           16"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                BC <- BC-1                   (1)      10 100 000 (A0h)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                DE <- DE+1"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                HL <- HL+1"}]}],"\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41","\n","$L42","\n","$L43","\n","$L44"]}]]}]]}]]]}]
+15:["$","$L45",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@46"}]}]
+1f:true
+9:300
+23:["$","span",null,{"children":["$","span",null,{}]}]
+24:["$","span",null,{"children":["$","span",null,{"children":"LDIR            (DE) <- (HL)        * * X 0 X 0 0 *   11 101 101 (EDh)    2           5           21          if BC<>0"}]}]
+25:["$","span",null,{"children":["$","span",null,{"children":"                BC <- BC-1                            10 110 000 (B0h)    2           4           16          if BC=0"}]}]
+26:["$","span",null,{"children":["$","span",null,{"children":"                DE <- DE+1"}]}]
+27:["$","span",null,{"children":["$","span",null,{"children":"                HL <- HL+1          Repeat until BC=0"}]}]
+28:["$","span",null,{"children":["$","span",null,{}]}]
+29:["$","span",null,{"children":["$","span",null,{"children":"LDD             (DE) <- (HL)        * * X 0 X ? 0 *   11 101 101 (EDh)    2           4           16"}]}]
+2a:["$","span",null,{"children":["$","span",null,{"children":"                BC <- BC-1                   (1)      10 101 000 (A8h)"}]}]
+2b:["$","span",null,{"children":["$","span",null,{"children":"                DE <- DE-1"}]}]
+2c:["$","span",null,{"children":["$","span",null,{"children":"                HL <- HL-1"}]}]
+2d:["$","span",null,{"children":["$","span",null,{}]}]
+2e:["$","span",null,{"children":["$","span",null,{"children":"LDDR            (DE) <- (HL)        * * X 0 X 0 0 *   11 101 101 (EDh)    2           5           21          if BC<>0"}]}]
+2f:["$","span",null,{"children":["$","span",null,{"children":"                BC <- BC-1                            10 111 000 (B8h)    2           4           16          if BC=0"}]}]
+30:["$","span",null,{"children":["$","span",null,{"children":"                DE <- DE-1"}]}]
+31:["$","span",null,{"children":["$","span",null,{"children":"                HL <- HL-1          Repeat until BC=0"}]}]
+32:["$","span",null,{"children":["$","span",null,{}]}]
+33:["$","span",null,{"children":["$","span",null,{"children":"CPI             A = (HL)            ? ? X ? X ? 1 *   11 101 101 (EDh)    2           4           16"}]}]
+34:["$","span",null,{"children":["$","span",null,{"children":"                BC <- BC-1           (2)     (1)      10 100 001 (A1h)"}]}]
+35:["$","span",null,{"children":["$","span",null,{"children":"                HL <- HL+1"}]}]
+36:["$","span",null,{"children":["$","span",null,{}]}]
+37:["$","span",null,{"children":["$","span",null,{"children":"CPIR            A = (HL)            ? ? X ? X ? 1 *   11 101 101 (EDh)    2           5           21  if BC<>0 and A<>(HL)"}]}]
+38:["$","span",null,{"children":["$","span",null,{"children":"                BC <- BC-1           (2)     (1)      10 110 001 (B1h)    2           4           16  if BC=0 or A=(HL)"}]}]
+39:["$","span",null,{"children":["$","span",null,{"children":"                HL <- HL+1          Repeat until BC=0 or A=(HL)"}]}]
+3a:["$","span",null,{"children":["$","span",null,{}]}]
+3b:["$","span",null,{"children":["$","span",null,{"children":"CPD             A = (HL)            ? ? X ? X ? 1 *   11 101 101 (EDh)    2           4           16"}]}]
+3c:["$","span",null,{"children":["$","span",null,{"children":"                BC <- BC-1           (2)     (1)      10 101 001 (A9h)"}]}]
+3d:["$","span",null,{"children":["$","span",null,{"children":"                HL <- HL-1"}]}]
+3e:["$","span",null,{"children":["$","span",null,{}]}]
+3f:["$","span",null,{"children":["$","span",null,{"children":"CPDR            A = (HL)            ? ? X ? X ? 1 *   11 101 101 (EDh)    2           5           21  if BC<>0 and A<>(HL)"}]}]
+40:["$","span",null,{"children":["$","span",null,{"children":"                BC <- BC-1           (2)     (1)      10 111 001 (B9h)    2           4           16  if BC=0 or A=(HL)"}]}]
+41:["$","span",null,{"children":["$","span",null,{"children":"                HL <- HL-1          Repeat until BC=0 or A=(HL)"}]}]
+42:["$","span",null,{"children":["$","span",null,{}]}]
+43:["$","span",null,{"children":["$","span",null,{"children":"(1)             P/V = 0, if result of BC-1 = 0, otherwise P/V = 1"}]}]
+44:["$","span",null,{"children":["$","span",null,{"children":"(2)             Fz = 1, if A = (HL), otherwise Fz = 0"}]}]
+46:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

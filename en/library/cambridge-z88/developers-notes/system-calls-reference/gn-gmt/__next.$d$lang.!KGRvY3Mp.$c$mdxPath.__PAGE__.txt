@@ -1,0 +1,81 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+13:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+1c:"ViewportBoundary"
+1d:I[484,[],"$1c"]
+1e:"MetadataBoundary"
+1f:I[484,[],"$1e"]
+20:"$Sreact.suspense"
+21:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T716,---
+description: "A = high byte, C = low byte. If result stored at (DE) then (DE) = low byte, (DE+2) = high byte (Z80 convention)."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8618125 (version 3) by scripts/import-z88-wiki.cjs */}
+
+# GN_Gmt, Get (read) machine system time in internal format
+
+## Register parameters
+
+```text
+IN:
+     C = Least significant byte of system date from last GN_Gmd call.
+     (optional)
+     DE = 0, not allowed.
+     DE = 1, not allowed.
+     DE = 2, return system time in ABC.
+     DE > 255, pointer to write system date at (DE)
+
+OUT:
+     Fz = 0, C(in) is inconsistent with input parameter.
+     Fz = 1, C(in) is consistent with time read
+     DE, DE = DE(in) if DE < 255, else DE = DE(in) + 3
+     ABC, ABC = ABC(in) if DE > 255 else contains the result
+
+Registers changed after return:
+     ......HL/IXIY same
+     AFBCDE../.... different
+```
+
+## Notes
+
+A = high byte, C = low byte. If result stored at (DE) then (DE) = low byte, (DE+2) = high byte (Z80 convention).
+
+## Related calls
+
+**[GN\_Gtm](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-gtm)**, convert an ASCII string to a time in internal format <br />**[GN\_Msc](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-msc)**, miscellaeneous time operations <br />**[GN\_Pmt](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-pmt)**, put (set) machine time <br />**[GN\_Ptm](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-ptm)**, write internal time as ASCII string <br />**[GN\_Sdo](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-sdo)**, send date and time to standard output <br />**[OS\_Dly](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-dly)**, delay a given perioda:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Register parameters","id":"register-parameters","depth":2},{"value":"Notes","id":"notes","depth":2},{"value":"Related calls","id":"related-calls","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"A = high byte, C = low byte. If result stored at (DE) then (DE) = low byte, (DE+2) = high byte (Z80 convention).","title":"GN_Gmt, Get (read) machine system time in internal format","filePath":"content/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-gmt.mdx","timestamp":1792315833000},"sourceCode":"$12","children":[["$","div",null,{"id":"nextra-skip-nav"}],["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["GN_Gmt, Get (read) machine system time in internal format","$undefined"]}],"\n",["$","h2",null,{"id":"register-parameters","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Register parameters",["$","$L13",null,{"id":"register-parameters"}]]}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":["$L14","$L15"]}]]}],"\n","$L16","\n","$L17","\n","$L18","\n","$L19"]]}]]}]]}]}],null,"$L1a"]}],"p":"$@1b","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/developers-notes/system-calls-reference/gn-gmt","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L1d",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1f",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$20",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"GN_Gmt, Get (read) machine system time in internal format - Klive IDE"}],["$","meta","1",{"name":"description","content":"A = high byte, C = low byte. If result stored at (DE) then (DE) = low byte, (DE+2) = high byte (Z80 convention)."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-gmt/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L21","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@22","v":null,"s":"$9"}},"a":"$@23","u":"$@24","b":"cyL0EKA0xNKEZcECA3AIS"}
+25:"ToggleWordWrapButton"
+26:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$25"]
+27:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+28:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+29:I[484,[],"OutletBoundary"]
+14:["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L26",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L27",null,{"className":""}]]}]
+15:["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"IN:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     C = Least significant byte of system date from last GN_Gmd call."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     (optional)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     DE = 0, not allowed."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     DE = 1, not allowed."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     DE = 2, return system time in ABC."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     DE > 255, pointer to write system date at (DE)"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OUT:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     Fz = 0, C(in) is inconsistent with input parameter."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     Fz = 1, C(in) is consistent with time read"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     DE, DE = DE(in) if DE < 255, else DE = DE(in) + 3"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     ABC, ABC = ABC(in) if DE > 255 else contains the result"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Registers changed after return:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     ......HL/IXIY same"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     AFBCDE../.... different"}]}]]}]
+16:["$","h2",null,{"id":"notes","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Notes",["$","$L13",null,{"id":"notes"}]]}]
+17:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A = high byte, C = low byte. If result stored at (DE) then (DE) = low byte, (DE+2) = high byte (Z80 convention)."}]
+18:["$","h2",null,{"id":"related-calls","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Related calls",["$","$L13",null,{"id":"related-calls"}]]}]
+19:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":["$","$L28",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-gtm","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"GN_Gtm"}]}],", convert an ASCII string to a time in internal format ",["$","br",null,{}],["$","strong",null,{"children":["$","$L28",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-msc","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"GN_Msc"}]}],", miscellaeneous time operations ",["$","br",null,{}],["$","strong",null,{"children":["$","$L28",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-pmt","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"GN_Pmt"}]}],", put (set) machine time ",["$","br",null,{}],["$","strong",null,{"children":["$","$L28",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-ptm","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"GN_Ptm"}]}],", write internal time as ASCII string ",["$","br",null,{}],["$","strong",null,{"children":["$","$L28",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-sdo","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"GN_Sdo"}]}],", send date and time to standard output ",["$","br",null,{}],["$","strong",null,{"children":["$","$L28",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-dly","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OS_Dly"}]}],", delay a given period"]}]
+1a:["$","$L29",null,{"children":["$","$20",null,{"name":"Next.MetadataOutlet","children":"$@2a"}]}]
+24:true
+9:300
+2a:null
+9:C
+23:0
+7:"$undefined"
+22:"$undefined"
+1b:"$undefined"

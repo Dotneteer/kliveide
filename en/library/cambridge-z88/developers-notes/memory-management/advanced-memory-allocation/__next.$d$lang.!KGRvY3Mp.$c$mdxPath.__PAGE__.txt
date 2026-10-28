@@ -1,0 +1,121 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T136b,---
+description: "During memory pool opening, options settings select scheme of allocation. All flags are OR-combined in A."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/324599809 (version 11) by scripts/import-z88-wiki.cjs */}
+
+# Advanced memory allocation
+
+## OS\_Mop variations
+
+During memory pool opening, options settings select scheme of allocation. All flags are OR-combined in A.
+
+#### Default, one bank memory pool
+
+MM\_S0 to MM\_S3 select the desired segment. MM\_S1 is the simplest and fastest according OZ design.
+
+If no other bit is set, then OZ will allocate in one of the most free bank. This allocation scheme is fast and reserved for up to 16K needs. All memory allocated from that pool is guaranteed to be in same bank.
+
+It is recommended for allocation of chunks (\<255 bytes allocation). An RC\_Room error returned by OS\_Mal will just mean that this pool is exhausted (bank is full). A subsequent OS\_Mop will open a new pool from the most free bank. If an RC\_Room is returned, then the whole memory is full.
+
+#### Multiple banks (MM\_MUL)
+
+When MM\_MUL flag is set, the pool is allocated anywhere in the free memory. It begins by the latest bank in the order of slot 1-2-3-0.
+
+This method has some overhead to find and add new free page. The MM\_FIX flag can be set in combination with MM\_MUL. It avoids allocation in the swap area used for bad or ugly application. It will reduce overhead of the page reshuffling when entering/exiting such applications.
+
+This allocation scheme is recommended for page allocation (256 bytes). This flag is mandatory for block allocation or explicit allocation. It is recommended for data storage in good applications. This option is used by the filesystem pool or the system process pool.
+
+#### Exclusive banks (MM\_EXC)
+
+This allocation scheme will allocate free banks in priority to the pool. It is as fast as the default scheme but not limited to one bank. Each time a bank is full, the next allocated is the most free available. This scheme is recommended for allocation of a huge number of chunks or pages that will be quickly released. Usage in a popdown or a shell command is a good rule. It It has the disadvantage to induce more memory fragmentation. This allocation method has been implemented in OZ 5.0.
+
+#### Slot/bank selection (MM\_SLT)
+
+Usage of this option is not recommended and should never be used. System itself never use it. When MM\_SLT is set in A, C register holds the slot (MC\_CI...) or the bank number ($20-$FF).
+
+## OS\_Mal variations
+
+OS\_Mal behaves differently according the amount of memory requested in BC. OS\_Mal does not bind bank but always adjust HL to the desired segment. A should always be zero.
+
+#### Page
+
+The fastest allocation is performed for a page (BC=256). For example, filesystem allocates pages and divide them is 4 sectors of 62 bytes.
+
+#### Chunk
+
+When allocating chunks (up to 253 bytes), memory area returned from OS\_Mal is guaranteed to be in single page. Chunk allocation has overhead required to manage the page filling. Notice that when BC=254, only 253 bytes are given back. And when 255 bytes are requested, a full page is given.
+
+#### Block
+
+A block of page can be allocated up to 16K. MM\_MUL should have been set during pool opening by OS\_Mop. Notice that when 257 bytes are requested, 512 bytes (2 consecutive pages) are allocated. Block allocation has been implemented since OZ 4.7 thanks to the explicit memory allocation introduced in OZ 4.6.
+
+#### Slot selection
+
+OS\_Mal should always be called with A=0. Usage of this option is not recommended and should never be used. When MM\_MUL was set during pool opening in OS\_Mop, slot selection of allocation can be forced by setting slot number in A (1-3) ORed with MA\_SLT.
+
+## Allocation internals
+
+Chunk and page allocation begins from the latest bank of the slot and goes downward. Block allocation begins at the first bank and goes upward. It avoids fragmentation (big blocks inside the file system). In the same principle, MM\_EXC forces in priority most free banks and MM\_MUL fills the slot downward. Memory allocation for the AZ module assembler is a good example, I performed some tests.
+
+In the first example, it allocates chunks using MM\_MUL option. Those chunks are allocated and released during page allocation for the file system. It ends with a fragmented filesystem.
+
+<Shot src="z88-developers-notes/memory-management/advanced-memory-allocation/capture-d-e-cran-2018-05-21-a-18-17-51.webp" alt="Capture d’écran 2018 05 21 à 18.17.51" width={210} />
+
+In the second image, MM\_EXC was specified. Banks allocated for chunks were less mixed with the filesystem. Result is a really decreased fragmentation and a better overall performance (around 10% of time).
+
+<Shot src="z88-developers-notes/memory-management/advanced-memory-allocation/capture-d-e-cran-2018-05-21-a-18-52-46.webp" alt="Capture d’écran 2018 05 21 à 18.52.46" width={453} />a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"OS_Mop variations","id":"os_mop-variations","depth":2},{"value":"Default, one bank memory pool","id":"default-one-bank-memory-pool","depth":4},{"value":"Multiple banks (MM_MUL)","id":"multiple-banks-mm_mul","depth":4},{"value":"Exclusive banks (MM_EXC)","id":"exclusive-banks-mm_exc","depth":4},{"value":"Slot/bank selection (MM_SLT)","id":"slotbank-selection-mm_slt","depth":4},{"value":"OS_Mal variations","id":"os_mal-variations","depth":2},{"value":"Page","id":"page","depth":4},{"value":"Chunk","id":"chunk","depth":4},{"value":"Block","id":"block","depth":4},{"value":"Slot selection","id":"slot-selection","depth":4},{"value":"Allocation internals","id":"allocation-internals","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"During memory pool opening, options settings select scheme of allocation. All flags are OR-combined in A.","title":"Advanced memory allocation","filePath":"content/en/library/cambridge-z88/developers-notes/memory-management/advanced-memory-allocation.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/developers-notes/memory-management/advanced-memory-allocation","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Advanced memory allocation - Klive IDE"}],["$","meta","1",{"name":"description","content":"During memory pool opening, options settings select scheme of allocation. All flags are OR-combined in A."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/developers-notes/memory-management/advanced-memory-allocation/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"cyL0EKA0xNKEZcECA3AIS"}
+20:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+33:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Advanced memory allocation","$undefined"]}],"\n",["$","h2",null,{"id":"os_mop-variations","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["OS_Mop variations",["$","$L20",null,{"id":"os_mop-variations"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"During memory pool opening, options settings select scheme of allocation. All flags are OR-combined in A."}],"\n",["$","h4",null,{"id":"default-one-bank-memory-pool","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":["Default, one bank memory pool",["$","$L20",null,{"id":"default-one-bank-memory-pool"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"MM_S0 to MM_S3 select the desired segment. MM_S1 is the simplest and fastest according OZ design."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If no other bit is set, then OZ will allocate in one of the most free bank. This allocation scheme is fast and reserved for up to 16K needs. All memory allocated from that pool is guaranteed to be in same bank."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"It is recommended for allocation of chunks (<255 bytes allocation). An RC_Room error returned by OS_Mal will just mean that this pool is exhausted (bank is full). A subsequent OS_Mop will open a new pool from the most free bank. If an RC_Room is returned, then the whole memory is full."}],"\n",["$","h4",null,{"id":"multiple-banks-mm_mul","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":["Multiple banks (MM_MUL)",["$","$L20",null,{"id":"multiple-banks-mm_mul"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When MM_MUL flag is set, the pool is allocated anywhere in the free memory. It begins by the latest bank in the order of slot 1-2-3-0."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This method has some overhead to find and add new free page. The MM_FIX flag can be set in combination with MM_MUL. It avoids allocation in the swap area used for bad or ugly application. It will reduce overhead of the page reshuffling when entering/exiting such applications."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This allocation scheme is recommended for page allocation (256 bytes). This flag is mandatory for block allocation or explicit allocation. It is recommended for data storage in good applications. This option is used by the filesystem pool or the system process pool."}],"\n",["$","h4",null,{"id":"exclusive-banks-mm_exc","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":["Exclusive banks (MM_EXC)",["$","$L20",null,{"id":"exclusive-banks-mm_exc"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This allocation scheme will allocate free banks in priority to the pool. It is as fast as the default scheme but not limited to one bank. Each time a bank is full, the next allocated is the most free available. This scheme is recommended for allocation of a huge number of chunks or pages that will be quickly released. Usage in a popdown or a shell command is a good rule. It It has the disadvantage to induce more memory fragmentation. This allocation method has been implemented in OZ 5.0."}],"\n","$L21","\n","$L22","\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32"]]}]
+15:["$","$L33",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@34"}]}]
+1f:true
+9:300
+21:["$","h4",null,{"id":"slotbank-selection-mm_slt","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":["Slot/bank selection (MM_SLT)",["$","$L20",null,{"id":"slotbank-selection-mm_slt"}]]}]
+22:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Usage of this option is not recommended and should never be used. System itself never use it. When MM_SLT is set in A, C register holds the slot (MC_CI…) or the bank number ($20-$FF)."}]
+23:["$","h2",null,{"id":"os_mal-variations","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["OS_Mal variations",["$","$L20",null,{"id":"os_mal-variations"}]]}]
+24:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"OS_Mal behaves differently according the amount of memory requested in BC. OS_Mal does not bind bank but always adjust HL to the desired segment. A should always be zero."}]
+25:["$","h4",null,{"id":"page","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":["Page",["$","$L20",null,{"id":"page"}]]}]
+26:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The fastest allocation is performed for a page (BC=256). For example, filesystem allocates pages and divide them is 4 sectors of 62 bytes."}]
+27:["$","h4",null,{"id":"chunk","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":["Chunk",["$","$L20",null,{"id":"chunk"}]]}]
+28:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When allocating chunks (up to 253 bytes), memory area returned from OS_Mal is guaranteed to be in single page. Chunk allocation has overhead required to manage the page filling. Notice that when BC=254, only 253 bytes are given back. And when 255 bytes are requested, a full page is given."}]
+29:["$","h4",null,{"id":"block","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":["Block",["$","$L20",null,{"id":"block"}]]}]
+2a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A block of page can be allocated up to 16K. MM_MUL should have been set during pool opening by OS_Mop. Notice that when 257 bytes are requested, 512 bytes (2 consecutive pages) are allocated. Block allocation has been implemented since OZ 4.7 thanks to the explicit memory allocation introduced in OZ 4.6."}]
+2b:["$","h4",null,{"id":"slot-selection","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":["Slot selection",["$","$L20",null,{"id":"slot-selection"}]]}]
+2c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"OS_Mal should always be called with A=0. Usage of this option is not recommended and should never be used. When MM_MUL was set during pool opening in OS_Mop, slot selection of allocation can be forced by setting slot number in A (1-3) ORed with MA_SLT."}]
+2d:["$","h2",null,{"id":"allocation-internals","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Allocation internals",["$","$L20",null,{"id":"allocation-internals"}]]}]
+2e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Chunk and page allocation begins from the latest bank of the slot and goes downward. Block allocation begins at the first bank and goes upward. It avoids fragmentation (big blocks inside the file system). In the same principle, MM_EXC forces in priority most free banks and MM_MUL fills the slot downward. Memory allocation for the AZ module assembler is a good example, I performed some tests."}]
+2f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"In the first example, it allocates chunks using MM_MUL option. Those chunks are allocated and released during page allocation for the file system. It ends with a fragmented filesystem."}]
+30:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"210px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-developers-notes/memory-management/advanced-memory-allocation/capture-d-e-cran-2018-05-21-a-18-17-51.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-developers-notes/memory-management/advanced-memory-allocation/capture-d-e-cran-2018-05-21-a-18-17-51.webp","alt":"Capture d’écran 2018 05 21 à 18.17.51","loading":"lazy","decoding":"async","width":210,"height":150}],[]]}]]}]
+31:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"In the second image, MM_EXC was specified. Banks allocated for chunks were less mixed with the filesystem. Result is a really decreased fragmentation and a better overall performance (around 10% of time)."}]
+32:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"453px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-developers-notes/memory-management/advanced-memory-allocation/capture-d-e-cran-2018-05-21-a-18-52-46.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-developers-notes/memory-management/advanced-memory-allocation/capture-d-e-cran-2018-05-21-a-18-52-46.webp","alt":"Capture d’écran 2018 05 21 à 18.52.46","loading":"lazy","decoding":"async","width":453,"height":138}],[]]}]]}]
+34:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

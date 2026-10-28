@@ -1,0 +1,252 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T20e4,---
+description: "Filters, as provided on the Z88, are a fairly general means of achieving simple context-independent transformations in a character sequence. Their anticipated use is in simple text processing, but..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/2654212 (version 7) by scripts/import-z88-wiki.cjs */}
+
+# Filters
+
+Filters, as provided on the Z88, are a fairly general means of achieving simple context-independent transformations in a character sequence. Their anticipated use is in simple text processing, but they may potentially be used for more complex tasks. The calls for handling filters are:
+
+`GN_Flo` open a filter, returning a filter handle<br />`GN_Flw` write a character to a filter<br />`GN_Flr` read a character from a filter<br />`GN_Fpb` push a character back into the filter<br />`GN_Flf` flush the filter<br />`GN_Flc` close the filter
+
+To use a filter, the programmer must first set up a 'Filter Definition Table' (FDT), which determines the operation of the filter. The filter must then be opened with **[GN\_Flo](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-flo)** with the programmer giving the address of the FDT and setting various input parameters. **[GN\_Flo](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-flo)** returns a filter handle which the other filter routines takes as input. Once open the filter can be written to a byte at a time using **[GN\_Flw](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-flw)** and read from (again a byte at a time) using **[GN\_Flr](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-flr)**. The bytes read out of the filter will be the processed form of the input; if processing has occurred on a particular character this is indicated ny Fz = 1 on return from **[GN\_Flr](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-flr)**. While the filter is open, it can be flushed, ie. all the characters written to it, but not read out, can be discarded. It is also possible to push one character back into the filter, before a subsequent filter read takes place. Finally the filter is closed using **[GN\_Flc](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-flc)**, which apart from freeing the handle and buffers associated with the filter also returns information as to how many characters have been written to and read from the filter.
+
+Note that filters can be used with a number of GN calls, in place of a source or destination which is in memory or a stream. Calls which can operate with filter are:
+
+`GN_Fcm` compress a filename<br />`GN_Fex` expand a filename<br />`GN_Gdn` convert ASCII decimal string to integer<br />`GN_Pdn` convert integer to ASCII decimal string<br />`GN_Gtm` convert ASCII string to internal time<br />`GN_Ptm` convert internal time to ASCII string<br />`GN_Pdt` convert internal date to ASCII string<br />`GN_Gdt` convert ASCII string to internal date<br />`GN_Skc` skip character<br />`GN_Skd` skip to delimiter<br />`GN_Skt` skip to value
+
+## How the filter works
+
+The filter definition table provides a list of strings to be searched for in the input sequence, and when one is found it will replace the found string with a replacement string also specified in the table. The table might contain the contain the following pairs of strings:
+
+```text
+            Search      Replace
+            Monday      Mon
+            Tuesday     Tue
+            Wednesday   Wed
+            Thursday    Thu
+            Friday      Fri
+            Saturday    Sat
+            Sunday      Sun
+```
+
+If the characters M,o,n,d,a,y - were pushed into the filter, then the characters pulled from the other end (via **[GN\_Flr](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-flr)**) would be: M,o,n - and then and 'End of file' return code, RC\_EOF ($09), would be encountered. Thus the filter provides a convenient means of performing simple text processing.
+
+Because the filter can only search for strings to substitute amongst characters which are 'in' the filter, the normal use is to push in the entire input string and pull out the entire result, each in one go. Also note that the filter routine will select the first successful match in the FST, so if one of the search strings is an extension of another, the longer should come first if the obvious substitution is required. For instance:
+
+```text
+            Mon         Lundi
+            Monday      Lundi
+```
+
+would result in the transformation of "Monday" into "Lundiday"; probably not what was intended.
+
+## Filter Definition Table
+
+```text
+2 bytes     Size of FDT in bytes
+1 byte      Options for left-hand strings
+1 byte      Options for right-hand strings
+```
+
+The options for the strings may be made up of some combination of the following bit settings:
+
+```text
+            128         Table has top bit set characters (ISO standard)
+            64          Table has numeric data
+            32          Table has alphabetic data
+            16          Table has punctation characters
+```
+
+Then come the entries, with the following format:
+
+```text
+1 byte      1+m
+m bytes     search string
+1 byte      1+n
+n bytes     replacement string
+```
+
+The 'length bytes are actually a displacement to the character beyond the next string, hence they are one greater than the length of the string.
+
+RESTRICTIONS: The FDT must not span a 16K boundary, and due to a software bug, the FDT must be addressed in segment 1.
+
+The filter calls are fully specified in [System Calls Reference](/en/library/cambridge-z88/developers-notes/system-calls-reference).
+
+```text
+include "memory.def"                ; memory call definitions
+include "stdio.def"                 ; standard I/O definitions
+ 
+; it is assumed that this code would be running in segment 3 
+; - it finds out which bank it is running in and binds this bank to segment 1 
+; Note that the binding of segment 3 does not change 
+; 
+; the routine assumes the address of the string is held at 
+; the static address 'input_string' 
+; 
+; the effect of the routine is to abbreviate full day names 
+; to the 3 character day names 
+
+.abbreviate ld   c, MS_S3           ; assumes table is in segment 3
+            oz   OS_Mgb             ; get binding of segment 3
+            ld   c, MS_S1
+            oz   OS_Mpb             ; bind table into segment 1. Note bank
+                                    ; is still bound to segment 3
+            ld   hl, fdt_Table      ; start address of table
+            ld   a,h
+            and  @00111111          ; mask out segment bits (15, 14)
+            or   MM_S1              ; merge memory mask for segment 1
+            ld   h,a                ; HL now addresses segment 1
+
+            ld   a, 4               ; buffer size in B
+            ld   b, 30              ; buffer size
+            oz   GN_Flo             ; open filter
+            ret  c                  ; exit if error
+
+            ld   hl, (input_string) ; address of string to process
+.loop       ld   a,(hl)
+            cp   0
+            jr   z, end_loop
+            oz   GN_FPW             ; write character to filter
+            inc  hl
+            jr   loop
+
+.end_loop   oz   GN_Flr             ; pull character from filter
+            jr   c, finished        ; exit if last one or error
+            oz   OS_Out             ; write converted char to std. output
+            jr   end_loop
+
+.finished   oz   GN_Flc             ; close the filter
+            oz   GN_Nln             ; new line
+            ret
+
+.fdt_start  defw fdt_end-fdt_start  ; length of FDT
+            defb 32                 ; search string alphabetic
+            defb 32                 ; replace string alphabetic
+
+            defm 7, "Monday"        ; abbreviate Monday
+            defm 4, "Mon"
+
+            defm 8, "Tuesday"       ; abbreviate Tuesday
+            defm 4, "Tue"
+
+            defm 10, "Wednesday"    ; abbreviate Wednesday
+            defm 4,  "Wed"
+
+            defm 9, "Thursday"      ; abbreviate Thursday
+            defm 4, "Thu"
+
+            defm 7, "Friday"        ; abbreviate Friday
+            defm 4, "fri"
+
+            defm 9, "Saturday"      ; abbreviate Saturday
+            defm 4, "Sat"
+
+            defm 7, "Sunday"        ; abbreviate Sunday
+            defm 4, "Sun"
+
+.fdt_end                            ; end of table
+```a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"How the filter works","id":"how-the-filter-works","depth":2},{"value":"Filter Definition Table","id":"filter-definition-table","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"Filters, as provided on the Z88, are a fairly general means of achieving simple context-independent transformations in a character sequence. Their anticipated use is in simple text processing, but...","title":"Filters","filePath":"content/en/library/cambridge-z88/developers-notes/filters.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/developers-notes/filters","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Filters - Klive IDE"}],["$","meta","1",{"name":"description","content":"Filters, as provided on the Z88, are a fairly general means of achieving simple context-independent transformations in a character sequence. Their anticipated use is in simple text processing, but..."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/developers-notes/filters/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"cyL0EKA0xNKEZcECA3AIS"}
+20:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+35:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Filters","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Filters, as provided on the Z88, are a fairly general means of achieving simple context-independent transformations in a character sequence. Their anticipated use is in simple text processing, but they may potentially be used for more complex tasks. The calls for handling filters are:"}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"GN_Flo"}]," open a filter, returning a filter handle",["$","br",null,{}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"GN_Flw"}]," write a character to a filter",["$","br",null,{}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"GN_Flr"}]," read a character from a filter",["$","br",null,{}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"GN_Fpb"}]," push a character back into the filter",["$","br",null,{}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"GN_Flf"}]," flush the filter",["$","br",null,{}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"GN_Flc"}]," close the filter"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["To use a filter, the programmer must first set up a ‘Filter Definition Table’ (FDT), which determines the operation of the filter. The filter must then be opened with ",["$","strong",null,{"children":["$","$L20",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-flo","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"GN_Flo"}]}]," with the programmer giving the address of the FDT and setting various input parameters. ",["$","strong",null,{"children":["$","$L20",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-flo","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"GN_Flo"}]}]," returns a filter handle which the other filter routines takes as input. Once open the filter can be written to a byte at a time using ",["$","strong",null,{"children":["$","$L20",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-flw","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"GN_Flw"}]}]," and read from (again a byte at a time) using ",["$","strong",null,{"children":["$","$L20",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-flr","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"GN_Flr"}]}],". The bytes read out of the filter will be the processed form of the input; if processing has occurred on a particular character this is indicated ny Fz = 1 on return from ",["$","strong",null,{"children":["$","$L20",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-flr","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"GN_Flr"}]}],". While the filter is open, it can be flushed, ie. all the characters written to it, but not read out, can be discarded. It is also possible to push one character back into the filter, before a subsequent filter read takes place. Finally the filter is closed using ","$L21",", which apart from freeing the handle and buffers associated with the filter also returns information as to how many characters have been written to and read from the filter."]}],"\n","$L22","\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34"]]}]
+15:["$","$L35",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@36"}]}]
+1f:true
+37:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+38:"ToggleWordWrapButton"
+39:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$38"]
+3a:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+9:300
+21:["$","strong",null,{"children":["$","$L20",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-flc","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"GN_Flc"}]}]
+22:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Note that filters can be used with a number of GN calls, in place of a source or destination which is in memory or a stream. Calls which can operate with filter are:"}]
+23:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"GN_Fcm"}]," compress a filename",["$","br",null,{}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"GN_Fex"}]," expand a filename",["$","br",null,{}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"GN_Gdn"}]," convert ASCII decimal string to integer",["$","br",null,{}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"GN_Pdn"}]," convert integer to ASCII decimal string",["$","br",null,{}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"GN_Gtm"}]," convert ASCII string to internal time",["$","br",null,{}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"GN_Ptm"}]," convert internal time to ASCII string",["$","br",null,{}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"GN_Pdt"}]," convert internal date to ASCII string",["$","br",null,{}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"GN_Gdt"}]," convert ASCII string to internal date",["$","br",null,{}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"GN_Skc"}]," skip character",["$","br",null,{}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"GN_Skd"}]," skip to delimiter",["$","br",null,{}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"GN_Skt"}]," skip to value"]}]
+24:["$","h2",null,{"id":"how-the-filter-works","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["How the filter works",["$","$L37",null,{"id":"how-the-filter-works"}]]}]
+25:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The filter definition table provides a list of strings to be searched for in the input sequence, and when one is found it will replace the found string with a replacement string also specified in the table. The table might contain the contain the following pairs of strings:"}]
+26:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L39",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L3a",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"            Search      Replace"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            Monday      Mon"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            Tuesday     Tue"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            Wednesday   Wed"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            Thursday    Thu"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            Friday      Fri"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            Saturday    Sat"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            Sunday      Sun"}]}]]}]]}]]}]
+27:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["If the characters M,o,n,d,a,y - were pushed into the filter, then the characters pulled from the other end (via ",["$","strong",null,{"children":["$","$L20",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-flr","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"GN_Flr"}]}],") would be: M,o,n - and then and ‘End of file’ return code, RC_EOF ($09), would be encountered. Thus the filter provides a convenient means of performing simple text processing."]}]
+28:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Because the filter can only search for strings to substitute amongst characters which are ‘in’ the filter, the normal use is to push in the entire input string and pull out the entire result, each in one go. Also note that the filter routine will select the first successful match in the FST, so if one of the search strings is an extension of another, the longer should come first if the obvious substitution is required. For instance:"}]
+29:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L39",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L3a",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"            Mon         Lundi"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            Monday      Lundi"}]}]]}]]}]]}]
+2a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"would result in the transformation of “Monday” into “Lundiday”; probably not what was intended."}]
+2b:["$","h2",null,{"id":"filter-definition-table","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Filter Definition Table",["$","$L37",null,{"id":"filter-definition-table"}]]}]
+2c:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L39",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L3a",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"2 bytes     Size of FDT in bytes"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1 byte      Options for left-hand strings"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1 byte      Options for right-hand strings"}]}]]}]]}]]}]
+2d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The options for the strings may be made up of some combination of the following bit settings:"}]
+2e:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L39",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L3a",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"            128         Table has top bit set characters (ISO standard)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            64          Table has numeric data"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            32          Table has alphabetic data"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            16          Table has punctation characters"}]}]]}]]}]]}]
+2f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Then come the entries, with the following format:"}]
+30:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L39",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L3a",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"1 byte      1+m"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"m bytes     search string"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1 byte      1+n"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"n bytes     replacement string"}]}]]}]]}]]}]
+31:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The ‘length bytes are actually a displacement to the character beyond the next string, hence they are one greater than the length of the string."}]
+32:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"RESTRICTIONS: The FDT must not span a 16K boundary, and due to a software bug, the FDT must be addressed in segment 1."}]
+33:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The filter calls are fully specified in ",["$","$L20",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"System Calls Reference"}],"."]}]
+34:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L39",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L3a",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"include \"memory.def\"                ; memory call definitions"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"include \"stdio.def\"                 ; standard I/O definitions"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; it is assumed that this code would be running in segment 3 "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; - it finds out which bank it is running in and binds this bank to segment 1 "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; Note that the binding of segment 3 does not change "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; the routine assumes the address of the string is held at "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; the static address 'input_string' "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; the effect of the routine is to abbreviate full day names "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; to the 3 character day names "}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":".abbreviate ld   c, MS_S3           ; assumes table is in segment 3"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            oz   OS_Mgb             ; get binding of segment 3"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ld   c, MS_S1"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            oz   OS_Mpb             ; bind table into segment 1. Note bank"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                                    ; is still bound to segment 3"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ld   hl, fdt_Table      ; start address of table"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ld   a,h"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            and  @00111111          ; mask out segment bits (15, 14)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            or   MM_S1              ; merge memory mask for segment 1"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ld   h,a                ; HL now addresses segment 1"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ld   a, 4               ; buffer size in B"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ld   b, 30              ; buffer size"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            oz   GN_Flo             ; open filter"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ret  c                  ; exit if error"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ld   hl, (input_string) ; address of string to process"}]}],"\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41","\n","$L42","\n","$L43","\n","$L44","\n","$L45","\n","$L46","\n","$L47","\n","$L48","\n","$L49","\n","$L4a","\n","$L4b","\n","$L4c","\n","$L4d","\n","$L4e","\n","$L4f","\n","$L50","\n","$L51","\n","$L52","\n","$L53","\n","$L54","\n","$L55","\n","$L56","\n","$L57","\n","$L58","\n","$L59","\n","$L5a","\n","$L5b","\n","$L5c","\n","$L5d","\n","$L5e","\n","$L5f","\n","$L60","\n","$L61","\n","$L62","\n","$L63","\n","$L64"]}]]}]]}]
+36:null
+9:C
+3b:["$","span",null,{"children":["$","span",null,{"children":".loop       ld   a,(hl)"}]}]
+3c:["$","span",null,{"children":["$","span",null,{"children":"            cp   0"}]}]
+3d:["$","span",null,{"children":["$","span",null,{"children":"            jr   z, end_loop"}]}]
+3e:["$","span",null,{"children":["$","span",null,{"children":"            oz   GN_FPW             ; write character to filter"}]}]
+3f:["$","span",null,{"children":["$","span",null,{"children":"            inc  hl"}]}]
+40:["$","span",null,{"children":["$","span",null,{"children":"            jr   loop"}]}]
+41:["$","span",null,{"children":["$","span",null,{}]}]
+42:["$","span",null,{"children":["$","span",null,{"children":".end_loop   oz   GN_Flr             ; pull character from filter"}]}]
+43:["$","span",null,{"children":["$","span",null,{"children":"            jr   c, finished        ; exit if last one or error"}]}]
+44:["$","span",null,{"children":["$","span",null,{"children":"            oz   OS_Out             ; write converted char to std. output"}]}]
+45:["$","span",null,{"children":["$","span",null,{"children":"            jr   end_loop"}]}]
+46:["$","span",null,{"children":["$","span",null,{}]}]
+47:["$","span",null,{"children":["$","span",null,{"children":".finished   oz   GN_Flc             ; close the filter"}]}]
+48:["$","span",null,{"children":["$","span",null,{"children":"            oz   GN_Nln             ; new line"}]}]
+49:["$","span",null,{"children":["$","span",null,{"children":"            ret"}]}]
+4a:["$","span",null,{"children":["$","span",null,{}]}]
+4b:["$","span",null,{"children":["$","span",null,{"children":".fdt_start  defw fdt_end-fdt_start  ; length of FDT"}]}]
+4c:["$","span",null,{"children":["$","span",null,{"children":"            defb 32                 ; search string alphabetic"}]}]
+4d:["$","span",null,{"children":["$","span",null,{"children":"            defb 32                 ; replace string alphabetic"}]}]
+4e:["$","span",null,{"children":["$","span",null,{}]}]
+4f:["$","span",null,{"children":["$","span",null,{"children":"            defm 7, \"Monday\"        ; abbreviate Monday"}]}]
+50:["$","span",null,{"children":["$","span",null,{"children":"            defm 4, \"Mon\""}]}]
+51:["$","span",null,{"children":["$","span",null,{}]}]
+52:["$","span",null,{"children":["$","span",null,{"children":"            defm 8, \"Tuesday\"       ; abbreviate Tuesday"}]}]
+53:["$","span",null,{"children":["$","span",null,{"children":"            defm 4, \"Tue\""}]}]
+54:["$","span",null,{"children":["$","span",null,{}]}]
+55:["$","span",null,{"children":["$","span",null,{"children":"            defm 10, \"Wednesday\"    ; abbreviate Wednesday"}]}]
+56:["$","span",null,{"children":["$","span",null,{"children":"            defm 4,  \"Wed\""}]}]
+57:["$","span",null,{"children":["$","span",null,{}]}]
+58:["$","span",null,{"children":["$","span",null,{"children":"            defm 9, \"Thursday\"      ; abbreviate Thursday"}]}]
+59:["$","span",null,{"children":["$","span",null,{"children":"            defm 4, \"Thu\""}]}]
+5a:["$","span",null,{"children":["$","span",null,{}]}]
+5b:["$","span",null,{"children":["$","span",null,{"children":"            defm 7, \"Friday\"        ; abbreviate Friday"}]}]
+5c:["$","span",null,{"children":["$","span",null,{"children":"            defm 4, \"fri\""}]}]
+5d:["$","span",null,{"children":["$","span",null,{}]}]
+5e:["$","span",null,{"children":["$","span",null,{"children":"            defm 9, \"Saturday\"      ; abbreviate Saturday"}]}]
+5f:["$","span",null,{"children":["$","span",null,{"children":"            defm 4, \"Sat\""}]}]
+60:["$","span",null,{"children":["$","span",null,{}]}]
+61:["$","span",null,{"children":["$","span",null,{"children":"            defm 7, \"Sunday\"        ; abbreviate Sunday"}]}]
+62:["$","span",null,{"children":["$","span",null,{"children":"            defm 4, \"Sun\""}]}]
+63:["$","span",null,{"children":["$","span",null,{}]}]
+64:["$","span",null,{"children":["$","span",null,{"children":".fdt_end                            ; end of table"}]}]
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

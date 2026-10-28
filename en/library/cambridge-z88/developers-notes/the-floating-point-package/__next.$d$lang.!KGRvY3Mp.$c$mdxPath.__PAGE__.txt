@@ -1,0 +1,115 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T1208,---
+description: "Floating point numbers in the Z88 are stored as a 4-byte mantissa and a 1 byte exponent. The exponent byte is simply the exponent plus 127. The mantissa is a binary fraction in a standard form..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/2752566 (version 3) by scripts/import-z88-wiki.cjs */}
+
+# The floating point package
+
+Floating point numbers in the Z88 are stored as a 4-byte mantissa and a 1 byte exponent. The exponent byte is simply the exponent plus 127. The mantissa is a binary fraction in a standard form where the most significant bit is assumed 1 (ie. the number is greater than or equal to 0.5 and less than 1). This is analogous to a base 10 standard from where the mantissa is of the form 0.xyz... (the usual choice is x.yz... but this is a matter of human convention) - x cannot be zero, as if it were then the number would be represented with a mantissa of 0.yz... and the exponent incremented. Hence the most significant bit of the mantissa may be taken to be 1 when calculating its magnitude, and can actually store other information. It is used as the mantissa sign bit, where 1 means a negative number. For example the decimal number 13 is binary 1101 or 0.1101\*10^100; this would be represented as a mantissa of 01010000.....0000 (32bits - note the zero msb for positive number) and an exponent of 10000011 (131 decimal).
+
+An exponent of zero is taken to mean that the mantissa is an integer - this allows integers which will fit in four bytes to be manipulated differently, avoiding irritating features such as 10 becomming 9.999998, whilst retaining the ability to cope with the large ranges which come with the floating point representative.
+
+Floating point numbers are conventionally stored with the least significant bit of the mantissa at the lowest address, and the exponent at the highest. However, since numbers are represented to and returned from the floating point package in registers, this convention may be flouted at the programmer's discretion.
+
+As mentioned earlier, the floating point package (hereinafter referred to as the FPP) uses a different `RST` call from the main system calls, the format of a floating point call is as follows:
+
+```text
+            RST  $18
+            DEFB <function code>
+```
+
+so apart from the different restart number, much the same as the OS calls. In the Z80 assembler notation we use:
+
+```text
+            FPP <function symbol>
+```
+
+Parameters are passed to and from the FPP in a rather bizarre collection of registers. The main register group is HLhlC (remember, lower case for alternate set), and where a second parameter is required it is passed in DEdeB. These divide into mantissa and exponent as follows:
+
+```text
+Param1      Param2      Significance
+H           D           Most significant byte of mantissa
+L           E
+h           d
+l           e           Least significant byte of mantissa
+C           B           Exponent byte
+```
+
+There are certain exceptions, which are explained where relevant (for instance one operation returns the numeric value of a string, so takes a pointer to the string in HL as its parameter). Please refer to "System calls reference" for details of the specific function calls.
+
+## Example
+
+The following is a simple example program, which prints out the mathematical constant PI. It makes two [FPP calls](/en/library/cambridge-z88/developers-notes/the-floating-point-package-reference), one **FP\_PI** to get the value, then a **FP\_STR** to convert it to a string. This is then printed via the standard **[GN\_Sop](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-sop)** routine.
+
+```text
+include "stdio.def"                 ; standard I/O definitions 
+include "fpp.def"                   ; floating point definitions 
+
+; routine assumes that IY points to small buffer on entry 
+; buffer size at least 15 bytes
+
+.print_pi   fpp  FP_PI              ; get value of PI in HLhlC
+            push iy
+            pop  de                 ; buffer address in DE
+            exx                     ; swap to alternate registers
+            ld   de, $000A          ; format control variable (10 digits)
+            exx
+            fpp  FP_STR             ; convert number to ASCII string
+            xor  a
+            ld   (de),a             ; null-terminate string
+            push iy
+            pop  hl                 ; buffer address in HL
+            oz   GN_Sop             ; display number to standard output
+            oz   GN_Nln             ; newline
+            ret                     ; finished (return to caller)
+```a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Example","id":"example","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"Floating point numbers in the Z88 are stored as a 4-byte mantissa and a 1 byte exponent. The exponent byte is simply the exponent plus 127. The mantissa is a binary fraction in a standard form...","title":"The floating point package","filePath":"content/en/library/cambridge-z88/developers-notes/the-floating-point-package.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/developers-notes/the-floating-point-package","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"The floating point package - Klive IDE"}],["$","meta","1",{"name":"description","content":"Floating point numbers in the Z88 are stored as a 4-byte mantissa and a 1 byte exponent. The exponent byte is simply the exponent plus 127. The mantissa is a binary fraction in a standard form..."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/developers-notes/the-floating-point-package/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"cyL0EKA0xNKEZcECA3AIS"}
+20:"ToggleWordWrapButton"
+21:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$20"]
+22:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+2c:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["The floating point package","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Floating point numbers in the Z88 are stored as a 4-byte mantissa and a 1 byte exponent. The exponent byte is simply the exponent plus 127. The mantissa is a binary fraction in a standard form where the most significant bit is assumed 1 (ie. the number is greater than or equal to 0.5 and less than 1). This is analogous to a base 10 standard from where the mantissa is of the form 0.xyz… (the usual choice is x.yz… but this is a matter of human convention) - x cannot be zero, as if it were then the number would be represented with a mantissa of 0.yz… and the exponent incremented. Hence the most significant bit of the mantissa may be taken to be 1 when calculating its magnitude, and can actually store other information. It is used as the mantissa sign bit, where 1 means a negative number. For example the decimal number 13 is binary 1101 or 0.1101*10^100; this would be represented as a mantissa of 01010000…0000 (32bits - note the zero msb for positive number) and an exponent of 10000011 (131 decimal)."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"An exponent of zero is taken to mean that the mantissa is an integer - this allows integers which will fit in four bytes to be manipulated differently, avoiding irritating features such as 10 becomming 9.999998, whilst retaining the ability to cope with the large ranges which come with the floating point representative."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Floating point numbers are conventionally stored with the least significant bit of the mantissa at the lowest address, and the exponent at the highest. However, since numbers are represented to and returned from the floating point package in registers, this convention may be flouted at the programmer’s discretion."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["As mentioned earlier, the floating point package (hereinafter referred to as the FPP) uses a different ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"RST"}]," call from the main system calls, the format of a floating point call is as follows:"]}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L21",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L22",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"            RST  $18"}]}],"\n","$L23"]}]]}]]}],"\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b"]]}]
+15:["$","$L2c",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@2d"}]}]
+1f:true
+2e:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+2f:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+9:300
+23:["$","span",null,{"children":["$","span",null,{"children":"            DEFB <function code>"}]}]
+24:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"so apart from the different restart number, much the same as the OS calls. In the Z80 assembler notation we use:"}]
+25:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L21",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L22",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"            FPP <function symbol>"}]}]}]]}]]}]
+26:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Parameters are passed to and from the FPP in a rather bizarre collection of registers. The main register group is HLhlC (remember, lower case for alternate set), and where a second parameter is required it is passed in DEdeB. These divide into mantissa and exponent as follows:"}]
+27:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L21",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L22",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"Param1      Param2      Significance"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"H           D           Most significant byte of mantissa"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"L           E"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"h           d"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"l           e           Least significant byte of mantissa"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"C           B           Exponent byte"}]}]]}]]}]]}]
+28:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"There are certain exceptions, which are explained where relevant (for instance one operation returns the numeric value of a string, so takes a pointer to the string in HL as its parameter). Please refer to “System calls reference” for details of the specific function calls."}]
+29:["$","h2",null,{"id":"example","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Example",["$","$L2e",null,{"id":"example"}]]}]
+2a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The following is a simple example program, which prints out the mathematical constant PI. It makes two ",["$","$L2f",null,{"href":"/en/library/cambridge-z88/developers-notes/the-floating-point-package-reference","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"FPP calls"}],", one ",["$","strong",null,{"children":"FP_PI"}]," to get the value, then a ",["$","strong",null,{"children":"FP_STR"}]," to convert it to a string. This is then printed via the standard ",["$","strong",null,{"children":["$","$L2f",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-sop","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"GN_Sop"}]}]," routine."]}]
+2b:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L21",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L22",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"include \"stdio.def\"                 ; standard I/O definitions "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"include \"fpp.def\"                   ; floating point definitions "}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; routine assumes that IY points to small buffer on entry "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; buffer size at least 15 bytes"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":".print_pi   fpp  FP_PI              ; get value of PI in HLhlC"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            push iy"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            pop  de                 ; buffer address in DE"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            exx                     ; swap to alternate registers"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ld   de, $000A          ; format control variable (10 digits)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            exx"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            fpp  FP_STR             ; convert number to ASCII string"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            xor  a"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ld   (de),a             ; null-terminate string"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            push iy"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            pop  hl                 ; buffer address in HL"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            oz   GN_Sop             ; display number to standard output"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            oz   GN_Nln             ; newline"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ret                     ; finished (return to caller)"}]}]]}]]}]]}]
+2d:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

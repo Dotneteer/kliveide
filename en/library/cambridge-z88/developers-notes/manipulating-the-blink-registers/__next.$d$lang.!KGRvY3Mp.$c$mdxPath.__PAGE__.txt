@@ -1,0 +1,116 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:Tce6,---
+description: "It is good programming practice to use the operating system calls provided, rather than trying to manipulate the hardware directly. This avoids compatibility problems with future releases and..."
+asIndexPage: true
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/3112997 (version 6) by scripts/import-z88-wiki.cjs */}
+
+# Manipulating the Blink Registers
+
+It is good programming practice to use the operating system calls provided, rather than trying to manipulate the hardware directly. This avoids compatibility problems with future releases and leaving the operating system in an unstable state. We are therefore NOT encouraging the reader to 'poke to the screen' or 'disable the operating system!' We will encourage you to use these good programming practise and attempt to give as full a description of the hardware that exists as we understand it.
+
+## Overview of the BLINK registers
+
+The following table lists all the registers in the BLINK chip, which are accessed through the Z80 I/O ports. Not all of the registers are useful to programmers, but they are all included for completeness. Some are described in more detail later in this section.
+
+The hardware registers have only one function. They can either be written to, or read from, (but not both). With this constraint it would have been possible to lose track of register contents. To get around this potential problem, the operating system duplicates these values by using soft copies of that can always be read, to check out the contents of the hardware registers. Addresses $0400 to $04FF are used to store the 'soft copies' of the values in the BLINK registers, with the low byte of the address being taken from the address of the I/O port. Operating system always write to the soft copy of a register before writing to the hardware register itself to ensure that the duplicate entry is valid. Reasons are explained below.
+
+```text
+I/O port    WRITE                   READ
+$70         PB0, pixel base reg.0   -
+$71         PB1, pixel base reg.1   -
+$72         PB2, pixel base reg.2   -
+$73         PB3, pixel base reg.3   -
+$74         SBR, screen base reg.   -
+
+$B0         COM, command register   -
+$B1         INT, mask & control     STA, interrupt status
+$B2         -                       KBD, keyboard
+$B3         EPR, EPROM programming  -
+$B4         TACK, RTC ack.          -
+$B5         TMK, RTC int. mask      TSTA, RTC int. status
+$B6         ACK, main int. mask     -
+
+$D0         SR0, segment reg. 0     TIM0, RTC 5ms counter
+$D1         SR1, segment reg. 1     TIM1, RTC seconds counter (6 bits)
+$D2         SR2, segment reg. 2     TIM2, RTC minutes counter
+$D3         SR3, segment reg. 3     TIM3, RTC minutes/256 counter
+$D4         -                       TIM4, RTC minutes/64K counter (5 bits)
+
+$E0         -                       RXD, UART receive data register
+$E1         -                       RXE, extended receiver data
+$E2         RXC, receiver control   -
+$E3         TXD, transmit data      -
+$E4         TXC, transmit control   -
+$E5         UMK, UART int. mask     UIT, UART int. status
+$E6         UAK, UART int. mask     -
+Note :
+```
+
+*RTC* Real Time Clock<br />*UART* Universal Asynchronous Receiver Transmitter<br />*INT* Interrupt<br />*ACK* Acknowledgea:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Overview of the BLINK registers","id":"overview-of-the-blink-registers","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"It is good programming practice to use the operating system calls provided, rather than trying to manipulate the hardware directly. This avoids compatibility problems with future releases and...","asIndexPage":true,"title":"Manipulating the Blink Registers","filePath":"content/en/library/cambridge-z88/developers-notes/manipulating-the-blink-registers/index.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/developers-notes/manipulating-the-blink-registers","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Manipulating the Blink Registers - Klive IDE"}],["$","meta","1",{"name":"description","content":"It is good programming practice to use the operating system calls provided, rather than trying to manipulate the hardware directly. This avoids compatibility problems with future releases and..."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/developers-notes/manipulating-the-blink-registers/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"cyL0EKA0xNKEZcECA3AIS"}
+20:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+21:"ToggleWordWrapButton"
+22:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$21"]
+23:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+3f:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Manipulating the Blink Registers","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"It is good programming practice to use the operating system calls provided, rather than trying to manipulate the hardware directly. This avoids compatibility problems with future releases and leaving the operating system in an unstable state. We are therefore NOT encouraging the reader to ‘poke to the screen’ or ‘disable the operating system!’ We will encourage you to use these good programming practise and attempt to give as full a description of the hardware that exists as we understand it."}],"\n",["$","h2",null,{"id":"overview-of-the-blink-registers","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Overview of the BLINK registers",["$","$L20",null,{"id":"overview-of-the-blink-registers"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The following table lists all the registers in the BLINK chip, which are accessed through the Z80 I/O ports. Not all of the registers are useful to programmers, but they are all included for completeness. Some are described in more detail later in this section."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The hardware registers have only one function. They can either be written to, or read from, (but not both). With this constraint it would have been possible to lose track of register contents. To get around this potential problem, the operating system duplicates these values by using soft copies of that can always be read, to check out the contents of the hardware registers. Addresses $0400 to $04FF are used to store the ‘soft copies’ of the values in the BLINK registers, with the low byte of the address being taken from the address of the I/O port. Operating system always write to the soft copy of a register before writing to the hardware register itself to ensure that the duplicate entry is valid. Reasons are explained below."}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"I/O port    WRITE                   READ"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"$$70         PB0, pixel base reg.0   -"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"$$71         PB1, pixel base reg.1   -"}]}],"\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d"]}]]}]]}],"\n","$L3e"]]}]
+15:["$","$L3f",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@40"}]}]
+1f:true
+9:300
+24:["$","span",null,{"children":["$","span",null,{"children":"$$72         PB2, pixel base reg.2   -"}]}]
+25:["$","span",null,{"children":["$","span",null,{"children":"$$73         PB3, pixel base reg.3   -"}]}]
+26:["$","span",null,{"children":["$","span",null,{"children":"$$74         SBR, screen base reg.   -"}]}]
+27:["$","span",null,{"children":["$","span",null,{}]}]
+28:["$","span",null,{"children":["$","span",null,{"children":"$$B0         COM, command register   -"}]}]
+29:["$","span",null,{"children":["$","span",null,{"children":"$$B1         INT, mask & control     STA, interrupt status"}]}]
+2a:["$","span",null,{"children":["$","span",null,{"children":"$$B2         -                       KBD, keyboard"}]}]
+2b:["$","span",null,{"children":["$","span",null,{"children":"$$B3         EPR, EPROM programming  -"}]}]
+2c:["$","span",null,{"children":["$","span",null,{"children":"$$B4         TACK, RTC ack.          -"}]}]
+2d:["$","span",null,{"children":["$","span",null,{"children":"$$B5         TMK, RTC int. mask      TSTA, RTC int. status"}]}]
+2e:["$","span",null,{"children":["$","span",null,{"children":"$$B6         ACK, main int. mask     -"}]}]
+2f:["$","span",null,{"children":["$","span",null,{}]}]
+30:["$","span",null,{"children":["$","span",null,{"children":"$$D0         SR0, segment reg. 0     TIM0, RTC 5ms counter"}]}]
+31:["$","span",null,{"children":["$","span",null,{"children":"$$D1         SR1, segment reg. 1     TIM1, RTC seconds counter (6 bits)"}]}]
+32:["$","span",null,{"children":["$","span",null,{"children":"$$D2         SR2, segment reg. 2     TIM2, RTC minutes counter"}]}]
+33:["$","span",null,{"children":["$","span",null,{"children":"$$D3         SR3, segment reg. 3     TIM3, RTC minutes/256 counter"}]}]
+34:["$","span",null,{"children":["$","span",null,{"children":"$$D4         -                       TIM4, RTC minutes/64K counter (5 bits)"}]}]
+35:["$","span",null,{"children":["$","span",null,{}]}]
+36:["$","span",null,{"children":["$","span",null,{"children":"$$E0         -                       RXD, UART receive data register"}]}]
+37:["$","span",null,{"children":["$","span",null,{"children":"$$E1         -                       RXE, extended receiver data"}]}]
+38:["$","span",null,{"children":["$","span",null,{"children":"$$E2         RXC, receiver control   -"}]}]
+39:["$","span",null,{"children":["$","span",null,{"children":"$$E3         TXD, transmit data      -"}]}]
+3a:["$","span",null,{"children":["$","span",null,{"children":"$$E4         TXC, transmit control   -"}]}]
+3b:["$","span",null,{"children":["$","span",null,{"children":"$$E5         UMK, UART int. mask     UIT, UART int. status"}]}]
+3c:["$","span",null,{"children":["$","span",null,{"children":"$$E6         UAK, UART int. mask     -"}]}]
+3d:["$","span",null,{"children":["$","span",null,{"children":"Note :"}]}]
+3e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","em",null,{"children":"RTC"}]," Real Time Clock",["$","br",null,{}],["$","em",null,{"children":"UART"}]," Universal Asynchronous Receiver Transmitter",["$","br",null,{}],["$","em",null,{"children":"INT"}]," Interrupt",["$","br",null,{}],["$","em",null,{"children":"ACK"}]," Acknowledge"]}]
+40:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

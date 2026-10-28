@@ -1,0 +1,107 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:Tac4,---
+description: "The replacement name must be just \"filename.ext\" - it must not include device or directory segments."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8618170 (version 3) by scripts/import-z88-wiki.cjs */}
+
+# GN_Ren, Rename file
+
+## Register parameters
+
+```text
+IN:
+     HL = 0,1,2; not allowed (B=0)
+     BHL = pointer to filename of file to be renamed (HL > 255)
+
+     DE = 0,1,2; not allowed
+     DE = pointer to replacement name (no path must be specified).
+
+OUT, if call successful:
+     Fc = 0
+OUT, if call failed:
+     Fc = 1
+     A = error code:
+          RC_ONF ($12), file not found
+          RC_IVF ($17), invalid filename
+          RC_EXIS ($19), file with replacement name already exists
+          RC_USE ($15), file is in use and cannot be renamed
+
+Registers changed after return:
+     ..BCDEHL/IXIY same
+     AF....../.... different
+```
+
+## Notes
+
+The replacement name must be just "filename.ext" - it must not include device or directory segments.
+
+## Related calls
+
+**[GN\_Cl](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-cl)**, close file <br />**[GN\_Del](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-del)**, delete a file from memory <br />**[GN\_Opf](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-opf)**, open file/resource (wildcard search) <br />**[OS\_Cl](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-cl)**, internal close (OZ usage) <br />**[OS\_Del](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-del)**, file delete (internal OZ usage) <br />**[OS\_Frm](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-frm)**, file read miscellaneous <br />**[OS\_Fwm](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fwm)**, file write miscellaneous <br />**[OS\_Gb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-gb)**, get byte from file (or device) <br />**[OS\_Gbt](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-gbt)**, get byte from file (or device) with timeout <br />**[OS\_Mv](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mv)**, move bytes between stream and memory <br />**[OS\_Op](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-op)**, internal open (OZ usage) <br />**[OS\_Pb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-pb)**, write byte to file, device <br />**[OS\_Pbt](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-pbt)**, write byte to file, device with timeout <br />**[OS\_Ren](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-ren)**, file rename (internal OZ usage)a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Register parameters","id":"register-parameters","depth":2},{"value":"Notes","id":"notes","depth":2},{"value":"Related calls","id":"related-calls","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"The replacement name must be just \"filename.ext\" - it must not include device or directory segments.","title":"GN_Ren, Rename file","filePath":"content/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-ren.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/developers-notes/system-calls-reference/gn-ren","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"GN_Ren, Rename file - Klive IDE"}],["$","meta","1",{"name":"description","content":"The replacement name must be just \"filename.ext\" - it must not include device or directory segments."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-ren/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"cyL0EKA0xNKEZcECA3AIS"}
+20:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+21:"ToggleWordWrapButton"
+22:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$21"]
+23:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+3f:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["GN_Ren, Rename file","$undefined"]}],"\n",["$","h2",null,{"id":"register-parameters","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Register parameters",["$","$L20",null,{"id":"register-parameters"}]]}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"IN:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     HL = 0,1,2; not allowed (B=0)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     BHL = pointer to filename of file to be renamed (HL > 255)"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     DE = 0,1,2; not allowed"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     DE = pointer to replacement name (no path must be specified)."}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OUT, if call successful:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     Fc = 0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OUT, if call failed:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     Fc = 1"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     A = error code:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"          RC_ONF ($12), file not found"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"          RC_IVF ($17), invalid filename"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"          RC_EXIS ($19), file with replacement name already exists"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"          RC_USE ($15), file is in use and cannot be renamed"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Registers changed after return:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     ..BCDEHL/IXIY same"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     AF....../.... different"}]}]]}]]}]]}],"\n",["$","h2",null,{"id":"notes","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Notes",["$","$L20",null,{"id":"notes"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The replacement name must be just “filename.ext” - it must not include device or directory segments."}],"\n",["$","h2",null,{"id":"related-calls","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Related calls",["$","$L20",null,{"id":"related-calls"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$L24",", close file ","$L25","$L26",", delete a file from memory ","$L27","$L28",", open file/resource (wildcard search) ","$L29","$L2a",", internal close (OZ usage) ","$L2b","$L2c",", file delete (internal OZ usage) ","$L2d","$L2e",", file read miscellaneous ","$L2f","$L30",", file write miscellaneous ","$L31","$L32",", get byte from file (or device) ","$L33","$L34",", get byte from file (or device) with timeout ","$L35","$L36",", move bytes between stream and memory ","$L37","$L38",", internal open (OZ usage) ","$L39","$L3a",", write byte to file, device ","$L3b","$L3c",", write byte to file, device with timeout ","$L3d","$L3e",", file rename (internal OZ usage)"]}]]]}]
+15:["$","$L3f",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@40"}]}]
+1f:true
+41:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+9:300
+24:["$","strong",null,{"children":["$","$L41",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-cl","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"GN_Cl"}]}]
+25:["$","br",null,{}]
+26:["$","strong",null,{"children":["$","$L41",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-del","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"GN_Del"}]}]
+27:["$","br",null,{}]
+28:["$","strong",null,{"children":["$","$L41",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-opf","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"GN_Opf"}]}]
+29:["$","br",null,{}]
+2a:["$","strong",null,{"children":["$","$L41",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-cl","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OS_Cl"}]}]
+2b:["$","br",null,{}]
+2c:["$","strong",null,{"children":["$","$L41",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-del","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OS_Del"}]}]
+2d:["$","br",null,{}]
+2e:["$","strong",null,{"children":["$","$L41",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-frm","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OS_Frm"}]}]
+2f:["$","br",null,{}]
+30:["$","strong",null,{"children":["$","$L41",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fwm","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OS_Fwm"}]}]
+31:["$","br",null,{}]
+32:["$","strong",null,{"children":["$","$L41",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-gb","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OS_Gb"}]}]
+33:["$","br",null,{}]
+34:["$","strong",null,{"children":["$","$L41",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-gbt","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OS_Gbt"}]}]
+35:["$","br",null,{}]
+36:["$","strong",null,{"children":["$","$L41",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mv","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OS_Mv"}]}]
+37:["$","br",null,{}]
+38:["$","strong",null,{"children":["$","$L41",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-op","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OS_Op"}]}]
+39:["$","br",null,{}]
+3a:["$","strong",null,{"children":["$","$L41",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-pb","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OS_Pb"}]}]
+3b:["$","br",null,{}]
+3c:["$","strong",null,{"children":["$","$L41",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-pbt","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OS_Pbt"}]}]
+3d:["$","br",null,{}]
+3e:["$","strong",null,{"children":["$","$L41",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-ren","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OS_Ren"}]}]
+40:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

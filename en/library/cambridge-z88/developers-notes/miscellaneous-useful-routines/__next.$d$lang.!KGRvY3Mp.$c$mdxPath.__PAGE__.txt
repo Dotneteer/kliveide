@@ -1,0 +1,61 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+13:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+18:"ViewportBoundary"
+19:I[484,[],"$18"]
+1a:"MetadataBoundary"
+1b:I[484,[],"$1a"]
+1c:"$Sreact.suspense"
+1d:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T433,---
+description: "This section explains how to manipulate system parameters, i.e. from the Panel, the Printer Editor and other system resources. The rest of this section displays useful routines which does not..."
+asIndexPage: true
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/2752701 (version 2) by scripts/import-z88-wiki.cjs */}
+
+# Miscellaneous useful routines
+
+This section explains how to manipulate system parameters, i.e. from the Panel, the Printer Editor and other system resources. The rest of this section displays useful routines which does not conveniently fit in any of the other sections.
+
+## System resource parameters
+
+These parameters are divided into 5 groups. Their mnemonic identifier is a 16bit identifier code where the high byte of the code identifies the related group:
+
+```text
+$80xx       PANEL system parameters (timeout, baud rates, date format...)
+$83xx       Window management parameters.
+$86xx       Process management parameters.
+$89xx       Memory management parameters.
+$8Cxx       Director/CLI parameters.
+```a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"System resource parameters","id":"system-resource-parameters","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"This section explains how to manipulate system parameters, i.e. from the Panel, the Printer Editor and other system resources. The rest of this section displays useful routines which does not...","asIndexPage":true,"title":"Miscellaneous useful routines","filePath":"content/en/library/cambridge-z88/developers-notes/miscellaneous-useful-routines/index.mdx","timestamp":1792315833000},"sourceCode":"$12","children":[["$","div",null,{"id":"nextra-skip-nav"}],["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Miscellaneous useful routines","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This section explains how to manipulate system parameters, i.e. from the Panel, the Printer Editor and other system resources. The rest of this section displays useful routines which does not conveniently fit in any of the other sections."}],"\n",["$","h2",null,{"id":"system-resource-parameters","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["System resource parameters",["$","$L13",null,{"id":"system-resource-parameters"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"These parameters are divided into 5 groups. Their mnemonic identifier is a 16bit identifier code where the high byte of the code identifies the related group:"}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":["$L14","$L15"]}]]}]]]}]]}]]}]}],null,"$L16"]}],"p":"$@17","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/developers-notes/miscellaneous-useful-routines","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L19",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1b",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1c",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Miscellaneous useful routines - Klive IDE"}],["$","meta","1",{"name":"description","content":"This section explains how to manipulate system parameters, i.e. from the Panel, the Printer Editor and other system resources. The rest of this section displays useful routines which does not..."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/developers-notes/miscellaneous-useful-routines/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1d","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1e","v":null,"s":"$9"}},"a":"$@1f","u":"$@20","b":"cyL0EKA0xNKEZcECA3AIS"}
+21:"ToggleWordWrapButton"
+22:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$21"]
+23:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+24:I[484,[],"OutletBoundary"]
+14:["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}]
+15:["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"$$80xx       PANEL system parameters (timeout, baud rates, date format...)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"$$83xx       Window management parameters."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"$$86xx       Process management parameters."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"$$89xx       Memory management parameters."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"$$8Cxx       Director/CLI parameters."}]}]]}]
+16:["$","$L24",null,{"children":["$","$1c",null,{"name":"Next.MetadataOutlet","children":"$@25"}]}]
+20:true
+9:300
+25:null
+9:C
+1f:0
+7:"$undefined"
+1e:"$undefined"
+17:"$undefined"

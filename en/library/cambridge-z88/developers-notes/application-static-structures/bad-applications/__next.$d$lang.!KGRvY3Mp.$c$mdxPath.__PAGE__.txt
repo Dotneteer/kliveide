@@ -1,0 +1,86 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T1122,---
+description: "An application can be made 'bad' (or a popdown 'ugly') if it requires a large area of continuous memory since the Z88 cannot allocate more than 256 bytes to an application at any time. Although..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8618251 (version 1) by scripts/import-z88-wiki.cjs */}
+
+# Bad Applications
+
+An application can be made 'bad' (or a popdown 'ugly') if it requires a large area of continuous memory since the Z88 cannot allocate more than 256 bytes to an application at any time. Although this appears to be very restrictive, most programs can be made to work under this regime. All the internal applications, bar BBC BASIC, are 'good', and BBC BASIC is only bad because it was not written for the Z88 but simply imported. If, however, you are simply unable to write an application without large continuous areas, you may have to make your application bad. Similarly if your application is intended to be the only one running on the Z88, there is no problem with it being bad.
+
+Bad application memory is provided from address $2000 onwards. The amount given depends on the value of the 'continuous RAM size' byte in the application DOR header. This byte should be set to the number of 256 byte pages required. If it is set to zero then the default value is used (40K in an expanded machine, 8K in an unexpanded machine). The value of the default can be changed, via the PANEL, but bear in mind this is something which affects the whole system, and should not be undertaken lightly. When a bad application is first entered, the IX register points to an information block as follows:
+
+```text
+            1 byte        $03         Number of information bytes
+            1 byte        x           Start page of continuous memory, $20
+            1 byte        x           End page of continuous memory, this cannot
+                                      be used, for example $C0 for a 40K bad
+                                      application.
+            1 byte        x           Ususally zero. Reserved for future
+                                      expansion.
+```
+
+Whenever BBC BASIC is exited an area of unused memory, between the program and the stack, is given back to the system. When BBC BASC is re-entered memory is found to fill this hole back up again. It is this mechanism that allows several 40K BBC BASIC's to co-exist on a 128K Z88 computer. All the BBC BASIC's have a 40K continuous space while they are active and running, but when inactive (pre-empted) they occupy considerably less memory. To give memory back to the system, the enquiry entry point is used. The enquiry entry point is three bytes above the application entry point and must be in segment 3, which effectively forces all entry points into segment 3. Normally the enquiry entry point should simply return with Fc = 1. However, if Fc = 0 the memory starting from the address specified in register BC and ending at the address specified in register DE (not including the byte at (DE)) is given back to the system. The following code might be used:
+
+```text
+.app_entry                jp   main_entry         ; JP instruction 3 bytes long
+.app_enquiry              ld   bc, (hole_start)   ; enquiry entry point
+                          ld   de, (hole_end)
+                          or   a                  ; Fc = 0
+                          ret
+```
+
+Bad applications not giving memory back to the system (and all other application) should use the following code for the enquiry entry point:
+
+```text
+.app_entry                jp   main_entry
+.app_enquiry              scf                     ; enquiry entry point
+                          ret
+```
+
+*Z88 Developers Team: We've had no problems with good applications & popdowns* that ignores the above \<**SCF**\> header, even though the original documentation explicitly specifies it to be coded.
+
+Bad applications place a lot of strain on the system, by using large areas of memory. A 40K bad application which gives no memory back to the system is unlikely to co-exist well with other applications, so it is strongly recommended that if you must write bad applications you give memory back to the system. It is almost always possible to design data structures so that a continuous block can be kept empty. Programmer laziness is not an excuse to use a 40K bad application by default!a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"An application can be made 'bad' (or a popdown 'ugly') if it requires a large area of continuous memory since the Z88 cannot allocate more than 256 bytes to an application at any time. Although...","title":"Bad Applications","filePath":"content/en/library/cambridge-z88/developers-notes/application-static-structures/bad-applications.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/developers-notes/application-static-structures/bad-applications","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Bad Applications - Klive IDE"}],["$","meta","1",{"name":"description","content":"An application can be made 'bad' (or a popdown 'ugly') if it requires a large area of continuous memory since the Z88 cannot allocate more than 256 bytes to an application at any time. Although..."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/developers-notes/application-static-structures/bad-applications/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"cyL0EKA0xNKEZcECA3AIS"}
+20:"ToggleWordWrapButton"
+21:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$20"]
+22:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+28:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Bad Applications","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"An application can be made ‘bad’ (or a popdown ‘ugly’) if it requires a large area of continuous memory since the Z88 cannot allocate more than 256 bytes to an application at any time. Although this appears to be very restrictive, most programs can be made to work under this regime. All the internal applications, bar BBC BASIC, are ‘good’, and BBC BASIC is only bad because it was not written for the Z88 but simply imported. If, however, you are simply unable to write an application without large continuous areas, you may have to make your application bad. Similarly if your application is intended to be the only one running on the Z88, there is no problem with it being bad."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Bad application memory is provided from address $2000 onwards. The amount given depends on the value of the ‘continuous RAM size’ byte in the application DOR header. This byte should be set to the number of 256 byte pages required. If it is set to zero then the default value is used (40K in an expanded machine, 8K in an unexpanded machine). The value of the default can be changed, via the PANEL, but bear in mind this is something which affects the whole system, and should not be undertaken lightly. When a bad application is first entered, the IX register points to an information block as follows:"}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L21",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L22",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"            1 byte        $03         Number of information bytes"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            1 byte        x           Start page of continuous memory, $20"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            1 byte        x           End page of continuous memory, this cannot"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                                      be used, for example $C0 for a 40K bad"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                                      application."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            1 byte        x           Ususally zero. Reserved for future"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                                      expansion."}]}]]}]]}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Whenever BBC BASIC is exited an area of unused memory, between the program and the stack, is given back to the system. When BBC BASC is re-entered memory is found to fill this hole back up again. It is this mechanism that allows several 40K BBC BASIC’s to co-exist on a 128K Z88 computer. All the BBC BASIC’s have a 40K continuous space while they are active and running, but when inactive (pre-empted) they occupy considerably less memory. To give memory back to the system, the enquiry entry point is used. The enquiry entry point is three bytes above the application entry point and must be in segment 3, which effectively forces all entry points into segment 3. Normally the enquiry entry point should simply return with Fc = 1. However, if Fc = 0 the memory starting from the address specified in register BC and ending at the address specified in register DE (not including the byte at (DE)) is given back to the system. The following code might be used:"}],"\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n","$L27"]]}]
+15:["$","$L28",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@29"}]}]
+1f:true
+9:300
+23:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L21",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L22",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":".app_entry                jp   main_entry         ; JP instruction 3 bytes long"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":".app_enquiry              ld   bc, (hole_start)   ; enquiry entry point"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                          ld   de, (hole_end)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                          or   a                  ; Fc = 0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                          ret"}]}]]}]]}]]}]
+24:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Bad applications not giving memory back to the system (and all other application) should use the following code for the enquiry entry point:"}]
+25:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L21",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L22",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":".app_entry                jp   main_entry"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":".app_enquiry              scf                     ; enquiry entry point"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                          ret"}]}]]}]]}]]}]
+26:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","em",null,{"children":"Z88 Developers Team: We’ve had no problems with good applications & popdowns"}]," that ignores the above <",["$","strong",null,{"children":"SCF"}],"> header, even though the original documentation explicitly specifies it to be coded."]}]
+27:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Bad applications place a lot of strain on the system, by using large areas of memory. A 40K bad application which gives no memory back to the system is unlikely to co-exist well with other applications, so it is strongly recommended that if you must write bad applications you give memory back to the system. It is almost always possible to design data structures so that a continuous block can be kept empty. Programmer laziness is not an excuse to use a 40K bad application by default!"}]
+29:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

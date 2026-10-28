@@ -1,0 +1,49 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+12:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+13:"ToggleWordWrapButton"
+14:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$13"]
+15:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+23:"ViewportBoundary"
+24:I[484,[],"$23"]
+25:"MetadataBoundary"
+26:I[484,[],"$25"]
+27:"$Sreact.suspense"
+28:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Register Parameters","id":"register-parameters","depth":2},{"value":"Notes","id":"notes","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"Return BHL pointer to new file entry (also first byte of free space in File Eprom Area, inserted in slot C).","title":"EP_New ($36) - Return pointer to future new entry in File Area","filePath":"content/en/library/cambridge-z88/developers-notes/system-calls-reference/os-epr/ep-new-36-return-pointer-to-future-new-entry-in-file-area.mdx","timestamp":1792315833000},"sourceCode":"---\ndescription: \"Return BHL pointer to new file entry (also first byte of free space in File Eprom Area, inserted in slot C).\"\n---\n\n{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7471551 (version 2) by scripts/import-z88-wiki.cjs */}\n\n# EP_New ($36) - Return pointer to future new entry in File Area\n\n## Register Parameters\n\n```text\nIN:\n   A = EP_NEW\n   C = slot number containing File Eprom Area\n\nOUT:\n   Fc = 0, File Eprom available\n        BHL = pointer to first byte of free space (B = absolute bank of slot C)\n\n   Fc = 1, File Area was not found in slot C\n\nRegisters changed after return:\n   ...CDE../IXIY same\n   AFB...HL/.... different\n```\n\n## Notes\n\nReturn BHL pointer to new file entry (also first byte of free space in File Eprom Area, inserted in slot C).","children":[["$","div",null,{"id":"nextra-skip-nav"}],["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["EP_New ($36) - Return pointer to future new entry in File Area","$undefined"]}],"\n",["$","h2",null,{"id":"register-parameters","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Register Parameters",["$","$L12",null,{"id":"register-parameters"}]]}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L14",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L15",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"IN:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"   A = EP_NEW"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"   C = slot number containing File Eprom Area"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":"$L16"}],"\n","$L17","\n","$L18","\n","$L19","\n","$L1a","\n","$L1b","\n","$L1c","\n","$L1d","\n","$L1e"]}]]}]]}],"\n","$L1f","\n","$L20"]]}]]}]]}]}],null,"$L21"]}],"p":"$@22","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/developers-notes/system-calls-reference/os-epr/ep-new-36-return-pointer-to-future-new-entry-in-file-area","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L24",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L26",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$27",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"EP_New ($36) - Return pointer to future new entry in File Area - Klive IDE"}],["$","meta","1",{"name":"description","content":"Return BHL pointer to new file entry (also first byte of free space in File Eprom Area, inserted in slot C)."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-epr/ep-new-36-return-pointer-to-future-new-entry-in-file-area/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L28","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@29","v":null,"s":"$9"}},"a":"$@2a","u":"$@2b","b":"cyL0EKA0xNKEZcECA3AIS"}
+2c:I[484,[],"OutletBoundary"]
+16:["$","span",null,{"children":"OUT:"}]
+17:["$","span",null,{"children":["$","span",null,{"children":"   Fc = 0, File Eprom available"}]}]
+18:["$","span",null,{"children":["$","span",null,{"children":"        BHL = pointer to first byte of free space (B = absolute bank of slot C)"}]}]
+19:["$","span",null,{"children":["$","span",null,{}]}]
+1a:["$","span",null,{"children":["$","span",null,{"children":"   Fc = 1, File Area was not found in slot C"}]}]
+1b:["$","span",null,{"children":["$","span",null,{}]}]
+1c:["$","span",null,{"children":["$","span",null,{"children":"Registers changed after return:"}]}]
+1d:["$","span",null,{"children":["$","span",null,{"children":"   ...CDE../IXIY same"}]}]
+1e:["$","span",null,{"children":["$","span",null,{"children":"   AFB...HL/.... different"}]}]
+1f:["$","h2",null,{"id":"notes","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Notes",["$","$L12",null,{"id":"notes"}]]}]
+20:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Return BHL pointer to new file entry (also first byte of free space in File Eprom Area, inserted in slot C)."}]
+21:["$","$L2c",null,{"children":["$","$27",null,{"name":"Next.MetadataOutlet","children":"$@2d"}]}]
+2b:true
+9:300
+2d:null
+9:C
+2a:0
+7:"$undefined"
+29:"$undefined"
+22:"$undefined"

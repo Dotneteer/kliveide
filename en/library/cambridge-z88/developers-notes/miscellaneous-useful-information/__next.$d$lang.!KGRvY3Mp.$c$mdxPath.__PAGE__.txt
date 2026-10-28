@@ -1,0 +1,410 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T2462,---
+description: "When a Z88 has 128K or more of RAM in slot 1, it becomes expanded. The latest V4 of the operating system is expanded automatically if internal RAM has been upgraded to 128K or more. For previous..."
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/3112962 (version 10) by scripts/import-z88-wiki.cjs */}
+
+# Miscellaneous useful information
+
+---
+
+## The expanded and non-expanded machine
+
+When a Z88 has 128K or more of RAM in slot 1, it becomes expanded. The latest V4 of the operating system is expanded automatically if internal RAM has been upgraded to 128K or more. For previous versions of the Z88 operating system only the first rule is obeyed. The differences between the expanded and non-expanded computers are as follows:
+
+<Table>
+<thead>
+<Table.Tr>
+<Table.Th>
+
+```text
+Property
+```
+
+</Table.Th>
+<Table.Th>
+
+```text
+Expanded
+```
+
+</Table.Th>
+<Table.Th>
+
+```text
+Non-expanded
+```
+
+</Table.Th>
+</Table.Tr>
+</thead>
+<tbody>
+<Table.Tr>
+<Table.Td>
+
+```text
+Size of BBC BASIC
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+40K
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+8K
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+Maximum map width
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+256 pixels
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+96 pixels
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+User characters
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+64
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+16 (but see below)
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+Value of EOF#-1
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+-1
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+0
+```
+
+</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+Some users will want to use extra memory, for filing for example, without the burden of a 40K BASIC. If all your BASIC programs fit comfortably within the ordinary 8K it is unhelpful to have to carry the extra 32K around, thus using slot 2 or slot 3 to expand the memory does not expand the machine (V3 or earlier operating systems), but just increases memory size (note that using slot 3 for RAM causes a very heavy power drain on the Z88, due to the lack of special power saving hardware in this slot). The unexpanded machine can use 64 user characters, but if an 80 pixel map is used, the last 48 of these will be overwritten by map information when PipeDream is used (or another application that write to the high resolution map). Reducing the map width to 64 pixels, or not using the map at all, allows for free use of all 64 user characters. The file attributes for BASIC's -1 channel ($FFFF) all hold interesting information:
+
+<Table>
+<thead>
+<Table.Tr>
+<Table.Th>File Handle Function</Table.Th>
+<Table.Th>Output</Table.Th>
+</Table.Tr>
+</thead>
+<tbody>
+<Table.Tr>
+<Table.Td>
+
+```text
+PTR#-1
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+high word = no. of free handles in the system. low word = ROM version code:
+$03 for V2.2 and 3.x versions
+$04 for OZ V4.0 (UK)
+$42 for OZ V4.2 release
+$43 for OZ V4.3 release.
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+EXT#-1
+```
+
+</Table.Td>
+<Table.Td>
+
+Free memory.
+
+This is an approximation and should be interpreted with care. It is similar to the memory free indicators given by PipeDream and the Diary.
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+EOF#-1
+```
+
+</Table.Td>
+<Table.Td>-1 = machine is expanded. 0 = standard 32K machine.</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+This information can be accessed by applications by using the **[OS\_Frm](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-frm)** system call, to read file attributes, and specifying a handle of $FFFF in the **IX** register pair. Note that although the sequential pointer (PTR) and extent (EXT) are returned as 4 byte values in DE and BC registers, the end of file (EOF) result is returned in Fz, with Fz = 1 indicating the end of file (ie. TRUE or 1) and Fz = 0 otherwise (ie. FALSE or 0).
+
+## Extra CLI features
+
+```text
+<SQUARE> + S            T-direct output to ":RAM.-/s.sgn".
+<SQUARE> + K            T-direct input to ":RAM.-/k.sgn".
+<SQUARE> + P            T-direct output to :PRT.0
+<DIAMOND><LEFT-SHIFT>   Freeze screen output
+```
+
+If there is an EPROM, which contains a file called "boot.cli", present in slot 3 at the time of a reset (soft or hard) then it will be loaded into :RAM.- and executed as a CLI file.
+
+Note: <strong>`:RAM.-`</strong> files are dangerous under the version 2.2 or 3.0 of the operating system - see below for details.
+
+## Memory for files and applications
+
+Each RAM card is given an allocation of space by the system which is useable by the RAM filing device associated with that slot. This allocation is always less than total RAM available in that card. Applications (and the special device :RAM.-) can use the remaining memory as well as the memory allocated to files. Because of this approach, the values given for free memory are sometimes confusing. The free memory indicators return space available to applications, which will generally be rather less than that available to files.
+
+The device <strong>`:RAM.-`</strong> can use memory from anywhere in the system, and as such is it very useful for large files. Due to a bug in versions 2.2 (3.0) in the operating system, if any files are stored in the device when a soft reset occurs, the system becomes badly confused, and it is very likely that a crash will follow sometime later. If you need to use :RAM.- files, then it is vital that they are deleted immediately after use. The features described in the previous section all use `:RAM.-` and if these operations are used, then the files generated should be deleted at the first opportunity.
+
+NOTE: V4 and later ROM version has fixed the `:RAM.-` problem. Some foreign V3.xx versions contains the fix as well. You will probably be aware of this on your own Z88.
+
+## PipeDream format
+
+The PipeDream file format is designed to facilitate manipulation by other programs. No control characters, or characters above ASCII value 127 are used in the file, unless they have been explicitly typed in (ISO characters), apart from Carriage Return (CR) characters which are used as separators. The files are sequential, and can be edited by any text editor.
+
+PipeDream uses a special form of construct to add special information about the structure of the file. All constructs begin and end with an ASCII percent sign '%'. Immediately after the first percent sign come one or more alphabetic characters which identify the construct. Between these characters and the final percent sign, can come any information which is relevant to the construct.
+
+At the start of the file is a group of constructs that identify what the values of Options Page Parameters are for the file. This is followed by the main body of the file.
+
+Each column in the file is preceeded by a column construct which gives details about the column followed by all the slots in the column. Every slot that is defined in that column has an entry.
+
+Each entry is separated from the next one with a CR character. On each line there can be a collection of constructs giving details about the slot.
+
+For each column in the file there is a column construct, followed by all the entries for that column, until the end of file.
+
+**Options Page construct**
+
+%OP%parameter value CR
+
+```text
+parameter   two characters identifying the parameter
+value       the value of the parameter
+CR          Carriage Return ($0D)
+```
+
+The various parameter values are:
+
+```text
+AM          Auto/manual
+BM          Bottom margin
+BO          Borders
+DE          Title
+DP          Decimal places
+FM          Footer margin
+FO          Footer
+HE          Header
+HM          Header margin
+IW          Insert on wrap
+JU          Justify
+LM          Left margin
+LP          Leading characters
+LS          Line spacing
+MB          Minus/Brackets
+PA          Pages
+PL          Page length
+PS          Page start no.
+RC          Rows/Columns
+TM          Top margin
+TN          Text/Numbers
+TP          Trailing characters
+WR          Wrap
+```
+
+**Column construct**
+
+%CO: column, width, wrap-width%
+
+```text
+column      letter identifying the column, eg. A
+width       decimal number giving the column width
+wrap-width  decimal number giving the wrap-width
+```
+
+These constructs can appear anywhere in the entry for each slot:
+
+```text
+%B%         bracket format
+%C%         centre format
+%Dn%        decimal places. n gives the number
+%DF%        floating format
+%F%         free align
+%Hn%        highlight character: n gives the number (1 to 8)
+%JL%        justify left
+%JR%        justify right
+%L%         left align
+%LC%        leading character format
+%LCR%       LCR align
+%Pn%        page break: n gives the argument, 0 for unconditional
+%PC%        per cent character
+%R%         right align
+%TC%        trailing character format
+%V%         slot is a number slot
+```
+
+**General format**
+
+construct text construct text ... CR
+
+```text
+construct   one of the constructs above
+text        ASCII characters being the slot contents
+CR          Carriage Return ($0D)
+```
+
+## Diary format
+
+Each day the diary uses (an active day) is headed by a date. This date is in the form:
+
+`%dd,mm,yyyy`
+
+The % character is represented as %%
+
+The remainder of a diary file is simply straight text.a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"The expanded and non-expanded machine","id":"the-expanded-and-non-expanded-machine","depth":2},{"value":"Extra CLI features","id":"extra-cli-features","depth":2},{"value":"Memory for files and applications","id":"memory-for-files-and-applications","depth":2},{"value":"PipeDream format","id":"pipedream-format","depth":2},{"value":"Diary format","id":"diary-format","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"When a Z88 has 128K or more of RAM in slot 1, it becomes expanded. The latest V4 of the operating system is expanded automatically if internal RAM has been upgraded to 128K or more. For previous...","title":"Miscellaneous useful information","filePath":"content/en/library/cambridge-z88/developers-notes/miscellaneous-useful-information.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/developers-notes/miscellaneous-useful-information","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Miscellaneous useful information - Klive IDE"}],["$","meta","1",{"name":"description","content":"When a Z88 has 128K or more of RAM in slot 1, it becomes expanded. The latest V4 of the operating system is expanded automatically if internal RAM has been upgraded to 128K or more. For previous..."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/developers-notes/miscellaneous-useful-information/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"cyL0EKA0xNKEZcECA3AIS"}
+20:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+21:"ToggleWordWrapButton"
+22:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$21"]
+23:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+4b:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Miscellaneous useful information","$undefined"]}],"\n",["$","hr",null,{"className":"x:my-[2em] nextra-border"}],"\n",["$","h2",null,{"id":"the-expanded-and-non-expanded-machine","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The expanded and non-expanded machine",["$","$L20",null,{"id":"the-expanded-and-non-expanded-machine"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When a Z88 has 128K or more of RAM in slot 1, it becomes expanded. The latest V4 of the operating system is expanded automatically if internal RAM has been upgraded to 128K or more. For previous versions of the Z88 operating system only the first rule is obeyed. The differences between the expanded and non-expanded computers are as follows:"}],"\n",["$","table",null,{"children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"Property"}]}]}]]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"Expanded"}]}]}]]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":["$L24","$L25"]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],"$L26"],"className":"x:block x:overflow-x-auto"}],"\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41","\n","$L42","\n","$L43","\n","$L44","\n","$L45","\n","$L46","\n","$L47","\n","$L48","\n","$L49","\n","$L4a"]]}]
+15:["$","$L4b",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@4c"}]}]
+1f:true
+56:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+9:300
+24:["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}]
+25:["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"Non-expanded"}]}]}]
+26:["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"Size of BBC BASIC"}]}]}]]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"40K"}]}]}]]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"8K"}]}]}]]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined","$L4d"]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],"$L4e","$L4f"],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],"$L50","$L51"]}]
+27:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Some users will want to use extra memory, for filing for example, without the burden of a 40K BASIC. If all your BASIC programs fit comfortably within the ordinary 8K it is unhelpful to have to carry the extra 32K around, thus using slot 2 or slot 3 to expand the memory does not expand the machine (V3 or earlier operating systems), but just increases memory size (note that using slot 3 for RAM causes a very heavy power drain on the Z88, due to the lack of special power saving hardware in this slot). The unexpanded machine can use 64 user characters, but if an 80 pixel map is used, the last 48 of these will be overwritten by map information when PipeDream is used (or another application that write to the high resolution map). Reducing the map width to 64 pixels, or not using the map at all, allows for free use of all 64 user characters. The file attributes for BASIC’s -1 channel ($FFFF) all hold interesting information:"}]
+28:["$","table",null,{"children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"File Handle Function","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Output","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"PTR#-1"}]}]}]]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"high word = no. of free handles in the system. low word = ROM version code:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"$$03 for V2.2 and 3.x versions"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"$$04 for OZ V4.0 (UK)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"$$42 for OZ V4.2 release"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"$$43 for OZ V4.3 release."}]}]]}]]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":["$L52","$L53"]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],"$L54"],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],"$L55"]}]],"className":"x:block x:overflow-x-auto"}]
+29:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["This information can be accessed by applications by using the ",["$","strong",null,{"children":["$","$L56",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-frm","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OS_Frm"}]}]," system call, to read file attributes, and specifying a handle of $FFFF in the ",["$","strong",null,{"children":"IX"}]," register pair. Note that although the sequential pointer (PTR) and extent (EXT) are returned as 4 byte values in DE and BC registers, the end of file (EOF) result is returned in Fz, with Fz = 1 indicating the end of file (ie. TRUE or 1) and Fz = 0 otherwise (ie. FALSE or 0)."]}]
+2a:["$","h2",null,{"id":"extra-cli-features","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Extra CLI features",["$","$L20",null,{"id":"extra-cli-features"}]]}]
+2b:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"<SQUARE> + S            T-direct output to \":RAM.-/s.sgn\"."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"<SQUARE> + K            T-direct input to \":RAM.-/k.sgn\"."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"<SQUARE> + P            T-direct output to :PRT.0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"<DIAMOND><LEFT-SHIFT>   Freeze screen output"}]}]]}]]}]]}]
+2c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If there is an EPROM, which contains a file called “boot.cli”, present in slot 3 at the time of a reset (soft or hard) then it will be loaded into :RAM.- and executed as a CLI file."}]
+2d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Note: ",["$","strong",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":":RAM.-"}]}]," files are dangerous under the version 2.2 or 3.0 of the operating system - see below for details."]}]
+2e:["$","h2",null,{"id":"memory-for-files-and-applications","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Memory for files and applications",["$","$L20",null,{"id":"memory-for-files-and-applications"}]]}]
+2f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Each RAM card is given an allocation of space by the system which is useable by the RAM filing device associated with that slot. This allocation is always less than total RAM available in that card. Applications (and the special device :RAM.-) can use the remaining memory as well as the memory allocated to files. Because of this approach, the values given for free memory are sometimes confusing. The free memory indicators return space available to applications, which will generally be rather less than that available to files."}]
+30:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The device ",["$","strong",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":":RAM.-"}]}]," can use memory from anywhere in the system, and as such is it very useful for large files. Due to a bug in versions 2.2 (3.0) in the operating system, if any files are stored in the device when a soft reset occurs, the system becomes badly confused, and it is very likely that a crash will follow sometime later. If you need to use :RAM.- files, then it is vital that they are deleted immediately after use. The features described in the previous section all use ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":":RAM.-"}]," and if these operations are used, then the files generated should be deleted at the first opportunity."]}]
+31:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["NOTE: V4 and later ROM version has fixed the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":":RAM.-"}]," problem. Some foreign V3.xx versions contains the fix as well. You will probably be aware of this on your own Z88."]}]
+32:["$","h2",null,{"id":"pipedream-format","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["PipeDream format",["$","$L20",null,{"id":"pipedream-format"}]]}]
+33:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The PipeDream file format is designed to facilitate manipulation by other programs. No control characters, or characters above ASCII value 127 are used in the file, unless they have been explicitly typed in (ISO characters), apart from Carriage Return (CR) characters which are used as separators. The files are sequential, and can be edited by any text editor."}]
+34:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"PipeDream uses a special form of construct to add special information about the structure of the file. All constructs begin and end with an ASCII percent sign ’%’. Immediately after the first percent sign come one or more alphabetic characters which identify the construct. Between these characters and the final percent sign, can come any information which is relevant to the construct."}]
+35:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"At the start of the file is a group of constructs that identify what the values of Options Page Parameters are for the file. This is followed by the main body of the file."}]
+36:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Each column in the file is preceeded by a column construct which gives details about the column followed by all the slots in the column. Every slot that is defined in that column has an entry."}]
+37:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Each entry is separated from the next one with a CR character. On each line there can be a collection of constructs giving details about the slot."}]
+38:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"For each column in the file there is a column construct, followed by all the entries for that column, until the end of file."}]
+39:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Options Page construct"}]}]
+3a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"%OP%parameter value CR"}]
+3b:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"parameter   two characters identifying the parameter"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"value       the value of the parameter"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"CR          Carriage Return ($0D)"}]}]]}]]}]]}]
+3c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The various parameter values are:"}]
+3d:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"AM          Auto/manual"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"BM          Bottom margin"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"BO          Borders"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"DE          Title"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"DP          Decimal places"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"FM          Footer margin"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"FO          Footer"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"HE          Header"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"HM          Header margin"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"IW          Insert on wrap"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"JU          Justify"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"LM          Left margin"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"LP          Leading characters"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"LS          Line spacing"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"MB          Minus/Brackets"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"PA          Pages"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"PL          Page length"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"PS          Page start no."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"RC          Rows/Columns"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"TM          Top margin"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"TN          Text/Numbers"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"TP          Trailing characters"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"WR          Wrap"}]}]]}]]}]]}]
+3e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Column construct"}]}]
+3f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"%CO: column, width, wrap-width%"}]
+40:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"column      letter identifying the column, eg. A"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"width       decimal number giving the column width"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"wrap-width  decimal number giving the wrap-width"}]}]]}]]}]]}]
+41:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"These constructs can appear anywhere in the entry for each slot:"}]
+42:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"%B%         bracket format"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"%C%         centre format"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"%Dn%        decimal places. n gives the number"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"%DF%        floating format"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"%F%         free align"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"%Hn%        highlight character: n gives the number (1 to 8)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"%JL%        justify left"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"%JR%        justify right"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"%L%         left align"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"%LC%        leading character format"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"%LCR%       LCR align"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"%Pn%        page break: n gives the argument, 0 for unconditional"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"%PC%        per cent character"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"%R%         right align"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"%TC%        trailing character format"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"%V%         slot is a number slot"}]}]]}]]}]]}]
+43:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"General format"}]}]
+44:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"construct text construct text … CR"}]
+45:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"construct   one of the constructs above"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"text        ASCII characters being the slot contents"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"CR          Carriage Return ($0D)"}]}]]}]]}]]}]
+46:["$","h2",null,{"id":"diary-format","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Diary format",["$","$L20",null,{"id":"diary-format"}]]}]
+47:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Each day the diary uses (an active day) is headed by a date. This date is in the form:"}]
+48:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"%dd,mm,yyyy"}]}]
+49:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The % character is represented as %%"}]
+4a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The remainder of a diary file is simply straight text."}]
+4c:null
+9:C
+4d:["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"Maximum map width"}]}]}]]}]
+4e:["$","td",null,{"children":["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"256 pixels"}]}]}]]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
+4f:["$","td",null,{"children":["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"96 pixels"}]}]}]]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
+50:["$","tr",null,{"children":[["$","td",null,{"children":["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"User characters"}]}]}]]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"64"}]}]}]]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"16 (but see below)"}]}]}]]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+51:["$","tr",null,{"children":[["$","td",null,{"children":["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"Value of EOF#-1"}]}]}]]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"-1"}]}]}]]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"0"}]}]}]]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+52:["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}]
+53:["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"EXT#-1"}]}]}]
+54:["$","td",null,{"children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Free memory."}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This is an approximation and should be interpreted with care. It is similar to the memory free indicators given by PipeDream and the Diary."}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
+55:["$","tr",null,{"children":[["$","td",null,{"children":["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"EOF#-1"}]}]}]]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"-1 = machine is expanded. 0 = standard 32K machine.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

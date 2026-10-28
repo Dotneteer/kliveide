@@ -1,0 +1,220 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T21cd,---
+description: "The Z88 operating system has, at any one time, a standard input source and a standard output destination. A number of calls use these standard I/O streams:"
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/2752562 (version 6) by scripts/import-z88-wiki.cjs */}
+
+# Standard Input - Output and the CLI
+
+The Z88 operating system has, at any one time, a standard input source and a standard output destination. A number of calls use these standard I/O streams:
+
+`OS_In` read a character from standard input<br />`OS_Tin` timed read a character from standard output<br />`OS_Out` write a character to standard output<br />`OS_Sout` write a string to standard output<br />`OS_Bout` write a string at extended address to standard output<br />`GN_Sip` fetch an input line using standard I/O<br />`GN_Sdo` write date to standard output
+
+Initially standard input and output are bound to the keyboard and screen respectively, but may be redefined to any file or device. The user may do this via the Command Line Interpreter (CLI). CLI commands are prefixed by a full stop and must be the first thing on the line.
+
+```text
+.< INFILE               take input from file/device "INFILE"
+.> OUTFILE              send output to file/device "OUTFILE"
+```
+
+which binds the standard input to "infile" and the standard output to "outfile". Redirection can also be done as T-fashion, where the ordinary streams remain in place, but copies of their contents are sent to a file or a device.
+
+```text
+.T< INFILE              send copy of input to file/device "INFILE"
+.T> INFILE              send copy of output to file/device "OUTFILE"
+```
+
+The printer output can be redirected in both ways:
+
+```text
+.= PRTFILE              redirect pre-filter printer output to file/device
+.T= PRTFILE             as .=, but also send the output to the printer filter.
+```
+
+Certain keystroke operations (such as \<SQUARE\> and \<DIAMOND\> sequences) have a special representation which is used when input is redirected. These sequences are generated when input is T-redirected and can be used in ordinary redirection to simulate the effect of the keyboard. Note that there are some keyboard features which have no representation, such as: the CAPS LOCK key, \<SHIFT\> or \<DIAMOND\> with \<ESC\>, the effect of holding down \<SHIFT\> and \<DIAMOND\> to stop output scrolling.
+
+```text
+Sequence    Significance
+
+#           holding down <SQUARE> and pressing another key
+|           holding down <DIAMOND> and pressing another key
+~A          pressing <SQUARE> and releasing it before another keypress
+~C          pressing <DIAMOND> and releasing it before another keypress
+|[          <ESC> key
+~E          <ENTER> key
+~S          <SHIFT> key (only generated if <SHIFT> had an effect)
+~I          <INDEX> key
+~M          <MENU> key
+~H          <HELP> key
+~X          <DEL> key
+~U          <UP> arrow key
+~D          <DOWN> arrow key
+~L          <LEFT> arrow key
+~R          <RIGHT> arrow key
+##          a single # (hash) character
+||          a single | character
+~~          a single ~ tilde (pronounced 'tilda' or 'twiddle')
+```
+
+The CLI also has the following commands:
+
+```text
+.S          suspend the current CLI but maintain all rebindings
+.D n        delay for n centiseconds (if <ESC> is pressed during a delay then
+            subsequent delays will fail for the rest of the current CLI)
+.J          Jammer. Ignore all special sequences for the rest of the CLI (eg.
+            after this command #B will generate '#B' and try and enter a BBC
+            BASIC application)
+.* file     Invoke a new CLI file
+.;          CLI comment (rest of line until CR is ignore by CLI)
+```
+
+NOTE: All CLI commands prefixed by a single dot must be at the start of a line. Any number of dots at the start of the line will be ignored. One way to produce a single dot is to use '\~.' at the start of a line to generate a full stop. Subsequent dots (ie. ones which do not appear as the first character of the line) are treated like ordinary alpha characters.
+
+CLI files can invoke other CLI files. A CLI file is terminated when the end of a file is reached or a suspension command is issued. CLI's can be forcibly removed one at a time by pressing \<SHIFT\> and \<ESC\>, or all current CLI's can be removed by using \<DIAMOND\> and \<ESC\>. Note that \<DIAMOND\> must be actually held down while \<ESC\> is pressed, ie. the usual latching operation does not apply. The CLI can be accessed by BBC BASIC by using the \*CLI command or the OSCLI command. For example, to create a 10 second delay:
+
+\*CLI .D 100 <br />OSCLI ("\*CLI .D 100"): REM these two lines are equivalent
+
+Most CLI use will be in the form of executable files, consisting of lines of CLI commands and text. These can be generated in PipeDream and saved as text files. Or generated by hand and then executed. CLI files can be executed from the FILER (using \<\>EX command) or from BBC BASIC using:
+
+OSCLI ("\*CLI .\*"+fname$)
+
+where *fname$* contains the filename. Typical CLI files consist of short sequences like:
+
+.T\> copyout .S
+
+The first line sends a copy of all output to the file 'copyout', and the second line maintains this new binding on exit from the CLI file. The binding (T-output to 'copyout') will now stay in place until the CLI is terminated by \<SHIFT\>\<ESC\> to remove the current CLI (or \<\>\<ESC\>, which removes all CLI's running). This situation will generally be undesirable, because it requires user intervention, since the program cannot simulate the effect of \<SHIFT\> \<ESC\>. Ideally the CLI should be avoided. Redirection can be easily achieved in applications by using file I/O, however, if necessary the CLI can be accessed fairly directly from an application. The operating system call **[DC\_Icl](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-icl)** invokes a new CLI, and is effectively the equivalent of BASIC's \*CLI. The call **[DC\_Rbd](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-rbd)** is used to directly rebind streams in the current CLI layer and can also terminate the CLI.
+
+## Example
+
+The program below starts a CLI, using **[DC\_Rbd](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-rbd)**, rebinds the T-output stream, and finally closes the stream and terminates the CLI. Refer to "System Calls Reference" for details of the calls used:
+
+```text
+
+```
+
+```text
+include "director.def"              ; director and CLI call definitions
+include "stdio.def"                 ; standard I/O call defs. & parameters
+include "fileio.def"                ; standard file I/O call defs. & parameters
+include "errors.def"                ; error code calls and definitions
+
+ ; entry point is .main 
+; on entry, (name) contains the address of a buffer which hold a filename 
+; to be used with the CLI, and (scratch) holds the address of a scratch 
+; buffer which need be no more than a few bytes in length 
+
+.main       ld   hl, cli_string     ; string to pass the CLI
+            ld   c, 2               ; length
+            ld   b, 0               ; must be zero
+            oz   DC_Icl             ; invoke a new CLI
+            ld   bc, 0              ; key read to allow CLI to be processed
+            oz   OS_Tin
+
+            ld   b, 0               ; HL is a local address
+            ld   hl, (name)         ; filename
+            ld   de, (scratch)      ; address of scratch buffer
+            ld   c, 1               ; explicit filename length
+            ld   a, OP_OUT          ; open a file for output
+            oz   GN_Opf             ; open...
+            jr   nc, rebind
+            oz   GN_Err             ; display error in box
+            ret                     ; note that on exit the CLI will
+                                    ; still be active
+; code to rebind standard output 
+
+.rebind     ld   a, 4               ; T-output code
+            oz   DC_Rbd             ; rebind to stream IX
+            jr   nc, continue
+            oz   GN_Cl              ; something has gone badly wrong
+            ret                     ; attempt to close the file and exit
+; write to standard output, and hence also to the file 
+
+.continue   ld   hl, message
+            oz   GN_Sop             ; output message to std. output and file
+            ld   ix, 0              ; close off CLI and file
+            ld   a, 4               ; T-output code
+            oz   DC_Rbd             ; close file and quit CLI
+            ret                     ; return (ignore all errors)
+
+.message    defm "This should go to the file and the screen.", 0
+.cli_string defm ".S", 0
+```a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Example","id":"example","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"The Z88 operating system has, at any one time, a standard input source and a standard output destination. A number of calls use these standard I/O streams:","title":"Standard Input - Output and the CLI","filePath":"content/en/library/cambridge-z88/developers-notes/standard-input-output-and-the-cli.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/developers-notes/standard-input-output-and-the-cli","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Standard Input - Output and the CLI - Klive IDE"}],["$","meta","1",{"name":"description","content":"The Z88 operating system has, at any one time, a standard input source and a standard output destination. A number of calls use these standard I/O streams:"}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/developers-notes/standard-input-output-and-the-cli/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"cyL0EKA0xNKEZcECA3AIS"}
+20:"ToggleWordWrapButton"
+21:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$20"]
+22:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+37:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Standard Input - Output and the CLI","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The Z88 operating system has, at any one time, a standard input source and a standard output destination. A number of calls use these standard I/O streams:"}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"OS_In"}]," read a character from standard input",["$","br",null,{}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"OS_Tin"}]," timed read a character from standard output",["$","br",null,{}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"OS_Out"}]," write a character to standard output",["$","br",null,{}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"OS_Sout"}]," write a string to standard output",["$","br",null,{}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"OS_Bout"}]," write a string at extended address to standard output",["$","br",null,{}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"GN_Sip"}]," fetch an input line using standard I/O",["$","br",null,{}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"GN_Sdo"}]," write date to standard output"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Initially standard input and output are bound to the keyboard and screen respectively, but may be redefined to any file or device. The user may do this via the Command Line Interpreter (CLI). CLI commands are prefixed by a full stop and must be the first thing on the line."}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L21",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L22",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":".< INFILE               take input from file/device \"INFILE\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":".> OUTFILE              send output to file/device \"OUTFILE\""}]}]]}]]}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"which binds the standard input to “infile” and the standard output to “outfile”. Redirection can also be done as T-fashion, where the ordinary streams remain in place, but copies of their contents are sent to a file or a device."}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":["$L23","$L24"]}]]}],"\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36"]]}]
+15:["$","$L37",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@38"}]}]
+1f:true
+39:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+3a:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+9:300
+23:["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L21",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L22",null,{"className":""}]]}]
+24:["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":".T< INFILE              send copy of input to file/device \"INFILE\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":".T> INFILE              send copy of output to file/device \"OUTFILE\""}]}]]}]
+25:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The printer output can be redirected in both ways:"}]
+26:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L21",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L22",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":".= PRTFILE              redirect pre-filter printer output to file/device"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":".T= PRTFILE             as .=, but also send the output to the printer filter."}]}]]}]]}]]}]
+27:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Certain keystroke operations (such as <SQUARE> and <DIAMOND> sequences) have a special representation which is used when input is redirected. These sequences are generated when input is T-redirected and can be used in ordinary redirection to simulate the effect of the keyboard. Note that there are some keyboard features which have no representation, such as: the CAPS LOCK key, <SHIFT> or <DIAMOND> with <ESC>, the effect of holding down <SHIFT> and <DIAMOND> to stop output scrolling."}]
+28:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L21",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L22",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"Sequence    Significance"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"#           holding down <SQUARE> and pressing another key"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"|           holding down <DIAMOND> and pressing another key"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"~A          pressing <SQUARE> and releasing it before another keypress"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"~C          pressing <DIAMOND> and releasing it before another keypress"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"|[          <ESC> key"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"~E          <ENTER> key"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"~S          <SHIFT> key (only generated if <SHIFT> had an effect)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"~I          <INDEX> key"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"~M          <MENU> key"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"~H          <HELP> key"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"~X          <DEL> key"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"~U          <UP> arrow key"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"~D          <DOWN> arrow key"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"~L          <LEFT> arrow key"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"~R          <RIGHT> arrow key"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"##          a single # (hash) character"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"||          a single | character"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"~~          a single ~ tilde (pronounced 'tilda' or 'twiddle')"}]}]]}]]}]]}]
+29:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The CLI also has the following commands:"}]
+2a:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L21",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L22",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":".S          suspend the current CLI but maintain all rebindings"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":".D n        delay for n centiseconds (if <ESC> is pressed during a delay then"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            subsequent delays will fail for the rest of the current CLI)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":".J          Jammer. Ignore all special sequences for the rest of the CLI (eg."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            after this command #B will generate '#B' and try and enter a BBC"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            BASIC application)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":".* file     Invoke a new CLI file"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":".;          CLI comment (rest of line until CR is ignore by CLI)"}]}]]}]]}]]}]
+2b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"NOTE: All CLI commands prefixed by a single dot must be at the start of a line. Any number of dots at the start of the line will be ignored. One way to produce a single dot is to use ’~.’ at the start of a line to generate a full stop. Subsequent dots (ie. ones which do not appear as the first character of the line) are treated like ordinary alpha characters."}]
+2c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"CLI files can invoke other CLI files. A CLI file is terminated when the end of a file is reached or a suspension command is issued. CLI’s can be forcibly removed one at a time by pressing <SHIFT> and <ESC>, or all current CLI’s can be removed by using <DIAMOND> and <ESC>. Note that <DIAMOND> must be actually held down while <ESC> is pressed, ie. the usual latching operation does not apply. The CLI can be accessed by BBC BASIC by using the *CLI command or the OSCLI command. For example, to create a 10 second delay:"}]
+2d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["*CLI .D 100 ",["$","br",null,{}],"OSCLI (“*CLI .D 100”): REM these two lines are equivalent"]}]
+2e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Most CLI use will be in the form of executable files, consisting of lines of CLI commands and text. These can be generated in PipeDream and saved as text files. Or generated by hand and then executed. CLI files can be executed from the FILER (using <>EX command) or from BBC BASIC using:"}]
+2f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"OSCLI (“*CLI .*“+fname$)"}]
+30:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["where ",["$","em",null,{"children":"fname$"}]," contains the filename. Typical CLI files consist of short sequences like:"]}]
+31:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":".T> copyout .S"}]
+32:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The first line sends a copy of all output to the file ‘copyout’, and the second line maintains this new binding on exit from the CLI file. The binding (T-output to ‘copyout’) will now stay in place until the CLI is terminated by <SHIFT><ESC> to remove the current CLI (or <><ESC>, which removes all CLI’s running). This situation will generally be undesirable, because it requires user intervention, since the program cannot simulate the effect of <SHIFT> <ESC>. Ideally the CLI should be avoided. Redirection can be easily achieved in applications by using file I/O, however, if necessary the CLI can be accessed fairly directly from an application. The operating system call ",["$","strong",null,{"children":["$","$L39",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-icl","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"DC_Icl"}]}]," invokes a new CLI, and is effectively the equivalent of BASIC’s *CLI. The call ",["$","strong",null,{"children":["$","$L39",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-rbd","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"DC_Rbd"}]}]," is used to directly rebind streams in the current CLI layer and can also terminate the CLI."]}]
+33:["$","h2",null,{"id":"example","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Example",["$","$L3a",null,{"id":"example"}]]}]
+34:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The program below starts a CLI, using ",["$","strong",null,{"children":["$","$L39",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-rbd","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"DC_Rbd"}]}],", rebinds the T-output stream, and finally closes the stream and terminates the CLI. Refer to “System Calls Reference” for details of the calls used:"]}]
+35:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L21",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L22",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{}]}]}]]}]]}]
+36:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L21",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L22",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"include \"director.def\"              ; director and CLI call definitions"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"include \"stdio.def\"                 ; standard I/O call defs. & parameters"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"include \"fileio.def\"                ; standard file I/O call defs. & parameters"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"include \"errors.def\"                ; error code calls and definitions"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" ; entry point is .main "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; on entry, (name) contains the address of a buffer which hold a filename "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; to be used with the CLI, and (scratch) holds the address of a scratch "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; buffer which need be no more than a few bytes in length "}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":".main       ld   hl, cli_string     ; string to pass the CLI"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ld   c, 2               ; length"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ld   b, 0               ; must be zero"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            oz   DC_Icl             ; invoke a new CLI"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ld   bc, 0              ; key read to allow CLI to be processed"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            oz   OS_Tin"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ld   b, 0               ; HL is a local address"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ld   hl, (name)         ; filename"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ld   de, (scratch)      ; address of scratch buffer"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ld   c, 1               ; explicit filename length"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ld   a, OP_OUT          ; open a file for output"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            oz   GN_Opf             ; open..."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            jr   nc, rebind"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            oz   GN_Err             ; display error in box"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ret                     ; note that on exit the CLI will"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                                    ; still be active"}]}],"\n",["$","span",null,{"children":"$L3b"}],"\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41","\n","$L42","\n","$L43","\n","$L44","\n","$L45","\n","$L46","\n","$L47","\n","$L48","\n","$L49","\n","$L4a","\n","$L4b","\n","$L4c"]}]]}]]}]
+38:null
+9:C
+3b:["$","span",null,{"children":"; code to rebind standard output "}]
+3c:["$","span",null,{"children":["$","span",null,{}]}]
+3d:["$","span",null,{"children":["$","span",null,{"children":".rebind     ld   a, 4               ; T-output code"}]}]
+3e:["$","span",null,{"children":["$","span",null,{"children":"            oz   DC_Rbd             ; rebind to stream IX"}]}]
+3f:["$","span",null,{"children":["$","span",null,{"children":"            jr   nc, continue"}]}]
+40:["$","span",null,{"children":["$","span",null,{"children":"            oz   GN_Cl              ; something has gone badly wrong"}]}]
+41:["$","span",null,{"children":["$","span",null,{"children":"            ret                     ; attempt to close the file and exit"}]}]
+42:["$","span",null,{"children":["$","span",null,{"children":"; write to standard output, and hence also to the file "}]}]
+43:["$","span",null,{"children":["$","span",null,{}]}]
+44:["$","span",null,{"children":["$","span",null,{"children":".continue   ld   hl, message"}]}]
+45:["$","span",null,{"children":["$","span",null,{"children":"            oz   GN_Sop             ; output message to std. output and file"}]}]
+46:["$","span",null,{"children":["$","span",null,{"children":"            ld   ix, 0              ; close off CLI and file"}]}]
+47:["$","span",null,{"children":["$","span",null,{"children":"            ld   a, 4               ; T-output code"}]}]
+48:["$","span",null,{"children":["$","span",null,{"children":"            oz   DC_Rbd             ; close file and quit CLI"}]}]
+49:["$","span",null,{"children":["$","span",null,{"children":"            ret                     ; return (ignore all errors)"}]}]
+4a:["$","span",null,{"children":["$","span",null,{}]}]
+4b:["$","span",null,{"children":["$","span",null,{"children":".message    defm \"This should go to the file and the screen.\", 0"}]}]
+4c:["$","span",null,{"children":["$","span",null,{"children":".cli_string defm \".S\", 0"}]}]
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

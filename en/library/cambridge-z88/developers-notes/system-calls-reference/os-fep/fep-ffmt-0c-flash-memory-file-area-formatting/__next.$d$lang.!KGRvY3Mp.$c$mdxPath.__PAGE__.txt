@@ -1,0 +1,96 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T1166,---
+description: "Create/reformat an \"oz\" File Area below application Rom Area, or on empty Flash Cards to create a normal \"oz\" File Eprom that is also recognized by Filer popdown in slot 3. Also reformat file..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7962646 (version 5) by scripts/import-z88-wiki.cjs */}
+
+# FEP_FFMT ($0C), Flash Memory File Area Formatting
+
+## Register Parameters
+
+```text
+IN:
+   A = FEP_FFMT
+   C = slot number (0, 1, 2 or 3) of Flash Memory Card
+
+OUT:
+   Success:
+        Fc = 0,
+             BHL = pointer to File Header for slot C (B = absolute bank of slot).
+                   (or pointer to free space in potential new File Area).
+               C = size of File Eprom Area in 16K banks
+             Fz = 1, File Header available
+                  A = "oz" File Eprom sub type
+                  D = size of card in 16K banks (0 - 64)
+
+        All sectors erased and a new header blown.
+
+   Failure:
+        Fc = 1
+            A = RC_ONF (File Eprom Card / Area not available; possibly no card in slot)
+            A = RC_ROOM (No room for File Area; all banks used for applications)
+            A = RC_NFE (not a recognized Flash Memory Chip)
+            A = RC_BER (error occurred when erasing block/sector)
+            A = RC_BWR (couldn't write header to Flash Memory)
+            A = RC_VPL (Vpp Low Error)
+
+Registers changed after return:
+   ......../IXIY same
+   AFBCDEHL/.... different
+```
+
+## Notes
+
+Create/reformat an "oz" File Area below application Rom Area, or on empty Flash Cards to create a normal "oz" File Eprom that is also recognized by Filer popdown in slot 3. Also reformat file areas that are embedded as part of application cards, located at top of card above the application area (automatically preserving 'OZ' header during reformat of file area).<br /><br />An 'oz' file card header or 'OZ' application card header with embedded 'oz' file area watermark is 64 bytes large, and is located at the top (last bank) of the file area at offset $3FC0.<br /><br />Defining 8 banks in the ROM Front DOR for applications will leave 58 banks for file storage in a 1Mb Flash Card. This scheme is however always performed with only formatting the Flash Eprom in free modulus 64K blocks, ie. having defined 5 banks for ROM would "waste" three banks for applications. Hence, ROM Front DOR definitions should always define bank reserved for applications in modulus 64K, eg. 4 banks, 8, 12, etc...<br /><br />The screen is turned off while the file area is being formatted (managed by this system call), if it is in the same slot as the OZ ROM. During formatting, no interference should happen from Blink, because the Blink reads the font bitmaps each 1/100 second:
+
+If the screen were enabled while formatting a 64K sector that is part of the OZ ROM address space, the font bitmaps would suddenly be unavailable which would create violent screen flickering during chip command mode. Further, and most importantly, to avoid the Blink doing read-cycles while chip is in command mode.
+
+By switching off the screen, the Blink doesn't read the font bit maps in OZ ROM, and the Flash chip can be in command mode without being disturbed by the Blink.<br /><br />Important:<br />Third generation AMD Flash Memory chips may be erased/programmed in all available slots (0-3). Only INTEL I28Fxxxx series Flash chips require the 12V VPP pin in slot 3 to successfully erase or blow data on the memory chip. If the Intel Flash Eprom card is inserted in slot 1 or 2, this routine will report a programming failure.<br /><br />It is the responsibility of the application (before using this call) to evaluate the Flash Memory (using the [**OS\_Fep**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fep), FEP\_CDID routine) and warn the user that an INTEL Flash Memory Card requires the Z88 slot 3 hardware, so this type of unnecessary error can be avoided.<br /><br />Due to a strange side effect with Intel Flash Chips, a special "NULL" file is saved as the first file to the Card. These bytes occupies the first bytes that otherwise could be interpreted as a random boot command for the Intel chip - the behaviour is an Intel chip suddenly gone into command mode for no particular reason.
+
+The NULL file prevents this behaviour by saving a file that avoids any kind of boot commands which sends the chip into command mode when the card has been inserted into a Z88 slot.a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Register Parameters","id":"register-parameters","depth":2},{"value":"Notes","id":"notes","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"Create/reformat an \"oz\" File Area below application Rom Area, or on empty Flash Cards to create a normal \"oz\" File Eprom that is also recognized by Filer popdown in slot 3. Also reformat file...","title":"FEP_FFMT ($0C), Flash Memory File Area Formatting","filePath":"content/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fep/fep-ffmt-0c-flash-memory-file-area-formatting.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/developers-notes/system-calls-reference/os-fep/fep-ffmt-0c-flash-memory-file-area-formatting","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"FEP_FFMT ($0C), Flash Memory File Area Formatting - Klive IDE"}],["$","meta","1",{"name":"description","content":"Create/reformat an \"oz\" File Area below application Rom Area, or on empty Flash Cards to create a normal \"oz\" File Eprom that is also recognized by Filer popdown in slot 3. Also reformat file..."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fep/fep-ffmt-0c-flash-memory-file-area-formatting/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"cyL0EKA0xNKEZcECA3AIS"}
+20:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+21:"ToggleWordWrapButton"
+22:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$21"]
+23:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+2a:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["FEP_FFMT ($0C), Flash Memory File Area Formatting","$undefined"]}],"\n",["$","h2",null,{"id":"register-parameters","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Register Parameters",["$","$L20",null,{"id":"register-parameters"}]]}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"IN:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"   A = FEP_FFMT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"   C = slot number (0, 1, 2 or 3) of Flash Memory Card"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OUT:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"   Success:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        Fc = 0,"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"             BHL = pointer to File Header for slot C (B = absolute bank of slot)."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                   (or pointer to free space in potential new File Area)."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"               C = size of File Eprom Area in 16K banks"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"             Fz = 1, File Header available"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                  A = \"oz\" File Eprom sub type"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                  D = size of card in 16K banks (0 - 64)"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        All sectors erased and a new header blown."}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"   Failure:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        Fc = 1"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            A = RC_ONF (File Eprom Card / Area not available; possibly no card in slot)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            A = RC_ROOM (No room for File Area; all banks used for applications)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            A = RC_NFE (not a recognized Flash Memory Chip)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            A = RC_BER (error occurred when erasing block/sector)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            A = RC_BWR (couldn't write header to Flash Memory)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            A = RC_VPL (Vpp Low Error)"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Registers changed after return:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"   ......../IXIY same"}]}],"\n","$L24"]}]]}]]}],"\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29"]]}]
+15:["$","$L2a",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@2b"}]}]
+1f:true
+2c:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+9:300
+24:["$","span",null,{"children":["$","span",null,{"children":"   AFBCDEHL/.... different"}]}]
+25:["$","h2",null,{"id":"notes","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Notes",["$","$L20",null,{"id":"notes"}]]}]
+26:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Create/reformat an “oz” File Area below application Rom Area, or on empty Flash Cards to create a normal “oz” File Eprom that is also recognized by Filer popdown in slot 3. Also reformat file areas that are embedded as part of application cards, located at top of card above the application area (automatically preserving ‘OZ’ header during reformat of file area).",["$","br",null,{}],["$","br",null,{}],"An ‘oz’ file card header or ‘OZ’ application card header with embedded ‘oz’ file area watermark is 64 bytes large, and is located at the top (last bank) of the file area at offset $3FC0.",["$","br",null,{}],["$","br",null,{}],"Defining 8 banks in the ROM Front DOR for applications will leave 58 banks for file storage in a 1Mb Flash Card. This scheme is however always performed with only formatting the Flash Eprom in free modulus 64K blocks, ie. having defined 5 banks for ROM would “waste” three banks for applications. Hence, ROM Front DOR definitions should always define bank reserved for applications in modulus 64K, eg. 4 banks, 8, 12, etc…",["$","br",null,{}],["$","br",null,{}],"The screen is turned off while the file area is being formatted (managed by this system call), if it is in the same slot as the OZ ROM. During formatting, no interference should happen from Blink, because the Blink reads the font bitmaps each 1/100 second:"]}]
+27:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If the screen were enabled while formatting a 64K sector that is part of the OZ ROM address space, the font bitmaps would suddenly be unavailable which would create violent screen flickering during chip command mode. Further, and most importantly, to avoid the Blink doing read-cycles while chip is in command mode."}]
+28:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["By switching off the screen, the Blink doesn’t read the font bit maps in OZ ROM, and the Flash chip can be in command mode without being disturbed by the Blink.",["$","br",null,{}],["$","br",null,{}],"Important:",["$","br",null,{}],"Third generation AMD Flash Memory chips may be erased/programmed in all available slots (0-3). Only INTEL I28Fxxxx series Flash chips require the 12V VPP pin in slot 3 to successfully erase or blow data on the memory chip. If the Intel Flash Eprom card is inserted in slot 1 or 2, this routine will report a programming failure.",["$","br",null,{}],["$","br",null,{}],"It is the responsibility of the application (before using this call) to evaluate the Flash Memory (using the ",["$","$L2c",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fep","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["$","strong",null,{"children":"OS_Fep"}]}],", FEP_CDID routine) and warn the user that an INTEL Flash Memory Card requires the Z88 slot 3 hardware, so this type of unnecessary error can be avoided.",["$","br",null,{}],["$","br",null,{}],"Due to a strange side effect with Intel Flash Chips, a special “NULL” file is saved as the first file to the Card. These bytes occupies the first bytes that otherwise could be interpreted as a random boot command for the Intel chip - the behaviour is an Intel chip suddenly gone into command mode for no particular reason."]}]
+29:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The NULL file prevents this behaviour by saving a file that avoids any kind of boot commands which sends the chip into command mode when the card has been inserted into a Z88 slot."}]
+2b:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

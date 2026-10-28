@@ -1,0 +1,543 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T3f9a,---
+description: "The EazyLink popdown is run on the Z88, and is the Server part which listens to commands sent to it from the serial port. The Client part is run on a desktop operating system like Windows, Mac or..."
+---
+
+import { Callout, Table } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/63701088 (version 6) by scripts/import-z88-user-guide.cjs */}
+
+# The Eazylink popdown
+
+The EazyLink popdown is run on the Z88, and is the **Server** part which listens to commands sent to it from the serial port. The **Client** part is run on a desktop operating system like Windows, Mac or Unix and functions as the window to the filing systems of both computers.
+
+### About EazyLink
+
+<Shot src="z88-user-guide/external/zep-the-eazylink-command-menu/eazylink-popdown.webp" alt="eazylink popdown" width={640} />
+
+### Introduction and History
+
+When the Z88 came out, there were loads of different desktop computers that were being used. This meant that to transfer with the Z88 and any other computer would have to be simple and reliable. Cambridge Computers initially came out with PC Link.
+
+<Shot src="z88-user-guide/external/zep-easy-file-transfer-between-z88-and-other-computers/pc-link-screen.webp" alt="Original PC Link II DOS Program" width={640} />
+
+This was a DOS based file request program which used the Imp/Export popdown on the Z88 and required the user to type commands on both the Z88 and the desktop computer. This was not very popular as it meant the user needed two pairs of hands. Around the same time Colton Software were working on a PC version of PipeDream. they wanted additional commands sent from the desktop computer to communicate with the Z88, like selecting directories, and so the protocol of PC-LINK II was born. <br /><br />EazyLink is based on PC-LINK II, using a "file server" (Z88) and a "client" (desktop computer) that requests file handling. It supports the existing file transfer protocol of PC-LINK II for compatibility. This enables you (if required) to use the original PC-LINK DOS application for transferring of files between DOS and the Z88.
+
+EazyLink's additional communication protocol offer
+
+- faster transfer rates using 38400 BPS (16K in approx 13s)
+- remote date stamp
+- file size requests
+- CRC-32 checksum validation after binary file upload
+- backup only updated files<sup>\*</sup>
+- read/write Z88 clock (to allow Z88's time and date to be set by file client seamlessly)
+
+It automatically
+
+- creates the Z88 path, including directories when receiving a file
+- creates MSDOS/Z88 line feed and ASCII character conversions during transfer
+
+Everything this popdown can do is requested and displayed from the Client application, as the "server" just sits at the other end and handles the various requests.
+
+<Callout type="info">
+
+**Backup only updated files\***
+
+This was implemented in Eazylink desktop client v1.6.2 (for Windows 95). This is planned to be implemented in Eazylink2 desktop client at a later date.
+
+</Callout>
+
+## Text and Binary Files
+
+PC Link II came with several file conversion programs. Two of these programs, ISO to IBM and IBM to ISO were needed for text files on the foreign Z88s. These users became very irritable having to run a separate program before being able to use them on their Desktop computers. The result is that in EazyLink, the character conversion is performed during the transfer of the file, making this process transparent to the user. Other variables that need to be changed, have been included using this method.
+
+<Callout type="error">
+
+**Binary Files**
+
+When Program or Binary files are transferred the user must ensure that Toggle Translation Mode and CRLF Mode is OFF, the default mode of this command.
+
+</Callout>
+
+## Selecting EazyLink.
+
+<Shot src="z88-user-guide/using-the-popdowns/the-eazylink-popdown/oz45-el-select.webp" alt="Select" width={640} />
+
+**EazyLink** can be started from the INDEX using the cursor bar or can be selected at any time using <Key k="square" />L.
+
+### Checking Version Number
+
+<Shot src="z88-user-guide/using-the-popdowns/the-eazylink-popdown/oz45-el-help.webp" alt="Version Number" width={640} />
+
+Use the <Key k="help" /> key whilst in the application to display the version number. If the version number is lower than displayed, consider updating to this latest version. The version number is displayed in the bottom left-hand corner together with the protocol level it supports, in this case Version 5.4 Protocol level 9.
+
+<Callout type="warning">
+
+**Eazylink commands are sent from the Client**
+
+Apart from starting this application there is no need to give any further commands on the Z88 itself. All commands are received from the Desktop Computer including Quit.
+
+They are shown here for completeness together with a detailed description of the different functions.
+
+</Callout>
+
+## Menu
+
+Pressing the <Key k="menu" /> key reveals the following commands:-
+
+<Shot src="z88-user-guide/external/zep-easy-file-transfer-between-z88-and-other-computers/el-menu.webp" alt="el menu" width={640} />
+
+The Main Menus are selected in the application itself.
+
+## Log Files
+
+This is used for development. These features are disable by default.
+
+The log files are created in the default RAM device and are named
+
+- "rs232snd.log" for bytes sent to the RS-232 port
+- "rs232rcv.log" for bytes received from the RS-232 port
+
+### Enable :COM.0 logging
+
+Selection is made by either pressing the <Key k="enter" /> key with the cursor over the command in the menu or it can be selected with<Key k="diamond" />D.
+
+Confirmation is given in the EazyLink window
+
+<Shot src="z88-user-guide/external/zep-easy-file-transfer-between-z88-and-other-computers/el-enable-com-logging.webp" alt="el Enable COM logging" width={640} />
+
+### Disable :COM.0 logging
+
+This disables the logging feature
+
+Selection is made by either pressing the <Key k="enter" /> key with the cursor over the command in the menu or it can be selected with<Key k="diamond" />Z.
+
+<Shot src="z88-user-guide/external/zep-easy-file-transfer-between-z88-and-other-computers/el-disable-com-logging.webp" alt="el Disable COM logging" width={640} />
+
+Once again, confirmation is given in the eazylink window
+
+## Main Menu
+
+To select a function on the menu on the left-hand side of the display, use the cursor <Key k="up" />or <Key k="down" />keys followed by the <Key k="enter" /> key.
+
+| <a id="tof" /><br />MAIN MENU |
+| --- |
+| [TOGGLE TRANSLATION MODE](#toggle-translation-mode) |
+| [TOGGLE LINEFEED MODE](#toggle-linefeed-mode) |
+| [USE ISO/IBM TRANSLATIONS](#use-isoibm-translations) |
+| [LOAD TRANSLATIONS](#load-translations) |
+| [QUIT EAZYLINK](#quit-eazylink) |
+
+When EazyLink starts the status of the three different modes are displayed in the EazyLink window.
+
+<Shot src="z88-user-guide/using-the-popdowns/the-eazylink-popdown/oz45-el-main.webp" alt="Main" width={640} />
+
+### [tof](#tof)Toggle Translation Mode
+
+The default mode of this command is OFF.
+
+<Callout type="warning">
+
+**Description to be added**
+
+</Callout>
+
+Changing the state of this mode or any of the other commands is achieved by pressing the <Key k="enter" /> key when the cursor is over the desired command. It is already over the Toggle Translation Mode by default.
+
+<Shot src="z88-user-guide/external/zep-easy-file-transfer-between-z88-and-other-computers/el-toggle-translation-on.webp" alt="el Toggle Translation on" width={640} />
+
+Pressing the <Key k="enter" /> key again changes the state again.
+
+<Shot src="z88-user-guide/external/zep-easy-file-transfer-between-z88-and-other-computers/el-toggle-translation-off.webp" alt="el Toggle Translation off" width={640} />
+
+The change of state is displayed in the EazyLink window.
+
+### [tof](#tof)Toggle Linefeed Mode
+
+<Shot src="z88-user-guide/external/zep-easy-file-transfer-between-z88-and-other-computers/el-toggle-linefeed-mode.webp" alt="el Toggle Linefeed Mode" width={640} />
+
+<Shot src="z88-user-guide/external/zp-history-z88-magic-and-background-of-this-manual/teletype-with-papertape-punch-and-reader.webp" alt="Teletype with papertape punch and reader" width={220} />
+
+The default mode of this command is OFF.
+
+Auto CRLF is short for Carriage Return, Line Feed.
+
+This command is due to historical reasons when teleprinters ruled the day. The two commands were issued separately. This allowed time for the carriage to return before issuing the line feed character, before sending the next character at the beginning of the line.. When sending a CR - Carriage Return character, some Word-processors will put another line-feed character in with it. If after sending a file across to your word-processor or printer you find there is an issue with blank lines or over-typing a line, changing the state of this command may correct this.
+
+As previously stated, changing the state of this mode is achieved by pressing the <Key k="enter" /> key with the cursor over the Toggle Linefeed Mode .
+
+### [tof](#tof)Use ISO/IBM Translations
+
+<Shot src="z88-user-guide/external/zep-easy-file-transfer-between-z88-and-other-computers/el-use-isoibm-translations.webp" alt="el use ISOIBM translations" width={640} />
+
+The default mode of this command is ON.
+
+The ISO/IBM Translations converts files between the ISO and IBM character sets and visa versa.
+
+Although IBM compatible PCs running under DOS used the IBM character set, applications running under Windows use the same ISO 8859-1 (ISO Latin 1) character set as the Z88. Therefore the IBM/ISO conversion is not necessary on files to be imported to Windows word-processors.
+
+When sending a file from the Z88 to the Desktop, the ISO character set is converted to the character set used on the IBM PC and other Desktop computers. This allows PipeDream or text files containing international characters that are outside the normal ASCII character set to be used. These characters are commonly the accented characters used in European languages.
+
+The conversion does not alter the structure of the file, but translates the characters in the file. When transferring a file created in PipeDream on the French Z88 to a Desktop word-processor, the file will appear the same as it did on the French Z88.
+
+Alternatively, you may wish to transfer a file from PipeDream on the Z88 in plain text and load the text file into another word processor that uses the IBM character set.
+
+This conversion does not affect characters in the range 32 - 127; these are standard ASCII characters that are common to both character sets. The conversion translates, where possible, character values outside this range to the corresponding character in the other character set.
+
+These characters are usually in the range 128 - 255, but there are some exceptions.
+
+<Callout type="warning">
+
+**Note**
+
+Not all characters in the ISO set have an equivalent in the IBM character set, and it is thus not possible to get a perfect translation. However, the most commonly used characters are in both character sets.
+
+The international versions of the Z88 do not support the whole ISO character set, just a subset required for each country. Refer to the Z88 manual of the country in question to see which ISO characters are available. In the UK version, no accented characters are available.
+
+OZ contains all those ISO characters implemented that supports French, Spanish, Italian, German, Danish, Swedish, Norwegian and Finnish (corresponding to country's keyboard layout).
+
+</Callout>
+
+**Characters that are translated**
+
+Here is a list of all the characters that can be successfully translated between the IBM and ISO character sets:
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td />
+<Table.Td>**Character Description**</Table.Td>
+<Table.Td />
+<Table.Td>**Character Description**</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>¡</Table.Td>
+<Table.Td>Inverted exclamation mark</Table.Td>
+<Table.Td>Ø</Table.Td>
+<Table.Td>O with stroke</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>¢</Table.Td>
+<Table.Td>Cent symbol</Table.Td>
+<Table.Td>Ü</Table.Td>
+<Table.Td>U diaeresis</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>£</Table.Td>
+<Table.Td>Pound symbol</Table.Td>
+<Table.Td>ß</Table.Td>
+<Table.Td>German sharp S</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>¤</Table.Td>
+<Table.Td>General currency symbol</Table.Td>
+<Table.Td>à</Table.Td>
+<Table.Td>a grave</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>¥</Table.Td>
+<Table.Td>Yen symbol</Table.Td>
+<Table.Td>á</Table.Td>
+<Table.Td>a acute</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>¦</Table.Td>
+<Table.Td>Broken bar</Table.Td>
+<Table.Td>â</Table.Td>
+<Table.Td>a circumflex</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>§</Table.Td>
+<Table.Td>Paragraph symbol</Table.Td>
+<Table.Td>ä</Table.Td>
+<Table.Td>a diaeresis</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>ª</Table.Td>
+<Table.Td>Feminine ordinal</Table.Td>
+<Table.Td>å</Table.Td>
+<Table.Td>a with ring above</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>«</Table.Td>
+<Table.Td>Left angle quotation</Table.Td>
+<Table.Td>æ</Table.Td>
+<Table.Td>a e diphthong</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>¬</Table.Td>
+<Table.Td>Not sign</Table.Td>
+<Table.Td>ç</Table.Td>
+<Table.Td>c cedilla</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>°</Table.Td>
+<Table.Td>Degree symbol</Table.Td>
+<Table.Td>è</Table.Td>
+<Table.Td>e grave</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>±</Table.Td>
+<Table.Td>Plus or minus sign</Table.Td>
+<Table.Td>é</Table.Td>
+<Table.Td>e acute</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>²</Table.Td>
+<Table.Td>Superscript 2</Table.Td>
+<Table.Td>ê</Table.Td>
+<Table.Td>e circumflex</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>µ</Table.Td>
+<Table.Td>Mu symbol</Table.Td>
+<Table.Td>ë</Table.Td>
+<Table.Td>e diaeresis</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>¶</Table.Td>
+<Table.Td>Pilcrow symbol</Table.Td>
+<Table.Td>ì</Table.Td>
+<Table.Td>i grave</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>·</Table.Td>
+<Table.Td>Middle dot</Table.Td>
+<Table.Td>í</Table.Td>
+<Table.Td>i acute</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>º</Table.Td>
+<Table.Td>Masculine ordinal</Table.Td>
+<Table.Td>î</Table.Td>
+<Table.Td>i circumflex</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>»</Table.Td>
+<Table.Td>Right angle quotation</Table.Td>
+<Table.Td>ï</Table.Td>
+<Table.Td>i diaeresis</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>¼</Table.Td>
+<Table.Td>Quarter symbol</Table.Td>
+<Table.Td>ñ</Table.Td>
+<Table.Td>n tilde</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>½</Table.Td>
+<Table.Td>Half symbol</Table.Td>
+<Table.Td>ò</Table.Td>
+<Table.Td>o grave</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>¿</Table.Td>
+<Table.Td>Inverted question mark</Table.Td>
+<Table.Td>ó</Table.Td>
+<Table.Td>o acute</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Á</Table.Td>
+<Table.Td>A diaeresis</Table.Td>
+<Table.Td>ô</Table.Td>
+<Table.Td>o circumflex</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Å</Table.Td>
+<Table.Td>A with ring</Table.Td>
+<Table.Td>õ</Table.Td>
+<Table.Td>o diaeresis</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Æ</Table.Td>
+<Table.Td>A E diphthong</Table.Td>
+<Table.Td>÷</Table.Td>
+<Table.Td>Division symbol</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Ç</Table.Td>
+<Table.Td>C cedilla</Table.Td>
+<Table.Td>ù</Table.Td>
+<Table.Td>u grave</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>È</Table.Td>
+<Table.Td>E acute</Table.Td>
+<Table.Td>ú</Table.Td>
+<Table.Td>u acute</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Ñ</Table.Td>
+<Table.Td>N tilde</Table.Td>
+<Table.Td>û</Table.Td>
+<Table.Td>u circumflex</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Ö</Table.Td>
+<Table.Td>O diaeresis</Table.Td>
+<Table.Td>ü</Table.Td>
+<Table.Td>u diaeresis</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td />
+<Table.Td>ý</Table.Td>
+<Table.Td>y diaeresis</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+### [tof](#tof)Load Translations
+
+<Shot src="z88-user-guide/external/zep-easy-file-transfer-between-z88-and-other-computers/el-load-translations.webp" alt="el load translations" width={640} />
+
+<Callout type="warning">
+
+**Description to be added**
+
+</Callout>
+
+### [tof](#tof)Quit Eazylink
+
+<Shot src="z88-user-guide/external/zep-easy-file-transfer-between-z88-and-other-computers/el-quit-eazylink.webp" alt="el quit eazylink" width={640} />
+
+This command closes the application.
+
+The <Key k="esc" /> key may also be used.a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"About EazyLink","id":"about-eazylink","depth":3},{"value":"Introduction and History","id":"introduction-and-history","depth":3},{"value":"Text and Binary Files","id":"text-and-binary-files","depth":2},{"value":"Selecting EazyLink.","id":"selecting-eazylink","depth":2},{"value":"Checking Version Number","id":"checking-version-number","depth":3},{"value":"Menu","id":"menu","depth":2},{"value":"Log Files","id":"log-files","depth":2},{"value":"Enable :COM.0 logging","id":"enable-com0-logging","depth":3},{"value":"Disable :COM.0 logging","id":"disable-com0-logging","depth":3},{"value":"Main Menu","id":"main-menu","depth":2},{"value":[["$","$4",".0",{"children":["tof","Toggle Translation Mode"]}]],"id":"toftoggle-translation-mode","depth":3},{"value":[["$","$4",".0",{"children":["tof","Toggle Linefeed Mode"]}]],"id":"toftoggle-linefeed-mode","depth":3},{"value":[["$","$4",".0",{"children":["tof","Use ISO/IBM Translations"]}]],"id":"tofuse-isoibm-translations","depth":3},{"value":[["$","$4",".0",{"children":["tof","Load Translations"]}]],"id":"tofload-translations","depth":3},{"value":[["$","$4",".0",{"children":["tof","Quit Eazylink"]}]],"id":"tofquit-eazylink","depth":3}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"The EazyLink popdown is run on the Z88, and is the Server part which listens to commands sent to it from the serial port. The Client part is run on a desktop operating system like Windows, Mac or...","title":"The Eazylink popdown","filePath":"content/en/library/cambridge-z88/user-guide/using-the-popdowns/the-eazylink-popdown.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/user-guide/using-the-popdowns/the-eazylink-popdown","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"The Eazylink popdown - Klive IDE"}],["$","meta","1",{"name":"description","content":"The EazyLink popdown is run on the Z88, and is the Server part which listens to commands sent to it from the serial port. The Client part is run on a desktop operating system like Windows, Mac or..."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/user-guide/using-the-popdowns/the-eazylink-popdown/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"cyL0EKA0xNKEZcECA3AIS"}
+20:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+6f:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["The Eazylink popdown","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The EazyLink popdown is run on the Z88, and is the ",["$","strong",null,{"children":"Server"}]," part which listens to commands sent to it from the serial port. The ",["$","strong",null,{"children":"Client"}]," part is run on a desktop operating system like Windows, Mac or Unix and functions as the window to the filing systems of both computers."]}],"\n",["$","h3",null,{"id":"about-eazylink","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["About EazyLink",["$","$L20",null,{"id":"about-eazylink"}]]}],"\n",["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/external/zep-the-eazylink-command-menu/eazylink-popdown.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/external/zep-the-eazylink-command-menu/eazylink-popdown.webp","alt":"eazylink popdown","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}],"\n",["$","h3",null,{"id":"introduction-and-history","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Introduction and History",["$","$L20",null,{"id":"introduction-and-history"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When the Z88 came out, there were loads of different desktop computers that were being used. This meant that to transfer with the Z88 and any other computer would have to be simple and reliable. Cambridge Computers initially came out with PC Link."}],"\n",["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/external/zep-easy-file-transfer-between-z88-and-other-computers/pc-link-screen.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/external/zep-easy-file-transfer-between-z88-and-other-computers/pc-link-screen.webp","alt":"Original PC Link II DOS Program","loading":"lazy","decoding":"async","width":640,"height":300}],[]]}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["This was a DOS based file request program which used the Imp/Export popdown on the Z88 and required the user to type commands on both the Z88 and the desktop computer. This was not very popular as it meant the user needed two pairs of hands. Around the same time Colton Software were working on a PC version of PipeDream. they wanted additional commands sent from the desktop computer to communicate with the Z88, like selecting directories, and so the protocol of PC-LINK II was born. ",["$","br",null,{}],["$","br",null,{}],"EazyLink is based on PC-LINK II, using a “file server” (Z88) and a “client” (desktop computer) that requests file handling. It supports the existing file transfer protocol of PC-LINK II for compatibility. This enables you (if required) to use the original PC-LINK DOS application for transferring of files between DOS and the Z88."]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"EazyLink’s additional communication protocol offer"}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n","$L21","\n","$L22","\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n"]}],"\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41","\n","$L42","\n","$L43","\n","$L44","\n","$L45","\n","$L46","\n","$L47","\n","$L48","\n","$L49","\n","$L4a","\n","$L4b","\n","$L4c","\n","$L4d","\n","$L4e","\n","$L4f","\n","$L50","\n","$L51","\n","$L52","\n","$L53","\n","$L54","\n","$L55","\n","$L56","\n","$L57","\n","$L58","\n","$L59","\n","$L5a","\n","$L5b","\n","$L5c","\n","$L5d","\n","$L5e","\n","$L5f","\n","$L60","\n","$L61","\n","$L62","\n","$L63","\n","$L64","\n","$L65","\n","$L66","\n","$L67","\n","$L68","\n","$L69","\n","$L6a","\n","$L6b","\n","$L6c","\n","$L6d","\n","$L6e"]]}]
+15:["$","$L6f",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@70"}]}]
+1f:true
+9:300
+21:["$","li",null,{"className":"x:my-[.5em]","children":"faster transfer rates using 38400 BPS (16K in approx 13s)"}]
+22:["$","li",null,{"className":"x:my-[.5em]","children":"remote date stamp"}]
+23:["$","li",null,{"className":"x:my-[.5em]","children":"file size requests"}]
+24:["$","li",null,{"className":"x:my-[.5em]","children":"CRC-32 checksum validation after binary file upload"}]
+25:["$","li",null,{"className":"x:my-[.5em]","children":["backup only updated files",["$","sup",null,{"children":"*"}]]}]
+26:["$","li",null,{"className":"x:my-[.5em]","children":"read/write Z88 clock (to allow Z88’s time and date to be set by file client seamlessly)"}]
+27:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"It automatically"}]
+28:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"creates the Z88 path, including directories when receiving a file"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"creates MSDOS/Z88 line feed and ASCII character conversions during transfer"}],"\n"]}]
+29:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Everything this popdown can do is requested and displayed from the Client application, as the “server” just sits at the other end and handles the various requests."}]
+2a:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":["$","svg",null,{"viewBox":"0 0 16 16","fill":"currentColor","height":".8em","className":"x:mt-[.3em]","children":["$","path",null,{"d":"M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"}]}]}],["$","div",null,{"className":"x:w-full x:min-w-0","children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Backup only updated files*"}]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This was implemented in Eazylink desktop client v1.6.2 (for Windows 95). This is planned to be implemented in Eazylink2 desktop client at a later date."}]]}]]}]
+2b:["$","h2",null,{"id":"text-and-binary-files","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Text and Binary Files",["$","$L20",null,{"id":"text-and-binary-files"}]]}]
+2c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"PC Link II came with several file conversion programs. Two of these programs, ISO to IBM and IBM to ISO were needed for text files on the foreign Z88s. These users became very irritable having to run a separate program before being able to use them on their Desktop computers. The result is that in EazyLink, the character conversion is performed during the transfer of the file, making this process transparent to the user. Other variables that need to be changed, have been included using this method."}]
+2d:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-red-100 x:dark:bg-red-900/30 x:text-red-700 x:dark:text-red-500 x:border-red-700 x:dark:border-red-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$2a:props:children:0:props:style","data-pagefind-ignore":"all","children":["$","svg",null,{"viewBox":"0 0 16 16","fill":"currentColor","height":".8em","className":"x:mt-[.3em]","children":["$","path",null,{"d":"M4.47.22A.749.749 0 0 1 5 0h6c.199 0 .389.079.53.22l4.25 4.25c.141.14.22.331.22.53v6a.749.749 0 0 1-.22.53l-4.25 4.25A.749.749 0 0 1 11 16H5a.749.749 0 0 1-.53-.22L.22 11.53A.749.749 0 0 1 0 11V5c0-.199.079-.389.22-.53Zm.84 1.28L1.5 5.31v5.38l3.81 3.81h5.38l3.81-3.81V5.31L10.69 1.5ZM8 4a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 8 4Zm0 8a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"}]}]}],["$","div",null,{"className":"x:w-full x:min-w-0","children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Binary Files"}]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When Program or Binary files are transferred the user must ensure that Toggle Translation Mode and CRLF Mode is OFF, the default mode of this command."}]]}]]}]
+2e:["$","h2",null,{"id":"selecting-eazylink","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Selecting EazyLink.",["$","$L20",null,{"id":"selecting-eazylink"}]]}]
+2f:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/using-the-popdowns/the-eazylink-popdown/oz45-el-select.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/using-the-popdowns/the-eazylink-popdown/oz45-el-select.webp","alt":"Select","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+30:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"EazyLink"}]," can be started from the INDEX using the cursor bar or can be selected at any time using ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],"L."]}]
+31:["$","h3",null,{"id":"checking-version-number","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Checking Version Number",["$","$L20",null,{"id":"checking-version-number"}]]}]
+32:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/using-the-popdowns/the-eazylink-popdown/oz45-el-help.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/using-the-popdowns/the-eazylink-popdown/oz45-el-help.webp","alt":"Version Number","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+33:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Use the ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Help","children":"HELP"}]," key whilst in the application to display the version number. If the version number is lower than displayed, consider updating to this latest version. The version number is displayed in the bottom left-hand corner together with the protocol level it supports, in this case Version 5.4 Protocol level 9."]}]
+34:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-yellow-50 x:dark:bg-yellow-700/30 x:text-yellow-700 x:dark:text-yellow-500 x:border-yellow-700","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$2a:props:children:0:props:style","data-pagefind-ignore":"all","children":["$","svg",null,{"viewBox":"0 0 16 16","fill":"currentColor","height":".8em","className":"x:mt-[.3em]","children":["$","path",null,{"d":"M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575Zm1.763.707a.25.25 0 0 0-.44 0L1.698 13.132a.25.25 0 0 0 .22.368h12.164a.25.25 0 0 0 .22-.368Zm.53 3.996v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"}]}]}],["$","div",null,{"className":"x:w-full x:min-w-0","children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Eazylink commands are sent from the Client"}]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Apart from starting this application there is no need to give any further commands on the Z88 itself. All commands are received from the Desktop Computer including Quit."}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"They are shown here for completeness together with a detailed description of the different functions."}]]}]]}]
+35:["$","h2",null,{"id":"menu","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Menu",["$","$L20",null,{"id":"menu"}]]}]
+36:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Pressing the ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Menu","children":"MENU"}]," key reveals the following commands:-"]}]
+37:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/external/zep-easy-file-transfer-between-z88-and-other-computers/el-menu.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/external/zep-easy-file-transfer-between-z88-and-other-computers/el-menu.webp","alt":"el menu","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+38:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The Main Menus are selected in the application itself."}]
+39:["$","h2",null,{"id":"log-files","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Log Files",["$","$L20",null,{"id":"log-files"}]]}]
+3a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This is used for development. These features are disable by default."}]
+3b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The log files are created in the default RAM device and are named"}]
+3c:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"“rs232snd.log” for bytes sent to the RS-232 port"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"“rs232rcv.log” for bytes received from the RS-232 port"}],"\n"]}]
+3d:["$","h3",null,{"id":"enable-com0-logging","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Enable :COM.0 logging",["$","$L20",null,{"id":"enable-com0-logging"}]]}]
+3e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Selection is made by either pressing the ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]," key with the cursor over the command in the menu or it can be selected with",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"D."]}]
+3f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Confirmation is given in the EazyLink window"}]
+40:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/external/zep-easy-file-transfer-between-z88-and-other-computers/el-enable-com-logging.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/external/zep-easy-file-transfer-between-z88-and-other-computers/el-enable-com-logging.webp","alt":"el Enable COM logging","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+41:["$","h3",null,{"id":"disable-com0-logging","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Disable :COM.0 logging",["$","$L20",null,{"id":"disable-com0-logging"}]]}]
+42:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This disables the logging feature"}]
+43:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Selection is made by either pressing the ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]," key with the cursor over the command in the menu or it can be selected with",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"Z."]}]
+44:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/external/zep-easy-file-transfer-between-z88-and-other-computers/el-disable-com-logging.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/external/zep-easy-file-transfer-between-z88-and-other-computers/el-disable-com-logging.webp","alt":"el Disable COM logging","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+45:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Once again, confirmation is given in the eazylink window"}]
+46:["$","h2",null,{"id":"main-menu","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Main Menu",["$","$L20",null,{"id":"main-menu"}]]}]
+47:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["To select a function on the menu on the left-hand side of the display, use the cursor ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor up","children":"↑"}],"or ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor down","children":"↓"}],"keys followed by the ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]," key."]}]
+48:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":["$","th",null,{"children":[["$","a",null,{"id":"tof"}],["$","br",null,{}],"MAIN MENU"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":["$","td",null,{"children":["$","a",null,{"href":"#toggle-translation-mode","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"TOGGLE TRANSLATION MODE"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":["$","td",null,{"children":["$","a",null,{"href":"#toggle-linefeed-mode","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"TOGGLE LINEFEED MODE"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":["$","td",null,{"children":["$","a",null,{"href":"#use-isoibm-translations","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"USE ISO/IBM TRANSLATIONS"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":["$","td",null,{"children":["$","a",null,{"href":"#load-translations","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"LOAD TRANSLATIONS"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":["$","td",null,{"children":["$","a",null,{"href":"#quit-eazylink","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"QUIT EAZYLINK"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}]]}]
+49:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When EazyLink starts the status of the three different modes are displayed in the EazyLink window."}]
+4a:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/using-the-popdowns/the-eazylink-popdown/oz45-el-main.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/using-the-popdowns/the-eazylink-popdown/oz45-el-main.webp","alt":"Main","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+4b:["$","h3",null,{"id":"toftoggle-translation-mode","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":[[["$","a",null,{"href":"#tof","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"tof"}],"Toggle Translation Mode"],["$","$L20",null,{"id":"toftoggle-translation-mode"}]]}]
+4c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The default mode of this command is OFF."}]
+4d:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-yellow-50 x:dark:bg-yellow-700/30 x:text-yellow-700 x:dark:text-yellow-500 x:border-yellow-700","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$2a:props:children:0:props:style","data-pagefind-ignore":"all","children":"$34:props:children:0:props:children"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Description to be added"}]}]}]]}]
+4e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Changing the state of this mode or any of the other commands is achieved by pressing the ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]," key when the cursor is over the desired command. It is already over the Toggle Translation Mode by default."]}]
+4f:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/external/zep-easy-file-transfer-between-z88-and-other-computers/el-toggle-translation-on.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/external/zep-easy-file-transfer-between-z88-and-other-computers/el-toggle-translation-on.webp","alt":"el Toggle Translation on","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+50:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Pressing the ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]," key again changes the state again."]}]
+51:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/external/zep-easy-file-transfer-between-z88-and-other-computers/el-toggle-translation-off.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/external/zep-easy-file-transfer-between-z88-and-other-computers/el-toggle-translation-off.webp","alt":"el Toggle Translation off","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+52:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The change of state is displayed in the EazyLink window."}]
+53:["$","h3",null,{"id":"toftoggle-linefeed-mode","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":[[["$","a",null,{"href":"#tof","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"tof"}],"Toggle Linefeed Mode"],["$","$L20",null,{"id":"toftoggle-linefeed-mode"}]]}]
+54:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/external/zep-easy-file-transfer-between-z88-and-other-computers/el-toggle-linefeed-mode.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/external/zep-easy-file-transfer-between-z88-and-other-computers/el-toggle-linefeed-mode.webp","alt":"el Toggle Linefeed Mode","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+55:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"220px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/external/zp-history-z88-magic-and-background-of-this-manual/teletype-with-papertape-punch-and-reader.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/external/zp-history-z88-magic-and-background-of-this-manual/teletype-with-papertape-punch-and-reader.webp","alt":"Teletype with papertape punch and reader","loading":"lazy","decoding":"async","width":220,"height":293}],[]]}]]}]
+56:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The default mode of this command is OFF."}]
+57:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Auto CRLF is short for Carriage Return, Line Feed."}]
+58:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This command is due to historical reasons when teleprinters ruled the day. The two commands were issued separately. This allowed time for the carriage to return before issuing the line feed character, before sending the next character at the beginning of the line.. When sending a CR - Carriage Return character, some Word-processors will put another line-feed character in with it. If after sending a file across to your word-processor or printer you find there is an issue with blank lines or over-typing a line, changing the state of this command may correct this."}]
+59:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["As previously stated, changing the state of this mode is achieved by pressing the ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]," key with the cursor over the Toggle Linefeed Mode ."]}]
+5a:["$","h3",null,{"id":"tofuse-isoibm-translations","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":[[["$","a",null,{"href":"#tof","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"tof"}],"Use ISO/IBM Translations"],["$","$L20",null,{"id":"tofuse-isoibm-translations"}]]}]
+5b:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/external/zep-easy-file-transfer-between-z88-and-other-computers/el-use-isoibm-translations.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/external/zep-easy-file-transfer-between-z88-and-other-computers/el-use-isoibm-translations.webp","alt":"el use ISOIBM translations","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+5c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The default mode of this command is ON."}]
+5d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The ISO/IBM Translations converts files between the ISO and IBM character sets and visa versa."}]
+5e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Although IBM compatible PCs running under DOS used the IBM character set, applications running under Windows use the same ISO 8859-1 (ISO Latin 1) character set as the Z88. Therefore the IBM/ISO conversion is not necessary on files to be imported to Windows word-processors."}]
+5f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When sending a file from the Z88 to the Desktop, the ISO character set is converted to the character set used on the IBM PC and other Desktop computers. This allows PipeDream or text files containing international characters that are outside the normal ASCII character set to be used. These characters are commonly the accented characters used in European languages."}]
+60:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The conversion does not alter the structure of the file, but translates the characters in the file. When transferring a file created in PipeDream on the French Z88 to a Desktop word-processor, the file will appear the same as it did on the French Z88."}]
+61:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Alternatively, you may wish to transfer a file from PipeDream on the Z88 in plain text and load the text file into another word processor that uses the IBM character set."}]
+62:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This conversion does not affect characters in the range 32 - 127; these are standard ASCII characters that are common to both character sets. The conversion translates, where possible, character values outside this range to the corresponding character in the other character set."}]
+63:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"These characters are usually in the range 128 - 255, but there are some exceptions."}]
+64:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-yellow-50 x:dark:bg-yellow-700/30 x:text-yellow-700 x:dark:text-yellow-500 x:border-yellow-700","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$2a:props:children:0:props:style","data-pagefind-ignore":"all","children":"$34:props:children:0:props:children"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Note"}]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Not all characters in the ISO set have an equivalent in the IBM character set, and it is thus not possible to get a perfect translation. However, the most commonly used characters are in both character sets."}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The international versions of the Z88 do not support the whole ISO character set, just a subset required for each country. Refer to the Z88 manual of the country in question to see which ISO characters are available. In the UK version, no accented characters are available."}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"OZ contains all those ISO characters implemented that supports French, Spanish, Italian, German, Danish, Swedish, Norwegian and Finnish (corresponding to country’s keyboard layout)."}]]}]]}]
+65:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Characters that are translated"}]}]
+66:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Here is a list of all the characters that can be successfully translated between the IBM and ISO character sets:"}]
+67:["$","table",null,{"children":["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","strong",null,{"children":"Character Description"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","strong",null,{"children":"Character Description"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"¡","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Inverted exclamation mark","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Ø","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"O with stroke","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"¢","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Cent symbol","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Ü","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"U diaeresis","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"£","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Pound symbol","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"ß","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"German sharp S","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"¤","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"General currency symbol","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"à","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"a grave","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"¥","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Yen symbol","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"á","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"a acute","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],"$L71","$L72","$L73","$L74","$L75","$L76","$L77","$L78","$L79","$L7a","$L7b","$L7c","$L7d","$L7e","$L7f","$L80","$L81","$L82","$L83","$L84","$L85","$L86","$L87","$L88"]}],"className":"x:block x:overflow-x-auto"}]
+68:["$","h3",null,{"id":"tofload-translations","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":[[["$","a",null,{"href":"#tof","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"tof"}],"Load Translations"],["$","$L20",null,{"id":"tofload-translations"}]]}]
+69:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/external/zep-easy-file-transfer-between-z88-and-other-computers/el-load-translations.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/external/zep-easy-file-transfer-between-z88-and-other-computers/el-load-translations.webp","alt":"el load translations","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+6a:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-yellow-50 x:dark:bg-yellow-700/30 x:text-yellow-700 x:dark:text-yellow-500 x:border-yellow-700","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$2a:props:children:0:props:style","data-pagefind-ignore":"all","children":"$34:props:children:0:props:children"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Description to be added"}]}]}]]}]
+6b:["$","h3",null,{"id":"tofquit-eazylink","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":[[["$","a",null,{"href":"#tof","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"tof"}],"Quit Eazylink"],["$","$L20",null,{"id":"tofquit-eazylink"}]]}]
+6c:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/external/zep-easy-file-transfer-between-z88-and-other-computers/el-quit-eazylink.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/external/zep-easy-file-transfer-between-z88-and-other-computers/el-quit-eazylink.webp","alt":"el quit eazylink","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+6d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This command closes the application."}]
+6e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Escape","children":"ESC"}]," key may also be used."]}]
+70:null
+9:C
+71:["$","tr",null,{"children":[["$","td",null,{"children":"¦","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Broken bar","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"â","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"a circumflex","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+72:["$","tr",null,{"children":[["$","td",null,{"children":"§","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Paragraph symbol","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"ä","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"a diaeresis","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+73:["$","tr",null,{"children":[["$","td",null,{"children":"ª","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Feminine ordinal","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"å","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"a with ring above","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+74:["$","tr",null,{"children":[["$","td",null,{"children":"«","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Left angle quotation","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"æ","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"a e diphthong","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+75:["$","tr",null,{"children":[["$","td",null,{"children":"¬","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Not sign","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"ç","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"c cedilla","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+76:["$","tr",null,{"children":[["$","td",null,{"children":"°","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Degree symbol","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"è","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"e grave","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+77:["$","tr",null,{"children":[["$","td",null,{"children":"±","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Plus or minus sign","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"é","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"e acute","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+78:["$","tr",null,{"children":[["$","td",null,{"children":"²","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Superscript 2","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"ê","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"e circumflex","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+79:["$","tr",null,{"children":[["$","td",null,{"children":"µ","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Mu symbol","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"ë","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"e diaeresis","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+7a:["$","tr",null,{"children":[["$","td",null,{"children":"¶","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Pilcrow symbol","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"ì","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"i grave","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+7b:["$","tr",null,{"children":[["$","td",null,{"children":"·","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Middle dot","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"í","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"i acute","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+7c:["$","tr",null,{"children":[["$","td",null,{"children":"º","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Masculine ordinal","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"î","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"i circumflex","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+7d:["$","tr",null,{"children":[["$","td",null,{"children":"»","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Right angle quotation","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"ï","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"i diaeresis","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+7e:["$","tr",null,{"children":[["$","td",null,{"children":"¼","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Quarter symbol","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"ñ","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"n tilde","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+7f:["$","tr",null,{"children":[["$","td",null,{"children":"½","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Half symbol","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"ò","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"o grave","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+80:["$","tr",null,{"children":[["$","td",null,{"children":"¿","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Inverted question mark","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"ó","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"o acute","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+81:["$","tr",null,{"children":[["$","td",null,{"children":"Á","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"A diaeresis","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"ô","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"o circumflex","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+82:["$","tr",null,{"children":[["$","td",null,{"children":"Å","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"A with ring","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"õ","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"o diaeresis","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+83:["$","tr",null,{"children":[["$","td",null,{"children":"Æ","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"A E diphthong","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"÷","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Division symbol","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+84:["$","tr",null,{"children":[["$","td",null,{"children":"Ç","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"C cedilla","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"ù","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"u grave","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+85:["$","tr",null,{"children":[["$","td",null,{"children":"È","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"E acute","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"ú","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"u acute","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+86:["$","tr",null,{"children":[["$","td",null,{"children":"Ñ","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"N tilde","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"û","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"u circumflex","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+87:["$","tr",null,{"children":[["$","td",null,{"children":"Ö","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"O diaeresis","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"ü","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"u diaeresis","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+88:["$","tr",null,{"children":[["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"ý","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"y diaeresis","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

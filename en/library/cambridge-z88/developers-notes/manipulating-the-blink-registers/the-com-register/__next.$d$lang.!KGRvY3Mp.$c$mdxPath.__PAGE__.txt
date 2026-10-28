@@ -1,0 +1,76 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+1b:"ViewportBoundary"
+1c:I[484,[],"$1b"]
+1d:"MetadataBoundary"
+1e:I[484,[],"$1d"]
+1f:"$Sreact.suspense"
+20:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T631,---
+description: "The $B0 register is detailed first because it controls various diverse aspects of BLINK operations:"
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/3112999 (version 6) by scripts/import-z88-wiki.cjs */}
+
+# The COM register
+
+The $B0 register is detailed first because it controls various diverse aspects of BLINK operations:
+
+```text
+Bit         Name        Function
+7           SRUN        Speaker source (0=SBIT, 1=TxD or 3200 Hz)
+6           SBIT        SRUN=0: 0=low, 1=high; SRUN=1: 0=3200 Hz, 1=TxD
+5           OVERP       Set to overprogram EPROMs
+4           RESTIM      Set to reset the RTC, clear to continue
+3           PROGRAM     Set to enable EPROM programming
+2           RAMS        Binding of lower 8K of segment 0: 0=bank 0, 1=bank 20
+1           VPPON       Set to turn programming voltage ON
+0           LCDON       Set to turn LCD ON, clear to turn LCD OFF
+```
+
+The two speaker control bits operate in the following fashion:
+
+```text
+SRUN        SBIT        Effect
+0           0           Speaker line low
+0           1           Speaker line high
+1           0           Speaker line oscillates at 3200 Hz
+1           1           Speaker line attached to Tx data (Tx data still output
+                        to comms. port)
+```
+
+RAMS is cleared on reset thus paging in ROM at logical addresses $0000 to $1FFF. This is necessary since the Z80 program counter is loaded with zero on reset. In normal operation RAMS is set and the lower 8K is the system RAM, which is also used for application static workspace and stack.a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"The $B0 register is detailed first because it controls various diverse aspects of BLINK operations:","title":"The COM register","filePath":"content/en/library/cambridge-z88/developers-notes/manipulating-the-blink-registers/the-com-register.mdx","timestamp":1792315833000},"sourceCode":"$12","children":[["$","div",null,{"id":"nextra-skip-nav"}],["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["The COM register","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The $B0 register is detailed first because it controls various diverse aspects of BLINK operations:"}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":["$L13","$L14"]}],"$L15"]}]]}],"\n","$L16","\n","$L17","\n","$L18"]]}]]}]]}]}],null,"$L19"]}],"p":"$@1a","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/developers-notes/manipulating-the-blink-registers/the-com-register","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L1c",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1e",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1f",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"The COM register - Klive IDE"}],["$","meta","1",{"name":"description","content":"The $B0 register is detailed first because it controls various diverse aspects of BLINK operations:"}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/developers-notes/manipulating-the-blink-registers/the-com-register/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L20","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@21","v":null,"s":"$9"}},"a":"$@22","u":"$@23","b":"cyL0EKA0xNKEZcECA3AIS"}
+24:"ToggleWordWrapButton"
+25:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$24"]
+26:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+27:I[484,[],"OutletBoundary"]
+13:["$","$L25",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}]
+14:["$","$L26",null,{"className":""}]
+15:["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"Bit         Name        Function"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"7           SRUN        Speaker source (0=SBIT, 1=TxD or 3200 Hz)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"6           SBIT        SRUN=0: 0=low, 1=high; SRUN=1: 0=3200 Hz, 1=TxD"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"5           OVERP       Set to overprogram EPROMs"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"4           RESTIM      Set to reset the RTC, clear to continue"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3           PROGRAM     Set to enable EPROM programming"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2           RAMS        Binding of lower 8K of segment 0: 0=bank 0, 1=bank 20"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1           VPPON       Set to turn programming voltage ON"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"0           LCDON       Set to turn LCD ON, clear to turn LCD OFF"}]}]]}]
+16:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The two speaker control bits operate in the following fashion:"}]
+17:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L25",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L26",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"SRUN        SBIT        Effect"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"0           0           Speaker line low"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"0           1           Speaker line high"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1           0           Speaker line oscillates at 3200 Hz"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1           1           Speaker line attached to Tx data (Tx data still output"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                        to comms. port)"}]}]]}]]}]]}]
+18:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"RAMS is cleared on reset thus paging in ROM at logical addresses $0000 to $1FFF. This is necessary since the Z80 program counter is loaded with zero on reset. In normal operation RAMS is set and the lower 8K is the system RAM, which is also used for application static workspace and stack."}]
+19:["$","$L27",null,{"children":["$","$1f",null,{"name":"Next.MetadataOutlet","children":"$@28"}]}]
+23:true
+9:300
+28:null
+9:C
+22:0
+7:"$undefined"
+21:"$undefined"
+1a:"$undefined"

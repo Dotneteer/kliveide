@@ -1,0 +1,356 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T24a0,---
+description: "The Blink gate-array is a custom ASIC : NEC D65031GF168. This SMD is a uPD65000 series (low power 2 micron ASIC) with 138 rows of 24 columns, 3312 cells of 4 transistors."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/3113051 (version 20) by scripts/import-z88-wiki.cjs */}
+
+# The BLINK gate array
+
+The Blink gate-array is a custom ASIC : **NEC D65031GF168**. This SMD is a uPD65000 series (low power 2 micron ASIC) with 138 rows of 24 columns, 3312 cells of 4 transistors.
+
+GF stands for a flat packaging of 100 pins. 168 is the circuit type number identifying the blink design.
+
+It contains the logic of :
+
+- the memory management unit (MMU)
+- the real time clock (RTC)
+- the Z80 clock and power management
+- the Z80 reset
+- the programmable interrupt controller (PIC)
+- the UART
+- the LCD controller
+- the EPROM programmmer
+- the speaker
+
+<Shot src="z88-developers-notes/the-z88-motherboard-hardware-and-periphial-cards/the-blink-gate-array/blink.webp" alt="The blink, this chip was product in 1987, week 14." width={340} />
+
+```text
+Pin     Name    Type    Description
+1       GND     -       Ground
+2       VDD     -       +5V
+3       IOR     I       Z80 /IORQ
+4       CRD     I       Z80 /RD
+5       MRQ     I       Z80 /MREQ
+6       HLT     I       Z80 /HALT
+7       NMIB    O       Z80 /NMI
+8       INTB    O       Z80 /INT
+9       CDB     IO      Z80 D1
+10      ROUT    O       Z80 /RST
+11      CDA     IO      Z80 D0
+12      CM1     I       Z80 /M1
+13      CDH     IO      Z80 D7
+14      CDC     IO      Z80 D2
+15      CA0     O       Z80 A0
+16      CDG     IO      Z80 D6
+17      CA1     O       Z80 A1
+18      CDF     IO      Z80 D5
+19      CA2     O       Z80 A2
+20      CDD     IO      Z80 D3
+21      CA3     O       Z80 A3
+22      CDE     IO      Z80 D4
+23      CA4     O       Z80 A4
+24      CA5     O       Z80 A5
+25      CA15    O       Z80 A15
+26      CA6     O       Z80 A6
+27      CA14    O       Z80 A14
+28      GND     -       Ground
+29      VDD     -       +5V
+
+30      CA13    O       Z80 A13
+31      CA7     O       Z80 A7
+32      CA8     O       Z80 A8
+33      CA12    O       Z80 A12
+34      CA9     O       Z80 A9
+35      CA11    O       Z80 A11
+36      CA10    O       Z80 A10
+37      TxD     O       UART TXD
+38      RTS     O       UART RTS
+39      IRCE    O       RAM.0 /CE
+40      GND     -       Ground
+41      RxD     I       UART RXD
+42      CTS     I       UART CTS
+43      DCD     I       UART DCD
+44      PM1     O       Z80 clock (3.2768 MHz)
+45      LP      O       LCD control, 10ms  line pulse
+46      FR      O       LCD control, 156us frame
+47      XSCL    O       LCD control, 300ns data
+48      LD0     O       LCD data
+49      LD1     O       LCD data
+50      LD2     O       LCD data
+51      LD3     O       LCD data
+
+52      VDD     -       +5V
+53      GND     -       Ground
+54      MA16    O       Memory A16
+55      MA15    O       Memory A15
+56      MA14    O       Memory A14
+57      MA12    O       Memory A12
+58      MA7     O       Memory A7
+59      MA13    O       Memory A13
+60      MA6     O       Memory A6
+61      MA8     O       Memory A8
+62      MA5     O       Memory A5
+63      WRB     O       Write enable /WE
+64      MA9     O       Memory A9
+65      MA4     O       Memory A4
+66      MA11    O       Memory A11
+67      MA3     O       Memory A3
+68      IPCE    O       ROM.0 /CE
+69      MA2     O       Memory A2
+70      MA10    O       Memory A10
+71      MA1     O       Memory A1
+72      MA0     O       Memory A0
+73      MDH     IO      Memory D7
+74      MDA     IO      Memory D0
+75      MDG     IO      Memory D6
+76      MDB     IO      Memory D1
+77      MDF     IO      Memory D5
+78      MDC     IO      Memory D2
+79      VDD     -       +5V
+80      GND     -       Ground
+
+81      MDE     IO      Memory D4
+82      MDD     IO      Memory D3
+83      MA17    O       Memory A17
+84      MA18    O       Memory A18
+85      MAW     O       Memory A19
+86      SE1     O       Slot1 /CE
+87      POE     O       PSRAM /OE (refreshed)
+88      ROE     O       ROM /OE
+89      PGMB    O       Slot 3 /WE (Program Byte)
+90      EOE     O       Slot 3 /OE (Eprom OE)
+91      SE3     O       Slot 3 /CE
+92      FLP     I       Flap
+93      SE2     O       Slot2 /CE
+94      SNS     I       Sens line (card insertion)
+95      VPON    O       VPP on
+96      BTL     I       Batt low
+97      RIN     I       Reset input
+98      MCK     I       Master clock (9.8304 MHz)
+99      SCK     I       Standby clock (25.6 KHz)
+100     SPKR    O       speaker
+```
+
+The original notes as supplied to Cambridge Computer were lost during the time of the company's move from Cambridge to Scotland. The following notes comes from the patent WO88/09007 (Richard MILLER and James WESTWOOD) and WO88/09573 (James WESTWOOD).
+
+## SNS
+
+Card insertion or removal is detected by SNS. The card module slot connector is made such that during insertion or removal the SNS is shorted to ground. When SNS goes low, an NMI is fired and initiate a shutdown. This prevent any loss off data or system crash.
+
+## POE, ROE, EOE, pseudo-static RAM refresh
+
+- POE : Pseudo-static OE
+- ROE : Rom OE
+- EOE : Eprom OE
+
+When Z80 is running and LCD is on, the refresh is performed by the LCD controller reading the memory.
+
+When LCD is off (DOZE state), the 42832 is not in standby mode, it needs to be refreshed.<br />POE provides this refresh, ROE does not. POE is tracked to slot 0 RAM, slot 1 and slot 2 connectors.
+
+Pseudo static RAM card are not supported in slot 3. The POE line in slot 3 connector is replaced by the EOE. EOE is driven by the EPR register.
+
+Z80 Refresh signal is not wired. Refresh logic in blink is done from CRD, CM1, MRQ (negative signals) :
+
+`POE = ROE | ( CRD & ~CM1 & ~MRQ)`
+
+## Clocks and power management
+
+Z80 clock (PM1) is driven by the Blink, the CMOS Z80 can be stopped without losing register state.
+
+Active : `PM1 = MCK / 3 = 9.8304 / 3 = 3.2768MHz`
+
+Snooze : `PM1 is stopped`
+
+Coma : `PM1 = SCK = 25.6KHz`
+
+Doze : `PM1 is stopped during some eprom programming phase (see below)`
+
+Master clock is 9.83MHz for the LCD controller reading screen files in memory.
+
+It will be appreciated that the CPU clock must be stopped and started at appropriate points in the clock cycle. In practice it may be stopped halfway through a cycle and restarted at the beginning of another cycle.
+
+## LCD controller
+
+A 640 bits shift register is used to build the current line and shift nibbles to the LCD data lines.
+
+The LCD frame rate is 100Hz, one page every 10ms (LP).
+
+One line is sent every 156.25us (FR). A burst of 160 nibbles at 3.2768 MHz (300ns period) are sent. It last 48us and is followed by a 108.25us inactive period.
+
+## Slot 3 and Eprom programming
+
+The connector for the top slot, slot 3, is moreover equipped to apply a programming voltage Vpp to enable an EPROM module to be programmed. By means of the present invention it is possible to effect this programming directly off the address and data buses extended to the module via the gate array and connector. Slot 3 normally operates like slots 1 and 2, i.e. normal read and (if RAM is in the slot) write operations may be effected. However a bit is used in the logic array as a flag to select (OVERP in COM register) between normal operation and programming mode. When this bit is set, the circuit described below with-reference to Fig. 2 is brought into action. A separate bit is set/reset to control the application of the programming voltage Vpp (VPP in COM register).
+
+Features of the logic array are shown in Fig. 2. A particular address range, namely the top slot, is dedicated to EPROM programming, when the flag bit mentioned above is set. When the<br />CPU wishes to program an EPROM byte, it establishes the required address by way of the bus A0 to A15 and one of the registers 15 (B0 to B7) and the required data is put on to the data bus D0 to D7.
+
+<Shot src="z88-developers-notes/the-z88-motherboard-hardware-and-periphial-cards/the-blink-gate-array/blink-epr.webp" alt="blink epr" width={695} />
+
+The logic array includes a decoder 22 which detects any extended write address in the programming range (B6 = B7 = 1) and issues a signal PROGRAMA which stops the CPU clock PHI CPU, via a latch 26 and gate 28. After a delay, introduced by delay stage 23, of about 2 seconds (FRONT PORCH) a latch 27 is set, which in turn will activate the appropriate control signals to the EPROM (such as PGM, OE and CE, depending on the EPROM type). Delay duration and state of PGM, EOE, SE3 are set in EPR register.
+
+The delay stage 24, is programmable, to accept various EPROM programming times After the delay 24, the latch 27 is reset, thus releasing the EPROM from its programming mode. A delay 25 (BACK PORCH) lasts for about 2 seconds, after which the clock to the CPU is started again. Vpp is applied throughout this sequence of operations. The delay time of the delay 24 may be programmed to allow the CPU to perform a program then verify cycle repeatedly in a training stage during which the appropriate minimum delay for secure programming of the EPROM is ascertained.
+
+It can thus be seen that the EPROM is programmed directly off the address and data buses A, D'0 - D'7 rather than off a separate register set up to buffer the input signals which have to be held over a very large number of CPU clock cycles.a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"SNS","id":"sns","depth":2},{"value":"POE, ROE, EOE, pseudo-static RAM refresh","id":"poe-roe-eoe-pseudo-static-ram-refresh","depth":2},{"value":"Clocks and power management","id":"clocks-and-power-management","depth":2},{"value":"LCD controller","id":"lcd-controller","depth":2},{"value":"Slot 3 and Eprom programming","id":"slot-3-and-eprom-programming","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"The Blink gate-array is a custom ASIC : NEC D65031GF168. This SMD is a uPD65000 series (low power 2 micron ASIC) with 138 rows of 24 columns, 3312 cells of 4 transistors.","title":"The BLINK gate array","filePath":"content/en/library/cambridge-z88/developers-notes/the-z88-motherboard-hardware-and-periphial-cards/the-blink-gate-array.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/developers-notes/the-z88-motherboard-hardware-and-periphial-cards/the-blink-gate-array","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"The BLINK gate array - Klive IDE"}],["$","meta","1",{"name":"description","content":"The Blink gate-array is a custom ASIC : NEC D65031GF168. This SMD is a uPD65000 series (low power 2 micron ASIC) with 138 rows of 24 columns, 3312 cells of 4 transistors."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/developers-notes/the-z88-motherboard-hardware-and-periphial-cards/the-blink-gate-array/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"cyL0EKA0xNKEZcECA3AIS"}
+20:"ToggleWordWrapButton"
+21:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$20"]
+22:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+a0:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["The BLINK gate array","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The Blink gate-array is a custom ASIC : ",["$","strong",null,{"children":"NEC D65031GF168"}],". This SMD is a uPD65000 series (low power 2 micron ASIC) with 138 rows of 24 columns, 3312 cells of 4 transistors."]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"GF stands for a flat packaging of 100 pins. 168 is the circuit type number identifying the blink design."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"It contains the logic of :"}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"the memory management unit (MMU)"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"the real time clock (RTC)"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"the Z80 clock and power management"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"the Z80 reset"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"the programmable interrupt controller (PIC)"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"the UART"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"the LCD controller"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"the EPROM programmmer"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"the speaker"}],"\n"]}],"\n",["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"340px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-developers-notes/the-z88-motherboard-hardware-and-periphial-cards/the-blink-gate-array/blink.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-developers-notes/the-z88-motherboard-hardware-and-periphial-cards/the-blink-gate-array/blink.webp","alt":"The blink, this chip was product in 1987, week 14.","loading":"lazy","decoding":"async","width":900,"height":708}],[]]}]]}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L21",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L22",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"Pin     Name    Type    Description"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1       GND     -       Ground"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2       VDD     -       +5V"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3       IOR     I       Z80 /IORQ"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"4       CRD     I       Z80 /RD"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"5       MRQ     I       Z80 /MREQ"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"6       HLT     I       Z80 /HALT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"7       NMIB    O       Z80 /NMI"}]}],"\n",["$","span",null,{"children":"$L23"}],"\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41","\n","$L42","\n","$L43","\n","$L44","\n","$L45","\n","$L46","\n","$L47","\n","$L48","\n","$L49","\n","$L4a","\n","$L4b","\n","$L4c","\n","$L4d","\n","$L4e","\n","$L4f","\n","$L50","\n","$L51","\n","$L52","\n","$L53","\n","$L54","\n","$L55","\n","$L56","\n","$L57","\n","$L58","\n","$L59","\n","$L5a","\n","$L5b","\n","$L5c","\n","$L5d","\n","$L5e","\n","$L5f","\n","$L60","\n","$L61","\n","$L62","\n","$L63","\n","$L64","\n","$L65","\n","$L66","\n","$L67","\n","$L68","\n","$L69","\n","$L6a","\n","$L6b","\n","$L6c","\n","$L6d","\n","$L6e","\n","$L6f","\n","$L70","\n","$L71","\n","$L72","\n","$L73","\n","$L74","\n","$L75","\n","$L76","\n","$L77","\n","$L78","\n","$L79","\n","$L7a","\n","$L7b","\n","$L7c","\n","$L7d","\n","$L7e","\n","$L7f","\n","$L80","\n","$L81","\n","$L82"]}]]}]]}],"\n","$L83","\n","$L84","\n","$L85","\n","$L86","\n","$L87","\n","$L88","\n","$L89","\n","$L8a","\n","$L8b","\n","$L8c","\n","$L8d","\n","$L8e","\n","$L8f","\n","$L90","\n","$L91","\n","$L92","\n","$L93","\n","$L94","\n","$L95","\n","$L96","\n","$L97","\n","$L98","\n","$L99","\n","$L9a","\n","$L9b","\n","$L9c","\n","$L9d","\n","$L9e","\n","$L9f"]]}]
+15:["$","$La0",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@a1"}]}]
+1f:true
+a2:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+9:300
+23:["$","span",null,{"children":"8       INTB    O       Z80 /INT"}]
+24:["$","span",null,{"children":["$","span",null,{"children":"9       CDB     IO      Z80 D1"}]}]
+25:["$","span",null,{"children":["$","span",null,{"children":"10      ROUT    O       Z80 /RST"}]}]
+26:["$","span",null,{"children":["$","span",null,{"children":"11      CDA     IO      Z80 D0"}]}]
+27:["$","span",null,{"children":["$","span",null,{"children":"12      CM1     I       Z80 /M1"}]}]
+28:["$","span",null,{"children":["$","span",null,{"children":"13      CDH     IO      Z80 D7"}]}]
+29:["$","span",null,{"children":["$","span",null,{"children":"14      CDC     IO      Z80 D2"}]}]
+2a:["$","span",null,{"children":["$","span",null,{"children":"15      CA0     O       Z80 A0"}]}]
+2b:["$","span",null,{"children":["$","span",null,{"children":"16      CDG     IO      Z80 D6"}]}]
+2c:["$","span",null,{"children":["$","span",null,{"children":"17      CA1     O       Z80 A1"}]}]
+2d:["$","span",null,{"children":["$","span",null,{"children":"18      CDF     IO      Z80 D5"}]}]
+2e:["$","span",null,{"children":["$","span",null,{"children":"19      CA2     O       Z80 A2"}]}]
+2f:["$","span",null,{"children":["$","span",null,{"children":"20      CDD     IO      Z80 D3"}]}]
+30:["$","span",null,{"children":["$","span",null,{"children":"21      CA3     O       Z80 A3"}]}]
+31:["$","span",null,{"children":["$","span",null,{"children":"22      CDE     IO      Z80 D4"}]}]
+32:["$","span",null,{"children":["$","span",null,{"children":"23      CA4     O       Z80 A4"}]}]
+33:["$","span",null,{"children":["$","span",null,{"children":"24      CA5     O       Z80 A5"}]}]
+34:["$","span",null,{"children":["$","span",null,{"children":"25      CA15    O       Z80 A15"}]}]
+35:["$","span",null,{"children":["$","span",null,{"children":"26      CA6     O       Z80 A6"}]}]
+36:["$","span",null,{"children":["$","span",null,{"children":"27      CA14    O       Z80 A14"}]}]
+37:["$","span",null,{"children":["$","span",null,{"children":"28      GND     -       Ground"}]}]
+38:["$","span",null,{"children":["$","span",null,{"children":"29      VDD     -       +5V"}]}]
+39:["$","span",null,{"children":["$","span",null,{}]}]
+3a:["$","span",null,{"children":["$","span",null,{"children":"30      CA13    O       Z80 A13"}]}]
+3b:["$","span",null,{"children":["$","span",null,{"children":"31      CA7     O       Z80 A7"}]}]
+3c:["$","span",null,{"children":["$","span",null,{"children":"32      CA8     O       Z80 A8"}]}]
+3d:["$","span",null,{"children":["$","span",null,{"children":"33      CA12    O       Z80 A12"}]}]
+3e:["$","span",null,{"children":["$","span",null,{"children":"34      CA9     O       Z80 A9"}]}]
+3f:["$","span",null,{"children":["$","span",null,{"children":"35      CA11    O       Z80 A11"}]}]
+40:["$","span",null,{"children":["$","span",null,{"children":"36      CA10    O       Z80 A10"}]}]
+41:["$","span",null,{"children":["$","span",null,{"children":"37      TxD     O       UART TXD"}]}]
+42:["$","span",null,{"children":["$","span",null,{"children":"38      RTS     O       UART RTS"}]}]
+43:["$","span",null,{"children":["$","span",null,{"children":"39      IRCE    O       RAM.0 /CE"}]}]
+44:["$","span",null,{"children":["$","span",null,{"children":"40      GND     -       Ground"}]}]
+45:["$","span",null,{"children":["$","span",null,{"children":"41      RxD     I       UART RXD"}]}]
+46:["$","span",null,{"children":["$","span",null,{"children":"42      CTS     I       UART CTS"}]}]
+47:["$","span",null,{"children":["$","span",null,{"children":"43      DCD     I       UART DCD"}]}]
+48:["$","span",null,{"children":["$","span",null,{"children":"44      PM1     O       Z80 clock (3.2768 MHz)"}]}]
+49:["$","span",null,{"children":["$","span",null,{"children":"45      LP      O       LCD control, 10ms  line pulse"}]}]
+4a:["$","span",null,{"children":["$","span",null,{"children":"46      FR      O       LCD control, 156us frame"}]}]
+4b:["$","span",null,{"children":["$","span",null,{"children":"47      XSCL    O       LCD control, 300ns data"}]}]
+4c:["$","span",null,{"children":["$","span",null,{"children":"48      LD0     O       LCD data"}]}]
+4d:["$","span",null,{"children":["$","span",null,{"children":"49      LD1     O       LCD data"}]}]
+4e:["$","span",null,{"children":["$","span",null,{"children":"50      LD2     O       LCD data"}]}]
+4f:["$","span",null,{"children":["$","span",null,{"children":"51      LD3     O       LCD data"}]}]
+50:["$","span",null,{"children":["$","span",null,{}]}]
+51:["$","span",null,{"children":["$","span",null,{"children":"52      VDD     -       +5V"}]}]
+52:["$","span",null,{"children":["$","span",null,{"children":"53      GND     -       Ground"}]}]
+53:["$","span",null,{"children":["$","span",null,{"children":"54      MA16    O       Memory A16"}]}]
+54:["$","span",null,{"children":["$","span",null,{"children":"55      MA15    O       Memory A15"}]}]
+55:["$","span",null,{"children":["$","span",null,{"children":"56      MA14    O       Memory A14"}]}]
+56:["$","span",null,{"children":["$","span",null,{"children":"57      MA12    O       Memory A12"}]}]
+57:["$","span",null,{"children":["$","span",null,{"children":"58      MA7     O       Memory A7"}]}]
+58:["$","span",null,{"children":["$","span",null,{"children":"59      MA13    O       Memory A13"}]}]
+59:["$","span",null,{"children":["$","span",null,{"children":"60      MA6     O       Memory A6"}]}]
+5a:["$","span",null,{"children":["$","span",null,{"children":"61      MA8     O       Memory A8"}]}]
+5b:["$","span",null,{"children":["$","span",null,{"children":"62      MA5     O       Memory A5"}]}]
+5c:["$","span",null,{"children":["$","span",null,{"children":"63      WRB     O       Write enable /WE"}]}]
+5d:["$","span",null,{"children":["$","span",null,{"children":"64      MA9     O       Memory A9"}]}]
+5e:["$","span",null,{"children":["$","span",null,{"children":"65      MA4     O       Memory A4"}]}]
+5f:["$","span",null,{"children":["$","span",null,{"children":"66      MA11    O       Memory A11"}]}]
+60:["$","span",null,{"children":["$","span",null,{"children":"67      MA3     O       Memory A3"}]}]
+61:["$","span",null,{"children":["$","span",null,{"children":"68      IPCE    O       ROM.0 /CE"}]}]
+62:["$","span",null,{"children":["$","span",null,{"children":"69      MA2     O       Memory A2"}]}]
+63:["$","span",null,{"children":["$","span",null,{"children":"70      MA10    O       Memory A10"}]}]
+64:["$","span",null,{"children":["$","span",null,{"children":"71      MA1     O       Memory A1"}]}]
+65:["$","span",null,{"children":["$","span",null,{"children":"72      MA0     O       Memory A0"}]}]
+66:["$","span",null,{"children":["$","span",null,{"children":"73      MDH     IO      Memory D7"}]}]
+67:["$","span",null,{"children":["$","span",null,{"children":"74      MDA     IO      Memory D0"}]}]
+68:["$","span",null,{"children":["$","span",null,{"children":"75      MDG     IO      Memory D6"}]}]
+69:["$","span",null,{"children":["$","span",null,{"children":"76      MDB     IO      Memory D1"}]}]
+6a:["$","span",null,{"children":["$","span",null,{"children":"77      MDF     IO      Memory D5"}]}]
+6b:["$","span",null,{"children":["$","span",null,{"children":"78      MDC     IO      Memory D2"}]}]
+6c:["$","span",null,{"children":["$","span",null,{"children":"79      VDD     -       +5V"}]}]
+6d:["$","span",null,{"children":["$","span",null,{"children":"80      GND     -       Ground"}]}]
+6e:["$","span",null,{"children":["$","span",null,{}]}]
+6f:["$","span",null,{"children":["$","span",null,{"children":"81      MDE     IO      Memory D4"}]}]
+70:["$","span",null,{"children":["$","span",null,{"children":"82      MDD     IO      Memory D3"}]}]
+71:["$","span",null,{"children":["$","span",null,{"children":"83      MA17    O       Memory A17"}]}]
+72:["$","span",null,{"children":["$","span",null,{"children":"84      MA18    O       Memory A18"}]}]
+73:["$","span",null,{"children":["$","span",null,{"children":"85      MAW     O       Memory A19"}]}]
+74:["$","span",null,{"children":["$","span",null,{"children":"86      SE1     O       Slot1 /CE"}]}]
+75:["$","span",null,{"children":["$","span",null,{"children":"87      POE     O       PSRAM /OE (refreshed)"}]}]
+76:["$","span",null,{"children":["$","span",null,{"children":"88      ROE     O       ROM /OE"}]}]
+77:["$","span",null,{"children":["$","span",null,{"children":"89      PGMB    O       Slot 3 /WE (Program Byte)"}]}]
+78:["$","span",null,{"children":["$","span",null,{"children":"90      EOE     O       Slot 3 /OE (Eprom OE)"}]}]
+79:["$","span",null,{"children":["$","span",null,{"children":"91      SE3     O       Slot 3 /CE"}]}]
+7a:["$","span",null,{"children":["$","span",null,{"children":"92      FLP     I       Flap"}]}]
+7b:["$","span",null,{"children":["$","span",null,{"children":"93      SE2     O       Slot2 /CE"}]}]
+7c:["$","span",null,{"children":["$","span",null,{"children":"94      SNS     I       Sens line (card insertion)"}]}]
+7d:["$","span",null,{"children":["$","span",null,{"children":"95      VPON    O       VPP on"}]}]
+7e:["$","span",null,{"children":["$","span",null,{"children":"96      BTL     I       Batt low"}]}]
+7f:["$","span",null,{"children":["$","span",null,{"children":"97      RIN     I       Reset input"}]}]
+80:["$","span",null,{"children":["$","span",null,{"children":"98      MCK     I       Master clock (9.8304 MHz)"}]}]
+81:["$","span",null,{"children":["$","span",null,{"children":"99      SCK     I       Standby clock (25.6 KHz)"}]}]
+82:["$","span",null,{"children":["$","span",null,{"children":"100     SPKR    O       speaker"}]}]
+83:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The original notes as supplied to Cambridge Computer were lost during the time of the company’s move from Cambridge to Scotland. The following notes comes from the patent WO88/09007 (Richard MILLER and James WESTWOOD) and WO88/09573 (James WESTWOOD)."}]
+84:["$","h2",null,{"id":"sns","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["SNS",["$","$La2",null,{"id":"sns"}]]}]
+85:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Card insertion or removal is detected by SNS. The card module slot connector is made such that during insertion or removal the SNS is shorted to ground. When SNS goes low, an NMI is fired and initiate a shutdown. This prevent any loss off data or system crash."}]
+86:["$","h2",null,{"id":"poe-roe-eoe-pseudo-static-ram-refresh","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["POE, ROE, EOE, pseudo-static RAM refresh",["$","$La2",null,{"id":"poe-roe-eoe-pseudo-static-ram-refresh"}]]}]
+87:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"POE : Pseudo-static OE"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"ROE : Rom OE"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"EOE : Eprom OE"}],"\n"]}]
+88:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When Z80 is running and LCD is on, the refresh is performed by the LCD controller reading the memory."}]
+89:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["When LCD is off (DOZE state), the 42832 is not in standby mode, it needs to be refreshed.",["$","br",null,{}],"POE provides this refresh, ROE does not. POE is tracked to slot 0 RAM, slot 1 and slot 2 connectors."]}]
+8a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Pseudo static RAM card are not supported in slot 3. The POE line in slot 3 connector is replaced by the EOE. EOE is driven by the EPR register."}]
+8b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Z80 Refresh signal is not wired. Refresh logic in blink is done from CRD, CM1, MRQ (negative signals) :"}]
+8c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"POE = ROE | ( CRD & ~CM1 & ~MRQ)"}]}]
+8d:["$","h2",null,{"id":"clocks-and-power-management","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Clocks and power management",["$","$La2",null,{"id":"clocks-and-power-management"}]]}]
+8e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Z80 clock (PM1) is driven by the Blink, the CMOS Z80 can be stopped without losing register state."}]
+8f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Active : ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"PM1 = MCK / 3 = 9.8304 / 3 = 3.2768MHz"}]]}]
+90:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Snooze : ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"PM1 is stopped"}]]}]
+91:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Coma : ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"PM1 = SCK = 25.6KHz"}]]}]
+92:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Doze : ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"PM1 is stopped during some eprom programming phase (see below)"}]]}]
+93:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Master clock is 9.83MHz for the LCD controller reading screen files in memory."}]
+94:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"It will be appreciated that the CPU clock must be stopped and started at appropriate points in the clock cycle. In practice it may be stopped halfway through a cycle and restarted at the beginning of another cycle."}]
+95:["$","h2",null,{"id":"lcd-controller","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["LCD controller",["$","$La2",null,{"id":"lcd-controller"}]]}]
+96:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A 640 bits shift register is used to build the current line and shift nibbles to the LCD data lines."}]
+97:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The LCD frame rate is 100Hz, one page every 10ms (LP)."}]
+98:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"One line is sent every 156.25us (FR). A burst of 160 nibbles at 3.2768 MHz (300ns period) are sent. It last 48us and is followed by a 108.25us inactive period."}]
+99:["$","h2",null,{"id":"slot-3-and-eprom-programming","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Slot 3 and Eprom programming",["$","$La2",null,{"id":"slot-3-and-eprom-programming"}]]}]
+9a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The connector for the top slot, slot 3, is moreover equipped to apply a programming voltage Vpp to enable an EPROM module to be programmed. By means of the present invention it is possible to effect this programming directly off the address and data buses extended to the module via the gate array and connector. Slot 3 normally operates like slots 1 and 2, i.e. normal read and (if RAM is in the slot) write operations may be effected. However a bit is used in the logic array as a flag to select (OVERP in COM register) between normal operation and programming mode. When this bit is set, the circuit described below with-reference to Fig. 2 is brought into action. A separate bit is set/reset to control the application of the programming voltage Vpp (VPP in COM register)."}]
+9b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Features of the logic array are shown in Fig. 2. A particular address range, namely the top slot, is dedicated to EPROM programming, when the flag bit mentioned above is set. When the",["$","br",null,{}],"CPU wishes to program an EPROM byte, it establishes the required address by way of the bus A0 to A15 and one of the registers 15 (B0 to B7) and the required data is put on to the data bus D0 to D7."]}]
+9c:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"695px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-developers-notes/the-z88-motherboard-hardware-and-periphial-cards/the-blink-gate-array/blink-epr.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-developers-notes/the-z88-motherboard-hardware-and-periphial-cards/the-blink-gate-array/blink-epr.webp","alt":"blink epr","loading":"lazy","decoding":"async","width":695,"height":548}],[]]}]]}]
+9d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The logic array includes a decoder 22 which detects any extended write address in the programming range (B6 = B7 = 1) and issues a signal PROGRAMA which stops the CPU clock PHI CPU, via a latch 26 and gate 28. After a delay, introduced by delay stage 23, of about 2 seconds (FRONT PORCH) a latch 27 is set, which in turn will activate the appropriate control signals to the EPROM (such as PGM, OE and CE, depending on the EPROM type). Delay duration and state of PGM, EOE, SE3 are set in EPR register."}]
+9e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The delay stage 24, is programmable, to accept various EPROM programming times After the delay 24, the latch 27 is reset, thus releasing the EPROM from its programming mode. A delay 25 (BACK PORCH) lasts for about 2 seconds, after which the clock to the CPU is started again. Vpp is applied throughout this sequence of operations. The delay time of the delay 24 may be programmed to allow the CPU to perform a program then verify cycle repeatedly in a training stage during which the appropriate minimum delay for secure programming of the EPROM is ascertained."}]
+9f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"It can thus be seen that the EPROM is programmed directly off the address and data buses A, D’0 - D’7 rather than off a separate register set up to buffer the input signals which have to be held over a very large number of CPU clock cycles."}]
+a1:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

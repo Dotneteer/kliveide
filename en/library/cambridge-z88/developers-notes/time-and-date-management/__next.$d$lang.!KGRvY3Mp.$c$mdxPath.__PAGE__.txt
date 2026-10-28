@@ -1,0 +1,117 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T124e,---
+description: "The applications within the Z88 frequently need to manipulate times and dates. The Clock, Calendar and Diary are the obvious examples; also the Filer stores creation and \"last updated\" dates in..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/2654214 (version 5) by scripts/import-z88-wiki.cjs */}
+
+# Time and date management
+
+The applications within the Z88 frequently need to manipulate times and dates. The Clock, Calendar and Diary are the obvious examples; also the Filer stores creation and "last updated" dates in its filing system. Hence a fairly comprehensive set of routines are provided to handle them. Before discussing the routines themselves, it is worth explaining how dates and times may be represented.
+
+Within the machine, dates are represented by 3-byte unsigned integers which represent the number of days since the conventional day zero, which is Monday 23rd November 4713 BC! This number of days figure is consistent from the point of view of the New Style (Gregorian) calendar, so will not tally with historical dates before 14th September 1752 (Britain) or 14th October 1582 (continental Europe) unless the dates have been retrospectively corrected (like George Washington's birth date). However, it should be entirely correct from its chosen point of view, incorporating the following rules to deal with leap years:
+
+```text
+            Every year is a normal year (365 days) except
+            every 4th year is a leap year (366 days) except
+            every 100th year is a normal year except
+            every 400th year is a leap year except
+            every 3200th year is a leap year except
+            every 80000th year is a normal year.
+```
+
+The accuracy range is 23/11/4713 BC to 31/12/18253 AD.
+
+Routines provided to convert between this rather inconvenient format and either:
+
+1\) A zoned integer representing a human date conveniently, split over registers as follows:
+
+```text
+            C (bits 7 to 5)         the day of the week (1=Monday, 7=Sunday)
+            C (bits 4 to 0)         the day of the month (1 to 31, obviously)
+            B                       the month (1=january, 12=december)
+            DE                      a signed year number relative to 0 AD
+```
+
+2\) An ASCII string, with various options (leading blanks, American format, century \[ie. 88 or 1988\], month in full \[ie. Dec or December\] etc).
+
+Times are internally represented as unsigned 3-byte integers representing the number of 10ms (1/100 of a second) intervals since the start of the day. Routines exist to convert between this format and an ASCII string, again with various options. Further routines are provided to read or set the machine time and date. The available routines are as follows, their specifications can be found in "System Calls Reference":
+
+`GN_Gdt` convert an ASCII string to an internal date<br />`GN_Pdt` convert an internal date to an ASCII string<br />`GN_Die` convert from internal to external format<br />`GN_Dei` convert from external to internal format<br />`GN_Gmd` fetch current machine date<br />`GN_Pmd` set current machine date<br /><br />`GN_Gtm` convert an ASCII string to an internal time<br />`GN_Ptm` convert an internal time to an ASCII string<br />`GN_Gmt` fetch current machine time<br />`GN_Pmt` set current machine time<br />`GN_Msc` convert real time to elapsed time<br />`GN_Sdo` output date and time to standard output
+
+```text
+
+```
+
+```text
+include "time.def"                  ; time & date call definitions
+include "stdio.def"                 ; standard I/O call definitions
+
+; simple example to display the current date 
+; assumes IY points to at least 30 bytes of available memory 
+; this memory should not lie in segment 2 
+
+            push iy
+            pop  de                 ; buffer for date
+            oz   GN_Gmd             ; get machine date
+                                    ; DE = DE(in) + 3
+            push iy
+            pop  hl                 ; source date
+            ld   a, 240             ; century output, C = interfield delimiter
+            ld   b, 15              ; expanded day and month (no AD/BC)
+            ld   c, '.'             ; interfield delimiter
+            oz   GN_Pdt             ; put date in ASCII format
+            xor  a
+            ld   (de),a             ; null-terminate ASCII string
+            push iy
+            pop  hl
+            inc  hl
+            inc  hl                 ; adjust string buffer address
+            inc  hl                 ; of converted string
+            oz   GN_Sop             ; write string to std. output
+            oz   GN_Nln             ; new line
+            ret
+```a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"The applications within the Z88 frequently need to manipulate times and dates. The Clock, Calendar and Diary are the obvious examples; also the Filer stores creation and \"last updated\" dates in...","title":"Time and date management","filePath":"content/en/library/cambridge-z88/developers-notes/time-and-date-management.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/developers-notes/time-and-date-management","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Time and date management - Klive IDE"}],["$","meta","1",{"name":"description","content":"The applications within the Z88 frequently need to manipulate times and dates. The Clock, Calendar and Diary are the obvious examples; also the Filer stores creation and \"last updated\" dates in..."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/developers-notes/time-and-date-management/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"cyL0EKA0xNKEZcECA3AIS"}
+20:"ToggleWordWrapButton"
+21:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$20"]
+22:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+29:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Time and date management","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The applications within the Z88 frequently need to manipulate times and dates. The Clock, Calendar and Diary are the obvious examples; also the Filer stores creation and “last updated” dates in its filing system. Hence a fairly comprehensive set of routines are provided to handle them. Before discussing the routines themselves, it is worth explaining how dates and times may be represented."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Within the machine, dates are represented by 3-byte unsigned integers which represent the number of days since the conventional day zero, which is Monday 23rd November 4713 BC! This number of days figure is consistent from the point of view of the New Style (Gregorian) calendar, so will not tally with historical dates before 14th September 1752 (Britain) or 14th October 1582 (continental Europe) unless the dates have been retrospectively corrected (like George Washington’s birth date). However, it should be entirely correct from its chosen point of view, incorporating the following rules to deal with leap years:"}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L21",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L22",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"            Every year is a normal year (365 days) except"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            every 4th year is a leap year (366 days) except"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            every 100th year is a normal year except"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            every 400th year is a leap year except"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            every 3200th year is a leap year except"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            every 80000th year is a normal year."}]}]]}]]}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The accuracy range is 23/11/4713 BC to 31/12/18253 AD."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Routines provided to convert between this rather inconvenient format and either:"}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"1) A zoned integer representing a human date conveniently, split over registers as follows:"}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined","$L23"]}],"\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28"]]}]
+15:["$","$L29",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@2a"}]}]
+1f:true
+9:300
+23:["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L21",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L22",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"            C (bits 7 to 5)         the day of the week (1=Monday, 7=Sunday)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            C (bits 4 to 0)         the day of the month (1 to 31, obviously)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            B                       the month (1=january, 12=december)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            DE                      a signed year number relative to 0 AD"}]}]]}]]}]
+24:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"2) An ASCII string, with various options (leading blanks, American format, century [ie. 88 or 1988], month in full [ie. Dec or December] etc)."}]
+25:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Times are internally represented as unsigned 3-byte integers representing the number of 10ms (1/100 of a second) intervals since the start of the day. Routines exist to convert between this format and an ASCII string, again with various options. Further routines are provided to read or set the machine time and date. The available routines are as follows, their specifications can be found in “System Calls Reference”:"}]
+26:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"GN_Gdt"}]," convert an ASCII string to an internal date",["$","br",null,{}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"GN_Pdt"}]," convert an internal date to an ASCII string",["$","br",null,{}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"GN_Die"}]," convert from internal to external format",["$","br",null,{}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"GN_Dei"}]," convert from external to internal format",["$","br",null,{}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"GN_Gmd"}]," fetch current machine date",["$","br",null,{}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"GN_Pmd"}]," set current machine date",["$","br",null,{}],["$","br",null,{}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"GN_Gtm"}]," convert an ASCII string to an internal time",["$","br",null,{}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"GN_Ptm"}]," convert an internal time to an ASCII string",["$","br",null,{}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"GN_Gmt"}]," fetch current machine time",["$","br",null,{}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"GN_Pmt"}]," set current machine time",["$","br",null,{}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"GN_Msc"}]," convert real time to elapsed time",["$","br",null,{}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"GN_Sdo"}]," output date and time to standard output"]}]
+27:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L21",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L22",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{}]}]}]]}]]}]
+28:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L21",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L22",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"include \"time.def\"                  ; time & date call definitions"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"include \"stdio.def\"                 ; standard I/O call definitions"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; simple example to display the current date "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; assumes IY points to at least 30 bytes of available memory "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; this memory should not lie in segment 2 "}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            push iy"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            pop  de                 ; buffer for date"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            oz   GN_Gmd             ; get machine date"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                                    ; DE = DE(in) + 3"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            push iy"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            pop  hl                 ; source date"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ld   a, 240             ; century output, C = interfield delimiter"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ld   b, 15              ; expanded day and month (no AD/BC)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ld   c, '.'             ; interfield delimiter"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            oz   GN_Pdt             ; put date in ASCII format"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            xor  a"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ld   (de),a             ; null-terminate ASCII string"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            push iy"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            pop  hl"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            inc  hl"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            inc  hl                 ; adjust string buffer address"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            inc  hl                 ; of converted string"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            oz   GN_Sop             ; write string to std. output"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            oz   GN_Nln             ; new line"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ret"}]}]]}]]}]]}]
+2a:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

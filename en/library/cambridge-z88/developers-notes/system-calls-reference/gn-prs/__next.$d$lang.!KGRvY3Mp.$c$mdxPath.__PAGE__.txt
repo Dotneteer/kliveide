@@ -1,0 +1,85 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+19:"ViewportBoundary"
+1a:I[484,[],"$19"]
+1b:"MetadataBoundary"
+1c:I[484,[],"$1b"]
+1d:"$Sreact.suspense"
+1e:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T871,---
+description: "GN_Esa, read & write to filename segments GN_Fcm, compress a filename GN_Fex, expand a filename GN_Opw, Open wildcard handler GN_Pfs, parse filename segment GN_Wcl, close wildcard handle GN_Wfn,..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8618163 (version 4) by scripts/import-z88-wiki.cjs */}
+
+# GN_Prs, Parse filename
+
+## Register parameters
+
+```text
+IN:
+     HL = 0,1,2; not allowed (B=0)
+     BHL = points to filename
+     (B = 0 is interpreted as local pointer)
+     Filename must be terminated by a control character.
+OUT, if call successful:
+     Fc = 0
+     A0 = 1, extension used
+     A1 = 1, filename used
+     A2 = 1, explicit directory used
+     A3 = 1, current directory (".") used
+     A4 = 1, parent directory ("..") used
+     A5 = 1, wildcard directory ("//") used
+     A6 = 1, device specified
+     A7 = 1, wildcards used
+
+     B = number of segments in filename
+     C = length of filename including terminator
+
+OUT, if call failed:
+     Fc = 1
+     A = error code:
+          RC_IVF ($17), poor syntax
+
+Registers changed after return:
+     ....DEHL/IXIY same
+     AFBC..../.... different
+```
+
+## Related calls
+
+**[GN\_Esa](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-esa)**, read & write to filename segments <br />**[GN\_Fcm](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-fcm)**, compress a filename <br />**[GN\_Fex](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-fex)**, expand a filename <br />**[GN\_Opw](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-opw)**, Open wildcard handler <br />**[GN\_Pfs](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-pfs)**, parse filename segment <br />**[GN\_Wcl](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-wcl)**, close wildcard handle <br />**[GN\_Wfn](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-wfn)**, fetch next match for wildcard string (handle) <br />**[GN\_Wsm](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-wsm)**, match filename segment to wildcard stringa:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Register parameters","id":"register-parameters","depth":2},{"value":"Related calls","id":"related-calls","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"GN_Esa, read & write to filename segments GN_Fcm, compress a filename GN_Fex, expand a filename GN_Opw, Open wildcard handler GN_Pfs, parse filename segment GN_Wcl, close wildcard handle GN_Wfn,...","title":"GN_Prs, Parse filename","filePath":"content/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-prs.mdx","timestamp":1792315833000},"sourceCode":"$12","children":[["$","div",null,{"id":"nextra-skip-nav"}],["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["GN_Prs, Parse filename","$undefined"]}],"\n",["$","h2",null,{"id":"register-parameters","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Register parameters","$L13"]}],"\n","$L14","\n","$L15","\n","$L16"]]}]]}]]}]}],null,"$L17"]}],"p":"$@18","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/developers-notes/system-calls-reference/gn-prs","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L1a",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1c",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1d",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"GN_Prs, Parse filename - Klive IDE"}],["$","meta","1",{"name":"description","content":"GN_Esa, read & write to filename segments GN_Fcm, compress a filename GN_Fex, expand a filename GN_Opw, Open wildcard handler GN_Pfs, parse filename segment GN_Wcl, close wildcard handle GN_Wfn,..."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-prs/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1e","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1f","v":null,"s":"$9"}},"a":"$@20","u":"$@21","b":"cyL0EKA0xNKEZcECA3AIS"}
+22:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+23:"ToggleWordWrapButton"
+24:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$23"]
+25:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+26:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+27:I[484,[],"OutletBoundary"]
+13:["$","$L22",null,{"id":"register-parameters"}]
+14:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L24",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L25",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"IN:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     HL = 0,1,2; not allowed (B=0)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     BHL = points to filename"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     (B = 0 is interpreted as local pointer)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     Filename must be terminated by a control character."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OUT, if call successful:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     Fc = 0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     A0 = 1, extension used"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     A1 = 1, filename used"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     A2 = 1, explicit directory used"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     A3 = 1, current directory (\".\") used"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     A4 = 1, parent directory (\"..\") used"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     A5 = 1, wildcard directory (\"//\") used"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     A6 = 1, device specified"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     A7 = 1, wildcards used"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     B = number of segments in filename"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     C = length of filename including terminator"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OUT, if call failed:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     Fc = 1"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     A = error code:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"          RC_IVF ($17), poor syntax"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Registers changed after return:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     ....DEHL/IXIY same"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     AFBC..../.... different"}]}]]}]]}]]}]
+15:["$","h2",null,{"id":"related-calls","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Related calls",["$","$L22",null,{"id":"related-calls"}]]}]
+16:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":["$","$L26",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-esa","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"GN_Esa"}]}],", read & write to filename segments ",["$","br",null,{}],["$","strong",null,{"children":["$","$L26",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-fcm","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"GN_Fcm"}]}],", compress a filename ",["$","br",null,{}],["$","strong",null,{"children":["$","$L26",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-fex","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"GN_Fex"}]}],", expand a filename ",["$","br",null,{}],["$","strong",null,{"children":["$","$L26",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-opw","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"GN_Opw"}]}],", Open wildcard handler ",["$","br",null,{}],["$","strong",null,{"children":["$","$L26",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-pfs","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"GN_Pfs"}]}],", parse filename segment ",["$","br",null,{}],["$","strong",null,{"children":["$","$L26",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-wcl","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"GN_Wcl"}]}],", close wildcard handle ",["$","br",null,{}],["$","strong",null,{"children":["$","$L26",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-wfn","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"GN_Wfn"}]}],", fetch next match for wildcard string (handle) ",["$","br",null,{}],["$","strong",null,{"children":["$","$L26",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-wsm","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"GN_Wsm"}]}],", match filename segment to wildcard string"]}]
+17:["$","$L27",null,{"children":["$","$1d",null,{"name":"Next.MetadataOutlet","children":"$@28"}]}]
+21:true
+9:300
+28:null
+9:C
+20:0
+7:"$undefined"
+1f:"$undefined"
+18:"$undefined"

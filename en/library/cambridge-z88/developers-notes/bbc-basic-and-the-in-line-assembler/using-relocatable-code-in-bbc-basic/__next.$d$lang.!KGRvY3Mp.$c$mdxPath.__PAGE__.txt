@@ -1,0 +1,315 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T1ca8,---
+description: "Using machine code in BBC BASIC is best suited with allocating dynamic memory with DIM and then storing (assembling) the code to that area. If you don't assemble but have code ready, eg. loaded..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/3112980 (version 6) by scripts/import-z88-wiki.cjs */}
+
+# Using relocatable code in BBC BASIC
+
+Using machine code in BBC BASIC is best suited with allocating dynamic memory with DIM and then storing (assembling) the code to that area. If you don't assemble but have code ready, eg. loaded directly with PROC\_lbytes, it is necessary that your machine code is relocatable, ie. contains no absolute address references (the machine code assumes that it is located at a certain ORG position in memory). You can relocatable code by omitting CALL and JP instructions and only use JR and DJNZ (jump relative) instruction. However, your program cannot be very large since relative jumps only range +/- 128 bytes in either direction from the instruction.
+
+You can make truly relocatable machine code with the **Mpm** assembler, which is an integrated part of the Z88 Assembler Workbench. By using the '-R' option a small header is generated together with your code. The header contains a relocater routine and a relocation table. When your code is executed, it is automatically relocated to the current position in memory (just once). Subsequent calls to the code will just execute your code and not the relocater. With this option you can always store your machine code utilities with PROC\_sbytes and at a later time allocate space with DIM for your code, and just load it into appropriate BBC BASIC memory. The code may be placed anywhere (in RAM).
+
+The Mpm assembler generates the relocation table, when parsing the source code for compilation of the binary executable code. The relocator routine that is used by Mpm is made available here for convenience:
+
+```text
+ MODULE relocator
+ XDEF relocator, SIZEOF_relocator
+
+; *************************************************************************
+;
+; This routine will relocate a machine code program.
+; A relocation table is placed immediatly after the relocation routine.
+;
+; The program that is to be relocated and executed are placed immediately
+; after the relocation table.
+;
+; The relocation routine expects IY to point at the start address, entry
+; of the relocater. The relocater then calculates the correct origin for
+; the relocated program. The BBC BASIC on the Z88 also setups the IY register
+; during a BBC BASIC CALL command to execute local machine code.
+;
+; After completed relocation, the entry of the relocater is patched to
+; JP  which jumps directly to the executing program, if the relocated
+; code is called again.
+;
+; The following registers are affected by the initial relocation process:
+;         AFBCDEHL/IX../........ same
+;         ......../..IY/afbcdehl different
+;
+; As indicated above the outside world cannot use the alternate registers
+; as parameter interface to the relocated program - they are smashed by the
+; relocater.
+;
+.relocator          
+        ex   af,af'                   ; preserve AF
+        exx                           ; preserve BC, DE, HL
+        push iy
+        pop  hl
+        ld   bc, #end_relocator-relocator
+
+        add  hl,bc                    ; absolute address of relocation table
+
+        ld   e,(hl)
+        inc  hl
+        ld   d,(hl)
+        push de                       ; DE = total of relocation offset elements
+        inc  hl
+        ld   c,(hl)
+        inc  hl
+        ld   b,(hl)                   ; total size of relocation offset elements
+        inc  hl
+        push hl                       ; preserve pointer to first relocation offset element
+        add  hl,bc
+        ld   b,h                      ; HL = pointer to current relocation address
+        ld   c,l                      ; BC = program ORG, first byte of program
+
+.relocate_loop
+        ex   (sp),hl                  ; HL = pointer to relocation offset element
+        ld   a,(hl)
+        inc  hl                       ; ready for next relocation offset pointer
+        or   a
+        jr   nz, byte_offset
+.extended_offset         
+        ld   e,(hl)
+        inc  hl
+        ld   d,(hl)                   ; DE = extended offset pointer to next relocation address
+        inc  hl                       ; ready for next relocation offset pointer
+        jr   relocate_address
+
+.byte_offset
+        ld   d,0
+        ld   e,a                      ; offset pointer to next relocation address
+.relocate_address
+        ex   (sp),hl                  ; HL = pointer to current relocation address
+        add  hl,de                    ; new pointer at memory that contains relocation address
+        ld   e,(hl)
+        inc  hl
+        ld   d,(hl)
+        ex   de,hl
+        add  hl,bc                    ; HL = address relocated to program ORG in BC
+        ex   de,hl
+        ld   (hl),d
+        dec  hl
+        ld   (hl),e                   ; update relocated address back to memory
+
+        pop  de                       ; DE = pointer to relocation offset
+        ex   (sp),hl                  ; HL = index counter
+        dec  hl                       ; update index counter
+        ld   a,h
+        or   l                        ; all addresses relocated?
+        ex   (sp),hl                  ; index counter back on stack
+        push de                       ; pointer to relocation offset back on stack
+        jr   nz, relocate_loop
+        pop  af
+        pop  af                       ; remove redundant variables
+
+; relocation of program completed. Patch the entry of the relocater to JP  that
+; jumps directly to the executing program, if the loaded program is executed again.
+; Finish with restoring main registers and then execute program.
+;
+.relocation_finished
+        ld   (iy+0),$C3
+        ld   (iy+1),c
+        ld   (iy+2),b                 ; patch entry to JP , the relocated program
+        exx                           ; swap back to main BC, DE, HL
+        ex   af,af'                   ; and main AF
+        jp   (iy)                     ; execute relocated program...
+.end_relocator
+
+DEFC SIZEOF_relocator = end_relocator - relocator
+
+; ******************************************************************************
+;
+; The relocation table is placed here by the Mpm assembler.
+; The format of the generated table is:
+;
+;    total_elements    ds.w 1
+;    sizeof_table      ds.w 1
+;    patchpointer_0    ds.b 1  --+
+;    patchpointer_1    ds.b 1    |
+;    ....                        |  sizeof_table
+;    ....                        |
+;    patchpointer_n    ds.b 1  --+
+;
+; The first patch pointer is an offset from the start of the program (.routine)
+; to the first position of a location that contains a relocatable address.
+; The following patchpointers are relative offsets from the current relocated
+; address to the next.
+; If the offset distance is larger than 255 bytes between two relocatable
+; addresses, the following patchpointer is used:
+;
+;         0,<16bit patchpointer>
+;
+; which denotes the an offset from the current relocated address to the next.
+; The 16 bit patch pointer is stored in the low byte, high byte order.
+;
+
+.routine
+; the machine code to be relocated is placed immediately after the relocation table
+```a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"Using machine code in BBC BASIC is best suited with allocating dynamic memory with DIM and then storing (assembling) the code to that area. If you don't assemble but have code ready, eg. loaded...","title":"Using relocatable code in BBC BASIC","filePath":"content/en/library/cambridge-z88/developers-notes/bbc-basic-and-the-in-line-assembler/using-relocatable-code-in-bbc-basic.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/developers-notes/bbc-basic-and-the-in-line-assembler/using-relocatable-code-in-bbc-basic","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Using relocatable code in BBC BASIC - Klive IDE"}],["$","meta","1",{"name":"description","content":"Using machine code in BBC BASIC is best suited with allocating dynamic memory with DIM and then storing (assembling) the code to that area. If you don't assemble but have code ready, eg. loaded..."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/developers-notes/bbc-basic-and-the-in-line-assembler/using-relocatable-code-in-bbc-basic/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"cyL0EKA0xNKEZcECA3AIS"}
+20:"ToggleWordWrapButton"
+21:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$20"]
+22:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+a2:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Using relocatable code in BBC BASIC","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Using machine code in BBC BASIC is best suited with allocating dynamic memory with DIM and then storing (assembling) the code to that area. If you don’t assemble but have code ready, eg. loaded directly with PROC_lbytes, it is necessary that your machine code is relocatable, ie. contains no absolute address references (the machine code assumes that it is located at a certain ORG position in memory). You can relocatable code by omitting CALL and JP instructions and only use JR and DJNZ (jump relative) instruction. However, your program cannot be very large since relative jumps only range +/- 128 bytes in either direction from the instruction."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["You can make truly relocatable machine code with the ",["$","strong",null,{"children":"Mpm"}]," assembler, which is an integrated part of the Z88 Assembler Workbench. By using the ‘-R’ option a small header is generated together with your code. The header contains a relocater routine and a relocation table. When your code is executed, it is automatically relocated to the current position in memory (just once). Subsequent calls to the code will just execute your code and not the relocater. With this option you can always store your machine code utilities with PROC_sbytes and at a later time allocate space with DIM for your code, and just load it into appropriate BBC BASIC memory. The code may be placed anywhere (in RAM)."]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The Mpm assembler generates the relocation table, when parsing the source code for compilation of the binary executable code. The relocator routine that is used by Mpm is made available here for convenience:"}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L21",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L22",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":" MODULE relocator"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" XDEF relocator, SIZEOF_relocator"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; *************************************************************************"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":";"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; This routine will relocate a machine code program."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; A relocation table is placed immediatly after the relocation routine."}]}],"\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41","\n","$L42","\n","$L43","\n","$L44","\n","$L45","\n","$L46","\n","$L47","\n","$L48","\n","$L49","\n","$L4a","\n","$L4b","\n","$L4c","\n","$L4d","\n","$L4e","\n","$L4f","\n","$L50","\n","$L51","\n","$L52","\n","$L53","\n","$L54","\n","$L55","\n","$L56","\n","$L57","\n","$L58","\n","$L59","\n","$L5a","\n","$L5b","\n","$L5c","\n","$L5d","\n","$L5e","\n","$L5f","\n","$L60","\n","$L61","\n","$L62","\n","$L63","\n","$L64","\n","$L65","\n","$L66","\n","$L67","\n","$L68","\n","$L69","\n","$L6a","\n","$L6b","\n","$L6c","\n","$L6d","\n","$L6e","\n","$L6f","\n","$L70","\n","$L71","\n","$L72","\n","$L73","\n","$L74","\n","$L75","\n","$L76","\n","$L77","\n","$L78","\n","$L79","\n","$L7a","\n","$L7b","\n","$L7c","\n","$L7d","\n","$L7e","\n","$L7f","\n","$L80","\n","$L81","\n","$L82","\n","$L83","\n","$L84","\n","$L85","\n","$L86","\n","$L87","\n","$L88","\n","$L89","\n","$L8a","\n","$L8b","\n","$L8c","\n","$L8d","\n","$L8e","\n","$L8f","\n","$L90","\n","$L91","\n","$L92","\n","$L93","\n","$L94","\n","$L95","\n","$L96","\n","$L97","\n","$L98","\n","$L99","\n","$L9a","\n","$L9b","\n","$L9c","\n","$L9d","\n","$L9e","\n","$L9f","\n","$La0","\n","$La1"]}]]}]]}]]]}]
+15:["$","$La2",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@a3"}]}]
+1f:true
+9:300
+23:["$","span",null,{"children":["$","span",null,{"children":";"}]}]
+24:["$","span",null,{"children":["$","span",null,{"children":"; The program that is to be relocated and executed are placed immediately"}]}]
+25:["$","span",null,{"children":["$","span",null,{"children":"; after the relocation table."}]}]
+26:["$","span",null,{"children":["$","span",null,{"children":";"}]}]
+27:["$","span",null,{"children":["$","span",null,{"children":"; The relocation routine expects IY to point at the start address, entry"}]}]
+28:["$","span",null,{"children":["$","span",null,{"children":"; of the relocater. The relocater then calculates the correct origin for"}]}]
+29:["$","span",null,{"children":["$","span",null,{"children":"; the relocated program. The BBC BASIC on the Z88 also setups the IY register"}]}]
+2a:["$","span",null,{"children":["$","span",null,{"children":"; during a BBC BASIC CALL command to execute local machine code."}]}]
+2b:["$","span",null,{"children":["$","span",null,{"children":";"}]}]
+2c:["$","span",null,{"children":["$","span",null,{"children":"; After completed relocation, the entry of the relocater is patched to"}]}]
+2d:["$","span",null,{"children":["$","span",null,{"children":"; JP  which jumps directly to the executing program, if the relocated"}]}]
+2e:["$","span",null,{"children":["$","span",null,{"children":"; code is called again."}]}]
+2f:["$","span",null,{"children":["$","span",null,{"children":";"}]}]
+30:["$","span",null,{"children":["$","span",null,{"children":"; The following registers are affected by the initial relocation process:"}]}]
+31:["$","span",null,{"children":["$","span",null,{"children":";         AFBCDEHL/IX../........ same"}]}]
+32:["$","span",null,{"children":["$","span",null,{"children":";         ......../..IY/afbcdehl different"}]}]
+33:["$","span",null,{"children":["$","span",null,{"children":";"}]}]
+34:["$","span",null,{"children":["$","span",null,{"children":"; As indicated above the outside world cannot use the alternate registers"}]}]
+35:["$","span",null,{"children":["$","span",null,{"children":"; as parameter interface to the relocated program - they are smashed by the"}]}]
+36:["$","span",null,{"children":["$","span",null,{"children":"; relocater."}]}]
+37:["$","span",null,{"children":["$","span",null,{"children":";"}]}]
+38:["$","span",null,{"children":["$","span",null,{"children":".relocator          "}]}]
+39:["$","span",null,{"children":["$","span",null,{"children":"        ex   af,af'                   ; preserve AF"}]}]
+3a:["$","span",null,{"children":["$","span",null,{"children":"        exx                           ; preserve BC, DE, HL"}]}]
+3b:["$","span",null,{"children":["$","span",null,{"children":"        push iy"}]}]
+3c:["$","span",null,{"children":["$","span",null,{"children":"        pop  hl"}]}]
+3d:["$","span",null,{"children":["$","span",null,{"children":"        ld   bc, #end_relocator-relocator"}]}]
+3e:["$","span",null,{"children":["$","span",null,{}]}]
+3f:["$","span",null,{"children":["$","span",null,{"children":"        add  hl,bc                    ; absolute address of relocation table"}]}]
+40:["$","span",null,{"children":["$","span",null,{}]}]
+41:["$","span",null,{"children":["$","span",null,{"children":"        ld   e,(hl)"}]}]
+42:["$","span",null,{"children":["$","span",null,{"children":"        inc  hl"}]}]
+43:["$","span",null,{"children":["$","span",null,{"children":"        ld   d,(hl)"}]}]
+44:["$","span",null,{"children":["$","span",null,{"children":"        push de                       ; DE = total of relocation offset elements"}]}]
+45:["$","span",null,{"children":["$","span",null,{"children":"        inc  hl"}]}]
+46:["$","span",null,{"children":["$","span",null,{"children":"        ld   c,(hl)"}]}]
+47:["$","span",null,{"children":["$","span",null,{"children":"        inc  hl"}]}]
+48:["$","span",null,{"children":["$","span",null,{"children":"        ld   b,(hl)                   ; total size of relocation offset elements"}]}]
+49:["$","span",null,{"children":["$","span",null,{"children":"        inc  hl"}]}]
+4a:["$","span",null,{"children":["$","span",null,{"children":"        push hl                       ; preserve pointer to first relocation offset element"}]}]
+4b:["$","span",null,{"children":["$","span",null,{"children":"        add  hl,bc"}]}]
+4c:["$","span",null,{"children":["$","span",null,{"children":"        ld   b,h                      ; HL = pointer to current relocation address"}]}]
+4d:["$","span",null,{"children":["$","span",null,{"children":"        ld   c,l                      ; BC = program ORG, first byte of program"}]}]
+4e:["$","span",null,{"children":["$","span",null,{}]}]
+4f:["$","span",null,{"children":["$","span",null,{"children":".relocate_loop"}]}]
+50:["$","span",null,{"children":["$","span",null,{"children":"        ex   (sp),hl                  ; HL = pointer to relocation offset element"}]}]
+51:["$","span",null,{"children":["$","span",null,{"children":"        ld   a,(hl)"}]}]
+52:["$","span",null,{"children":["$","span",null,{"children":"        inc  hl                       ; ready for next relocation offset pointer"}]}]
+53:["$","span",null,{"children":["$","span",null,{"children":"        or   a"}]}]
+54:["$","span",null,{"children":["$","span",null,{"children":"        jr   nz, byte_offset"}]}]
+55:["$","span",null,{"children":["$","span",null,{"children":".extended_offset         "}]}]
+56:["$","span",null,{"children":["$","span",null,{"children":"        ld   e,(hl)"}]}]
+57:["$","span",null,{"children":["$","span",null,{"children":"        inc  hl"}]}]
+58:["$","span",null,{"children":["$","span",null,{"children":"        ld   d,(hl)                   ; DE = extended offset pointer to next relocation address"}]}]
+59:["$","span",null,{"children":["$","span",null,{"children":"        inc  hl                       ; ready for next relocation offset pointer"}]}]
+5a:["$","span",null,{"children":["$","span",null,{"children":"        jr   relocate_address"}]}]
+5b:["$","span",null,{"children":["$","span",null,{}]}]
+5c:["$","span",null,{"children":["$","span",null,{"children":".byte_offset"}]}]
+5d:["$","span",null,{"children":["$","span",null,{"children":"        ld   d,0"}]}]
+5e:["$","span",null,{"children":["$","span",null,{"children":"        ld   e,a                      ; offset pointer to next relocation address"}]}]
+5f:["$","span",null,{"children":["$","span",null,{"children":".relocate_address"}]}]
+60:["$","span",null,{"children":["$","span",null,{"children":"        ex   (sp),hl                  ; HL = pointer to current relocation address"}]}]
+61:["$","span",null,{"children":["$","span",null,{"children":"        add  hl,de                    ; new pointer at memory that contains relocation address"}]}]
+62:["$","span",null,{"children":["$","span",null,{"children":"        ld   e,(hl)"}]}]
+63:["$","span",null,{"children":["$","span",null,{"children":"        inc  hl"}]}]
+64:["$","span",null,{"children":["$","span",null,{"children":"        ld   d,(hl)"}]}]
+65:["$","span",null,{"children":["$","span",null,{"children":"        ex   de,hl"}]}]
+66:["$","span",null,{"children":["$","span",null,{"children":"        add  hl,bc                    ; HL = address relocated to program ORG in BC"}]}]
+67:["$","span",null,{"children":["$","span",null,{"children":"        ex   de,hl"}]}]
+68:["$","span",null,{"children":["$","span",null,{"children":"        ld   (hl),d"}]}]
+69:["$","span",null,{"children":["$","span",null,{"children":"        dec  hl"}]}]
+6a:["$","span",null,{"children":["$","span",null,{"children":"        ld   (hl),e                   ; update relocated address back to memory"}]}]
+6b:["$","span",null,{"children":["$","span",null,{}]}]
+6c:["$","span",null,{"children":["$","span",null,{"children":"        pop  de                       ; DE = pointer to relocation offset"}]}]
+6d:["$","span",null,{"children":["$","span",null,{"children":"        ex   (sp),hl                  ; HL = index counter"}]}]
+6e:["$","span",null,{"children":["$","span",null,{"children":"        dec  hl                       ; update index counter"}]}]
+6f:["$","span",null,{"children":["$","span",null,{"children":"        ld   a,h"}]}]
+70:["$","span",null,{"children":["$","span",null,{"children":"        or   l                        ; all addresses relocated?"}]}]
+71:["$","span",null,{"children":["$","span",null,{"children":"        ex   (sp),hl                  ; index counter back on stack"}]}]
+72:["$","span",null,{"children":["$","span",null,{"children":"        push de                       ; pointer to relocation offset back on stack"}]}]
+73:["$","span",null,{"children":["$","span",null,{"children":"        jr   nz, relocate_loop"}]}]
+74:["$","span",null,{"children":["$","span",null,{"children":"        pop  af"}]}]
+75:["$","span",null,{"children":["$","span",null,{"children":"        pop  af                       ; remove redundant variables"}]}]
+76:["$","span",null,{"children":["$","span",null,{}]}]
+77:["$","span",null,{"children":["$","span",null,{"children":"; relocation of program completed. Patch the entry of the relocater to JP  that"}]}]
+78:["$","span",null,{"children":["$","span",null,{"children":"; jumps directly to the executing program, if the loaded program is executed again."}]}]
+79:["$","span",null,{"children":["$","span",null,{"children":"; Finish with restoring main registers and then execute program."}]}]
+7a:["$","span",null,{"children":["$","span",null,{"children":";"}]}]
+7b:["$","span",null,{"children":["$","span",null,{"children":".relocation_finished"}]}]
+7c:["$","span",null,{"children":["$","span",null,{"children":"        ld   (iy+0),$C3"}]}]
+7d:["$","span",null,{"children":["$","span",null,{"children":"        ld   (iy+1),c"}]}]
+7e:["$","span",null,{"children":["$","span",null,{"children":"        ld   (iy+2),b                 ; patch entry to JP , the relocated program"}]}]
+7f:["$","span",null,{"children":["$","span",null,{"children":"        exx                           ; swap back to main BC, DE, HL"}]}]
+80:["$","span",null,{"children":["$","span",null,{"children":"        ex   af,af'                   ; and main AF"}]}]
+81:["$","span",null,{"children":["$","span",null,{"children":"        jp   (iy)                     ; execute relocated program..."}]}]
+82:["$","span",null,{"children":["$","span",null,{"children":".end_relocator"}]}]
+83:["$","span",null,{"children":["$","span",null,{}]}]
+84:["$","span",null,{"children":["$","span",null,{"children":"DEFC SIZEOF_relocator = end_relocator - relocator"}]}]
+85:["$","span",null,{"children":["$","span",null,{}]}]
+86:["$","span",null,{"children":["$","span",null,{"children":"; ******************************************************************************"}]}]
+87:["$","span",null,{"children":["$","span",null,{"children":";"}]}]
+88:["$","span",null,{"children":["$","span",null,{"children":"; The relocation table is placed here by the Mpm assembler."}]}]
+89:["$","span",null,{"children":["$","span",null,{"children":"; The format of the generated table is:"}]}]
+8a:["$","span",null,{"children":["$","span",null,{"children":";"}]}]
+8b:["$","span",null,{"children":["$","span",null,{"children":";    total_elements    ds.w 1"}]}]
+8c:["$","span",null,{"children":["$","span",null,{"children":";    sizeof_table      ds.w 1"}]}]
+8d:["$","span",null,{"children":["$","span",null,{"children":";    patchpointer_0    ds.b 1  --+"}]}]
+8e:["$","span",null,{"children":["$","span",null,{"children":";    patchpointer_1    ds.b 1    |"}]}]
+8f:["$","span",null,{"children":["$","span",null,{"children":";    ....                        |  sizeof_table"}]}]
+90:["$","span",null,{"children":["$","span",null,{"children":";    ....                        |"}]}]
+91:["$","span",null,{"children":["$","span",null,{"children":";    patchpointer_n    ds.b 1  --+"}]}]
+92:["$","span",null,{"children":["$","span",null,{"children":";"}]}]
+93:["$","span",null,{"children":["$","span",null,{"children":"; The first patch pointer is an offset from the start of the program (.routine)"}]}]
+94:["$","span",null,{"children":["$","span",null,{"children":"; to the first position of a location that contains a relocatable address."}]}]
+95:["$","span",null,{"children":["$","span",null,{"children":"; The following patchpointers are relative offsets from the current relocated"}]}]
+96:["$","span",null,{"children":["$","span",null,{"children":"; address to the next."}]}]
+97:["$","span",null,{"children":["$","span",null,{"children":"; If the offset distance is larger than 255 bytes between two relocatable"}]}]
+98:["$","span",null,{"children":["$","span",null,{"children":"; addresses, the following patchpointer is used:"}]}]
+99:["$","span",null,{"children":["$","span",null,{"children":";"}]}]
+9a:["$","span",null,{"children":["$","span",null,{"children":";         0,<16bit patchpointer>"}]}]
+9b:["$","span",null,{"children":["$","span",null,{"children":";"}]}]
+9c:["$","span",null,{"children":["$","span",null,{"children":"; which denotes the an offset from the current relocated address to the next."}]}]
+9d:["$","span",null,{"children":["$","span",null,{"children":"; The 16 bit patch pointer is stored in the low byte, high byte order."}]}]
+9e:["$","span",null,{"children":["$","span",null,{"children":";"}]}]
+9f:["$","span",null,{"children":["$","span",null,{}]}]
+a0:["$","span",null,{"children":["$","span",null,{"children":".routine"}]}]
+a1:["$","span",null,{"children":["$","span",null,{"children":"; the machine code to be relocated is placed immediately after the relocation table"}]}]
+a3:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

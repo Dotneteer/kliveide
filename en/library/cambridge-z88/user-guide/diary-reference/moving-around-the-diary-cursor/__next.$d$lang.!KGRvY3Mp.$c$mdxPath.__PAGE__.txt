@@ -1,0 +1,218 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+1a:"ViewportBoundary"
+1b:I[484,[],"$1a"]
+1c:"MetadataBoundary"
+1d:I[484,[],"$1c"]
+1e:"$Sreact.suspense"
+1f:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":[["$","$4",".0",{"children":["Save Position ",["$","kbd",".1",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"CSP"]}]],"id":"save-position-csp","depth":4},{"value":[["$","$4",".0",{"children":["Restore Position ",["$","kbd",".1",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"CRP"]}]],"id":"restore-position-crp","depth":4},{"value":"Moving within a line","id":"moving-within-a-line","depth":2},{"value":[["$","$4",".0",{"children":["Cursor Right ",["$","kbd",".1",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor right","children":"→"}]]}]],"id":"cursor-right-","depth":4},{"value":[["$","$4",".0",{"children":["Cursor Left ",["$","kbd",".1",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor left","children":"←"}]]}]],"id":"cursor-left-","depth":4},{"value":[["$","$4",".0",{"children":["Next Word ",["$","kbd",".1",{"className":"Z88_key__DMNGV","title":"Shift","children":"SHIFT"}]," ",["$","kbd",".3",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor right","children":"→"}]]}]],"id":"next-word--","depth":4},{"value":[["$","$4",".0",{"children":["Previous Word ",["$","kbd",".1",{"className":"Z88_key__DMNGV","title":"Shift","children":"SHIFT"}]," ",["$","kbd",".3",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor left","children":"←"}]]}]],"id":"previous-word--","depth":4},{"value":[["$","$4",".0",{"children":["End of Line ",["$","kbd",".1",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],["$","kbd",".2",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor right","children":"→"}]]}]],"id":"end-of-line-","depth":4},{"value":[["$","$4",".0",{"children":["Start of Line ",["$","kbd",".1",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],["$","kbd",".2",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor left","children":"←"}]]}]],"id":"start-of-line-","depth":4},{"value":"Moving within a day","id":"moving-within-a-day","depth":2},{"value":[["$","$4",".0",{"children":["Cursor Down ",["$","kbd",".1",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor down","children":"↓"}]]}]],"id":"cursor-down-","depth":4},{"value":[["$","$4",".0",{"children":["Cursor Up ",["$","kbd",".1",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor up","children":"↑"}]]}]],"id":"cursor-up-","depth":4},{"value":[["$","$4",".0",{"children":["Last Line ",["$","kbd",".1",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],["$","kbd",".2",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor down","children":"↓"}]]}]],"id":"last-line-","depth":4},{"value":[["$","$4",".0",{"children":["First Line ",["$","kbd",".1",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],["$","kbd",".2",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor up","children":"↑"}]]}]],"id":"first-line-","depth":4},{"value":[["$","$4",".0",{"children":["Screen Down ",["$","kbd",".1",{"className":"Z88_key__DMNGV","title":"Shift","children":"SHIFT"}],["$","kbd",".2",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor down","children":"↓"}]]}]],"id":"screen-down-","depth":4},{"value":[["$","$4",".0",{"children":["Screen Up ",["$","kbd",".1",{"className":"Z88_key__DMNGV","title":"Shift","children":"SHIFT"}],["$","kbd",".2",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor up","children":"↑"}]]}]],"id":"screen-up-","depth":4},{"value":"Moving between days","id":"moving-between-days","depth":2},{"value":[["$","$4",".0",{"children":["Today ",["$","kbd",".1",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"CT"]}]],"id":"today-ct","depth":4},{"value":[["$","$4",".0",{"children":["Next Day ",["$","kbd",".1",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],["$","kbd",".2",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor down","children":"↓"}]]}]],"id":"next-day-","depth":4},{"value":[["$","$4",".0",{"children":["Previous Day ","$L10","$L11"]}]],"id":"previous-day-","depth":4},{"value":"Active days","id":"active-days","depth":2},{"value":["$L12"],"id":"next-active-day-","depth":4},{"value":["$L13"],"id":"previous-active-day-","depth":4},{"value":["$L14"],"id":"last-active-day-clad","depth":4},{"value":["$L15"],"id":"first-active-day-cfad","depth":4},{"value":"Summary of Diary cursor operations","id":"summary-of-diary-cursor-operations","depth":2}],"children":["$L16","$L17"]}]}],null,"$L18"]}],"p":"$@19","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/user-guide/diary-reference/moving-around-the-diary-cursor","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L1b",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1d",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1e",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Moving around the Diary - CURSOR - Klive IDE"}],["$","meta","1",{"name":"description","content":"The commands on the cursor menu enable you to move the cursor to any position on the page of information for the current day in the diary, and to the next or previous day."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/user-guide/diary-reference/moving-around-the-diary-cursor/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1f","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@20","v":null,"s":"$9"}},"a":"$@21","u":"$@22","b":"cyL0EKA0xNKEZcECA3AIS"}
+23:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+24:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+28:I[484,[],"OutletBoundary"]
+10:["$","kbd",".1",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}]
+11:["$","kbd",".2",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor up","children":"↑"}]
+12:["$","$4",".0",{"children":["Next Active Day ",["$","kbd",".1",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],["$","kbd",".2",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor right","children":"→"}]]}]
+13:["$","$4",".0",{"children":["Previous Active Day ",["$","kbd",".1",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],["$","kbd",".2",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor left","children":"←"}]]}]
+14:["$","$4",".0",{"children":["Last Active Day ",["$","kbd",".1",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"CLAD"]}]
+15:["$","$4",".0",{"children":["First Active Day ",["$","kbd",".1",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"CFAD"]}]
+16:["$","$L23",null,{}]
+25:T10bb,---
+description: "The commands on the cursor menu enable you to move the cursor to any position on the page of information for the current day in the diary, and to the next or previous day."
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/35913759 (version 6) by scripts/import-z88-user-guide.cjs */}
+
+# Moving around the Diary - CURSOR
+
+The commands on the cursor menu enable you to move the cursor to any position on the page of information for the current day in the diary, and to the next or previous day.
+
+<Shot src="z88-user-guide/diary-reference/diary-cursor.webp" alt="diary cursor" width={640} />
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td style={{ whiteSpace: "nowrap" }}><Key k="tab" /></Table.Td>
+<Table.Td>Inserts spaces to position the cursor at the next tab position to the right. There are preset tab positions preset every 8 characters across the line.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td style={{ whiteSpace: "nowrap" }}><Key k="enter" /></Table.Td>
+<Table.Td>Moves the cursor to the beginning of the next line.</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+#### Save Position <Key k="diamond" />CSP
+
+Saves the current cursor position. If you move to a new position, you can jump back to the previous position with the Restore Position command. Up to five positions can be saved, and they will be restored in turn.
+
+#### Restore Position <Key k="diamond" />CRP
+
+Moves the cursor to the last position saved.
+
+## Moving within a line
+
+#### Cursor Right <Key k="right" />
+
+Moves the cursor one character space to the right.
+
+#### Cursor Left <Key k="left" />
+
+Moves the cursor one character position to the left. You cannot move past the beginning of the line.
+
+#### Next Word <Key k="shift" /> <Key k="right" />
+
+Moves the cursor to the beginning of the next word on the current line.
+
+#### Previous Word <Key k="shift" /> <Key k="left" />
+
+Moves the cursor to the beginning of the previous word on the current line.
+
+#### End of Line <Key k="diamond" /><Key k="right" />
+
+Moves the cursor to the character position after the last character on the current line.
+
+#### Start of Line <Key k="diamond" /><Key k="left" />
+
+Moves the cursor to the first character position in the current line.
+
+## Moving within a day
+
+#### Cursor Down <Key k="down" />
+
+Moves the cursor down within the current day.
+
+#### Cursor Up <Key k="up" />
+
+Moves the cursor up within the current day
+
+#### Last Line <Key k="diamond" /><Key k="down" />
+
+Moves the cursor to the last line on the current page.
+
+#### First Line <Key k="diamond" /><Key k="up" />
+
+Moves the cursor to the first line on the current page.
+
+#### Screen Down <Key k="shift" /><Key k="down" />
+
+Moves the cursor down by a screenful of information.
+
+#### Screen Up <Key k="shift" /><Key k="up" />
+
+Moves the cursor up by a screenful of information.
+
+## Moving between days
+
+#### Today <Key k="diamond" />CT
+
+Moves the cursor to today.
+
+#### Next Day <Key k="square" /><Key k="down" />
+
+Moves to the next day.
+
+#### Previous Day <Key k="square" /><Key k="up" />
+
+Moves to the previous day.
+
+## Active days
+
+Days in the Diary which contain information are referred to as 'active' days. You can move rapidly between the active days with the **Next** and **Previous Active Day** commands, and you can find the latest and earliest information in the Diary with the **Last** and **First Active Day** commands.
+
+<Shot src="z88-user-guide/diary-reference/diary-active-day.webp" alt="diary active day" width={640} />
+
+If you call the Calendar from the Diary, active days, and the day you are currently looking at, are indicated by a marker against the day: <strong>`14 15 16`</strong>
+
+#### Next Active Day <Key k="square" /><Key k="right" />
+
+Moves to the next day containing an entry.
+
+#### Previous Active Day <Key k="square" /><Key k="left" />
+
+Moves to the previous day containing an entry.
+
+#### Last Active Day <Key k="diamond" />CLAD
+
+Moves to the latest day containing any information.
+
+#### First Active Day <Key k="diamond" />CFAD
+
+Moves to the earliest day containing any information.
+
+## Summary of Diary cursor operations
+
+<Shot src="z88-user-guide/diary-reference/163.webp" alt="Illustration for “Moving around the Diary - CURSOR”" width={640} />17:["$","$L24",null,{"metadata":{"description":"The commands on the cursor menu enable you to move the cursor to any position on the page of information for the current day in the diary, and to the next or previous day.","title":"Moving around the Diary - CURSOR","filePath":"content/en/library/cambridge-z88/user-guide/diary-reference/moving-around-the-diary-cursor.mdx","timestamp":1792315833000},"sourceCode":"$25","children":["$L26","$L27"]}]
+18:["$","$L28",null,{"children":["$","$1e",null,{"name":"Next.MetadataOutlet","children":"$@29"}]}]
+22:true
+2a:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+9:300
+26:["$","div",null,{"id":"nextra-skip-nav"}]
+27:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Moving around the Diary - CURSOR","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The commands on the cursor menu enable you to move the cursor to any position on the page of information for the current day in the diary, and to the next or previous day."}],"\n",["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/diary-reference/diary-cursor.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/diary-reference/diary-cursor.webp","alt":"diary cursor","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}],"\n",["$","table",null,{"children":["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"style":{"whiteSpace":"nowrap"},"children":["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Tab","children":"TAB"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Inserts spaces to position the cursor at the next tab position to the right. There are preset tab positions preset every 8 characters across the line.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"style":{"whiteSpace":"nowrap"},"children":["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Moves the cursor to the beginning of the next line.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}],"className":"x:block x:overflow-x-auto"}],"\n",["$","h4",null,{"id":"save-position-csp","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":[["Save Position ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"CSP"],["$","$L2a",null,{"id":"save-position-csp"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Saves the current cursor position. If you move to a new position, you can jump back to the previous position with the Restore Position command. Up to five positions can be saved, and they will be restored in turn."}],"\n",["$","h4",null,{"id":"restore-position-crp","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":[["Restore Position ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"CRP"],["$","$L2a",null,{"id":"restore-position-crp"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Moves the cursor to the last position saved."}],"\n",["$","h2",null,{"id":"moving-within-a-line","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Moving within a line",["$","$L2a",null,{"id":"moving-within-a-line"}]]}],"\n",["$","h4",null,{"id":"cursor-right-","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":[["Cursor Right ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor right","children":"→"}]],"$L2b"]}],"\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41","\n","$L42","\n","$L43","\n","$L44","\n","$L45","\n","$L46","\n","$L47","\n","$L48","\n","$L49","\n","$L4a","\n","$L4b","\n","$L4c","\n","$L4d","\n","$L4e","\n","$L4f","\n","$L50","\n","$L51","\n","$L52","\n","$L53","\n","$L54","\n","$L55","\n","$L56","\n","$L57","\n","$L58"]]}]
+29:null
+9:C
+2b:["$","$L2a",null,{"id":"cursor-right-"}]
+2c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Moves the cursor one character space to the right."}]
+2d:["$","h4",null,{"id":"cursor-left-","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":[["Cursor Left ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor left","children":"←"}]],["$","$L2a",null,{"id":"cursor-left-"}]]}]
+2e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Moves the cursor one character position to the left. You cannot move past the beginning of the line."}]
+2f:["$","h4",null,{"id":"next-word--","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":[["Next Word ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Shift","children":"SHIFT"}]," ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor right","children":"→"}]],["$","$L2a",null,{"id":"next-word--"}]]}]
+30:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Moves the cursor to the beginning of the next word on the current line."}]
+31:["$","h4",null,{"id":"previous-word--","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":[["Previous Word ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Shift","children":"SHIFT"}]," ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor left","children":"←"}]],["$","$L2a",null,{"id":"previous-word--"}]]}]
+32:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Moves the cursor to the beginning of the previous word on the current line."}]
+33:["$","h4",null,{"id":"end-of-line-","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":[["End of Line ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor right","children":"→"}]],["$","$L2a",null,{"id":"end-of-line-"}]]}]
+34:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Moves the cursor to the character position after the last character on the current line."}]
+35:["$","h4",null,{"id":"start-of-line-","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":[["Start of Line ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor left","children":"←"}]],["$","$L2a",null,{"id":"start-of-line-"}]]}]
+36:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Moves the cursor to the first character position in the current line."}]
+37:["$","h2",null,{"id":"moving-within-a-day","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Moving within a day",["$","$L2a",null,{"id":"moving-within-a-day"}]]}]
+38:["$","h4",null,{"id":"cursor-down-","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":[["Cursor Down ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor down","children":"↓"}]],["$","$L2a",null,{"id":"cursor-down-"}]]}]
+39:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Moves the cursor down within the current day."}]
+3a:["$","h4",null,{"id":"cursor-up-","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":[["Cursor Up ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor up","children":"↑"}]],["$","$L2a",null,{"id":"cursor-up-"}]]}]
+3b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Moves the cursor up within the current day"}]
+3c:["$","h4",null,{"id":"last-line-","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":[["Last Line ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor down","children":"↓"}]],["$","$L2a",null,{"id":"last-line-"}]]}]
+3d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Moves the cursor to the last line on the current page."}]
+3e:["$","h4",null,{"id":"first-line-","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":[["First Line ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor up","children":"↑"}]],["$","$L2a",null,{"id":"first-line-"}]]}]
+3f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Moves the cursor to the first line on the current page."}]
+40:["$","h4",null,{"id":"screen-down-","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":[["Screen Down ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Shift","children":"SHIFT"}],["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor down","children":"↓"}]],["$","$L2a",null,{"id":"screen-down-"}]]}]
+41:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Moves the cursor down by a screenful of information."}]
+42:["$","h4",null,{"id":"screen-up-","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":[["Screen Up ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Shift","children":"SHIFT"}],["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor up","children":"↑"}]],["$","$L2a",null,{"id":"screen-up-"}]]}]
+43:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Moves the cursor up by a screenful of information."}]
+44:["$","h2",null,{"id":"moving-between-days","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Moving between days",["$","$L2a",null,{"id":"moving-between-days"}]]}]
+45:["$","h4",null,{"id":"today-ct","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":[["Today ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"CT"],["$","$L2a",null,{"id":"today-ct"}]]}]
+46:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Moves the cursor to today."}]
+47:["$","h4",null,{"id":"next-day-","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":[["Next Day ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor down","children":"↓"}]],["$","$L2a",null,{"id":"next-day-"}]]}]
+48:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Moves to the next day."}]
+49:["$","h4",null,{"id":"previous-day-","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":[["Previous Day ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor up","children":"↑"}]],["$","$L2a",null,{"id":"previous-day-"}]]}]
+4a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Moves to the previous day."}]
+4b:["$","h2",null,{"id":"active-days","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Active days",["$","$L2a",null,{"id":"active-days"}]]}]
+4c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Days in the Diary which contain information are referred to as ‘active’ days. You can move rapidly between the active days with the ",["$","strong",null,{"children":"Next"}]," and ",["$","strong",null,{"children":"Previous Active Day"}]," commands, and you can find the latest and earliest information in the Diary with the ",["$","strong",null,{"children":"Last"}]," and ",["$","strong",null,{"children":"First Active Day"}]," commands."]}]
+4d:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/diary-reference/diary-active-day.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/diary-reference/diary-active-day.webp","alt":"diary active day","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+4e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["If you call the Calendar from the Diary, active days, and the day you are currently looking at, are indicated by a marker against the day: ",["$","strong",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"14 15 16"}]}]]}]
+4f:["$","h4",null,{"id":"next-active-day-","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":[["Next Active Day ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor right","children":"→"}]],["$","$L2a",null,{"id":"next-active-day-"}]]}]
+50:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Moves to the next day containing an entry."}]
+51:["$","h4",null,{"id":"previous-active-day-","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":[["Previous Active Day ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor left","children":"←"}]],["$","$L2a",null,{"id":"previous-active-day-"}]]}]
+52:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Moves to the previous day containing an entry."}]
+53:["$","h4",null,{"id":"last-active-day-clad","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":[["Last Active Day ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"CLAD"],["$","$L2a",null,{"id":"last-active-day-clad"}]]}]
+54:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Moves to the latest day containing any information."}]
+55:["$","h4",null,{"id":"first-active-day-cfad","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":[["First Active Day ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"CFAD"],["$","$L2a",null,{"id":"first-active-day-cfad"}]]}]
+56:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Moves to the earliest day containing any information."}]
+57:["$","h2",null,{"id":"summary-of-diary-cursor-operations","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Summary of Diary cursor operations",["$","$L2a",null,{"id":"summary-of-diary-cursor-operations"}]]}]
+58:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/diary-reference/163.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/diary-reference/163.webp","alt":"Illustration for “Moving around the Diary - CURSOR”","loading":"lazy","decoding":"async","width":640,"height":335}],[]]}]]}]
+21:0
+7:"$undefined"
+20:"$undefined"
+19:"$undefined"

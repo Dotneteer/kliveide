@@ -1,0 +1,125 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:Tc74,---
+description: "If only destination segment is specified, you get memory from bank with most free space. Pool is limited to one bank."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7962733 (version 10) by scripts/import-z88-wiki.cjs */}
+
+# OS_Mop, Open memory (allocate memory pool)
+
+## Register parameters
+
+```text
+IN:
+     A = memory mask arguments (several arguments OR'ed together):
+
+          Destination segment (allocated memory addressed for segment):
+          MM_S0 ($00), segment 0
+          MM_S1 ($40), segment 1
+          MM_S2 ($80), segment 2
+          MM_S3 ($C0), segment 3
+
+          Source of memory (to be allocated):
+          MM_FIX ($02), fixed workspace (not subject to swapping)
+          MM_SLT ($04), explicit slot usage
+          MM_EXC ($10), exclusive use of bank
+          MM_MUL ($20), use multiple banks
+
+     B = 0, always
+     C = bank or slot number if MM_SLT = 1 and MM_MUL = 0
+		  MC_AS ($00), find an exclusive bank in any slot
+          MC_CI ($10), internal memory
+          MC_C1 ($01), card 1
+          MC_C2 ($02), card 2
+          MC_C3 ($03), card 3
+		  or ($20-$ff), explicit bank
+
+OUT, if call successful:
+     Fc = 0
+     IX = memory pool handle
+OUT, if call failed:
+     Fc = 1
+     A = error code:
+          RC_NA ($06), handle not available
+          RC_ROOM ($07), no room
+
+Registers changed after return:
+     A.FBCDEHL/..IY same
+     .F......./IX.. different
+```
+
+## Notes
+
+If only destination segment is specified, you get memory from bank with most free space. Pool is limited to one bank.
+
+**OS\_Mop** doesn't allocate any memory, so even the very first **OS\_Mal** can fail.
+
+If **MM\_MUL** is specified, memory is allocated from all the memory available (pool is not limited to one bank).
+
+If **MM\_EXC** is specified, memory is allocated from free banks in priority, pool is not limited to one bank (OZ 5.0 and newer).
+
+If **MM\_FIX** is specified, only memory not subject to swap is allocated.
+
+If **MM\_SLT** is specified, C holds bank number ($20-$FF) or slot.
+
+If you specified **MM\_MUL**, you can force slot 1-3 during first **OS\_Mal** by loading A with slot number.
+
+## Related calls
+
+**[OS\_Bix](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-bix)**, Bind in extended address <br />**[OS\_Box](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-box)**, restore bindings after OS\_Bix <br />**[OS\_Fc](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fc)**, select fast code (fast bank switching) <br />**[OS\_Mal](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mal)**, allocate memory <br />**[OS\_Mcl](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mcl)**, close memory (free memory pool) <br />**[OS\_Mfr](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mfr)**, free (previously allocated block) memory <br />**[OS\_Mgb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mgb)**, get current bank binding in segment <br />**[OS\_Mpb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mpb)**, set new bank binding in segmenta:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Register parameters","id":"register-parameters","depth":2},{"value":"Notes","id":"notes","depth":2},{"value":"Related calls","id":"related-calls","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"If only destination segment is specified, you get memory from bank with most free space. Pool is limited to one bank.","title":"OS_Mop, Open memory (allocate memory pool)","filePath":"content/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mop.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/developers-notes/system-calls-reference/os-mop","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"OS_Mop, Open memory (allocate memory pool) - Klive IDE"}],["$","meta","1",{"name":"description","content":"If only destination segment is specified, you get memory from bank with most free space. Pool is limited to one bank."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mop/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"cyL0EKA0xNKEZcECA3AIS"}
+20:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+21:"ToggleWordWrapButton"
+22:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$21"]
+23:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+35:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["OS_Mop, Open memory (allocate memory pool)","$undefined"]}],"\n",["$","h2",null,{"id":"register-parameters","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Register parameters",["$","$L20",null,{"id":"register-parameters"}]]}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"IN:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     A = memory mask arguments (several arguments OR'ed together):"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"          Destination segment (allocated memory addressed for segment):"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"          MM_S0 ($00), segment 0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"          MM_S1 ($40), segment 1"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"          MM_S2 ($80), segment 2"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"          MM_S3 ($C0), segment 3"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"          Source of memory (to be allocated):"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"          MM_FIX ($02), fixed workspace (not subject to swapping)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"          MM_SLT ($04), explicit slot usage"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"          MM_EXC ($10), exclusive use of bank"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"          MM_MUL ($20), use multiple banks"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     B = 0, always"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     C = bank or slot number if MM_SLT = 1 and MM_MUL = 0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"\t\t  MC_AS ($00), find an exclusive bank in any slot"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"          MC_CI ($10), internal memory"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"          MC_C1 ($01), card 1"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"          MC_C2 ($02), card 2"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"          MC_C3 ($03), card 3"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"\t\t  or ($20-$ff), explicit bank"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OUT, if call successful:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     Fc = 0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     IX = memory pool handle"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OUT, if call failed:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     Fc = 1"}]}],"\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a"]}]]}]]}],"\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34"]]}]
+15:["$","$L35",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@36"}]}]
+1f:true
+37:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+9:300
+24:["$","span",null,{"children":["$","span",null,{"children":"     A = error code:"}]}]
+25:["$","span",null,{"children":["$","span",null,{"children":"          RC_NA ($06), handle not available"}]}]
+26:["$","span",null,{"children":["$","span",null,{"children":"          RC_ROOM ($07), no room"}]}]
+27:["$","span",null,{"children":["$","span",null,{}]}]
+28:["$","span",null,{"children":["$","span",null,{"children":"Registers changed after return:"}]}]
+29:["$","span",null,{"children":["$","span",null,{"children":"     A.FBCDEHL/..IY same"}]}]
+2a:["$","span",null,{"children":["$","span",null,{"children":"     .F......./IX.. different"}]}]
+2b:["$","h2",null,{"id":"notes","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Notes",["$","$L20",null,{"id":"notes"}]]}]
+2c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If only destination segment is specified, you get memory from bank with most free space. Pool is limited to one bank."}]
+2d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"OS_Mop"}]," doesn’t allocate any memory, so even the very first ",["$","strong",null,{"children":"OS_Mal"}]," can fail."]}]
+2e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["If ",["$","strong",null,{"children":"MM_MUL"}]," is specified, memory is allocated from all the memory available (pool is not limited to one bank)."]}]
+2f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["If ",["$","strong",null,{"children":"MM_EXC"}]," is specified, memory is allocated from free banks in priority, pool is not limited to one bank (OZ 5.0 and newer)."]}]
+30:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["If ",["$","strong",null,{"children":"MM_FIX"}]," is specified, only memory not subject to swap is allocated."]}]
+31:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["If ",["$","strong",null,{"children":"MM_SLT"}]," is specified, C holds bank number ($20-$FF) or slot."]}]
+32:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["If you specified ",["$","strong",null,{"children":"MM_MUL"}],", you can force slot 1-3 during first ",["$","strong",null,{"children":"OS_Mal"}]," by loading A with slot number."]}]
+33:["$","h2",null,{"id":"related-calls","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Related calls",["$","$L20",null,{"id":"related-calls"}]]}]
+34:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":["$","$L37",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-bix","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OS_Bix"}]}],", Bind in extended address ",["$","br",null,{}],["$","strong",null,{"children":["$","$L37",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-box","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OS_Box"}]}],", restore bindings after OS_Bix ",["$","br",null,{}],["$","strong",null,{"children":["$","$L37",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fc","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OS_Fc"}]}],", select fast code (fast bank switching) ",["$","br",null,{}],["$","strong",null,{"children":["$","$L37",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mal","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OS_Mal"}]}],", allocate memory ",["$","br",null,{}],["$","strong",null,{"children":["$","$L37",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mcl","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OS_Mcl"}]}],", close memory (free memory pool) ",["$","br",null,{}],["$","strong",null,{"children":["$","$L37",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mfr","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OS_Mfr"}]}],", free (previously allocated block) memory ",["$","br",null,{}],["$","strong",null,{"children":["$","$L37",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mgb","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OS_Mgb"}]}],", get current bank binding in segment ",["$","br",null,{}],["$","strong",null,{"children":["$","$L37",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mpb","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OS_Mpb"}]}],", set new bank binding in segment"]}]
+36:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

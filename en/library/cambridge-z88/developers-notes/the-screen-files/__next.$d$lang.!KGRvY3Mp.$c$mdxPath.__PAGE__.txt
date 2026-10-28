@@ -1,0 +1,219 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T2412,---
+description: "The screen is generated from the Screen Base File (SBF), a 2K file containing character codes, window and status information with four more files which contain font definitions of those..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/60653578 (version 17) by scripts/import-z88-wiki.cjs */}
+
+# The screen files
+
+**Preamble**
+
+The screen is generated from the Screen Base File (SBF), a 2K file containing character codes, window and status information with four more files which contain font definitions of those characters. They are called LORES0, LORES1, HIRES0 and HIRES1 where the LORES character sets consist in 6 by 8 pixels characters (used for characters) and the HIRES characters are 8 by 8 pixels (used for the map area and the OZ window).
+
+The screen is refreshed every 10ms. It consists of 64 rows of 640 bits (pixels). Each 156µs, the 640 bits shift-register is built by combining character set data according to the screen codes stored in the Screen Base File (SBF). When the Blink reads a line, it shifts 6 or 8 bits to the row register according the Hires (HRS) flag. Those bits are given by the corresponding character number in the definition file (LORESx or HIRESx). Some text effects are hardware driven (reverse, flashing, grey, underlining). The flags behaviour depends on the HRS state.
+
+**The Definition Files**
+
+The Lores fonts are addressed by 9 bits (ch8-ch0) : 512 characters<br />- Lores1 (448 characters) is the 6 \* 8 fonts in ROM<br />- Lores0 (64 characters) is the 6 \* 8 user graphic defined (UGD) characters file in RAM. Assignment starts from top address with the character for code 64 ('@').
+
+The Hires fonts are addressed by 10 bits (ch9-ch0) : 1024 characters<br />- Hires0 (768 characters) is the 8 \* 8 map file in RAM (only 256 are used for map)<br />- Hires1 (256 characters) is the 8 \* 8 fonts in ROM for the OZ window (only 128 are used)
+
+Their structure is simply the 8 bytes of each character in the row order 1 to 8. For the Lores the 6 bits are stored in a byte but only uses bits 0-5 like UDG.
+
+The mapping of those files depends on OZ version. Since 4.2, all LORES have been merged to allow country and keymap selection.
+
+```text
+LORES1 map
+128 normal lores (32 foreign + 96 ascii)
+128 bold lores (same order as normal)
+128 tiny lores (same order as normal)
+64  symbol lores (10 lores are still free)
+ 
+HIRES1 map
+96 characters for OZ window (ascii, icons...)
+```
+
+In order to spare the 32K RAM of the original z88, the RES0 size vary if the machine is expanded or not.
+
+| Font | Unexpanded | Expanded |
+| --- | --- | --- |
+| Lores0 | 256 bytes, 32 UGD characters | 512 bytes, 64 UGD characters |
+| Hires0 | 512 bytes, 64 pixels width map | 2K bytes, 256 pixels width map |
+| SBF | 8 rows of 256 bytes (2K) | 8 rows of 256 bytes (2K) |
+
+On an unexpanded Z88 Hires0 may actually overlap Lores0. If Map=Yes and Map size in Panel is set to more than 64 (up to 96), UGD characters may be overwritten by map information if PipeDream is run.
+
+**The Screen Base File**
+
+It is a 2K file consisting of 8 lines of 256 bytes. In a line, each character position is stored on 2 bytes with its attributes. When the Blink builds the 640 rows it only reads the 216 first bytes. So up to 108 characters are stored by line. The 40 bytes remaining are used to store windows status and information (see below). The format of these two bytes is like this:
+
+```text
+Attribute 2 (odd address):      Attribute 1 (even address): 
+7   6   5   4   3   2   1   0   7   6   5   4   3   2   1   0 
+---------------------------------------------------------------
+sw1 sw2 hrs rev fls gry und ch8 ch7 ch6 ch5 ch4 ch3 ch2 ch1 ch0
+---------------------------------------------------------------
+
+sw1 : no hardware effect (used to store tiny flag)
+sw2 : no hardware effect (used to store bold flag)
+hrs : refer to Hires font (i.e. shift 8 bits in register), else Lores (shift 6 bits in register)
+rev : reverse (i.e. XOR)
+fls : flash (1 second period)
+gry : grey (probably a faster flash period)
+und : underline (i.e. set the 8 bits when on 8th row), only valid for Lores it becomes ch9 when hrs is set.
+```
+
+Four types of character can also be displayed : Lores, Hires, Lores cursor or the Null character.
+
+```text
+                 5     4     3     2     1     0,  7-0
+                 hrs   rev   fls   gry   und   ch8-ch0
+------------------------------------------------------
+LORES            0     v     v     v     v     000-1FF
+LORES CURSOR     1     1     1     v     v     000-1FF
+NULL CHARACTER   1     1     0     1     xxx    -  xxx
+HIRES            1     0     v     v     000    -  3FF
+x = don't care, v = valid, (i.e. the attribute depends on the value of the bit)
+```
+
+The Null character ($34 or $35) is used when there is nothing to add to the shift-register. For example, when there is no map, the first line shifts 104 lores characters (6\*104=624 pixels), 1 null (0), 3 hires (O, Z, space, 16 bits the third is not displayed). It corresponds to 640 pixels. This null character is used many times when there is a map.
+
+Lores cursor : is just a reversed flashing character with hrs flag set.
+
+**Windows and Status information**
+
+In the SBF, the 40 bytes free at the end of each line are used by OZ to store windows and cursor informations. As OZ uses absolute addresses, those data are defined according their address. Each line contains the relative window properties (1-8) and the main data are stored in the last line.
+
+```text
+SBF structure
+Row 1 : 108 chars ($7800-$78D7) + Window 1 properties ($78D8-$78E6) + 25 bytes free ($78E7-$78FF)
+Row 2 : 108 chars ($7900-$79D7) + Window 2 properties ($79D8-$79E6) + 25 bytes free ($79E7-$79FF)
+Row 3 : 108 chars ($7A00-$7AD7) + Window 3 properties ($7AD8-$7AE6) + 25 bytes free ($7AE7-$7AFF)
+Row 4 : 108 chars ($7B00-$7BD7) + Window 4 properties ($7BD8-$7BE6) + 25 bytes free ($7BE7-$7BFF)
+Row 5 : 108 chars ($7C00-$7CD7) + Window 5 properties ($7CD8-$7CE6) + 25 bytes free ($7CE7-$7CFF)
+Row 6 : 108 chars ($7D00-$7DD7) + Window 6 properties ($7DD8-$7DE6) + 25 bytes free ($7DE7-$7DFF)
+Row 7 : 108 chars ($7E00-$7ED7) + Window 7 properties ($7ED8-$7EE6) + 25 bytes free ($7EE7-$7EFF)
+Row 8 : 108 chars ($7F00-$7FD7) + Window 8 properties ($7FD8-$7FE6) + Main screen data ($7FE7-$79FF)
+
+Main screen data are :
+$7FE7 2 bytes : Active window frame
+$7FE9 1 byte  : SOH sequence length (0 if none)
+$7FEC x bytes : SOH buffer
+
+Example with a sequence defining a user lores character : 1,138,'=',..,...
+$7FE9 10 the length
+$7FEC '=' the command
+$7FED user defined character number
+$7FEE user defined character data (8 raws)
+```
+
+The window properties frame contains informations about the window appearance and the cursor (if selected). The 8 frames are :
+
+```text
+IX frame
+$78E6 window 1
+$79E6 window 2
+$7AE6 window 3
+$7BE6 window 4
+$7CE6 window 5
+$7DE6 window 6
+$7EE6 window 7
+$7FE6 window 8
+```
+
+When addressing a frame, its number is in IX. The data i/o are done with LD (IX-nn) instructions. nn defines the data described in the window frame structure. In that frame, the coordinates are absolutes. It is the address of the character attributes. Stored in HL, H refers to the row, L to the column. For example, (0,0) will be $00 $78 (HL=$7800). (105,7) will be $E2 $7F (HL=$7FE2).
+
+```text
+Window properties frame structure 
+IX-01 Y up left
+IX-02 X up left
+IY-03 Y down right
+IY-04 X down right
+IY-05 Left margin
+IY-06 Right margin
+IY-07 Y cursor address
+IY-08 X cursor address
+IY-09 cursor attributes
+IY-10 always 0
+IY-11 flags low
+IY-12 open flags
+IY-13 flags hi
+   b0-b1 Justification (0 normal, 1 right, 2 left, 3 centered)
+   b6 Set to update cursor
+   b7 Cursor mode (set=ON)
+IY-14 flags 2 (1 initialization bit used)
+```
+
+**Uses of the Screen Registers**
+
+Obviously, any routines which look directly at screen information are very hardware specific. Use of the **[OS\_Sci](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-sci)** call means that in future such routines would not cause code to fail, in the way that writing directly to hardware registers might, but if the system hardware arrangement did change, any code which relies on the screen information, almost certainly would not work properly. Therefore it makes sense that code using the **[OS\_Sci](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-sci)** call checks for error returns and can cope with the concept of the screen information being unavailable.
+
+Screen file address are read by **[OS\_Sci](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-sci)** with A=file reason and B=0, result is in BHL. The Lores0 and Hires0 can be moved by the user (often used in the Ranger software). For more details about the Screen registers consult [Blink registers manipulations](/en/library/cambridge-z88/developers-notes/manipulating-the-blink-registers) chapter.
+
+**Full Graphic Screen**
+
+It is possible to have a full graphic array of 640x64. It requires only HIRES0. A total of 640 HIRES0 characters are needed. The SBF is filled with all of those HIRES0 characters (80 characters by row). Accessing the screen matrix is done by changing the HIRES0 settings directly in the RAM.a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"The screen is generated from the Screen Base File (SBF), a 2K file containing character codes, window and status information with four more files which contain font definitions of those...","title":"The screen files","filePath":"content/en/library/cambridge-z88/developers-notes/the-screen-files.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/developers-notes/the-screen-files","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"The screen files - Klive IDE"}],["$","meta","1",{"name":"description","content":"The screen is generated from the Screen Base File (SBF), a 2K file containing character codes, window and status information with four more files which contain font definitions of those..."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/developers-notes/the-screen-files/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"cyL0EKA0xNKEZcECA3AIS"}
+20:"ToggleWordWrapButton"
+21:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$20"]
+3b:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["The screen files","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Preamble"}]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The screen is generated from the Screen Base File (SBF), a 2K file containing character codes, window and status information with four more files which contain font definitions of those characters. They are called LORES0, LORES1, HIRES0 and HIRES1 where the LORES character sets consist in 6 by 8 pixels characters (used for characters) and the HIRES characters are 8 by 8 pixels (used for the map area and the OZ window)."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The screen is refreshed every 10ms. It consists of 64 rows of 640 bits (pixels). Each 156µs, the 640 bits shift-register is built by combining character set data according to the screen codes stored in the Screen Base File (SBF). When the Blink reads a line, it shifts 6 or 8 bits to the row register according the Hires (HRS) flag. Those bits are given by the corresponding character number in the definition file (LORESx or HIRESx). Some text effects are hardware driven (reverse, flashing, grey, underlining). The flags behaviour depends on the HRS state."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"The Definition Files"}]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The Lores fonts are addressed by 9 bits (ch8-ch0) : 512 characters",["$","br",null,{}],"- Lores1 (448 characters) is the 6 * 8 fonts in ROM",["$","br",null,{}],"- Lores0 (64 characters) is the 6 * 8 user graphic defined (UGD) characters file in RAM. Assignment starts from top address with the character for code 64 (’@’)."]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The Hires fonts are addressed by 10 bits (ch9-ch0) : 1024 characters",["$","br",null,{}],"- Hires0 (768 characters) is the 8 * 8 map file in RAM (only 256 are used for map)",["$","br",null,{}],"- Hires1 (256 characters) is the 8 * 8 fonts in ROM for the OZ window (only 128 are used)"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Their structure is simply the 8 bytes of each character in the row order 1 to 8. For the Lores the 6 bits are stored in a byte but only uses bits 0-5 like UDG."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The mapping of those files depends on OZ version. Since 4.2, all LORES have been merged to allow country and keymap selection."}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L21",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":"$L22"}]}],"$L23"]}],"$L24"]}]]}],"\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a"]]}]
+15:["$","$L3b",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@3c"}]}]
+1f:true
+3d:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+3e:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+9:300
+22:["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]
+23:["$","$L3d",null,{"className":""}]
+24:["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"LORES1 map"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"128 normal lores (32 foreign + 96 ascii)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"128 bold lores (same order as normal)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"128 tiny lores (same order as normal)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"64  symbol lores (10 lores are still free)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"HIRES1 map"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"96 characters for OZ window (ascii, icons...)"}]}]]}]
+25:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"In order to spare the 32K RAM of the original z88, the RES0 size vary if the machine is expanded or not."}]
+26:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"Font","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Unexpanded","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Expanded","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":"Lores0","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"256 bytes, 32 UGD characters","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"512 bytes, 64 UGD characters","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"Hires0","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"512 bytes, 64 pixels width map","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"2K bytes, 256 pixels width map","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"SBF","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"8 rows of 256 bytes (2K)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"8 rows of 256 bytes (2K)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}]]}]
+27:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"On an unexpanded Z88 Hires0 may actually overlap Lores0. If Map=Yes and Map size in Panel is set to more than 64 (up to 96), UGD characters may be overwritten by map information if PipeDream is run."}]
+28:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"The Screen Base File"}]}]
+29:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"It is a 2K file consisting of 8 lines of 256 bytes. In a line, each character position is stored on 2 bytes with its attributes. When the Blink builds the 640 rows it only reads the 216 first bytes. So up to 108 characters are stored by line. The 40 bytes remaining are used to store windows status and information (see below). The format of these two bytes is like this:"}]
+2a:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L21",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L3d",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"Attribute 2 (odd address):      Attribute 1 (even address): "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"7   6   5   4   3   2   1   0   7   6   5   4   3   2   1   0 "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"---------------------------------------------------------------"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"sw1 sw2 hrs rev fls gry und ch8 ch7 ch6 ch5 ch4 ch3 ch2 ch1 ch0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"---------------------------------------------------------------"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"sw1 : no hardware effect (used to store tiny flag)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"sw2 : no hardware effect (used to store bold flag)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"hrs : refer to Hires font (i.e. shift 8 bits in register), else Lores (shift 6 bits in register)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"rev : reverse (i.e. XOR)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"fls : flash (1 second period)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"gry : grey (probably a faster flash period)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"und : underline (i.e. set the 8 bits when on 8th row), only valid for Lores it becomes ch9 when hrs is set."}]}]]}]]}]]}]
+2b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Four types of character can also be displayed : Lores, Hires, Lores cursor or the Null character."}]
+2c:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L21",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L3d",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"                 5     4     3     2     1     0,  7-0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                 hrs   rev   fls   gry   und   ch8-ch0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"------------------------------------------------------"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"LORES            0     v     v     v     v     000-1FF"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"LORES CURSOR     1     1     1     v     v     000-1FF"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"NULL CHARACTER   1     1     0     1     xxx    -  xxx"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"HIRES            1     0     v     v     000    -  3FF"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"x = don't care, v = valid, (i.e. the attribute depends on the value of the bit)"}]}]]}]]}]]}]
+2d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The Null character ($34 or $35) is used when there is nothing to add to the shift-register. For example, when there is no map, the first line shifts 104 lores characters (6*104=624 pixels), 1 null (0), 3 hires (O, Z, space, 16 bits the third is not displayed). It corresponds to 640 pixels. This null character is used many times when there is a map."}]
+2e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Lores cursor : is just a reversed flashing character with hrs flag set."}]
+2f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Windows and Status information"}]}]
+30:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"In the SBF, the 40 bytes free at the end of each line are used by OZ to store windows and cursor informations. As OZ uses absolute addresses, those data are defined according their address. Each line contains the relative window properties (1-8) and the main data are stored in the last line."}]
+31:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L21",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L3d",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"SBF structure"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Row 1 : 108 chars ($7800-$78D7) + Window 1 properties ($78D8-$78E6) + 25 bytes free ($78E7-$78FF)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Row 2 : 108 chars ($7900-$79D7) + Window 2 properties ($79D8-$79E6) + 25 bytes free ($79E7-$79FF)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Row 3 : 108 chars ($7A00-$7AD7) + Window 3 properties ($7AD8-$7AE6) + 25 bytes free ($7AE7-$7AFF)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Row 4 : 108 chars ($7B00-$7BD7) + Window 4 properties ($7BD8-$7BE6) + 25 bytes free ($7BE7-$7BFF)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Row 5 : 108 chars ($7C00-$7CD7) + Window 5 properties ($7CD8-$7CE6) + 25 bytes free ($7CE7-$7CFF)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Row 6 : 108 chars ($7D00-$7DD7) + Window 6 properties ($7DD8-$7DE6) + 25 bytes free ($7DE7-$7DFF)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Row 7 : 108 chars ($7E00-$7ED7) + Window 7 properties ($7ED8-$7EE6) + 25 bytes free ($7EE7-$7EFF)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Row 8 : 108 chars ($7F00-$7FD7) + Window 8 properties ($7FD8-$7FE6) + Main screen data ($7FE7-$79FF)"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Main screen data are :"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"$$7FE7 2 bytes : Active window frame"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"$$7FE9 1 byte  : SOH sequence length (0 if none)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"$$7FEC x bytes : SOH buffer"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Example with a sequence defining a user lores character : 1,138,'=',..,..."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"$$7FE9 10 the length"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"$$7FEC '=' the command"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"$$7FED user defined character number"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"$$7FEE user defined character data (8 raws)"}]}]]}]]}]]}]
+32:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The window properties frame contains informations about the window appearance and the cursor (if selected). The 8 frames are :"}]
+33:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L21",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L3d",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"IX frame"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"$$78E6 window 1"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"$$79E6 window 2"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"$$7AE6 window 3"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"$$7BE6 window 4"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"$$7CE6 window 5"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"$$7DE6 window 6"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"$$7EE6 window 7"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"$$7FE6 window 8"}]}]]}]]}]]}]
+34:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When addressing a frame, its number is in IX. The data i/o are done with LD (IX-nn) instructions. nn defines the data described in the window frame structure. In that frame, the coordinates are absolutes. It is the address of the character attributes. Stored in HL, H refers to the row, L to the column. For example, (0,0) will be $00 $78 (HL=$7800). (105,7) will be $E2 $7F (HL=$7FE2)."}]
+35:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L21",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L3d",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"Window properties frame structure "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"IX-01 Y up left"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"IX-02 X up left"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"IY-03 Y down right"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"IY-04 X down right"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"IY-05 Left margin"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"IY-06 Right margin"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"IY-07 Y cursor address"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"IY-08 X cursor address"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"IY-09 cursor attributes"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"IY-10 always 0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"IY-11 flags low"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"IY-12 open flags"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"IY-13 flags hi"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"   b0-b1 Justification (0 normal, 1 right, 2 left, 3 centered)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"   b6 Set to update cursor"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"   b7 Cursor mode (set=ON)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"IY-14 flags 2 (1 initialization bit used)"}]}]]}]]}]]}]
+36:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Uses of the Screen Registers"}]}]
+37:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Obviously, any routines which look directly at screen information are very hardware specific. Use of the ",["$","strong",null,{"children":["$","$L3e",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-sci","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OS_Sci"}]}]," call means that in future such routines would not cause code to fail, in the way that writing directly to hardware registers might, but if the system hardware arrangement did change, any code which relies on the screen information, almost certainly would not work properly. Therefore it makes sense that code using the ",["$","strong",null,{"children":["$","$L3e",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-sci","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OS_Sci"}]}]," call checks for error returns and can cope with the concept of the screen information being unavailable."]}]
+38:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Screen file address are read by ",["$","strong",null,{"children":["$","$L3e",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-sci","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OS_Sci"}]}]," with A=file reason and B=0, result is in BHL. The Lores0 and Hires0 can be moved by the user (often used in the Ranger software). For more details about the Screen registers consult ",["$","$L3e",null,{"href":"/en/library/cambridge-z88/developers-notes/manipulating-the-blink-registers","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Blink registers manipulations"}]," chapter."]}]
+39:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Full Graphic Screen"}]}]
+3a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"It is possible to have a full graphic array of 640x64. It requires only HIRES0. A total of 640 HIRES0 characters are needed. The SBF is filled with all of those HIRES0 characters (80 characters by row). Accessing the screen matrix is done by changing the HIRES0 settings directly in the RAM."}]
+3c:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

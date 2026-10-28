@@ -1,0 +1,248 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T1167,---
+description: "Although an OS_In alike call is made that returns the proper return codes on pre-emption error codes, successful keyboard output is always ."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8617990 (version 11) by scripts/import-z88-wiki.cjs */}
+
+# OS_Sr, Save & restore operations
+
+## Register parameters
+
+```text
+IN:
+     A = reason code:
+     SR_SUS ($01)   Save user screen
+	 SR_RUS ($02)   Restore user screen
+     SR_WPD ($03)   Write parameter data (mailbox)
+     SR_RPD ($04)   Read parameter data (mailbox)
+     SR_FUS ($05)   Free user screen
+     SR_CRM ($06)   Remove card (not implemented)
+     SR_CIN ($07)   Insert card (not implemented)
+     SR_PWT ($08)   Page wait
+     SR_RND ($09)   Occasionally a random number
+     SR_SRS ($0A)   Set random seed
+
+     BC, DE, HL, IX = arguments
+OUT, if call successful:
+     Fc = 0
+     returned values depend on A(in)
+
+OUT, if call failed:
+     Fc = 1
+     A = error code:
+          RC_UNK ($03), unknown request
+          RC_BAD ($04), bad arguments
+          RC_HAND ($08), bad handle
+          RC_ROOM ($07), no room
+          RC_ESC ($01), with SR_PWT
+          RC_SUSP ($69), with SR_PWT
+          RC_DRAW ($66), with SR_PWT
+          RC_QUIT ($67), with SR_PWT
+```
+
+### SR\_SUS
+
+```text
+IN:
+     -
+OUT, if call succeeded:
+     Fc = 0
+     IX = handle of saved screen
+
+OUT, if call failed:
+     Fc = 1
+     A = return code:
+          RC_HAND ($08), not sufficiently room for screen in memory.
+
+Registers changed after return:
+     A.BCDEHL/..IY same
+     .F....../IX.. different
+```
+
+### SR\_RUS
+
+```text
+IN:
+     IX = handle of previously saved screen image
+
+OUT, if call succeeded:
+     Fc = 0
+     IX = 0
+OUT, if call failed:
+     Fc = 1
+     A = return code:
+          RC_HAND ($08), screen handle was not valid
+
+Registers changed after return:
+     A.BCDEHL/..IY same
+     .F....../IX.. different
+```
+
+### SR\_FUS
+
+```text
+IN:
+     IX = handle of previously saved screen image
+
+OUT, if call succeeded:
+     Fc = 0
+     IX = 0
+OUT, if call failed:
+     Fc = 1
+     A = return code:
+          RC_HAND ($08), screen handle was not valid
+
+Registers changed after return:
+     A.BCDEHL/..IY same
+     .F....../IX.. different
+```
+
+### SR\_PWT
+
+```text
+IN:
+     -
+OUT, if call succeeded:
+     Fc = 0
+     A = <BACKSPACE> ($08)
+OUT, if call failed:
+     Fc = 1
+     A = return code:
+          RC_ESC ($01), escape condition detected
+          RC_SUSP ($69), process suspended or machine revived
+          RC_DRAW ($66), process suspended or screen corrupted
+          RC_QUIT ($67), KILL request
+
+Registers changed after return:
+     ..BCDEHL/IXIY same
+     AF....../.... different
+```
+
+Although an [OS\_In](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-in) alike call is made that returns the proper return codes on pre-emption error codes, successful keyboard output is always \<BACKSPACE\>.
+
+### SR\_RND
+
+```text
+IN:
+     -
+OUT:
+     DEBC = random number
+```
+
+The return value (random number) only changes when certain operating system functions occur in between calls to **OS\_Sr**. Repeated fetching a random number may well result in the same value being returned.
+
+Fixed and improved since OZ 5.0 using an xor-shift algorithm. All returned values are different.
+
+### SR\_SRS
+
+```text
+IN:
+     DEBC = random seed	
+OUT:
+     -
+```
+
+Implemented in OZ5.0
+
+### SR\_WPD
+
+```text
+IN:
+     DE = name of information type (null-terminated)
+     DE = 0, clear mailbox
+     BHL = extended pointer to information
+     C = length of information
+
+OUT:
+     Fc = 0, successful
+
+Registers changed after return:
+     A.BCDEHL/IXIY same
+     .F....../.... different
+```
+
+Mailboxing functionality is explained in detail in [Application Static Structures](/en/library/cambridge-z88/developers-notes/application-static-structures/mailboxes).
+
+### SR\_RPD
+
+```text
+IN:
+     DE = name of information type (null-terminated)
+     BHL = extended pointer to buffer for information read
+     C = maximum size of buffer
+OUT, if call successful:
+     Fc = 0
+     C = actual data size
+OUT, if call failed:
+     Fc = 0
+     A = return code
+          RC_FAIL ($16), information type is not present
+
+Registers changed after return:
+     A.B.DEHL/IXIY same
+     .F.C..../.... different
+```
+
+Mailboxing functionality is explained in detail in [Application Static Structures](/en/library/cambridge-z88/developers-notes/application-static-structures/mailboxes).a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Register parameters","id":"register-parameters","depth":2},{"value":"SR_SUS","id":"sr_sus","depth":3},{"value":"SR_RUS","id":"sr_rus","depth":3},{"value":"SR_FUS","id":"sr_fus","depth":3},{"value":"SR_PWT","id":"sr_pwt","depth":3},{"value":"SR_RND","id":"sr_rnd","depth":3},{"value":"SR_SRS","id":"sr_srs","depth":3},{"value":"SR_WPD","id":"sr_wpd","depth":3},{"value":"SR_RPD","id":"sr_rpd","depth":3}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"Although an OS_In alike call is made that returns the proper return codes on pre-emption error codes, successful keyboard output is always .","title":"OS_Sr, Save & restore operations","filePath":"content/en/library/cambridge-z88/developers-notes/system-calls-reference/os-sr.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/developers-notes/system-calls-reference/os-sr","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"OS_Sr, Save & restore operations - Klive IDE"}],["$","meta","1",{"name":"description","content":"Although an OS_In alike call is made that returns the proper return codes on pre-emption error codes, successful keyboard output is always ."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-sr/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"cyL0EKA0xNKEZcECA3AIS"}
+20:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+21:"ToggleWordWrapButton"
+22:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$21"]
+23:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+3a:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["OS_Sr, Save & restore operations","$undefined"]}],"\n",["$","h2",null,{"id":"register-parameters","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Register parameters",["$","$L20",null,{"id":"register-parameters"}]]}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"IN:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     A = reason code:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     SR_SUS ($01)   Save user screen"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"\t SR_RUS ($02)   Restore user screen"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     SR_WPD ($03)   Write parameter data (mailbox)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     SR_RPD ($04)   Read parameter data (mailbox)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     SR_FUS ($05)   Free user screen"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     SR_CRM ($06)   Remove card (not implemented)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     SR_CIN ($07)   Insert card (not implemented)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     SR_PWT ($08)   Page wait"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     SR_RND ($09)   Occasionally a random number"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     SR_SRS ($0A)   Set random seed"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     BC, DE, HL, IX = arguments"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OUT, if call successful:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     Fc = 0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     returned values depend on A(in)"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OUT, if call failed:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     Fc = 1"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     A = error code:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"          RC_UNK ($03), unknown request"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"          RC_BAD ($04), bad arguments"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"          RC_HAND ($08), bad handle"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"          RC_ROOM ($07), no room"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"          RC_ESC ($01), with SR_PWT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"          RC_SUSP ($69), with SR_PWT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"          RC_DRAW ($66), with SR_PWT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"          RC_QUIT ($67), with SR_PWT"}]}]]}]]}]]}],"\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39"]]}]
+15:["$","$L3a",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@3b"}]}]
+1f:true
+3c:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+9:300
+24:["$","h3",null,{"id":"sr_sus","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["SR_SUS",["$","$L20",null,{"id":"sr_sus"}]]}]
+25:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"IN:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     -"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OUT, if call succeeded:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     Fc = 0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     IX = handle of saved screen"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OUT, if call failed:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     Fc = 1"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     A = return code:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"          RC_HAND ($08), not sufficiently room for screen in memory."}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Registers changed after return:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     A.BCDEHL/..IY same"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     .F....../IX.. different"}]}]]}]]}]]}]
+26:["$","h3",null,{"id":"sr_rus","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["SR_RUS",["$","$L20",null,{"id":"sr_rus"}]]}]
+27:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"IN:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     IX = handle of previously saved screen image"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OUT, if call succeeded:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     Fc = 0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     IX = 0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OUT, if call failed:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     Fc = 1"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     A = return code:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"          RC_HAND ($08), screen handle was not valid"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Registers changed after return:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     A.BCDEHL/..IY same"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     .F....../IX.. different"}]}]]}]]}]]}]
+28:["$","h3",null,{"id":"sr_fus","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["SR_FUS",["$","$L20",null,{"id":"sr_fus"}]]}]
+29:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"IN:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     IX = handle of previously saved screen image"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OUT, if call succeeded:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     Fc = 0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     IX = 0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OUT, if call failed:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     Fc = 1"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     A = return code:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"          RC_HAND ($08), screen handle was not valid"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Registers changed after return:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     A.BCDEHL/..IY same"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     .F....../IX.. different"}]}]]}]]}]]}]
+2a:["$","h3",null,{"id":"sr_pwt","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["SR_PWT",["$","$L20",null,{"id":"sr_pwt"}]]}]
+2b:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"IN:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     -"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OUT, if call succeeded:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     Fc = 0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     A = <BACKSPACE> ($08)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OUT, if call failed:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     Fc = 1"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     A = return code:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"          RC_ESC ($01), escape condition detected"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"          RC_SUSP ($69), process suspended or machine revived"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"          RC_DRAW ($66), process suspended or screen corrupted"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"          RC_QUIT ($67), KILL request"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Registers changed after return:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     ..BCDEHL/IXIY same"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     AF....../.... different"}]}]]}]]}]]}]
+2c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Although an ",["$","$L3c",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-in","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OS_In"}]," alike call is made that returns the proper return codes on pre-emption error codes, successful keyboard output is always <BACKSPACE>."]}]
+2d:["$","h3",null,{"id":"sr_rnd","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["SR_RND",["$","$L20",null,{"id":"sr_rnd"}]]}]
+2e:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"IN:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     -"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OUT:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     DEBC = random number"}]}]]}]]}]]}]
+2f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The return value (random number) only changes when certain operating system functions occur in between calls to ",["$","strong",null,{"children":"OS_Sr"}],". Repeated fetching a random number may well result in the same value being returned."]}]
+30:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Fixed and improved since OZ 5.0 using an xor-shift algorithm. All returned values are different."}]
+31:["$","h3",null,{"id":"sr_srs","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["SR_SRS",["$","$L20",null,{"id":"sr_srs"}]]}]
+32:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"IN:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     DEBC = random seed\t"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OUT:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     -"}]}]]}]]}]]}]
+33:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Implemented in OZ5.0"}]
+34:["$","h3",null,{"id":"sr_wpd","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["SR_WPD",["$","$L20",null,{"id":"sr_wpd"}]]}]
+35:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"IN:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     DE = name of information type (null-terminated)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     DE = 0, clear mailbox"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     BHL = extended pointer to information"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     C = length of information"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OUT:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     Fc = 0, successful"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Registers changed after return:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     A.BCDEHL/IXIY same"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     .F....../.... different"}]}]]}]]}]]}]
+36:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Mailboxing functionality is explained in detail in ",["$","$L3c",null,{"href":"/en/library/cambridge-z88/developers-notes/application-static-structures/mailboxes","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Application Static Structures"}],"."]}]
+37:["$","h3",null,{"id":"sr_rpd","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["SR_RPD",["$","$L20",null,{"id":"sr_rpd"}]]}]
+38:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"IN:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     DE = name of information type (null-terminated)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     BHL = extended pointer to buffer for information read"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     C = maximum size of buffer"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OUT, if call successful:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     Fc = 0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     C = actual data size"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OUT, if call failed:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     Fc = 0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     A = return code"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"          RC_FAIL ($16), information type is not present"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Registers changed after return:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     A.B.DEHL/IXIY same"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     .F.C..../.... different"}]}]]}]]}]]}]
+39:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Mailboxing functionality is explained in detail in ",["$","$L3c",null,{"href":"/en/library/cambridge-z88/developers-notes/application-static-structures/mailboxes","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Application Static Structures"}],"."]}]
+3b:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

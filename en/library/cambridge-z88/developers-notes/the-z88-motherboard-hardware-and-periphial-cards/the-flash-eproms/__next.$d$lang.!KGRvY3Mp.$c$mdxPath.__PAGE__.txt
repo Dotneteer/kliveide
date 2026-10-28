@@ -1,0 +1,158 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T10f5,---
+description: "The Flash Eprom cards are a new device for Z88 storage. Its main feature is an integrated electrical erasure. The prototype card used the Intel 28F008SA and the production cards used initially the..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/3113053 (version 1) by scripts/import-z88-wiki.cjs */}
+
+# The Flash Eproms
+
+The Flash Eprom cards are a new device for Z88 storage. Its main feature is an integrated electrical erasure. The prototype card used the Intel 28F008SA and the production cards used initially the Intel 28F008S5 (which is fastest). When Intel stopped manufacturing these, AMD (now Spansion) manufactured a similar chip, same size and format. The Vpp pin became redundant (NC not connected). Unlike the Intel chip, this was a 5v only device which meant that they could be written to in any of the Z88's 3 slots. Both the Intel and AMD chips had 44 pins in a PSOP (or SO) format (0.5 mm between each pin). Spansion stopped manufacturing this package and changed it to a 40pin Standard TSOP. Both packages are shown below. They are wired to the slot connector like the standard EPROM.
+
+```text
+    +--------------+             +-------------------------------+
+VPP |1    +--+   44| VCC     A19 |1             +--+           40| -
+RP# |2           43| CE#     A18 |2                            39| -
+A11 |3           42| A12     A17 |3                            38| WE#
+A10 |4           41| A13     A16 |4                            37| OE#
+A9  |5           40| A14     A15 |5                            36| -
+A8  |6           39| A15     A14 |6                            35| D7
+A7  |7           38| A16     A13 |7                            34| D6
+A6  |8           37| A17     A12 |8                            33| D5
+A5  |9           36| A18     CE# |9                            32| D4
+A4  |10          35| A19     VCC |10                           31| VCC
+-   |11   Intel  34| -         - |11       Spansion / AMD      30| GND
+-   |12  28F008  33| -       RP# |12          Am29F080B        29| GND
+A3  |13   SA/S5  32| -       A11 |13         40-pin TSOP       28| D3
+A2  |14          31| -       A10 |14                           27| D2
+A1  |15          30| WE#     A9  |15                           26| D1
+A0  |16          29| OE#     A8  |16                           25| D0
+D0  |17          28| -       A7  |17                           24| A0
+D1  |18          27| D7      A6  |18                           23| A1
+D2  |19          26| D6      A5  |19                           22| A2
+D3  |20          25| D5      A4  |20                           21| A3
+GND |21          24| D4          +-------------------------------+
+GND |22          23| VCC
+    +--------------+
+```
+
+The table below describes the connections between the edge connector and the chip.
+
+```text
+Slot signal     Flash Signal Flash Signal (TSOP)
+1 MA16  A16     38               4
+2 MA15  A15     39               5
+3 MA12  A12     42               8
+4 MA7   A7      7                17
+5 MA6   A6      8                18
+6 MA5   A5      9                19
+7 MA4   A4      10               20
+8 MA3   A3      13               21
+9 MA2   A2      14               22
+10 MA1  A1      15               23
+11 MA0  A0      16               24
+12 MDA  D0      17               25
+13 MDB  D1      18               26
+14 MDC  D2      19               27
+15 SNS
+16 GND  GND     21               29
+17 GND  GND     22               30
+18 MA14 A14     40               6
+19 VPP  VPP     1
+20 VCC  VCC     44,23            31,10
+21 VCC  -
+22 PGM  WE#     30               38
+23 MA13 A13     41               7
+24 MA8  A8      6                16
+25 MA9  A9      5                15
+26 MA11 A11     3                13
+27 POE  -
+28 EOE  OE#     29               37
+29 MA10 A10     4                14
+30 SE3  CE#     43               9
+31 MDH  D7      27               35
+32 MDG  D6      26               34
+33 MDD  D3      20               28
+34 MDE  D4      24               32
+35 MDF  D5      25               33
+36 MA17 A17     37               3
+37 MA18 A18     36               2
+38 MA19 A19     35               1
+
+Other pins:
+
+RP# connected to VCC Pin 2 : Pin 12
+
+Pin 1 : Vpp
+Pin 23: Vcc
+Pin 44: Vcc
+Must be connected to a 100nF ceramic capacitor.
+
+NB: all the VCC and GND pins have to be connected.
+```a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"The Flash Eprom cards are a new device for Z88 storage. Its main feature is an integrated electrical erasure. The prototype card used the Intel 28F008SA and the production cards used initially the...","title":"The Flash Eproms","filePath":"content/en/library/cambridge-z88/developers-notes/the-z88-motherboard-hardware-and-periphial-cards/the-flash-eproms.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/developers-notes/the-z88-motherboard-hardware-and-periphial-cards/the-flash-eproms","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"The Flash Eproms - Klive IDE"}],["$","meta","1",{"name":"description","content":"The Flash Eprom cards are a new device for Z88 storage. Its main feature is an integrated electrical erasure. The prototype card used the Intel 28F008SA and the production cards used initially the..."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/developers-notes/the-z88-motherboard-hardware-and-periphial-cards/the-flash-eproms/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"cyL0EKA0xNKEZcECA3AIS"}
+20:"ToggleWordWrapButton"
+21:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$20"]
+22:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+30:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["The Flash Eproms","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The Flash Eprom cards are a new device for Z88 storage. Its main feature is an integrated electrical erasure. The prototype card used the Intel 28F008SA and the production cards used initially the Intel 28F008S5 (which is fastest). When Intel stopped manufacturing these, AMD (now Spansion) manufactured a similar chip, same size and format. The Vpp pin became redundant (NC not connected). Unlike the Intel chip, this was a 5v only device which meant that they could be written to in any of the Z88’s 3 slots. Both the Intel and AMD chips had 44 pins in a PSOP (or SO) format (0.5 mm between each pin). Spansion stopped manufacturing this package and changed it to a 40pin Standard TSOP. Both packages are shown below. They are wired to the slot connector like the standard EPROM."}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L21",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L22",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"    +--------------+             +-------------------------------+"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"VPP |1    +--+   44| VCC     A19 |1             +--+           40| -"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"RP# |2           43| CE#     A18 |2                            39| -"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"A11 |3           42| A12     A17 |3                            38| WE#"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"A10 |4           41| A13     A16 |4                            37| OE#"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"A9  |5           40| A14     A15 |5                            36| -"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"A8  |6           39| A15     A14 |6                            35| D7"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"A7  |7           38| A16     A13 |7                            34| D6"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"A6  |8           37| A17     A12 |8                            33| D5"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"A5  |9           36| A18     CE# |9                            32| D4"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"A4  |10          35| A19     VCC |10                           31| VCC"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"-   |11   Intel  34| -         - |11       Spansion / AMD      30| GND"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"-   |12  28F008  33| -       RP# |12          Am29F080B        29| GND"}]}],"\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d"]}]]}]]}],"\n","$L2e","\n","$L2f"]]}]
+15:["$","$L30",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@31"}]}]
+1f:true
+9:300
+23:["$","span",null,{"children":["$","span",null,{"children":"A3  |13   SA/S5  32| -       A11 |13         40-pin TSOP       28| D3"}]}]
+24:["$","span",null,{"children":["$","span",null,{"children":"A2  |14          31| -       A10 |14                           27| D2"}]}]
+25:["$","span",null,{"children":["$","span",null,{"children":"A1  |15          30| WE#     A9  |15                           26| D1"}]}]
+26:["$","span",null,{"children":["$","span",null,{"children":"A0  |16          29| OE#     A8  |16                           25| D0"}]}]
+27:["$","span",null,{"children":["$","span",null,{"children":"D0  |17          28| -       A7  |17                           24| A0"}]}]
+28:["$","span",null,{"children":["$","span",null,{"children":"D1  |18          27| D7      A6  |18                           23| A1"}]}]
+29:["$","span",null,{"children":["$","span",null,{"children":"D2  |19          26| D6      A5  |19                           22| A2"}]}]
+2a:["$","span",null,{"children":["$","span",null,{"children":"D3  |20          25| D5      A4  |20                           21| A3"}]}]
+2b:["$","span",null,{"children":["$","span",null,{"children":"GND |21          24| D4          +-------------------------------+"}]}]
+2c:["$","span",null,{"children":["$","span",null,{"children":"GND |22          23| VCC"}]}]
+2d:["$","span",null,{"children":["$","span",null,{"children":"    +--------------+"}]}]
+2e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The table below describes the connections between the edge connector and the chip."}]
+2f:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L21",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L22",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"Slot signal     Flash Signal Flash Signal (TSOP)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1 MA16  A16     38               4"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2 MA15  A15     39               5"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3 MA12  A12     42               8"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"4 MA7   A7      7                17"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"5 MA6   A6      8                18"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"6 MA5   A5      9                19"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"7 MA4   A4      10               20"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"8 MA3   A3      13               21"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"9 MA2   A2      14               22"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"10 MA1  A1      15               23"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"11 MA0  A0      16               24"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"12 MDA  D0      17               25"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"13 MDB  D1      18               26"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"14 MDC  D2      19               27"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"15 SNS"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"16 GND  GND     21               29"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"17 GND  GND     22               30"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"18 MA14 A14     40               6"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"19 VPP  VPP     1"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"20 VCC  VCC     44,23            31,10"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"21 VCC  -"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"22 PGM  WE#     30               38"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"23 MA13 A13     41               7"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"24 MA8  A8      6                16"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"25 MA9  A9      5                15"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"26 MA11 A11     3                13"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"27 POE  -"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"28 EOE  OE#     29               37"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"29 MA10 A10     4                14"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"30 SE3  CE#     43               9"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"31 MDH  D7      27               35"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"32 MDG  D6      26               34"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"33 MDD  D3      20               28"}]}],"\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41"]}]]}]]}]
+31:null
+9:C
+32:["$","span",null,{"children":["$","span",null,{"children":"34 MDE  D4      24               32"}]}]
+33:["$","span",null,{"children":["$","span",null,{"children":"35 MDF  D5      25               33"}]}]
+34:["$","span",null,{"children":["$","span",null,{"children":"36 MA17 A17     37               3"}]}]
+35:["$","span",null,{"children":["$","span",null,{"children":"37 MA18 A18     36               2"}]}]
+36:["$","span",null,{"children":["$","span",null,{"children":"38 MA19 A19     35               1"}]}]
+37:["$","span",null,{"children":["$","span",null,{}]}]
+38:["$","span",null,{"children":["$","span",null,{"children":"Other pins:"}]}]
+39:["$","span",null,{"children":["$","span",null,{}]}]
+3a:["$","span",null,{"children":["$","span",null,{"children":"RP# connected to VCC Pin 2 : Pin 12"}]}]
+3b:["$","span",null,{"children":["$","span",null,{}]}]
+3c:["$","span",null,{"children":["$","span",null,{"children":"Pin 1 : Vpp"}]}]
+3d:["$","span",null,{"children":["$","span",null,{"children":"Pin 23: Vcc"}]}]
+3e:["$","span",null,{"children":["$","span",null,{"children":"Pin 44: Vcc"}]}]
+3f:["$","span",null,{"children":["$","span",null,{"children":"Must be connected to a 100nF ceramic capacitor."}]}]
+40:["$","span",null,{"children":["$","span",null,{}]}]
+41:["$","span",null,{"children":["$","span",null,{"children":"NB: all the VCC and GND pins have to be connected."}]}]
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

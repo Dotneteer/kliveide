@@ -1,0 +1,120 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:Tf07,---
+description: "The 38 pin proprietary format connectors are for the external cards. Each slot is able to address 1024K. Slot 3 has an additional Vpp (12V) line which is used for Eprom programming. Pseudo-static..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/3113055 (version 4) by scripts/import-z88-wiki.cjs */}
+
+# The slot connectors
+
+The 38 pin proprietary format connectors are for the external cards. Each slot is able to address 1024K. Slot 3 has an additional Vpp (12V) line which is used for Eprom programming. Pseudo-static RAM, static RAM, EPROM and Flash EPROM can also be used.
+
+The 1M RAM chip connections have been changed. All the data and address lines are used, but the order of these have been altered to suit the layout of the Z88's edge connector..
+
+```text
+Slot    RAM/ROM RAM/ROM Eprom   Pins for
+pins    Slot 1  Slot 2  Slot 3  32K     128K    32K      512K        1M
+        Signals Signals Signals EPROM   EPROM   RAM      FLASH       RAM
+                                                M27C256B AM29F040B   BS62LV800
+1       A16     A16     A16     -       24      -        2            18
+2       A15     A15     A15     -       3       -        3            1
+3       A12     A12     A12     2       4       2        4            4
+4       A7      A7      A7      3       5       3        5            5
+5       A6      A6      A6      4       6       4        6            2
+6       A5      A5      A5      5       7       5        7            19
+7       A4      A4      A4      6       8       6        8            20
+8       A3      A3      A3      7       9       7        9            21
+9       A2      A2      A2      8       10      8        10           22
+10      A1      A1      A1      9       11      9        11           3
+11      A0      A0      A0      10      12      10       12           24
+12      D0      D0      D0      11      13      11       13           9
+13      D1      D1      D1      12      14      12       14           10
+14      D2      D2      D2      13      15      13       15           13
+15      SNSL    SNSL    SNSL    -       -       -        -            -
+16      GND     GND     GND     14      16      14       16           34
+17      GND     GND     GND     14      16      14       16           12
+18      A14     A14     A14     27      29      1        29           23
+19      VCC     VCC     VPP     1       1       -        -            -
+20      VCC     VCC     VCC     28      32      -        32           11,40
+21      VCC     VCC     VCC     -       -       28       -            33
+22      WEL     WEL     PGML    -       31      -        31           17
+23      A13     A13     A13     26      28      26       28           25
+24      A8      A8      A8      25      27      25       27           26
+25      A9      A9      A9      24      26      24       26           27
+26      A11     A11     A11     23      25      23       25           28
+27      POE     POE     POE     -       -       22       -            -
+28      ROE     ROE     EOE     22      2       -        24           41
+29      A10     A10     A10     21      23      21       23           39
+30      SE1     SE2     SE3     20      22      20       22           6
+31      D7      D7      D7      19      21      19       21           21
+32      D6      D6      D6      18      20      18       20           20
+33      D3      D3      D3      15      17      15       17           17
+34      D4      D4      D4      16      18      16       18           18
+35      D5      D5      D5      17      19      17       19           19
+36      A17     A17     A17     -       -       -        30           42
+37      A18     A18     A18     -       -       -        1            43
+38      A19     A19     A19     -       -       -        -            44
+```a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"The 38 pin proprietary format connectors are for the external cards. Each slot is able to address 1024K. Slot 3 has an additional Vpp (12V) line which is used for Eprom programming. Pseudo-static...","title":"The slot connectors","filePath":"content/en/library/cambridge-z88/developers-notes/the-z88-motherboard-hardware-and-periphial-cards/the-slot-connectors.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/developers-notes/the-z88-motherboard-hardware-and-periphial-cards/the-slot-connectors","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"The slot connectors - Klive IDE"}],["$","meta","1",{"name":"description","content":"The 38 pin proprietary format connectors are for the external cards. Each slot is able to address 1024K. Slot 3 has an additional Vpp (12V) line which is used for Eprom programming. Pseudo-static..."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/developers-notes/the-z88-motherboard-hardware-and-periphial-cards/the-slot-connectors/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"cyL0EKA0xNKEZcECA3AIS"}
+20:"ToggleWordWrapButton"
+21:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$20"]
+22:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+3d:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["The slot connectors","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The 38 pin proprietary format connectors are for the external cards. Each slot is able to address 1024K. Slot 3 has an additional Vpp (12V) line which is used for Eprom programming. Pseudo-static RAM, static RAM, EPROM and Flash EPROM can also be used."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The 1M RAM chip connections have been changed. All the data and address lines are used, but the order of these have been altered to suit the layout of the Z88’s edge connector.."}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L21",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L22",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"Slot    RAM/ROM RAM/ROM Eprom   Pins for"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"pins    Slot 1  Slot 2  Slot 3  32K     128K    32K      512K        1M"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        Signals Signals Signals EPROM   EPROM   RAM      FLASH       RAM"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                                                M27C256B AM29F040B   BS62LV800"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1       A16     A16     A16     -       24      -        2            18"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2       A15     A15     A15     -       3       -        3            1"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3       A12     A12     A12     2       4       2        4            4"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"4       A7      A7      A7      3       5       3        5            5"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"5       A6      A6      A6      4       6       4        6            2"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"6       A5      A5      A5      5       7       5        7            19"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"7       A4      A4      A4      6       8       6        8            20"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"8       A3      A3      A3      7       9       7        9            21"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"9       A2      A2      A2      8       10      8        10           22"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"10      A1      A1      A1      9       11      9        11           3"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"11      A0      A0      A0      10      12      10       12           24"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"12      D0      D0      D0      11      13      11       13           9"}]}],"\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c"]}]]}]]}]]]}]
+15:["$","$L3d",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@3e"}]}]
+1f:true
+9:300
+23:["$","span",null,{"children":["$","span",null,{"children":"13      D1      D1      D1      12      14      12       14           10"}]}]
+24:["$","span",null,{"children":["$","span",null,{"children":"14      D2      D2      D2      13      15      13       15           13"}]}]
+25:["$","span",null,{"children":["$","span",null,{"children":"15      SNSL    SNSL    SNSL    -       -       -        -            -"}]}]
+26:["$","span",null,{"children":["$","span",null,{"children":"16      GND     GND     GND     14      16      14       16           34"}]}]
+27:["$","span",null,{"children":["$","span",null,{"children":"17      GND     GND     GND     14      16      14       16           12"}]}]
+28:["$","span",null,{"children":["$","span",null,{"children":"18      A14     A14     A14     27      29      1        29           23"}]}]
+29:["$","span",null,{"children":["$","span",null,{"children":"19      VCC     VCC     VPP     1       1       -        -            -"}]}]
+2a:["$","span",null,{"children":["$","span",null,{"children":"20      VCC     VCC     VCC     28      32      -        32           11,40"}]}]
+2b:["$","span",null,{"children":["$","span",null,{"children":"21      VCC     VCC     VCC     -       -       28       -            33"}]}]
+2c:["$","span",null,{"children":["$","span",null,{"children":"22      WEL     WEL     PGML    -       31      -        31           17"}]}]
+2d:["$","span",null,{"children":["$","span",null,{"children":"23      A13     A13     A13     26      28      26       28           25"}]}]
+2e:["$","span",null,{"children":["$","span",null,{"children":"24      A8      A8      A8      25      27      25       27           26"}]}]
+2f:["$","span",null,{"children":["$","span",null,{"children":"25      A9      A9      A9      24      26      24       26           27"}]}]
+30:["$","span",null,{"children":["$","span",null,{"children":"26      A11     A11     A11     23      25      23       25           28"}]}]
+31:["$","span",null,{"children":["$","span",null,{"children":"27      POE     POE     POE     -       -       22       -            -"}]}]
+32:["$","span",null,{"children":["$","span",null,{"children":"28      ROE     ROE     EOE     22      2       -        24           41"}]}]
+33:["$","span",null,{"children":["$","span",null,{"children":"29      A10     A10     A10     21      23      21       23           39"}]}]
+34:["$","span",null,{"children":["$","span",null,{"children":"30      SE1     SE2     SE3     20      22      20       22           6"}]}]
+35:["$","span",null,{"children":["$","span",null,{"children":"31      D7      D7      D7      19      21      19       21           21"}]}]
+36:["$","span",null,{"children":["$","span",null,{"children":"32      D6      D6      D6      18      20      18       20           20"}]}]
+37:["$","span",null,{"children":["$","span",null,{"children":"33      D3      D3      D3      15      17      15       17           17"}]}]
+38:["$","span",null,{"children":["$","span",null,{"children":"34      D4      D4      D4      16      18      16       18           18"}]}]
+39:["$","span",null,{"children":["$","span",null,{"children":"35      D5      D5      D5      17      19      17       19           19"}]}]
+3a:["$","span",null,{"children":["$","span",null,{"children":"36      A17     A17     A17     -       -       -        30           42"}]}]
+3b:["$","span",null,{"children":["$","span",null,{"children":"37      A18     A18     A18     -       -       -        1            43"}]}]
+3c:["$","span",null,{"children":["$","span",null,{"children":"38      A19     A19     A19     -       -       -        -            44"}]}]
+3e:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

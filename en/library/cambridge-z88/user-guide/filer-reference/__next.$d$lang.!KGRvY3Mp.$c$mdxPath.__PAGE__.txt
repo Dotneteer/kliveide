@@ -1,0 +1,1211 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+15:"ViewportBoundary"
+16:I[484,[],"$15"]
+17:"MetadataBoundary"
+18:I[484,[],"$17"]
+19:"$Sreact.suspense"
+1a:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"A little story about Directories","id":"a-little-story-about-directories","depth":3},{"value":"File names","id":"file-names","depth":3},{"value":"Specifying file names in full","id":"specifying-file-names-in-full","depth":3},{"value":"The Filing System Hierarchical System","id":"the-filing-system-hierarchical-system","depth":5},{"value":"Device specifications","id":"device-specifications","depth":3},{"value":"Wildcards","id":"wildcards","depth":3},{"value":"MENU Commands","id":"menu-commands","depth":3},{"value":[["$","$4",".0",{"children":["Catalogue Files ",["$","kbd",".1",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"CF"]}]],"id":"catalogue-files-cf","depth":3},{"value":"Updated Date is the only Date used","id":"updated-date-is-the-only-date-used","depth":4},{"value":[["$","$4",".0",{"children":[["$","kbd",".0",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"CE — Catalogue File Card"]}]],"id":"ce--catalogue-file-card","depth":4},{"value":"Flashing Display whilst using Flash or EPROM card is normal","id":"flashing-display-whilst-using-flash-or-eprom-card-is-normal","depth":4},{"value":[["$","$4",".0",{"children":[["$","kbd",".0",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"ES — Save to File Card"]}]],"id":"es--save-to-file-card","depth":4},{"value":"UV EPROM fully erased?","id":"uv-eprom-fully-erased","depth":4},{"value":[["$","$4",".0",{"children":[["$","kbd",".0",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"EF — Fetch from File Card"]}]],"id":"ef--fetch-from-file-card","depth":4},{"value":[["$","$4",".0",{"children":[["$","kbd",".0",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"CO — Copy"]}]],"id":"co--copy","depth":4},{"value":[["$","$4",".0",{"children":[["$","kbd",".0",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"RE — Rename"]}]],"id":"re--rename","depth":4},{"value":[["$","$4",".0",{"children":[["$","kbd",".0",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"ER — Erase"]}]],"id":"er--erase","depth":4},{"value":[["$","$4",".0",{"children":[["$","kbd",".0",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"SE — Select File Card"]}]],"id":"se--select-file-card","depth":4},{"value":[["$","$4",".0",{"children":[["$","kbd",".0",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"EC — Create File Card"]}]],"id":"ec--create-file-card","depth":4},{"value":[["$","$4",".0",{"children":[["$","kbd",".0",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"Sl — Select Directory"]}]],"id":"sl--select-directory","depth":4},{"value":[["$","$4",".0",{"children":[["$","kbd",".0",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"SV — Select Device"]}]],"id":"sv--select-device","depth":4},{"value":"Down Directory — Up Directory","id":"down-directory--up-directory","depth":4},{"value":[["$","$4",".0",{"children":[["$","kbd",".0",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"EX — Execute"]}]],"id":"ex--execute","depth":4},{"value":[["$","$4",".0",{"children":[["$","kbd",".0",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"CD — Create Directory"]}]],"id":"cd--create-directory","depth":4},{"value":[["$","$4",".0",{"children":[["$","kbd",".0",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"TC — Tree Copy"]}]],"id":"tc--tree-copy","depth":4},{"value":[["$","$4",".0",{"children":[["$","kbd",".0",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"NM — Name Match"]}]],"id":"nm--name-match","depth":4},{"value":[["$","$4",".0",{"children":[["$","kbd",".0",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"VF — View File"]}]],"id":"vf--view-file","depth":4},{"value":["$L10"],"id":"----","depth":4},{"value":"CLI Files","id":"cli_files","depth":2},{"value":"Special Significance Characters","id":"special-significance-characters","depth":3},{"value":"Key sequences","id":"key-sequences","depth":4},{"value":"File control commands","id":"file-control-commands","depth":5},{"value":"Terminating execute files","id":"terminating-execute-files","depth":3},{"value":"Redirecting keyboard input and screen output","id":"redirecting-keyboard-input-and-screen-output","depth":3},{"value":"Editing BASIC programs using PipeDream","id":"editing-basic-programs-using-pipedream","depth":4},{"value":"Executing a file on reset","id":"executing-a-file-on-reset","depth":4},{"value":"Example using []+K to make a Command File","id":"example-using-k-to-make-a-command-file","depth":2},{"value":"Copy the File from temporary RAM.- to ordinary RAM.1","id":"copy-the-file-from-temporary-ram--to-ordinary-ram1","depth":3},{"value":"Edit the File in Pipedream","id":"edit-the-file-in-pipedream","depth":3},{"value":"Starting boot.cli","id":"starting-bootcli","depth":3},{"value":"Error messages","id":"error-messages","depth":2},{"value":"UV EPROM not fully erased","id":"uv-eprom-not-fully-erased","depth":3},{"value":"In Use","id":"in-use","depth":3}],"children":["$L11","$L12"]}]}],null,"$L13"]}],"p":"$@14","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/user-guide/filer-reference","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L16",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L18",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$19",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Section Seven - Filer reference - Klive IDE"}],["$","meta","1",{"name":"description","content":"This section describes the more advanced features and commands of the Filer popdown, and should be read in conjunction with The Filer. The features described here include:"}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/user-guide/filer-reference/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1a","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1b","v":null,"s":"$9"}},"a":"$@1c","u":"$@1d","b":"cyL0EKA0xNKEZcECA3AIS"}
+1e:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+1f:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+23:I[484,[],"OutletBoundary"]
+10:["$","$4",".0",{"children":[["$","kbd",".0",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor down","children":"↓"}],["$","kbd",".1",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor up","children":"↑"}],["$","kbd",".2",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor left","children":"←"}],["$","kbd",".3",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor right","children":"→"}]," — ",["$","kbd",".5",{"className":"Z88_key__DMNGV","title":"Shift","children":"SHIFT"}],["$","kbd",".6",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor down","children":"↓"}],["$","kbd",".7",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor up","children":"↑"}],["$","kbd",".8",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor left","children":"←"}],["$","kbd",".9",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor right","children":"→"}]," — ",["$","kbd",".b",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],["$","kbd",".c",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor down","children":"↓"}],["$","kbd",".d",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor up","children":"↑"}],["$","kbd",".e",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor left","children":"←"}],["$","kbd",".f",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor right","children":"→"}]]}]
+11:["$","$L1e",null,{}]
+20:T82e0,---
+description: "This section describes the more advanced features and commands of the Filer popdown, and should be read in conjunction with The Filer. The features described here include:"
+---
+
+import { Callout, Table } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/35913796 (version 91) by scripts/import-z88-user-guide.cjs */}
+
+# Section Seven - Filer reference
+
+This section describes the more advanced features and commands of the Filer popdown, and should be read in conjunction with [The Filer](/en/library/cambridge-z88/user-guide/using-the-popdowns/the-filer-popdown). The features described here include:
+
+- Directories, and the [hierarchical filing system](#thefilingsystemhierarchicalsystem)
+- The Command Line Interpreter, and CLI files
+
+Here, you will find the following chapters:
+
+- [Specifying file names in full](#specifyingfilenamesinfull)
+
+Describes filename syntax, filename extensions, directory structure, device specifications and wildcards.
+
+- [Additional Filer commands](#additionalfilercommands)
+
+Describes commands that provide facilities for creating directories, manipulating files within the hierarchical directory structure.
+
+- [CLI Files](#cli_files)
+
+Describes how to use the Command Line Interpreter with text files, reference of special commands for the CLI, redirecting of I/O and how to utilize this for editing BBC BASIC programs in PipeDream.
+
+### A little story about Directories
+
+Users may not understand the value of using "The Filing System Hierarchical System," until it is too late. Here is a fictitious example showing what 482 files could look like if they are just dumped into the flash card. There are no directories, and when using EPROMs or Flashcards, no date is stored. The order of the files are known. the first file saved is on Page 1 top left-hand corner and the last file is on Page 2, bottom right-hand corner. There is no way of knowing what each file contains. Perhaps the answer is in the file name.
+
+<Table>
+<thead>
+<Table.Tr>
+<Table.Th>Page 1</Table.Th>
+<Table.Th>Page 2</Table.Th>
+</Table.Tr>
+</thead>
+<tbody>
+<Table.Tr>
+<Table.Td>
+
+<Shot src="z88-user-guide/filer-reference/z88-files-1.webp" alt="Z88 files 1" width={900} />
+
+</Table.Td>
+<Table.Td>
+
+<Shot src="z88-user-guide/filer-reference/z88-files-2.webp" alt="Z88 files 2" width={900} />
+
+</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+<Callout type="info">
+
+**NOTE**
+
+The numbers on the left column indicates the file size.
+
+</Callout>
+
+### File names
+
+The first 6 file-names were on the flash card to start with, but then there are
+
+```text
+286 RECEIPT
+863 DEBT
+739 FONENOS2
+```
+
+Now what you need to ask yourself when choosing a file name is,
+
+will I remember what this would be about in 10 years time,
+
+just by looking at the file name? If I asked you now, what would you say for the first one, "that's a receipt?" Now that is a good start, but, what was it for? Who was it from? When was it issued? The only way of knowing that is by opening the file and having a look.
+
+Other file names down the list include
+
+```text
+123 5
+141 4
+140 3
+```
+
+These file names could mean anything. You can have 12 characters to describe what the file is and the first file here is 5. There are some other clues. File 5 was saved before File 4 and File 3, but again without knowing what all these files are the only way again of knowing what they are is again by opening them and having a look.
+
+<Callout type="info">
+
+**Q & A**
+
+Q When is the best time to sort out your file names?<br />Q When is the best time to sort out your directories?
+
+**A At the beginning**
+
+</Callout>
+
+Looking at the file name 286 RECEIPT and then the questions we asked about it i.e. what was it for? Who was it from? When was it issued? These answers may be put into the Directories. i.e.
+
+/BATHROOM/PLUMBER/20150714/RECEIPT
+
+This now shows that the receipt was for the PLUMBER who did some work in the BATHROOM on the 14th July 2015.
+
+<Callout type="info">
+
+**Writing Dates**
+
+If the date is written backwards, i.e. YYYYMMDD the numbers can be easily sorted.
+
+</Callout>
+
+Do not think, I will use this name for now and will change it later. This example was based on 'real-life,' the file names never got changed.
+
+### Specifying file names in full
+
+##### The Filing System Hierarchical System
+
+<Shot src="z88-user-guide/filer-reference/hierarchical.webp" alt="Hierarchical" width={351} />
+
+The Filing System Hierarchical System looks like an upside down tree with the Device at the top. <br />Underneath that can be either a Directory or a filename,<br />Underneath that can be either a Directory or a filename,<br />and so on ...
+
+The full form of a file name is <br /><em>:DEVICE I DIRECTORY I DIRECTORY I .... /filename<br /></em>where <br />DEVICE is one of the specification listed below<br />DIRECTORY and filename are each of the form<br /><em>name**.**extension<br /></em>consisting of a name of up to 12 letters or digits, followed by an optional extension of up to three letters or digits, *DIRECTORY* is a directory name subject to the same constraints as *filename*.
+
+All ISO characters (such as **é** and **å**) are allowed in filenames<sup>**OZ4.7**</sup>.
+
+The following extensions are used for system functions:
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>`.sgn`</Table.Td>
+<Table.Td>For <Key k="square" />+K and <Key k="square" />+S CLI files</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>`.CLI`</Table.Td>
+<Table.Td>For BOOT.CLI; see **CLI files** section below</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>`.L`</Table.Td>
+<Table.Td>For PipeDream multi-file List file</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+In addition the following symbols can be used:
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>`../name`</Table.Td>
+<Table.Td>Parent directory of name</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>.</Table.Td>
+<Table.Td>Current directory</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+### Device specifications
+
+*DEVICE* can be specified as one of the following in Application Load or Save operations:
+
+<Table>
+<thead>
+<Table.Tr>
+<Table.Th colSpan={2}>Specification</Table.Th>
+<Table.Th>Effect</Table.Th>
+</Table.Tr>
+</thead>
+<tbody>
+<Table.Tr>
+<Table.Td colSpan={2}>`:RAM.0`</Table.Td>
+<Table.Td>RAM in slot 0 (internal memory)</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={2}>`:RAM.1`</Table.Td>
+<Table.Td>RAM in slot 1 (external memory)</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={2}>`:RAM.2`</Table.Td>
+<Table.Td>RAM in slot 2 (external memory)</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={2}>`:RAM.3`</Table.Td>
+<Table.Td>RAM in slot 3 (external memory)</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={2}>`:RAM.-`</Table.Td>
+<Table.Td>Any RAM memory; ie 0, 1, 2, or 3. Used by CLI for temporary files, and lost on reset.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={2}>`:EPR.0`</Table.Td>
+<Table.Td>FLASH or EPROM in slot 0 (internal memory)<sup>OZ4.7</sup></Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={2}>`:EPR.1`</Table.Td>
+<Table.Td>FLASH or EPROM in slot 1 (external file area)<sup>OZ4.7</sup></Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={2}>`:EPR.2`</Table.Td>
+<Table.Td>FLASH or EPROM in slot 2 (external file area)<sup>OZ4.7</sup></Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={2}>`:EPR.3`</Table.Td>
+<Table.Td>FLASH or EPROM in slot 3 (external file area)<sup>OZ4.7</sup></Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={2}>`:ROM.0`</Table.Td>
+<Table.Td>ROM</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={2}>`:SCR.0`</Table.Td>
+<Table.Td>Screen</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={2}>`:PRT.0`</Table.Td>
+<Table.Td>Printer; via printer driver so that highlight codes are interpreted</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={2}>`:COM.0`</Table.Td>
+<Table.Td>Communications; via serial port</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={2}>`:INP.0`</Table.Td>
+<Table.Td>Standard input</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={2}>`:OUT.0`</Table.Td>
+<Table.Td>Standard output</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={2}>`:NUL.0`</Table.Td>
+<Table.Td>Null: absorbs output, and acts like an empty file on input</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+### Wildcards
+
+The device, directory and file name can contain the following wildcards:
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>`*`</Table.Td>
+<Table.Td>Matches any number of characters (or none)</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>`?`</Table.Td>
+<Table.Td>Matches a single character</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>`//`</Table.Td>
+<Table.Td>Matches any number of directories (or none)</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+For example,
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>`:*//letter`</Table.Td>
+<Table.Td>Finds the file called `letter` anywhere</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>`doc*`</Table.Td>
+<Table.Td>Finds: `doc. tx, document, doc27, doc`, etc</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>`*.*`</Table.Td>
+<Table.Td>Finds only files with extensions.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>`../fred`</Table.Td>
+<Table.Td>Finds all files beginning with `fred` in the parent directory</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+Note that the characters / and \\ may be used interchangeably.
+
+### MENU Commands
+
+Press <Key k="menu" /> to see the **COMMANDS** menu:
+
+<Shot src="z88-user-guide/filer-reference/filer-menu.webp" alt="filer menu" width={640} />
+
+### Catalogue Files <Key k="diamond" />CF
+
+Gives fuller information about a specified list of files in RAM. The subset of files to be catalogued is specified after the prompt
+
+`Name :`
+
+Reply as follows:
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td><Key k="enter" /></Table.Td>
+<Table.Td>catalogues all files (in the current directory)</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>`fred*`</Table.Td>
+<Table.Td>catalogues all files beginning with fred</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\*.<Typed>bas</Typed></Table.Td>
+<Table.Td>catalogues all files with a bas extension</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+Each file will be listed as:
+
+<Table>
+<thead>
+<Table.Tr>
+<Table.Th>**File name**</Table.Th>
+<Table.Th colSpan={2}>**Creation date & time**</Table.Th>
+<Table.Th colSpan={2}><strong>Last updated <strong>**date & time**</strong></strong></Table.Th>
+<Table.Th>**Size (in characters)**</Table.Th>
+</Table.Tr>
+</thead>
+<tbody>
+<Table.Tr>
+<Table.Td>`letter.txt`</Table.Td>
+<Table.Td>`Today`</Table.Td>
+<Table.Td>`17:42:54`</Table.Td>
+<Table.Td>`Today`</Table.Td>
+<Table.Td>`17:42:54`</Table.Td>
+<Table.Td>`1254`</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>`novel.txt`</Table.Td>
+<Table.Td>`01-Jun-1987`</Table.Td>
+<Table.Td>`17:41:17`</Table.Td>
+<Table.Td>`Today`</Table.Td>
+<Table.Td>`14:32:58`</Table.Td>
+<Table.Td>`13112`</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>`game.bas`</Table.Td>
+<Table.Td>`02-Jun-1987`</Table.Td>
+<Table.Td>`12:27:43`</Table.Td>
+<Table.Td>`02-Jun-1987`</Table.Td>
+<Table.Td>`12:27:43`</Table.Td>
+<Table.Td>`827`</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+#### Updated Date is the only Date used
+
+Although both the **Creation date & time** and <strong><strong>Last updated <strong>**date & time**</strong></strong></strong> are shown in two columns in practise, they remain the same value as none of the applications on the Z88 use this feature i.e. when the file is changed, the creation date & time is also updated.
+
+The last updated time and date are only relevant if **OPENUP** is used from BASIC. If the file is open at the time it is catalogued, the size will not be shown.
+
+#### <Key k="diamond" />CE — Catalogue File Card
+
+#### Flashing Display whilst using Flash or EPROM card is normal
+
+Gives a list of information on all files in a Flash or EPROM card. The directories and file names will be given to show where the files originally came from.
+
+When you catalogue or save to a blank EPROM, the display will go blank for a few seconds while the EPROM is checked. This also happens with Flash cards when OZ is running on the same card. This happens only once; afterwards cataloging is without flickering.
+
+<Callout type="info">
+
+**The header of Erased EPROM has also been removed**
+
+If the Card has been erased, it will check the file area is blank and blow a header so that the file area is recognised by the <Key k="diamond" />CARD command in the INDEX.
+
+</Callout>
+
+<Callout type="warning">
+
+**Note**
+
+The Date information on files is not stored in either the Flash or EPROM cards. If this information is important, consider saving the file to the Desktop computer, where the date information is also transferred. Zipping the file in RAM before saving it to the Eprom card will retain the date.
+
+</Callout>
+
+<Callout type="info">
+
+**UV EPROM fully erased?**
+
+From OZ 4.5 a check is made that the file area is fully erased when using this command for the first time. Users using previous versions should check that the EPROM is fully erased using [ROMcombiner.](https://cambridgez88.jira.com/wiki/display/ZRC/RomCombiner+BBC+BASIC+utility)
+
+</Callout>
+
+#### <Key k="diamond" />ES — Save to File Card
+
+#### UV EPROM fully erased?
+
+Copies files from the filing system to a Flash or EPROM card. The file or files to be saved can either be selected as already described, or specified after the prompt
+
+`Name :`
+
+When a file is being saved to EPROM or to a Flash card in Slot 1, the screen will blank intermittently (if OZ is running on the same card) until saving is completed, when the Cambridge Z88 will bleep.
+
+Warning: the display may be blank for a long time when saving large files
+
+When saving very large file, the Z88 may appear to be doing nothing. It isn't, it is just working as fast as it can so leave it alone. For example a 368K file can take up to 3 minutes to complete, so just wait.
+
+Several files may be saved at the same time. See [Select Extra File](#selectextrafile-)
+
+From OZ 4.5 a check is made that the file area is fully erased when using this command for the first time. Users using previous versions should check that the EPROM is fully erased using [ROMcombiner.](https://cambridgez88.jira.com/wiki/display/ZRC/RomCombiner+BBC+BASIC+utility)
+
+#### <Key k="diamond" />EF — Fetch from File Card
+
+Copies files from Flash or EPROM card back to the filing system. Gives the prompts
+
+`Source :` <br />`Destination :`
+
+*Source:* specifies the name of the file in the EPROM.
+
+*Destination:* gives the name it is to be saved as in the destination filing system. It is initially set to the same as the source name, but you can edit it if you want to save the file under a different name.
+
+#### <Key k="diamond" />CO — Copy
+
+Makes a second copy of a file in RAM. Gives the prompt
+
+`Name :`
+
+allowing you to specify the file name to be copied, followed by the prompt
+
+`New name :`
+
+for the name of the copy.
+
+Multiple files (selected in the catalogue window) can be merged into a single file with the **Copy** command; they will be appended in the order in which they were selected. See [Select Extra File](#selectextrafile-)
+
+#### <Key k="diamond" />RE — Rename
+
+Allows the name of a file in RAM to be altered. Gives the prompts
+
+`Name :` <br />`New name :`
+
+For example, to change the name of a file from game.bas to 0ldversion you would specify
+
+`Name : game.bas` <br />`New name : oldversion`
+
+Note that you cannot use the **Rename** command to move a file from one directory or device to another. The new name must be a simple file name; devices and path names are not permitted.
+
+#### <Key k="diamond" />ER — Erase
+
+Allows one or more files from RAM to be removed from the filing system. Gives the prompt
+
+<strong>`Name :`</strong>
+
+followed by the prompt
+
+`Confirm each file ? Yes`
+
+Pressing <Key k="enter" /> will prompt for each file you have selected to be erased, so allowing you to change your decision for any particular file. Alternatively, changing the option to `No` by typing <Typed>N</Typed> will erase all the selected files without further prompting.
+
+You will not be permitted to erase a file which is in use; for example, a directory containing other files, or an open BASIC file.
+
+Several files may be erased at the same time. See [Select Extra File](#selectextrafile-)
+
+<Callout type="error">
+
+**Warning**
+
+Because parts of an erased file in RAM may still be present, you should not rely on the **Erase** command for disposing of confidential information from the system
+
+</Callout>
+
+<Callout type="warning">
+
+**Note**
+
+The file area in the Flash cards are erased (or formatted) using Flashstore or Filer (<Key k="diamond" />EC).
+
+Files can only be erased from the EPROM with the EPROM eraser using ultra-violet light.
+
+</Callout>
+
+#### <Key k="diamond" />SE — Select File Card
+
+Selects the slot for the default File Card. This is selected using the number keys, 0-3 or <Key k="diamond" />J to toggle each slot number.
+
+<Callout type="warning">
+
+**Note**
+
+As a blank EPROM may be used, any slot may be selected. The user needs to ensure that the correct slot is valid.
+
+</Callout>
+
+#### <Key k="diamond" />EC — Create File Card
+
+If the Flash card is blank, this command formats the File Area for the first time. If this has already been done and there are some files already saved, this command will format the file area again after giving a warning.
+
+<Callout type="error">
+
+**WARNING**
+
+ALL FILES WILL BE REMOVED. All Applications that are on the Flash card will be unaffected and remain on the card.
+
+</Callout>
+
+#### <Key k="diamond" />Sl — Select Directory
+
+Sets the current directory to the specified directory. Gives the prompt
+
+`Name :`
+
+displaying the current directory string (if any).
+
+For example; to set the current directory to directory `TEXT` in the current directory, specify
+
+`Name : TEXT`
+
+If the directory has not been created, a `File not found` error will be displayed.
+
+#### <Key k="diamond" />SV — Select Device
+
+Sets the current RAM device. Gives a prompt such as
+
+`Name : :RAM.1`
+
+showing the current device, which can be edited to the required new device.
+
+The **Select Device** command resets the current directory to the root directory.
+
+The **Select Device** and **Select Directory** commands affect the device and directory for the activity from which the Filer was entered, if there is one. This allows different activities to use different devices and directories without the need for specifying them explicitly each time.
+
+<Callout type="warning">
+
+If you save files having set a device and/or directory from one activity, and then enter the Filer from another activity, you may be in a different device and/or Directory. Check that the directory displayed at the top of the DIRECTORY window is the intended directory you wish to use.
+
+</Callout>
+
+#### Down Directory — Up Directory
+
+<Key k="shift" /><Key k="down" />
+
+<Key k="shift" /><Key k="up" />
+
+These commands are used for traversing a [hierarchical directory structure](#thefilingsystemhierarchicalsystem). To select a directory move the highlight bar to the directory name in the Filer DIRECTORY window and press <Key k="shift" /><Key k="down" />. To go back up to the parent directory press <Key k="shift" /><Key k="up" />.
+
+#### <Key k="diamond" />EX — Execute
+
+Executes a CLI file of commands specified after the prompt
+
+`Name : I`
+
+See CLI files below.
+
+#### <Key k="diamond" />CD — Create Directory
+
+Creates a directory within the current directory; the name is specified after the prompt
+
+`Name : I`
+
+#### <Key k="diamond" />TC — Tree Copy
+
+Copies a file tree from one directory to another. Arguments to the S o u r c e and D e s t i n a t i o n fields must be devices or directories. For example,
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>Source :</Table.Td>
+<Table.Td>:RAM.1</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Destination :</Table.Td>
+<Table.Td>:RAM.2</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+will make a duplicate copy of all files from RAM card 1 to RAM card 2.
+
+The source area cannot be part of the destination area.
+
+Source :
+
+:RAM.1
+
+Destination :
+
+:RAM.2
+
+#### <Key k="diamond" />NM — Name Match
+
+Sets up a match string restricting access to files in the current directory to those that match the string. For example, setting
+
+`Name : *.bas`
+
+Will catalogue only files with a `bas` extension. The default match string is \*, matching all file names. When a name match other than \* is active, the symbol `NM` will be displayed at the left-hand end of the Filer DIRECTORY window
+
+#### <Key k="diamond" />VF — View File
+
+When this command is issued, the user is prompted for the file name.
+
+<Shot src="z88-user-guide/filer-reference/oz45-filer-vf-filename.webp" alt="enter filename" width={640} />
+
+Alternatively, to avoid making typing errors, the file may be marked beforehand
+
+<Shot src="z88-user-guide/filer-reference/oz45-filer-vf-marked.webp" alt="marked file" width={640} />
+
+and then the command issued
+
+<Shot src="z88-user-guide/filer-reference/oz45-filer-vf-fileview.webp" alt="oz45 filer vf fileview" width={640} />
+
+CRC-32
+
+The [CRC-32](http://en.wikipedia.org/wiki/Cyclic_redundancy_check) (checksum) value of the file is displayed. It is used by several applications on the Z88 (Eazylink2, FlashStore, ROMupdate) to ensure file integrity. CRC-32 is found in many desktop applications as well.
+
+#### <Key k="down" /><Key k="up" /><Key k="left" /><Key k="right" /> — <Key k="shift" /><Key k="down" /><Key k="up" /><Key k="left" /><Key k="right" /> — <Key k="diamond" /><Key k="down" /><Key k="up" /><Key k="left" /><Key k="right" />
+
+The cursor keys are used to navigate around the file.
+
+<Key k="tab" />
+
+is used to toggle the cursor between the HEX display on the left and the ASCII display on the right.
+
+<Key k="esc" />
+
+Quits this View File function, but remains in the Filer.
+
+Make sure you use <Key k="esc" /> to leave this pop down otherwise an 'In use' error message will be shown when the file is deleted. The only way of clearing this error is with either a Soft or Hard Reset, risking losing files in RAM.
+
+<Shot src="z88-user-guide/appendix-c-error-messages/in-use-error-message.webp" alt="in use error message" width={640} />
+
+## CLI Files [#cli_files]
+
+The Filer Execute command,<Key k="diamond" />EX, allows a text file to be passed to the Command Line Interpreter, or CLI. The effect is as if the characters in the file had been typed at the Cambridge Z88 keyboard. CLI files thus provide a means of specifying a sequence of commands or operations, which can then be carried out simply by executing the file. For example, an execute file could be used to carry out a frequently-used sequence of Replace operations in PipeDream documents.
+
+<Callout type="warning">
+
+**CLI file fails to be interpreted**
+
+If a CLI file fails to be interpreted correctly, it may not have been written with PipeDream or tested.
+
+To correct this,
+
+1. Load the file into PipeDream
+
+2. Remove any spaces that are at the start of each CLI command
+
+3. Save the file as a 'plain text' file.
+
+This will correct the line feed character if it was different, at the end of each line.
+
+</Callout>
+
+### Special Significance Characters
+
+Certain characters are given a special significance in CLI files, to allow special keys on the keyboard to be represented, or additional operations to be carried out by the Command Line Interpreter.
+
+These special characters, and their functions, are as follows:
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>\#</Table.Td>
+<Table.Td>Prefixes a <Key k="square" /> key sequence - holding down <Key k="square" /> key and pressing another key</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\|</Table.Td>
+<Table.Td>Prefixes a <Key k="diamond" /> key sequence -holding down <Key k="diamond" /> key and pressing another key</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\~</Table.Td>
+<Table.Td>Used in combination with a letter to represent other special keys on the Cambridge Z88 keyboard</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>.</Table.Td>
+<Table.Td>As the first character on a line, introduces a special CLI command.</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+To represent these actual characters in a command file, they should be specified twice:
+
+| Sequence | Represents |
+| --- | --- |
+| \#\# | \# |
+| \~\~ | \~ |
+| \|\| | \| |
+
+#### Key sequences
+
+| Character | Significance |
+| --- | --- |
+| \~A | Single press of the <Key k="square" /> key; \~A\~A has no effect |
+| \~C | Single press of the <Key k="diamond" /> key; \~C\~C has no effect |
+| \~S | <Key k="shift" /> |
+| \~I | <Key k="index" /> |
+| \~M | <Key k="menu" /> |
+| \~H | <Key k="help" /> |
+| \~E | <Key k="enter" /> |
+| \~X | <Key k="del" /> |
+| \~T | <Key k="tab" /> |
+| \~U | <Key k="up" /> |
+| \~D | <Key k="down" /> |
+| \~L | <Key k="left" /> |
+| \~R | <Key k="right" /> |
+| \|\[ | <Key k="esc" /> |
+
+<Callout type="error">
+
+**ESC does not work in CLI files**
+
+The <Key k="esc" /> key code \|\[ does not work after OZ 4.0. A workaround is to select the Filer \#F and then select an application after that.
+
+This has been fixed from OZ 4.7.
+
+</Callout>
+
+##### File control commands
+
+The full-stop character introduces the following special commands when it is the first character of a line in an execute file.
+
+| Sequence | Significance |
+| --- | --- |
+| .T\> filename | Create output file |
+| .T\< filename | Create input file |
+| .T= filename | Create printer file |
+| .\> filename | Redirect output |
+| .\< filename | Redirect input |
+| .= filename | Redirect printer |
+| .D nnn | Delay nnn centiseconds |
+| .S | Suspend CLI; all redirections of input or output remain in force |
+| .\* filename | Invoke new file to CLI |
+| .J | Ignore special significance of subsequent escape characters |
+| a comment | Ignored. |
+
+The T character represents a 'T' junction, as it causes an additional copy of the input or output to be sent to a specified stream. For example:
+
+`.T> :RAM.0/fred.txt`
+
+sends a copy of what is going to the screen to the file
+
+`:RAM.0/fred.txt`
+
+The J character stands for 'Jam', as it inhibits interpretation of the escape characters.
+
+Printer output can be spooled to a file with the '=' symbol. For example,
+
+`.= :RAM.0/printout`
+
+takes the text that would have been printed out, before printer codes are added, and puts the text into the file
+
+`:RAM.0/printout`
+
+### Terminating execute files
+
+When the CLI is running an execute file a CLI symbol is displayed in the OZ area of the screen. The current CLI can be terminated by pressing <Key k="shift" /> <Key k="esc" />. If several CLIs are running they can all be terminated by holding down <Key k="diamond" /> and pressing <Key k="esc" />.
+
+### Redirecting keyboard input and screen output
+
+The following key combinations can be used to redirect keyboard input and screen output:
+
+| Key | Effect |
+| --- | --- |
+| <Key k="square" />+P | All screen output also sent to the printer |
+| <Key k="square" />+S | All screen output also sent to the file : RAM .-/S.sgn |
+| <Key k="square" />+K | Key input also sent to the file : RAM .-/K.sgn |
+
+For example, <Key k="square" />+P can be used to obtain a catalogue of EPROM or RAM to a printer.
+
+The corresponding sequences with \`–' turn the facility off, and sequences <Key k="square" /> +P and <Key k="square" />+S are mutually exclusive.
+
+The commands <Key k="square" />+S and <Key k="square" />+K generate files K.sgn and S.sgn in temporary RAM. These should be deleted after use with the Filer Erase command.
+
+<Callout type="warning">
+
+**Can be used as a recorder.**
+
+<Key k="square" />+K is a really useful and undervalued command as it can be used as a recorder. Typing in the keystokes normally, saves trying to remember all those special characters. The file created :RAM.-K.sgn may be copied and could then be edited as a plain text file in Pipedream to be a CLI file which will play back the keystrokes recorded.
+
+</Callout>
+
+#### Editing BASIC programs using PipeDream
+
+BASIC programs are saved in a tokenised format, and so cannot be loaded into PipeDream and edited directly. However, the CLI provides a convenient way of obtaining a text listing of a BASIC program, which can then be edited and executed back into BASIC.
+
+The procedure is as follows:
+
+1. LIST the program to the file **:RAM.-/S.sgn** by typing `LIST` <Key k="square" />`+S` <Key k="enter" />
+
+2. When the listing has finished, close the file by typing <Key k="square" />`-S`<br />The file `:RAM.-/S.sgn` can be loaded into PipeDream as plain text, and edited.
+
+3. Add the characters<br />`.J`<br />`NEW`<br /><br />at the start of the file, and save it from PipeDream using the Plain text option.
+
+4. Execute the edited file back into BASIC by entering BASIC and typing:<br />`*CLI .*FILENAME`<br /><br />to invoke the CLI to execute the file.
+
+5. When finished, erase the file `:RAM.-/S.sgn` using the Filer.
+
+The . J at the start of the file avoids the need to replace characters such as \# by \#\# throughout the BASIC program so that they will not be interpreted by the CLI.
+
+#### Executing a file on reset
+
+On resetting the Cambridge Z88, if a file with the name
+
+`BOOT.CLI`
+
+exists on an EPROM card in slot 3, it will be copied into
+
+`:RAM.-/BOOT.CLI`
+
+and then executed. The file should be deleted when it is no longer required.
+
+From OZ 4.7, the **boot.cli** may be in any RAM or card slot. This allows for example, Flash cards in slot 1 running OZ 4.7 or above to automatically execute the boot.cli file when a SOFT or HARD RESET is given.
+
+## Example using \[\]+K to make a Command File
+
+To record the sequence of keystrokes to RUN a boot.cli file for use in OZ 4.6.2 so that additional RAM applications are ready to run after a HARD RESET is given.
+
+If a mistake is made, it will be recorded in the file. Two choices
+
+- either STOP and START AGAIN or
+- continue, save it and edit the mistakes out afterwards.
+
+Select Index
+
+- Select CLI function \<\<SEND\>\> KEYBOARD to FILE.<br /><Key k="square" />+K <br />(CLI will appear flashing on RHS of display)
+- Select Filer<br /><Key k="square" />F
+- Fetch from File Card<br /><Key k="diamond" />EF
+- ziputils.ap0 <Key k="enter" /><Key k="enter" />
+- Fetch from File Card<br /><Key k="diamond" />EF
+- ziputils.app <Key k="enter" /><Key k="enter" />
+- Select INDEX<br /><Key k="square" />I
+- Install application<br /><Key k="diamond" />INS
+- Install Application - Filename (Name of File to Fetch) <br />ziputils.app <Key k="enter" /><Key k="enter" />
+- Deselect CLI function \<\<SEND\>\> KEYBOARD to FILE.<br /><Key k="square" />-K <br />(CLI disappears on RHS of display)
+
+The file will be in :RAM.-/K.sgn
+
+### Copy the File from temporary RAM.- to ordinary RAM.1
+
+There are two things to do straight away after creating any files in RAM.-
+
+- Copy the file to RAM.1
+- Delete the file in RAM.-
+
+Select Filer <Key k="square" />F<br />Select Copy <Key k="diamond" />CO<br />Name : :RAM.-/K.sgn <Key k="enter" /><br />New name : :RAM.1/boot.CLI <Key k="enter" />
+
+Select Erase <Key k="diamond" />ER<br />Name : :RAM.-/K.sgn <Key k="enter" />
+
+### Edit the File in Pipedream
+
+The boot.cli file is loaded into Pipedream as a 'plain text' file.
+
+A comment line prefixed with ; can be added to remind the reader what the file does.
+
+The final command \~A-k which was used to end using the cli command needs to be deleted.
+
+add \#I OR \~AI at the end.
+
+Here is a screen shot of the final file.
+
+<Shot src="z88-user-guide/filer-reference/cli-kb-example1.webp" alt="cli kb example1" width={640} />
+
+Save the file as a 'plain text' file and then in the Filer, save boot.cli to file card.
+
+### Starting boot.cli
+
+<Callout type="info">
+
+**Boot.cli only works in Slot 3 until OZ 4.7**
+
+Before OZ V4.7, when the Z88 is given a SOFT or HARD RESET, OZ looks to see if there is a boot.cli file to run in Slot 3. OZ V4.7 and later executes this file in any RAM or EPROM/FLASH card, if found
+
+</Callout>
+
+The workaround is as follows:-
+
+- Select Filer<br /><Key k="square" />F
+- Fetch from File Card<br /><Key k="diamond" />EF
+- boot.cli <Key k="enter" /><Key k="enter" />
+- Execute<br /><Key k="diamond" />EX
+- boot.cli <Key k="enter" /><Key k="enter" />
+
+This will load and run the boot.cli file and give the following screen output.
+
+<Shot src="z88-user-guide/filer-reference/index-instalation-complete.webp" alt="index instalation complete" width={640} />
+
+Press <Key k="esc" /> to resume.
+
+## Error messages
+
+### UV EPROM not fully erased
+
+When an EPROM is erased, all the memory locations are returned to their natural state i.e. ff. Occasionally some locations may escape erasure due to some dust covering the UV window or that the chip has reached the end of its useful life. From OZ 4.5 a check is made that all the locations have been cleared correctly before the header or the first file is saved.
+
+<Shot src="z88-user-guide/filer-reference/unerased-eprom.webp" alt="Unerased EPROM" width={482} />
+
+If an error is found, (see above), the following error message is displayed.
+
+<Shot src="z88-user-guide/filer-reference/uv-eprom-not-fully-cleared.webp" alt="UV EPROM not erased" width={640} />
+
+The solution is to continually erasing the EPROM until this message does not appear. If this does not happen, the EPROM card needs to be discarded.
+
+### In Use
+
+<Shot src="z88-user-guide/filer-reference/in-use-error-message.webp" alt="in use error message" width={640} />
+
+Make sure you use <Key k="esc" /> to leave this View File function. otherwise an 'In use' error message will be shown when the file is deleted. The only way of clearing this error is with either a Soft or Hard Reset, risking losing files in RAM.12:["$","$L1f",null,{"metadata":{"description":"This section describes the more advanced features and commands of the Filer popdown, and should be read in conjunction with The Filer. The features described here include:","title":"Section Seven - Filer reference","filePath":"content/en/library/cambridge-z88/user-guide/filer-reference.mdx","timestamp":1792315833000},"sourceCode":"$20","children":["$L21","$L22"]}]
+13:["$","$L23",null,{"children":["$","$19",null,{"name":"Next.MetadataOutlet","children":"$@24"}]}]
+1d:true
+25:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+26:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+9:300
+21:["$","div",null,{"id":"nextra-skip-nav"}]
+22:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Section Seven - Filer reference","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["This section describes the more advanced features and commands of the Filer popdown, and should be read in conjunction with ",["$","$L25",null,{"href":"/en/library/cambridge-z88/user-guide/using-the-popdowns/the-filer-popdown","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"The Filer"}],". The features described here include:"]}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["Directories, and the ",["$","a",null,{"href":"#thefilingsystemhierarchicalsystem","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"hierarchical filing system"}]]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"The Command Line Interpreter, and CLI files"}],"\n"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Here, you will find the following chapters:"}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","a",null,{"href":"#specifyingfilenamesinfull","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Specifying file names in full"}]}],"\n"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Describes filename syntax, filename extensions, directory structure, device specifications and wildcards."}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","a",null,{"href":"#additionalfilercommands","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Additional Filer commands"}]}],"\n"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Describes commands that provide facilities for creating directories, manipulating files within the hierarchical directory structure."}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","a",null,{"href":"#cli_files","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"CLI Files"}]}],"\n"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Describes how to use the Command Line Interpreter with text files, reference of special commands for the CLI, redirecting of I/O and how to utilize this for editing BBC BASIC programs in PipeDream."}],"\n",["$","h3",null,{"id":"a-little-story-about-directories","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["A little story about Directories",["$","$L26",null,{"id":"a-little-story-about-directories"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Users may not understand the value of using “The Filing System Hierarchical System,” until it is too late. Here is a fictitious example showing what 482 files could look like if they are just dumped into the flash card. There are no directories, and when using EPROMs or Flashcards, no date is stored. The order of the files are known. the first file saved is on Page 1 top left-hand corner and the last file is on Page 2, bottom right-hand corner. There is no way of knowing what each file contains. Perhaps the answer is in the file name."}],"\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41","\n","$L42","\n","$L43","\n","$L44","\n","$L45","\n","$L46","\n","$L47","\n","$L48","\n","$L49","\n","$L4a","\n","$L4b","\n","$L4c","\n","$L4d","\n","$L4e","\n","$L4f","\n","$L50","\n","$L51","\n","$L52","\n","$L53","\n","$L54","\n","$L55","\n","$L56","\n","$L57","\n","$L58","\n","$L59","\n","$L5a","\n","$L5b","\n","$L5c","\n","$L5d","\n","$L5e","\n","$L5f","\n","$L60","\n","$L61","\n","$L62","\n","$L63","\n","$L64","\n","$L65","\n","$L66","\n","$L67","\n","$L68","\n","$L69","\n","$L6a","\n","$L6b","\n","$L6c","\n","$L6d","\n","$L6e","\n","$L6f","\n","$L70","\n","$L71","\n","$L72","\n","$L73","\n","$L74","\n","$L75","\n","$L76","\n","$L77","\n","$L78","\n","$L79","\n","$L7a","\n","$L7b","\n","$L7c","\n","$L7d","\n","$L7e","\n","$L7f","\n","$L80","\n","$L81","\n","$L82","\n","$L83","\n","$L84","\n","$L85","\n","$L86","\n","$L87","\n","$L88","\n","$L89","\n","$L8a","\n","$L8b","\n","$L8c","\n","$L8d","\n","$L8e","\n","$L8f","\n","$L90","\n","$L91","\n","$L92","\n","$L93","\n","$L94","\n","$L95","\n","$L96","\n","$L97","\n","$L98","\n","$L99","\n","$L9a","\n","$L9b","\n","$L9c","\n","$L9d","\n","$L9e","\n","$L9f","\n","$La0","\n","$La1","\n","$La2","\n","$La3","\n","$La4","\n","$La5","\n","$La6","\n","$La7","\n","$La8","\n","$La9","\n","$Laa","\n","$Lab","\n","$Lac","\n","$Lad","\n","$Lae","\n","$Laf","\n","$Lb0","\n","$Lb1","\n","$Lb2","\n","$Lb3","\n","$Lb4","\n","$Lb5","\n","$Lb6","\n","$Lb7","\n","$Lb8","\n","$Lb9","\n","$Lba","\n","$Lbb","\n","$Lbc","\n","$Lbd","\n","$Lbe","\n","$Lbf","\n","$Lc0","\n","$Lc1","\n","$Lc2","\n","$Lc3","\n","$Lc4","\n","$Lc5","\n","$Lc6","\n","$Lc7","\n","$Lc8","\n","$Lc9","\n","$Lca","\n","$Lcb","\n","$Lcc","\n","$Lcd","\n","$Lce","\n","$Lcf","\n","$Ld0","\n","$Ld1","\n","$Ld2","\n","$Ld3","\n","$Ld4","\n","$Ld5","\n","$Ld6","\n","$Ld7","\n","$Ld8","\n","$Ld9","\n","$Lda","\n","$Ldb","\n","$Ldc","\n","$Ldd","\n","$Lde","\n","$Ldf","\n","$Le0","\n","$Le1","\n","$Le2","\n","$Le3","\n","$Le4","\n","$Le5","\n","$Le6","\n","$Le7","\n","$Le8","\n","$Le9","\n","$Lea","\n","$Leb","\n","$Lec","\n","$Led","\n","$Lee","\n","$Lef","\n","$Lf0","\n","$Lf1","\n","$Lf2","\n","$Lf3","\n","$Lf4","\n","$Lf5","\n","$Lf6","\n","$Lf7","\n","$Lf8","\n","$Lf9","\n","$Lfa","\n","$Lfb","\n","$Lfc","\n","$Lfd","\n","$Lfe","\n","$Lff","\n","$L100","\n","$L101","\n","$L102","\n","$L103","\n","$L104","\n","$L105","\n","$L106","\n","$L107","\n","$L108","\n","$L109","\n","$L10a","\n","$L10b","\n","$L10c","\n","$L10d","\n","$L10e","\n","$L10f","\n","$L110","\n","$L111","\n","$L112","\n","$L113","\n","$L114"]]}]
+24:null
+115:"ToggleWordWrapButton"
+116:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$115"]
+117:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+9:C
+27:["$","table",null,{"children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"Page 1","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Page 2","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":["$","tr",null,{"children":[["$","td",null,{"children":["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"900px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/filer-reference/z88-files-1.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/filer-reference/z88-files-1.webp","alt":"Z88 files 1","loading":"lazy","decoding":"async","width":900,"height":1272}],[]]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"900px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/filer-reference/z88-files-2.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/filer-reference/z88-files-2.webp","alt":"Z88 files 2","loading":"lazy","decoding":"async","width":900,"height":1272}],[]]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}]],"className":"x:block x:overflow-x-auto"}]
+28:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":["$","svg",null,{"viewBox":"0 0 16 16","fill":"currentColor","height":".8em","className":"x:mt-[.3em]","children":["$","path",null,{"d":"M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"}]}]}],["$","div",null,{"className":"x:w-full x:min-w-0","children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"NOTE"}]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The numbers on the left column indicates the file size."}]]}]]}]
+29:["$","h3",null,{"id":"file-names","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["File names",["$","$L26",null,{"id":"file-names"}]]}]
+2a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The first 6 file-names were on the flash card to start with, but then there are"}]
+2b:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L116",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L117",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"286 RECEIPT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"863 DEBT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"739 FONENOS2"}]}]]}]]}]]}]
+2c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Now what you need to ask yourself when choosing a file name is,"}]
+2d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"will I remember what this would be about in 10 years time,"}]
+2e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"just by looking at the file name? If I asked you now, what would you say for the first one, “that’s a receipt?” Now that is a good start, but, what was it for? Who was it from? When was it issued? The only way of knowing that is by opening the file and having a look."}]
+2f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Other file names down the list include"}]
+30:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L116",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L117",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"123 5"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"141 4"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"140 3"}]}]]}]]}]]}]
+31:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"These file names could mean anything. You can have 12 characters to describe what the file is and the first file here is 5. There are some other clues. File 5 was saved before File 4 and File 3, but again without knowing what all these files are the only way again of knowing what they are is again by opening them and having a look."}]
+32:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$28:props:children:0:props:style","data-pagefind-ignore":"all","children":"$28:props:children:0:props:children"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Q & A"}]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Q When is the best time to sort out your file names?",["$","br",null,{}],"Q When is the best time to sort out your directories?"]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"A At the beginning"}]}]]}]]}]
+33:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Looking at the file name 286 RECEIPT and then the questions we asked about it i.e. what was it for? Who was it from? When was it issued? These answers may be put into the Directories. i.e."}]
+34:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"/BATHROOM/PLUMBER/20150714/RECEIPT"}]
+35:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This now shows that the receipt was for the PLUMBER who did some work in the BATHROOM on the 14th July 2015."}]
+36:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$28:props:children:0:props:style","data-pagefind-ignore":"all","children":"$28:props:children:0:props:children"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Writing Dates"}]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If the date is written backwards, i.e. YYYYMMDD the numbers can be easily sorted."}]]}]]}]
+37:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Do not think, I will use this name for now and will change it later. This example was based on ‘real-life,’ the file names never got changed."}]
+38:["$","h3",null,{"id":"specifying-file-names-in-full","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Specifying file names in full",["$","$L26",null,{"id":"specifying-file-names-in-full"}]]}]
+39:["$","h5",null,{"id":"the-filing-system-hierarchical-system","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-lg","children":["The Filing System Hierarchical System",["$","$L26",null,{"id":"the-filing-system-hierarchical-system"}]]}]
+3a:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"351px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/filer-reference/hierarchical.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/filer-reference/hierarchical.webp","alt":"Hierarchical","loading":"lazy","decoding":"async","width":286,"height":176}],[]]}]]}]
+3b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The Filing System Hierarchical System looks like an upside down tree with the Device at the top. ",["$","br",null,{}],"Underneath that can be either a Directory or a filename,",["$","br",null,{}],"Underneath that can be either a Directory or a filename,",["$","br",null,{}],"and so on …"]}]
+3c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The full form of a file name is ",["$","br",null,{}],["$","em",null,{"children":[":DEVICE I DIRECTORY I DIRECTORY I … /filename",["$","br",null,{}]]}],"where ",["$","br",null,{}],"DEVICE is one of the specification listed below",["$","br",null,{}],"DIRECTORY and filename are each of the form",["$","br",null,{}],["$","em",null,{"children":["name**.**extension",["$","br",null,{}]]}],"consisting of a name of up to 12 letters or digits, followed by an optional extension of up to three letters or digits, ",["$","em",null,{"children":"DIRECTORY"}]," is a directory name subject to the same constraints as ",["$","em",null,{"children":"filename"}],"."]}]
+3d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["All ISO characters (such as ",["$","strong",null,{"children":"é"}]," and ",["$","strong",null,{"children":"å"}],") are allowed in filenames",["$","sup",null,{"children":["$","strong",null,{"children":"OZ4.7"}]}],"."]}]
+3e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The following extensions are used for system functions:"}]
+3f:["$","table",null,{"children":["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":".sgn"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["For ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],"+K and ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],"+S CLI files"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":".CLI"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["For BOOT.CLI; see ",["$","strong",null,{"children":"CLI files"}]," section below"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":".L"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"For PipeDream multi-file List file","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}],"className":"x:block x:overflow-x-auto"}]
+40:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"In addition the following symbols can be used:"}]
+41:["$","table",null,{"children":["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"../name"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Parent directory of name","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":".","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Current directory","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}],"className":"x:block x:overflow-x-auto"}]
+42:["$","h3",null,{"id":"device-specifications","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Device specifications",["$","$L26",null,{"id":"device-specifications"}]]}]
+43:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","em",null,{"children":"DEVICE"}]," can be specified as one of the following in Application Load or Save operations:"]}]
+44:["$","table",null,{"children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"colSpan":2,"children":"Specification","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Effect","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"colSpan":2,"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":":RAM.0"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"RAM in slot 0 (internal memory)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"colSpan":2,"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":":RAM.1"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"RAM in slot 1 (external memory)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"colSpan":2,"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":":RAM.2"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"RAM in slot 2 (external memory)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"colSpan":2,"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":":RAM.3"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"RAM in slot 3 (external memory)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"colSpan":2,"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":":RAM.-"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Any RAM memory; ie 0, 1, 2, or 3. Used by CLI for temporary files, and lost on reset.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"colSpan":2,"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":":EPR.0"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["FLASH or EPROM in slot 0 (internal memory)",["$","sup",null,{"children":"OZ4.7"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"colSpan":2,"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":":EPR.1"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["FLASH or EPROM in slot 1 (external file area)",["$","sup",null,{"children":"OZ4.7"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],"$L118","$L119","$L11a","$L11b","$L11c","$L11d","$L11e","$L11f","$L120"]}]],"className":"x:block x:overflow-x-auto"}]
+45:["$","h3",null,{"id":"wildcards","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Wildcards",["$","$L26",null,{"id":"wildcards"}]]}]
+46:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The device, directory and file name can contain the following wildcards:"}]
+47:["$","table",null,{"children":["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"*"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Matches any number of characters (or none)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"?"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Matches a single character","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"//"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Matches any number of directories (or none)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}],"className":"x:block x:overflow-x-auto"}]
+48:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"For example,"}]
+49:["$","table",null,{"children":["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":":*//letter"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["Finds the file called ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"letter"}]," anywhere"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"doc*"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["Finds: ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"doc. tx, document, doc27, doc"}],", etc"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"*.*"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Finds only files with extensions.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"../fred"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["Finds all files beginning with ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"fred"}]," in the parent directory"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}],"className":"x:block x:overflow-x-auto"}]
+4a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Note that the characters / and \\ may be used interchangeably."}]
+4b:["$","h3",null,{"id":"menu-commands","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["MENU Commands",["$","$L26",null,{"id":"menu-commands"}]]}]
+4c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Press ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Menu","children":"MENU"}]," to see the ",["$","strong",null,{"children":"COMMANDS"}]," menu:"]}]
+4d:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/filer-reference/filer-menu.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/filer-reference/filer-menu.webp","alt":"filer menu","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+4e:["$","h3",null,{"id":"catalogue-files-cf","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":[["Catalogue Files ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"CF"],["$","$L26",null,{"id":"catalogue-files-cf"}]]}]
+4f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Gives fuller information about a specified list of files in RAM. The subset of files to be catalogued is specified after the prompt"}]
+50:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Name :"}]}]
+51:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Reply as follows:"}]
+52:["$","table",null,{"children":["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"catalogues all files (in the current directory)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"fred*"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"catalogues all files beginning with fred","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["*.",["$","span",null,{"className":"Z88_typed___J27m","children":"bas"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"catalogues all files with a bas extension","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}],"className":"x:block x:overflow-x-auto"}]
+53:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Each file will be listed as:"}]
+54:["$","table",null,{"children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":["$","strong",null,{"children":"File name"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"colSpan":2,"children":["$","strong",null,{"children":"Creation date & time"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"colSpan":2,"children":["$","strong",null,{"children":["Last updated ",["$","strong",null,{"children":["$","strong",null,{"children":"date & time"}]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":["$","strong",null,{"children":"Size (in characters)"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"letter.txt"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Today"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"17:42:54"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Today"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"17:42:54"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"1254"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"novel.txt"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"01-Jun-1987"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"17:41:17"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Today"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"14:32:58"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"13112"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"game.bas"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"02-Jun-1987"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"12:27:43"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],"$L121","$L122","$L123"],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}]],"className":"x:block x:overflow-x-auto"}]
+55:["$","h4",null,{"id":"updated-date-is-the-only-date-used","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":["Updated Date is the only Date used",["$","$L26",null,{"id":"updated-date-is-the-only-date-used"}]]}]
+56:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Although both the ",["$","strong",null,{"children":"Creation date & time"}]," and ",["$","strong",null,{"children":["$","strong",null,{"children":["Last updated ",["$","strong",null,{"children":["$","strong",null,{"children":"date & time"}]}]]}]}]," are shown in two columns in practise, they remain the same value as none of the applications on the Z88 use this feature i.e. when the file is changed, the creation date & time is also updated."]}]
+57:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The last updated time and date are only relevant if ",["$","strong",null,{"children":"OPENUP"}]," is used from BASIC. If the file is open at the time it is catalogued, the size will not be shown."]}]
+58:["$","h4",null,{"id":"ce--catalogue-file-card","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":[[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"CE — Catalogue File Card"],["$","$L26",null,{"id":"ce--catalogue-file-card"}]]}]
+59:["$","h4",null,{"id":"flashing-display-whilst-using-flash-or-eprom-card-is-normal","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":["Flashing Display whilst using Flash or EPROM card is normal",["$","$L26",null,{"id":"flashing-display-whilst-using-flash-or-eprom-card-is-normal"}]]}]
+5a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Gives a list of information on all files in a Flash or EPROM card. The directories and file names will be given to show where the files originally came from."}]
+5b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When you catalogue or save to a blank EPROM, the display will go blank for a few seconds while the EPROM is checked. This also happens with Flash cards when OZ is running on the same card. This happens only once; afterwards cataloging is without flickering."}]
+5c:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$28:props:children:0:props:style","data-pagefind-ignore":"all","children":"$28:props:children:0:props:children"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"The header of Erased EPROM has also been removed"}]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["If the Card has been erased, it will check the file area is blank and blow a header so that the file area is recognised by the ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"CARD command in the INDEX."]}]]}]]}]
+5d:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-yellow-50 x:dark:bg-yellow-700/30 x:text-yellow-700 x:dark:text-yellow-500 x:border-yellow-700","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$28:props:children:0:props:style","data-pagefind-ignore":"all","children":["$","svg",null,{"viewBox":"0 0 16 16","fill":"currentColor","height":".8em","className":"x:mt-[.3em]","children":["$","path",null,{"d":"M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575Zm1.763.707a.25.25 0 0 0-.44 0L1.698 13.132a.25.25 0 0 0 .22.368h12.164a.25.25 0 0 0 .22-.368Zm.53 3.996v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"}]}]}],["$","div",null,{"className":"x:w-full x:min-w-0","children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Note"}]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The Date information on files is not stored in either the Flash or EPROM cards. If this information is important, consider saving the file to the Desktop computer, where the date information is also transferred. Zipping the file in RAM before saving it to the Eprom card will retain the date."}]]}]]}]
+5e:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$28:props:children:0:props:style","data-pagefind-ignore":"all","children":"$28:props:children:0:props:children"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"UV EPROM fully erased?"}]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["From OZ 4.5 a check is made that the file area is fully erased when using this command for the first time. Users using previous versions should check that the EPROM is fully erased using ",["$","a",null,{"href":"https://cambridgez88.jira.com/wiki/display/ZRC/RomCombiner+BBC+BASIC+utility","target":"_blank","rel":"noreferrer","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["ROMcombiner.",[" ",["$","svg",null,{"fill":"none","stroke":"currentColor","strokeLinecap":"round","strokeLinejoin":"round","strokeWidth":1.7,"viewBox":"0 0 24 24","height":"1em","className":"x:inline x:align-baseline x:shrink-0","children":[["$","path",null,{"d":"M7 17L17 7"}],["$","path",null,{"d":"M7 7h10v10"}]]}]]]}]]}]]}]]}]
+5f:["$","h4",null,{"id":"es--save-to-file-card","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":[[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"ES — Save to File Card"],["$","$L26",null,{"id":"es--save-to-file-card"}]]}]
+60:["$","h4",null,{"id":"uv-eprom-fully-erased","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":["UV EPROM fully erased?",["$","$L26",null,{"id":"uv-eprom-fully-erased"}]]}]
+61:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Copies files from the filing system to a Flash or EPROM card. The file or files to be saved can either be selected as already described, or specified after the prompt"}]
+62:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Name :"}]}]
+63:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When a file is being saved to EPROM or to a Flash card in Slot 1, the screen will blank intermittently (if OZ is running on the same card) until saving is completed, when the Cambridge Z88 will bleep."}]
+64:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Warning: the display may be blank for a long time when saving large files"}]
+65:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When saving very large file, the Z88 may appear to be doing nothing. It isn’t, it is just working as fast as it can so leave it alone. For example a 368K file can take up to 3 minutes to complete, so just wait."}]
+66:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Several files may be saved at the same time. See ",["$","a",null,{"href":"#selectextrafile-","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Select Extra File"}]]}]
+67:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["From OZ 4.5 a check is made that the file area is fully erased when using this command for the first time. Users using previous versions should check that the EPROM is fully erased using ",["$","a",null,{"href":"https://cambridgez88.jira.com/wiki/display/ZRC/RomCombiner+BBC+BASIC+utility","target":"_blank","rel":"noreferrer","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["ROMcombiner.",[" ",["$","svg",null,{"fill":"none","stroke":"currentColor","strokeLinecap":"round","strokeLinejoin":"round","strokeWidth":1.7,"viewBox":"0 0 24 24","height":"1em","className":"x:inline x:align-baseline x:shrink-0","children":[["$","path",null,{"d":"M7 17L17 7"}],["$","path",null,{"d":"M7 7h10v10"}]]}]]]}]]}]
+68:["$","h4",null,{"id":"ef--fetch-from-file-card","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":[[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"EF — Fetch from File Card"],["$","$L26",null,{"id":"ef--fetch-from-file-card"}]]}]
+69:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Copies files from Flash or EPROM card back to the filing system. Gives the prompts"}]
+6a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Source :"}]," ",["$","br",null,{}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Destination :"}]]}]
+6b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","em",null,{"children":"Source:"}]," specifies the name of the file in the EPROM."]}]
+6c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","em",null,{"children":"Destination:"}]," gives the name it is to be saved as in the destination filing system. It is initially set to the same as the source name, but you can edit it if you want to save the file under a different name."]}]
+6d:["$","h4",null,{"id":"co--copy","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":[[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"CO — Copy"],["$","$L26",null,{"id":"co--copy"}]]}]
+6e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Makes a second copy of a file in RAM. Gives the prompt"}]
+6f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Name :"}]}]
+70:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"allowing you to specify the file name to be copied, followed by the prompt"}]
+71:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"New name :"}]}]
+72:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"for the name of the copy."}]
+73:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Multiple files (selected in the catalogue window) can be merged into a single file with the ",["$","strong",null,{"children":"Copy"}]," command; they will be appended in the order in which they were selected. See ",["$","a",null,{"href":"#selectextrafile-","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Select Extra File"}]]}]
+74:["$","h4",null,{"id":"re--rename","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":[[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"RE — Rename"],["$","$L26",null,{"id":"re--rename"}]]}]
+75:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Allows the name of a file in RAM to be altered. Gives the prompts"}]
+76:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Name :"}]," ",["$","br",null,{}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"New name :"}]]}]
+77:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"For example, to change the name of a file from game.bas to 0ldversion you would specify"}]
+78:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Name : game.bas"}]," ",["$","br",null,{}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"New name : oldversion"}]]}]
+79:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Note that you cannot use the ",["$","strong",null,{"children":"Rename"}]," command to move a file from one directory or device to another. The new name must be a simple file name; devices and path names are not permitted."]}]
+7a:["$","h4",null,{"id":"er--erase","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":[[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"ER — Erase"],["$","$L26",null,{"id":"er--erase"}]]}]
+7b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Allows one or more files from RAM to be removed from the filing system. Gives the prompt"}]
+7c:["$","strong",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Name :"}]}]
+7d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"followed by the prompt"}]
+7e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Confirm each file ? Yes"}]}]
+7f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Pressing ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]," will prompt for each file you have selected to be erased, so allowing you to change your decision for any particular file. Alternatively, changing the option to ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"No"}]," by typing ",["$","span",null,{"className":"Z88_typed___J27m","children":"N"}]," will erase all the selected files without further prompting."]}]
+80:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You will not be permitted to erase a file which is in use; for example, a directory containing other files, or an open BASIC file."}]
+81:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Several files may be erased at the same time. See ",["$","a",null,{"href":"#selectextrafile-","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Select Extra File"}]]}]
+82:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-red-100 x:dark:bg-red-900/30 x:text-red-700 x:dark:text-red-500 x:border-red-700 x:dark:border-red-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$28:props:children:0:props:style","data-pagefind-ignore":"all","children":["$","svg",null,{"viewBox":"0 0 16 16","fill":"currentColor","height":".8em","className":"x:mt-[.3em]","children":["$","path",null,{"d":"M4.47.22A.749.749 0 0 1 5 0h6c.199 0 .389.079.53.22l4.25 4.25c.141.14.22.331.22.53v6a.749.749 0 0 1-.22.53l-4.25 4.25A.749.749 0 0 1 11 16H5a.749.749 0 0 1-.53-.22L.22 11.53A.749.749 0 0 1 0 11V5c0-.199.079-.389.22-.53Zm.84 1.28L1.5 5.31v5.38l3.81 3.81h5.38l3.81-3.81V5.31L10.69 1.5ZM8 4a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 8 4Zm0 8a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"}]}]}],["$","div",null,{"className":"x:w-full x:min-w-0","children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Warning"}]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Because parts of an erased file in RAM may still be present, you should not rely on the ",["$","strong",null,{"children":"Erase"}]," command for disposing of confidential information from the system"]}]]}]]}]
+83:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-yellow-50 x:dark:bg-yellow-700/30 x:text-yellow-700 x:dark:text-yellow-500 x:border-yellow-700","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$28:props:children:0:props:style","data-pagefind-ignore":"all","children":"$5d:props:children:0:props:children"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Note"}]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The file area in the Flash cards are erased (or formatted) using Flashstore or Filer (",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"EC)."]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Files can only be erased from the EPROM with the EPROM eraser using ultra-violet light."}]]}]]}]
+84:["$","h4",null,{"id":"se--select-file-card","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":[[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"SE — Select File Card"],["$","$L26",null,{"id":"se--select-file-card"}]]}]
+85:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Selects the slot for the default File Card. This is selected using the number keys, 0-3 or ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"J to toggle each slot number."]}]
+86:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-yellow-50 x:dark:bg-yellow-700/30 x:text-yellow-700 x:dark:text-yellow-500 x:border-yellow-700","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$28:props:children:0:props:style","data-pagefind-ignore":"all","children":"$5d:props:children:0:props:children"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Note"}]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"As a blank EPROM may be used, any slot may be selected. The user needs to ensure that the correct slot is valid."}]]}]]}]
+87:["$","h4",null,{"id":"ec--create-file-card","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":[[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"EC — Create File Card"],["$","$L26",null,{"id":"ec--create-file-card"}]]}]
+88:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If the Flash card is blank, this command formats the File Area for the first time. If this has already been done and there are some files already saved, this command will format the file area again after giving a warning."}]
+89:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-red-100 x:dark:bg-red-900/30 x:text-red-700 x:dark:text-red-500 x:border-red-700 x:dark:border-red-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$28:props:children:0:props:style","data-pagefind-ignore":"all","children":"$82:props:children:0:props:children"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"WARNING"}]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"ALL FILES WILL BE REMOVED. All Applications that are on the Flash card will be unaffected and remain on the card."}]]}]]}]
+8a:["$","h4",null,{"id":"sl--select-directory","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":[[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"Sl — Select Directory"],["$","$L26",null,{"id":"sl--select-directory"}]]}]
+8b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Sets the current directory to the specified directory. Gives the prompt"}]
+8c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Name :"}]}]
+8d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"displaying the current directory string (if any)."}]
+8e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["For example; to set the current directory to directory ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"TEXT"}]," in the current directory, specify"]}]
+8f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Name : TEXT"}]}]
+90:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["If the directory has not been created, a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"File not found"}]," error will be displayed."]}]
+91:["$","h4",null,{"id":"sv--select-device","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":[[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"SV — Select Device"],["$","$L26",null,{"id":"sv--select-device"}]]}]
+92:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Sets the current RAM device. Gives a prompt such as"}]
+93:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Name : :RAM.1"}]}]
+94:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"showing the current device, which can be edited to the required new device."}]
+95:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ",["$","strong",null,{"children":"Select Device"}]," command resets the current directory to the root directory."]}]
+96:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ",["$","strong",null,{"children":"Select Device"}]," and ",["$","strong",null,{"children":"Select Directory"}]," commands affect the device and directory for the activity from which the Filer was entered, if there is one. This allows different activities to use different devices and directories without the need for specifying them explicitly each time."]}]
+97:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-yellow-50 x:dark:bg-yellow-700/30 x:text-yellow-700 x:dark:text-yellow-500 x:border-yellow-700","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$28:props:children:0:props:style","data-pagefind-ignore":"all","children":"$5d:props:children:0:props:children"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If you save files having set a device and/or directory from one activity, and then enter the Filer from another activity, you may be in a different device and/or Directory. Check that the directory displayed at the top of the DIRECTORY window is the intended directory you wish to use."}]}]]}]
+98:["$","h4",null,{"id":"down-directory--up-directory","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":["Down Directory — Up Directory",["$","$L26",null,{"id":"down-directory--up-directory"}]]}]
+99:["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Shift","children":"SHIFT"}]
+9a:["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor down","children":"↓"}]
+9b:["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Shift","children":"SHIFT"}]
+9c:["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor up","children":"↑"}]
+9d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["These commands are used for traversing a ",["$","a",null,{"href":"#thefilingsystemhierarchicalsystem","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"hierarchical directory structure"}],". To select a directory move the highlight bar to the directory name in the Filer DIRECTORY window and press ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Shift","children":"SHIFT"}],["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor down","children":"↓"}],". To go back up to the parent directory press ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Shift","children":"SHIFT"}],["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor up","children":"↑"}],"."]}]
+9e:["$","h4",null,{"id":"ex--execute","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":[[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"EX — Execute"],["$","$L26",null,{"id":"ex--execute"}]]}]
+9f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Executes a CLI file of commands specified after the prompt"}]
+a0:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Name : I"}]}]
+a1:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"See CLI files below."}]
+a2:["$","h4",null,{"id":"cd--create-directory","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":[[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"CD — Create Directory"],["$","$L26",null,{"id":"cd--create-directory"}]]}]
+a3:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Creates a directory within the current directory; the name is specified after the prompt"}]
+a4:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Name : I"}]}]
+a5:["$","h4",null,{"id":"tc--tree-copy","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":[[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"TC — Tree Copy"],["$","$L26",null,{"id":"tc--tree-copy"}]]}]
+a6:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Copies a file tree from one directory to another. Arguments to the S o u r c e and D e s t i n a t i o n fields must be devices or directories. For example,"}]
+a7:["$","table",null,{"children":["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":"Source :","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":":RAM.1","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"Destination :","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":":RAM.2","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}],"className":"x:block x:overflow-x-auto"}]
+a8:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"will make a duplicate copy of all files from RAM card 1 to RAM card 2."}]
+a9:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The source area cannot be part of the destination area."}]
+aa:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Source :"}]
+ab:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":":RAM.1"}]
+ac:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Destination :"}]
+ad:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":":RAM.2"}]
+ae:["$","h4",null,{"id":"nm--name-match","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":[[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"NM — Name Match"],["$","$L26",null,{"id":"nm--name-match"}]]}]
+af:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Sets up a match string restricting access to files in the current directory to those that match the string. For example, setting"}]
+b0:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Name : *.bas"}]}]
+b1:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Will catalogue only files with a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"bas"}]," extension. The default match string is *, matching all file names. When a name match other than * is active, the symbol ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"NM"}]," will be displayed at the left-hand end of the Filer DIRECTORY window"]}]
+b2:["$","h4",null,{"id":"vf--view-file","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":[[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"VF — View File"],["$","$L26",null,{"id":"vf--view-file"}]]}]
+b3:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When this command is issued, the user is prompted for the file name."}]
+b4:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/filer-reference/oz45-filer-vf-filename.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/filer-reference/oz45-filer-vf-filename.webp","alt":"enter filename","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+b5:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Alternatively, to avoid making typing errors, the file may be marked beforehand"}]
+b6:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/filer-reference/oz45-filer-vf-marked.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/filer-reference/oz45-filer-vf-marked.webp","alt":"marked file","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+b7:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"and then the command issued"}]
+b8:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/filer-reference/oz45-filer-vf-fileview.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/filer-reference/oz45-filer-vf-fileview.webp","alt":"oz45 filer vf fileview","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+b9:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"CRC-32"}]
+ba:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ",["$","a",null,{"href":"http://en.wikipedia.org/wiki/Cyclic_redundancy_check","target":"_blank","rel":"noreferrer","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["CRC-32",[" ",["$","svg",null,{"fill":"none","stroke":"currentColor","strokeLinecap":"round","strokeLinejoin":"round","strokeWidth":1.7,"viewBox":"0 0 24 24","height":"1em","className":"x:inline x:align-baseline x:shrink-0","children":[["$","path",null,{"d":"M7 17L17 7"}],["$","path",null,{"d":"M7 7h10v10"}]]}]]]}]," (checksum) value of the file is displayed. It is used by several applications on the Z88 (Eazylink2, FlashStore, ROMupdate) to ensure file integrity. CRC-32 is found in many desktop applications as well."]}]
+bb:["$","h4",null,{"id":"----","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":[[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor down","children":"↓"}],["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor up","children":"↑"}],["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor left","children":"←"}],["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor right","children":"→"}]," — ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Shift","children":"SHIFT"}],["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor down","children":"↓"}],["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor up","children":"↑"}],["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor left","children":"←"}],["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor right","children":"→"}]," — ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor down","children":"↓"}],["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor up","children":"↑"}],["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor left","children":"←"}],["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor right","children":"→"}]],["$","$L26",null,{"id":"----"}]]}]
+bc:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The cursor keys are used to navigate around the file."}]
+bd:["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Tab","children":"TAB"}]
+be:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"is used to toggle the cursor between the HEX display on the left and the ASCII display on the right."}]
+bf:["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Escape","children":"ESC"}]
+c0:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Quits this View File function, but remains in the Filer."}]
+c1:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Make sure you use ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Escape","children":"ESC"}]," to leave this pop down otherwise an ‘In use’ error message will be shown when the file is deleted. The only way of clearing this error is with either a Soft or Hard Reset, risking losing files in RAM."]}]
+c2:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/appendix-c-error-messages/in-use-error-message.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/appendix-c-error-messages/in-use-error-message.webp","alt":"in use error message","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+c3:["$","h2",null,{"id":"cli_files","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["CLI Files",["$","$L26",null,{"id":"cli_files"}]]}]
+c4:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The Filer Execute command,",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"EX, allows a text file to be passed to the Command Line Interpreter, or CLI. The effect is as if the characters in the file had been typed at the Cambridge Z88 keyboard. CLI files thus provide a means of specifying a sequence of commands or operations, which can then be carried out simply by executing the file. For example, an execute file could be used to carry out a frequently-used sequence of Replace operations in PipeDream documents."]}]
+c5:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-yellow-50 x:dark:bg-yellow-700/30 x:text-yellow-700 x:dark:text-yellow-500 x:border-yellow-700","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$28:props:children:0:props:style","data-pagefind-ignore":"all","children":"$5d:props:children:0:props:children"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"CLI file fails to be interpreted"}]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If a CLI file fails to be interpreted correctly, it may not have been written with PipeDream or tested."}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"To correct this,"}],["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Load the file into PipeDream"}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Remove any spaces that are at the start of each CLI command"}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Save the file as a ‘plain text’ file."}],"\n"]}],"\n"]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This will correct the line feed character if it was different, at the end of each line."}]]}]]}]
+c6:["$","h3",null,{"id":"special-significance-characters","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Special Significance Characters",["$","$L26",null,{"id":"special-significance-characters"}]]}]
+c7:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Certain characters are given a special significance in CLI files, to allow special keys on the keyboard to be represented, or additional operations to be carried out by the Command Line Interpreter."}]
+c8:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"These special characters, and their functions, are as follows:"}]
+c9:["$","table",null,{"children":["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":"#","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["Prefixes a ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}]," key sequence - holding down ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}]," key and pressing another key"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"|","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["Prefixes a ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}]," key sequence -holding down ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}]," key and pressing another key"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"~","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Used in combination with a letter to represent other special keys on the Cambridge Z88 keyboard","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":".","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"As the first character on a line, introduces a special CLI command.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}],"className":"x:block x:overflow-x-auto"}]
+ca:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"To represent these actual characters in a command file, they should be specified twice:"}]
+cb:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"Sequence","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Represents","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":"##","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"#","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"~~","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"~","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"||","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"|","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}]]}]
+cc:["$","h4",null,{"id":"key-sequences","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":["Key sequences",["$","$L26",null,{"id":"key-sequences"}]]}]
+cd:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"Character","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Significance","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":"~A","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["Single press of the ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}]," key; ~A~A has no effect"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"~C","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["Single press of the ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}]," key; ~C~C has no effect"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"~S","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Shift","children":"SHIFT"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"~I","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Index","children":"INDEX"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"~M","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Menu","children":"MENU"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"~H","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Help","children":"HELP"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"~E","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],"$L124","$L125","$L126","$L127","$L128","$L129","$L12a"]}]]}]
+ce:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-red-100 x:dark:bg-red-900/30 x:text-red-700 x:dark:text-red-500 x:border-red-700 x:dark:border-red-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$28:props:children:0:props:style","data-pagefind-ignore":"all","children":"$82:props:children:0:props:children"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"ESC does not work in CLI files"}]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Escape","children":"ESC"}]," key code |[ does not work after OZ 4.0. A workaround is to select the Filer #F and then select an application after that."]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This has been fixed from OZ 4.7."}]]}]]}]
+cf:["$","h5",null,{"id":"file-control-commands","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-lg","children":["File control commands",["$","$L26",null,{"id":"file-control-commands"}]]}]
+d0:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The full-stop character introduces the following special commands when it is the first character of a line in an execute file."}]
+d1:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"Sequence","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Significance","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":".T> filename","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Create output file","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":".T< filename","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Create input file","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":".T= filename","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Create printer file","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":".> filename","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Redirect output","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":".< filename","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Redirect input","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":".= filename","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Redirect printer","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":".D nnn","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Delay nnn centiseconds","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":".S","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Suspend CLI; all redirections of input or output remain in force","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],"$L12b","$L12c","$L12d"]}]]}]
+d2:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The T character represents a ‘T’ junction, as it causes an additional copy of the input or output to be sent to a specified stream. For example:"}]
+d3:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":".T> :RAM.0/fred.txt"}]}]
+d4:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"sends a copy of what is going to the screen to the file"}]
+d5:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":":RAM.0/fred.txt"}]}]
+d6:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The J character stands for ‘Jam’, as it inhibits interpretation of the escape characters."}]
+d7:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Printer output can be spooled to a file with the ’=’ symbol. For example,"}]
+d8:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":".= :RAM.0/printout"}]}]
+d9:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"takes the text that would have been printed out, before printer codes are added, and puts the text into the file"}]
+da:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":":RAM.0/printout"}]}]
+db:["$","h3",null,{"id":"terminating-execute-files","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Terminating execute files",["$","$L26",null,{"id":"terminating-execute-files"}]]}]
+dc:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["When the CLI is running an execute file a CLI symbol is displayed in the OZ area of the screen. The current CLI can be terminated by pressing ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Shift","children":"SHIFT"}]," ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Escape","children":"ESC"}],". If several CLIs are running they can all be terminated by holding down ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}]," and pressing ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Escape","children":"ESC"}],"."]}]
+dd:["$","h3",null,{"id":"redirecting-keyboard-input-and-screen-output","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Redirecting keyboard input and screen output",["$","$L26",null,{"id":"redirecting-keyboard-input-and-screen-output"}]]}]
+de:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The following key combinations can be used to redirect keyboard input and screen output:"}]
+df:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"Key","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Effect","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],"+P"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"All screen output also sent to the printer","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],"+S"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"All screen output also sent to the file : RAM .-/S.sgn","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],"+K"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Key input also sent to the file : RAM .-/K.sgn","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}]]}]
+e0:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["For example, ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],"+P can be used to obtain a catalogue of EPROM or RAM to a printer."]}]
+e1:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The corresponding sequences with `–’ turn the facility off, and sequences ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}]," +P and ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],"+S are mutually exclusive."]}]
+e2:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The commands ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],"+S and ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],"+K generate files K.sgn and S.sgn in temporary RAM. These should be deleted after use with the Filer Erase command."]}]
+e3:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-yellow-50 x:dark:bg-yellow-700/30 x:text-yellow-700 x:dark:text-yellow-500 x:border-yellow-700","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$28:props:children:0:props:style","data-pagefind-ignore":"all","children":"$5d:props:children:0:props:children"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Can be used as a recorder."}]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],"+K is a really useful and undervalued command as it can be used as a recorder. Typing in the keystokes normally, saves trying to remember all those special characters. The file created :RAM.-K.sgn may be copied and could then be edited as a plain text file in Pipedream to be a CLI file which will play back the keystrokes recorded."]}]]}]]}]
+e4:["$","h4",null,{"id":"editing-basic-programs-using-pipedream","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":["Editing BASIC programs using PipeDream",["$","$L26",null,{"id":"editing-basic-programs-using-pipedream"}]]}]
+e5:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"BASIC programs are saved in a tokenised format, and so cannot be loaded into PipeDream and edited directly. However, the CLI provides a convenient way of obtaining a text listing of a BASIC program, which can then be edited and executed back into BASIC."}]
+e6:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The procedure is as follows:"}]
+e7:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["LIST the program to the file ",["$","strong",null,{"children":":RAM.-/S.sgn"}]," by typing ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"LIST"}]," ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"+S"}]," ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]]}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["When the listing has finished, close the file by typing ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"-S"}],["$","br",null,{}],"The file ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":":RAM.-/S.sgn"}]," can be loaded into PipeDream as plain text, and edited."]}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Add the characters",["$","br",null,{}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":".J"}],["$","br",null,{}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"NEW"}],["$","br",null,{}],["$","br",null,{}],"at the start of the file, and save it from PipeDream using the Plain text option."]}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Execute the edited file back into BASIC by entering BASIC and typing:",["$","br",null,{}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"*CLI .*FILENAME"}],["$","br",null,{}],["$","br",null,{}],"to invoke the CLI to execute the file."]}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["When finished, erase the file ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":":RAM.-/S.sgn"}]," using the Filer."]}],"\n"]}],"\n"]}]
+e8:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The . J at the start of the file avoids the need to replace characters such as # by ## throughout the BASIC program so that they will not be interpreted by the CLI."}]
+e9:["$","h4",null,{"id":"executing-a-file-on-reset","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":["Executing a file on reset",["$","$L26",null,{"id":"executing-a-file-on-reset"}]]}]
+ea:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"On resetting the Cambridge Z88, if a file with the name"}]
+eb:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"BOOT.CLI"}]}]
+ec:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"exists on an EPROM card in slot 3, it will be copied into"}]
+ed:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":":RAM.-/BOOT.CLI"}]}]
+ee:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"and then executed. The file should be deleted when it is no longer required."}]
+ef:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["From OZ 4.7, the ",["$","strong",null,{"children":"boot.cli"}]," may be in any RAM or card slot. This allows for example, Flash cards in slot 1 running OZ 4.7 or above to automatically execute the boot.cli file when a SOFT or HARD RESET is given."]}]
+f0:["$","h2",null,{"id":"example-using-k-to-make-a-command-file","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Example using []+K to make a Command File",["$","$L26",null,{"id":"example-using-k-to-make-a-command-file"}]]}]
+f1:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"To record the sequence of keystrokes to RUN a boot.cli file for use in OZ 4.6.2 so that additional RAM applications are ready to run after a HARD RESET is given."}]
+f2:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If a mistake is made, it will be recorded in the file. Two choices"}]
+f3:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"either STOP and START AGAIN or"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"continue, save it and edit the mistakes out afterwards."}],"\n"]}]
+f4:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Select Index"}]
+f5:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["Select CLI function <<SEND>> KEYBOARD to FILE.",["$","br",null,{}],["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],"+K ",["$","br",null,{}],"(CLI will appear flashing on RHS of display)"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["Select Filer",["$","br",null,{}],["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],"F"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["Fetch from File Card",["$","br",null,{}],["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"EF"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["ziputils.ap0 ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}],["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["Fetch from File Card",["$","br",null,{}],["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"EF"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["ziputils.app ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}],["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["Select INDEX",["$","br",null,{}],["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],"I"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["Install application",["$","br",null,{}],["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"INS"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["Install Application - Filename (Name of File to Fetch) ",["$","br",null,{}],"ziputils.app ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}],["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["Deselect CLI function <<SEND>> KEYBOARD to FILE.",["$","br",null,{}],["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],"-K ",["$","br",null,{}],"(CLI disappears on RHS of display)"]}],"\n"]}]
+f6:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The file will be in :RAM.-/K.sgn"}]
+f7:["$","h3",null,{"id":"copy-the-file-from-temporary-ram--to-ordinary-ram1","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Copy the File from temporary RAM.- to ordinary RAM.1",["$","$L26",null,{"id":"copy-the-file-from-temporary-ram--to-ordinary-ram1"}]]}]
+f8:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"There are two things to do straight away after creating any files in RAM.-"}]
+f9:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"Copy the file to RAM.1"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Delete the file in RAM.-"}],"\n"]}]
+fa:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Select Filer ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],"F",["$","br",null,{}],"Select Copy ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"CO",["$","br",null,{}],"Name : :RAM.-/K.sgn ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}],["$","br",null,{}],"New name : :RAM.1/boot.CLI ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]]}]
+fb:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Select Erase ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"ER",["$","br",null,{}],"Name : :RAM.-/K.sgn ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]]}]
+fc:["$","h3",null,{"id":"edit-the-file-in-pipedream","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Edit the File in Pipedream",["$","$L26",null,{"id":"edit-the-file-in-pipedream"}]]}]
+fd:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The boot.cli file is loaded into Pipedream as a ‘plain text’ file."}]
+fe:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A comment line prefixed with ; can be added to remind the reader what the file does."}]
+ff:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The final command ~A-k which was used to end using the cli command needs to be deleted."}]
+100:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"add #I OR ~AI at the end."}]
+101:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Here is a screen shot of the final file."}]
+102:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/filer-reference/cli-kb-example1.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/filer-reference/cli-kb-example1.webp","alt":"cli kb example1","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+103:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Save the file as a ‘plain text’ file and then in the Filer, save boot.cli to file card."}]
+104:["$","h3",null,{"id":"starting-bootcli","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Starting boot.cli",["$","$L26",null,{"id":"starting-bootcli"}]]}]
+105:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$28:props:children:0:props:style","data-pagefind-ignore":"all","children":"$28:props:children:0:props:children"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Boot.cli only works in Slot 3 until OZ 4.7"}]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Before OZ V4.7, when the Z88 is given a SOFT or HARD RESET, OZ looks to see if there is a boot.cli file to run in Slot 3. OZ V4.7 and later executes this file in any RAM or EPROM/FLASH card, if found"}]]}]]}]
+106:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The workaround is as follows:-"}]
+107:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["Select Filer",["$","br",null,{}],["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],"F"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["Fetch from File Card",["$","br",null,{}],["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"EF"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["boot.cli ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}],["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["Execute",["$","br",null,{}],["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"EX"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["boot.cli ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}],["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]]}],"\n"]}]
+108:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This will load and run the boot.cli file and give the following screen output."}]
+109:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/filer-reference/index-instalation-complete.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/filer-reference/index-instalation-complete.webp","alt":"index instalation complete","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+10a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Press ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Escape","children":"ESC"}]," to resume."]}]
+10b:["$","h2",null,{"id":"error-messages","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Error messages",["$","$L26",null,{"id":"error-messages"}]]}]
+10c:["$","h3",null,{"id":"uv-eprom-not-fully-erased","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["UV EPROM not fully erased",["$","$L26",null,{"id":"uv-eprom-not-fully-erased"}]]}]
+10d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When an EPROM is erased, all the memory locations are returned to their natural state i.e. ff. Occasionally some locations may escape erasure due to some dust covering the UV window or that the chip has reached the end of its useful life. From OZ 4.5 a check is made that all the locations have been cleared correctly before the header or the first file is saved."}]
+10e:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"482px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/filer-reference/unerased-eprom.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/filer-reference/unerased-eprom.webp","alt":"Unerased EPROM","loading":"lazy","decoding":"async","width":482,"height":165}],[]]}]]}]
+10f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If an error is found, (see above), the following error message is displayed."}]
+110:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/filer-reference/uv-eprom-not-fully-cleared.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/filer-reference/uv-eprom-not-fully-cleared.webp","alt":"UV EPROM not erased","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+111:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The solution is to continually erasing the EPROM until this message does not appear. If this does not happen, the EPROM card needs to be discarded."}]
+112:["$","h3",null,{"id":"in-use","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["In Use",["$","$L26",null,{"id":"in-use"}]]}]
+113:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/filer-reference/in-use-error-message.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/filer-reference/in-use-error-message.webp","alt":"in use error message","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+114:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Make sure you use ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Escape","children":"ESC"}]," to leave this View File function. otherwise an ‘In use’ error message will be shown when the file is deleted. The only way of clearing this error is with either a Soft or Hard Reset, risking losing files in RAM."]}]
+118:["$","tr",null,{"children":[["$","td",null,{"colSpan":2,"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":":EPR.2"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["FLASH or EPROM in slot 2 (external file area)",["$","sup",null,{"children":"OZ4.7"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+119:["$","tr",null,{"children":[["$","td",null,{"colSpan":2,"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":":EPR.3"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["FLASH or EPROM in slot 3 (external file area)",["$","sup",null,{"children":"OZ4.7"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+11a:["$","tr",null,{"children":[["$","td",null,{"colSpan":2,"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":":ROM.0"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"ROM","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+11b:["$","tr",null,{"children":[["$","td",null,{"colSpan":2,"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":":SCR.0"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Screen","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+11c:["$","tr",null,{"children":[["$","td",null,{"colSpan":2,"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":":PRT.0"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Printer; via printer driver so that highlight codes are interpreted","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+11d:["$","tr",null,{"children":[["$","td",null,{"colSpan":2,"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":":COM.0"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Communications; via serial port","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+11e:["$","tr",null,{"children":[["$","td",null,{"colSpan":2,"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":":INP.0"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Standard input","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+11f:["$","tr",null,{"children":[["$","td",null,{"colSpan":2,"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":":OUT.0"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Standard output","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+120:["$","tr",null,{"children":[["$","td",null,{"colSpan":2,"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":":NUL.0"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Null: absorbs output, and acts like an empty file on input","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+121:["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"02-Jun-1987"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
+122:["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"12:27:43"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
+123:["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"827"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
+124:["$","tr",null,{"children":[["$","td",null,{"children":"~X","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Delete","children":"DEL"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+125:["$","tr",null,{"children":[["$","td",null,{"children":"~T","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Tab","children":"TAB"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+126:["$","tr",null,{"children":[["$","td",null,{"children":"~U","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor up","children":"↑"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+127:["$","tr",null,{"children":[["$","td",null,{"children":"~D","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor down","children":"↓"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+128:["$","tr",null,{"children":[["$","td",null,{"children":"~L","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor left","children":"←"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+129:["$","tr",null,{"children":[["$","td",null,{"children":"~R","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor right","children":"→"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+12a:["$","tr",null,{"children":[["$","td",null,{"children":"|[","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Escape","children":"ESC"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+12b:["$","tr",null,{"children":[["$","td",null,{"children":".* filename","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Invoke new file to CLI","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+12c:["$","tr",null,{"children":[["$","td",null,{"children":".J","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Ignore special significance of subsequent escape characters","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+12d:["$","tr",null,{"children":[["$","td",null,{"children":"a comment","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Ignored.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+1c:0
+7:"$undefined"
+1b:"$undefined"
+14:"$undefined"

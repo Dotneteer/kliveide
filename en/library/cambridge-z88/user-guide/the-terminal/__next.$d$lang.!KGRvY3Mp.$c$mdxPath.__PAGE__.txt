@@ -1,0 +1,323 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T1ddf,---
+description: "The Terminal application provides communicating to another device over the RS232 serial line using the Digital VT52 standard protocol."
+---
+
+import { Callout, Table } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/35913789 (version 35) by scripts/import-z88-user-guide.cjs */}
+
+# Section Eight - The Terminal
+
+The Terminal application provides communicating to another device over the RS232 serial line using the Digital VT52 standard protocol.
+
+The Terminal can be entered from the Index APPLICATIONS menu, or by typing <Key k="square" />V.
+
+<Shot src="z88-user-guide/the-terminal/term-main.webp" alt="Terminal - Main Display" width={640} />
+
+The keys typed on the keyboard are sent to the serial port. Some control keys, accessible from the <Key k="menu" /> allow to control output on the remote computer. On the other side, characters received on the serial port are displayed on the Z88 screen and control function allow control of the Z88 screen like layout.
+
+## Serial port settings
+
+The serial port parameters have to match on both computers. They can be configured from the panel which is entered with <Key k="square" />S; see [Panel options](/en/library/cambridge-z88/user-guide/using-the-popdowns/the-panel-popdown#serial_port_parameters).
+
+## Menu
+
+<Shot src="z88-user-guide/the-terminal/term-menu.webp" alt="term menu" width={640} />
+
+Pressing the <Key k="menu" /> key displays all the commands as listed below:-
+
+## Control keys
+
+The equivalent Cambridge Z88 commands and keys for the implementation of the VT52 control keys are shown in the following table, together with a list of the codes transmitted:
+
+<Table>
+<thead>
+<Table.Tr>
+<Table.Th>Command</Table.Th>
+<Table.Th>Symbol</Table.Th>
+<Table.Th>Effect</Table.Th>
+<Table.Th>Codes sent</Table.Th>
+</Table.Tr>
+</thead>
+<tbody>
+<Table.Tr>
+<Table.Td><Key k="del" /></Table.Td>
+<Table.Td>DEL</Table.Td>
+<Table.Td>Rubout</Table.Td>
+<Table.Td>127</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td><Key k="shift" /> <Key k="del" /></Table.Td>
+<Table.Td>BS</Table.Td>
+<Table.Td>Backspace</Table.Td>
+<Table.Td>8</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td><Key k="diamond" />G</Table.Td>
+<Table.Td>BEL</Table.Td>
+<Table.Td>Ring terminal bell</Table.Td>
+<Table.Td>7</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td><Key k="diamond" />H</Table.Td>
+<Table.Td>BS</Table.Td>
+<Table.Td>Backspace</Table.Td>
+<Table.Td>8</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td><Key k="diamond" />I</Table.Td>
+<Table.Td>HT</Table.Td>
+<Table.Td>Horizontal tabulation</Table.Td>
+<Table.Td>9</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td><Key k="diamond" />J</Table.Td>
+<Table.Td>LF</Table.Td>
+<Table.Td>Line feed</Table.Td>
+<Table.Td>10</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td><Key k="diamond" />L</Table.Td>
+<Table.Td>FF</Table.Td>
+<Table.Td>Form feed, clear screen and home cursor</Table.Td>
+<Table.Td>12</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td><Key k="diamond" />M</Table.Td>
+<Table.Td>CR</Table.Td>
+<Table.Td>Carriage return</Table.Td>
+<Table.Td>13</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td><Key k="diamond" />N</Table.Td>
+<Table.Td>SO</Table.Td>
+<Table.Td>Shift out</Table.Td>
+<Table.Td>14</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td><Key k="diamond" />O</Table.Td>
+<Table.Td>SI</Table.Td>
+<Table.Td>Shift in</Table.Td>
+<Table.Td>15</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td><Key k="diamond" />Q</Table.Td>
+<Table.Td>DC1 (XON)</Table.Td>
+<Table.Td>Resume transmitting</Table.Td>
+<Table.Td>17</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td><Key k="diamond" />S</Table.Td>
+<Table.Td>DC3 (XOFF)</Table.Td>
+<Table.Td>Stop transmitting</Table.Td>
+<Table.Td>19</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td><Key k="diamond" />X</Table.Td>
+<Table.Td>CAN</Table.Td>
+<Table.Td>Cancel or abort escape sequence</Table.Td>
+<Table.Td>24</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td><Key k="diamond" />Z</Table.Td>
+<Table.Td>SUB</Table.Td>
+<Table.Td>Same effect as CAN</Table.Td>
+<Table.Td>26</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td><Key k="esc" /></Table.Td>
+<Table.Td>ESC</Table.Td>
+<Table.Td>Escape sequence</Table.Td>
+<Table.Td>27</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td><Key k="up" /></Table.Td>
+<Table.Td />
+<Table.Td>Cursor up</Table.Td>
+<Table.Td>ESC A</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td><Key k="down" /></Table.Td>
+<Table.Td />
+<Table.Td>Cursor down</Table.Td>
+<Table.Td>ESC B</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td><Key k="right" /></Table.Td>
+<Table.Td />
+<Table.Td>Cursor right</Table.Td>
+<Table.Td>ESC C</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td><Key k="left" /></Table.Td>
+<Table.Td />
+<Table.Td>Cursor left</Table.Td>
+<Table.Td>ESC D</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td><Key k="shift" /> <Key k="left" /></Table.Td>
+<Table.Td>PF1</Table.Td>
+<Table.Td>Function 1</Table.Td>
+<Table.Td>ESC ? P</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td><Key k="shift" /> <Key k="right" /></Table.Td>
+<Table.Td>PF2</Table.Td>
+<Table.Td>Function 2</Table.Td>
+<Table.Td>ESC ? Q</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td><Key k="shift" /> <Key k="down" /></Table.Td>
+<Table.Td>PF3</Table.Td>
+<Table.Td>Function 3</Table.Td>
+<Table.Td>ESC ? R</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td><Key k="shift" /> <Key k="up" /></Table.Td>
+<Table.Td>PF3</Table.Td>
+<Table.Td>Function 4</Table.Td>
+<Table.Td>ESC ? S</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Th colSpan={4}>Additional Command</Table.Th>
+</Table.Tr>
+<Table.Tr>
+<Table.Td><Key k="diamond" /><Key k="del" /></Table.Td>
+<Table.Td />
+<Table.Td>Clear Z88 screen to start a new session</Table.Td>
+<Table.Td />
+</Table.Tr>
+</tbody>
+</Table>
+
+**Exit**
+
+Press <Key k="shift" /> <Key k="enter" /> to exit the terminal and return to the Index. From the Index, move the cursor over the Terminal Suspended Activity and use the <Key k="diamond" />KILL command. This is the preferred option.
+
+### VT52 Control Function Summary
+
+If the following commands are sent to the Serial Port,
+
+their effects are as follows :
+
+| Code sent | Effect |
+| --- | --- |
+| ESC A | Cursor up |
+| ESC B | Cursor down |
+| ESC C | Cursor right |
+| ESC D | Cursor left |
+| ESC F | Enable SOH |
+| ESC G | Disable SOH |
+| ESC H | Cursor to home |
+| ESC I | Reverse Line Feed |
+| ESC J | Erase to end of screen |
+| ESC K | Erase to end of line |
+| ESC L | Clear screen and cursor to home |
+| ESC Y row col | Cursor to (row, column) |
+| ESC Z | Identify, Z88 responds ESC / Z |
+
+## Spooling files
+
+Material received by the Terminal application can be spooled to a file **:RAM.– /S.sgn** automatically by typing <Key k="square" />**+S** before commencing the transfer. The file will be created in temporary RAM, and should be deleted after use.
+
+Spooling can be disabled by typing <strong><Key k="square" />-S</strong>.
+
+## Transmitting files
+
+A convenient way of sending a file to a remote machine is to copy the file to the **:COM** device.
+
+Enter the Terminal and establish contact with the remote machine in the usual way, and then type <Key k="square" />F to go into the Filer.
+
+Select the file you wish to transmit and then choose Copy from the Filer menu (see Section Seven - Filer Reference, for details of how to select and copy files). A dialogue box will appear. Type in **:COM** as the destination and press <Key k="enter" />. The file will then be transmitted.
+
+Once the transmission is over the dialogue box will disappear leaving the Filer display on the screen. You may then press <Key k="esc" /> to return to the Terminal.
+
+<Callout type="error">
+
+**Only works with TEXT files**
+
+Spooling or Transmitting files only work with TEXT files. If a BINARY file needs to be transferred, use Eazylink2.
+
+</Callout>a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Serial port settings","id":"serial-port-settings","depth":2},{"value":"Menu","id":"menu","depth":2},{"value":"Control keys","id":"control-keys","depth":2},{"value":"VT52 Control Function Summary","id":"vt52-control-function-summary","depth":3},{"value":"Spooling files","id":"spooling-files","depth":2},{"value":"Transmitting files","id":"transmitting-files","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"The Terminal application provides communicating to another device over the RS232 serial line using the Digital VT52 standard protocol.","title":"Section Eight - The Terminal","filePath":"content/en/library/cambridge-z88/user-guide/the-terminal.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/user-guide/the-terminal","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Section Eight - The Terminal - Klive IDE"}],["$","meta","1",{"name":"description","content":"The Terminal application provides communicating to another device over the RS232 serial line using the Digital VT52 standard protocol."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/user-guide/the-terminal/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"cyL0EKA0xNKEZcECA3AIS"}
+20:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+21:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+32:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Section Eight - The Terminal","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The Terminal application provides communicating to another device over the RS232 serial line using the Digital VT52 standard protocol."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The Terminal can be entered from the Index APPLICATIONS menu, or by typing ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],"V."]}],"\n",["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/the-terminal/term-main.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/the-terminal/term-main.webp","alt":"Terminal - Main Display","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The keys typed on the keyboard are sent to the serial port. Some control keys, accessible from the ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Menu","children":"MENU"}]," allow to control output on the remote computer. On the other side, characters received on the serial port are displayed on the Z88 screen and control function allow control of the Z88 screen like layout."]}],"\n",["$","h2",null,{"id":"serial-port-settings","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Serial port settings",["$","$L20",null,{"id":"serial-port-settings"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The serial port parameters have to match on both computers. They can be configured from the panel which is entered with ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],"S; see ",["$","$L21",null,{"href":"/en/library/cambridge-z88/user-guide/using-the-popdowns/the-panel-popdown#serial_port_parameters","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Panel options"}],"."]}],"\n",["$","h2",null,{"id":"menu","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Menu",["$","$L20",null,{"id":"menu"}]]}],"\n",["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/the-terminal/term-menu.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/the-terminal/term-menu.webp","alt":"term menu","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Pressing the ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Menu","children":"MENU"}]," key displays all the commands as listed below:-"]}],"\n",["$","h2",null,{"id":"control-keys","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Control keys",["$","$L20",null,{"id":"control-keys"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The equivalent Cambridge Z88 commands and keys for the implementation of the VT52 control keys are shown in the following table, together with a list of the codes transmitted:"}],"\n","$L22","\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31"]]}]
+15:["$","$L32",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@33"}]}]
+1f:true
+9:300
+22:["$","table",null,{"children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"Command","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Symbol","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Effect","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Codes sent","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Delete","children":"DEL"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"DEL","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Rubout","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"127","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Shift","children":"SHIFT"}],["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Delete","children":"DEL"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"BS","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Backspace","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"8","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"G"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"BEL","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Ring terminal bell","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"7","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"H"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"BS","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Backspace","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"8","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"I"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],"$L34","$L35","$L36"],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],"$L37","$L38","$L39","$L3a","$L3b","$L3c","$L3d","$L3e","$L3f","$L40","$L41","$L42","$L43","$L44","$L45","$L46","$L47","$L48","$L49","$L4a"]}]],"className":"x:block x:overflow-x-auto"}]
+23:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Exit"}]}]
+24:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Press ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Shift","children":"SHIFT"}]," ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]," to exit the terminal and return to the Index. From the Index, move the cursor over the Terminal Suspended Activity and use the ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"KILL command. This is the preferred option."]}]
+25:["$","h3",null,{"id":"vt52-control-function-summary","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["VT52 Control Function Summary",["$","$L20",null,{"id":"vt52-control-function-summary"}]]}]
+26:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If the following commands are sent to the Serial Port,"}]
+27:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"their effects are as follows :"}]
+28:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"Code sent","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Effect","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":"ESC A","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Cursor up","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"ESC B","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Cursor down","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"ESC C","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Cursor right","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"ESC D","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Cursor left","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"ESC F","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Enable SOH","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"ESC G","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Disable SOH","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"ESC H","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Cursor to home","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"ESC I","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Reverse Line Feed","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":["$L4b","$L4c"],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],"$L4d","$L4e","$L4f","$L50"]}]]}]
+29:["$","h2",null,{"id":"spooling-files","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Spooling files",["$","$L20",null,{"id":"spooling-files"}]]}]
+2a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Material received by the Terminal application can be spooled to a file ",["$","strong",null,{"children":":RAM.– /S.sgn"}]," automatically by typing ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],["$","strong",null,{"children":"+S"}]," before commencing the transfer. The file will be created in temporary RAM, and should be deleted after use."]}]
+2b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Spooling can be disabled by typing ",["$","strong",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],"-S"]}],"."]}]
+2c:["$","h2",null,{"id":"transmitting-files","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Transmitting files",["$","$L20",null,{"id":"transmitting-files"}]]}]
+2d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A convenient way of sending a file to a remote machine is to copy the file to the ",["$","strong",null,{"children":":COM"}]," device."]}]
+2e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Enter the Terminal and establish contact with the remote machine in the usual way, and then type ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],"F to go into the Filer."]}]
+2f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Select the file you wish to transmit and then choose Copy from the Filer menu (see Section Seven - Filer Reference, for details of how to select and copy files). A dialogue box will appear. Type in ",["$","strong",null,{"children":":COM"}]," as the destination and press ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}],". The file will then be transmitted."]}]
+30:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Once the transmission is over the dialogue box will disappear leaving the Filer display on the screen. You may then press ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Escape","children":"ESC"}]," to return to the Terminal."]}]
+31:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-red-100 x:dark:bg-red-900/30 x:text-red-700 x:dark:text-red-500 x:border-red-700 x:dark:border-red-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":["$","svg",null,{"viewBox":"0 0 16 16","fill":"currentColor","height":".8em","className":"x:mt-[.3em]","children":["$","path",null,{"d":"M4.47.22A.749.749 0 0 1 5 0h6c.199 0 .389.079.53.22l4.25 4.25c.141.14.22.331.22.53v6a.749.749 0 0 1-.22.53l-4.25 4.25A.749.749 0 0 1 11 16H5a.749.749 0 0 1-.53-.22L.22 11.53A.749.749 0 0 1 0 11V5c0-.199.079-.389.22-.53Zm.84 1.28L1.5 5.31v5.38l3.81 3.81h5.38l3.81-3.81V5.31L10.69 1.5ZM8 4a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 8 4Zm0 8a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"}]}]}],["$","div",null,{"className":"x:w-full x:min-w-0","children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Only works with TEXT files"}]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Spooling or Transmitting files only work with TEXT files. If a BINARY file needs to be transferred, use Eazylink2."}]]}]]}]
+33:null
+9:C
+34:["$","td",null,{"children":"HT","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
+35:["$","td",null,{"children":"Horizontal tabulation","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
+36:["$","td",null,{"children":"9","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
+37:["$","tr",null,{"children":[["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"J"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"LF","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Line feed","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"10","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+38:["$","tr",null,{"children":[["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"L"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"FF","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Form feed, clear screen and home cursor","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"12","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+39:["$","tr",null,{"children":[["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"M"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"CR","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Carriage return","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"13","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+3a:["$","tr",null,{"children":[["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"N"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"SO","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Shift out","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"14","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+3b:["$","tr",null,{"children":[["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"O"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"SI","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Shift in","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"15","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+3c:["$","tr",null,{"children":[["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"Q"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"DC1 (XON)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Resume transmitting","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"17","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+3d:["$","tr",null,{"children":[["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"S"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"DC3 (XOFF)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Stop transmitting","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"19","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+3e:["$","tr",null,{"children":[["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"X"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"CAN","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Cancel or abort escape sequence","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"24","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+3f:["$","tr",null,{"children":[["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"Z"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"SUB","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Same effect as CAN","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"26","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+40:["$","tr",null,{"children":[["$","td",null,{"children":["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Escape","children":"ESC"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"ESC","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Escape sequence","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"27","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+41:["$","tr",null,{"children":[["$","td",null,{"children":["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor up","children":"↑"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Cursor up","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"ESC A","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+42:["$","tr",null,{"children":[["$","td",null,{"children":["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor down","children":"↓"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Cursor down","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"ESC B","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+43:["$","tr",null,{"children":[["$","td",null,{"children":["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor right","children":"→"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Cursor right","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"ESC C","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+44:["$","tr",null,{"children":[["$","td",null,{"children":["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor left","children":"←"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Cursor left","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"ESC D","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+45:["$","tr",null,{"children":[["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Shift","children":"SHIFT"}],["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor left","children":"←"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"PF1","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Function 1","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"ESC ? P","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+46:["$","tr",null,{"children":[["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Shift","children":"SHIFT"}],["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor right","children":"→"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"PF2","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Function 2","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"ESC ? Q","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+47:["$","tr",null,{"children":[["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Shift","children":"SHIFT"}],["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor down","children":"↓"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"PF3","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Function 3","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"ESC ? R","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+48:["$","tr",null,{"children":[["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Shift","children":"SHIFT"}],["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor up","children":"↑"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"PF3","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Function 4","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"ESC ? S","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+49:["$","tr",null,{"children":["$","th",null,{"colSpan":4,"children":"Additional Command","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+4a:["$","tr",null,{"children":[["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Delete","children":"DEL"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Clear Z88 screen to start a new session","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+4b:["$","td",null,{"children":"ESC J","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
+4c:["$","td",null,{"children":"Erase to end of screen","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
+4d:["$","tr",null,{"children":[["$","td",null,{"children":"ESC K","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Erase to end of line","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+4e:["$","tr",null,{"children":[["$","td",null,{"children":"ESC L","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Clear screen and cursor to home","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+4f:["$","tr",null,{"children":[["$","td",null,{"children":"ESC Y row col","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Cursor to (row, column)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+50:["$","tr",null,{"children":[["$","td",null,{"children":"ESC Z","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Identify, Z88 responds ESC / Z","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

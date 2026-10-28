@@ -1,0 +1,82 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+13:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+1e:"ViewportBoundary"
+1f:I[484,[],"$1e"]
+20:"MetadataBoundary"
+21:I[484,[],"$20"]
+22:"$Sreact.suspense"
+23:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T5bc,---
+description: "OZ can only run in slot 0 or 1. Using this call for slots 2 and 3 will always return Fz = 1. This call is used internally by OZ in the Flash card management sub-system, when it is necessary to..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7962867 (version 8) by scripts/import-z88-wiki.cjs */}
+
+# OS_Ploz, Poll for running OZ
+
+## Register parameters
+
+```text
+IN:
+     A = slot number (0 to 3)
+
+OUT, if call successfull:
+     Fz = 0, OZ is running in slot
+     Fz = 1, OZ is not running in slot.
+
+OUT, if call failed:
+     Fc = 1
+     A = RC_ONF, no card found
+
+Registers changed after return:
+     A.BCDEHL/IXIY same
+     .F....../.... different
+```
+
+## Notes
+
+OZ can only run in slot 0 or 1. Using this call for slots 2 and 3 will always return Fz = 1. This call is used internally by OZ in the Flash card management sub-system, when it is necessary to turn off the screen during Flash hardware operations on the same card as a running OZ. Applications may benefit from this system call too.
+
+This system call is only available in OZ release 4.2 and newer.
+
+## Related calls
+
+**[DC\_Pol](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-pol)**, poll for card usage<br />**[OS\_Poll](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-poll)**, poll for an application<br />**[OS\_Use](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-use)**, process card usagea:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Register parameters","id":"register-parameters","depth":2},{"value":"Notes","id":"notes","depth":2},{"value":"Related calls","id":"related-calls","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"OZ can only run in slot 0 or 1. Using this call for slots 2 and 3 will always return Fz = 1. This call is used internally by OZ in the Flash card management sub-system, when it is necessary to...","title":"OS_Ploz, Poll for running OZ","filePath":"content/en/library/cambridge-z88/developers-notes/system-calls-reference/os-ploz.mdx","timestamp":1792315833000},"sourceCode":"$12","children":[["$","div",null,{"id":"nextra-skip-nav"}],["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["OS_Ploz, Poll for running OZ","$undefined"]}],"\n",["$","h2",null,{"id":"register-parameters","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Register parameters",["$","$L13",null,{"id":"register-parameters"}]]}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":["$L14","$L15"]}],"$L16"]}]]}],"\n","$L17","\n","$L18","\n","$L19","\n","$L1a","\n","$L1b"]]}]]}]]}]}],null,"$L1c"]}],"p":"$@1d","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/developers-notes/system-calls-reference/os-ploz","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L1f",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L21",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$22",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"OS_Ploz, Poll for running OZ - Klive IDE"}],["$","meta","1",{"name":"description","content":"OZ can only run in slot 0 or 1. Using this call for slots 2 and 3 will always return Fz = 1. This call is used internally by OZ in the Flash card management sub-system, when it is necessary to..."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-ploz/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L23","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@24","v":null,"s":"$9"}},"a":"$@25","u":"$@26","b":"cyL0EKA0xNKEZcECA3AIS"}
+27:"ToggleWordWrapButton"
+28:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$27"]
+29:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+2a:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+2b:I[484,[],"OutletBoundary"]
+14:["$","$L28",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}]
+15:["$","$L29",null,{"className":""}]
+16:["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"IN:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     A = slot number (0 to 3)"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OUT, if call successfull:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     Fz = 0, OZ is running in slot"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     Fz = 1, OZ is not running in slot."}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OUT, if call failed:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     Fc = 1"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     A = RC_ONF, no card found"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Registers changed after return:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     A.BCDEHL/IXIY same"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     .F....../.... different"}]}]]}]
+17:["$","h2",null,{"id":"notes","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Notes",["$","$L13",null,{"id":"notes"}]]}]
+18:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"OZ can only run in slot 0 or 1. Using this call for slots 2 and 3 will always return Fz = 1. This call is used internally by OZ in the Flash card management sub-system, when it is necessary to turn off the screen during Flash hardware operations on the same card as a running OZ. Applications may benefit from this system call too."}]
+19:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This system call is only available in OZ release 4.2 and newer."}]
+1a:["$","h2",null,{"id":"related-calls","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Related calls",["$","$L13",null,{"id":"related-calls"}]]}]
+1b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":["$","$L2a",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-pol","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"DC_Pol"}]}],", poll for card usage",["$","br",null,{}],["$","strong",null,{"children":["$","$L2a",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-poll","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OS_Poll"}]}],", poll for an application",["$","br",null,{}],["$","strong",null,{"children":["$","$L2a",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-use","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OS_Use"}]}],", process card usage"]}]
+1c:["$","$L2b",null,{"children":["$","$22",null,{"name":"Next.MetadataOutlet","children":"$@2c"}]}]
+26:true
+9:300
+2c:null
+9:C
+25:0
+7:"$undefined"
+24:"$undefined"
+1d:"$undefined"

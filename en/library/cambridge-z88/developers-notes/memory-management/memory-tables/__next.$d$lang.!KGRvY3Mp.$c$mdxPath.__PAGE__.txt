@@ -1,0 +1,105 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:Tb13,---
+description: "The purpose of this description is just for the understanding of memory allocation in the Z88. Programmer have to use the provided system calls to properly allocate memory. He should not bypass..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/60653617 (version 9) by scripts/import-z88-wiki.cjs */}
+
+# Memory Tables
+
+The purpose of this description is just for the understanding of memory allocation in the Z88. Programmer have to use the provided system calls to properly allocate memory. He should not bypass the operating system and tweak directly in the memory tables.
+
+Memory tables are located in the first bank of each slot, except for internal memory tables which are in bank $21.
+
+**Swap memory**
+
+On reset, special memory area is marked as SWAP memory : 8K on unexpanded Z88, 40K on expanded ones. This memory area is allocated to bad or ugly applications when they're entered. On exit, this memory is released by copying used swap memory to fixed memory allocated for process storage. When normal memory becomes full, this swap area can be used for other purposes.
+
+**Out-of-memory flags - one for each bank**
+
+If all memory in a bank is used, OZ sets flags in the first bank, except for seg0 addressed allocations. These flags go backward, $00ff is the first bank of slot, $00c0 is the last ($00e0 is the last for internal RAM). Only two bits are used:
+
+OOM\_B\_NORMAL =0<br />OOM\_B\_FIXED =1
+
+These flags are used to speed up memory allocation by skipping full banks. Flags are cleared when full bank is freed.
+
+**Memory Allocation Tables, MATs - one for each page**
+
+MATs start at $0100. There is one word for each page in slot, ie. 64 entries per bank, max. 4096 entries for 1MB card. Entries are sorted in natural order.
+
+```text
+PAGE WORD in MAT
+bits 0-11 Offset of next MAT entry in chain
+bit 0 only set (MAT_SYSTEM) page is used by OZ (eg. screen file, see examples below)
+
+bit 12 MAT_LAST : this page is last in chain, bits 0-11 are MemHandle>>4
+bit 13 MAT_FULL : page fully used, can't be split in chunks (see below)
+bit 14 MAT_ALLOCFIXED : if reset page is allocated as fixed memory
+bit 15 MAT_SWAP : page is used by OZ for bad application memory
+Some examples :
+00xx-0Fxx tagged as 0001 - system variables and such
+10xx-17xx tagged as 8000 - swap area for bad apps
+1800-1fff tagged as 0001 - stack
+```
+
+**Page allocation scheme for chunk (\<256 byte) allocations (MAT\_FULL (bit 13) not set in MAT)**
+
+XX00: yy offset to the first free chunk, 00 if no free chunks in page<br />if y=255 then page is invalid -\> fail
+
+XXyy: sz nx sz=chunk size, 02-FF bytes<br />if yy+sz\>nx then page is invalid -\> fail<br />nx=offset to the next free chunk, 00 if no more chunks in page<br />if nx\<=yy then page is invalid -\> fail
+
+Page with 255 bytes free:
+
+XX00: 01 FF 00 ...a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"The purpose of this description is just for the understanding of memory allocation in the Z88. Programmer have to use the provided system calls to properly allocate memory. He should not bypass...","title":"Memory Tables","filePath":"content/en/library/cambridge-z88/developers-notes/memory-management/memory-tables.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/developers-notes/memory-management/memory-tables","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Memory Tables - Klive IDE"}],["$","meta","1",{"name":"description","content":"The purpose of this description is just for the understanding of memory allocation in the Z88. Programmer have to use the provided system calls to properly allocate memory. He should not bypass..."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/developers-notes/memory-management/memory-tables/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"cyL0EKA0xNKEZcECA3AIS"}
+20:"ToggleWordWrapButton"
+21:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$20"]
+22:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+32:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Memory Tables","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The purpose of this description is just for the understanding of memory allocation in the Z88. Programmer have to use the provided system calls to properly allocate memory. He should not bypass the operating system and tweak directly in the memory tables."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Memory tables are located in the first bank of each slot, except for internal memory tables which are in bank $21."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Swap memory"}]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"On reset, special memory area is marked as SWAP memory : 8K on unexpanded Z88, 40K on expanded ones. This memory area is allocated to bad or ugly applications when they’re entered. On exit, this memory is released by copying used swap memory to fixed memory allocated for process storage. When normal memory becomes full, this swap area can be used for other purposes."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Out-of-memory flags - one for each bank"}]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If all memory in a bank is used, OZ sets flags in the first bank, except for seg0 addressed allocations. These flags go backward, $00ff is the first bank of slot, $00c0 is the last ($00e0 is the last for internal RAM). Only two bits are used:"}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["OOM_B_NORMAL =0",["$","br",null,{}],"OOM_B_FIXED =1"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"These flags are used to speed up memory allocation by skipping full banks. Flags are cleared when full bank is freed."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Memory Allocation Tables, MATs - one for each page"}]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"MATs start at $0100. There is one word for each page in slot, ie. 64 entries per bank, max. 4096 entries for 1MB card. Entries are sorted in natural order."}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L21",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L22",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"PAGE WORD in MAT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"bits 0-11 Offset of next MAT entry in chain"}]}],"\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c"]}]]}]]}],"\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31"]]}]
+15:["$","$L32",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@33"}]}]
+1f:true
+9:300
+23:["$","span",null,{"children":["$","span",null,{"children":"bit 0 only set (MAT_SYSTEM) page is used by OZ (eg. screen file, see examples below)"}]}]
+24:["$","span",null,{"children":["$","span",null,{}]}]
+25:["$","span",null,{"children":["$","span",null,{"children":"bit 12 MAT_LAST : this page is last in chain, bits 0-11 are MemHandle>>4"}]}]
+26:["$","span",null,{"children":["$","span",null,{"children":"bit 13 MAT_FULL : page fully used, can't be split in chunks (see below)"}]}]
+27:["$","span",null,{"children":["$","span",null,{"children":"bit 14 MAT_ALLOCFIXED : if reset page is allocated as fixed memory"}]}]
+28:["$","span",null,{"children":["$","span",null,{"children":"bit 15 MAT_SWAP : page is used by OZ for bad application memory"}]}]
+29:["$","span",null,{"children":["$","span",null,{"children":"Some examples :"}]}]
+2a:["$","span",null,{"children":["$","span",null,{"children":"00xx-0Fxx tagged as 0001 - system variables and such"}]}]
+2b:["$","span",null,{"children":["$","span",null,{"children":"10xx-17xx tagged as 8000 - swap area for bad apps"}]}]
+2c:["$","span",null,{"children":["$","span",null,{"children":"1800-1fff tagged as 0001 - stack"}]}]
+2d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Page allocation scheme for chunk (<256 byte) allocations (MAT_FULL (bit 13) not set in MAT)"}]}]
+2e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["XX00: yy offset to the first free chunk, 00 if no free chunks in page",["$","br",null,{}],"if y=255 then page is invalid -> fail"]}]
+2f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["XXyy: sz nx sz=chunk size, 02-FF bytes",["$","br",null,{}],"if yy+sz>nx then page is invalid -> fail",["$","br",null,{}],"nx=offset to the next free chunk, 00 if no more chunks in page",["$","br",null,{}],"if nx<=yy then page is invalid -> fail"]}]
+30:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Page with 255 bytes free:"}]
+31:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"XX00: 01 FF 00 …"}]
+33:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

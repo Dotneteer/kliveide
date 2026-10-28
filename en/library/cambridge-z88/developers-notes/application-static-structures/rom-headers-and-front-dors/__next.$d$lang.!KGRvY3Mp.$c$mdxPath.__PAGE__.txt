@@ -1,0 +1,260 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T1aa4,---
+description: "Applications are set up as linked lists of DORs, an object linking structure which is explained in 'DORs', one list for each ROM card (including the internal one in Slot 0). The application DORs..."
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8618233 (version 10) by scripts/import-z88-wiki.cjs */}
+
+# ROM Headers and Front DORs
+
+Applications are set up as linked lists of DORs, an object linking structure which is explained in 'DORs', one list for each ROM card (including the internal one in Slot 0). The application DORs contain such vital information as where the application entry point is and whether caps lock should be set on entry; more of this below. The root of each link is the 'front DOR'. The first application is linked as a son to this DOR, and subsequent applications are linked together as brothers. For instance, in the internal ROM, the arrangement of application DORs is as follows:
+
+<Shot src="z88-developers-notes/application-static-structures/rom-headers-and-front-dors/application-dors.webp" alt="Application DORs" width={875} />
+
+When the operating system searches for applications it looks at each slot in turn, starting with the internal ROM or slot 0. The top bank of each slot is examined for the presence of 'OZ' in the uppermost two bytes - if this is found then the card is identified as containing applications. Filing system EPROMs are identified by 'oz' in the top two bytes. The full header which an application card should incorporate at the top of its highest bank is as follows:
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td style={{ whiteSpace: "nowrap" }}>
+
+**The Card Header:**
+
+(seen from top of card, downwards)
+
+</Table.Td>
+<Table.Td>
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>$3FFE</Table.Td>
+<Table.Td>'OZ'</Table.Td>
+<Table.Td>Card holds applications</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>$3FFD</Table.Td>
+<Table.Td>$00</Table.Td>
+<Table.Td>Subtype of card - future expansion</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>$3FFC</Table.Td>
+<Table.Td>x</Table.Td>
+<Table.Td>Size of card in banks, eg. $02 for a 32K card</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>$3FFB</Table.Td>
+<Table.Td>$80</Table.Td>
+<Table.Td>Marks external application</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>$3FFA</Table.Td>
+<Table.Td>@0000xxxx</Table.Td>
+<Table.Td>4 bit country code</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>$3FF9</Table.Td>
+<Table.Td>@0xxxxxxx</Table.Td>
+<Table.Td>High byte of card ID</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>$3FF8</Table.Td>
+<Table.Td>@0xxxxxxx</Table.Td>
+<Table.Td>Low byte of card ID</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+The country codes is as follows: The high nibble of the country code byte must be 0 (@0000). The low nibble indicates the language variant of the application, and is coded as follows:
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td style={{ whiteSpace: "nowrap" }}>**The country codes:**</Table.Td>
+<Table.Td>
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>0000 (00h)</Table.Td>
+<Table.Td>USA</Table.Td>
+<Table.Td>1000 (08h)</Table.Td>
+<Table.Td>Japan</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>0001 (01h)</Table.Td>
+<Table.Td>France</Table.Td>
+<Table.Td>1001 (09h)</Table.Td>
+<Table.Td>Iceland</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>0010 (02h)</Table.Td>
+<Table.Td>Germany</Table.Td>
+<Table.Td>1010 (0ah)</Table.Td>
+<Table.Td>Norway</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>0011 (03h)</Table.Td>
+<Table.Td>UK</Table.Td>
+<Table.Td>1011 (0bh)</Table.Td>
+<Table.Td>Switzerland</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>0100 (04h)</Table.Td>
+<Table.Td>Denmark</Table.Td>
+<Table.Td>1100 (0ch)</Table.Td>
+<Table.Td>Turkey</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>0101 (05h)</Table.Td>
+<Table.Td>Sweden</Table.Td>
+<Table.Td>1101 (0dh)</Table.Td>
+<Table.Td>reserved</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>0110 (06h)</Table.Td>
+<Table.Td>Italy</Table.Td>
+<Table.Td>1110 (0eh)</Table.Td>
+<Table.Td>reserved</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>0111 (07h)</Table.Td>
+<Table.Td>Spain</Table.Td>
+<Table.Td>1111 (0fh)</Table.Td>
+<Table.Td>reserved</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+Before commercial release it is necessary to obtain a card ID. If two commercially released cards shared an ID, then inserting both into the machine could cause serious problems for the card manager, and it is most important that this should not happen. The bits explicitly given above will be true for all external IDs - alternative settings of these bits are reserved for future internal applications.
+
+Next, the card manager expects to find the application front DOR starting in the top bank of the slot, at bank offset $3FC0. This section should be identical for all application cards, apart from the address of the first application DOR. The 3 byte links consist of a 2 byte offset within a bank (low byte, high byte) followed by a bank number.
+
+It is recommended but not necessary that all the application header information, including menus and help, are placed in the top one or two banks. The space between the application front DOR and the card header above it should be padded with zeros.
+
+Note: The bank numbers should be offset from the top bank. ie. the top bank should be $3F, the one below $3E etc. In a 128K EPROM the lowest bank should be thought of as $38 and not as $00.
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td style={{ whiteSpace: "nowrap" }}>**The application front DOR:**</Table.Td>
+<Table.Td>
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>3 bytes</Table.Td>
+<Table.Td>0 0 0</Table.Td>
+<Table.Td>Extended pointer to parent</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>3 bytes</Table.Td>
+<Table.Td>0 0 0</Table.Td>
+<Table.Td>Extended pointer to brother - this may point to the HELP front DOR</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>3 bytes</Table.Td>
+<Table.Td>x x x</Table.Td>
+<Table.Td>Extended pointer to son - this points to the first application DOR</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>1 byte</Table.Td>
+<Table.Td>$13</Table.Td>
+<Table.Td>DOR type, ROM Front DOR</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>1 byte</Table.Td>
+<Table.Td>8</Table.Td>
+<Table.Td>DOR length</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>1 byte</Table.Td>
+<Table.Td>'N'</Table.Td>
+<Table.Td>Key for name field (DT\_NAM)</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>1 byte</Table.Td>
+<Table.Td>5</Table.Td>
+<Table.Td>Length of name and terminator</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>5 bytes</Table.Td>
+<Table.Td>'APPL', 0</Table.Td>
+<Table.Td>NULL-terminated name</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>1 byte</Table.Td>
+<Table.Td>$FF</Table.Td>
+<Table.Td>DOR terminator</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"Applications are set up as linked lists of DORs, an object linking structure which is explained in 'DORs', one list for each ROM card (including the internal one in Slot 0). The application DORs...","title":"ROM Headers and Front DORs","filePath":"content/en/library/cambridge-z88/developers-notes/application-static-structures/rom-headers-and-front-dors.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/developers-notes/application-static-structures/rom-headers-and-front-dors","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"ROM Headers and Front DORs - Klive IDE"}],["$","meta","1",{"name":"description","content":"Applications are set up as linked lists of DORs, an object linking structure which is explained in 'DORs', one list for each ROM card (including the internal one in Slot 0). The application DORs..."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/developers-notes/application-static-structures/rom-headers-and-front-dors/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"cyL0EKA0xNKEZcECA3AIS"}
+2c:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["ROM Headers and Front DORs","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Applications are set up as linked lists of DORs, an object linking structure which is explained in ‘DORs’, one list for each ROM card (including the internal one in Slot 0). The application DORs contain such vital information as where the application entry point is and whether caps lock should be set on entry; more of this below. The root of each link is the ‘front DOR’. The first application is linked as a son to this DOR, and subsequent applications are linked together as brothers. For instance, in the internal ROM, the arrangement of application DORs is as follows:"}],"\n",["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"875px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-developers-notes/application-static-structures/rom-headers-and-front-dors/application-dors.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-developers-notes/application-static-structures/rom-headers-and-front-dors/application-dors.webp","alt":"Application DORs","loading":"lazy","decoding":"async","width":875,"height":50}],[]]}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When the operating system searches for applications it looks at each slot in turn, starting with the internal ROM or slot 0. The top bank of each slot is examined for the presence of ‘OZ’ in the uppermost two bytes - if this is found then the card is identified as containing applications. Filing system EPROMs are identified by ‘oz’ in the top two bytes. The full header which an application card should incorporate at the top of its highest bank is as follows:"}],"\n",["$","table",null,{"children":["$","tbody",null,{"children":["$","tr",null,{"children":[["$","td",null,{"style":{"whiteSpace":"nowrap"},"children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"The Card Header:"}]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"(seen from top of card, downwards)"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","table",null,{"children":["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":"$$3FFE","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"’OZ’","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Card holds applications","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"$$3FFD","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"$$00","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Subtype of card - future expansion","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"$$3FFC","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"x","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],"$L20"],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],"$L21","$L22","$L23","$L24"]}],"className":"x:block x:overflow-x-auto"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],"className":"x:block x:overflow-x-auto"}],"\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b"]]}]
+15:["$","$L2c",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@2d"}]}]
+1f:true
+9:300
+20:["$","td",null,{"children":"Size of card in banks, eg. $02 for a 32K card","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
+21:["$","tr",null,{"children":[["$","td",null,{"children":"$$3FFB","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"$$80","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Marks external application","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+22:["$","tr",null,{"children":[["$","td",null,{"children":"$$3FFA","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"@0000xxxx","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"4 bit country code","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+23:["$","tr",null,{"children":[["$","td",null,{"children":"$$3FF9","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"@0xxxxxxx","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"High byte of card ID","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+24:["$","tr",null,{"children":[["$","td",null,{"children":"$$3FF8","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"@0xxxxxxx","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Low byte of card ID","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+25:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The country codes is as follows: The high nibble of the country code byte must be 0 (@0000). The low nibble indicates the language variant of the application, and is coded as follows:"}]
+26:["$","table",null,{"children":["$","tbody",null,{"children":["$","tr",null,{"children":[["$","td",null,{"style":{"whiteSpace":"nowrap"},"children":["$","strong",null,{"children":"The country codes:"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","table",null,{"children":["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":"0000 (00h)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"USA","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"1000 (08h)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Japan","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"0001 (01h)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"France","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"1001 (09h)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Iceland","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"0010 (02h)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Germany","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"1010 (0ah)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Norway","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"0011 (03h)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"UK","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"1011 (0bh)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Switzerland","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"0100 (04h)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Denmark","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"1100 (0ch)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Turkey","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"0101 (05h)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Sweden","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"1101 (0dh)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],"$L2e"],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],"$L2f","$L30"]}],"className":"x:block x:overflow-x-auto"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],"className":"x:block x:overflow-x-auto"}]
+27:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Before commercial release it is necessary to obtain a card ID. If two commercially released cards shared an ID, then inserting both into the machine could cause serious problems for the card manager, and it is most important that this should not happen. The bits explicitly given above will be true for all external IDs - alternative settings of these bits are reserved for future internal applications."}]
+28:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Next, the card manager expects to find the application front DOR starting in the top bank of the slot, at bank offset $3FC0. This section should be identical for all application cards, apart from the address of the first application DOR. The 3 byte links consist of a 2 byte offset within a bank (low byte, high byte) followed by a bank number."}]
+29:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"It is recommended but not necessary that all the application header information, including menus and help, are placed in the top one or two banks. The space between the application front DOR and the card header above it should be padded with zeros."}]
+2a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Note: The bank numbers should be offset from the top bank. ie. the top bank should be $3F, the one below $3E etc. In a 128K EPROM the lowest bank should be thought of as $38 and not as $00."}]
+2b:["$","table",null,{"children":["$","tbody",null,{"children":["$","tr",null,{"children":[["$","td",null,{"style":{"whiteSpace":"nowrap"},"children":["$","strong",null,{"children":"The application front DOR:"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","table",null,{"children":["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":"3 bytes","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"0 0 0","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Extended pointer to parent","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"3 bytes","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"0 0 0","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Extended pointer to brother - this may point to the HELP front DOR","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"3 bytes","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"x x x","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Extended pointer to son - this points to the first application DOR","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"1 byte","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"$$13","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"DOR type, ROM Front DOR","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"1 byte","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"8","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"DOR length","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"1 byte","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"’N’","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Key for name field (DT_NAM)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"1 byte","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"5","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],"$L31"],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],"$L32","$L33"]}],"className":"x:block x:overflow-x-auto"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],"className":"x:block x:overflow-x-auto"}]
+2d:null
+9:C
+2e:["$","td",null,{"children":"reserved","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
+2f:["$","tr",null,{"children":[["$","td",null,{"children":"0110 (06h)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Italy","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"1110 (0eh)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"reserved","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+30:["$","tr",null,{"children":[["$","td",null,{"children":"0111 (07h)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Spain","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"1111 (0fh)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"reserved","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+31:["$","td",null,{"children":"Length of name and terminator","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
+32:["$","tr",null,{"children":[["$","td",null,{"children":"5 bytes","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"’APPL’, 0","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"NULL-terminated name","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+33:["$","tr",null,{"children":[["$","td",null,{"children":"1 byte","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"$$FF","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"DOR terminator","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

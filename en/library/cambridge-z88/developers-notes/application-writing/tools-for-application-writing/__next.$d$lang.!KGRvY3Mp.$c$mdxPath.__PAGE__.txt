@@ -1,0 +1,107 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:Te2e,---
+description: "Although it is possible to use the BBC BASIC as a development environment for Z88 applications, the limited memory capacity of BASIC make this task somewhat arduous. Moreover during development..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/64094323 (version 8) by scripts/import-z88-wiki.cjs */}
+
+# Tools for application writing
+
+## Introduction
+
+Although it is possible to use the BBC BASIC as a development environment for Z88 applications, the limited memory capacity of BASIC make this task somewhat arduous. Moreover during development the Z88 is likely to crash fairly often, so much time would be spent in backing up source files to EPROM or another computer. The Z88 however, is not easy to break down. It depends on the type of crash. Software could be developed on the original computer - with a brave spirit and plenty of time! However, these things have become much easier on modern desktop computers - cross-platform developing and testing, and final upload and validation on the real Z88.
+
+For application writing and publishing on EPROM and FLASH cards, it is needed to have a unique application card id, if you are going to produce software for application cards. When Cambridge Computer still were manufacturing the Z88, they administrated the card id's. When the company folded, card id registrations were lost. Many years since a new method has been developed; the Z88 development team has now implemented a card builder tool which generates unique ID's using CRC-32 checksum on the binary application code. Chances of card ID conflicts are small and guarantees safe installation of application cards on the Z88. Applications can also be developed to be targeted for installation in RAM, which requires no special card ID's.
+
+Z88 Assembler Workbench
+
+Targeted for modern desktop systems, the Z88 development project provides a fully featured Z80 macro assembler tool-chain containing a Z80 CPU cross assembler / linker / library manager, application card builder tool and Z88 computer emulator, commonly labelled as the Z88 Assembler Workbench. This toolchain is used to compile large assembler application projects such as the OZ operating system (more than 130.000 lines of assember source code!). The tools are available for Windows, Linux, Mac OSX and other Unix operating systems.
+
+The Z88 computer emulator and debugging environment - OZvm - supports tracing, breakpoints and many other features to run and analyse your applications both on simulated EPROM, Flash or RAM.
+
+RomUpdate, an application EPROM & FLASH card programming utility, has been implemented on the Z88 to produce application cards natively.
+
+The project also provides a file transfer utility, EazyLink2, in order to be able to test the code on real Z88 computers.
+
+All tools are available for download here: **[https://sourceforge.net/projects/z88/files/Z88%20Assembler%20Workbench/](https://sourceforge.net/projects/z88/files/Z88%20Assembler%20Workbench/)**
+
+Source code for all Z88 Assembler workbench tools are available here:
+
+<strong>[https://gitlab.com/b4works](https://gitlab.com/b4works)<br /></strong>
+
+If you have ideas, bug reports, suggestions for new applications or features of the Z88 operating system, or have an itch to develop software, you can contact the project on **[https://cambridgez88.jira.com/wiki](https://cambridgez88.jira.com/wiki)**.
+
+### mpm
+
+...
+
+### z88card
+
+...
+
+### romupdate
+
+...
+
+## OZvm - a Z88 computer emulator and debugger tool
+
+...
+
+## Abundance of existing source code of Z88 applications
+
+...
+
+## The final frontier - Z88 ROM development
+
+...a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Introduction","id":"introduction","depth":2},{"value":"mpm","id":"mpm","depth":3},{"value":"z88card","id":"z88card","depth":3},{"value":"romupdate","id":"romupdate","depth":3},{"value":"OZvm - a Z88 computer emulator and debugger tool","id":"ozvm---a-z88-computer-emulator-and-debugger-tool","depth":2},{"value":"Abundance of existing source code of Z88 applications","id":"abundance-of-existing-source-code-of-z88-applications","depth":2},{"value":"The final frontier - Z88 ROM development","id":"the-final-frontier---z88-rom-development","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"Although it is possible to use the BBC BASIC as a development environment for Z88 applications, the limited memory capacity of BASIC make this task somewhat arduous. Moreover during development...","title":"Tools for application writing","filePath":"content/en/library/cambridge-z88/developers-notes/application-writing/tools-for-application-writing.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/developers-notes/application-writing/tools-for-application-writing","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Tools for application writing - Klive IDE"}],["$","meta","1",{"name":"description","content":"Although it is possible to use the BBC BASIC as a development environment for Z88 applications, the limited memory capacity of BASIC make this task somewhat arduous. Moreover during development..."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/developers-notes/application-writing/tools-for-application-writing/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"cyL0EKA0xNKEZcECA3AIS"}
+20:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+31:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Tools for application writing","$undefined"]}],"\n",["$","h2",null,{"id":"introduction","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Introduction",["$","$L20",null,{"id":"introduction"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Although it is possible to use the BBC BASIC as a development environment for Z88 applications, the limited memory capacity of BASIC make this task somewhat arduous. Moreover during development the Z88 is likely to crash fairly often, so much time would be spent in backing up source files to EPROM or another computer. The Z88 however, is not easy to break down. It depends on the type of crash. Software could be developed on the original computer - with a brave spirit and plenty of time! However, these things have become much easier on modern desktop computers - cross-platform developing and testing, and final upload and validation on the real Z88."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"For application writing and publishing on EPROM and FLASH cards, it is needed to have a unique application card id, if you are going to produce software for application cards. When Cambridge Computer still were manufacturing the Z88, they administrated the card id’s. When the company folded, card id registrations were lost. Many years since a new method has been developed; the Z88 development team has now implemented a card builder tool which generates unique ID’s using CRC-32 checksum on the binary application code. Chances of card ID conflicts are small and guarantees safe installation of application cards on the Z88. Applications can also be developed to be targeted for installation in RAM, which requires no special card ID’s."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Z88 Assembler Workbench"}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Targeted for modern desktop systems, the Z88 development project provides a fully featured Z80 macro assembler tool-chain containing a Z80 CPU cross assembler / linker / library manager, application card builder tool and Z88 computer emulator, commonly labelled as the Z88 Assembler Workbench. This toolchain is used to compile large assembler application projects such as the OZ operating system (more than 130.000 lines of assember source code!). The tools are available for Windows, Linux, Mac OSX and other Unix operating systems."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The Z88 computer emulator and debugging environment - OZvm - supports tracing, breakpoints and many other features to run and analyse your applications both on simulated EPROM, Flash or RAM."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"RomUpdate, an application EPROM & FLASH card programming utility, has been implemented on the Z88 to produce application cards natively."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The project also provides a file transfer utility, EazyLink2, in order to be able to test the code on real Z88 computers."}],"\n","$L21","\n","$L22","\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30"]]}]
+15:["$","$L31",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@32"}]}]
+1f:true
+9:300
+21:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["All tools are available for download here: ",["$","strong",null,{"children":["$","a",null,{"href":"https://sourceforge.net/projects/z88/files/Z88%20Assembler%20Workbench/","target":"_blank","rel":"noreferrer","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["https://sourceforge.net/projects/z88/files/Z88%20Assembler%20Workbench/",[" ",["$","svg",null,{"fill":"none","stroke":"currentColor","strokeLinecap":"round","strokeLinejoin":"round","strokeWidth":1.7,"viewBox":"0 0 24 24","height":"1em","className":"x:inline x:align-baseline x:shrink-0","children":[["$","path",null,{"d":"M7 17L17 7"}],["$","path",null,{"d":"M7 7h10v10"}]]}]]]}]}]]}]
+22:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Source code for all Z88 Assembler workbench tools are available here:"}]
+23:["$","strong",null,{"children":[["$","a",null,{"href":"https://gitlab.com/b4works","target":"_blank","rel":"noreferrer","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["https://gitlab.com/b4works",[" ",["$","svg",null,{"fill":"none","stroke":"currentColor","strokeLinecap":"round","strokeLinejoin":"round","strokeWidth":1.7,"viewBox":"0 0 24 24","height":"1em","className":"x:inline x:align-baseline x:shrink-0","children":[["$","path",null,{"d":"M7 17L17 7"}],["$","path",null,{"d":"M7 7h10v10"}]]}]]]}],["$","br",null,{}]]}]
+24:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["If you have ideas, bug reports, suggestions for new applications or features of the Z88 operating system, or have an itch to develop software, you can contact the project on ",["$","strong",null,{"children":["$","a",null,{"href":"https://cambridgez88.jira.com/wiki","target":"_blank","rel":"noreferrer","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["https://cambridgez88.jira.com/wiki",[" ",["$","svg",null,{"fill":"none","stroke":"currentColor","strokeLinecap":"round","strokeLinejoin":"round","strokeWidth":1.7,"viewBox":"0 0 24 24","height":"1em","className":"x:inline x:align-baseline x:shrink-0","children":[["$","path",null,{"d":"M7 17L17 7"}],["$","path",null,{"d":"M7 7h10v10"}]]}]]]}]}],"."]}]
+25:["$","h3",null,{"id":"mpm","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["mpm",["$","$L20",null,{"id":"mpm"}]]}]
+26:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"…"}]
+27:["$","h3",null,{"id":"z88card","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["z88card",["$","$L20",null,{"id":"z88card"}]]}]
+28:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"…"}]
+29:["$","h3",null,{"id":"romupdate","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["romupdate",["$","$L20",null,{"id":"romupdate"}]]}]
+2a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"…"}]
+2b:["$","h2",null,{"id":"ozvm---a-z88-computer-emulator-and-debugger-tool","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["OZvm - a Z88 computer emulator and debugger tool",["$","$L20",null,{"id":"ozvm---a-z88-computer-emulator-and-debugger-tool"}]]}]
+2c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"…"}]
+2d:["$","h2",null,{"id":"abundance-of-existing-source-code-of-z88-applications","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Abundance of existing source code of Z88 applications",["$","$L20",null,{"id":"abundance-of-existing-source-code-of-z88-applications"}]]}]
+2e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"…"}]
+2f:["$","h2",null,{"id":"the-final-frontier---z88-rom-development","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The final frontier - Z88 ROM development",["$","$L20",null,{"id":"the-final-frontier---z88-rom-development"}]]}]
+30:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"…"}]
+32:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

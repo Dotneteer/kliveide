@@ -1,0 +1,94 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+1b:"ViewportBoundary"
+1c:I[484,[],"$1b"]
+1d:"MetadataBoundary"
+1e:I[484,[],"$1d"]
+1f:"$Sreact.suspense"
+20:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T641,---
+description: "Two system calls are available to enable and disable interrupts. It is very important to use these calls and not use the Z80 interrupt instructions because of a hardware bug in the Z80, which..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/2752712 (version 2) by scripts/import-z88-wiki.cjs */}
+
+# Interrupts
+
+Two system calls are available to enable and disable interrupts. It is very important to use these calls and not use the Z80 interrupt instructions because of a hardware bug in the Z80, which allows for interrupts to occur while reading the interrupt status. Note that disabling interrupts should be avoided if possible and that NMI (Non Maskable Interrupts) will still occur. If a HALT is executed when interrupts are disabled the system will stop. HALT should not be used anyway, nor should EI, DI or IM \<n\>.
+
+```text
+CALL $0051
+
+IN:
+            -
+OUT:
+            A = old I register
+            Fc = old interrupt status (Fc = 1 disabled; Fc = 0 enabled)
+ 
+Registers changed after return:
+            ..BCDEHL/IXIY same
+            AF....../.... different
+```
+
+```text
+CALL $0054
+
+IN:
+
+            A = old I register
+            Fc = old interrupt status (Fc = 1 disabled; Fc = 0 enabled)
+
+OUT:        -
+
+Registers changed after return:
+            AFBCDEHL/IXIY same
+            ......../.... different
+```
+
+Thus one might do:
+
+```text
+            call OZ_DI
+            push af
+
+            ; operations requiring disabled interrupts
+
+            pop  af
+            call OZ_EI
+```
+
+and be assured for the interrupt status is preserved.a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"Two system calls are available to enable and disable interrupts. It is very important to use these calls and not use the Z80 interrupt instructions because of a hardware bug in the Z80, which...","title":"Interrupts","filePath":"content/en/library/cambridge-z88/developers-notes/miscellaneous-useful-routines/interrupts.mdx","timestamp":1792315833000},"sourceCode":"$12","children":[["$","div",null,{"id":"nextra-skip-nav"}],["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Interrupts","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Two system calls are available to enable and disable interrupts. It is very important to use these calls and not use the Z80 interrupt instructions because of a hardware bug in the Z80, which allows for interrupts to occur while reading the interrupt status. Note that disabling interrupts should be avoided if possible and that NMI (Non Maskable Interrupts) will still occur. If a HALT is executed when interrupts are disabled the system will stop. HALT should not be used anyway, nor should EI, DI or IM <n>."}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":["$L13","$L14"]}]]}],"\n","$L15","\n","$L16","\n","$L17","\n","$L18"]]}]]}]]}]}],null,"$L19"]}],"p":"$@1a","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/developers-notes/miscellaneous-useful-routines/interrupts","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L1c",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1e",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1f",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Interrupts - Klive IDE"}],["$","meta","1",{"name":"description","content":"Two system calls are available to enable and disable interrupts. It is very important to use these calls and not use the Z80 interrupt instructions because of a hardware bug in the Z80, which..."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/developers-notes/miscellaneous-useful-routines/interrupts/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L20","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@21","v":null,"s":"$9"}},"a":"$@22","u":"$@23","b":"cyL0EKA0xNKEZcECA3AIS"}
+24:"ToggleWordWrapButton"
+25:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$24"]
+26:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+27:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L25",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L26",null,{"className":""}]]}]
+14:["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"CALL $0051"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"IN:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            -"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OUT:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            A = old I register"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            Fc = old interrupt status (Fc = 1 disabled; Fc = 0 enabled)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Registers changed after return:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ..BCDEHL/IXIY same"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            AF....../.... different"}]}]]}]
+15:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L25",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L26",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"CALL $0054"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"IN:"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            A = old I register"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            Fc = old interrupt status (Fc = 1 disabled; Fc = 0 enabled)"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OUT:        -"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Registers changed after return:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            AFBCDEHL/IXIY same"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ......../.... different"}]}]]}]]}]]}]
+16:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Thus one might do:"}]
+17:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L25",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L26",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"            call OZ_DI"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            push af"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ; operations requiring disabled interrupts"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            pop  af"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            call OZ_EI"}]}]]}]]}]]}]
+18:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"and be assured for the interrupt status is preserved."}]
+19:["$","$L27",null,{"children":["$","$1f",null,{"name":"Next.MetadataOutlet","children":"$@28"}]}]
+23:true
+9:300
+28:null
+9:C
+22:0
+7:"$undefined"
+21:"$undefined"
+1a:"$undefined"

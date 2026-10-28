@@ -1,0 +1,299 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T3c41,---
+description: "Input from the keyboard can be achieved by treating it as a device and using the file I/O calls. Four calls read from the standard input, which unless it has been rebound by the CLI, will be the..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/2654210 (version 5) by scripts/import-z88-wiki.cjs */}
+
+# Input and the keyboard decoder
+
+Input from the keyboard can be achieved by treating it as a device and using the file I/O calls. Four calls read from the standard input, which unless it has been rebound by the CLI, will be the keyboard. These calls are:
+
+```text
+OS_In         read a character from the standard input
+OS_Tin        read a character from the standard input, with timeout
+GN_Sip        standard input line routine
+OS_Sr         reads a character when doing a "Page Wait". Returns always ASCII 8
+              or an RC_ error code.
+```
+
+**[GN\_Sip](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-sip)** is described later in this section and **[OS\_Sr](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-sr)** is discussed in "Miscellaneous useful routines". **[OS\_In](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-in)** and **[OS\_Tin](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-tin)** return the character read in register A and Fc = 0 to indicate success. Since these are pre-emptable calls they may return Fc = 1 and any of RC\_SUSP, RC\_DRAW, RC\_ESC, RC\_QUIT and, in the case of **[OS\_Tin](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-tin)**, RC\_TIME. These calls usually returns ASCII values, but for special Z88 keys and menu commands, some other encoding is required. The solution is that when a special key or menu command occurrs, the **[OS\_In](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-in)** or **[OS\_Tin](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-tin)** will return a zero. The call is then made again and the value returned by this second call corresponds to the special key or menu command. The codes for the special keyboard sequences are shown below, those marked \* are not zero prefixed. Keys marked with \*\* are internal keycodes and not available to applications. Finally, note that register pair AF and the alternate registers are corrupted by **[OS\_In](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-in)** (as almost all system calls). **[OS\_Tin](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-tin)** waits for keyboard input for as long as the number of centiseconds specified in the BC(in) register pair, and on exit BC will be the centiseconds of the timeout remaining, and so BC will have changed as well as AF and the alternate register set.
+
+```text
+Key           normal           <SQUARE>       <DIAMOND>      <SHIFT>
+<SQUARE>      IN_SQU, $B8 **
+<DIAMOND>     IN_DIA, $C8 **
+<SHIFT>       IN_SHI, $D8 **
+<CAPS LOCK>   IN_CAPS, $E8 ***
+
+<SPACE>       IN_SPC, $20      IN_ASPC, $B0   IN_DSPC, $C0   -
+<ENTER>       IN_ENT, $0D *    IN_AENT, $B1   IN_DENT, $C1   IN_SENT, $D1
+<TAB>         IN_TAB, $09 *    IN_ATAB, $B2   IN_DTAB, $C2   IN_STAB, $D2
+<DEL>         IN_DEL, $7F *    IN_ADEL, $B3   IN_DDEL, $C3   IN_SDEL, $D3
+<ESC>         IN_ESC, $1B *    IN_AESC, $B4   IN_DESC, $C4   IN_SESC, $D4 **
+<MENU>        IN_MEN, $E5 **   IN_AMEN, $B5   IN_DMEN, $C5   IN_SMEN, $D5
+<INDEX>       IN_IDX, $E6 **   IN_AIDX, $B6   IN_DIDX, $C6   IN_SIDX, $D6
+<HELP>        IN_HLP, $E7 **   IN_AHEL, $B7   IN_DHEL, $C7   IN_SHEL, $D7
+<LEFT>        IN_LFT, $FC      IN_ALFT, $F0   IN_DLFT, $F4   IN_SLFT, $F8
+<RIGHT>       IN_RGT, $FD      IN_ARGT, $F1   IN_DRGT, $F5   IN_SRGT, $F9
+<DOWN>        IN_DWN, $FE      IN_ADWN, $F2   IN_DDWN, $F6   IN_SDWN, $FA
+<UP>          IN_UP, $FF       IN_AUP, $F3    IN_DUP, $F7    IN_SUP, $FB
+```
+
+\*\*\*) This 'key' is the forces Lock out state produced by switching the machine on, and while holding both \<SHIFT\> keys down, pressing the \<CAPS\> lock key.
+
+Note that the diamond key operates like a \<CTRL\> key on a conventional keyboard and can be used to generate the sub-32 control characters, eg. \<\>G for BEL,
+
+provided the key in question is not a menu command. The following is a list of obtainable control characters:
+
+```text
+HEX           DECIMAL          SYMBOL         KEYS           DESCRIPTION
+$00           0                NUL            <>=            NULL
+$01           1                SOH            <>A            Start of header
+$02           2                STX            <>B            Start of text
+$03           3                ETX            <>C            End of text
+$04           4                EOT            <>D            End of transmission
+$05           5                ENQ            <>E            Enquiry
+$06           6                ACK            <>F            Acknowledge
+$07           7                BEL            <>G            Bell
+$08           8                BS             <>H            Backspace
+$09           9                HT             <>I            Horizontal tabulation
+$0A           10               LF             <>J            Line feed
+$0B           11               VT             <>K            Vertical tabulation
+$0C           12               FF             <>L            Form feed
+$0D           13               CR             <>M            Carriage return
+$0E           14               SO             <>N            Shift out
+$0F           15               SI             <>O            Shift in
+$10           16               DLE            <>P            Data link escape
+$11           17               DC1            <>Q            Device control 1 (XON)
+$12           18               DC2            <>R            Device control 2
+$13           19               DC3            <>S            Device control 1 (XOFF)
+$14           20               DC4            <>T            Device control 4
+$15           21               NAK            <>U            Negative acknowledge
+$16           22               SYN            <>V            Synchronous idle
+$17           23               ETB            <>W            End of transmitted block
+$18           24               CAN            <>X            Cancel line
+$19           25               EM             <>Y            End of medium
+$1A           26               SUB            <>Z            Substitute (End of file)
+$1B           27               ESC            <>[ or ESC     Escape
+$1C           28               FS             <>\            File separator
+$1D           29               GS             <>]            Group separator
+$1E           30               RS             <>`            Record separator
+$1F           31               US             <>-            Unit separator
+```
+
+## The Input Line Routine
+
+**[GN\_Sip](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-sip)** is the standard system input line routine and used by most of the applications (Diary uses it for editing individual lines on a date page). It provides access to all the standard editing commands which are:
+
+```text
+<>DEL                          Delete line
+<>D                            Delete to end of line
+<>G                            Delete character under cursor, rightward
+<>M                            <ENTER>
+<>S                            Swap case
+<>T                            Delete word under cursor
+<>U                            Insert character
+<>V                            Insert/Overtype (see below for complications)
+<><LEFT>                       Start of line
+<><RIGHT>                      End of line
+<SHIFT><LEFT>                  Previous word
+<SHIFT><RIGHT>                 Next word
+```
+
+Where appropriate the following editing commands should be implemented (this is machine conventions):
+
+```text
+<>J                            Next option , where input is limited all the option can
+                               be cycled through using this command
+<><UP>                         Top of current page
+<><DOWN>                       Bottom of current page
+<SHIFT><UP>                    Move up a screenful
+<SHIFT><DOWN>                  Move down a screenful
+<TAB>                          Next column or TAB
+<SHIFT><TAB>                   Previous column or TAB
+```
+
+The basic specifications of **[GN\_Sip](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-sip)** is as follows:
+
+```text
+RST 20H, DEFW $3909
+
+IN:
+
+              DE = buffer for input string
+
+              A0 = 1, buffer already contains data to be edited
+              A1 = 1, force insert/overwrite mode (see A2)
+              A2 = 1, if A1 = 1, 0 = insert mode, 1 = overwrite mode
+              A3 = 1, return unexpected characters
+              A4 = 1, return if wrap occurs
+              A5 = 1, single line lock control
+              A6 = 1, disply in reverse video
+              A7 = 1, if A3 = 1, allow for insert/overwrite return
+
+              B = length of buffer
+              C = cursor position, if A0 = 1
+              L = width of line, if A5 = 1 (incl. null-terminator)
+OUT, if call successful:
+
+              Fc = 0
+              B = length of line entered, including terminating null
+              C = cursor position on exit
+              A = character which caused end of input
+OUT, if call failed:
+              Fc = 1
+              A = error code:
+                               RC_BAD ($04), bad arguments
+                               RC_WRAP ($0D), wrapping has occurred (only if A4 = 1)
+                               RC_SUSP ($69), suspicion of suspension
+                               RC_DRAW ($66), application screen needs redrawing
+                               RC_QUIT ($67), kill request (e.g. from INDEX)
+                               RC_ESC ($01), if escape detection is enabled
+Registers changed after return:
+              ....DEHL/IXIY same
+              AFBC..../.... different
+```
+
+If bit 0 of register A is set then DE should point to a null-terminated string which is no greater than the buffer length specified in B. **[GN\_Sip](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-sip)** will write this string to standard output starting at the cursor position and then place the cursor at the position in the buffer indicated by C. If C is greater than B, then the cursor is placed at the end of the buffer. Note that if **[GN\_Sip](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-sip)** is suspended then to continue editing the cursor needs to be re-positioned to the start of the input line and **[GN\_Sip](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-sip)** called again with A0 set and the buffer length reset to its initial value. Unless this is done suspension will not be transparent, eg. whenever \<DIAMOND\> is inadvertently pressed during input, the input would be terminated or ots output would be corrupted.
+
+Setting A1 allows you to force insert or overtype mode, with A2, as the mode to be used in the input line, rather than using the default as set by the Panel. This can be useful in its own right and in addition can be used to implement a local insert or overtype mode.
+
+If A3 is not set then input is terminated only by \<ENTER\>, A = IN\_ENT, or \<ESC\>. \<ESC\> will return with A = IN\_ESC if escape detection is disabled, or A = RC\_ESC and Fc = 1 if escape detection is enabled. However, if A3 is set then many more key sequences will cause the routine to exit. All the single letter Diamond codes will return their control character, except for \<\>D, \<\>G, \<\>S, \<\>T, \<\>U and \<\>V, which carry out their normal editing functions. Menu commands in the form of diamond sequences, excepting those starting with D, G, S, T, U and V, will return their command code. \<\>S and the \<LEFT\> and \<RIGHT\> arrows, with or without \<SHIFT\> or \<DIAMOND\>, will return their codes if an attempt is made to move outside of the buffer and A4 is not set. Any other key sequence which has no meaning in the input line routine will cause an exit, eg. \<SHIFT\>\<UP\> will return with A = IN\_SUP. Note that if A7 is set then \<\>V will cause an exit, thus allowing a local inseert/overtype mode to be established, as is done in PipeDream.
+
+If A4 is set then an attempt to move outside the limits of the buffer will cause an exit with A = RC\_WRAP, and the key which caused the wrapping will be lost.
+
+A5 is set to select single line lock mode. This sets up a horizontal window of length L and will scroll the input buffer, if necessary, within this window. This feature is useful if you have a limited space to display the input line, but may need a long input string.
+
+## Example
+
+The following example uses a locked line width of 15 characters. When \<ENTER\> is pressed the full input line is displayed. When the buffer is nearly full, try suspending **[GN\_Sip](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-sip)**, eg. by pressing the Square key twice, and you will see a slight flicker as **[GN\_Sip](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-sip)** re-displays and scrolls the line.
+
+```text
+include "stdio.def"                           ; get standard I/O definitions
+include "errors.def"                          ; get error code definitions
+
+defc init = 32                                ; mode for GN_Sip (single line lock)
+
+; assume that on entry IY points to 40 bytes of free space ; code starts here...
+.main         ld   a, 12
+              oz   OS_Out                     ; clear screen
+              call fetch                      ; fetch the line
+                                              ; may need to check errors here...
+              push iy
+              pop  hl                         ; HL points at start of input buffer
+              oz   GN_Nln                     ; output a newline
+              oz   GN_Sop                     ; display input buffer
+              oz   GN_Nln                     ; terminate with another newline
+              ret
+; actual input line subroutine
+.fetch        ld   a, init                    ; initial mode of GN_Sip
+              push iy
+              pop  de                         ; DE points at input buffer
+              ld   b, 30                      ; max. buffer size
+              ld   c, 0                       ; cursor position at beginning
+
+.sip          ld   hl, pos                    ; input prompt text
+              oz   GN_Sop                     ; to standard output
+              ld   l, 15                      ; max. line width
+              oz   GN_Sip                     ; edit line buffer...
+              ret  nc                         ; return if no errors
+              cp   RC_SUSP                    ; check for suspension
+              ret  nz                         ; return if some other error
+              ld   b, 30                      ; reset buffer length
+              ld   a, init | 1                ; buffer contains data
+              jr   sip                        ; re-enter GN_Sip
+; define constant string
+.pos          defm 1, "3@", 32, 35            ; cursor at (0,3)
+              defm "Input: "                  ; prompt
+              defb 0                          ; null-terminator
+```a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"The Input Line Routine","id":"the-input-line-routine","depth":2},{"value":"Example","id":"example","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"Input from the keyboard can be achieved by treating it as a device and using the file I/O calls. Four calls read from the standard input, which unless it has been rebound by the CLI, will be the...","title":"Input and the keyboard decoder","filePath":"content/en/library/cambridge-z88/developers-notes/input-and-the-keyboard-decoder.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/developers-notes/input-and-the-keyboard-decoder","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Input and the keyboard decoder - Klive IDE"}],["$","meta","1",{"name":"description","content":"Input from the keyboard can be achieved by treating it as a device and using the file I/O calls. Four calls read from the standard input, which unless it has been rebound by the CLI, will be the..."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/developers-notes/input-and-the-keyboard-decoder/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"cyL0EKA0xNKEZcECA3AIS"}
+20:"ToggleWordWrapButton"
+21:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$20"]
+22:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+23:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+3c:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Input and the keyboard decoder","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Input from the keyboard can be achieved by treating it as a device and using the file I/O calls. Four calls read from the standard input, which unless it has been rebound by the CLI, will be the keyboard. These calls are:"}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L21",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L22",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"OS_In         read a character from the standard input"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OS_Tin        read a character from the standard input, with timeout"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"GN_Sip        standard input line routine"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OS_Sr         reads a character when doing a \"Page Wait\". Returns always ASCII 8"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"              or an RC_ error code."}]}]]}]]}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":["$","$L23",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-sip","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"GN_Sip"}]}]," is described later in this section and ",["$","strong",null,{"children":["$","$L23",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-sr","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OS_Sr"}]}]," is discussed in “Miscellaneous useful routines”. ",["$","strong",null,{"children":["$","$L23",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-in","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OS_In"}]}]," and ",["$","strong",null,{"children":["$","$L23",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-tin","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OS_Tin"}]}]," return the character read in register A and Fc = 0 to indicate success. Since these are pre-emptable calls they may return Fc = 1 and any of RC_SUSP, RC_DRAW, RC_ESC, RC_QUIT and, in the case of ",["$","strong",null,{"children":["$","$L23",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-tin","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OS_Tin"}]}],", RC_TIME. These calls usually returns ASCII values, but for special Z88 keys and menu commands, some other encoding is required. The solution is that when a special key or menu command occurrs, the ","$L24"," or ","$L25"," will return a zero. The call is then made again and the value returned by this second call corresponds to the special key or menu command. The codes for the special keyboard sequences are shown below, those marked * are not zero prefixed. Keys marked with ** are internal keycodes and not available to applications. Finally, note that register pair AF and the alternate registers are corrupted by ","$L26"," (as almost all system calls). ","$L27"," waits for keyboard input for as long as the number of centiseconds specified in the BC(in) register pair, and on exit BC will be the centiseconds of the timeout remaining, and so BC will have changed as well as AF and the alternate register set."]}],"\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b"]]}]
+15:["$","$L3c",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@3d"}]}]
+1f:true
+49:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+9:300
+24:["$","strong",null,{"children":["$","$L23",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-in","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OS_In"}]}]
+25:["$","strong",null,{"children":["$","$L23",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-tin","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OS_Tin"}]}]
+26:["$","strong",null,{"children":["$","$L23",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-in","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OS_In"}]}]
+27:["$","strong",null,{"children":["$","$L23",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-tin","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OS_Tin"}]}]
+28:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L21",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L22",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"Key           normal           <SQUARE>       <DIAMOND>      <SHIFT>"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"<SQUARE>      IN_SQU, $B8 **"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"<DIAMOND>     IN_DIA, $C8 **"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"<SHIFT>       IN_SHI, $D8 **"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"<CAPS LOCK>   IN_CAPS, $E8 ***"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"<SPACE>       IN_SPC, $20      IN_ASPC, $B0   IN_DSPC, $C0   -"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"<ENTER>       IN_ENT, $0D *    IN_AENT, $B1   IN_DENT, $C1   IN_SENT, $D1"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"<TAB>         IN_TAB, $09 *    IN_ATAB, $B2   IN_DTAB, $C2   IN_STAB, $D2"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"<DEL>         IN_DEL, $7F *    IN_ADEL, $B3   IN_DDEL, $C3   IN_SDEL, $D3"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"<ESC>         IN_ESC, $1B *    IN_AESC, $B4   IN_DESC, $C4   IN_SESC, $D4 **"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"<MENU>        IN_MEN, $E5 **   IN_AMEN, $B5   IN_DMEN, $C5   IN_SMEN, $D5"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"<INDEX>       IN_IDX, $E6 **   IN_AIDX, $B6   IN_DIDX, $C6   IN_SIDX, $D6"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"<HELP>        IN_HLP, $E7 **   IN_AHEL, $B7   IN_DHEL, $C7   IN_SHEL, $D7"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"<LEFT>        IN_LFT, $FC      IN_ALFT, $F0   IN_DLFT, $F4   IN_SLFT, $F8"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"<RIGHT>       IN_RGT, $FD      IN_ARGT, $F1   IN_DRGT, $F5   IN_SRGT, $F9"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"<DOWN>        IN_DWN, $FE      IN_ADWN, $F2   IN_DDWN, $F6   IN_SDWN, $FA"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"<UP>          IN_UP, $FF       IN_AUP, $F3    IN_DUP, $F7    IN_SUP, $FB"}]}]]}]]}]]}]
+29:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"***) This ‘key’ is the forces Lock out state produced by switching the machine on, and while holding both <SHIFT> keys down, pressing the <CAPS> lock key."}]
+2a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Note that the diamond key operates like a <CTRL> key on a conventional keyboard and can be used to generate the sub-32 control characters, eg. <>G for BEL,"}]
+2b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"provided the key in question is not a menu command. The following is a list of obtainable control characters:"}]
+2c:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L21",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L22",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"HEX           DECIMAL          SYMBOL         KEYS           DESCRIPTION"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"$$00           0                NUL            <>=            NULL"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"$$01           1                SOH            <>A            Start of header"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"$$02           2                STX            <>B            Start of text"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"$$03           3                ETX            <>C            End of text"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"$$04           4                EOT            <>D            End of transmission"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"$$05           5                ENQ            <>E            Enquiry"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"$$06           6                ACK            <>F            Acknowledge"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"$$07           7                BEL            <>G            Bell"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"$$08           8                BS             <>H            Backspace"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"$$09           9                HT             <>I            Horizontal tabulation"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"$$0A           10               LF             <>J            Line feed"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"$$0B           11               VT             <>K            Vertical tabulation"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"$$0C           12               FF             <>L            Form feed"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"$$0D           13               CR             <>M            Carriage return"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"$$0E           14               SO             <>N            Shift out"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"$$0F           15               SI             <>O            Shift in"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"$$10           16               DLE            <>P            Data link escape"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"$$11           17               DC1            <>Q            Device control 1 (XON)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"$$12           18               DC2            <>R            Device control 2"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"$$13           19               DC3            <>S            Device control 1 (XOFF)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"$$14           20               DC4            <>T            Device control 4"}]}],"\n","$L3e","\n","$L3f","\n","$L40","\n","$L41","\n","$L42","\n","$L43","\n","$L44","\n","$L45","\n","$L46","\n","$L47","\n","$L48"]}]]}]]}]
+2d:["$","h2",null,{"id":"the-input-line-routine","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The Input Line Routine",["$","$L49",null,{"id":"the-input-line-routine"}]]}]
+2e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":["$","$L23",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-sip","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"GN_Sip"}]}]," is the standard system input line routine and used by most of the applications (Diary uses it for editing individual lines on a date page). It provides access to all the standard editing commands which are:"]}]
+2f:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L21",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L22",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"<>DEL                          Delete line"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"<>D                            Delete to end of line"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"<>G                            Delete character under cursor, rightward"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"<>M                            <ENTER>"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"<>S                            Swap case"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"<>T                            Delete word under cursor"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"<>U                            Insert character"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"<>V                            Insert/Overtype (see below for complications)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"<><LEFT>                       Start of line"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"<><RIGHT>                      End of line"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"<SHIFT><LEFT>                  Previous word"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"<SHIFT><RIGHT>                 Next word"}]}]]}]]}]]}]
+30:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Where appropriate the following editing commands should be implemented (this is machine conventions):"}]
+31:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L21",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L22",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"<>J                            Next option , where input is limited all the option can"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                               be cycled through using this command"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"<><UP>                         Top of current page"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"<><DOWN>                       Bottom of current page"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"<SHIFT><UP>                    Move up a screenful"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"<SHIFT><DOWN>                  Move down a screenful"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"<TAB>                          Next column or TAB"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"<SHIFT><TAB>                   Previous column or TAB"}]}]]}]]}]]}]
+32:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The basic specifications of ",["$","strong",null,{"children":["$","$L23",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-sip","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"GN_Sip"}]}]," is as follows:"]}]
+33:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L21",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L22",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"RST 20H, DEFW $3909"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"IN:"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"              DE = buffer for input string"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"              A0 = 1, buffer already contains data to be edited"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"              A1 = 1, force insert/overwrite mode (see A2)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"              A2 = 1, if A1 = 1, 0 = insert mode, 1 = overwrite mode"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"              A3 = 1, return unexpected characters"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"              A4 = 1, return if wrap occurs"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"              A5 = 1, single line lock control"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"              A6 = 1, disply in reverse video"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"              A7 = 1, if A3 = 1, allow for insert/overwrite return"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"              B = length of buffer"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"              C = cursor position, if A0 = 1"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"              L = width of line, if A5 = 1 (incl. null-terminator)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OUT, if call successful:"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"              Fc = 0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"              B = length of line entered, including terminating null"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"              C = cursor position on exit"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"              A = character which caused end of input"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OUT, if call failed:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"              Fc = 1"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"              A = error code:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                               RC_BAD ($04), bad arguments"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                               RC_WRAP ($0D), wrapping has occurred (only if A4 = 1)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                               RC_SUSP ($69), suspicion of suspension"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                               RC_DRAW ($66), application screen needs redrawing"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                               RC_QUIT ($67), kill request (e.g. from INDEX)"}]}],"\n","$L4a","\n","$L4b","\n","$L4c","\n","$L4d"]}]]}]]}]
+34:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["If bit 0 of register A is set then DE should point to a null-terminated string which is no greater than the buffer length specified in B. ",["$","strong",null,{"children":["$","$L23",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-sip","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"GN_Sip"}]}]," will write this string to standard output starting at the cursor position and then place the cursor at the position in the buffer indicated by C. If C is greater than B, then the cursor is placed at the end of the buffer. Note that if ",["$","strong",null,{"children":["$","$L23",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-sip","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"GN_Sip"}]}]," is suspended then to continue editing the cursor needs to be re-positioned to the start of the input line and ",["$","strong",null,{"children":["$","$L23",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-sip","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"GN_Sip"}]}]," called again with A0 set and the buffer length reset to its initial value. Unless this is done suspension will not be transparent, eg. whenever <DIAMOND> is inadvertently pressed during input, the input would be terminated or ots output would be corrupted."]}]
+35:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Setting A1 allows you to force insert or overtype mode, with A2, as the mode to be used in the input line, rather than using the default as set by the Panel. This can be useful in its own right and in addition can be used to implement a local insert or overtype mode."}]
+4e:T406,If A3 is not set then input is terminated only by <ENTER>, A = IN_ENT, or <ESC>. <ESC> will return with A = IN_ESC if escape detection is disabled, or A = RC_ESC and Fc = 1 if escape detection is enabled. However, if A3 is set then many more key sequences will cause the routine to exit. All the single letter Diamond codes will return their control character, except for <>D, <>G, <>S, <>T, <>U and <>V, which carry out their normal editing functions. Menu commands in the form of diamond sequences, excepting those starting with D, G, S, T, U and V, will return their command code. <>S and the <LEFT> and <RIGHT> arrows, with or without <SHIFT> or <DIAMOND>, will return their codes if an attempt is made to move outside of the buffer and A4 is not set. Any other key sequence which has no meaning in the input line routine will cause an exit, eg. <SHIFT><UP> will return with A = IN_SUP. Note that if A7 is set then <>V will cause an exit, thus allowing a local inseert/overtype mode to be established, as is done in PipeDream.36:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"$4e"}]
+37:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If A4 is set then an attempt to move outside the limits of the buffer will cause an exit with A = RC_WRAP, and the key which caused the wrapping will be lost."}]
+38:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A5 is set to select single line lock mode. This sets up a horizontal window of length L and will scroll the input buffer, if necessary, within this window. This feature is useful if you have a limited space to display the input line, but may need a long input string."}]
+39:["$","h2",null,{"id":"example","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Example",["$","$L49",null,{"id":"example"}]]}]
+3a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The following example uses a locked line width of 15 characters. When <ENTER> is pressed the full input line is displayed. When the buffer is nearly full, try suspending ",["$","strong",null,{"children":["$","$L23",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-sip","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"GN_Sip"}]}],", eg. by pressing the Square key twice, and you will see a slight flicker as ",["$","strong",null,{"children":["$","$L23",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-sip","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"GN_Sip"}]}]," re-displays and scrolls the line."]}]
+3b:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L21",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L22",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"include \"stdio.def\"                           ; get standard I/O definitions"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"include \"errors.def\"                          ; get error code definitions"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"defc init = 32                                ; mode for GN_Sip (single line lock)"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; assume that on entry IY points to 40 bytes of free space ; code starts here..."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":".main         ld   a, 12"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"              oz   OS_Out                     ; clear screen"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"              call fetch                      ; fetch the line"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                                              ; may need to check errors here..."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"              push iy"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"              pop  hl                         ; HL points at start of input buffer"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"              oz   GN_Nln                     ; output a newline"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"              oz   GN_Sop                     ; display input buffer"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"              oz   GN_Nln                     ; terminate with another newline"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"              ret"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; actual input line subroutine"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":".fetch        ld   a, init                    ; initial mode of GN_Sip"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"              push iy"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"              pop  de                         ; DE points at input buffer"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"              ld   b, 30                      ; max. buffer size"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"              ld   c, 0                       ; cursor position at beginning"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":".sip          ld   hl, pos                    ; input prompt text"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"              oz   GN_Sop                     ; to standard output"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"              ld   l, 15                      ; max. line width"}]}],"\n",["$","span",null,{"children":"$L4f"}],"\n","$L50","\n","$L51","\n","$L52","\n","$L53","\n","$L54","\n","$L55","\n","$L56","\n","$L57","\n","$L58","\n","$L59"]}]]}]]}]
+3d:null
+9:C
+3e:["$","span",null,{"children":["$","span",null,{"children":"$$15           21               NAK            <>U            Negative acknowledge"}]}]
+3f:["$","span",null,{"children":["$","span",null,{"children":"$$16           22               SYN            <>V            Synchronous idle"}]}]
+40:["$","span",null,{"children":["$","span",null,{"children":"$$17           23               ETB            <>W            End of transmitted block"}]}]
+41:["$","span",null,{"children":["$","span",null,{"children":"$$18           24               CAN            <>X            Cancel line"}]}]
+42:["$","span",null,{"children":["$","span",null,{"children":"$$19           25               EM             <>Y            End of medium"}]}]
+43:["$","span",null,{"children":["$","span",null,{"children":"$$1A           26               SUB            <>Z            Substitute (End of file)"}]}]
+44:["$","span",null,{"children":["$","span",null,{"children":"$$1B           27               ESC            <>[ or ESC     Escape"}]}]
+45:["$","span",null,{"children":["$","span",null,{"children":"$$1C           28               FS             <>\\            File separator"}]}]
+46:["$","span",null,{"children":["$","span",null,{"children":"$$1D           29               GS             <>]            Group separator"}]}]
+47:["$","span",null,{"children":["$","span",null,{"children":"$$1E           30               RS             <>`            Record separator"}]}]
+48:["$","span",null,{"children":["$","span",null,{"children":"$$1F           31               US             <>-            Unit separator"}]}]
+4a:["$","span",null,{"children":["$","span",null,{"children":"                               RC_ESC ($01), if escape detection is enabled"}]}]
+4b:["$","span",null,{"children":["$","span",null,{"children":"Registers changed after return:"}]}]
+4c:["$","span",null,{"children":["$","span",null,{"children":"              ....DEHL/IXIY same"}]}]
+4d:["$","span",null,{"children":["$","span",null,{"children":"              AFBC..../.... different"}]}]
+4f:["$","span",null,{"children":"              oz   GN_Sip                     ; edit line buffer..."}]
+50:["$","span",null,{"children":["$","span",null,{"children":"              ret  nc                         ; return if no errors"}]}]
+51:["$","span",null,{"children":["$","span",null,{"children":"              cp   RC_SUSP                    ; check for suspension"}]}]
+52:["$","span",null,{"children":["$","span",null,{"children":"              ret  nz                         ; return if some other error"}]}]
+53:["$","span",null,{"children":["$","span",null,{"children":"              ld   b, 30                      ; reset buffer length"}]}]
+54:["$","span",null,{"children":["$","span",null,{"children":"              ld   a, init | 1                ; buffer contains data"}]}]
+55:["$","span",null,{"children":["$","span",null,{"children":"              jr   sip                        ; re-enter GN_Sip"}]}]
+56:["$","span",null,{"children":["$","span",null,{"children":"; define constant string"}]}]
+57:["$","span",null,{"children":["$","span",null,{"children":".pos          defm 1, \"3@\", 32, 35            ; cursor at (0,3)"}]}]
+58:["$","span",null,{"children":["$","span",null,{"children":"              defm \"Input: \"                  ; prompt"}]}]
+59:["$","span",null,{"children":["$","span",null,{"children":"              defb 0                          ; null-terminator"}]}]
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

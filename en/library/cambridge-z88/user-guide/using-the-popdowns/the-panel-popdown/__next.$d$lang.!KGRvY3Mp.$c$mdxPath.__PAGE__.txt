@@ -1,0 +1,283 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T1e91,---
+description: "The Panel popdown allows you to set up aspects of the Cambridge Z88's operation to suit your own preferences. You can change the language, alter the rate at which keys on the keyboard, auto-repeat..."
+---
+
+import { Callout } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/35913778 (version 35) by scripts/import-z88-user-guide.cjs */}
+
+# The Panel popdown
+
+The Panel popdown allows you to set up aspects of the Cambridge Z88's operation to suit your own preferences. You can change the language, alter the rate at which keys on the keyboard, auto-repeat when you hold them down, the time after which the Cambridge Z88 will automatically switch off, the default device and directory used by the Filer, and the parameters for the serial interface.
+
+You call up the panel by typing <Key k="square" />S (for Settings) or from the INDEX moving the cursor over the Application name and using the <Key k="enter" /> key.
+
+<Shot src="z88-user-guide/external/oz-the-z88-operating-system/panel.webp" alt="panel" width={640} />
+
+## Altering the panel
+
+## Cursor Keys
+
+To alter an option on the panel, first select it by moving the cursor to the appropriate line with the cursor keys <Key k="left" />, <Key k="right" />, <Key k="up" /> and <Key k="down" />. Then type in the new value for the option, and press <Key k="enter" />.
+
+The editing commands are summarised on the Panel **CURSOR** menu.
+
+<Shot src="z88-user-guide/using-the-popdowns/the-panel-popdown/panel-menu-cursor.webp" alt="panel menu cursor" width={640} />
+
+In the case of options with alternative values you can also select between the alternatives using
+
+### <Key k="diamond" />J Next Option
+
+This toggles through all the available options or if you can remember the option you want, typing the option's
+
+### First letter or first Capital letter
+
+shown in the word, will select it immediately.
+
+You can save a particular set of panel settings in a panel file, using the **Save** command on the **FILES** menu. Selecting the **New** command on the **FILES** menu returns the settings to their initial values.
+
+## Panel options
+
+For each of the following options the initial default value is shown in brackets.
+
+## Keyboard options
+
+### *Auto-repeat rate (6):*
+
+determines the rate at which keys auto-repeat when held down continuously. Smaller values increase the repeat rate. A value of 0 gives no auto-repeat.
+
+### *Keyclick (No):*
+
+altering the option to `Yes` gives an audible bleep at each keypress, to provide additional feedback during touch-typing.
+
+<Callout type="warning">
+
+**Note: + Use these Settings before starting an Application or Popdown**
+
+These 3 settings for *Insert/Overtype*, *Default device* and *Default directory* only affect new activities. <br />When a new Application or Popdown is started, it looks up and uses the values of these options. Existing activities retain their original settings.
+
+</Callout>
+
+### + *Insert/Overtype (Insert):*
+
+in Insert mode text typed at the keyboard is inserted at the cursor position, and subsequent text on the line moves to the right to make space for the new text. Some typists prefer Overtype mode, in which text types over any text previously on the line. To insert text in Overtype mode you need to make a gap in the line with the **Insert Character** command <Key k="diamond" />U first.
+
+## Filer options
+
+### + *Default device (:RAM.1 or :RAM.2):*
+
+the device to and from which files are saved and loaded. This is set to the largest RAM found. It can be set to :RAM.1, :RAM.2, or :RAM.3, corresponding to the three RAM cards.
+
+### + *Default directory:*
+
+allows a path of one or more directories, which should already exist, to be specified for all filing-system operations. By default the top-level directory is selected.
+
+## Machine options
+
+### *Timeout (mins) (5):*
+
+determines the time after which the Cambridge Z88 will switch off if nothing is typed at the keyboard; a value of 0 disables timeout. Setting the timeout to 2 minutes will extend the effective battery life of the Cambridge Z88 (1 minute is possible but not recommended for normal use).
+
+### *Sound (Yes):*
+
+allows the internal sound system to be switched off.
+
+### *Map (Yes):*
+
+allows the PipeDream page map display to be turned off if not required. Typing and editing will be marginally faster when the map is disabled.
+
+### *Map size (80):*
+
+allows the size of the map to be altered up to a maximum of 92 characters across, or 255 characters across on an expanded machine. See **[Expanded/Unexpanded](/en/library/cambridge-z88/user-guide/getting-started/using-cards/expanded-unexpanded)**,
+
+### *Date format (European):*
+
+determines the format for all dates in the Cambridge Z88; the default date format is European, so that dates are recognised in the form:
+
+day/month/year
+
+This option can be changed to American to work with the format
+
+month/day/year.
+
+### *Keyboard (Uk):*
+
+can be set to any of the following countries using the capital letter of the name:
+
+Uk, France, Denmark, Sweden, Finland, Germany, usA, sPain & Italy.
+
+Changing this option allows the appropriate extra characters to be displayed on the screen, allows a different keyboard to be used and has been covered in more detail previously. See [Changing keyboard layout](/en/library/cambridge-z88/user-guide/getting-started/up-and-running#changingkeyboardlayout).
+
+Keyboard layouts are shown in the Appendix
+
+## Serial port parameters [#serial_port_parameters]
+
+### *Transmit baud rate (9600) / Receive baud rate (9600):*
+
+can both be set to any of the following values:
+
+75, 300, 600, 1200, 2400, 9600, 19200, 38400
+
+<Shot src="z88-user-guide/external/eazugv10-starting-eazylink-on-the-z88/speed.webp" alt="Speed" width={60} />
+
+The standard Z88 with OZ 3.x and V4.0 could only reach 9600 baud. All speeds can be selected using OZ 4.5.
+
+### *Parity (None):*
+
+can be set to None, Space, Mark, Odd, or Even. The number of data bits is 8 if None is specified, or 7 otherwise.
+
+### *Xon/Xoff (Yes):*
+
+determines whether the serial communication protocol uses Xon/Xoff.
+
+The number of start and stop bits is fixed as follows:
+
+Transmit: 1 start bit, 2 stop bits. <br />Receive: 1 start bit, 1 stop bit.
+
+## Menu Options
+
+Pressing the <Key k="menu" /> key gives the following options.
+
+### Cursor
+
+<Shot src="z88-user-guide/using-the-popdowns/the-panel-popdown/panel-menu-cursor.webp" alt="panel menu cursor" width={640} />
+
+These cursor commands are described above.
+
+### Files
+
+<Shot src="z88-user-guide/using-the-popdowns/the-panel-popdown/panel-menu-files.webp" alt="panel menu files" width={640} />
+
+### <Key k="diamond" />FL File Load
+
+Loading the Panel's settings
+
+Loads a file that has been saved previously by the Panel. This will set all the parameters in the Panel to the setting that were made when the save was made. The following option is displayed:
+
+`Filename`
+
+Instead of typing the file name, the file can be selected from the Filer. After typing <Key k="diamond" />FL, call the Filer by typing <Key k="square" />F, and select the required document using the cursor keys followed by <Key k="enter" /> (see **[Selecting files](/en/library/cambridge-z88/user-guide/using-the-popdowns/the-filer-popdown#selecting_files)**). You can then return to PipeDream from the Filer by pressing <Key k="esc" />, and the full file name will have been entered for you. Press <Key k="enter" /> to load the file.
+
+### <Key k="diamond" />FS File Save
+
+Saving the Panel's settings
+
+The following option is displayed:
+
+`Filename`
+
+You can save a particular set of panel settings in a panel file, using the **Save** command on the **FILES** menu.
+
+### <Key k="diamond" />FNEW
+
+Reset to initial values
+
+Selecting the **New** command on the **FILES** menu returns the settings to their initial values.a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Altering the panel","id":"altering-the-panel","depth":2},{"value":"Cursor Keys","id":"cursor-keys","depth":2},{"value":[["$","$4",".0",{"children":[["$","kbd",".0",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"J Next Option"]}]],"id":"j-next-option","depth":3},{"value":"First letter or first Capital letter","id":"first-letter-or-first-capital-letter","depth":3},{"value":"Panel options","id":"panel-options","depth":2},{"value":"Keyboard options","id":"keyboard-options","depth":2},{"value":[["$","$4",".0",{"children":[["$","em",".0",{"children":"Auto-repeat rate (6):"}]]}]],"id":"auto-repeat-rate-6","depth":3},{"value":[["$","$4",".0",{"children":[["$","em",".0",{"children":"Keyclick (No):"}]]}]],"id":"keyclick-no","depth":3},{"value":[["$","$4",".0",{"children":["+ ",["$","em",".1",{"children":"Insert/Overtype (Insert):"}]]}]],"id":"-insertovertype-insert","depth":3},{"value":"Filer options","id":"filer-options","depth":2},{"value":[["$","$4",".0",{"children":["+ ",["$","em",".1",{"children":"Default device (:RAM.1 or :RAM.2):"}]]}]],"id":"-default-device-ram1-or-ram2","depth":3},{"value":[["$","$4",".0",{"children":["+ ",["$","em",".1",{"children":"Default directory:"}]]}]],"id":"-default-directory","depth":3},{"value":"Machine options","id":"machine-options","depth":2},{"value":[["$","$4",".0",{"children":[["$","em",".0",{"children":"Timeout (mins) (5):"}]]}]],"id":"timeout-mins-5","depth":3},{"value":[["$","$4",".0",{"children":[["$","em",".0",{"children":"Sound (Yes):"}]]}]],"id":"sound-yes","depth":3},{"value":[["$","$4",".0",{"children":[["$","em",".0",{"children":"Map (Yes):"}]]}]],"id":"map-yes","depth":3},{"value":[["$","$4",".0",{"children":[["$","em",".0",{"children":"Map size (80):"}]]}]],"id":"map-size-80","depth":3},{"value":[["$","$4",".0",{"children":[["$","em",".0",{"children":"Date format (European):"}]]}]],"id":"date-format-european","depth":3},{"value":[["$","$4",".0",{"children":[["$","em",".0",{"children":"Keyboard (Uk):"}]]}]],"id":"keyboard-uk","depth":3},{"value":"Serial port parameters","id":"serial_port_parameters","depth":2},{"value":[["$","$4",".0",{"children":[["$","em",".0",{"children":"Transmit baud rate (9600) / Receive baud rate (9600):"}]]}]],"id":"transmit-baud-rate-9600--receive-baud-rate-9600","depth":3},{"value":[["$","$4",".0",{"children":[["$","em",".0",{"children":"Parity (None):"}]]}]],"id":"parity-none","depth":3},{"value":[["$","$4",".0",{"children":[["$","em",".0",{"children":"Xon/Xoff (Yes):"}]]}]],"id":"xonxoff-yes","depth":3},{"value":"Menu Options","id":"menu-options","depth":2},{"value":"Cursor","id":"cursor","depth":3},{"value":"Files","id":"files","depth":3},{"value":[["$","$4",".0",{"children":[["$","kbd",".0",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"FL File Load"]}]],"id":"fl-file-load","depth":3},{"value":[["$","$4",".0",{"children":[["$","kbd",".0",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"FS File Save"]}]],"id":"fs-file-save","depth":3},{"value":[["$","$4",".0",{"children":[["$","kbd",".0",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"FNEW"]}]],"id":"fnew","depth":3}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"The Panel popdown allows you to set up aspects of the Cambridge Z88's operation to suit your own preferences. You can change the language, alter the rate at which keys on the keyboard, auto-repeat...","title":"The Panel popdown","filePath":"content/en/library/cambridge-z88/user-guide/using-the-popdowns/the-panel-popdown.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/user-guide/using-the-popdowns/the-panel-popdown","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"The Panel popdown - Klive IDE"}],["$","meta","1",{"name":"description","content":"The Panel popdown allows you to set up aspects of the Cambridge Z88's operation to suit your own preferences. You can change the language, alter the rate at which keys on the keyboard, auto-repeat..."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/user-guide/using-the-popdowns/the-panel-popdown/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"cyL0EKA0xNKEZcECA3AIS"}
+20:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+68:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["The Panel popdown","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The Panel popdown allows you to set up aspects of the Cambridge Z88’s operation to suit your own preferences. You can change the language, alter the rate at which keys on the keyboard, auto-repeat when you hold them down, the time after which the Cambridge Z88 will automatically switch off, the default device and directory used by the Filer, and the parameters for the serial interface."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["You call up the panel by typing ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],"S (for Settings) or from the INDEX moving the cursor over the Application name and using the ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]," key."]}],"\n",["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/external/oz-the-z88-operating-system/panel.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/external/oz-the-z88-operating-system/panel.webp","alt":"panel","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}],"\n",["$","h2",null,{"id":"altering-the-panel","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Altering the panel",["$","$L20",null,{"id":"altering-the-panel"}]]}],"\n",["$","h2",null,{"id":"cursor-keys","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Cursor Keys",["$","$L20",null,{"id":"cursor-keys"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["To alter an option on the panel, first select it by moving the cursor to the appropriate line with the cursor keys ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor left","children":"←"}],", ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor right","children":"→"}],", ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor up","children":"↑"}]," and ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor down","children":"↓"}],". Then type in the new value for the option, and press ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}],"."]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The editing commands are summarised on the Panel ",["$","strong",null,{"children":"CURSOR"}]," menu."]}],"\n",["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/using-the-popdowns/the-panel-popdown/panel-menu-cursor.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/using-the-popdowns/the-panel-popdown/panel-menu-cursor.webp","alt":"panel menu cursor","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"In the case of options with alternative values you can also select between the alternatives using"}],"\n",["$","h3",null,{"id":"j-next-option","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":[[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"J Next Option"],"$L21"]}],"\n","$L22","\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41","\n","$L42","\n","$L43","\n","$L44","\n","$L45","\n","$L46","\n","$L47","\n","$L48","\n","$L49","\n","$L4a","\n","$L4b","\n","$L4c","\n","$L4d","\n","$L4e","\n","$L4f","\n","$L50","\n","$L51","\n","$L52","\n","$L53","\n","$L54","\n","$L55","\n","$L56","\n","$L57","\n","$L58","\n","$L59","\n","$L5a","\n","$L5b","\n","$L5c","\n","$L5d","\n","$L5e","\n","$L5f","\n","$L60","\n","$L61","\n","$L62","\n","$L63","\n","$L64","\n","$L65","\n","$L66","\n","$L67"]]}]
+15:["$","$L68",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@69"}]}]
+1f:true
+6a:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+9:300
+21:["$","$L20",null,{"id":"j-next-option"}]
+22:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This toggles through all the available options or if you can remember the option you want, typing the option’s"}]
+23:["$","h3",null,{"id":"first-letter-or-first-capital-letter","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["First letter or first Capital letter",["$","$L20",null,{"id":"first-letter-or-first-capital-letter"}]]}]
+24:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"shown in the word, will select it immediately."}]
+25:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["You can save a particular set of panel settings in a panel file, using the ",["$","strong",null,{"children":"Save"}]," command on the ",["$","strong",null,{"children":"FILES"}]," menu. Selecting the ",["$","strong",null,{"children":"New"}]," command on the ",["$","strong",null,{"children":"FILES"}]," menu returns the settings to their initial values."]}]
+26:["$","h2",null,{"id":"panel-options","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Panel options",["$","$L20",null,{"id":"panel-options"}]]}]
+27:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"For each of the following options the initial default value is shown in brackets."}]
+28:["$","h2",null,{"id":"keyboard-options","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Keyboard options",["$","$L20",null,{"id":"keyboard-options"}]]}]
+29:["$","h3",null,{"id":"auto-repeat-rate-6","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":[["$","em",null,{"children":"Auto-repeat rate (6):"}],["$","$L20",null,{"id":"auto-repeat-rate-6"}]]}]
+2a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"determines the rate at which keys auto-repeat when held down continuously. Smaller values increase the repeat rate. A value of 0 gives no auto-repeat."}]
+2b:["$","h3",null,{"id":"keyclick-no","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":[["$","em",null,{"children":"Keyclick (No):"}],["$","$L20",null,{"id":"keyclick-no"}]]}]
+2c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["altering the option to ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Yes"}]," gives an audible bleep at each keypress, to provide additional feedback during touch-typing."]}]
+2d:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-yellow-50 x:dark:bg-yellow-700/30 x:text-yellow-700 x:dark:text-yellow-500 x:border-yellow-700","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":["$","svg",null,{"viewBox":"0 0 16 16","fill":"currentColor","height":".8em","className":"x:mt-[.3em]","children":["$","path",null,{"d":"M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575Zm1.763.707a.25.25 0 0 0-.44 0L1.698 13.132a.25.25 0 0 0 .22.368h12.164a.25.25 0 0 0 .22-.368Zm.53 3.996v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"}]}]}],["$","div",null,{"className":"x:w-full x:min-w-0","children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Note: + Use these Settings before starting an Application or Popdown"}]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["These 3 settings for ",["$","em",null,{"children":"Insert/Overtype"}],", ",["$","em",null,{"children":"Default device"}]," and ",["$","em",null,{"children":"Default directory"}]," only affect new activities. ",["$","br",null,{}],"When a new Application or Popdown is started, it looks up and uses the values of these options. Existing activities retain their original settings."]}]]}]]}]
+2e:["$","h3",null,{"id":"-insertovertype-insert","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":[["+ ",["$","em",null,{"children":"Insert/Overtype (Insert):"}]],["$","$L20",null,{"id":"-insertovertype-insert"}]]}]
+2f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["in Insert mode text typed at the keyboard is inserted at the cursor position, and subsequent text on the line moves to the right to make space for the new text. Some typists prefer Overtype mode, in which text types over any text previously on the line. To insert text in Overtype mode you need to make a gap in the line with the ",["$","strong",null,{"children":"Insert Character"}]," command ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"U first."]}]
+30:["$","h2",null,{"id":"filer-options","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Filer options",["$","$L20",null,{"id":"filer-options"}]]}]
+31:["$","h3",null,{"id":"-default-device-ram1-or-ram2","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":[["+ ",["$","em",null,{"children":"Default device (:RAM.1 or :RAM.2):"}]],["$","$L20",null,{"id":"-default-device-ram1-or-ram2"}]]}]
+32:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"the device to and from which files are saved and loaded. This is set to the largest RAM found. It can be set to :RAM.1, :RAM.2, or :RAM.3, corresponding to the three RAM cards."}]
+33:["$","h3",null,{"id":"-default-directory","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":[["+ ",["$","em",null,{"children":"Default directory:"}]],["$","$L20",null,{"id":"-default-directory"}]]}]
+34:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"allows a path of one or more directories, which should already exist, to be specified for all filing-system operations. By default the top-level directory is selected."}]
+35:["$","h2",null,{"id":"machine-options","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Machine options",["$","$L20",null,{"id":"machine-options"}]]}]
+36:["$","h3",null,{"id":"timeout-mins-5","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":[["$","em",null,{"children":"Timeout (mins) (5):"}],["$","$L20",null,{"id":"timeout-mins-5"}]]}]
+37:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"determines the time after which the Cambridge Z88 will switch off if nothing is typed at the keyboard; a value of 0 disables timeout. Setting the timeout to 2 minutes will extend the effective battery life of the Cambridge Z88 (1 minute is possible but not recommended for normal use)."}]
+38:["$","h3",null,{"id":"sound-yes","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":[["$","em",null,{"children":"Sound (Yes):"}],["$","$L20",null,{"id":"sound-yes"}]]}]
+39:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"allows the internal sound system to be switched off."}]
+3a:["$","h3",null,{"id":"map-yes","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":[["$","em",null,{"children":"Map (Yes):"}],["$","$L20",null,{"id":"map-yes"}]]}]
+3b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"allows the PipeDream page map display to be turned off if not required. Typing and editing will be marginally faster when the map is disabled."}]
+3c:["$","h3",null,{"id":"map-size-80","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":[["$","em",null,{"children":"Map size (80):"}],["$","$L20",null,{"id":"map-size-80"}]]}]
+3d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["allows the size of the map to be altered up to a maximum of 92 characters across, or 255 characters across on an expanded machine. See ",["$","strong",null,{"children":["$","$L6a",null,{"href":"/en/library/cambridge-z88/user-guide/getting-started/using-cards/expanded-unexpanded","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Expanded/Unexpanded"}]}],","]}]
+3e:["$","h3",null,{"id":"date-format-european","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":[["$","em",null,{"children":"Date format (European):"}],["$","$L20",null,{"id":"date-format-european"}]]}]
+3f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"determines the format for all dates in the Cambridge Z88; the default date format is European, so that dates are recognised in the form:"}]
+40:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"day/month/year"}]
+41:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This option can be changed to American to work with the format"}]
+42:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"month/day/year."}]
+43:["$","h3",null,{"id":"keyboard-uk","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":[["$","em",null,{"children":"Keyboard (Uk):"}],["$","$L20",null,{"id":"keyboard-uk"}]]}]
+44:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"can be set to any of the following countries using the capital letter of the name:"}]
+45:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Uk, France, Denmark, Sweden, Finland, Germany, usA, sPain & Italy."}]
+46:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Changing this option allows the appropriate extra characters to be displayed on the screen, allows a different keyboard to be used and has been covered in more detail previously. See ",["$","$L6a",null,{"href":"/en/library/cambridge-z88/user-guide/getting-started/up-and-running#changingkeyboardlayout","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Changing keyboard layout"}],"."]}]
+47:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Keyboard layouts are shown in the Appendix"}]
+48:["$","h2",null,{"id":"serial_port_parameters","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Serial port parameters",["$","$L20",null,{"id":"serial_port_parameters"}]]}]
+49:["$","h3",null,{"id":"transmit-baud-rate-9600--receive-baud-rate-9600","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":[["$","em",null,{"children":"Transmit baud rate (9600) / Receive baud rate (9600):"}],["$","$L20",null,{"id":"transmit-baud-rate-9600--receive-baud-rate-9600"}]]}]
+4a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"can both be set to any of the following values:"}]
+4b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"75, 300, 600, 1200, 2400, 9600, 19200, 38400"}]
+4c:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"60px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/external/eazugv10-starting-eazylink-on-the-z88/speed.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/external/eazugv10-starting-eazylink-on-the-z88/speed.webp","alt":"Speed","loading":"lazy","decoding":"async","width":480,"height":360}],[]]}]]}]
+4d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The standard Z88 with OZ 3.x and V4.0 could only reach 9600 baud. All speeds can be selected using OZ 4.5."}]
+4e:["$","h3",null,{"id":"parity-none","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":[["$","em",null,{"children":"Parity (None):"}],["$","$L20",null,{"id":"parity-none"}]]}]
+4f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"can be set to None, Space, Mark, Odd, or Even. The number of data bits is 8 if None is specified, or 7 otherwise."}]
+50:["$","h3",null,{"id":"xonxoff-yes","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":[["$","em",null,{"children":"Xon/Xoff (Yes):"}],["$","$L20",null,{"id":"xonxoff-yes"}]]}]
+51:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"determines whether the serial communication protocol uses Xon/Xoff."}]
+52:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The number of start and stop bits is fixed as follows:"}]
+53:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Transmit: 1 start bit, 2 stop bits. ",["$","br",null,{}],"Receive: 1 start bit, 1 stop bit."]}]
+54:["$","h2",null,{"id":"menu-options","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Menu Options",["$","$L20",null,{"id":"menu-options"}]]}]
+55:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Pressing the ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Menu","children":"MENU"}]," key gives the following options."]}]
+56:["$","h3",null,{"id":"cursor","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Cursor",["$","$L20",null,{"id":"cursor"}]]}]
+57:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/using-the-popdowns/the-panel-popdown/panel-menu-cursor.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/using-the-popdowns/the-panel-popdown/panel-menu-cursor.webp","alt":"panel menu cursor","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+58:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"These cursor commands are described above."}]
+59:["$","h3",null,{"id":"files","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Files",["$","$L20",null,{"id":"files"}]]}]
+5a:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/using-the-popdowns/the-panel-popdown/panel-menu-files.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/using-the-popdowns/the-panel-popdown/panel-menu-files.webp","alt":"panel menu files","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+5b:["$","h3",null,{"id":"fl-file-load","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":[[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"FL File Load"],["$","$L20",null,{"id":"fl-file-load"}]]}]
+5c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Loading the Panel’s settings"}]
+5d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Loads a file that has been saved previously by the Panel. This will set all the parameters in the Panel to the setting that were made when the save was made. The following option is displayed:"}]
+5e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Filename"}]}]
+5f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Instead of typing the file name, the file can be selected from the Filer. After typing ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"FL, call the Filer by typing ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],"F, and select the required document using the cursor keys followed by ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]," (see ",["$","strong",null,{"children":["$","$L6a",null,{"href":"/en/library/cambridge-z88/user-guide/using-the-popdowns/the-filer-popdown#selecting_files","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Selecting files"}]}],"). You can then return to PipeDream from the Filer by pressing ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Escape","children":"ESC"}],", and the full file name will have been entered for you. Press ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]," to load the file."]}]
+60:["$","h3",null,{"id":"fs-file-save","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":[[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"FS File Save"],["$","$L20",null,{"id":"fs-file-save"}]]}]
+61:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Saving the Panel’s settings"}]
+62:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The following option is displayed:"}]
+63:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Filename"}]}]
+64:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["You can save a particular set of panel settings in a panel file, using the ",["$","strong",null,{"children":"Save"}]," command on the ",["$","strong",null,{"children":"FILES"}]," menu."]}]
+65:["$","h3",null,{"id":"fnew","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":[[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"FNEW"],["$","$L20",null,{"id":"fnew"}]]}]
+66:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Reset to initial values"}]
+67:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Selecting the ",["$","strong",null,{"children":"New"}]," command on the ",["$","strong",null,{"children":"FILES"}]," menu returns the settings to their initial values."]}]
+69:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

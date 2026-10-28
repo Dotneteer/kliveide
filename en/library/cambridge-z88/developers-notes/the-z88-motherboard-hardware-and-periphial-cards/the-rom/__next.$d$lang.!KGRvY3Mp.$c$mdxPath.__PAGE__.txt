@@ -1,0 +1,102 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+1d:"ViewportBoundary"
+1e:I[484,[],"$1d"]
+1f:"MetadataBoundary"
+20:I[484,[],"$1f"]
+21:"$Sreact.suspense"
+22:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T94f,---
+description: "The serial rom chip is an UV eprom NEC uPD23C1000C for foreign OZ. The UK version may be an eprom chip for v2.2, the v3.0 supports exactly the same software but have been put in a ROM which have..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/3113049 (version 1) by scripts/import-z88-wiki.cjs */}
+
+# The ROM
+
+<strong>*ROM types*</strong>
+
+The serial rom chip is an UV eprom NEC uPD23C1000C for foreign OZ. The UK version may be an eprom chip for v2.2, the v3.0 supports exactly the same software but have been put in a ROM which have only 28 pins. The last v4.0 is fitted on an EPROM chip. The socket layout isn't standard according to the NEC standard (see below). If you wish to fit a new eprom, be very careful, pins 2 and 24 must be exchanged according to the JEDEC standard. Particulary if you want to use actual 128K Eprom chip, like 27C1001. In theory, you can fit larger eprom (like 27C2000 or 27C4000), if you wire the addresses lines.
+
+<strong>*ROM socket*</strong>
+
+The mother has 32 pins tracked to the NEC standard.
+
+```text
+    +--------------+
+VCC |1    +--+   32| VCC
+ROE |2           31| VCC
+A15 |3           30| VCC
+A12 |4           29| A14
+A7  |5           28| A13
+A6  |6           27| A8
+A5  |7    Z88    26| A9
+A4  |8    ROM    25| A11
+A3  |9    PCB    24| A16
+A2  |10          23| A10
+A1  |11          22| CE
+A0  |12          21| D7
+D0  |13          20| D6
+D1  |14          19| D5
+D2  |15          18| D4
+VSS |16          17| D3
+    +--------------+
+```
+
+This table describes the 128K chip pinout and Blink signals.
+
+```text
+Pin     Chip    Blink   Pin     Chip    Blink
+1       VPP     VCC     32      VCC     VCC
+2       [OE]    ROE     31      [PGM]   VCC
+3       A15     MA15    30      VCC     VCC
+4       A12     MA12    29      A14     MA14
+5       A7      MA7     28      A13     MA13
+6       A6      MA6     27      A8      MA8
+7       A5      MA5     26      A9      MA9
+8       A4      MA4     25      A11     MA11
+9       A3      MA3     24      A16     MA16
+10      A2      MA2     23      A10     MA10
+11      A1      MA1     22      [CE]    IPCE (Internal PROM chip enable)
+12      A0      MA0     21      D7      MDH
+13      D0      MDA     20      D6      MDG
+14      D1      MDB     19      D5      MDF
+15      D2      MDC     18      D4      MDE
+16      VSS     GND     17      D3      MDD
+```a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"The serial rom chip is an UV eprom NEC uPD23C1000C for foreign OZ. The UK version may be an eprom chip for v2.2, the v3.0 supports exactly the same software but have been put in a ROM which have...","title":"The ROM","filePath":"content/en/library/cambridge-z88/developers-notes/the-z88-motherboard-hardware-and-periphial-cards/the-rom.mdx","timestamp":1792315833000},"sourceCode":"$12","children":[["$","div",null,{"id":"nextra-skip-nav"}],["$","main",null,{"data-pagefind-body":true,"children":[false,["\n","$L13","\n","$L14","\n","$L15","\n","$L16","\n","$L17","\n","$L18","\n","$L19","\n","$L1a"]]}]]}]]}]}],null,"$L1b"]}],"p":"$@1c","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/developers-notes/the-z88-motherboard-hardware-and-periphial-cards/the-rom","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L1e",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L20",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$21",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"The ROM - Klive IDE"}],["$","meta","1",{"name":"description","content":"The serial rom chip is an UV eprom NEC uPD23C1000C for foreign OZ. The UK version may be an eprom chip for v2.2, the v3.0 supports exactly the same software but have been put in a ROM which have..."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/developers-notes/the-z88-motherboard-hardware-and-periphial-cards/the-rom/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L22","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@23","v":null,"s":"$9"}},"a":"$@24","u":"$@25","b":"cyL0EKA0xNKEZcECA3AIS"}
+26:"ToggleWordWrapButton"
+27:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$26"]
+28:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+29:I[484,[],"OutletBoundary"]
+13:["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["The ROM","$undefined"]}]
+14:["$","strong",null,{"children":["$","em",null,{"children":"ROM types"}]}]
+15:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The serial rom chip is an UV eprom NEC uPD23C1000C for foreign OZ. The UK version may be an eprom chip for v2.2, the v3.0 supports exactly the same software but have been put in a ROM which have only 28 pins. The last v4.0 is fitted on an EPROM chip. The socket layout isn’t standard according to the NEC standard (see below). If you wish to fit a new eprom, be very careful, pins 2 and 24 must be exchanged according to the JEDEC standard. Particulary if you want to use actual 128K Eprom chip, like 27C1001. In theory, you can fit larger eprom (like 27C2000 or 27C4000), if you wire the addresses lines."}]
+16:["$","strong",null,{"children":["$","em",null,{"children":"ROM socket"}]}]
+17:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The mother has 32 pins tracked to the NEC standard."}]
+18:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L27",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L28",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"    +--------------+"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"VCC |1    +--+   32| VCC"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"ROE |2           31| VCC"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"A15 |3           30| VCC"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"A12 |4           29| A14"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"A7  |5           28| A13"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"A6  |6           27| A8"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"A5  |7    Z88    26| A9"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"A4  |8    ROM    25| A11"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"A3  |9    PCB    24| A16"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"A2  |10          23| A10"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"A1  |11          22| CE"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"A0  |12          21| D7"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"D0  |13          20| D6"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"D1  |14          19| D5"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"D2  |15          18| D4"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"VSS |16          17| D3"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    +--------------+"}]}]]}]]}]]}]
+19:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This table describes the 128K chip pinout and Blink signals."}]
+1a:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L27",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L28",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"Pin     Chip    Blink   Pin     Chip    Blink"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1       VPP     VCC     32      VCC     VCC"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2       [OE]    ROE     31      [PGM]   VCC"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3       A15     MA15    30      VCC     VCC"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"4       A12     MA12    29      A14     MA14"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"5       A7      MA7     28      A13     MA13"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"6       A6      MA6     27      A8      MA8"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"7       A5      MA5     26      A9      MA9"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"8       A4      MA4     25      A11     MA11"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"9       A3      MA3     24      A16     MA16"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"10      A2      MA2     23      A10     MA10"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"11      A1      MA1     22      [CE]    IPCE (Internal PROM chip enable)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"12      A0      MA0     21      D7      MDH"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"13      D0      MDA     20      D6      MDG"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"14      D1      MDB     19      D5      MDF"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"15      D2      MDC     18      D4      MDE"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"16      VSS     GND     17      D3      MDD"}]}]]}]]}]]}]
+1b:["$","$L29",null,{"children":["$","$21",null,{"name":"Next.MetadataOutlet","children":"$@2a"}]}]
+25:true
+9:300
+2a:null
+9:C
+24:0
+7:"$undefined"
+23:"$undefined"
+1c:"$undefined"

@@ -1,0 +1,352 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T3be1,---
+description: "Each application can have a set of 'topics' associated with it. These topics appear in the topic window on the left hand edge of the screen, below the application name. Normally all the topics are..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8618240 (version 2) by scripts/import-z88-wiki.cjs */}
+
+# Menu, Topic, Help (MTH)
+
+Each application can have a set of 'topics' associated with it. These topics appear in the topic window on the left hand edge of the screen, below the application name. Normally all the topics are in grey but when the menu key is pressed a topic name is highlighted and a menu display is brought up. The menu consists of up to three columns of commands, which may be selected with a highlight bar or by using a special keyboard sequence also shown on the menu. Each topic and each command may have a page of help text associated with it and in addition the application itself may have a page of help text, perhaps for a general description of its function. An extra information topic, not displayed in the topic window, may be added to provide access to a series of help pages which are not directly associated with keyboard commands. This is useful to explain general features of the application or tips of command usage.
+
+**Limitations and conventions**
+
+There are some limitations and conventions regarding menu topics and help; the limitations are:
+
+1. Diamond sequences should consist of no more than 5 characters, although these may be special characters like arrow keys and Delete.
+
+2. The first possible match will be selected, so if a diamond sequence 'AB' exists, there is no point having 'ABC' as it cannot be selected.
+
+3. No command code should be zero, as two zeroes from 'OS\_In' are used to represent NUL. Note also that the \<SPACE\>, \<TAB\>, \<ENTER\> and the arrow keys all return command codes and you must make sure you do not clash with these. See "Input and the Keyboard Decoder" for details of these codes.
+
+4. There should be no more than 7 topics per application and no more than 24 commands per topic. Each command name should consist of no more than 25 characters.
+
+5. If any commands in a topic have help, then it is strongly recommended that all the topics have help, even if this is just a blank page (set the help pointer to point to a NUL) and the topic itself must have help.
+
+The conventions, we recommend you subscribe to, are:
+
+## Topic information
+
+The 'pointer to topics' is of the form of a 2 byte offset in a bank, followed by a bank number. The pointer should point to a series of topic definitions arranged like this:
+
+```text
+            1 byte        0           Start marker
+            x bytes                   <first definition>
+            x bytes                   <second definition>
+            ...
+            ...
+            x bytes                   <last definition>
+            1 byte        0           End marker
+```
+
+Where each definition has the following form:
+
+```text
+a           1 byte        b-a         length byte
+            n bytes       'xxxxx'     topic name
+            1 byte        0           optional null-terminator (see below)
+            2 bytes       x x         Optional pointer to topic help page, if
+                                      any. This is a 2-byte pointer relative to
+                                      the start of the help text. NOTE: it is
+                                      stored as high byte, low byte sequence
+                                      (reverse of the conventional order).
+            1 byte        x           topic attribute byte
+            1 byte        b-a         length byte
+```
+
+b
+
+The topic attribute byte:
+
+```text
+bit 0       set for an 'An' topic eg. 'An Edit topic' - default is 'A'
+bit 1       set for an information topic - see below
+bits 2-3    should be 0
+bit 4       set if topic entry has a pointer to a help page
+bits 5-7    should be 0
+```
+
+The topic name terminator can simply be a null, but in fact any control character (ie. $00-$1F) will serve perfectly well. Therefore it is possible to use the attribute byte, or the high byte of the help pointer (hence the high byte, low byte ordering - although this won't apply if the help text length is more than 8K - the high byte becoming $80) to terminate the name. The system looks at the attribute and help pointers by counting back from the end of the topic entry, so there is no confusion between a term inator and an attribute byte or help pointer.
+
+NOTE: Due to a bug in OZ it is necessary when creating information topics (bit 1), that the definitions must be placed before any command topics otherwise they are not recognized by the system.
+
+## Command Information
+
+The 'pointer to commands' is of the form of a 2 byte offset in a bank, followed by a bank number. The pointer should point to a series of command definitions arranged like this:
+
+```text
+            1 byte        0           Start marker
+            x bytes       def(1,1)    first command of first topic
+            x bytes       def(1,2)    second command of first topic
+            ...
+            x bytes       def(1,x)    last command of first topic
+            1 byte        1           End of this topic
+
+            x bytes       def(2,1)    first command of second topic
+            ...
+            x bytes       def(2,x)    last command of second topic
+            1 byte        1           End of this topic
+
+            x bytes       def(x,1)    first command of last topic
+            x bytes       def(x,y)    last command of last topic
+
+            1 byte        0           End of all topics
+```
+
+Each of these definitions should have the following form:
+
+```text
+a           1 byte        b-a         length byte
+            1 byte        x           command code (see below)
+            x bytes       'xxx',0     null-terminated keyboard sequence for
+                                      command.
+            x bytes       'xxxxx'     Command name. The total length of the name
+                                      and keyboard sequence must be 25 characters
+                                      or less. Any control characters which you
+                                      need to use must be brought in via tokens.
+
+            1 byte        0           optional null-terminator (see below)
+            2 bytes       x x         Optional pointer to command help page, if
+                                      any. This is a 2-byte pointer relative to
+                                      the start of the help text. NOTE: it is
+                                      stored as high byte, low byte sequence
+                                      (reverse of the conventional order).
+            1 byte        x           command attribute byte
+            1 byte        b-a         length byte
+```
+
+b
+
+The command attribute byte:
+
+```text
+bit 0       set to make this entry the first in a new column. Note: the last
+            entry in a column has no special attribute. Set this bit even
+            though the previous column is used up, otherwise the system gets
+            confused in displaying the entries.
+
+bit 1       should be set to 0
+
+bit 2       set to make a hidden entry. The command name and key sequence will
+            not appear on the menu display. This is useful for commands which
+            need to key sequences. eg. in PipeDream <>TAB is a hidden entry
+            which does the same thing as <>CFC, by having the same command
+            code. Hidden entries may have Help text, but this text will never
+            be displayed. Note: A hidden entry must never be the last in a
+            topic. If it is the Help system will not be fully traversable and
+            the system will crash if the user moves through help in a certain
+            way.
+
+bit 3       set to make safe. Setting this bit forces to use the user to use
+            the keyboard sequence rather than selecting the command with the
+            highlight bar in the menu display. This is used by the system for
+            the Index commands <>KILL and <>PURGE. An attempt to access these
+            commands through the highlight bar results in a double bleep. These
+            entries should have their command name in tiny text, by convention.
+            This has to be done using a token, since control characters will
+            terminate a command name.
+
+bit 4       set if command entry has a pointer to a help page.
+
+bit 5-7     should be set to 0
+```
+
+NOTE: The same trick of treating the attribute byte, or high byte of the help pointer as a terminator, can be used in menu entries. The command name terminator simply needs to be in the range ($00 - $1F).
+
+The format of the keyboard sequence is as follows:
+
+For a conventional diamond sequence, simply use the upper case letters of the sequence, eg. for the PipeDream New command the entry would be the following bytes "BNEW" & 0 . For commands using other keys the keyboard decoder codes are used. For example \<SHIFT\>\<UP\>\<ARROW\> is represented by a key sequence consisting of one byte. IN\_SUP ($FB) and the terminator, $00. The system automatically generates the graphic sequence from this code. The menu exceptions, which correspond to the screen driver codes, are:
+
+```text
+            Key           Symbol      Code
+            <SPACE>       MU_SPC      $E0
+            <ENTER>       MU_ENT      $E1
+            <TAB>         MU_TAB      $E2
+            <DEL>         MU_DEL      $E3
+```
+
+When an application reads the keyboard then valid keyboard sequences are intercepted so instead of returning the raw characters, the routine will return a zero, indicating a command - note this means the NUL can never be read in as a normal character. The next keyboard read will then return the relevant command code as specified in the above definition. One way of dealing with this behaviour is for the user to set up a 'read character' routine which will return normal characters without change, but intercept and obey command sequences. The following code fragment indicates a possible arrangement, although you will need to have read "Error handling and related issues" and "Input and the keyboard decoder" to follow it properly.
+
+```text
+.rdch       call_oz(OS_In)            ; perform OS_In
+            jr   nc, rdch2            ; if no error, continue
+            cp   RC_SUSP              ; check RC_SUSP
+            jr   z, rdch              ; and ignore if it occurs
+            SCF
+            RET                       ; return with system error enabled
+.rdch2      or   a                    ; reflect on input
+            ret  nz                   ; return if character is not NUL
+            call_oz(OS_In)            ; read command code
+            or   a                    ; set flags
+            ret  z                    ; return if a NUL has been read
+
+            <deal with command code in A>
+```
+
+## **Help Information**
+
+The 'pointer to commands' is of the form of a 2 byte offset in a bank, followed by a bank number. The pointer should point to a series of help page definitions arranged like this:
+
+```text
+            x bytes       help page for the application (or 0 for a blank page)
+            x bytes       help entry (see below)
+            ...
+            ...
+            x bytes       last help entry
+```
+
+Each help entry will produce one page of help text. It consists of a series of lines, where DEL ($7F) is used for newline, terminated by a NUL ($00). The DEL character is used for newline to facilitate embedding screen driver codes into the help text. For example you can use special keyboard icons, arrow symbols or box characters, eg. for the 'ENTER' icon use the sequence 1 & SD\_ENT. The help page is displayed with centred justfification switched on, but you could include a command to switch off centering in your help strings. This should only be done where necessary, to avoid disrupting the overall style of the help pages. The pointer to the help text, which is an offset from the base of the help text, defined in the application DOR, in topic and command entries, should point to the first character of the first line. A help entry might look like this:
+
+```text
+.helppage   defm "This is a simple help page" & $7F
+            defm "and this is the second line" & 0
+```
+
+## **Token information**
+
+The 'pointer to token base' is of the form of a 2 byte offset in a bank, followed by a bank number. The token table format is shown below.
+
+```text
+base        1 byte                    Recursive token boundary (1 - 127)
+            1 byte                    Number of tokens (1 - 127)
+            2 bytes       first-base  pointer to first token
+            2 bytes       second-base pointer to second token
+            ...
+            ...
+            2 bytes       last-base   pointer to last token
+            2 bytes       end-base    pointer to byte after nth token
+
+.first      x bytes       defm "xxx"  first string (no terminators)
+.second     x bytes       defm "yyy"  second string
+            ...
+.last       x bytes       defm "zzz"  last string
+```
+
+.end
+
+NOTE: the token table must not be allowed to cross a bank boundary (16K).
+
+Tokens may be embedded in the help text or within the text for topic and command names. The first token has a code of $80 and subsequent tokens count up from here. Recursive tokens may contain tokens in their text. Tokens above the boundary level set by the 'first recursive token' may contain tokens themselves, providing those tokens are below the boundary. The example below is in assembly format to improve clarity:
+
+```text
+.tok_base   defb $04                              ; recursive token boundary
+            defb $05                              ; number of tokens
+            defw tok0 - tok_base
+            defw tok1 - tok_base
+            defw tok2 - tok_base
+            defw tok3 - tok_base
+            defw tok4 - tok_base
+            defw end - tok_base
+
+.tok0       defm "file"
+.tok1       defm " the "
+.tok2       defm "EPROM"
+.tok3       defb $01, 'T'                         ; Tiny text token
+.tok4       defm ' ', $80, "s "
+```
+
+.end
+
+## Information topics
+
+The information topic is selected by pressing \<HELP\> from within the application. If the topic is present then a menu of commands will be brought up. In an application with no other topics, pressing \<MENU\> will bring up the information topic name in the topic window. The command entries for an information topic topic differ from ordinary commands in that there is no keyboard sequence associated with them. The command entries should look like this:
+
+```text
+a           1 byte        b-a         length byte
+            1 byte        0           NULL command code
+            1 byte        0           NULL keyboard sequence
+            x bytes       'xxxxx'     Command name. The total length of the name
+                                      must be 25 characters
+            1 byte        0           optional null-terminator
+            2 bytes       x x         pointer to help page
+            1 byte        x           command attribute byte
+            1 byte        b-a         length byte
+```
+
+b
+
+The attribute byte should always be $10 (help page) or $11 (help page and first entry in a new column).a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Topic information","id":"topic-information","depth":2},{"value":"Command Information","id":"command-information","depth":2},{"value":[["$","$4",".0",{"children":[["$","strong",".0",{"children":"Help Information"}]]}]],"id":"help-information","depth":2},{"value":[["$","$4",".0",{"children":[["$","strong",".0",{"children":"Token information"}]]}]],"id":"token-information","depth":2},{"value":"Information topics","id":"information-topics","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"Each application can have a set of 'topics' associated with it. These topics appear in the topic window on the left hand edge of the screen, below the application name. Normally all the topics are...","title":"Menu, Topic, Help (MTH)","filePath":"content/en/library/cambridge-z88/developers-notes/application-static-structures/menu-topic-help-mth.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/developers-notes/application-static-structures/menu-topic-help-mth","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Menu, Topic, Help (MTH) - Klive IDE"}],["$","meta","1",{"name":"description","content":"Each application can have a set of 'topics' associated with it. These topics appear in the topic window on the left hand edge of the screen, below the application name. Normally all the topics are..."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/developers-notes/application-static-structures/menu-topic-help-mth/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"cyL0EKA0xNKEZcECA3AIS"}
+4a:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Menu, Topic, Help (MTH)","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Each application can have a set of ‘topics’ associated with it. These topics appear in the topic window on the left hand edge of the screen, below the application name. Normally all the topics are in grey but when the menu key is pressed a topic name is highlighted and a menu display is brought up. The menu consists of up to three columns of commands, which may be selected with a highlight bar or by using a special keyboard sequence also shown on the menu. Each topic and each command may have a page of help text associated with it and in addition the application itself may have a page of help text, perhaps for a general description of its function. An extra information topic, not displayed in the topic window, may be added to provide access to a series of help pages which are not directly associated with keyboard commands. This is useful to explain general features of the application or tips of command usage."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Limitations and conventions"}]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"There are some limitations and conventions regarding menu topics and help; the limitations are:"}],"\n",["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Diamond sequences should consist of no more than 5 characters, although these may be special characters like arrow keys and Delete."}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The first possible match will be selected, so if a diamond sequence ‘AB’ exists, there is no point having ‘ABC’ as it cannot be selected."}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"No command code should be zero, as two zeroes from ‘OS_In’ are used to represent NUL. Note also that the <SPACE>, <TAB>, <ENTER> and the arrow keys all return command codes and you must make sure you do not clash with these. See “Input and the Keyboard Decoder” for details of these codes."}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"There should be no more than 7 topics per application and no more than 24 commands per topic. Each command name should consist of no more than 25 characters."}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If any commands in a topic have help, then it is strongly recommended that all the topics have help, even if this is just a blank page (set the help pointer to point to a NUL) and the topic itself must have help."}],"\n"]}],"\n"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The conventions, we recommend you subscribe to, are:"}],"\n",["$","h2",null,{"id":"topic-information","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Topic information","$L20"]}],"\n","$L21","\n","$L22","\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41","\n","$L42","\n","$L43","\n","$L44","\n","$L45","\n","$L46","\n","$L47","\n","$L48","\n","$L49"]]}]
+15:["$","$L4a",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@4b"}]}]
+1f:true
+4c:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+4d:"ToggleWordWrapButton"
+4e:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$4d"]
+4f:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+9:300
+20:["$","$L4c",null,{"id":"topic-information"}]
+21:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The ‘pointer to topics’ is of the form of a 2 byte offset in a bank, followed by a bank number. The pointer should point to a series of topic definitions arranged like this:"}]
+22:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L4e",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L4f",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"            1 byte        0           Start marker"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            x bytes                   <first definition>"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            x bytes                   <second definition>"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ..."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ..."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            x bytes                   <last definition>"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            1 byte        0           End marker"}]}]]}]]}]]}]
+23:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Where each definition has the following form:"}]
+24:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L4e",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L4f",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"a           1 byte        b-a         length byte"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            n bytes       'xxxxx'     topic name"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            1 byte        0           optional null-terminator (see below)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            2 bytes       x x         Optional pointer to topic help page, if"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                                      any. This is a 2-byte pointer relative to"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                                      the start of the help text. NOTE: it is"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                                      stored as high byte, low byte sequence"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                                      (reverse of the conventional order)."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            1 byte        x           topic attribute byte"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            1 byte        b-a         length byte"}]}]]}]]}]]}]
+25:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"b"}]
+26:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The topic attribute byte:"}]
+27:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L4e",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L4f",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"bit 0       set for an 'An' topic eg. 'An Edit topic' - default is 'A'"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"bit 1       set for an information topic - see below"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"bits 2-3    should be 0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"bit 4       set if topic entry has a pointer to a help page"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"bits 5-7    should be 0"}]}]]}]]}]]}]
+28:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The topic name terminator can simply be a null, but in fact any control character (ie. $00-$1F) will serve perfectly well. Therefore it is possible to use the attribute byte, or the high byte of the help pointer (hence the high byte, low byte ordering - although this won’t apply if the help text length is more than 8K - the high byte becoming $80) to terminate the name. The system looks at the attribute and help pointers by counting back from the end of the topic entry, so there is no confusion between a term inator and an attribute byte or help pointer."}]
+29:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"NOTE: Due to a bug in OZ it is necessary when creating information topics (bit 1), that the definitions must be placed before any command topics otherwise they are not recognized by the system."}]
+2a:["$","h2",null,{"id":"command-information","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Command Information",["$","$L4c",null,{"id":"command-information"}]]}]
+2b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The ‘pointer to commands’ is of the form of a 2 byte offset in a bank, followed by a bank number. The pointer should point to a series of command definitions arranged like this:"}]
+2c:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L4e",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L4f",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"            1 byte        0           Start marker"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            x bytes       def(1,1)    first command of first topic"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            x bytes       def(1,2)    second command of first topic"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ..."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            x bytes       def(1,x)    last command of first topic"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            1 byte        1           End of this topic"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            x bytes       def(2,1)    first command of second topic"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ..."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            x bytes       def(2,x)    last command of second topic"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            1 byte        1           End of this topic"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            x bytes       def(x,1)    first command of last topic"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            x bytes       def(x,y)    last command of last topic"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            1 byte        0           End of all topics"}]}]]}]]}]]}]
+2d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Each of these definitions should have the following form:"}]
+2e:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L4e",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L4f",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"a           1 byte        b-a         length byte"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            1 byte        x           command code (see below)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            x bytes       'xxx',0     null-terminated keyboard sequence for"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                                      command."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            x bytes       'xxxxx'     Command name. The total length of the name"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                                      and keyboard sequence must be 25 characters"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                                      or less. Any control characters which you"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                                      need to use must be brought in via tokens."}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            1 byte        0           optional null-terminator (see below)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            2 bytes       x x         Optional pointer to command help page, if"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                                      any. This is a 2-byte pointer relative to"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                                      the start of the help text. NOTE: it is"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                                      stored as high byte, low byte sequence"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                                      (reverse of the conventional order)."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            1 byte        x           command attribute byte"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            1 byte        b-a         length byte"}]}]]}]]}]]}]
+2f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"b"}]
+30:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The command attribute byte:"}]
+31:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L4e",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L4f",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"bit 0       set to make this entry the first in a new column. Note: the last"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            entry in a column has no special attribute. Set this bit even"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            though the previous column is used up, otherwise the system gets"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            confused in displaying the entries."}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"bit 1       should be set to 0"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"bit 2       set to make a hidden entry. The command name and key sequence will"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            not appear on the menu display. This is useful for commands which"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            need to key sequences. eg. in PipeDream <>TAB is a hidden entry"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            which does the same thing as <>CFC, by having the same command"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            code. Hidden entries may have Help text, but this text will never"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            be displayed. Note: A hidden entry must never be the last in a"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            topic. If it is the Help system will not be fully traversable and"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            the system will crash if the user moves through help in a certain"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            way."}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"bit 3       set to make safe. Setting this bit forces to use the user to use"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            the keyboard sequence rather than selecting the command with the"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            highlight bar in the menu display. This is used by the system for"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            the Index commands <>KILL and <>PURGE. An attempt to access these"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            commands through the highlight bar results in a double bleep. These"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            entries should have their command name in tiny text, by convention."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            This has to be done using a token, since control characters will"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            terminate a command name."}]}],"\n","$L50","\n","$L51","\n","$L52","\n","$L53"]}]]}]]}]
+32:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"NOTE: The same trick of treating the attribute byte, or high byte of the help pointer as a terminator, can be used in menu entries. The command name terminator simply needs to be in the range ($00 - $1F)."}]
+33:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The format of the keyboard sequence is as follows:"}]
+34:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"For a conventional diamond sequence, simply use the upper case letters of the sequence, eg. for the PipeDream New command the entry would be the following bytes “BNEW” & 0 . For commands using other keys the keyboard decoder codes are used. For example <SHIFT><UP><ARROW> is represented by a key sequence consisting of one byte. IN_SUP ($FB) and the terminator, $00. The system automatically generates the graphic sequence from this code. The menu exceptions, which correspond to the screen driver codes, are:"}]
+35:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L4e",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L4f",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"            Key           Symbol      Code"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            <SPACE>       MU_SPC      $E0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            <ENTER>       MU_ENT      $E1"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            <TAB>         MU_TAB      $E2"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            <DEL>         MU_DEL      $E3"}]}]]}]]}]]}]
+36:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When an application reads the keyboard then valid keyboard sequences are intercepted so instead of returning the raw characters, the routine will return a zero, indicating a command - note this means the NUL can never be read in as a normal character. The next keyboard read will then return the relevant command code as specified in the above definition. One way of dealing with this behaviour is for the user to set up a ‘read character’ routine which will return normal characters without change, but intercept and obey command sequences. The following code fragment indicates a possible arrangement, although you will need to have read “Error handling and related issues” and “Input and the keyboard decoder” to follow it properly."}]
+37:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L4e",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L4f",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":".rdch       call_oz(OS_In)            ; perform OS_In"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            jr   nc, rdch2            ; if no error, continue"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            cp   RC_SUSP              ; check RC_SUSP"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            jr   z, rdch              ; and ignore if it occurs"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            SCF"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            RET                       ; return with system error enabled"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":".rdch2      or   a                    ; reflect on input"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ret  nz                   ; return if character is not NUL"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            call_oz(OS_In)            ; read command code"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            or   a                    ; set flags"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ret  z                    ; return if a NUL has been read"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            <deal with command code in A>"}]}]]}]]}]]}]
+38:["$","h2",null,{"id":"help-information","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":[["$","strong",null,{"children":"Help Information"}],["$","$L4c",null,{"id":"help-information"}]]}]
+39:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The ‘pointer to commands’ is of the form of a 2 byte offset in a bank, followed by a bank number. The pointer should point to a series of help page definitions arranged like this:"}]
+3a:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L4e",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L4f",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"            x bytes       help page for the application (or 0 for a blank page)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            x bytes       help entry (see below)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ..."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ..."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            x bytes       last help entry"}]}]]}]]}]]}]
+3b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Each help entry will produce one page of help text. It consists of a series of lines, where DEL ($7F) is used for newline, terminated by a NUL ($00). The DEL character is used for newline to facilitate embedding screen driver codes into the help text. For example you can use special keyboard icons, arrow symbols or box characters, eg. for the ‘ENTER’ icon use the sequence 1 & SD_ENT. The help page is displayed with centred justfification switched on, but you could include a command to switch off centering in your help strings. This should only be done where necessary, to avoid disrupting the overall style of the help pages. The pointer to the help text, which is an offset from the base of the help text, defined in the application DOR, in topic and command entries, should point to the first character of the first line. A help entry might look like this:"}]
+3c:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L4e",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L4f",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":".helppage   defm \"This is a simple help page\" & $7F"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            defm \"and this is the second line\" & 0"}]}]]}]]}]]}]
+3d:["$","h2",null,{"id":"token-information","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":[["$","strong",null,{"children":"Token information"}],["$","$L4c",null,{"id":"token-information"}]]}]
+3e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The ‘pointer to token base’ is of the form of a 2 byte offset in a bank, followed by a bank number. The token table format is shown below."}]
+3f:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L4e",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L4f",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"base        1 byte                    Recursive token boundary (1 - 127)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            1 byte                    Number of tokens (1 - 127)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            2 bytes       first-base  pointer to first token"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            2 bytes       second-base pointer to second token"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ..."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ..."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            2 bytes       last-base   pointer to last token"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            2 bytes       end-base    pointer to byte after nth token"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":".first      x bytes       defm \"xxx\"  first string (no terminators)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":".second     x bytes       defm \"yyy\"  second string"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ..."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":".last       x bytes       defm \"zzz\"  last string"}]}]]}]]}]]}]
+40:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":".end"}]
+41:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"NOTE: the token table must not be allowed to cross a bank boundary (16K)."}]
+42:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Tokens may be embedded in the help text or within the text for topic and command names. The first token has a code of $80 and subsequent tokens count up from here. Recursive tokens may contain tokens in their text. Tokens above the boundary level set by the ‘first recursive token’ may contain tokens themselves, providing those tokens are below the boundary. The example below is in assembly format to improve clarity:"}]
+43:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L4e",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L4f",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":".tok_base   defb $04                              ; recursive token boundary"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            defb $05                              ; number of tokens"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            defw tok0 - tok_base"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            defw tok1 - tok_base"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            defw tok2 - tok_base"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            defw tok3 - tok_base"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            defw tok4 - tok_base"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            defw end - tok_base"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":".tok0       defm \"file\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":".tok1       defm \" the \""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":".tok2       defm \"EPROM\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":".tok3       defb $01, 'T'                         ; Tiny text token"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":".tok4       defm ' ', $80, \"s \""}]}]]}]]}]]}]
+44:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":".end"}]
+45:["$","h2",null,{"id":"information-topics","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Information topics",["$","$L4c",null,{"id":"information-topics"}]]}]
+46:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The information topic is selected by pressing <HELP> from within the application. If the topic is present then a menu of commands will be brought up. In an application with no other topics, pressing <MENU> will bring up the information topic name in the topic window. The command entries for an information topic topic differ from ordinary commands in that there is no keyboard sequence associated with them. The command entries should look like this:"}]
+47:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L4e",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L4f",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"a           1 byte        b-a         length byte"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            1 byte        0           NULL command code"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            1 byte        0           NULL keyboard sequence"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            x bytes       'xxxxx'     Command name. The total length of the name"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                                      must be 25 characters"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            1 byte        0           optional null-terminator"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            2 bytes       x x         pointer to help page"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            1 byte        x           command attribute byte"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            1 byte        b-a         length byte"}]}]]}]]}]]}]
+48:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"b"}]
+49:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The attribute byte should always be $10 (help page) or $11 (help page and first entry in a new column)."}]
+4b:null
+9:C
+50:["$","span",null,{"children":["$","span",null,{}]}]
+51:["$","span",null,{"children":["$","span",null,{"children":"bit 4       set if command entry has a pointer to a help page."}]}]
+52:["$","span",null,{"children":["$","span",null,{}]}]
+53:["$","span",null,{"children":["$","span",null,{"children":"bit 5-7     should be set to 0"}]}]
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

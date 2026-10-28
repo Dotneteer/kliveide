@@ -1,0 +1,61 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:Tb50,---
+description: "The Z88 provides a facility for applications to pass on information to the next application started up. This is used by PipeDream and the Diary to read the name of a marked file from the Filer...."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8618254 (version 1) by scripts/import-z88-wiki.cjs */}
+
+# Mailboxes
+
+The Z88 provides a facility for applications to pass on information to the next application started up. This is used by PipeDream and the Diary to read the name of a marked file from the Filer. The way this works is that the Filer drops the address and length of the name of the last marked file into a mailbox from time to time. When the Filer is exited (eg. by pressing \<ESC\>) the system looks at the mailbox and if there is something there, it copies the information to a safe area of memory. When another application is started it can ask the system if there is any mail. All mail is tagged by an name, which describes the type of information, and an application must give the system the name of the information it is after. If information is present then the system copies it from the safe area into the bottom stack area of the application's memory. The interface for mailboxing is provided by the OS\_Sr call with the reason codes SR\_WPD (write parameter data) and OS\_RPD (read parameter data). See OS\_Sr reference for details of parameter specification.
+
+The system uses two information types; filenames and dates. These have the information type names of "NAME" and "DATE", both null-terminated. If you transfer information of one of these types, then you must use the appropriate name, otherwise the internal appliations will not be able to collect your mail. Similarly you won't be able to receive mail from the Filer, Calendar, Diary, etc., unless you try and read mail with these names. If you do use the mail system please inform the programmers in your documentation of the information type name you use (which should be a mnemonic upper case alpha string), so other applications can share data with yours. The internal applications use mail as follows:
+
+```text
+            Filer         exports filenames
+            Diary         imports filenames, imports dates, exports dates
+            PipeDream     imports filenames
+            Calendar      imports dates, exports dates
+            Alarm         imports dates
+```
+
+The mailboxing system can be seen in operation using PipeDream and the Filer. Use \<\>FL from PipeDream and enter the Filer from this menu. Mark a file (eg. with \<TAB\>) and press \<ESC\> to return to PipeDream. The marked file will then be copied into the 'Name of file to load' field. Similarly selecting the Diary from the Calendar will set the Diary date to the date which was highlighted by the Calendar. When you go to the Calendar from the Diary, the Calendar moves to the Diary date.a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"The Z88 provides a facility for applications to pass on information to the next application started up. This is used by PipeDream and the Diary to read the name of a marked file from the Filer....","title":"Mailboxes","filePath":"content/en/library/cambridge-z88/developers-notes/application-static-structures/mailboxes.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/developers-notes/application-static-structures/mailboxes","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Mailboxes - Klive IDE"}],["$","meta","1",{"name":"description","content":"The Z88 provides a facility for applications to pass on information to the next application started up. This is used by PipeDream and the Diary to read the name of a marked file from the Filer...."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/developers-notes/application-static-structures/mailboxes/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"cyL0EKA0xNKEZcECA3AIS"}
+21:"ToggleWordWrapButton"
+22:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$21"]
+23:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+26:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+20:T426,The Z88 provides a facility for applications to pass on information to the next application started up. This is used by PipeDream and the Diary to read the name of a marked file from the Filer. The way this works is that the Filer drops the address and length of the name of the last marked file into a mailbox from time to time. When the Filer is exited (eg. by pressing <ESC>) the system looks at the mailbox and if there is something there, it copies the information to a safe area of memory. When another application is started it can ask the system if there is any mail. All mail is tagged by an name, which describes the type of information, and an application must give the system the name of the information it is after. If information is present then the system copies it from the safe area into the bottom stack area of the application’s memory. The interface for mailboxing is provided by the OS_Sr call with the reason codes SR_WPD (write parameter data) and OS_RPD (read parameter data). See OS_Sr reference for details of parameter specification.14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Mailboxes","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"$20"}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The system uses two information types; filenames and dates. These have the information type names of “NAME” and “DATE”, both null-terminated. If you transfer information of one of these types, then you must use the appropriate name, otherwise the internal appliations will not be able to collect your mail. Similarly you won’t be able to receive mail from the Filer, Calendar, Diary, etc., unless you try and read mail with these names. If you do use the mail system please inform the programmers in your documentation of the information type name you use (which should be a mnemonic upper case alpha string), so other applications can share data with yours. The internal applications use mail as follows:"}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"            Filer         exports filenames"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            Diary         imports filenames, imports dates, exports dates"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            PipeDream     imports filenames"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            Calendar      imports dates, exports dates"}]}],"\n","$L24"]}]]}]]}],"\n","$L25"]]}]
+15:["$","$L26",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@27"}]}]
+1f:true
+9:300
+24:["$","span",null,{"children":["$","span",null,{"children":"            Alarm         imports dates"}]}]
+25:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The mailboxing system can be seen in operation using PipeDream and the Filer. Use <>FL from PipeDream and enter the Filer from this menu. Mark a file (eg. with <TAB>) and press <ESC> to return to PipeDream. The marked file will then be copied into the ‘Name of file to load’ field. Similarly selecting the Diary from the Calendar will set the Diary date to the date which was highlighted by the Calendar. When you go to the Calendar from the Diary, the Calendar moves to the Diary date."}]
+27:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

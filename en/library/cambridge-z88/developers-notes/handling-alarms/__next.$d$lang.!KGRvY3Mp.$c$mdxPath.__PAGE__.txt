@@ -1,0 +1,164 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T1701,---
+description: "Alarms in the Z88 are organized as a linked list of 'alarm blocks' with the root at some fixed location. Each alarm block contains all the relevant data for the particular alarm; time, date,..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/2752568 (version 3) by scripts/import-z88-wiki.cjs */}
+
+# Handling Alarms
+
+Alarms in the Z88 are organized as a linked list of 'alarm blocks' with the root at some fixed location. Each alarm block contains all the relevant data for the particular alarm; time, date, number of repeats; in fact much the same as the options given in the alarm display in the main alarm popdown. Although there are many system calls which deal with alarms the programmer need only know about four:
+
+`GN_Aab` allocate alarm block<br />`GN_Lab` link alarm block into alarm chain<br />`GN_Uab` unlink alarm block from chain<br />`GN_Fab` free alarm block
+
+The following stages are involved in using alarms:
+
+**1. Allocation**
+
+**[GN\_Aab](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-aab)** is called to allocate space for an alarm block. An extended pointer to the allocated memory is returned in BHL.
+
+**2. Setting**
+
+The parameters of the alarm should be copied into the allocated alarm block, following the format shown above.
+
+**3. Linking**
+
+Once the block has been set up it can be linked into the alarm chain, using **[GN\_Lab](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-lab)**. This done, the programmer can forget about the alarm. After expiry the alarm will be removed from the chain and the memory associated with it will be freed.
+
+**4. Removal**
+
+To remove an alarm that has been set, but has not expired, the alarm block is first unlinked from the chain using **[GN\_Uab](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-uab)** and the memory associated with the block is then released with **[GN\_Fab](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-fab)**.
+
+The format of the alarm block is as follows:
+
+```text
+3 bytes     link to next block, set by system
+3 bytes     time of alarm in internal format
+3 bytes     date of alarm in internal format
+24 bytes    command line to execute or simply a comment. This should be null-
+            terminated. Note that the repeat time starts 33 bytes into the
+            block, not after the terminator for the command line.
+3 bytes     repeat time in days, added to value below
+3 bytes     repeat time in centisecond ticks, added to value above
+2 bytes     number of times to repeat
+1 byte      repeat time display units:
+
+            1           seconds
+            2           minutes
+            4           hours
+            8           days
+            16          weeks
+            32          months
+            64          years
+            128         never repeat
+
+1 byte      alarm status, some combination of:
+
+            1           beep on expiry
+            2           execute command line on expiry
+            4           alarm has expired, set by system
+            8           alarm is pending, set by system
+```
+
+The 'repeat time display units' byte controls what is displayed in the alarm popdown window. It is important to choose a unit appropriate to the repeat time. If you use units of hours, with a repeat time of 2 minutes, then the repeat time will be displayed as 0 hours.
+
+NOTE: The repeat time must be at least ten seconds otherwise it may be difficult to enter the alarm popdown to clear the alarm.
+
+The alarms set up are all lost when a system soft reset occurs, and unfortunately there is no way of saving and loading the currently set alarms. In addition, alarms are suppressed when the machine is in the alarm popdown. This is true even if the machine is in coma. This feature is included to allow a simple way to disable alarms.
+
+## Example
+
+The following example sets up an alarm for the entirely arbitrary date and time of "21/05/3934 08:46:20". The alarm has a repeat time of 25 seconds and will occur three time (ie. number of repeats is two). Finally the type of alarm is ALARM and the bleeping is enabled:
+
+```text
+include "alarm.def"                 ; alarm definition calls
+include "memory.def"                ; memory management definition calls
+
+.set_alarm  oz   GN_Aab             ; allocate alarm block
+            ret  c                  ; exit if error (no room)
+
+            push bc                 ; preserve BHL which holds
+            push hl                 ; the extended pointer to the block
+            ld   c, MS_S1           ; segment 1 specifier
+            oz   OS_MBP             ; bind in bank containing block
+            ld   a,h
+            and  @00111111          ; mask out old segment
+            or   MM_S1              ; force into segment 1
+
+            ld   d,a
+            ld   e,l                ; alarm block address in DE
+            ld   hl, alm_block      ; address of data for alarm block
+            ld   bc, sizeof_block
+            ldir                    ; copy data into alarm block
+
+            pop  hl
+            pop  bc
+            oz   GN_Lab             ; link block into alarm chain
+            ret
+ 
+; alarm block definition to be copied into allocated block
+DEFC sizeof_ablock = end_alm_block - alm_block 
+
+.alm_block  defb 0, 0, 0            ; link to next block (set up by system)
+            defm "000"              ; time in internal format
+            defm "000"              ; date in internal format
+            defm "Message space 24 bytes.", 0
+            defb 0, 0, 0            ; repeat time in days
+            defb 0, 10, 0           ; repeat time in centiseconds
+            defw 2                  ; times to repeat
+            defb 1                  ; repeat time display unit (seconds)
+            defb 1                  ; alarm status (bleep on expiry)
+```a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Example","id":"example","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"Alarms in the Z88 are organized as a linked list of 'alarm blocks' with the root at some fixed location. Each alarm block contains all the relevant data for the particular alarm; time, date,...","title":"Handling Alarms","filePath":"content/en/library/cambridge-z88/developers-notes/handling-alarms.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/developers-notes/handling-alarms","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Handling Alarms - Klive IDE"}],["$","meta","1",{"name":"description","content":"Alarms in the Z88 are organized as a linked list of 'alarm blocks' with the root at some fixed location. Each alarm block contains all the relevant data for the particular alarm; time, date,..."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/developers-notes/handling-alarms/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"cyL0EKA0xNKEZcECA3AIS"}
+20:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+29:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Handling Alarms","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Alarms in the Z88 are organized as a linked list of ‘alarm blocks’ with the root at some fixed location. Each alarm block contains all the relevant data for the particular alarm; time, date, number of repeats; in fact much the same as the options given in the alarm display in the main alarm popdown. Although there are many system calls which deal with alarms the programmer need only know about four:"}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"GN_Aab"}]," allocate alarm block",["$","br",null,{}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"GN_Lab"}]," link alarm block into alarm chain",["$","br",null,{}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"GN_Uab"}]," unlink alarm block from chain",["$","br",null,{}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"GN_Fab"}]," free alarm block"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The following stages are involved in using alarms:"}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"1. Allocation"}]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":["$","$L20",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-aab","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"GN_Aab"}]}]," is called to allocate space for an alarm block. An extended pointer to the allocated memory is returned in BHL."]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"2. Setting"}]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The parameters of the alarm should be copied into the allocated alarm block, following the format shown above."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"3. Linking"}]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Once the block has been set up it can be linked into the alarm chain, using ",["$","strong",null,{"children":["$","$L20",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-lab","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"GN_Lab"}]}],". This done, the programmer can forget about the alarm. After expiry the alarm will be removed from the chain and the memory associated with it will be freed."]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"4. Removal"}]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["To remove an alarm that has been set, but has not expired, the alarm block is first unlinked from the chain using ",["$","strong",null,{"children":["$","$L20",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-uab","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"GN_Uab"}]}]," and the memory associated with the block is then released with ",["$","strong",null,{"children":["$","$L20",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-fab","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"GN_Fab"}]}],"."]}],"\n","$L21","\n","$L22","\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28"]]}]
+15:["$","$L29",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@2a"}]}]
+1f:true
+2b:"ToggleWordWrapButton"
+2c:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$2b"]
+2d:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+2e:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+9:300
+21:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The format of the alarm block is as follows:"}]
+22:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L2c",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L2d",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"3 bytes     link to next block, set by system"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3 bytes     time of alarm in internal format"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3 bytes     date of alarm in internal format"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"24 bytes    command line to execute or simply a comment. This should be null-"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            terminated. Note that the repeat time starts 33 bytes into the"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            block, not after the terminator for the command line."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3 bytes     repeat time in days, added to value below"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3 bytes     repeat time in centisecond ticks, added to value above"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2 bytes     number of times to repeat"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1 byte      repeat time display units:"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            1           seconds"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            2           minutes"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            4           hours"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            8           days"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            16          weeks"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            32          months"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            64          years"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            128         never repeat"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1 byte      alarm status, some combination of:"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            1           beep on expiry"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            2           execute command line on expiry"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            4           alarm has expired, set by system"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            8           alarm is pending, set by system"}]}]]}]]}]]}]
+23:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The ‘repeat time display units’ byte controls what is displayed in the alarm popdown window. It is important to choose a unit appropriate to the repeat time. If you use units of hours, with a repeat time of 2 minutes, then the repeat time will be displayed as 0 hours."}]
+24:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"NOTE: The repeat time must be at least ten seconds otherwise it may be difficult to enter the alarm popdown to clear the alarm."}]
+25:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The alarms set up are all lost when a system soft reset occurs, and unfortunately there is no way of saving and loading the currently set alarms. In addition, alarms are suppressed when the machine is in the alarm popdown. This is true even if the machine is in coma. This feature is included to allow a simple way to disable alarms."}]
+26:["$","h2",null,{"id":"example","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Example",["$","$L2e",null,{"id":"example"}]]}]
+27:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The following example sets up an alarm for the entirely arbitrary date and time of “21/05/3934 08:46:20”. The alarm has a repeat time of 25 seconds and will occur three time (ie. number of repeats is two). Finally the type of alarm is ALARM and the bleeping is enabled:"}]
+28:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L2c",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L2d",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"include \"alarm.def\"                 ; alarm definition calls"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"include \"memory.def\"                ; memory management definition calls"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":".set_alarm  oz   GN_Aab             ; allocate alarm block"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ret  c                  ; exit if error (no room)"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            push bc                 ; preserve BHL which holds"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            push hl                 ; the extended pointer to the block"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ld   c, MS_S1           ; segment 1 specifier"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            oz   OS_MBP             ; bind in bank containing block"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ld   a,h"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            and  @00111111          ; mask out old segment"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            or   MM_S1              ; force into segment 1"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ld   d,a"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ld   e,l                ; alarm block address in DE"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ld   hl, alm_block      ; address of data for alarm block"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ld   bc, sizeof_block"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ldir                    ; copy data into alarm block"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            pop  hl"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            pop  bc"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            oz   GN_Lab             ; link block into alarm chain"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ret"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; alarm block definition to be copied into allocated block"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"DEFC sizeof_ablock = end_alm_block - alm_block "}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":".alm_block  defb 0, 0, 0            ; link to next block (set up by system)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            defm \"000\"              ; time in internal format"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            defm \"000\"              ; date in internal format"}]}],"\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34"]}]]}]]}]
+2a:null
+9:C
+2f:["$","span",null,{"children":["$","span",null,{"children":"            defm \"Message space 24 bytes.\", 0"}]}]
+30:["$","span",null,{"children":["$","span",null,{"children":"            defb 0, 0, 0            ; repeat time in days"}]}]
+31:["$","span",null,{"children":["$","span",null,{"children":"            defb 0, 10, 0           ; repeat time in centiseconds"}]}]
+32:["$","span",null,{"children":["$","span",null,{"children":"            defw 2                  ; times to repeat"}]}]
+33:["$","span",null,{"children":["$","span",null,{"children":"            defb 1                  ; repeat time display unit (seconds)"}]}]
+34:["$","span",null,{"children":["$","span",null,{"children":"            defb 1                  ; alarm status (bleep on expiry)"}]}]
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

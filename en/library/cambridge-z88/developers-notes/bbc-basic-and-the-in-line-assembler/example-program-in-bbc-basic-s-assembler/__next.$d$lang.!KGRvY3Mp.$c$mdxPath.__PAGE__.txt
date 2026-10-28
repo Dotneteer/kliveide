@@ -1,0 +1,332 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T19b1,---
+description: "We present here a short example program in BASIC. The error handler copes with pre-emption, responding to RC_QUIT by calling BASIC's own error handler. This will not close files, filters..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/3112993 (version 9) by scripts/import-z88-wiki.cjs */}
+
+# Example program in BBC BASIC's assembler
+
+We present here a short example program in BASIC. The error handler copes with pre-emption, responding to RC\_QUIT by calling BASIC's own error handler. This will not close files, filters wildcards, or memory however, so if you use these features you must modify the error handler to close these things first before calling BASIC. The program here does something which BASIC cannot normally do, which is to read the update date of a file. When the program is run it assembles the code and asks for a filename. It attempts to open the file for DOR access, indicating failure with a system error box, and then reads the update date. Finally, having released the DOR handle, the program displays the explicit filename, expanded by **[GN\_Opf](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-opf)**, and the update date.
+
+This listing can be 'loaded' by CLI. Copy this source code as save as text file as 'example.bas' on your desktop, then upload to :RAM.0 on your Z88. Start BBC BASIC application, execute command `*CLI .*:RAM.0/example.bas` to "type it in". Finally, `RUN`.
+
+```text
+.J
+AUTO
+
+DIM code 512                   : REM space for program
+GN_Esp=&4C09                   : REM return pointer to system error message
+GN_Soe=&3C09                   : REM Write string at extended address to standard output
+GN_Nln=&2E09                   : REM carriage return, linefeed to std. output
+GN_Sop=&3A09                   : REM output string to std. output
+GN_Opf=&6009                   : REM open file
+OS_Erh=&75                     : REM install error handler
+OS_Esc=&6F                     : REM examine special condition
+GN_Err=&4A09                   : REM standard system error box
+GN_Sdo=&0E09                   : REM date and time to standard output
+OS_Dor=&87                     : REM DOR interface
+dr_rd=&09                      : REM read DOR record
+dr_fre=&05                     : REM free DOR handle
+op_dor=&06                     : REM open file for DOR access
+rc_quit=&67                    : REM KILL request error code
+rc_esc=&01                     : REM escape detection error code
+
+FOR pass=0 TO 2 STEP 2
+P%=code
+[
+OPT  pass
+LD   HL,0
+ADD  HL,SP                     \ get current BASIC stack pointer
+LD   (bstk),HL                 \ preserve it
+LD   SP,(&1FFE)                \ install system (safe) stack pointer
+XOR  A
+LD   B,A
+LD   HL,errhan                 \ address of error handler
+OPT  FNsys(OS_Erh)             \ install new error handler
+LD   (obou),A                  \ save old error handler call level
+LD   (oerr),HL                 \ save old error handler address
+
+\ Here is the call to your assembler language routine which should be
+\ included at the end of this code.
+CALL main                      \ call main routine
+
+.exit
+LD   HL,(oerr)                 \ address of old error handler
+LD   A,(obou)                  \ old call level
+LD   B,0
+OPT  FNsys(OS_Erh)             \ restore previous error handler
+LD   SP,(bstk)                 \ restore BASIC stack pointer
+RET                            \ return to BBC BASIC interpreter
+
+.errhan
+RET  Z
+CP   rc_esc                    \ ESC pressed?
+JR   NZ,err1
+OPT  FNsys(OS_Esc)             \ acknowledge ESC
+LD   A,rc_esc
+OR   A                         \ return rc_esc back to main program
+RET                            \ Fc = 0, Fz = 0
+
+.err1
+CP   rc_quit                   \ KILL request?
+JR   NZ,err2
+
+LD   HL,(oerr)                 \ re-install old error handler
+LD   A,(obou)                  \ old call level
+OPT  FNsys(OS_Erh)
+
+LD   SP,(bstk)                 \ install BASIC stack pointer
+LD   HL,(oerr)
+
+LD   A, rc_quit                \ reload A with RC_QUIT
+OR   A                         \ Fz = 0
+SCF                            \ Fc = 1
+JP   (HL)                      \ jump to BASIC's error handler
+
+.err2                          \ write error message if possible
+OPT  FNsys(GN_Esp)             \ Get ext. pointer to system error message
+OPT  FNsys(GN_Soe)             \ Write error message to std. output
+OPT  FNsys(GN_Nln)             \ New line to std. output
+OR   A                         \ Fc = 0
+RET
+
+.bstk DEFW 0                   \ storage for BASIC stack pointer
+.obou DEFB 0                   \ storage for old call level
+.oerr DEFW 0                   \ storage for old error handler address
+
+\ ----------------------------------------------------------------------
+\ main routine starts here
+.main
+LD   HL,scratch_1              \ holds address of file to open
+LD   DE,scratch_2              \ explicit name buffer
+LD   C,40                      \ size of explicit name buffer
+LD   B,0                       \ HL string pointer is local
+LD   a, op_dor                 \ get DOR handle
+OPT  FNsys(GN_Opf)             \ open...
+JR   NC,opened_OK
+OPT  FNsys(GN_Err)             \ report error in standard window
+RET
+.opened_OK
+LD   A,dr_rd                   \ read DOR record
+LD   B,ASC"U"                  \ read update information
+LD   C,6                       \ 3 byte internal date, 3 byte int. time
+LD   DE,scratch_1              \ store returned information at (DE)
+OPT  FNsys(OS_Dor)             \ fetch update date
+LD   A,dr_fre
+OPT  FNsys(OS_Dor)             \ free DOR handle
+LD   HL,scratch_2              \ display explicit filename
+OPT  FNsys(GN_Sop)             \ to standard output
+LD   HL,tab_str
+OPT  FNsys(GN_Sop)             \ tab to column 40
+LD   HL,scratch_1
+OPT  FNsys(GN_Sdo)             \ output returned update date
+OPT  FNsys(GN_Nln)             \ display newline
+RET                            \ back to BASIC
+
+.scratch_1 DEFM STRING$(40,"X")
+.scratch_2 DEFM STRING$(40,"X")
+.tab_str DEFM CHR$1+"2X"+CHR$(32+40)+CHR$0
+\ main routine ends here
+\ ----------------------------------------------------------------------
+]
+NEXT pass
+
+CLS
+PRINT "Read File Update Date and Time"
+INPUT "Filename:"A$
+IF LEN(A$)>40 THEN PRINT "String too long": END
+
+A$=A$+CHR$0  : REM null-terminate filename string
+$scratch_1=A$
+CALL code
+END
+:
+DEF FNsys(arg)
+IF arg>255 THEN PROC_Rst20Defw(arg) ELSE PROC_Rst20Defb(arg)
+=pass
+:
+DEF PROC_Rst20Defw(arg)
+[OPT pass
+RST &20: DEFW arg
+]
+ENDPROC
+DEF PROC_Rst20Defb(arg)
+[OPT pass
+RST &20: DEFB arg
+]
+ENDPROC
+```a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"We present here a short example program in BASIC. The error handler copes with pre-emption, responding to RC_QUIT by calling BASIC's own error handler. This will not close files, filters...","title":"Example program in BBC BASIC's assembler","filePath":"content/en/library/cambridge-z88/developers-notes/bbc-basic-and-the-in-line-assembler/example-program-in-bbc-basic-s-assembler.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/developers-notes/bbc-basic-and-the-in-line-assembler/example-program-in-bbc-basic-s-assembler","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Example program in BBC BASIC's assembler - Klive IDE"}],["$","meta","1",{"name":"description","content":"We present here a short example program in BASIC. The error handler copes with pre-emption, responding to RC_QUIT by calling BASIC's own error handler. This will not close files, filters..."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/developers-notes/bbc-basic-and-the-in-line-assembler/example-program-in-bbc-basic-s-assembler/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"cyL0EKA0xNKEZcECA3AIS"}
+20:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+21:"ToggleWordWrapButton"
+22:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$21"]
+23:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+ab:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Example program in BBC BASIC’s assembler","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["We present here a short example program in BASIC. The error handler copes with pre-emption, responding to RC_QUIT by calling BASIC’s own error handler. This will not close files, filters wildcards, or memory however, so if you use these features you must modify the error handler to close these things first before calling BASIC. The program here does something which BASIC cannot normally do, which is to read the update date of a file. When the program is run it assembles the code and asks for a filename. It attempts to open the file for DOR access, indicating failure with a system error box, and then reads the update date. Finally, having released the DOR handle, the program displays the explicit filename, expanded by ",["$","strong",null,{"children":["$","$L20",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-opf","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"GN_Opf"}]}],", and the update date."]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["This listing can be ‘loaded’ by CLI. Copy this source code as save as text file as ‘example.bas’ on your desktop, then upload to :RAM.0 on your Z88. Start BBC BASIC application, execute command ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"*CLI .*:RAM.0/example.bas"}]," to “type it in”. Finally, ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"RUN"}],"."]}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":".J"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"AUTO"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"DIM code 512                   : REM space for program"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"GN_Esp=&4C09                   : REM return pointer to system error message"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"GN_Soe=&3C09                   : REM Write string at extended address to standard output"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"GN_Nln=&2E09                   : REM carriage return, linefeed to std. output"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"GN_Sop=&3A09                   : REM output string to std. output"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"GN_Opf=&6009                   : REM open file"}]}],"\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41","\n","$L42","\n","$L43","\n","$L44","\n","$L45","\n","$L46","\n","$L47","\n","$L48","\n","$L49","\n","$L4a","\n","$L4b","\n","$L4c","\n","$L4d","\n","$L4e","\n","$L4f","\n","$L50","\n","$L51","\n","$L52","\n","$L53","\n","$L54","\n","$L55","\n","$L56","\n","$L57","\n","$L58","\n","$L59","\n","$L5a","\n","$L5b","\n","$L5c","\n","$L5d","\n","$L5e","\n","$L5f","\n","$L60","\n","$L61","\n","$L62","\n","$L63","\n","$L64","\n","$L65","\n","$L66","\n","$L67","\n","$L68","\n","$L69","\n","$L6a","\n","$L6b","\n","$L6c","\n","$L6d","\n","$L6e","\n","$L6f","\n","$L70","\n","$L71","\n","$L72","\n","$L73","\n","$L74","\n","$L75","\n","$L76","\n","$L77","\n","$L78","\n","$L79","\n","$L7a","\n","$L7b","\n","$L7c","\n","$L7d","\n","$L7e","\n","$L7f","\n","$L80","\n","$L81","\n","$L82","\n","$L83","\n","$L84","\n","$L85","\n","$L86","\n","$L87","\n","$L88","\n","$L89","\n","$L8a","\n","$L8b","\n","$L8c","\n","$L8d","\n","$L8e","\n","$L8f","\n","$L90","\n","$L91","\n","$L92","\n","$L93","\n","$L94","\n","$L95","\n","$L96","\n","$L97","\n","$L98","\n","$L99","\n","$L9a","\n","$L9b","\n","$L9c","\n","$L9d","\n","$L9e","\n","$L9f","\n","$La0","\n","$La1","\n","$La2","\n","$La3","\n","$La4","\n","$La5","\n","$La6","\n","$La7","\n","$La8","\n","$La9","\n","$Laa"]}]]}]]}]]]}]
+15:["$","$Lab",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@ac"}]}]
+1f:true
+9:300
+24:["$","span",null,{"children":["$","span",null,{"children":"OS_Erh=&75                     : REM install error handler"}]}]
+25:["$","span",null,{"children":["$","span",null,{"children":"OS_Esc=&6F                     : REM examine special condition"}]}]
+26:["$","span",null,{"children":["$","span",null,{"children":"GN_Err=&4A09                   : REM standard system error box"}]}]
+27:["$","span",null,{"children":["$","span",null,{"children":"GN_Sdo=&0E09                   : REM date and time to standard output"}]}]
+28:["$","span",null,{"children":["$","span",null,{"children":"OS_Dor=&87                     : REM DOR interface"}]}]
+29:["$","span",null,{"children":["$","span",null,{"children":"dr_rd=&09                      : REM read DOR record"}]}]
+2a:["$","span",null,{"children":["$","span",null,{"children":"dr_fre=&05                     : REM free DOR handle"}]}]
+2b:["$","span",null,{"children":["$","span",null,{"children":"op_dor=&06                     : REM open file for DOR access"}]}]
+2c:["$","span",null,{"children":["$","span",null,{"children":"rc_quit=&67                    : REM KILL request error code"}]}]
+2d:["$","span",null,{"children":["$","span",null,{"children":"rc_esc=&01                     : REM escape detection error code"}]}]
+2e:["$","span",null,{"children":["$","span",null,{}]}]
+2f:["$","span",null,{"children":["$","span",null,{"children":"FOR pass=0 TO 2 STEP 2"}]}]
+30:["$","span",null,{"children":["$","span",null,{"children":"P%=code"}]}]
+31:["$","span",null,{"children":["$","span",null,{"children":"["}]}]
+32:["$","span",null,{"children":["$","span",null,{"children":"OPT  pass"}]}]
+33:["$","span",null,{"children":["$","span",null,{"children":"LD   HL,0"}]}]
+34:["$","span",null,{"children":["$","span",null,{"children":"ADD  HL,SP                     \\ get current BASIC stack pointer"}]}]
+35:["$","span",null,{"children":["$","span",null,{"children":"LD   (bstk),HL                 \\ preserve it"}]}]
+36:["$","span",null,{"children":["$","span",null,{"children":"LD   SP,(&1FFE)                \\ install system (safe) stack pointer"}]}]
+37:["$","span",null,{"children":["$","span",null,{"children":"XOR  A"}]}]
+38:["$","span",null,{"children":["$","span",null,{"children":"LD   B,A"}]}]
+39:["$","span",null,{"children":["$","span",null,{"children":"LD   HL,errhan                 \\ address of error handler"}]}]
+3a:["$","span",null,{"children":["$","span",null,{"children":"OPT  FNsys(OS_Erh)             \\ install new error handler"}]}]
+3b:["$","span",null,{"children":["$","span",null,{"children":"LD   (obou),A                  \\ save old error handler call level"}]}]
+3c:["$","span",null,{"children":["$","span",null,{"children":"LD   (oerr),HL                 \\ save old error handler address"}]}]
+3d:["$","span",null,{"children":["$","span",null,{}]}]
+3e:["$","span",null,{"children":["$","span",null,{"children":"\\ Here is the call to your assembler language routine which should be"}]}]
+3f:["$","span",null,{"children":["$","span",null,{"children":"\\ included at the end of this code."}]}]
+40:["$","span",null,{"children":["$","span",null,{"children":"CALL main                      \\ call main routine"}]}]
+41:["$","span",null,{"children":["$","span",null,{}]}]
+42:["$","span",null,{"children":["$","span",null,{"children":".exit"}]}]
+43:["$","span",null,{"children":["$","span",null,{"children":"LD   HL,(oerr)                 \\ address of old error handler"}]}]
+44:["$","span",null,{"children":["$","span",null,{"children":"LD   A,(obou)                  \\ old call level"}]}]
+45:["$","span",null,{"children":["$","span",null,{"children":"LD   B,0"}]}]
+46:["$","span",null,{"children":["$","span",null,{"children":"OPT  FNsys(OS_Erh)             \\ restore previous error handler"}]}]
+47:["$","span",null,{"children":["$","span",null,{"children":"LD   SP,(bstk)                 \\ restore BASIC stack pointer"}]}]
+48:["$","span",null,{"children":["$","span",null,{"children":"RET                            \\ return to BBC BASIC interpreter"}]}]
+49:["$","span",null,{"children":["$","span",null,{}]}]
+4a:["$","span",null,{"children":["$","span",null,{"children":".errhan"}]}]
+4b:["$","span",null,{"children":["$","span",null,{"children":"RET  Z"}]}]
+4c:["$","span",null,{"children":["$","span",null,{"children":"CP   rc_esc                    \\ ESC pressed?"}]}]
+4d:["$","span",null,{"children":["$","span",null,{"children":"JR   NZ,err1"}]}]
+4e:["$","span",null,{"children":["$","span",null,{"children":"OPT  FNsys(OS_Esc)             \\ acknowledge ESC"}]}]
+4f:["$","span",null,{"children":["$","span",null,{"children":"LD   A,rc_esc"}]}]
+50:["$","span",null,{"children":["$","span",null,{"children":"OR   A                         \\ return rc_esc back to main program"}]}]
+51:["$","span",null,{"children":["$","span",null,{"children":"RET                            \\ Fc = 0, Fz = 0"}]}]
+52:["$","span",null,{"children":["$","span",null,{}]}]
+53:["$","span",null,{"children":["$","span",null,{"children":".err1"}]}]
+54:["$","span",null,{"children":["$","span",null,{"children":"CP   rc_quit                   \\ KILL request?"}]}]
+55:["$","span",null,{"children":["$","span",null,{"children":"JR   NZ,err2"}]}]
+56:["$","span",null,{"children":["$","span",null,{}]}]
+57:["$","span",null,{"children":["$","span",null,{"children":"LD   HL,(oerr)                 \\ re-install old error handler"}]}]
+58:["$","span",null,{"children":["$","span",null,{"children":"LD   A,(obou)                  \\ old call level"}]}]
+59:["$","span",null,{"children":["$","span",null,{"children":"OPT  FNsys(OS_Erh)"}]}]
+5a:["$","span",null,{"children":["$","span",null,{}]}]
+5b:["$","span",null,{"children":["$","span",null,{"children":"LD   SP,(bstk)                 \\ install BASIC stack pointer"}]}]
+5c:["$","span",null,{"children":["$","span",null,{"children":"LD   HL,(oerr)"}]}]
+5d:["$","span",null,{"children":["$","span",null,{}]}]
+5e:["$","span",null,{"children":["$","span",null,{"children":"LD   A, rc_quit                \\ reload A with RC_QUIT"}]}]
+5f:["$","span",null,{"children":["$","span",null,{"children":"OR   A                         \\ Fz = 0"}]}]
+60:["$","span",null,{"children":["$","span",null,{"children":"SCF                            \\ Fc = 1"}]}]
+61:["$","span",null,{"children":["$","span",null,{"children":"JP   (HL)                      \\ jump to BASIC's error handler"}]}]
+62:["$","span",null,{"children":["$","span",null,{}]}]
+63:["$","span",null,{"children":["$","span",null,{"children":".err2                          \\ write error message if possible"}]}]
+64:["$","span",null,{"children":["$","span",null,{"children":"OPT  FNsys(GN_Esp)             \\ Get ext. pointer to system error message"}]}]
+65:["$","span",null,{"children":["$","span",null,{"children":"OPT  FNsys(GN_Soe)             \\ Write error message to std. output"}]}]
+66:["$","span",null,{"children":["$","span",null,{"children":"OPT  FNsys(GN_Nln)             \\ New line to std. output"}]}]
+67:["$","span",null,{"children":["$","span",null,{"children":"OR   A                         \\ Fc = 0"}]}]
+68:["$","span",null,{"children":["$","span",null,{"children":"RET"}]}]
+69:["$","span",null,{"children":["$","span",null,{}]}]
+6a:["$","span",null,{"children":["$","span",null,{"children":".bstk DEFW 0                   \\ storage for BASIC stack pointer"}]}]
+6b:["$","span",null,{"children":["$","span",null,{"children":".obou DEFB 0                   \\ storage for old call level"}]}]
+6c:["$","span",null,{"children":["$","span",null,{"children":".oerr DEFW 0                   \\ storage for old error handler address"}]}]
+6d:["$","span",null,{"children":["$","span",null,{}]}]
+6e:["$","span",null,{"children":["$","span",null,{"children":"\\ ----------------------------------------------------------------------"}]}]
+6f:["$","span",null,{"children":["$","span",null,{"children":"\\ main routine starts here"}]}]
+70:["$","span",null,{"children":["$","span",null,{"children":".main"}]}]
+71:["$","span",null,{"children":["$","span",null,{"children":"LD   HL,scratch_1              \\ holds address of file to open"}]}]
+72:["$","span",null,{"children":["$","span",null,{"children":"LD   DE,scratch_2              \\ explicit name buffer"}]}]
+73:["$","span",null,{"children":["$","span",null,{"children":"LD   C,40                      \\ size of explicit name buffer"}]}]
+74:["$","span",null,{"children":["$","span",null,{"children":"LD   B,0                       \\ HL string pointer is local"}]}]
+75:["$","span",null,{"children":["$","span",null,{"children":"LD   a, op_dor                 \\ get DOR handle"}]}]
+76:["$","span",null,{"children":["$","span",null,{"children":"OPT  FNsys(GN_Opf)             \\ open..."}]}]
+77:["$","span",null,{"children":["$","span",null,{"children":"JR   NC,opened_OK"}]}]
+78:["$","span",null,{"children":["$","span",null,{"children":"OPT  FNsys(GN_Err)             \\ report error in standard window"}]}]
+79:["$","span",null,{"children":["$","span",null,{"children":"RET"}]}]
+7a:["$","span",null,{"children":["$","span",null,{"children":".opened_OK"}]}]
+7b:["$","span",null,{"children":["$","span",null,{"children":"LD   A,dr_rd                   \\ read DOR record"}]}]
+7c:["$","span",null,{"children":["$","span",null,{"children":"LD   B,ASC\"U\"                  \\ read update information"}]}]
+7d:["$","span",null,{"children":["$","span",null,{"children":"LD   C,6                       \\ 3 byte internal date, 3 byte int. time"}]}]
+7e:["$","span",null,{"children":["$","span",null,{"children":"LD   DE,scratch_1              \\ store returned information at (DE)"}]}]
+7f:["$","span",null,{"children":["$","span",null,{"children":"OPT  FNsys(OS_Dor)             \\ fetch update date"}]}]
+80:["$","span",null,{"children":["$","span",null,{"children":"LD   A,dr_fre"}]}]
+81:["$","span",null,{"children":["$","span",null,{"children":"OPT  FNsys(OS_Dor)             \\ free DOR handle"}]}]
+82:["$","span",null,{"children":["$","span",null,{"children":"LD   HL,scratch_2              \\ display explicit filename"}]}]
+83:["$","span",null,{"children":["$","span",null,{"children":"OPT  FNsys(GN_Sop)             \\ to standard output"}]}]
+84:["$","span",null,{"children":["$","span",null,{"children":"LD   HL,tab_str"}]}]
+85:["$","span",null,{"children":["$","span",null,{"children":"OPT  FNsys(GN_Sop)             \\ tab to column 40"}]}]
+86:["$","span",null,{"children":["$","span",null,{"children":"LD   HL,scratch_1"}]}]
+87:["$","span",null,{"children":["$","span",null,{"children":"OPT  FNsys(GN_Sdo)             \\ output returned update date"}]}]
+88:["$","span",null,{"children":["$","span",null,{"children":"OPT  FNsys(GN_Nln)             \\ display newline"}]}]
+89:["$","span",null,{"children":["$","span",null,{"children":"RET                            \\ back to BASIC"}]}]
+8a:["$","span",null,{"children":["$","span",null,{}]}]
+8b:["$","span",null,{"children":["$","span",null,{"children":".scratch_1 DEFM STRING$(40,\"X\")"}]}]
+8c:["$","span",null,{"children":["$","span",null,{"children":".scratch_2 DEFM STRING$(40,\"X\")"}]}]
+8d:["$","span",null,{"children":["$","span",null,{"children":".tab_str DEFM CHR$1+\"2X\"+CHR$(32+40)+CHR$0"}]}]
+8e:["$","span",null,{"children":["$","span",null,{"children":"\\ main routine ends here"}]}]
+8f:["$","span",null,{"children":["$","span",null,{"children":"\\ ----------------------------------------------------------------------"}]}]
+90:["$","span",null,{"children":["$","span",null,{"children":"]"}]}]
+91:["$","span",null,{"children":["$","span",null,{"children":"NEXT pass"}]}]
+92:["$","span",null,{"children":["$","span",null,{}]}]
+93:["$","span",null,{"children":["$","span",null,{"children":"CLS"}]}]
+94:["$","span",null,{"children":["$","span",null,{"children":"PRINT \"Read File Update Date and Time\""}]}]
+95:["$","span",null,{"children":["$","span",null,{"children":"INPUT \"Filename:\"A$"}]}]
+96:["$","span",null,{"children":["$","span",null,{"children":"IF LEN(A$)>40 THEN PRINT \"String too long\": END"}]}]
+97:["$","span",null,{"children":["$","span",null,{}]}]
+98:["$","span",null,{"children":["$","span",null,{"children":"A$=A$+CHR$0  : REM null-terminate filename string"}]}]
+99:["$","span",null,{"children":["$","span",null,{"children":"$$scratch_1=A$"}]}]
+9a:["$","span",null,{"children":["$","span",null,{"children":"CALL code"}]}]
+9b:["$","span",null,{"children":["$","span",null,{"children":"END"}]}]
+9c:["$","span",null,{"children":["$","span",null,{"children":":"}]}]
+9d:["$","span",null,{"children":["$","span",null,{"children":"DEF FNsys(arg)"}]}]
+9e:["$","span",null,{"children":["$","span",null,{"children":"IF arg>255 THEN PROC_Rst20Defw(arg) ELSE PROC_Rst20Defb(arg)"}]}]
+9f:["$","span",null,{"children":["$","span",null,{"children":"=pass"}]}]
+a0:["$","span",null,{"children":["$","span",null,{"children":":"}]}]
+a1:["$","span",null,{"children":["$","span",null,{"children":"DEF PROC_Rst20Defw(arg)"}]}]
+a2:["$","span",null,{"children":["$","span",null,{"children":"[OPT pass"}]}]
+a3:["$","span",null,{"children":["$","span",null,{"children":"RST &20: DEFW arg"}]}]
+a4:["$","span",null,{"children":["$","span",null,{"children":"]"}]}]
+a5:["$","span",null,{"children":["$","span",null,{"children":"ENDPROC"}]}]
+a6:["$","span",null,{"children":["$","span",null,{"children":"DEF PROC_Rst20Defb(arg)"}]}]
+a7:["$","span",null,{"children":["$","span",null,{"children":"[OPT pass"}]}]
+a8:["$","span",null,{"children":["$","span",null,{"children":"RST &20: DEFB arg"}]}]
+a9:["$","span",null,{"children":["$","span",null,{"children":"]"}]}]
+aa:["$","span",null,{"children":["$","span",null,{"children":"ENDPROC"}]}]
+ac:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

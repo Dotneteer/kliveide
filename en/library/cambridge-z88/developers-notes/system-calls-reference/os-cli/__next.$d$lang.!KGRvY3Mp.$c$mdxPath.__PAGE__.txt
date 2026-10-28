@@ -1,0 +1,240 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:Tebe,---
+description: "CL_CNT can be used to ask system if there is an active CLI."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7471396 (version 9) by scripts/import-z88-wiki.cjs */}
+
+# OS_Cli, CLI interface
+
+## Register parameters
+
+```text
+ IN:
+     A = CL_CNT ($00), get CLI use count
+
+     A = CL_RIM ($01), get raw input
+          BC = timeout in 1/100 second ticks
+          BC = 0, return immediately if no data
+          BC = -1 ($FFFF), wait forever for data
+
+     A = CL_MBC ($02), meta/base to character conversion
+          DE = meta (D) / base (E)
+               D = $01   SHIFT
+                 = $02   CTRL (DIAMOND)
+                 = $04   ALT (SQUARE)
+                 = $08   special
+               E = base character
+
+     A = CL_CMB ($03), character to meta/base conversion
+          DE = raw character
+               D = 0, E is ISO character
+               D = 1, E is special character
+
+     A = CL_INC ($04), increment CLI use count
+     A = CL_DEC ($05), decrement CLI use count
+     A = CL_RES ($06), reset CLI use count
+
+     A = CL_ACK ($07), acknowledge CLI/Escape
+          D = reset mask (zero to reset):
+               CLM_SH ($01) = SHIFT (bit)
+               CLM_CT ($02) = DIAMOND (bit)
+
+OUT, A(in) = CL_CNT, always:
+     Fc = 0
+     A  = CLI use count (A = 0 if no active CLI)
+     IX = keyboard variable frame
+
+Registers changed after return:
+     ..BCDEHL/..IY same
+     AF....../IX.. different
+
+OUT, A(in) = CL_RIN, successful:
+     Fc = 0
+     BC = remaining timeout
+     DE = character:
+          D = 0, E is ISO character
+          D = 1, E is special character
+OUT, A(in) = CL_RIN, failed:
+     Fc = 1
+          A = RC_ESC
+          A = RC_SUSP
+          A = RC_TIME
+
+Registers changed after return:
+     ......HL/IXIY same
+     AFBCDE../.... different
+
+OUT, A(in) = CL_MBC, successful:
+     Fc = 0
+     DE = character:
+          D = 0, E is ISO character
+          D = 1, E is special character
+OUT, A(in) = CL_MBC, failed:
+     Fc = 1
+          A = RC_FAIL, not a meaningful character
+
+Registers changed after return:
+     ..BC..HL/IXIY same
+     AF..DE../.... different
+
+OUT, A(in) = CL_CMB, successful:
+     Fc = 0
+     DE = meta (D) / base (E)
+          D = $01   SHIFT
+            = $02   CTRL (DIAMOND)
+            = $04   ALT (SQUARE)
+            = $08   special
+          E = base character
+
+OUT, A(in) = CL_CMB, failed:
+     Fc = 1
+          A = RC_FAIL, not a meaningful character
+
+Registers changed after return:
+     ..BC..HL/IXIY same
+     AF..DE../.... different
+
+OUT, A(in) = CL_INC, CL_DEC, CL_RES always:
+     Fc = 0
+
+Registers changed after return:
+     A.BCDEHL/IXIY same
+     .F....../.... different
+
+OUT, A(in) = CL_ACK, always:
+     Fc = 0
+     Fz = 1, no Escape
+     Fz = 0, Escape
+     D = resulting mask
+
+Registers changed after return:
+     A.BCDEHL/IXIY same
+     .F....../.... different
+```
+
+## Notes
+
+Internal operating system usage.
+
+CL\_CNT can be used to ask system if there is an active CLI.
+
+## Related calls
+
+**[DC\_Icl](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-icl)**, Invoke new CLI<br />**[DC\_In](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-in)**, Read from CLI<br />**[DC\_Out](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-out)**, Write to CLI<br />**[DC\_Prt](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-prt)**, Print to CLI<br />**[DC\_Rbd](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-rbd)**, Rebind streams<br />**[DC\_Xin](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-xin)**, examine CLI input<br />**[DC\_Gen](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-gen)**, screen driver SOH calla:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Register parameters","id":"register-parameters","depth":2},{"value":"Notes","id":"notes","depth":2},{"value":"Related calls","id":"related-calls","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"CL_CNT can be used to ask system if there is an active CLI.","title":"OS_Cli, CLI interface","filePath":"content/en/library/cambridge-z88/developers-notes/system-calls-reference/os-cli.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/developers-notes/system-calls-reference/os-cli","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"OS_Cli, CLI interface - Klive IDE"}],["$","meta","1",{"name":"description","content":"CL_CNT can be used to ask system if there is an active CLI."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-cli/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"cyL0EKA0xNKEZcECA3AIS"}
+20:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+21:"ToggleWordWrapButton"
+22:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$21"]
+23:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+71:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["OS_Cli, CLI interface","$undefined"]}],"\n",["$","h2",null,{"id":"register-parameters","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Register parameters",["$","$L20",null,{"id":"register-parameters"}]]}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":" IN:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     A = CL_CNT ($00), get CLI use count"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     A = CL_RIM ($01), get raw input"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"          BC = timeout in 1/100 second ticks"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"          BC = 0, return immediately if no data"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"          BC = -1 ($FFFF), wait forever for data"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     A = CL_MBC ($02), meta/base to character conversion"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"          DE = meta (D) / base (E)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"               D = $01   SHIFT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                 = $02   CTRL (DIAMOND)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                 = $04   ALT (SQUARE)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                 = $08   special"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"               E = base character"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     A = CL_CMB ($03), character to meta/base conversion"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"          DE = raw character"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"               D = 0, E is ISO character"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"               D = 1, E is special character"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     A = CL_INC ($04), increment CLI use count"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     A = CL_DEC ($05), decrement CLI use count"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     A = CL_RES ($06), reset CLI use count"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     A = CL_ACK ($07), acknowledge CLI/Escape"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"          D = reset mask (zero to reset):"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"               CLM_SH ($01) = SHIFT (bit)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"               CLM_CT ($02) = DIAMOND (bit)"}]}],"\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41","\n","$L42","\n","$L43","\n","$L44","\n","$L45","\n","$L46","\n","$L47","\n","$L48","\n","$L49","\n","$L4a","\n","$L4b","\n","$L4c","\n","$L4d","\n","$L4e","\n","$L4f","\n","$L50","\n","$L51","\n","$L52","\n","$L53","\n","$L54","\n","$L55","\n","$L56","\n","$L57","\n","$L58","\n","$L59","\n","$L5a","\n","$L5b","\n","$L5c","\n","$L5d","\n","$L5e","\n","$L5f","\n","$L60","\n","$L61","\n","$L62","\n","$L63","\n","$L64","\n","$L65","\n","$L66","\n","$L67","\n","$L68","\n","$L69","\n","$L6a","\n","$L6b"]}]]}]]}],"\n","$L6c","\n","$L6d","\n","$L6e","\n","$L6f","\n","$L70"]]}]
+15:["$","$L71",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@72"}]}]
+1f:true
+73:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+9:300
+24:["$","span",null,{"children":["$","span",null,{}]}]
+25:["$","span",null,{"children":["$","span",null,{"children":"OUT, A(in) = CL_CNT, always:"}]}]
+26:["$","span",null,{"children":["$","span",null,{"children":"     Fc = 0"}]}]
+27:["$","span",null,{"children":["$","span",null,{"children":"     A  = CLI use count (A = 0 if no active CLI)"}]}]
+28:["$","span",null,{"children":["$","span",null,{"children":"     IX = keyboard variable frame"}]}]
+29:["$","span",null,{"children":["$","span",null,{}]}]
+2a:["$","span",null,{"children":["$","span",null,{"children":"Registers changed after return:"}]}]
+2b:["$","span",null,{"children":["$","span",null,{"children":"     ..BCDEHL/..IY same"}]}]
+2c:["$","span",null,{"children":["$","span",null,{"children":"     AF....../IX.. different"}]}]
+2d:["$","span",null,{"children":["$","span",null,{}]}]
+2e:["$","span",null,{"children":["$","span",null,{"children":"OUT, A(in) = CL_RIN, successful:"}]}]
+2f:["$","span",null,{"children":["$","span",null,{"children":"     Fc = 0"}]}]
+30:["$","span",null,{"children":["$","span",null,{"children":"     BC = remaining timeout"}]}]
+31:["$","span",null,{"children":["$","span",null,{"children":"     DE = character:"}]}]
+32:["$","span",null,{"children":["$","span",null,{"children":"          D = 0, E is ISO character"}]}]
+33:["$","span",null,{"children":["$","span",null,{"children":"          D = 1, E is special character"}]}]
+34:["$","span",null,{"children":["$","span",null,{"children":"OUT, A(in) = CL_RIN, failed:"}]}]
+35:["$","span",null,{"children":["$","span",null,{"children":"     Fc = 1"}]}]
+36:["$","span",null,{"children":["$","span",null,{"children":"          A = RC_ESC"}]}]
+37:["$","span",null,{"children":["$","span",null,{"children":"          A = RC_SUSP"}]}]
+38:["$","span",null,{"children":["$","span",null,{"children":"          A = RC_TIME"}]}]
+39:["$","span",null,{"children":["$","span",null,{}]}]
+3a:["$","span",null,{"children":["$","span",null,{"children":"Registers changed after return:"}]}]
+3b:["$","span",null,{"children":["$","span",null,{"children":"     ......HL/IXIY same"}]}]
+3c:["$","span",null,{"children":["$","span",null,{"children":"     AFBCDE../.... different"}]}]
+3d:["$","span",null,{"children":["$","span",null,{}]}]
+3e:["$","span",null,{"children":["$","span",null,{"children":"OUT, A(in) = CL_MBC, successful:"}]}]
+3f:["$","span",null,{"children":["$","span",null,{"children":"     Fc = 0"}]}]
+40:["$","span",null,{"children":["$","span",null,{"children":"     DE = character:"}]}]
+41:["$","span",null,{"children":["$","span",null,{"children":"          D = 0, E is ISO character"}]}]
+42:["$","span",null,{"children":["$","span",null,{"children":"          D = 1, E is special character"}]}]
+43:["$","span",null,{"children":["$","span",null,{"children":"OUT, A(in) = CL_MBC, failed:"}]}]
+44:["$","span",null,{"children":["$","span",null,{"children":"     Fc = 1"}]}]
+45:["$","span",null,{"children":["$","span",null,{"children":"          A = RC_FAIL, not a meaningful character"}]}]
+46:["$","span",null,{"children":["$","span",null,{}]}]
+47:["$","span",null,{"children":["$","span",null,{"children":"Registers changed after return:"}]}]
+48:["$","span",null,{"children":["$","span",null,{"children":"     ..BC..HL/IXIY same"}]}]
+49:["$","span",null,{"children":["$","span",null,{"children":"     AF..DE../.... different"}]}]
+4a:["$","span",null,{"children":["$","span",null,{}]}]
+4b:["$","span",null,{"children":["$","span",null,{"children":"OUT, A(in) = CL_CMB, successful:"}]}]
+4c:["$","span",null,{"children":["$","span",null,{"children":"     Fc = 0"}]}]
+4d:["$","span",null,{"children":["$","span",null,{"children":"     DE = meta (D) / base (E)"}]}]
+4e:["$","span",null,{"children":["$","span",null,{"children":"          D = $01   SHIFT"}]}]
+4f:["$","span",null,{"children":["$","span",null,{"children":"            = $02   CTRL (DIAMOND)"}]}]
+50:["$","span",null,{"children":["$","span",null,{"children":"            = $04   ALT (SQUARE)"}]}]
+51:["$","span",null,{"children":["$","span",null,{"children":"            = $08   special"}]}]
+52:["$","span",null,{"children":["$","span",null,{"children":"          E = base character"}]}]
+53:["$","span",null,{"children":["$","span",null,{}]}]
+54:["$","span",null,{"children":["$","span",null,{"children":"OUT, A(in) = CL_CMB, failed:"}]}]
+55:["$","span",null,{"children":["$","span",null,{"children":"     Fc = 1"}]}]
+56:["$","span",null,{"children":["$","span",null,{"children":"          A = RC_FAIL, not a meaningful character"}]}]
+57:["$","span",null,{"children":["$","span",null,{}]}]
+58:["$","span",null,{"children":["$","span",null,{"children":"Registers changed after return:"}]}]
+59:["$","span",null,{"children":["$","span",null,{"children":"     ..BC..HL/IXIY same"}]}]
+5a:["$","span",null,{"children":["$","span",null,{"children":"     AF..DE../.... different"}]}]
+5b:["$","span",null,{"children":["$","span",null,{}]}]
+5c:["$","span",null,{"children":["$","span",null,{"children":"OUT, A(in) = CL_INC, CL_DEC, CL_RES always:"}]}]
+5d:["$","span",null,{"children":["$","span",null,{"children":"     Fc = 0"}]}]
+5e:["$","span",null,{"children":["$","span",null,{}]}]
+5f:["$","span",null,{"children":["$","span",null,{"children":"Registers changed after return:"}]}]
+60:["$","span",null,{"children":["$","span",null,{"children":"     A.BCDEHL/IXIY same"}]}]
+61:["$","span",null,{"children":["$","span",null,{"children":"     .F....../.... different"}]}]
+62:["$","span",null,{"children":["$","span",null,{}]}]
+63:["$","span",null,{"children":["$","span",null,{"children":"OUT, A(in) = CL_ACK, always:"}]}]
+64:["$","span",null,{"children":["$","span",null,{"children":"     Fc = 0"}]}]
+65:["$","span",null,{"children":["$","span",null,{"children":"     Fz = 1, no Escape"}]}]
+66:["$","span",null,{"children":["$","span",null,{"children":"     Fz = 0, Escape"}]}]
+67:["$","span",null,{"children":["$","span",null,{"children":"     D = resulting mask"}]}]
+68:["$","span",null,{"children":["$","span",null,{}]}]
+69:["$","span",null,{"children":["$","span",null,{"children":"Registers changed after return:"}]}]
+6a:["$","span",null,{"children":["$","span",null,{"children":"     A.BCDEHL/IXIY same"}]}]
+6b:["$","span",null,{"children":["$","span",null,{"children":"     .F....../.... different"}]}]
+6c:["$","h2",null,{"id":"notes","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Notes",["$","$L20",null,{"id":"notes"}]]}]
+6d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Internal operating system usage."}]
+6e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"CL_CNT can be used to ask system if there is an active CLI."}]
+6f:["$","h2",null,{"id":"related-calls","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Related calls",["$","$L20",null,{"id":"related-calls"}]]}]
+70:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":["$","$L73",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-icl","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"DC_Icl"}]}],", Invoke new CLI",["$","br",null,{}],["$","strong",null,{"children":["$","$L73",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-in","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"DC_In"}]}],", Read from CLI",["$","br",null,{}],["$","strong",null,{"children":["$","$L73",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-out","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"DC_Out"}]}],", Write to CLI",["$","br",null,{}],["$","strong",null,{"children":["$","$L73",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-prt","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"DC_Prt"}]}],", Print to CLI",["$","br",null,{}],["$","strong",null,{"children":["$","$L73",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-rbd","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"DC_Rbd"}]}],", Rebind streams",["$","br",null,{}],["$","strong",null,{"children":["$","$L73",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-xin","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"DC_Xin"}]}],", examine CLI input",["$","br",null,{}],["$","strong",null,{"children":["$","$L73",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-gen","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"DC_Gen"}]}],", screen driver SOH call"]}]
+72:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

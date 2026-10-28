@@ -1,0 +1,654 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T3053,---
+description: "Any slot in a PipeDream document can be designated as an expression slot, in which case the expression you type into it will be evaluated, and the result will be displayed in the corresponding..."
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/35913754 (version 5) by scripts/import-z88-user-guide.cjs */}
+
+# Expression slots
+
+Any slot in a PipeDream document can be designated as an expression slot, in which case the expression you type into it will be evaluated, and the result will be displayed in the corresponding position in the document.
+
+An expression is entered by giving the **Edit Expression** command on the **EDIT** menu, or by typing <Key k="diamond" />X. The cursor will then move to the editing line, at the top of the screen, until the expression is entered by typing <Key k="enter" />.
+
+Alternatively, if the Options Page **Text/Numbers** option is set to `N`, all entries are taken as expressions.
+
+## Expressions
+
+Expressions can consist of numbers, functions performing operations on other expressions, references to other slots, or a combination of these combined by mathematical operators. Expressions can give a numerical result, a date, or a string of text. Illegal expressions will give an error as their result.
+
+### Numbers
+
+Numbers can be expressed in normal notation, or scientific notation. For example,
+
+<Typed>1, -1.7632, 1.4e27, 0.001</Typed>
+
+All calculations are performed to an accuracy of nine decimal places and numbers may lie between 1e38 and 1e-38.
+
+### Strings
+
+Strings are entered between double quotes, and may contain spaces. A slot reference to a text slot returns a string.
+
+### Slot references
+
+The form of a slot reference is
+
+*column-label row-number*
+
+separated by optional spaces, where
+
+*column-label* designates one of the 64 columns, A to Z, followed by AA to BN, and
+
+*row-number* is from 1 to 32768.
+
+Slot references are normally 'relative'; the reference will be updated if the position of the slot containing the reference changes relative to other slots.
+
+Each half of the slot reference may be 'fixed' by preceding the column letter or the row number by a dollar sign. The possibilities are:
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td><Typed>A1</Typed></Table.Td>
+<Table.Td>normal reference</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>$A1</Table.Td>
+<Table.Td>fixed column reference</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>A$1</Table.Td>
+<Table.Td>fixed row reference</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>$A$1</Table.Td>
+<Table.Td>fixed column, fixed row</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+The fixed part of a reference is not altered when copied with the **Replicate** or **Copy** commands on the **BLOCKS** menu, or when placed in a selection expression for the **Save** and **Print** commands on the **FILES** and **PRINT** menus respectively.
+
+When a slot to which a slot reference refers is deleted, the slot reference is marked with a '%' sign to indicate that the reference is no longer valid. The expression containing the slot reference will display the `Badslot` error message.
+
+### Specifying a block of slots - Ranges
+
+You can perform some functions on a block of slots, specified by the top left-hand corner of the block followed by the bottom right-hand corner of the block.
+
+For example
+
+<Typed>A2 D8</Typed>
+
+specifies all the slots in the block between columns A and D, and rows 2 and 8 inclusive.
+
+In some cases the function only makes sense if the range is restricted to a single row (a 'row range') as in A1 D1, or a single column (a 'column range'), as in B8 B20.
+
+### Specifying several slots - Lists
+
+Functions are available to count, choose from, or find the maximum or minimum of a list of elements. The elements in a list are separated by commas and can be simple slot references, or ranges. Each slot in a range is considered as a separate list element. For example,
+
+<Typed>13, B1 B5, C7,</Typed>
+
+is a list containing the 7 elements <Typed>13, B1, B2, B3, B4, B5,</Typed> and <Typed>C7</Typed>.
+
+### Dates
+
+Dates are entered in the format
+
+*DD.MM.YYYY* or *MM.DD.YYYY*
+
+depending on whether the Panel date-format setting is European or American.
+
+Dates can be sorted into chronological order, and the functions DAY, MONTH, and YEAR can be used to extract the values of the date's day, month, and year respectively.
+
+## Operators
+
+The following operators can be used within expressions
+
+### Arithmetic
+
+The arithmetic operators take two numbers as operands.
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>\+</Table.Td>
+<Table.Td>add</Table.Td>
+<Table.Td>\-</Table.Td>
+<Table.Td>subtract</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\*</Table.Td>
+<Table.Td>multiply</Table.Td>
+<Table.Td>/</Table.Td>
+<Table.Td>divide</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>^</Table.Td>
+<Table.Td>raise to the power</Table.Td>
+<Table.Td />
+<Table.Td />
+</Table.Tr>
+</tbody>
+</Table>
+
+Also, '+' and '-' may be used on date values. For example
+
+<Typed>12.10.1987 + 127</Typed>
+
+will return the date 127 days after 12 October 87, or 16.2.88, assuming that European date format has been selected.
+
+### Relational
+
+The relational operators can compare dates, strings, and numbers. Both operands must be of the same type, and the result is a logical value of FALSE=0 and TRUE=1.
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>\<</Table.Td>
+<Table.Td>less than</Table.Td>
+<Table.Td>\=</Table.Td>
+<Table.Td>equal to</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\<=</Table.Td>
+<Table.Td>less than or equal to</Table.Td>
+<Table.Td>\></Table.Td>
+<Table.Td>greater than</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\<\></Table.Td>
+<Table.Td>not equal to</Table.Td>
+<Table.Td>\>=</Table.Td>
+<Table.Td>greater than or equal to</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+When strings are being compared, the following wildcards (as in the **Replace** command) can be included in the second string:
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>^?</Table.Td>
+<Table.Td>matches any single character</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>^\#</Table.Td>
+<Table.Td>matches any number of characters</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>^^</Table.Td>
+<Table.Td>represents ^</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+### Logical
+
+The logical operators operate on numeric or logical values. Boolean FALSE is taken as zero, TRUE as non-zero.
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>&</Table.Td>
+<Table.Td>AND</Table.Td>
+<Table.Td>¦</Table.Td>
+<Table.Td>OR</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>!</Table.Td>
+<Table.Td>unary NOT</Table.Td>
+<Table.Td />
+<Table.Td />
+</Table.Tr>
+</tbody>
+</Table>
+
+## Functions
+
+### ABS — Absolute value
+
+ABS(number)
+
+Returns the absolute positive value of the argument.
+
+### ACS — Arc cosine
+
+ACS(number)
+
+Returns the arc cosine of the argument, in radians.
+
+### ASN — Arc sine
+
+ASN(number)
+
+Returns the arc sine of the argument, in radians.
+
+### ATN — Arc tangent
+
+ATN(number)
+
+Returns the arc tangent of the argument, in radians.
+
+### CHOOSE — Choose element from list
+
+CHOOSE(list)
+
+Returns an element from the list, using the value of the first element as an index into the remaining elements. For example, if `B4` contains <strong>`17.2.1987`</strong>
+
+`CHOOSE (MONTH(B4),"jan","feb","mar","apr")`
+
+gives the result <strong>`feb`</strong>.
+
+### COL — Column
+
+COL
+
+The value of the column in which it is evaluated. Column A is 1, column B is 2, etc.
+
+### COS — Cosine
+
+COS(radians)
+
+Returns the cosine of the argument.
+
+### COUNT — Count the number of elements
+
+COUNT(list)
+
+Returns the number of non-blank slots in the list.
+
+### DAY — Day of date
+
+DAY(date)
+
+Returns the day number of a date argument.
+
+For example, if slot <strong>`A1`</strong> contains <strong>`17.3.1961`</strong>, then <Typed>DAY (A1)</Typed> returns 17
+
+### DEG — Degrees from radians
+
+DEG(radians)
+
+Converts the argument, taken in radians, into degrees.
+
+### EXP — Exponent
+
+EXP(number)
+
+Returns the constant e (2.71828184..) raised to the specified power.
+
+### IF — Conditional expression
+
+IF(boolean,then,else)
+
+If the value of the first argument is TRUE, ie non-zero, the function returns then; otherwise the function returns else.
+
+For example, if slot A1 contains `-23`,
+
+<Typed>IF(A1 \<0,"Debit","Credit")</Typed>
+
+would return Debit.
+
+### INDEX — Index slot
+
+INDEX(column,row)
+
+Returns the evaluated expression or string found at coordinates column, row.
+
+For example, if `A2` contained <strong>`IF(100,"Debit","Credit")`</strong>
+
+<Typed>INDEX(1,2)</Typed>
+
+would return <strong>`Credit`</strong>.
+
+### INT — Integer part
+
+INT(number)
+
+Returns the integer part of the argument.
+
+### LN — Logarithm to base e
+
+LN(number)
+
+Returns the natural logarithm, log<sub>e</sub> of the argument.
+
+### LOG — Logarithm to base 10
+
+LOG(number)
+
+Returns the logarithm to base 10 of the argument.
+
+### LOOKUP — Look up value in a table
+
+LOOKUP(key,range1,range2)
+
+Returns the value in range2 corresponding to the position that key occurs in range1.
+
+key must be a cell reference. For example, the following sheet would result if <Typed>LOOKUP(A3,A1 F1,A2 F2)</Typed> were placed at B4:
+
+<Shot src="z88-user-guide/pipedream-reference/pipedream-lookup-example.webp" alt="Pipedream lookup example" width={640} />
+
+If an exact match is found in range1, the function returns the value of the slot the same number of slots from the beginning of the second range.
+
+If key is not found in range1, the function returns the error
+
+`Lookup`
+
+Wildcards '^?' and '^\#' may be included in key.
+
+### MAX — Maximum value in list
+
+MAX(list)
+
+Returns the maximum value from the slots in the list.
+
+### MIN — Minimum value in list
+
+MIN(list)
+
+Returns the minimum value from the slots in the list.
+
+### MONTH — Month of date
+
+MONTH(date)
+
+Returns the month number of its date argument.
+
+For example, if `A1` contains `12.6.1987` then <Typed>MONTH(A1)</Typed> returns `6`.
+
+### PI — π
+
+PI
+
+Returns the value 3.141592653.
+
+### RAD — Radians from degrees
+
+RAD(degrees)
+
+Returns the argument, taken as degrees, converted into radians.
+
+### ROW — Row
+
+ROW
+
+The value of the row in which it is evaluated.
+
+### SGN — Sign
+
+SGN(number)
+
+Returns -1, 0, or 1 depending on whether the argument is negative, zero, or positive respectively.
+
+### SIN — Sine
+
+SIN(radians)
+
+Returns the sine of the argument, in radians.
+
+### SQR — Square root
+
+SQR(number)
+
+Returns the positive square-root of its argument.
+
+### SUM — Sum
+
+SUM(list)
+
+Returns the sum of the slots in the list.
+
+### TAN — Tangent
+
+TAN(radians)
+
+Returns the tangent of the argument, in radians.
+
+### YEAR — Year of date
+
+Returns the year number of its date argument.
+
+For example, if `A1` contains `12.6.1987` then <Typed>`YEAR(A1`)</Typed> returns `87`.
+
+## @ Fields
+
+You can include the page number, the date, the file title from the Options Page, or the value of any expression slot within text in your document using the special PipeDream @-fields.
+
+The following @ fields are available:
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>**Identifier**</Table.Td>
+<Table.Td>**Effect**</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td><Typed>@P@</Typed></Table.Td>
+<Table.Td>current page number</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td><Typed>@D@</Typed></Table.Td>
+<Table.Td>date</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>@T@</Table.Td>
+<Table.Td>title defined in options page</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td><Typed>@</Typed>*ref*<Typed>@</Typed></Table.Td>
+<Table.Td>value of slot *ref*</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>@@</Table.Td>
+<Table.Td>@</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+One or more '@' characters should be given after the identifier to determine the size of the @ field for formatting. For example,
+
+<Typed>@P@@@@</Typed>
+
+creates a field of four characters. Provided the value to be displayed is less than the size of the @-field, the line will be justified correctly.
+
+The field:
+
+<Typed>@ref@@@@@</Typed>
+
+will reserve five characters for the value of the slot indicated by the reference.
+
+If it is an expression slot, the value will be displayed in the same format as in the slot itself, with alignment ignored.
+
+When the cursor is not on a text slot with an @ field in it, the slot shows the value of the @ field. When the cursor is moved onto the slot, the actual @ identifier is shown, for editing.a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Expressions","id":"expressions","depth":2},{"value":"Numbers","id":"numbers","depth":3},{"value":"Strings","id":"strings","depth":3},{"value":"Slot references","id":"slot-references","depth":3},{"value":"Specifying a block of slots - Ranges","id":"specifying-a-block-of-slots---ranges","depth":3},{"value":"Specifying several slots - Lists","id":"specifying-several-slots---lists","depth":3},{"value":"Dates","id":"dates","depth":3},{"value":"Operators","id":"operators","depth":2},{"value":"Arithmetic","id":"arithmetic","depth":3},{"value":"Relational","id":"relational","depth":3},{"value":"Logical","id":"logical","depth":3},{"value":"Functions","id":"functions","depth":2},{"value":"ABS — Absolute value","id":"abs--absolute-value","depth":3},{"value":"ACS — Arc cosine","id":"acs--arc-cosine","depth":3},{"value":"ASN — Arc sine","id":"asn--arc-sine","depth":3},{"value":"ATN — Arc tangent","id":"atn--arc-tangent","depth":3},{"value":"CHOOSE — Choose element from list","id":"choose--choose-element-from-list","depth":3},{"value":"COL — Column","id":"col--column","depth":3},{"value":"COS — Cosine","id":"cos--cosine","depth":3},{"value":"COUNT — Count the number of elements","id":"count--count-the-number-of-elements","depth":3},{"value":"DAY — Day of date","id":"day--day-of-date","depth":3},{"value":"DEG — Degrees from radians","id":"deg--degrees-from-radians","depth":3},{"value":"EXP — Exponent","id":"exp--exponent","depth":3},{"value":"IF — Conditional expression","id":"if--conditional-expression","depth":3},{"value":"INDEX — Index slot","id":"index--index-slot","depth":3},{"value":"INT — Integer part","id":"int--integer-part","depth":3},{"value":"LN — Logarithm to base e","id":"ln--logarithm-to-base-e","depth":3},{"value":"LOG — Logarithm to base 10","id":"log--logarithm-to-base-10","depth":3},{"value":"LOOKUP — Look up value in a table","id":"lookup--look-up-value-in-a-table","depth":3},{"value":"MAX — Maximum value in list","id":"max--maximum-value-in-list","depth":3},{"value":"MIN — Minimum value in list","id":"min--minimum-value-in-list","depth":3},{"value":"MONTH — Month of date","id":"month--month-of-date","depth":3},{"value":"PI — π","id":"pi--π","depth":3},{"value":"RAD — Radians from degrees","id":"rad--radians-from-degrees","depth":3},{"value":"ROW — Row","id":"row--row","depth":3},{"value":"SGN — Sign","id":"sgn--sign","depth":3},{"value":"SIN — Sine","id":"sin--sine","depth":3},{"value":"SQR — Square root","id":"sqr--square-root","depth":3},{"value":"SUM — Sum","id":"sum--sum","depth":3},{"value":"TAN — Tangent","id":"tan--tangent","depth":3},{"value":"YEAR — Year of date","id":"year--year-of-date","depth":3},{"value":"@ Fields","id":"-fields","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"Any slot in a PipeDream document can be designated as an expression slot, in which case the expression you type into it will be evaluated, and the result will be displayed in the corresponding...","title":"Expression slots","filePath":"content/en/library/cambridge-z88/user-guide/pipedream-reference/expression-slots.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/user-guide/pipedream-reference/expression-slots","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Expression slots - Klive IDE"}],["$","meta","1",{"name":"description","content":"Any slot in a PipeDream document can be designated as an expression slot, in which case the expression you type into it will be evaluated, and the result will be displayed in the corresponding..."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/user-guide/pipedream-reference/expression-slots/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"cyL0EKA0xNKEZcECA3AIS"}
+20:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+ba:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Expression slots","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Any slot in a PipeDream document can be designated as an expression slot, in which case the expression you type into it will be evaluated, and the result will be displayed in the corresponding position in the document."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["An expression is entered by giving the ",["$","strong",null,{"children":"Edit Expression"}]," command on the ",["$","strong",null,{"children":"EDIT"}]," menu, or by typing ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"X. The cursor will then move to the editing line, at the top of the screen, until the expression is entered by typing ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}],"."]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Alternatively, if the Options Page ",["$","strong",null,{"children":"Text/Numbers"}]," option is set to ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"N"}],", all entries are taken as expressions."]}],"\n",["$","h2",null,{"id":"expressions","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Expressions",["$","$L20",null,{"id":"expressions"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Expressions can consist of numbers, functions performing operations on other expressions, references to other slots, or a combination of these combined by mathematical operators. Expressions can give a numerical result, a date, or a string of text. Illegal expressions will give an error as their result."}],"\n",["$","h3",null,{"id":"numbers","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Numbers",["$","$L20",null,{"id":"numbers"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Numbers can be expressed in normal notation, or scientific notation. For example,"}],"\n",["$","span",null,{"className":"Z88_typed___J27m","children":"1, -1.7632, 1.4e27, 0.001"}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"All calculations are performed to an accuracy of nine decimal places and numbers may lie between 1e38 and 1e-38."}],"\n",["$","h3",null,{"id":"strings","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Strings",["$","$L20",null,{"id":"strings"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Strings are entered between double quotes, and may contain spaces. A slot reference to a text slot returns a string."}],"\n",["$","h3",null,{"id":"slot-references","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Slot references",["$","$L20",null,{"id":"slot-references"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The form of a slot reference is"}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","em",null,{"children":"column-label row-number"}]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"separated by optional spaces, where"}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","em",null,{"children":"column-label"}]," designates one of the 64 columns, A to Z, followed by AA to BN, and"]}],"\n","$L21","\n","$L22","\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41","\n","$L42","\n","$L43","\n","$L44","\n","$L45","\n","$L46","\n","$L47","\n","$L48","\n","$L49","\n","$L4a","\n","$L4b","\n","$L4c","\n","$L4d","\n","$L4e","\n","$L4f","\n","$L50","\n","$L51","\n","$L52","\n","$L53","\n","$L54","\n","$L55","\n","$L56","\n","$L57","\n","$L58","\n","$L59","\n","$L5a","\n","$L5b","\n","$L5c","\n","$L5d","\n","$L5e","\n","$L5f","\n","$L60","\n","$L61","\n","$L62","\n","$L63","\n","$L64","\n","$L65","\n","$L66","\n","$L67","\n","$L68","\n","$L69","\n","$L6a","\n","$L6b","\n","$L6c","\n","$L6d","\n","$L6e","\n","$L6f","\n","$L70","\n","$L71","\n","$L72","\n","$L73","\n","$L74","\n","$L75","\n","$L76","\n","$L77","\n","$L78","\n","$L79","\n","$L7a","\n","$L7b","\n","$L7c","\n","$L7d","\n","$L7e","\n","$L7f","\n","$L80","\n","$L81","\n","$L82","\n","$L83","\n","$L84","\n","$L85","\n","$L86","\n","$L87","\n","$L88","\n","$L89","\n","$L8a","\n","$L8b","\n","$L8c","\n","$L8d","\n","$L8e","\n","$L8f","\n","$L90","\n","$L91","\n","$L92","\n","$L93","\n","$L94","\n","$L95","\n","$L96","\n","$L97","\n","$L98","\n","$L99","\n","$L9a","\n","$L9b","\n","$L9c","\n","$L9d","\n","$L9e","\n","$L9f","\n","$La0","\n","$La1","\n","$La2","\n","$La3","\n","$La4","\n","$La5","\n","$La6","\n","$La7","\n","$La8","\n","$La9","\n","$Laa","\n","$Lab","\n","$Lac","\n","$Lad","\n","$Lae","\n","$Laf","\n","$Lb0","\n","$Lb1","\n","$Lb2","\n","$Lb3","\n","$Lb4","\n","$Lb5","\n","$Lb6","\n","$Lb7","\n","$Lb8","\n","$Lb9"]]}]
+15:["$","$Lba",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@bb"}]}]
+1f:true
+9:300
+21:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","em",null,{"children":"row-number"}]," is from 1 to 32768."]}]
+22:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Slot references are normally ‘relative’; the reference will be updated if the position of the slot containing the reference changes relative to other slots."}]
+23:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Each half of the slot reference may be ‘fixed’ by preceding the column letter or the row number by a dollar sign. The possibilities are:"}]
+24:["$","table",null,{"children":["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":["$","span",null,{"className":"Z88_typed___J27m","children":"A1"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"normal reference","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"$$A1","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"fixed column reference","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"A$1","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"fixed row reference","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"$$A$1","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"fixed column, fixed row","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}],"className":"x:block x:overflow-x-auto"}]
+25:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The fixed part of a reference is not altered when copied with the ",["$","strong",null,{"children":"Replicate"}]," or ",["$","strong",null,{"children":"Copy"}]," commands on the ",["$","strong",null,{"children":"BLOCKS"}]," menu, or when placed in a selection expression for the ",["$","strong",null,{"children":"Save"}]," and ",["$","strong",null,{"children":"Print"}]," commands on the ",["$","strong",null,{"children":"FILES"}]," and ",["$","strong",null,{"children":"PRINT"}]," menus respectively."]}]
+26:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["When a slot to which a slot reference refers is deleted, the slot reference is marked with a ’%’ sign to indicate that the reference is no longer valid. The expression containing the slot reference will display the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Badslot"}]," error message."]}]
+27:["$","h3",null,{"id":"specifying-a-block-of-slots---ranges","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Specifying a block of slots - Ranges",["$","$L20",null,{"id":"specifying-a-block-of-slots---ranges"}]]}]
+28:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You can perform some functions on a block of slots, specified by the top left-hand corner of the block followed by the bottom right-hand corner of the block."}]
+29:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"For example"}]
+2a:["$","span",null,{"className":"Z88_typed___J27m","children":"A2 D8"}]
+2b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"specifies all the slots in the block between columns A and D, and rows 2 and 8 inclusive."}]
+2c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"In some cases the function only makes sense if the range is restricted to a single row (a ‘row range’) as in A1 D1, or a single column (a ‘column range’), as in B8 B20."}]
+2d:["$","h3",null,{"id":"specifying-several-slots---lists","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Specifying several slots - Lists",["$","$L20",null,{"id":"specifying-several-slots---lists"}]]}]
+2e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Functions are available to count, choose from, or find the maximum or minimum of a list of elements. The elements in a list are separated by commas and can be simple slot references, or ranges. Each slot in a range is considered as a separate list element. For example,"}]
+2f:["$","span",null,{"className":"Z88_typed___J27m","children":"13, B1 B5, C7,"}]
+30:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["is a list containing the 7 elements ",["$","span",null,{"className":"Z88_typed___J27m","children":"13, B1, B2, B3, B4, B5,"}]," and ",["$","span",null,{"className":"Z88_typed___J27m","children":"C7"}],"."]}]
+31:["$","h3",null,{"id":"dates","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Dates",["$","$L20",null,{"id":"dates"}]]}]
+32:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Dates are entered in the format"}]
+33:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","em",null,{"children":"DD.MM.YYYY"}]," or ",["$","em",null,{"children":"MM.DD.YYYY"}]]}]
+34:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"depending on whether the Panel date-format setting is European or American."}]
+35:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Dates can be sorted into chronological order, and the functions DAY, MONTH, and YEAR can be used to extract the values of the date’s day, month, and year respectively."}]
+36:["$","h2",null,{"id":"operators","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Operators",["$","$L20",null,{"id":"operators"}]]}]
+37:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The following operators can be used within expressions"}]
+38:["$","h3",null,{"id":"arithmetic","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Arithmetic",["$","$L20",null,{"id":"arithmetic"}]]}]
+39:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The arithmetic operators take two numbers as operands."}]
+3a:["$","table",null,{"children":["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":"+","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"add","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"-","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"subtract","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"*","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"multiply","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"/","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"divide","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"^","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"raise to the power","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}],"className":"x:block x:overflow-x-auto"}]
+3b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Also, ’+’ and ’-’ may be used on date values. For example"}]
+3c:["$","span",null,{"className":"Z88_typed___J27m","children":"12.10.1987 + 127"}]
+3d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"will return the date 127 days after 12 October 87, or 16.2.88, assuming that European date format has been selected."}]
+3e:["$","h3",null,{"id":"relational","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Relational",["$","$L20",null,{"id":"relational"}]]}]
+3f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The relational operators can compare dates, strings, and numbers. Both operands must be of the same type, and the result is a logical value of FALSE=0 and TRUE=1."}]
+40:["$","table",null,{"children":["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":"<","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"less than","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"=","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"equal to","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"<=","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"less than or equal to","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":">","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"greater than","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"<>","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"not equal to","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":">=","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"greater than or equal to","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}],"className":"x:block x:overflow-x-auto"}]
+41:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["When strings are being compared, the following wildcards (as in the ",["$","strong",null,{"children":"Replace"}]," command) can be included in the second string:"]}]
+42:["$","table",null,{"children":["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":"^?","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"matches any single character","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"^#","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"matches any number of characters","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"^^","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"represents ^","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}],"className":"x:block x:overflow-x-auto"}]
+43:["$","h3",null,{"id":"logical","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Logical",["$","$L20",null,{"id":"logical"}]]}]
+44:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The logical operators operate on numeric or logical values. Boolean FALSE is taken as zero, TRUE as non-zero."}]
+45:["$","table",null,{"children":["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":"&","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"AND","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"¦","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"OR","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"!","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"unary NOT","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}],"className":"x:block x:overflow-x-auto"}]
+46:["$","h2",null,{"id":"functions","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Functions",["$","$L20",null,{"id":"functions"}]]}]
+47:["$","h3",null,{"id":"abs--absolute-value","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["ABS — Absolute value",["$","$L20",null,{"id":"abs--absolute-value"}]]}]
+48:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"ABS(number)"}]
+49:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Returns the absolute positive value of the argument."}]
+4a:["$","h3",null,{"id":"acs--arc-cosine","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["ACS — Arc cosine",["$","$L20",null,{"id":"acs--arc-cosine"}]]}]
+4b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"ACS(number)"}]
+4c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Returns the arc cosine of the argument, in radians."}]
+4d:["$","h3",null,{"id":"asn--arc-sine","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["ASN — Arc sine",["$","$L20",null,{"id":"asn--arc-sine"}]]}]
+4e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"ASN(number)"}]
+4f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Returns the arc sine of the argument, in radians."}]
+50:["$","h3",null,{"id":"atn--arc-tangent","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["ATN — Arc tangent",["$","$L20",null,{"id":"atn--arc-tangent"}]]}]
+51:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"ATN(number)"}]
+52:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Returns the arc tangent of the argument, in radians."}]
+53:["$","h3",null,{"id":"choose--choose-element-from-list","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["CHOOSE — Choose element from list",["$","$L20",null,{"id":"choose--choose-element-from-list"}]]}]
+54:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"CHOOSE(list)"}]
+55:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Returns an element from the list, using the value of the first element as an index into the remaining elements. For example, if ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"B4"}]," contains ",["$","strong",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"17.2.1987"}]}]]}]
+56:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"CHOOSE (MONTH(B4),\"jan\",\"feb\",\"mar\",\"apr\")"}]}]
+57:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["gives the result ",["$","strong",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"feb"}]}],"."]}]
+58:["$","h3",null,{"id":"col--column","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["COL — Column",["$","$L20",null,{"id":"col--column"}]]}]
+59:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"COL"}]
+5a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The value of the column in which it is evaluated. Column A is 1, column B is 2, etc."}]
+5b:["$","h3",null,{"id":"cos--cosine","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["COS — Cosine",["$","$L20",null,{"id":"cos--cosine"}]]}]
+5c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"COS(radians)"}]
+5d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Returns the cosine of the argument."}]
+5e:["$","h3",null,{"id":"count--count-the-number-of-elements","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["COUNT — Count the number of elements",["$","$L20",null,{"id":"count--count-the-number-of-elements"}]]}]
+5f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"COUNT(list)"}]
+60:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Returns the number of non-blank slots in the list."}]
+61:["$","h3",null,{"id":"day--day-of-date","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["DAY — Day of date",["$","$L20",null,{"id":"day--day-of-date"}]]}]
+62:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"DAY(date)"}]
+63:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Returns the day number of a date argument."}]
+64:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["For example, if slot ",["$","strong",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"A1"}]}]," contains ",["$","strong",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"17.3.1961"}]}],", then ",["$","span",null,{"className":"Z88_typed___J27m","children":"DAY (A1)"}]," returns 17"]}]
+65:["$","h3",null,{"id":"deg--degrees-from-radians","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["DEG — Degrees from radians",["$","$L20",null,{"id":"deg--degrees-from-radians"}]]}]
+66:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"DEG(radians)"}]
+67:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Converts the argument, taken in radians, into degrees."}]
+68:["$","h3",null,{"id":"exp--exponent","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["EXP — Exponent",["$","$L20",null,{"id":"exp--exponent"}]]}]
+69:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"EXP(number)"}]
+6a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Returns the constant e (2.71828184..) raised to the specified power."}]
+6b:["$","h3",null,{"id":"if--conditional-expression","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["IF — Conditional expression",["$","$L20",null,{"id":"if--conditional-expression"}]]}]
+6c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"IF(boolean,then,else)"}]
+6d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If the value of the first argument is TRUE, ie non-zero, the function returns then; otherwise the function returns else."}]
+6e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["For example, if slot A1 contains ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"-23"}],","]}]
+6f:["$","span",null,{"className":"Z88_typed___J27m","children":"IF(A1 <0,“Debit”,“Credit”)"}]
+70:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"would return Debit."}]
+71:["$","h3",null,{"id":"index--index-slot","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["INDEX — Index slot",["$","$L20",null,{"id":"index--index-slot"}]]}]
+72:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"INDEX(column,row)"}]
+73:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Returns the evaluated expression or string found at coordinates column, row."}]
+74:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["For example, if ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"A2"}]," contained ",["$","strong",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"IF(100,\"Debit\",\"Credit\")"}]}]]}]
+75:["$","span",null,{"className":"Z88_typed___J27m","children":"INDEX(1,2)"}]
+76:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["would return ",["$","strong",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Credit"}]}],"."]}]
+77:["$","h3",null,{"id":"int--integer-part","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["INT — Integer part",["$","$L20",null,{"id":"int--integer-part"}]]}]
+78:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"INT(number)"}]
+79:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Returns the integer part of the argument."}]
+7a:["$","h3",null,{"id":"ln--logarithm-to-base-e","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["LN — Logarithm to base e",["$","$L20",null,{"id":"ln--logarithm-to-base-e"}]]}]
+7b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"LN(number)"}]
+7c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Returns the natural logarithm, log",["$","sub",null,{"children":"e"}]," of the argument."]}]
+7d:["$","h3",null,{"id":"log--logarithm-to-base-10","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["LOG — Logarithm to base 10",["$","$L20",null,{"id":"log--logarithm-to-base-10"}]]}]
+7e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"LOG(number)"}]
+7f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Returns the logarithm to base 10 of the argument."}]
+80:["$","h3",null,{"id":"lookup--look-up-value-in-a-table","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["LOOKUP — Look up value in a table",["$","$L20",null,{"id":"lookup--look-up-value-in-a-table"}]]}]
+81:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"LOOKUP(key,range1,range2)"}]
+82:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Returns the value in range2 corresponding to the position that key occurs in range1."}]
+83:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["key must be a cell reference. For example, the following sheet would result if ",["$","span",null,{"className":"Z88_typed___J27m","children":"LOOKUP(A3,A1 F1,A2 F2)"}]," were placed at B4:"]}]
+84:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/pipedream-reference/pipedream-lookup-example.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/pipedream-reference/pipedream-lookup-example.webp","alt":"Pipedream lookup example","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+85:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If an exact match is found in range1, the function returns the value of the slot the same number of slots from the beginning of the second range."}]
+86:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If key is not found in range1, the function returns the error"}]
+87:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Lookup"}]}]
+88:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Wildcards ’^?’ and ’^#’ may be included in key."}]
+89:["$","h3",null,{"id":"max--maximum-value-in-list","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["MAX — Maximum value in list",["$","$L20",null,{"id":"max--maximum-value-in-list"}]]}]
+8a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"MAX(list)"}]
+8b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Returns the maximum value from the slots in the list."}]
+8c:["$","h3",null,{"id":"min--minimum-value-in-list","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["MIN — Minimum value in list",["$","$L20",null,{"id":"min--minimum-value-in-list"}]]}]
+8d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"MIN(list)"}]
+8e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Returns the minimum value from the slots in the list."}]
+8f:["$","h3",null,{"id":"month--month-of-date","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["MONTH — Month of date",["$","$L20",null,{"id":"month--month-of-date"}]]}]
+90:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"MONTH(date)"}]
+91:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Returns the month number of its date argument."}]
+92:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["For example, if ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"A1"}]," contains ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"12.6.1987"}]," then ",["$","span",null,{"className":"Z88_typed___J27m","children":"MONTH(A1)"}]," returns ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"6"}],"."]}]
+93:["$","h3",null,{"id":"pi--π","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["PI — π",["$","$L20",null,{"id":"pi--π"}]]}]
+94:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"PI"}]
+95:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Returns the value 3.141592653."}]
+96:["$","h3",null,{"id":"rad--radians-from-degrees","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["RAD — Radians from degrees",["$","$L20",null,{"id":"rad--radians-from-degrees"}]]}]
+97:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"RAD(degrees)"}]
+98:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Returns the argument, taken as degrees, converted into radians."}]
+99:["$","h3",null,{"id":"row--row","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["ROW — Row",["$","$L20",null,{"id":"row--row"}]]}]
+9a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"ROW"}]
+9b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The value of the row in which it is evaluated."}]
+9c:["$","h3",null,{"id":"sgn--sign","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["SGN — Sign",["$","$L20",null,{"id":"sgn--sign"}]]}]
+9d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"SGN(number)"}]
+9e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Returns -1, 0, or 1 depending on whether the argument is negative, zero, or positive respectively."}]
+9f:["$","h3",null,{"id":"sin--sine","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["SIN — Sine",["$","$L20",null,{"id":"sin--sine"}]]}]
+a0:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"SIN(radians)"}]
+a1:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Returns the sine of the argument, in radians."}]
+a2:["$","h3",null,{"id":"sqr--square-root","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["SQR — Square root",["$","$L20",null,{"id":"sqr--square-root"}]]}]
+a3:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"SQR(number)"}]
+a4:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Returns the positive square-root of its argument."}]
+a5:["$","h3",null,{"id":"sum--sum","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["SUM — Sum",["$","$L20",null,{"id":"sum--sum"}]]}]
+a6:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"SUM(list)"}]
+a7:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Returns the sum of the slots in the list."}]
+a8:["$","h3",null,{"id":"tan--tangent","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["TAN — Tangent",["$","$L20",null,{"id":"tan--tangent"}]]}]
+a9:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"TAN(radians)"}]
+aa:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Returns the tangent of the argument, in radians."}]
+ab:["$","h3",null,{"id":"year--year-of-date","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["YEAR — Year of date",["$","$L20",null,{"id":"year--year-of-date"}]]}]
+ac:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Returns the year number of its date argument."}]
+ad:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["For example, if ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"A1"}]," contains ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"12.6.1987"}]," then ",["$","span",null,{"className":"Z88_typed___J27m","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"YEAR(A1"}],")"]}]," returns ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"87"}],"."]}]
+ae:["$","h2",null,{"id":"-fields","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["@ Fields",["$","$L20",null,{"id":"-fields"}]]}]
+af:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You can include the page number, the date, the file title from the Options Page, or the value of any expression slot within text in your document using the special PipeDream @-fields."}]
+b0:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The following @ fields are available:"}]
+b1:["$","table",null,{"children":["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"Identifier"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","strong",null,{"children":"Effect"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","span",null,{"className":"Z88_typed___J27m","children":"@P@"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"current page number","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","span",null,{"className":"Z88_typed___J27m","children":"@D@"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"date","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"@T@","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"title defined in options page","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":[["$","span",null,{"className":"Z88_typed___J27m","children":"@"}],["$","em",null,{"children":"ref"}],["$","span",null,{"className":"Z88_typed___J27m","children":"@"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["value of slot ",["$","em",null,{"children":"ref"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"@@","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"@","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}],"className":"x:block x:overflow-x-auto"}]
+b2:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"One or more ’@’ characters should be given after the identifier to determine the size of the @ field for formatting. For example,"}]
+b3:["$","span",null,{"className":"Z88_typed___J27m","children":"@P@@@@"}]
+b4:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"creates a field of four characters. Provided the value to be displayed is less than the size of the @-field, the line will be justified correctly."}]
+b5:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The field:"}]
+b6:["$","span",null,{"className":"Z88_typed___J27m","children":"@ref@@@@@"}]
+b7:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"will reserve five characters for the value of the slot indicated by the reference."}]
+b8:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If it is an expression slot, the value will be displayed in the same format as in the slot itself, with alignment ignored."}]
+b9:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When the cursor is not on a text slot with an @ field in it, the slot shows the value of the @ field. When the cursor is moved onto the slot, the actual @ identifier is shown, for editing."}]
+bb:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

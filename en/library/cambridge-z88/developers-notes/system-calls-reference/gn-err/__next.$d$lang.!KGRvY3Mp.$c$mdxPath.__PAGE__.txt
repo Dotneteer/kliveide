@@ -1,0 +1,81 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+1d:"ViewportBoundary"
+1e:I[484,[],"$1d"]
+1f:"MetadataBoundary"
+20:I[484,[],"$1f"]
+21:"$Sreact.suspense"
+22:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T8f8,---
+description: "See also GN_Esp which just displays the error message to standard output. Calling GN_Err with an invalid or fatal error message will cause a box with the error message and \"Press Q to Quit - fatal..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8618075 (version 7) by scripts/import-z88-wiki.cjs */}
+
+# GN_Err, Display an interactive error box
+
+## Register parameters
+
+```text
+ IN:
+     A = 0, display error message at BHL and C = 0 if fatal
+     A <>0, display system error message of error code A
+OUT:
+     Fc = 1
+     A = return code:
+          RC_QUIT ($67), error fatal
+          RC_SUSP ($69), error not fatal
+          RC_DRAW ($66), error not fatal, windows corrupted
+
+Registers changed after return:
+     ..BCDEHL/IXIY same
+     AF....../.... different
+```
+
+## Notes
+
+See also **[GN\_Esp](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-esp)** which just displays the error message to standard output. Calling **[GN\_Err](https://cambridgez88.jira.com/wiki/pages/viewpage.action?pageId=99450881)** with an invalid or fatal error message will cause a box with the error message and "Press Q to Quit - fatal error" to be displayed, and subsequently will generate a RC\_QUIT system error. If you have an error handler in place, which handles RC\_QUIT, then that code will be called.<br /><br />The system call stacks the screen underneath the error window. RC\_QUIT is returned if the user wants to quit. RC\_DRAW is returned if the user wants to resume and screen needs re-drawing. RC\_SUSP is returned the user wants to resume and the screen is preserved.
+
+Since OZ 5.0, it is possible to output an explicit error message using A(in) = 0 and BHL = pointer to a null terminated string, if C = 0, error is fatal.
+
+## Related calls
+
+**[GN\_Esp](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-esp)**, return an extended pointer to a system error message <br />**[OS\_Erc](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-erc)**, get error context <br />**[OS\_Erh](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-erh)**, set error handler <br />**[OS\_Esc](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-esc)**, examine special conditiona:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Register parameters","id":"register-parameters","depth":2},{"value":"Notes","id":"notes","depth":2},{"value":"Related calls","id":"related-calls","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"See also GN_Esp which just displays the error message to standard output. Calling GN_Err with an invalid or fatal error message will cause a box with the error message and \"Press Q to Quit - fatal...","title":"GN_Err, Display an interactive error box","filePath":"content/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-err.mdx","timestamp":1792315833000},"sourceCode":"$12","children":[["$","div",null,{"id":"nextra-skip-nav"}],["$","main",null,{"data-pagefind-body":true,"children":[false,["\n","$L13","\n","$L14","\n","$L15","\n","$L16","\n","$L17","\n","$L18","\n","$L19","\n","$L1a"]]}]]}]]}]}],null,"$L1b"]}],"p":"$@1c","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/developers-notes/system-calls-reference/gn-err","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L1e",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L20",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$21",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"GN_Err, Display an interactive error box - Klive IDE"}],["$","meta","1",{"name":"description","content":"See also GN_Esp which just displays the error message to standard output. Calling GN_Err with an invalid or fatal error message will cause a box with the error message and \"Press Q to Quit - fatal..."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-err/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L22","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@23","v":null,"s":"$9"}},"a":"$@24","u":"$@25","b":"cyL0EKA0xNKEZcECA3AIS"}
+26:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+27:"ToggleWordWrapButton"
+28:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$27"]
+29:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+2a:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+2b:I[484,[],"OutletBoundary"]
+13:["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["GN_Err, Display an interactive error box","$undefined"]}]
+14:["$","h2",null,{"id":"register-parameters","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Register parameters",["$","$L26",null,{"id":"register-parameters"}]]}]
+15:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L28",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L29",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":" IN:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     A = 0, display error message at BHL and C = 0 if fatal"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     A <>0, display system error message of error code A"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OUT:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     Fc = 1"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     A = return code:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"          RC_QUIT ($67), error fatal"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"          RC_SUSP ($69), error not fatal"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"          RC_DRAW ($66), error not fatal, windows corrupted"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Registers changed after return:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     ..BCDEHL/IXIY same"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     AF....../.... different"}]}]]}]]}]]}]
+16:["$","h2",null,{"id":"notes","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Notes",["$","$L26",null,{"id":"notes"}]]}]
+17:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["See also ",["$","strong",null,{"children":["$","$L2a",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-esp","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"GN_Esp"}]}]," which just displays the error message to standard output. Calling ",["$","strong",null,{"children":["$","a",null,{"href":"https://cambridgez88.jira.com/wiki/pages/viewpage.action?pageId=99450881","target":"_blank","rel":"noreferrer","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["GN_Err",[" ",["$","svg",null,{"fill":"none","stroke":"currentColor","strokeLinecap":"round","strokeLinejoin":"round","strokeWidth":1.7,"viewBox":"0 0 24 24","height":"1em","className":"x:inline x:align-baseline x:shrink-0","children":[["$","path",null,{"d":"M7 17L17 7"}],["$","path",null,{"d":"M7 7h10v10"}]]}]]]}]}]," with an invalid or fatal error message will cause a box with the error message and “Press Q to Quit - fatal error” to be displayed, and subsequently will generate a RC_QUIT system error. If you have an error handler in place, which handles RC_QUIT, then that code will be called.",["$","br",null,{}],["$","br",null,{}],"The system call stacks the screen underneath the error window. RC_QUIT is returned if the user wants to quit. RC_DRAW is returned if the user wants to resume and screen needs re-drawing. RC_SUSP is returned the user wants to resume and the screen is preserved."]}]
+18:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Since OZ 5.0, it is possible to output an explicit error message using A(in) = 0 and BHL = pointer to a null terminated string, if C = 0, error is fatal."}]
+19:["$","h2",null,{"id":"related-calls","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Related calls",["$","$L26",null,{"id":"related-calls"}]]}]
+1a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":["$","$L2a",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-esp","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"GN_Esp"}]}],", return an extended pointer to a system error message ",["$","br",null,{}],["$","strong",null,{"children":["$","$L2a",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-erc","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OS_Erc"}]}],", get error context ",["$","br",null,{}],["$","strong",null,{"children":["$","$L2a",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-erh","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OS_Erh"}]}],", set error handler ",["$","br",null,{}],["$","strong",null,{"children":["$","$L2a",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-esc","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OS_Esc"}]}],", examine special condition"]}]
+1b:["$","$L2b",null,{"children":["$","$21",null,{"name":"Next.MetadataOutlet","children":"$@2c"}]}]
+25:true
+9:300
+2c:null
+9:C
+24:0
+7:"$undefined"
+23:"$undefined"
+1c:"$undefined"

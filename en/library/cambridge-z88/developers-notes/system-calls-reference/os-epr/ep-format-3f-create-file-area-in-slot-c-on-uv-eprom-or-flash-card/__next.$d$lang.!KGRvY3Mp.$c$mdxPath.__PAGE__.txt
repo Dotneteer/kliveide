@@ -1,0 +1,79 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:Taed,---
+description: "Create file area header in UV Eprom Card (or Flash card, if available) in slot C. On UV Eprom, only the 64 byte header is created - on Flash Card, the complete file area is formatted and a header..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7471555 (version 6) by scripts/import-z88-wiki.cjs */}
+
+# EP_Format ($3f) - Create File Area in slot C, on UV Eprom or Flash Card
+
+## Register Parameters
+
+```text
+IN:
+        A = EP_FORMAT
+        C = slot number
+OUT:
+        Fc = 0,
+             File Area created in slot C.
+
+        Fc = 1,
+             A = RC_VPL, RC_BWR, Flash/UV Eprom Write Error
+             A = RC_EPNE (UV Eprom file area not empty)
+
+ Registers changed on return:
+   A.BCDEHL/IXIY same
+   .F....../.... different
+```
+
+## Notes
+
+Create file area header in UV Eprom Card (or Flash card, if available) in slot C. On UV Eprom, only the 64 byte header is created - on Flash Card, the complete file area is formatted and a header created.
+
+On OZ V4.5 and later, the complete file are is also checked to be empty (all bytes = FFh) after the header has been created on an UV Eprom. Fc = 1, A = RC\_EPNE is returned if the file area contains bytes not completely erased.
+
+The screen is turned off while file area header & area is being formatted, when file area is in the same slot as the OZ ROM. During formatting, no interference must happen from Blink, because the Blink reads the font bitmaps each 1/100 second:
+
+If the screen were enabled while formatting inside the address space that is part of OZ ROM chip, the font bitmaps would suddenly be unavailable which would create violent screen flickering during chip command mode. Further, and most importantly, to avoid the Blink doing read-cycles while chip is in command mode.
+
+By switching off the screen, the Blink doesn't read the font bit maps in OZ ROM, and the Flash chip can be in command mode (writing file area header and formatting area) without being disturbed by the Blink.<br /><br />**Important:**<br />INTEL I28Fxxxx series Flash chips require the 12V VPP pin in slot 3 to successfully blow data to the memory chip. If the Flash Eprom card is inserted in slot 1 or 2, this routine will report a programming failure. It is the responsibility of the application (before using this call) to evaluate the Flash Memory (using the [**OS\_Fep**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fep), A=FEP\_CDID call) and warn the user that an INTEL Flash Memory Card requires the Z88 slot 3 hardware, so this type of unnecessary error can be avoided. Equally, the application should evaluate that saving to a file that is on an UV Eprom only can be performed in slot 3. This routine will report failure if creating a file area header in slots 0, 1 or 2.a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Register Parameters","id":"register-parameters","depth":2},{"value":"Notes","id":"notes","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"Create file area header in UV Eprom Card (or Flash card, if available) in slot C. On UV Eprom, only the 64 byte header is created - on Flash Card, the complete file area is formatted and a header...","title":"EP_Format ($3f) - Create File Area in slot C, on UV Eprom or Flash Card","filePath":"content/en/library/cambridge-z88/developers-notes/system-calls-reference/os-epr/ep-format-3f-create-file-area-in-slot-c-on-uv-eprom-or-flash-card.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/developers-notes/system-calls-reference/os-epr/ep-format-3f-create-file-area-in-slot-c-on-uv-eprom-or-flash-card","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"EP_Format ($3f) - Create File Area in slot C, on UV Eprom or Flash Card - Klive IDE"}],["$","meta","1",{"name":"description","content":"Create file area header in UV Eprom Card (or Flash card, if available) in slot C. On UV Eprom, only the 64 byte header is created - on Flash Card, the complete file area is formatted and a header..."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-epr/ep-format-3f-create-file-area-in-slot-c-on-uv-eprom-or-flash-card/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"cyL0EKA0xNKEZcECA3AIS"}
+20:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+21:"ToggleWordWrapButton"
+22:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$21"]
+23:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+25:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["EP_Format ($3f) - Create File Area in slot C, on UV Eprom or Flash Card","$undefined"]}],"\n",["$","h2",null,{"id":"register-parameters","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Register Parameters",["$","$L20",null,{"id":"register-parameters"}]]}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"IN:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        A = EP_FORMAT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        C = slot number"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OUT:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        Fc = 0,"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"             File Area created in slot C."}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        Fc = 1,"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"             A = RC_VPL, RC_BWR, Flash/UV Eprom Write Error"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"             A = RC_EPNE (UV Eprom file area not empty)"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" Registers changed on return:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"   A.BCDEHL/IXIY same"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"   .F....../.... different"}]}]]}]]}]]}],"\n",["$","h2",null,{"id":"notes","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Notes",["$","$L20",null,{"id":"notes"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Create file area header in UV Eprom Card (or Flash card, if available) in slot C. On UV Eprom, only the 64 byte header is created - on Flash Card, the complete file area is formatted and a header created."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"On OZ V4.5 and later, the complete file are is also checked to be empty (all bytes = FFh) after the header has been created on an UV Eprom. Fc = 1, A = RC_EPNE is returned if the file area contains bytes not completely erased."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The screen is turned off while file area header & area is being formatted, when file area is in the same slot as the OZ ROM. During formatting, no interference must happen from Blink, because the Blink reads the font bitmaps each 1/100 second:"}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If the screen were enabled while formatting inside the address space that is part of OZ ROM chip, the font bitmaps would suddenly be unavailable which would create violent screen flickering during chip command mode. Further, and most importantly, to avoid the Blink doing read-cycles while chip is in command mode."}],"\n","$L24"]]}]
+15:["$","$L25",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@26"}]}]
+1f:true
+27:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+9:300
+24:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["By switching off the screen, the Blink doesn’t read the font bit maps in OZ ROM, and the Flash chip can be in command mode (writing file area header and formatting area) without being disturbed by the Blink.",["$","br",null,{}],["$","br",null,{}],["$","strong",null,{"children":"Important:"}],["$","br",null,{}],"INTEL I28Fxxxx series Flash chips require the 12V VPP pin in slot 3 to successfully blow data to the memory chip. If the Flash Eprom card is inserted in slot 1 or 2, this routine will report a programming failure. It is the responsibility of the application (before using this call) to evaluate the Flash Memory (using the ",["$","$L27",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fep","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["$","strong",null,{"children":"OS_Fep"}]}],", A=FEP_CDID call) and warn the user that an INTEL Flash Memory Card requires the Z88 slot 3 hardware, so this type of unnecessary error can be avoided. Equally, the application should evaluate that saving to a file that is on an UV Eprom only can be performed in slot 3. This routine will report failure if creating a file area header in slots 0, 1 or 2."]}]
+26:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

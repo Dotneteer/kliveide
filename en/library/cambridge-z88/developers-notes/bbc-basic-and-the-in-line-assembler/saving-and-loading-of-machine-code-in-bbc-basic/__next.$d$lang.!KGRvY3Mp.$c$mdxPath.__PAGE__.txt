@@ -1,0 +1,320 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T22ec,---
+description: "The simplest method of loading a machine code is having it stored in DATA statements as byte opcode sequenses. However, this emplies a lot of work, converting an assembled code into DATA..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/3112976 (version 4) by scripts/import-z88-wiki.cjs */}
+
+# Saving and loading of machine code in BBC BASIC
+
+The simplest method of loading a machine code is having it stored in DATA statements as byte opcode sequenses. However, this emplies a lot of work, converting an assembled code into DATA statements (you could make a BASIC program that generates a simple text file that later could could be typed in by CLI). Another way is simply to have the in-line assembler source included together with the rest of the BBC BASIC program. However, large assembler source tends to use much memory, especially if it is well-commented. It is usually sufficient with small assembler routines.
+
+When you use pre-compiled code ready to execute, you face another obstacle; you must always place the code at the same location. Using DIM will probably not return the same address of allocated memory, so it is needed to move down HIMEM to ensure a static position for your code. If you have the source in-line then it is no problem, since you always can re-compile for a specifically allocated memory area.
+
+The two BASIC procedures below implements a simple interface to both load and save machine code in binary files. Both procedures use a small machine code routine to save/load the code in BASIC's memory. To ensure compact BASIC procedures, the machine code have been put into DATA statements, placed inside the procedures. The mnemonic assembler source are found below the procedures. Both procedures locate the machine code routine at the bottom of the stack, beginning at $1800. This area is not touched by BBC BASIC and is therefore safe. However, when BBC BASIC has been pre-empted the bottom of the stack might have changed. Please note that both routines null-terminate the filename strings.
+
+```text
+65515 DEF PROC_lbytes(f$,addr%) 
+65516 LOCAL b%,i% 
+65517 f$=f$+CHR$0 
+65518 RESTORE 65520: FOR i%=0 TO 66: READ b%: ?(&1800+i%)=b%: NEXT i% 
+65519 CALL &1800,f$,addr% 
+65520 DATA &21,0,0,&39,&ED,&7B,&FE,&1F,&E5,&CD,&0F,&18,&E1,&F9,&C9 
+65521 DATA &DD,&E5,&FD,&E1,&FD,&6E,2,&FD,&66,3,&23,&23,&5E,&23,&56,&62 
+65522 DATA &6B,1,2,0,&3E,1,&E7,9,&60,&38,&15,&FD,&6E,5,&FD,&66,6 
+65523 DATA &5E,&23,&56,&21,0,0,1,&FF,&FF,&E7,&45,&E7,9,&62,&C9,&E7,9,&4A,&C9 
+65524 ENDPROC
+
+65525 DEF PROC_sbytes(f$,addr%,length%) 
+65526 LOCAL b%,i% 
+65527 f$=f$+CHR$0 
+65528 RESTORE 65530: FOR i%=0 TO 73: READ b%: ?(&1800+i%)=b%: NEXT i% 
+65529 CALL &1800,f$,addr%,length% 
+65530 DATA &21,0,0,&39,&ED,&7B,&FE,&1F,&E5,&CD,&0F,&18,&E1,&F9,&C9 
+65531 DATA &DD,&E5,&FD,&E1,&FD,&6E,2,&FD,&66,3,&23,&23,&5E,&23,&56,&62 
+65532 DATA &6B,1,2,0,&3E,2,&E7,9,&60,&38,&1C,&FD,&6E,5,&FD,&66,6 
+65533 DATA &5E,&23,&56,&FD,&6E,8,&FD,&66,9,&4E,&23,&46,&EB,&11,0,0 
+65534 DATA &E7,&45,&E7,9,&62,&C9,&E7,9,&4A,&C9 
+65535 ENDPROC
+```
+
+```text
+MODULE Lbytes 
+ 
+
+include "fileio.def"                ; standard file I/O definitions
+include "error.def"                 ; error code definitions
+
+ORG $1800                           ; subroutine resided at $1800
+
+;**************************************************************************** 
+; BBC BASIC 'load bytes' machine code routine. The routine always loads the 
+; complete file (length), 
+; which is not specified in the CALL parameter list. 
+; 
+;           1st parameter is the string pointer
+;           2nd parameter is the start address integer 
+; 
+; IN: IX = pointer to BASIC parameter block: 
+;           (IX+0)      number of parameters:               2
+;           (IX+1)      type of 1st parameter:              129 (mov. string)
+;           (IX+2,3)    address of movable string:          xx
+;           (IX+4)      type of 2nd parameter:              4 (32bit integer)
+;           (IX+5,6)    address of 2nd parameter:           xx
+;           The movable string parameter block:
+;           (xx+0)      current length
+;           (xx+1)      max. length
+;           (xx+2,3)    start address of string
+;**************************************************************************** 
+.InitLbytes ld   hl,0
+            add  hl,sp              ; get current BASIC stack pointer
+            ld   sp,($1FFE)         ; install safe stack pointer
+            push hl                 ; preserve BASIC stack pointer
+            call Lbytes
+            pop  hl
+            ld   sp,hl              ; restore BASIC stack
+            ret                     ; return to BASIC interpreter
+
+.Lbytes     push ix
+            pop  iy                 ; iy points at CALL parameter block
+            ld   l,(iy+2)
+            ld   h,(iy+3)           ; get pointer to moveable string par. block
+            inc  hl
+            inc  hl                 ; point at string start address pointer
+            ld   e,(hl)
+            inc  hl
+            ld   d,(hl)
+
+            ld   h,d                ; HL & DE = pointer to start of filename
+            ld   l,e
+            ld   bc,2               ; local pointer, C = 2 byte scratch buffer
+            ld   a, OP_IN
+            oz   GN_Opf
+            jr   c, file_err        ; Ups, file couldn't be opened
+
+            ld   l,(iy+5)           ; IX = file handle
+            ld   h,(iy+6)
+            ld   e,(hl)
+            inc  hl
+            ld   d,(hl)             ; start address to load machine code
+            ld   hl,0
+            ld   bc, $FFFF          ; max. file length (probably much snaller!)
+            oz   OS_Mv              ; load file image at (DE) onwards...
+            oz   GN_Cl              ; close file
+            ret
+
+.file_err   oz   GN_Err             ; display error box...
+            ret
+```
+
+```text
+MODULE Sbytes 
+ 
+
+include "fileio.def"                ; standard file I/O definitions
+include "error.def"                 ; error code definitions
+
+ORG $1800                           ; subroutine resided at $1800
+
+;**************************************************************************** 
+; BBC BASIC 'save bytes' machine code routine. 
+;           1st parameter is the string pointer
+;           2nd parameter is the start address integer
+;           3rd parameter is length of memory block
+; 
+; IN: IX = pointer to BASIC parameter block: 
+;           (IX+0)      number of parameters:               2
+;           (IX+1)      type of 1st parameter:              129 (mov. string)
+;           (IX+2,3)    address of movable string:          xx
+;           (IX+4)      type of 2nd parameter:              4 (32bit integer)
+;           (IX+5,6)    address of 2nd parameter:           xx
+;           (IX+7)      type of 3rd parameter:              4 (32bit integer)
+;           (IX+8,9)    address of 3rd parameter:           xx
+;
+;           The movable string parameter block:
+;           (xx+0)      current length
+;           (xx+1)      max. length
+;           (xx+2,3)    start address of string
+;
+;**************************************************************************** 
+.InitSbytes ld   hl,0
+            add  hl,sp              ; get current BASIC stack pointer
+            ld   sp,($1FFE)         ; install safe stack pointer
+            push hl                 ; preserve BASIC stack pointer
+            call Sbytes
+            pop  hl
+            ld   sp,hl              ; restore BASIC stack
+            ret                     ; return to BASIC interpreter
+
+.Sbytes     push ix
+            pop  iy                 ; iy points at CALL parameter block
+            ld   l,(iy+2)
+            ld   h,(iy+3)           ; get pointer to moveable string par. block
+            inc  hl
+            inc  hl                 ; point at string start address pointer
+            ld   e,(hl)
+            inc  hl
+            ld   d,(hl)
+
+            ld   h,d                ; HL & DE = pointer to start of filename
+            ld   l,e
+            ld   bc,2               ; local pointer, C = 2 byte scratch buffer
+            ld   a, OP_OUT
+            oz   GN_Opf
+            jr   c, file_err        ; Ups, file couldn't be created
+
+            ld   l,(iy+5)           ; IX = file handle
+            ld   h,(iy+6)           ; HL = pointer to pointer to start address
+            ld   e,(hl)
+            inc  hl
+            ld   d,(hl)             ; DE = start addr. of memory block to save
+            ld   l,(iy+8)
+            ld   h,(iy+9)           ; HL = pointer to pointer to length
+            ld   c,(hl)
+            inc  hl
+            ld   b,(hl)             ; BC = length of memory block to save
+            ex   de,hl
+            ld   de,0
+            oz   OS_Mv              ; save memory block from (HL) onwards...
+            oz   GN_Cl              ; close file
+            ret
+
+.file_err   oz   GN_Err             ; display error box...
+            ret
+```a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"The simplest method of loading a machine code is having it stored in DATA statements as byte opcode sequenses. However, this emplies a lot of work, converting an assembled code into DATA...","title":"Saving and loading of machine code in BBC BASIC","filePath":"content/en/library/cambridge-z88/developers-notes/bbc-basic-and-the-in-line-assembler/saving-and-loading-of-machine-code-in-bbc-basic.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/developers-notes/bbc-basic-and-the-in-line-assembler/saving-and-loading-of-machine-code-in-bbc-basic","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Saving and loading of machine code in BBC BASIC - Klive IDE"}],["$","meta","1",{"name":"description","content":"The simplest method of loading a machine code is having it stored in DATA statements as byte opcode sequenses. However, this emplies a lot of work, converting an assembled code into DATA..."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/developers-notes/bbc-basic-and-the-in-line-assembler/saving-and-loading-of-machine-code-in-bbc-basic/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"cyL0EKA0xNKEZcECA3AIS"}
+20:"ToggleWordWrapButton"
+21:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$20"]
+22:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+37:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Saving and loading of machine code in BBC BASIC","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The simplest method of loading a machine code is having it stored in DATA statements as byte opcode sequenses. However, this emplies a lot of work, converting an assembled code into DATA statements (you could make a BASIC program that generates a simple text file that later could could be typed in by CLI). Another way is simply to have the in-line assembler source included together with the rest of the BBC BASIC program. However, large assembler source tends to use much memory, especially if it is well-commented. It is usually sufficient with small assembler routines."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When you use pre-compiled code ready to execute, you face another obstacle; you must always place the code at the same location. Using DIM will probably not return the same address of allocated memory, so it is needed to move down HIMEM to ensure a static position for your code. If you have the source in-line then it is no problem, since you always can re-compile for a specifically allocated memory area."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The two BASIC procedures below implements a simple interface to both load and save machine code in binary files. Both procedures use a small machine code routine to save/load the code in BASIC’s memory. To ensure compact BASIC procedures, the machine code have been put into DATA statements, placed inside the procedures. The mnemonic assembler source are found below the procedures. Both procedures locate the machine code routine at the bottom of the stack, beginning at $1800. This area is not touched by BBC BASIC and is therefore safe. However, when BBC BASIC has been pre-empted the bottom of the stack might have changed. Please note that both routines null-terminate the filename strings."}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L21",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L22",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"65515 DEF PROC_lbytes(f$,addr%) "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"65516 LOCAL b%,i% "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"65517 f$=f$+CHR$0 "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"65518 RESTORE 65520: FOR i%=0 TO 66: READ b%: ?(&1800+i%)=b%: NEXT i% "}]}],"\n",["$","span",null,{"children":"$L23"}],"\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34"]}]]}]]}],"\n","$L35","\n","$L36"]]}]
+15:["$","$L37",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@38"}]}]
+1f:true
+9:300
+23:["$","span",null,{"children":"65519 CALL &1800,f$,addr% "}]
+24:["$","span",null,{"children":["$","span",null,{"children":"65520 DATA &21,0,0,&39,&ED,&7B,&FE,&1F,&E5,&CD,&0F,&18,&E1,&F9,&C9 "}]}]
+25:["$","span",null,{"children":["$","span",null,{"children":"65521 DATA &DD,&E5,&FD,&E1,&FD,&6E,2,&FD,&66,3,&23,&23,&5E,&23,&56,&62 "}]}]
+26:["$","span",null,{"children":["$","span",null,{"children":"65522 DATA &6B,1,2,0,&3E,1,&E7,9,&60,&38,&15,&FD,&6E,5,&FD,&66,6 "}]}]
+27:["$","span",null,{"children":["$","span",null,{"children":"65523 DATA &5E,&23,&56,&21,0,0,1,&FF,&FF,&E7,&45,&E7,9,&62,&C9,&E7,9,&4A,&C9 "}]}]
+28:["$","span",null,{"children":["$","span",null,{"children":"65524 ENDPROC"}]}]
+29:["$","span",null,{"children":["$","span",null,{}]}]
+2a:["$","span",null,{"children":["$","span",null,{"children":"65525 DEF PROC_sbytes(f$,addr%,length%) "}]}]
+2b:["$","span",null,{"children":["$","span",null,{"children":"65526 LOCAL b%,i% "}]}]
+2c:["$","span",null,{"children":["$","span",null,{"children":"65527 f$=f$+CHR$0 "}]}]
+2d:["$","span",null,{"children":["$","span",null,{"children":"65528 RESTORE 65530: FOR i%=0 TO 73: READ b%: ?(&1800+i%)=b%: NEXT i% "}]}]
+2e:["$","span",null,{"children":["$","span",null,{"children":"65529 CALL &1800,f$,addr%,length% "}]}]
+2f:["$","span",null,{"children":["$","span",null,{"children":"65530 DATA &21,0,0,&39,&ED,&7B,&FE,&1F,&E5,&CD,&0F,&18,&E1,&F9,&C9 "}]}]
+30:["$","span",null,{"children":["$","span",null,{"children":"65531 DATA &DD,&E5,&FD,&E1,&FD,&6E,2,&FD,&66,3,&23,&23,&5E,&23,&56,&62 "}]}]
+31:["$","span",null,{"children":["$","span",null,{"children":"65532 DATA &6B,1,2,0,&3E,2,&E7,9,&60,&38,&1C,&FD,&6E,5,&FD,&66,6 "}]}]
+32:["$","span",null,{"children":["$","span",null,{"children":"65533 DATA &5E,&23,&56,&FD,&6E,8,&FD,&66,9,&4E,&23,&46,&EB,&11,0,0 "}]}]
+33:["$","span",null,{"children":["$","span",null,{"children":"65534 DATA &E7,&45,&E7,9,&62,&C9,&E7,9,&4A,&C9 "}]}]
+34:["$","span",null,{"children":["$","span",null,{"children":"65535 ENDPROC"}]}]
+35:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L21",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L22",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"MODULE Lbytes "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" "}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"include \"fileio.def\"                ; standard file I/O definitions"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"include \"error.def\"                 ; error code definitions"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"ORG $1800                           ; subroutine resided at $1800"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":";**************************************************************************** "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; BBC BASIC 'load bytes' machine code routine. The routine always loads the "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; complete file (length), "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; which is not specified in the CALL parameter list. "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":";           1st parameter is the string pointer"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":";           2nd parameter is the start address integer "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; IN: IX = pointer to BASIC parameter block: "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":";           (IX+0)      number of parameters:               2"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":";           (IX+1)      type of 1st parameter:              129 (mov. string)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":";           (IX+2,3)    address of movable string:          xx"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":";           (IX+4)      type of 2nd parameter:              4 (32bit integer)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":";           (IX+5,6)    address of 2nd parameter:           xx"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":";           The movable string parameter block:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":";           (xx+0)      current length"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":";           (xx+1)      max. length"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":";           (xx+2,3)    start address of string"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":";**************************************************************************** "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":".InitLbytes ld   hl,0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            add  hl,sp              ; get current BASIC stack pointer"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ld   sp,($1FFE)         ; install safe stack pointer"}]}],"\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41","\n","$L42","\n","$L43","\n","$L44","\n","$L45","\n","$L46","\n","$L47","\n","$L48","\n","$L49","\n","$L4a","\n","$L4b","\n","$L4c","\n","$L4d","\n","$L4e","\n","$L4f","\n","$L50","\n","$L51","\n","$L52","\n","$L53","\n","$L54","\n","$L55","\n","$L56","\n","$L57","\n","$L58","\n","$L59","\n","$L5a","\n","$L5b","\n","$L5c"]}]]}]]}]
+36:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L21",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L22",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"MODULE Sbytes "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" "}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"include \"fileio.def\"                ; standard file I/O definitions"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"include \"error.def\"                 ; error code definitions"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"ORG $1800                           ; subroutine resided at $1800"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":";**************************************************************************** "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; BBC BASIC 'save bytes' machine code routine. "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":";           1st parameter is the string pointer"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":";           2nd parameter is the start address integer"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":";           3rd parameter is length of memory block"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; IN: IX = pointer to BASIC parameter block: "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":";           (IX+0)      number of parameters:               2"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":";           (IX+1)      type of 1st parameter:              129 (mov. string)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":";           (IX+2,3)    address of movable string:          xx"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":";           (IX+4)      type of 2nd parameter:              4 (32bit integer)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":";           (IX+5,6)    address of 2nd parameter:           xx"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":";           (IX+7)      type of 3rd parameter:              4 (32bit integer)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":";           (IX+8,9)    address of 3rd parameter:           xx"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":";"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":";           The movable string parameter block:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":";           (xx+0)      current length"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":";           (xx+1)      max. length"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":";           (xx+2,3)    start address of string"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":";"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":";**************************************************************************** "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":".InitSbytes ld   hl,0"}]}],"\n","$L5d","\n","$L5e","\n","$L5f","\n","$L60","\n","$L61","\n","$L62","\n","$L63","\n","$L64","\n","$L65","\n","$L66","\n","$L67","\n","$L68","\n","$L69","\n","$L6a","\n","$L6b","\n","$L6c","\n","$L6d","\n","$L6e","\n","$L6f","\n","$L70","\n","$L71","\n","$L72","\n","$L73","\n","$L74","\n","$L75","\n","$L76","\n","$L77","\n","$L78","\n","$L79","\n","$L7a","\n","$L7b","\n","$L7c","\n","$L7d","\n","$L7e","\n","$L7f","\n","$L80","\n","$L81","\n","$L82","\n","$L83","\n","$L84","\n","$L85","\n","$L86","\n","$L87"]}]]}]]}]
+38:null
+9:C
+39:["$","span",null,{"children":["$","span",null,{"children":"            push hl                 ; preserve BASIC stack pointer"}]}]
+3a:["$","span",null,{"children":["$","span",null,{"children":"            call Lbytes"}]}]
+3b:["$","span",null,{"children":["$","span",null,{"children":"            pop  hl"}]}]
+3c:["$","span",null,{"children":["$","span",null,{"children":"            ld   sp,hl              ; restore BASIC stack"}]}]
+3d:["$","span",null,{"children":["$","span",null,{"children":"            ret                     ; return to BASIC interpreter"}]}]
+3e:["$","span",null,{"children":["$","span",null,{}]}]
+3f:["$","span",null,{"children":["$","span",null,{"children":".Lbytes     push ix"}]}]
+40:["$","span",null,{"children":["$","span",null,{"children":"            pop  iy                 ; iy points at CALL parameter block"}]}]
+41:["$","span",null,{"children":["$","span",null,{"children":"            ld   l,(iy+2)"}]}]
+42:["$","span",null,{"children":["$","span",null,{"children":"            ld   h,(iy+3)           ; get pointer to moveable string par. block"}]}]
+43:["$","span",null,{"children":["$","span",null,{"children":"            inc  hl"}]}]
+44:["$","span",null,{"children":["$","span",null,{"children":"            inc  hl                 ; point at string start address pointer"}]}]
+45:["$","span",null,{"children":["$","span",null,{"children":"            ld   e,(hl)"}]}]
+46:["$","span",null,{"children":["$","span",null,{"children":"            inc  hl"}]}]
+47:["$","span",null,{"children":["$","span",null,{"children":"            ld   d,(hl)"}]}]
+48:["$","span",null,{"children":["$","span",null,{}]}]
+49:["$","span",null,{"children":["$","span",null,{"children":"            ld   h,d                ; HL & DE = pointer to start of filename"}]}]
+4a:["$","span",null,{"children":["$","span",null,{"children":"            ld   l,e"}]}]
+4b:["$","span",null,{"children":["$","span",null,{"children":"            ld   bc,2               ; local pointer, C = 2 byte scratch buffer"}]}]
+4c:["$","span",null,{"children":["$","span",null,{"children":"            ld   a, OP_IN"}]}]
+4d:["$","span",null,{"children":["$","span",null,{"children":"            oz   GN_Opf"}]}]
+4e:["$","span",null,{"children":["$","span",null,{"children":"            jr   c, file_err        ; Ups, file couldn't be opened"}]}]
+4f:["$","span",null,{"children":["$","span",null,{}]}]
+50:["$","span",null,{"children":["$","span",null,{"children":"            ld   l,(iy+5)           ; IX = file handle"}]}]
+51:["$","span",null,{"children":["$","span",null,{"children":"            ld   h,(iy+6)"}]}]
+52:["$","span",null,{"children":["$","span",null,{"children":"            ld   e,(hl)"}]}]
+53:["$","span",null,{"children":["$","span",null,{"children":"            inc  hl"}]}]
+54:["$","span",null,{"children":["$","span",null,{"children":"            ld   d,(hl)             ; start address to load machine code"}]}]
+55:["$","span",null,{"children":["$","span",null,{"children":"            ld   hl,0"}]}]
+56:["$","span",null,{"children":["$","span",null,{"children":"            ld   bc, $FFFF          ; max. file length (probably much snaller!)"}]}]
+57:["$","span",null,{"children":["$","span",null,{"children":"            oz   OS_Mv              ; load file image at (DE) onwards..."}]}]
+58:["$","span",null,{"children":["$","span",null,{"children":"            oz   GN_Cl              ; close file"}]}]
+59:["$","span",null,{"children":["$","span",null,{"children":"            ret"}]}]
+5a:["$","span",null,{"children":["$","span",null,{}]}]
+5b:["$","span",null,{"children":["$","span",null,{"children":".file_err   oz   GN_Err             ; display error box..."}]}]
+5c:["$","span",null,{"children":["$","span",null,{"children":"            ret"}]}]
+5d:["$","span",null,{"children":["$","span",null,{"children":"            add  hl,sp              ; get current BASIC stack pointer"}]}]
+5e:["$","span",null,{"children":["$","span",null,{"children":"            ld   sp,($1FFE)         ; install safe stack pointer"}]}]
+5f:["$","span",null,{"children":["$","span",null,{"children":"            push hl                 ; preserve BASIC stack pointer"}]}]
+60:["$","span",null,{"children":["$","span",null,{"children":"            call Sbytes"}]}]
+61:["$","span",null,{"children":["$","span",null,{"children":"            pop  hl"}]}]
+62:["$","span",null,{"children":["$","span",null,{"children":"            ld   sp,hl              ; restore BASIC stack"}]}]
+63:["$","span",null,{"children":["$","span",null,{"children":"            ret                     ; return to BASIC interpreter"}]}]
+64:["$","span",null,{"children":["$","span",null,{}]}]
+65:["$","span",null,{"children":["$","span",null,{"children":".Sbytes     push ix"}]}]
+66:["$","span",null,{"children":["$","span",null,{"children":"            pop  iy                 ; iy points at CALL parameter block"}]}]
+67:["$","span",null,{"children":["$","span",null,{"children":"            ld   l,(iy+2)"}]}]
+68:["$","span",null,{"children":["$","span",null,{"children":"            ld   h,(iy+3)           ; get pointer to moveable string par. block"}]}]
+69:["$","span",null,{"children":["$","span",null,{"children":"            inc  hl"}]}]
+6a:["$","span",null,{"children":["$","span",null,{"children":"            inc  hl                 ; point at string start address pointer"}]}]
+6b:["$","span",null,{"children":["$","span",null,{"children":"            ld   e,(hl)"}]}]
+6c:["$","span",null,{"children":["$","span",null,{"children":"            inc  hl"}]}]
+6d:["$","span",null,{"children":["$","span",null,{"children":"            ld   d,(hl)"}]}]
+6e:["$","span",null,{"children":["$","span",null,{}]}]
+6f:["$","span",null,{"children":["$","span",null,{"children":"            ld   h,d                ; HL & DE = pointer to start of filename"}]}]
+70:["$","span",null,{"children":["$","span",null,{"children":"            ld   l,e"}]}]
+71:["$","span",null,{"children":["$","span",null,{"children":"            ld   bc,2               ; local pointer, C = 2 byte scratch buffer"}]}]
+72:["$","span",null,{"children":["$","span",null,{"children":"            ld   a, OP_OUT"}]}]
+73:["$","span",null,{"children":["$","span",null,{"children":"            oz   GN_Opf"}]}]
+74:["$","span",null,{"children":["$","span",null,{"children":"            jr   c, file_err        ; Ups, file couldn't be created"}]}]
+75:["$","span",null,{"children":["$","span",null,{}]}]
+76:["$","span",null,{"children":["$","span",null,{"children":"            ld   l,(iy+5)           ; IX = file handle"}]}]
+77:["$","span",null,{"children":["$","span",null,{"children":"            ld   h,(iy+6)           ; HL = pointer to pointer to start address"}]}]
+78:["$","span",null,{"children":["$","span",null,{"children":"            ld   e,(hl)"}]}]
+79:["$","span",null,{"children":["$","span",null,{"children":"            inc  hl"}]}]
+7a:["$","span",null,{"children":["$","span",null,{"children":"            ld   d,(hl)             ; DE = start addr. of memory block to save"}]}]
+7b:["$","span",null,{"children":["$","span",null,{"children":"            ld   l,(iy+8)"}]}]
+7c:["$","span",null,{"children":["$","span",null,{"children":"            ld   h,(iy+9)           ; HL = pointer to pointer to length"}]}]
+7d:["$","span",null,{"children":["$","span",null,{"children":"            ld   c,(hl)"}]}]
+7e:["$","span",null,{"children":["$","span",null,{"children":"            inc  hl"}]}]
+7f:["$","span",null,{"children":["$","span",null,{"children":"            ld   b,(hl)             ; BC = length of memory block to save"}]}]
+80:["$","span",null,{"children":["$","span",null,{"children":"            ex   de,hl"}]}]
+81:["$","span",null,{"children":["$","span",null,{"children":"            ld   de,0"}]}]
+82:["$","span",null,{"children":["$","span",null,{"children":"            oz   OS_Mv              ; save memory block from (HL) onwards..."}]}]
+83:["$","span",null,{"children":["$","span",null,{"children":"            oz   GN_Cl              ; close file"}]}]
+84:["$","span",null,{"children":["$","span",null,{"children":"            ret"}]}]
+85:["$","span",null,{"children":["$","span",null,{}]}]
+86:["$","span",null,{"children":["$","span",null,{"children":".file_err   oz   GN_Err             ; display error box..."}]}]
+87:["$","span",null,{"children":["$","span",null,{"children":"            ret"}]}]
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

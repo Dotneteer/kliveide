@@ -1,0 +1,78 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+13:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+21:"ViewportBoundary"
+22:I[484,[],"$21"]
+23:"MetadataBoundary"
+24:I[484,[],"$23"]
+25:"$Sreact.suspense"
+26:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T6f1,---
+description: "Press □J to start Flashstore"
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/53477399 (version 4) by scripts/import-z88-user-guide.cjs */}
+
+# Fetching a file from the Flashcard
+
+## Fetching a file from the Flashcard
+
+Press <Key k="square" />J to start Flashstore
+
+<Shot src="z88-user-guide/getting-started/up-and-running/flash-card-example/z88-flashstore1.webp" alt="z88 flashstore1" width={640} />
+
+Use the cursor keys <Key k="right" /> to move to the next window, then the <Key k="down" /> five times until it is over the **F** /flash.txt filename.
+
+<Shot src="z88-user-guide/getting-started/up-and-running/flash-card-example/z88-flastore2.webp" alt="z88 flastore2" width={640} />
+
+Press <Key k="enter" /> to select that file.<br />The following screen will be displayed. You can use the cursor keys to change the **Save to:** destination if desired, but :RAM.1/flash.txt is fine.
+
+<Shot src="z88-user-guide/getting-started/up-and-running/flash-card-example/z88-flashstore3.webp" alt="z88 flashstore3" width={640} />
+
+Press <Key k="enter" /> to confirm this.
+
+<Shot src="z88-user-guide/getting-started/up-and-running/flash-card-example/z88-flashstore4.webp" alt="z88 flashstore4" width={640} />
+
+This screen shows the file was copied to :RAM.1 successfully. Press either <Key k="space" /> or <Key k="enter" /> to resume as instructed.<br />The following screen is displayed.
+
+<Shot src="z88-user-guide/getting-started/up-and-running/flash-card-example/z88-flastore2.webp" alt="z88 flastore2" width={640} />
+
+As Flashstore is a Popdown, pressing <Key k="esc" /> exits the application and (in this case) returns to the INDEX.
+
+<Shot src="z88-user-guide/getting-started/up-and-running/z88-index.webp" alt="z88 index" width={640} />a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Fetching a file from the Flashcard","id":"fetching-a-file-from-the-flashcard","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"Press □J to start Flashstore","title":"Fetching a file from the Flashcard","filePath":"content/en/library/cambridge-z88/user-guide/getting-started/up-and-running/flash-card-example/fetching-a-file-from-the-flashcard.mdx","timestamp":1792315833000},"sourceCode":"$12","children":[["$","div",null,{"id":"nextra-skip-nav"}],["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Fetching a file from the Flashcard","$undefined"]}],"\n",["$","h2",null,{"id":"fetching-a-file-from-the-flashcard","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Fetching a file from the Flashcard",["$","$L13",null,{"id":"fetching-a-file-from-the-flashcard"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Press ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],"J to start Flashstore"]}],"\n",["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined","$L14"]}],"\n","$L15","\n","$L16","\n","$L17","\n","$L18","\n","$L19","\n","$L1a","\n","$L1b","\n","$L1c","\n","$L1d","\n","$L1e"]]}]]}]]}]}],null,"$L1f"]}],"p":"$@20","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/user-guide/getting-started/up-and-running/flash-card-example/fetching-a-file-from-the-flashcard","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L22",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L24",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$25",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Fetching a file from the Flashcard - Klive IDE"}],["$","meta","1",{"name":"description","content":"Press □J to start Flashstore"}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/user-guide/getting-started/up-and-running/flash-card-example/fetching-a-file-from-the-flashcard/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L26","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@27","v":null,"s":"$9"}},"a":"$@28","u":"$@29","b":"cyL0EKA0xNKEZcECA3AIS"}
+2a:I[484,[],"OutletBoundary"]
+14:["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/up-and-running/flash-card-example/z88-flashstore1.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/up-and-running/flash-card-example/z88-flashstore1.webp","alt":"z88 flashstore1","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]
+15:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Use the cursor keys ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor right","children":"→"}]," to move to the next window, then the ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor down","children":"↓"}]," five times until it is over the ",["$","strong",null,{"children":"F"}]," /flash.txt filename."]}]
+16:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/up-and-running/flash-card-example/z88-flastore2.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/up-and-running/flash-card-example/z88-flastore2.webp","alt":"z88 flastore2","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+17:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Press ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]," to select that file.",["$","br",null,{}],"The following screen will be displayed. You can use the cursor keys to change the ",["$","strong",null,{"children":"Save to:"}]," destination if desired, but :RAM.1/flash.txt is fine."]}]
+18:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/up-and-running/flash-card-example/z88-flashstore3.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/up-and-running/flash-card-example/z88-flashstore3.webp","alt":"z88 flashstore3","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+19:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Press ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]," to confirm this."]}]
+1a:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/up-and-running/flash-card-example/z88-flashstore4.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/up-and-running/flash-card-example/z88-flashstore4.webp","alt":"z88 flashstore4","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+1b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["This screen shows the file was copied to :RAM.1 successfully. Press either ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Space","children":"SPACE"}]," or ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]," to resume as instructed.",["$","br",null,{}],"The following screen is displayed."]}]
+1c:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/up-and-running/flash-card-example/z88-flastore2.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/up-and-running/flash-card-example/z88-flastore2.webp","alt":"z88 flastore2","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+1d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["As Flashstore is a Popdown, pressing ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Escape","children":"ESC"}]," exits the application and (in this case) returns to the INDEX."]}]
+1e:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/getting-started/up-and-running/z88-index.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/getting-started/up-and-running/z88-index.webp","alt":"z88 index","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+1f:["$","$L2a",null,{"children":["$","$25",null,{"name":"Next.MetadataOutlet","children":"$@2b"}]}]
+29:true
+9:300
+2b:null
+9:C
+28:0
+7:"$undefined"
+27:"$undefined"
+20:"$undefined"

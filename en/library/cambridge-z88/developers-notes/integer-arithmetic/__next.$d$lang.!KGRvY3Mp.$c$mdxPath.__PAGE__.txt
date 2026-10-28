@@ -1,0 +1,197 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T1945,---
+description: "The Z88 provides multiplication and division routines for 16 and 24 bit binary numbers as well as routines to convert between binary values and decimal numbers represented by ASCII digits. The..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/2654218 (version 7) by scripts/import-z88-wiki.cjs */}
+
+# Integer arithmetic
+
+The Z88 provides multiplication and division routines for 16 and 24 bit binary numbers as well as routines to convert between binary values and decimal numbers represented by ASCII digits. The arithmetic routines use the HL and DE registers (BHL and CDE for 24 bits) as input parameters with the result in HL (or BHL). In the case of division DE (or CDE) returns the remainder. The only error that is flagged is division by zero; Fc = 0 and A = RC\_FAIL ($16). No overflow error is provided in the case of multiplication, so it is up to the user of these routines to check for overflow, if necessary.
+
+`GN_M16` unsigned 16bit multiplication<br />`GN_D16` unsigned 16bit division<br />`GN_M24` unsigned 24bit multiplication<br />`GN_D24` unsigned 24bit division
+
+The conversion routines are quite flexible with the ASCII source or destination being either in memory, at a stream or at a filter. The binary source or destination can either be the BC register pair (16 bits) or a 4 byte buffer in memory (32 bits). When converting from binary to ASCII you have four formatting options. Bits 4 to 7 of the Accumulator (A) define the width of the output field (where zero means as large as is necessary). Bits 1 and 2 of A are set to output a space before and after the decimal digits respectively. If bit 0 of A is set then instead of generating spaces in order to push the number to the right hand edge of the numeric field, zero digits are generated instead.
+
+`GN_Gdn` convert ASCII string to binary number<br />`GN_Pdn` convert binary integer to an ASCII string
+
+## Example
+
+We now take an opportunity to present a more substantial example than before. The following code fragment accepts a number from the keyboard, converts it to binary, multiplies it by 10, converts back to ASCII decimal and finally outputs it to the screen. Included in this fragment is the memory allocation necessary to obtain an input buffer for the input line routine. Note that some static workspace has to be used here, to store the memory pool handle. This is because an error handler will need to be able to access this handle to close off the memory pool. An error handler associated with this piece of code needs to fetch the memory handle from static workspace and close the memory pool before exciting the application.
+
+```text
+
+```
+
+```text
+include "memory.def"            ; memory call definitions and parameters
+include "stdio.def"             ; standard I/O call defs. & parameters
+include "integer.def"           ; integer call definitions
+include "errors.def"            ; error code calls and definitions
+
+; The routine reads a number from the keyboard, multiplies it by 10 and 
+; then outputs the answer 
+; 
+; The routine assumes an open memory pool already exists 
+; and that its handle is in IX 
+; It is further assumed the memory pool is associated with segment 2 
+; (OS_Mop called with A = MM_S2) 
+; 
+; Note that because of the input line routine this code is pre-emptable. 
+; An error handler would need to be able to access the open pool handle in 
+; order to close the pool before before quitting - this can be done if the open 
+; pool handle is stored in static workspace ; 
+
+; first allocate memory
+
+.main       call mall               ; allocate input buffer
+            oz   GN_Nln             ; newline before input
+            xor  a                  ; set options for GN_Sip (empty buffer)
+; now get number from keyboard
+            push iy
+            pop  de                 ; DE = address of input buffer
+
+.getline    ld   b, 6               ; buffer length
+            oz   GN_Sip             ; get the ASCII integer
+            jr   nc, cont1          ; if no errors then continue
+            cp   RC_SUSP
+            ret  nz                 ; exit if some other error
+
+            ; reposition the cursor before calling GN_Sip again
+            ld   a, 13
+            oz   OS_Out             ; output a carriage return
+            ld   a, 1               ; option for GN_Sip (buffer has contents)
+            jr   getline            ; try again
+; convert the ASCII number to integer and multiply by 10
+.cont1      oz   GN_Nln             ; newline
+            push iy
+            pop  hl                 ; HL points at buffer address
+            ld   de, 2              ; option for GN_Gdn to store result in BC
+            ld   b, 6               ; don't attempt to read more than 6 chars.
+            oz   GN_Gdn             ; convert from ASCII decimal to integer
+            ld   d,b
+            ld   e,c                ; result in DE
+            ld   hl, 10             ; multiply DE by 10
+            oz   GN_M16             ; multiply...
+            ld   b,h
+            ld   c,l                ; result in BC
+; convert and output answer
+            push iy
+            pop  de                 ; DE points at buffer address
+            xor  a                  ; set convert options (A = 0)
+            oz   GN_Pdn             ; convert integer to ASCII decimal
+                                    ; (convert HL to ASCII decimal at buffer)
+            xor  a
+            ld   (de),a             ; null-terminate string result
+            push iy
+            pop  hl                 ; HL points at start of buffer
+            oz   GN_Sop             ; write result to standard output
+            oz   GN_Nln
+; now de-allocate memory
+            push iy
+            pop  hl                 ; address of allocated memory
+            ld   c, MS_S2
+            oz   OS_Mgb             ; get current bank binding at segment 2
+            ld   a,b
+            ld   bc, size           ; size of memory chunk
+            oz   OS_Mfr             ; free memory (used for input buffer)
+            ret
+; subroutine to allocate memory
+.mall       ld   bc, size           ; allocate a whole page (256 bytes)
+            xor  a                  ; as per spec
+            oz   OS_Mal             ; allocate memory
+            oz   OS_Mpb             ; page the memory into segment 2
+            push hl
+            pop  iy                 ; IY points at address of allocated memory
+            ret
+```a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Example","id":"example","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"The Z88 provides multiplication and division routines for 16 and 24 bit binary numbers as well as routines to convert between binary values and decimal numbers represented by ASCII digits. The...","title":"Integer arithmetic","filePath":"content/en/library/cambridge-z88/developers-notes/integer-arithmetic.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/developers-notes/integer-arithmetic","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Integer arithmetic - Klive IDE"}],["$","meta","1",{"name":"description","content":"The Z88 provides multiplication and division routines for 16 and 24 bit binary numbers as well as routines to convert between binary values and decimal numbers represented by ASCII digits. The..."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/developers-notes/integer-arithmetic/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"cyL0EKA0xNKEZcECA3AIS"}
+20:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+23:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Integer arithmetic","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The Z88 provides multiplication and division routines for 16 and 24 bit binary numbers as well as routines to convert between binary values and decimal numbers represented by ASCII digits. The arithmetic routines use the HL and DE registers (BHL and CDE for 24 bits) as input parameters with the result in HL (or BHL). In the case of division DE (or CDE) returns the remainder. The only error that is flagged is division by zero; Fc = 0 and A = RC_FAIL ($16). No overflow error is provided in the case of multiplication, so it is up to the user of these routines to check for overflow, if necessary."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"GN_M16"}]," unsigned 16bit multiplication",["$","br",null,{}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"GN_D16"}]," unsigned 16bit division",["$","br",null,{}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"GN_M24"}]," unsigned 24bit multiplication",["$","br",null,{}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"GN_D24"}]," unsigned 24bit division"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The conversion routines are quite flexible with the ASCII source or destination being either in memory, at a stream or at a filter. The binary source or destination can either be the BC register pair (16 bits) or a 4 byte buffer in memory (32 bits). When converting from binary to ASCII you have four formatting options. Bits 4 to 7 of the Accumulator (A) define the width of the output field (where zero means as large as is necessary). Bits 1 and 2 of A are set to output a space before and after the decimal digits respectively. If bit 0 of A is set then instead of generating spaces in order to push the number to the right hand edge of the numeric field, zero digits are generated instead."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"GN_Gdn"}]," convert ASCII string to binary number",["$","br",null,{}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"GN_Pdn"}]," convert binary integer to an ASCII string"]}],"\n",["$","h2",null,{"id":"example","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Example",["$","$L20",null,{"id":"example"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"We now take an opportunity to present a more substantial example than before. The following code fragment accepts a number from the keyboard, converts it to binary, multiplies it by 10, converts back to ASCII decimal and finally outputs it to the screen. Included in this fragment is the memory allocation necessary to obtain an input buffer for the input line routine. Note that some static workspace has to be used here, to store the memory pool handle. This is because an error handler will need to be able to access this handle to close off the memory pool. An error handler associated with this piece of code needs to fetch the memory handle from static workspace and close the memory pool before exciting the application."}],"\n","$L21","\n","$L22"]]}]
+15:["$","$L23",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@24"}]}]
+1f:true
+25:"ToggleWordWrapButton"
+26:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$25"]
+27:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+9:300
+21:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L26",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L27",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{}]}]}]]}]]}]
+22:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L26",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L27",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"include \"memory.def\"            ; memory call definitions and parameters"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"include \"stdio.def\"             ; standard I/O call defs. & parameters"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"include \"integer.def\"           ; integer call definitions"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"include \"errors.def\"            ; error code calls and definitions"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; The routine reads a number from the keyboard, multiplies it by 10 and "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; then outputs the answer "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; The routine assumes an open memory pool already exists "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; and that its handle is in IX "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; It is further assumed the memory pool is associated with segment 2 "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; (OS_Mop called with A = MM_S2) "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; Note that because of the input line routine this code is pre-emptable. "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; An error handler would need to be able to access the open pool handle in "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; order to close the pool before before quitting - this can be done if the open "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; pool handle is stored in static workspace ; "}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; first allocate memory"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":".main       call mall               ; allocate input buffer"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            oz   GN_Nln             ; newline before input"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            xor  a                  ; set options for GN_Sip (empty buffer)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; now get number from keyboard"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            push iy"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            pop  de                 ; DE = address of input buffer"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":".getline    ld   b, 6               ; buffer length"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            oz   GN_Sip             ; get the ASCII integer"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            jr   nc, cont1          ; if no errors then continue"}]}],"\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41","\n","$L42","\n","$L43","\n","$L44","\n","$L45","\n","$L46","\n","$L47","\n","$L48","\n","$L49","\n","$L4a","\n","$L4b","\n","$L4c","\n","$L4d","\n","$L4e","\n","$L4f","\n","$L50","\n","$L51","\n","$L52","\n","$L53","\n","$L54","\n","$L55","\n","$L56","\n","$L57","\n","$L58","\n","$L59"]}]]}]]}]
+24:null
+9:C
+28:["$","span",null,{"children":["$","span",null,{"children":"            cp   RC_SUSP"}]}]
+29:["$","span",null,{"children":["$","span",null,{"children":"            ret  nz                 ; exit if some other error"}]}]
+2a:["$","span",null,{"children":["$","span",null,{}]}]
+2b:["$","span",null,{"children":["$","span",null,{"children":"            ; reposition the cursor before calling GN_Sip again"}]}]
+2c:["$","span",null,{"children":["$","span",null,{"children":"            ld   a, 13"}]}]
+2d:["$","span",null,{"children":["$","span",null,{"children":"            oz   OS_Out             ; output a carriage return"}]}]
+2e:["$","span",null,{"children":["$","span",null,{"children":"            ld   a, 1               ; option for GN_Sip (buffer has contents)"}]}]
+2f:["$","span",null,{"children":["$","span",null,{"children":"            jr   getline            ; try again"}]}]
+30:["$","span",null,{"children":["$","span",null,{"children":"; convert the ASCII number to integer and multiply by 10"}]}]
+31:["$","span",null,{"children":["$","span",null,{"children":".cont1      oz   GN_Nln             ; newline"}]}]
+32:["$","span",null,{"children":["$","span",null,{"children":"            push iy"}]}]
+33:["$","span",null,{"children":["$","span",null,{"children":"            pop  hl                 ; HL points at buffer address"}]}]
+34:["$","span",null,{"children":["$","span",null,{"children":"            ld   de, 2              ; option for GN_Gdn to store result in BC"}]}]
+35:["$","span",null,{"children":["$","span",null,{"children":"            ld   b, 6               ; don't attempt to read more than 6 chars."}]}]
+36:["$","span",null,{"children":["$","span",null,{"children":"            oz   GN_Gdn             ; convert from ASCII decimal to integer"}]}]
+37:["$","span",null,{"children":["$","span",null,{"children":"            ld   d,b"}]}]
+38:["$","span",null,{"children":["$","span",null,{"children":"            ld   e,c                ; result in DE"}]}]
+39:["$","span",null,{"children":["$","span",null,{"children":"            ld   hl, 10             ; multiply DE by 10"}]}]
+3a:["$","span",null,{"children":["$","span",null,{"children":"            oz   GN_M16             ; multiply..."}]}]
+3b:["$","span",null,{"children":["$","span",null,{"children":"            ld   b,h"}]}]
+3c:["$","span",null,{"children":["$","span",null,{"children":"            ld   c,l                ; result in BC"}]}]
+3d:["$","span",null,{"children":["$","span",null,{"children":"; convert and output answer"}]}]
+3e:["$","span",null,{"children":["$","span",null,{"children":"            push iy"}]}]
+3f:["$","span",null,{"children":["$","span",null,{"children":"            pop  de                 ; DE points at buffer address"}]}]
+40:["$","span",null,{"children":["$","span",null,{"children":"            xor  a                  ; set convert options (A = 0)"}]}]
+41:["$","span",null,{"children":["$","span",null,{"children":"            oz   GN_Pdn             ; convert integer to ASCII decimal"}]}]
+42:["$","span",null,{"children":["$","span",null,{"children":"                                    ; (convert HL to ASCII decimal at buffer)"}]}]
+43:["$","span",null,{"children":["$","span",null,{"children":"            xor  a"}]}]
+44:["$","span",null,{"children":["$","span",null,{"children":"            ld   (de),a             ; null-terminate string result"}]}]
+45:["$","span",null,{"children":["$","span",null,{"children":"            push iy"}]}]
+46:["$","span",null,{"children":["$","span",null,{"children":"            pop  hl                 ; HL points at start of buffer"}]}]
+47:["$","span",null,{"children":["$","span",null,{"children":"            oz   GN_Sop             ; write result to standard output"}]}]
+48:["$","span",null,{"children":["$","span",null,{"children":"            oz   GN_Nln"}]}]
+49:["$","span",null,{"children":["$","span",null,{"children":"; now de-allocate memory"}]}]
+4a:["$","span",null,{"children":["$","span",null,{"children":"            push iy"}]}]
+4b:["$","span",null,{"children":["$","span",null,{"children":"            pop  hl                 ; address of allocated memory"}]}]
+4c:["$","span",null,{"children":["$","span",null,{"children":"            ld   c, MS_S2"}]}]
+4d:["$","span",null,{"children":["$","span",null,{"children":"            oz   OS_Mgb             ; get current bank binding at segment 2"}]}]
+4e:["$","span",null,{"children":["$","span",null,{"children":"            ld   a,b"}]}]
+4f:["$","span",null,{"children":["$","span",null,{"children":"            ld   bc, size           ; size of memory chunk"}]}]
+50:["$","span",null,{"children":["$","span",null,{"children":"            oz   OS_Mfr             ; free memory (used for input buffer)"}]}]
+51:["$","span",null,{"children":["$","span",null,{"children":"            ret"}]}]
+52:["$","span",null,{"children":["$","span",null,{"children":"; subroutine to allocate memory"}]}]
+53:["$","span",null,{"children":["$","span",null,{"children":".mall       ld   bc, size           ; allocate a whole page (256 bytes)"}]}]
+54:["$","span",null,{"children":["$","span",null,{"children":"            xor  a                  ; as per spec"}]}]
+55:["$","span",null,{"children":["$","span",null,{"children":"            oz   OS_Mal             ; allocate memory"}]}]
+56:["$","span",null,{"children":["$","span",null,{"children":"            oz   OS_Mpb             ; page the memory into segment 2"}]}]
+57:["$","span",null,{"children":["$","span",null,{"children":"            push hl"}]}]
+58:["$","span",null,{"children":["$","span",null,{"children":"            pop  iy                 ; IY points at address of allocated memory"}]}]
+59:["$","span",null,{"children":["$","span",null,{"children":"            ret"}]}]
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

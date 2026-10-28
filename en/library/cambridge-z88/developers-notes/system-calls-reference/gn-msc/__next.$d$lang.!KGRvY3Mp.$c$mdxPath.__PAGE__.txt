@@ -1,0 +1,109 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:Ta46,---
+description: "GN_Gmt, get (read) machine time in internal format GN_Gtm, convert an ASCII string to a time in internal format GN_Pmt, put (set) machine time GN_Ptm, write internal time as ASCII string GN_Sdo,..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8618136 (version 7) by scripts/import-z88-wiki.cjs */}
+
+# GN_Msc, Miscellaeneous time operations
+
+## Register parameters
+
+```text
+IN:
+     A = MT_CVT ($00), Convert source to time to elapse:
+     BHL = source time days
+     CDE = source time centiseconds/ticks
+
+     A = MT_UBT ($01), Update base time:
+     BHL = additional offset in minutes
+     C = offset in seconds
+
+     A = MT_UPT ($02), Read uptime
+
+OUT, if A(in) = MT_CVT
+	 Fc = 0, success
+     	BHL = minutes still to elapse
+     	C = seconds still to elapse (only when minutes < 0)
+     	A = centiseconds still to elapse
+     Fc = 1, failure
+     	A = RC_FAIL ($16), time given to routine has already elapsed
+
+Registers changed after return:
+     ....DE../IXIY same
+     AFBC..HL/.... different
+
+OUT, if A(in) = MT_UBT
+	 Fc = 0, always
+
+Registers changed after return:
+     A.BCDEHL/IXIY same
+     .F....../.... different
+
+OUT, if A(in) = MT_UPT
+	 Fc = 0, always
+	 DE = days since latest hard reset
+	 H = hours, L = minutes and C = seconds
+
+Registers changed after return:
+     A.B...../IXIY same
+     .F.CDEHL/.... different
+```
+
+## Notes
+
+- MT\_CVT : Operating system uses this call to determine when an alarm has to be triggered by calculating difference between alarm time and current time.
+- MT\_UBT : Applications should not use this call, the system to maintain the time over soft reset. It adjusts the base time because hardware timers are reset.
+- MT\_UPT : Uptime is the operating system running time since latest hard reset. Uptime is preserved over soft reset (OZ V5.0).
+
+## Related calls
+
+**[GN\_Gmt](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-gmt)**, get (read) machine time in internal format <br />**[GN\_Gtm](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-gtm)**, convert an ASCII string to a time in internal format <br />**[GN\_Pmt](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-pmt)**, put (set) machine time <br />**[GN\_Ptm](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-ptm)**, write internal time as ASCII string <br />**[GN\_Sdo](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-sdo)**, send date and time to standard output <br />**[OS\_Dly](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-dly)**, delay a given perioda:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Register parameters","id":"register-parameters","depth":2},{"value":"Notes","id":"notes","depth":2},{"value":"Related calls","id":"related-calls","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"GN_Gmt, get (read) machine time in internal format GN_Gtm, convert an ASCII string to a time in internal format GN_Pmt, put (set) machine time GN_Ptm, write internal time as ASCII string GN_Sdo,...","title":"GN_Msc, Miscellaeneous time operations","filePath":"content/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-msc.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/developers-notes/system-calls-reference/gn-msc","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"GN_Msc, Miscellaeneous time operations - Klive IDE"}],["$","meta","1",{"name":"description","content":"GN_Gmt, get (read) machine time in internal format GN_Gtm, convert an ASCII string to a time in internal format GN_Pmt, put (set) machine time GN_Ptm, write internal time as ASCII string GN_Sdo,..."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-msc/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"cyL0EKA0xNKEZcECA3AIS"}
+20:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+21:"ToggleWordWrapButton"
+22:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$21"]
+23:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+2d:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["GN_Msc, Miscellaeneous time operations","$undefined"]}],"\n",["$","h2",null,{"id":"register-parameters","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Register parameters",["$","$L20",null,{"id":"register-parameters"}]]}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"IN:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     A = MT_CVT ($00), Convert source to time to elapse:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     BHL = source time days"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     CDE = source time centiseconds/ticks"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     A = MT_UBT ($01), Update base time:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     BHL = additional offset in minutes"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     C = offset in seconds"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     A = MT_UPT ($02), Read uptime"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OUT, if A(in) = MT_CVT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"\t Fc = 0, success"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     \tBHL = minutes still to elapse"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     \tC = seconds still to elapse (only when minutes < 0)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     \tA = centiseconds still to elapse"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     Fc = 1, failure"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     \tA = RC_FAIL ($16), time given to routine has already elapsed"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Registers changed after return:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     ....DE../IXIY same"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     AFBC..HL/.... different"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OUT, if A(in) = MT_UBT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"\t Fc = 0, always"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Registers changed after return:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     A.BCDEHL/IXIY same"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     .F....../.... different"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OUT, if A(in) = MT_UPT"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"\t Fc = 0, always"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"\t DE = days since latest hard reset"}]}],"\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28"]}]]}]]}],"\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c"]]}]
+15:["$","$L2d",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@2e"}]}]
+1f:true
+2f:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+9:300
+24:["$","span",null,{"children":["$","span",null,{"children":"\t H = hours, L = minutes and C = seconds"}]}]
+25:["$","span",null,{"children":["$","span",null,{}]}]
+26:["$","span",null,{"children":["$","span",null,{"children":"Registers changed after return:"}]}]
+27:["$","span",null,{"children":["$","span",null,{"children":"     A.B...../IXIY same"}]}]
+28:["$","span",null,{"children":["$","span",null,{"children":"     .F.CDEHL/.... different"}]}]
+29:["$","h2",null,{"id":"notes","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Notes",["$","$L20",null,{"id":"notes"}]]}]
+2a:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"MT_CVT : Operating system uses this call to determine when an alarm has to be triggered by calculating difference between alarm time and current time."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"MT_UBT : Applications should not use this call, the system to maintain the time over soft reset. It adjusts the base time because hardware timers are reset."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"MT_UPT : Uptime is the operating system running time since latest hard reset. Uptime is preserved over soft reset (OZ V5.0)."}],"\n"]}]
+2b:["$","h2",null,{"id":"related-calls","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Related calls",["$","$L20",null,{"id":"related-calls"}]]}]
+2c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":["$","$L2f",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-gmt","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"GN_Gmt"}]}],", get (read) machine time in internal format ",["$","br",null,{}],["$","strong",null,{"children":["$","$L2f",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-gtm","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"GN_Gtm"}]}],", convert an ASCII string to a time in internal format ",["$","br",null,{}],["$","strong",null,{"children":["$","$L2f",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-pmt","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"GN_Pmt"}]}],", put (set) machine time ",["$","br",null,{}],["$","strong",null,{"children":["$","$L2f",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-ptm","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"GN_Ptm"}]}],", write internal time as ASCII string ",["$","br",null,{}],["$","strong",null,{"children":["$","$L2f",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-sdo","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"GN_Sdo"}]}],", send date and time to standard output ",["$","br",null,{}],["$","strong",null,{"children":["$","$L2f",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-dly","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OS_Dly"}]}],", delay a given period"]}]
+2e:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

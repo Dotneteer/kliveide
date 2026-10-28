@@ -1,0 +1,81 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+13:"ToggleWordWrapButton"
+14:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$13"]
+1f:"ViewportBoundary"
+20:I[484,[],"$1f"]
+21:"MetadataBoundary"
+22:I[484,[],"$21"]
+23:"$Sreact.suspense"
+24:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T57b,---
+description: "The default system token table is used if a local token table has not been established with OS_Wtb.The standard screen driver effects and icons are handled by this call.The ISO characters can be..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/120984238 (version 7) by scripts/import-z88-wiki.cjs */}
+
+# OS_Wts, Write tokenized string
+
+Register parameters
+
+```text
+IN:
+     BHL = pointer to tokenized null terminated string (B = 0, local)
+
+OUT, if call successful:
+     Fc = 0, always
+
+Registers changed after return:
+     A.BCDEHK/IXIY same
+     .F....../.... different
+```
+
+Notes
+
+The default system token table is used if a local token table has not been established with [OS\_Wtb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-wtb).<br />The standard screen driver effects and icons are handled by this call.<br />The [ISO characters](/en/library/cambridge-z88/developers-notes/internationalization/iso-character-table) can be displayed using the STX ($02) escape sequence, for example using string below :
+
+```text
+defm 2,$A4,0
+```
+
+will output the '€' character and not the corresponding token.
+
+## Related calls
+
+**[OS\_Wtb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-wtb)**, write token base<br />**[OS\_Wrt](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-wrt)**, write tokena:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Related calls","id":"related-calls","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"The default system token table is used if a local token table has not been established with OS_Wtb.The standard screen driver effects and icons are handled by this call.The ISO characters can be...","title":"OS_Wts, Write tokenized string","filePath":"content/en/library/cambridge-z88/developers-notes/system-calls-reference/os-wts.mdx","timestamp":1792315833000},"sourceCode":"$12","children":[["$","div",null,{"id":"nextra-skip-nav"}],["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["OS_Wts, Write tokenized string","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Register parameters"}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L14",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],"$L15"]}],"$L16"]}]]}],"\n","$L17","\n","$L18","\n","$L19","\n","$L1a","\n","$L1b","\n","$L1c"]]}]]}]]}]}],null,"$L1d"]}],"p":"$@1e","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/developers-notes/system-calls-reference/os-wts","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L20",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L22",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$23",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"OS_Wts, Write tokenized string - Klive IDE"}],["$","meta","1",{"name":"description","content":"The default system token table is used if a local token table has not been established with OS_Wtb.The standard screen driver effects and icons are handled by this call.The ISO characters can be..."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-wts/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L24","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@25","v":null,"s":"$9"}},"a":"$@26","u":"$@27","b":"cyL0EKA0xNKEZcECA3AIS"}
+28:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+29:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+2a:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+2b:I[484,[],"OutletBoundary"]
+15:["$","$L28",null,{"className":""}]
+16:["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"IN:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     BHL = pointer to tokenized null terminated string (B = 0, local)"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OUT, if call successful:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     Fc = 0, always"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Registers changed after return:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     A.BCDEHK/IXIY same"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     .F....../.... different"}]}]]}]
+17:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Notes"}]
+18:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The default system token table is used if a local token table has not been established with ",["$","$L29",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-wtb","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OS_Wtb"}],".",["$","br",null,{}],"The standard screen driver effects and icons are handled by this call.",["$","br",null,{}],"The ",["$","$L29",null,{"href":"/en/library/cambridge-z88/developers-notes/internationalization/iso-character-table","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"ISO characters"}]," can be displayed using the STX ($02) escape sequence, for example using string below :"]}]
+19:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L14",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L28",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"defm 2,$A4,0"}]}]}]]}]]}]
+1a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"will output the ’€’ character and not the corresponding token."}]
+1b:["$","h2",null,{"id":"related-calls","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Related calls",["$","$L2a",null,{"id":"related-calls"}]]}]
+1c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":["$","$L29",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-wtb","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OS_Wtb"}]}],", write token base",["$","br",null,{}],["$","strong",null,{"children":["$","$L29",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-wrt","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OS_Wrt"}]}],", write token"]}]
+1d:["$","$L2b",null,{"children":["$","$23",null,{"name":"Next.MetadataOutlet","children":"$@2c"}]}]
+27:true
+9:300
+2c:null
+9:C
+26:0
+7:"$undefined"
+25:"$undefined"
+1e:"$undefined"

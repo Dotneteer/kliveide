@@ -1,0 +1,232 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T206a,---
+description: "The map area was designed for graphics purposes. However, no graphics routines were implemented other than a simple horizontal line-write that PipeDream uses. The map is the small area on the..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/2752584 (version 5) by scripts/import-z88-wiki.cjs */}
+
+# The Map Area
+
+The map area was designed for graphics purposes. However, no graphics routines were implemented other than a simple horizontal line-write that PipeDream uses. The map is the small area on the right hand edge of the screen to display a picture of what a page looks like in PipeDream, when printed. This region consists of between 0 and 256 pixels across by 64 pixels down. It is theoretically possible to have a 624 by 64 Hires screen, but with current information, graphics are limited to the map area only. It is possible, with extreme care, to write directly to the map memory, by accessing the HIRES0 character set, see the "Hardware layout of the map" section for further details.
+
+Once you have opened a window for the map, say window '1', the system automatically updates the contents of the map to the defined window 50 times a second by the Blink array chip. The map memory is simply hard-wired, and everthing written to it will immediatly be reflected on the screen (if opened via the **[OS\_Map](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-map)** call).
+
+The calls provided here, only allows you to write to the map area, not to read back from it. If you need to know about the contents of the map area, then you should keep a copy of what you write have written to it. The width of the map is limited to 96 pixels in an unexpanded machine. The actual width will always be a multiple of 8, although the widths used by the **[OS\_Map](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-map)** call will be on less than this, ie. 63 refers to an actual width of 64 pixels, numbered 0 to 63. The map call has the following specification:
+
+```text
+RST 20H, DEFW $F406
+
+IN:
+            BC = reason code
+            MP_WR ($01)             write a line to the map
+            MP_DEF ($02)            define a map using the Panel default width
+            MP_GRA ($03)            define a map of specific width
+            MP_MEM ($05)            define a map of specific width and associate to application segment
+
+ OUT, if call successful:
+            Fc = 0
+ 
+OUT, if call failed:
+            Fc = 1
+            A = error code:
+                        RC_BAD ($04), bad parameters (errors are generally ignored)
+                        RC_UNK ($03), value of BC is not valid
+```
+
+The various calls to manipulate the map area on the simple line based interface is found at the **[OS\_Map](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-map)** call specification in the System Calls Reference section.
+
+If you are adventurous, have a look at the following examples. Since the map is hardwired, anything written to it will automatically be reflected in the map window. It is possible, and very easy to write graphical routines once the physical layout of the map memory is defined.
+
+## The hardware layout of the map
+
+The map on the Z88 have been designed for a maximum of 256 pixels wide and 64 pixels high graphical area. Even though it is a graphical area, its basic organisation is a character based matrix, where each 'character' is defined by eight column bytes from top to bottom. Each 'line' is then defined by the 'characters'. This is why the width of the map area is defined in multiple of 8 (bits). The following illustrates the memory map organisation:
+
+\<graphics\_base\>, (0,0)
+
+```text
+            y columns:
+x rows:     <byte0>     <byte8>     <byte16>    ...         <mapwidth>
+            <byte1>     <byte9>     ...
+            <byte2>     <byte10>    ...
+            <byte3>     <byte11>    ...
+            <byte4>     <byte12>    ...
+            <byte5>     ...         ...
+            <byte6>     ...         ...
+            <byte7>     <byte15>    <byte(x)*8+y>
+
+line y:     <byte <mapwidth>*8*(y div 8)>                   <graphics_end>
+```
+
+The above illustration defines the organisation for 'lines' of 'characters'. The width of the map is defined in byte boundaries. The following formula defines the byte position from the base of the map area, defined by a simple (x,y) pixel position, where (0,0) is at the upper left corner of \<byte0\>.
+
+```text
+            linedist = (y div 8) * <mapwidth>   ; each line is 8 * <mapwidth>
+            rowdist  = (x div 8) * 8            ; step 8 bytes pr. 8 pixels
+            coldist  = y mod 8                  ; somewhere in a 'character'
+            bytepos  = linedist + rowdist + coldist
+```
+
+Given a pixel coordinate of (x,y) = (10,4), and a map of 80 pixels wide (10 bytes), the formula would look like this:
+
+```text
+            linedist = (4 div 8) * <10>         =>          0
+            rowdist  = (10 div 8) * 8           =>          8
+            coldist  = (4 mod 8)                =>          4
+            bytepos  = 12
+```
+
+which is at \<byte12\>. The pixel position within the byte (ie. bit position) is simply:
+
+```text
+            pixelpos = 7 - (x mod 8)            =>          5
+```
+
+which fits: the second bit (seen from left) in the second byte row.
+
+## Example
+
+The following two examples manipulates the map area directly, thereby avoiding the relatively large system overhead of the **[OS\_Map](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-map)** call. Here, you read/write directly to the map area. The two examples show how easy graphics can be implemented on the Z88, as long as you play by the rules and avoid writing beyond the boundaries of the map.
+
+First the base address of the map is fetched, then the memory is paged into segment 2 and the base address of the map is stored at *(BASE\_GRAPHICS)*. The following example routine will return an address and a corresponding bit position of the address in the map from a virtual (x,y) coordinate. This is the basic algorithm for manipulating graphics in the map area. The Standard Library contains a complete set of library graphics routines to plot points, draw lines, sprites and scroll the map area contents. All source files are included for evaluation and improvement. These two routines are an extract:
+
+```text
+include "memory.def"            ; memory call definitions 
+include "map.def"               ; map call definitions 
+include "screen.def"            ; low level screen call definitions 
+
+; Open graphics window '1', static size of 256x64 pixels, and bind graphics 
+; memory into segment 2. NOTE: Only expanded machines may open a 256 pixels 
+; wide map. 
+; 
+.openmap    
+
+            ld      a,'1'               ; use window '1' for graphics
+            ld      B, MS_S2
+            ld      C, MP_MEM
+            ld      hl,255
+            oz      OS_Map              ; create a map of 256 pixels
+            rst     OZ_Mpb              ; and bind map memory to segment 2
+            ld      (base_graphics),hl  ; initialize base address of hires0 
+            ret
+
+; This routine returns the address and bit position of a pixel coordinate (x,y) 
+; 
+; in: hl = (x,y) coordinate of pixel (h,l) 
+; 
+; out: de = address of pixel byte 
+; a = bit number of byte where pixel is to be placed 
+; fz = 1 if bit number is 0 of pixel position 
+; 
+; registers changed after return: 
+; ......hl/ixiy same 
+; afbcde../.... different 
+;
+
+.pixeladdr  ld   b,l
+            srl  b
+            srl  b
+            srl  b                   ; linedist = y div 8 * 256
+            ld   a,h
+            and  @11111000           ; rowdist = x div 8 * 8
+            ld   c,a                 ; bc = linedist + rowdist
+            ld   a,l
+            and  @00000111           ; coldist = y mod 8
+            ld   de,(base_graphics)  ; pointer to base of graphics area
+            ld   e,a                 ; coldist = graphicsarea + coldist
+            ld   a,h
+            ex   de,hl
+            add  hl,bc               ; bytepos = linedist + rowdist + coldist
+            ex   de,hl
+            and  @00000111           ; a = x mod 8
+            xor  @00000111           ; a = 7 - a
+            ret
+```a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"The hardware layout of the map","id":"the-hardware-layout-of-the-map","depth":2},{"value":"Example","id":"example","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"The map area was designed for graphics purposes. However, no graphics routines were implemented other than a simple horizontal line-write that PipeDream uses. The map is the small area on the...","title":"The Map Area","filePath":"content/en/library/cambridge-z88/developers-notes/the-map-area.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/developers-notes/the-map-area","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"The Map Area - Klive IDE"}],["$","meta","1",{"name":"description","content":"The map area was designed for graphics purposes. However, no graphics routines were implemented other than a simple horizontal line-write that PipeDream uses. The map is the small area on the..."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/developers-notes/the-map-area/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"cyL0EKA0xNKEZcECA3AIS"}
+20:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+21:"ToggleWordWrapButton"
+22:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$21"]
+23:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+46:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["The Map Area","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The map area was designed for graphics purposes. However, no graphics routines were implemented other than a simple horizontal line-write that PipeDream uses. The map is the small area on the right hand edge of the screen to display a picture of what a page looks like in PipeDream, when printed. This region consists of between 0 and 256 pixels across by 64 pixels down. It is theoretically possible to have a 624 by 64 Hires screen, but with current information, graphics are limited to the map area only. It is possible, with extreme care, to write directly to the map memory, by accessing the HIRES0 character set, see the “Hardware layout of the map” section for further details."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Once you have opened a window for the map, say window ‘1’, the system automatically updates the contents of the map to the defined window 50 times a second by the Blink array chip. The map memory is simply hard-wired, and everthing written to it will immediatly be reflected on the screen (if opened via the ",["$","strong",null,{"children":["$","$L20",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-map","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OS_Map"}]}]," call)."]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The calls provided here, only allows you to write to the map area, not to read back from it. If you need to know about the contents of the map area, then you should keep a copy of what you write have written to it. The width of the map is limited to 96 pixels in an unexpanded machine. The actual width will always be a multiple of 8, although the widths used by the ",["$","strong",null,{"children":["$","$L20",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-map","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OS_Map"}]}]," call will be on less than this, ie. 63 refers to an actual width of 64 pixels, numbered 0 to 63. The map call has the following specification:"]}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34"]}]]}]]}],"\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41","\n","$L42","\n","$L43","\n","$L44","\n","$L45"]]}]
+15:["$","$L46",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@47"}]}]
+1f:true
+48:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+9:300
+24:["$","span",null,{"children":["$","span",null,{"children":"RST 20H, DEFW $F406"}]}]
+25:["$","span",null,{"children":["$","span",null,{}]}]
+26:["$","span",null,{"children":["$","span",null,{"children":"IN:"}]}]
+27:["$","span",null,{"children":["$","span",null,{"children":"            BC = reason code"}]}]
+28:["$","span",null,{"children":["$","span",null,{"children":"            MP_WR ($01)             write a line to the map"}]}]
+29:["$","span",null,{"children":["$","span",null,{"children":"            MP_DEF ($02)            define a map using the Panel default width"}]}]
+2a:["$","span",null,{"children":["$","span",null,{"children":"            MP_GRA ($03)            define a map of specific width"}]}]
+2b:["$","span",null,{"children":["$","span",null,{"children":"            MP_MEM ($05)            define a map of specific width and associate to application segment"}]}]
+2c:["$","span",null,{"children":["$","span",null,{}]}]
+2d:["$","span",null,{"children":["$","span",null,{"children":" OUT, if call successful:"}]}]
+2e:["$","span",null,{"children":["$","span",null,{"children":"            Fc = 0"}]}]
+2f:["$","span",null,{"children":["$","span",null,{"children":" "}]}]
+30:["$","span",null,{"children":["$","span",null,{"children":"OUT, if call failed:"}]}]
+31:["$","span",null,{"children":["$","span",null,{"children":"            Fc = 1"}]}]
+32:["$","span",null,{"children":["$","span",null,{"children":"            A = error code:"}]}]
+33:["$","span",null,{"children":["$","span",null,{"children":"                        RC_BAD ($04), bad parameters (errors are generally ignored)"}]}]
+34:["$","span",null,{"children":["$","span",null,{"children":"                        RC_UNK ($03), value of BC is not valid"}]}]
+35:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The various calls to manipulate the map area on the simple line based interface is found at the ",["$","strong",null,{"children":["$","$L20",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-map","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OS_Map"}]}]," call specification in the System Calls Reference section."]}]
+36:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If you are adventurous, have a look at the following examples. Since the map is hardwired, anything written to it will automatically be reflected in the map window. It is possible, and very easy to write graphical routines once the physical layout of the map memory is defined."}]
+37:["$","h2",null,{"id":"the-hardware-layout-of-the-map","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The hardware layout of the map",["$","$L48",null,{"id":"the-hardware-layout-of-the-map"}]]}]
+38:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The map on the Z88 have been designed for a maximum of 256 pixels wide and 64 pixels high graphical area. Even though it is a graphical area, its basic organisation is a character based matrix, where each ‘character’ is defined by eight column bytes from top to bottom. Each ‘line’ is then defined by the ‘characters’. This is why the width of the map area is defined in multiple of 8 (bits). The following illustrates the memory map organisation:"}]
+39:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"<graphics_base>, (0,0)"}]
+3a:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"            y columns:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"x rows:     <byte0>     <byte8>     <byte16>    ...         <mapwidth>"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            <byte1>     <byte9>     ..."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            <byte2>     <byte10>    ..."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            <byte3>     <byte11>    ..."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            <byte4>     <byte12>    ..."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            <byte5>     ...         ..."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            <byte6>     ...         ..."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            <byte7>     <byte15>    <byte(x)*8+y>"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"line y:     <byte <mapwidth>*8*(y div 8)>                   <graphics_end>"}]}]]}]]}]]}]
+3b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The above illustration defines the organisation for ‘lines’ of ‘characters’. The width of the map is defined in byte boundaries. The following formula defines the byte position from the base of the map area, defined by a simple (x,y) pixel position, where (0,0) is at the upper left corner of <byte0>."}]
+3c:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"            linedist = (y div 8) * <mapwidth>   ; each line is 8 * <mapwidth>"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            rowdist  = (x div 8) * 8            ; step 8 bytes pr. 8 pixels"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            coldist  = y mod 8                  ; somewhere in a 'character'"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            bytepos  = linedist + rowdist + coldist"}]}]]}]]}]]}]
+3d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Given a pixel coordinate of (x,y) = (10,4), and a map of 80 pixels wide (10 bytes), the formula would look like this:"}]
+3e:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"            linedist = (4 div 8) * <10>         =>          0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            rowdist  = (10 div 8) * 8           =>          8"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            coldist  = (4 mod 8)                =>          4"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            bytepos  = 12"}]}]]}]]}]]}]
+3f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"which is at <byte12>. The pixel position within the byte (ie. bit position) is simply:"}]
+40:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"            pixelpos = 7 - (x mod 8)            =>          5"}]}]}]]}]]}]
+41:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"which fits: the second bit (seen from left) in the second byte row."}]
+42:["$","h2",null,{"id":"example","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Example",["$","$L48",null,{"id":"example"}]]}]
+43:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The following two examples manipulates the map area directly, thereby avoiding the relatively large system overhead of the ",["$","strong",null,{"children":["$","$L20",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-map","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OS_Map"}]}]," call. Here, you read/write directly to the map area. The two examples show how easy graphics can be implemented on the Z88, as long as you play by the rules and avoid writing beyond the boundaries of the map."]}]
+44:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["First the base address of the map is fetched, then the memory is paged into segment 2 and the base address of the map is stored at ",["$","em",null,{"children":"(BASE_GRAPHICS)"}],". The following example routine will return an address and a corresponding bit position of the address in the map from a virtual (x,y) coordinate. This is the basic algorithm for manipulating graphics in the map area. The Standard Library contains a complete set of library graphics routines to plot points, draw lines, sprites and scroll the map area contents. All source files are included for evaluation and improvement. These two routines are an extract:"]}]
+45:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"include \"memory.def\"            ; memory call definitions "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"include \"map.def\"               ; map call definitions "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"include \"screen.def\"            ; low level screen call definitions "}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; Open graphics window '1', static size of 256x64 pixels, and bind graphics "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; memory into segment 2. NOTE: Only expanded machines may open a 256 pixels "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; wide map. "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":".openmap    "}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ld      a,'1'               ; use window '1' for graphics"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ld      B, MS_S2"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ld      C, MP_MEM"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ld      hl,255"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            oz      OS_Map              ; create a map of 256 pixels"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            rst     OZ_Mpb              ; and bind map memory to segment 2"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ld      (base_graphics),hl  ; initialize base address of hires0 "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ret"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; This routine returns the address and bit position of a pixel coordinate (x,y) "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; in: hl = (x,y) coordinate of pixel (h,l) "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; out: de = address of pixel byte "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; a = bit number of byte where pixel is to be placed "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; fz = 1 if bit number is 0 of pixel position "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; registers changed after return: "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; ......hl/ixiy same "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; afbcde../.... different "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":";"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":".pixeladdr  ld   b,l"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            srl  b"}]}],"\n","$L49","\n","$L4a","\n","$L4b","\n","$L4c","\n","$L4d","\n","$L4e","\n","$L4f","\n","$L50","\n","$L51","\n","$L52","\n","$L53","\n","$L54","\n","$L55","\n","$L56","\n","$L57","\n","$L58"]}]]}]]}]
+47:null
+9:C
+49:["$","span",null,{"children":["$","span",null,{"children":"            srl  b"}]}]
+4a:["$","span",null,{"children":["$","span",null,{"children":"            srl  b                   ; linedist = y div 8 * 256"}]}]
+4b:["$","span",null,{"children":["$","span",null,{"children":"            ld   a,h"}]}]
+4c:["$","span",null,{"children":["$","span",null,{"children":"            and  @11111000           ; rowdist = x div 8 * 8"}]}]
+4d:["$","span",null,{"children":["$","span",null,{"children":"            ld   c,a                 ; bc = linedist + rowdist"}]}]
+4e:["$","span",null,{"children":["$","span",null,{"children":"            ld   a,l"}]}]
+4f:["$","span",null,{"children":["$","span",null,{"children":"            and  @00000111           ; coldist = y mod 8"}]}]
+50:["$","span",null,{"children":["$","span",null,{"children":"            ld   de,(base_graphics)  ; pointer to base of graphics area"}]}]
+51:["$","span",null,{"children":["$","span",null,{"children":"            ld   e,a                 ; coldist = graphicsarea + coldist"}]}]
+52:["$","span",null,{"children":["$","span",null,{"children":"            ld   a,h"}]}]
+53:["$","span",null,{"children":["$","span",null,{"children":"            ex   de,hl"}]}]
+54:["$","span",null,{"children":["$","span",null,{"children":"            add  hl,bc               ; bytepos = linedist + rowdist + coldist"}]}]
+55:["$","span",null,{"children":["$","span",null,{"children":"            ex   de,hl"}]}]
+56:["$","span",null,{"children":["$","span",null,{"children":"            and  @00000111           ; a = x mod 8"}]}]
+57:["$","span",null,{"children":["$","span",null,{"children":"            xor  @00000111           ; a = 7 - a"}]}]
+58:["$","span",null,{"children":["$","span",null,{"children":"            ret"}]}]
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

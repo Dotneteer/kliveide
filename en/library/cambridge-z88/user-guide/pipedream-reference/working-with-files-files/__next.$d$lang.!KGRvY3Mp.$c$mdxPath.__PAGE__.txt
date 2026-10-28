@@ -1,0 +1,233 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T23a7,---
+description: "The commands on the FILES menu allow you to load documents from the Cambridge Z88 filing system, and save documents to the filing system."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/35913766 (version 9) by scripts/import-z88-user-guide.cjs */}
+
+# Working with files - FILES
+
+<Shot src="z88-user-guide/pipedream-reference/pipedream-menu-files.webp" alt="Pipedream menu files" width={640} />
+
+The commands on the **FILES** menu allow you to load documents from the Cambridge Z88 filing system, and save documents to the filing system.
+
+You can create a document consisting of several files linked together by a List file. Commands are available to move to the next file or previous file, or go directly to the first file or last file in a multi-file document.
+
+For simple use of PipeDream you do not need to use files, since you can leave documents you are working on as suspended applications. However, since there is a small overhead in keeping suspended applications, saving a large number of small documents as files will prevent the inconveniences of memory low conditions.
+
+## File names
+
+When you start PipeDream with a blank document, the document will have no File name associated with it, and it will show:
+
+`File No File`
+
+at the top right-hand side of the Options Page. A File name can be given to a document with the **Name** command. Loading a file, with the **Load** command, will set the File name to the name of the loaded file.
+
+The File name of the document is displayed in the Options Page, and is used as the default file name in the options for the **Save** and **Name** commands. The File name is also used to label PipeDream suspended activities, in the Index YOUR REF. column.
+
+### <Key k="diamond" />FC — Name
+
+Sets the File name for the current document. Gives the prompt:
+
+`New name of file`
+
+The current File name, if any, will be displayed; this should be edited to the new name, followed by <Key k="enter" />.
+
+## Loading a document
+
+### <Key k="diamond" />FL — Load
+
+Loads a document of a given name from the filing system. The following options are displayed:
+
+`Name of file to load`<br />`Insert at slot No`<br />`Limit to range of rows No`<br />`Load as plain text No`
+
+*Name of file to load*: specifies the file name. If a file of the same name but with the extension'<Typed>.L</Typed>' exists, this file is taken as a List file; See **[Multi-file documents](#multi-file_documents)**, If not, the specified file is loaded.
+
+The File name, displayed in the Options Page, will be set to the name of the file loaded. In the case of a multi-file document, this will be the name of the current document, not the name of the List file.
+
+Instead of typing the file name, the file can be selected from the Filer. After typing <Key k="diamond" />FL, call the Filer by typing <Key k="square" />F, and select the required document using the cursor keys followed by <Key k="enter" /> (see **[Selecting files](/en/library/cambridge-z88/user-guide/using-the-popdowns/the-filer-popdown#selecting_files)**). You can then return to PipeDream from the Filer by pressing <Key k="esc" />, and the full file name will have been entered for you. Press <Key k="enter" /> to load the file.
+
+If the document in memory has been altered since last saving it, the message
+
+`Overwrite text?`
+
+will be displayed, and the document will only be loaded if <Typed>Y</Typed> (or <Typed>y</Typed>) is typed. If the document is too large to fit into memory, only the first section will be loaded, and the display will show the message
+
+`Memory full`
+
+*Insert at slot*: appends the file to the document already in memory, either at the specified slot reference, or at the current cursor position if no slot reference is specified. Type <Typed>Y</Typed> for the option
+
+`Insert at slot Yes`
+
+and enter a slot reference.
+
+*Limit to range of rows*: enables files too large for the available memory to be edited by splitting them up into sections. If the option is set to `Yes`, a range of rows can be entered as two numbers separated by a space. Only rows lying between the specified range, inclusive, will be loaded.
+
+*Load as plain text*: if `Yes` is specified, the file is interpreted as plain text. Sections of text on each line separated by tabs are put into successive columns across each row of the PipeDream document.
+
+After loading a document, expression slots are recalculated twice, once to obtain the correct values of constant slots, and then again to ensure that references to constant slots have the correct values. If the document contains complicated forward referencing, it may need further recalculation before the values of slots stabilise.
+
+## Saving a document
+
+### <Key k="diamond" /> FS — Save
+
+If none of the options are changed, pressing <Key k="enter" /> saves the whole of the current document to the name last set by the **Load** or **Name** commands.
+
+The following options are displayed:
+
+`Name of file to save` <br />`Save only range of columns No`<br />`Save selection of rows No`<br />`Save marked block No`<br />`Save plain text No`
+
+*Name of file to save*: by default, the current File name is displayed, as shown in the Options Page. This can be edited to save the document under a different name.
+
+*Save only range of columns*: altering this option to `Yes` allows you to specify a range of columns. This should be given as two column labels, separated by a space: for example, A F. Only the text within the range of columns, inclusive, will be saved.
+
+*Save selection of rows*: altering this option to `Yes` allows you to enter an expression. Only rows for which the expression evaluates to TRUE will be saved.
+
+For example, column E in an inventory of goods may represent the quantity of each item in stock. To save a copy of the database which excluded out-of-stock items, you would type
+
+`Save selection of rows Yes E1>0`
+
+All row references in the expression are incremented before the expression is evaluated for each row in the document. So in this example row 6 will be saved if E6\>0.
+
+*Save marked block*: altering this option to `Yes` specifies that only the marked block of text should be saved.
+
+*Save plain text*: altering this option to `Yes` will save the document as a plain text file, containing no special constructs. The contents of each successive column will be output separated by tab characters, with each row terminated by a return character.
+
+## Multi-file documents [#multi-file_documents]
+
+Documents comprised of several different files can be edited and printed as a single document by means of a PipeDream List file
+
+The List file is a plain text file containing the names of all the files making up the entire document. It should be saved with the *Save plain text* option, with each file name on a separate line.
+
+The List file should be given a name with the extension'<Typed>.L</Typed>'. A file with extension'<Typed>.L</Typed>' is taken as a List file when loading, and the first document in the list will be loaded.
+
+Any error which occurs during the processing of a multi-file document cancels the multi-file mode after reporting the error, to avoid overwriting files with incorrect text.
+
+The following commands provide a convenient way of moving between files in a multi-file document:
+
+### <Key k="diamond" />FN — Next File
+
+Loads the next file in a multi-file document, but first saves the current file if it has been altered since the last save command.
+
+### <Key k="diamond" />FP — Previous File
+
+Loads the previous file in a multi-file document. The current document is saved if it has been altered since last saving it.
+
+### <Key k="diamond" />FT — Top File
+
+Loads the first file in a multi-file document. The current document is first saved if it has been altered since last saving it.
+
+### <Key k="diamond" />FB — Bottom File
+
+Loads the last document in a multi-file document. The current document is first saved if it has been altered since last saving it.
+
+### Multi-file example
+
+For example, first create a List file in PipeDream, containing the following text:
+
+<Shot src="z88-user-guide/pipedream-reference/pipedream-multifile-example.webp" alt="Pipedream multifile example" width={640} />
+
+Take care not to add any blank lines after the last file name. Then save this as a plain text file called <Typed>book.L</Typed>, by typing <Key k="diamond" />FS <Typed>book.L</Typed>, and setting the *Save plain text* option to `Y`.
+
+Create three files, <Typed>chapterone</Typed>, <Typed>chaptertwo</Typed>, and <Typed>chapterthree</Typed>, containing, for example, the following lines of text respectively:
+
+<Typed>This is the first chapter</Typed>
+
+<Typed>This is the second chapter</Typed>
+
+<Typed>This is chapter three</Typed>
+
+Now load the multi-file document by typing <Key k="diamond" />FL <Typed>book</Typed>. If you use the Filer to select the file you will need to delete the '<Typed>.L</Typed>' extension from the end of the file name.
+
+Typing <Key k="diamond" />FN, <Key k="diamond" />FP, <Key k="diamond" />FT, and <Key k="diamond" />FB will then move between the three files.a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"File names","id":"file-names","depth":2},{"value":[["$","$4",".0",{"children":[["$","kbd",".0",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"FC — Name"]}]],"id":"fc--name","depth":3},{"value":"Loading a document","id":"loading-a-document","depth":2},{"value":[["$","$4",".0",{"children":[["$","kbd",".0",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"FL — Load"]}]],"id":"fl--load","depth":3},{"value":"Saving a document","id":"saving-a-document","depth":2},{"value":[["$","$4",".0",{"children":[["$","kbd",".0",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}]," FS — Save"]}]],"id":"-fs--save","depth":3},{"value":"Multi-file documents","id":"multi-file_documents","depth":2},{"value":[["$","$4",".0",{"children":[["$","kbd",".0",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"FN — Next File"]}]],"id":"fn--next-file","depth":3},{"value":[["$","$4",".0",{"children":[["$","kbd",".0",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"FP — Previous File"]}]],"id":"fp--previous-file","depth":3},{"value":[["$","$4",".0",{"children":[["$","kbd",".0",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"FT — Top File"]}]],"id":"ft--top-file","depth":3},{"value":[["$","$4",".0",{"children":[["$","kbd",".0",{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"FB — Bottom File"]}]],"id":"fb--bottom-file","depth":3},{"value":"Multi-file example","id":"multi-file-example","depth":3}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"The commands on the FILES menu allow you to load documents from the Cambridge Z88 filing system, and save documents to the filing system.","title":"Working with files - FILES","filePath":"content/en/library/cambridge-z88/user-guide/pipedream-reference/working-with-files-files.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/user-guide/pipedream-reference/working-with-files-files","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Working with files - FILES - Klive IDE"}],["$","meta","1",{"name":"description","content":"The commands on the FILES menu allow you to load documents from the Cambridge Z88 filing system, and save documents to the filing system."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/user-guide/pipedream-reference/working-with-files-files/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"cyL0EKA0xNKEZcECA3AIS"}
+20:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+58:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Working with files - FILES","$undefined"]}],"\n",["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/pipedream-reference/pipedream-menu-files.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/pipedream-reference/pipedream-menu-files.webp","alt":"Pipedream menu files","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The commands on the ",["$","strong",null,{"children":"FILES"}]," menu allow you to load documents from the Cambridge Z88 filing system, and save documents to the filing system."]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You can create a document consisting of several files linked together by a List file. Commands are available to move to the next file or previous file, or go directly to the first file or last file in a multi-file document."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"For simple use of PipeDream you do not need to use files, since you can leave documents you are working on as suspended applications. However, since there is a small overhead in keeping suspended applications, saving a large number of small documents as files will prevent the inconveniences of memory low conditions."}],"\n",["$","h2",null,{"id":"file-names","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["File names",["$","$L20",null,{"id":"file-names"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When you start PipeDream with a blank document, the document will have no File name associated with it, and it will show:"}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"File No File"}]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["at the top right-hand side of the Options Page. A File name can be given to a document with the ",["$","strong",null,{"children":"Name"}]," command. Loading a file, with the ",["$","strong",null,{"children":"Load"}]," command, will set the File name to the name of the loaded file."]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The File name of the document is displayed in the Options Page, and is used as the default file name in the options for the ",["$","strong",null,{"children":"Save"}]," and ",["$","strong",null,{"children":"Name"}]," commands. The File name is also used to label PipeDream suspended activities, in the Index YOUR REF. column."]}],"\n",["$","h3",null,{"id":"fc--name","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":[[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"FC — Name"],["$","$L20",null,{"id":"fc--name"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Sets the File name for the current document. Gives the prompt:"}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"New name of file"}]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The current File name, if any, will be displayed; this should be edited to the new name, followed by ","$L21","."]}],"\n","$L22","\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41","\n","$L42","\n","$L43","\n","$L44","\n","$L45","\n","$L46","\n","$L47","\n","$L48","\n","$L49","\n","$L4a","\n","$L4b","\n","$L4c","\n","$L4d","\n","$L4e","\n","$L4f","\n","$L50","\n","$L51","\n","$L52","\n","$L53","\n","$L54","\n","$L55","\n","$L56","\n","$L57"]]}]
+15:["$","$L58",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@59"}]}]
+1f:true
+5a:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+9:300
+21:["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]
+22:["$","h2",null,{"id":"loading-a-document","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Loading a document",["$","$L20",null,{"id":"loading-a-document"}]]}]
+23:["$","h3",null,{"id":"fl--load","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":[[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"FL — Load"],["$","$L20",null,{"id":"fl--load"}]]}]
+24:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Loads a document of a given name from the filing system. The following options are displayed:"}]
+25:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Name of file to load"}],["$","br",null,{}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Insert at slot No"}],["$","br",null,{}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Limit to range of rows No"}],["$","br",null,{}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Load as plain text No"}]]}]
+26:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","em",null,{"children":"Name of file to load"}],": specifies the file name. If a file of the same name but with the extension’",["$","span",null,{"className":"Z88_typed___J27m","children":".L"}],"’ exists, this file is taken as a List file; See ",["$","strong",null,{"children":["$","a",null,{"href":"#multi-file_documents","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Multi-file documents"}]}],", If not, the specified file is loaded."]}]
+27:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The File name, displayed in the Options Page, will be set to the name of the file loaded. In the case of a multi-file document, this will be the name of the current document, not the name of the List file."}]
+28:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Instead of typing the file name, the file can be selected from the Filer. After typing ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"FL, call the Filer by typing ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],"F, and select the required document using the cursor keys followed by ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]," (see ",["$","strong",null,{"children":["$","$L5a",null,{"href":"/en/library/cambridge-z88/user-guide/using-the-popdowns/the-filer-popdown#selecting_files","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Selecting files"}]}],"). You can then return to PipeDream from the Filer by pressing ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Escape","children":"ESC"}],", and the full file name will have been entered for you. Press ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]," to load the file."]}]
+29:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If the document in memory has been altered since last saving it, the message"}]
+2a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Overwrite text?"}]}]
+2b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["will be displayed, and the document will only be loaded if ",["$","span",null,{"className":"Z88_typed___J27m","children":"Y"}]," (or ",["$","span",null,{"className":"Z88_typed___J27m","children":"y"}],") is typed. If the document is too large to fit into memory, only the first section will be loaded, and the display will show the message"]}]
+2c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Memory full"}]}]
+2d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","em",null,{"children":"Insert at slot"}],": appends the file to the document already in memory, either at the specified slot reference, or at the current cursor position if no slot reference is specified. Type ",["$","span",null,{"className":"Z88_typed___J27m","children":"Y"}]," for the option"]}]
+2e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Insert at slot Yes"}]}]
+2f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"and enter a slot reference."}]
+30:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","em",null,{"children":"Limit to range of rows"}],": enables files too large for the available memory to be edited by splitting them up into sections. If the option is set to ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Yes"}],", a range of rows can be entered as two numbers separated by a space. Only rows lying between the specified range, inclusive, will be loaded."]}]
+31:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","em",null,{"children":"Load as plain text"}],": if ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Yes"}]," is specified, the file is interpreted as plain text. Sections of text on each line separated by tabs are put into successive columns across each row of the PipeDream document."]}]
+32:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"After loading a document, expression slots are recalculated twice, once to obtain the correct values of constant slots, and then again to ensure that references to constant slots have the correct values. If the document contains complicated forward referencing, it may need further recalculation before the values of slots stabilise."}]
+33:["$","h2",null,{"id":"saving-a-document","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Saving a document",["$","$L20",null,{"id":"saving-a-document"}]]}]
+34:["$","h3",null,{"id":"-fs--save","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":[[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}]," FS — Save"],["$","$L20",null,{"id":"-fs--save"}]]}]
+35:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["If none of the options are changed, pressing ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]," saves the whole of the current document to the name last set by the ",["$","strong",null,{"children":"Load"}]," or ",["$","strong",null,{"children":"Name"}]," commands."]}]
+36:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The following options are displayed:"}]
+37:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Name of file to save"}]," ",["$","br",null,{}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Save only range of columns No"}],["$","br",null,{}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Save selection of rows No"}],["$","br",null,{}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Save marked block No"}],["$","br",null,{}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Save plain text No"}]]}]
+38:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","em",null,{"children":"Name of file to save"}],": by default, the current File name is displayed, as shown in the Options Page. This can be edited to save the document under a different name."]}]
+39:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","em",null,{"children":"Save only range of columns"}],": altering this option to ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Yes"}]," allows you to specify a range of columns. This should be given as two column labels, separated by a space: for example, A F. Only the text within the range of columns, inclusive, will be saved."]}]
+3a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","em",null,{"children":"Save selection of rows"}],": altering this option to ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Yes"}]," allows you to enter an expression. Only rows for which the expression evaluates to TRUE will be saved."]}]
+3b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"For example, column E in an inventory of goods may represent the quantity of each item in stock. To save a copy of the database which excluded out-of-stock items, you would type"}]
+3c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Save selection of rows Yes E1>0"}]}]
+3d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"All row references in the expression are incremented before the expression is evaluated for each row in the document. So in this example row 6 will be saved if E6>0."}]
+3e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","em",null,{"children":"Save marked block"}],": altering this option to ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Yes"}]," specifies that only the marked block of text should be saved."]}]
+3f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","em",null,{"children":"Save plain text"}],": altering this option to ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Yes"}]," will save the document as a plain text file, containing no special constructs. The contents of each successive column will be output separated by tab characters, with each row terminated by a return character."]}]
+40:["$","h2",null,{"id":"multi-file_documents","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Multi-file documents",["$","$L20",null,{"id":"multi-file_documents"}]]}]
+41:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Documents comprised of several different files can be edited and printed as a single document by means of a PipeDream List file"}]
+42:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The List file is a plain text file containing the names of all the files making up the entire document. It should be saved with the ",["$","em",null,{"children":"Save plain text"}]," option, with each file name on a separate line."]}]
+43:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The List file should be given a name with the extension’",["$","span",null,{"className":"Z88_typed___J27m","children":".L"}],"’. A file with extension’",["$","span",null,{"className":"Z88_typed___J27m","children":".L"}],"’ is taken as a List file when loading, and the first document in the list will be loaded."]}]
+44:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Any error which occurs during the processing of a multi-file document cancels the multi-file mode after reporting the error, to avoid overwriting files with incorrect text."}]
+45:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The following commands provide a convenient way of moving between files in a multi-file document:"}]
+46:["$","h3",null,{"id":"fn--next-file","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":[[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"FN — Next File"],["$","$L20",null,{"id":"fn--next-file"}]]}]
+47:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Loads the next file in a multi-file document, but first saves the current file if it has been altered since the last save command."}]
+48:["$","h3",null,{"id":"fp--previous-file","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":[[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"FP — Previous File"],["$","$L20",null,{"id":"fp--previous-file"}]]}]
+49:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Loads the previous file in a multi-file document. The current document is saved if it has been altered since last saving it."}]
+4a:["$","h3",null,{"id":"ft--top-file","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":[[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"FT — Top File"],["$","$L20",null,{"id":"ft--top-file"}]]}]
+4b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Loads the first file in a multi-file document. The current document is first saved if it has been altered since last saving it."}]
+4c:["$","h3",null,{"id":"fb--bottom-file","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":[[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"FB — Bottom File"],["$","$L20",null,{"id":"fb--bottom-file"}]]}]
+4d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Loads the last document in a multi-file document. The current document is first saved if it has been altered since last saving it."}]
+4e:["$","h3",null,{"id":"multi-file-example","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Multi-file example",["$","$L20",null,{"id":"multi-file-example"}]]}]
+4f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"For example, first create a List file in PipeDream, containing the following text:"}]
+50:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/pipedream-reference/pipedream-multifile-example.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/pipedream-reference/pipedream-multifile-example.webp","alt":"Pipedream multifile example","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+51:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Take care not to add any blank lines after the last file name. Then save this as a plain text file called ",["$","span",null,{"className":"Z88_typed___J27m","children":"book.L"}],", by typing ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"FS ",["$","span",null,{"className":"Z88_typed___J27m","children":"book.L"}],", and setting the ",["$","em",null,{"children":"Save plain text"}]," option to ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Y"}],"."]}]
+52:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Create three files, ",["$","span",null,{"className":"Z88_typed___J27m","children":"chapterone"}],", ",["$","span",null,{"className":"Z88_typed___J27m","children":"chaptertwo"}],", and ",["$","span",null,{"className":"Z88_typed___J27m","children":"chapterthree"}],", containing, for example, the following lines of text respectively:"]}]
+53:["$","span",null,{"className":"Z88_typed___J27m","children":"This is the first chapter"}]
+54:["$","span",null,{"className":"Z88_typed___J27m","children":"This is the second chapter"}]
+55:["$","span",null,{"className":"Z88_typed___J27m","children":"This is chapter three"}]
+56:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Now load the multi-file document by typing ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"FL ",["$","span",null,{"className":"Z88_typed___J27m","children":"book"}],". If you use the Filer to select the file you will need to delete the ’",["$","span",null,{"className":"Z88_typed___J27m","children":".L"}],"’ extension from the end of the file name."]}]
+57:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Typing ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"FN, ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"FP, ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"FT, and ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"FB will then move between the three files."]}]
+59:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

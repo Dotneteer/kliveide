@@ -1,0 +1,77 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+13:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+1b:"ViewportBoundary"
+1c:I[484,[],"$1b"]
+1d:"MetadataBoundary"
+1e:I[484,[],"$1d"]
+1f:"$Sreact.suspense"
+20:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T7ca,---
+description: "All the memory allocated using the above handle parameter will be freed."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7962724 (version 5) by scripts/import-z88-wiki.cjs */}
+
+# OS_Mcl, Close memory (free memory pool)
+
+## Register parameters
+
+```text
+ IN:
+     IX = memory pool handle (returned from previous OS_Mop call)
+
+OUT, if call successful:
+     Fc = 0
+     IX = 0
+OUT, if call failed:
+     Fc = 1
+     A = error code:
+          RC_HAND ($08), IX(in) was not a valid memory pool handle
+
+Registers changed after return:
+     ..BCDEHL/..IY same
+     AF....../IX.. different
+```
+
+## Notes
+
+All the memory allocated using the above handle parameter will be freed.
+
+## Related calls
+
+**[OS\_Bix](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-bix)**, Bind in extended address <br />**[OS\_Box](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-box)**, restore bindings after OS\_Bix <br />**[OS\_Fc](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fc)**, select fast code (fast bank switching) <br />**[OS\_Mal](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mal)**, allocate memory <br />**[OS\_Mfr](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mfr)**, free (previously allocated block) memory <br />**[OS\_Mgb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mgb)**, get current bank binding in segment <br />**[OS\_Mop](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mop)**, open memory (allocate memory pool) <br />**[OS\_Mpb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mpb)**, set new bank binding in segment<br />**[OZ\_Mgb](/en/library/cambridge-z88/developers-notes/system-calls-reference/oz-mgb)**, get current bank binding in segment<br />**[OZ\_Mpb](/en/library/cambridge-z88/developers-notes/system-calls-reference/oz-mpb)**, set new bank binding in segmenta:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Register parameters","id":"register-parameters","depth":2},{"value":"Notes","id":"notes","depth":2},{"value":"Related calls","id":"related-calls","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"All the memory allocated using the above handle parameter will be freed.","title":"OS_Mcl, Close memory (free memory pool)","filePath":"content/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mcl.mdx","timestamp":1792315833000},"sourceCode":"$12","children":[["$","div",null,{"id":"nextra-skip-nav"}],["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["OS_Mcl, Close memory (free memory pool)","$undefined"]}],"\n",["$","h2",null,{"id":"register-parameters","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Register parameters",["$","$L13",null,{"id":"register-parameters"}]]}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined","$L14"]}],"\n","$L15","\n","$L16","\n","$L17","\n","$L18"]]}]]}]]}]}],null,"$L19"]}],"p":"$@1a","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/developers-notes/system-calls-reference/os-mcl","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L1c",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1e",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1f",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"OS_Mcl, Close memory (free memory pool) - Klive IDE"}],["$","meta","1",{"name":"description","content":"All the memory allocated using the above handle parameter will be freed."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mcl/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L20","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@21","v":null,"s":"$9"}},"a":"$@22","u":"$@23","b":"cyL0EKA0xNKEZcECA3AIS"}
+24:"ToggleWordWrapButton"
+25:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$24"]
+26:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+27:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+28:I[484,[],"OutletBoundary"]
+14:["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L25",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L26",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":" IN:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     IX = memory pool handle (returned from previous OS_Mop call)"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OUT, if call successful:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     Fc = 0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     IX = 0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OUT, if call failed:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     Fc = 1"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     A = error code:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"          RC_HAND ($08), IX(in) was not a valid memory pool handle"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Registers changed after return:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     ..BCDEHL/..IY same"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     AF....../IX.. different"}]}]]}]]}]
+15:["$","h2",null,{"id":"notes","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Notes",["$","$L13",null,{"id":"notes"}]]}]
+16:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"All the memory allocated using the above handle parameter will be freed."}]
+17:["$","h2",null,{"id":"related-calls","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Related calls",["$","$L13",null,{"id":"related-calls"}]]}]
+18:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":["$","$L27",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-bix","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OS_Bix"}]}],", Bind in extended address ",["$","br",null,{}],["$","strong",null,{"children":["$","$L27",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-box","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OS_Box"}]}],", restore bindings after OS_Bix ",["$","br",null,{}],["$","strong",null,{"children":["$","$L27",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fc","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OS_Fc"}]}],", select fast code (fast bank switching) ",["$","br",null,{}],["$","strong",null,{"children":["$","$L27",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mal","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OS_Mal"}]}],", allocate memory ",["$","br",null,{}],["$","strong",null,{"children":["$","$L27",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mfr","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OS_Mfr"}]}],", free (previously allocated block) memory ",["$","br",null,{}],["$","strong",null,{"children":["$","$L27",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mgb","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OS_Mgb"}]}],", get current bank binding in segment ",["$","br",null,{}],["$","strong",null,{"children":["$","$L27",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mop","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OS_Mop"}]}],", open memory (allocate memory pool) ",["$","br",null,{}],["$","strong",null,{"children":["$","$L27",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mpb","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OS_Mpb"}]}],", set new bank binding in segment",["$","br",null,{}],["$","strong",null,{"children":["$","$L27",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/oz-mgb","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OZ_Mgb"}]}],", get current bank binding in segment",["$","br",null,{}],["$","strong",null,{"children":["$","$L27",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/oz-mpb","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OZ_Mpb"}]}],", set new bank binding in segment"]}]
+19:["$","$L28",null,{"children":["$","$1f",null,{"name":"Next.MetadataOutlet","children":"$@29"}]}]
+23:true
+9:300
+29:null
+9:C
+22:0
+7:"$undefined"
+21:"$undefined"
+1a:"$undefined"

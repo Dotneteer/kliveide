@@ -1,0 +1,399 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T25dc,---
+description: "GN_Crc allows to generate a CRC–32 (Cyclic Redundancy Check) for memory area, RAM files and File Entries on File Cards. Various methods are available:"
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/37683211 (version 32) by scripts/import-z88-wiki.cjs */}
+
+# GN_Crc, Get CRC-32 of ressource
+
+GN\_Crc allows to generate a CRC–32 (Cyclic Redundancy Check) for memory area, RAM files and File Entries on File Cards. Various methods are available:
+
+1. Generate CRC–32 of a local memory area (for example a string)
+
+2. Generate CRC–32 of complete RAM file
+
+3. Generate partial CRC–32 of RAM file. This enables the application to process CRC-32 across file entry while other activites are done
+
+4. Generate CRC–32 from a File Entry in a File Area on an Eprom or Flash card
+
+5. Generate partial CRC–32 a File Entry in a File Area on an Eprom or Flash card. Process CRC-32 across file entry while other activites are done
+
+## Register parameters
+
+```text
+OZ GN_Crc - RST 20H, DEFW $7C09
+
+IN:
+    A = CRC_MEMA (0)
+    HL = pointer to buffer (local memory)
+    BC = buffer size
+    DE = 0, Initialize CRC-32 with FFFFFFFFh
+    DE > 0, (local) pointer to initial 4-byte CRC-32
+
+OUT, if call successful:
+     Fc = 0
+     DEBC = CRC-32 result (DE = high-word, BC = low-word)
+OUT, if call failed:
+     Fc = 1
+     A = RC_BAD ($04) - bad argument
+
+Registers changed after return:
+     ......HL/IXIY same
+     AFBCDE../.... different
+```
+
+```text
+OZ GN_Crc - RST 20H, DEFW $7C09
+
+IN:
+    A = CRC_FILE (1)
+    HL = pointer to file buffer (local memory) 
+    BC = buffer size
+    DE = 0, Initialize CRC-32 with FFFFFFFFh
+    DE > 0, (local) pointer to initial 4-byte CRC-32
+    IX = file handle of open file (using GN_Opf)
+
+OUT, if call successful:
+    Fc = 0,
+    DEBC = CRC-32
+
+OUT, if call failed:
+    Fc = 1,
+	A = RC_BAD ($04) - bad argument
+    A = RC_xxx (file & handle related errors)
+
+Registers changed after return:
+    ......HL/IXIY same
+    AFBCDE../.... different
+```
+
+```text
+OZ GN_Crc - RST 20H, DEFW $7C09
+
+IN:
+    A = CRC_PARTFILEBYTE (2)
+    HL = max bytes to read for this partial scan, or -1 for rest of file
+    DEBC = Initial CRC-32 or input from result of previous partial CRC-32 scan
+    IX = file handle of open file (using GN_Opf)
+
+OUT, if call successful:
+    Fc = 0
+    DEBC = partial CRC-32 result (DE = high-word, BC = low-word), to be used for next scan iteration 
+
+    Fc = 1, A _RC_Eof
+    DEBC = final CRC-32 result (DE = high-word, BC = low-word) 
+
+OUT, if call failed:
+    Fc = 1,
+	A = RC_BAD ($04) - bad argument
+    A = RC_xxx (file & handle related errors)
+
+Registers changed after return:
+    ......HL/IXIY same
+    AFBCDE../.... different
+```
+
+```text
+OZ GN_Crc - RST 20H, DEFW $7C09
+
+IN:
+    A = CRC_PARTFILEBUF (3)
+    HL = pointer to file buffer (local memory), 
+    BC = buffer size 
+    DE = 0, Initialize CRC-32 with FFFFFFFFh
+    DE > 0, (local) pointer to 4-byte CRC-32 (initial CRC-32 or input from result of previous partial scan)
+    IX = file handle of open file (using GN_Opf)
+
+OUT, if call successful:
+    Fc = 0
+    DEBC = partial CRC-32 result (DE = high-word, BC = low-word), to be used for next scan iteration
+
+    Fc = 1, A _RC_Eof
+    DEBC = final CRC-32 result (DE = high-word, BC = low-word) 
+
+OUT, if call failed:
+    Fc = 1,
+	A = RC_BAD ($04) - bad argument
+    A = RC_xxx (file & handle related errors)
+
+Registers changed after return:
+    ......HL/IXIY same
+    AFBCDE../.... different
+```
+
+```text
+OZ GN_Crc - RST 20H, DEFW $7C09
+
+IN:
+    A = CRC_EPFILE (4)
+    BHL = pointer to file entry
+    DE = 0, Initialize CRC-32 with FFFFFFFFh
+    DE > 0, (local) pointer to initial 4-byte CRC-32
+
+OUT, if call successful:
+    Fc = 0,
+    DEBC = CRC-32
+OUT, if call failed:
+    Fc = 1,
+	A = RC_BAD ($04) - bad argument
+    A = RC_xxx (file card related errors)
+
+ Registers changed after return:
+    ......HL/IXIY same
+    AFBCDE../.... different
+```
+
+```text
+OZ GN_Crc - RST 20H, DEFW $7C09
+
+IN:
+    A = CRC_PARTEPFILE (5)
+
+    Initial call:
+    BHL = pointer to File Entry
+    DE = max. size of bytes to read per partial scan
+    IX = pointer to local memory (allocated in application/popdown workspace, 12 bytes):
+    (IX + 0,3)   : Initial CRC-32 or input from result of previous partial CRC-32 scan
+    (IX + 4,6)   : Reserved for 24bit file pointer (initialized after first call)
+    (IX + 7,9)   : Reserved for size of file entry (initialized after first call)
+    (IX + 10,11) : Reserved for max. bytes to read per partial scan
+
+    Subsequent calls:
+    BHL = 0 (this is returned automatically after initial call to this method)
+    IX = pointer to updated local memory of CRC-32 variables (12 bytes):
+
+ OUT:
+    BHL = 0, always
+
+    Fc = 0
+    (IX + 0,3)   : partial CRC-32 result, low-byte, high-byte order
+    (IX + 4,6)   : 24bit file pointer updated for next partial scan
+    (IX + 7,9)   : Remaining file size updated for next partial scan
+    (IX + 10,11) : max. bytes to read per partial scan = DE (initial input)
+
+    Fc = 1
+    A = RC_Eof (complete file scanned)
+    (IX + 0,3)   : final CRC-32 result, low-byte, high-byte order;
+
+    Fc = 1
+    A = RC_xxx (System error occurred - file entry corrupt, not found, etc.)
+
+Registers changed on return:
+    ......../IXIY same
+    AFBCDEHL/.... different
+```
+
+## Related calls
+
+None.
+
+## Notes
+
+GN\_Crc was implemented in OZ V4.5. It is used by the integrated EazyLink popdown to validate uploaded file content. FlashStore also uses it to display the checksum of a File Entry to be fetched to RAM. GN\_Crc will be used more in future OZ developments.
+
+If this system call is used in stand-alone applications, it is necessary to validate which OZ version the application is running on:
+
+```text
+include "fileio.def"
+
+      ld   a,FA_PTR
+      ld   ix,ffffh
+      ld   de,0          ; result in DEBC
+      oz   OS_Frm
+      ld   a,44h         ; OZ versions are embedded as hexnibbles in C register.
+      cp   c
+      jr   nc, not_ozv45 ; Check for OZ V4.5 failed (44h-45h gives Fc = 1)
+```
+
+```text
+include "crc32.def"
+      ld   a,CRC_MEMA
+      ld   hl,crctext
+      ld   bc,crctext_end - crctext
+      ld   de,0
+      oz   GN_Crc
+      ; CRC–32 returned is 0x414FA339 (DE = 0x414F, BC = 0xA339)
+
+.crctext       
+      defm "The quick brown fox jumps over the lazy dog"
+.crctext_end
+```
+
+```text
+include "crc32.def"
+include "fileio.def"
+
+DEFC FileBufferSize = 1280
+DEFVARS $2000                          ; "popdown" workspace from 2000H onwards
+        FileBuffer ds.b FileBufferSize ; buffer for file I/O
+ENDDEF
+
+        LD   A, OP_IN
+        LD   BC,128
+        LD   HL,filename               ; pointer to local filename
+        LD   D,H
+        LD   E,L
+        OZ   GN_Opf 
+        JR   C,not_available
+
+        ld   a, CRC_FILE
+        ld   hl,FileBuffer             ; use buffer
+        ld   bc,FileBufferSize             
+        ld   de,0                      ; Use FFFFFFFFh as initial Crc-32
+        oz   GN_Crc                    ; get CRC-32 of Open file (with buffer), returned in DEBC
+        oz   GN_Cl                     ; close file
+```
+
+```text
+include "crc32.def"
+include "fileio.def"
+include "error.def"
+
+        LD   A, OP_IN
+        LD   BC,128
+        LD   HL,filename               ; pointer to local filename
+        LD   D,H
+        LD   E,L
+        OZ   GN_Opf 
+        JR   C,not_available
+
+        ld   a, CRC_PARTFILEBYTE
+        ld   hl,1024                   ; read 1024 bytes at a time from file
+        ld   bc,$ffff
+        ld   d,b
+        ld   e,c                       ; Use FFFFFFFFh as initial Crc-32
+
+.scan_file
+        oz   GN_Crc                    ; get CRC-32 of Open file (no buffer)
+        jr   c,check_eof
+        push bc
+        push de
+        push hl
+
+        call do_task
+
+        pop  hl
+        pop  de
+        pop  bc
+        jr   scan_file
+
+.check_eof
+        oz   GN_Cl                     ; close file
+        cp   Rc_eof
+        ret  z                         ; CRC-32 completed, return DEBC to caller
+        scf                            ; other error occurred - signal Fc = 1, A = RC_xxx
+        ret
+```
+
+```text
+include "crc32.def"
+include "eprom.def"
+
+        ld   c,2               
+        ld   de,epfilename             ; search for filename in filea area of slot 2
+        ld   a, EP_Find
+        oz   OS_Epr                     
+        ret  c                         ; file area not there
+        ret  nz                        ; file entry not found
+
+        ld   a, CRC_EPFILE
+        ld   de,0                      ; Use FFFFFFFFh as initial Crc-32
+        oz   GN_Crc                    ; get CRC-32 of File Entry returned in DEBC
+```
+
+```text
+include "crc32.def"
+include "eprom.def"
+
+DEFVARS $2000                          ; "popdown" workspace from 2000H onwards
+        FE_CRC32VARS ds.b 12 
+ENDDEF
+
+        ld   c,2               
+        ld   de,epfilename             ; search for filename in filea area of slot 2
+        ld   a, EP_Find
+        oz   OS_Epr                     
+        ret  c                         ; file area not there
+        ret  nz                        ; file entry not found
+
+        ld   a, CRC_PARTEPFILE
+        ld   ix, FE_CRC32VARS          ; variable space for partial GN_Crc
+        ld   de,1024                   ; Scan max. 1024 bytes per loop iteration, initial Crc-32 is FFFFFFFFh
+.crc32_fe_loop
+        oz   GN_Crc                    ; get partial CRC-32 of File Entry in BHL (or BHL = 0 for next partial block)
+        jr   c, final_crc32
+        ...
+        call do_task
+        ...
+        jr   crc32_fe_loop
+.final_crc
+        ; CRC-32 is available in (IX+0)
+        call display_crc32
+        ret
+```a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Register parameters","id":"register-parameters","depth":2},{"value":"Related calls","id":"related-calls","depth":2},{"value":"Notes","id":"notes","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"GN_Crc allows to generate a CRC–32 (Cyclic Redundancy Check) for memory area, RAM files and File Entries on File Cards. Various methods are available:","title":"GN_Crc, Get CRC-32 of ressource","filePath":"content/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-crc.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/developers-notes/system-calls-reference/gn-crc","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"GN_Crc, Get CRC-32 of ressource - Klive IDE"}],["$","meta","1",{"name":"description","content":"GN_Crc allows to generate a CRC–32 (Cyclic Redundancy Check) for memory area, RAM files and File Entries on File Cards. Various methods are available:"}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-crc/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"cyL0EKA0xNKEZcECA3AIS"}
+20:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+21:"ToggleWordWrapButton"
+22:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$21"]
+23:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+3b:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["GN_Crc, Get CRC-32 of ressource","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"GN_Crc allows to generate a CRC–32 (Cyclic Redundancy Check) for memory area, RAM files and File Entries on File Cards. Various methods are available:"}],"\n",["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Generate CRC–32 of a local memory area (for example a string)"}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Generate CRC–32 of complete RAM file"}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Generate partial CRC–32 of RAM file. This enables the application to process CRC-32 across file entry while other activites are done"}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Generate CRC–32 from a File Entry in a File Area on an Eprom or Flash card"}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Generate partial CRC–32 a File Entry in a File Area on an Eprom or Flash card. Process CRC-32 across file entry while other activites are done"}],"\n"]}],"\n"]}],"\n",["$","h2",null,{"id":"register-parameters","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Register parameters",["$","$L20",null,{"id":"register-parameters"}]]}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"OZ GN_Crc - RST 20H, DEFW $7C09"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"IN:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    A = CRC_MEMA (0)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    HL = pointer to buffer (local memory)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    BC = buffer size"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    DE = 0, Initialize CRC-32 with FFFFFFFFh"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    DE > 0, (local) pointer to initial 4-byte CRC-32"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OUT, if call successful:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     Fc = 0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     DEBC = CRC-32 result (DE = high-word, BC = low-word)"}]}],"\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a"]}]]}]]}],"\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a"]]}]
+15:["$","$L3b",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@3c"}]}]
+1f:true
+9:300
+24:["$","span",null,{"children":["$","span",null,{"children":"OUT, if call failed:"}]}]
+25:["$","span",null,{"children":["$","span",null,{"children":"     Fc = 1"}]}]
+26:["$","span",null,{"children":["$","span",null,{"children":"     A = RC_BAD ($04) - bad argument"}]}]
+27:["$","span",null,{"children":["$","span",null,{}]}]
+28:["$","span",null,{"children":["$","span",null,{"children":"Registers changed after return:"}]}]
+29:["$","span",null,{"children":["$","span",null,{"children":"     ......HL/IXIY same"}]}]
+2a:["$","span",null,{"children":["$","span",null,{"children":"     AFBCDE../.... different"}]}]
+2b:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"OZ GN_Crc - RST 20H, DEFW $7C09"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"IN:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    A = CRC_FILE (1)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    HL = pointer to file buffer (local memory) "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    BC = buffer size"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    DE = 0, Initialize CRC-32 with FFFFFFFFh"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    DE > 0, (local) pointer to initial 4-byte CRC-32"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    IX = file handle of open file (using GN_Opf)"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OUT, if call successful:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    Fc = 0,"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    DEBC = CRC-32"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OUT, if call failed:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    Fc = 1,"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"\tA = RC_BAD ($04) - bad argument"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    A = RC_xxx (file & handle related errors)"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Registers changed after return:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    ......HL/IXIY same"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    AFBCDE../.... different"}]}]]}]]}]]}]
+2c:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"OZ GN_Crc - RST 20H, DEFW $7C09"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"IN:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    A = CRC_PARTFILEBYTE (2)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    HL = max bytes to read for this partial scan, or -1 for rest of file"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    DEBC = Initial CRC-32 or input from result of previous partial CRC-32 scan"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    IX = file handle of open file (using GN_Opf)"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OUT, if call successful:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    Fc = 0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    DEBC = partial CRC-32 result (DE = high-word, BC = low-word), to be used for next scan iteration "}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    Fc = 1, A _RC_Eof"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    DEBC = final CRC-32 result (DE = high-word, BC = low-word) "}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OUT, if call failed:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    Fc = 1,"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"\tA = RC_BAD ($04) - bad argument"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    A = RC_xxx (file & handle related errors)"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Registers changed after return:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    ......HL/IXIY same"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    AFBCDE../.... different"}]}]]}]]}]]}]
+2d:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"OZ GN_Crc - RST 20H, DEFW $7C09"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"IN:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    A = CRC_PARTFILEBUF (3)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    HL = pointer to file buffer (local memory), "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    BC = buffer size "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    DE = 0, Initialize CRC-32 with FFFFFFFFh"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    DE > 0, (local) pointer to 4-byte CRC-32 (initial CRC-32 or input from result of previous partial scan)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    IX = file handle of open file (using GN_Opf)"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OUT, if call successful:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    Fc = 0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    DEBC = partial CRC-32 result (DE = high-word, BC = low-word), to be used for next scan iteration"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    Fc = 1, A _RC_Eof"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    DEBC = final CRC-32 result (DE = high-word, BC = low-word) "}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OUT, if call failed:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    Fc = 1,"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"\tA = RC_BAD ($04) - bad argument"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    A = RC_xxx (file & handle related errors)"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Registers changed after return:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    ......HL/IXIY same"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    AFBCDE../.... different"}]}]]}]]}]]}]
+2e:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"OZ GN_Crc - RST 20H, DEFW $7C09"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"IN:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    A = CRC_EPFILE (4)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    BHL = pointer to file entry"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    DE = 0, Initialize CRC-32 with FFFFFFFFh"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    DE > 0, (local) pointer to initial 4-byte CRC-32"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OUT, if call successful:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    Fc = 0,"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    DEBC = CRC-32"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OUT, if call failed:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    Fc = 1,"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"\tA = RC_BAD ($04) - bad argument"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    A = RC_xxx (file card related errors)"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" Registers changed after return:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    ......HL/IXIY same"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    AFBCDE../.... different"}]}]]}]]}]]}]
+2f:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"OZ GN_Crc - RST 20H, DEFW $7C09"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"IN:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    A = CRC_PARTEPFILE (5)"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    Initial call:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    BHL = pointer to File Entry"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    DE = max. size of bytes to read per partial scan"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    IX = pointer to local memory (allocated in application/popdown workspace, 12 bytes):"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    (IX + 0,3)   : Initial CRC-32 or input from result of previous partial CRC-32 scan"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    (IX + 4,6)   : Reserved for 24bit file pointer (initialized after first call)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    (IX + 7,9)   : Reserved for size of file entry (initialized after first call)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    (IX + 10,11) : Reserved for max. bytes to read per partial scan"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    Subsequent calls:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    BHL = 0 (this is returned automatically after initial call to this method)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    IX = pointer to updated local memory of CRC-32 variables (12 bytes):"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" OUT:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    BHL = 0, always"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    Fc = 0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    (IX + 0,3)   : partial CRC-32 result, low-byte, high-byte order"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    (IX + 4,6)   : 24bit file pointer updated for next partial scan"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    (IX + 7,9)   : Remaining file size updated for next partial scan"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    (IX + 10,11) : max. bytes to read per partial scan = DE (initial input)"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    Fc = 1"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    A = RC_Eof (complete file scanned)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    (IX + 0,3)   : final CRC-32 result, low-byte, high-byte order;"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    Fc = 1"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"    A = RC_xxx (System error occurred - file entry corrupt, not found, etc.)"}]}],"\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40"]}]]}]]}]
+30:["$","h2",null,{"id":"related-calls","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Related calls",["$","$L20",null,{"id":"related-calls"}]]}]
+31:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"None."}]
+32:["$","h2",null,{"id":"notes","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Notes",["$","$L20",null,{"id":"notes"}]]}]
+33:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"GN_Crc was implemented in OZ V4.5. It is used by the integrated EazyLink popdown to validate uploaded file content. FlashStore also uses it to display the checksum of a File Entry to be fetched to RAM. GN_Crc will be used more in future OZ developments."}]
+34:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If this system call is used in stand-alone applications, it is necessary to validate which OZ version the application is running on:"}]
+35:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"include \"fileio.def\""}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"      ld   a,FA_PTR"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"      ld   ix,ffffh"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"      ld   de,0          ; result in DEBC"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"      oz   OS_Frm"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"      ld   a,44h         ; OZ versions are embedded as hexnibbles in C register."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"      cp   c"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"      jr   nc, not_ozv45 ; Check for OZ V4.5 failed (44h-45h gives Fc = 1)"}]}]]}]]}]]}]
+36:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"include \"crc32.def\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"      ld   a,CRC_MEMA"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"      ld   hl,crctext"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"      ld   bc,crctext_end - crctext"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"      ld   de,0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"      oz   GN_Crc"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"      ; CRC–32 returned is 0x414FA339 (DE = 0x414F, BC = 0xA339)"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":".crctext       "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"      defm \"The quick brown fox jumps over the lazy dog\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":".crctext_end"}]}]]}]]}]]}]
+37:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"include \"crc32.def\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"include \"fileio.def\""}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"DEFC FileBufferSize = 1280"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"DEFVARS $2000                          ; \"popdown\" workspace from 2000H onwards"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        FileBuffer ds.b FileBufferSize ; buffer for file I/O"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"ENDDEF"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        LD   A, OP_IN"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        LD   BC,128"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        LD   HL,filename               ; pointer to local filename"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        LD   D,H"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        LD   E,L"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        OZ   GN_Opf "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        JR   C,not_available"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        ld   a, CRC_FILE"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        ld   hl,FileBuffer             ; use buffer"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        ld   bc,FileBufferSize             "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        ld   de,0                      ; Use FFFFFFFFh as initial Crc-32"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        oz   GN_Crc                    ; get CRC-32 of Open file (with buffer), returned in DEBC"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        oz   GN_Cl                     ; close file"}]}]]}]]}]]}]
+38:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"include \"crc32.def\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"include \"fileio.def\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"include \"error.def\""}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        LD   A, OP_IN"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        LD   BC,128"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        LD   HL,filename               ; pointer to local filename"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        LD   D,H"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        LD   E,L"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        OZ   GN_Opf "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        JR   C,not_available"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        ld   a, CRC_PARTFILEBYTE"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        ld   hl,1024                   ; read 1024 bytes at a time from file"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        ld   bc,$ffff"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        ld   d,b"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        ld   e,c                       ; Use FFFFFFFFh as initial Crc-32"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":".scan_file"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        oz   GN_Crc                    ; get CRC-32 of Open file (no buffer)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        jr   c,check_eof"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        push bc"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        push de"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        push hl"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        call do_task"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        pop  hl"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        pop  de"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        pop  bc"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        jr   scan_file"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":".check_eof"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        oz   GN_Cl                     ; close file"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        cp   Rc_eof"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        ret  z                         ; CRC-32 completed, return DEBC to caller"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        scf                            ; other error occurred - signal Fc = 1, A = RC_xxx"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        ret"}]}]]}]]}]]}]
+39:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"include \"crc32.def\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"include \"eprom.def\""}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        ld   c,2               "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        ld   de,epfilename             ; search for filename in filea area of slot 2"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        ld   a, EP_Find"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        oz   OS_Epr                     "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        ret  c                         ; file area not there"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        ret  nz                        ; file entry not found"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        ld   a, CRC_EPFILE"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        ld   de,0                      ; Use FFFFFFFFh as initial Crc-32"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        oz   GN_Crc                    ; get CRC-32 of File Entry returned in DEBC"}]}]]}]]}]]}]
+3a:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"include \"crc32.def\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"include \"eprom.def\""}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"DEFVARS $2000                          ; \"popdown\" workspace from 2000H onwards"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        FE_CRC32VARS ds.b 12 "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"ENDDEF"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        ld   c,2               "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        ld   de,epfilename             ; search for filename in filea area of slot 2"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        ld   a, EP_Find"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        oz   OS_Epr                     "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        ret  c                         ; file area not there"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        ret  nz                        ; file entry not found"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        ld   a, CRC_PARTEPFILE"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        ld   ix, FE_CRC32VARS          ; variable space for partial GN_Crc"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        ld   de,1024                   ; Scan max. 1024 bytes per loop iteration, initial Crc-32 is FFFFFFFFh"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":".crc32_fe_loop"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        oz   GN_Crc                    ; get partial CRC-32 of File Entry in BHL (or BHL = 0 for next partial block)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        jr   c, final_crc32"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        ..."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        call do_task"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        ..."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        jr   crc32_fe_loop"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":".final_crc"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        ; CRC-32 is available in (IX+0)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        call display_crc32"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        ret"}]}]]}]]}]]}]
+3c:null
+9:C
+3d:["$","span",null,{"children":["$","span",null,{}]}]
+3e:["$","span",null,{"children":["$","span",null,{"children":"Registers changed on return:"}]}]
+3f:["$","span",null,{"children":["$","span",null,{"children":"    ......../IXIY same"}]}]
+40:["$","span",null,{"children":["$","span",null,{"children":"    AFBCDEHL/.... different"}]}]
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

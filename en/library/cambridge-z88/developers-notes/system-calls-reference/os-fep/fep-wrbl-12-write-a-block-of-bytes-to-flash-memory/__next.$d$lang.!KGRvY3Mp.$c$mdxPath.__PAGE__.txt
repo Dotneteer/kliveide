@@ -1,0 +1,96 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T117d,---
+description: "Write a block of bytes to the Flash Eprom Card, from address DE to BHL of block size IX. If a block will cross a bank boundary, it is automatically continued on the next adjacent bank of the card...."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7962653 (version 5) by scripts/import-z88-wiki.cjs */}
+
+# FEP_WRBL ($12), Write a block of bytes to Flash Memory
+
+## Register Parameters
+
+```text
+In:
+        A = FEP_WRBL
+        C = FE_28F, FE_29F or 0 (poll card for blowing algorithm)
+        DE = local pointer to start of block (located in current address space)
+        BHL = extended address to start of destination (pointer into card)
+             (bits 7,6 of B is the slot mask)
+             (bits 7,6 of H = MM_Sx segment mask for BHL)
+        IX = size of block (at DE) to blow
+Out:
+        Success:
+             Fc = 0
+             C = FE_28F or FE_29F (depending on found card)
+             BHL updated
+        Failure:
+             Fc = 1
+             A = RC_BWR (block not blown properly)
+             A = RC_NFE (not a recognized Flash Memory Chip)
+             A = RC_UNK (chip type is unknown: use only FE_28F, FE_29F or 0)
+
+Registers changed on return:
+   ....DE../IXIY same
+   AFBC..HL/.... different
+```
+
+## Notes
+
+Write a block of bytes to the Flash Eprom Card, from address DE to BHL of block size IX. If a block will cross a bank boundary, it is automatically continued on the next adjacent bank of the card. On return, BHL points at the byte after the last written byte.
+
+<u>This system call is regarded as internal operating system usage but may be used by applications</u>. This system call is used by the File Eprom Management Interface, [**OS\_Epr**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-epr), but is well suited for other application purposes.
+
+The routine can be told which programming algorithm to use (by specifying the FE\_28F or FE\_29F mnemonic in C); these parameters can be fetched when investigating which Flash Memory chip is available in the slot, using the [**OS\_Fep**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fep), A = FEP\_CDID that reports these constants.
+
+However, if neither of the constants are provided in A, the routine can be specified with C = 0 which internally polls the Flash Memory for identification and intelligently use the correct programming algorithm. The identified FE\_28F or FE\_29F constant is returned to the caller in C for future reference (when the block was successfully programmed to the card).<br /><br />Uses the segment mask of HL (where BHL memory will be bound into the Z80 address space to blow the block of bytes (MM\_S0 - MM\_S3), which has to be in a different segment than DE is referring.<br /><br />BHL points to an absolute bank (which is part of the slot that the Flash Memory Card have been inserted into). Further, the local buffer must be available in local address space and not part of the segment used for blowing bytes.<br /><br />**Important:**<br />Third generation AMD Flash Memory chips may be programmed in all available slots (0-3). Only INTEL I28Fxxxx series Flash chips require the 12V VPP pin in slot 3 to successfully blow data on the memory chip. If the Intel Flash Eprom card is inserted in slot 1 or 2, this routine will report a programming failure.<br /><br />It is the responsibility of the application (before using this call) to evaluate the Flash Memory (using the [**OS\_Fep**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fep), FEP\_CDID routine) and warn the user that an INTEL Flash Memory Card requires the Z88 slot 3 hardware, so this type of unnecessary error can be avoided.
+
+It is also the responsibility of the application (before using this call) to turn off the screen while writing to a card which contains the running OZ ROM. During writing, no interference should happen from Blink, because the Blink reads the font bitmaps each 1/100 second:
+
+If the screen were enabled while formatting inside the address space that is part of OZ ROM chip, the font bitmaps would suddenly be unavailable which would create violent screen flickering during chip command mode. Further, and most importantly, to avoid the Blink doing read-cycles while chip is in command mode.
+
+By switching off the screen, the Blink doesn't read the font bit maps in OZ ROM, and the Flash chip can be in command mode without being disturbed by the Blink.a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Register Parameters","id":"register-parameters","depth":2},{"value":"Notes","id":"notes","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"Write a block of bytes to the Flash Eprom Card, from address DE to BHL of block size IX. If a block will cross a bank boundary, it is automatically continued on the next adjacent bank of the card....","title":"FEP_WRBL ($12), Write a block of bytes to Flash Memory","filePath":"content/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fep/fep-wrbl-12-write-a-block-of-bytes-to-flash-memory.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/developers-notes/system-calls-reference/os-fep/fep-wrbl-12-write-a-block-of-bytes-to-flash-memory","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"FEP_WRBL ($12), Write a block of bytes to Flash Memory - Klive IDE"}],["$","meta","1",{"name":"description","content":"Write a block of bytes to the Flash Eprom Card, from address DE to BHL of block size IX. If a block will cross a bank boundary, it is automatically continued on the next adjacent bank of the card...."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fep/fep-wrbl-12-write-a-block-of-bytes-to-flash-memory/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"cyL0EKA0xNKEZcECA3AIS"}
+20:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+21:"ToggleWordWrapButton"
+22:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$21"]
+23:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+2a:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["FEP_WRBL ($12), Write a block of bytes to Flash Memory","$undefined"]}],"\n",["$","h2",null,{"id":"register-parameters","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Register Parameters",["$","$L20",null,{"id":"register-parameters"}]]}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"In:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        A = FEP_WRBL"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        C = FE_28F, FE_29F or 0 (poll card for blowing algorithm)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        DE = local pointer to start of block (located in current address space)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        BHL = extended address to start of destination (pointer into card)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"             (bits 7,6 of B is the slot mask)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"             (bits 7,6 of H = MM_Sx segment mask for BHL)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        IX = size of block (at DE) to blow"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Out:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        Success:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"             Fc = 0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"             C = FE_28F or FE_29F (depending on found card)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"             BHL updated"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        Failure:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"             Fc = 1"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"             A = RC_BWR (block not blown properly)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"             A = RC_NFE (not a recognized Flash Memory Chip)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"             A = RC_UNK (chip type is unknown: use only FE_28F, FE_29F or 0)"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Registers changed on return:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"   ....DE../IXIY same"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"   AFBC..HL/.... different"}]}]]}]]}]]}],"\n",["$","h2",null,{"id":"notes","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Notes",["$","$L20",null,{"id":"notes"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Write a block of bytes to the Flash Eprom Card, from address DE to BHL of block size IX. If a block will cross a bank boundary, it is automatically continued on the next adjacent bank of the card. On return, BHL points at the byte after the last written byte."}],"\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29"]]}]
+15:["$","$L2a",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@2b"}]}]
+1f:true
+2c:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+9:300
+24:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","u",null,{"children":"This system call is regarded as internal operating system usage but may be used by applications"}],". This system call is used by the File Eprom Management Interface, ",["$","$L2c",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-epr","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["$","strong",null,{"children":"OS_Epr"}]}],", but is well suited for other application purposes."]}]
+25:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The routine can be told which programming algorithm to use (by specifying the FE_28F or FE_29F mnemonic in C); these parameters can be fetched when investigating which Flash Memory chip is available in the slot, using the ",["$","$L2c",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fep","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["$","strong",null,{"children":"OS_Fep"}]}],", A = FEP_CDID that reports these constants."]}]
+26:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["However, if neither of the constants are provided in A, the routine can be specified with C = 0 which internally polls the Flash Memory for identification and intelligently use the correct programming algorithm. The identified FE_28F or FE_29F constant is returned to the caller in C for future reference (when the block was successfully programmed to the card).",["$","br",null,{}],["$","br",null,{}],"Uses the segment mask of HL (where BHL memory will be bound into the Z80 address space to blow the block of bytes (MM_S0 - MM_S3), which has to be in a different segment than DE is referring.",["$","br",null,{}],["$","br",null,{}],"BHL points to an absolute bank (which is part of the slot that the Flash Memory Card have been inserted into). Further, the local buffer must be available in local address space and not part of the segment used for blowing bytes.",["$","br",null,{}],["$","br",null,{}],["$","strong",null,{"children":"Important:"}],["$","br",null,{}],"Third generation AMD Flash Memory chips may be programmed in all available slots (0-3). Only INTEL I28Fxxxx series Flash chips require the 12V VPP pin in slot 3 to successfully blow data on the memory chip. If the Intel Flash Eprom card is inserted in slot 1 or 2, this routine will report a programming failure.",["$","br",null,{}],["$","br",null,{}],"It is the responsibility of the application (before using this call) to evaluate the Flash Memory (using the ",["$","$L2c",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fep","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["$","strong",null,{"children":"OS_Fep"}]}],", FEP_CDID routine) and warn the user that an INTEL Flash Memory Card requires the Z88 slot 3 hardware, so this type of unnecessary error can be avoided."]}]
+27:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"It is also the responsibility of the application (before using this call) to turn off the screen while writing to a card which contains the running OZ ROM. During writing, no interference should happen from Blink, because the Blink reads the font bitmaps each 1/100 second:"}]
+28:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If the screen were enabled while formatting inside the address space that is part of OZ ROM chip, the font bitmaps would suddenly be unavailable which would create violent screen flickering during chip command mode. Further, and most importantly, to avoid the Blink doing read-cycles while chip is in command mode."}]
+29:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"By switching off the screen, the Blink doesn’t read the font bit maps in OZ ROM, and the Flash chip can be in command mode without being disturbed by the Blink."}]
+2b:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

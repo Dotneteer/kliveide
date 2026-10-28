@@ -1,0 +1,89 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:Tdbd,---
+description: "If the battery low symbol appears as soon as the Cambridge Z88 is switched on, the safest course of action is to replace the batteries as soon as possible. The computer should be switched off..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/35913793 (version 10) by scripts/import-z88-user-guide.cjs */}
+
+# Appendix A - Replacing batteries
+
+If the battery low symbol appears as soon as the Cambridge Z88 is switched on, the safest course of action is to replace the batteries as soon as possible. The computer should be switched off until new batteries have been obtained.
+
+The replacement batteries should be Alkaline cells, size AA, type MN1500 or LR6.
+
+Note that while you are exchanging batteries, the contents of the machine's memory will be kept intact by the internal super capacitor. However, this will only maintain power for a limited time, so it is recommended that you power the Cambridge Z88 from the mains power unit while changing batteries, especially if extra cards are fitted.
+
+In the absence of a mains unit, carry out the following actions promptly, and bear in mind the time limitations given below.
+
+## Memory retention time
+
+The time available depends on the number of RAM cards fitted. With no RAM cards the machine will retain its data for 3 minutes. With one RAM card this will be reduced to about 1 minute. Use of two RAM cards will lead to a further reduction to about 30 seconds.
+
+It is not recommended that the machine be fitted with three RAM cards as this would require the use of slot 3 which is designed primarily for use with EPROM cards and, although it is possible to use it with RAM, a much higher power consumption would result.
+
+The time limit does not depend on the size of RAM card used. EPROM cards do not affect the time limit in any slot.
+
+The times given are for the worst case situation. In general the limit will be twice as high, but this should not be relied upon.
+
+If you have a mains adaptor you can use it to power the Cambridge Z88 while you change batteries. **[See Appendix G - Using the mains adaptor](/en/library/cambridge-z88/user-guide/appendix-g-using-the-mains-adapter)**.
+
+### Procedure
+
+Read the following procedure carefully, so that you can carry it out without pausing:
+
+1. Remove the new batteries from their packaging, and place them within easy reach on the right-hand side of the Cambridge Z88.
+
+2. Switch the Cambridge Z88 off by pressing both <Key k="shift" /> keys simultaneously.
+
+3. Place the Cambridge Z88 keyboard-down, and remove the lid of the battery compartment.
+
+4. Note the time, and calculate how long you have according to the table given on the previous page.
+
+5. Remove the four batteries from the battery compartment, if necessary tilting the Cambridge Z88 to slide the batteries out.
+
+6. Throw the old batteries away, to avoid confusing them with the new replacements.
+
+7. Place one of the new batteries at each end of the battery compartment, observing the polarity carefully. Place the remaining two batteries in an 'A' shape, and press down on the point of the 'A' so that they pop into place.
+
+8. Check that the batteries are all orientated correctly. There is now no longer any time pressure.
+
+9. Replace the battery-compartment lid firmly before turning the machine over again.<br /><br />DO NOT PRESS RESET.
+
+10. Switch on, by pressing both <Key k="shift" /> keys simultaneously. The Cambridge Z88 should now be working, and the battery-low indicator will not be displayed.a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Memory retention time","id":"memory-retention-time","depth":2},{"value":"Procedure","id":"procedure","depth":3}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"If the battery low symbol appears as soon as the Cambridge Z88 is switched on, the safest course of action is to replace the batteries as soon as possible. The computer should be switched off...","title":"Appendix A - Replacing batteries","filePath":"content/en/library/cambridge-z88/user-guide/appendix-a-replacing-batteries.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/user-guide/appendix-a-replacing-batteries","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Appendix A - Replacing batteries - Klive IDE"}],["$","meta","1",{"name":"description","content":"If the battery low symbol appears as soon as the Cambridge Z88 is switched on, the safest course of action is to replace the batteries as soon as possible. The computer should be switched off..."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/user-guide/appendix-a-replacing-batteries/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"cyL0EKA0xNKEZcECA3AIS"}
+20:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+21:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+23:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Appendix A - Replacing batteries","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If the battery low symbol appears as soon as the Cambridge Z88 is switched on, the safest course of action is to replace the batteries as soon as possible. The computer should be switched off until new batteries have been obtained."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The replacement batteries should be Alkaline cells, size AA, type MN1500 or LR6."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Note that while you are exchanging batteries, the contents of the machine’s memory will be kept intact by the internal super capacitor. However, this will only maintain power for a limited time, so it is recommended that you power the Cambridge Z88 from the mains power unit while changing batteries, especially if extra cards are fitted."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"In the absence of a mains unit, carry out the following actions promptly, and bear in mind the time limitations given below."}],"\n",["$","h2",null,{"id":"memory-retention-time","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Memory retention time",["$","$L20",null,{"id":"memory-retention-time"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The time available depends on the number of RAM cards fitted. With no RAM cards the machine will retain its data for 3 minutes. With one RAM card this will be reduced to about 1 minute. Use of two RAM cards will lead to a further reduction to about 30 seconds."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"It is not recommended that the machine be fitted with three RAM cards as this would require the use of slot 3 which is designed primarily for use with EPROM cards and, although it is possible to use it with RAM, a much higher power consumption would result."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The time limit does not depend on the size of RAM card used. EPROM cards do not affect the time limit in any slot."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The times given are for the worst case situation. In general the limit will be twice as high, but this should not be relied upon."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["If you have a mains adaptor you can use it to power the Cambridge Z88 while you change batteries. ",["$","strong",null,{"children":["$","$L21",null,{"href":"/en/library/cambridge-z88/user-guide/appendix-g-using-the-mains-adapter","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"See Appendix G - Using the mains adaptor"}]}],"."]}],"\n",["$","h3",null,{"id":"procedure","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Procedure",["$","$L20",null,{"id":"procedure"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Read the following procedure carefully, so that you can carry it out without pausing:"}],"\n","$L22"]]}]
+15:["$","$L23",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@24"}]}]
+1f:true
+9:300
+22:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Remove the new batteries from their packaging, and place them within easy reach on the right-hand side of the Cambridge Z88."}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Switch the Cambridge Z88 off by pressing both ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Shift","children":"SHIFT"}]," keys simultaneously."]}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Place the Cambridge Z88 keyboard-down, and remove the lid of the battery compartment."}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Note the time, and calculate how long you have according to the table given on the previous page."}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Remove the four batteries from the battery compartment, if necessary tilting the Cambridge Z88 to slide the batteries out."}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Throw the old batteries away, to avoid confusing them with the new replacements."}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Place one of the new batteries at each end of the battery compartment, observing the polarity carefully. Place the remaining two batteries in an ‘A’ shape, and press down on the point of the ‘A’ so that they pop into place."}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Check that the batteries are all orientated correctly. There is now no longer any time pressure."}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Replace the battery-compartment lid firmly before turning the machine over again.",["$","br",null,{}],["$","br",null,{}],"DO NOT PRESS RESET."]}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Switch on, by pressing both ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Shift","children":"SHIFT"}]," keys simultaneously. The Cambridge Z88 should now be working, and the battery-low indicator will not be displayed."]}],"\n"]}],"\n"]}]
+24:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

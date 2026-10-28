@@ -1,0 +1,368 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T272d,---
+description: "To enter an application, or a popdown, select its name on the APPLICATIONS list by moving the highlighting bar up and down with the cursor keys UP and DOWN, and press the ENTER key:"
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/35913776 (version 44) by scripts/import-z88-user-guide.cjs */}
+
+# The Index popdown
+
+The Index pop-down allows you to
+
+- Enter pop-downs or applications.
+- Check whether the external cards have been recognised.
+- Start PipeDream (or BBC BASIC) with a new, blank, document (or program).
+- Obtain a list of all the suspended activities you have in the Cambridge Z88, and remove activities you no longer need.
+- Insert and remove RAM, ROM, EPROM or FLASH cards, as explained in **[Section One - Getting started](/en/library/cambridge-z88/user-guide/getting-started/using-cards)**,
+- Central point for information of the Z88 OZ system.
+- Install or Remove an Application in RAM, rather than using a Flash or EPROM card (Refer to [Appendix J - Installing applications in RAM](/en/library/cambridge-z88/user-guide/appendix-j-installing-applications-in-ram)).
+
+## The Index screen
+
+<Shot src="z88-user-guide/using-the-popdowns/the-index-popdown/index-overview.webp" alt="Index Overview" width={684} />
+
+## Entering an application
+
+To enter an application, or a popdown, select its name on the APPLICATIONS list by moving the highlighting bar up and down with the cursor keys <Key k="up" /> and <Key k="down" />, and press the <Key k="enter" /> key:
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>Diary</Table.Td>
+<Table.Td><Key k="square" />D</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>PipeDream</Table.Td>
+<Table.Td><Key k="square" />P</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>BASIC</Table.Td>
+<Table.Td><Key k="square" />B</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Calculator</Table.Td>
+<Table.Td><Key k="square" />R</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Calendar</Table.Td>
+<Table.Td><Key k="square" />C</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Clock</Table.Td>
+<Table.Td><Key k="square" />T</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Alarm</Table.Td>
+<Table.Td><Key k="square" />A</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Filer</Table.Td>
+<Table.Td><Key k="square" />F</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>FlashStore</Table.Td>
+<Table.Td><Key k="square" />J</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>PrinterEd</Table.Td>
+<Table.Td><Key k="square" />E</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Panel</Table.Td>
+<Table.Td><Key k="square" />S</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Terminal</Table.Td>
+<Table.Td><Key k="square" />V</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Imp-Export</Table.Td>
+<Table.Td><Key k="square" />X</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>EazyLink</Table.Td>
+<Table.Td><Key k="square" />L</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+When the bar reaches the bottom of the screen, the list scrolls up to show the remaining options.
+
+Entering PipeDream (or BBC BASIC) from the Index APPLICATIONS list creates a new, blank document (or program).
+
+Index can be activated from any application or popdown with the <Key k="index" /> key or <Key k="square" />I.
+
+### Suspended activities
+
+The SUSPENDED ACTIVITIES list shows the following information for each suspended activity:
+
+| **Heading** | **Meaning** |
+| --- | --- |
+| `YOUR REF.` | The name given to the document (with the PipeDream <Key k="diamond" />FC or <Key k="diamond" />FL commands, the Diary or PrinterEd <Key k="diamond" />FC, <Key k="diamond" />FS, or <Key k="diamond" />FL commands, or the<br />BASIC \*NAME command) |
+| `APPLICATION` | The application name |
+| `WHEN SUSPENDED` | The time and date the document was suspended |
+| <strong>`CARDS`</strong> | The number of the card slot, for activities using an application card |
+
+There can be more than one PipeDream and BBC BASIC suspended activity, but only one for each of the other applications.
+
+### Re-entering a suspended activity
+
+To re-enter a suspended activity, select it by moving the highlighting bar across with the cursor keys, and then press the <Key k="enter" /> key. Alternatively, pressing <Key k="square" />P or <Key k="square" />B repeatedly will enter each PipeDream or BBC BASIC activity in turn.
+
+## Menu
+
+To enter the Menu, use the <Key k="menu" /> key.
+
+<Shot src="z88-user-guide/using-the-popdowns/the-index-popdown/oz46-index-menu.webp" alt="Index - Menu" width={640} />
+
+Commands in <sub>SMALL CAPITALS</sub> i.e. KILL ACTIVITY, PURGE SYSTEM and REMOVE APPLICATION can only selected by using the individual <Key k="diamond" />keys. Moving the cursor and selecting it using the <Key k="enter" /> key in the Menu, does not work.
+
+## Commands
+
+### <Key k="enter" /> — Execute
+
+The <Key k="enter" /> key is used to select whatever the cursor is over.
+
+### ESCAPE
+
+<Key k="esc" />
+
+The <Key k="esc" /> key gets you out of trouble by cancelling what you are about to select.
+
+### Card Display
+
+<Key k="diamond" />CARD
+
+The <Key k="diamond" />CARD command shows the type and size of the card in each slot. It will not show an erased EPROM until it has been accessed by the Filer.
+
+<Shot src="z88-user-guide/using-the-popdowns/the-index-popdown/ozcard.webp" alt="ozcard" width={640} />
+
+This screen shows a 512K/512K RAM/Flash Card used in Slot 1. The 192K ROM is OZ4.5 itself, 320K is the File Area that user files may be saved leaving 512K of RAM making up the full 1M memory that the slot is able to address. The graphical display on the right-hand side gives a representation of how much RAM has been used by the system (resources) and the user (files and open applications).
+
+### System Information
+
+<Key k="diamond" />INFO
+
+The <Key k="diamond" />INFO screen is an addition to OZ V4.5 and later, showing information about the system which was shown in different places now in a central place. They are as follows:-
+
+<Shot src="z88-user-guide/using-the-popdowns/the-index-popdown/index-info.webp" alt="Info Page" width={640} />
+
+| KEY | Description |
+| --- | --- |
+| OZ | The version number of the Operating System |
+| MACHINE | The name of the computer it is running on, normally the Z88. |
+| TYPE | UNEXPANDED and EXPANDED types are shown. EXPANDED types have more than 128K of RAM. |
+| BATTERY | There are three levels displayed.<br />good - normal battery level<br />low - low battery level<br />screen fails to turn on, Battery too low for the Z88 to operate |
+| BUILD | The build revision number of this OZ release with the date and time when source code of the OZ ROM was compiled. |
+| FREE MEMORY | Free Memory was initially in the Diary but this information is valid for all the applications. Each byte represents the space needed for a character; approximately 2000 bytes are needed to store a typical A4 page of text. |
+| FREE HANDLES | This information displays the total free ressources to manage open files and other system components such as RAM memory. If this number keeps dropping, it is an indication that an application or popdown is not closing files after use. |
+
+KEY
+
+Description
+
+OZ
+
+The version number of the Operating System
+
+MACHINE
+
+The name of the computer it is running on, normally the Z88.
+
+TYPE
+
+UNEXPANDED and EXPANDED types are shown. EXPANDED types have more than 128K of RAM.
+
+BATTERY
+
+There are three levels displayed.
+
+good - normal battery level
+
+low - low battery level
+
+screen fails to turn on, Battery too low for the Z88 to operate
+
+BUILD
+
+The build revision number of this OZ release with the date and time when source code of the OZ ROM was compiled.
+
+FREE MEMORY
+
+Free Memory was initially in the Diary but this information is valid for all the applications. Each byte represents the space needed for a character; approximately 2000 bytes are needed to store a typical A4 page of text.
+
+FREE HANDLES
+
+This information displays the total free ressources to manage open files and other system components such as RAM memory. If this number keeps dropping, it is an indication that an application or popdown is not closing files after use.
+
+### <sub>KILL ACTIVITY</sub>
+
+<Key k="diamond" />KILL
+
+To kill a suspended activity, select it on the **SUSPENDED ACTIVITIES** list with the cursor, and type <Key k="diamond" />KILL. The activity will be removed from the list, and the document (or program) associated with it will be lost.
+
+### <sub>PURGE SYSTEM</sub>
+
+<Key k="diamond" />PURGE
+
+is equivalent to a soft reset, which kills all suspended activities, and should therefore be used with great caution.
+
+### Install RAM Application
+
+<Key k="diamond" />INS
+
+To install an application in RAM, enter the .app filename, or select the file by marking it in the Filer. All required files (.app, ap0...) need to be in the same directory but they may be deleted after installation if desired.
+
+### Remove RAM Application
+
+<Key k="diamond" />RMV
+
+Uninstalls an application in RAM that the cursor is over. If multiple applications are required to be removed, place the cursor over the first application in the list.
+
+Before using Remove RAM Application command, check that the application is not running as a suspended activity. If it is, remove it by placing the cursor over the suspended activity and then use the <Key k="diamond" />KILL command.
+
+## Hidden Commands
+
+These commands are reserved for advanced users.
+
+### Enquiry
+
+<Key k="diamond" />NQ
+
+When the select bar is in the application window, this command will show informations about the application.
+
+<Shot src="z88-user-guide/using-the-popdowns/the-index-popdown/nq-appl.webp" alt="nq appl" width={640} />
+
+When the select bar is in the suspended activities window, this command will show information about the suspended process.
+
+<Shot src="z88-user-guide/using-the-popdowns/the-index-popdown/nq-proc.webp" alt="nq proc" width={640} />
+
+### Hard Reset
+
+<Key k="diamond" />HARD
+
+Performs a **HARD RESET**. All data in RAM will be lost. All files and applications in Eprom and Flash cards are preserved during hard reset.a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"The Index screen","id":"the-index-screen","depth":2},{"value":"Entering an application","id":"entering-an-application","depth":2},{"value":"Suspended activities","id":"suspended-activities","depth":3},{"value":"Re-entering a suspended activity","id":"re-entering-a-suspended-activity","depth":3},{"value":"Menu","id":"menu","depth":2},{"value":"Commands","id":"commands","depth":2},{"value":[["$","$4",".0",{"children":[["$","kbd",".0",{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]," — Execute"]}]],"id":"--execute","depth":3},{"value":"ESCAPE","id":"escape","depth":3},{"value":"Card Display","id":"card-display","depth":3},{"value":"System Information","id":"system-information","depth":3},{"value":[["$","$4",".0",{"children":[["$","sub",".0",{"children":"KILL ACTIVITY"}]]}]],"id":"kill-activity","depth":3},{"value":[["$","$4",".0",{"children":[["$","sub",".0",{"children":"PURGE SYSTEM"}]]}]],"id":"purge-system","depth":3},{"value":"Install RAM Application","id":"install-ram-application","depth":3},{"value":"Remove RAM Application","id":"remove-ram-application","depth":3},{"value":"Hidden Commands","id":"hidden-commands","depth":2},{"value":"Enquiry","id":"enquiry","depth":3},{"value":"Hard Reset","id":"hard-reset","depth":3}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"To enter an application, or a popdown, select its name on the APPLICATIONS list by moving the highlighting bar up and down with the cursor keys UP and DOWN, and press the ENTER key:","title":"The Index popdown","filePath":"content/en/library/cambridge-z88/user-guide/using-the-popdowns/the-index-popdown.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/user-guide/using-the-popdowns/the-index-popdown","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"The Index popdown - Klive IDE"}],["$","meta","1",{"name":"description","content":"To enter an application, or a popdown, select its name on the APPLICATIONS list by moving the highlighting bar up and down with the cursor keys UP and DOWN, and press the ENTER key:"}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/user-guide/using-the-popdowns/the-index-popdown/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"cyL0EKA0xNKEZcECA3AIS"}
+20:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+21:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+77:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["The Index popdown","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The Index pop-down allows you to"}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"Enter pop-downs or applications."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Check whether the external cards have been recognised."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Start PipeDream (or BBC BASIC) with a new, blank, document (or program)."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Obtain a list of all the suspended activities you have in the Cambridge Z88, and remove activities you no longer need."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["Insert and remove RAM, ROM, EPROM or FLASH cards, as explained in ",["$","strong",null,{"children":["$","$L20",null,{"href":"/en/library/cambridge-z88/user-guide/getting-started/using-cards","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Section One - Getting started"}]}],","]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Central point for information of the Z88 OZ system."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["Install or Remove an Application in RAM, rather than using a Flash or EPROM card (Refer to ",["$","$L20",null,{"href":"/en/library/cambridge-z88/user-guide/appendix-j-installing-applications-in-ram","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Appendix J - Installing applications in RAM"}],")."]}],"\n"]}],"\n",["$","h2",null,{"id":"the-index-screen","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The Index screen",["$","$L21",null,{"id":"the-index-screen"}]]}],"\n",["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"684px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/using-the-popdowns/the-index-popdown/index-overview.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/using-the-popdowns/the-index-popdown/index-overview.webp","alt":"Index Overview","loading":"lazy","decoding":"async","width":684,"height":312}],[]]}]]}],"\n",["$","h2",null,{"id":"entering-an-application","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Entering an application",["$","$L21",null,{"id":"entering-an-application"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["To enter an application, or a popdown, select its name on the APPLICATIONS list by moving the highlighting bar up and down with the cursor keys ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor up","children":"↑"}]," and ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor down","children":"↓"}],", and press the ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]," key:"]}],"\n",["$","table",null,{"children":["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":"Diary","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],"D"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],"$L22","$L23","$L24","$L25","$L26","$L27","$L28","$L29","$L2a","$L2b","$L2c","$L2d","$L2e"]}],"className":"x:block x:overflow-x-auto"}],"\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41","\n","$L42","\n","$L43","\n","$L44","\n","$L45","\n","$L46","\n","$L47","\n","$L48","\n","$L49","\n","$L4a","\n","$L4b","\n","$L4c","\n","$L4d","\n","$L4e","\n","$L4f","\n","$L50","\n","$L51","\n","$L52","\n","$L53","\n","$L54","\n","$L55","\n","$L56","\n","$L57","\n","$L58","\n","$L59","\n","$L5a","\n","$L5b","\n","$L5c","\n","$L5d","\n","$L5e","\n","$L5f","\n","$L60","\n","$L61","\n","$L62","\n","$L63","\n","$L64","\n","$L65","\n","$L66","\n","$L67","\n","$L68","\n","$L69","\n","$L6a","\n","$L6b","\n","$L6c","\n","$L6d","\n","$L6e","\n","$L6f","\n","$L70","\n","$L71","\n","$L72","\n","$L73","\n","$L74","\n","$L75","\n","$L76"]]}]
+15:["$","$L77",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@78"}]}]
+1f:true
+9:300
+22:["$","tr",null,{"children":[["$","td",null,{"children":"PipeDream","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],"P"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+23:["$","tr",null,{"children":[["$","td",null,{"children":"BASIC","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],"B"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+24:["$","tr",null,{"children":[["$","td",null,{"children":"Calculator","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],"R"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+25:["$","tr",null,{"children":[["$","td",null,{"children":"Calendar","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],"C"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+26:["$","tr",null,{"children":[["$","td",null,{"children":"Clock","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],"T"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+27:["$","tr",null,{"children":[["$","td",null,{"children":"Alarm","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],"A"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+28:["$","tr",null,{"children":[["$","td",null,{"children":"Filer","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],"F"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+29:["$","tr",null,{"children":[["$","td",null,{"children":"FlashStore","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],"J"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+2a:["$","tr",null,{"children":[["$","td",null,{"children":"PrinterEd","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],"E"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+2b:["$","tr",null,{"children":[["$","td",null,{"children":"Panel","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],"S"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+2c:["$","tr",null,{"children":[["$","td",null,{"children":"Terminal","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],"V"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+2d:["$","tr",null,{"children":[["$","td",null,{"children":"Imp-Export","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],"X"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+2e:["$","tr",null,{"children":[["$","td",null,{"children":"EazyLink","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],"L"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+2f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When the bar reaches the bottom of the screen, the list scrolls up to show the remaining options."}]
+30:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Entering PipeDream (or BBC BASIC) from the Index APPLICATIONS list creates a new, blank document (or program)."}]
+31:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Index can be activated from any application or popdown with the ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Index","children":"INDEX"}]," key or ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],"I."]}]
+32:["$","h3",null,{"id":"suspended-activities","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Suspended activities",["$","$L21",null,{"id":"suspended-activities"}]]}]
+33:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The SUSPENDED ACTIVITIES list shows the following information for each suspended activity:"}]
+34:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":["$","strong",null,{"children":"Heading"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":["$","strong",null,{"children":"Meaning"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"YOUR REF."}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["The name given to the document (with the PipeDream ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"FC or ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"FL commands, the Diary or PrinterEd ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"FC, ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"FS, or ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"FL commands, or the",["$","br",null,{}],"BASIC *NAME command)"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"APPLICATION"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The application name","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"WHEN SUSPENDED"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The time and date the document was suspended","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"CARDS"}]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The number of the card slot, for activities using an application card","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}]]}]
+35:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"There can be more than one PipeDream and BBC BASIC suspended activity, but only one for each of the other applications."}]
+36:["$","h3",null,{"id":"re-entering-a-suspended-activity","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Re-entering a suspended activity",["$","$L21",null,{"id":"re-entering-a-suspended-activity"}]]}]
+37:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["To re-enter a suspended activity, select it by moving the highlighting bar across with the cursor keys, and then press the ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]," key. Alternatively, pressing ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],"P or ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],"B repeatedly will enter each PipeDream or BBC BASIC activity in turn."]}]
+38:["$","h2",null,{"id":"menu","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Menu",["$","$L21",null,{"id":"menu"}]]}]
+39:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["To enter the Menu, use the ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Menu","children":"MENU"}]," key."]}]
+3a:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/using-the-popdowns/the-index-popdown/oz46-index-menu.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/using-the-popdowns/the-index-popdown/oz46-index-menu.webp","alt":"Index - Menu","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+3b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Commands in ",["$","sub",null,{"children":"SMALL CAPITALS"}]," i.e. KILL ACTIVITY, PURGE SYSTEM and REMOVE APPLICATION can only selected by using the individual ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"keys. Moving the cursor and selecting it using the ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]," key in the Menu, does not work."]}]
+3c:["$","h2",null,{"id":"commands","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Commands",["$","$L21",null,{"id":"commands"}]]}]
+3d:["$","h3",null,{"id":"--execute","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":[[["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]," — Execute"],["$","$L21",null,{"id":"--execute"}]]}]
+3e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]," key is used to select whatever the cursor is over."]}]
+3f:["$","h3",null,{"id":"escape","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["ESCAPE",["$","$L21",null,{"id":"escape"}]]}]
+40:["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Escape","children":"ESC"}]
+41:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Escape","children":"ESC"}]," key gets you out of trouble by cancelling what you are about to select."]}]
+42:["$","h3",null,{"id":"card-display","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Card Display",["$","$L21",null,{"id":"card-display"}]]}]
+43:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"CARD"]}]
+44:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"CARD command shows the type and size of the card in each slot. It will not show an erased EPROM until it has been accessed by the Filer."]}]
+45:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/using-the-popdowns/the-index-popdown/ozcard.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/using-the-popdowns/the-index-popdown/ozcard.webp","alt":"ozcard","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+46:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This screen shows a 512K/512K RAM/Flash Card used in Slot 1. The 192K ROM is OZ4.5 itself, 320K is the File Area that user files may be saved leaving 512K of RAM making up the full 1M memory that the slot is able to address. The graphical display on the right-hand side gives a representation of how much RAM has been used by the system (resources) and the user (files and open applications)."}]
+47:["$","h3",null,{"id":"system-information","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["System Information",["$","$L21",null,{"id":"system-information"}]]}]
+48:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"INFO"]}]
+49:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"INFO screen is an addition to OZ V4.5 and later, showing information about the system which was shown in different places now in a central place. They are as follows:-"]}]
+4a:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/using-the-popdowns/the-index-popdown/index-info.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/using-the-popdowns/the-index-popdown/index-info.webp","alt":"Info Page","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+4b:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"KEY","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Description","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":"OZ","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The version number of the Operating System","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"MACHINE","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The name of the computer it is running on, normally the Z88.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"TYPE","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"UNEXPANDED and EXPANDED types are shown. EXPANDED types have more than 128K of RAM.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"BATTERY","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["There are three levels displayed.",["$","br",null,{}],"good - normal battery level",["$","br",null,{}],"low - low battery level",["$","br",null,{}],"screen fails to turn on, Battery too low for the Z88 to operate"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"BUILD","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The build revision number of this OZ release with the date and time when source code of the OZ ROM was compiled.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"FREE MEMORY","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Free Memory was initially in the Diary but this information is valid for all the applications. Each byte represents the space needed for a character; approximately 2000 bytes are needed to store a typical A4 page of text.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"FREE HANDLES","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],"$L79"],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}]]}]
+4c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"KEY"}]
+4d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Description"}]
+4e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"OZ"}]
+4f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The version number of the Operating System"}]
+50:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"MACHINE"}]
+51:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The name of the computer it is running on, normally the Z88."}]
+52:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"TYPE"}]
+53:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"UNEXPANDED and EXPANDED types are shown. EXPANDED types have more than 128K of RAM."}]
+54:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"BATTERY"}]
+55:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"There are three levels displayed."}]
+56:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"good - normal battery level"}]
+57:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"low - low battery level"}]
+58:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"screen fails to turn on, Battery too low for the Z88 to operate"}]
+59:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"BUILD"}]
+5a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The build revision number of this OZ release with the date and time when source code of the OZ ROM was compiled."}]
+5b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"FREE MEMORY"}]
+5c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Free Memory was initially in the Diary but this information is valid for all the applications. Each byte represents the space needed for a character; approximately 2000 bytes are needed to store a typical A4 page of text."}]
+5d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"FREE HANDLES"}]
+5e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This information displays the total free ressources to manage open files and other system components such as RAM memory. If this number keeps dropping, it is an indication that an application or popdown is not closing files after use."}]
+5f:["$","h3",null,{"id":"kill-activity","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":[["$","sub",null,{"children":"KILL ACTIVITY"}],["$","$L21",null,{"id":"kill-activity"}]]}]
+60:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"KILL"]}]
+61:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["To kill a suspended activity, select it on the ",["$","strong",null,{"children":"SUSPENDED ACTIVITIES"}]," list with the cursor, and type ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"KILL. The activity will be removed from the list, and the document (or program) associated with it will be lost."]}]
+62:["$","h3",null,{"id":"purge-system","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":[["$","sub",null,{"children":"PURGE SYSTEM"}],["$","$L21",null,{"id":"purge-system"}]]}]
+63:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"PURGE"]}]
+64:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"is equivalent to a soft reset, which kills all suspended activities, and should therefore be used with great caution."}]
+65:["$","h3",null,{"id":"install-ram-application","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Install RAM Application",["$","$L21",null,{"id":"install-ram-application"}]]}]
+66:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"INS"]}]
+67:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"To install an application in RAM, enter the .app filename, or select the file by marking it in the Filer. All required files (.app, ap0…) need to be in the same directory but they may be deleted after installation if desired."}]
+68:["$","h3",null,{"id":"remove-ram-application","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Remove RAM Application",["$","$L21",null,{"id":"remove-ram-application"}]]}]
+69:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"RMV"]}]
+6a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Uninstalls an application in RAM that the cursor is over. If multiple applications are required to be removed, place the cursor over the first application in the list."}]
+6b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Before using Remove RAM Application command, check that the application is not running as a suspended activity. If it is, remove it by placing the cursor over the suspended activity and then use the ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"KILL command."]}]
+6c:["$","h2",null,{"id":"hidden-commands","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Hidden Commands",["$","$L21",null,{"id":"hidden-commands"}]]}]
+6d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"These commands are reserved for advanced users."}]
+6e:["$","h3",null,{"id":"enquiry","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Enquiry",["$","$L21",null,{"id":"enquiry"}]]}]
+6f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"NQ"]}]
+70:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When the select bar is in the application window, this command will show informations about the application."}]
+71:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/using-the-popdowns/the-index-popdown/nq-appl.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/using-the-popdowns/the-index-popdown/nq-appl.webp","alt":"nq appl","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+72:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When the select bar is in the suspended activities window, this command will show information about the suspended process."}]
+73:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-user-guide/using-the-popdowns/the-index-popdown/nq-proc.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-user-guide/using-the-popdowns/the-index-popdown/nq-proc.webp","alt":"nq proc","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+74:["$","h3",null,{"id":"hard-reset","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Hard Reset",["$","$L21",null,{"id":"hard-reset"}]]}]
+75:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"HARD"]}]
+76:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Performs a ",["$","strong",null,{"children":"HARD RESET"}],". All data in RAM will be lost. All files and applications in Eprom and Flash cards are preserved during hard reset."]}]
+78:null
+9:C
+79:["$","td",null,{"children":"This information displays the total free ressources to manage open files and other system components such as RAM memory. If this number keeps dropping, it is an indication that an application or popdown is not closing files after use.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

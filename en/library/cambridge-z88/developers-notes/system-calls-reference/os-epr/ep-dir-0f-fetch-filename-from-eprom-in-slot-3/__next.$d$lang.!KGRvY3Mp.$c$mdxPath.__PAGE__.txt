@@ -1,0 +1,75 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+13:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+1c:"ViewportBoundary"
+1d:I[484,[],"$1c"]
+1e:"MetadataBoundary"
+1f:I[484,[],"$1e"]
+20:"$Sreact.suspense"
+21:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T64f,---
+description: "The first EPR_DIR call will return the first file name, if available. Subsequent calls will return the next filenames in chronological order (as the files were stored on EPROM). It is necessary to..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7471494 (version 3) by scripts/import-z88-wiki.cjs */}
+
+# EP_DIR ($0F) - Fetch filename from Eprom in slot 3
+
+## Register parameters
+
+```text
+IN:    A = EP_DIR
+     BHL = pointer to store returned filename (B=0 means local pointer).
+
+OUT: Fc = 0:
+          Filename returned at (HL), null-terminated.
+     Fc = 1:
+          A = RC_EOF ($09), no more filenames on File EPROM.
+          A = RC_FAIL ($16), File EPROM not available.
+
+Registers changed after return:
+  ..BCDEHL/IXIY same 
+  AF....../.... different
+```
+
+## Notes
+
+The first EPR\_DIR call will return the first file name, if available. Subsequent calls will return the next filenames in chronological order (as the files were stored on EPROM). It is necessary to read all file names to the end, if you want to re-read the filenames from start at a later time. The buffer to receive the filenames from EPR\_DIR must be sufficiently large, e.g. 128 bytes.
+
+The FILER uses this system call to display all available filenames on EPROM.
+
+Filenames never contains RAM device references, but always reflect the complete path from the filing system (when blown to EPROM). Old 'deleted' files are not reflected in the list of filenames. This call also works with sub file areas (a file area available on an application card in slot 3 - implemented in OZ V4.2 and newer).a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Register parameters","id":"register-parameters","depth":2},{"value":"Notes","id":"notes","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"The first EPR_DIR call will return the first file name, if available. Subsequent calls will return the next filenames in chronological order (as the files were stored on EPROM). It is necessary to...","title":"EP_DIR ($0F) - Fetch filename from Eprom in slot 3","filePath":"content/en/library/cambridge-z88/developers-notes/system-calls-reference/os-epr/ep-dir-0f-fetch-filename-from-eprom-in-slot-3.mdx","timestamp":1792315833000},"sourceCode":"$12","children":[["$","div",null,{"id":"nextra-skip-nav"}],["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["EP_DIR ($0F) - Fetch filename from Eprom in slot 3","$undefined"]}],"\n",["$","h2",null,{"id":"register-parameters","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Register parameters",["$","$L13",null,{"id":"register-parameters"}]]}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":["$L14","$L15"]}]]}],"\n","$L16","\n","$L17","\n","$L18","\n","$L19"]]}]]}]]}]}],null,"$L1a"]}],"p":"$@1b","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/developers-notes/system-calls-reference/os-epr/ep-dir-0f-fetch-filename-from-eprom-in-slot-3","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L1d",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1f",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$20",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"EP_DIR ($0F) - Fetch filename from Eprom in slot 3 - Klive IDE"}],["$","meta","1",{"name":"description","content":"The first EPR_DIR call will return the first file name, if available. Subsequent calls will return the next filenames in chronological order (as the files were stored on EPROM). It is necessary to..."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-epr/ep-dir-0f-fetch-filename-from-eprom-in-slot-3/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L21","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@22","v":null,"s":"$9"}},"a":"$@23","u":"$@24","b":"cyL0EKA0xNKEZcECA3AIS"}
+25:"ToggleWordWrapButton"
+26:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$25"]
+27:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+28:I[484,[],"OutletBoundary"]
+14:["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L26",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L27",null,{"className":""}]]}]
+15:["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"IN:    A = EP_DIR"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     BHL = pointer to store returned filename (B=0 means local pointer)."}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"OUT: Fc = 0:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"          Filename returned at (HL), null-terminated."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     Fc = 1:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"          A = RC_EOF ($09), no more filenames on File EPROM."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"          A = RC_FAIL ($16), File EPROM not available."}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Registers changed after return:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"  ..BCDEHL/IXIY same "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"  AF....../.... different"}]}]]}]
+16:["$","h2",null,{"id":"notes","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Notes",["$","$L13",null,{"id":"notes"}]]}]
+17:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The first EPR_DIR call will return the first file name, if available. Subsequent calls will return the next filenames in chronological order (as the files were stored on EPROM). It is necessary to read all file names to the end, if you want to re-read the filenames from start at a later time. The buffer to receive the filenames from EPR_DIR must be sufficiently large, e.g. 128 bytes."}]
+18:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The FILER uses this system call to display all available filenames on EPROM."}]
+19:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Filenames never contains RAM device references, but always reflect the complete path from the filing system (when blown to EPROM). Old ‘deleted’ files are not reflected in the list of filenames. This call also works with sub file areas (a file area available on an application card in slot 3 - implemented in OZ V4.2 and newer)."}]
+1a:["$","$L28",null,{"children":["$","$20",null,{"name":"Next.MetadataOutlet","children":"$@29"}]}]
+24:true
+9:300
+29:null
+9:C
+23:0
+7:"$undefined"
+22:"$undefined"
+1b:"$undefined"

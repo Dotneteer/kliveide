@@ -1,0 +1,85 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+1d:"ViewportBoundary"
+1e:I[484,[],"$1d"]
+1f:"MetadataBoundary"
+20:I[484,[],"$1f"]
+21:"$Sreact.suspense"
+22:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T754,---
+description: "In most situations where you are entering a line of text in the Cambridge Z88, such as in response to a prompt, the following commands are available to make corrections and alterations to what you..."
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/35913773 (version 7) by scripts/import-z88-user-guide.cjs */}
+
+# Line editing
+
+In most situations where you are entering a line of text in the Cambridge Z88, such as in response to a prompt, the following commands are available to make corrections and alterations to what you are typing:
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td style={{ whiteSpace: "nowrap" }}><Key k="left" />,<Key k="right" /></Table.Td>
+<Table.Td>moves the cursor left and right</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td style={{ whiteSpace: "nowrap" }}><Key k="diamond" /><Key k="left" />,<Key k="diamond" /><Key k="right" /></Table.Td>
+<Table.Td>moves the cursor to the beginning or end of a line</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td style={{ whiteSpace: "nowrap" }}><Key k="shift" /><Key k="left" />, <Key k="shift" /> <Key k="right" /></Table.Td>
+<Table.Td>moves the cursor to the previous or next word of a line</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td style={{ whiteSpace: "nowrap" }}><Key k="del" /></Table.Td>
+<Table.Td>deletes the previous character</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td style={{ whiteSpace: "nowrap" }}><Key k="shift" /> <Key k="del" /></Table.Td>
+<Table.Td>deletes the character at the cursor position</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td style={{ whiteSpace: "nowrap" }}><Key k="diamond" />D</Table.Td>
+<Table.Td>deletes to the end of the line</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td style={{ whiteSpace: "nowrap" }}><Key k="diamond" />T</Table.Td>
+<Table.Td>deletes a word</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"In most situations where you are entering a line of text in the Cambridge Z88, such as in response to a prompt, the following commands are available to make corrections and alterations to what you...","title":"Line editing","filePath":"content/en/library/cambridge-z88/user-guide/getting-started/basic-concepts/line-editing.mdx","timestamp":1792315833000},"sourceCode":"$12","children":[["$","div",null,{"id":"nextra-skip-nav"}],["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Line editing","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"In most situations where you are entering a line of text in the Cambridge Z88, such as in response to a prompt, the following commands are available to make corrections and alterations to what you are typing:"}],"\n",["$","table",null,{"children":["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"style":{"whiteSpace":"nowrap"},"children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor left","children":"←"}],",","$L13"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],"$L14"],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],"$L15","$L16","$L17","$L18","$L19","$L1a"]}],"className":"x:block x:overflow-x-auto"}]]]}]]}]]}]}],null,"$L1b"]}],"p":"$@1c","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/user-guide/getting-started/basic-concepts/line-editing","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L1e",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L20",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$21",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Line editing - Klive IDE"}],["$","meta","1",{"name":"description","content":"In most situations where you are entering a line of text in the Cambridge Z88, such as in response to a prompt, the following commands are available to make corrections and alterations to what you..."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/user-guide/getting-started/basic-concepts/line-editing/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L22","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@23","v":null,"s":"$9"}},"a":"$@24","u":"$@25","b":"cyL0EKA0xNKEZcECA3AIS"}
+26:I[484,[],"OutletBoundary"]
+13:["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor right","children":"→"}]
+14:["$","td",null,{"children":"moves the cursor left and right","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
+15:["$","tr",null,{"children":[["$","td",null,{"style":{"whiteSpace":"nowrap"},"children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor left","children":"←"}],",",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor right","children":"→"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"moves the cursor to the beginning or end of a line","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+16:["$","tr",null,{"children":[["$","td",null,{"style":{"whiteSpace":"nowrap"},"children":[["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Shift","children":"SHIFT"}],["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor left","children":"←"}],", ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Shift","children":"SHIFT"}]," ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor right","children":"→"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"moves the cursor to the previous or next word of a line","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+17:["$","tr",null,{"children":[["$","td",null,{"style":{"whiteSpace":"nowrap"},"children":["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Delete","children":"DEL"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"deletes the previous character","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+18:["$","tr",null,{"children":[["$","td",null,{"style":{"whiteSpace":"nowrap"},"children":[["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Shift","children":"SHIFT"}],["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Delete","children":"DEL"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"deletes the character at the cursor position","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+19:["$","tr",null,{"children":[["$","td",null,{"style":{"whiteSpace":"nowrap"},"children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"D"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"deletes to the end of the line","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+1a:["$","tr",null,{"children":[["$","td",null,{"style":{"whiteSpace":"nowrap"},"children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],"T"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"deletes a word","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+1b:["$","$L26",null,{"children":["$","$21",null,{"name":"Next.MetadataOutlet","children":"$@27"}]}]
+25:true
+9:300
+27:null
+9:C
+24:0
+7:"$undefined"
+23:"$undefined"
+1c:"$undefined"

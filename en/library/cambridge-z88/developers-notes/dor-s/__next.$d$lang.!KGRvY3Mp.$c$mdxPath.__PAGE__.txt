@@ -1,0 +1,237 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T2371,---
+description: "DOR may be thought of as standing for \"Directory Object Record\" - although DOR was not intended as an acronym for this, this does provide quite a good explanation. DORs are a fairly general record..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/2752576 (version 8) by scripts/import-z88-wiki.cjs */}
+
+# DOR's
+
+DOR may be thought of as standing for "Directory Object Record" - although DOR was not intended as an acronym for this, this does provide quite a good explanation. DORs are a fairly general record structure well suited to displaying hierarchically organized information. They are used in the RAM filening system, but unfortunately not in the EPROM filing system, and in application definitions. Some degree of understanding of them is necessary to extract certain information, such as last updated dates, from the filing system.
+
+## Format
+
+A DOR starts with the three link pointers which point to the parent, brother and child respectively. The links are of the form of a 2 byte offset within a bank followed by a bank number, ie. an extended address. If relatives do not exist then the link pointers are set to 0 (three zeroes). The remainder of the DOR consists of a series of keyed subrecords.
+
+```text
+3 bytes     Link to parent, three zeroes indicates a null (pointer) link
+3 bytes     Link to brother, three zeroes indicates a null (pointer) link
+3 bytes     Link to son, three zeroes indicates a null (pointer) link
+1 byte      DOR type, eg. DM_ROM
+1 byte      Length of DOR in bytes
+
+1 byte      Record key. This is usually a mnemonic, eg. DT_NAM
+1 byte      Length of record entry in bytes
+n bytes     Data specific to record (type)
+...
+...         More record entries (in the same form as above)
+...
+1 byte      The DOR terminator, $FF
+```
+
+The above format may be useful if you want to set up a static DOR structure. For example the header for application cards, and the headers for the internal applications, use a static DOR structure. On the whole, however, the internal arrangement of the DOR is transparent to the user and the DOR interface can be used throughout. This interface works with the following types and record keys:
+
+NOTE: In the following descriptions the ASCII character corresponding to a hexadecimal value is sometimes placed next to it within brackets. This is done to indicate the mnemonic nature of the values used. For example ($4E,"N") represents the single hexadecimal value $4E, the "N" is mnemonic for DT\_NAM, the name record type.
+
+## Major types
+
+```text
+DM_DEV ($81)            RAM device (internal use only)
+DM_CHD ($82)            Character Device (pseudo type, internal use only)
+                        (SCR.0, PRT.0, COM.0, NUL.0, INP.0, OUT.0)
+DM_ROM ($83)            ROM Information, consists of three record types:
+                        DT_INF ($40,"@")        application information
+                        DT_HLP ($48,"H")        help information
+                        DT_NAM ($4E,"N")        name of application
+DM_EPR ($84)            EPR device (eprom file area)
+```
+
+NOTE: It is not possible to add external device drivers to the system via a DOR, despite the major types shown above. This is because device drivers are not integrated into the DOR system.
+
+## Minor Types
+
+```text
+DN_FIL ($11)            File type, consists of four record types:
+                        DT_NAM ($4E,"N")        file name
+                        DT_CRE ($43,"C")        creation time
+                        DT_UPD ($55,"U")        update time
+                        DT_EXT ($58,"X")        extent (size of file)
+
+DN_DIR ($12)            Directory type, consists of three record types:
+                        DT_NAM ($4E,"N")        directory name
+                        DT_CRE ($43,"C")        creation time
+                        DT_UPD ($55,"U")        update time
+
+DN_APL ($13)            Application Front DOR Type, consists of record type:
+                        DT_NAM ($4E,"N")        Name of front DOR; the name
+                                                will be "APPL" for applications
+                                                and "HELP" for help.
+
+DN_DEL ($7F)            Deleted Entry Type
+```
+
+## Record Types
+
+```text
+DT_NAM ($4E,"N")        Name type. Name must be null-terminated. Filenames have
+                        a fixed length of 17 characters so, if the real
+                        filename is shorter, you will need to ignore excess
+                        characters (beyond the null-terminator). A name record
+                        might look like this:
+
+                                    DEFM $4E & $05 & "Paul" & 0
+
+DT_UPD ($55,"U")        Last Updated Date. 6 bytes. 3 bytes internal time
+                        followed by 3 bytes internal date.
+
+DT_CRE ($43,"C")        Creation Date. 6 bytes. 3 bytes internal time
+                        followed by 3 bytes internal date.
+
+DT_EXT ($58,"X")        Extent of file. 4 byte long word (low byte first)
+
+DT_ATR ($41,"A")        Attributes. Not currently used. 2 bytes.
+
+DT_HLP ($48,"H")        Help type. 12 bytes: four 3 byte link pointers
+                        (offset+bank): Topics, command, help and tokens. See an
+                        example in "Application Static Strucures" section.
+
+DT_INF ($40,"@")        Information. See an example in "Application Static
+                        Structures" section for details of format.
+```
+
+## The DOR interface
+
+DORs are manipulated using the **[OS\_Dor](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-dor)** call, which is supplied with various reason codes, one for each DOR operation. The possible operations are:
+
+```text
+DR_GET ($01)            get a handle for a DOR name (system use)
+DR_DUP ($02)            duplicate DOR
+DR_SIB ($03)            return brother DOR
+DR_SON ($04)            return child DOR
+DR_FRE ($05)            free DOR handle
+DR_CRE ($06)            create blank DOR
+DR_DEL ($07)            delete DOR
+DR_INS ($08)            insert DOR
+DR_RD ($09)             read DOR record
+DR_WR ($0A)             write DOR record
+DR_RD2 ($0B)            read DOR record (system use only)
+```
+
+The following is the interface system call definition:
+
+```text
+RST 20H, DEFB $87
+
+In:
+            A = reason code
+            HL, IX arguments
+            Other register usage depends on reason code
+
+ Out, if call successful:
+            Fc = 0
+            returned values depend on A(in)
+
+ Out, if call failed:
+            Fc = 1
+            A = error code:
+                        RC_BAD ($04), bad arguments
+                        RC_HAND ($08), bad handle
+                        RC_ROOM ($07), no room
+                        RC_EOF ($09), end of file
+```
+
+Each reason code operation action is described in detail with the **[OS\_Dor](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-dor)** call in the "System Calls Reference" section.
+
+## Example
+
+The following example reads the last updated date of a file, which can only be done by reading the DOR of the file. To get a DOR handle for a file, the user must use the **[GN\_Opf](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-opf)** call with A = OP\_DOR ($06). This differs from the other options of **[GN\_Opf](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-opf)** in that:
+
+1\) It does not open the file. 2) It returns a DOR handle rather than a file handle
+
+Note that the file should be closed before the call is made, and that it is necessary to free the DOR handle after you have finished, by using **[OS\_Dor](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-dor)** with reason code DR\_FRE.
+
+```text
+include "fileio.def"                ; file I/O call definitions & parameters
+include "dor.def"                   ; DOR interface call definitions
+include "time.def"                  ; Date & time call definitions
+include "stdio.def"                 ; standard I/O call defs. & parameters
+
+; assume HL points to local filename and DE points to a dummy buffer 
+; and 'buff' is at least 6 bytes of temporary workspace 
+; note, 'buff' must not occur in segment 2, or GN_Sdo will fail 
+
+.start      ld   b, 0               ; HL is a local pointer
+            ld   c, 20              ; max. size of expanded filename
+            ld   a, OP_DOR          ; get DOR handle
+            oz   GN_Opf             ; get DOR information
+            ld   a, DR_RD           ; read DOR record
+            ld   b, DT_UPD          ; look at record 'U' (update time)
+            ld   c, 6               ; return time information
+            ld   de, buff           ; return data at (DE)
+            oz   OS_Dor             ; fetch DOR information
+            ld   a, DR_FRE
+            oz   OS_Dor             ; free DOR handle
+            ld   hl, buff           ; HL points to internal time, date format
+            oz   GN_Sdo             ; write time & date to standard output
+            oz   GN_Nln             ; new line
+            ret
+```a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Format","id":"format","depth":2},{"value":"Major types","id":"major-types","depth":2},{"value":"Minor Types","id":"minor-types","depth":2},{"value":"Record Types","id":"record-types","depth":2},{"value":"The DOR interface","id":"the-dor-interface","depth":2},{"value":"Example","id":"example","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"DOR may be thought of as standing for \"Directory Object Record\" - although DOR was not intended as an acronym for this, this does provide quite a good explanation. DORs are a fairly general record...","title":"DOR's","filePath":"content/en/library/cambridge-z88/developers-notes/dor-s.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/developers-notes/dor-s","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"DOR's - Klive IDE"}],["$","meta","1",{"name":"description","content":"DOR may be thought of as standing for \"Directory Object Record\" - although DOR was not intended as an acronym for this, this does provide quite a good explanation. DORs are a fairly general record..."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/developers-notes/dor-s/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"cyL0EKA0xNKEZcECA3AIS"}
+20:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+21:"ToggleWordWrapButton"
+22:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$21"]
+23:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+38:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["DOR’s","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"DOR may be thought of as standing for “Directory Object Record” - although DOR was not intended as an acronym for this, this does provide quite a good explanation. DORs are a fairly general record structure well suited to displaying hierarchically organized information. They are used in the RAM filening system, but unfortunately not in the EPROM filing system, and in application definitions. Some degree of understanding of them is necessary to extract certain information, such as last updated dates, from the filing system."}],"\n",["$","h2",null,{"id":"format","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Format",["$","$L20",null,{"id":"format"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A DOR starts with the three link pointers which point to the parent, brother and child respectively. The links are of the form of a 2 byte offset within a bank followed by a bank number, ie. an extended address. If relatives do not exist then the link pointers are set to 0 (three zeroes). The remainder of the DOR consists of a series of keyed subrecords."}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"3 bytes     Link to parent, three zeroes indicates a null (pointer) link"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3 bytes     Link to brother, three zeroes indicates a null (pointer) link"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3 bytes     Link to son, three zeroes indicates a null (pointer) link"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1 byte      DOR type, eg. DM_ROM"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1 byte      Length of DOR in bytes"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1 byte      Record key. This is usually a mnemonic, eg. DT_NAM"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1 byte      Length of record entry in bytes"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"n bytes     Data specific to record (type)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"..."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"...         More record entries (in the same form as above)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"..."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"1 byte      The DOR terminator, $FF"}]}]]}]]}]]}],"\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37"]]}]
+15:["$","$L38",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@39"}]}]
+1f:true
+3a:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+9:300
+24:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The above format may be useful if you want to set up a static DOR structure. For example the header for application cards, and the headers for the internal applications, use a static DOR structure. On the whole, however, the internal arrangement of the DOR is transparent to the user and the DOR interface can be used throughout. This interface works with the following types and record keys:"}]
+25:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"NOTE: In the following descriptions the ASCII character corresponding to a hexadecimal value is sometimes placed next to it within brackets. This is done to indicate the mnemonic nature of the values used. For example ($4E,“N”) represents the single hexadecimal value $4E, the “N” is mnemonic for DT_NAM, the name record type."}]
+26:["$","h2",null,{"id":"major-types","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Major types",["$","$L20",null,{"id":"major-types"}]]}]
+27:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"DM_DEV ($81)            RAM device (internal use only)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"DM_CHD ($82)            Character Device (pseudo type, internal use only)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                        (SCR.0, PRT.0, COM.0, NUL.0, INP.0, OUT.0)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"DM_ROM ($83)            ROM Information, consists of three record types:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                        DT_INF ($40,\"@\")        application information"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                        DT_HLP ($48,\"H\")        help information"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                        DT_NAM ($4E,\"N\")        name of application"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"DM_EPR ($84)            EPR device (eprom file area)"}]}]]}]]}]]}]
+28:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"NOTE: It is not possible to add external device drivers to the system via a DOR, despite the major types shown above. This is because device drivers are not integrated into the DOR system."}]
+29:["$","h2",null,{"id":"minor-types","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Minor Types",["$","$L20",null,{"id":"minor-types"}]]}]
+2a:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"DN_FIL ($11)            File type, consists of four record types:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                        DT_NAM ($4E,\"N\")        file name"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                        DT_CRE ($43,\"C\")        creation time"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                        DT_UPD ($55,\"U\")        update time"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                        DT_EXT ($58,\"X\")        extent (size of file)"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"DN_DIR ($12)            Directory type, consists of three record types:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                        DT_NAM ($4E,\"N\")        directory name"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                        DT_CRE ($43,\"C\")        creation time"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                        DT_UPD ($55,\"U\")        update time"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"DN_APL ($13)            Application Front DOR Type, consists of record type:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                        DT_NAM ($4E,\"N\")        Name of front DOR; the name"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                                                will be \"APPL\" for applications"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                                                and \"HELP\" for help."}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"DN_DEL ($7F)            Deleted Entry Type"}]}]]}]]}]]}]
+2b:["$","h2",null,{"id":"record-types","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Record Types",["$","$L20",null,{"id":"record-types"}]]}]
+2c:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"DT_NAM ($4E,\"N\")        Name type. Name must be null-terminated. Filenames have"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                        a fixed length of 17 characters so, if the real"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                        filename is shorter, you will need to ignore excess"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                        characters (beyond the null-terminator). A name record"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                        might look like this:"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                                    DEFM $4E & $05 & \"Paul\" & 0"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"DT_UPD ($55,\"U\")        Last Updated Date. 6 bytes. 3 bytes internal time"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                        followed by 3 bytes internal date."}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"DT_CRE ($43,\"C\")        Creation Date. 6 bytes. 3 bytes internal time"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                        followed by 3 bytes internal date."}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"DT_EXT ($58,\"X\")        Extent of file. 4 byte long word (low byte first)"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"DT_ATR ($41,\"A\")        Attributes. Not currently used. 2 bytes."}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"DT_HLP ($48,\"H\")        Help type. 12 bytes: four 3 byte link pointers"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                        (offset+bank): Topics, command, help and tokens. See an"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                        example in \"Application Static Strucures\" section."}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"DT_INF ($40,\"@\")        Information. See an example in \"Application Static"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                        Structures\" section for details of format."}]}]]}]]}]]}]
+2d:["$","h2",null,{"id":"the-dor-interface","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The DOR interface",["$","$L20",null,{"id":"the-dor-interface"}]]}]
+2e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["DORs are manipulated using the ",["$","strong",null,{"children":["$","$L3a",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-dor","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OS_Dor"}]}]," call, which is supplied with various reason codes, one for each DOR operation. The possible operations are:"]}]
+2f:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"DR_GET ($01)            get a handle for a DOR name (system use)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"DR_DUP ($02)            duplicate DOR"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"DR_SIB ($03)            return brother DOR"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"DR_SON ($04)            return child DOR"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"DR_FRE ($05)            free DOR handle"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"DR_CRE ($06)            create blank DOR"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"DR_DEL ($07)            delete DOR"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"DR_INS ($08)            insert DOR"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"DR_RD ($09)             read DOR record"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"DR_WR ($0A)             write DOR record"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"DR_RD2 ($0B)            read DOR record (system use only)"}]}]]}]]}]]}]
+30:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The following is the interface system call definition:"}]
+31:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"RST 20H, DEFB $87"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"In:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            A = reason code"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            HL, IX arguments"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            Other register usage depends on reason code"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" Out, if call successful:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            Fc = 0"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            returned values depend on A(in)"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":" Out, if call failed:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            Fc = 1"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            A = error code:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                        RC_BAD ($04), bad arguments"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                        RC_HAND ($08), bad handle"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                        RC_ROOM ($07), no room"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"                        RC_EOF ($09), end of file"}]}]]}]]}]]}]
+32:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Each reason code operation action is described in detail with the ",["$","strong",null,{"children":["$","$L3a",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-dor","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OS_Dor"}]}]," call in the “System Calls Reference” section."]}]
+33:["$","h2",null,{"id":"example","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Example",["$","$L20",null,{"id":"example"}]]}]
+34:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The following example reads the last updated date of a file, which can only be done by reading the DOR of the file. To get a DOR handle for a file, the user must use the ",["$","strong",null,{"children":["$","$L3a",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-opf","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"GN_Opf"}]}]," call with A = OP_DOR ($06). This differs from the other options of ",["$","strong",null,{"children":["$","$L3a",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-opf","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"GN_Opf"}]}]," in that:"]}]
+35:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"1) It does not open the file. 2) It returns a DOR handle rather than a file handle"}]
+36:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Note that the file should be closed before the call is made, and that it is necessary to free the DOR handle after you have finished, by using ",["$","strong",null,{"children":["$","$L3a",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-dor","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OS_Dor"}]}]," with reason code DR_FRE."]}]
+37:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"include \"fileio.def\"                ; file I/O call definitions & parameters"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"include \"dor.def\"                   ; DOR interface call definitions"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"include \"time.def\"                  ; Date & time call definitions"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"include \"stdio.def\"                 ; standard I/O call defs. & parameters"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; assume HL points to local filename and DE points to a dummy buffer "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; and 'buff' is at least 6 bytes of temporary workspace "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"; note, 'buff' must not occur in segment 2, or GN_Sdo will fail "}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":".start      ld   b, 0               ; HL is a local pointer"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ld   c, 20              ; max. size of expanded filename"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ld   a, OP_DOR          ; get DOR handle"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            oz   GN_Opf             ; get DOR information"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ld   a, DR_RD           ; read DOR record"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ld   b, DT_UPD          ; look at record 'U' (update time)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ld   c, 6               ; return time information"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ld   de, buff           ; return data at (DE)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            oz   OS_Dor             ; fetch DOR information"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ld   a, DR_FRE"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            oz   OS_Dor             ; free DOR handle"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ld   hl, buff           ; HL points to internal time, date format"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            oz   GN_Sdo             ; write time & date to standard output"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            oz   GN_Nln             ; new line"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ret"}]}]]}]]}]]}]
+39:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

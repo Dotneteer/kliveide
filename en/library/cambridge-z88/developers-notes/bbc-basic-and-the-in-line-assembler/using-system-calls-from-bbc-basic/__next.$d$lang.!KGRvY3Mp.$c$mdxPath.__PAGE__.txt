@@ -1,0 +1,75 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:Taea,---
+description: "When using system calls from BBC BASIC there are various important things to bear in mind. The main restart code itself needs to page memory banks in and out of the address space; for instance one..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/3112974 (version 2) by scripts/import-z88-wiki.cjs */}
+
+# Using system calls from BBC BASIC
+
+When using system calls from BBC BASIC there are various important things to bear in mind. The main restart code itself needs to page memory banks in and out of the address space; for instance one of the first things it does is bind bank 0 (which contains the vector table for the OZ calls) to segment 3; but it expects the stack to perform properly when it has done so. So in general, any program, the BASIC interpreter included, should not place its stack where it is liable to be paged out. To be safe, it should be in the bottom 8K of the logical address space, which is never paged out. The BBC BASIC application stack has to be fairly large as it is used for parameter-passing during BASIC execution, and so cannot be placed in the bottom 8K by default. It is in a very vulnerable position, typically at the top of segment 2, and so it is advisable to select a safer stack if any system calls are to be used. This may reliably be done by loading the stack pointer from the location $1FFE. For example, if the main user code starts at 'main' then the program as a whole might look like:
+
+```text
+            exx                     ; use alternate registers
+            ld   hl,0               ; to preserve hl
+            add  hl,sp              ; get current stack pointer in HL
+            ld   sp,(&1FFE)         ; load new (safe) stack pointer
+            push hl                 ; preserve old stack pointer on new stack
+            exx                     ; back to main registers
+            call main               ; execute main machine code
+            exx                     ; back to alternate registers
+            pop  hl                 ; get old BASIC stack pointer
+            ld   sp,hl              ; and restore it
+            exx                     ; back to main registers
+            ret                     ; return to BBC BASIC interpreter
+
+.main       ...                     ; main machine code...
+            ...
+            ret
+```
+
+The use of the alternate register set avoids corrupting the main set, thus allowing parameter passing with HL (by using the BASIC variables H% and L%), but this may be dispensed with, if the contents of HL are not important. The old stack pointer is pushed onto the new stack so it can be re-called at the end. The old stack pointer could also be saved in a static memory location and this technique is used in some of the other examples.a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"When using system calls from BBC BASIC there are various important things to bear in mind. The main restart code itself needs to page memory banks in and out of the address space; for instance one...","title":"Using system calls from BBC BASIC","filePath":"content/en/library/cambridge-z88/developers-notes/bbc-basic-and-the-in-line-assembler/using-system-calls-from-bbc-basic.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/developers-notes/bbc-basic-and-the-in-line-assembler/using-system-calls-from-bbc-basic","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Using system calls from BBC BASIC - Klive IDE"}],["$","meta","1",{"name":"description","content":"When using system calls from BBC BASIC there are various important things to bear in mind. The main restart code itself needs to page memory banks in and out of the address space; for instance one..."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/developers-notes/bbc-basic-and-the-in-line-assembler/using-system-calls-from-bbc-basic/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"cyL0EKA0xNKEZcECA3AIS"}
+21:"ToggleWordWrapButton"
+22:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$21"]
+23:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+2b:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+20:T447,When using system calls from BBC BASIC there are various important things to bear in mind. The main restart code itself needs to page memory banks in and out of the address space; for instance one of the first things it does is bind bank 0 (which contains the vector table for the OZ calls) to segment 3; but it expects the stack to perform properly when it has done so. So in general, any program, the BASIC interpreter included, should not place its stack where it is liable to be paged out. To be safe, it should be in the bottom 8K of the logical address space, which is never paged out. The BBC BASIC application stack has to be fairly large as it is used for parameter-passing during BASIC execution, and so cannot be placed in the bottom 8K by default. It is in a very vulnerable position, typically at the top of segment 2, and so it is advisable to select a safer stack if any system calls are to be used. This may reliably be done by loading the stack pointer from the location $1FFE. For example, if the main user code starts at ‘main’ then the program as a whole might look like:14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Using system calls from BBC BASIC","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"$20"}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L23",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"            exx                     ; use alternate registers"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ld   hl,0               ; to preserve hl"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            add  hl,sp              ; get current stack pointer in HL"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ld   sp,(&1FFE)         ; load new (safe) stack pointer"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            push hl                 ; preserve old stack pointer on new stack"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            exx                     ; back to main registers"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            call main               ; execute main machine code"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            exx                     ; back to alternate registers"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            pop  hl                 ; get old BASIC stack pointer"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"            ld   sp,hl              ; and restore it"}]}],"\n",["$","span",null,{"children":"$L24"}],"\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29"]}]]}]]}],"\n","$L2a"]]}]
+15:["$","$L2b",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@2c"}]}]
+1f:true
+9:300
+24:["$","span",null,{"children":"            exx                     ; back to main registers"}]
+25:["$","span",null,{"children":["$","span",null,{"children":"            ret                     ; return to BBC BASIC interpreter"}]}]
+26:["$","span",null,{"children":["$","span",null,{}]}]
+27:["$","span",null,{"children":["$","span",null,{"children":".main       ...                     ; main machine code..."}]}]
+28:["$","span",null,{"children":["$","span",null,{"children":"            ..."}]}]
+29:["$","span",null,{"children":["$","span",null,{"children":"            ret"}]}]
+2a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The use of the alternate register set avoids corrupting the main set, thus allowing parameter passing with HL (by using the BASIC variables H% and L%), but this may be dispensed with, if the contents of HL are not important. The old stack pointer is pushed onto the new stack so it can be re-called at the end. The old stack pointer could also be saved in a static memory location and this technique is used in some of the other examples."}]
+2c:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

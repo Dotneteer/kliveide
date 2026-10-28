@@ -1,0 +1,59 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+12:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+13:"ToggleWordWrapButton"
+14:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$13"]
+15:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+2c:"ViewportBoundary"
+2d:I[484,[],"$2c"]
+2e:"MetadataBoundary"
+2f:I[484,[],"$2e"]
+30:"$Sreact.suspense"
+31:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Register parameters","id":"register-parameters","depth":2},{"value":"Notes","id":"notes","depth":2},{"value":"Related calls","id":"related-calls","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"OS_Gth, get tri-handle OS_Fth, free tri-handle","title":"OS_Vth, Verify tri-handle","filePath":"content/en/library/cambridge-z88/developers-notes/system-calls-reference/os-vth.mdx","timestamp":1792315833000},"sourceCode":"---\ndescription: \"OS_Gth, get tri-handle OS_Fth, free tri-handle\"\n---\n\n{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8618005 (version 4) by scripts/import-z88-wiki.cjs */}\n\n# OS_Vth, Verify tri-handle\n\n## Register parameters\n\n```text\nIN:\n     A = Tri-handle subtype\n          TH_FILT ($F0), verify filter handle\n          TH_WMG ($F1), verify wildcard manager handle\n          TH_ALM ($F2), verify alarm handle\n     IX = tri-handle\n\nOUT, if call successful:\n     Fc = 0, handle OK.\n          B = Bank\n          H = Adress of high byte\n          L = Segment\nOUT, if call failed:\n     Fc = 1\n          A = RC_HAND, bad handle\n\nRegisters changed after return:\n     ...CDE../IXIY same\n     AFB...HL/.... different\n```\n\n## Notes\n\nInternal operating system usage.\n\n## Related calls\n\n**[OS\\_Gth](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-gth)**, get tri-handle <br />**[OS\\_Fth](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fth)**, free tri-handle","children":[["$","div",null,{"id":"nextra-skip-nav"}],["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["OS_Vth, Verify tri-handle","$undefined"]}],"\n",["$","h2",null,{"id":"register-parameters","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Register parameters",["$","$L12",null,{"id":"register-parameters"}]]}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L14",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L15",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"IN:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"     A = Tri-handle subtype"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"          TH_FILT ($F0), verify filter handle"}]}],"\n",["$","span",null,{"children":"$L16"}],"\n","$L17","\n","$L18","\n","$L19","\n","$L1a","\n","$L1b","\n","$L1c","\n","$L1d","\n","$L1e","\n","$L1f","\n","$L20","\n","$L21","\n","$L22","\n","$L23","\n","$L24","\n","$L25"]}]]}]]}],"\n","$L26","\n","$L27","\n","$L28","\n","$L29"]]}]]}]]}]}],null,"$L2a"]}],"p":"$@2b","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/developers-notes/system-calls-reference/os-vth","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L2d",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L2f",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$30",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"OS_Vth, Verify tri-handle - Klive IDE"}],["$","meta","1",{"name":"description","content":"OS_Gth, get tri-handle OS_Fth, free tri-handle"}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-vth/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L31","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@32","v":null,"s":"$9"}},"a":"$@33","u":"$@34","b":"cyL0EKA0xNKEZcECA3AIS"}
+35:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+36:I[484,[],"OutletBoundary"]
+16:["$","span",null,{"children":"          TH_WMG ($F1), verify wildcard manager handle"}]
+17:["$","span",null,{"children":["$","span",null,{"children":"          TH_ALM ($F2), verify alarm handle"}]}]
+18:["$","span",null,{"children":["$","span",null,{"children":"     IX = tri-handle"}]}]
+19:["$","span",null,{"children":["$","span",null,{}]}]
+1a:["$","span",null,{"children":["$","span",null,{"children":"OUT, if call successful:"}]}]
+1b:["$","span",null,{"children":["$","span",null,{"children":"     Fc = 0, handle OK."}]}]
+1c:["$","span",null,{"children":["$","span",null,{"children":"          B = Bank"}]}]
+1d:["$","span",null,{"children":["$","span",null,{"children":"          H = Adress of high byte"}]}]
+1e:["$","span",null,{"children":["$","span",null,{"children":"          L = Segment"}]}]
+1f:["$","span",null,{"children":["$","span",null,{"children":"OUT, if call failed:"}]}]
+20:["$","span",null,{"children":["$","span",null,{"children":"     Fc = 1"}]}]
+21:["$","span",null,{"children":["$","span",null,{"children":"          A = RC_HAND, bad handle"}]}]
+22:["$","span",null,{"children":["$","span",null,{}]}]
+23:["$","span",null,{"children":["$","span",null,{"children":"Registers changed after return:"}]}]
+24:["$","span",null,{"children":["$","span",null,{"children":"     ...CDE../IXIY same"}]}]
+25:["$","span",null,{"children":["$","span",null,{"children":"     AFB...HL/.... different"}]}]
+26:["$","h2",null,{"id":"notes","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Notes",["$","$L12",null,{"id":"notes"}]]}]
+27:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Internal operating system usage."}]
+28:["$","h2",null,{"id":"related-calls","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Related calls",["$","$L12",null,{"id":"related-calls"}]]}]
+29:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":["$","$L35",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-gth","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OS_Gth"}]}],", get tri-handle ",["$","br",null,{}],["$","strong",null,{"children":["$","$L35",null,{"href":"/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fth","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"OS_Fth"}]}],", free tri-handle"]}]
+2a:["$","$L36",null,{"children":["$","$30",null,{"name":"Next.MetadataOutlet","children":"$@37"}]}]
+34:true
+9:300
+37:null
+9:C
+33:0
+7:"$undefined"
+32:"$undefined"
+2b:"$undefined"
