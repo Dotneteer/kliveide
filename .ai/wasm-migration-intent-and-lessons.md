@@ -607,6 +607,31 @@ models on one artifact. What it taught:
   `charSetOfModel`). The IDE's ROM-gated custom disassembly asks a bank space the HT does not have;
   a ROM that is never paged out gates on its addresses instead.
 
+## A Machine Whose Video Chip Stretches The CPU: The Videoton TVC
+
+The Videoton TVC (`.plans/VIDEOTON_TVC_PLAN.md`, `src/emu/machines/tvc/wasm/README.md`) is the third
+non-Spectrum machine on the shared Z80. What it taught, for the next one:
+
+- **A new hook goes in as its own phase, proved byte-identical first.** H1, `Z80_DELAY_OPCODE_FETCH`,
+  is compiled only under `#ifdef`; every other core rebuilt byte-identical before any TVC code
+  landed. The same proof made the WD1793 extraction safe: a name-prefix macro let the Beta 128 keep
+  its symbol names, so the 128K core rebuilt byte for byte.
+- **Keep time finer than the CPU when the hardware is.** The stretch moves the CPU by half-T-states,
+  so the core keeps a half-T clock beside `cpu.tacts`; everything on the fixed clock tree (the CRTC,
+  the pixels, the sound divider) follows it, and only the CPU is ever held.
+- **An eager per-character video step was cheap enough** and made every mid-line write exact; the
+  lazy catch-up renderer of the HT-1080Z was not needed here.
+- **A machine frame is whatever the video chip says**: the frame ends at the CRTC's wrap, with a
+  guard for a CRTC that is not programmed yet.
+- **Make the ROM do the work through its own paths.** Fast load is a turbo (extra frames while the
+  motor runs), not a ROM trap; Run has BASIC call the code with `USR` above `LOMEM`, so the return
+  path needs no ROM address. Both stay exact for free.
+- **Find the ROM's waits by running it, not by guessing.** The sign-on animation does not use the
+  key wait the prompt uses, and BASIC drops a key that arrives the moment it starts waiting: the flow
+  waits on the animation's own loop and types after a delay (`TypeText.delayFrames`).
+- **A witness must be able to fail.** Several first tests passed on something BASIC repaints anyway
+  (the border); the template test passed without its text. Compare against a run that prints nothing.
+
 ## Recommended First Reading For Next Migration
 
 Before touching ZX Spectrum Next WASM work, read:

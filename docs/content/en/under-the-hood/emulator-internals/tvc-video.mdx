@@ -1,0 +1,256 @@
+---
+description: "How the Videoton TVC makes its picture: a 6845 that only counts, a video RAM the CPU and the display take turns at, the shift registers behind the 2-, 4- and 16-colour modes, the palette and the border, blanking and sync made in TTL, the cursor that is really a frame interrupt, and how Klive's core draws the same picture against the CPU's clock."
+---
+
+import { Callout } from 'nextra/components'
+
+# Videoton TVC: How the Picture Is Made
+
+A program on the Videoton TV Computer can change the palette in the middle of a scan line and see the
+colours split exactly there. It can also find that writing to the screen makes it slower, wherever
+the beam is, even in the border. Both come from the same design: the TVC's video chip, a 6845,
+only counts, and everything that turns its count into a picture is built from small logic chips
+around it, sharing one video memory with the CPU.
+
+This matters to anyone who writes graphics for the machine: a game that races the beam, flips
+between pictures on the 64K+, or times a raster effect from the frame interrupt depends on these
+details. You should know what a scan line and a frame are ([How a television draws a
+picture](/en/under-the-hood/emulator-internals/crt-display/)) and the Z80's T-states.
+
+## How this article is organised
+
+- [Part 1](#part-1-one-character-two-t-states): the clocks, and why a character is two T-states.
+- [Part 2](#part-2-the-6845-and-the-frame-it-counts): the 6845 and the frame the ROM programs.
+- [Part 3](#part-3-from-the-count-to-a-video-ram-address): how the count becomes a video RAM address.
+- [Part 4](#part-4-one-video-ram-two-users): the CPU and the display taking turns.
+- [Part 5](#part-5-from-a-byte-to-dots): the three graphics modes.
+- [Part 6](#part-6-colour-the-palette-and-the-border): colour, the palette and the border.
+- [Part 7](#part-7-border-blanking-and-sync): border, blanking and sync.
+- [Part 8](#part-8-the-frame-interrupt): the frame interrupt.
+- [How Klive does it](#how-klive-does-it) and the [Summary](#summary).
+
+If you read only one part, read Part 4: it explains why video memory is slow.
+
+<Callout type="info">
+The numbers are for the CRTC settings the BASIC ROM programs at power-on, which every program starts
+from: 100 characters a line, 314 lines a frame. The behaviour described is the emulated machine's,
+checked by Klive's tests on its TVC core.
+</Callout>
+
+## Part 1: One character, two T-states
+
+A 25 MHz crystal feeds a chain of dividers: 12.5 MHz, 6.25 MHz and 3.125 MHz. The **CPU clock** is
+3.125 MHz, so one T-state is 320 ns. The video circuit halves 3.125 MHz once more and gets its
+**character clock**: one character every 640 ns, two T-states.
+
+Each character is split into two halves of 320 ns. In the first the video memory belongs to the CPU,
+in the second to the 6845, the video chip. So a scan line of 100 characters takes 64 µs, **200
+T-states**, and whatever the CPU does, the display gets its turn at the memory on every character.
+
+Everything in the picture runs from this fixed clock tree. The CPU's clock is the only one that is
+ever held back (Part 4); the beam never waits for the CPU.
+
+## Part 2: The 6845 and the frame it counts
+
+The **6845 CRT controller** sits at ports `70h` (select a register) and `71h` (write or read it). It
+keeps three counters: the **character** within a line, the **raster** (the scan line within a row)
+and the **row**. From them it puts out a memory address, and it marks three moments: display enable
+(paper here), the line and frame syncs, and the cursor.
+
+At power-on the ROM programs it like this:
+
+- R0 = 99: a line is 100 characters, 64 µs.
+- R1 = 64: 64 characters of each line are paper.
+- R2 = 75: the line sync signal starts at character 75.
+- R4 = 77 and R5 = 2: 78 rows and 2 extra lines, **314 lines** a frame.
+- R6 = 60 and R9 = 3: 60 rows of 4 scan lines are paper, **240 lines**.
+- R7 = 66: the frame sync signal starts at row 66, line 264.
+- R10, R11 = 3 and R14, R15 = `0Eh`, `FFh`: a one-line cursor at address `0EFFh` (Part 8).
+
+So a frame is 314 × 200 = **62,800 T-states, 49.76 frames a second**, and it is not interlaced:
+every frame draws the same lines. The "rows" of 4 lines are only the 6845's bookkeeping; BASIC's text
+lines are 10 scan lines high, drawn by software into a bitmap.
+
+<figure><svg viewBox="0 0 700 326" role="img" aria-label="The TVC frame to scale, 100 characters wide and 314 lines high: the paper fills characters 1 to 64 of lines 0 to 239; the line is blanked from character 75 for about 22 characters, with the line sync from character 77 for 7 characters; the frame is blanked from line 264 to line 284, with the frame sync in its first two lines; the interrupt comes at the end of line 239, character 64; everything else is border." style={{ width: "100%", maxWidth: "700px", height: "auto" }}><rect x="60.0" y="30.0" width="560.0" height="251.2" fill="currentColor" fill-opacity="0.12" stroke="currentColor" stroke-width="1"/><rect x="65.6" y="30.0" width="358.4" height="192.0" fill="#3b82f6" fill-opacity="0.55"/><rect x="480.0" y="30.0" width="126.0" height="251.2" fill="currentColor" fill-opacity="0.55"/><rect x="60.0" y="241.2" width="560.0" height="16.0" fill="currentColor" fill-opacity="0.55"/><rect x="491.2" y="30.0" width="39.2" height="251.2" fill="#e8912d" fill-opacity="0.9"/><rect x="60.0" y="241.2" width="560.0" height="1.68" fill="#e8912d" fill-opacity="0.9"/><circle cx="424.0" cy="221.6" r="5" fill="#e5484d" stroke="white" stroke-width="1.5"/><text x="244.8" y="126.0" text-anchor="middle" fill="currentColor" font-size="13">paper: 64 bytes × 240 lines</text><text x="244.8" y="231.6" text-anchor="middle" fill="currentColor" font-size="11">bottom border</text><text x="244.8" y="271.6" text-anchor="middle" fill="currentColor" font-size="11">top border</text><text x="432.0" y="225.6" fill="currentColor" font-size="11">interrupt</text><line x1="60.0" y1="281.2" x2="60.0" y2="286.2" stroke="currentColor"/><text x="60.0" y="298.2" text-anchor="middle" fill="currentColor" font-size="11">0</text><line x1="418.4" y1="281.2" x2="418.4" y2="286.2" stroke="currentColor"/><text x="418.4" y="298.2" text-anchor="middle" fill="currentColor" font-size="11">64</text><line x1="480.0" y1="281.2" x2="480.0" y2="286.2" stroke="currentColor"/><text x="480.0" y="298.2" text-anchor="middle" fill="currentColor" font-size="11">75</text><line x1="620.0" y1="281.2" x2="620.0" y2="286.2" stroke="currentColor"/><text x="620.0" y="298.2" text-anchor="middle" fill="currentColor" font-size="11">100</text><text x="340.0" y="313.2" text-anchor="middle" fill="currentColor" font-size="11">character in the line (2 T-states each)</text><line x1="55.0" y1="30.0" x2="60.0" y2="30.0" stroke="currentColor"/><text x="52.0" y="34.0" text-anchor="end" fill="currentColor" font-size="11">0</text><line x1="55.0" y1="222.0" x2="60.0" y2="222.0" stroke="currentColor"/><text x="52.0" y="226.0" text-anchor="end" fill="currentColor" font-size="11">240</text><line x1="55.0" y1="241.2" x2="60.0" y2="241.2" stroke="currentColor"/><text x="52.0" y="245.2" text-anchor="end" fill="currentColor" font-size="11">264</text><line x1="55.0" y1="257.2" x2="60.0" y2="257.2" stroke="currentColor"/><text x="52.0" y="261.2" text-anchor="end" fill="currentColor" font-size="11">284</text><line x1="55.0" y1="281.2" x2="60.0" y2="281.2" stroke="currentColor"/><text x="52.0" y="285.2" text-anchor="end" fill="currentColor" font-size="11">314</text><rect x="630.0" y="38.0" width="14" height="14" fill="#3b82f6" fill-opacity="0.55" stroke="currentColor" stroke-width="0.5"/><text x="650.0" y="49.0" fill="currentColor" font-size="12">paper</text><rect x="630.0" y="60.0" width="14" height="14" fill="currentColor" fill-opacity="0.12" stroke="currentColor" stroke-width="0.5"/><text x="650.0" y="71.0" fill="currentColor" font-size="12">border</text><rect x="630.0" y="82.0" width="14" height="14" fill="currentColor" fill-opacity="0.55" stroke="currentColor" stroke-width="0.5"/><text x="650.0" y="93.0" fill="currentColor" font-size="12">blanked</text><rect x="630.0" y="104.0" width="14" height="14" fill="#e8912d" fill-opacity="0.9" stroke="currentColor" stroke-width="0.5"/><text x="650.0" y="115.0" fill="currentColor" font-size="12">sync</text></svg><figcaption>One frame with the ROM's settings, to scale: a column is a character (640 ns), a row a scan line.</figcaption></figure>
+
+The figure shows the whole frame the 6845 counts. Parts 7 and 8 explain the blanked areas, the
+syncs and the interrupt.
+
+## Part 3: From the count to a video RAM address
+
+The 6845 counts its address in characters, and the raster separately. The board wires them into a
+14-bit video RAM address with the raster in the middle:
+
+```text
+ video RAM address bit:  13 12 11 10  9  8   7   6   5  4  3  2  1  0
+ from the 6845:          the row (address bits 11-6)  raster  the character in the row
+```
+
+With 64 characters a row, row *r*'s first address is 64 × *r*, so the wiring gives
+256 · row + 64 · raster + character, which is 64 · line + character: **the bitmap is linear**, 64 bytes
+a scan line, top to bottom. At `8000h`, where page 2 shows the video RAM, line *L*, byte *C* is at
+`8000h` + 64 · *L* + *C*. The 16K hold 256 lines, of which 240 are shown.
+
+The linear layout holds only for 64 characters a row. A program that changes R1 changes the layout
+too, because the wiring stays the same.
+
+The **64K+** has four 16K video banks. Port `0Ch` (repeated at `0Dh`-`0Fh`) chooses them: bits 1-0 the
+bank the CPU sees through page 1, bits 3-2 the one it sees through page 2, and **bits 5-4 the bank the
+display shows**, whichever banks the CPU uses. A program draws the next frame in one bank while
+another is on the screen, then flips by rewriting bits 5-4; the display reads the new bank from its
+next character on, even in the middle of a line.
+
+## Part 4: One video RAM, two users
+
+The CPU's half of each character is the only time it can reach the video RAM. The memory's output
+goes through one latch that both users share, so the CPU's byte is there only for a moment, until the
+display's half of the character overwrites it. The CPU must take the byte in that moment, and an
+instruction can start its memory access at any of four points within the character.
+
+So a **clock stretch** circuit holds the CPU's clock until the CPU's slot comes round: for one to four
+half-T-states, depending on where in the character the access starts.
+
+- A read or write of video RAM is stretched by 2, 1, 4 or 3 half-T-states, for the four phases the
+  access can start in.
+- An opcode fetch from video RAM is stretched by 3, 2, 1 or 4, because the Z80 samples an opcode at
+  another point of its cycle.
+- I/O, interrupt acknowledges and refresh cycles are never stretched.
+- **The stretch does not depend on the beam.** It applies in the border and during blanking as well
+  as on the paper, which sets the TVC apart from the ZX Spectrum, whose contention applies only while
+  the picture is drawn.
+
+One consequence is that code which keeps touching video RAM locks to the slots: after the first
+stretch every access starts at the same phase. A run of `NOP`s executed from video RAM settles at
+6 T-states each.
+
+The other consequence is good: the CPU and the display never use the memory at the same moment, so
+the TVC shows no "snow". The CPU's half comes first in each character, so a byte the CPU writes is
+already in memory when the display reads the same character's address. **The finest step for racing
+the beam with memory writes is one character, two T-states.**
+
+## Part 5: From a byte to dots
+
+At the end of the display's half, the byte goes into two 4-bit shift registers chained together. A
+**shift clock** moves the bits out, and port `06h` bits 1-0 choose its rate and so the mode:
+
+- `00`, **2 colours**: 12.5 MHz, 8 dots a byte, 512 dots a line. Each dot is one bit, bit 7 leftmost:
+  0 shows palette entry 0, 1 palette entry 1.
+- `01`, **4 colours**: 6.25 MHz, 4 dots a byte, 256 a line. The two bits of a dot are four apart:
+  dot *n* (0 leftmost) shows palette entry 2 × bit(3 − *n*) + bit(7 − *n*).
+- `10` or `11`, **16 colours**: 3.125 MHz, 2 dots a byte, 128 a line. The palette is bypassed and the
+  bits are the colour itself: the left dot is bits 7, 5, 3, 1 as intensity, green, red, blue, and the
+  right dot bits 6, 4, 2, 0.
+
+The 4- and 16-colour orders come from where the colour logic taps the two shift registers, not from a
+choice of format. Take the byte `B4h`, binary `1011 0100`:
+
+1. In 2-colour mode it shows palette entries 1, 0, 1, 1, 0, 1, 0, 0.
+2. In 4-colour mode the dots are 2·b3 + b7 = 1, 2·b2 + b6 = 2, 2·b1 + b5 = 1 and 2·b0 + b4 = 1.
+3. In 16-colour mode the left dot is I = 1, G = 1, R = 0, B = 0, bright green; the right dot I = 0,
+   G = 1, R = 1, B = 0, dark yellow.
+
+Every mode takes one character per byte, so the line is the same length in all three.
+
+## Part 6: Colour, the palette and the border
+
+A TVC colour is four bits: **I**ntensity, **G**reen, **R**ed and **B**lue. The **palette** is four
+4-bit registers at ports `60h`-`63h`; the display reads them while the CPU writes them, so a palette
+write recolours every following dot that uses the entry, from the next dot on, in the middle of a line
+too. It is the TVC's main tool for colour splits. The **border** register at port `00h` works the
+same way for the border.
+
+The two expect their bits in different places:
+
+```text
+ bit:                  7   6   5   4   3   2   1   0
+ palette, 60h-63h      -   I   -   G   -   R   -   B
+ border, 00h           I   -   G   -   R   -   B   -
+```
+
+Each gun gets two levels from its colour bit and its colour bit ANDed with intensity. So intensity
+brightens only the guns that are on: a bright colour is its dark version, brighter, and **"bright
+black" is black**. Klive draws a dark gun at `92h` and a bright one at `FFh`.
+
+## Part 7: Border, blanking and sync
+
+None of the 6845's own signals reach the television as they are. Small logic around it makes the
+border, the blanking and the syncs:
+
+- **Paper or border.** The 6845's display enable is delayed by one character before it chooses
+  between the paper's colour and the border's. The byte for a character is shifted out during the
+  next character, so the delay keeps the edge of the paper in line with its first and last byte.
+- **Horizontal blanking.** A timer started when the line sync signal rises (character 75) blanks the
+  picture for 14.4 µs, until partway through character 97.
+- **Line sync.** Another timer, started when the 6845's sync signal falls (character 77), makes a
+  4.5 µs pulse. So the line has a front porch of 1.3 µs, close to broadcast PAL's.
+- **Vertical blanking.** A latch is set by the frame sync, at line 264, and cleared when address bit 9
+  of the still-counting 6845 goes high, at character 64 of line 284. About 20 lines are blanked.
+- **Frame sync.** A third timer, started by the frame sync signal, makes a 135 µs pulse, about two
+  lines. Only its start comes from the 6845, so the 6845's own frame sync width does not matter.
+
+With the ROM's settings this leaves 24 lines of border below the paper and about 29 above it, 10
+characters of border to the right and 3.5 to the left.
+
+Two of these depend on the program's settings in ways that are easy to miss. The end of vertical
+blanking is an address bit, so a program that moves the start address (R12-R13) to scroll also moves
+the end of the blanking. And a program that sets R2 or R7 so that a sync never comes leaves the
+television without a picture to lock to.
+
+## Part 8: The frame interrupt
+
+The TVC never shows the 6845's cursor: the cursor BASIC shows is drawn into the bitmap. The cursor
+signal has one job, to **request an interrupt**. The ROM puts the cursor at address `0EFFh` on raster 3
+only, which is the last byte of the last paper line, so the pulse comes once a frame.
+
+The cursor and the sound generator's interrupt share an interrupt flip-flop through one gate:
+
+1. The flip-flop is set when the cursor pulse ends, at character 64 of line 239.
+2. It holds the Z80's INT line until a program writes any value to port `07h`. BASIC's handler does,
+   on every interrupt; port `59h` bit 4 shows the request (0 while it is pending).
+3. While one source holds the gate's input, the other cannot set the flip-flop: one can mask the
+   other.
+
+The interrupt is wherever the cursor registers put it. VT-DOS, the disk system, moves the cursor to
+`0AFFh`, and after it has started, the interrupt comes at the end of line 175. A raster effect timed
+from "the frame interrupt" must set the cursor itself or measure from the interrupt it gets.
+
+## How Klive does it
+
+Klive's TVC core keeps the CPU and the picture on one clock: it counts whole T-states and, beside them,
+a half-T-state clock, because the stretch moves the CPU by half-T-states. At the start of every
+character as the CPU's clock passes it, the core runs the 6845's tick, the delayed display enable,
+the blanking and the sync timers, places the character in the television's window, and fetches the
+next byte from the displayed bank. A palette, border, mode or video RAM write therefore lands at the
+character it happens in.
+
+The television is modelled too: it finds the line and frame syncs, and the picture is the 608 × 288
+dots around the paper that a TV would show, with the paper centred. A dot is drawn 7/12.5 as wide as
+a ZX Spectrum dot, its true width.
+
+The **TVC Video** panel in the Debug activity shows the 6845's registers and counters, the mode, the
+palette, the border, the blanking latch and the interrupt flip-flop of the running machine (see [The
+Videoton TVC](/en/guides/machines/videoton-tvc/)).
+
+| File | What it holds |
+|---|---|
+| `src/emu/machines/tvc/wasm/tvc/tvc-crtc.c` | The 6845's counters, registers and signals |
+| `src/emu/machines/tvc/wasm/tvc/tvc-video.c` | The dots, the palette and border, blanking, sync, the TV window, the interrupt flip-flop |
+| `src/emu/machines/tvc/wasm/tvc/tvc-timing.c` | The clock stretch on video RAM |
+| `src/emu/machines/tvc/wasm/tvc/tvc.c` | The half-T-state clock and the frame loop |
+| `test/tvc-hw/video.test.ts`, `timing.test.ts` | The modes, the colour bits, the paper's position, the blanking, the interrupt's moment, the stretch at every phase |
+
+## Summary
+
+- One character is 640 ns, two T-states: half for the CPU, half for the display. The ROM's frame is
+  100 × 314 characters, 62,800 T-states, 49.76 Hz, with 64 × 240 bytes of paper.
+- The bitmap is linear, 64 bytes a line, while the 6845's rows are 64 characters wide. On the 64K+,
+  port `0Ch` bits 5-4 choose the bank on the screen.
+- The CPU is held for 1-4 half-T-states on every video RAM access, wherever the beam is; in return
+  there is no snow, and a write races the beam to the character.
+- Two shift registers make the three modes: 2 colours bit by bit, 4 colours from bits four apart,
+  16 colours from the odd and even bits.
+- Colour is IGRB; the palette (even bits) and the border (odd bits) can change mid-line; "bright
+  black" is black.
+- Border, blanking and sync are made around the 6845 by timers and a latch.
+- The frame interrupt is the cursor: set at the end of the cursor pulse, cleared by port `07h`, moved
+  by whoever moves the cursor.

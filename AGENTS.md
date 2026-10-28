@@ -247,6 +247,22 @@ merely uncoloured, which no route diff can see.
   export) is `.plans/ZX8081_CODE_INJECTION_PLAN.md`; its §8 records how it works. The program image is
   built in one place, `src/common/zx8081/programImage.ts`, for injection and export alike.
 
+## Videoton TVC
+
+- One C/WASM core runs the TVC 64K and 64K+: `src/emu/machines/tvc/wasm/` - read its `README.md`
+  (the half-T clock, the clock stretch, the video steps, sound, tape, the HBF card) before changing
+  it. The plan and its as-built record are `.plans/VIDEOTON_TVC_PLAN.md` (§17); the research pack is
+  `_input/videoton-tvc/` (`TVC_VIDEO_GENERATION.md` for the picture).
+- Provenance (plan D1): Klive's own code. rtvc (MIT) and MAME (BSD) are read for interface facts;
+  rtvc's ROM listings never feed shipped `.rom.dis` sidecars.
+- Test with the harness in `test/harness/tvc/` (real ROMs, `bootToBasic`, typing, tapes, disks, the
+  debugger); hardware tests go in `test/tvc-hw/`. Pictures are pinned by hashes only after they
+  were checked by eye.
+- Run puts code in $1A30-$BBFF and has BASIC call it (`LOMEM`, `C=USR(entry)`); the rules are one
+  module, `src/common/tvc/codePlacement.ts`, shared by Run, Inject and the `.cas` export.
+- The HBF floppy card (`MC_TVC_HBF`) runs on the shared WD1793 (`src/emu/machines/common/wasm/wd1793.c`,
+  also the Beta 128's): a change there rebuilds both cores, and the 128K core must stay unchanged.
+
 ## ROM Annotations (reverse engineering the ROMs)
 
 - The shipped ROM sidecars (`src/public/roms/*.rom.dis`) are written from scratch: **read

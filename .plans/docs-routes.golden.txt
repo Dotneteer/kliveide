@@ -171,6 +171,7 @@
 /en/guides/machines/cambridge-z88/index.html
 /en/guides/machines/ht1080z/index.html
 /en/guides/machines/timex-scorpion/index.html
+/en/guides/machines/videoton-tvc/index.html
 /en/guides/machines/zx81-zx80/index.html
 /en/guides/media/disk-explorer/index.html
 /en/guides/media/disks-tutorial/index.html
@@ -230,6 +231,7 @@
 /en/reference/z80-assembler/pragmas/index.html
 /en/reference/z80-assembler/statements/index.html
 /en/reference/z80-assembler/structs/index.html
+/en/reference/z80-assembler/videoton-tvc/index.html
 /en/reference/z80-assembler/z80-instructions/index.html
 /en/reference/z80-assembler/zx-next-copper/index.html
 /en/reference/z80-assembler/zx-next-dma/index.html
@@ -256,6 +258,7 @@
 /en/under-the-hood/emulator-internals/reverse-debugging/index.html
 /en/under-the-hood/emulator-internals/spectrum-accuracy/index.html
 /en/under-the-hood/emulator-internals/spectrum-display/index.html
+/en/under-the-hood/emulator-internals/tvc-video/index.html
 /en/under-the-hood/emulator-internals/wasm-cores/index.html
 /en/under-the-hood/emulator-internals/zx81-display/index.html
 /en/under-the-hood/emulator-internals/zx81-tape/index.html
