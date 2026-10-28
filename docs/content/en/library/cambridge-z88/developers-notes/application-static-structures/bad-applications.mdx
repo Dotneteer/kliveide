@@ -1,0 +1,43 @@
+---
+description: "An application can be made 'bad' (or a popdown 'ugly') if it requires a large area of continuous memory since the Z88 cannot allocate more than 256 bytes to an application at any time. Although..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8618251 (version 1) by scripts/import-z88-wiki.cjs */}
+
+# Bad Applications
+
+An application can be made 'bad' (or a popdown 'ugly') if it requires a large area of continuous memory since the Z88 cannot allocate more than 256 bytes to an application at any time. Although this appears to be very restrictive, most programs can be made to work under this regime. All the internal applications, bar BBC BASIC, are 'good', and BBC BASIC is only bad because it was not written for the Z88 but simply imported. If, however, you are simply unable to write an application without large continuous areas, you may have to make your application bad. Similarly if your application is intended to be the only one running on the Z88, there is no problem with it being bad.
+
+Bad application memory is provided from address $2000 onwards. The amount given depends on the value of the 'continuous RAM size' byte in the application DOR header. This byte should be set to the number of 256 byte pages required. If it is set to zero then the default value is used (40K in an expanded machine, 8K in an unexpanded machine). The value of the default can be changed, via the PANEL, but bear in mind this is something which affects the whole system, and should not be undertaken lightly. When a bad application is first entered, the IX register points to an information block as follows:
+
+```text
+            1 byte        $03         Number of information bytes
+            1 byte        x           Start page of continuous memory, $20
+            1 byte        x           End page of continuous memory, this cannot
+                                      be used, for example $C0 for a 40K bad
+                                      application.
+            1 byte        x           Ususally zero. Reserved for future
+                                      expansion.
+```
+
+Whenever BBC BASIC is exited an area of unused memory, between the program and the stack, is given back to the system. When BBC BASC is re-entered memory is found to fill this hole back up again. It is this mechanism that allows several 40K BBC BASIC's to co-exist on a 128K Z88 computer. All the BBC BASIC's have a 40K continuous space while they are active and running, but when inactive (pre-empted) they occupy considerably less memory. To give memory back to the system, the enquiry entry point is used. The enquiry entry point is three bytes above the application entry point and must be in segment 3, which effectively forces all entry points into segment 3. Normally the enquiry entry point should simply return with Fc = 1. However, if Fc = 0 the memory starting from the address specified in register BC and ending at the address specified in register DE (not including the byte at (DE)) is given back to the system. The following code might be used:
+
+```text
+.app_entry                jp   main_entry         ; JP instruction 3 bytes long
+.app_enquiry              ld   bc, (hole_start)   ; enquiry entry point
+                          ld   de, (hole_end)
+                          or   a                  ; Fc = 0
+                          ret
+```
+
+Bad applications not giving memory back to the system (and all other application) should use the following code for the enquiry entry point:
+
+```text
+.app_entry                jp   main_entry
+.app_enquiry              scf                     ; enquiry entry point
+                          ret
+```
+
+*Z88 Developers Team: We've had no problems with good applications & popdowns* that ignores the above \<**SCF**\> header, even though the original documentation explicitly specifies it to be coded.
+
+Bad applications place a lot of strain on the system, by using large areas of memory. A 40K bad application which gives no memory back to the system is unlikely to co-exist well with other applications, so it is strongly recommended that if you must write bad applications you give memory back to the system. It is almost always possible to design data structures so that a continuous block can be kept empty. Programmer laziness is not an excuse to use a 40K bad application by default!

@@ -1,0 +1,88 @@
+---
+description: "The list below shows which data that can be polled from OS_Nq."
+asIndexPage: true
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7962745 (version 18) by scripts/import-z88-wiki.cjs */}
+
+# OS_Nq, Enquire
+
+## Register parameters
+
+```text
+IN:
+     BC = enquiry code
+     ADEHLIX parameters
+
+OUT, if call succeeded:
+     Fc = 0
+     Depends on BC and other arguments
+
+Out, if call failed:
+     Fc = 1
+     A = return code:
+          RC_BAD ($04), incorrect reason code or parameters
+          RC_UNK ($03), unknown request
+```
+
+## Available Reason Codes
+
+The list below shows which data that can be polled from [**OS\_Nq**](https://cambridgez88.jira.com/wiki/pages/viewpage.action?pageId=96403565).
+
+In the description of each reason code which follow, only successful calls are considered. In some cases it is possible that other error codes will be returned. With luck this should be clear from the context. Details of these calls are specified in subsequent pages.
+
+### Window management
+
+**[NQ\_WBOX](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-nq/window-management-information#nq_wbox)** ($8300), return window information <br />**[NQ\_WCUR](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-nq/window-management-information#nq_wcur)** ($8303), return cursor information <br />**[NQ\_RDS](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-nq/window-management-information#nq_rds)** ($8306), read text from the screen
+
+### Process Management
+
+**NQ\_Ain** ($8600), application enquiry (system use only)<br />**NQ\_Khn** ($8603), read keyboard handle (use ":INP" device instead)<br />**NQ\_Shn** ($8606), read screen handle (use ":SCR" device instead)<br />**NQ\_Phn** ($8609), read printer indirected handle<br />**NQ\_Nhn** ($860C), read null handle (use ":NUL" device instead)<br />**NQ\_Wai** ($860F), Who am I? (system use only)<br />**NQ\_Com** ($8612), read comms handle (use ":COM" device instead)<br />**NQ\_Ihn** ($8615), read IN handle (use ":INP" device instead)<br />**NQ\_Ohn** ($8618), read OUT handle (use ":OUT" device instead)<br />**NQ\_Rhn** ($861B), read direct printer handle<br />**NQ\_Voz** ($861E), application verifies running OZ version (OZ 4.5 and newer)<br />**NQ\_Roz** ($8621), read OZ revision number (OZ 4.5 and newer)<br />**NQ\_Btl** ($8624), read battery status (OZ 4.5 and newer)
+
+### Memory Management
+
+**NQ\_Mfs** ($8900), read free space information (system use only)<br />**NQ\_Slt** ($8903), read slot type information (system use only)<br />**NQ\_Mfp** ($8906), get total of free RAM pages in slot (OZ 4.2 and newer)<br />**NQ\_Mup** ($8909), get memory used in pool (OZ 5.0 and newer)<br />**NQ\_Mnt** ($890C), fetch mount status (OZ 5.0 and newer)
+
+### Director and CLI
+
+**NQ\_Dev** ($8C00), fetch current device<br />**NQ\_Dir** ($8C03), fetch current directory<br />**NQ\_Fnm** ($8C06), fetch current filename match string
+
+### Director and CLI handles
+
+**NQ\_Dmh** ($8C09), fetch Director special memory handle (system use only)<br />**NQ\_Inp** ($8C0C), read std. input handle<br />**NQ\_Out** ($8C0F), read std. output handle<br />**NQ\_Prt** ($8C12), read printer stream handle<br />**NQ\_Tin** ($8C15), read input-T handle<br />**NQ\_Tot** ($8C18), read output-T handle<br />**NQ\_Tpr** ($8C1B), read printer-T stream handle<br />**NQ\_Chn** ($8C1E), read comms handle
+
+### Panel and Printer Editor values
+
+All the Panel and Printer Editor codes can be used to read values via OS\_Nq in the following manner:
+
+```text
+IN:
+     BC = PA_xxx
+     A = number of bytes to read
+     DE = buffer for bytes to be read
+OUT:
+     A = number of bytes actually read
+```
+
+```text
+
+```
+
+SI\_SFT calls [**OS\_Nq**](https://cambridgez88.jira.com/wiki/pages/viewpage.action?pageId=96403565) in an undocumented way for reading Panel settings.
+
+```text
+In: A is not set before call.
+    DE is set to 2.
+
+Out: Result is picked up in E or possibly DE for two-byte returns.
+```
+
+Please refer to **[OS\_Sp](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-sp)** for Panel and Printer Editor value parameter reason codes.
+
+## Bugs
+
+This call may fail if called from segment 2 (fixed since OZ 4.7).
+
+## Related calls
+
+**[DC\_Sp](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-sp)**, DC specify<br />**[DC\_Nq](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-nq)**, DC enquire<br />**[OS\_Sp](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-sp)**, specify

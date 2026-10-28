@@ -1,0 +1,25 @@
+---
+description: "When you enter an application the stack pointer is established and you will have a stack space of the order of 1.5K. The memory used for the stack is a shared resource, however. The 2K space..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8618257 (version 4) by scripts/import-z88-wiki.cjs */}
+
+# Environment on entry to an application
+
+When you enter an application the stack pointer is established and you will have a stack space of the order of 1.5K. The memory used for the stack is a shared resource, however. The 2K space between address $1800 and address $2000 is used for the following purpose:
+
+1. As the system stack. This will usually be quite lightly used, but can be quite big in some circumstances.
+
+2. For the safe and unsafe workspace which applications request. The bigger these are, the less stack you will have.
+
+3. For storing mailbox information between application switches. If a lot of lengthy mail is being passed around, the maximum stack size is reduced. We recommend that mail is restricted to a maximum of 64 bytes.
+
+The stack space looks like this:
+
+<Shot src="z88-developers-notes/application-static-structures/environment-on-entry-to-an-application/appl-stackframe.webp" alt="appl-stackframe" width={310} />
+
+Even with all these demands it is unlikely that you will have much less than 1.5K to use for the stack, but clearly if you might need more space you will need to make your own arrangements, such as allocating memory and implementing you own stack procedures, or if really necessary using a bad application to provide continuous memory for a stack.
+
+If you change the stack pointer within your application you must save the old stack pointer and restore it (below $2000 in segment 0) before making any system calls. This is because system calls swap memory banks during execution; the stack may get 'paged' out and a system crash would then most likely occur.
+
+If your applications requires access to other banks in your card then you can use the bank switching call, **[OS\_Mpb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mpb)**, to bind them in. However, your card could be placed in any of the three slots so you need to determine where your card is. This can simply be done by using **[OS\_Mgb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mgb)** while running ROM'ed code and then using bank offsets relative to this value.

@@ -1,0 +1,117 @@
+---
+description: "The application program interfaces with the system in two ways. An application consists of both an application header and a main body. The header sets up various parameters for the application..."
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/262232 (version 6) by scripts/import-z88-wiki.cjs */}
+
+# Interfacing with the system
+
+The application program interfaces with the system in two ways. An application consists of both an application header and a main body. The header sets up various parameters for the application such as whether it is good or bad, and also contains all the menus and help text. Each menu command generates a key code, so that the application itself just receives a code when a command is generated, either by the menu or the key sequence. This obviously reduces the application's overheads somewhat. The body of the application interfaces with the system via calls. Most of the main system calls are entered using a RST $20 instruction, the floating point routines being the exception, followed by one or two bytes which define the required function. A full list is given in 'System Calls Reference'. For example the code to write a character to standard output (called OS\_Out) would be called as follows:
+
+```text
+            RST  $20                ; Z80 restart instruction
+            DEFB OS_Out             ; reason code
+```
+
+In the text we will write something like this:
+
+```text
+            CALL_OZ(OS_Out)         ; write a character
+or
+            OZ OS_Out               ; write a character
+```
+
+which is pre-defined pseudo instructions (macros) allowed by the assembler called 'CALL\_OZ' and 'OZ' to generate the calls. Macros are pre-defined for the system calls which may be included in your source code. However it is written, this code sends the character whose ASCII value is in A to the screen. This format of operating system call has the merit of economy of space; one byte for the RST instruction, one byte for the appended function code. The system call can easily find the appended byte using the return address pushed by the RST instruction and adjust the return address to point after it. A scheme in which the function code was loaded into a register before executing RST $20 would waste an extra byte every time the function is called.
+
+Note: As you may have already noted from the above, we represent hexadecimal numbers by preceding them with a '$' symbol. Occasionally where hexadecimal is unambiguously the base the '$' is omitted. The '@' symbol is used in prefix fashion to indicate binary numbers. The mnemonic names for the calls are prefixed by either 'GN', 'OS', 'DC' or 'FP'. This represents a rather arbitrary division into:
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>GN\_</Table.Td>
+<Table.Td>General utilities like arithmetic routines and data type conversion.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>OS\_</Table.Td>
+<Table.Td>Operating System calls like process management and error handling.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>DC\_</Table.Td>
+<Table.Td>Director/CLI calls are very low level, for which an alternative 'OS' or 'GN' call usually provides a more convenient interface. Director is a synonym for Index. CLI stands for Command Line Interpreter.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>FP\_</Table.Td>
+<Table.Td>Floating point calls access the internal floating point package.</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+When one wishes to find the system call to perform a particular action, turn to the 'System Calls Finder,' This lists various actions the user may want to perform, and refers to the appropriate system calls whose specification may be found in 'System Calls Reference'.
+
+## Notation
+
+We now introduce the notation that will be adopted in presenting the interface specifications of the various calls. Uppercase register letters (A,HL etc.) represent the main register set; lower case letters (a,hl etc.) represent the alternate set, as distinct from the more usual notation A',H'L' etc. The alternate register set is used freely within the operating system and so almost every call is specified as corrupting all the alternate registers. For this reason the changes to the alternate set are not mentioned in most call specifications. Changes to registers are indicated as follows. Here F, HL, and IX may have been corrupted and the other registers remain intact:
+
+```text
+            A.BCDE../..IY same
+            .F....HL/IX.. different
+```
+
+The IY register is never affected or used as a parameter by system calls. IX, however, is used as a handle reference for many I/O calls. IY may therefore be used as a base register of some sort, eg. pointing at the base address of an application's workspace.
+
+The stack pointer, as one might expect, will never change; this is not indicated explicitly. The above provides a succinct and clear notation which will be used throughout the subsequent sections, particularly 'System Calls Reference.' Where the value of input parameters is referred to in explaining the value of output values the input parameter will be postfixed (in), eg. DE(in). One other notational point worth mentioning is that Fz represents the zero flag, Fc the carry flag, etc.
+
+## Other terminology
+
+As outlined above the 'physical address space' (by this we mean what is actually there ie. addressable RAM chips) is divided into 256 banks of 16K. The 64K 'logical address space' (by which we mean what the Z80 can actually see at any one time) is divided into 4 segments of 16K. Each segment can be 'bound' to any bank. Being bound means that when the Z80 looks at that segment, the bank it is bound to is what it actually sees. The segments are numbered 0 to 3 as follows:
+
+| *Segment* | *Logical address* | *Used as* |
+| --- | --- | --- |
+| 0 | $0000 - $1FFF | RST 00H-38H, sys.vars, stack, appl. worksp. |
+| 0 | $2000 - $3FFF | 8K RAM (continuous RAM or application bank) |
+| 1 | $4000 - $7FFF | Application code or RAM allocation |
+| 2 | $8000 - $BFFF | Application code or RAM allocation |
+| 3 | $C000 - $FFFF | Application code (ROM/EPROM) or RAM |
+
+The banks are mapped onto the following physical memory sources in the machine:
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>*Banks*</Table.Td>
+<Table.Td>*Wired to*</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>$00 to $1F</Table.Td>
+<Table.Td>128K ROM, wired to slot 0 (512K range)</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>$20 to $3F</Table.Td>
+<Table.Td>:RAM.0 (32K), wired to slot 0 (512K range)</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>$40 to $7F</Table.Td>
+<Table.Td>Wired to slot 1 (1MB range)</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>$80 to $BF</Table.Td>
+<Table.Td>Wired to slot 2 (1MB range)</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>$C0 to $FF</Table.Td>
+<Table.Td>Wired to slot 3 (1MB range)</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+Note that most cards and the internal memory, do not exploit the full lMB addressing range, but only decode the lower address lines. This means that memory will appear more than once within the lMB range. The memory of a 32K card in slot 1 would appear at banks $40 and $41, $42 and $43, ..., $7E and $7F. Alternatively a 128K EPROM in slot 3 would appear at $C0 to $C7, $C8 to $CF, ..., $F8 to $FF. This way of addressing is assumed by the system - so you can rely on it too - and should be followed by anyone producing card hardware for the Z88. Note that the lowest and highest bank in an EPROM can always be addressed by looking at the bank at the bottom of the 1MB address range and the bank at the top respectively.
+
+Slot 0 hardware is differently wired than slot 1 to 3. The lower half of the 1MB address range (512K) is reserved for ROM (however the Z88 mother board has only tracked the address line for 128K, but may be extended with the missing address lines). The upper half is reserved for RAM. Currently 32K is installed, but pins are allocated for a 128K RAM chip. The hardware can address 512K RAM, but address line has to be added explicitly (circuitry is only tracked for 128K RAM).
+
+System calls exist to allow you to bind any bank to any segment, and should always be used, rather than resorting to hardware, because the system has to keep track of your binding state. When system calls are made the bindings will change and need to be restored before control is returned your application. Segment 0 operates slightly differently to the other segments because the Z80 needs special information at the lower addresses of its logical address space. The lower 8K of segment 0 can either be ROM, for hard reset, or RAM, for restart routines and other OZ information. Bindings made on segment 0 affect only the upper 8K, and so involve paging in an 8K half bank, not a full 16K bank. The lowest bit of the bank number, which is normally an 8 bit value, is used to select whether the lower (least significant bit = 0) or upper (least significant bit = l) is bound to the half segment. The least significant bit of the bank number, therefore, no longer refers to which bank is to be used and so for the purposes of choosing a bank it is regarded as zero. The upshot of all this is that only even numbered banks can be bound into the upper 8K of segment zero, with the half of the bank being selected by looking at the lowest bit of what is nominally the bank number.
+
+The term 'extended address' is used throughout the text to refer to the combination of an offset in a bank and a bank number. An extended address is often passed in a register trio such as BHL or CDE. In these cases B (or C) will hold the bank number and the lower 14 bits of HL (or DE) will hold the offset within the bank. Often B register being zero indicates that HL should be used directly as a logical address, but there are exceptions to this. The remaining upper 2 bits of HL may be used as 'memory mask'. The memory mask is a technique for making the bank binding a bit easier. If you know which segment you want the memory you are looking at to be bound to, and you tell the memory allocator, then it will return an extended address in BHL with the top 2 bits of HL set to your intended segment number. The result of this is when the bank is bound in to the segment you said it would be, you can use HL to address it, as HL will reflect the logical address of the bound in memory.
+
+When system calls expect local pointers to information it is vital that this information is kept with the current bank boundary. System calls keep track of the source bank of the pointer but does not expect it to cross bank boundaries. The end result of this is random. **[GN\_Sop](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-sop)** (write string to std. output) for example just displays rubbish from the point of the bank boundary onwards.

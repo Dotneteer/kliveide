@@ -1,0 +1,58 @@
+---
+description: "The serial rom chip is an UV eprom NEC uPD23C1000C for foreign OZ. The UK version may be an eprom chip for v2.2, the v3.0 supports exactly the same software but have been put in a ROM which have..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/3113049 (version 1) by scripts/import-z88-wiki.cjs */}
+
+# The ROM
+
+<strong>*ROM types*</strong>
+
+The serial rom chip is an UV eprom NEC uPD23C1000C for foreign OZ. The UK version may be an eprom chip for v2.2, the v3.0 supports exactly the same software but have been put in a ROM which have only 28 pins. The last v4.0 is fitted on an EPROM chip. The socket layout isn't standard according to the NEC standard (see below). If you wish to fit a new eprom, be very careful, pins 2 and 24 must be exchanged according to the JEDEC standard. Particulary if you want to use actual 128K Eprom chip, like 27C1001. In theory, you can fit larger eprom (like 27C2000 or 27C4000), if you wire the addresses lines.
+
+<strong>*ROM socket*</strong>
+
+The mother has 32 pins tracked to the NEC standard.
+
+```text
+    +--------------+
+VCC |1    +--+   32| VCC
+ROE |2           31| VCC
+A15 |3           30| VCC
+A12 |4           29| A14
+A7  |5           28| A13
+A6  |6           27| A8
+A5  |7    Z88    26| A9
+A4  |8    ROM    25| A11
+A3  |9    PCB    24| A16
+A2  |10          23| A10
+A1  |11          22| CE
+A0  |12          21| D7
+D0  |13          20| D6
+D1  |14          19| D5
+D2  |15          18| D4
+VSS |16          17| D3
+    +--------------+
+```
+
+This table describes the 128K chip pinout and Blink signals.
+
+```text
+Pin     Chip    Blink   Pin     Chip    Blink
+1       VPP     VCC     32      VCC     VCC
+2       [OE]    ROE     31      [PGM]   VCC
+3       A15     MA15    30      VCC     VCC
+4       A12     MA12    29      A14     MA14
+5       A7      MA7     28      A13     MA13
+6       A6      MA6     27      A8      MA8
+7       A5      MA5     26      A9      MA9
+8       A4      MA4     25      A11     MA11
+9       A3      MA3     24      A16     MA16
+10      A2      MA2     23      A10     MA10
+11      A1      MA1     22      [CE]    IPCE (Internal PROM chip enable)
+12      A0      MA0     21      D7      MDH
+13      D0      MDA     20      D6      MDG
+14      D1      MDB     19      D5      MDF
+15      D2      MDC     18      D4      MDE
+16      VSS     GND     17      D3      MDD
+```

@@ -1,0 +1,35 @@
+---
+description: "The routine will internally ask the Flash Memory for identification and intelligently use the correct erasing algorithm."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7962641 (version 3) by scripts/import-z88-wiki.cjs */}
+
+# FEP_CDER ($09), Erase entire Flash Memory
+
+## Register Parameters
+
+```text
+IN:
+        A = FEP_CDER
+        C = slot number (0, 1, 2 or 3) of Flash Memory
+OUT:
+        Success:
+             Fc = 0
+        Failure:
+             Fc = 1
+             A = RC_NFE (not a recognized Flash Memory Chip)
+             A = RC_BER (error occurred when erasing block/sector)
+             A = RC_VPL (Vpp Low Error)
+
+Registers changed on return:
+   ..BCDEHL/IXIY same
+   AF....../.... different
+```
+
+## Notes
+
+The routine will internally ask the Flash Memory for identification and intelligently use the correct erasing algorithm.
+
+<u>This system call is regarded as internal operating system usage but may be used by applications</u>.<br /><br />Important:<br />INTEL I28Fxxxx series Flash chips require the 12V VPP pin in slot 3 to successfully erase the memory chip. If the Flash Memory card is inserted in slot 1 or 2, this routine will automatically report a sector erase failure error.<br /><br />It is the responsibility of the application (before using this call) to evaluate the Flash Memory (using the FlashEprCardId routine) and warn the user that an INTEL Flash Memory Card requires the Z88 slot 3 hardware, so this type of unnecessary error can be avoided.
+
+Important for application usage:<br />Do not use this system call on a slot that contains a running OZ or running application cards!

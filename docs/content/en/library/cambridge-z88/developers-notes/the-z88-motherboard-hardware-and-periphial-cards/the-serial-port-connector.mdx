@@ -1,0 +1,24 @@
+---
+description: "This is a DB9 male connector with a private pinout describe below."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/3113063 (version 3) by scripts/import-z88-wiki.cjs */}
+
+# The Serial Port Connector
+
+This is a DB9 male connector with a private pinout describe below.
+
+```text
+Pin     Signal  Description             Direction
+1       -       unswitched (+5v at 10 uA) output
+2       TxD     transmit data             output
+3       RxD     receive data              input
+4       RTS     ready to send             output 
+5       CTS     clear to send             input
+6       -       reserved for future use   -
+7       GND     Ground
+8       DCD     data carrier detect       input
+9       DTR     switched (+5v at 1mA)     output
+```
+
+*Note :* DTR is high when the machine is awake. The machine is always awake when the screen is active, but even if asleep the machine will wake every minute or so to carry out various housekeeping tasks, such as checking for alarms, and at these time DTR will go high. Pin 1 will show a signal if there is power available to the machine.

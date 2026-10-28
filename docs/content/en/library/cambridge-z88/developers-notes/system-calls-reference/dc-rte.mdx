@@ -1,0 +1,28 @@
+---
+description: "This call is invoked by a RET ending execution of an ELF binary. It returns to the caller with main and index registers preserved (alternate register set changed). It restores the stack and the..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/116359200 (version 4) by scripts/import-z88-wiki.cjs */}
+
+# DC_Rte, Return from ELF
+
+## Register parameters
+
+```text
+IN:  -
+OUT: -
+
+Registers affected after return:
+     AFBCDEHL/IXIY same
+     ......../.... different
+```
+
+## Notes
+
+Internal operating system usage.
+
+This call is invoked by a RET ending execution of an ELF binary. It returns to the caller with main and index registers preserved (alternate register set changed). It restores the stack and the performs the stackframe adjustement.
+
+## Related calls
+
+**[DC\_Elf](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-elf)**, ELF interface<br />**GN\_Elf**, Enter ELF program

@@ -1,0 +1,30 @@
+---
+description: "GN_Err, display an interactive error box GN_Esp, return an extended pointer to a system error message OS_Erh, set error handler OS_Esc, examine special condition"
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7471562 (version 6) by scripts/import-z88-wiki.cjs */}
+
+# OS_Erc, Get error context
+
+## Register parameters
+
+```text
+IN:  -
+
+OUT: Fc = 0, always and
+             A = last error code
+             B = resumption cycle
+             C = dynamic id
+
+Registers changed after return:
+     ....DEHL/IXIY same
+     AFBC..../.... different
+```
+
+## Notes
+
+Internal operating system usage.
+
+## Related system calls
+
+**[GN\_Err](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-err)**, display an interactive error box <br />**[GN\_Esp](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-esp)**, return an extended pointer to a system error message <br />**[OS\_Erh](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-erh)**, set error handler <br />**[OS\_Esc](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-esc)**, examine special condition

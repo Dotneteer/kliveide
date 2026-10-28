@@ -7,6 +7,8 @@
   "@area.reference": { "context": "Navbar tab of the reference documentation." },
   "area.under-the-hood": "Under the Hood",
   "@area.under-the-hood": { "context": "Navbar tab of the articles on how the emulators work inside, and on contributing." },
+  "area.library": "Library",
+  "@area.library": { "context": "Navbar tab of the machines' own manuals (for example the Cambridge Z88 User Guide), written by their makers and communities, not by Klive. The last tab; keep it short." },
   "area.englishOnly": "{title} (English)",
   "@area.englishOnly": { "context": "A navbar tab whose pages exist only in English. {title} is the tab's translated name. Keep it short: it sits in the navbar." },
 

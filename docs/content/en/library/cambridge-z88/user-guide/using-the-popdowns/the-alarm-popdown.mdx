@@ -1,0 +1,96 @@
+---
+description: "The Alarm popdown can either be selected from the INDEX"
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/UG/pages/35913780 (version 10) by scripts/import-z88-user-guide.cjs */}
+
+# The Alarm popdown
+
+The Alarm popdown can either be selected from the INDEX
+
+<Shot src="z88-user-guide/using-the-popdowns/the-alarm-popdown/oz45-al-select.webp" alt="Select Alarm" width={640} />
+
+or (activated with <strong><Key k="square" /></strong>A)
+
+It can be used to make your Cambridge Z88 remind you of important events or appointments, or simply to wake you up in the morning. Any number of alarms can be set up, and for each alarm you can specify the following information:
+
+## The Menu
+
+<Shot src="z88-user-guide/using-the-popdowns/the-alarm-popdown/oz45-al-menu.webp" alt="Menu" width={640} />
+
+is called up the the <Key k="menu" /> key.
+
+<Shot src="z88-user-guide/using-the-popdowns/the-alarm-popdown/oz45-al-important-meeting.webp" alt="Important Meeting" width={640} />
+
+### DATE
+
+The date on which the first alarm will occur. For a new alarm this is initially set to the current date, or if the alarm is called from the Calendar or Diary, the Calendar or Diary date.
+
+### TIME
+
+The time at which the alarm will occur. For a new alarm this is set to the current time, but you will usually alter it to the required alarm time. All times in the Alarm are given in 24-hour format.
+
+### REASON/COMMAND
+
+For each alarm you can specify a message of up to 23 characters, or a CLI command string which will be executed to cause something to happen; see below.
+
+To set an alarm, press <Key k="enter" />. The alarms you have set up will become active as soon as you exit from the popdown by pressing <Key k="esc" />.
+
+Note that the Cambridge Z88 will not switch off automatically while the alarm popdown is on the screen.
+
+### Alarm options
+
+Each alarm can also have the following optional settings:
+
+*Bell:* can be <strong>`ON`</strong> or `OFF`, determining whether the Cambridge Z88 bleeper sounds when the alarm is activated.
+
+*Alarm type:* normally `ALARM`. This can be altered to `EXECUTE` to allow a command, in the `REASON FOR ALARM` field, to be executed when the alarm is activated. Thus you could, for example, cause the Diary to be entered and a line of text to be typed in automatically on an alarm:
+
+<Typed>\#D\|CT Urgent message</Typed>
+
+For more information on executing commands, see [**CLI files**](/en/library/cambridge-z88/user-guide/filer-reference#cli_files).
+
+*Repeat every:* normally set to `NEVER`, so that an alarm will occur just once, at the specified time and date. The repeat rate can be altered to one of the following to obtain a repeating alarm:
+
+`YEAR, MONTH, WEEK, DAY, HOUR, MINUTE, SECOND`
+
+You can move between these options with <Key k="shift" /><Key k="up" /> and <Key k="shift" /><Key k="down" />; pressing<Key k="up" /> or <Key k="down" /> then increases or decreases the number of the unit selected. You can thus specify every <strong>`3 HOURS`</strong>, for example.
+
+*No. of times:* specifies the number of times that the alarm will be repeated before being cancelled. It is initially set to `NEVER`, so that the alarm will occur just once. It can be set to `FOREVER` by pressing <Key k="down" />, or a number from one upwards by pressing<Key k="up" />. Holding the <Key k="shift" /> key down while pressing<Key k="up" /> or <Key k="down" /> will increase or decrease the number in tens, and <Key k="diamond" /><Key k="up" /> and <Key k="diamond" /><Key k="down" /> will change it in hundreds.
+
+By setting these fields appropriately, you can obtain almost every possible alarm setting. For example, to cause an alarm to occur on the 3rd March, 3rd April, and 3rd May, at 12.00, set
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Th>`DATE`</Table.Th>
+<Table.Td><Typed>3 Mar 1987</Typed></Table.Td>
+<Table.Td />
+<Table.Th>`REPEAT EVERY`</Table.Th>
+<Table.Td><Typed>1 MONTH</Typed></Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Th>`TIME`</Table.Th>
+<Table.Td><Typed>12.00</Typed></Table.Td>
+<Table.Td />
+<Table.Th>`NO. OF TIMES`</Table.Th>
+<Table.Td>3</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+*Note:* Do not set the alarm to repeat every second for ever. You will not be able to cancel it without doing a soft reset.
+
+### Clearing alarms
+
+To clear an alarm, select it with the cursor keys<Key k="up" /> or <Key k="down" /> on the list of alarms, select `CLEAR ALARM` with <Key k="left" /> and <Key k="right" />, and press <Key k="enter" />. With a repeating alarm this just clears the present alarm; use `CLEAR ALARM` twice to remove a repeating alarm completely.
+
+If an alarm occurs while the Cambridge Z88 is turned off, the alarm will sound and the Cambridge Z88 will be turned on in `LOCK OUT` state to prevent accidental key-presses. To clear this state turn the Cambridge Z88 off and then on again in the usual way, by pressing both <Key k="shift" /> keys.
+
+<Shot src="z88-user-guide/using-the-popdowns/the-alarm-popdown/lockout-from-alarm.webp" alt="lockout from alarm" width={640} />
+
+### Saving and Loading
+
+Alarms may now be saved and loaded using <Key k="diamond" />FL and <Key k="diamond" />FS commands. Alarms are not preserved if a SOFT RESET is performed with the <Key k="diamond" />PURGE command from Index. One great way to restore alarms is via the Boot.cli file (executed by Filer after a soft reset).

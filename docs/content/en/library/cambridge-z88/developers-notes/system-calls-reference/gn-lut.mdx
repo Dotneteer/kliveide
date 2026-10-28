@@ -1,0 +1,48 @@
+---
+description: "GN_Lut, Lookup table facility"
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/125751142 (version 4) by scripts/import-z88-wiki.cjs */}
+
+# GN_Lut, Lookup table facility
+
+## Register parameters
+
+**RST 20H, DEFW $8E09**
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>
+
+`IN: BHL = lookup table address (B=0, local)`<br /> `CDE = key (null terminated string) to search`<br /> `A = search options`<br /> `A0 = 1, case sensitive`
+
+`A0 = 0, case insensitive`<br /><br /> `Lookup table format : keys have to be alphabetically sorted (ASCII sorted table if symbol are used)`<br /> `---------------------` <br /><br /> `defb N ; number of entries`<br /> `defm "key1",0, pointer1 ; first entry, null terminated followed by a 16bit pointer`<br /> `defm "key2",0, pointer2 ; second entry`<br /> `...`<br /> `defm "keyN",0, pointerN ; Nth and last entry`
+
+`out,` `if` `successful:`
+
+`Fc =` `0``, key found and associated pointer returned in HL`
+
+`out,` `if` `failed:`
+
+`Fc =` `1``,` `A = error code`
+
+`RC_Eof, no matching string found`
+
+`registers changed after` `return``:`
+
+`A.BC.E../IXIY same`
+
+`.F..D.HL/.... different`
+
+</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+Notes
+
+- API call implemented in OZ 5.0
+- This call is used by Shell, debugger or man command to deal with command names

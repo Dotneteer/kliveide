@@ -1,0 +1,322 @@
+---
+description: "When a Z88 has 128K or more of RAM in slot 1, it becomes expanded. The latest V4 of the operating system is expanded automatically if internal RAM has been upgraded to 128K or more. For previous..."
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/3112962 (version 10) by scripts/import-z88-wiki.cjs */}
+
+# Miscellaneous useful information
+
+---
+
+## The expanded and non-expanded machine
+
+When a Z88 has 128K or more of RAM in slot 1, it becomes expanded. The latest V4 of the operating system is expanded automatically if internal RAM has been upgraded to 128K or more. For previous versions of the Z88 operating system only the first rule is obeyed. The differences between the expanded and non-expanded computers are as follows:
+
+<Table>
+<thead>
+<Table.Tr>
+<Table.Th>
+
+```text
+Property
+```
+
+</Table.Th>
+<Table.Th>
+
+```text
+Expanded
+```
+
+</Table.Th>
+<Table.Th>
+
+```text
+Non-expanded
+```
+
+</Table.Th>
+</Table.Tr>
+</thead>
+<tbody>
+<Table.Tr>
+<Table.Td>
+
+```text
+Size of BBC BASIC
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+40K
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+8K
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+Maximum map width
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+256 pixels
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+96 pixels
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+User characters
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+64
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+16 (but see below)
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+Value of EOF#-1
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+-1
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+0
+```
+
+</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+Some users will want to use extra memory, for filing for example, without the burden of a 40K BASIC. If all your BASIC programs fit comfortably within the ordinary 8K it is unhelpful to have to carry the extra 32K around, thus using slot 2 or slot 3 to expand the memory does not expand the machine (V3 or earlier operating systems), but just increases memory size (note that using slot 3 for RAM causes a very heavy power drain on the Z88, due to the lack of special power saving hardware in this slot). The unexpanded machine can use 64 user characters, but if an 80 pixel map is used, the last 48 of these will be overwritten by map information when PipeDream is used (or another application that write to the high resolution map). Reducing the map width to 64 pixels, or not using the map at all, allows for free use of all 64 user characters. The file attributes for BASIC's -1 channel ($FFFF) all hold interesting information:
+
+<Table>
+<thead>
+<Table.Tr>
+<Table.Th>File Handle Function</Table.Th>
+<Table.Th>Output</Table.Th>
+</Table.Tr>
+</thead>
+<tbody>
+<Table.Tr>
+<Table.Td>
+
+```text
+PTR#-1
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+high word = no. of free handles in the system. low word = ROM version code:
+$03 for V2.2 and 3.x versions
+$04 for OZ V4.0 (UK)
+$42 for OZ V4.2 release
+$43 for OZ V4.3 release.
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+EXT#-1
+```
+
+</Table.Td>
+<Table.Td>
+
+Free memory.
+
+This is an approximation and should be interpreted with care. It is similar to the memory free indicators given by PipeDream and the Diary.
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+EOF#-1
+```
+
+</Table.Td>
+<Table.Td>-1 = machine is expanded. 0 = standard 32K machine.</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+This information can be accessed by applications by using the **[OS\_Frm](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-frm)** system call, to read file attributes, and specifying a handle of $FFFF in the **IX** register pair. Note that although the sequential pointer (PTR) and extent (EXT) are returned as 4 byte values in DE and BC registers, the end of file (EOF) result is returned in Fz, with Fz = 1 indicating the end of file (ie. TRUE or 1) and Fz = 0 otherwise (ie. FALSE or 0).
+
+## Extra CLI features
+
+```text
+<SQUARE> + S            T-direct output to ":RAM.-/s.sgn".
+<SQUARE> + K            T-direct input to ":RAM.-/k.sgn".
+<SQUARE> + P            T-direct output to :PRT.0
+<DIAMOND><LEFT-SHIFT>   Freeze screen output
+```
+
+If there is an EPROM, which contains a file called "boot.cli", present in slot 3 at the time of a reset (soft or hard) then it will be loaded into :RAM.- and executed as a CLI file.
+
+Note: <strong>`:RAM.-`</strong> files are dangerous under the version 2.2 or 3.0 of the operating system - see below for details.
+
+## Memory for files and applications
+
+Each RAM card is given an allocation of space by the system which is useable by the RAM filing device associated with that slot. This allocation is always less than total RAM available in that card. Applications (and the special device :RAM.-) can use the remaining memory as well as the memory allocated to files. Because of this approach, the values given for free memory are sometimes confusing. The free memory indicators return space available to applications, which will generally be rather less than that available to files.
+
+The device <strong>`:RAM.-`</strong> can use memory from anywhere in the system, and as such is it very useful for large files. Due to a bug in versions 2.2 (3.0) in the operating system, if any files are stored in the device when a soft reset occurs, the system becomes badly confused, and it is very likely that a crash will follow sometime later. If you need to use :RAM.- files, then it is vital that they are deleted immediately after use. The features described in the previous section all use `:RAM.-` and if these operations are used, then the files generated should be deleted at the first opportunity.
+
+NOTE: V4 and later ROM version has fixed the `:RAM.-` problem. Some foreign V3.xx versions contains the fix as well. You will probably be aware of this on your own Z88.
+
+## PipeDream format
+
+The PipeDream file format is designed to facilitate manipulation by other programs. No control characters, or characters above ASCII value 127 are used in the file, unless they have been explicitly typed in (ISO characters), apart from Carriage Return (CR) characters which are used as separators. The files are sequential, and can be edited by any text editor.
+
+PipeDream uses a special form of construct to add special information about the structure of the file. All constructs begin and end with an ASCII percent sign '%'. Immediately after the first percent sign come one or more alphabetic characters which identify the construct. Between these characters and the final percent sign, can come any information which is relevant to the construct.
+
+At the start of the file is a group of constructs that identify what the values of Options Page Parameters are for the file. This is followed by the main body of the file.
+
+Each column in the file is preceeded by a column construct which gives details about the column followed by all the slots in the column. Every slot that is defined in that column has an entry.
+
+Each entry is separated from the next one with a CR character. On each line there can be a collection of constructs giving details about the slot.
+
+For each column in the file there is a column construct, followed by all the entries for that column, until the end of file.
+
+**Options Page construct**
+
+%OP%parameter value CR
+
+```text
+parameter   two characters identifying the parameter
+value       the value of the parameter
+CR          Carriage Return ($0D)
+```
+
+The various parameter values are:
+
+```text
+AM          Auto/manual
+BM          Bottom margin
+BO          Borders
+DE          Title
+DP          Decimal places
+FM          Footer margin
+FO          Footer
+HE          Header
+HM          Header margin
+IW          Insert on wrap
+JU          Justify
+LM          Left margin
+LP          Leading characters
+LS          Line spacing
+MB          Minus/Brackets
+PA          Pages
+PL          Page length
+PS          Page start no.
+RC          Rows/Columns
+TM          Top margin
+TN          Text/Numbers
+TP          Trailing characters
+WR          Wrap
+```
+
+**Column construct**
+
+%CO: column, width, wrap-width%
+
+```text
+column      letter identifying the column, eg. A
+width       decimal number giving the column width
+wrap-width  decimal number giving the wrap-width
+```
+
+These constructs can appear anywhere in the entry for each slot:
+
+```text
+%B%         bracket format
+%C%         centre format
+%Dn%        decimal places. n gives the number
+%DF%        floating format
+%F%         free align
+%Hn%        highlight character: n gives the number (1 to 8)
+%JL%        justify left
+%JR%        justify right
+%L%         left align
+%LC%        leading character format
+%LCR%       LCR align
+%Pn%        page break: n gives the argument, 0 for unconditional
+%PC%        per cent character
+%R%         right align
+%TC%        trailing character format
+%V%         slot is a number slot
+```
+
+**General format**
+
+construct text construct text ... CR
+
+```text
+construct   one of the constructs above
+text        ASCII characters being the slot contents
+CR          Carriage Return ($0D)
+```
+
+## Diary format
+
+Each day the diary uses (an active day) is headed by a date. This date is in the form:
+
+`%dd,mm,yyyy`
+
+The % character is represented as %%
+
+The remainder of a diary file is simply straight text.

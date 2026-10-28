@@ -1,0 +1,55 @@
+---
+description: "e represents a 2. complement 8-bit integer which defines a relative jump in the range [-126; 129]."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/9568454 (version 4) by scripts/import-z88-wiki.cjs */}
+
+# Jump Group
+
+```text
+__________________________________________________________________________________________________________________________
+Mnemonic        Symbolic            Flags (bit 7-0)   Instruction         Number      Number of   Number of   Comments
+                operation           S Z . H . V N C   opcode              of bytes    M cycles    T states
+__________________________________________________________________________________________________________________________
+
+JP nn           PC <- nn            * * X * X * * *   11 000 011 (C3h)    3           3           10
+                                                      -- <nn> --
+
+JP cc,nn        if condition true   * * X * X * * *   11 <cc> 010         3           3           10          cc: condition
+                  PC <- nn                                                                                    000 NZ not zero
+                else                                                                                          001 Z  zero
+                  continue                                                                                    010 NC not carry
+                                                                                                              011 C  carry
+                                                                                                              100 PO parity odd
+                                                                                                              101 PE parity even
+                                                                                                              110 P  sign posit.
+                                                                                                              111 M  sign nega.
+JR e            PC <- PC+e          * * X * X * * *   00 011 000 (18h)    2           3           12
+                                                        <e-2>
+
+JR C,e          if C = 0, continue  * * X * X * * *   00 111 000 (38h)    2           2           7           condition not met
+                else, PC <- PC+e                        <e-2>             2           2           12          condition met
+
+JR NC,e         if C = 1, continue  * * X * X * * *   00 110 000 (30h)    2           2           7           condition not met
+                else, PC <- PC+e                        <e-2>             2           2           12          condition met
+
+JR Z,e          if Z = 0, continue  * * X * X * * *   00 101 000 (28h)    2           2           7           condition not met
+                else, PC <- PC+e                        <e-2>             2           2           12          condition met
+
+JR NZ,e         if Z = 1, continue  * * X * X * * *   00 100 000 (20h)    2           2           7           condition not met
+                else, PC <- PC+e                        <e-2>             2           2           12          condition met
+
+DJNZ,e          B <- B-1            * * X * X * * *   00 010 000 (10h)    2           2           8           if B = 0
+                if B = 0, continue                      <e-2>             2           2           13          if B <> 0
+                else, PC <- PC+e
+
+JP (HL)         PC <- HL            * * X * X * * *   11 101 001 (E9h)    1           1           4
+
+JP (IX)         PC <- IX            * * X * X * * *   11 011 101 (DDh)    2           2           8
+                                                      11 101 001 (E9h)
+
+JP (IY)         PC <- IY            * * X * X * * *   11 111 101 (FDh)    2           2           8
+                                                      11 101 001 (E9h)
+```
+
+**e** represents a 2. complement 8-bit integer which defines a relative jump in the range \[-126; 129\].

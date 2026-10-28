@@ -1,0 +1,51 @@
+---
+description: "The time is used throughout the machine and should only be altered if the user of the machine is fully aware of the fact. Flow sequence:"
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8618158 (version 6) by scripts/import-z88-wiki.cjs */}
+
+# GN_Pmt, Put (set) machine time
+
+## Register parameters
+
+```text
+IN:
+     HL = 0, not allowed
+     HL = 1, not allowed
+     HL = 2, 3 byte internal time in ABC (A = high byte, C = low byte)
+     HL > 255, HL points to 3 byte internal time (low byte first)
+     E = least significant byte of assumed date
+
+OUT, if call successful:
+     Fz = 0, if time is inconsistent with assumed date in E(in).
+
+Registers changed after return:
+     ..BCDEHL/IXIY same
+     AF....../.... different
+```
+
+## Notes
+
+The time is used throughout the machine and should only be altered if the user of the machine is fully aware of the fact. Flow sequence:
+
+1. Divide by 100 (get set seconds).
+
+2. Read the time in days/seconds.
+
+3. Store base centiseconds.
+
+4. Reset the RTC.
+
+5. X = Days (1 day in seconds)
+
+6. Z = X + Set seconds
+
+7. Store new base time
+
+## Bugs
+
+Call probably crashes if HL points to segment 3.
+
+## Related calls
+
+**[GN\_Gmt](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-gmt)**, get (read) machine time in internal format <br />**[GN\_Gtm](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-gtm)**, convert an ASCII string to a time in internal format <br />**[GN\_Msc](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-msc)**, miscellaneous time operations <br />**[GN\_Ptm](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-ptm)**, write internal time as ASCII string<br />[**GN\_Pmd**](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-pmd), Put (set) machine date<br />**[GN\_Sdo](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-sdo)**, send date and time to standard output <br />**[OS\_Dly](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-dly)**, delay a given period

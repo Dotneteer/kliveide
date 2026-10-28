@@ -1,0 +1,32 @@
+---
+description: "OS_Out, write character to standard outputOS_Sout, write local string to standard outputOS_Bout,write string at (B)HL to standard output OS_Pout, write embedded null-terminated string at caller..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7471386 (version 13) by scripts/import-z88-wiki.cjs */}
+
+# OS_Bout, Write string at (B)HL to standard output
+
+## Register parameters
+
+```text
+IN:
+  BHL = extended pointer to string to be written
+  B = 0, then local address space pointer in caller bank binding
+
+OUT:
+   Fc = 0, always (error handler is never provoked)
+   HL = points null-terminator
+
+Registers changed after return:
+   A.BCDE../IXIY same
+  .F....HL/.... different
+```
+
+## Notes
+
+- This call replace [**GN\_Soe**](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-soe). This call is shorter (2 bytes) and performs a significantly faster rendering.
+- String can cross bank boundary. When string crosses a bank boundary, the bank number of the next segment is used for local address (B=0), else the next bank number is used until a null terminator is reached. This feature fixes weird output in BBC Basic when the string crosses a bank boundary.
+
+## Related calls
+
+**[OS\_Out](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-out)**, write character to standard output<br />[**OS\_Sout**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-sout), write local string to standard output<br />**OS\_Bout**,write string at (B)HL to standard output <br />**[OS\_Pout](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-pout)**, write embedded null-terminated string at caller (PC) to standard output<br />[**OS\_Hout**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-hout), write hexadecimal byte to standard output<br />[**OS\_Nln**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-nln), send newline (CR/LF) to standard output<br />**[GN\_Sop](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-sop)**, write local string to standard output<br />**[GN\_Soe](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-soe)**, write string at extended address to standard output<br />**[GN\_Nln](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-nln)**, send newline (CR/LF) to standard output

@@ -1,0 +1,39 @@
+---
+description: "GN_Cls, classify character GN_Skc, skip character GN_Skd, skip to delimiter"
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8618186 (version 3) by scripts/import-z88-wiki.cjs */}
+
+# GN_Skt, Skip to value
+
+## Register parameters
+
+```text
+IN:
+     A = character to search for
+     BC = maximum number of characters to search. BC = 0, unlimited search.
+     HL = 0, read from stream IX
+     HL = 1, read from filter IX
+     HL = 2, not allowed
+     HL > 255, read at (HL)
+     IX = optional handle (if HL = 0, 1)
+
+OUT, if call successful:
+     Fc = 0
+     Fz = 1, if character found
+     HL = points to terminating character (if HL(in) > 255)
+     BC = 0, if BC(in) = 0
+     BC = less number of characters processed (if BC(in)<>0)
+
+OUT, if call failed:
+     Fc = 1
+     A = error code:
+
+Registers changed after return:
+     ....DE../IXIY same
+     AFBC..HL/.... different
+```
+
+## Related calls
+
+**[GN\_Cls](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-cls)**, classify character <br />**[GN\_Skc](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-skc)**, skip character <br />**[GN\_Skd](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-skd)**, skip to delimiter

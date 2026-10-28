@@ -1,0 +1,16 @@
+---
+description: "As described in screen files, up to 512 lores characters are handled by the blink. First 448 ($000-$1BF) are fixed LORES1. Following 64 ($1C0-$1FF) are user defined LORES0."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/85229589 (version 15) by scripts/import-z88-wiki.cjs */}
+
+# ISO Character Fonts
+
+As described in screen files, up to 512 lores characters are handled by the blink. First 448 ($000-$1BF) are fixed LORES1. Following 64 ($1C0-$1FF) are user defined LORES0.
+
+The LORES1 font has been heavily reshuffled in OZ 5.0. It is organized in 4 parts : 128 + 128 + 128 + 64 in order to follow the respecting ASCII number.
+
+- part 1 : 32 symbol iso + 96 normal ascii font
+- part 2 : 32 upper iso + 96 bold ascii font
+- part 3 : 32 lower iso + 96 tiny ascii font
+- part 4 : 64 oz symbol font

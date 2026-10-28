@@ -1,0 +1,207 @@
+---
+description: "Applications are set up as linked lists of DORs, an object linking structure which is explained in 'DORs', one list for each ROM card (including the internal one in Slot 0). The application DORs..."
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8618233 (version 10) by scripts/import-z88-wiki.cjs */}
+
+# ROM Headers and Front DORs
+
+Applications are set up as linked lists of DORs, an object linking structure which is explained in 'DORs', one list for each ROM card (including the internal one in Slot 0). The application DORs contain such vital information as where the application entry point is and whether caps lock should be set on entry; more of this below. The root of each link is the 'front DOR'. The first application is linked as a son to this DOR, and subsequent applications are linked together as brothers. For instance, in the internal ROM, the arrangement of application DORs is as follows:
+
+<Shot src="z88-developers-notes/application-static-structures/rom-headers-and-front-dors/application-dors.webp" alt="Application DORs" width={875} />
+
+When the operating system searches for applications it looks at each slot in turn, starting with the internal ROM or slot 0. The top bank of each slot is examined for the presence of 'OZ' in the uppermost two bytes - if this is found then the card is identified as containing applications. Filing system EPROMs are identified by 'oz' in the top two bytes. The full header which an application card should incorporate at the top of its highest bank is as follows:
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td style={{ whiteSpace: "nowrap" }}>
+
+**The Card Header:**
+
+(seen from top of card, downwards)
+
+</Table.Td>
+<Table.Td>
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>$3FFE</Table.Td>
+<Table.Td>'OZ'</Table.Td>
+<Table.Td>Card holds applications</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>$3FFD</Table.Td>
+<Table.Td>$00</Table.Td>
+<Table.Td>Subtype of card - future expansion</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>$3FFC</Table.Td>
+<Table.Td>x</Table.Td>
+<Table.Td>Size of card in banks, eg. $02 for a 32K card</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>$3FFB</Table.Td>
+<Table.Td>$80</Table.Td>
+<Table.Td>Marks external application</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>$3FFA</Table.Td>
+<Table.Td>@0000xxxx</Table.Td>
+<Table.Td>4 bit country code</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>$3FF9</Table.Td>
+<Table.Td>@0xxxxxxx</Table.Td>
+<Table.Td>High byte of card ID</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>$3FF8</Table.Td>
+<Table.Td>@0xxxxxxx</Table.Td>
+<Table.Td>Low byte of card ID</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+The country codes is as follows: The high nibble of the country code byte must be 0 (@0000). The low nibble indicates the language variant of the application, and is coded as follows:
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td style={{ whiteSpace: "nowrap" }}>**The country codes:**</Table.Td>
+<Table.Td>
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>0000 (00h)</Table.Td>
+<Table.Td>USA</Table.Td>
+<Table.Td>1000 (08h)</Table.Td>
+<Table.Td>Japan</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>0001 (01h)</Table.Td>
+<Table.Td>France</Table.Td>
+<Table.Td>1001 (09h)</Table.Td>
+<Table.Td>Iceland</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>0010 (02h)</Table.Td>
+<Table.Td>Germany</Table.Td>
+<Table.Td>1010 (0ah)</Table.Td>
+<Table.Td>Norway</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>0011 (03h)</Table.Td>
+<Table.Td>UK</Table.Td>
+<Table.Td>1011 (0bh)</Table.Td>
+<Table.Td>Switzerland</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>0100 (04h)</Table.Td>
+<Table.Td>Denmark</Table.Td>
+<Table.Td>1100 (0ch)</Table.Td>
+<Table.Td>Turkey</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>0101 (05h)</Table.Td>
+<Table.Td>Sweden</Table.Td>
+<Table.Td>1101 (0dh)</Table.Td>
+<Table.Td>reserved</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>0110 (06h)</Table.Td>
+<Table.Td>Italy</Table.Td>
+<Table.Td>1110 (0eh)</Table.Td>
+<Table.Td>reserved</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>0111 (07h)</Table.Td>
+<Table.Td>Spain</Table.Td>
+<Table.Td>1111 (0fh)</Table.Td>
+<Table.Td>reserved</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+Before commercial release it is necessary to obtain a card ID. If two commercially released cards shared an ID, then inserting both into the machine could cause serious problems for the card manager, and it is most important that this should not happen. The bits explicitly given above will be true for all external IDs - alternative settings of these bits are reserved for future internal applications.
+
+Next, the card manager expects to find the application front DOR starting in the top bank of the slot, at bank offset $3FC0. This section should be identical for all application cards, apart from the address of the first application DOR. The 3 byte links consist of a 2 byte offset within a bank (low byte, high byte) followed by a bank number.
+
+It is recommended but not necessary that all the application header information, including menus and help, are placed in the top one or two banks. The space between the application front DOR and the card header above it should be padded with zeros.
+
+Note: The bank numbers should be offset from the top bank. ie. the top bank should be $3F, the one below $3E etc. In a 128K EPROM the lowest bank should be thought of as $38 and not as $00.
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td style={{ whiteSpace: "nowrap" }}>**The application front DOR:**</Table.Td>
+<Table.Td>
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>3 bytes</Table.Td>
+<Table.Td>0 0 0</Table.Td>
+<Table.Td>Extended pointer to parent</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>3 bytes</Table.Td>
+<Table.Td>0 0 0</Table.Td>
+<Table.Td>Extended pointer to brother - this may point to the HELP front DOR</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>3 bytes</Table.Td>
+<Table.Td>x x x</Table.Td>
+<Table.Td>Extended pointer to son - this points to the first application DOR</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>1 byte</Table.Td>
+<Table.Td>$13</Table.Td>
+<Table.Td>DOR type, ROM Front DOR</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>1 byte</Table.Td>
+<Table.Td>8</Table.Td>
+<Table.Td>DOR length</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>1 byte</Table.Td>
+<Table.Td>'N'</Table.Td>
+<Table.Td>Key for name field (DT\_NAM)</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>1 byte</Table.Td>
+<Table.Td>5</Table.Td>
+<Table.Td>Length of name and terminator</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>5 bytes</Table.Td>
+<Table.Td>'APPL', 0</Table.Td>
+<Table.Td>NULL-terminated name</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>1 byte</Table.Td>
+<Table.Td>$FF</Table.Td>
+<Table.Td>DOR terminator</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>

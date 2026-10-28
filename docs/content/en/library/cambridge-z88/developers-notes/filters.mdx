@@ -1,0 +1,150 @@
+---
+description: "Filters, as provided on the Z88, are a fairly general means of achieving simple context-independent transformations in a character sequence. Their anticipated use is in simple text processing, but..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/2654212 (version 7) by scripts/import-z88-wiki.cjs */}
+
+# Filters
+
+Filters, as provided on the Z88, are a fairly general means of achieving simple context-independent transformations in a character sequence. Their anticipated use is in simple text processing, but they may potentially be used for more complex tasks. The calls for handling filters are:
+
+`GN_Flo` open a filter, returning a filter handle<br />`GN_Flw` write a character to a filter<br />`GN_Flr` read a character from a filter<br />`GN_Fpb` push a character back into the filter<br />`GN_Flf` flush the filter<br />`GN_Flc` close the filter
+
+To use a filter, the programmer must first set up a 'Filter Definition Table' (FDT), which determines the operation of the filter. The filter must then be opened with **[GN\_Flo](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-flo)** with the programmer giving the address of the FDT and setting various input parameters. **[GN\_Flo](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-flo)** returns a filter handle which the other filter routines takes as input. Once open the filter can be written to a byte at a time using **[GN\_Flw](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-flw)** and read from (again a byte at a time) using **[GN\_Flr](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-flr)**. The bytes read out of the filter will be the processed form of the input; if processing has occurred on a particular character this is indicated ny Fz = 1 on return from **[GN\_Flr](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-flr)**. While the filter is open, it can be flushed, ie. all the characters written to it, but not read out, can be discarded. It is also possible to push one character back into the filter, before a subsequent filter read takes place. Finally the filter is closed using **[GN\_Flc](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-flc)**, which apart from freeing the handle and buffers associated with the filter also returns information as to how many characters have been written to and read from the filter.
+
+Note that filters can be used with a number of GN calls, in place of a source or destination which is in memory or a stream. Calls which can operate with filter are:
+
+`GN_Fcm` compress a filename<br />`GN_Fex` expand a filename<br />`GN_Gdn` convert ASCII decimal string to integer<br />`GN_Pdn` convert integer to ASCII decimal string<br />`GN_Gtm` convert ASCII string to internal time<br />`GN_Ptm` convert internal time to ASCII string<br />`GN_Pdt` convert internal date to ASCII string<br />`GN_Gdt` convert ASCII string to internal date<br />`GN_Skc` skip character<br />`GN_Skd` skip to delimiter<br />`GN_Skt` skip to value
+
+## How the filter works
+
+The filter definition table provides a list of strings to be searched for in the input sequence, and when one is found it will replace the found string with a replacement string also specified in the table. The table might contain the contain the following pairs of strings:
+
+```text
+            Search      Replace
+            Monday      Mon
+            Tuesday     Tue
+            Wednesday   Wed
+            Thursday    Thu
+            Friday      Fri
+            Saturday    Sat
+            Sunday      Sun
+```
+
+If the characters M,o,n,d,a,y - were pushed into the filter, then the characters pulled from the other end (via **[GN\_Flr](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-flr)**) would be: M,o,n - and then and 'End of file' return code, RC\_EOF ($09), would be encountered. Thus the filter provides a convenient means of performing simple text processing.
+
+Because the filter can only search for strings to substitute amongst characters which are 'in' the filter, the normal use is to push in the entire input string and pull out the entire result, each in one go. Also note that the filter routine will select the first successful match in the FST, so if one of the search strings is an extension of another, the longer should come first if the obvious substitution is required. For instance:
+
+```text
+            Mon         Lundi
+            Monday      Lundi
+```
+
+would result in the transformation of "Monday" into "Lundiday"; probably not what was intended.
+
+## Filter Definition Table
+
+```text
+2 bytes     Size of FDT in bytes
+1 byte      Options for left-hand strings
+1 byte      Options for right-hand strings
+```
+
+The options for the strings may be made up of some combination of the following bit settings:
+
+```text
+            128         Table has top bit set characters (ISO standard)
+            64          Table has numeric data
+            32          Table has alphabetic data
+            16          Table has punctation characters
+```
+
+Then come the entries, with the following format:
+
+```text
+1 byte      1+m
+m bytes     search string
+1 byte      1+n
+n bytes     replacement string
+```
+
+The 'length bytes are actually a displacement to the character beyond the next string, hence they are one greater than the length of the string.
+
+RESTRICTIONS: The FDT must not span a 16K boundary, and due to a software bug, the FDT must be addressed in segment 1.
+
+The filter calls are fully specified in [System Calls Reference](/en/library/cambridge-z88/developers-notes/system-calls-reference).
+
+```text
+include "memory.def"                ; memory call definitions
+include "stdio.def"                 ; standard I/O definitions
+ 
+; it is assumed that this code would be running in segment 3 
+; - it finds out which bank it is running in and binds this bank to segment 1 
+; Note that the binding of segment 3 does not change 
+; 
+; the routine assumes the address of the string is held at 
+; the static address 'input_string' 
+; 
+; the effect of the routine is to abbreviate full day names 
+; to the 3 character day names 
+
+.abbreviate ld   c, MS_S3           ; assumes table is in segment 3
+            oz   OS_Mgb             ; get binding of segment 3
+            ld   c, MS_S1
+            oz   OS_Mpb             ; bind table into segment 1. Note bank
+                                    ; is still bound to segment 3
+            ld   hl, fdt_Table      ; start address of table
+            ld   a,h
+            and  @00111111          ; mask out segment bits (15, 14)
+            or   MM_S1              ; merge memory mask for segment 1
+            ld   h,a                ; HL now addresses segment 1
+
+            ld   a, 4               ; buffer size in B
+            ld   b, 30              ; buffer size
+            oz   GN_Flo             ; open filter
+            ret  c                  ; exit if error
+
+            ld   hl, (input_string) ; address of string to process
+.loop       ld   a,(hl)
+            cp   0
+            jr   z, end_loop
+            oz   GN_FPW             ; write character to filter
+            inc  hl
+            jr   loop
+
+.end_loop   oz   GN_Flr             ; pull character from filter
+            jr   c, finished        ; exit if last one or error
+            oz   OS_Out             ; write converted char to std. output
+            jr   end_loop
+
+.finished   oz   GN_Flc             ; close the filter
+            oz   GN_Nln             ; new line
+            ret
+
+.fdt_start  defw fdt_end-fdt_start  ; length of FDT
+            defb 32                 ; search string alphabetic
+            defb 32                 ; replace string alphabetic
+
+            defm 7, "Monday"        ; abbreviate Monday
+            defm 4, "Mon"
+
+            defm 8, "Tuesday"       ; abbreviate Tuesday
+            defm 4, "Tue"
+
+            defm 10, "Wednesday"    ; abbreviate Wednesday
+            defm 4,  "Wed"
+
+            defm 9, "Thursday"      ; abbreviate Thursday
+            defm 4, "Thu"
+
+            defm 7, "Friday"        ; abbreviate Friday
+            defm 4, "fri"
+
+            defm 9, "Saturday"      ; abbreviate Saturday
+            defm 4, "Sat"
+
+            defm 7, "Sunday"        ; abbreviate Sunday
+            defm 4, "Sun"
+
+.fdt_end                            ; end of table
+```

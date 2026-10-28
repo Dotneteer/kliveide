@@ -1,0 +1,26 @@
+---
+description: "This is the call which the application must make to terminate itself; in particular in the error handler when responding to a <>KILL request. Note that this call does NOT automatically close files..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7471392 (version 5) by scripts/import-z88-wiki.cjs */}
+
+# OS_Bye, Exit application
+
+## Register parameters
+
+```text
+IN:
+     A = system error code to display standard error box message
+     A = 0, no error message after exit
+
+OUT:
+     -
+```
+
+## Notes
+
+This is the call which the application must make to terminate itself; in particular in the error handler when responding to a \<\>KILL request. Note that this call does NOT automatically close files and deallocate memory - the application must do this before making the call. Register changes are not fixed, as the code previously executing is not re-entered.
+
+## Related calls
+
+**[OS\_Poll](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-poll)**, poll for an application <br />**[DC\_Pol](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-pol)**, poll for card usage <br />**[OS\_Ent](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-ent)**, enter an application <br />**[DC\_Ent](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-ent)**, enter new application <br />**[DC\_Nam](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-nam)**, name current application <br />**[OS\_Exit](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-exit)**, exit an application <br />**[DC\_Bye](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-bye)**, exiting current application <br />**[OS\_Stk](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-stk)**, stack current process (application) <br />**[OS\_Use](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-use)**, process card usage

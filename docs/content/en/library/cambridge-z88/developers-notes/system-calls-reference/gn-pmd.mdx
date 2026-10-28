@@ -1,0 +1,41 @@
+---
+description: "The date is used throughout the machine and should only be altered if the user of the machine is fully aware of the fact. Flow sequence:"
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8618156 (version 8) by scripts/import-z88-wiki.cjs */}
+
+# GN_Pmd, Put (set) the current machine date
+
+## Register parameters
+
+```text
+IN:
+     HL = 0, not allowed
+     HL = 1, not allowed
+     HL = 2, 3 byte internal date in ABC (A = high byte, C = low byte)
+     HL > 255, HL points to 3 byte internal date (low byte first)
+
+OUT, if call successful:
+     -
+Registers changed after return:
+     AFBCDEHL/IXIY same
+     ......../.... different
+```
+
+## Notes
+
+The date is used throughout the machine and should only be altered if the user of the machine is fully aware of the fact. Flow sequence:
+
+1. Get real time in days/seconds/centiseconds
+
+2. Reset RTC
+
+3. Multiply set-days by $011580
+
+4. Add real seconds
+
+5. Save new base seconds
+
+## Related calls
+
+**[GN\_Dei](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-dei)**, convert zoned format date to internal format <br />**[GN\_Die](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-die)**, convert internal format date to zoned format <br />**[GN\_Gdt](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-gdt)**, convert an ASCII string to an internal binary date <br />**[GN\_Gmd](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-gmd)**, Get (read) machine date in internal format**[<br />GN\_Pmt,](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-pmt)**Put (set) machine time**[<br />GN\_Pdt](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-pdt)**, write internal date as ASCII string

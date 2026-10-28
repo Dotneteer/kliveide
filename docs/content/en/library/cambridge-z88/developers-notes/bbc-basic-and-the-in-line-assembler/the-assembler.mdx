@@ -1,0 +1,255 @@
+---
+description: "We can now move to the assembler itself. Some oddities worth mentioning are that the brackets around the port number for the IN and OUT Z80 instructions mnemonics are optional (ie. OUT 5,A and OUT..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/3112972 (version 1) by scripts/import-z88-wiki.cjs */}
+
+# The Assembler
+
+We can now move to the assembler itself. Some oddities worth mentioning are that the brackets around the port number for the IN and OUT Z80 instructions mnemonics are optional (ie. OUT 5,A and OUT (5),a are equivalent). The instruction IN F,(C) is not accepted, but the source code IN (HL),(C) produces the equivalent object code. It is conventional (but not necessary) to use lower case for labels and manifests, as this avoids lexical pitfalls and improves readability. It is also important to put spaces between the instruction mnemonic and its operands.
+
+Assembler source may simply be placed within the BASIC program, surrounded by square brackets. The assembler uses the BASIC variable P% as a program counter, which advances as the assembler moves through the source code (note that P%, as with any BASIC variable with a % suffix, is a 4-byte signed (2. complement) integer rather than a floating point variable). The user must, therefore, set P% to the desired start point for the machine code output before invoking the assembler. The program might look like this:
+
+```text
+            10 REM Trivial example of how to use Z80 assembler
+            20 DIM code 50
+            30 P%=code
+            40 [
+            50 ld bc, 50
+            60 ret
+            70 ]
+```
+
+When this BASIC program is RUN, it assembles the two-line assembler program into the first four bytes of the reserved memory, but does not execute the code itself. As the BASIC is RUN, an assembly listing is provided. This may be surpressed by using option flags, set by using the assembler directive OPT \<n\> at the start of the code; 0 will supress a listing, ie. insert line 45 with:
+
+```text
+            45 OPT 0
+```
+
+A number given by any combination of the following bit settings may follow OPT:
+
+```text
+            BIT 0 = 1   (1) give a listing
+            BIT 1 = 1   (2) report errors
+            BIT 2 = 1   (4) place assembled code starting at O% rather than P%
+```
+
+The above options may be combined. The last option means that the code is actually placed starting at O%, but labels have values as if the code started at P% (see below for details of labels declarations). This allows one to assemble code into on space which is designed to fit somewhere else. For instance, in the following code fragment:
+
+```text
+            100 DIM code 50
+            110 P%=&C000: O%=code
+            130 [
+            140 OPT 6
+            150 .codestart
+            160 dec a
+            170 cp (hl)
+            180 jp codestart
+            ..
+            200 ]
+```
+
+then although the code will actually go into the 'code' array, the label 'codestart' has the value $C000, and so the address in the JP statement will appear as such. This facility could be used to assemble code that will ultimately appear in an application card.
+
+Comments may be inserted in the assembler source by preceeding them with either semicolon or backslash, viz:
+
+```text
+            42 ; This is a comment
+            55 \ and so is this
+```
+
+Note, however, that a comment ends at the end of a BASIC statement. This will normally be the end of the line, but a colon will have the same effect. Hence any characters after a colon will be regarded as a new assembler statement:
+
+```text
+            54; The following will be regarded as an assembler statement: RST 0
+```
+
+This practice is, of cource, very confusing and is not recommended.
+
+Labels may be used in the assembler code; simply precede each label with a full stop (the full stop is NOT part of the label). A label may or may not be followed by an assembler statement on the same line, but if it is, then at least one space must be left between them, eg.:
+
+```text
+            10 ld c,15
+            20 .loop1 ld b,30
+            30 .loop2
+            40 call misc
+            50 djnz loop2
+            60 call wrn1
+            70 dec c
+            80 jr nz, loop1
+```
+
+When the assembler encounters a label, it sets a BASIC variable of that name to the current value of P%. Assembler labels and BASIC variables are thus interchangeable; so the assembler code could use:
+
+```text
+            JP code
+```
+
+to jump back to the very start of the program (beginning of the allocated area by the DIM statement). Also, this allows BASIC variables to be used to define manifest constants for use in the assembler listing:
+
+```text
+            5 maxsize = 62
+            .
+            .
+            40 [
+            .
+            .
+            56 cp maxsize
+            .
+            .
+            80 ]
+```
+
+The assembler simply passes once through the source from start to finish, and so will not know the values of labels before they are defined. It would be inconvenient to have to define every label before it is used, so the way around this problem is to make two passes through the code. The first will, in general, encounter errors, so set OPT 0 to suppress their reporting. This pass will set up all the labels correctly, so that a second pass (with OPT 2, or OPT 3 if a listing is desired, to make sure there are no 'genuine' errors) will complete the assembly process. For example:
+
+```text
+            100 DIM code 100
+            110 FOR pass%=0 TO 2 STEP 2
+            120 P%=code
+            130 [
+            140 OPT pass%
+            150 ld bc,13
+            160 jr label
+            170 ld bc,26
+            180 .label
+            190 ret
+            200 ]
+            210 NEXT pass%
+```
+
+Two rough edges in the assembler regarding labels are:
+
+1. If a label is re-declared, no warning is given.
+
+2. If a label which is undeclared is the operand of a JR (jump relative) instruction, then the error issued is 'out of range' rather than 'label not found'.
+
+In-line data definition is possible in the assembler source using the directives DEFB (define byte), DEFW (define word) and DEFM (define message).
+
+```text
+DEFB &12    ; sets up a byte of storage and initialises it to 12H (18 decimal)
+
+DEFW 16385  ; sets up a 16bit word of storage and initialises it to 123, less
+            ; significant byte first, eg.: 1,64
+
+DEFM "hey"  ; sets up space initialised with this string, one character per
+            ; byte
+```
+
+The DEFM directive does not introduce any magic characters, so if you want a string to be null or carriage return terminated, you must explicitly append the terminator byte(s), eg.:
+
+```text
+            .pointer
+            DEFM "This string is null-terminated"
+            DEFB 0
+```
+
+Contrast the BASIC string indirection which when used thus:
+
+```text
+            $pointer = "This string is CR-terminated"
+```
+
+will automatically carriage-return (13) terminate the string.
+
+Unfortunately, there is no define-storage directive. A second DIM statement may be used, or small spaces, one could use DEFM with a dummy string. This may conveniently be done as follows:
+
+```text
+            DEFM STRING$(100,"A")
+```
+
+This demonstrates a useful consequence of the close intertwining of the assembler with BASIC: the arguments to assembler operands and pseudo-operands may include many forms of BASIC expressions (though brackets may lead to ambiguity as they often indicate an extra level of indirection in Z80 assembler). Two other handy incidences of this are the use of ASC"x" as a character constant, viz:
+
+```text
+            ld  a, ASC"Q"
+```
+
+and the use of user-defined functions to provide macro and conditional assembly facilities. Suppose we are using the (non-local) variable 'pass' to represent the current assembler option. Then:
+
+```text
+            OPT pass
+```
+
+will have no effect. Taking this a stage further, if the user-defined function 'macro' always evaluates to 'pass', then:
+
+```text
+            OPT FNmacro(arguments...)
+```
+
+will have no effect, except that it will execute the body of the function, if any. For instance, suppose we define:
+
+```text
+            DEF FNsave_regs(savearea)
+            [
+            OPT pass
+            ld (savearea),hl
+            ld (savearea+2),de
+            ld (savearea+4),bc
+            ]
+            =pass
+```
+
+then including:
+
+```text
+            OPT FNsave_regs(space)
+```
+
+in the main code would reproduce the above three lines of code with 'savearea' set to 'space'. Another useful example is a macro to automatically generate a DEFB or a DEFW depending on the size of an operating system call code. This would look like this:
+
+```text
+            DEF FNcall_oz(arg)
+            IF arg>255 THEN [OPT pass: RST &20: DEFW arg] :=pass
+            [OPT pass: RST &20: DEFB arg] :=pass
+```
+
+Note that an OPT must reappear in the function and that closing square bracket in the function body does not exit assembler mode in the main program.
+
+Finally, to call the machine code program once it has been assembled, do:
+
+```text
+            CALL code
+```
+
+or
+
+```text
+            a = USR(code)
+```
+
+which returns the contents of the HL H'L' register pairs (forming a 32bit value) set at termination (HL most significant; H'L' least significant).
+
+There is a mechanism for initialising the contents of registers from the CALL or USR statements: the registers A, F, B, C, D, E, H, L on entry are set to the values of the BASIC variables A%, F%, B%, C%, D%, E%, H% and L% respectively.
+
+The CALL statement also allows the user to set up a parameter block on entry by appending the required parameters to the CALL statement, ie.:
+
+```text
+            CALL code, par1, par2, par3, ... parx
+```
+
+On entry IY is identical to the calling address, and IX will point to a parameter block with the following format:
+
+```text
+1 byte      number of parameters
+1 byte      parameter 1 type
+2 bytes     parameter 1 address
+1 byte      parameter 2 type
+2 bytes     parameter 2 address
+```
+
+... ...
+
+```text
+1 byte      parameter x type
+2 bytes     parameter x address
+```
+
+The parameter type byte may be any of:
+
+```text
+0           byte, eg. ?x
+4           32bit word, eg. !x or x%
+5           Floating point (40bit), eg. x
+128         String eg. "Hello"
+129         Four byte string descriptor containing the current length of the
+            string, the number of bytes allocated to the string and its address
+```

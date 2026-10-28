@@ -1,0 +1,82 @@
+---
+description: "Most operating systems provide calls to allocate chunks of memory and free them after use. The Z88 is no exception; however, the largest chunk of memory which can be allocated at any one time, and..."
+asIndexPage: true
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/262245 (version 10) by scripts/import-z88-wiki.cjs */}
+
+# Memory Management
+
+## Introduction
+
+Most operating systems provide calls to allocate chunks of memory and free them after use. The Z88 is no exception; however, the largest chunk of memory which can be allocated at any one time, and thus the largest chunk which can be guaranteed continuous, is 256 bytes. The only way of ensuring a larger continuous chunk is to set up the application as a so-called 'bad application'. This is wasteful of space and time as the OZ is forced to reshuffle memory, hence the pejorative term attached. A well-written application should only use the small chunks of memory, which for most programs should not be difficult, and indeed should provide a useful discipline as it tends to lead to little wasted memory in comparison with, say, reserving a 100K chunk and probably leaving much of it unused.
+
+## Allocation
+
+Reserved chunks of memory are allocated from larger 'pools'. To reserve memory, the application must first allocate a memory pool, which is done by the call **[OS\_Mop](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mop)**. This allocates a memory pool, set initially to 256 bytes in size, and a handle to refer to it. The only parameter for this call is the memory mask. The value of the mask effects the segment to which the logical address of allocated memory will refer. The allocation routine will find a free page within a bank and place its 14 bit address in register HL. The upper two bits are provided by the upper two bits of the memory mask. The memory mask must be one of **MM\_S0** to **MM\_S3** which correspond to segment 0, 1, 2 and 3 respectively.
+
+Each memory pool is associated with a particular bank of RAM and so all allocations from that pool are guaranteed to be in the same bank. This is usefull to know as it can reduce the amount of bank switching that has to be done. When a pool is exhausted a 'No room' error is returned - this does not mean that the Z88 has run out of memory, but that there is no more room in the bank associated with the pool to give to the application. The application should now attempt to open another memory pool, which will be associated with another bank, and allocate from there. If this attempt is thwarted by a 'No room' error then the Z88 has no more memory it can allocate to the application.
+
+Once a pool is openeded actual allocation can begin using the **[OS\_Mal](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mal)** system call. It is called with a pool handle, returned by the previous **[OS\_Mop](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mop)** system call, and memory is allocated from the stock allocated to the pool. If future calls of **[OS\_Mal](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mal)** exhaust the 256 byte initially allocated to the pool, the pool will expand to include more pages, one at a time. A 'No room' indicates that the memory pool is exhausted, ie. it can find no more free pages in its bank. If more memory is required, a new pool will need to be opened, although it may be that there is no memory left.
+
+**[OS\_Mal](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mal)** returns a bank number, the segment number implied by the pool's memory mask and a logical address. The logical address consists of a 14 bit offset within a bank with the upper two bits defined by the memory mask. Note that the allocated memory is not automatically paged in, so before it can be used, the application must ensure that the relevant bank is bound to the segment in which it is to be used. This will usually be the same segment as specified in the memory mask, if not then the address returned by **[OS\_Mal](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mal)** will have to be altered (the upper two bits). The binding calls are detailed below.
+
+The complement of **[OS\_Mal](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mal)** is **[OS\_Mfr](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mfr)**, which will free a chunk of memory. This may be a subset of a previously allocated chunk, although since a partially allocated page cannot be used by other applications, it is only really effective to free whole pages at a time. Finally, the complement to **[OS\_Mop](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mop)** is **[OS\_Mcl](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mcl)**. This call will de-allocate all the memory associated with the pool, meaning that each chunk does no have to be separately de-allocated, and close the pool down. Pools must be closed off, even if all the memory has been freed, otherwise the system will loose a handle and some memory.
+
+## Bindings
+
+Now we have seen how memory is allocated we must show how allocated memory can be paged into the logical address space. This involves binding banks to specific segments. Two calls are provided for this purpose: the first, OS\_Mgb, return the current binding for a particular segment ie. which bank is associated with the specific segment, but also returns the old binding. The calls are not particularly slow, but if a lot of bank switching is likely to occur then a faster mechanism can be used which makes use of the Z88's 'fast code' facility detailed in "Miscellaneous useful routines".
+
+The registers used for the memory management routines are carefully chosen for programmer convenience. Once a pool is opened, register IX holds the pool handle which **[OS\_Mal](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mal)**, **[OS\_Mfr](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mfr)** and **[OS\_Mcl](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mcl)** require. The binding calls expect a segment specifier (MS\_S0 to MS\_S3) in register C and a bank number in register B, so **[OS\_Mal](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mal)** exits with these three registers appropriately set. It establishes the segment number by reference to the memory mask associated with the pool. **[OS\_Mpb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mpb)** returns the old binding of the same segment in register B, so providing BC is preserved the old binding, can be restored simply by calling **[OS\_Mpb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mpb)** again.
+
+## Memory allocation options
+
+OZ offers several settings to select allocation method or various size of memory. Following pages goes deeper in memory allocation API description.
+
+## Example
+
+This routine demonstrates how 256 bytes can be allocated and paged in ready for use. Note the attention to errors, which is vital in the Z88 system because each application has to share with others.
+
+```text
+include "memory.def"            ; memory allocation definitions
+include "director.def"          ; director call definitions
+include "errors.def"            ; error code definitions
+include "stdio.def"             ; standard input/output definition calls
+
+.example 
+ ld    a, MM_S1                 ; use segment 1 for memory allocations
+ ld    bc, 0                    ; as per call spec
+ oz    OS_Mop                   ; open a memory pool for segment 1
+ jr    c, open_err              ; check for error...
+
+; IX = pool handle
+ ld    bc, 256                  ; 256 bytes = full page
+ xor   a                        ; A = 0
+ oz    OS_Mal                   ; allocate page
+ jr    c, alloc_err             ; check for error
+ oz    OS_Mpb                   ; effect new binding
+
+; application specific code goes here
+; HL points to a page of memory that
+; we are free to use...
+
+ oz    OS_Mcl                   ; assume IX is still intact
+ xor   a                        ; no error message on exit
+ oz    OS_Bye                   ; exit the application
+
+; routine to handle "No room" when attempting to open a memory pool
+.open_err 
+ ld    a, RC_ROOM               ; error code...
+ oz    OS_Bye                   ; exit with error message
+
+; this routine called when OS_Mal fails. A = error code. 
+; NOTE: in this example this should not occur because only one page is 
+; requested and the pool already has this much. Subsequent OS_Mal's 
+; may fail
+.alloc_err 
+ oz    GN_Esp                   ; ext. address of error message
+ oz    GN_Soe                   ; write message to standard output
+ oz    GN_Nln                   ; followed by <CR><LF>
+
+; application specific code to handle memory goes here.
+```

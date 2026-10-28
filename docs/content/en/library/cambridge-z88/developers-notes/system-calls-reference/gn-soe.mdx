@@ -1,0 +1,31 @@
+---
+description: "This call is deprecated, use OS_Bout. If B is zero on entry the address will not be treated as local."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8618188 (version 5) by scripts/import-z88-wiki.cjs */}
+
+# GN_Soe, Write string at extended address to standard output
+
+## Register parameters
+
+```text
+IN:
+     BHL = pointer to null-terminated string at extended address
+     (B = 0, is interpreted as bank 0, not local...)
+
+OUT, if call successful:
+     Fc = 0
+     BHL points to null terminator
+
+Registers changed after return:
+     AFBCDE../IXIY same
+     ......HL/.... different
+```
+
+## Notes
+
+This call is deprecated, use [**OS\_Bout**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-bout). If B is zero on entry the address will not be treated as local.
+
+## Related calls
+
+**[OS\_Out](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-out)**, write character to standard output<br />**OS\_Sout**, write local string to standard output<br />[**OS\_Bout**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-bout),write string at (B)HL to standard output <br />**[OS\_Pout](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-pout)**, write embedded null-terminated string at caller (PC) to standard output<br />[**OS\_Hout**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-hout), write hexadecimal byte to standard output<br />[**OS\_Nln**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-nln), send newline (CR/LF) to standard output<br />**[GN\_Sop](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-sop)**, write local string to standard output<br />**GN\_Soe**, write string at extended address to standard output<br />**[GN\_Nln](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-nln)**, send newline (CR/LF) to standard output

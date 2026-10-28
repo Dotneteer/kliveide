@@ -1,0 +1,31 @@
+---
+description: "DC_Dis, DisassembleDC_Sbp, Set break point"
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/124312136 (version 8) by scripts/import-z88-wiki.cjs */}
+
+# DC_Dbg, Enter debugger
+
+## Register parameters
+
+**RST 20H, DEFW $280C**
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>`IN:` <br /> `-`<br /> <br />`OUT:`<br /> `-`<br /> <br />`Registers affected after return:`<br /> `AF``BCDEHL/IXIY same`<br /> `..``....../.... different`</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+## Notes
+
+- Internal operating system usage
+- Debugger entry invoked by RST 08h
+- API call implemented in OZ 5.0
+
+## Related calls
+
+**[DC\_Dis](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-dis)**, Disassemble<br />**[DC\_Sbp](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-sbp)**, Set break point

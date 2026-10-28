@@ -1,0 +1,110 @@
+---
+description: "Alarms in the Z88 are organized as a linked list of 'alarm blocks' with the root at some fixed location. Each alarm block contains all the relevant data for the particular alarm; time, date,..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/2752568 (version 3) by scripts/import-z88-wiki.cjs */}
+
+# Handling Alarms
+
+Alarms in the Z88 are organized as a linked list of 'alarm blocks' with the root at some fixed location. Each alarm block contains all the relevant data for the particular alarm; time, date, number of repeats; in fact much the same as the options given in the alarm display in the main alarm popdown. Although there are many system calls which deal with alarms the programmer need only know about four:
+
+`GN_Aab` allocate alarm block<br />`GN_Lab` link alarm block into alarm chain<br />`GN_Uab` unlink alarm block from chain<br />`GN_Fab` free alarm block
+
+The following stages are involved in using alarms:
+
+**1. Allocation**
+
+**[GN\_Aab](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-aab)** is called to allocate space for an alarm block. An extended pointer to the allocated memory is returned in BHL.
+
+**2. Setting**
+
+The parameters of the alarm should be copied into the allocated alarm block, following the format shown above.
+
+**3. Linking**
+
+Once the block has been set up it can be linked into the alarm chain, using **[GN\_Lab](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-lab)**. This done, the programmer can forget about the alarm. After expiry the alarm will be removed from the chain and the memory associated with it will be freed.
+
+**4. Removal**
+
+To remove an alarm that has been set, but has not expired, the alarm block is first unlinked from the chain using **[GN\_Uab](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-uab)** and the memory associated with the block is then released with **[GN\_Fab](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-fab)**.
+
+The format of the alarm block is as follows:
+
+```text
+3 bytes     link to next block, set by system
+3 bytes     time of alarm in internal format
+3 bytes     date of alarm in internal format
+24 bytes    command line to execute or simply a comment. This should be null-
+            terminated. Note that the repeat time starts 33 bytes into the
+            block, not after the terminator for the command line.
+3 bytes     repeat time in days, added to value below
+3 bytes     repeat time in centisecond ticks, added to value above
+2 bytes     number of times to repeat
+1 byte      repeat time display units:
+
+            1           seconds
+            2           minutes
+            4           hours
+            8           days
+            16          weeks
+            32          months
+            64          years
+            128         never repeat
+
+1 byte      alarm status, some combination of:
+
+            1           beep on expiry
+            2           execute command line on expiry
+            4           alarm has expired, set by system
+            8           alarm is pending, set by system
+```
+
+The 'repeat time display units' byte controls what is displayed in the alarm popdown window. It is important to choose a unit appropriate to the repeat time. If you use units of hours, with a repeat time of 2 minutes, then the repeat time will be displayed as 0 hours.
+
+NOTE: The repeat time must be at least ten seconds otherwise it may be difficult to enter the alarm popdown to clear the alarm.
+
+The alarms set up are all lost when a system soft reset occurs, and unfortunately there is no way of saving and loading the currently set alarms. In addition, alarms are suppressed when the machine is in the alarm popdown. This is true even if the machine is in coma. This feature is included to allow a simple way to disable alarms.
+
+## Example
+
+The following example sets up an alarm for the entirely arbitrary date and time of "21/05/3934 08:46:20". The alarm has a repeat time of 25 seconds and will occur three time (ie. number of repeats is two). Finally the type of alarm is ALARM and the bleeping is enabled:
+
+```text
+include "alarm.def"                 ; alarm definition calls
+include "memory.def"                ; memory management definition calls
+
+.set_alarm  oz   GN_Aab             ; allocate alarm block
+            ret  c                  ; exit if error (no room)
+
+            push bc                 ; preserve BHL which holds
+            push hl                 ; the extended pointer to the block
+            ld   c, MS_S1           ; segment 1 specifier
+            oz   OS_MBP             ; bind in bank containing block
+            ld   a,h
+            and  @00111111          ; mask out old segment
+            or   MM_S1              ; force into segment 1
+
+            ld   d,a
+            ld   e,l                ; alarm block address in DE
+            ld   hl, alm_block      ; address of data for alarm block
+            ld   bc, sizeof_block
+            ldir                    ; copy data into alarm block
+
+            pop  hl
+            pop  bc
+            oz   GN_Lab             ; link block into alarm chain
+            ret
+ 
+; alarm block definition to be copied into allocated block
+DEFC sizeof_ablock = end_alm_block - alm_block 
+
+.alm_block  defb 0, 0, 0            ; link to next block (set up by system)
+            defm "000"              ; time in internal format
+            defm "000"              ; date in internal format
+            defm "Message space 24 bytes.", 0
+            defb 0, 0, 0            ; repeat time in days
+            defb 0, 10, 0           ; repeat time in centiseconds
+            defw 2                  ; times to repeat
+            defb 1                  ; repeat time display unit (seconds)
+            defb 1                  ; alarm status (bleep on expiry)
+```

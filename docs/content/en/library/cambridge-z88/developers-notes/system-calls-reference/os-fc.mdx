@@ -1,0 +1,43 @@
+---
+description: "OS_Fc has only been implemented with the above bank switching routine."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7471570 (version 8) by scripts/import-z88-wiki.cjs */}
+
+# OS_Fc, Select fast code (fast bank switching)
+
+## Register parameters
+
+```text
+IN:
+     A = 1, for fast bank switching
+     DE = address to copy code into
+     HL = 0, for code to terminate with RET
+     HL <> 0, for code to terminate with JP (HL)
+     C = segment for bank switching (MS_Sx)
+OUT:
+     Fc = 0
+Registers changed after return:
+     ..BCDEHL/IXIY same
+     AF....../.... different
+
+The OS_Fc fast bank switching code has now been established. 
+Subsequent calls to OS_Fc with:
+ 
+ IN:  
+     A = bank to bind to segment specified by OS_Fc initialization
+
+OUT:
+     AFBCDEHL/IXIY/afbcdehl same
+     ......../..../........ different
+```
+
+## Notes
+
+**OS\_Fc** has only been implemented with the above bank switching routine.
+
+**OZ V4.1 and newer:** Applications should use **[OZ\_Mpb](/en/library/cambridge-z88/developers-notes/system-calls-reference/oz-mpb)** - which is a RST 30H with same API as **[OS\_Mpb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mpb)**. All system code in OZ V4.1 and newer uses **[OZ\_Mpb](/en/library/cambridge-z88/developers-notes/system-calls-reference/oz-mpb)** for optimal bank switching speed. Applications using **[OZ\_Mpb](/en/library/cambridge-z88/developers-notes/system-calls-reference/oz-mpb)** are able to run only in OZ V4.1 and newer.
+
+## Related system calls
+
+**[OS\_Bix](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-bix)**, Bind in extended address <br />**[OS\_Box](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-box)**, restore bindings after OS\_Bix <br />**[OS\_Mal](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mal)**, allocate memory <br />**[OS\_Mcl](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mcl)**, close memory (free memory pool) <br />**[OS\_Mfr](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mfr)**, free (previously allocated block) memory <br />**[OS\_Mgb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mgb)**, get current bank binding in segment <br />**[OS\_Mop](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mop)**, open memory (allocate memory pool) <br />**[OS\_Mpb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mpb)**, set new bank binding in segment<br />**[OZ\_Mgb](/en/library/cambridge-z88/developers-notes/system-calls-reference/oz-mgb)**, get current bank binding in segment<br />**[OZ\_Mpb](/en/library/cambridge-z88/developers-notes/system-calls-reference/oz-mpb)**, set new bank binding in segment

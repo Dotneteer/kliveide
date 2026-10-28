@@ -1,0 +1,43 @@
+---
+description: "Before you can begin to write an application it is necessary to include certain information in the ROM card which tells the system what the card contains. This section explains how to set up the..."
+asIndexPage: true
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/262234 (version 13) by scripts/import-z88-wiki.cjs */}
+
+# Application Static Structures
+
+Before you can begin to write an application it is necessary to include certain information in the ROM card which tells the system what the card contains. This section explains how to set up the static structures, including menu topic help, which define your application. Following this, actual programming techniques and facilities can be examined.
+
+**Introduction**
+
+The most unusual facet of the Z88 is its ability to deal with many applications and suspend and reactivate them as required. An application may be set up on a ROM or EPROM card and inserted into one of the slots at the front of the machine. If the appropriate data structures are set up on the card, then the operating system can make application appear like the in built programs, such as Pipedream. Applications are rather confusingly divided into 'Applications' and 'Popdowns'. When we talk about applications in general this includes popdowns, but when talking about the two together an application is distinct from a popdown. The actual difference between the two, when a contrast is being drawn, is that a popdown will receive a KILL request from the system whenever the user attempts to switch applications. A popdown is useful for functions like the clock and calculator which on ce they have been used do not really need to remember what they were doing before, so it is perfectly allright to close them down completely and start them up from scratch when they are required again. An application, as opposed to a popdown, can be returned to after application switching, so that the user can continue to use it as before.
+
+Applications are further divided into good and bad types. Most applications are 'good': they only take RAM as they need it, using the memory management routines, and do not demand more than 256 bytes of continuous RAM. 'Bad' applications, demanding larger blocks of memory, can use up to a 40K of continuous RAM - this feature was included in order to be able to run standard BBC BASICZ80 - a binary image designed for a normal Z80 system. There is also an 'ugly' application type, which is similar to 'bad' but refers only to popdowns ie. a bad popdown.
+
+None of the built in applications is of this type. Applications types are, therefore:
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td style={{ whiteSpace: "nowrap" }}>Good</Table.Td>
+<Table.Td>An application application not requiring large continuous workspace.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td style={{ whiteSpace: "nowrap" }}>Bad</Table.Td>
+<Table.Td>An application application requiring large continuous workspace.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td style={{ whiteSpace: "nowrap" }}>Popdown</Table.Td>
+<Table.Td>A popdown application not requiring large continuous workspace.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td style={{ whiteSpace: "nowrap" }}>Ugly</Table.Td>
+<Table.Td>A popdown application requiring large continuous workspace.</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+The following pages will describe all the structures available to implement application cards that can hold one or more types as listed above.

@@ -1,0 +1,31 @@
+---
+description: "Write a char to the prefix sequence buffer."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8618012 (version 3) by scripts/import-z88-wiki.cjs */}
+
+# OS_Wsq, Write to prefix sequence
+
+## Register parameters
+
+```text
+IN:    A = character
+       HL = sequence buffer
+OUT: 
+       Fc=0 always
+       A=0 if sequence completed, -1 otherwise
+
+Registers affected after return:
+     ..BCDE../IXIY same
+     AF....HL/.... different
+```
+
+## Notes
+
+Internal operating system usage.
+
+Write a char to the prefix sequence buffer.
+
+## Related calls
+
+[OS\_Isq](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-isq), initialise prefix sequence

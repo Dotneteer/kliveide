@@ -1,0 +1,66 @@
+---
+description: "The routine does not process wildcards , ? and //, but passes them to the output buffer."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8618099 (version 3) by scripts/import-z88-wiki.cjs */}
+
+# GN_Fex, Expand a filename
+
+## Register parameters
+
+```text
+IN:
+     BHL = source pointer (HL>255, B=0 means local pointer).
+     HL = 0,1,2; not allowed.
+     Source string should be terminated by a control character
+
+     DE = destination pointer
+          0: output to IX stream handle
+          1: output to IX filter handle
+          >255 place string at (DE)
+     IX = destination handle (if DE = 0,1)
+     C = limit of space to use
+
+OUT, if call successful:
+     Fc = 0
+     DE = points to the character after the last one written
+     (If DE(in) > 255)
+
+     B = number of filename segments returned
+     C = number of characters in compressed space
+
+     A =
+          A7 = 1, wildcards were used
+          A6 = 1, device name specified
+          A5 = 1, wild directory specified ("//")
+          A4 = 1, parent directory specified ("..")
+          A3 = 1, current directory specified (".")
+          A2 = 1, explicit directory specified
+          A1 = 1, filename specified
+          A0 = 1, extension specified
+
+OUT, if call failed:
+     Fc = 1
+     A = error code:
+          RC_IVF ($17), invalid filename
+          RC_EOF ($09), blank filename
+          RC_BAD ($04), bad parameters
+
+Registers changed after return:
+     ......HL/IXIY same
+     AFBCDE../.... different
+```
+
+## Notes
+
+The routine does not process wildcards \*, ? and //, but passes them to the output buffer.
+
+**..** is expanded to parent directory <br />**.** or no directory is expanded to current directory.
+
+## Bugs
+
+If the source is in segment 2 and B=0 then problems may occur (but not for extended address). If the source is in segment 3 and BHL as extended pointer then this call will also fail.
+
+## Related calls
+
+**[GN\_Esa](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-esa)**, read & write to filename segments <br />**[GN\_Fcm](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-fcm)**, compress a filename <br />**[GN\_Opw](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-opw)**, Open wildcard handler <br />**[GN\_Pfs](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-pfs)**, parse filename segment <br />**[GN\_Prs](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-prs)**, parse filename <br />**[GN\_Wcl](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-wcl)**, close wildcard handle <br />**[GN\_Wfn](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-wfn)**, fetch next match for wildcard string (handle) <br />**[GN\_Wsm](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-wsm)**, match filename segment to wildcard string

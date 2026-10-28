@@ -1,0 +1,21 @@
+---
+description: "The Z88 provides a facility for applications to pass on information to the next application started up. This is used by PipeDream and the Diary to read the name of a marked file from the Filer...."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8618254 (version 1) by scripts/import-z88-wiki.cjs */}
+
+# Mailboxes
+
+The Z88 provides a facility for applications to pass on information to the next application started up. This is used by PipeDream and the Diary to read the name of a marked file from the Filer. The way this works is that the Filer drops the address and length of the name of the last marked file into a mailbox from time to time. When the Filer is exited (eg. by pressing \<ESC\>) the system looks at the mailbox and if there is something there, it copies the information to a safe area of memory. When another application is started it can ask the system if there is any mail. All mail is tagged by an name, which describes the type of information, and an application must give the system the name of the information it is after. If information is present then the system copies it from the safe area into the bottom stack area of the application's memory. The interface for mailboxing is provided by the OS\_Sr call with the reason codes SR\_WPD (write parameter data) and OS\_RPD (read parameter data). See OS\_Sr reference for details of parameter specification.
+
+The system uses two information types; filenames and dates. These have the information type names of "NAME" and "DATE", both null-terminated. If you transfer information of one of these types, then you must use the appropriate name, otherwise the internal appliations will not be able to collect your mail. Similarly you won't be able to receive mail from the Filer, Calendar, Diary, etc., unless you try and read mail with these names. If you do use the mail system please inform the programmers in your documentation of the information type name you use (which should be a mnemonic upper case alpha string), so other applications can share data with yours. The internal applications use mail as follows:
+
+```text
+            Filer         exports filenames
+            Diary         imports filenames, imports dates, exports dates
+            PipeDream     imports filenames
+            Calendar      imports dates, exports dates
+            Alarm         imports dates
+```
+
+The mailboxing system can be seen in operation using PipeDream and the Filer. Use \<\>FL from PipeDream and enter the Filer from this menu. Mark a file (eg. with \<TAB\>) and press \<ESC\> to return to PipeDream. The marked file will then be copied into the 'Name of file to load' field. Similarly selecting the Diary from the Calendar will set the Diary date to the date which was highlighted by the Calendar. When you go to the Calendar from the Diary, the Calendar moves to the Diary date.

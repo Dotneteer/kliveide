@@ -1,0 +1,66 @@
+---
+description: "Applications must use the GN_Opf call."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7962820 (version 7) by scripts/import-z88-wiki.cjs */}
+
+# OS_Op, Internal open
+
+## Register parameters
+
+```text
+ IN:
+     A = OP_IN ($01), open file for input
+          IX = (file) DOR handle
+
+     A = OP_OUT ($02), open (create) file for output
+          IX = (directory) DOR handle
+          HL = pointer to ASCII filename (null-terminated)
+
+     A = OP_UP ($03), open for update
+          IX = (file) DOR handle
+
+     A = OP_MEM ($04), open memory
+          BHL = pointer to memory
+          C = size (max. 255 bytes)
+
+     A = OP_DIR ($05), create directory
+          IX = (directory) DOR handle
+          HL = pointer to ASCII filename (null-terminated)
+
+	 A = OP_DOR ($06), create node (OZ 5.0 and newer)
+          IX = parent DOR handle
+	   	  B = minor DOR type 
+          HL = pointer to ASCII filename (null-terminated)
+
+OUT, if call successful:
+     Fc = 0
+     A(in) = OP_IN:
+          IX = file handle
+     A(in) = OP_OUT:
+          IX = file handle
+     A(in) = OP_UP:
+          IX = file handle
+     A(in) = OP_MEM:
+          IX = file handle
+     A(in) = OP_DIR:
+          IX = DOR handle
+     A(in) = OP_DOR:
+          IX = DOR handle
+
+Registers changed after return:
+     ..BCDEHL/..IY same
+     AF....../IX.. different
+```
+
+## Notes
+
+Internal operating system usage.
+
+Applications must use the **[GN\_Opf](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-opf)** call.
+
+OP\_MEM copies a memory area to a file accessed by IX handle (memory type). This feature is used by DC\_Icl when a string is specified at BHL.
+
+## Related calls
+
+**[GN\_Cl](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-cl)**, close file <br />**[GN\_Del](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-del)**, delete a file from memory <br />**[GN\_Opf](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-opf)**, open file/resource (wildcard search) <br />**[GN\_Ren](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-ren)**, rename file <br />**[OS\_Cl](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-cl)**, internal close (OZ usage) <br />**[OS\_Del](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-del)**, file delete (internal OZ usage) <br />**[OS\_Frm](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-frm)**, file read miscellaneous <br />**[OS\_Fwm](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fwm)**, file write miscellaneous <br />**[OS\_Gb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-gb)**, get byte from file (or device) <br />**[OS\_Gbt](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-gbt)**, get byte from file (or device) with timeout <br />**[OS\_Mv](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mv)**, move bytes between stream and memory <br />**[OS\_Pb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-pb)**, write byte to file, device <br />**[OS\_Pbt](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-pbt)**, write byte to file, device with timeout <br />**[OS\_Ren](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-ren)**, file rename (internal OZ usage)

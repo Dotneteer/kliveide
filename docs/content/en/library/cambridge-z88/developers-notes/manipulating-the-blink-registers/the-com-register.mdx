@@ -1,0 +1,34 @@
+---
+description: "The $B0 register is detailed first because it controls various diverse aspects of BLINK operations:"
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/3112999 (version 6) by scripts/import-z88-wiki.cjs */}
+
+# The COM register
+
+The $B0 register is detailed first because it controls various diverse aspects of BLINK operations:
+
+```text
+Bit         Name        Function
+7           SRUN        Speaker source (0=SBIT, 1=TxD or 3200 Hz)
+6           SBIT        SRUN=0: 0=low, 1=high; SRUN=1: 0=3200 Hz, 1=TxD
+5           OVERP       Set to overprogram EPROMs
+4           RESTIM      Set to reset the RTC, clear to continue
+3           PROGRAM     Set to enable EPROM programming
+2           RAMS        Binding of lower 8K of segment 0: 0=bank 0, 1=bank 20
+1           VPPON       Set to turn programming voltage ON
+0           LCDON       Set to turn LCD ON, clear to turn LCD OFF
+```
+
+The two speaker control bits operate in the following fashion:
+
+```text
+SRUN        SBIT        Effect
+0           0           Speaker line low
+0           1           Speaker line high
+1           0           Speaker line oscillates at 3200 Hz
+1           1           Speaker line attached to Tx data (Tx data still output
+                        to comms. port)
+```
+
+RAMS is cleared on reset thus paging in ROM at logical addresses $0000 to $1FFF. This is necessary since the Z80 program counter is loaded with zero on reset. In normal operation RAMS is set and the lower 8K is the system RAM, which is also used for application static workspace and stack.

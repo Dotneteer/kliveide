@@ -1,0 +1,66 @@
+---
+description: "The Z88 is based on a Z80 central processor running at 3.2876 MHz. The Z80 has a 16-bit address bus and can thus only directly access 64Kbytes of memory. Reconciling oneself to this total amount..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/98271270 (version 9) by scripts/import-z88-wiki.cjs */}
+
+# Organization of memory
+
+## Segments
+
+The Z88 is based on a Z80 central processor running at 3.2876 MHz. The Z80 has a 16-bit address bus and can thus only directly access 64Kbytes of memory. Reconciling oneself to this total amount of memory would be very restrictive for a machine like the Z88 and in fact the Z88 can use up to 4Mbytes of memory. The decoding is handled by the 'BLINK' gate array, which sits between the CPU and memory. The CPU communicates via i/o ports, which address various BLINK registers. The 4Mbyte physical address space is split up into 256 'banks', each of 16Kbytes. At any time, the Z80 can address 4 such banks. The 64K logical address space is notionally divided into four 16K 'segments', which are by convention numbered as follows:
+
+```text
+Segment 0: Logical addresses &0000 - &3FFF
+Segment 1: Logical addresses &4000 - &7FFF
+Segment 2: Logical addresses &8000 - &BFFF
+Segment 3: Logical addresses &C000 - &FFFF
+```
+
+Facilities are provided for a program to 'bind' each segment to any of the 256 banks. This means that a logical address falling within each segment will be translated into a physical address within the bank bound to that segment, the lower 14 bits of the logical address providing an offset within the bank. The exact method by which a program may bind banks is explained in the next section, along with other useful system calls.
+
+It is prudent, however, to be cautious with rebinding of banks. Firstly, it is quite possible to page out the bank in which the code is running, or in which the machine stack resides. The consequences of this would almost certainly be a sytem crash.
+
+## Segment 0
+
+Secondly, segment 0 has rather more complex organization than is indicated above. The bottom 8K (&0000 - &1FFF) is normally bound to the RAM used by many vital machine operating system (MOS) components. It is impossible for the CPU to rebind this section to an arbitrary bank, nor would one normally want to as it would lead to the MOS having the ground cut from under its feet.
+
+This lower 8K may be bound either to bank 0 (ROM - this is the arrangement when the machine is hard-reset) or bank &20 (RAM - containing the restart routines and other MOS components, which is the normal state of affairs). This duality is intended only to ensure that the machine boots up properly, and need not normally concern the user. Thus, paging a bank into segment 0 actually involves paging an 8K half- bank into the logical address space &2000 - &3FFF. In this case, only the top 7 bits of the bank specification are significant in the bank number and the bottom bit specifies which half of the bank is bound to the segment (0 being the lower part). So if the bank specifier were:
+
+```text
+a b c d e f g h
+```
+
+where each character represents a bit, then 'h' specifies which half of the bank is bound (<u>0 for the lower and 1 for the upper part</u>), and the number of the bank bound would be, in binary:
+
+```text
+a b c d e f g 0
+```
+
+and is thus always even, ie. <u>only even-numbered banks may be bound to segment 0</u>. In view of this complexity, then, it is probably advisable to avoid rebinding segment 0 unless it is really felt to be necessary.
+
+## Segment usage
+
+The 'recommended' use of memory is as follows:
+
+```text
+Segment 0: RAM
+Segment 1: RAM
+Segment 2: RAM or code 
+Segment 3: code.
+```
+
+Finally, a few words may be in order concerning the way in which the memory is physically set up with respect to the internal chips and the three card slots at the front of the machine. The answer is quite simple:
+
+```text
+Banks &00 - &3F are internal (lower half ROM, upper half RAM) 
+Banks &40 - &7F are wired to Slot 1 
+Banks &80 - &BF are wired to Slot 2 
+Banks &C0 - &FF are wired to Slot 3 (usually EPROM).
+```
+
+Note, however, that cards with an addressing range of less than 1M (which at time of writing means all of them!) only decode the lower address lines, so for example a 32K RAM card in slot 1 will appear identically in banks &40 and &41, &42 and &43 .... &7E and &7F, ie. whatever the state of the top 5 address lines. A 128K EPROM card (in slot 3) would appear identically in banks &C0 to &C7, &C8 to &CF, &D0 to &D8 ... &F8 to &FF. This makes it easy to address the top and bottom of its address space without prior knowlege of its size ie. by addressing the top and bottom bank of the slot. The system expects this behaviour so the convention should be followed by any hardware developers intending to create their own cards.
+
+## Hybrid cards
+
+Note that it is possible to mix ROM and RAM in a single card, but care must taken in decoding the address lines. A simple scheme, which should work, is to have the lower half of a card containing RAM (the RAM can occur several times in first half megabyte) and the upper half ROM (again the ROM can repeat). If a card is arranged like this the system will be able to use the RAM and run software from the ROM. Other schemes exist which can make on-card RAM private. If you intend to develop hybrid ROM and RAM cards, you are strongly advised to consult Cambridge Computer.

@@ -1,0 +1,57 @@
+---
+description: "Parsing will stop at the first non-decimal digit. If the source text was numeric by not supplied with a terminator, the routine will set Fz = 1 and exit with A=0 and Fc = 0."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8618119 (version 4) by scripts/import-z88-wiki.cjs */}
+
+# GN_Gdn, Convert an ASCII string to a binary integer number
+
+## Register parameters
+
+```text
+IN:
+     HL = local source pointer
+          HL = 0, read from stream IX handle
+          HL = 1, read from filter IX handle
+          HL = 2, not allowed
+          > 255, read string at (HL)
+     DE = destination pointer.
+          DE = 0, 1 not allowed
+          DE = 2, return integer in BC (converted to 16bit
+          range)
+          > 255, store integer at (DE). (DE) = least
+          significant byte, (DE+3)= most significant byte.
+
+     B = maximum number of characters to be read
+     IX = source handle (if HL = 0,1)
+
+OUT, if call successful:
+     Fc = 0
+     Fz = 1, conversion recognised a number
+     A = character which stopped conversion
+     HL, if HL(in) < 2, indexes conversion terminator
+     HL, if HL(in) > 255, then points to conversion terminator.
+     BC = result, if DE(in) = 2
+
+OUT, if call failed:
+     Fc = 1
+     A = error code:
+          RC_OVF ($0B), overflow, result invalid
+          RC_EOF ($09), reading an empty stream or filter
+
+Registers changed after return:
+     ...DE../IXIY same
+     AFB..HL/.... different
+```
+
+## Notes
+
+Parsing will stop at the first non-decimal digit. If the source text was numeric by not supplied with a terminator, the routine will set Fz = 1 and exit with A=0 and Fc = 0.
+
+## Bugs
+
+This call will fail if the source or destination pointers are in segment 2.
+
+## Related calls
+
+**[GN\_D16](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-d16)**, 16bit unsigned division <br />**[GN\_M16](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-m16)**, 16bit unsigned multiplication <br />**[GN\_D24](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-d24)**, 24bit unsigned division <br />**[GN\_M24](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-m24)**, 24bit unsigned multiplication <br />**[GN\_Pdn](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-pdn)**, write number as decimal ASCII string

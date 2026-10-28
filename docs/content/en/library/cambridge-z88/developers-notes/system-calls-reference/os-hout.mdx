@@ -1,0 +1,28 @@
+---
+description: "This call is used by System Information command in Index to display OZ revision number. This system call is only available in OZ release V4.5 and newer."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/62488634 (version 4) by scripts/import-z88-wiki.cjs */}
+
+# OS_Hout, write a hexadecimal byte to standard output
+
+## Register parameters
+
+```text
+IN:
+     A = byte to be written
+OUT:
+     Fc = 0 always (error handler is never provoked)
+
+Registers changed after return to caller:
+     A.BCDEHL/IXIY same
+     .F....../.... different
+```
+
+## Notes
+
+This call is used by System Information command in Index to display OZ revision number. This system call is only available in OZ release V4.5 and newer.
+
+## Related calls
+
+**[OS\_Out](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-out)**, write character to standard output<br />**OS\_Sout**, write local string to standard output<br />[**OS\_Bout**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-bout),write string at (B)HL to standard output <br />**[OS\_Pout](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-pout)**, write embedded null-terminated string at caller (PC) to standard output<br />**OS\_Hout**, write hexadecimal byte to standard output<br />[**OS\_Nln**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-nln), send newline (CR/LF) to standard output<br />**[GN\_Sop](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-sop)**, write local string to standard output<br />**[GN\_Soe](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-soe)**, write string at extended address to standard output<br />**[GN\_Nln](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-nln)**, send newline (CR/LF) to standard output

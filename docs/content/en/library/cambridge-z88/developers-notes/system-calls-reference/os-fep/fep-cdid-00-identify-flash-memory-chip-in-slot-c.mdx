@@ -1,0 +1,35 @@
+---
+description: "FEP_CDID ($00), Identify Flash Memory Chip in slot C"
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7471583 (version 2) by scripts/import-z88-wiki.cjs */}
+
+# FEP_CDID ($00), Identify Flash Memory Chip in slot C
+
+## Register Parameters
+
+```text
+In:
+        A = FEP_CDID
+        C = slot number (0, 1, 2 or 3)
+Out:
+        Success:
+             Fc = 0, Fz = 1
+             A = FE_28F or FE_29F, defining the Flash Memory chip generation
+             HL = Flash Memory ID
+                  H = Manufacturer Code (FE_INTEL_MFCD, FE_AMD_MFCD)
+                  L = Device Code (refer to flashepr.def)
+             B = total of 16K banks on Flash Memory Chip.
+
+        Failure:
+             Fc = 1
+             A = RC_NFE (not a recognized Flash Memory Chip)
+
+Registers changed on return:
+   ...CDE../IXIY af...... same
+   AFB...HL/.... ..bcdehl different
+```
+
+## Notes
+
+Identify flash chip and size in slot C.

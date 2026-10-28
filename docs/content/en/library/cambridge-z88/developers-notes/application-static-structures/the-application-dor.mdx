@@ -1,0 +1,277 @@
+---
+description: "The application DOR(s) may now be placed wherever is convenient (the contain relative data structure pointers), and if there is more than one, chained together via the brother links. An..."
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8618237 (version 4) by scripts/import-z88-wiki.cjs */}
+
+# The Application DOR
+
+The application DOR(s) may now be placed wherever is convenient (the contain relative data structure pointers), and if there is more than one, chained together via the brother links. An application DOR contains various information relevant to running the application, and may also contain pointers to menu topic help information. The format of an application DOR is as follows:
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>3 bytes</Table.Td>
+<Table.Td>0 0 0</Table.Td>
+<Table.Td>Extended pointer to parent</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>3 bytes</Table.Td>
+<Table.Td>x x x</Table.Td>
+<Table.Td>Extended pointer to brother (this will be 0 0 0 if this is the only application on the card or the last in a chain)</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>3 bytes</Table.Td>
+<Table.Td>0 0 0</Table.Td>
+<Table.Td>Extended pointer to son</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>1 byte</Table.Td>
+<Table.Td>$83</Table.Td>
+<Table.Td>DOR type, application ROM</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>1 byte</Table.Td>
+<Table.Td>x</Table.Td>
+<Table.Td>Total DOR length</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>1 byte</Table.Td>
+<Table.Td>'@'</Table.Td>
+<Table.Td>Key to info section</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>1 byte</Table.Td>
+<Table.Td>x</Table.Td>
+<Table.Td>Length of info section</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>2 bytes</Table.Td>
+<Table.Td>0 0</Table.Td>
+<Table.Td>Reserved for future expansion</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>1 byte</Table.Td>
+<Table.Td>'x'</Table.Td>
+<Table.Td>Application key letter, i.e. the letter used in the square sequence to enter the application. If several<br />applications share a letter, then the first is entered by \[\]x, the next by \[\]Zx, the next by \[\]ZZx, etc. A<br />maximum of ZZZZ is possible. However, a bug in v3.0 of the operating system doesn't allow for more than \[\]ZZx.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>1 byte</Table.Td>
+<Table.Td>x</Table.Td>
+<Table.Td>continuous RAM size required, in 256-byte pages (eg. 32 for 8K). This is relevant only to bad applications. This byte ranges from 1 to 160 (160\*256=40K). See the section below on bad applications. Use 0 to make your application the default size, which is 8K on an unexpanded machine and 40K on an expanded one, or if your application is good.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>2 bytes</Table.Td>
+<Table.Td>0 0</Table.Td>
+<Table.Td>This is an estimate of environment overhead, ie. how much memory is needed to save the state of the application each time it is exited. OZ will 'learn' from experience how much is actually required anyway, so this feature is best ignored.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>2 bytes</Table.Td>
+<Table.Td>x x</Table.Td>
+<Table.Td>Unsafe (ie. not preserved over pre-emption) workspace size required in bytes (low byte, high byte).</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>2 bytes</Table.Td>
+<Table.Td>x x</Table.Td>
+<Table.Td>Safe (ie. preserved over pre-emption) workspace size required in bytes. These workspaces are allocated from the system half of segment 0, downwards from $1FFD, unsafe workspace at the top. They are used when it is important that the workspace is not bound to awkward segments, but rather remains stable in the logical address space. Note that both safe and unsafe workspace draw from the 2K area of memory from $1800 to $2000. This area is also used for the application stack, mailboxes, and some system stack. Therefore you must make sure that all these demands do not exceed the limited supply of available memory. It is probably advisable to limit safe and unsafe workspace to not much more than a couple of pages at the most.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>2 bytes</Table.Td>
+<Table.Td>x x</Table.Td>
+<Table.Td>Entry point for application code (16bit local address). Must be in segment 3. Remember low byte, high byte order.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>1 byte</Table.Td>
+<Table.Td>x</Table.Td>
+<Table.Td>Desired binding of Segment 0 on entry.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>1 byte</Table.Td>
+<Table.Td>x</Table.Td>
+<Table.Td>Desired binding of Segment 1 on entry.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>1 byte</Table.Td>
+<Table.Td>x</Table.Td>
+<Table.Td>Desired binding of Segment 2 on entry.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>1 byte</Table.Td>
+<Table.Td>x</Table.Td>
+<Table.Td>Desired binding of Segment 3 on entry.<br /><br />Usually you will want to bind the bank containing the code for your application to segment 3 and probably set the other banks to zero. If the application is a bad one, then certain segments will be bound to RAM on entry, depending on the size of continuous RAM selected. The desired binding of such segments must be set to zero to avoid conflict (RAM is paged in after application is created therefore overriding explicit bank references).</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>1 byte</Table.Td>
+<Table.Td>x</Table.Td>
+<Table.Td>
+
+Application type byte 1. Set it to a combination of the following bits. Note the bits are not all orthogonal, eg. if 4 is set 8 must be too.
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>AT\_GOOD=1</Table.Td>
+<Table.Td>Good application</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>AT\_BAD=2</Table.Td>
+<Table.Td>Bad application</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>AT\_UGLY=4</Table.Td>
+<Table.Td>Ugly application, bad popdown</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>AT\_POPD=8</Table.Td>
+<Table.Td>Popdown, kill on pre-emption</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>AT\_ONES=16</Table.Td>
+<Table.Td>Only one instantiation is allowed (e.g. Diary).</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>AT\_DRAW=32</Table.Td>
+<Table.Td>OZ should attempt to preserve screen over pre-emption (ranging from right edge of topic window to left edge of OZ window). This should not be set unless absolutely necessary, ie. when the application cannot reasonably redraw its own screen in response to an RC\_DRAW return. Programmer laziness is not sufficient grounds! Note that when memory is low OZ will fail to preserve the screen anyway and will return RC\_DRAW after screen corruption.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>AT\_FILM=64</Table.Td>
+<Table.Td>File manager ID, used by the Filer, DO NOT SET.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>AT\_BOOT=128</Table.Td>
+<Table.Td>Application auto-boot, used by the Index, DO NOT SET.</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>AT\_GOOD=1</Table.Td>
+<Table.Td>Good application</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>AT\_BAD=2</Table.Td>
+<Table.Td>Bad application</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>AT\_UGLY=4</Table.Td>
+<Table.Td>Ugly application, bad popdown</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>AT\_POPD=8</Table.Td>
+<Table.Td>Popdown, kill on pre-emption</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>AT\_ONES=16</Table.Td>
+<Table.Td>Only one instantiation is allowed (e.g. Diary).</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>AT\_DRAW=32</Table.Td>
+<Table.Td>OZ should attempt to preserve screen over pre-emption (ranging from right edge of topic window to left edge of OZ window). This should not be set unless absolutely necessary, ie. when the application cannot reasonably redraw its own screen in response to an RC\_DRAW return. Programmer laziness is not sufficient grounds! Note that when memory is low OZ will fail to preserve the screen anyway and will return RC\_DRAW after screen corruption.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>AT\_FILM=64</Table.Td>
+<Table.Td>File manager ID, used by the Filer, DO NOT SET.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>AT\_BOOT=128</Table.Td>
+<Table.Td>Application auto-boot, used by the Index, DO NOT SET.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>1 byte</Table.Td>
+<Table.Td>x</Table.Td>
+<Table.Td>
+
+Application type byte 2. Given by combination of:
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>AT2\_CL=1</Table.Td>
+<Table.Td>Set CAPS lock on entry</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>AT2\_ICL=2</Table.Td>
+<Table.Td>Set inverted CAPS lock on entry (should not be set without bit 1 set too or the effect is undefined).</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>AT2\_IE=128</Table.Td>
+<Table.Td>Ignore error returns - internal use only, DO NOT SET.</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>AT2\_CL=1</Table.Td>
+<Table.Td>Set CAPS lock on entry</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>AT2\_ICL=2</Table.Td>
+<Table.Td>Set inverted CAPS lock on entry (should not be set without bit 1 set too or the effect is undefined).</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>AT2\_IE=128</Table.Td>
+<Table.Td>Ignore error returns - internal use only, DO NOT SET.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>1 byte</Table.Td>
+<Table.Td>'H'</Table.Td>
+<Table.Td>Key to help section</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>1 byte</Table.Td>
+<Table.Td>x</Table.Td>
+<Table.Td>Length of help section</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>3 bytes</Table.Td>
+<Table.Td>x x x</Table.Td>
+<Table.Td>Extended pointer to topics</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>3 bytes</Table.Td>
+<Table.Td>x x x</Table.Td>
+<Table.Td>Extended pointer to commands</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>3 bytes</Table.Td>
+<Table.Td>x x x</Table.Td>
+<Table.Td>Extended pointer to application help</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>3 bytes</Table.Td>
+<Table.Td>x x x</Table.Td>
+<Table.Td>Extended pointer to token base ($000000 for no token, $FFFFFF for system tokens).</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td />
+<Table.Td>If no menus, help or diamond sequences are required then the above should all point to three zeros. E.g. an extended pointer to the beginning of the current application DOR would be suitable (it always contains three zeros).</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>1 byte</Table.Td>
+<Table.Td>'N'</Table.Td>
+<Table.Td>Key to name section</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>1 byte</Table.Td>
+<Table.Td>x</Table.Td>
+<Table.Td>Length of name</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>x bytes</Table.Td>
+<Table.Td>'xxxx',0</Table.Td>
+<Table.Td>Null-terminated application name. If this too long then it will look rather odd in the Index. 12 characters is about the maximum sensible length. Screen driver codes is allowed in the name (e.g. bold).</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>1 byte</Table.Td>
+<Table.Td>$FF</Table.Td>
+<Table.Td>DOR terminator byte.</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>

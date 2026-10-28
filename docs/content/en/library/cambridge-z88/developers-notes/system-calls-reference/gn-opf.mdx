@@ -1,0 +1,58 @@
+---
+description: "Please refer to GN_Fex for details of what might happen to the filename. Using GN_Opf with A=OP_DOR, you only get a DOR handle. The file is not opened. If the file exists, OS_Dor & A=DR_FRE must..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8618140 (version 4) by scripts/import-z88-wiki.cjs */}
+
+# GN_Opf, Open file/resource (wildcard search)
+
+## Register parameters
+
+```text
+IN:
+     HL = 0,1,2; not allowed (B=0)
+     BHL = pointer to name of filename to open
+     (B = 0, identified as local pointer)
+
+     DE = 0,1,2; not allowed
+     DE = pointer to space to insert explicit filename
+     C = maximum space to fill with this explicit filename (e.g. 18)
+
+     A = access mode
+          OP_IN ($01)  = open for input
+          OP_OUT ($02) = open for output
+          OP_UP ($03)  = open for update (read/write)
+          OP_MEM ($04) = open memory (internal usage - not for applications)
+          OP_DIR ($05) = create directory - returns DOR handle
+          OP_DOR ($06) = return DOR information - returns DOR handle
+
+OUT, if call successful:
+     Fc = 0
+     IX = file handle for open file
+     A(IN=OP_DOR): A = DOR type; DN_FIL, DN_EPR, Dn_DIR, etc.
+     B = number of segments in the explicit filename
+     C = number of characters in returned, expanded filename at (DE)
+     DE = points beyond the last character of explicit filename
+
+OUT, if call failed:
+     Fc = 1
+     A = error code:
+          RC_BAD ($04), bad arguments
+          RC_IVF ($17), invalid filename, eg. ".wrong"
+          RC_ONF ($12), file not found
+          RC_USE ($15), file already in use
+          RC_FTM ($18), file type mismatch
+          RC_UNK ($03), unknown request, eg. A(in) invalid
+
+Registers changed after return:
+     ......HL/..IY same
+     AFBCDE../IX.. different
+```
+
+## Notes
+
+Please refer to **[GN\_Fex](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-fex)** for details of what might happen to the filename. Using **[GN\_Opf](https://cambridgez88.jira.com/wiki/pages/viewpage.action?pageId=96403601)** with A=OP\_DOR, you only get a DOR handle. The file is not opened. If the file exists, **[OS\_Dor](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-dor)** & A=DR\_FRE must be used to release the DOR handle before the file is opened/created with **[GN\_Opf](https://cambridgez88.jira.com/wiki/pages/viewpage.action?pageId=96403601)**, otherwise RC\_USE ("file in use") is returned.
+
+## Related calls
+
+**[GN\_Cl](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-cl)**, close file <br />**[GN\_Del](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-del)**, delete a file from memory <br />**[GN\_Ren](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-ren)**, rename file <br />**[OS\_Cl](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-cl)**, internal close (OZ usage) <br />**[OS\_Del](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-del)**, file delete (internal OZ usage) <br />**[OS\_Frm](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-frm)**, file read miscellaneous <br />**[OS\_Fwm](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fwm)**, file write miscellaneous <br />**[OS\_Gb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-gb)**, get byte from file (or device) <br />**[OS\_Gbt](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-gbt)**, get byte from file (or device) with timeout <br />**[OS\_Mv](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mv)**, move bytes between stream and memory <br />**[OS\_Op](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-op)**, internal open (OZ usage) <br />**[OS\_Pb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-pb)**, write byte to file, device <br />**[OS\_Pbt](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-pbt)**, write byte to file, device with timeout <br />**[OS\_Ren](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-ren)**, file rename (internal OZ usage)

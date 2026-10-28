@@ -19,7 +19,7 @@ export function useMDXComponents(components?: MDXComponents) {
     ...docsComponents,
     ClickableImage,
     Shot,
-    // --- The Z88 User Guide's notation (content/en/z88-user-guide/)
+    // --- The Z88 manuals' notation (content/en/library/cambridge-z88/)
     Key,
     Typed,
     ...components

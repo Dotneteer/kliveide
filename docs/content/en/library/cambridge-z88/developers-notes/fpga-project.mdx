@@ -1,0 +1,1570 @@
+---
+description: "This project page describes the hardware specifications of the new FPGA based Z88 platform."
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/71139347 (version 27) by scripts/import-z88-wiki.cjs */}
+
+# FPGA project
+
+This project page describes the hardware specifications of the new FPGA based Z88 platform.
+
+## Project status
+
+Full original blink implementation is done and really stable, tested during 3 continuous days without reset.
+
+Platform is actually a common TERASIC DE-1 board with a Cyclone 2 FPGA. Implementation uses the on-board Flash EPROM and SRAM.
+
+Serial port is wired to a FTDI serial-USB adapter. It is fully working and Eazylink, Y-modem transfers are reliable at 38K.
+
+Screen is a VGA monitor, keyboard a standard PS2.
+
+Coma and snooze are implemented, pressing the 2 shifts keys on the PS2 keyboards wakes-up immediately the machine and turns on the VGA monitor.
+
+## Improvements
+
+### NextZ80 CPU (done)
+
+Working at 6.25MHz. Since this CPU works 4 times faster than the Z80, global speed is 8 times the original Z88.
+
+Zetriz project is compiled in less than 1'30" versus 12' on the real Z88.
+
+### Serial port (done)
+
+Full original implementation is done.
+
+The UTEST flag in TXC enables fast baud rates up to 500K baud.
+
+The 31.5K baud speed is possible, allowing a MIDI interface implementation.
+
+### SPI controller (done)
+
+Two SPI controller have been implemented in the blink. One is interfaced with the SD card slot.
+
+- SPI layer is implemented
+- SD protocol is implemented
+- FAT32 is implemented in read-only
+- VFAT with long filename support is implemented (allowing OZ full filename length support)
+- TODO : SPI layer and SD layer OZ API (W.I.P.)
+- TODO : integration in OZ VFS (transparent virtual filesystem already used for eprom file area)
+- TODO : write support, erase, format...
+
+### SDRAM
+
+The speed will be greatly improved with SDRAM usage. Speed limitation is due to Flash EPROM and SRAM chip latency.
+
+Using a 4M SDRAM will unlock this limitation. A bootstrap has to be implemented in the CPU in order to load OZ in the first 512K before hard reset.
+
+Read-only protection needs to be implemented in order to protect system.
+
+### Dual VGA display
+
+Two VGA output are planned.
+
+OZ could easily support a dual display by switching between two screen base files.
+
+### Advanced memory management unit
+
+This feature is intend to protect OZ integrity and avoid lowram corruption. Principles are described below.
+
+Extended Segment register will allow up to 1GByte RAM allocation without loosing compatibility with the actual 4M range.
+
+## Blink ports
+
+New blink registers are in bold.
+
+<Table>
+<thead>
+<Table.Tr>
+<Table.Th>
+
+```text
+Port
+```
+
+</Table.Th>
+<Table.Th>
+
+```text
+Read
+```
+
+</Table.Th>
+<Table.Th>
+
+```text
+Width
+```
+
+</Table.Th>
+<Table.Th>
+
+```text
+Write
+```
+
+</Table.Th>
+<Table.Th>
+
+```text
+Width
+```
+
+</Table.Th>
+<Table.Th>
+
+```text
+Softcopy
+```
+
+</Table.Th>
+</Table.Tr>
+</thead>
+<tbody>
+<Table.Tr>
+<Table.Td>
+
+```text
+
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td />
+<Table.Td />
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+$70
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td>
+
+```text
+PB0
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+13
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+$0460, $0470
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+$71
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td>
+
+```text
+PB1
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+10
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+$0461, $0471
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+$72
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td>
+
+```text
+PB2
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+9
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+$0462, $0472
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+$73
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td>
+
+```text
+PB3
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+11
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+$0463, $0473
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+$74
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td>
+
+```text
+SBR
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+11
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+$0464, $0474
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+$75
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td>
+
+```text
+SB1
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+8
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+$0475
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+$76
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td>
+
+```text
+SB2
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+8
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+$0476
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+$77
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+SCI
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+16
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+SCM
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+8
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+$0477
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td />
+<Table.Td />
+<Table.Td />
+<Table.Td />
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+$B0
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+MID
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+16
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+COM
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+8
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+$04B0
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+$B1
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+STA
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+8
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+INT
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+8
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+$04B1
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+$B2
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+KBD
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+8
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+MVP
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+16
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+$04B2
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+$B3
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td>
+
+```text
+EPR
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+8
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+$04B3
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+$B4
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td>
+
+```text
+TACK
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+3
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+$04B4
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+$B5
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+TSTA
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+3
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+TMK
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+3
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+$04B5
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+$B6
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td>
+
+```text
+ACK
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+8
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+$04B6
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+$B7
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td>
+
+```text
+ROM
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+8
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+$04B7
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td />
+<Table.Td />
+<Table.Td />
+<Table.Td />
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+$C0
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td>
+
+```text
+ES0
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+16
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+$04C0, $04D0
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+$C1
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td>
+
+```text
+ES1
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+16
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+$04C1, $04D1
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+$C2
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td>
+
+```text
+ES2
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+16
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+$04C2, $04D2
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+$C3
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td>
+
+```text
+ES3
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+16
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+$04C3, $04D3
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td />
+<Table.Td />
+<Table.Td />
+<Table.Td />
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+$D0
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+TIM0
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+8
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+SR0
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+8
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+$04D0
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+$D1
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+TIM1
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+6
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+SR1
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+8
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+$04D1
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+$D2
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+TIM2
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+8
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+SR2
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+8
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+$04D2
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+$D3
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+TIM3
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+8
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+SR3
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+8
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+$04D3
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+$D4
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+TIM4
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+5
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td />
+<Table.Td />
+<Table.Td />
+<Table.Td />
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+$E0
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+RXD
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td />
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+$E1
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+RXE
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+6
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+$E2
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td>
+
+```text
+RXC
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+8
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+$04E2
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+$E3
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td>
+
+```text
+TXD
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+11
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+$04E3
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+$E4
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td>
+
+```text
+TXC
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+8
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+$04E4
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+$E5
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+UIT
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+8
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+UMK
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+7
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+$04E5
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+$E6
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td>
+
+```text
+UAK
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+7
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+$04E6
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td />
+<Table.Td />
+<Table.Td />
+<Table.Td />
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+$F0
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+SPS0
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+8
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+SPS0
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+16
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+$04F0 (LSB), $04F1 (MSB)
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+$F1
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+SPD0
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+8
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+SPD0
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+8
+```
+
+</Table.Td>
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+$F2
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+SPS1
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+8
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+SPS1
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+16
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+$04F2 (LSB), $04F3 (MSB)
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+$F3
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+SPD1
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+8
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+SPD1
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+8
+```
+
+</Table.Td>
+<Table.Td />
+</Table.Tr>
+</tbody>
+</Table>
+
+<u>Read</u>
+
+$77 **SCI** 16bits Screen Informations
+
+$B0 **MID** 16bit Machine Identification
+
+<u>Write</u>
+
+$77 **SCM** 8bits Screen Mode ($00: 640x64 pixels, $01: 640x480 pixels)
+
+$B7 **ROM** 8bits Read Only Memory (bit 0 : $00-$1F, bit 2: $40-$5F, bit 3: $60-$7F, ... bit 7 : $E0-$FF, read-only if reset)
+
+$B2 **MVP** 16bits Memory Violation Protection (1bit for each page of the first 4K, read-only if reset)
+
+$C0 **ES0** 16bits Extended segment 0 register (overwrites SR0)
+
+$C1 **ES1** 16bits Extended segment 1 register (overwrites SR1)
+
+$C2 **ES2** 16bits Extended segment 2 register (overwrites SR2)
+
+$C3 **ES3** 16bits Extended segment 3 register (overwrites SR3)
+
+## Advanced Memory Management Unit
+
+The MVP and ROM registers are intend to protect memory against system violation.
+
+The MVP allows writing in the first 4K of bank $20. Reset, Interrupt and RST instructions set this register to $FF.
+
+The OZ calls are allowed to write in this area, they restore this register state on exit.
+
+Application or user code cannot write in this area, if so, an interrupt is fired and MVP flag is set in INT (MVP flag replaces A19 bit, unused).
+
+This feature ensure a strong system stability.
+
+The ROM register hold the Read-Only configuration of 512K areas in the first 4M range.
+
+Bit reset stands for a read only area. Each bit cover a 512K area.
+
+Bit 0 : $00-$1F area<br />Bit 1 : $20-$3F area<br />Bit 2 : $40-$5F area<br />Bit 3 : $60-$7F area<br />Bit 4 : $80-$9F area<br />Bit 5 : $A0-$BF area<br />Bit 6 : $C0-$DF area<br />Bit 7 : $E0-$1F area
+
+## Screen
+
+### Resolution
+
+Screen resolution is set by the SCM register, mode 0, default, is the standard 640x64 pixels panel.
+
+Mode 1, VGA, the choice of the FPGA platform.
+
+Mode 2, WVGA, is planned since 800x480 pixels resolution are a quite common LCD available (for future portable).
+
+The blink returns screen width and height with SCW and SCH registers.
+
+### SBF
+
+The screen base file is held in one bank.
+
+All the screen registers are still addressed in the first 4M range.
+
+SBR width becomes 8 bits with a 16K granularity.
+
+128 words of 16 bits hold one line, minimal pixel width is 128x6 : 768 pixels, maximum 800 pixels if HIRES characters are used for the map.
+
+15K are required to hold the 480 pixel lines of 60 characters.
+
+The 1K left is used to hold the screen driver data (numbers of windows are increased...).
+
+### OZ window and MTH
+
+OZ window and Menu window are horizontal. A vertical layout like original Z88 is not required and waste display space.
+
+Top line : MENU window displaying Application names then the commands
+
+Bottom line : OZ window displaying the system flags like Country, batteries, CAPS, CLI...
+
+## Control
+
+Platform identification is performed reading the TYP register returning id ($FF for a Z88 portable).
+
+Since memory is a large SDRAM chip, operating system area have to be write protected.
+
+## Memory Bank Switching
+
+Extended segment registers (ESR) performs the bank switching up to 65536\*16K, 1GB memory range.
+
+Those ESR have a 16 bits width and lowest 8 bits overwrite the standard segments registers keeping backward compatibility.
+
+## SPI controller
+
+Up to 4 SPI controller are implemented in the blink, actually only two are fitted.
+
+Two ports by controller. One port for control/status of the controller (SPS0 or SPS1), one for data i/o (SPD0 or SPD1).
+
+By default, controller 0 is wired to the internal serial flash (intended for FPGA bitstream update).
+
+Controller 1 is wired to the primary SD card (intended for OZ loading).
+
+Each controller has a CRC 16 and 32 calculation facility.
+
+Remaining controllers are intended for future additional SD card slots.
+
+## UART update
+
+UART implementation is backward compatible. UTEST bit implementation allows high-speed additional baudrates. Up to 500,000 bauds are allowed. A special 31.5 bauds speed allows MIDI implementation.
+
+The serial signals are directly wired to a FTDI FT232R chip allowing UART USB link.

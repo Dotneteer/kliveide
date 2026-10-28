@@ -1,0 +1,90 @@
+---
+description: "The OS_Nq call is used to read the system parameters, including information on the screen, memory, available streams and settings from the Panel and Printer Editor. A call is made by loading the..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/2752703 (version 6) by scripts/import-z88-wiki.cjs */}
+
+# Enquiries
+
+The **[OS\_Nq](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-nq)** call is used to read the system parameters, including information on the screen, memory, available streams and settings from the Panel and Printer Editor. A call is made by loading the BC register with a reason code (the system parameter mnemonic) and the other registers with values specific to that reason code. Register changes and output specifications are different for each reason code.
+
+Here is the call specification:
+
+```text
+RST 20H, DEFB $66
+
+IN:
+            BC = reason code
+            ADEHLIX parameters
+ 
+OUT if call succeeded:
+            Fc = 0
+            Depends on BC and other arguments
+ 
+Out if call failed:
+            Fc = 1
+            A = return code:
+                        RC_BAD ($04), incorrect reason code or parameters
+                        RC_UNK ($03), unknown request
+```
+
+## Window Management
+
+The following enquiry calls are for fetching low level window information:
+
+NQ\_WBOX (BC = $8300), return window information NQ\_WCUR (BC = $8303), return cursor information NQ\_RDS (BC = $8306), read text from the screen
+
+The above window enquiry calls are described in detail in the **[OS\_Nq](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-nq)** call specification.
+
+## Process Management
+
+The following codes return system handles in IX:
+
+```text
+NQ_Ain ($8600)          application enquiry (system use only)
+NQ_Khn ($8603)          read keyboard handle (use ":INP" device instead)
+NQ_Shn ($8606)          read screen handle (use ":SCR" device instead)
+NQ_Phn ($8609)          read printer indirected handle
+NQ_Nhn ($860C)          read null handle (use ":NUL" device instead)
+NQ_Wai ($860F)          who am I? (system use only)
+NQ_Com ($8612)          read comms handle (use ":COM" device instead)
+NQ_Ihn ($8615)          read IN handle (use ":INP" device instead)
+NQ_Ohn ($8618)          read OUT handle (use ":OUT" device instead)
+NQ_Rhn ($861B)          read direct printer handle
+NQ_Voz ($861E)          application verifies running OZ version (OZ V4.5 and newer)
+NQ_Roz ($8621)          read OZ revision number (OZ V4.5 and newer)
+NQ_Btl ($8624)          read battery status (OZ V4.5 and newer)
+```
+
+## Memory Management
+
+```text
+NQ_Mfs ($8900)          read free space information (system use only)
+NQ_Slt ($8903)          read slot type information (system use only)
+NQ_Mfp ($8906)          get total of free RAM pages in slot (OZ 4.2 and newer)
+```
+
+## Director and CLI
+
+These enquiries return extended pointers of a null-terminated string in BHL:
+
+```text
+NQ_Dev ($8C00)          fetch current device
+NQ_Dir ($8C03)          fetch current directory
+NQ_Fnm ($8C06)          fetch current filename match string
+```
+
+## Director and CLI handles
+
+The following calls return system handles in IX
+
+```text
+NQ_Dmh ($8C09)          fetch Director special memory handle (system use only)
+NQ_Inp ($8C0C)          read std. input handle
+NQ_Out ($8C0F)          read std. output handle
+NQ_Prt ($8C12)          read printer stream handle
+NQ_Tin ($8C15)          read input-T handle
+NQ_Tot ($8C18)          read output-T handle
+NQ_Tpr ($8C1B)          read printer-T stream handle
+NQ_Chn ($8C1E)          read comms handle
+```

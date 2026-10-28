@@ -1,0 +1,33 @@
+---
+description: "Return file size in CDE of File Entry at pointer BHL (B=00h-FFh embedded slot mask, HL=0000h-3FFFh bank offset)."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7471540 (version 2) by scripts/import-z88-wiki.cjs */}
+
+# EP_Size ($2D) - Return file size of File Entry
+
+## Register Parameters
+
+```text
+IN:
+     A = EP_SIZE
+   BHL = Pointer to File Entry in card at slot
+
+OUT:
+   Fc = 0, File Eprom available
+        Fz = 1, File Entry marked as deleted
+        Fz = 0, File Entry active
+             CDE = size of file (24bit integer, C = high byte)
+
+   Fc = 1,
+        A = RC_ONF
+        File Eprom was not found in slot, or File Entry not available
+
+Registers changed after return:
+   ..B...HL/IXIY same
+   AF.CDE../.... different
+```
+
+## Notes
+
+Return file size in CDE of File Entry at pointer BHL (B=00h-FFh embedded slot mask, HL=0000h-3FFFh bank offset).

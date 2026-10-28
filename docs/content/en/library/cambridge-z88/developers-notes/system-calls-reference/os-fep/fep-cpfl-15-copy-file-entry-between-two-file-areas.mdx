@@ -1,0 +1,45 @@
+---
+description: "Copy file entry from one file area to another file area in slot C (or to file area in same slot).The routine does NOT handle automatical \"deletion\" of existing files that matches the filename..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7962656 (version 4) by scripts/import-z88-wiki.cjs */}
+
+# FEP_CPFL ($15), Copy file entry between two File Areas
+
+## Register Parameters
+
+```text
+IN:
+          A = FEP_CPFL
+          C = slot number (0, 1, 2 or 3)
+        BHL = pointer to file entry to be copied
+OUT:
+        Fc = 0,
+             File successfully copied to File Area in slot C.
+        Fc = 1,
+             File (Flash) Eprom not available in slot C:
+                  A = RC_Nfe (not a recognized Flash Memory Chip)
+             File Entry at BHL was not found, or no file area in slot C:
+                  A = RC_Onf
+             No sufficient space to store file (and File Entry Header) in slot C:
+                  A = RC_Room
+             Flash Write Errors:
+                  If possible, the new File Entry is marked as deleted.
+                  A = RC_Vpl, RC_Bwr (see "flashepr.def" for details)
+
+Registers changed on return:
+   ..BCDEHL/IXIY same
+   AF....../.... different
+```
+
+## Notes
+
+Copy file entry from one file area to another file area in slot C (or to file area in same slot).<br /><br />The routine does NOT handle automatical "deletion" of existing files that matches the filename (excl. device). This must be used by a call to [**OS\_Epr**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-epr), EP\_Delete. Should the actual process of blowing the file image fail, the new File Entry will be marked as deleted, if possible.
+
+**Important:**<br />Third generation AMD Flash Memory chips may be programmed in all available slots (0-3). Only INTEL I28Fxxxx series Flash chips require the 12V VPP pin in slot 3 to successfully blow data on the memory chip. If the Intel Flash Eprom card is inserted in slot 1 or 2, this routine will report a programming failure.<br /><br />It is the responsibility of the application (before using this call) to evaluate the Flash Memory (using the [**OS\_Fep**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fep), FEP\_CDID routine) and warn the user that an INTEL Flash Memory Card requires the Z88 slot 3 hardware, so this type of unnecessary error can be avoided.
+
+The screen is turned off while the file entry is being copied (managed by this system call) to the file area of the same slot as the OZ ROM. During copying no interference should happen from Blink, because the Blink reads the font bitmaps each 1/100 second:
+
+If the screen were enabled while copying a file entry to a file area being part of the OZ ROM address space, the font bitmaps would suddenly be unavailable which would create violent screen flickering during chip command mode. Further, and most importantly, to avoid the Blink doing read-cycles while chip is in command mode.
+
+By switching off the screen, the Blink doesn't read the font bit maps in OZ ROM, and the Flash chip can be in command mode without being disturbed by the Blink.

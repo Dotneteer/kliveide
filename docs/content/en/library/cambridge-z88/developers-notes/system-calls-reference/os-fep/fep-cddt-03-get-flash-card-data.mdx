@@ -1,0 +1,45 @@
+---
+description: "Get a set of descriptive data of the flash chip identified by HL, including a text string displaying chip name. The following strings are returned in OZ V4.3 (details from flashepr.def include file):"
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7962628 (version 6) by scripts/import-z88-wiki.cjs */}
+
+# FEP_CDDT ($03), Get Flash Card Data
+
+## Register Parameters
+
+```text
+IN:
+    A = FEP_CDDT
+   HL = Polled from Flash Memory Chip (see FEP_CDID):
+        Manufacturer & Device Code
+
+OUT:
+   Fc = 0
+      ID was found (verified):
+      A = chip generation (FE_28F or FE_29F)
+      B = total of 16K banks on Flash Memory
+      CDE = extended pointer to null-terminated string description of chip
+   Fc = 1
+     ID was not found
+
+Registers changed on return:
+  ......HL/IXIY same
+  AFBCDE../.... different
+```
+
+## Notes
+
+Get a set of descriptive data of the flash chip identified by HL, including a text string displaying chip name. The following strings are returned in OZ V4.3 (details from flashepr.def include file):
+
+| Manufacturer & Device Code (HL) | Returned text string | Chip description | Chip hardware |
+| --- | --- | --- | --- |
+| $89A7 | "I28F004S5 (512K)" | Intel Flash chip 12V | 8 x 64K sectors |
+| $89A2 | "I28F008S5 (1Mb)" | Intel Flash chip 12V, original I28F008SA | 16 x 64K sectors |
+| $89A6 | "I28F008S5 (1Mb)" | Intel Flash chip 12V | 16 x 64K sectors |
+| $0120 | "AM29F010B (128K)" | AMD Flash 5V | 8 x 16K sectors |
+| $01A4 | "AM29F040B (512K)" | AMD Flash 5V | 8 x 64K sectors |
+| $01D5 | "AM29F080B (1Mb)" | AMD Flash 5V | 16 x 64K sectors |
+| $3786 | "AMIC29F040B (512K)" | Amic Flash 5V (AMD compatible) | 8 x 64K sectors |
+
+All above flash chips are managed by OZ File Card Interface, **[OS\_Epr](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-epr)** and **[OS\_Fep](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fep)**; writing data and erasing of sectors.

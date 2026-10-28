@@ -1,0 +1,97 @@
+---
+description: "If both HL and DE are zero or they are both non-zero then the operation of this call is undefined."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7962739 (version 6) by scripts/import-z88-wiki.cjs */}
+
+# OS_Mv, Move bytes between stream and memory
+
+## Register parameters
+
+```text
+ IN:
+     BC = number of bytes to move (0 = indicates no data)
+     IX = handle of file (or device)
+     DE = 0, move data from memory, starting at (HL), to the file
+     HL = 0, move data from the file to memory, starting at (DE)
+
+OUT, if call (perhaps partially) successful:
+     Fc = 0
+     BC = number of bytes not 'moved'
+     DE(in) = 0, HL points to next byte to read
+     HL(in) = 0, DE points to next byte to write
+
+OUT, if call failed:
+     Fc = 1
+     A = error code:
+          RC_EOF ($09), end of file reached at some stage
+          RC_HAND ($08), bad handle supplied in IX
+          RC_RP ($13), device is read-protected, eg. :OUT.0
+          RC_ESC ($01), escape, if device :COM.0, :PRT.0, or :INP.0
+          RC_SUSP ($69), suspension if device is :COM.0, :PRT.0 or :INP.0
+          RC_DRAW ($66), redraw screen, if device is :INP.0
+          RC_QUIT ($67), kill request, if device is :INP.0
+
+Registers changed after return:
+     ......../IXIY same
+     AFBCDEHL/.... different
+```
+
+## Notes
+
+If both HL and DE are zero or they are both non-zero then the operation of this call is undefined.
+
+## Bugs
+
+**[OS\_Mv](https://cambridgez88.jira.com/wiki/pages/viewpage.action?pageId=104562711)** on files previously opened with **[GN\_Opf](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-opf)**, **OP\_UP:** When residing in the last 62 byte sector (or the first sector) of the current file, when **[OS\_Mv](https://cambridgez88.jira.com/wiki/pages/viewpage.action?pageId=104562711)** call completes, the adjusted file pointer of **OS\_Mv** also becomes the new EOF - and content up until the 62nd bytes of the current sector will be truncated. This bug exists in all OZ versions, **V2.2 - V4.7**. This bug is fixed in **OZ V4.7.1** and newer releases.
+
+An example to illustrate the problem:
+
+File size is 40 bytes, the current file pointer is set at position 28, **OS\_Mv** is executed to write 2 bytes, which results in new file pointer becoming position 30. Due to the bug, <strong>*the rest of file contents until position 40 is lost*</strong> (truncated).
+
+## Related calls
+
+**[GN\_Cl](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-cl)**, close file <br />**[GN\_Del](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-del)**, delete a file from memory <br />**[GN\_Opf](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-opf)**, open file/resource (wildcard search) <br />**[GN\_Ren](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-ren)**, rename file <br />**[OS\_Cl](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-cl)**, internal close (OZ usage) <br />**[OS\_Del](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-del)**, file delete (internal OZ usage) <br />**[OS\_Frm](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-frm)**, file read miscellaneous <br />**[OS\_Fwm](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fwm)**, file write miscellaneous <br />**[OS\_Gb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-gb)**, get byte from file (or device) <br />**[OS\_Gbt](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-gbt)**, get byte from file (or device) with timeout <br />**[OS\_Op](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-op)**, internal open (OZ usage) <br />**[OS\_Pb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-pb)**, write byte to file, device <br />**[OS\_Pbt](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-pbt)**, write byte to file, device with timeout <br />**[OS\_Ren](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-ren)**, file rename (internal OZ usage)
+
+## Register parameters
+
+```text
+ IN:
+     BC = number of bytes to move (0 = indicates no data)
+     IX = handle of file (or device)
+     DE = 0, move data from memory, starting at (HL), to the file
+     HL = 0, move data from the file to memory, starting at (DE)
+
+OUT, if call (perhaps partially) successful:
+     Fc = 0
+     BC = number of bytes not 'moved'
+     DE(in) = 0, HL points to next byte to read
+     HL(in) = 0, DE points to next byte to write
+
+OUT, if call failed:
+     Fc = 1
+     A = error code:
+          RC_EOF ($09), end of file reached at some stage
+          RC_HAND ($08), bad handle supplied in IX
+          RC_RP ($13), device is read-protected, eg. :OUT.0
+          RC_ESC ($01), escape, if device :COM.0, :PRT.0, or :INP.0
+          RC_SUSP ($69), suspension if device is :COM.0, :PRT.0 or :INP.0
+          RC_DRAW ($66), redraw screen, if device is :INP.0
+          RC_QUIT ($67), kill request, if device is :INP.0
+
+Registers changed after return:
+     ......../IXIY same
+     AFBCDEHL/.... different
+```
+
+## Notes
+
+If both HL and DE are zero or they are both non-zero then the operation of this call is undefined.
+
+## Bugs
+
+**[OS\_Mv](https://cambridgez88.jira.com/wiki/pages/viewpage.action?pageId=104562711)** on files previously opened with **[GN\_Opf](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-opf)**, OP\_UP that are less or equal to 63 bytes length: Issuing a **[GN\_Cl](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-cl)** (close file) just after a **[OS\_Mv](https://cambridgez88.jira.com/wiki/pages/viewpage.action?pageId=104562711)**, the file contents will be truncated into rubbish from the current file pointer and onwards (to the end of the file).
+
+## Related calls
+
+**[GN\_Cl](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-cl)**, close file <br />**[GN\_Del](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-del)**, delete a file from memory <br />**[GN\_Opf](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-opf)**, open file/resource (wildcard search) <br />**[GN\_Ren](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-ren)**, rename file <br />**[OS\_Cl](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-cl)**, internal close (OZ usage) <br />**[OS\_Del](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-del)**, file delete (internal OZ usage) <br />**[OS\_Frm](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-frm)**, file read miscellaneous <br />**[OS\_Fwm](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fwm)**, file write miscellaneous <br />**[OS\_Gb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-gb)**, get byte from file (or device) <br />**[OS\_Gbt](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-gbt)**, get byte from file (or device) with timeout <br />**[OS\_Op](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-op)**, internal open (OZ usage) <br />**[OS\_Pb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-pb)**, write byte to file, device <br />**[OS\_Pbt](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-pbt)**, write byte to file, device with timeout <br />**[OS\_Ren](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-ren)**, file rename (internal OZ usage)

@@ -1,0 +1,52 @@
+---
+description: "Two system calls are available to enable and disable interrupts. It is very important to use these calls and not use the Z80 interrupt instructions because of a hardware bug in the Z80, which..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/2752712 (version 2) by scripts/import-z88-wiki.cjs */}
+
+# Interrupts
+
+Two system calls are available to enable and disable interrupts. It is very important to use these calls and not use the Z80 interrupt instructions because of a hardware bug in the Z80, which allows for interrupts to occur while reading the interrupt status. Note that disabling interrupts should be avoided if possible and that NMI (Non Maskable Interrupts) will still occur. If a HALT is executed when interrupts are disabled the system will stop. HALT should not be used anyway, nor should EI, DI or IM \<n\>.
+
+```text
+CALL $0051
+
+IN:
+            -
+OUT:
+            A = old I register
+            Fc = old interrupt status (Fc = 1 disabled; Fc = 0 enabled)
+ 
+Registers changed after return:
+            ..BCDEHL/IXIY same
+            AF....../.... different
+```
+
+```text
+CALL $0054
+
+IN:
+
+            A = old I register
+            Fc = old interrupt status (Fc = 1 disabled; Fc = 0 enabled)
+
+OUT:        -
+
+Registers changed after return:
+            AFBCDEHL/IXIY same
+            ......../.... different
+```
+
+Thus one might do:
+
+```text
+            call OZ_DI
+            push af
+
+            ; operations requiring disabled interrupts
+
+            pop  af
+            call OZ_EI
+```
+
+and be assured for the interrupt status is preserved.

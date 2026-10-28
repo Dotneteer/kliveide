@@ -1,0 +1,48 @@
+---
+description: "The reference of the Z80 mnemonics have been included here for the sake of a quick guide during program analysation, optimising and debugging. For convenience, we have also attached a complete..."
+asIndexPage: true
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/9568413 (version 9) by scripts/import-z88-wiki.cjs */}
+
+# The Zilog Z80 CPU Instruction Set
+
+## Introduction
+
+The reference of the Z80 mnemonics have been included here for the sake of a quick guide during program analysation, optimising and debugging. For convenience, we have also attached a **[complete Reference User Manual of the Z80 CPU](https://cambridgez88.jira.com/wiki/download/attachments/9568413/z80cpu.pdf)**, describing all aspects; hardware organisation, detailed instruction set reference with examples, etc.
+
+If you want more comprehensive information, **[Wikipedia](http://en.wikipedia.org/wiki/Zilog_Z80)** describes in great detail the historical aspect and the many variations of the **[Zilog Z80](http://en.wikipedia.org/wiki/Zilog_Z80)** 8bit microprocessor.
+
+## Notation rules
+
+`r specifies any one of the registers: A, B, C, D, E, H, L.` <br />`(HL) specifies the contents of memory at the location addressed by HL.` <br />`n specifies a 8 bits expression in the range (0 to 255).` <br />`nn specifies a 16 bits expression in the range (0 to 65535), low byte first.` <br />`d specifies a 8 bits displacement value in the range (-128 to 127).` <br />`(nn) specifies the contents of memory at the location addressed by nn address.` <br />`b specifies an expression in the range (0 to 7).` <br />`e specifies a one-byte expression in the range (-126 to 129).` <br />`cc specifies the condition flag :` <br /> `Z (Zero), NZ (Not Zero)` <br /> `C (Carry), NC (Not Carry)` <br /> `P (Plus), M (Minus)` <br /> `PO (Parity Odd), PE (Parity Even)` <br />`qq specifies any one of the register pairs: BC, DE, HL or AF.` <br />`ss specifies any one of the register pairs: BC, DE, HL or SP.` <br />`pp specifies any one of the register pairs: BC, DE, IX or SP.` <br />`rr specifies any one of the register pairs: BC, DE, IY or SP.` <br />`s specifies any of r, n, (HL), (IX+d) or (IY+d).` <br />`dd specifies any one of the register pairs: BC, DE, HL or SP.` <br />`m specifies any of r, (HL), (IX+d) or (IY+d).`
+
+## Flagregister notation:
+
+`? Changed functionally according to operation.`<br />`* Flag not affected.`<br />`X Flag is set randomly by operation.`<br />`0 Flag is reset.`<br />`1 Flag is set.`<br />`V Flag signals overflow by operation.`<br />`P Flag signals even parity.`
+
+The symbol 'V' in the Flags column displays the P/V flag.<br />The leftmost flag bit, the Sign flag, represents bit 7 - the rightmost bit, the Carry flag, represents bit 0. Bit 5 and 3 (with the '.' symbol) are not used, but are set randomly by the processor during execution of various instructions.
+
+The numbers in the instruction opcode column represents the binary representation of the byte opcode from bit 0 to 7 (total of eight bits).<br />When no hexadecimal number is displayed several opcodes are generated from the bit pattern.<br />The index registers registers `IX` and `IY` are fully represented with the `IY` register example (`IX` only varies with the 1. opcode DDh).
+
+**The following pages organises the instruction set according to their group.**
+
+## Introduction
+
+The reference of the Z80 mnemonics have been included here for the sake of a quick guide during program analysation, optimising and debugging. For convenience, we have also attached a **complete Reference User Manual of the Z80 CPU**, describing all aspects; hardware organisation, detailed instruction set reference with examples, etc.
+
+If you want more comprehensive information, **[Wikipedia](http://en.wikipedia.org/wiki/Zilog_Z80)** describes in great detail the historical aspect and the many variations of the **[Zilog Z80](http://en.wikipedia.org/wiki/Zilog_Z80)** 8bit microprocessor.
+
+## Notation rules
+
+`r specifies any one of the registers: A, B, C, D, E, H, L.` <br />`(HL) specifies the contents of memory at the location addressed by HL.` <br />`n specifies a 16 bits expression in the range (0 to 255).` <br />`nn specifies a 8 bits expression in the range (0 to 65535), low byte first.` <br />`d specifies a 8 bits displacement value in the range (-128 to 127).` <br />`(nn) specifies the contents of memory at the location addressed by nn address.` <br />`b specifies an expression in the range (0 to 7).` <br />`e specifies a one-byte expression in the range (-126 to 129).` <br />`cc specifies the condition flag :` <br /> `Z (Zero), NZ (Not Zero)` <br /> `C (Carry), NC (Not Carry)` <br /> `P (Plus), M (Minus)` <br /> `PO (Parity Odd), PE (Parity Even)` <br />`qq specifies any one of the register pairs: BC, DE, HL or AF.` <br />`ss specifies any one of the register pairs: BC, DE, HL or SP.` <br />`pp specifies any one of the register pairs: BC, DE, IX or SP.` <br />`rr specifies any one of the register pairs: BC, DE, IY or SP.` <br />`s specifies any of r, n, (HL), (IX+d) or (IY+d).` <br />`dd specifies any one of the register pairs: BC, DE, HL or SP.` <br />`m specifies any of r, (HL), (IX+d) or (IY+d).`
+
+## Flagregister notation:
+
+`? Changed functionally according to operation.`<br />`* Flag not affected.`<br />`X Flag is set randomly by operation.`<br />`0 Flag is reset.`<br />`1 Flag is set.`<br />`V Flag signals overflow by operation.`<br />`P Flag signals even parity.`
+
+The symbol 'V' in the Flags column displays the P/V flag.<br />The leftmost flag bit, the Sign flag, represents bit 7 - the rightmost bit, the Carry flag, represents bit 0. Bit 5 and 3 (with the '.' symbol) are not used, but are set randomly by the processor during execution of various instructions.
+
+The numbers in the instruction opcode column represents the binary representation of the byte opcode from bit 0 to 7 (total of eight bits).<br />When no hexadecimal number is displayed several opcodes are generated from the bit pattern.<br />The index registers registers `IX` and `IY` are fully represented with the `IY` register example (`IX` only varies with the 1. opcode DDh).
+
+**The following pages organises the instruction set according to their group.**

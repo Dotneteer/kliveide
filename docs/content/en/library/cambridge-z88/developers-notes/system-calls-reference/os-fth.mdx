@@ -1,0 +1,39 @@
+---
+description: "OS_Vth, verify tri-handle OS_Gth, get tri-handle"
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7962679 (version 3) by scripts/import-z88-wiki.cjs */}
+
+# OS_Fth, Free tri-handle
+
+## Register parameters
+
+```text
+IN:
+     A = Tri-handle subtype
+     TH_FILT ($F0), free filter handle
+     TH_WMG ($F1), free wildcard manager handle
+     TH_ALM ($F2), free alarm handle
+     IX = tri-handle
+
+OUT, if call successful:
+     Fc = 0, handle freed
+     IX = 0
+     BHL = Tri-handle contents
+
+OUT, if call failed:
+     Fc = 1
+     A = RC_HAND, bad handle
+
+Registers changed after return:
+     ...CDE../..IY same
+     AFB...HL/IX.. different
+```
+
+## Notes
+
+Internal operating system usage.
+
+## Related calls
+
+**[OS\_Vth](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-vth)**, verify tri-handle <br />**[OS\_Gth](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-gth)**, get tri-handle

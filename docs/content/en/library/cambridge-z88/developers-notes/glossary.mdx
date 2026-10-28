@@ -1,0 +1,116 @@
+---
+description: "Glossary"
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7471106 (version 4) by scripts/import-z88-wiki.cjs */}
+
+# Glossary
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td style={{ whiteSpace: "nowrap" }}>**Application**</Table.Td>
+<Table.Td>A program set up according to the appropriate machine conventions. The program is blown into ROM or EPROM cards using static data structures that identify the hotkey to activate it, menu and help pages for commands.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td style={{ whiteSpace: "nowrap" }}>**Bank**</Table.Td>
+<Table.Td>16K chunk of memory, always on a 16K boundary in the logical address space. See also SEGMENT.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td style={{ whiteSpace: "nowrap" }}>**Blink**</Table.Td>
+<Table.Td>The name given to the Z88's gate array chip. The chip handles the screen, serial port, keyboard, memory switching, interrupts, etc.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td style={{ whiteSpace: "nowrap" }}>**Card Manager**</Table.Td>
+<Table.Td>This refers to the code which deals with inserting and removing ROM cards. The basic rules are that all interchange should be done from the INDEX and that the machine is switched ON. If an application is using a ROM card then the card's slot number is displayed in the column next to the application name in the INDEX popdown window. RAM cards can only be inserted, never removed. File EPROM cards can be inserted and removed at most time, but obviously not while the FILER is actively reading or writing slot 3.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td style={{ whiteSpace: "nowrap" }}>**CLI**</Table.Td>
+<Table.Td>Command Line Interpreter. This is used to simulate the keyboard and to rebind streams (re-direct or copy I/O information).</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td style={{ whiteSpace: "nowrap" }}>**Director**</Table.Td>
+<Table.Td>Synomym for INDEX (the name used for it while much of the code was being written, hence DC operating system calls, not IC calls).</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td style={{ whiteSpace: "nowrap" }}>**DOR**</Table.Td>
+<Table.Td>Node in dynamic tree structure used in applications and in the RAM filing system.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td style={{ whiteSpace: "nowrap" }}>**Explicit Filename**</Table.Td>
+<Table.Td>A filename which includes the device and root directories. For example "queries.pdd" might become ":RAM.1/office.dir/queries.pdd".</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td style={{ whiteSpace: "nowrap" }}>**Extension**</Table.Td>
+<Table.Td>Up to three letters after the filename, usually used to classify the file, eg. you might add .pdd to all your PipeDream files to aid identification.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td style={{ whiteSpace: "nowrap" }}>**Filter**</Table.Td>
+<Table.Td>Conceptual 'object' (actually a set of routines) which perform transformations in a byte sequense, Also see Printer Filter.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td style={{ whiteSpace: "nowrap" }}>**Handle**</Table.Td>
+<Table.Td>A handle is a 16bit value, usually returned in the IX register, used in file-like operations (eg. files, filters, etc.) to direct input and output. For example, a handle is returned when a file is opened and is subsequently used whenever the file is accessed. A file can have several handles associated with it and attributes like the sequential pointer into a file are associated with each handle and not with the file itself. There are a finite number of handles in the machine, initially around 150, and the current number available is reflected in the high word of the sequential pointer associated with a handle value of -1 (In BASIC, PTR\#-1).</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td style={{ whiteSpace: "nowrap" }}>**Instantiation**</Table.Td>
+<Table.Td>This refers to one 'run' of an application. For example if two copies of PipeDream are current, than each copy is called an 'instantiation' and although the same program is running, the data associated with each are independent.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td style={{ whiteSpace: "nowrap" }}>**Logical address**</Table.Td>
+<Table.Td>Address which the Z80 CPU 'sees', ie. a standard 16bit Z80 address. See also *Physical Address*.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td style={{ whiteSpace: "nowrap" }}>**MOS**</Table.Td>
+<Table.Td>Machine operating system. Also referred to as OZ.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td style={{ whiteSpace: "nowrap" }}>**Page**</Table.Td>
+<Table.Td>256 byte chunk of memory, on a 256-byte boundary. This is the basic unit of memory on which the allocation routines operate.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td style={{ whiteSpace: "nowrap" }}>**Physical Address**</Table.Td>
+<Table.Td>24 byte address referring to an actual memory location (only 22bits are significant, giving an addressing range of 4MB). The memory are organised, seen in 256 16K blocks, each slot addressing 1MB, giving a total of 4MB (14bit logical address + 8bit bank number = 22 bit)</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td style={{ whiteSpace: "nowrap" }}>**Pre-emption**</Table.Td>
+<Table.Td>The suspension of a process, normally prior to the main body of a system call.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td style={{ whiteSpace: "nowrap" }}>**Printer Filter**</Table.Td>
+<Table.Td>This is a filter controlled by the Printer Editor. It allows applications to use special printing effects by specifying filter codes and letting the filter generate codes appropriate to the printer actually in use.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td style={{ whiteSpace: "nowrap" }}>**Process**</Table.Td>
+<Table.Td>A particular instantiation of a program (normally an application).</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td style={{ whiteSpace: "nowrap" }}>**Segment**</Table.Td>
+<Table.Td>
+
+1. One of the four 16K portions of the logical memory map (which the Z80 can see). All memory banks in the system can be bound to one of the four memory segments (64K/4 = 16K, hence four segments).
+
+2. One of the portions of a filename separated by '/', ie. a file or a directory name.
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td style={{ whiteSpace: "nowrap" }}>**Slot**</Table.Td>
+<Table.Td>
+
+1. One of the three physical holes in the front of the machine, which can accept a RAM, EPROM or ROM card. The internal memory of the machine is thought of as Slot 0.
+
+2. The transmission form for a character of data in the serial system, ie. the byte to be transmitted plus appropriate start and stop bits.
+
+3. Concept used in PipeDream. Roughly approximates to a spreadsheet cell.
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td style={{ whiteSpace: "nowrap" }}>**Stream**</Table.Td>
+<Table.Td>This is a communication channel with an associated handle.</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>

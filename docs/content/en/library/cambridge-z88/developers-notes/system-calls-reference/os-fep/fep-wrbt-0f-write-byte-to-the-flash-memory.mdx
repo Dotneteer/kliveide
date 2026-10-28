@@ -1,0 +1,44 @@
+---
+description: "Write a byte (in C) to the Flash Memory Card in slot x, at address BHL. BHL points to a bank, offset (which is part of the slot that the Flash Memory Card have been inserted into)."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7962649 (version 5) by scripts/import-z88-wiki.cjs */}
+
+# FEP_WRBT ($0F), Write byte to the Flash Memory
+
+## Register Parameters
+
+```text
+In:
+        A = FEP_WRBT
+        C = byte to blow at address
+        E = FE_28F, FE_29F or 0 (poll card for blowing algorithm)
+        BHL = pointer to Flash Memory address (B=00h-FFh, HL=0000h-3FFFh)
+              (bits 7,6 of B is the slot mask)
+Out:
+        Success:
+             Fc = 0
+        Failure:
+             Fc = 1
+             A = RC_BWR (programming of byte failed)
+             A = RC_NFE (not a recognized Flash Memory Chip)
+             A = RC_UNK (chip type is unknown: use only FE_28F, FE_29F or 0)
+
+Registers changed on return:
+   ..BCDEHL/IXIY same
+   AF....../.... different
+```
+
+## Notes
+
+Write a byte (in C) to the Flash Memory Card in slot x, at address BHL. BHL points to a bank, offset (which is part of the slot that the Flash Memory Card have been inserted into).
+
+<u>This system call is regarded as internal operating system usage but may be used by applications</u>.
+
+The routine can be told which programming algorithm to use (by specifying the FE\_28F or FE\_29F mnemonic in E); these parameters can be fetched when investigated which Flash Memory chip is available in the slot, using the [**OS\_Fep**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fep), FEP\_CDID routine that reports these constants back to the caller.<br /><br />However, if neither of the constants are provided in E, the routine can be specified with E = 0 which internally polls the Flash Memory for identification and intelligently use the correct programming algorithm.<br /><br />Important:<br />Third generation AMD Flash Memory chips may be erased/programmed in all available slots (0-3). Only INTEL I28Fxxxx series Flash chips require the 12V VPP pin in slot 3 to successfully erase or blow data on the memory chip. If the Intel Flash Eprom card is inserted in slot 1 or 2, this routine will report a programming failure.<br /><br />It is the responsibility of the application (before using this call) to evaluate the Flash Memory (using the [**OS\_Fep**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fep), FEP\_CDID routine) and warn the user that an INTEL Flash Memory Card requires the Z88 slot 3 hardware, so this type of unnecessary error can be avoided.
+
+It is also the responsibility of the application (before using this call) to turn off the screen while writing to a card which contains the running OZ ROM. During writing, no interference should happen from Blink, because the Blink reads the font bitmaps each 1/100 second:
+
+If the screen were enabled while formatting inside the address space that is part of OZ ROM chip, the font bitmaps would suddenly be unavailable which would create violent screen flickering during chip command mode. Further, and most importantly, to avoid the Blink doing read-cycles while chip is in command mode.
+
+By switching off the screen, the Blink doesn't read the font bit maps in OZ ROM, and the Flash chip can be in command mode without being disturbed by the Blink.

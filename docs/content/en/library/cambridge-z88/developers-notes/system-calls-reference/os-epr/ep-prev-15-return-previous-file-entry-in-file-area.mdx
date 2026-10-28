@@ -1,0 +1,34 @@
+---
+description: "To get the previous file entry, the current file entry pointer must be supplied as argument to this API. The B register defines the absolute bank number which contains the slot mask ($40 for slot..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7471498 (version 3) by scripts/import-z88-wiki.cjs */}
+
+# EP_Prev ($15) - Return previous file entry in File Area
+
+## Register parameters
+
+```text
+IN:
+     A = EP_PREV
+   BHL = pointer to current file entry in slot (B=00h-FFh, HL=0000h-3FFFh).
+
+OUT:
+   Fc = 0, File Eprom Area available
+        Fz = 1, File Entry marked as deleted
+        Fz = 0, File Entry is active.
+        BHL = pointer to previous file entry in slot (B=00h-FFh, HL=0000h-3FFFh).
+
+   Fc = 1,
+        A = RC_Onf
+        File Eprom was not found in slot, or current File entry was the first
+        File Entry (an attempt was made to go beyond the bottom of the file area)
+
+Registers changed after return:
+   A..CDE../IXIY same
+   .FB...HL/.... different
+```
+
+## Notes
+
+To get the previous file entry, the current file entry pointer must be supplied as argument to this API. The B register defines the absolute bank number which contains the slot mask ($40 for slot 1, $80 for slot 2 and $C0 for slot 3).

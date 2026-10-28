@@ -1,0 +1,35 @@
+---
+description: "Since a memory page is on a 256 byte boundary, the L register is ignored. Refer to explicit memory allocation for further informations."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7471372 (version 15) by scripts/import-z88-wiki.cjs */}
+
+# OS_Axp, Allocate explicit page
+
+## Register parameters
+
+```text
+IN:
+     IX = memory handle
+     B = explicit bank
+     H = explicit page
+
+OUT, if call successful:
+     Fc = 0, OK
+
+OUT, if call failed:
+     Fc = 1
+          A = RC_FAIL, failed to allocate memory
+
+Registers changed after return:
+     ..BCDEHL/IXIY same
+     AF....../.... different
+```
+
+## Notes
+
+Since a memory page is on a 256 byte boundary, the L register is ignored. Refer to **[explicit memory allocation](/en/library/cambridge-z88/developers-notes/memory-management/explicit-memory-allocation)** for further informations.
+
+Related calls
+
+**[OS\_Bix](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-bix)**, Bind in extended address <br />**[OS\_Box](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-box)**, Restore bindings after OS\_Bix <br />**[OS\_Fc](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fc)**, Select fast code (fast bank switching) <br />**[OS\_Mal](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mal)**, Allocate memory<br />**[OS\_Mcl](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mcl)**, Close memory (free memory pool) <br />**[OS\_Mfr](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mfr)**, Free (previously allocated block) memory <br />**[OS\_Mgb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mgb)**, Get current bank binding in segment <br />**[OS\_Mop](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mop)**, Open memory (allocate memory pool) <br />**[OS\_Mpb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mpb)**, Set new bank binding in segment<br />**[OZ\_Mgb](/en/library/cambridge-z88/developers-notes/system-calls-reference/oz-mgb)**, Get current bank binding in segment<br />**[OZ\_Mpb](/en/library/cambridge-z88/developers-notes/system-calls-reference/oz-mpb)**, Set new bank binding in segment

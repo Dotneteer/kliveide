@@ -1,0 +1,43 @@
+---
+description: "GN_Esa, read & write to filename segments GN_Fcm, compress a filename GN_Fex, expand a filename GN_Opw, Open wildcard handler GN_Pfs, parse filename segment GN_Wcl, close wildcard handle GN_Wfn,..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8618163 (version 4) by scripts/import-z88-wiki.cjs */}
+
+# GN_Prs, Parse filename
+
+## Register parameters
+
+```text
+IN:
+     HL = 0,1,2; not allowed (B=0)
+     BHL = points to filename
+     (B = 0 is interpreted as local pointer)
+     Filename must be terminated by a control character.
+OUT, if call successful:
+     Fc = 0
+     A0 = 1, extension used
+     A1 = 1, filename used
+     A2 = 1, explicit directory used
+     A3 = 1, current directory (".") used
+     A4 = 1, parent directory ("..") used
+     A5 = 1, wildcard directory ("//") used
+     A6 = 1, device specified
+     A7 = 1, wildcards used
+
+     B = number of segments in filename
+     C = length of filename including terminator
+
+OUT, if call failed:
+     Fc = 1
+     A = error code:
+          RC_IVF ($17), poor syntax
+
+Registers changed after return:
+     ....DEHL/IXIY same
+     AFBC..../.... different
+```
+
+## Related calls
+
+**[GN\_Esa](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-esa)**, read & write to filename segments <br />**[GN\_Fcm](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-fcm)**, compress a filename <br />**[GN\_Fex](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-fex)**, expand a filename <br />**[GN\_Opw](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-opw)**, Open wildcard handler <br />**[GN\_Pfs](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-pfs)**, parse filename segment <br />**[GN\_Wcl](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-wcl)**, close wildcard handle <br />**[GN\_Wfn](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-wfn)**, fetch next match for wildcard string (handle) <br />**[GN\_Wsm](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-wsm)**, match filename segment to wildcard string

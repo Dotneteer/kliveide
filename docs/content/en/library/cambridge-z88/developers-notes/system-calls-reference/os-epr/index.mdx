@@ -1,0 +1,102 @@
+---
+description: "OS_Epr is used for the management of File Cards. For all Z88 OZ releases up until V4.0, this API contained only EP_Save, EP_Load and EP_Dir reason codes. This system call manages File Cards in the..."
+asIndexPage: true
+---
+
+import { Callout } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7471416 (version 22) by scripts/import-z88-wiki.cjs */}
+
+# OS_Epr, File Eprom Interface
+
+## Register parameters
+
+```text
+IN:
+    A = reason code:
+
+    EP_Save = $00    Blow RAM file to UV Eprom 
+    EP_Load = $03    Copy file from File Area, as RAM file 
+    EP_Req = $06     Check for "oz" File Eprom or File Area in slot C  (OZ 4.2 and newer)
+    EP_Fetch = $09   Copy saved/deleted file from File Area to RAM     (OZ 4.2 and newer)
+    EP_Find = $0c    Find active File(name) in File Area in slot C     (OZ 4.2 and newer)
+    EP_Dir = $0f     Return next filename (starting with first) 
+    EP_First = $12   Return first file entry in File Area in slot C    (OZ 4.2 and newer)
+    EP_Prev = $15    Return previous file entry in File Area           (OZ 4.2 and newer)
+    EP_Next = $18    Return next file entry in File Area               (OZ 4.2 and newer)
+    EP_Last = $1b    Return last file entry in File Area in slot C     (OZ 4.2 and newer)
+    EP_TotSp = $1e   Return amount of used file space in slot C        (OZ 4.2 and newer)
+    EP_ActSp = $21   Return active file space in slot C                (OZ 4.2 and newer)
+    EP_FreSp = $24   Return free file space in slot C                  (OZ 4.2 and newer)
+    EP_Count = $27   Return number of files in File Area slot C        (OZ 4.2 and newer)
+    EP_Stat = $2a    Return file entry status (active or deleted)      (OZ 4.2 and newer)
+    EP_Size = $2d    Return file size of File Entry                    (OZ 4.2 and newer)
+    EP_Name = $30    Copy File entry name to buffer at (CDE)           (OZ 4.2 and newer)
+    EP_Image = $33   Return pointer to start of file contents          (OZ 4.2 and newer)
+    EP_New = $36     Return pointer to future new entry in File Area   (OZ 4.2 and newer)
+    EP_SvFl = $39    Save RAM file to Flash or UV Eprom to slot C      (OZ 4.2 and newer)
+    EP_Delete = $3c  Mark File Entry as deleted on Flash or UV Eprom   (OZ 4.2 and newer)
+    EP_Format = $3f  Create File Area in slot C (Eprom or Flash Card)  (OZ 4.2 and newer)
+    EP_NewFile = $42 Write Blow RAM file to slot C                     (OZ 4.2 and newer)
+    EP_WrBlk = $45   Write a block of bytes to UV Eprom in slot 3      (OZ 4.2 and newer)
+    EP_Fptr = $48    Get file pointer via offset into file entry image (OZ 4.5 and newer)
+    EP_Empty = $4b   Poll for empty file area in slot C                (OZ 4.5 and newer)
+    EP_SvAs = $4e    Stream opened RAM file to file area in slot C     (OZ 4.7 and newer)
+    EP_FndAt = $50   Find active File(name) at file entry, forwards    (OZ 4.7 and newer)
+    EP_Mount = $53   Mount :EPR filesystem                             (OZ 5.0 and newer)
+    EP_Umnt = $56    Unmount :EPR filesystem                           (OZ 5.0 and newer)
+    EP_Node = $59    Add EPR filesystem node                           (OZ 5.0 and newer)
+
+    BC, DE, HL, IX arguments. 
+
+OUT:
+    Fc = 1, A = error code.
+    Fc = 0, reason code action successfully ended.
+
+Registers changed after return depends on individual API call.
+```
+
+## Notes
+
+[**OS\_Epr**](https://cambridgez88.jira.com/wiki/pages/viewpage.action?pageId=96010399) is used for the management of File Cards. For all Z88 OZ releases up until V4.0, this API contained only EP\_Save, EP\_Load and EP\_Dir reason codes. This system call manages File Cards in the following format:
+
+<Callout type="default">
+
+**File Card Format**
+
+```text
+$0000       File entry
+...         File entry
+...         Latest file entry
+
+...         $FF's until
+$3FC0       $00's until
+$3FF7       $01
+$3FF8       4 byte random id
+$3FFC       size of card in banks (2=32K, 8=128K, 16=256K)
+$3FFD       sub-type, $7E for 32K cards, and $7C for 128K (or larger) cards
+$3FFE       'o'
+$3FFF       'z' (file eprom identifier, lower case 'oz')
+```
+
+A file entry has the form:
+
+```text
+1 byte      n           length of filename
+1 byte      x           '/' for latest version, $00 for old version (deleted)
+n-1 bytes   'xxxx'      filename
+4 bytes     m           length of file (least significant byte first)
+m bytes                 body of file
+```
+
+</Callout>
+
+When a file is saved to EPROM which has the same name as an existing file, the byte following the filename length, is set to zero, thus marking the file deleted. However, the name length and contents of the old file are all intact and so by directly reading the EPROM, deleted files can be recovered.
+
+The [**OS\_Epr**](https://cambridgez88.jira.com/wiki/pages/viewpage.action?pageId=96010399) API interface has now been greatly extended for application usage, this is used in the OZ V4.2 (interim) release, and is a reflection of the implementations done originally by the standard library. All library routines were used in the FlashStore popdown. These were originally conceived as a BBC BASIC utility for the first 1Mb Intel Flash cards.
+
+With OZ V4.2, all the functionality of File Card Management has been implemented as new reason codes. These can be found in detail in subsequent pages. FlashStore has been integrated as a system popdown into OZ V4.2 and uses all [**OS\_Epr**](https://cambridgez88.jira.com/wiki/pages/viewpage.action?pageId=96010399) functionalities. The Filer popdown has also been optimized in OZ V4.2 to use the new functionality of [**OS\_Epr**](https://cambridgez88.jira.com/wiki/pages/viewpage.action?pageId=96010399).
+
+## Related system calls
+
+[**OS\_Fep**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fep), Flash Card Interface

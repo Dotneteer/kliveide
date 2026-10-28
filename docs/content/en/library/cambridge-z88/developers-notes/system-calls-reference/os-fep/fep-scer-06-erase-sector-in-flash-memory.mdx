@@ -1,0 +1,41 @@
+---
+description: "Erase sector defined in B (00h-0Fh), on Flash Memory Card inserted in slot C."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7962634 (version 4) by scripts/import-z88-wiki.cjs */}
+
+# FEP_SCER ($06), Erase sector in Flash Memory
+
+## Register Parameters
+
+```text
+IN:
+        A = FEP_SCER
+        B = block/sector number on chip to be erased (00h - 0Fh)
+            (available sector size and count depend on chip type)
+        C = slot number (0, 1, 2 or 3) of Flash Memory Card
+OUT:
+        Success:
+             Fc = 0
+        Failure:
+             Fc = 1
+             A = RC_NFE (not a recognized Flash Memory Chip)
+             A = RC_BER (error occurred when erasing block/sector)
+             A = RC_VPL (Vpp Low Error)
+
+Registers changed on return:
+   ..BCDEHL/IXIY same
+   AF....../.... different
+```
+
+## Notes
+
+Erase sector defined in B (00h-0Fh), on Flash Memory Card inserted in slot C.
+
+<u>This system call is regarded as internal operating system usage but may be used by applications</u>.<br /><br />The routine will internally ask the Flash Memory for identification and intelligently use the correct erasing algorithm. All known Flash Memory chips from INTEL, AMD & AMIC (see flashepr.def) uses 64K sectors, except the AM29F010B 128K chip, which uses 16K sectors.<br /><br />**Important:**<br />INTEL I28Fxxxx series Flash chips require the 12V VPP pin in slot 3 to successfully erase a block/sector on the memory chip. If the Flash Eprom card is inserted in slot 1 or 2, this routine will automatically report a sector erase failure error.<br /><br />It is the responsibility of the application (before using this call) to evaluate the Flash Memory (using the [**OS\_Fep**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fep), FEP\_CDID API) and warn the user that an INTEL Flash Memory Card requires the Z88 slot 3 hardware, so this type of unnecessary error can be avoided.
+
+It is also the responsibility of the application (before using this call) to turn off the screen while formatting the sector, when the sector is in the same slot as the running OZ ROM. During formatting, no interference should happen from Blink, because the Blink reads the font bitmaps each 1/100 second:
+
+If the screen were enabled while formatting inside the address space that is part of OZ ROM chip, the font bitmaps would suddenly be unavailable which would create violent screen flickering during chip command mode. Further, and most importantly, to avoid the Blink doing read-cycles while chip is in command mode.
+
+By switching off the screen, the Blink doesn't read the font bit maps in OZ ROM, and the Flash chip can be in command mode (writing file area header and formatting area) without being disturbed by the Blink.

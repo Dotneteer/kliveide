@@ -1,0 +1,60 @@
+---
+description: "GN_Gmt, get (read) machine time in internal format GN_Gtm, convert an ASCII string to a time in internal format GN_Pmt, put (set) machine time GN_Ptm, write internal time as ASCII string GN_Sdo,..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8618136 (version 7) by scripts/import-z88-wiki.cjs */}
+
+# GN_Msc, Miscellaeneous time operations
+
+## Register parameters
+
+```text
+IN:
+     A = MT_CVT ($00), Convert source to time to elapse:
+     BHL = source time days
+     CDE = source time centiseconds/ticks
+
+     A = MT_UBT ($01), Update base time:
+     BHL = additional offset in minutes
+     C = offset in seconds
+
+     A = MT_UPT ($02), Read uptime
+
+OUT, if A(in) = MT_CVT
+	 Fc = 0, success
+     	BHL = minutes still to elapse
+     	C = seconds still to elapse (only when minutes < 0)
+     	A = centiseconds still to elapse
+     Fc = 1, failure
+     	A = RC_FAIL ($16), time given to routine has already elapsed
+
+Registers changed after return:
+     ....DE../IXIY same
+     AFBC..HL/.... different
+
+OUT, if A(in) = MT_UBT
+	 Fc = 0, always
+
+Registers changed after return:
+     A.BCDEHL/IXIY same
+     .F....../.... different
+
+OUT, if A(in) = MT_UPT
+	 Fc = 0, always
+	 DE = days since latest hard reset
+	 H = hours, L = minutes and C = seconds
+
+Registers changed after return:
+     A.B...../IXIY same
+     .F.CDEHL/.... different
+```
+
+## Notes
+
+- MT\_CVT : Operating system uses this call to determine when an alarm has to be triggered by calculating difference between alarm time and current time.
+- MT\_UBT : Applications should not use this call, the system to maintain the time over soft reset. It adjusts the base time because hardware timers are reset.
+- MT\_UPT : Uptime is the operating system running time since latest hard reset. Uptime is preserved over soft reset (OZ V5.0).
+
+## Related calls
+
+**[GN\_Gmt](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-gmt)**, get (read) machine time in internal format <br />**[GN\_Gtm](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-gtm)**, convert an ASCII string to a time in internal format <br />**[GN\_Pmt](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-pmt)**, put (set) machine time <br />**[GN\_Ptm](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-ptm)**, write internal time as ASCII string <br />**[GN\_Sdo](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-sdo)**, send date and time to standard output <br />**[OS\_Dly](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-dly)**, delay a given period

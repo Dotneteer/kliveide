@@ -1,0 +1,120 @@
+---
+description: "The following calls return system handles in IX:"
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7962761 (version 7) by scripts/import-z88-wiki.cjs */}
+
+# Director and CLI handles information
+
+The following calls return system handles in IX:
+
+## NQ\_Dmh
+
+```text
+IN:  BC = NQ_Dmh
+OUT: IX = memory handle
+
+Registers changed after return:
+     A.BCDEHL/..IY same
+     .F....../IX.. different
+```
+
+## NQ\_Fmh
+
+```text
+IN:  BC = NQ_Fmh
+OUT: IX = memory handle
+
+Registers changed after return:
+     A.BCDEHL/..IY same
+     .F....../IX.. different
+```
+
+## NQ\_Inp
+
+```text
+IN:  BC = NQ_Inp
+OUT: IX = input stream handle
+
+Registers changed after return:
+     A.BCDEHL/..IY same
+     .F....../IX.. different
+```
+
+## NQ\_Out
+
+```text
+IN:  BC = NQ_Out
+OUT: IX = output stream handle
+
+Registers changed after return:
+     A.BCDEHL/..IY same
+     .F....../IX.. different
+```
+
+## NQ\_Prt
+
+```text
+IN:  BC = NQ_Prt
+OUT: IX = printer stream handle
+
+Registers changed after return:
+     A.BCDEHL/..IY same
+     .F....../IX.. different
+```
+
+## NQ\_Tin
+
+```text
+IN:  BC = NQ_Tin
+OUT: IX = input tee stream handle
+
+Registers changed after return:
+     A.BCDEHL/..IY same
+     .F....../IX.. different
+```
+
+## NQ\_Tot
+
+```text
+IN:  BC = NQ_Tot
+OUT: IX = output tee stream handle
+
+Registers changed after return:
+     A.BCDEHL/..IY same
+     .F....../IX.. different
+```
+
+## NQ\_Tpr
+
+```text
+IN:  BC = NQ_Tpr
+OUT: IX = printer tee stream handle
+
+Registers changed after return:
+     A.BCDEHL/..IY same
+     .F....../IX.. different
+```
+
+## NQ\_Chn
+
+```text
+IN:  BC = NQ_Chn
+OUT: IX = comms handle
+
+Registers changed after return:
+     A.BCDEHL/..IY same
+     .F....../IX.. different
+```
+
+## NQ\_Prc
+
+```text
+IN:  BC = NQ_Prc
+     A  = process dynamic id (Pid)
+OUT: BHL = process environment address
+
+Registers changed after return:
+     A..CDE../..IY same
+     .FB...HL/IX.. different
+```

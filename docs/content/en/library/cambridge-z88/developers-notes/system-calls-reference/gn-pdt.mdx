@@ -1,0 +1,68 @@
+---
+description: "A3 = A4 = 0 will output in system defined format.A3 = A4 = 1 undefined result.A5 = 0 will use space as inter-field delimiter."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8618151 (version 6) by scripts/import-z88-wiki.cjs */}
+
+# GN_Pdt, Convert an internal date to an ASCII string
+
+## Register parameters
+
+```text
+IN:
+     HL = 0,1,2 not allowed
+     HL > 255, HL points to 3 byte internal date (low byte first)
+     DE = 0, result to stream IX
+     DE = 1, result to filter IX
+     DE = 2, not allowed
+     DE > 255, result written at (DE)
+
+     A0 = 1, enable zero blanking
+     A1 = 1, output leading space
+     A2 = 1, output trailing space
+     A3 = 1, force American format (day, month, date, year)
+     A4 = 1, force European format (day, date, month year)
+     A5 = 1, force C as inter-field delimiter
+     A6 = 1, date suffix output
+     A7 = 1, century output
+
+     B0 = 1, output text month, reset for numeric month
+     B1 = 1, output expanded day, reset for compressed day
+     B2 = 1, output expanded month, reset for numeric month
+     B3 = 1, output day, reset for no day
+     B4 = 1, output AD or BC, reset for no AD/BC
+	 B5 - B7, undefined
+
+     C = optional inter-field delimiter (A5 = 1)
+     IX = optional output handle (if DE = 0,1)
+
+OUT, if call successful:
+     Fc = 0
+     DE = points to next character after result (if DE(in) > 255), else
+     contains number of characters written to destination.
+OUT, if call failed:
+     Fc = 1
+     A = error code:
+          RC_BAD ($04), bad parameters
+          RC_ROOM ($07), no room to perform conversion
+
+Registers changed after return:
+     ..BC..HL/IXIY same
+     AF..DE../.... different
+```
+
+## Notes
+
+A3 = A4 = 0 will output in system defined format.<br />A3 = A4 = 1 undefined result.<br />A5 = 0 will use space as inter-field delimiter.
+
+Since OZ 4.5 date strings are fully country localized.
+
+## Bugs
+
+Will fail if source or destination addresses are in segment 2.
+
+Destination address (DE\>255) can not be in segment 1 used by Date Filter Table. Source address (HL\>255) can be in segment 1.
+
+## Related calls
+
+**[GN\_Dei](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-dei)**, convert zoned format date to internal format <br />**[GN\_Die](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-die)**, convert internal format date to zoned format <br />**[GN\_Gdt](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-gdt)**, convert an ASCII string to an internal binary date <br />**[GN\_Gmd](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-gmd)**, Get (read) machine date in internal format <br />**[GN\_Pmd](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-pmd)**, put (set) machine date

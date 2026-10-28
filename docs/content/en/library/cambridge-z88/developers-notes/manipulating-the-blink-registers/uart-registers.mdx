@@ -1,0 +1,181 @@
+---
+description: "RXE ($E1), extended receive data register"
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/3113005 (version 12) by scripts/import-z88-wiki.cjs */}
+
+# UART registers
+
+## UART Receive registers
+
+RXD ($E0), receive data register
+
+```text
+7  6  5  4  3  2  1  0 
+----------------------- 
+D7 D6 D5 D4 D3 D2 D1 D0 
+-----------------------
+```
+
+RXE ($E1), extended receive data register
+
+```text
+BIT         NAME        Function
+7           -           Always clear
+6           -           Always clear
+5           FE          Frame error, set if error (FE = ~S2)
+4           RXDB        Value of RXD pin on BLINK
+3           TCLK        Internal transmit clock
+2           RCLK        Internal receive clock
+1           PAR         Parity or first stop bit (PAR = S1)
+0           START       Start bit (should be zero)
+```
+
+RXC ($E2), receive control register
+
+```text
+BIT         NAME        Function
+7           SHTW        Set to select short word mode
+6           LOOP        Set to connect transmit to receive (used for testing)
+5           UART        Set to hold UART in RESET
+4           ARTS        Auto RTS mode
+3           IRTS        Invert RTS
+2           BAUD 2      These three bits define receiver baud rate
+1           BAUD 1
+0           BAUD 0
+```
+
+SHTW is used to align RXC register with the incoming data such that the byte you want ends up in RXC and you do not get stuck with parity or stop bits. We can see the effect of SHTW by showing how an incoming data stream is mapped onto RXC and RXE. Suppose the incoming data is
+
+--\> S2 S1 D7 D6 D5 D4 D3 D2 D1 D0 ST --\> Z88
+
+```text
+BITS        If SHTW=0               If SHTW=1
+S2          FE (inverted)           Not clocked in
+S1          PAR                     FE (inverted)
+D7          D7                      PAR
+D7-D0       D7-D0                   D7-D0
+ST          START                   START
+```
+
+When ARTS is set then RTS will be asserted every time a new character is received and cleared when the receive register has been read. Manual control of RTS can be achieved by using IRTS to change the current state of the line. IRTS = 0 toggle the RTS line low (-5.5V) stopping incoming transmission, IRTS = 1 toggle the line high (+5.5V) allowing incoming transmission.
+
+The baud rates set by BAUD 2 to BAUD 0 are as follows:
+
+```text
+Value       (Baud2-0)   Baud rate
+0           000         75
+1           001         300
+2           010         600
+3           011         1200
+4           100         2400
+5           101         9600
+6           110         19200
+7           111         38400
+```
+
+## UART Transmit registers
+
+The transmit data registers is 11 bits wide with the upper 3 bits being written by the address lines A8-A10 during the OUT instruction. The register looks like this:
+
+TXD ($E3), Transmit data register
+
+```text
+            10          9           8           7-0
+            --------------------------------------------
+            STOP2       STOP1       START       D7 - D0
+            --------------------------------------------
+```
+
+If SHTW (in RXC) is set then STOP2 will not be sent out and only 10 bits will be sent in all. To load the register you must use a code sequence like:
+
+```text
+            ld   a, data            ; 8 bits to send
+            ld   b, @00000110       ; 2 stops, 1 start
+            ld   c, TXD             ; I/O port $B3
+            out  (c),a              ; transmit data
+```
+
+TXC ($E4), Transmit control register
+
+```text
+BIT         NAME        Function
+7           UTEST       Set fast baud rate for receive and transmit
+6           IDCD        If set, DCD interrupts when low (else when high)
+5           ICTS        If set, CTS interrupts when low (else when high)
+4           ATX         Auto transmit mode
+3           ITX         Invert Tx data output pin
+2           BAUD2       These three bits define transmit baud reate
+1           BAUD1       (See above table for baud rates)
+0           BAUD0
+```
+
+When ATX is set the data in TXD will not be sent until CTS is asserted. Manual control of the TxD pin can be achieved by using ITX to change the current state of the line.
+
+## UART interrupts and status
+
+UIT ($E5), UART interrupt status register
+
+```text
+BIT         NAME        Function
+7           RSRD        Receive shift register full (cleared when read)
+6           DCDI        DCD interrupt
+5           CTSI        CTS interrupt
+4           TDRE        Transmit data register empty
+3           -           -
+2           RDRF        Receive data register full
+1           DCD         State of DCD line
+0           CTS         State of CTS line
+```
+
+The registers UMK and UAK control the enabling and acknowledging of the UART interrupts. CTS and DCD can both be enabled to cause interrupts and the interrupts can be set to occur on either state of the line (IDCD and ICTS in the TXC register). To clear a DCD interrupt the state of IDCD needs to be changed (since the interrupt is level and not edge triggered) and then the DCD bit should be set in the interrupt acknowledge register UAK. CTS works in exactly the same way as DCD.
+
+UMK ($E5), UART interrupt mask register
+
+```text
+BIT         NAME        Function
+7           -           -
+6           DCD         If set, DCD interrupts are enabled
+5           CTS         If set, CTS interrupts are enabled
+4           TDRE        If set, transmit data register empty interrupt enabled
+3           -           -
+2           RDRF        If set, receive data register full interrupt enabled
+1           -           -
+0           -           -
+```
+
+UMK register masks UIT register in order to generate UART interrupt bit in STA, logic is STA\[UART\] = \|(UIT & UMK). UIT bits are always up to date regardless of UMK value. UAK is a write only register, it resets UIT\[DCDI\] and UIT\[CTSI\] bits.
+
+UAK ($E6), UART interrupt acknowledge register
+
+```text
+BIT         NAME        Function
+7           -           -
+6           DCD         Set to acknowledge DCD interrupt
+5           CTS         Set to acknowledge CTS interrupt
+4           -           -
+3           -           -
+2           -           -
+1           -           -
+0           -           -
+```
+
+To clear TDRE and RDRF interrupts you write to the transmit data register or read from the receive data register respectively.
+
+## UART examples
+
+It is sometimes desirable to explicitly manipulate the RTS line of the serial interface for example when auto-dialing modems. This may be done by manipulating the IRTS bit in the RXC register. In programming terms this is bit 3 of I/O port $E2. It is important that the soft copy is updated first.
+
+Bit 3 is XOR'ed with the normal state of the RTS line, as defined by RDRF in UIT (receive data register full) and ARTS (auto RTS) in RXC.
+
+The logic is RTS=\[\[RDRF AND ARTS\] XOR IRTS\]. This bit therefore toggles the RTS line. A code fragment to achieve this might be:
+
+```text
+            ld   bc, $04E2          ; address of soft copy
+            ld   a,(bc)             ; fetch old value
+            or   8                  ; (use AND 247 to reset)
+            ld   (bc),a             ; update soft copy
+            out  (c),a              ; update hardware
+```
+
+The TxD (transmit data) line can be inverted by changing the state of ITX in TXC (the transmit control register) using bit 3 of I/O port $E4 (soft copy address $04E4) in a similar way to the RTS line. The value of the RxD line (receive data) can be found by reading RXDB in RXE (extended receive data register, using bit 4 of I/O port $E1 (soft copy $04E1 - the soft copy will not necessarily be up to date).

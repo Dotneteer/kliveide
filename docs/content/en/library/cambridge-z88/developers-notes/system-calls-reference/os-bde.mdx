@@ -1,0 +1,32 @@
+---
+description: "GN_Cme, compare null-terminated strings, one local, one extended GN_Rbe, read byte at extended address GN_Wbe, write byte at extended address OS_Bhl, copy bytes from extended address"
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7471378 (version 9) by scripts/import-z88-wiki.cjs */}
+
+# OS_Bde, Copy bytes to extended address
+
+## Register parameters
+
+```text
+IN:
+     C = number of bytes to copy (0 ... 255)
+     HL = local source pointer ($0000-$7FFF)
+     BDE = extended destination pointer
+OUT:
+     Fc = 0 always
+
+Registers changed after return:
+     A.BCDEHL/IXIY same
+     .F....../.... different
+```
+
+## Notes
+
+- Bank boundary crossing of destination is automatically handled, if number of bytes to read passes between to banks then B is incremented (typically when writing contents from a File Entry on a File Card).
+- The HL source pointer has to be in segment 0 or 1.
+- The call does not work if the source pointer defines memory in segments 2 or 3.
+
+## Related calls
+
+**[GN\_Cme](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-cme)**, compare null-terminated strings, one local, one extended <br />**[GN\_Rbe](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-rbe)**, read byte at extended address <br />**[GN\_Wbe](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-wbe)**, write byte at extended address <br />**[OS\_Bhl](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-bhl)**, copy bytes from extended address

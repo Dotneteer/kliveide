@@ -1,0 +1,28 @@
+---
+description: "Clears buffer and sets buffer pointer. Buffer length is 22 bytes."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7962707 (version 5) by scripts/import-z88-wiki.cjs */}
+
+# OS_Isq, Initialize prefix sequence
+
+## Register parameters
+
+```text
+IN: HL = sequence buffer
+OUT: -
+
+Registers affected after return:
+     A.BCDE../IXIY same
+     .F....HL/.... different
+```
+
+## Notes
+
+Internal operating system usage.
+
+Clears buffer and sets buffer pointer. Buffer length is 22 bytes.
+
+## Related calls
+
+**[OS\_Wsq](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-wsq)**, write to prefix sequence

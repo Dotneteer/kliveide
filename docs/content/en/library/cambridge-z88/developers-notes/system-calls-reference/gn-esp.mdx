@@ -1,0 +1,635 @@
+---
+description: "The following is a list of messages produced by GN_Esp. All other values of A(in), and hence any error codes not in the list below, will give the message \"Internal Error\" and these errors are all..."
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8618083 (version 9) by scripts/import-z88-wiki.cjs */}
+
+# GN_Esp, Return an extended pointer to a system error message
+
+## Register parameters
+
+```text
+N:
+     A = system error code requesting a pointer to a string
+OUT:
+     Fc = 0
+     Fz = 1, error is fatal
+     Fz = 0, useful error message
+     BHL = pointer to error message string
+
+Registers changed after return:
+     A..CDE../IXIY same
+     .FB...HL/.... different
+```
+
+## Notes
+
+The following is a list of messages produced by [**GN\_Esp**](https://cambridgez88.jira.com/wiki/pages/viewpage.action?pageId=96010364). All other values of A(in), and hence any error codes not in the list below, will give the message "Internal Error" and these errors are all fatal.
+
+<Table>
+<thead>
+<Table.Tr>
+<Table.Th>Return Code</Table.Th>
+<Table.Th>Value</Table.Th>
+<Table.Th>Message</Table.Th>
+<Table.Th>Fatality</Table.Th>
+<Table.Th>OZ release</Table.Th>
+</Table.Tr>
+</thead>
+<tbody>
+<Table.Tr>
+<Table.Td>RC\_ESC</Table.Td>
+<Table.Td>$01</Table.Td>
+<Table.Td>
+
+```text
+"Escape"
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td>V2.2 - V4.0</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>RC\_TIM</Table.Td>
+<Table.Td>$02</Table.Td>
+<Table.Td>
+
+```text
+"Timeout"
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td>V2.2 - V4.0</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>RC\_UNK</Table.Td>
+<Table.Td>$03</Table.Td>
+<Table.Td>
+
+```text
+"Internal Error"
+```
+
+</Table.Td>
+<Table.Td>Error is fatal</Table.Td>
+<Table.Td>V2.2 - V4.0</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>RC\_BAD</Table.Td>
+<Table.Td>$04</Table.Td>
+<Table.Td>
+
+```text
+"Internal Error"
+```
+
+</Table.Td>
+<Table.Td>Error is fatal</Table.Td>
+<Table.Td>V2.2 - V4.0</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>RC\_MS</Table.Td>
+<Table.Td>$05</Table.Td>
+<Table.Td>
+
+```text
+"Internal Error"
+```
+
+</Table.Td>
+<Table.Td>Error is fatal</Table.Td>
+<Table.Td>V2.2 - V4.0</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>RC\_NA</Table.Td>
+<Table.Td>$06</Table.Td>
+<Table.Td>
+
+```text
+"Internal Error"
+```
+
+</Table.Td>
+<Table.Td>Error is fatal</Table.Td>
+<Table.Td>V2.2 - V4.0</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>RC\_ROOM</Table.Td>
+<Table.Td>$07</Table.Td>
+<Table.Td>
+
+```text
+"No Room"
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td>V2.2 - V4.0</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>RC\_HAND</Table.Td>
+<Table.Td>$08</Table.Td>
+<Table.Td>
+
+```text
+"Bad handle"
+```
+
+</Table.Td>
+<Table.Td>Error is fatal</Table.Td>
+<Table.Td>V2.2 - V4.0</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>RC\_EOF</Table.Td>
+<Table.Td>$09</Table.Td>
+<Table.Td>
+
+```text
+"End of file"
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td>V2.2 - V4.0</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>RC\_FLF</Table.Td>
+<Table.Td>$0A</Table.Td>
+<Table.Td>
+
+```text
+"Filter full"
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td>V2.2 - V4.0</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>RC\_OVF</Table.Td>
+<Table.Td>$0B</Table.Td>
+<Table.Td>
+
+```text
+"Overflow"
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td>V2.2 - V4.0</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>RC\_SNTX</Table.Td>
+<Table.Td>$0C</Table.Td>
+<Table.Td>
+
+```text
+"Bad syntax"
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td>V2.2 - V4.0</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>RC\_WRAP</Table.Td>
+<Table.Td>$0D</Table.Td>
+<Table.Td>
+
+```text
+"Wrap"
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td>V2.2 - V4.0</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>RC\_PUSH</Table.Td>
+<Table.Td>$0E</Table.Td>
+<Table.Td>
+
+```text
+"Cannot satisfy request"
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td>V2.2 - V4.0</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>RC\_ERR</Table.Td>
+<Table.Td>$0F</Table.Td>
+<Table.Td>
+
+```text
+"Internal Error"
+```
+
+</Table.Td>
+<Table.Td>Error is fatal</Table.Td>
+<Table.Td>V2.2 - V4.0</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>RC\_TYPE</Table.Td>
+<Table.Td>$10</Table.Td>
+<Table.Td>
+
+```text
+"Unexpected type"
+```
+
+</Table.Td>
+<Table.Td>Error is fatal</Table.Td>
+<Table.Td>V2.2 - V4.0</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>RC\_PRE</Table.Td>
+<Table.Td>$11</Table.Td>
+<Table.Td>
+
+```text
+"No room"
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td>V2.2 - V4.0</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>RC\_ONF</Table.Td>
+<Table.Td>$12</Table.Td>
+<Table.Td>
+
+```text
+"File not found"
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td>V2.2 - V4.0</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>RC\_RP</Table.Td>
+<Table.Td>$13</Table.Td>
+<Table.Td>
+
+```text
+"Read protected"
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td>V2.2 - V4.0</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>RC\_WP</Table.Td>
+<Table.Td>$14</Table.Td>
+<Table.Td>
+
+```text
+"Write protected"
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td>V2.2 - V4.0</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>RC\_USE</Table.Td>
+<Table.Td>$15</Table.Td>
+<Table.Td>
+
+```text
+"In use"
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td>V2.2 - V4.0</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>RC\_FAIL</Table.Td>
+<Table.Td>$16</Table.Td>
+<Table.Td>
+
+```text
+"Cannot satisfy request"
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td>V2.2 - V4.0</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>RC\_IVF</Table.Td>
+<Table.Td>$17</Table.Td>
+<Table.Td>
+
+```text
+"Bad filename"
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td>V2.2 - V4.0</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>RC\_FTM</Table.Td>
+<Table.Td>$18</Table.Td>
+<Table.Td>
+
+```text
+"File type mismatch"
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td>V2.2 - V4.0</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>RC\_EXIS</Table.Td>
+<Table.Td>$19</Table.Td>
+<Table.Td>
+
+```text
+"Already exists"
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td>V2.2 - V4.0</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>RC\_ADDR</Table.Td>
+<Table.Td>$32</Table.Td>
+<Table.Td>
+
+```text
+"Unknown error"
+```
+
+</Table.Td>
+<Table.Td>Error is fatal</Table.Td>
+<Table.Td>V2.2 - V4.0</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>RC\_SIZE</Table.Td>
+<Table.Td>$33</Table.Td>
+<Table.Td>
+
+```text
+"Unknown error"
+```
+
+</Table.Td>
+<Table.Td>Error is fatal</Table.Td>
+<Table.Td>V2.2 - V4.0</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>RC\_BANK</Table.Td>
+<Table.Td>$34</Table.Td>
+<Table.Td>
+
+```text
+"Unknown error"
+```
+
+</Table.Td>
+<Table.Td>Error is fatal</Table.Td>
+<Table.Td>V2.2 - V4.0</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>RC\_FRM</Table.Td>
+<Table.Td>$35</Table.Td>
+<Table.Td>
+
+```text
+"Frame error"
+```
+
+</Table.Td>
+<Table.Td>Error is fatal</Table.Td>
+<Table.Td>V2.2 - V4.0</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>RC\_PAR</Table.Td>
+<Table.Td>$36</Table.Td>
+<Table.Td>
+
+```text
+"Parity error"
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td>V2.2 - V4.0</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>RC\_BTL</Table.Td>
+<Table.Td>$37</Table.Td>
+<Table.Td>
+
+```text
+"Battery low"
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td>V4.7</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>RC\_VOZ</Table.Td>
+<Table.Td>$38</Table.Td>
+<Table.Td>
+
+```text
+"OZ version not compatible"
+```
+
+</Table.Td>
+<Table.Td>Error is fatal</Table.Td>
+<Table.Td>V5.0</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>RC\_DVZ</Table.Td>
+<Table.Td>$46</Table.Td>
+<Table.Td>
+
+```text
+"Divide by 0"
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td>V2.2 - V4.0</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>RC\_TBG</Table.Td>
+<Table.Td>$47</Table.Td>
+<Table.Td>
+
+```text
+"Number too big"
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td>V2.2 - V4.0</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>RC\_NVR</Table.Td>
+<Table.Td>$48</Table.Td>
+<Table.Td>
+
+```text
+"-ve root"
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td>V2.2 - V4.0</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>RC\_LGR</Table.Td>
+<Table.Td>$49</Table.Td>
+<Table.Td>
+
+```text
+"Log range"
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td>V2.2 - V4.0</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>RC\_ACL</Table.Td>
+<Table.Td>$4A</Table.Td>
+<Table.Td>
+
+```text
+"Accuracy lost"
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td>V2.2 - V4.0</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>RC\_EXR</Table.Td>
+<Table.Td>$4B</Table.Td>
+<Table.Td>
+
+```text
+"Exponent range"
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td>V2.2 - V4.0</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>RC\_BDN</Table.Td>
+<Table.Td>$4C</Table.Td>
+<Table.Td>
+
+```text
+"Bad number"
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td>V2.2 - V4.0</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>RC\_DRAW</Table.Td>
+<Table.Td>$66</Table.Td>
+<Table.Td>
+
+```text
+"Redraw"
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td>V2.2 - V4.0</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>RC\_QUIT</Table.Td>
+<Table.Td>$67</Table.Td>
+<Table.Td>
+
+```text
+"Unknown error"
+```
+
+</Table.Td>
+<Table.Td>Error is fatal</Table.Td>
+<Table.Td>V2.2 - V4.0</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>RC\_SUSP</Table.Td>
+<Table.Td>$69</Table.Td>
+<Table.Td>
+
+```text
+"Suspended"
+```
+
+</Table.Td>
+<Table.Td />
+<Table.Td>V2.2 - V4.0</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>RC\_VPL</Table.Td>
+<Table.Td>$70</Table.Td>
+<Table.Td>`"Flash VPP low"`</Table.Td>
+<Table.Td />
+<Table.Td>V4.2</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>RC\_BWR</Table.Td>
+<Table.Td>$71</Table.Td>
+<Table.Td>`"Flash/UV Eprom Write error"`</Table.Td>
+<Table.Td />
+<Table.Td>V4.2</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>RC\_BER</Table.Td>
+<Table.Td>$72</Table.Td>
+<Table.Td>`"Flash Erase error"`</Table.Td>
+<Table.Td />
+<Table.Td>V4.2</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>RC\_EPNE</Table.Td>
+<Table.Td>$73</Table.Td>
+<Table.Td>`"UV Eprom not fully cleared, erase again"`</Table.Td>
+<Table.Td />
+<Table.Td>V4.5</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>RC\_NFE</Table.Td>
+<Table.Td>$80</Table.Td>
+<Table.Td>`"Flash chip unknown"`</Table.Td>
+<Table.Td />
+<Table.Td>V4.2</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>RC\_NOZ</Table.Td>
+<Table.Td>$81</Table.Td>
+<Table.Td>`"Flash chip contains OZ"`</Table.Td>
+<Table.Td />
+<Table.Td>V4.2</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+## Related calls
+
+**[GN\_Err](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-err)**, display an interactive error box <br />**[OS\_Erc](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-erc)**, get error context <br />**[OS\_Erh](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-erh)**, set error handler <br />**[OS\_Esc](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-esc)**, examine special condition

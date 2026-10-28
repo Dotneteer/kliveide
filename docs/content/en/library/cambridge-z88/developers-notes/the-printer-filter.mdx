@@ -1,0 +1,71 @@
+---
+description: "All output sent to the ':PRT.0' device is routed via the printer filter. This is effectively the code translation system defined by the printer editor application; it allows the output sent to..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/2752564 (version 2) by scripts/import-z88-wiki.cjs */}
+
+# The Printer filter
+
+All output sent to the ':PRT.0' device is routed via the printer filter. This is effectively the code translation system defined by the printer editor application; it allows the output sent to ':PRT.0' to be in a standard form while allowing control codes peculiar to a certain type of printer to be sent to the printer itself. Note that this is NOT the same as a more general type of 'filter' which will be discussed later.
+
+The printer filter has its own on/off control, so rather than sending codes to switch the printer on, one sends codes to switch the printer filter itself on or off. Switching the filter on and off sends the printer on and off sequences, as defined in the Printer Editor. These should always be sent at the beginning and end of each printer sequence. If the filter is not switched on then everything sent (other then the on-message) is ignored. The control codes recognized by the printer filter are all prefixed by ENQ (ASCII code 5) and use the same mechanism for specifying the number of following parameters as the screen driver. Note that although a count of '1' is not strictly necessary it is possible to include it and PipeDream, for example, does so.
+
+## Control codes
+
+```text
+5, '['                  Printer filter on
+5, ']'                  Printer filter off
+5, '2','P',32+n         Set page length to n lines
+5, '2','H',32+n         Microspace n units
+5, 'S'                  New slot, reset highlights that would be reset on CR
+5, '3','$','x','y'      Send $xy to the printer
+```
+
+## Toggle display modes
+
+```text
+5, 'U'                  Underline
+5, 'B'                  Bold
+5, 'X'                  Extended sequence
+5, 'I'                  Italics
+5, 'L'                  Subscript
+5, 'R'                  Superscript (raised text)
+5, 'A'                  Alternate font
+5, 'E'                  User defined
+```
+
+The toggles can be automatically reset at the next slot or the next carriage return (CR) by setting the "Off at CR" option in the Printer Editor to Yes. By default all the display toggles except A (alternate font) and E (user defined) are automatically reset at a new slot or a carriage return.
+
+The following codes, in addition to SPACE to DEL ($20 - $7F) are sent to the printer:
+
+```text
+            NUL         ($00)
+            BEL         ($07)
+            BS          ($08)
+            HT          ($09)
+            LF          ($0A)
+            VT          ($0B)
+            FF          ($0C)
+            CR          ($0D)
+```
+
+The printer output can be redirected using the CLI (command line interpreter), and other output can be redirected to the printer. The following diagram shows where redirection occurs. The use of the CLI is detailed in the previous section, [Standard Input / Output and the CLI](/en/library/cambridge-z88/developers-notes/standard-input-output-and-the-cli).
+
+```text
+            output      PrinterEd   PANEL
+            redirected  |           |
+            to the      |           |
+            printer     |           |
+            .> :PRT     |           |
+                        |           |
+            |           |           |
+            |           |           |
+Application +---->----- Printer ->- comms -->-- 9 pin
+            |           filter      port        connector
+            |
+            |
+            redirected printer output
+            ( .= filename )
+```
+
+The Printer Filter also provides character translations. This facility is used in the default driver to generate a pound sign, which requires a sequence of codes to make the printer change character sets. The UK Z88 computer has 9 translations and the international version have a further 28. The translations may be set up using the PrinterEd application or by setting values directly with the **[OS\_Sp](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-sp)** call, see the [Miscellaneous useful routines](/en/library/cambridge-z88/developers-notes/miscellaneous-useful-routines) section.

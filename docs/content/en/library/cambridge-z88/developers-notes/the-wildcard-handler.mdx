@@ -1,0 +1,65 @@
+---
+description: "The wildcard calls can be used to supplement the calls described in File Input/Output. You can use the wildcard handler to gain control over the match selected, or indeed get all possible matches...."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/2752574 (version 3) by scripts/import-z88-wiki.cjs */}
+
+# The Wildcard Handler
+
+The wildcard calls can be used to supplement the calls described in [File Input/Output](/en/library/cambridge-z88/developers-notes/file-input-output). You can use the wildcard handler to gain control over the match selected, or indeed get all possible matches. The wildcard system recognizes the following character sequences:
+
+```text
+*           match any number of characters, or none
+?           match a single character
+//          matches any number of directories, or none
+```
+
+NOTE: **/** and <strong>\\</strong> are interchangeable, but the system generates **/**
+
+Normal use of the wildcard handler involves specifying a wildcard string and then getting, one by one, the possible explicit filenames that match it, if any actually do, which may then be used or discarded as required. The calls available are as follows:
+
+**[GN\_Opw](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-opw)**
+
+Open wildcard handler. This is given a pointer to a wildcard string and returns a wildcard handle in register IX associated with it. You can specify whether directories or files come first in the search and if directories and device paths are returned with each name.
+
+**[GN\_Wfn](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-wfn)**
+
+This gives the explicit filename of the next file which matches the string supplied to **[GN\_Opw](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-opw)**. It also returns the length and number of segments of the name it finds. If no more matches are available, the routine returns with Fc = 1 and A = RC\_EOF.
+
+**[GN\_Wcl](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-wcl)**
+
+Close the wildcard handler. You simply supply the wildcard handle.A detailed description of the call parameters of these calls may be found in the System Calls Reference section (click on the links of the system call API name).
+
+## Example
+
+The following program demonstrates the use of the above sequence in providing a complete catalogue of the RAM filing system, by matching to the wildcard string ":RAM.\*//\*". Note that this program does not include a "Page Wait" mechanism so output will simply be scrolled - you can hold down \<SHIFT\> and \<DIAMOND\> to freeze scrolling temporarily.
+
+```text
+
+```
+
+```text
+include "fileio.def"                ; get definitions for wildcard calls
+include "stdio.def"                 ; get standard I/O definitions
+ 
+; the routine assumes that address of 40 bytes of scratch buffer is 
+; held at (scratch) in static workspace 
+
+.main       ld   b, 0               ; local pointer to wildcard string
+            ld   hl, wildstring
+            xor  a                  ; directories returned first, do
+                                    ; not return parents
+            oz   GN_Opw             ; open wildcard handler
+.nextname   ld   de, (scratch)      ; pointer to buffer for returned filenames
+            ld   c, 40              ; max. extent of buffer
+            oz   GN_Wfn             ; get next (or first) match
+            jr   c, exit            ; is it the last entry?
+            ld   hl, (scratch)      ; point at found filename match
+            oz   GN_Sop             ; write filename to std. output
+            oz   GN_Nln             ; print a newline
+
+.exit       oz   GN_Wcl             ; close wildcard handler
+            ret
+
+.wildstring DEFM ":RAM.*//*", 0     ; change this if you like!
+```

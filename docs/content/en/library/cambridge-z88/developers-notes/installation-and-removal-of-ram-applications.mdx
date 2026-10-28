@@ -1,0 +1,67 @@
+---
+description: "Installing an application in RAM is a new feature that has been implemented in OZ 4.6. It allows end-users and programmers to add or remove a suite of applications or individually, using the Index..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/65208329 (version 19) by scripts/import-z88-wiki.cjs */}
+
+# Installation and removal of RAM Applications
+
+Installing an application in RAM is a new feature that has been implemented in OZ 4.6. It allows end-users and programmers to add or remove a suite of applications or individually, using the Index popdown. This facility simplifies application development iteration. No longer are EPROM or Flash cards needed to blow code into, or to be inserted and removed wearing out the external slots. From an end-user point of view, installing applications in RAM is a good alternative when those cards are not available. Notice that installed application are erased by a soft reset (previously allocated space available again for files and other resources). Applications are installed in available RAM in any slot. They are chained to an **:APP.-** virtual device. It can be seen from Filer with Catalogue Files ':APP.-//\*' command. Processes of installed applications are shown with a '-' in the cards column of Suspended Activities in the Index popdown.
+
+Two commands provide this feature:
+
+## Install application \<\>INS
+
+It will ask user to enter an **.app** filename. It contains all the data required to install in RAM the binary files of the application. Those files have to be in the same directory. Binary files have the extension **.ap0** to **.ap7**. Each binary file is up to 16K. Maximum size of an installation is 128K at once, this large size is helpful for an application suite with several applications sharing same code. An easy way to perform installation is just to mark the **.app** file from the Filer and enter Index (using the inter-application Mailbox feature).
+
+For compatibility, this implementation uses the **.app** file format as provided by the Installer Application by Garry Lancaster.
+
+```text
+.APP files are 40 bytes long.
+
+	Bytes	Use
+	-----	---
+	0-1	    File identifier ($5AA5)
+	2	    Number of banks (1-8)
+	3	    Number of patches (1-255) [NOT IMPLEMENTED]
+	4-6	    Pointer to first DOR (if 0,0,0 then ROM Front DOR used)
+	7	    Flags for required even banks
+	8-9	    Offset of .AP0 file
+	10-11	Length of .AP0 file
+	12-13	Offset of .AP1 file
+	14-15	Length of .AP1 file
+	16-17	Offset of .AP2 file
+	18-19	Length of .AP2 file
+	20-21	Offset of .AP3 file
+	22-23	Length of .AP3 file
+	24-25	Offset of .AP4 file
+	26-27	Length of .AP4 file
+	28-29	Offset of .AP5 file
+	30-31	Length of .AP5 file
+	32-33	Offset of .AP6 file
+	34-35	Length of .AP6 file
+	36-37	Offset of .AP7 file
+	38-39	Length of .AP7 file
+```
+
+The binary files are the same as a ROM slot card application. It can be a full bank or not. Each file hold up to 16K (a 32K application requires 2 binary files, etc...). Bank 63 ($3F) is held in the file with extension **.ap0**, bank 62 in **.ap1** etc, up to file **.ap7** which contains bank 56 ($38). It is recommended to specify the pointer to the first application DOR, however, leaving the pointer to zero requires a valid ROM Front DOR at the end of **.ap0** file. The patch option has not been implemented. Creating **.app** files can be easily performed with ['appmaker.bas'](http://www.worldofspectrum.org/z88forever/tools.html) tool provided by Garry, refer to 'toolkit.txt' for help.
+
+## Remove Application \<\>RMV
+
+This protected command shortcut removes the selected application. Before removal, the user has to kill all running processes of the application in 'Suspended Activities'. When a suite of applications have been installed, they are uninstalled at once by selecting the first application. This command free memory and handles allocated.
+
+## Technical aspects
+
+The previous Installer application has been a major step for Z88 users. It was designed for OZ 3.0 and 4.0. Unfortunately, it is not compatible with latest OZ system variables reorganization. This re-implementation has been done for a deeper integration with OZ in respect of memory allocation tables. The previous implementation was limited to external RAM slot. Now, the **:APP.-** device uses all available memory including internal memory. All informations for uninstallation are stored in handles, **.apu** files are not needed anymore. Remove command respects running processes of remaining installed applications and can refresh their static handle, feature that was not possible in previous implementation.
+
+##### Install principle
+
+It is based on [explicit memory allocation](/en/library/cambridge-z88/developers-notes/memory-management/explicit-memory-allocation). When the **.app** file has been parsed, [OS\_Fma](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fma) finds memory area according desired length and offset. Those areas are allocated by [OS\_Axm](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-axm) and binaries are copied to them with [OS\_Mv](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mv) (file to memory). Memory handle, number of installed applications, first application [DOR](/en/library/cambridge-z88/developers-notes/dor-s) are stored in an installation handle (OZ 4.6 and newer). Each installation leaves two handles open: the memory handle (type 3) and the installation handle (type 7). It ends by chaining the application DORs to the previous installed or to the application front device **:APP.-**.
+
+##### Remove principle
+
+It is performed by getting DOR from selected application, finding its corresponding installation handle with [OS\_Fn](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fn). Commands FN\_GH (find handle), FN\_NH (find next handle) parse the handle list to find it (OZ 4.6 and newer). Then DORs are unchained from the current linked list of installed applications, memory freed by [OS\_MCl](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mcl). Installation handle is freed by OS\_Fn with FN\_FH (free handle). Before removal, existing processes are checked by [DC\_Pol](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-pol) with A7 bit set option (OZ 4.6 and newer). The following processes are updated with the new application static handles because the static handle of the removed application will be used by another one if other application are installed. This update is performed by [OS\_Uash](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-uash) (OZ 4.6 and newer).
+
+##### Application Static Handles
+
+It is the number given by [OS\_Poll](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-poll) specific to an application. Index refers to an application by this number generally specified in IX. For information, the first 128 are referring to the card slot application (slot 0: 0-31, slot 1: 32-63, slot 2: 64-95, slot 3:96-127), the last 128 are devoted to installed applications (128-255). Thus a maximum of 128 applications can be installed on the system.

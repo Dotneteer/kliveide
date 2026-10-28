@@ -1,0 +1,30 @@
+---
+description: "GN_Alp, process an expired alarm GN_Fab, free alarm block GN_Lab, link an alarm block into the alarm chain GN_Uab, unlink an alarm block from the alarm chain OS_Alm, alarm manipulation (internal..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8618055 (version 4) by scripts/import-z88-wiki.cjs */}
+
+# GN_Aab, Allocate alarm block
+
+## Register parameters
+
+```text
+IN:  -
+
+OUT, if call successful:
+     Fc = 0
+     BHL = pointer to alarm block
+
+OUT, if call failed:
+     Fc = 1
+     A = error code
+          RC_ROOM ($07), no room to allocate alarm block
+
+Registers changed after return:
+     ...CDE../IXIY same
+     AFB...HL/.... different
+```
+
+## Related calls
+
+**[GN\_Alp](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-alp)**, process an expired alarm <br />**[GN\_Fab](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-fab)**, free alarm block <br />**[GN\_Lab](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-lab)**, link an alarm block into the alarm chain <br />**[GN\_Uab](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-uab)**, unlink an alarm block from the alarm chain <br />[**OS\_Alm**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-alm), alarm manipulation (internal OZ usage)

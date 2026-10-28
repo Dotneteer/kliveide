@@ -1,0 +1,49 @@
+---
+description: "Deprecated in OZ 5.0, call integrated in respective GN_ calls."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7962697 (version 7) by scripts/import-z88-wiki.cjs */}
+
+# OS_Ht, Hardware time manipulation
+
+## Register parameters
+
+```text
+IN:  A = HT_RES ($01), reset hardware timer
+
+OUT: -
+
+Registers changed after return:
+     A.BCDEHL/IXIY same
+     .F....../.... different
+
+IN:  A = HT_RD ($02), read hardware timer
+         HL = pointer to a 5 bytes buffer
+OUT: -
+
+Registers changed after return:
+     A.BCDEHL/IXIY same
+     .F....../.... different
+
+IN:  A = HT_MDT ($03), read monthy/date/time address
+OUT: Fc = 0
+     BHL = month, date, time address
+
+Registers changed after return:
+     ...CDE../IXIY same
+     AFB...HL/.... different
+
+IN:	 A = HT_UPT ($04), read uptime
+OUT: Fc = 0
+	 BCD = minutes, E = seconds since latest hard reset
+
+Registers changed after return:
+     AF....HL/IXIY same
+     ..BCDE../.... different
+```
+
+## Notes
+
+Internal operating system usage.
+
+Deprecated in OZ 5.0, call integrated in respective GN\_ calls.

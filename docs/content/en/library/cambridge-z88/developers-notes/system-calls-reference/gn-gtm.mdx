@@ -1,0 +1,49 @@
+---
+description: "The string can be of the form HH(:)MM(:SS)(:CC). For example five to two might be represented as \"13:54:43:04\". The () are optional."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8618127 (version 3) by scripts/import-z88-wiki.cjs */}
+
+# GN_Gtm, Convert an ASCII string to a time in internal format
+
+## Register parameters
+
+```text
+IN:
+     HL = source pointer
+          0 = read from stream IX handle
+          1 = read from filter IX handle
+          2 = not allowed
+          >255 = read string at (HL)
+
+     DE = destination pointer
+          0 = not allowed
+          1 = not allowed
+          2 = result returned in ABC
+          >255 = store result at (DE)
+     IX = source handle (if HL = 0,1)
+
+OUT, if call successful:
+     Fc = 0
+     HL, HL(in) < 2, HL(in)
+     HL, HL(in) > 255, HL points to terminating character
+     ABC, DE(in) = 2, result
+     ABC, DE(in) > 255, ABC(in)
+
+OUT, if call failed:
+     Fc = 1
+     A = error code:
+          RC_SNTX ($0C), Bad syntax
+
+Registers changed after return:
+     ....DE../IXIY same
+     AFBC..HL/.... different
+```
+
+## Notes
+
+The string can be of the form HH(:)MM(:SS)(:CC). For example five to two might be represented as "13:54:43:04". The () are optional.
+
+## Related calls
+
+**[GN\_Gmt](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-gmt)**, get (read) machine time in internal format <br />**[GN\_Msc](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-msc)**, miscellaeneous time operations <br />**[GN\_Pmt](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-pmt)**, put (set) machine time <br />**[GN\_Ptm](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-ptm)**, write internal time as ASCII string <br />**[GN\_Sdo](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-sdo)**, send date and time to standard output <br />**[OS\_Dly](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-dly)**, delay a given period

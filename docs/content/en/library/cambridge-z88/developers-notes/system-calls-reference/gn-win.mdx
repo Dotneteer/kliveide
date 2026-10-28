@@ -1,0 +1,56 @@
+---
+description: "This system call was introduced in OZ V4.2, and is used internally by OZ to create all application & popdown windows. It avoids the VDU clutter that otherwise is necessary to draw windows in OZ."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8618202 (version 5) by scripts/import-z88-wiki.cjs */}
+
+# GN_Win, Standard window create with banner and bottom line
+
+## Register parameters
+
+```text
+IN:
+        DE = (optional) "dynamic" pointer to banner (if banner pointer in definition block is 0)
+       BHL = pointer to 7 byte window definition block (if B=0, then local pointer)
+
+           Window Defintion Block offsets:
+           0:  A = window ID (bits 0-3). The ID is in range 1-8
+               bit 7=1, 6=1: Draw left & right bars, shelf brackets, banner text, bottom line
+               bit 7=1, 6=0: Draw left & right bars, shelf brackets, banner text
+               bit 7=0, 6=1: Draw left & right bars
+               bit 7=0, 6=0: Just create window space (no visible borders)
+               bit 5=1: 8 pixel inverted top banner (only evaluated with bit 7=1)
+               bit 5=0: 7 pixel inverted top banner (only evaluated with bit 7=1)
+               bit 4=1: For all windows: grey screen, then draw window to get a pop-up effect.
+           1:  X coordinate (upper left corner) of Window (255 to center window)
+           2:  Y coordinate (upper left corner) of Window (255 to center window)
+           3:  WIDTH of Window (inclusive banner & bottom line)
+           4:  HEIGHT of Window (inclusive banner & bottom line)
+           5:  low byte, high byte address of window banner text
+               Only specified if bit 7 of window ID is enabled.
+               Set pointer to 0, if using a dynamic banner 
+               (window with different banner each time)
+OUT:
+     Fc = 0
+
+Registers changed after return:
+     A.BCDEHL/IXIY same
+     .F....../.... different
+```
+
+## Notes
+
+This system call was introduced in OZ V4.2, and is used internally by OZ to create all application & popdown windows. It avoids the VDU clutter that otherwise is necessary to draw windows in OZ.
+
+Example of window definition block with extended window "2" having 8 pixel banner and bottom line:
+
+```text
+DEFB @11100000 | 2
+DEFW $0000
+DEFW $0811
+DEFW bannerptr ; this points to a banner text, null-terminated.
+```
+
+## Related calls
+
+**[GN\_Soe](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-soe)**, write string at extended address to standard output <br />**[GN\_Sop](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-sop)**, write string to standard output, local memory<br />**[OS\_Bout](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-bout)**, write null-terminated string block at (B)HL to standard output<br />**[OS\_Out](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-out)**, write character to standard output<br />**[OS\_Pout](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-pout)**, write embedded null-terminated string at caller (PC) to standard output

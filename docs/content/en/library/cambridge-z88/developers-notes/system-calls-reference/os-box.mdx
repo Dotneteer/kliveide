@@ -1,0 +1,30 @@
+---
+description: "Internal operating system usage.OS_Box are called from GN_ and OS_ 2 byte calls. Please refer to OS_Bix for further information. May be used by applications."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7471390 (version 5) by scripts/import-z88-wiki.cjs */}
+
+# OS_Box, Restore bindings after OS_Bix
+
+## Register parameters
+
+```text
+IN:
+     E = bank to be bound into segment 1
+     D = bank to be bound into segment 2
+     IY = OSPUSH frame
+OUT:
+     Fc = 0
+
+Registers changed after return:
+     A.BCDEHL/IXIY same
+     .F....../.... different
+```
+
+## Notes
+
+Internal operating system usage.<br /><br />**OS\_Box** are called from *GN\_* and *OS\_* 2 byte calls. Please refer to **[OS\_Bix](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-bix)** for further information. May be used by applications.
+
+## Related calls
+
+**[OS\_Bix](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-bix)**, Bind in extended address <br />**[OS\_Fc](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fc)**, select fast code (fast bank switching) <br />**[OS\_Mal](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mal)**, allocate memory <br />**[OS\_Mcl](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mcl)**, close memory (free memory pool) <br />**[OS\_Mfr](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mfr)**, free (previously allocated block) memory <br />**[OS\_Mgb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mgb)**, get current bank binding in segment <br />**[OS\_Mop](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mop)**, open memory (allocate memory pool) <br />**[OS\_Mpb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mpb)**, set new bank binding in segment<br />**[OZ\_Mgb](/en/library/cambridge-z88/developers-notes/system-calls-reference/oz-mgb)**, get current bank binding in segment<br />**[OZ\_Mpb](/en/library/cambridge-z88/developers-notes/system-calls-reference/oz-mpb)**, set new bank binding in segment

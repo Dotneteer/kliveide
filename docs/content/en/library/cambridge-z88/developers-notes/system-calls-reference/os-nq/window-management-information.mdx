@@ -1,0 +1,67 @@
+---
+description: "The following enquiry calls are for fetching low level window information."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7962747 (version 9) by scripts/import-z88-wiki.cjs */}
+
+# Window Management information
+
+The following enquiry calls are for fetching low level window information.
+
+## NQ\_WBOX [#nq_wbox]
+
+```text
+IN:
+     A = window ID (ASCII '1' - '8') or A = 0 for current window
+     BC = NQ_WBOX
+OUT:
+     A = window id (ASCII '1' to '8')
+     C = width
+     B = depth
+     E = offset from left of screen (always 0)
+     D = offset from top of screen (always 0)
+
+Registers changed after return:
+     ......../IXIY same
+     AFBCDEHL/.... different
+```
+
+### Notes
+
+D and E return 0 always, ie. offset of start of window relative to start of window, not the screen.
+
+## NQ\_WCUR [#nq_wcur]
+
+```text
+IN:
+     A = window ID (ASCII '1' - '8') or A = 0 for current window
+     BC = NQ_WCUR
+OUT:
+     A = window ID (ASCII '1' to '8')
+     C = x coordinate of cursor
+     B = y coordinate of cursor
+     D = bit 7 set if cursor is ON
+
+Registers changed after return:
+     ......../IXIY same
+     AFBCDEHL/.... different
+```
+
+## NQ\_RDS [#nq_rds]
+
+```text
+IN:
+     BC = NQ_RDS
+     DE = pointer to a buffer to store text
+     HL = number of bytes to read
+OUT:
+     -
+
+Registers changed after return:
+     A.BCDEHL/IXIY same
+     .F....../.... different
+```
+
+### Notes
+
+This call reads text from the current window starting at the current cursor position. Screen locations which have not been written to are read as NUL (not as SPC) and all the screen locations return same value, ie. if the window width is 40 characters then 40 bytes will be returned for that line. If more than a whole line of characters is to be read then reading resumes at the start of the next line. The cursor position is not affected by this call, but if a ludicrously large value of HL is used then the screen may be affected.

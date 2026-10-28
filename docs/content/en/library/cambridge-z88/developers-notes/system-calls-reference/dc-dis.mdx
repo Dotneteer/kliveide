@@ -1,0 +1,62 @@
+---
+description: "DC_Dbg, Enter debuggerDC_Sbp, Set break point"
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/124314348 (version 13) by scripts/import-z88-wiki.cjs */}
+
+# DC_Dis, Disassemble
+
+## Register parameters
+
+**RST 20H, DEFW $2A0C**
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>
+
+```text
+IN : A = options
+        A7 = 1, DI_FLW : follow PC (alter next instruction pointer according jump/call and condition)
+        A6 = 1, DI_BYE : catch OS_Bye (exit with RC_Eof if encountered)
+        A5 = 1, DI_LWR : low ram protection check (exit with RC_Wrap)
+    BHL = extended address to be decoded (B = 0, local)
+    DE = buffer for null terminated disassembled intruction string
+    IX = registers frame (required if A7=1, see DD_Dbg for frame content)
+
+OUT: Fc = 0, success
+    DE = points to byte after null terminator of mnemonic string
+    HL = points to next instruction
+    C = number of bytes decoded for instruction
+    A = type of instruction
+        A0 = 1, DO_OZCALL : RST 20h system call
+        A4 = 1, DO_FALSE  : condition is false (jump or call cc instructions)
+        A5 = 1, DO_JMP    : jump (absolute or relative) instruction
+        A6 = 1, DO_RET    : ret instruction
+        A7 = 1, DO_CALL   : call instruction
+
+Fc = 1, failure
+    A = Rc_Fail, illegal instruction (returns NOP string, BHL and C updated)
+    A = Rc_Eof, OS_Bye encountered (if DI_BYE option enabled)
+    A = Rc_Wrap, next instruction is in lowram (if DI_LWR option enabled)
+Registers affected after return:
+    ......../IXIY same
+    AFBCDEHL/.... different
+```
+
+</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+## Notes
+
+- A7, A6, A5 options are set for debugger usage, reset for a standard disassembly output
+- Low ram protection option triggers any jump or call below $2000
+- API call implemented in OZ 5.0
+
+## Related calls
+
+**[DC\_Dbg](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-dbg)**, Enter debugger<br />**[DC\_Sbp](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-sbp)**, Set break point

@@ -1,0 +1,65 @@
+---
+description: "Exchange, Block Transfer And Search Group"
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/9568439 (version 4) by scripts/import-z88-wiki.cjs */}
+
+# Exchange, Block Transfer And Search Group
+
+```text
+__________________________________________________________________________________________________________________________
+Mnemonic        Symbolic            Flags (bit 7-0)   Instruction         Number      Number of   Number of   Comments
+                operation           S Z . H . V N C   opcode              of bytes    M cycles    T states
+__________________________________________________________________________________________________________________________
+
+EX DE,HL        DE <-> HL           * * X * X * * *   11 101 011 (EBh)    1           1           4
+EX AF,AF'       AF <-> AF'          * * X * X * * *   00 001 000 (08h)    1           1           4
+EXX             BC <-> BC'          * * X * X * * *   11 011 001 (D9h)    1           1           4
+                DE <-> DE'
+                HL <-> HL'
+
+EX (SP),HL      L <-> (SP)          * * X * X * * *   11 100 011 (E3h)    1           5           19
+                H <-> (SP+1)
+EX (SP),IX      IXL <-> (SP)        * * X * X * * *   11 011 101 (DDh)    2           6           23
+EX (SP),IY      IXH <-> (SP+1)      * * X * X * * *   11 111 101 (FDh)    2           6           23
+                                                      11 100 011 (E3h)
+
+LDI             (DE) <- (HL)        * * X 0 X ? 0 *   11 101 101 (EDh)    2           4           16
+                BC <- BC-1                   (1)      10 100 000 (A0h)
+                DE <- DE+1
+                HL <- HL+1
+
+LDIR            (DE) <- (HL)        * * X 0 X 0 0 *   11 101 101 (EDh)    2           5           21          if BC<>0
+                BC <- BC-1                            10 110 000 (B0h)    2           4           16          if BC=0
+                DE <- DE+1
+                HL <- HL+1          Repeat until BC=0
+
+LDD             (DE) <- (HL)        * * X 0 X ? 0 *   11 101 101 (EDh)    2           4           16
+                BC <- BC-1                   (1)      10 101 000 (A8h)
+                DE <- DE-1
+                HL <- HL-1
+
+LDDR            (DE) <- (HL)        * * X 0 X 0 0 *   11 101 101 (EDh)    2           5           21          if BC<>0
+                BC <- BC-1                            10 111 000 (B8h)    2           4           16          if BC=0
+                DE <- DE-1
+                HL <- HL-1          Repeat until BC=0
+
+CPI             A = (HL)            ? ? X ? X ? 1 *   11 101 101 (EDh)    2           4           16
+                BC <- BC-1           (2)     (1)      10 100 001 (A1h)
+                HL <- HL+1
+
+CPIR            A = (HL)            ? ? X ? X ? 1 *   11 101 101 (EDh)    2           5           21  if BC<>0 and A<>(HL)
+                BC <- BC-1           (2)     (1)      10 110 001 (B1h)    2           4           16  if BC=0 or A=(HL)
+                HL <- HL+1          Repeat until BC=0 or A=(HL)
+
+CPD             A = (HL)            ? ? X ? X ? 1 *   11 101 101 (EDh)    2           4           16
+                BC <- BC-1           (2)     (1)      10 101 001 (A9h)
+                HL <- HL-1
+
+CPDR            A = (HL)            ? ? X ? X ? 1 *   11 101 101 (EDh)    2           5           21  if BC<>0 and A<>(HL)
+                BC <- BC-1           (2)     (1)      10 111 001 (B9h)    2           4           16  if BC=0 or A=(HL)
+                HL <- HL-1          Repeat until BC=0 or A=(HL)
+
+(1)             P/V = 0, if result of BC-1 = 0, otherwise P/V = 1
+(2)             Fz = 1, if A = (HL), otherwise Fz = 0
+```

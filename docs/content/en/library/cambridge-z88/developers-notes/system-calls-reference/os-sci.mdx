@@ -1,0 +1,35 @@
+---
+description: "These hardware registers should not be altered unless the programmer knows what he is doing. Please refer to the Hardware section."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7962888 (version 2) by scripts/import-z88-wiki.cjs */}
+
+# OS_Sci, Alter screen information
+
+## Register parameters
+
+```text
+IN:
+     A = reason code
+          SC_LR0 ($01)   LORES0 (512 bytes granularity, 13 bits width)
+          SC_LR1 ($02)   LORES1 (4K granularity, 10 bits width)
+          SC_HR0 ($03)   HIRES0 (8K granularity, 9 bits width)
+          SC_HR1 ($04)   HIRES1 (2K granularity, 11 bits width)
+          SC_SBR ($05)   screen base (2K granularity, 11 bits width)
+
+  B = 0, get pointer address (address is not set)
+  B <> 0, set pointer address with BHL = new pointer address (L always = 0)
+  and HL is truncated according to screen granularity
+
+OUT: 
+     Fc = 0
+     BHL = old pointer address
+
+Registers changed after return:
+     A..CDE../IXIY same
+     .FB...HL/.... different
+```
+
+## Notes
+
+These hardware registers should not be altered unless the programmer knows what he is doing. Please refer to the [Hardware section](/en/library/cambridge-z88/developers-notes/manipulating-the-blink-registers).

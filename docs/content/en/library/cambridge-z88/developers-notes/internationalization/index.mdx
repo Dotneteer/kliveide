@@ -1,0 +1,32 @@
+---
+description: "Huge efforts have been made for providing localization to OZ. Initial work were done by Cambridge Computers in the form of several foreign 3.xx versions of OZ. Since OZ v4.2 milestone, foreign OZ..."
+asIndexPage: true
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/85229599 (version 19) by scripts/import-z88-wiki.cjs */}
+
+# Internationalization
+
+Huge efforts have been made for providing localization to OZ. Initial work were done by Cambridge Computers in the form of several foreign 3.xx versions of OZ. Since OZ v4.2 milestone, foreign OZ sources have been merged, rewritten and organized in an API for one standalone OZ version. OZ character set is compatible with [ISO 8859-15 layout (Latin-9)](/en/library/cambridge-z88/developers-notes/internationalization/iso-character-table). It provides a quite good compatibility with modern computers.
+
+## Keyboard
+
+All the produced foreign keyboards except Icelandic and Turkish ones are supported. Keyboard is selected in Panel specifying country letter ([OS\_Sp / PA\_Loc](/en/library/cambridge-z88/developers-notes/miscellaneous-useful-routines/specifies)). It adjusts the keyboard mapping, the language used for dates and the country code letters shown below OZ in the system window.
+
+OZ uses an [internal key table](/en/library/cambridge-z88/developers-notes/internationalization/iso-key-translation-table) to deal between key sequences, ISO and character fonts.
+
+## Character fonts
+
+The different foreign OZ fonts have been merged to provide maximum ISO compatibility. Even if the selected country is UK, the french, danish and other exotic characters are correctly displayed. The layout of the 512 LORES characters are detailed in [this table](/en/library/cambridge-z88/developers-notes/internationalization/iso-character-fonts). New accented characters and the euro symbol have been added. '€' is accessed by pressing \<\>£ and can be altered in bold and tiny fonts.
+
+## Dates
+
+Dates are fully localized thanks to a new [GN\_Ldm, Localized Date Manipulation](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-ldm) API (OZ v4.5). It works as an overlay on filters and provides localized dates in whole system. Output is performed with [GN\_Sdo](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-sdo) handling localization of date and moments (Yesterday, Today and Tomorrow). This function is implemented in Index, Time, Calendar and Alarm applications.
+
+## Printer driver
+
+Printer translations handle ISO to printer sequence translations. They have been increased to 41 ([OS\_Sp / PA\_Tr1...41](/en/library/cambridge-z88/developers-notes/miscellaneous-useful-routines/specifies)). The \<\>ISO Translation page in PrinterEd handles now 32 slots in addition to the 9 translations in page 2. The default Epson driver handles all the supported ISO characters (OZ v4.7).
+
+## Filing system
+
+Thanks to an upgrade of [OS\_Nq / Nq\_Rds](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-nq/window-management-information), the filing system can now handle ISO characters in filenames and directories (OZ v4.7).

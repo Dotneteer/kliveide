@@ -1,0 +1,45 @@
+---
+description: "Call and Return Group"
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/9568456 (version 4) by scripts/import-z88-wiki.cjs */}
+
+# Call and Return Group
+
+```text
+__________________________________________________________________________________________________________________________
+Mnemonic        Symbolic            Flags (bit 7-0)   Instruction         Number      Number of   Number of   Comments
+                operation           S Z . H . V N C   opcode              of bytes    M cycles    T states
+__________________________________________________________________________________________________________________________
+
+CALL nn         (SP-1) <- PCh       * * X * X * * *   11 001 101 (CDh)    3           5           17
+                (SP-2) <- PCl                         -- <nn> --
+                SP <- SP-2
+                PC <- nn
+
+CALL cc,nn      if not cc, continue * * X * X * * *   11 <cc> 100         3           5           10          if cc is false
+                else, CALL nn                         -- <nn> ---         3           5           17          if cc iss true
+
+RETI            return from         * * X * X * * *   11 101 101 (EDh)    2           4           14          cc: condition
+                interrupt                             01 001 101 (4Dh)                                        000 NZ not zero
+                                                                                                              001 Z  zero
+RETN            return from non-    * * X * X * * *   11 101 101 (EDh)    2           4           14          010 NC not carry
+                maskable interrupt                    01 000 101 (45h)                                        011 C  carry
+                                                                                                              100 PO parity odd
+RET             PCl <- (SP)         * * X * X * * *   11 001 001 (C9h)    1           3           10          101 PE parity even
+                PCh <- (SP+1)                                                                                 110 P  sign posit.
+                SP <- SP+2                                                                                    111 M  sign nega.
+
+RET cc          if not cc, continue * * X * X * * *   11 <cc> 000         1           1           5           if cc is false
+                else, RET                                                 1           3           11          if cc is true
+
+RST p           (SP-1) <- PCh       * * X * X * * *   11 <t> 111          1           3           11          t:   p:
+                (SP-2) <- PCl                                                                                 000  00h
+                SP <- SP-2                                                                                    001  08h
+                PCh <- 0                                                                                      010  10h
+                PCl <- p                                                                                      011  18h
+                                                                                                              100  20h
+                                                                                                              101  28h
+                                                                                                              110  30h
+                                                                                                              111  38h
+```

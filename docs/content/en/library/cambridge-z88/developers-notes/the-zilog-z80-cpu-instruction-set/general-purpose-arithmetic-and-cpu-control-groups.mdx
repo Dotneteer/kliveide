@@ -1,0 +1,42 @@
+---
+description: "General Purpose Arithmetic And Cpu Control Groups"
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/9568417 (version 10) by scripts/import-z88-wiki.cjs */}
+
+# General Purpose Arithmetic And Cpu Control Groups
+
+```text
+__________________________________________________________________________________________________________________________
+Mnemonic        Symbolic            Flags (bit 7-0)   Instruction         Number      Number of   Number of   Comments
+                operation           S Z . H . V N C   opcode              of bytes    M cycles    T states
+__________________________________________________________________________________________________________________________
+
+DAA             Converts accum.     ? ? X ? X P * ?   00 100 111 (27h)    1           1           4           Decimal
+                contents into                                                                                 adjust
+                packed BCD format                                                                             accumulator
+
+CPL             A <- NOT A          * * X 1 X * 1 *   00 101 111 (2Fh)    1           1           4           Complement
+                (1. complement)                                                                               accumulator
+
+NEG             A <- 0 - A          ? ? X ? X V 1 ?   11 101 101 (EDh)    2           2           8           Negate
+                (2. complement)                       01 000 100 (44h)                                        accumulator
+
+CCF             CY <- NOT CY        * * X X X * 0 ?   00 111 111 (3Fh)    1           1           4           Complement
+                                                                                                              Carry flag
+
+SCF             CY <- 1             * * X 0 X * 0 1   00 110 111 (37h)    1           1           4           Set Carry
+                                                                                                              flag
+NOP             No operation        * * X * X * * *   00 000 000          1           1           4
+HALT            CPU halted          * * X * X * * *   01 110 110 (76h)    1           1           4
+DI              IFF <- 0            * * X * X * * *   11 110 011 (F3h)    1           1           4
+EI              IFF <- 1            * * X * X * * *   11 111 011 (FBh)    1           1           4
+IM 0            Set int. mode 0     * * X * X * * *   11 101 101 (EDh)    2           2           8
+                                                      01 000 110 (46h)
+IM 1            Set int. mode 1     * * X * X * * *   11 101 101 (EDh)    2           2           8
+                                                      01 010 110 (56h)
+IM 2            Set int. mode 2     * * X * X * * *   11 101 101 (EDh)    2           2           8
+                                                      01 011 110 (5Eh)
+
+IFF = Interrupt enable flip-flop
+```

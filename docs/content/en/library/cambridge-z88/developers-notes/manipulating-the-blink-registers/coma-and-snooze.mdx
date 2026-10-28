@@ -1,0 +1,11 @@
+---
+description: "The COMA state is entered via a HALT instruction. Any interrupt can cause a wake up, providing there is enough power to run the machine and the interrupt is enabled. If all interrupts are disabled..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/3113030 (version 1) by scripts/import-z88-wiki.cjs */}
+
+# Coma and Snooze
+
+The COMA state is entered via a HALT instruction. Any interrupt can cause a wake up, providing there is enough power to run the machine and the interrupt is enabled. If all interrupts are disabled withing BLINK (regardless of whether they are enabled in Z80 - the interrupt line to the Z80 comes from BLINK) before a HALT instruction, then the machine will never be able to wake up again. One special way of waking the machine is by ensuring KEY and KWAIT (in INT) are set before executing HALT. During HALT the upper 8 address bits hold the contents of the Z80 I (Interrupt) register. If this is set appropriately, a special key sequence can cause an interrupt to occur, waking the machine. This is how the pressing the two \<SHIFT\> keys wakes up the machine. The I register is loaded with @00111111 before HALT is executed. The two \<SHIFT\> keys occur in the two left hand columns of the keyboard matrix, so they can be sensed with the address lines in this state. Note that the minimum time between entering COMA and waking up again is 5ms, so the COMA state would not be suitable for waiting for regular interrupts. Finally note that the UART will not work in COMA because all the UART clocks are shut down.
+
+During snooze the Z80 clock is stopped, but all the other system clocks continue to run. Therefore it is possible to use the UART from snooze. Any keyboard column going low will cause a wakeup from snooze, even if the keyboard interrupts are disabled. Note that the keyboard data returned after wakeup will not necessarily be valid, so the keyboard should definitely be read again.

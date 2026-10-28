@@ -1,0 +1,49 @@
+---
+description: "Read File Entry Status information, if available. This routine might be used by applications, but is primarily used internally by OS_Epr."
+---
+
+import { Callout } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7471534 (version 4) by scripts/import-z88-wiki.cjs */}
+
+# EP_Stat ($2A) - Return file entry status (active or deleted)
+
+## Register Parameters
+
+```text
+IN:
+     A = EP_STAT
+   BHL = pointer to start of file entry
+        The Bank specifier contains the slot mask, ie. defines which slot
+        is being read. HL is the traditional bank offset.
+
+OUT:
+   Fc = 0, File Entry available
+        Fz = 1, deleted file
+        Fz = 0, active file
+
+   Fc = 1, File Entry not available ($FF or $00 was first byte of entry)
+        A = RC_Onf (Object not found)
+
+Registers changed after return:
+   ..BCDEHL/IXIY same
+   AF....../.... different
+```
+
+## Notes
+
+Read File Entry Status information, if available. This routine might be used by applications, but is primarily used internally by OS\_Epr.
+
+<Callout type="default">
+
+**File Entry Structure**
+
+```text
+1 byte      n           length of filename
+1 byte      x           '/' for latest version, $00 for old version (deleted)
+n-1 bytes   'xxxx'      filename
+4 bytes     m           length of file (least significant byte first)
+m bytes                 body of file
+```
+
+</Callout>

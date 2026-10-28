@@ -1,0 +1,37 @@
+---
+description: "DC_Sp is a sub-call of OS_Sp, use OS_Sp instead. Attribute (Dev, Dir, Fnm) is set into Filer process if it is running, otherwise by Index. If DQ_Dev argument points to null byte, PA_Dev is used as..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7471357 (version 6) by scripts/import-z88-wiki.cjs */}
+
+# DC_Sp, Handle Director/CLI settings
+
+## Register parameters
+
+```text
+IN:
+     C = reason code
+       DQ_Dev ($00), define default device 
+       DQ_Dir ($03), define default directory 
+       DQ_Fnm ($06), define filename match string
+     B = 0, always
+     HL = OSFrame
+
+OUT:
+     Fc = 0,   Successful
+     Fc = 1, A = RC error if failure
+
+Registers affected after return:
+     ..BCDEHL/IXIY same
+     AF....../.... different
+```
+
+## Notes
+
+Internal operating system usage.
+
+**[DC\_Sp](https://cambridgez88.jira.com/wiki/pages/viewpage.action?pageId=96403644)** is a sub-call of **[OS\_Sp](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-sp)**, use **[OS\_Sp](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-sp)** instead. Attribute (Dev, Dir, Fnm) is set into Filer process if it is running, otherwise by Index. If DQ\_Dev argument points to null byte, PA\_Dev is used as source. Works if string at HL is terminated by a control-char ($00-$1F).
+
+## Related calls
+
+**[DC\_Sp](https://cambridgez88.jira.com/wiki/pages/viewpage.action?pageId=96403644)**, DC specify<br />**[DC\_Nq](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-nq)**, DC enquire<br />**[OS\_Sp](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-sp)**, specify<br />**[OS\_NQ](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-nq)**, enquire

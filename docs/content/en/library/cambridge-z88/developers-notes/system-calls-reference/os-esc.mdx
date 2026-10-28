@@ -1,0 +1,62 @@
+---
+description: "On entry to an application, Escape detection is always disabled. Application may have to enable it if API with timeout requires escape detection (like OS_Tin, OS_Dly or OS_Si)."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7471566 (version 5) by scripts/import-z88-wiki.cjs */}
+
+# OS_Esc, Examine special condition
+
+## Register parameters
+
+```text
+IN:
+     A = reason code
+
+     Reason codes are as follows:
+
+     SC_BIT ($00)   Test for Escape. Returns Fc = 1 if escape has been
+                    pressed, else Fc = 0.
+
+     SC_ACK ($01)   Acknowledge escape and also flush input buffer.
+                    Fz = 1 if there was no escape to acknowledge, else
+                    Fz = 0. Note that RC_ESC = SC_ACK so you can acknowledge
+                    escape with this call without reloading the accumulator.
+                    This also resets the machine timeout.
+
+     SC_SET ($02)   Set escape, ie. simulate an escape condition
+
+     SC_RES ($03)   Reset escape without flushing the input buffer.
+
+     SC_TST ($04)   Test if escape detection is enabled or disabled. Fc = 0
+                    always, and A = SC_ENA if it is enabled, A = SC_DIS if
+                    it is disabled.
+
+     SC_ENA ($05)   Enable escape detection
+     SC_DIS ($06)   Disable escape detection.
+
+OUT:     if A(in) = SC_BIT then
+          Fc = 0, no escape
+          Fc = 1, escape detected
+     if A(in) = SC_ACK then
+          Fc = 0,
+          Fz = 1, no escape
+          Fz = 0, escape acknowledged, machine timeout reset
+     if A(in) = SC_TST then
+          Fc = 0
+          A = SC_ENA, escape detection enabled
+          A = SC_DIS, escape detection disabled
+     other A(in) values
+          Fc = 0
+
+Registers changed after return:
+     ..BCDEHL/IXIY same
+     AF....../.... different
+```
+
+## Note
+
+On entry to an application, Escape detection is always disabled. Application may have to enable it if API with timeout requires escape detection (like OS\_Tin, OS\_Dly or OS\_Si).
+
+## Related system calls
+
+**[GN\_Err](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-err)**, display an interactive error box <br />**[GN\_Esp](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-esp)**, return an extended pointer to a system error message <br />**[OS\_Erc](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-erc)**, get error context <br />**[OS\_Erh](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-erh)**, set error handler

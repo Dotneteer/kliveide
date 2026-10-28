@@ -1,0 +1,73 @@
+---
+description: "The applications within the Z88 frequently need to manipulate times and dates. The Clock, Calendar and Diary are the obvious examples; also the Filer stores creation and \"last updated\" dates in..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/2654214 (version 5) by scripts/import-z88-wiki.cjs */}
+
+# Time and date management
+
+The applications within the Z88 frequently need to manipulate times and dates. The Clock, Calendar and Diary are the obvious examples; also the Filer stores creation and "last updated" dates in its filing system. Hence a fairly comprehensive set of routines are provided to handle them. Before discussing the routines themselves, it is worth explaining how dates and times may be represented.
+
+Within the machine, dates are represented by 3-byte unsigned integers which represent the number of days since the conventional day zero, which is Monday 23rd November 4713 BC! This number of days figure is consistent from the point of view of the New Style (Gregorian) calendar, so will not tally with historical dates before 14th September 1752 (Britain) or 14th October 1582 (continental Europe) unless the dates have been retrospectively corrected (like George Washington's birth date). However, it should be entirely correct from its chosen point of view, incorporating the following rules to deal with leap years:
+
+```text
+            Every year is a normal year (365 days) except
+            every 4th year is a leap year (366 days) except
+            every 100th year is a normal year except
+            every 400th year is a leap year except
+            every 3200th year is a leap year except
+            every 80000th year is a normal year.
+```
+
+The accuracy range is 23/11/4713 BC to 31/12/18253 AD.
+
+Routines provided to convert between this rather inconvenient format and either:
+
+1\) A zoned integer representing a human date conveniently, split over registers as follows:
+
+```text
+            C (bits 7 to 5)         the day of the week (1=Monday, 7=Sunday)
+            C (bits 4 to 0)         the day of the month (1 to 31, obviously)
+            B                       the month (1=january, 12=december)
+            DE                      a signed year number relative to 0 AD
+```
+
+2\) An ASCII string, with various options (leading blanks, American format, century \[ie. 88 or 1988\], month in full \[ie. Dec or December\] etc).
+
+Times are internally represented as unsigned 3-byte integers representing the number of 10ms (1/100 of a second) intervals since the start of the day. Routines exist to convert between this format and an ASCII string, again with various options. Further routines are provided to read or set the machine time and date. The available routines are as follows, their specifications can be found in "System Calls Reference":
+
+`GN_Gdt` convert an ASCII string to an internal date<br />`GN_Pdt` convert an internal date to an ASCII string<br />`GN_Die` convert from internal to external format<br />`GN_Dei` convert from external to internal format<br />`GN_Gmd` fetch current machine date<br />`GN_Pmd` set current machine date<br /><br />`GN_Gtm` convert an ASCII string to an internal time<br />`GN_Ptm` convert an internal time to an ASCII string<br />`GN_Gmt` fetch current machine time<br />`GN_Pmt` set current machine time<br />`GN_Msc` convert real time to elapsed time<br />`GN_Sdo` output date and time to standard output
+
+```text
+
+```
+
+```text
+include "time.def"                  ; time & date call definitions
+include "stdio.def"                 ; standard I/O call definitions
+
+; simple example to display the current date 
+; assumes IY points to at least 30 bytes of available memory 
+; this memory should not lie in segment 2 
+
+            push iy
+            pop  de                 ; buffer for date
+            oz   GN_Gmd             ; get machine date
+                                    ; DE = DE(in) + 3
+            push iy
+            pop  hl                 ; source date
+            ld   a, 240             ; century output, C = interfield delimiter
+            ld   b, 15              ; expanded day and month (no AD/BC)
+            ld   c, '.'             ; interfield delimiter
+            oz   GN_Pdt             ; put date in ASCII format
+            xor  a
+            ld   (de),a             ; null-terminate ASCII string
+            push iy
+            pop  hl
+            inc  hl
+            inc  hl                 ; adjust string buffer address
+            inc  hl                 ; of converted string
+            oz   GN_Sop             ; write string to std. output
+            oz   GN_Nln             ; new line
+            ret
+```

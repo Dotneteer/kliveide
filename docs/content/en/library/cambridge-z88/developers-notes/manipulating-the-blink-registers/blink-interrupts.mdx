@@ -1,0 +1,75 @@
+---
+description: "Two external interrupts drive the Z80. The maskable /INT signal is used to drive the common hardware events such as the realtime clock, the keyboard, the serial port and battery low condition. The..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/3113017 (version 13) by scripts/import-z88-wiki.cjs */}
+
+# Blink interrupts
+
+Two external interrupts drive the Z80. The maskable /INT signal is used to drive the common hardware events such as the realtime clock, the keyboard, the serial port and battery low condition. The /NMI (non-maskable interrupt) is used for critical events such as power failure or insertion/removal of memory cards in the external slots or the bus-connector (typically sealed of - was never used).
+
+The /INT signal (the actual pin on the Z80 CPU) is seen as a state (enabled or disabled) between the Blink and the Z80 CPU, which is set active (low) when fired and until being acknowledged. The /NMI is regarded as a pulse that is fired for a hardware-related event. /NMI has not to be acknowledged.
+
+The OZ operating system is using Z80 interrupt mode 1 for maskable interrupts, received through the RST 38H vector. The NMI interrupt is received through the RST 66H vector.
+
+The INT ($B1) register controls which interrupts are enabled, forming a multiple logical AND filter to the /INT pin of the Z80 CPU. Any enabled bit of the STA register defines a logical OR to the /INT pin of the Z80 CPU. Once a interrupt is signaled in the STA register, it must be acknowledged via the ACK register to be put low again.
+
+When all STA interrupts have been acknowledged, AND-masked with the INT register, if the logical result is 0, then the /INT pin is disabled by the Blink - no more maskable interrupts available for the Z80 CPU.
+
+<strong>The INT ($B1) register controls which interrupts are enabled:<br /></strong>
+
+```text
+BIT         NAME        Function
+7           KWAIT       If set, reading the keyboard will Snooze
+6           A19         If set, an active high on A19 will exit Coma
+5           FLAP        If set, flap interrupts are enabled
+4           UART        If set, UART interrupts are enabled
+3           BTL         If set, battery low interrupts are enabled
+2           KEY         If set, keyboard interrupts (Snooze or Coma) are enabl.
+1           TIME        If set, RTC interrupts are enabled
+0           GINT        If clear, no interrupts get out of blink
+```
+
+**The ACK ($B6) register is used to acknowledge and thus clear an interrupt (to ultimately reset the /INT pin on the Z80 CPU):**
+
+```text
+BIT         NAME        Function
+7           -           -
+6           A19         Acknowledge A19 interrupt
+5           FLAP        Acknowledge FLAP interrupt
+4           -           -
+3           BTL         Acknowledge battery low interrupt
+2           KEY         Acknowledge keyboard interrupt
+1           -           -
+0           -           -
+```
+
+**The STA ($B1) register provides information about which interrupt has actually occurred:**
+
+```text
+BIT         NAME        Function
+7           FLAPOPEN    If set, flap open else flap closed
+6           A19         If set, high level on A19 occurred during coma
+5           FLAP        If set, positive edge has occurred on FLAPOPEN
+4           UART        If set, an enabled UART interrupt is active
+3           BTL         If set, battery low pin is active
+2           KEY         If set, a column has gone low in snooze (or coma)
+1           -           -
+0           TIME        If set, an enabled TIME interrupt is active
+```
+
+UART is the result of TDRE, RDRF, DCDI and CTSI interrupt masked with UMK.
+
+TIME is the result of TICK, SEC and MIN interrupt masked with TMK.
+
+The logic is detailed below :
+
+```text
+INT.UART = STA.UART = (UIT.TDRE & UMK.TDRE) | (UIT.RDRF & UMK.RDRF) | (UIT.DCDI & UMK.DCD) | (UIT.CTSI & UMK.CTS)
+
+INT.TIME = STA.TIME = (TSTA.TICK & TMK.TICK) | (TSTA.SEC & TMK.SEC) | (TSTA.MIN & TMK.MIN)
+```
+
+The following diagram shows the how the registers combined defines the /INT signal (simplified):
+
+<Shot src="z88-developers-notes/manipulating-the-blink-registers/blink-interrupts/blink-int-signal-wiring.webp" alt="Blink INT signal wiring" width={573} />

@@ -61,15 +61,18 @@ React 19 + Next 16.
 - Only `docs/content/` produces routes. `docs/authoring/` holds working notes
   that must stay off the public site.
 - Pages live under `docs/content/<lang>/` (English in `en/`), in five navbar areas -
-  `get-started/`, `guides/`, `reference/`, `under-the-hood/`, `z88-user-guide/` - plus the book, which is reachable
-  by URL but deliberately not linked anywhere (decision D6). The plan is
+  `get-started/`, `guides/`, `reference/`, `under-the-hood/` (Klive's own documentation) and
+  `library/` (the machines' own manuals, one folder per machine, always the last tab) - plus the
+  book, which is reachable by URL but deliberately not linked anywhere (decision D6). The plan is
   `.plans/DOCS_SITE_MODERNIZATION_PLAN.md`.
-- **The Cambridge Z88 User Guide (`content/en/z88-user-guide/`) is imported, not written here**:
-  `node scripts/import-z88-user-guide.cjs` converts the cambridgez88.jira.com "UG" Confluence space
-  (pictures to `public/images/en/z88-user-guide/`, key legends to `<Key>`/`<Typed>` from
-  `page-components/Z88.tsx`). It is official documentation: a navbar tab of its own ("Z88 User
-  Guide", English only), in the site search, and linked from the Cambridge Z88 machine guide.
-  Once the reviewed pages are edited by hand, do not re-run the import over them.
+- **The Library's manuals are imported, not written here.** The Cambridge Z88 User Guide and the
+  Z88 Developers' Notes (`content/en/library/cambridge-z88/{user-guide,developers-notes}/`) come
+  from the cambridgez88.jira.com Confluence spaces through
+  `node scripts/import-z88-wiki.cjs --space UG|DN` (pictures to `public/images/en/z88-*/`, key
+  legends to `<Key>`/`<Typed>` from `page-components/Z88.tsx`; links between the two spaces stay
+  on the site). A machine's guide in `guides/machines/` links to its manuals. They are English only.
+  Once the reviewed pages are edited by hand, do not re-run the import over them; `--out <dir>`
+  writes a fresh import elsewhere to compare against.
 - **The website is translated through its own workflow**, never by hand-editing
   `docs/content/<lang>/`: `npm run doc:i18n:todo -- <lang>` / `doc:i18n:merge` (read
   `docs/i18n/TRANSLATING.md`). The landing page's and the chrome's texts are in

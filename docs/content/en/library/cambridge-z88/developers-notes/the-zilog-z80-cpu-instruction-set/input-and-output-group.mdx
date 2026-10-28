@@ -1,0 +1,60 @@
+---
+description: "(1) If the result of B-1 = 0, then Fz = 1, otherwise Fz = 0."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/9568458 (version 4) by scripts/import-z88-wiki.cjs */}
+
+# Input and Output Group
+
+```text
+__________________________________________________________________________________________________________________________
+Mnemonic        Symbolic            Flags (bit 7-0)   Instruction         Number      Number of   Number of   Comments
+                operation           S Z . H . V N C   opcode              of bytes    M cycles    T states
+__________________________________________________________________________________________________________________________
+
+IN A,(n)        A <- (n)            * * X * X * * *   11 011 011 (DBh)    2           3           11          n to A0 - A7
+                                                      -- <n> ---                                              Acc to A8 - A15
+
+IN r,(C)        r <- (C)            ? ? X ? X P 0 *   11 101 101 (EDh)    2           3           12          C to A0 - A7
+                if r = 110, only flags is affected    01 <r> 000                                              B to A8 - A15
+
+INI             (HL) <- (C)         X ? X X X X 1 *   11 101 101 (EDh)    2           4           16          C to A0 - A7
+                B <- B-1             (1)              10 100 010 (A2h)                                        B to A8 - A15
+                HL <- HL+1
+
+INIR            (HL) <- (C)         X 1 X X X X 1 *   11 101 101 (EDh)    2           5           21 (B<>0)   C to A0 - A7
+                B <- B-1                              10 110 010 (B2h)    2           4           16 (B=0)    B to A8 - A15
+                HL <- HL+1          Repeat until B=0
+
+IND             (HL) <- (C)         X ? X X X X 1 *   11 101 101 (EDh)    2           4           16          C to A0 - A7
+                B <- B-1             (1)              10 101 010 (AAh)                                        B to A8 - A15
+                HL <- HL-1
+
+INDR            (HL) <- (C)         X 1 X X X X 1 *   11 101 101 (EDh)    2           5           21 (B<>0)   C to A0 - A7
+                B <- B-1                              10 111 010 (BAh)    2           4           16 (B=0)    B to A8 - A15
+                HL <- HL-1          Repeat until B=0
+
+OUT (n),A       (n) <- A            * * X * X * * *   11 010 011 (D3h)    2           3           11          n to A0 - A7
+                                                      -- <n> ---                                              Acc to A8 - A15
+
+OUT (C),r       (C) <- r            * * X * X * * *   11 101 101 (EDh)    2           3           12          C to A0 - A7
+                                                      01 <r> 001                                              B to A8 - A15
+
+OUTI            (C) <- (HL)         X ? X X X X 1 *   11 101 101 (EDh)    2           4           16          C to A0 - A7
+                B <- B-1             (1)              10 100 011 (A3h)                                        B to A8 - A15
+                HL <- HL+1
+
+OTIR            (C) <- (HL)         X 1 X X X X 1 *   11 101 101 (EDh)    2           5           21 (B<>0)   C to A0 - A7
+                B <- B-1                              10 110 011 (B3h)    2           4           16 (B=0)    B to A8 - A15
+                HL <- HL+1          Repeat until B=0
+
+OUTD            (C) <- (HL)         X ? X X X X 1 *   11 101 101 (EDh)    2           4           16          C to A0 - A7
+                B <- B-1             (1)              10 101 011 (ABh)                                        B to A8 - A15
+                HL <- HL-1
+
+OTDR            (C) <- (HL)         X 1 X X X X 1 *   11 101 101 (EDh)    2           5           21 (B<>0)   C to A0 - A7
+                B <- B-1                              10 111 011 (BBh)    2           4           16 (B=0)    B to A8 - A15
+                HL <- HL-1          Repeat until B=0
+```
+
+(1) If the result of B-1 = 0, then Fz = 1, otherwise Fz = 0.

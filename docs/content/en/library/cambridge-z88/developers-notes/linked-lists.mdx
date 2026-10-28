@@ -1,0 +1,73 @@
+---
+description: "The Z88 incorporates useful system calls for implementing linked list structures. These calls can be used to insert and delete members or fetch the next member. This is very valuable on the Z88,..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/2752570 (version 3) by scripts/import-z88-wiki.cjs */}
+
+# Linked lists
+
+The Z88 incorporates useful system calls for implementing linked list structures. These calls can be used to insert and delete members or fetch the next member. This is very valuable on the Z88, where the memory allocated to a process may be very highly fragmented. For setting up large symbol tables or other big data structures, linked lists (or binary trees) are the only realistic arrangement. For instance, PipeDream and Diary uses linked lists of text blocks to store the current pages.
+
+The conventional structure of a linked list is a set of records, each containing a pointer to the next record:
+
+```text
+addr1       DEFW addr2
+            ; <first record contents here>
+
+addr2       DEFW addr3
+            ; <second record contents here>
+
+addr3       DEFW addr4
+            ; <third record contents here>
+```
+
+etc.
+
+If you want to be able to step back as well as forwards, it would normally be necessary to store both a forward and a backward pointer within each record. However, the novel system used on the Z88 allows forward and backwards steps while only necessitating the storage of one pointer in the block. You can't get something for nothing, and the price is that to step forward one needs not only the address of the current entry, but also that of the previous entry. This should not be a handicap as you will normally step through the linked list record by record, but it does mean that if you jump into the list without knowledge of an adjacent member, you are lost.
+
+The way this is implemented is to store within each record the XOR of the forward and backward pointers. In the case of the first and last records, one of these pointers does not exist, it is assumed zero when calculating the XOR expression. For the Z88 the pointers are three byte extended addresses, although note that if the most significant byte is zero this will not be taken to mean that the address is local, but rather as referring to bank 0 (ROM). A typical arrangement is as follows:
+
+; note DEFP stands for DEFINE POINTER (3 bytes long)
+
+```text
+addr(n)     DEFP addr(n-1) XOR addr(n+1)
+            ; nth record here
+
+addr(n+1)   DEFP addr(n) XOR addr(n+2)
+            ; n+1th record here
+
+addr(n+2)   DEFP addr(n+1) XOR addr(n+3)
+            ; n+2th record here
+```
+
+Now if we want to step forward from addr(n+1), and assuming we know addr(n), then we can find addr(n+2) as follows:
+
+addr(n+2) = (\*addr(n+1)) XOR addr(n)
+
+Where \* denotes 'the contents of'. Stepping backwards is symmetrical, the advantage of using XOR rather than, say, addition. Thus only one 'fetch next entry' routine is needed and it can be used to move in either direction.
+
+To delete entry (n+1) and link together entries (n) and (n+2), we can do:
+
+\*addr(n) = (\*addr(n)) XOR addr(n+1) XOR addr(n+2) \*addr(n+2) = (\*addr(n+2)) XOR addr(n+1) XOR addr(n)
+
+which again display the attractive symmetry of the scheme. This is the algorithm used by **[GN\_Xdl](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-xdl)**.
+
+If we now wanted to put entry (n+1) back again, we would use the routine **[GN\_Xin](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-xin)**, which will do:
+
+\*addr(n+1) = addr(n) XOR addr(n+2) \*addr(n) = (\*addr(n)) XOR addr(n+1) XOR addr(n+2) \*addr(n+2) = (\*addr(n+2)) XOR addr(n+1) XOR addr(n)
+
+Although a good understanding of how the linked lists works is helpful, the system calls do most of the hard work for you.
+
+The calls provided are:
+
+**[GN\_Xin](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-xin)**
+
+Insert an entry into a linked list. You pass this call the extended pointer of the entry to insert and the extended pointers of the previous and next entry.
+
+**[GN\_Xnx](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-xnx)**
+
+Index adjacent entry in list. You pass this call the extended pointer of the current entry and either the previous entry (to step forward) or of the next entry (to step back). It leaves the registers set up so another step (in the same direction) can be taken.
+
+**[GN\_Xdl](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-xdl)**
+
+Delete an entry. You pass the extended pointer of the current and previous entry, and this routine updates the pointers and returns the extended pointer of the previous and next entries to the old current entry, now deleted.

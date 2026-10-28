@@ -1,0 +1,56 @@
+---
+description: "Reduce an existing \"oz\" File Area below application/OZ Rom Area on Flash Card by one or several 64K sectors. Reduction is done on Flash sector size, ie. 64K."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7962669 (version 5) by scripts/import-z88-wiki.cjs */}
+
+# FEP_RDFA ($18), Reduce an existing "oz" File Area
+
+## Register Parameters
+
+```text
+IN:
+    A = FEP_RDFA
+    B = total sectors to reduce file area
+    C = slot number (0, 1, 2 or 3) of Flash Memory Card
+
+ OUT:
+    Success:
+         Fc = 0,
+         BHL = absolute pointer to new "oz" header in card
+         C = Number of 16K banks of File Eprom Area
+
+         Current files in file area are intact.
+         New header blown (for reduced file area) and old header sector erased.
+
+    Failure:
+         Fc = 1
+             A = RC_ONF (File Eprom Card / Area not available; possibly no card in slot)
+             A = RC_ROOM (File area cannot be reduced - files are located inside reducing sector)
+             A = RC_NFE (not a recognized Flash Memory Chip)
+             A = RC_BER (error occurred when erasing block/sector)
+             A = RC_BWR (couldn't write header to Flash Memory)
+             A = RC_VPL (Vpp Low Error)
+
+ Registers changed after return:
+    ....DE../IXIY same
+    AFBC..HL/.... different
+```
+
+## Notes
+
+Reduce an existing "oz" File Area below application/OZ Rom Area on Flash Card by one or several 64K sectors. Reduction is done on Flash sector size, ie. 64K.
+
+<u>This system call is regarded as internal operating system usage but may be used by applications</u>.
+
+This routine will signal failure ("file area not found") if an application wants to reduce a file area that is part of the OZ ROM in slot 0 (only on Z88 computers that have an AMD 512K flash installed in slot 0). A file area in slot is located above the OZ area and as a different layout structure which cannot be shrinked.
+
+**Important:**
+
+Third generation AMD Flash Memory chips may be programmed in all available slots (0-3). Only INTEL I28Fxxxx series Flash chips require the 12V VPP pin in slot 3 to successfully blow data on the memory chip. If the Intel Flash Eprom card is inserted in slot 1 or 2, this routine will report a programming failure.<br /><br />It is the responsibility of the application (before using this call) to evaluate the Flash Memory (using the [**OS\_Fep**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fep), FEP\_CDID routine) and warn the user that an INTEL Flash Memory Card requires the Z88 slot 3 hardware, so this type of unnecessary error can be avoided.
+
+The screen is turned off while the file area is being shrinked (managed by this system call) which is on the same slot as the OZ ROM. During shrinking no interference should happen from Blink, because the Blink reads the font bitmaps each 1/100 second:
+
+If the screen were enabled while shrinking a file area being part of the OZ ROM address space, the font bitmaps would suddenly be unavailable which would create violent screen flickering during chip command mode. Further, and most importantly, to avoid the Blink doing read-cycles while chip is in command mode.
+
+By switching off the screen, the Blink doesn't read the font bit maps in OZ ROM, and the Flash chip can be in command mode without being disturbed by the Blink.

@@ -1,0 +1,37 @@
+---
+description: "GN_Dei, convert zoned external format date to internal format GN_Gdt, convert an ASCII string to an internal binary date GN_Gmd, Get (read) machine date in internal format GN_Pdt, write internal..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8618073 (version 3) by scripts/import-z88-wiki.cjs */}
+
+# GN_Die, Convert internal format date to zoned format
+
+## Register parameters
+
+```text
+IN:
+     ABC = internal format date (as returned by GN_Gmd)
+     (A is most significant byte, C is less significant byte)
+
+OUT, if call successful:
+     Fc = 0
+     A = number of days in month (eg. 28 if date is in Feb 1989)
+     B = month (1 = January, 12 = December)
+     C =
+          C7 to C5: day of the week (1=Monday, 7=Sunday)
+          C4 to C0: day of the month (1 to 31)
+     DE = Signed year number (relative to 0 A.D.).
+     B.C. years are negative numbers.
+
+OUT, if call failed:
+     Fc = 1 (no error code)
+     Date out of range (eg. beyond 32767 A.D.)
+
+Registers changed after return:
+     ......HL/IXIY same
+     AFBCDE../.... different
+```
+
+## Related calls
+
+**[GN\_Dei](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-dei)**, convert zoned external format date to internal format <br />**[GN\_Gdt](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-gdt)**, convert an ASCII string to an internal binary date <br />**[GN\_Gmd](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-gmd)**, Get (read) machine date in internal format <br />**[GN\_Pdt](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-pdt)**, write internal date as ASCII string <br />**[GN\_Pmd](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-pmd)**, put (set) machine date

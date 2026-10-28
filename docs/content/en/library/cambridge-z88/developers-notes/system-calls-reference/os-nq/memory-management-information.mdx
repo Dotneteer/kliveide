@@ -1,0 +1,115 @@
+---
+description: "The following codes return information about free RAM space and memory type organisation:"
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7962753 (version 10) by scripts/import-z88-wiki.cjs */}
+
+# Memory Management information
+
+The following codes return information about free RAM space and memory type organisation:
+
+## NQ\_Mfs
+
+```text
+IN:  BC = NQ_Mfs
+     IX = memory handle
+
+OUT: Fc = 0, success
+             ABC = free space info (A = MSB, C = LSB)
+             DE = 0
+     Fc = 1, A = RC_Handle
+
+Registers changed after return:
+     ......../IXIY same
+     AFBCDEHL/.... different
+```
+
+## NQ\_Slt
+
+```text
+IN:
+     BC = NQ_Slt  
+     D = slot
+     E = bank
+
+OUT: A = configuration (bank usage definition):          
+          BU_NOT = 0     bank is empty
+          BU_EPR = 1     bank is EPROM
+          BU_ROM = 2     bank is ROM
+          BU_WRK = 4     work memory
+          BU_FIX = 8     fixed memory
+          BU_RES = 16    reserved memory
+          BU_APL = 32    bank is application RAM
+          BU_FRE = 128   bank is available RAM
+
+Registers changed after return: 
+     ..BCDEHL/IXIY same
+     AF....../.... different
+```
+
+## NQ\_Mfp
+
+```text
+IN:
+ A = slot number (0 for internal)
+ BC = NQ_Mfp
+
+OUT:
+ Fc = 0, it is a RAM device
+ A = total number of banks in Ram Card ($40 for 1MB)
+ DE = free pages (1 page = 256 bytes)
+
+ Fc = 1, it is not a RAM device
+ A = RC_ONF (Object not found)
+
+Registers changed after return:
+ ..BC..HL/IXIY same
+ AF..DE../... different
+```
+
+### Notes
+
+API call implemented in OZ 4.2. Calling [**OS\_Nq**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-nq) with BC = NQ\_Mfp will return Fc = 1, A = RC\_Unk in previous OZ releases.
+
+## NQ\_Mup
+
+```text
+IN:
+ IX = memory pool handle
+
+OUT:
+ Fc = 0, 
+ DE = number of pages used (1 page = 256 bytes)
+
+ Fc = 1, 
+ A = RC_HND (bad handle)
+
+Registers changed after return:
+ A.BC..HL/IXIY same
+ .F..DE../... different
+```
+
+### Notes
+
+API call implemented in OZ 5.0.
+
+## NQ\_Mnt
+
+```text
+IN:
+ A = slot number
+
+OUT:
+ Fc = 0, file area mounted in slot
+
+ Fc = 1, 
+ A = RC_ONF (object not found), no file area mounted in slot
+
+Registers changed after return:
+ A.BCDEHL/IXIY same
+ .F....../... different
+```
+
+### Notes
+
+API call implemented in OZ 5.0.

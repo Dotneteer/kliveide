@@ -1,0 +1,30 @@
+---
+description: "DC_Icl, Invoke new CLIDC_In, Read from CLIDC_Out, Write to CLIDC_Prt, Print to CLIDC_Rbd, Rebind streamsDC_Gen, screen driver SOH callOS_Cli, CLI interface"
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7471360 (version 5) by scripts/import-z88-wiki.cjs */}
+
+# DC_Xin, Examine CLI input
+
+## Register parameters
+
+```text
+IN: 
+    -
+
+OUT:
+    Fc = 0 : CLI has input stream
+    Fc = 1, A = RC_Eof : there is no CLI or no input stream
+
+Registers affected after return:
+    ..BCDEHL/IXIY same
+    AF....../.... different
+```
+
+## Notes
+
+Internal operating system usage.
+
+## Related calls
+
+**[DC\_Icl](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-icl)**, Invoke new CLI<br />**[DC\_In](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-in)**, Read from CLI<br />**[DC\_Out](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-out)**, Write to CLI<br />**[DC\_Prt](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-prt)**, Print to CLI<br />**[DC\_Rbd](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-rbd)**, Rebind streams<br />**[DC\_Gen](/en/library/cambridge-z88/developers-notes/system-calls-reference/dc-gen)**, screen driver SOH call<br />**[OS\_Cli](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-cli)**, CLI interface

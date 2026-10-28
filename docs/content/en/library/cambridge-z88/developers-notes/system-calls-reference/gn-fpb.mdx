@@ -1,0 +1,38 @@
+---
+description: "At most one character can be pushed back without an intervening read, otherwise a push back error is given."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8618117 (version 3) by scripts/import-z88-wiki.cjs */}
+
+# GN_Fpb, Push back a character into filter
+
+## Register parameters
+
+```text
+IN:
+     IX = filter handle
+
+OUT, if call successful:
+     Fc = 0
+
+OUT, if call failed:
+     Fc = 1
+     A = error code:
+          RC_HAND ($08), bad filter handle
+          RC_PUSH ($0E), push back error
+               1. never read from filter
+               2. Already pushed back one character
+          RC_EOF ($09), filter is empty
+
+Registers changed after return:
+     ..BCDEHL/IXIY same
+     AF....../.... different
+```
+
+## Notes
+
+At most one character can be pushed back without an intervening read, otherwise a push back error is given.
+
+## Related calls
+
+**[GN\_Flc](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-flc)**, close filter <br />**[GN\_Flf](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-flf)**, flush filter <br />**[GN\_Flo](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-flo)**, open filter <br />**[GN\_Flr](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-flr)**, read from filter <br />**[GN\_Flw](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-flw)**, write character to filter

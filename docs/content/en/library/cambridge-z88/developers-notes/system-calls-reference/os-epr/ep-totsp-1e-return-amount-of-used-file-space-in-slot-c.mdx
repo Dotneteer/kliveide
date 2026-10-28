@@ -1,0 +1,32 @@
+---
+description: "Return amount of active and deleted file space (in bytes) in File Eprom Area, inserted in slot C."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7471524 (version 2) by scripts/import-z88-wiki.cjs */}
+
+# EP_TotSp ($1E) - Return amount of used file space in slot C
+
+## Register parameters
+
+```text
+IN:
+   A = EP_TOTSP
+   C = slot number containing File Eprom Area
+
+OUT:
+   Fc = 0, File Eprom available
+        BHL = Amount of active file space in bytes (24bit integer, B = MSB)
+        CDE = Amount of deleted file space in bytes (24bit integer, C = MSB)
+
+   Fc = 1,
+        A = RC_ONF
+        File Eprom was not found in slot C.
+
+Registers changed after return:
+   ......../IXIY same
+   AFBCDEHL/.... different
+```
+
+## Notes
+
+Return amount of active and deleted file space (in bytes) in File Eprom Area, inserted in slot C.

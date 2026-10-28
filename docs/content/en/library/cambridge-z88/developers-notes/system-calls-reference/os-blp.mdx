@@ -1,0 +1,26 @@
+---
+description: "OS_Blp, Make a bleep"
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7471384 (version 3) by scripts/import-z88-wiki.cjs */}
+
+# OS_Blp, Make a bleep
+
+## Register parameters
+
+```text
+IN:
+     A = sound count
+     B = space count
+     C = mark count
+OUT:
+     Fc = 0 always
+
+Registers changed after return:
+     ....DEHL/IXIY same
+     AFBC..../.... different
+```
+
+## Notes
+
+Called as VDU 1, n, "!", ...

@@ -1,0 +1,30 @@
+---
+description: "GN_Gmt, get (read) machine time in internal format GN_Gtm, convert an ASCII string to a time in internal format GN_Msc, miscellaneous time operations GN_Pmt, put (set) machine time GN_Ptm, write..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7471400 (version 4) by scripts/import-z88-wiki.cjs */}
+
+# OS_Dly, Delay a given period
+
+## Register parameters
+
+```text
+IN:
+     BC = delay in centiseconds
+
+OUT, if call failed:
+     Fc = 1
+     BC = remaining timeout
+     A = error code:
+          RC_ESC ($01), escape was pressed
+          RC_SUSP ($69), process suspended
+          RC_TIME ($02), timeout
+
+Registers changed after return:
+     ....DEHL/IXIY same
+     AFBC..../.... different
+```
+
+## Related calls
+
+**[GN\_Gmt](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-gmt)**, get (read) machine time in internal format <br />**[GN\_Gtm](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-gtm)**, convert an ASCII string to a time in internal format <br />**[GN\_Msc](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-msc)**, miscellaneous time operations <br />**[GN\_Pmt](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-pmt)**, put (set) machine time <br />**[GN\_Ptm](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-ptm)**, write internal time as ASCII string <br />**[GN\_Sdo](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-sdo)**, send date and time to standard output

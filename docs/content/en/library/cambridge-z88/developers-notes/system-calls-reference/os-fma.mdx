@@ -1,0 +1,39 @@
+---
+description: "This call tells application in which bank the explicit memory area requested is free for allocation. Refer to explicit memory allocation for further informations. This system call is only..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/63275116 (version 7) by scripts/import-z88-wiki.cjs */}
+
+# OS_Fma, Find Memory for Allocation
+
+## Register parameters
+
+```text
+IN:
+	  A = options
+        A7 = even bank needed (for segment 0 allocation)
+        A6 = fixed memory requested (no subject to swapping)
+        A5 = from any slot
+		A4 = any offset (generated and returned by call)
+        A0-A1 = slot number if A5=0
+
+      H = page offset ($00-$3F; $00 if A4 option set)
+      L = number of pages wanted (1 to 64)
+
+OUT:  Fc = 0
+         L = 0, always 
+         Available memory found at pointer BHL
+      Fc = 1, A = RC_Room if not enough space in slot(s)
+
+Registers changed after return:
+     ....DEH./IXIY same
+     AFBC...L/.... different
+```
+
+## Notes
+
+This call tells application in which bank the explicit memory area requested is free for allocation. Refer to **[explicit memory allocation](/en/library/cambridge-z88/developers-notes/memory-management/explicit-memory-allocation)** for further informations. This system call is only available in OZ release V4.6 and newer.
+
+## Related calls
+
+**[OS\_Axm](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-axm)**, Allocate explicit memory[<br />**OS\_**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-bix)**[Axp](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-axp)**, Allocate explicit page<br />**[OS\_Bix](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-bix)**, Bind in extended address <br />**[OS\_Box](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-box)**, Restore bindings after OS\_Bix <br />**[OS\_Fc](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fc)**, Select fast code (fast bank switching) <br />**[OS\_Fxm](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fxm)**, Free explicit memory <br />**[OS\_Mal](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mal)**, Allocate memory<br />**[OS\_Mcl](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mcl)**, Close memory (free memory pool) <br />**[OS\_Mfr](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mfr)**, Free (previously allocated block) memory <br />**[OS\_Mgb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mgb)**, Get current bank binding in segment <br />**[OS\_Mop](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mop)**, Open memory (allocate memory pool) <br />**[OS\_Mpb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mpb)**, Set new bank binding in segment<br />**[OZ\_Mgb](/en/library/cambridge-z88/developers-notes/system-calls-reference/oz-mgb)**, Get current bank binding in segment<br />**[OZ\_Mpb](/en/library/cambridge-z88/developers-notes/system-calls-reference/oz-mpb)**, Set new bank binding in segment

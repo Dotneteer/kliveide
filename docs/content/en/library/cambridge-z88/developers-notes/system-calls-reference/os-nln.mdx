@@ -1,0 +1,30 @@
+---
+description: "This call replace GN_Nln. It uses 2 bytes (instead of 3) and is significantly faster. Error will only occur if rebinding has occurred."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/120991001 (version 3) by scripts/import-z88-wiki.cjs */}
+
+# OS_Nln, send new line (CR/LF) to standard output
+
+## Register parameters
+
+```text
+IN:  -
+
+OUT: Fc = 0, success
+     Fc = 1, failure and A = error code
+          RC_HAND ($08), bad handle (during re-direction)
+          RC_WP ($14), write protected (during re-direction)
+
+Registers changed after return:
+     ..BCDEHL/IXIY same
+     AF....../.... different
+```
+
+Notes
+
+This call replace [**GN\_Nln**](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-nln). It uses 2 bytes (instead of 3) and is significantly faster. Error will only occur if rebinding has occurred.
+
+## Related calls
+
+**[OS\_Out](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-out)**, write character to standard output<br />**OS\_Sout**, write local string to standard output<br />[**OS\_Bout**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-bout),write string at (B)HL to standard output <br />**[OS\_Pout](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-pout)**, write embedded null-terminated string at caller (PC) to standard output<br />[**OS\_Hout**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-hout), write hexadecimal byte to standard output<br />**OS\_Nln**, send newline (CR/LF) to standard output<br />**[GN\_Sop](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-sop)**, write local string to standard output<br />**[GN\_Soe](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-soe)**, write string at extended address to standard output<br />**[GN\_Nln](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-nln)**, send newline (CR/LF) to standard output

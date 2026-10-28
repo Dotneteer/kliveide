@@ -1,0 +1,35 @@
+---
+description: "See also GN_Esp which just displays the error message to standard output. Calling GN_Err with an invalid or fatal error message will cause a box with the error message and \"Press Q to Quit - fatal..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8618075 (version 7) by scripts/import-z88-wiki.cjs */}
+
+# GN_Err, Display an interactive error box
+
+## Register parameters
+
+```text
+ IN:
+     A = 0, display error message at BHL and C = 0 if fatal
+     A <>0, display system error message of error code A
+OUT:
+     Fc = 1
+     A = return code:
+          RC_QUIT ($67), error fatal
+          RC_SUSP ($69), error not fatal
+          RC_DRAW ($66), error not fatal, windows corrupted
+
+Registers changed after return:
+     ..BCDEHL/IXIY same
+     AF....../.... different
+```
+
+## Notes
+
+See also **[GN\_Esp](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-esp)** which just displays the error message to standard output. Calling **[GN\_Err](https://cambridgez88.jira.com/wiki/pages/viewpage.action?pageId=99450881)** with an invalid or fatal error message will cause a box with the error message and "Press Q to Quit - fatal error" to be displayed, and subsequently will generate a RC\_QUIT system error. If you have an error handler in place, which handles RC\_QUIT, then that code will be called.<br /><br />The system call stacks the screen underneath the error window. RC\_QUIT is returned if the user wants to quit. RC\_DRAW is returned if the user wants to resume and screen needs re-drawing. RC\_SUSP is returned the user wants to resume and the screen is preserved.
+
+Since OZ 5.0, it is possible to output an explicit error message using A(in) = 0 and BHL = pointer to a null terminated string, if C = 0, error is fatal.
+
+## Related calls
+
+**[GN\_Esp](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-esp)**, return an extended pointer to a system error message <br />**[OS\_Erc](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-erc)**, get error context <br />**[OS\_Erh](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-erh)**, set error handler <br />**[OS\_Esc](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-esc)**, examine special condition

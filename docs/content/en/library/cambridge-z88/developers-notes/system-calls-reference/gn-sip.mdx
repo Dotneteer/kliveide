@@ -1,0 +1,54 @@
+---
+description: "Crashes OZ while in a popdown and an error handler is installed in segment 2, when the popdown is pre-empted (with RC_QUIT) during the GN_Sip call."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8618174 (version 3) by scripts/import-z88-wiki.cjs */}
+
+# GN_Sip, System input line routine
+
+## Register parameters
+
+```text
+IN:
+     DE = buffer for input string
+
+     A0 = 1, buffer already contains data to be edited
+     A1 = 1, force insert/overwrite mode (see A2)
+     A2 = 1, 0 = insert mode, 1 = overwrite mode (ignored if A1 = 0)
+     A3 = 1, return special characters, else ignore
+     A4 = 1, return if wrap occurs
+     A5 = 1, single line lock control
+     A6 = 1, display in reverse video
+     A7 = 1, if A3 = 1, allow for insert/overwrite return
+
+     B = length of buffer
+     C = cursor position, if A0 = 1 (set C = B if C > B)
+     L = width of line, if A5 = 1 (incl. null-terminator)
+
+OUT, if call successful:
+     Fc = 0
+     B = length of line entered, including terminating null
+     C = cursor position on exit
+     A = character which caused end of input
+OUT, if call failed:
+     Fc = 1
+     A = error code:
+          RC_BAD ($04), bad arguments
+          RC_WRAP ($0D), wrapping has occurred (only if A4 = 1)
+          RC_SUSP ($69), suspicion of suspension
+          RC_DRAW ($66), application screen needs redrawing
+          RC_QUIT ($67), kill request (e.g. from INDEX)
+          RC_ESC ($01), if escape detection is enabled
+
+Registers changed after return:
+     ....DEHL/IXIY same
+     AFBC..../.... different
+```
+
+## Bugs
+
+Crashes OZ while in a popdown and an error handler is installed in segment 2, when the popdown is pre-empted (with RC\_QUIT) during the **GN\_Sip** call.
+
+## Related calls
+
+**[GN\_Gmt](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-gmt)**, get (read) machine time in internal format <br />**[GN\_Gtm](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-gtm)**, convert an ASCII string to a time in internal format <br />**[GN\_Msc](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-msc)**, miscellaneous time operations <br />**[GN\_Pmt](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-pmt)**, put (set) machine time <br />**[GN\_Ptm](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-ptm)**, write internal time as ASCII string <br />**[OS\_Dly](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-dly)**, delay a given period

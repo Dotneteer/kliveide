@@ -1,0 +1,41 @@
+---
+description: "Save RAM file to Flash Memory or UV Eprom file area in slot C (files to UV Eprom only in slot 3). The routine does automatical \"deletion\" (overwrite) of existing file that matches the file entry..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/70451219 (version 2) by scripts/import-z88-wiki.cjs */}
+
+# EP_SvAs ($4e) - Stream opened RAM file to Flash or UV Eprom to slot C
+
+## Register Parameters
+
+```text
+IN:
+         A = EP_SVAS
+         C = slot number (0, 1, 2 or 3)
+        IX = handle to opened RAM file (from GN_Opf)
+         D = length of file entry name excl. null-terminator
+       BHL = ext. pointer to file entry name string,
+             begins with '/'
+OUT:
+        Fc = 0, File successfully saved to Flash File Eprom.
+             BHL = pointer to created File Entry in slot C.
+
+        Fc = 1,
+             File (Flash) Eprom not available in slot A:
+                  A = RC_NFE (not a recognized Flash Memory Chip)
+             Not sufficient space to store file (and File Entry Header):
+                  A = RC_Room
+             Flash Eprom Write Errors:
+                  If possible, the new File Entry is marked as deleted.
+                  A = RC_VPL, RC_BWR (see "error.def" for details)
+
+Registers changed on return:
+   ...CDE../IXIY same
+   AFB...HL/.... different
+```
+
+## Notes
+
+Save RAM file to Flash Memory or UV Eprom file area in slot C (files to UV Eprom only in slot 3). The routine does automatical "deletion" (overwrite) of existing file that matches the file entry name. This system call was implemented in OZ V4.7.<br /><br />Should the actual process of blowing the file image fail, the new File Entry will be marked as deleted, if possible.<br /><br />The screen is turned off while saving a file to flash file area that is in the same slot as the OZ ROM. During saving, no interference should happen from Blink, because the Blink reads the font bitmaps each 1/100 second: If the screen were enabled when a byte is written to an address space that is part of OZ ROM chip, the font bitmaps would suddenly be unavailable which would create violent screen flickering during chip command mode. Further, and most importantly, to avoid the Blink doing read-cycles while chip is in command mode.
+
+By switching off the screen, the Blink doesn't read the font bit maps in OZ ROM, and the Flash chip can be in command mode without being disturbed by the Blink.<br /><br />**Important:**<br />INTEL I28Fxxxx series Flash chips require the 12V VPP pin in slot 3 to successfully blow data to the memory chip. If the Flash Eprom card is inserted in slot 1 or 2, this routine will report a programming failure. It is the responsibility of the application (before using this call) to evaluate the Flash Memory (using the [**OS\_Fep**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fep), A=FEP\_CDID call) and warn the user that an INTEL Flash Memory Card requires the Z88 slot 3 hardware, so this type of unnecessary error can be avoided. Equally, the application should evaluate that saving to a file that is on an UV Eprom only can be performed in slot 3. This routine will report failure if saving a file to slots 0, 1 or 2.

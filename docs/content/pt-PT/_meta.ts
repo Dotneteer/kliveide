@@ -4,4 +4,5 @@ export default {
   "guides": { type: "page", title: "Guias (inglês)", href: "/en/guides/" },
   "reference": { type: "page", title: "Referência (inglês)", href: "/en/reference/" },
   "under-the-hood": { type: "page", title: "Nos bastidores (inglês)", href: "/en/under-the-hood/" },
+  "library": { type: "page", title: "Library (inglês)", href: "/en/library/" },
 };

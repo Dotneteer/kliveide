@@ -1,0 +1,186 @@
+---
+description: "Although an OS_In alike call is made that returns the proper return codes on pre-emption error codes, successful keyboard output is always ."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8617990 (version 11) by scripts/import-z88-wiki.cjs */}
+
+# OS_Sr, Save & restore operations
+
+## Register parameters
+
+```text
+IN:
+     A = reason code:
+     SR_SUS ($01)   Save user screen
+	 SR_RUS ($02)   Restore user screen
+     SR_WPD ($03)   Write parameter data (mailbox)
+     SR_RPD ($04)   Read parameter data (mailbox)
+     SR_FUS ($05)   Free user screen
+     SR_CRM ($06)   Remove card (not implemented)
+     SR_CIN ($07)   Insert card (not implemented)
+     SR_PWT ($08)   Page wait
+     SR_RND ($09)   Occasionally a random number
+     SR_SRS ($0A)   Set random seed
+
+     BC, DE, HL, IX = arguments
+OUT, if call successful:
+     Fc = 0
+     returned values depend on A(in)
+
+OUT, if call failed:
+     Fc = 1
+     A = error code:
+          RC_UNK ($03), unknown request
+          RC_BAD ($04), bad arguments
+          RC_HAND ($08), bad handle
+          RC_ROOM ($07), no room
+          RC_ESC ($01), with SR_PWT
+          RC_SUSP ($69), with SR_PWT
+          RC_DRAW ($66), with SR_PWT
+          RC_QUIT ($67), with SR_PWT
+```
+
+### SR\_SUS
+
+```text
+IN:
+     -
+OUT, if call succeeded:
+     Fc = 0
+     IX = handle of saved screen
+
+OUT, if call failed:
+     Fc = 1
+     A = return code:
+          RC_HAND ($08), not sufficiently room for screen in memory.
+
+Registers changed after return:
+     A.BCDEHL/..IY same
+     .F....../IX.. different
+```
+
+### SR\_RUS
+
+```text
+IN:
+     IX = handle of previously saved screen image
+
+OUT, if call succeeded:
+     Fc = 0
+     IX = 0
+OUT, if call failed:
+     Fc = 1
+     A = return code:
+          RC_HAND ($08), screen handle was not valid
+
+Registers changed after return:
+     A.BCDEHL/..IY same
+     .F....../IX.. different
+```
+
+### SR\_FUS
+
+```text
+IN:
+     IX = handle of previously saved screen image
+
+OUT, if call succeeded:
+     Fc = 0
+     IX = 0
+OUT, if call failed:
+     Fc = 1
+     A = return code:
+          RC_HAND ($08), screen handle was not valid
+
+Registers changed after return:
+     A.BCDEHL/..IY same
+     .F....../IX.. different
+```
+
+### SR\_PWT
+
+```text
+IN:
+     -
+OUT, if call succeeded:
+     Fc = 0
+     A = <BACKSPACE> ($08)
+OUT, if call failed:
+     Fc = 1
+     A = return code:
+          RC_ESC ($01), escape condition detected
+          RC_SUSP ($69), process suspended or machine revived
+          RC_DRAW ($66), process suspended or screen corrupted
+          RC_QUIT ($67), KILL request
+
+Registers changed after return:
+     ..BCDEHL/IXIY same
+     AF....../.... different
+```
+
+Although an [OS\_In](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-in) alike call is made that returns the proper return codes on pre-emption error codes, successful keyboard output is always \<BACKSPACE\>.
+
+### SR\_RND
+
+```text
+IN:
+     -
+OUT:
+     DEBC = random number
+```
+
+The return value (random number) only changes when certain operating system functions occur in between calls to **OS\_Sr**. Repeated fetching a random number may well result in the same value being returned.
+
+Fixed and improved since OZ 5.0 using an xor-shift algorithm. All returned values are different.
+
+### SR\_SRS
+
+```text
+IN:
+     DEBC = random seed	
+OUT:
+     -
+```
+
+Implemented in OZ5.0
+
+### SR\_WPD
+
+```text
+IN:
+     DE = name of information type (null-terminated)
+     DE = 0, clear mailbox
+     BHL = extended pointer to information
+     C = length of information
+
+OUT:
+     Fc = 0, successful
+
+Registers changed after return:
+     A.BCDEHL/IXIY same
+     .F....../.... different
+```
+
+Mailboxing functionality is explained in detail in [Application Static Structures](/en/library/cambridge-z88/developers-notes/application-static-structures/mailboxes).
+
+### SR\_RPD
+
+```text
+IN:
+     DE = name of information type (null-terminated)
+     BHL = extended pointer to buffer for information read
+     C = maximum size of buffer
+OUT, if call successful:
+     Fc = 0
+     C = actual data size
+OUT, if call failed:
+     Fc = 0
+     A = return code
+          RC_FAIL ($16), information type is not present
+
+Registers changed after return:
+     A.B.DEHL/IXIY same
+     .F.C..../.... different
+```
+
+Mailboxing functionality is explained in detail in [Application Static Structures](/en/library/cambridge-z88/developers-notes/application-static-structures/mailboxes).

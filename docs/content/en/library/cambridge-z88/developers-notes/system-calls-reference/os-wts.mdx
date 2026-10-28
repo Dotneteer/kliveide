@@ -1,0 +1,35 @@
+---
+description: "The default system token table is used if a local token table has not been established with OS_Wtb.The standard screen driver effects and icons are handled by this call.The ISO characters can be..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/120984238 (version 7) by scripts/import-z88-wiki.cjs */}
+
+# OS_Wts, Write tokenized string
+
+Register parameters
+
+```text
+IN:
+     BHL = pointer to tokenized null terminated string (B = 0, local)
+
+OUT, if call successful:
+     Fc = 0, always
+
+Registers changed after return:
+     A.BCDEHK/IXIY same
+     .F....../.... different
+```
+
+Notes
+
+The default system token table is used if a local token table has not been established with [OS\_Wtb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-wtb).<br />The standard screen driver effects and icons are handled by this call.<br />The [ISO characters](/en/library/cambridge-z88/developers-notes/internationalization/iso-character-table) can be displayed using the STX ($02) escape sequence, for example using string below :
+
+```text
+defm 2,$A4,0
+```
+
+will output the '€' character and not the corresponding token.
+
+## Related calls
+
+**[OS\_Wtb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-wtb)**, write token base<br />**[OS\_Wrt](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-wrt)**, write token

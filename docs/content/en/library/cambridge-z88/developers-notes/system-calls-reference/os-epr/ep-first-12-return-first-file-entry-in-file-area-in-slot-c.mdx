@@ -1,0 +1,36 @@
+---
+description: "Due to a strange side effect with Intel Flash Chips, a special \"NULL\" file is saved as the first file to the Card. These bytes occupies the first bytes that otherwise could be interpreted as a..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7471496 (version 3) by scripts/import-z88-wiki.cjs */}
+
+# EP_First ($12) - Return first file entry in File Area in slot C
+
+## Register parameters
+
+```text
+IN:
+   A = EP_FIRST
+   C = slot number containing File Eprom
+
+OUT:
+   Fc = 0, File Eprom available
+        Fz = 1, File Entry marked as deleted
+        Fz = 0, File Entry is active.
+        BHL = pointer to first file entry in slot (B=00h-FFh, HL=0000h-3FFFh).
+        (NULL file skipped if found on Intel Flash Card)
+
+   Fc = 1,
+        A = RC_Onf
+        File Eprom was not found in slot, or File Entry not available
+
+Registers changed after return:
+   ...CDE../IXIY same
+   AFB...HL/.... different
+```
+
+## Notes
+
+Due to a strange side effect with Intel Flash Chips, a special "NULL" file is saved as the first file to the Card. These bytes occupies the first bytes that otherwise could be interpreted as a random boot command for the Intel chip - the behaviour is an Intel chip suddenly gone into command mode for no particular reason. The NULL file prevents this behaviour by saving a file that avoids any kind of boot commands which sends the chip into command mode when the card has been inserted into a Z88 slot.
+
+If the NULL file is identified as the first file, it is skipped and the next file entry pointer is automatically returned.

@@ -1,0 +1,41 @@
+---
+description: "Delimiters are tab, space and comma. If the A is set to one of the delimiters then that delimiter is treated as a terminator. A(out) always contains the terminator character."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8618184 (version 3) by scripts/import-z88-wiki.cjs */}
+
+# GN_Skd, Skip delimiters in byte sequense
+
+## Register parameters
+
+```text
+ IN:
+     HL = 0, read from stream IX
+     HL = 1, read from filter IX
+     HL = 2, not allowed
+     HL > 255, read at (HL)
+     A = terminator
+     IX = optional handle (if HL = 0,1)
+
+OUT, if call successful:
+     Fc = 0
+     HL = points to terminating character processed (if HL(in) > 255)
+     A = terminator
+     Fz = 1, terminator seen
+     Fz = 0, terminator not seen
+OUT, if call failed:
+     Fc = 1
+     A = error code:
+
+Registers changed after return:
+     ..BCDEHL/IXIY same
+     AF....../.... different
+```
+
+## Notes
+
+Delimiters are tab, space and comma. If the A is set to one of the delimiters then that delimiter is treated as a terminator. A(out) always contains the terminator character.
+
+## Related calls
+
+**[GN\_Cls](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-cls)**, classify character <br />**[GN\_Skc](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-skc)**, skip character <br />**[GN\_Skt](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-skt)**, skip to value

@@ -1,0 +1,30 @@
+---
+description: "Before calling OS_Epr and EP_LOAD you should create a new file with an appropriate file name, using GN_Opf, A = OP_OUT. The filename to be searched on EPROM must not contain wildcards (the File..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7471432 (version 6) by scripts/import-z88-wiki.cjs */}
+
+# EP_LOAD ($03) - read file from Eprom in slot 3 into RAM file
+
+## Register parameters
+
+```text
+IN:  A = EP_LOAD
+     BHL = pointer to filename (to be found on EPROM)
+     IX = output file handle (to store contents of file on EPROM)
+
+OUT: Fc = 0, file successfully moved to RAM filing system.
+     Fc = 1:
+          A = RC_FAIL ($16), file EPROM not available.
+          A = RC_ROOM ($07), no room in filing system for data from EPROM.
+
+Registers changed after return:
+  ..BCDEHL/IXIY same 
+  AF....../.... different
+```
+
+## Notes
+
+Before calling [**OS\_Epr**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-epr) and EP\_LOAD you should create a new file with an appropriate file name, using [**GN\_Opf**](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-opf), A = OP\_OUT. The filename to be searched on EPROM must not contain wildcards (the File EPROM is not organised as the RAM filing system). This call is equivalent to the \<\>EF command in the FILER. You must close the output file after the data has been copied from EPROM.
+
+This call also works with sub file areas (a file area available on an application card in slot 3 - featured in OZ V4.2 and newer).

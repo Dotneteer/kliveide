@@ -1,0 +1,30 @@
+---
+description: "This system call is used internally by OZ V4.5 (and later) to validate the file area being empty after the file header has been written on the UV Eprom card. However, applications may use this..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/60260481 (version 2) by scripts/import-z88-wiki.cjs */}
+
+# EP_Empty ($4b) - Poll for empty file area in slot number C
+
+## Register Parameters
+
+```text
+In:
+      C = poll for empty file area in slot number 0, 1, 2 or 3
+Out:
+      Fz = 1, File area is empty (all bytes are FFh)
+      Fz = 0, File area is not empty
+              B = bank that contains non-empty bytes
+      Fc = 1,
+              A = RC_ONF (File Eprom Card/Area not available; possibly no card in slot)
+
+Registers changed after return:
+   A..CDEHL/IXIY same
+   .FB...../.... different
+```
+
+## Notes
+
+This system call is used internally by OZ V4.5 (and later) to validate the file area being empty after the file header has been written on the UV Eprom card. However, applications may use this utility function.
+
+A new system error code and message is available (OZ V4.5 and later), when an UV Eprom file header was created and the file area was identified not being empty. It can be displayed with GN\_Err, A = RC\_EPNE. The message is "UV Eprom not fully cleared, erase again".

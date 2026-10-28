@@ -1,0 +1,36 @@
+---
+description: "It is reported to be useless due to too many bugs. If (HL) < A then the error handler is called with A = (HL)."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8618182 (version 3) by scripts/import-z88-wiki.cjs */}
+
+# GN_Skc, Skip character
+
+## Register parameters
+
+```text
+IN:
+     A = value to bypass
+     HL = Sequense index:
+          0 => read from stream IX
+          1 => read from filter IX
+          2 = not allowed
+          > 255 = read at (HL)
+     IX = optional handle
+OUT, if call succeeded:
+     HL(in) > 255: (HL) points to character which stopped scanning, else
+     HL(in).
+OUT, if call failed:
+     Fc = 1
+          Error code ???
+```
+
+## Bugs
+
+It is reported to be useless due to too many bugs. If (HL) \< A then the error handler is called with A = (HL).
+
+OOPS!!! Hence the routine bombs out when a character \< A is passed to it in (HL). From stream IX it is even worse. It skips over the character correctly but (IX) \< A or (IX) \> A cause an error (always RC\_QUIT!!!).
+
+## Related calls
+
+**[GN\_Cls](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-cls)**, classify character <br />**[GN\_Skd](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-skd)**, skip delimiter <br />**[GN\_Skt](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-skt)**, skip to value

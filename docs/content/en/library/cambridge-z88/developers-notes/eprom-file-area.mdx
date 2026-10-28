@@ -1,0 +1,54 @@
+---
+description: "Persistent mass storage is handled by the EPROM file area. It is interfaced by the :EPR device (OZ 4.7 and above). This device follows the DOR conventions with the major type DM_Epr ($84)...."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/70057986 (version 10) by scripts/import-z88-wiki.cjs */}
+
+# Eprom File Area
+
+## Interfacing
+
+Persistent mass storage is handled by the EPROM file area. It is interfaced by the **:EPR** device (OZ 4.7 and above). This device follows the DOR conventions with the major type DM\_Epr ($84). Internal EPROM file area is accessed with :EPR.0 device name. :EPR.1, :EPR.2, :EPR.3 refer to the EPROM file area in slot 1, 2 or 3 when a formatted EPROM or flash card is available. Accessing the file requires opening with [GN\_Opf](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-opf), followed by i/o operations ([OS\_Gb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-gb), [OS\_Pb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-pb), [OS\_Frm](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-frm), [OS\_Fwm](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fwm), [OS\_Mv](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mv)...) and is closed with [GN\_Cl](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-cl). All usual read and write operations are performed just like standard RAM files, thanks to the temporary ram files stored in :RAM.-. This functionality is transparent to the end user, the temporary files are deleted after closing the file.
+
+Saving a file to the EPROM file area writes the complete file again. The previous copy (if it still exists) is marked as deleted. EPR device can be used as default device in the Panel. If this mode is chosen, keep in mind that the available free space can quickly be wasted by the deleted files generated.
+
+## Wildcards
+
+Wildcards has been implemented on EPROM filenames. Supported wildcards are '\*' and '?'. Thus :EPR.\* or :EPR.? browses all available file areas. Filenames are automatically expanded in GN\_Opf filename buffer. This feature is useful in applications like Pipedream. After loading a file using wildcards, the filename is expanded when using \<\>FC or \<\>FS filename displaying the first file it finds.
+
+## File Card format
+
+The following is the format used in file Eprom and Flash Cards. Unfortunately this is not the conventions used by the DOR system. However, it is sufficient for traversing through the file contents. With this information you can program an application that can retreave previously 'deleted' (overwritten) files. The format is as follows:
+
+```text
+$0000       File entry
+...         File entry
+```
+
+...
+
+```text
+...         Latest file entry
+...         $FF's until
+$3FC0       $00's until
+$3FF7       $01
+$3FF8       4 byte random id
+$3FFC       size of card in banks (2=32K, 8=128K, 16=256K)
+$3FFD       sub-type, $7E for 32K cards, and $7C for 128K (or larger) cards
+$3FFE       'o'
+$3FFF       'z' (file eprom identifier, lower case 'oz')
+```
+
+A file entry has the form:
+
+```text
+1 byte      n           length of filename
+1 byte      x           '/' for latest version, $00 for old version (deleted)
+n-1 bytes   'xxxx'      filename
+4 bytes     m           length of file (least significant byte first)
+m bytes                 body of file
+```
+
+When a file is saved to EPROM which has the same name as an existing file, the byte following the filename length, is set to zero, thus marking the file deleted. However, the name length and contents of the old file are all intact and so by directly reading the EPROM, old files can be recovered.
+
+In OZ V4.2 and later, **[OS\_Epr](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-epr)** has been extended with new functionality to read / write File cards. A new system call, **[OS\_Fep](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fep)** has also been introduced which writes and erases data on Rakewell Flash Cards.

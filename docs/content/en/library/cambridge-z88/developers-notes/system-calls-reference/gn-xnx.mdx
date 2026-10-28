@@ -1,0 +1,39 @@
+---
+description: "For more details, read Linked lists."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8618215 (version 6) by scripts/import-z88-wiki.cjs */}
+
+# GN_Xnx, Index next entry in linked list
+
+## Register parameters
+
+```text
+IN:
+     CDE = pointer to previous entry
+     BHL = pointer to current entry
+
+OUT, if call successful:
+     Fc = 0
+     CDE = pointer to old current entry (ie. BHL(in))
+     BHL = pointer to next entry
+     Fz = 1, if BHL(out) = 0.
+
+OUT, if call failed:
+     Fc = 1
+          If BHL(in) = 0; BHL(in) and CDE(in) are then preserved.
+     A = error code:
+          RC_EOF ($09), attempt to step beyond start or end of list
+
+Registers changed after return:
+     ......../IXIY same
+     AFBCDEHL/.... different
+```
+
+## Notes
+
+For more details, read [Linked lists](/en/library/cambridge-z88/developers-notes/linked-lists).
+
+## Related calls
+
+**[GN\_Xdl](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-xdl)**, delete an entry from a linked list <br />**[GN\_Xin](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-xin)**, insert an entry into a linked list

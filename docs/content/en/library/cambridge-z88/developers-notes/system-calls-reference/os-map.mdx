@@ -1,0 +1,129 @@
+---
+description: "HL points to a series of bytes, where each byte represents 8 pixels on the map. Bit 7 is the left most pixel and the bytes are written onto the map from left to right. The number of bytes read..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7962718 (version 4) by scripts/import-z88-wiki.cjs */}
+
+# OS_Map, PipeDream map control
+
+## Register parameters
+
+```text
+IN:
+     BC = reason code
+          MP_WR ($01)    write a line to the map
+          MP_DEF ($02)   define a map using the Panel default width
+          MP_GRA ($03)   define a map of specific width
+          MP_DEL ($04)   no functionality
+          MP_MEM ($05)   define a map of specific width and associate to application segment
+
+OUT, if call successful:
+     Fc = 0
+OUT, if call failed:
+     Fc = 1
+     A = error code:
+          RC_BAD ($04), bad parameters (errors are generally ignored)
+          RC_UNK ($03), value of BC is not valid
+
+Registers changed after return:
+     defined by MP_ reason code.
+```
+
+## MP\_WR
+
+```text
+IN:
+     A = window ID number (ASCII digit '1' to '6')
+     DE = row of the map to be written (0 to 63, 0 = top of screen)
+     HL = points to bytes to be written
+OUT:
+     -
+
+Registers changed after return:
+     ..BCDEHL/IXIY same
+     AF....../.... different
+```
+
+### Notes
+
+HL points to a series of bytes, where each byte represents 8 pixels on the map. Bit 7 is the left most pixel and the bytes are written onto the map from left to right. The number of bytes read from HL depends on the width of the map.
+
+## MP\_DEF
+
+```text
+IN:
+     A = window ID number (ASCII digit '1' to '6')
+OUT:
+     B = width of map in pixels
+     C = width of map in 6 bit characters
+
+Registers changed after return:
+     A...DEHL/IXIY same
+     .FBC..../.... different
+```
+
+### Notes
+
+This call simply reads the value of the map size entry in the Panel and attempts to define a map of that width.
+
+## MP\_GRA
+
+```text
+IN:
+     A = window ID number (ASCII digit '1' to '6')
+     HL = width of map to set up (0 to 255)
+OUT:
+     as for MP_DEF
+```
+
+## MP\_DEL
+
+```text
+IN:
+     A = window ID number (ASCII digit '1' to '6')
+OUT:
+     -
+```
+
+### Notes
+
+This call executes no functionality.
+
+## MP\_MEM
+
+```text
+IN:
+     A = window ID number (ASCII digit '1' to '6')
+     B = MS_Sx segment for returned map memory as extended address
+     HL = width of map to set up (0 to 255), modulus 8
+OUT:
+     D = width of map in pixels
+     E = width of map in 6 bit characters
+     C = MS_Sx segment for returned map memory as extended address
+     BHL = extended address of base of map area (for MS_Sx segment), upper left (0,0) coordinate
+          (size of map area is D * 64 pixels = size/8 bytes)
+
+Registers changed after return:
+     A......./IXIY same
+     .FBCDEHL/.... different
+```
+
+### Notes
+
+A map has always 64 pixels height (depth of screen). When the map is created, just use [**OS\_Mpb**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mpb) (or [RST OZ\_MPB](/en/library/cambridge-z88/developers-notes/system-calls-reference/oz-mpb) in OZ 4.1 and newer) to bind returned BHL pointer into C = MS\_Sx segment. An example:
+
+```text
+        ld      a,'4'             ; use window '4' for graphics
+        ld      B, MS_S2
+        ld      C, MP_MEM
+        ld      hl,64
+        oz      OS_Map            ; create a map of 64 pixels
+        rst     OZ_Mpb            ; and bind map memory to segment 2
+        ld      (hl),@10101010    ; write first 8 pixels to the map area, which is automatically displayed on screen
+```
+
+MP\_MEM only exists in OZ V4.2 and newer. If used on older ROMs, Fc = 1 is returned (invalid reason code).
+
+---
+
+At present there is only one map area and it is reclaimed for text by redefining the window in which it sits, or by defining a window which overlaps it. However, to allow for future expansion this call should be used if a map area is to be reclaimed for text use. Please refer to [section The Map Area](/en/library/cambridge-z88/developers-notes/the-map-area), to know more about. How the map pixel memory is organised.

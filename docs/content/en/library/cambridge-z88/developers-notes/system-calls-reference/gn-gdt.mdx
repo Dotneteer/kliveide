@@ -1,0 +1,67 @@
+---
+description: "ASCII string have to use the local date string (dates are fully country localized since OZ 4.5)."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8618121 (version 5) by scripts/import-z88-wiki.cjs */}
+
+# GN_Gdt, Convert an ASCII string to an internal binary date
+
+## Register parameters
+
+```text
+IN:
+     HL = source pointer
+          0 = read from stream whose handle is IX
+          1 = read from filter whose handle is IX
+          2 = not allowed
+          > 255 = string pointed to by HL
+     DE = destination pointer
+          0 = not allowed
+          1 = not allowed
+          2 = result returned in ABC
+          >255 = store result at address pointed to by DE
+     A = date format
+          A0 = 1, undefined
+          A1 = 1, undefined
+          A2 = 1, undefined
+          A3 = 1, force American format (MM/DD/YY)
+          A4 = 1, force European format (DD/MM/YY)
+          A5 = 1, force C to be the delimiter
+          A6 = 1, undefined
+          A7 = 1, undefined
+
+     IX = source handle (if HL = 0,1)
+     B = maximum number of characters to be read
+     C = optional forced delimiter (default is ".")
+
+OUT, if call successful:
+     Fc = 0
+     HL, if HL(in) = 0, index to last character read
+     HL, if HL(in) > 255, pointer to last/terminating character
+     ABC, if DE(in) = 2, date in internal format
+     ABC, if DE(in) > 255, ABC(in)
+     DE, if DE(in) > 255, DE(in)+3
+OUT, if call failed:
+     Fc = 1
+     A = error code:
+          RC_ROOM ($07), insufficient memory to make conversion.
+          RC_HAND ($08), handles not available for conversion
+          RC_BAD ($04), bad parameters
+          RC_SNTX ($0C), Bad syntax
+
+Registers changed after return:
+     ......../IXIY same
+     AFBCDEHL/.... different
+```
+
+## Notes
+
+ASCII string have to use the local date string (dates are fully country localized since OZ 4.5).
+
+Setting A3=0 and A4=0 will mean that the PANEL settings for the date format will be used. A3=A4=1 will use European format. The routine will return a syntax error (RC\_SNTX) if A5=1 and the character passed in C(in) is not the terminator of the string to be converted. Please note that returned internal format is in high byte low byte register sequense (A = high byte, C = low byte).
+
+Source in HL can not be in segment 1 used by Date Filter Table. Destination in (DE\>255) can be inside segment 1.
+
+## Related calls
+
+**[GN\_Dei](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-dei)**, convert zoned format date to internal format <br />**[GN\_Die](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-die)**, convert internal format date to zoned format <br />**[GN\_Gmd](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-gmd)**, Get (read) machine date in internal format <br />**[GN\_Pdt](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-pdt)**, write internal date as ASCII string <br />**[GN\_Pmd](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-pmd)**, put (set) machine date

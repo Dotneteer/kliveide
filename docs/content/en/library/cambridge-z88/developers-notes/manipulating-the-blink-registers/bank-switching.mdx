@@ -1,0 +1,33 @@
+---
+description: "System calls inevitably require a significant time overhead while they decode their input parameters and perform general housekeeping. This could have an effect on some programs which need to..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/3113001 (version 4) by scripts/import-z88-wiki.cjs */}
+
+# Bank Switching
+
+System calls inevitably require a significant time overhead while they decode their input parameters and perform general housekeeping. This could have an effect on some programs which need to switch banks around a great deal, so we present here the method for binding banks via hardware. It should not be necessary to use this code because of the existence of the fast code interface described in "Miscellaneous useful routines". This section is included to provide some explanations as how things work. If you want your code to be compatible with future versions of the machine you should only use the fast code interface.
+
+To rebind one of the segments 0 to 3, the program writes the bank number into the relevant "segment register"; there are four segment registers, SR0 - 3, one for each segment. These are held in the BLINK chip and adressed via the Z80 I/O ports $D0 to $D3. Thus:
+
+```text
+            ld   a,20               ; do not use this code...
+            out  ($D3),a            ; under any circumstances
+```
+
+will bind bank 20 (internal RAM) to segment 3.
+
+Because the segment registers are write-only, the operating system needs 'soft copies' of the current bindings so it can restore the old bindings correctly after it has rebound banks at the start of OS calls or interrupt service routines. These soft copies are stored at machine locations $04D0 to $04D3. It is VITAL that the desired bindings are stored here BEFORE actually binding the bank; if the bank were bound first, then in the event of an interrupt occurring immediatly after the output instruction, the interrupt service routine would rebind the bank to the contents of the soft copy (assuming it does rebind the relevant segment), and the desired change would be lost. The equivalent of an **[OS\_Mpb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mpb)** would be:
+
+```text
+            ld   bc, $04D0 + segment            ; address of soft copy
+            ld   a, bank                        ; bank number
+            ld   (bc),a                         ; update the soft copy
+            out  (c),a                          ; bind in the bank
+```
+
+Similarly, the equivalent of the **[OS\_Mgb](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-mgb)** would be simply to read the soft copy:
+
+```text
+            ld   a,($04D0 + segment)
+```

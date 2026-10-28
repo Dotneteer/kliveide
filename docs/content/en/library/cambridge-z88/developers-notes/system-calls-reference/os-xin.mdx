@@ -1,0 +1,35 @@
+---
+description: "This call return if a key is pressed or not. It avoids OS_In usage which has more overhead. For example, Pipedream uses OS_Xin during calculations, system menu and help looks for a key press with..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8618018 (version 8) by scripts/import-z88-wiki.cjs */}
+
+# OS_Xin, Examine input
+
+## Register parameters
+
+```text
+IN:	-
+
+OUT, if call successful:
+     Fc = 0, input MAY BE available : a following OS_In will return immediately possibly with error
+     Fc = 1, A=RC_EOF ($09), no input, OS_In will wait
+
+Registers changed after return:
+     ..BCDEHL/IXIY same
+     AF....../.... different
+```
+
+## Notes
+
+This call return if a key is pressed or not. It avoids OS\_In usage which has more overhead. For example, Pipedream uses OS\_Xin during calculations, system menu and help looks for a key press with OS\_Xin during menu and help rendering.
+
+The function of this call is not so much to tell you when input is available, but rather to indicate when it definitely is not.
+
+The call might be useful to examine if **[OS\_In](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-in)** is going to return a pre-emption error like RC\_SUSP or RC\_QUIT. Possible reasons are:
+
+pending character<br />exception code (e.g. RC\_SUSP due to machine reviving)<br />input available
+
+## Related calls
+
+**[GN\_Sip](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-sip)**, system input line routine <br />**[OS\_In](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-in)**, read (wait for) character from standard input <br />**[OS\_Pur](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-pur)**, purge keyboard buffer <br />**[OS\_Tin](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-tin)**, read character from standard input, with timeout

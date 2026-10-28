@@ -1,0 +1,54 @@
+---
+description: "If the filename cannot be reproduced in the space available, ie. C(in), then on exit C =1, B = 0 and the expansion buffer (stream or filter) will be given a NULL. Setting C(in) = 18 will guarantee..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8618097 (version 3) by scripts/import-z88-wiki.cjs */}
+
+# GN_Fcm, Compress a filename
+
+## Register parameters
+
+```text
+ IN:
+     BHL = source pointer
+     HL = 0, not allowed
+     HL = 1, not allowed
+     HL = 2, not allowed
+     String should be terminated by a control character
+     (HL > 255, B = 0 means local pointer)
+
+     DE = destination (local) pointer
+          0: result to stream IX handle
+          1: result to filter IX handle
+          > 255: place string at (DE)
+     C = limit of space to use
+
+OUT, if call successful:
+     Fc = 0
+     DE = points to the character after the last one written
+     (if DE(in) > 255)
+
+     B = number of filename segments returned
+     C = number of characters in compressed space
+
+OUT, if call failed:
+     Fc = 1
+     A = error code:
+          RC_BAD ($04), bad parameters, fatal error
+
+Registers changed after return:
+     ......HL/IXIY same
+     AFBCDE../.... different
+```
+
+## Notes
+
+If the filename cannot be reproduced in the space available, ie. C(in), then on exit C =1, B = 0 and the expansion buffer (stream or filter) will be given a NULL. Setting C(in) = 18 will guarantee the return of a filename and extension.
+
+## Bugs
+
+If the source is in segment 2 then problems may occur.
+
+## Related calls
+
+**[GN\_Esa](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-esa)**, read & write to filename segments <br />**[GN\_Fex](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-fex)**, expand a filename <br />**[GN\_Opw](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-opw)**, Open wildcard handler <br />**[GN\_Pfs](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-pfs)**, parse filename segment <br />**[GN\_Prs](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-prs)**, parse filename <br />**[GN\_Wcl](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-wcl)**, close wildcard handle <br />**[GN\_Wfn](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-wfn)**, fetch next match for wildcard string (handle) <br />**[GN\_Wsm](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-wsm)**, match filename segment to wildcard string

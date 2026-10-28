@@ -1,0 +1,59 @@
+---
+description: "8-Bit Load Group"
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/9568429 (version 5) by scripts/import-z88-wiki.cjs */}
+
+# 8-Bit Load Group
+
+```text
+__________________________________________________________________________________________________________________________
+Mnemonic        Symbolic            Flags (bit 7-0)   Instruction         Number      Number of   Number of   Comments
+                operation           S Z . H . V N C   opcode              of bytes    M cycles    T states
+__________________________________________________________________________________________________________________________
+
+LD r, r'        r <- r'             * * X * X * * *   01 <r> <r'>         1           1           4           r:
+LD r, n         r <- n              * * X * X * * *   00 <r> 110          2           2           7           000  C
+
+                                                      -- <n> ---                                              001  B
+                                                                                                              010  E
+LD r,(HL)       r <- (HL)           * * X * X * * *   01 <r> 110          1           2           7           011  D
+LD r,(IX+d)     r <- (IX+d)         * * X * X * * *   11 011 101 (DDh)    3           5           19          100  L
+LD r,(IY+d)     r <- (IY+d)         * * X * X * * *   11 111 101 (FDh)    3           5           19          101  H
+                                                      01 <r> 110                                              111  A
+                                                      -- <d> ---
+
+LD (HL),r       (HL) <- r           * * X * X * * *   01 110 <r>          1           2           7
+LD (IX+d),r     (IX+d) <- r         * * X * X * * *   11 011 101 (DDh)    3           5           19
+LD (IY+d),r     (IY+d) <- r         * * X * X * * *   11 111 101 (FDh)    3           5           19
+                                                      01 110 <r>
+                                                      -- <d> ---
+
+LD (HL),n       (HL) <- n           * * X * X * * *   00 110 110 (36h)    2           3           10
+                                                      -- <n> ---
+LD (IX+d),n     (IX+d) <- n         * * X * X * * *   11 011 101 (DDh)    4           5           19
+LD (IY+d),n     (IY+d) <- n         * * X * X * * *   11 111 101 (FDh)    4           5           19
+                                                      00 110 110 (36h)
+                                                      -- <d> ---
+                                                      -- <n> ---
+
+LD A,(BC)       A <- (BC)           * * X * X * * *   00 001 010 (0Ah)    1           2           7
+LD A,(DE)       A <- (DE)           * * X * X * * *   00 011 010 (1Ah)    1           2           7
+LD A,(nn)       A <- (nn)           * * X * X * * *   00 111 010 (3Ah)    3           4           13
+                                                      -- <nn> --
+LD (BC),A       (BC) <- A           * * X * X * * *   00 000 010 (02h)    1           2           7
+LD (DE),A       (DE) <- A           * * X * X * * *   00 010 010 (12h)    1           2           7
+LD (nn),A       (nn) <- A           * * X * X * * *   00 110 010 (32h)    3           4           13
+                                                      -- <nn> --
+
+LD A,I          A <- I              ? ? X 0 X f 0 *   11 101 101 (EDh)    2           2           9
+                                                      01 010 111 (57h)
+LD A,R          A <- R              ? ? X 0 X f 0 *   11 101 101 (EDh)    2           2           9
+                                                      01 011 111 (5Fh)
+LD I,A          I <- A              * * X * X * * *   11 101 101 (EDh)    2           2           9
+                                                      01 000 111 (47h)
+LD R,A          R <- A              * * X * X * * *   11 101 101 (EDh)    2           2           9
+                                                      01 001 111 (4Fh)
+
+f: Interrupt enable flip-flop copied to P/V.
+```

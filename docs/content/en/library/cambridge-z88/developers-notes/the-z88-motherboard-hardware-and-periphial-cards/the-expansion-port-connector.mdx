@@ -1,0 +1,89 @@
+---
+description: "To our knowledge, this was never used with any external device. Earlier models had a removable flap to expose the standard 2.54mm double sided gold plated 48 pins male connector that presented all..."
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/3113061 (version 7) by scripts/import-z88-wiki.cjs */}
+
+# The expansion port connector
+
+<Table>
+<thead>
+<Table.Tr>
+<Table.Th colSpan={2}>Early Z88 Models - with the connector</Table.Th>
+</Table.Tr>
+</thead>
+<tbody>
+<Table.Tr>
+<Table.Th>Z88 connector with flap removed</Table.Th>
+<Table.Th>Z88 connector with flap in place</Table.Th>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+<Shot src="z88-developers-notes/the-z88-motherboard-hardware-and-periphial-cards/the-expansion-port-connector/z88-external-connector1.webp" alt="Z88 external connector1" width={900} />
+
+</Table.Td>
+<Table.Td>
+
+<Shot src="z88-developers-notes/the-z88-motherboard-hardware-and-periphial-cards/the-expansion-port-connector/z88-external-connector2.webp" alt="Z88 external connector2" width={900} />
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Th colSpan={2}>Later and Current Z88 Models - without the Connector</Table.Th>
+</Table.Tr>
+<Table.Tr>
+<Table.Th>Z88 PCB connector pads tinned (no gold).</Table.Th>
+<Table.Th>The Z88 case moulding is changed - no flap.</Table.Th>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+<Shot src="z88-developers-notes/the-z88-motherboard-hardware-and-periphial-cards/the-expansion-port-connector/z88-external-connector4.webp" alt="Z88 external connector4" width={313} />
+
+</Table.Td>
+<Table.Td>
+
+<Shot src="z88-developers-notes/the-z88-motherboard-hardware-and-periphial-cards/the-expansion-port-connector/z88-external-connector3.webp" alt="Z88 external connector3" width={313} />
+
+</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+To our knowledge, this was never used with any external device. Earlier models had a removable flap to expose the standard 2.54mm double sided gold plated 48 pins male connector that presented all the Z80 bus signals.
+
+On later models, when it was discovered that using this connector caused the Z88 to be unstable, the flap was made part of the case and the connector pads on the PCB were tinned, no longer gold plated.
+
+```text
+Component       P C B
+Side A Edge     Side B 
+GND     1       SNSL see below
+A11     2       +12v
+A12     3       A10
+A13     4       A9
+A14     5       A8
+A15     6       A7
+clock   7       A6
+D4      8       A5
+D3      9       A4
+D5      10      A3
+D6      11      A2
+VCC     12      A1
+D2      13      A0
+GND     14      GND
+D0      15      D7
+D1      16      M1L
+INTL    17      FLP (flap switch)
+slot    18      slot
+HALTL   19      NMIL
+MREQL   20      WRL
+IORQL   21      RDL
+MAWL    22      RESETL Resets Z88 (2 pulses required)
+-BT     23      SVCC 5.4v while the machine is 'on.'
+GND     24      SNSL
+```
+
+SNSL allows the machine to be automatically placed into comatose state buy causing a 'power fail interrupt' when an edge connector is plugged into to the expansion slot of the Z88.

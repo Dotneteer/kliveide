@@ -1,0 +1,20 @@
+---
+description: "These enquiries return extended pointers of a null-terminated string in BHL:"
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7962758 (version 4) by scripts/import-z88-wiki.cjs */}
+
+# Director and CLI information
+
+These enquiries return extended pointers of a null-terminated string in BHL:
+
+```text
+IN:  
+    BC = NQ_Dev ($8C00)      fetch current device
+    BC = NQ_Dir ($8C03)      fetch current directory
+    BC = NQ_Fnm ($8C06)      fetch current filename match string
+
+Registers changed after return:
+     A..CDE../IXIY same
+     .FB...HL/.... different
+```

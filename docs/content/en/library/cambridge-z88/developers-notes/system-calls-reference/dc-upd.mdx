@@ -1,0 +1,42 @@
+---
+description: "This system call updates OZ in slot 0/1, defined via data from \"ozupdate.cfg\" file and OZ ROM bank files stored in a RAM device. The config file has been parsed for OZ ROM target and bank files by..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/99024903 (version 12) by scripts/import-z88-wiki.cjs */}
+
+# DC_Upd, Update Operating System
+
+## Register parameters
+
+```text
+IN:
+         B = total of OZ ROM banks to flash
+         C = slot number (0 or 1) to blow OZ ROM
+        IX = points to array space in local Z80 address space of max. 64 OZ ROM banks (1024K). 
+               Each entry has the following format:
+               -----------------------------------------------------------------------------------
+               byte 0:                        byte 1:                        byte 2:
+               [first 64 byte sector of file] [bank of first sector]         destination bank in slot
+OUT:
+         Success:
+              Z88 soft reset and return to Index in new, booted OZ.
+         Failure:
+              Fc = 1
+              A = RC_Btl, Batt Low condition
+              A = RC_NFE, flash chip not found in slot C
+              A = RC_Wp, Intel Flash is "write-protected" in slot C
+```
+
+## Notes
+
+<strong>This is a system call for internal usage by Index, implemented in OZ V4.7 only. This system call **is deprecated** in OZ V5.0 and future releases. This functionality has been re-implemented as a Shell command, 'updoz', also accessed by Index for \<\>UPD feature.<br /><br /></strong>
+
+This system call updates OZ in slot 0/1, defined via data from "ozupdate.cfg" file and OZ ROM bank files stored in a RAM device. The config file has been parsed for OZ ROM target and bank files by new Index \<\>UPD command. This system call erases the AMD 512K flash chip, blows the bank files from RAM into the slot, completed by a soft reset.
+
+A special routine is running in LOWRAM that performs the update. Blink interrupts and screen is turned off during the update process because the AMD flash chip hardware is running in command mode, interacting with the routine in LOWRAM (it cannot be interrupted by the Blink during this vital stage). The routine operates without OZ (it has been erased from the chip!), reading the RAM files directly via the linked list of sectors as they were organised by OZ.
+
+DC\_Upd flashes OZ banks in slot 1 in upper half of 512K of the chip; this is the standard - OZ is always located at the top (like in application cards) in slot 1, hence Rakewell hybrid cards is also supported.
+
+---
+
+There's no fall-back if a partial update fails; the end-user must recover OZ manually using tools such as RomUpdate. Failures might be due to slot connector problems or simply that the chips shows signs of age.

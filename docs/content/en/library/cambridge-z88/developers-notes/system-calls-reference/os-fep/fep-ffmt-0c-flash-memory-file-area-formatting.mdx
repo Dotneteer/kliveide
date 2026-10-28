@@ -1,0 +1,50 @@
+---
+description: "Create/reformat an \"oz\" File Area below application Rom Area, or on empty Flash Cards to create a normal \"oz\" File Eprom that is also recognized by Filer popdown in slot 3. Also reformat file..."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/7962646 (version 5) by scripts/import-z88-wiki.cjs */}
+
+# FEP_FFMT ($0C), Flash Memory File Area Formatting
+
+## Register Parameters
+
+```text
+IN:
+   A = FEP_FFMT
+   C = slot number (0, 1, 2 or 3) of Flash Memory Card
+
+OUT:
+   Success:
+        Fc = 0,
+             BHL = pointer to File Header for slot C (B = absolute bank of slot).
+                   (or pointer to free space in potential new File Area).
+               C = size of File Eprom Area in 16K banks
+             Fz = 1, File Header available
+                  A = "oz" File Eprom sub type
+                  D = size of card in 16K banks (0 - 64)
+
+        All sectors erased and a new header blown.
+
+   Failure:
+        Fc = 1
+            A = RC_ONF (File Eprom Card / Area not available; possibly no card in slot)
+            A = RC_ROOM (No room for File Area; all banks used for applications)
+            A = RC_NFE (not a recognized Flash Memory Chip)
+            A = RC_BER (error occurred when erasing block/sector)
+            A = RC_BWR (couldn't write header to Flash Memory)
+            A = RC_VPL (Vpp Low Error)
+
+Registers changed after return:
+   ......../IXIY same
+   AFBCDEHL/.... different
+```
+
+## Notes
+
+Create/reformat an "oz" File Area below application Rom Area, or on empty Flash Cards to create a normal "oz" File Eprom that is also recognized by Filer popdown in slot 3. Also reformat file areas that are embedded as part of application cards, located at top of card above the application area (automatically preserving 'OZ' header during reformat of file area).<br /><br />An 'oz' file card header or 'OZ' application card header with embedded 'oz' file area watermark is 64 bytes large, and is located at the top (last bank) of the file area at offset $3FC0.<br /><br />Defining 8 banks in the ROM Front DOR for applications will leave 58 banks for file storage in a 1Mb Flash Card. This scheme is however always performed with only formatting the Flash Eprom in free modulus 64K blocks, ie. having defined 5 banks for ROM would "waste" three banks for applications. Hence, ROM Front DOR definitions should always define bank reserved for applications in modulus 64K, eg. 4 banks, 8, 12, etc...<br /><br />The screen is turned off while the file area is being formatted (managed by this system call), if it is in the same slot as the OZ ROM. During formatting, no interference should happen from Blink, because the Blink reads the font bitmaps each 1/100 second:
+
+If the screen were enabled while formatting a 64K sector that is part of the OZ ROM address space, the font bitmaps would suddenly be unavailable which would create violent screen flickering during chip command mode. Further, and most importantly, to avoid the Blink doing read-cycles while chip is in command mode.
+
+By switching off the screen, the Blink doesn't read the font bit maps in OZ ROM, and the Flash chip can be in command mode without being disturbed by the Blink.<br /><br />Important:<br />Third generation AMD Flash Memory chips may be erased/programmed in all available slots (0-3). Only INTEL I28Fxxxx series Flash chips require the 12V VPP pin in slot 3 to successfully erase or blow data on the memory chip. If the Intel Flash Eprom card is inserted in slot 1 or 2, this routine will report a programming failure.<br /><br />It is the responsibility of the application (before using this call) to evaluate the Flash Memory (using the [**OS\_Fep**](/en/library/cambridge-z88/developers-notes/system-calls-reference/os-fep), FEP\_CDID routine) and warn the user that an INTEL Flash Memory Card requires the Z88 slot 3 hardware, so this type of unnecessary error can be avoided.<br /><br />Due to a strange side effect with Intel Flash Chips, a special "NULL" file is saved as the first file to the Card. These bytes occupies the first bytes that otherwise could be interpreted as a random boot command for the Intel chip - the behaviour is an Intel chip suddenly gone into command mode for no particular reason.
+
+The NULL file prevents this behaviour by saving a file that avoids any kind of boot commands which sends the chip into command mode when the card has been inserted into a Z88 slot.

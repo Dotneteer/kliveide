@@ -1,0 +1,48 @@
+---
+description: "Leading/trailing spaces only effective if numeric field width is given."
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8618149 (version 4) by scripts/import-z88-wiki.cjs */}
+
+# GN_Pdn, Write binary integer number as decimal ASCII string
+
+## Register parameters
+
+```text
+IN:
+     HL = 0, not allowed
+     HL = 1, not allowed
+     HL = 2, convert 16bit integer in BC
+     HL > 255, HL points at 32bit integer to convert
+
+     DE = 0, write result to stream IX
+     DE = 1, write result to filter IX
+     DE > 255, result is written at (DE)
+
+     A = formatting specifier
+          A0 = 1, disable leading zero blanking (ie. no leading spaces)
+          A1 = 1, output leading space
+          A2 = 1, output trailing space
+          A4->A7, numeric field width (0 = as large as is required)
+
+     IX = optional result handle (if DE = 0,1)
+
+OUT, if call successful:
+     Fc = 0
+     DE points to character after result (if DE(in) > 255)
+
+OUT, if call failed:
+     Fc = 1
+     A = error code
+Registers changed after return:
+     ..BC..HL/IXIY same
+     AF..DE../.... different
+```
+
+## Notes
+
+Leading/trailing spaces only effective if numeric field width is given.
+
+## Related calls
+
+**[GN\_D16](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-d16)**, 16bit unsigned division <br />**[GN\_Gdn](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-gdn)**, convert an ASCII string to a binary number <br />**[GN\_M16](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-m16)**, 16bit unsigned multiplication <br />**[GN\_D24](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-d24)**, 24bit unsigned division <br />**[GN\_M24](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-m24)**, 24bit unsigned multiplication

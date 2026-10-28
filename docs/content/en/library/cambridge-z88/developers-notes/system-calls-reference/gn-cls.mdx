@@ -1,0 +1,28 @@
+---
+description: "GN_Skc, skip character GN_Skd, skip delimiters GN_Skt, skip to value"
+---
+
+{/* Imported from https://cambridgez88.jira.com/wiki/spaces/DN/pages/8618061 (version 3) by scripts/import-z88-wiki.cjs */}
+
+# GN_Cls, Classify character
+
+## Register parameters
+
+```text
+IN:
+     A = character to classify
+OUT:
+     F = flags indicate classification, as follows:
+          Fc = 0, Fz = 0: Neither alphabetic or numeric
+          Fc = 0, Fz = 1: Numeric ('0' ... '9')
+          Fc = 1, Fz = 0: Upper case letter ('A' ... 'Z')
+          Fc = 1, Fz = 1: Lower case letter ('a' ... 'z')
+
+Registers changed after return:
+     A.BCDEHL/IXIY same
+     .F....../.... different
+```
+
+## Related calls
+
+**[GN\_Skc](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-skc)**, skip character <br />**[GN\_Skd](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-skd)**, skip delimiters <br />**[GN\_Skt](/en/library/cambridge-z88/developers-notes/system-calls-reference/gn-skt)**, skip to value
