@@ -49,7 +49,9 @@ describe("ZX Next audio while debugging", () => {
       for (let frame = 0; frame < 4; frame++) {
         const f = runFrame(m);
         expect(Math.abs(f.count - perFrame), `frame ${frame}: ${f.count} samples`).toBeLessThan(3);
-        expect(f.max - f.min, `frame ${frame}: the beeper is heard`).toBeGreaterThan(0.1);
+        // --- Toggling every few T-states averages to a small swing in each sample (about 0.05 at the
+        // --- mixer's gain of 12.8); a silent frame swings 0
+        expect(f.max - f.min, `frame ${frame}: the beeper is heard`).toBeGreaterThan(0.02);
       }
     });
   }

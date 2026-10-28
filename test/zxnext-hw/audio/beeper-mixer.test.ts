@@ -111,8 +111,8 @@ describe("Beeper and mixer", () => {
   /*
    * BEEP-004: the mixer's weights, as ratios so the output gain drops out. Full-scale steps: EAR 512,
    * MIC 128, one YM channel at volume 15 = 255, one DAC channel from $00 to $FF = 255 * 4 = 1020.
-   * The gain itself is a product choice (2026-09-18: a full AY channel keeps its earlier loudness), so
-   * sums above ~1110 units clamp; the additivity check stays below that.
+   * The gain itself is a product choice: the jack's headroom (BEEP-009), so sums more than 2559 units
+   * above silence clamp; the additivity check stays below that.
    */
   async function weights(): Promise<{ ear: number; ay: number; dac: number }> {
     const e = await session();
@@ -174,6 +174,39 @@ describe("Beeper and mixer", () => {
     const samples = record(s, 4);
     expect(swing(side(samples, "left"))).toBe(0);
     expect(side(samples, "right")).toEqual(side(samples, "left"));
+  });
+
+  /*
+   * BEEP-009: headroom. The audio jack's converters take the sum's low 12 bits (zxnext_top_issue4.vhd
+   * ~1279/1299, `zxn_audio_L(11 downto 0)`), so the jack plays 0-4095 cleanly; silence is 1536 (DACs at
+   * $80: 1024, the Pi off: 512), which leaves 2559 units above it. Klive's mix (silence = 0) must not
+   * clamp anything in that range: three AY chips with A and B at volume 15 (3 x 510 = 1530 on the
+   * left) plus DAC A and B at $FF (+1016) is 2546 units, and must still add up exactly.
+   */
+  it("BEEP-009: everything the jack plays cleanly (up to 2559 units above silence) adds up without clipping", async () => {
+    const s = await session();
+    s.setNextReg(0x06, 0x00).setNextReg(0x08, SPEAKER | DAC_EN | 0x02); // --- + TurboSound
+    const levelNow = () => {
+      const samples = record(s, 1);
+      return samples[samples.length - 1].left;
+    };
+    const silence = levelNow();
+    const chipOn = (select: number) => {
+      s.out(0xfffd, select); // --- bit 7 + bits 4-2 = 111: select chip (bits 1-0), pan both (bits 6-5)
+      ay(s, 7, 0x3f); // --- tone and noise off: the output is the volume, constant
+      ay(s, 8, 0x0f);
+      ay(s, 9, 0x0f);
+    };
+    chipOn(0xff);
+    const one = levelNow() - silence; // --- 510 units
+    chipOn(0xfe);
+    chipOn(0xfd);
+    const three = levelNow() - silence; // --- 1530 units
+    s.out(0x1f, 0xff).out(0x0f, 0xff); // --- DAC A and B: +127 each, x 4
+    const withDac = levelNow() - silence; // --- 2546 units
+    expect(one).toBeGreaterThan(0);
+    expect(three / one, "three chips").toBeCloseTo(3, 2);
+    expect(withDac / one, "three chips and both left DACs at full").toBeCloseTo((1530 + 1016) / 510, 2);
   });
 
   for (const rate of [44_100, 48_000]) {

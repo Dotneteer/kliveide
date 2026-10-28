@@ -125,11 +125,15 @@ static void zxnextAudioMixerSetVolumeScaleMilli(uint32_t scale) {
  * audio_mixer.vhd: pcm = ear + mic + ay + dac + i2s, each side on its own, in these units: EAR 512 and
  * MIC 128 while high, a full YM channel 255 (the PSG output is that table x 257), one DAC channel 4 per
  * step, the Pi I2S sample 1 per step (0-1023). The beeper arrives DC-filtered and the DACs and I2S are
- * taken about their centres ($80, $200), so silence is 0; the AY stays unipolar. ZXNEXT_MIXER_GAIN maps the sum to 16 bits: chosen (2026-09-18) so that a full
- * AY channel keeps the level it had before the mixer followed the VHDL proportions. Mirrors
- * AudioMixerDevice.getMixedOutput.
+ * taken about their centres ($80, $200), so silence is 0; the AY stays unipolar. ZXNEXT_MIXER_GAIN maps
+ * the sum to 16 bits with the headroom of the audio jack: its converters take the sum's low 12 bits
+ * (zxnext_top_issue4.vhd ~1279, `zxn_audio_L(11 downto 0)`), 0-4095, and silence there is 1536 (the DACs
+ * at $80, the Pi at its rest), so the jack plays up to 2559 units above silence cleanly. 2559 x 12.8 =
+ * 32755: whatever the jack plays without wrapping plays here without clamping; only a mix that already
+ * wraps on the jack clamps. (Until 2026-10 the gain was 29.44, which clamped three AY chips at full
+ * volume, 1530 units.)
  */
-#define ZXNEXT_MIXER_GAIN 29.44
+#define ZXNEXT_MIXER_GAIN 12.8
 static int32_t zxnextAudioMixerGetMixedSide(uint32_t isRight) {
   double mixed = (double)zxnextMixerEarLevel + (double)zxnextMixerMicLevel;
   mixed += (isRight ? zxnextMixerPsgRight : zxnextMixerPsgLeft) / 257.0;

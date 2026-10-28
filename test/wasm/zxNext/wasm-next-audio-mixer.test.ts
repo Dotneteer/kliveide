@@ -27,9 +27,10 @@ describe("ZX Next WASM audio mixer", () => {
     // --- $2D writes A, $2C writes B, $2E writes C, $5F writes D (the $2D value also lands in D
     // --- but the later $5F write overrides it)
     expect([0, 1, 2, 3].map(i => exports.zxnextGetDacChannel(i))).toEqual([0x90, 0x70, 0xa0, 0x60]);
-    // --- pinned
-    expect(exports.zxnextGetAudioMixerMixedLeftWord()).toBe(5297);
-    expect(exports.zxnextGetAudioMixerMixedRightWord()).toBe(5121);
+    // --- pinned: left = EAR 256 + MIC -32 + PSG 4096 / 257 + DAC (A + B - 256) * 4 = 0 -> 239.94 units,
+    // --- x 12.8 (ZXNEXT_MIXER_GAIN) = 3071 (trunc), x 0.75 = 2303 (floor); right: 231.97 -> 2969 -> 2226
+    expect(exports.zxnextGetAudioMixerMixedLeftWord()).toBe(2303);
+    expect(exports.zxnextGetAudioMixerMixedRightWord()).toBe(2226);
     expect(exports.zxnextAppendAudioMixerCurrentSample()).toBe(1);
     expect(exports.zxnextGetAudioMixerSampleCount()).toBe(1);
     expect(exports.zxnextGetAudioMixerSampleLeft(0)).toBe(exports.zxnextGetAudioMixerMixedLeftWord());
