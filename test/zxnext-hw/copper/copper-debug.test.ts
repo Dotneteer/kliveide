@@ -168,11 +168,18 @@ describe("Copper watch and hit latch", () => {
       s.runFrames(frames);
       return performance.now() - start;
     };
-    // --- Warm up, then compare unarmed with armed on an index that matches every lap
+    // --- Warm up, then compare unarmed with armed on an index that matches every lap.
+    // --- The samples alternate so a load spike on a shared CI runner hits both sides alike
+    // --- instead of landing on one block of them; the best of each side is compared.
     time(10);
-    const unarmed = Math.min(time(20), time(20));
-    s.watchCopper([1023]);
-    const armed = Math.min(time(20), time(20));
+    let unarmed = Infinity;
+    let armed = Infinity;
+    for (let i = 0; i < 5; i++) {
+      s.clearCopperWatch();
+      unarmed = Math.min(unarmed, time(10));
+      s.watchCopper([1023]);
+      armed = Math.min(armed, time(10));
+    }
     s.clearCopperWatch();
     // --- Lenient: the armed path adds one bit test per instruction; a 2x bound catches a real
     // --- regression (a test on every tick) without being flaky on a loaded machine.
