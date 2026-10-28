@@ -2209,3 +2209,31 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
 - **Level:** 2, measured and recorded (471 labels, 1,802 annotated lines, 75 regions, 3,249 instructions; 2
   targets inside an instruction, each explained). Checked in the running IDE (Playwright harness, `dis` at
   $C229, $D9EF, $DB80 with the labels; $E000 unlabelled, as the SYS high chip has no sidecar yet).
+
+### 2026-10-28 — Videoton TVC: `tvc12-d3.rom` (BASIC 1.2, SYS high chip) to level 2
+
+- **Sources:** as for tvc12-d4 (the bytes through `tools/tvc-dis.cjs`, the SYS low and EXTH chips' bytes where
+  this chip calls them, Klive's TVC core, runs). Not used: anything under `_input/`, the web, routine names from
+  Klive's TVC code. No `manual` entries. Names from the SYS low chip's sidecar are cited, not copied as labels.
+- **Base regions** from the bytes and the earlier profile run (which covered the whole SYS bank): the built-in
+  function chain (23 entries, walked from VERNUM's, whose head the SYS low chip stores at $DD0F), every
+  `RST $18` stream (the rule read from CALCULATOR $FB82 and the op routines: only op 5, $EA82, reads the
+  stream), every `RST $08` code byte and `CALL $FE79` string (the scan rerun until no new site appeared), and
+  the operand bytes at $0000-$0001.
+- **Helpers:** seven, one per range, with `helper-briefs/tvc-draft-a-range.md`, a dispatch file built from the
+  bytes (statement words, calculator ops, the function chain, the SYS low chip's calls into this chip with
+  their names) and the coverage map. A helper corrected the facts file's number layout (+7 is a carry byte,
+  not part of a 7-byte number at +2); checked against PUSH_NUMBER and NORMALIZE and sent to the others.
+  Helper probes (deleted): XOR ORs the high bytes (POKE 30000,(256 XOR 256)/256 poked 1; 3 XOR 5 gave 6); an
+  overflowing division gives 0 (X=1E60/1E-60 left 0, no error); a sign only starts a sum; ^ is left to
+  right; string slices A$(2:3), A$(4); DEF Q(Z)=Z*2+1 gives Q(3) = 7; POKE/PEEK accept 0-65535 (else error
+  4) and map $C000 up to video RAM; error output and STOP's "STOP at line 10".
+- **Settling probe** (throwaway, deleted): "B"<"AA" is true and "AB"<"B" false (lengths compared first);
+  LEN(STRING$(3,"")) = 0; 20 calls of STRING$(3,"") in one line left FREE unchanged.
+- **Merge fixes:** four name clashes resolved by meaning (PRINT_PREFIX/PRINT_ITEM, READ_NUM_VAR/READ_NUMBER,
+  STORE_NUM7/STORE_NUMBER, PRINT_NUM_ITEM/PRINT_NUMBER); run-address references swapped for names (this
+  chip's, and "the SYS low chip's NAME"); the two "probably"s settled (token class 1 is a string variable;
+  codes $10-$18 are the small Hungarian letters, as Klive's earlier TVC work observed).
+- **Level:** 2, measured and recorded (607 labels, 285 regions, 4,279 instructions; 4 targets inside an
+  instruction, each explained). Checked in the running IDE (Playwright harness, `dis` at $E002, $E570, $EAF1,
+  $FB82, $FE79 with the labels and calls named).

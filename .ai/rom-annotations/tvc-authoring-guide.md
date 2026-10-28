@@ -130,6 +130,23 @@ from a listing. Addresses are where BASIC 1.2 runs them; check a 2.2 chip's own 
   line at $1735, the IY expression stack (9-byte numbers; GOSUB entries of type $06, FOR entries of type
   $2B, the type byte being the length). The editor's text buffer is U0 $0100-$06FF (24 x 64), the screen
   is video RAM $8000-$BBFF, 64 bytes a scanline, 10 scanlines a text row.
+- **The calculator (`RST $18`, SYS high CALCULATOR $FB82)** runs the op bytes after the RST: op n's routine
+  is the word at SYS low $C0C7 + 2n; bit 7 marks the last op; op 5 takes one more byte (constant k at
+  $C111 + 7k). Ops: 0 add, 1 divide, 2 multiply, 3 subtract (y op x, x the top), 4 negate, 5 constant,
+  6/7 recall memory A/B ($19C0/$19C7), 8/9 copy to memory, 10/11 pop to memory, 12 duplicate, 13 store
+  into a variable, 14 '(' expression ')'. Only op 5 reads the stream, so a stream ends at the first byte
+  with bit 7 set, plus one byte after each op 5. The stream pointer is $1718; streams nest.
+- **Names and built-in functions share one chain**: records [link word][length][name][type byte][value],
+  head in $1724. Its tail is the 23 built-in functions (ABS .. VERNUM), each entry right before its code in
+  the SYS high chip; type bits: 0 array, 1 numeric, 2 DEF function, 3 built-in code, 7 just created. ATN,
+  ORD and INKEY$ are tokens and are dispatched directly.
+- **Numbers on the IY stack** are 9-byte entries: +0 type $09, +1..+6 six BCD bytes, +7 a carry byte, +8
+  the exponent. 12 digits are kept, 10 printed. Strings are [type 1][length][text].
+- **Errors**: the table at SYS high $FDC6 holds [code][length][tokenised text][$FF] for codes 1-16 (Not
+  understood .. Bad file) and a catch-all 0 ("BASIC corrupted"); a code with bit 7 set prints "System error
+  <n>". Message words are tokens $93-$8F.
+- **ROM quirks observed**: XOR ORs the high bytes (256 XOR 256 = 256); a division that overflows gives 0
+  with no error; a shorter string compares as smaller whatever its characters ("B" < "AA").
 - **The token tables**: 1.2 at $DE6D, 2.2 at $D73A, tokens $FE down to $95 (BASIC listing work).
 - **BASIC 2.2 waits for a key** in $CA9F-$CAAB (observed only).
 - **The frame interrupt** is the CRTC cursor at $0EFF (scan line 239); VT-DOS moves it to $0AFF.
@@ -139,6 +156,12 @@ from a listing. Addresses are where BASIC 1.2 runs them; check a 2.2 chip's own 
 - **Overlapping entries.** `LD BC,nn`, `LD D,n` and the like hide entry points one byte in: $026B and
   $0348 (targets inside an instruction, explained in comments), and labels the tools accepted at $0A89,
   $0BFF and $1D94 (DELETE enters at $1D93, which cannot carry a label).
+- **Inline data after calls**: every `RST $08` code byte, `RST $18` stream and `CALL $FE79` string is a
+  region; a stream hidden by a misdecode shows only after the one before it is marked ($0B3C in d3): rerun
+  the scan until nothing new appears.
+- **Entries hidden inside instructions** are common in the SYS high chip (`OR $37` hiding SCF, `LD A,n`
+  hiding POP AF, `LD BC,nn` hiding two bytes): 4 unlabelled targets and a dozen accepted labels, each
+  explained.
 - **One table, two readers**: the statement words at $00C7-$00D1 are also calculator operations 0-5.
 - **Regions that touch merge**, so the constant sub-tables ($0112-$0228), the four key maps ($17BF-$18FE)
   and the token table with the message words ($1E6D-$1FF1) are each one region with data labels and
@@ -149,9 +172,10 @@ from a listing. Addresses are where BASIC 1.2 runs them; check a 2.2 chip's own 
 | Sidecar | Level | Labels | Notes |
 |---|---|---|---|
 | `tvc12-d4.rom.dis` | **2** | 471 | 75 regions, 1,802 annotated lines; checked in the running IDE (labels at $C000-$DFFF) |
-| the others | 0 | | next: `tvc12-d3.rom` (the SYS high chip), reusing d4's names and wording |
+| `tvc12-d3.rom.dis` | **2** | 607 | 285 regions (function entries, calculator streams, error table); checked in the running IDE |
+| the others | 0 | | next: `tvc12-d7.rom` (BASIC 1.2's EXTH: half of it filler), then BASIC 2.2's chips |
 
-**Method that worked (tvc12-d4).** A profile run first (the core's `setProfiling` over boot and ~60 typed
+**Method that worked (tvc12-d4, repeated for tvc12-d3 with seven helpers).** A profile run first (the core's `setProfiling` over boot and ~60 typed
 commands: what runs as code, what is read as data) marked the big data blocks before any helper started;
 then six helpers, one per range ($0000/$0974/$0D48/$1000/$1500/$18FF), with
 `helper-briefs/tvc-draft-a-range.md`, `dispatch.txt` (every routine the ROM's own tables reach), `facts.md`
