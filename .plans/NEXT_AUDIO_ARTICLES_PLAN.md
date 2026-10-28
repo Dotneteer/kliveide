@@ -295,14 +295,17 @@ example, the CD rate arithmetic). Mechanics as for the series (§0.5), but the p
 `emulator-internals/` and needs its own routes/assets golden entries.
 
 
-**As built.** `computer-sound.mdx`, about 2,000 words of prose and six figures, all computed by
+**As built.** `computer-sound.mdx`, about 2,400 words of prose and eight figures, all computed by
 `docs/authoring/next-audio/computer-sound-figures.cjs`, which rewrites the SVG between the page's
 `{/* fig:<name> */}` markers and prints the numbers the text quotes (edit the script, not the SVG).
 Examples it settled: a 1,000 Hz wave at 16,000 and 5,000 samples a second; a 4-bit DAC staircase at
 16,000 samples a second through two RC stages at 3,000 Hz (the smooth wave lags the staircase by about
 0.1 ms); a 7,000 Hz tone at 8,000 samples a second heard as 1,000 Hz (the telephone example, limit
 4,000 Hz); pulse widths of 25/50/75 % filtered to about those levels; 1,000 Hz + 3,000 Hz summed to
-1.15 of the range and clipped. No listening clips (Q3 still open). The page is the background, so it
+1.15 of the range and clipped. A short Part "Two speakers: stereo and space" (added at the
+author's request) covers channels, mono, panning, and delay-based width, echo and reverb, with two
+more figures: three panning cases with their channel levels, and a 12 × 8 m room's echoes to scale
+(direct sound 16.3 ms, single bounces 26–39 ms); article 4 (ABC/ACB, per-chip panning) can link it. No listening clips (Q3 still open). The page is the background, so it
 has no "How Klive does it"; the overview (article 1) links it in its audience paragraph.
 ---
 

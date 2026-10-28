@@ -398,6 +398,116 @@ const numbers = [];
 }
 
 // ---------------------------------------------------------------------------------------------
+// Figure: panning, the same sound at different levels on the two sides
+{
+  const cases = [
+    { title: "left only", l: 1, r: 0 },
+    { title: "equal: centre", l: 0.7, r: 0.7 },
+    { title: "more on the right", l: 0.3, r: 0.8 }
+  ];
+  const out = [svgOpen(250, "Three cases, each seen from above: two speakers in front of a listener, and the level the sound has in each channel. Left only: the left channel at full level, the right silent, and the sound seems to come from the left speaker. Equal levels on both sides: the sound seems to come from the centre, between the speakers. More on the right than on the left: the sound seems to come from between the centre and the right speaker.")];
+  cases.forEach((c, i) => {
+    const x = 10 + i * 230;
+    const sl = x + 35, sr = x + 185, sy = 50;
+    out.push(text(x + 110, 18, c.title, { anchor: "middle", size: 14, bold: true }));
+    out.push(line(sl, sy, sr, sy, { opacity: 0.35, dash: "4 4" }));
+    for (const [sx, col, lab] of [[sl, BLUE, "L"], [sr, PURPLE, "R"]]) {
+      out.push(`  <rect x="${sx - 12}" y="${sy - 14}" width="24" height="28" rx="3" fill="none" stroke="${col}" strokeWidth="2" />`);
+      out.push(text(sx, sy + 5, lab, { anchor: "middle", size: 13, fill: col, bold: true }));
+    }
+    // The listener, seen from above: a head with two ears.
+    const hx = x + 110, hy = 120;
+    out.push(`  <circle cx="${hx}" cy="${hy}" r="16" fill="none" stroke="currentColor" strokeWidth="2" />`);
+    out.push(`  <ellipse cx="${hx - 18}" cy="${hy}" rx="3" ry="6" fill="currentColor" />`);
+    out.push(`  <ellipse cx="${hx + 18}" cy="${hy}" rx="3" ry="6" fill="currentColor" />`);
+    out.push(`  <path d="M${hx - 5},${hy - 15} L${hx},${hy - 22} L${hx + 5},${hy - 15}" fill="none" stroke="currentColor" strokeWidth="2" />`);
+    // Where the sound seems to come from.
+    const pos = c.r / (c.l + c.r);
+    const px = sl + pos * (sr - sl);
+    out.push(`  <circle cx="${r(px)}" cy="${sy - (pos === 0 || pos === 1 ? 26 : 0)}" r="8" fill="${GREEN}" />`);
+    // Level bars.
+    [[c.l, BLUE, "left"], [c.r, PURPLE, "right"]].forEach(([v, col, lab], k) => {
+      const by = 170 + k * 26;
+      out.push(text(x + 48, by + 12, lab, { anchor: "end", size: 12, fill: col }));
+      out.push(`  <rect x="${x + 56}" y="${by}" width="150" height="16" fill="none" stroke="currentColor" strokeOpacity="0.4" />`);
+      if (v > 0) out.push(`  <rect x="${x + 56}" y="${by}" width="${r(150 * v)}" height="16" fill="${col}" fillOpacity="0.85" />`);
+    });
+  });
+  out.push(text(10, 242, "level in each channel; the green dot is where the sound seems to come from", { size: 12 }));
+  out.push("</svg>");
+  figures.pan = out;
+}
+
+// ---------------------------------------------------------------------------------------------
+// Figure: echoes in a room, the paths off the walls and what reaches the ear over time
+{
+  const Lx = 12, Ly = 8; // metres
+  const src = [3, 3], ear = [8, 5.5];
+  const c = 343; // speed of sound, m/s
+  const absorb = 0.6; // level kept at each wall
+  const arrivals = [];
+  for (let nx = -2; nx <= 2; nx++) {
+    for (let ny = -2; ny <= 2; ny++) {
+      const order = Math.abs(nx) + Math.abs(ny);
+      if (order > 2) continue;
+      const ix = nx * Lx + (nx % 2 === 0 ? src[0] : Lx - src[0]);
+      const iy = ny * Ly + (ny % 2 === 0 ? src[1] : Ly - src[1]);
+      const d = Math.hypot(ix - ear[0], iy - ear[1]);
+      arrivals.push({ order, d, ms: (d / c) * 1000, image: [ix, iy] });
+    }
+  }
+  const direct = arrivals.find((a) => a.order === 0);
+  arrivals.forEach((a) => (a.level = (direct.d / a.d) * absorb ** a.order));
+  const out = [svgOpen(290, "Left: a room 12 by 8 metres seen from above, with a speaker and a listener. The sound reaches the listener straight away along the direct path, and also along four paths that bounce once off each wall, which are longer. Right: what reaches the listener's ear over the first 60 milliseconds: the direct sound first, at about 16 milliseconds, then the four single echoes between about 26 and 40 milliseconds, quieter, then a crowd of even quieter echoes that bounced twice. Together they are the room's reverberation.")];
+  out.push(arrowDefs("snd-room-arrow"));
+  // Room, 25 px per metre.
+  const S = 25, rx = 20, ry = 40;
+  const X = (m) => rx + m * S, Y = (m) => ry + (Ly - m) * S;
+  out.push(text(rx, 24, "a room seen from above (12 × 8 m)", { size: 13, bold: true }));
+  out.push(`  <rect x="${rx}" y="${ry}" width="${Lx * S}" height="${Ly * S}" fill="none" stroke="currentColor" strokeWidth="3" />`);
+  for (const a of arrivals.filter((a) => a.order === 1)) {
+    // The bounce point: where the line from the ear to the image source crosses the wall.
+    const [ix, iy] = a.image;
+    let t;
+    if (ix < 0) t = (0 - ear[0]) / (ix - ear[0]);
+    else if (ix > Lx) t = (Lx - ear[0]) / (ix - ear[0]);
+    else if (iy < 0) t = (0 - ear[1]) / (iy - ear[1]);
+    else t = (Ly - ear[1]) / (iy - ear[1]);
+    const bx = ear[0] + t * (ix - ear[0]), by = ear[1] + t * (iy - ear[1]);
+    out.push(`  <path d="M${X(src[0])},${Y(src[1])} L${r(X(bx))},${r(Y(by))} L${X(ear[0])},${Y(ear[1])}" fill="none" stroke="${ORANGE}" strokeWidth="1.5" strokeDasharray="5 4" />`);
+  }
+  out.push(line(X(src[0]), Y(src[1]), X(ear[0]) - 10, Y(ear[1]) - 5, { stroke: BLUE, width: 2.5, marker: "snd-room-arrow" }));
+  out.push(`  <rect x="${X(src[0]) - 9}" y="${Y(src[1]) - 9}" width="18" height="18" rx="3" fill="currentColor" />`);
+  out.push(text(X(src[0]), Y(src[1]) + 26, "speaker", { anchor: "middle", size: 12 }));
+  out.push(`  <circle cx="${X(ear[0])}" cy="${Y(ear[1])}" r="9" fill="${GREEN}" />`);
+  out.push(text(X(ear[0]), Y(ear[1]) + 26, "listener", { anchor: "middle", size: 12 }));
+  // Arrivals over time.
+  const b = box(360, 50, 320, 170, 0, 60, 0, 1.05);
+  out.push(text(b.x, 24, "what reaches the ear", { size: 13, bold: true }));
+  out.push(line(b.x, b.y + b.h, b.x + b.w, b.y + b.h, { opacity: 0.5, marker: "snd-room-arrow" }));
+  out.push(line(b.x, b.y, b.x, b.y + b.h, { opacity: 0.5 }));
+  arrivals.sort((p, q) => q.order - p.order).forEach((a) => {
+    if (a.ms > 60) return;
+    const col = a.order === 0 ? BLUE : ORANGE;
+    out.push(line(b.px(a.ms), b.py(0), b.px(a.ms), b.py(a.level), { stroke: col, width: a.order === 0 ? 4 : 3, opacity: a.order === 2 ? 0.5 : undefined }));
+  });
+  for (const ms of [0, 20, 40, 60]) {
+    out.push(line(b.px(ms), b.y + b.h, b.px(ms), b.y + b.h + 5, { opacity: 0.5 }));
+    out.push(text(b.px(ms), b.y + b.h + 20, `${ms} ms`, { anchor: ms === 0 ? "start" : ms === 60 ? "end" : "middle", size: 12 }));
+  }
+  out.push(text(b.x - 8, b.y + 8, "level", { anchor: "end", size: 11 }));
+  out.push(text(b.x, 270, "direct", { fill: BLUE, size: 12 }));
+  out.push(text(b.x + 60, 270, "one bounce", { fill: ORANGE, size: 12 }));
+  out.push(text(b.x + 150, 270, "two bounces (fainter)", { fill: ORANGE, size: 12 }));
+  out.push("</svg>");
+  figures.room = out;
+  for (const a of arrivals.sort((p, q) => p.ms - q.ms)) {
+    if (a.order < 2) numbers.push(`room fig: order ${a.order}, ${a.d.toFixed(2)} m, ${a.ms.toFixed(1)} ms, level ${a.level.toFixed(2)}`);
+  }
+  numbers.push(`room fig: ${arrivals.filter((a) => a.order === 2 && a.ms <= 60).length} two-bounce echoes within 60 ms`);
+}
+
+// ---------------------------------------------------------------------------------------------
 // Numbers the text quotes, worked out once.
 numbers.push(`CD: 44,100 x 2 sides x 16 bits = ${44100 * 2 * 16} bits/s; 2^16 = ${2 ** 16} values; limit ${44100 / 2} Hz`);
 numbers.push(`telephone: 8,000/s -> limit ${8000 / 2} Hz`);

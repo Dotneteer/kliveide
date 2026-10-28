@@ -1,5 +1,5 @@
 ---
-description: "How a list of numbers inside a computer becomes a sound you can hear: sound as moving air, samples and the sample rate, the DAC and its staircase, the filter that makes the result analogue, aliasing, sound from a single bit, and mixing several sounds into one."
+description: "How a list of numbers inside a computer becomes a sound you can hear: sound as moving air, samples and the sample rate, the DAC and its staircase, the filter that makes the result analogue, aliasing, sound from a single bit, mixing several sounds into one, and stereo: panning and spatial effects."
 ---
 
 import { Callout } from 'nextra/components'
@@ -27,6 +27,7 @@ Klive's articles about how particular machines make their sound, which can then 
 - [Fast enough, or it sounds wrong](#fast-enough-or-it-sounds-wrong): how many samples a second are enough.
 - [Sound from a single bit](#sound-from-a-single-bit): how "on" and "off" alone can make music.
 - [Several sounds at once are added together](#several-sounds-at-once-are-added-together): mixing.
+- [Two speakers: stereo and space](#two-speakers-stereo-and-space): left and right, panning, and how sounds get a place.
 - [Back to the computer](#back-to-the-computer): the whole chain, and where a sound chip fits.
 
 <Callout type="info">
@@ -544,6 +545,150 @@ then always contains a constant extra level, an **offset**, around which the sou
 cannot use a constant level, it would only push the cone out and keep it there, so a **capacitor** in
 the path removes it. A capacitor lets changes through but not a level that stays the same, and what
 reaches the speaker is the sound moving around zero.
+
+## Two speakers: stereo and space
+
+Your two ears hear every sound slightly differently: a sound from the left arrives at the left ear a
+moment earlier and a little louder than at the right one. The brain uses those differences to tell
+where the sound comes from.
+
+**Stereo** uses this. It keeps two separate sounds, two **channels**, one for a left speaker and one
+for a right speaker, each going through its own DAC, filter and amplifier. Mixing then happens twice,
+once for each side. A **mono** sound is the opposite case: one channel, or the same sound on both sides.
+
+The simplest way to place a sound is **panning**: mix it into the two channels at different levels.
+
+<figure>
+{/* fig:pan */}
+<svg viewBox="0 0 700 250" role="img" aria-label="Three cases, each seen from above: two speakers in front of a listener, and the level the sound has in each channel. Left only: the left channel at full level, the right silent, and the sound seems to come from the left speaker. Equal levels on both sides: the sound seems to come from the centre, between the speakers. More on the right than on the left: the sound seems to come from between the centre and the right speaker." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
+  <text x="120" y="18" textAnchor="middle" fill="currentColor" fontSize="14" fontWeight="bold">left only</text>
+  <line x1="45" y1="50" x2="195" y2="50" stroke="currentColor" strokeWidth="1" strokeDasharray="4 4" strokeOpacity="0.35" />
+  <rect x="33" y="36" width="24" height="28" rx="3" fill="none" stroke="#3b82f6" strokeWidth="2" />
+  <text x="45" y="55" textAnchor="middle" fill="#3b82f6" fontSize="13" fontWeight="bold">L</text>
+  <rect x="183" y="36" width="24" height="28" rx="3" fill="none" stroke="#a855f7" strokeWidth="2" />
+  <text x="195" y="55" textAnchor="middle" fill="#a855f7" fontSize="13" fontWeight="bold">R</text>
+  <circle cx="120" cy="120" r="16" fill="none" stroke="currentColor" strokeWidth="2" />
+  <ellipse cx="102" cy="120" rx="3" ry="6" fill="currentColor" />
+  <ellipse cx="138" cy="120" rx="3" ry="6" fill="currentColor" />
+  <path d="M115,105 L120,98 L125,105" fill="none" stroke="currentColor" strokeWidth="2" />
+  <circle cx="45" cy="24" r="8" fill="#30a46c" />
+  <text x="58" y="182" textAnchor="end" fill="#3b82f6" fontSize="12">left</text>
+  <rect x="66" y="170" width="150" height="16" fill="none" stroke="currentColor" strokeOpacity="0.4" />
+  <rect x="66" y="170" width="150" height="16" fill="#3b82f6" fillOpacity="0.85" />
+  <text x="58" y="208" textAnchor="end" fill="#a855f7" fontSize="12">right</text>
+  <rect x="66" y="196" width="150" height="16" fill="none" stroke="currentColor" strokeOpacity="0.4" />
+  <text x="350" y="18" textAnchor="middle" fill="currentColor" fontSize="14" fontWeight="bold">equal: centre</text>
+  <line x1="275" y1="50" x2="425" y2="50" stroke="currentColor" strokeWidth="1" strokeDasharray="4 4" strokeOpacity="0.35" />
+  <rect x="263" y="36" width="24" height="28" rx="3" fill="none" stroke="#3b82f6" strokeWidth="2" />
+  <text x="275" y="55" textAnchor="middle" fill="#3b82f6" fontSize="13" fontWeight="bold">L</text>
+  <rect x="413" y="36" width="24" height="28" rx="3" fill="none" stroke="#a855f7" strokeWidth="2" />
+  <text x="425" y="55" textAnchor="middle" fill="#a855f7" fontSize="13" fontWeight="bold">R</text>
+  <circle cx="350" cy="120" r="16" fill="none" stroke="currentColor" strokeWidth="2" />
+  <ellipse cx="332" cy="120" rx="3" ry="6" fill="currentColor" />
+  <ellipse cx="368" cy="120" rx="3" ry="6" fill="currentColor" />
+  <path d="M345,105 L350,98 L355,105" fill="none" stroke="currentColor" strokeWidth="2" />
+  <circle cx="350" cy="50" r="8" fill="#30a46c" />
+  <text x="288" y="182" textAnchor="end" fill="#3b82f6" fontSize="12">left</text>
+  <rect x="296" y="170" width="150" height="16" fill="none" stroke="currentColor" strokeOpacity="0.4" />
+  <rect x="296" y="170" width="105" height="16" fill="#3b82f6" fillOpacity="0.85" />
+  <text x="288" y="208" textAnchor="end" fill="#a855f7" fontSize="12">right</text>
+  <rect x="296" y="196" width="150" height="16" fill="none" stroke="currentColor" strokeOpacity="0.4" />
+  <rect x="296" y="196" width="105" height="16" fill="#a855f7" fillOpacity="0.85" />
+  <text x="580" y="18" textAnchor="middle" fill="currentColor" fontSize="14" fontWeight="bold">more on the right</text>
+  <line x1="505" y1="50" x2="655" y2="50" stroke="currentColor" strokeWidth="1" strokeDasharray="4 4" strokeOpacity="0.35" />
+  <rect x="493" y="36" width="24" height="28" rx="3" fill="none" stroke="#3b82f6" strokeWidth="2" />
+  <text x="505" y="55" textAnchor="middle" fill="#3b82f6" fontSize="13" fontWeight="bold">L</text>
+  <rect x="643" y="36" width="24" height="28" rx="3" fill="none" stroke="#a855f7" strokeWidth="2" />
+  <text x="655" y="55" textAnchor="middle" fill="#a855f7" fontSize="13" fontWeight="bold">R</text>
+  <circle cx="580" cy="120" r="16" fill="none" stroke="currentColor" strokeWidth="2" />
+  <ellipse cx="562" cy="120" rx="3" ry="6" fill="currentColor" />
+  <ellipse cx="598" cy="120" rx="3" ry="6" fill="currentColor" />
+  <path d="M575,105 L580,98 L585,105" fill="none" stroke="currentColor" strokeWidth="2" />
+  <circle cx="614.1" cy="50" r="8" fill="#30a46c" />
+  <text x="518" y="182" textAnchor="end" fill="#3b82f6" fontSize="12">left</text>
+  <rect x="526" y="170" width="150" height="16" fill="none" stroke="currentColor" strokeOpacity="0.4" />
+  <rect x="526" y="170" width="45" height="16" fill="#3b82f6" fillOpacity="0.85" />
+  <text x="518" y="208" textAnchor="end" fill="#a855f7" fontSize="12">right</text>
+  <rect x="526" y="196" width="150" height="16" fill="none" stroke="currentColor" strokeOpacity="0.4" />
+  <rect x="526" y="196" width="120" height="16" fill="#a855f7" fillOpacity="0.85" />
+  <text x="10" y="242" fill="currentColor" fontSize="12">level in each channel; the green dot is where the sound seems to come from</text>
+</svg>
+{/* /fig:pan */}
+<figcaption>Panning. The same sound at different levels in the left and right channels seems to come from different places between the speakers.</figcaption>
+</figure>
+
+- Equal levels on both sides put the sound in the **centre**, between the speakers.
+- More on one side moves it towards that speaker.
+- A sound on one side only seems to come from that speaker alone. In headphones this can feel odd,
+  because in real life a sound always reaches both ears.
+
+Panning is how a computer gives each voice its own place: the melody in the centre, an accompaniment
+to the left, a drum to the right. Each voice stays easier to follow when they do not all come from the
+same spot.
+
+Other effects use the timing difference, still with the same two channels:
+
+- A copy of a sound added a few milliseconds later on one side pulls it towards the other side, or
+  makes it sound **wider** than the speakers.
+- **Echo** and **reverberation** add quieter, delayed copies of the sound, the way the walls of a room
+  or a valley would send it back. They tell the ear how large the space is.
+
+In a real room, a sound reaches you first along the straight path, and then again and again after
+bouncing off the walls, each time later and quieter:
+
+<figure>
+{/* fig:room */}
+<svg viewBox="0 0 700 290" role="img" aria-label="Left: a room 12 by 8 metres seen from above, with a speaker and a listener. The sound reaches the listener straight away along the direct path, and also along four paths that bounce once off each wall, which are longer. Right: what reaches the listener's ear over the first 60 milliseconds: the direct sound first, at about 16 milliseconds, then the four single echoes between about 26 and 40 milliseconds, quieter, then a crowd of even quieter echoes that bounced twice. Together they are the room's reverberation." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
+  <defs>
+    <marker id="snd-room-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
+    </marker>
+  </defs>
+  <text x="20" y="24" fill="currentColor" fontSize="13" fontWeight="bold">a room seen from above (12 × 8 m)</text>
+  <rect x="20" y="40" width="300" height="200" fill="none" stroke="currentColor" strokeWidth="3" />
+  <path d="M95,165 L20,148 L220,102.5" fill="none" stroke="#e8912d" strokeWidth="1.5" strokeDasharray="5 4" />
+  <path d="M95,165 L139.1,240 L220,102.5" fill="none" stroke="#e8912d" strokeWidth="1.5" strokeDasharray="5 4" />
+  <path d="M95,165 L178.3,40 L220,102.5" fill="none" stroke="#e8912d" strokeWidth="1.5" strokeDasharray="5 4" />
+  <path d="M95,165 L320,121.7 L220,102.5" fill="none" stroke="#e8912d" strokeWidth="1.5" strokeDasharray="5 4" />
+  <line x1="95" y1="165" x2="210" y2="97.5" stroke="#3b82f6" strokeWidth="2.5" markerEnd="url(#snd-room-arrow)" />
+  <rect x="86" y="156" width="18" height="18" rx="3" fill="currentColor" />
+  <text x="95" y="191" textAnchor="middle" fill="currentColor" fontSize="12">speaker</text>
+  <circle cx="220" cy="102.5" r="9" fill="#30a46c" />
+  <text x="220" y="128.5" textAnchor="middle" fill="currentColor" fontSize="12">listener</text>
+  <text x="360" y="24" fill="currentColor" fontSize="13" fontWeight="bold">what reaches the ear</text>
+  <line x1="360" y1="220" x2="680" y2="220" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" markerEnd="url(#snd-room-arrow)" />
+  <line x1="360" y1="50" x2="360" y2="220" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <line x1="576.2" y1="220" x2="576.2" y2="196.6" stroke="#e8912d" strokeWidth="3" strokeOpacity="0.5" />
+  <line x1="567" y1="220" x2="567" y2="195.5" stroke="#e8912d" strokeWidth="3" strokeOpacity="0.5" />
+  <line x1="658" y1="220" x2="658" y2="203" stroke="#e8912d" strokeWidth="3" strokeOpacity="0.5" />
+  <line x1="583.8" y1="220" x2="583.8" y2="197.4" stroke="#e8912d" strokeWidth="3" strokeOpacity="0.5" />
+  <line x1="601.5" y1="220" x2="601.5" y2="199" stroke="#e8912d" strokeWidth="3" strokeOpacity="0.5" />
+  <line x1="593.4" y1="220" x2="593.4" y2="198.3" stroke="#e8912d" strokeWidth="3" strokeOpacity="0.5" />
+  <line x1="658" y1="220" x2="658" y2="203" stroke="#e8912d" strokeWidth="3" strokeOpacity="0.5" />
+  <line x1="535.4" y1="220" x2="535.4" y2="171.9" stroke="#e8912d" strokeWidth="3" />
+  <line x1="513.3" y1="220" x2="513.3" y2="164.9" stroke="#e8912d" strokeWidth="3" />
+  <line x1="500.2" y1="220" x2="500.2" y2="159.8" stroke="#e8912d" strokeWidth="3" />
+  <line x1="565.8" y1="220" x2="565.8" y2="179" stroke="#e8912d" strokeWidth="3" />
+  <line x1="446.9" y1="220" x2="446.9" y2="58.1" stroke="#3b82f6" strokeWidth="4" />
+  <line x1="360" y1="220" x2="360" y2="225" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="360" y="240" textAnchor="start" fill="currentColor" fontSize="12">0 ms</text>
+  <line x1="466.7" y1="220" x2="466.7" y2="225" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="466.7" y="240" textAnchor="middle" fill="currentColor" fontSize="12">20 ms</text>
+  <line x1="573.3" y1="220" x2="573.3" y2="225" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="573.3" y="240" textAnchor="middle" fill="currentColor" fontSize="12">40 ms</text>
+  <line x1="680" y1="220" x2="680" y2="225" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="680" y="240" textAnchor="end" fill="currentColor" fontSize="12">60 ms</text>
+  <text x="352" y="58" textAnchor="end" fill="currentColor" fontSize="11">level</text>
+  <text x="360" y="270" fill="#3b82f6" fontSize="12">direct</text>
+  <text x="420" y="270" fill="#e8912d" fontSize="12">one bounce</text>
+  <text x="510" y="270" fill="#e8912d" fontSize="12">two bounces (fainter)</text>
+</svg>
+{/* /fig:room */}
+<figcaption>Echoes in a room, drawn to scale. Each bounce makes the path longer, so the sound arrives later, and the wall swallows some of it, so it arrives quieter. A program imitates a room by adding such delayed, quieter copies to the sound.</figcaption>
+</figure>
+
+None of this needs new hardware beyond the second channel: it is all done by choosing what to add into
+each side, and when.
 
 ## Back to the computer
 
