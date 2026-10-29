@@ -27,6 +27,14 @@ const MAX_LAG_FRAMES = 5;
 const DRY_DECAY = 0.995;
 // Samples over which playback fades back in after priming, so a restart never steps (~2 ms)
 const FADE_IN_SAMPLES = 96;
+/*
+ * Bursts of time with nothing new before a lone burst plays (see `nextPair`). Two, not one. The output
+ * pulls 512 samples a callback, so two callbacks - 1,024 samples, more than a 20 ms frame's 960 at
+ * 48 kHz - often pass between two frames of a machine that keeps up. With a one-burst wait, priming
+ * ended on the first frame nearly every time: the sound started after one frame, not three, and ran
+ * 12-31 ms ahead of the ear instead of the hold-back's margin.
+ */
+const LONE_WAIT_FRAMES = 2;
 
 let waveBuffer;
 let samplesPerFrameStereo = 0; // interleaved values (L, R) per frame, rounded up by one sample
@@ -133,10 +141,10 @@ class SamplingGenerator extends AudioWorkletProcessor {
     pairsSinceStore++;
     /*
      * A lone burst - one frame and then nothing, as when the debugger steps the machine - would
-     * wait forever for a second one. Once a burst's worth of time has passed with nothing new,
-     * play what is queued.
+     * wait forever for a second one. Once LONE_WAIT_FRAMES bursts' worth of time have passed with
+     * nothing new, play what is queued.
      */
-    if (priming && available >= 2 && pairsSinceStore * 2 >= samplesPerFrameStereo) {
+    if (priming && available >= 2 && pairsSinceStore * 2 >= LONE_WAIT_FRAMES * samplesPerFrameStereo) {
       this.startPlaying();
     }
     if (priming || available < 2) {

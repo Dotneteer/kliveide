@@ -80,14 +80,14 @@ describe("Sampling.worklet", () => {
   });
 
   it("holds a single frame back while more may be on the way, then plays it", () => {
-    // --- One frame and then nothing, as when the debugger steps the machine: wait a frame's time
+    // --- One frame and then nothing, as when the debugger steps the machine: wait two frames' time
     // --- for a second one, then play what there is
     const worklet = loadWorklet();
     worklet.post({ initialize: SAMPLES_PER_FRAME });
     worklet.post({ samples: frame(0.5) });
 
-    const firstFrameTime = renderQuanta(worklet, Math.floor(SAMPLES_PER_FRAME / QUANTUM));
-    expect(firstFrameTime.every((v) => v === 0)).toBe(true);
+    const waitTime = renderQuanta(worklet, Math.floor((2 * SAMPLES_PER_FRAME) / QUANTUM));
+    expect(waitTime.every((v) => v === 0)).toBe(true);
     const out = renderQuanta(worklet, framesToQuanta(2));
     expect(out.filter((v) => v === 0.5).length).toBe(SAMPLES_PER_FRAME - (FADE_IN - 1));
   });
@@ -123,8 +123,9 @@ describe("Sampling.worklet", () => {
     worklet.post({ initialize: SAMPLES_PER_FRAME });
     worklet.post({ samples: frame(0.5) });
 
-    // --- Play the click out, then keep the output running for ten frames with nothing new
-    const played = renderQuanta(worklet, framesToQuanta(2));
+    // --- Play the click out (after the lone frame's two-frame wait), then keep the output running
+    // --- for ten frames with nothing new
+    const played = renderQuanta(worklet, framesToQuanta(3));
     const clickValues = played.filter((v) => v === 0.5).length;
     expect(clickValues).toBe(SAMPLES_PER_FRAME - (FADE_IN - 1));
 
@@ -143,6 +144,38 @@ describe("Sampling.worklet", () => {
     worklet.post({ samples: frame(0) });
     const after = renderQuanta(worklet, framesToQuanta(6));
     expect(after.filter((v) => v === 0.5).length).toBe(0);
+  });
+
+  it("holds three frames back for a running machine, whose frames arrive between the card's callbacks", () => {
+    // --- The card pulls 512 samples a callback (four render quanta; measured on macOS), so two callbacks,
+    // --- 1,024 samples, often pass between two frames of 882: more than a frame's time, but the frames keep
+    // --- coming. That must not count as a lone frame and cut the hold-back short.
+    const worklet = loadWorklet();
+    worklet.post({ initialize: SAMPLES_PER_FRAME });
+    const CALLBACK = 4;
+    let played = 0;
+    let nextFrame = 0;
+    let frames = 0;
+    let firstSound = -1;
+    let framesAtFirstSound = 0;
+    while (played < 12 * SAMPLES_PER_FRAME) {
+      // --- the frames due by now arrive between callbacks, as the audio thread's messages do
+      while (nextFrame <= played) {
+        worklet.post({ samples: frame(0.5) });
+        frames++;
+        nextFrame += SAMPLES_PER_FRAME;
+      }
+      for (let q = 0; q < CALLBACK; q++) {
+        const out = worklet.render();
+        if (firstSound < 0 && out.some((v) => v !== 0)) {
+          firstSound = played;
+          framesAtFirstSound = frames;
+        }
+        played += QUANTUM;
+      }
+    }
+    expect(firstSound).toBeGreaterThan(0);
+    expect(framesAtFirstSound, "three frames queued before it plays").toBeGreaterThanOrEqual(3);
   });
 
   it("keeps latency bounded when the machine delivers faster than real time", () => {
