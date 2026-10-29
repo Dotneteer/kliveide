@@ -222,6 +222,17 @@ Loop:   ld a,h            ; 4
   return record(s);
 }
 
+/** The lengths of a square wave's halves in 3.5 MHz T-states, from its edges (interpolated inside the
+ *  sample that holds each one, so to within about 10 T-states) */
+function halfPeriodsInTacts(values: number[]): number[] {
+  const mid = (Math.max(...values) + Math.min(...values)) / 2;
+  const edges: number[] = [];
+  for (let i = 1; i < values.length; i++) {
+    if (values[i - 1] < mid !== values[i] < mid) edges.push(i - 1 + (mid - values[i - 1]) / (values[i] - values[i - 1]));
+  }
+  return edges.slice(1).map((e, i) => ((e - edges[i]) * CPU_HZ) / RATE);
+}
+
 /** The magnitude of one frequency in a signal (a single DFT bin, mean removed), per sample */
 function magnitudeAt(values: number[], hz: number, rate: number): number {
   const mean = values.reduce((a, b) => a + b, 0) / values.length;
@@ -362,7 +373,27 @@ Inner:  djnz Inner        ; 13 * 255 + 8
     const fc = frequency(contended, RATE);
     const fcl = frequency(contendedLow, RATE);
     expect(fcl).toBeLessThan(f35 * 0.99);
-    const extra = { hz: f35, hz7: frequency(at7, RATE), hzContended: fc, hzContendedLow: fcl, halfTacts: BEEPER_HALF };
+    // --- Contention is not a lower note: a pass keeps its 1,760 T-states while the beam is in the border
+    //     and is stretched to about 2,000 while the picture's lines are drawn, so the pitch drops and comes
+    //     back every frame. (The frame average, `fcl`, is only how many periods fit in 20 ms.)
+    const passes = halfPeriodsInTacts(contendedLow);
+    const border = passes.filter((t) => t < 1775); // --- (a pass that straddles the picture's edge is in neither)
+    const picture = passes.filter((t) => t > 1950);
+    expect(border.length).toBeGreaterThan(10);
+    expect(picture.length).toBeGreaterThan(10);
+    for (const t of border) expect(Math.abs(t - BEEPER_HALF)).toBeLessThan(20);
+    const pictureMean = picture.reduce((a, b) => a + b, 0) / picture.length;
+    expect(pictureMean).toBeGreaterThan(1980);
+    expect(pictureMean).toBeLessThan(2030);
+    const extra = {
+      hz: f35,
+      hz7: frequency(at7, RATE),
+      hzContended: fc,
+      hzContendedLow: fcl,
+      halfTacts: BEEPER_HALF,
+      pictureHalfTacts: pictureMean,
+      hzPicture: CPU_HZ / (2 * pictureMean)
+    };
     const samples = { "note-35": await beeperAt(0, false), "note-7": await beeperAt(1, false), "note-contended": await beeperAt(0, true, 0x6000) };
     for (const [name, v] of Object.entries(samples)) save("beeper", name, v, extra);
   });

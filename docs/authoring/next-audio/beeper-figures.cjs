@@ -149,33 +149,49 @@ function risingEdge(values, from = 0) {
 // ---------------------------------------------------------------------------------------------
 // Figure: the same loop at 3.5 MHz, at 7 MHz, and in contended memory
 {
-  const T = 10; // ms
+  const T = 18; // ms: most of a frame, so that the contended row shows border, picture and border
   const rows = [
-    { name: "note-35", t: "3.5 MHz", hz: (d) => d.hz },
-    { name: "note-7", t: "7 MHz", hz: (d) => d.hz7 },
-    { name: "note-contended", t: "3.5 MHz, contended", hz: (d) => d.hzContendedLow }
+    { name: "note-35", t: "3.5 MHz", sub: () => "994 Hz" },
+    { name: "note-7", t: "7 MHz", sub: (d) => `${fmt(d.hz7)} Hz` },
+    { name: "note-contended", t: "3.5 MHz,", t2: "contended", sub: (d) => `994 / ${fmt(d.hzPicture)} Hz` }
   ];
-  const out = [svgOpen(700, 380, "The same beeper loop captured three times, ten milliseconds each, on one time scale. At 3.5 MHz it is a square wave of 994 Hz, about ten periods. At 7 MHz the periods are half as long: 1,989 Hz, about twenty periods. At 3.5 MHz with the loop in contended memory and contention on, the periods are longer and slightly uneven: about 918 Hz on average.")];
+  const out = [svgOpen(700, 400, "The same beeper loop captured three times, 18 milliseconds each, on one time scale. At 3.5 MHz it is an even square wave of 994 Hz. At 7 MHz the periods are half as long: 1,989 Hz. At 3.5 MHz with the loop in contended memory and contention on, the wave changes during the frame: in the border its periods are those of 994 Hz; in the shaded stretch, while the picture's lines are drawn, every pass is stretched from 1,760 to about 2,007 T-states and the note drops to about 872 Hz; then it comes back.")];
   rows.forEach((row, i) => {
     const d = capture(row.name);
     const v = units(d);
     const dt = 1000 / d.rate;
-    const start = Math.floor(risingEdge(v, 40)) - 4;
+    const start = Math.floor(risingEdge(v, 0)) - 2;
     const w = v.slice(start, start + Math.round(T / dt));
     const mean = (Math.max(...w) + Math.min(...w)) / 2;
     const y = 30 + i * 105;
     const b = box(150, y, 530, 70, 0, T, -330, 330);
+    if (row.name === "note-contended") {
+      // --- shade the passes stretched by contention (half periods over 1,950 T-states)
+      const mid = 0;
+      const edges = [];
+      const c = w.map((x) => x - mean);
+      for (let k = 1; k < c.length; k++) if (c[k - 1] < mid !== c[k] < mid) edges.push((k - 1 + (mid - c[k - 1]) / (c[k] - c[k - 1])) * dt);
+      let from = null, to = null;
+      for (let k = 1; k < edges.length; k++) {
+        const tacts = ((edges[k] - edges[k - 1]) / 1000) * 3.5e6;
+        if (tacts > 1950) { if (from === null) from = edges[k - 1]; to = edges[k]; }
+      }
+      out.push(rect(b.px(from), y - 6, b.px(to) - b.px(from), 82, { fill: BEEPER, fillOpacity: 0.12, stroke: BEEPER, width: 1, opacity: 0.4 }));
+      out.push(text((b.px(from) + b.px(to)) / 2, y + 90, `the picture's lines: a pass takes about ${fmt(d.pictureHalfTacts)} T-states, ${fmt(d.hzPicture)} Hz`, { anchor: "middle", size: 11.5, fill: BEEPER }));
+      out.push(text(b.px(from) - 6, y + 90, "border: 994 Hz", { anchor: "end", size: 11.5 }));
+      numbers.push(`speeds fig: contended stretch ${from.toFixed(1)}-${to.toFixed(1)} ms`);
+    }
     out.push(line(b.x, b.py(0), b.x + b.w, b.py(0), { opacity: 0.25 }));
-    out.push(pathEl(sampleStairs(b, w.map((x) => x - mean), 0, dt), { stroke: BEEPER, width: 1.6 }));
-    out.push(text(10, y + 30, row.t, { size: 13, bold: true, fill: BEEPER }));
-    out.push(text(10, y + 48, `${fmt(row.hz(d))} Hz`, { size: 12.5 }));
-    numbers.push(`speeds fig: ${row.t}: ${row.hz(d).toFixed(1)} Hz`);
+    out.push(pathEl(sampleStairs(b, w.map((x) => x - mean), 0, dt), { stroke: BEEPER, width: 1.4 }));
+    out.push(text(10, y + 26, row.t, { size: 13, bold: true, fill: BEEPER }));
+    if (row.t2) out.push(text(10, y + 42, row.t2, { size: 13, bold: true, fill: BEEPER }));
+    out.push(text(10, y + (row.t2 ? 60 : 44), row.sub(d), { size: 12.5 }));
   });
   const b = box(150, 0, 530, 0, 0, T, 0, 1);
-  out.push(line(b.x, 340, b.x + b.w, 340, { opacity: 0.5 }));
-  for (let ms = 0; ms <= T; ms += 2) {
-    out.push(line(b.px(ms), 336, b.px(ms), 344, { opacity: 0.5 }));
-    out.push(text(b.px(ms), 360, `${ms} ms`, { anchor: ms === 0 ? "start" : ms === T ? "end" : "middle", size: 11.5 }));
+  out.push(line(b.x, 350, b.x + b.w, 350, { opacity: 0.5 }));
+  for (let ms = 0; ms <= T; ms += 3) {
+    out.push(line(b.px(ms), 346, b.px(ms), 354, { opacity: 0.5 }));
+    out.push(text(b.px(ms), 370, `${ms} ms`, { anchor: ms === 0 ? "start" : ms === T ? "end" : "middle", size: 11.5 }));
   }
   out.push("</svg>");
   figures.speeds = out;
@@ -301,10 +317,10 @@ function risingEdge(values, from = 0) {
   box2(470, 190, 180, 56, ["or"], { size: 12 });
   arrow("M560,150 L560,186", GREY);
   // --- sources on the left
-  box2(10, 180, 190, 32, ["port $FE bit 4 (EAR)"], { c: BEEPER, size: 12 });
+  box2(10, 190, 190, 32, ["port $FE bit 4 (EAR)"], { c: BEEPER, size: 12 });
   box2(10, 250, 190, 32, ["port $FE bit 3 (MIC)"], { c: BEEPER, size: 12 });
   box2(10, 300, 190, 32, ["issue 2: NextReg $08 bit 0"], { size: 12 });
-  arrow("M200,196 L466,206");
+  arrow("M200,206 L466,206");
   box2(270, 260, 110, 52, ["and"], { size: 12 });
   arrow("M200,266 L266,276");
   arrow("M200,316 L266,298", GREY);

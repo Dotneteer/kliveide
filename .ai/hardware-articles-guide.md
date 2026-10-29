@@ -77,7 +77,9 @@ to and replace what it supersedes.
   which values never match.
 - **Give practical uses** for modes and options: what each is for in a real program, not only what it
   does. A list with a sentence of application each beat a state diagram.
-- **Show real code for effects**: a commented listing (`text` fence), then "how it works" as numbered
+- **Show real code for effects**: a commented listing in a `z80klive` fence for Z80 code, so the site
+  highlights it (a `text` fence for anything the Z80 grammar does not know, such as a Copper list, and for bit
+  diagrams), then "how it works" as numbered
   steps or bullets. Check the listing's numbers against the program the test actually runs.
 - **Explain why**, briefly: why the hardware is shaped this way, why a list writes in the border of the
   line before instead of at dot 0.

@@ -395,7 +395,9 @@ of the beeper's lines (input stage, bit 6, the MIC line). Facts established:
 - **With the issue 2 keyboard on, real-time loading through the ROM fails**: LD-BYTES holds MIC at 1, so bit
   6 reads 1 throughout (TAPE-009, with an issue 3 control that loads).
 - Pitch: the loop of 44 + 13 × (B − 1) T-states per half period, 1,760 → 994.3 Hz; 7 MHz 1,989 Hz; the same
-  loop at `$6000` with contention on about 918 Hz (at `$8000` no measurable change). Contention only at
+  loop at `$6000` with contention on keeps 1,760 T-states (994 Hz) in the border and takes about 2,007
+  (872 Hz) on the picture's lines, so the pitch drops and comes back every frame; the 918 Hz frame average is
+  arithmetic, not a pitch (author's review), and the stretch is this loop's (at `$8000` no measurable change). Contention only at
   3.5 MHz (and not in Pentagon timing); the article gives 3.5 and 7 MHz only, as before.
 - Two voices: a 112 T-state constant-time pass, two 34 T-state slots, 8-bit phases with steps 4 and 5:
   488.3 Hz and 610.4 Hz. The spectrum has both notes and their second harmonics almost as strong (pulse
