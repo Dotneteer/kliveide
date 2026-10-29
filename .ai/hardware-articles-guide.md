@@ -46,11 +46,15 @@ to and replace what it supersedes.
 
 The articles are also meant to be printed as a **book for engineers**: each article is a chapter, and a
 topic such as Sound or Screen is a part of the book that groups its chapters. The project author set the
-rules below on the TurboSound chapter (`next-audio/turbosound.mdx`, the model), and every Sound chapter
-(`computer-sound.mdx` and `next-audio/`) now follows them, text and figures. The Screen chapters
-(`next-display/` and the other display pages) still follow the old shape (`## Part N`, a linked list of
-Parts, a bulleted Summary, small figures) until they are reworked. A new Sound chapter starts in the new
-shape.
+rules below on the TurboSound chapter (`next-audio/turbosound.mdx`, the model), and every Next chapter
+now follows them, text and figures: Sound (`computer-sound.mdx`, `next-audio/`) and Screen
+(`next-display/`). The other machines' pages (`spectrum-display.mdx`, `zx81-display.mdx`, `crt-display.mdx`,
+...) still follow the old shape (`## Part N`, a linked list of Parts, a bulleted Summary, small figures)
+until they are reworked. A new chapter starts in the new shape.
+- **Vary the conversational openers across chapters.** Read as a book, the same line in every chapter
+  becomes a tic: "So, what have we got?" once opened 16 closing retellings and "Hey, notice" sat in 12
+  chapters, and "my friend" ended three. Use each such phrase in a few chapters at most, and give each
+  closing its own first line.
 
 - **The title names the chapter's subject, without the machine** ("TurboSound: Three AY Chips Behind Two
   Ports", not "ZX Spectrum Next: TurboSound Next"): the book's part says which machine. Specific enough to

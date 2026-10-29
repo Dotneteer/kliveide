@@ -848,7 +848,7 @@ And if you want to read the code yourself, here is where it lives:
 
 ## What to take home
 
-So, what have we got? The beeper is two bits of **port `$FE`**, which any even port address reaches:
+Let's look back at the two bits. The beeper is two bits of **port `$FE`**, which any even port address reaches:
 **bit 4, EAR**, the beeper itself, and **bit 3, MIC**, the tape output, beside the border colour in bits
 2–0. A reset clears them. In the mixer, EAR adds **512** and MIC **128** to both sides, 4 to 1 as on the
 48K, and because their silence is 0, the first switch-on clicks.

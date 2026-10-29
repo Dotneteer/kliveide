@@ -420,7 +420,7 @@ height as landing an eighth of a cycle *before* it, so the samples slowly walk b
 wave. The dots therefore describe one slow cycle of 1,000 Hz, the difference between the sample rate and
 the tone (8,000 − 7,000), and that is what comes out of the speaker.
 
-Hey, notice what that means: no filter after the DAC can undo it. The samples themselves are a correct
+Think about what that means: no filter after the DAC can undo it. The samples themselves are a correct
 record of a 1,000 Hz wave. So a sound must be free of frequencies above half the sample rate *before* it
 is sampled. The CD's rate of 44,100 samples a second was chosen with this in mind: half of it, 22,050 Hz,
 is just above the highest pitch anyone hears.
@@ -693,7 +693,7 @@ each side, and when.
 
 ## Where the numbers come from
 
-So, what have we got? The whole chain, from the first figure, now reads:
+Let's step back. The whole chain, from the first figure, now reads:
 
 **numbers → DAC → filter → amplifier → speaker → air**
 

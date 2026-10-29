@@ -4,183 +4,185 @@ description: "How the ZX Spectrum Next's LoRes modes draw a 128 × 96 picture in
 
 import { Callout } from 'nextra/components'
 
-# ZX Spectrum Next: LoRes and Radastan
+# LoRes and Radastan: Big Pixels in the ULA's Place
 
-A 128 × 96 screen sounds like a step backwards: the Spectrum's own screen has four times as many dots.
-But on the Spectrum, every 8 × 8 cell of the screen can show only two colours, and a picture has to be
-drawn around that. On a LoRes screen, **every pixel can be any of 256 colours**, the whole screen fits in
-**12K**, and it scrolls in both directions without the program copying a byte. For a game or a demo
-that wants colour more than detail, and a CPU that has to redraw the screen 50 times a second, that is a
-good trade.
+A 128 × 96 screen sounds like a step backwards. The Spectrum's own screen has four times as many dots, so why
+would anyone want fewer? Well, on the Spectrum every 8 × 8 cell of the screen can show only two colours, and
+you have to draw your picture around that. On a LoRes screen, **every pixel can be any of 256 colours**, the
+whole screen fits in **12K**, and it scrolls in both directions without your program copying a single byte.
 
-The Next has two such modes. **LoRes** stores a byte per pixel. **Radastan**, a mode first made for the
-ZX-Uno, stores 4 bits per pixel: 16 colours in half the memory. Neither is a layer of its own: switched
-on, they take the ULA's place, and the rest of the machine treats their picture as the ULA's.
+Why does that matter? Think of a game or a demo that wants colour more than detail, on a CPU that has to
+redraw the screen 50 times a second. Fewer, fatter pixels, each in a colour of its own, is a very good trade
+for it. The Next has two such modes. **LoRes** stores a byte per pixel. **Radastan**, a mode first made for
+the ZX-Uno, stores 4 bits per pixel: 16 colours in half the memory. Neither is a layer of its own. Switch one
+on, and it takes the ULA's place, and the rest of the machine treats its picture as the ULA's.
 
-This article explains both, from the bytes in memory to the colour on the screen. It assumes the
-[big picture](/en/under-the-hood/emulator-internals/next-display/overview/) and
-[colours and palettes](/en/under-the-hood/emulator-internals/next-display/palettes/); the
-[ULA article](/en/under-the-hood/emulator-internals/next-display/ula/) helps for Part 6.
+Read [the big picture](/en/under-the-hood/emulator-internals/next-display/overview/) and
+[colours and palettes](/en/under-the-hood/emulator-internals/next-display/palettes/) first: everything here
+leans on the layers and the palettes they introduce. The
+[ULA chapter](/en/under-the-hood/emulator-internals/next-display/ula/) helps when we get to the ULA's
+clip window and border.
 
-### How this article is organised
+## The road ahead
 
-- **A pixel is four dots** ([Part 1](#part-1-a-pixel-is-four-dots)): what the 128 × 96 screen looks like
-  and how it covers the display area.
-- **Where the bytes are** ([Part 2](#part-2-where-the-bytes-are)): the two 6K halves in bank 5, and how
-  LoRes reads them.
-- **From a byte to a colour** ([Part 3](#part-3-from-a-byte-to-a-colour)): the ULA's palette and the
-  palette offset.
-- **Radastan** ([Part 4](#part-4-radastan-16-colours-in-6k)) and **its two screens**
-  ([Part 5](#part-5-two-radastan-screens)).
-- **In the ULA's place** ([Part 6](#part-6-in-the-ulas-place)): the clip window, transparency, the border.
-  If you read only one part, read this one.
-- **Scrolling** ([Part 7](#part-7-scrolling)), **what a screen costs** ([Part 8](#part-8-what-a-screen-costs))
-  and **the emulator** ([Part 9](#part-9-how-klive-does-it)).
+We start with what a LoRes pixel is, four dots of one colour, and how 128 × 96 of them cover the display
+area. Then we look for the bytes in bank 5, in two neat halves, and see how LoRes reads them without ever
+getting in the CPU's way. Next, a byte becomes a colour through the ULA's palette and a palette offset.
+Radastan comes after that, with its 16 colours in 6K and the two screens it can flip between. The key idea
+is the one that follows: LoRes is not a layer of its own but the ULA in disguise, with the ULA's clip window,
+border and transparency. We end with scrolling by half a pixel, with what a full screen costs to redraw, and
+with how Klive does the same.
 
 <Callout type="info">
 The pictures are Klive's Next with only the ULA layer on, at 128K/+3 timing and 50 Hz, with the ULA's
 palette set so that entry *i* holds the colour whose RGB332 value is *i*. Each picture is written by a
-test that first checks the dots this article describes.
+test that first checks the dots the text describes.
 </Callout>
 
-## Part 1: A pixel is four dots
+## A pixel is four dots
 
-LoRes is switched on by bit 7 of the Sprite and Layers System register, **NextReg `$15`**. Its screen is
+You switch LoRes on with bit 7 of the Sprite and Layers System register, **NextReg `$15`**. Its screen is
 **128 pixels across and 96 down**, and it fills the same **display area** as the Spectrum's screen,
 256 × 192 dots. So each LoRes pixel covers **2 dots across and 2 lines down**, four dots of one colour:
 
 <figure>
-<svg viewBox="0 0 700 400" role="img" aria-label="Klive's Next showing a LoRes picture, 128 by 96 pixels across the whole display area: a sunset, with a sky that fades from deep blue at the top through purple and pink to orange at the horizon, a glow around a yellow sun on the right, a dark purple range of hills on the left, and a blue sea with the sun's reflection in broken orange bands." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
-  <image x="94" y="8" width="512" height="384" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/lores/lores.webp`} />
-  <rect x="94" y="8" width="512" height="384" fill="none" stroke="currentColor" strokeOpacity="0.35" />
+<svg viewBox="0 0 700 525" role="img" aria-label="Klive's Next showing a LoRes picture, 128 by 96 pixels across the whole display area: a sunset, with a sky that fades from deep blue at the top through purple and pink to orange at the horizon, a glow around a yellow sun on the right, a dark purple range of hills on the left, and a blue sea with the sun's reflection in broken orange bands." style={{ width: "100%", height: "auto" }}>
+  <image x="0" y="0" width="700" height="525" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/lores/lores.webp`} />
+  <rect x="0" y="0" width="700" height="525" fill="none" stroke="currentColor" strokeOpacity="0.35" />
 </svg>
 <figcaption>A LoRes picture on Klive's Next: 128 × 96 pixels, each any of 256 colours. It takes 12K.</figcaption>
 </figure>
 
-Close up, the four-dot blocks are easy to see. Each square of the solid grid is one pixel, and so one
+Close up, you can see the four-dot blocks easily. Each square of the solid grid is one pixel, and so one
 byte in memory:
 
 <figure>
-<svg viewBox="0 0 700 344" role="img" aria-label="A close-up of the LoRes picture, 32 dots across and 24 lines down, around the top of the hills: the dark hills against the pink sky. Dashed lines separate the dots and lines; a solid grid marks every second one, and each square of the heavy grid has one colour. One square is outlined and explained beside the picture: one LoRes pixel is one byte in memory and covers 2 dots across and 2 lines down, four dots of one colour. 128 by 96 such pixels fill the display area of 256 by 192 dots." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
-  <image x="16" y="16" width="416" height="312" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/lores/blocks.webp`} />
-  <rect x="16" y="16" width="416" height="312" fill="none" stroke="currentColor" strokeOpacity="0.35" />
-  <line x1="29" y1="16" x2="29" y2="328" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="1" strokeDasharray="3 3" />
-  <line x1="42" y1="16" x2="42" y2="328" stroke="#ffffff" strokeOpacity="0.85" strokeWidth="1.5" />
-  <line x1="55" y1="16" x2="55" y2="328" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="1" strokeDasharray="3 3" />
-  <line x1="68" y1="16" x2="68" y2="328" stroke="#ffffff" strokeOpacity="0.85" strokeWidth="1.5" />
-  <line x1="81" y1="16" x2="81" y2="328" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="1" strokeDasharray="3 3" />
-  <line x1="94" y1="16" x2="94" y2="328" stroke="#ffffff" strokeOpacity="0.85" strokeWidth="1.5" />
-  <line x1="107" y1="16" x2="107" y2="328" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="1" strokeDasharray="3 3" />
-  <line x1="120" y1="16" x2="120" y2="328" stroke="#ffffff" strokeOpacity="0.85" strokeWidth="1.5" />
-  <line x1="133" y1="16" x2="133" y2="328" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="1" strokeDasharray="3 3" />
-  <line x1="146" y1="16" x2="146" y2="328" stroke="#ffffff" strokeOpacity="0.85" strokeWidth="1.5" />
-  <line x1="159" y1="16" x2="159" y2="328" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="1" strokeDasharray="3 3" />
-  <line x1="172" y1="16" x2="172" y2="328" stroke="#ffffff" strokeOpacity="0.85" strokeWidth="1.5" />
-  <line x1="185" y1="16" x2="185" y2="328" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="1" strokeDasharray="3 3" />
-  <line x1="198" y1="16" x2="198" y2="328" stroke="#ffffff" strokeOpacity="0.85" strokeWidth="1.5" />
-  <line x1="211" y1="16" x2="211" y2="328" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="1" strokeDasharray="3 3" />
-  <line x1="224" y1="16" x2="224" y2="328" stroke="#ffffff" strokeOpacity="0.85" strokeWidth="1.5" />
-  <line x1="237" y1="16" x2="237" y2="328" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="1" strokeDasharray="3 3" />
-  <line x1="250" y1="16" x2="250" y2="328" stroke="#ffffff" strokeOpacity="0.85" strokeWidth="1.5" />
-  <line x1="263" y1="16" x2="263" y2="328" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="1" strokeDasharray="3 3" />
-  <line x1="276" y1="16" x2="276" y2="328" stroke="#ffffff" strokeOpacity="0.85" strokeWidth="1.5" />
-  <line x1="289" y1="16" x2="289" y2="328" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="1" strokeDasharray="3 3" />
-  <line x1="302" y1="16" x2="302" y2="328" stroke="#ffffff" strokeOpacity="0.85" strokeWidth="1.5" />
-  <line x1="315" y1="16" x2="315" y2="328" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="1" strokeDasharray="3 3" />
-  <line x1="328" y1="16" x2="328" y2="328" stroke="#ffffff" strokeOpacity="0.85" strokeWidth="1.5" />
-  <line x1="341" y1="16" x2="341" y2="328" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="1" strokeDasharray="3 3" />
-  <line x1="354" y1="16" x2="354" y2="328" stroke="#ffffff" strokeOpacity="0.85" strokeWidth="1.5" />
-  <line x1="367" y1="16" x2="367" y2="328" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="1" strokeDasharray="3 3" />
-  <line x1="380" y1="16" x2="380" y2="328" stroke="#ffffff" strokeOpacity="0.85" strokeWidth="1.5" />
-  <line x1="393" y1="16" x2="393" y2="328" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="1" strokeDasharray="3 3" />
-  <line x1="406" y1="16" x2="406" y2="328" stroke="#ffffff" strokeOpacity="0.85" strokeWidth="1.5" />
-  <line x1="419" y1="16" x2="419" y2="328" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="1" strokeDasharray="3 3" />
-  <line x1="16" y1="29" x2="432" y2="29" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="1" strokeDasharray="3 3" />
-  <line x1="16" y1="42" x2="432" y2="42" stroke="#ffffff" strokeOpacity="0.85" strokeWidth="1.5" />
-  <line x1="16" y1="55" x2="432" y2="55" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="1" strokeDasharray="3 3" />
-  <line x1="16" y1="68" x2="432" y2="68" stroke="#ffffff" strokeOpacity="0.85" strokeWidth="1.5" />
-  <line x1="16" y1="81" x2="432" y2="81" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="1" strokeDasharray="3 3" />
-  <line x1="16" y1="94" x2="432" y2="94" stroke="#ffffff" strokeOpacity="0.85" strokeWidth="1.5" />
-  <line x1="16" y1="107" x2="432" y2="107" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="1" strokeDasharray="3 3" />
-  <line x1="16" y1="120" x2="432" y2="120" stroke="#ffffff" strokeOpacity="0.85" strokeWidth="1.5" />
-  <line x1="16" y1="133" x2="432" y2="133" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="1" strokeDasharray="3 3" />
-  <line x1="16" y1="146" x2="432" y2="146" stroke="#ffffff" strokeOpacity="0.85" strokeWidth="1.5" />
-  <line x1="16" y1="159" x2="432" y2="159" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="1" strokeDasharray="3 3" />
-  <line x1="16" y1="172" x2="432" y2="172" stroke="#ffffff" strokeOpacity="0.85" strokeWidth="1.5" />
-  <line x1="16" y1="185" x2="432" y2="185" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="1" strokeDasharray="3 3" />
-  <line x1="16" y1="198" x2="432" y2="198" stroke="#ffffff" strokeOpacity="0.85" strokeWidth="1.5" />
-  <line x1="16" y1="211" x2="432" y2="211" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="1" strokeDasharray="3 3" />
-  <line x1="16" y1="224" x2="432" y2="224" stroke="#ffffff" strokeOpacity="0.85" strokeWidth="1.5" />
-  <line x1="16" y1="237" x2="432" y2="237" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="1" strokeDasharray="3 3" />
-  <line x1="16" y1="250" x2="432" y2="250" stroke="#ffffff" strokeOpacity="0.85" strokeWidth="1.5" />
-  <line x1="16" y1="263" x2="432" y2="263" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="1" strokeDasharray="3 3" />
-  <line x1="16" y1="276" x2="432" y2="276" stroke="#ffffff" strokeOpacity="0.85" strokeWidth="1.5" />
-  <line x1="16" y1="289" x2="432" y2="289" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="1" strokeDasharray="3 3" />
-  <line x1="16" y1="302" x2="432" y2="302" stroke="#ffffff" strokeOpacity="0.85" strokeWidth="1.5" />
-  <line x1="16" y1="315" x2="432" y2="315" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="1" strokeDasharray="3 3" />
-  <rect x="146" y="68" width="26" height="26" fill="none" stroke="#ffffff" strokeWidth="6" />
-  <rect x="146" y="68" width="26" height="26" fill="none" stroke="#111111" strokeWidth="2.5" />
-  <line x1="172" y1="81" x2="500" y2="90" stroke="#ffffff" strokeWidth="5" />
-  <line x1="172" y1="81" x2="500" y2="90" stroke="#111111" strokeWidth="2" />
-  <text x="590" y="70" textAnchor="middle" fill="currentColor" fontSize="12" fontWeight="600">one LoRes pixel</text>
-  <text x="590" y="88" textAnchor="middle" fill="currentColor" fontSize="11">= one byte in memory</text>
-  <text x="590" y="104" textAnchor="middle" fill="currentColor" fontSize="11">= 2 dots across × 2 lines down</text>
-  <rect x="530" y="124" width="52" height="52" fill="#3b82f6" fillOpacity="0.85" stroke="#3b82f6" />
-  <line x1="556" y1="124" x2="556" y2="176" stroke="#ffffff" strokeWidth="1.5" strokeDasharray="4 3" />
-  <line x1="530" y1="150" x2="582" y2="150" stroke="#ffffff" strokeWidth="1.5" strokeDasharray="4 3" />
-  <text x="596" y="146" textAnchor="start" fill="currentColor" fontSize="11">4 dots,</text>
-  <text x="596" y="160" textAnchor="start" fill="currentColor" fontSize="11">one colour</text>
-  <text x="590" y="214" textAnchor="middle" fill="currentColor" fontSize="10.5" fillOpacity="0.85">128 × 96 pixels fill the display</text>
-  <text x="590" y="228" textAnchor="middle" fill="currentColor" fontSize="10.5" fillOpacity="0.85">area of 256 × 192 dots</text>
+<svg viewBox="0 0 700 360" role="img" aria-label="A close-up of the LoRes picture, 32 dots across and 24 lines down, around the top of the hills: the dark hills against the pink sky. Dashed lines separate the dots and lines; a solid grid marks every second one, and each square of the heavy grid has one colour. One square is outlined and explained beside the picture: one LoRes pixel is one byte in memory and covers 2 dots across and 2 lines down, four dots of one colour. 128 by 96 such pixels fill the display area of 256 by 192 dots." style={{ width: "100%", height: "auto" }}>
+  <image x="0" y="0" width="480" height="360" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/lores/blocks.webp`} />
+  <rect x="0" y="0" width="480" height="360" fill="none" stroke="currentColor" strokeOpacity="0.35" />
+  <line x1="15" y1="0" x2="15" y2="360" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="1" strokeDasharray="3 3" />
+  <line x1="30" y1="0" x2="30" y2="360" stroke="#ffffff" strokeOpacity="0.85" strokeWidth="1.5" />
+  <line x1="45" y1="0" x2="45" y2="360" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="1" strokeDasharray="3 3" />
+  <line x1="60" y1="0" x2="60" y2="360" stroke="#ffffff" strokeOpacity="0.85" strokeWidth="1.5" />
+  <line x1="75" y1="0" x2="75" y2="360" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="1" strokeDasharray="3 3" />
+  <line x1="90" y1="0" x2="90" y2="360" stroke="#ffffff" strokeOpacity="0.85" strokeWidth="1.5" />
+  <line x1="105" y1="0" x2="105" y2="360" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="1" strokeDasharray="3 3" />
+  <line x1="120" y1="0" x2="120" y2="360" stroke="#ffffff" strokeOpacity="0.85" strokeWidth="1.5" />
+  <line x1="135" y1="0" x2="135" y2="360" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="1" strokeDasharray="3 3" />
+  <line x1="150" y1="0" x2="150" y2="360" stroke="#ffffff" strokeOpacity="0.85" strokeWidth="1.5" />
+  <line x1="165" y1="0" x2="165" y2="360" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="1" strokeDasharray="3 3" />
+  <line x1="180" y1="0" x2="180" y2="360" stroke="#ffffff" strokeOpacity="0.85" strokeWidth="1.5" />
+  <line x1="195" y1="0" x2="195" y2="360" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="1" strokeDasharray="3 3" />
+  <line x1="210" y1="0" x2="210" y2="360" stroke="#ffffff" strokeOpacity="0.85" strokeWidth="1.5" />
+  <line x1="225" y1="0" x2="225" y2="360" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="1" strokeDasharray="3 3" />
+  <line x1="240" y1="0" x2="240" y2="360" stroke="#ffffff" strokeOpacity="0.85" strokeWidth="1.5" />
+  <line x1="255" y1="0" x2="255" y2="360" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="1" strokeDasharray="3 3" />
+  <line x1="270" y1="0" x2="270" y2="360" stroke="#ffffff" strokeOpacity="0.85" strokeWidth="1.5" />
+  <line x1="285" y1="0" x2="285" y2="360" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="1" strokeDasharray="3 3" />
+  <line x1="300" y1="0" x2="300" y2="360" stroke="#ffffff" strokeOpacity="0.85" strokeWidth="1.5" />
+  <line x1="315" y1="0" x2="315" y2="360" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="1" strokeDasharray="3 3" />
+  <line x1="330" y1="0" x2="330" y2="360" stroke="#ffffff" strokeOpacity="0.85" strokeWidth="1.5" />
+  <line x1="345" y1="0" x2="345" y2="360" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="1" strokeDasharray="3 3" />
+  <line x1="360" y1="0" x2="360" y2="360" stroke="#ffffff" strokeOpacity="0.85" strokeWidth="1.5" />
+  <line x1="375" y1="0" x2="375" y2="360" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="1" strokeDasharray="3 3" />
+  <line x1="390" y1="0" x2="390" y2="360" stroke="#ffffff" strokeOpacity="0.85" strokeWidth="1.5" />
+  <line x1="405" y1="0" x2="405" y2="360" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="1" strokeDasharray="3 3" />
+  <line x1="420" y1="0" x2="420" y2="360" stroke="#ffffff" strokeOpacity="0.85" strokeWidth="1.5" />
+  <line x1="435" y1="0" x2="435" y2="360" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="1" strokeDasharray="3 3" />
+  <line x1="450" y1="0" x2="450" y2="360" stroke="#ffffff" strokeOpacity="0.85" strokeWidth="1.5" />
+  <line x1="465" y1="0" x2="465" y2="360" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="1" strokeDasharray="3 3" />
+  <line x1="0" y1="15" x2="480" y2="15" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="1" strokeDasharray="3 3" />
+  <line x1="0" y1="30" x2="480" y2="30" stroke="#ffffff" strokeOpacity="0.85" strokeWidth="1.5" />
+  <line x1="0" y1="45" x2="480" y2="45" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="1" strokeDasharray="3 3" />
+  <line x1="0" y1="60" x2="480" y2="60" stroke="#ffffff" strokeOpacity="0.85" strokeWidth="1.5" />
+  <line x1="0" y1="75" x2="480" y2="75" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="1" strokeDasharray="3 3" />
+  <line x1="0" y1="90" x2="480" y2="90" stroke="#ffffff" strokeOpacity="0.85" strokeWidth="1.5" />
+  <line x1="0" y1="105" x2="480" y2="105" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="1" strokeDasharray="3 3" />
+  <line x1="0" y1="120" x2="480" y2="120" stroke="#ffffff" strokeOpacity="0.85" strokeWidth="1.5" />
+  <line x1="0" y1="135" x2="480" y2="135" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="1" strokeDasharray="3 3" />
+  <line x1="0" y1="150" x2="480" y2="150" stroke="#ffffff" strokeOpacity="0.85" strokeWidth="1.5" />
+  <line x1="0" y1="165" x2="480" y2="165" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="1" strokeDasharray="3 3" />
+  <line x1="0" y1="180" x2="480" y2="180" stroke="#ffffff" strokeOpacity="0.85" strokeWidth="1.5" />
+  <line x1="0" y1="195" x2="480" y2="195" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="1" strokeDasharray="3 3" />
+  <line x1="0" y1="210" x2="480" y2="210" stroke="#ffffff" strokeOpacity="0.85" strokeWidth="1.5" />
+  <line x1="0" y1="225" x2="480" y2="225" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="1" strokeDasharray="3 3" />
+  <line x1="0" y1="240" x2="480" y2="240" stroke="#ffffff" strokeOpacity="0.85" strokeWidth="1.5" />
+  <line x1="0" y1="255" x2="480" y2="255" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="1" strokeDasharray="3 3" />
+  <line x1="0" y1="270" x2="480" y2="270" stroke="#ffffff" strokeOpacity="0.85" strokeWidth="1.5" />
+  <line x1="0" y1="285" x2="480" y2="285" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="1" strokeDasharray="3 3" />
+  <line x1="0" y1="300" x2="480" y2="300" stroke="#ffffff" strokeOpacity="0.85" strokeWidth="1.5" />
+  <line x1="0" y1="315" x2="480" y2="315" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="1" strokeDasharray="3 3" />
+  <line x1="0" y1="330" x2="480" y2="330" stroke="#ffffff" strokeOpacity="0.85" strokeWidth="1.5" />
+  <line x1="0" y1="345" x2="480" y2="345" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="1" strokeDasharray="3 3" />
+  <rect x="150" y="60" width="30" height="30" fill="none" stroke="#ffffff" strokeWidth="6" />
+  <rect x="150" y="60" width="30" height="30" fill="none" stroke="#111111" strokeWidth="2.5" />
+  <line x1="180" y1="75" x2="498" y2="75" stroke="#ffffff" strokeWidth="5" />
+  <line x1="180" y1="75" x2="498" y2="75" stroke="#111111" strokeWidth="2" />
+  <text x="506" y="81" textAnchor="start" fill="currentColor" fontSize="16.5" fontWeight="600">one LoRes pixel</text>
+  <text x="506" y="103" textAnchor="start" fill="currentColor" fontSize="13.5">= one byte in memory</text>
+  <text x="506" y="121" textAnchor="start" fill="currentColor" fontSize="13.5">= 2 dots across ×</text>
+  <text x="506" y="139" textAnchor="start" fill="currentColor" fontSize="13.5">2 lines down</text>
+  <rect x="506" y="175" width="56" height="56" fill="#3b82f6" fillOpacity="0.85" stroke="#3b82f6" />
+  <line x1="534" y1="175" x2="534" y2="231" stroke="#ffffff" strokeWidth="1.5" strokeDasharray="4 3" />
+  <line x1="506" y1="203" x2="562" y2="203" stroke="#ffffff" strokeWidth="1.5" strokeDasharray="4 3" />
+  <text x="574" y="199" textAnchor="start" fill="currentColor" fontSize="13.5">4 dots,</text>
+  <text x="574" y="217" textAnchor="start" fill="currentColor" fontSize="13.5">one colour</text>
+  <text x="506" y="280" textAnchor="start" fill="currentColor" fontSize="13.5" fillOpacity="0.85">128 × 96 pixels fill</text>
+  <text x="506" y="298" textAnchor="start" fill="currentColor" fontSize="13.5" fillOpacity="0.85">the display area</text>
+  <text x="506" y="316" textAnchor="start" fill="currentColor" fontSize="13.5" fillOpacity="0.85">of 256 × 192 dots</text>
 </svg>
 <figcaption>The hilltop close up. The dashed lines separate the dots; every square of the solid grid is one LoRes pixel, four dots of one colour.</figcaption>
 </figure>
 
-Like the ULA's screen, LoRes covers only the display area. The border around it stays the ULA's border
-(Part 6).
+Like the ULA's screen, LoRes covers only the display area. The border around it stays the ULA's border, as
+you will see in the section In the ULA's place.
 
-## Part 2: Where the bytes are
+## Where the bytes are
 
 LoRes keeps its picture in **bank 5**, the bank that holds the Spectrum's screen, in two halves of
 6,144 bytes:
 
 <figure>
-<svg viewBox="0 0 700 320" role="img" aria-label="Bank 5, 16K from address 4000 to 7FFF hexadecimal, drawn to scale. LoRes uses two blocks of 6,144 bytes: 4000 to 57FF for the top half of the screen, rows 0 to 47, and 6000 to 77FF for the bottom half, rows 48 to 95; the 2K between them, 5800 to 5FFF, and the last 2K, 7800 to 7FFF, are not used. Below, for comparison, the ULA uses the same first block as its bitmap, with its attributes at 5800, and the Timex modes keep their second bitmap where LoRes keeps its bottom half. At the bottom, the screen: the top half takes rows 0 to 47 from the first block, the bottom half rows 48 to 95 from the second, 128 bytes a row, left to right." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
-  <rect x="70.0" y="40" width="210.0" height="44" fill="#3b82f6" fillOpacity="0.5" stroke="currentColor" strokeOpacity="0.5" />
-  <text x="175.0" y="59" textAnchor="middle" fill="currentColor" fontSize="11">top half: rows 0–47</text>
-  <text x="175.0" y="75" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">$4000–$57FF, 6,144 bytes</text>
-  <rect x="280.0" y="40" width="70.0" height="44" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.5" />
-  <text x="315.0" y="59" textAnchor="middle" fill="currentColor" fontSize="10">not used</text>
-  <text x="315.0" y="75" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">2K</text>
-  <rect x="350.0" y="40" width="210.0" height="44" fill="#3b82f6" fillOpacity="0.3" stroke="currentColor" strokeOpacity="0.5" />
-  <text x="455.0" y="59" textAnchor="middle" fill="currentColor" fontSize="11">bottom half: rows 48–95</text>
-  <text x="455.0" y="75" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">$6000–$77FF, 6,144 bytes</text>
-  <rect x="560.0" y="40" width="70.0" height="44" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.5" />
-  <text x="595.0" y="59" textAnchor="middle" fill="currentColor" fontSize="10">not used</text>
-  <text x="595.0" y="75" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">2K</text>
-  <text x="70.0" y="100" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.75">$4000</text>
-  <text x="280.0" y="100" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.75">$5800</text>
-  <text x="350.0" y="100" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.75">$6000</text>
-  <text x="560.0" y="100" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.75">$7800</text>
-  <text x="630.0" y="100" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.75">$8000</text>
-  <text x="62" y="66" textAnchor="end" fill="currentColor" fontSize="11">bank 5</text>
-  <text x="350" y="26" textAnchor="middle" fill="currentColor" fontSize="11" fontWeight="600">bank 5, 16K, to scale</text>
-  <rect x="70.0" y="120" width="210.0" height="20" fill="none" stroke="currentColor" strokeOpacity="0.5" strokeDasharray="4 3" />
-  <text x="175.0" y="134" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">the ULA's bitmap</text>
-  <rect x="280.0" y="120" width="26.2" height="20" fill="none" stroke="currentColor" strokeOpacity="0.5" strokeDasharray="4 3" />
-  <text x="293.1" y="134" textAnchor="middle" fill="currentColor" fontSize="9" fillOpacity="0.8">attrs</text>
-  <rect x="350.0" y="120" width="210.0" height="20" fill="none" stroke="currentColor" strokeOpacity="0.5" strokeDasharray="4 3" />
-  <text x="455.0" y="134" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">the Timex second bitmap</text>
-  <text x="70" y="113" textAnchor="start" fill="currentColor" fontSize="10" fillOpacity="0.8">for comparison, the same addresses in the ULA's and the Timex modes' screens:</text>
-  <rect x="250" y="160" width="200" height="75.0" fill="#3b82f6" fillOpacity="0.5" stroke="currentColor" strokeOpacity="0.5" />
-  <rect x="250" y="235.0" width="200" height="75.0" fill="#3b82f6" fillOpacity="0.3" stroke="currentColor" strokeOpacity="0.5" />
-  <text x="350.0" y="194" textAnchor="middle" fill="currentColor" fontSize="11">rows 0–47</text>
-  <text x="350.0" y="269.0" textAnchor="middle" fill="currentColor" fontSize="11">rows 48–95</text>
-  <text x="460" y="200" textAnchor="start" fill="currentColor" fontSize="10.5">128 bytes a row,</text>
-  <text x="460" y="214" textAnchor="start" fill="currentColor" fontSize="10.5">left to right</text>
-  <text x="240" y="239.0" textAnchor="end" fill="currentColor" fontSize="11">the screen</text>
-  <path d="M175.0,140 C175.0,150 290,145 290,160" fill="none" stroke="#3b82f6" strokeWidth="1.2" />
-  <path d="M455.0,140 C455.0,170 510,260 450,265.0" fill="none" stroke="#3b82f6" strokeWidth="1.2" />
+<svg viewBox="0 0 700 400" role="img" aria-label="Bank 5, 16K from address 4000 to 7FFF hexadecimal, drawn to scale. LoRes uses two blocks of 6,144 bytes: 4000 to 57FF for the top half of the screen, rows 0 to 47, and 6000 to 77FF for the bottom half, rows 48 to 95; the 2K between them, 5800 to 5FFF, and the last 2K, 7800 to 7FFF, are not used. Below them, the screen: the top half takes rows 0 to 47 from the first block, the bottom half rows 48 to 95 from the second, 128 bytes a row, left to right. At the bottom, for comparison, the ULA uses the same first block as its bitmap, with its attributes at 5800, and the Timex modes keep their second bitmap where LoRes keeps its bottom half." style={{ width: "100%", height: "auto" }}>
+  <defs>
+    <marker id="lr-map-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#3b82f6" />
+    </marker>
+  </defs>
+  <text x="350" y="18" textAnchor="middle" fill="currentColor" fontSize="16.5" fontWeight="600">bank 5, 16K, to scale</text>
+  <rect x="0" y="30" width="262.5" height="54" fill="#3b82f6" fillOpacity="0.5" stroke="currentColor" strokeOpacity="0.5" />
+  <text x="131.25" y="52" textAnchor="middle" fill="currentColor" fontSize="15">top half: rows 0–47</text>
+  <text x="131.25" y="72" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.8">$4000–$57FF, 6,144 bytes</text>
+  <rect x="262.5" y="30" width="87.5" height="54" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.5" />
+  <text x="306.25" y="52" textAnchor="middle" fill="currentColor" fontSize="15">not used</text>
+  <text x="306.25" y="72" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.8">2K</text>
+  <rect x="350" y="30" width="262.5" height="54" fill="#3b82f6" fillOpacity="0.3" stroke="currentColor" strokeOpacity="0.5" />
+  <text x="481.25" y="52" textAnchor="middle" fill="currentColor" fontSize="15">bottom half: rows 48–95</text>
+  <text x="481.25" y="72" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.8">$6000–$77FF, 6,144 bytes</text>
+  <rect x="612.5" y="30" width="87.5" height="54" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.5" />
+  <text x="656.25" y="52" textAnchor="middle" fill="currentColor" fontSize="15">not used</text>
+  <text x="656.25" y="72" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.8">2K</text>
+  <text x="0" y="102" textAnchor="start" fill="currentColor" fontSize="13.5" fillOpacity="0.75">$4000</text>
+  <text x="262.5" y="102" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.75">$5800</text>
+  <text x="350" y="102" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.75">$6000</text>
+  <text x="612.5" y="102" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.75">$7800</text>
+  <text x="700" y="102" textAnchor="end" fill="currentColor" fontSize="13.5" fillOpacity="0.75">$8000</text>
+  <rect x="230" y="140" width="240" height="90" fill="#3b82f6" fillOpacity="0.5" stroke="currentColor" strokeOpacity="0.5" />
+  <rect x="230" y="230" width="240" height="90" fill="#3b82f6" fillOpacity="0.3" stroke="currentColor" strokeOpacity="0.5" />
+  <text x="350" y="190" textAnchor="middle" fill="currentColor" fontSize="15">rows 0–47</text>
+  <text x="350" y="280" textAnchor="middle" fill="currentColor" fontSize="15">rows 48–95</text>
+  <text x="350" y="130" textAnchor="middle" fill="currentColor" fontSize="15" fontWeight="600">the screen</text>
+  <text x="216" y="275" textAnchor="end" fill="currentColor" fontSize="13.5">128 bytes a row,</text>
+  <text x="216" y="293" textAnchor="end" fill="currentColor" fontSize="13.5">left to right</text>
+  <path d="M131.25,84 L131.25,185 L228,185" fill="none" stroke="#3b82f6" strokeWidth="1.8" markerEnd="url(#lr-map-arrow)" />
+  <path d="M525,84 L525,275 L472,275" fill="none" stroke="#3b82f6" strokeWidth="1.8" markerEnd="url(#lr-map-arrow)" />
+  <text x="0" y="340" textAnchor="start" fill="currentColor" fontSize="13.5" fillOpacity="0.8">for comparison, the same addresses in the ULA's and the Timex modes' screens:</text>
+  <rect x="0" y="352" width="262.5" height="30" fill="none" stroke="currentColor" strokeOpacity="0.5" strokeDasharray="4 3" />
+  <text x="131.25" y="372" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.8">the ULA's bitmap</text>
+  <rect x="262.5" y="352" width="32.81" height="30" fill="none" stroke="currentColor" strokeOpacity="0.5" strokeDasharray="4 3" />
+  <text x="301.31" y="372" textAnchor="start" fill="currentColor" fontSize="13.5" fillOpacity="0.8">attrs</text>
+  <rect x="350" y="352" width="262.5" height="30" fill="none" stroke="currentColor" strokeOpacity="0.5" strokeDasharray="4 3" />
+  <text x="481.25" y="372" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.8">the Timex second bitmap</text>
 </svg>
 <figcaption>Where LoRes keeps its 12K, to scale. Each half sits exactly where the ULA and the Timex modes keep a bitmap.</figcaption>
 </figure>
@@ -190,24 +192,24 @@ LoRes keeps its picture in **bank 5**, the bank that holds the Spectrum's screen
 - Inside a half the rows are stored one after the other, **128 bytes a row**, left to right. Pixel
   (*x*, *y*) of the top half is at `$4000` + 128*y* + *x*; of the bottom half, at `$6000` + 128(*y* − 48) + *x*.
 
-Nothing is scrambled, unlike the ULA's bitmap: the next byte is the next pixel, and the next 128 bytes are
-the next row. The gap between the halves is where the ULA keeps its attributes, at `$5800`, and the two
-halves are exactly where the Timex modes keep their two bitmaps.
+Did you spot what is missing? the scrambling. Unlike the ULA's bitmap, the next byte is the next pixel, and
+the next 128 bytes are the next row. The gap between the halves is where the ULA keeps its attributes, at
+`$5800`, and the two halves are exactly where the Timex modes keep their two bitmaps.
 
 LoRes always reads bank 5, even while a 128K program shows the shadow screen in bank 7.
 
-### How LoRes reads bank 5
+## How LoRes reads bank 5
 
 Bank 5 is block RAM inside the FPGA with two ports. The ULA and the tilemap share one; **the CPU and
 LoRes share the other**. LoRes reads one byte for every dot, through the CPU's port, and the CPU always
-goes first: in each dot there is time for the CPU's access and for LoRes's, so LoRes never delays the
-CPU and always gets its byte.
+goes first. In each dot there is time for the CPU's access and for LoRes's, so LoRes never delays the
+CPU and always gets its byte. Polite, and on time.
 
 The ULA keeps running underneath. It still fetches its screen through its own port, and only its picture
-is replaced by LoRes, so the timing of the machine, contention included, is the same with LoRes on or
+is replaced by LoRes. So the timing of the machine, contention included, is the same with LoRes on or
 off.
 
-## Part 3: From a byte to a colour
+## From a byte to a colour
 
 A LoRes byte is a **palette index**. It goes through the **ULA's palette**, the first or the second one
 as bit 1 of the Palette Control register, **NextReg `$43`**, selects, and so any of the 256 entries can
@@ -216,116 +218,118 @@ an attribute.
 
 The LoRes Control register, **NextReg `$6A`**, holds a **palette offset** in bits 3–0. It is added to the
 byte's high nibble before the lookup, as for an 8-bit Layer 2 dot: offset 1 turns byte `$25` into index
-`$35`. With offset 0, the byte is the index. Radastan uses the same offset differently (Part 4):
+`$35`. With offset 0, the byte is the index. Radastan uses the same offset differently, as the next section
+shows:
 
 <figure>
-<svg viewBox="0 0 700 200" role="img" aria-label="Two paths from memory to a colour. LoRes: the byte, high nibble H and low nibble L; the palette offset from NextReg 6A bits 3 to 0 is added to the high nibble, the low nibble is kept; the result is a palette index. Radastan: the pixel's 4-bit nibble N; the offset becomes the high nibble of the index and N the low one, or, with ULA+ on, the high nibble is 11 followed by offset bits 1 and 0. Both indexes go to the ULA palette, the first or second as NextReg 43 bit 1 selects, and the colour goes to the ULA layer, where NextReg 14 can make it transparent." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
+<svg viewBox="0 0 700 300" role="img" aria-label="Two paths from memory to a colour. LoRes: the byte, high nibble H and low nibble L; the palette offset from NextReg 6A bits 3 to 0 is added to the high nibble, the low nibble is kept; the result is a palette index. Radastan: the pixel's 4-bit nibble N; the offset becomes the high nibble of the index and N the low one, or, with ULA+ on, the high nibble is 11 followed by offset bits 1 and 0. Both indexes go to the ULA palette, the first or second as NextReg 43 bit 1 selects, and the colour goes to the ULA layer, where NextReg 14 can make it transparent." style={{ width: "100%", height: "auto" }}>
   <defs>
     <marker id="lr-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M0,0 L10,5 L0,10 z" fill="currentColor" fillOpacity="0.6" />
     </marker>
   </defs>
-  <text x="20" y="30" textAnchor="start" fill="currentColor" fontSize="12" fontWeight="600">LoRes</text>
-  <rect x="20" y="42" width="110" height="40" rx="4" fill="#3b82f6" fillOpacity="0.15" stroke="#3b82f6" />
-  <text x="75.0" y="59.0" textAnchor="middle" fill="currentColor" fontSize="11">the byte</text>
-  <text x="75.0" y="74.0" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">HHHH LLLL</text>
-  <line x1="130" y1="62" x2="150" y2="62" stroke="currentColor" strokeOpacity="0.6" markerEnd="url(#lr-arrow)" />
-  <rect x="150" y="42" width="200" height="40" rx="4" fill="#3b82f6" fillOpacity="0.15" stroke="#3b82f6" />
-  <text x="250.0" y="59.0" textAnchor="middle" fill="currentColor" fontSize="11">HHHH + offset, LLLL</text>
-  <text x="250.0" y="74.0" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">offset: NextReg $6A bits 3–0</text>
-  <text x="20" y="130" textAnchor="start" fill="currentColor" fontSize="12" fontWeight="600">Radastan</text>
-  <rect x="20" y="142" width="110" height="40" rx="4" fill="#3b82f6" fillOpacity="0.15" stroke="#3b82f6" />
-  <text x="75.0" y="159.0" textAnchor="middle" fill="currentColor" fontSize="11">the pixel's nibble</text>
-  <text x="75.0" y="174.0" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">NNNN</text>
-  <line x1="130" y1="162" x2="150" y2="162" stroke="currentColor" strokeOpacity="0.6" markerEnd="url(#lr-arrow)" />
-  <rect x="150" y="142" width="200" height="40" rx="4" fill="#3b82f6" fillOpacity="0.15" stroke="#3b82f6" />
-  <text x="250.0" y="159.0" textAnchor="middle" fill="currentColor" fontSize="11">offset, NNNN</text>
-  <text x="250.0" y="174.0" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">with ULA+: 11, offset bits 1–0, NNNN</text>
-  <line x1="350" y1="162" x2="375" y2="116" stroke="currentColor" strokeOpacity="0.6" markerEnd="url(#lr-arrow)" />
-  <line x1="350" y1="62" x2="375" y2="88" stroke="currentColor" strokeOpacity="0.6" markerEnd="url(#lr-arrow)" />
-  <rect x="375" y="82" width="170" height="40" rx="4" fill="#3b82f6" fillOpacity="0.15" stroke="#3b82f6" />
-  <text x="460.0" y="99.0" textAnchor="middle" fill="currentColor" fontSize="11">the ULA palette</text>
-  <text x="460.0" y="114.0" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">first or second: NextReg $43 bit 1</text>
-  <line x1="545" y1="102" x2="560" y2="102" stroke="currentColor" strokeOpacity="0.6" markerEnd="url(#lr-arrow)" />
-  <rect x="560" y="82" width="130" height="40" rx="4" fill="currentColor" fillOpacity="0.06" stroke="currentColor" />
-  <text x="625.0" y="99.0" textAnchor="middle" fill="currentColor" fontSize="11">the ULA layer</text>
-  <text x="625.0" y="114.0" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">then NextReg $14 applies</text>
+  <text x="0" y="20" textAnchor="start" fill="currentColor" fontSize="16.5" fontWeight="600">LoRes</text>
+  <rect x="0" y="30" width="135" height="56" rx="4" fill="#3b82f6" fillOpacity="0.15" stroke="#3b82f6" />
+  <text x="67.5" y="54" textAnchor="middle" fill="currentColor" fontSize="15">the byte</text>
+  <text x="67.5" y="73" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.8">HHHH LLLL</text>
+  <rect x="165" y="30" width="270" height="56" rx="4" fill="#3b82f6" fillOpacity="0.15" stroke="#3b82f6" />
+  <text x="300" y="54" textAnchor="middle" fill="currentColor" fontSize="15">HHHH + offset, LLLL</text>
+  <text x="300" y="73" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.8">offset: NextReg $6A bits 3–0</text>
+  <path d="M135,58 L163,58" fill="none" stroke="currentColor" strokeOpacity="0.6" strokeWidth="1.8" markerEnd="url(#lr-arrow)" />
+  <text x="0" y="130" textAnchor="start" fill="currentColor" fontSize="16.5" fontWeight="600">Radastan</text>
+  <rect x="0" y="140" width="135" height="56" rx="4" fill="#3b82f6" fillOpacity="0.15" stroke="#3b82f6" />
+  <text x="67.5" y="164" textAnchor="middle" fill="currentColor" fontSize="15">the pixel's</text>
+  <text x="67.5" y="183" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.8">nibble NNNN</text>
+  <rect x="165" y="140" width="270" height="56" rx="4" fill="#3b82f6" fillOpacity="0.15" stroke="#3b82f6" />
+  <text x="300" y="164" textAnchor="middle" fill="currentColor" fontSize="15">offset, NNNN</text>
+  <text x="300" y="183" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.8">with ULA+: 11, offset bits 1–0, NNNN</text>
+  <path d="M135,168 L163,168" fill="none" stroke="currentColor" strokeOpacity="0.6" strokeWidth="1.8" markerEnd="url(#lr-arrow)" />
+  <rect x="185" y="236" width="280" height="56" rx="4" fill="#3b82f6" fillOpacity="0.15" stroke="#3b82f6" />
+  <text x="325" y="260" textAnchor="middle" fill="currentColor" fontSize="15">the ULA palette</text>
+  <text x="325" y="279" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.8">first or second: NextReg $43 bit 1</text>
+  <rect x="495" y="236" width="205" height="56" rx="4" fill="currentColor" fillOpacity="0.06" stroke="currentColor" />
+  <text x="597.5" y="260" textAnchor="middle" fill="currentColor" fontSize="15">the ULA layer</text>
+  <text x="597.5" y="279" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.8">then NextReg $14 applies</text>
+  <path d="M435,58 L455,58 L455,168" fill="none" stroke="currentColor" strokeOpacity="0.6" strokeWidth="1.8" />
+  <path d="M435,168 L455,168 L455,234" fill="none" stroke="currentColor" strokeOpacity="0.6" strokeWidth="1.8" markerEnd="url(#lr-arrow)" />
+  <path d="M465,264 L493,264" fill="none" stroke="currentColor" strokeOpacity="0.6" strokeWidth="1.8" markerEnd="url(#lr-arrow)" />
 </svg>
 <figcaption>From memory to a colour. Both modes use the ULA's palette; only the index is made differently.</figcaption>
 </figure>
 
 The colour then goes to the ULA layer like a ULA dot's, and the same transparency test applies: a LoRes
-dot whose colour equals the Global Transparency Colour register, **NextReg `$14`**, is transparent
-([colours and palettes, Part 4](/en/under-the-hood/emulator-internals/next-display/palettes/#part-4-transparency-and-the-fallback-colour)).
+dot whose colour equals the Global Transparency Colour register, **NextReg `$14`**, is transparent (the
+palettes chapter's
+[Transparency and the fallback colour](/en/under-the-hood/emulator-internals/next-display/palettes/#two-rules-for-transparency)).
 
-## Part 4: Radastan: 16 colours in 6K
+## Radastan: 16 colours in 6K
 
 Bit 5 of **NextReg `$6A`** switches LoRes to **Radastan mode**. The screen is still 128 × 96 pixels of
 2 × 2 dots, but each pixel is **4 bits**, so a byte holds two of them and the screen takes half the
 memory:
 
 <figure>
-<svg viewBox="0 0 700 245" role="img" aria-label="Radastan's memory. One byte holds two pixels: bits 7 to 4 the left one, bits 3 to 0 the right one. A row of the screen is 64 bytes, 128 pixels, and 96 rows take 6,144 bytes. Bank 5 can hold two such screens, display file 0 from 4000 to 57FF hexadecimal and display file 1 from 6000 to 77FF, drawn to scale; the screen shows one of them, chosen by port FF bit 0 exclusive-or NextReg 6A bit 4." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
-  <text x="350" y="24" textAnchor="middle" fill="currentColor" fontSize="12" fontWeight="600">one byte, two pixels</text>
-  <rect x="230" y="36" width="30" height="30" fill="#3b82f6" fillOpacity="0.5" stroke="currentColor" strokeOpacity="0.5" />
-  <text x="245" y="56" textAnchor="middle" fill="currentColor" fontSize="11">7</text>
-  <rect x="260" y="36" width="30" height="30" fill="#3b82f6" fillOpacity="0.5" stroke="currentColor" strokeOpacity="0.5" />
-  <text x="275" y="56" textAnchor="middle" fill="currentColor" fontSize="11">6</text>
-  <rect x="290" y="36" width="30" height="30" fill="#3b82f6" fillOpacity="0.5" stroke="currentColor" strokeOpacity="0.5" />
-  <text x="305" y="56" textAnchor="middle" fill="currentColor" fontSize="11">5</text>
-  <rect x="320" y="36" width="30" height="30" fill="#3b82f6" fillOpacity="0.5" stroke="currentColor" strokeOpacity="0.5" />
-  <text x="335" y="56" textAnchor="middle" fill="currentColor" fontSize="11">4</text>
-  <rect x="350" y="36" width="30" height="30" fill="#3b82f6" fillOpacity="0.25" stroke="currentColor" strokeOpacity="0.5" />
-  <text x="365" y="56" textAnchor="middle" fill="currentColor" fontSize="11">3</text>
-  <rect x="380" y="36" width="30" height="30" fill="#3b82f6" fillOpacity="0.25" stroke="currentColor" strokeOpacity="0.5" />
-  <text x="395" y="56" textAnchor="middle" fill="currentColor" fontSize="11">2</text>
-  <rect x="410" y="36" width="30" height="30" fill="#3b82f6" fillOpacity="0.25" stroke="currentColor" strokeOpacity="0.5" />
-  <text x="425" y="56" textAnchor="middle" fill="currentColor" fontSize="11">1</text>
-  <rect x="440" y="36" width="30" height="30" fill="#3b82f6" fillOpacity="0.25" stroke="currentColor" strokeOpacity="0.5" />
-  <text x="455" y="56" textAnchor="middle" fill="currentColor" fontSize="11">0</text>
-  <text x="290" y="84" textAnchor="middle" fill="currentColor" fontSize="10.5">left pixel</text>
-  <text x="410" y="84" textAnchor="middle" fill="currentColor" fontSize="10.5">right pixel</text>
-  <text x="350" y="118" textAnchor="middle" fill="currentColor" fontSize="11">a row: 64 bytes, 128 pixels; 96 rows: 6,144 bytes</text>
-  <rect x="110" y="128" width="15" height="20" fill="#3b82f6" fillOpacity="0.5" stroke="currentColor" strokeOpacity="0.4" />
-  <rect x="125" y="128" width="15" height="20" fill="#3b82f6" fillOpacity="0.25" stroke="currentColor" strokeOpacity="0.4" />
-  <rect x="140" y="128" width="15" height="20" fill="#3b82f6" fillOpacity="0.5" stroke="currentColor" strokeOpacity="0.4" />
-  <rect x="155" y="128" width="15" height="20" fill="#3b82f6" fillOpacity="0.25" stroke="currentColor" strokeOpacity="0.4" />
-  <rect x="170" y="128" width="15" height="20" fill="#3b82f6" fillOpacity="0.5" stroke="currentColor" strokeOpacity="0.4" />
-  <rect x="185" y="128" width="15" height="20" fill="#3b82f6" fillOpacity="0.25" stroke="currentColor" strokeOpacity="0.4" />
-  <rect x="200" y="128" width="15" height="20" fill="#3b82f6" fillOpacity="0.5" stroke="currentColor" strokeOpacity="0.4" />
-  <rect x="215" y="128" width="15" height="20" fill="#3b82f6" fillOpacity="0.25" stroke="currentColor" strokeOpacity="0.4" />
-  <rect x="230" y="128" width="15" height="20" fill="#3b82f6" fillOpacity="0.5" stroke="currentColor" strokeOpacity="0.4" />
-  <rect x="245" y="128" width="15" height="20" fill="#3b82f6" fillOpacity="0.25" stroke="currentColor" strokeOpacity="0.4" />
-  <rect x="260" y="128" width="15" height="20" fill="#3b82f6" fillOpacity="0.5" stroke="currentColor" strokeOpacity="0.4" />
-  <rect x="275" y="128" width="15" height="20" fill="#3b82f6" fillOpacity="0.25" stroke="currentColor" strokeOpacity="0.4" />
-  <rect x="290" y="128" width="15" height="20" fill="#3b82f6" fillOpacity="0.5" stroke="currentColor" strokeOpacity="0.4" />
-  <rect x="305" y="128" width="15" height="20" fill="#3b82f6" fillOpacity="0.25" stroke="currentColor" strokeOpacity="0.4" />
-  <rect x="320" y="128" width="15" height="20" fill="#3b82f6" fillOpacity="0.5" stroke="currentColor" strokeOpacity="0.4" />
-  <rect x="335" y="128" width="15" height="20" fill="#3b82f6" fillOpacity="0.25" stroke="currentColor" strokeOpacity="0.4" />
-  <rect x="350" y="128" width="15" height="20" fill="#3b82f6" fillOpacity="0.5" stroke="currentColor" strokeOpacity="0.4" />
-  <rect x="365" y="128" width="15" height="20" fill="#3b82f6" fillOpacity="0.25" stroke="currentColor" strokeOpacity="0.4" />
-  <rect x="380" y="128" width="15" height="20" fill="#3b82f6" fillOpacity="0.5" stroke="currentColor" strokeOpacity="0.4" />
-  <rect x="395" y="128" width="15" height="20" fill="#3b82f6" fillOpacity="0.25" stroke="currentColor" strokeOpacity="0.4" />
-  <rect x="410" y="128" width="15" height="20" fill="#3b82f6" fillOpacity="0.5" stroke="currentColor" strokeOpacity="0.4" />
-  <rect x="425" y="128" width="15" height="20" fill="#3b82f6" fillOpacity="0.25" stroke="currentColor" strokeOpacity="0.4" />
-  <rect x="440" y="128" width="15" height="20" fill="#3b82f6" fillOpacity="0.5" stroke="currentColor" strokeOpacity="0.4" />
-  <rect x="455" y="128" width="15" height="20" fill="#3b82f6" fillOpacity="0.25" stroke="currentColor" strokeOpacity="0.4" />
-  <rect x="470" y="128" width="15" height="20" fill="#3b82f6" fillOpacity="0.5" stroke="currentColor" strokeOpacity="0.4" />
-  <rect x="485" y="128" width="15" height="20" fill="#3b82f6" fillOpacity="0.25" stroke="currentColor" strokeOpacity="0.4" />
-  <rect x="500" y="128" width="15" height="20" fill="#3b82f6" fillOpacity="0.5" stroke="currentColor" strokeOpacity="0.4" />
-  <rect x="515" y="128" width="15" height="20" fill="#3b82f6" fillOpacity="0.25" stroke="currentColor" strokeOpacity="0.4" />
-  <rect x="530" y="128" width="15" height="20" fill="#3b82f6" fillOpacity="0.5" stroke="currentColor" strokeOpacity="0.4" />
-  <rect x="545" y="128" width="15" height="20" fill="#3b82f6" fillOpacity="0.25" stroke="currentColor" strokeOpacity="0.4" />
-  <rect x="560" y="128" width="15" height="20" fill="#3b82f6" fillOpacity="0.5" stroke="currentColor" strokeOpacity="0.4" />
-  <rect x="575" y="128" width="15" height="20" fill="#3b82f6" fillOpacity="0.25" stroke="currentColor" strokeOpacity="0.4" />
-  <text x="600" y="142" textAnchor="start" fill="currentColor" fontSize="10" fillOpacity="0.8">… 48 more</text>
-  <rect x="70" y="182" width="210.0" height="30" fill="#3b82f6" fillOpacity="0.5" stroke="currentColor" strokeOpacity="0.5" />
-  <text x="175.0" y="201" textAnchor="middle" fill="currentColor" fontSize="10.5">display file 0: $4000–$57FF</text>
-  <rect x="350.0" y="182" width="210.0" height="30" fill="#3b82f6" fillOpacity="0.25" stroke="currentColor" strokeOpacity="0.5" />
-  <text x="455.0" y="201" textAnchor="middle" fill="currentColor" fontSize="10.5">display file 1: $6000–$77FF</text>
-  <rect x="70" y="182" width="560" height="30" fill="none" stroke="currentColor" strokeOpacity="0.35" />
-  <text x="62" y="201" textAnchor="end" fill="currentColor" fontSize="10.5">bank 5</text>
-  <text x="350" y="232" textAnchor="middle" fill="currentColor" fontSize="10.5" fillOpacity="0.85">the screen shows one of them: port $FF bit 0 XOR NextReg $6A bit 4</text>
+<svg viewBox="0 0 700 290" role="img" aria-label="Radastan's memory. One byte holds two pixels: bits 7 to 4 the left one, bits 3 to 0 the right one. A row of the screen is 64 bytes, 128 pixels: the first 16 bytes are drawn as 32 pixels, then 48 more bytes follow. 96 rows take 6,144 bytes. Bank 5 can hold two such screens, display file 0 from 4000 to 57FF hexadecimal and display file 1 from 6000 to 77FF, drawn to scale; the screen shows one of them, chosen by port FF bit 0 exclusive-or NextReg 6A bit 4." style={{ width: "100%", height: "auto" }}>
+  <text x="350" y="18" textAnchor="middle" fill="currentColor" fontSize="16.5" fontWeight="600">one byte, two pixels</text>
+  <rect x="150" y="30" width="50" height="40" fill="#3b82f6" fillOpacity="0.5" stroke="currentColor" strokeOpacity="0.5" />
+  <text x="175" y="56" textAnchor="middle" fill="currentColor" fontSize="15">7</text>
+  <rect x="200" y="30" width="50" height="40" fill="#3b82f6" fillOpacity="0.5" stroke="currentColor" strokeOpacity="0.5" />
+  <text x="225" y="56" textAnchor="middle" fill="currentColor" fontSize="15">6</text>
+  <rect x="250" y="30" width="50" height="40" fill="#3b82f6" fillOpacity="0.5" stroke="currentColor" strokeOpacity="0.5" />
+  <text x="275" y="56" textAnchor="middle" fill="currentColor" fontSize="15">5</text>
+  <rect x="300" y="30" width="50" height="40" fill="#3b82f6" fillOpacity="0.5" stroke="currentColor" strokeOpacity="0.5" />
+  <text x="325" y="56" textAnchor="middle" fill="currentColor" fontSize="15">4</text>
+  <rect x="350" y="30" width="50" height="40" fill="#3b82f6" fillOpacity="0.25" stroke="currentColor" strokeOpacity="0.5" />
+  <text x="375" y="56" textAnchor="middle" fill="currentColor" fontSize="15">3</text>
+  <rect x="400" y="30" width="50" height="40" fill="#3b82f6" fillOpacity="0.25" stroke="currentColor" strokeOpacity="0.5" />
+  <text x="425" y="56" textAnchor="middle" fill="currentColor" fontSize="15">2</text>
+  <rect x="450" y="30" width="50" height="40" fill="#3b82f6" fillOpacity="0.25" stroke="currentColor" strokeOpacity="0.5" />
+  <text x="475" y="56" textAnchor="middle" fill="currentColor" fontSize="15">1</text>
+  <rect x="500" y="30" width="50" height="40" fill="#3b82f6" fillOpacity="0.25" stroke="currentColor" strokeOpacity="0.5" />
+  <text x="525" y="56" textAnchor="middle" fill="currentColor" fontSize="15">0</text>
+  <text x="250" y="90" textAnchor="middle" fill="currentColor" fontSize="13.5">left pixel</text>
+  <text x="450" y="90" textAnchor="middle" fill="currentColor" fontSize="13.5">right pixel</text>
+  <text x="350" y="128" textAnchor="middle" fill="currentColor" fontSize="15">a row: 64 bytes, 128 pixels; 96 rows: 6,144 bytes</text>
+  <rect x="0" y="140" width="17.5" height="24" fill="#3b82f6" fillOpacity="0.5" stroke="currentColor" strokeOpacity="0.4" />
+  <rect x="17.5" y="140" width="17.5" height="24" fill="#3b82f6" fillOpacity="0.25" stroke="currentColor" strokeOpacity="0.4" />
+  <rect x="35" y="140" width="17.5" height="24" fill="#3b82f6" fillOpacity="0.5" stroke="currentColor" strokeOpacity="0.4" />
+  <rect x="52.5" y="140" width="17.5" height="24" fill="#3b82f6" fillOpacity="0.25" stroke="currentColor" strokeOpacity="0.4" />
+  <rect x="70" y="140" width="17.5" height="24" fill="#3b82f6" fillOpacity="0.5" stroke="currentColor" strokeOpacity="0.4" />
+  <rect x="87.5" y="140" width="17.5" height="24" fill="#3b82f6" fillOpacity="0.25" stroke="currentColor" strokeOpacity="0.4" />
+  <rect x="105" y="140" width="17.5" height="24" fill="#3b82f6" fillOpacity="0.5" stroke="currentColor" strokeOpacity="0.4" />
+  <rect x="122.5" y="140" width="17.5" height="24" fill="#3b82f6" fillOpacity="0.25" stroke="currentColor" strokeOpacity="0.4" />
+  <rect x="140" y="140" width="17.5" height="24" fill="#3b82f6" fillOpacity="0.5" stroke="currentColor" strokeOpacity="0.4" />
+  <rect x="157.5" y="140" width="17.5" height="24" fill="#3b82f6" fillOpacity="0.25" stroke="currentColor" strokeOpacity="0.4" />
+  <rect x="175" y="140" width="17.5" height="24" fill="#3b82f6" fillOpacity="0.5" stroke="currentColor" strokeOpacity="0.4" />
+  <rect x="192.5" y="140" width="17.5" height="24" fill="#3b82f6" fillOpacity="0.25" stroke="currentColor" strokeOpacity="0.4" />
+  <rect x="210" y="140" width="17.5" height="24" fill="#3b82f6" fillOpacity="0.5" stroke="currentColor" strokeOpacity="0.4" />
+  <rect x="227.5" y="140" width="17.5" height="24" fill="#3b82f6" fillOpacity="0.25" stroke="currentColor" strokeOpacity="0.4" />
+  <rect x="245" y="140" width="17.5" height="24" fill="#3b82f6" fillOpacity="0.5" stroke="currentColor" strokeOpacity="0.4" />
+  <rect x="262.5" y="140" width="17.5" height="24" fill="#3b82f6" fillOpacity="0.25" stroke="currentColor" strokeOpacity="0.4" />
+  <rect x="280" y="140" width="17.5" height="24" fill="#3b82f6" fillOpacity="0.5" stroke="currentColor" strokeOpacity="0.4" />
+  <rect x="297.5" y="140" width="17.5" height="24" fill="#3b82f6" fillOpacity="0.25" stroke="currentColor" strokeOpacity="0.4" />
+  <rect x="315" y="140" width="17.5" height="24" fill="#3b82f6" fillOpacity="0.5" stroke="currentColor" strokeOpacity="0.4" />
+  <rect x="332.5" y="140" width="17.5" height="24" fill="#3b82f6" fillOpacity="0.25" stroke="currentColor" strokeOpacity="0.4" />
+  <rect x="350" y="140" width="17.5" height="24" fill="#3b82f6" fillOpacity="0.5" stroke="currentColor" strokeOpacity="0.4" />
+  <rect x="367.5" y="140" width="17.5" height="24" fill="#3b82f6" fillOpacity="0.25" stroke="currentColor" strokeOpacity="0.4" />
+  <rect x="385" y="140" width="17.5" height="24" fill="#3b82f6" fillOpacity="0.5" stroke="currentColor" strokeOpacity="0.4" />
+  <rect x="402.5" y="140" width="17.5" height="24" fill="#3b82f6" fillOpacity="0.25" stroke="currentColor" strokeOpacity="0.4" />
+  <rect x="420" y="140" width="17.5" height="24" fill="#3b82f6" fillOpacity="0.5" stroke="currentColor" strokeOpacity="0.4" />
+  <rect x="437.5" y="140" width="17.5" height="24" fill="#3b82f6" fillOpacity="0.25" stroke="currentColor" strokeOpacity="0.4" />
+  <rect x="455" y="140" width="17.5" height="24" fill="#3b82f6" fillOpacity="0.5" stroke="currentColor" strokeOpacity="0.4" />
+  <rect x="472.5" y="140" width="17.5" height="24" fill="#3b82f6" fillOpacity="0.25" stroke="currentColor" strokeOpacity="0.4" />
+  <rect x="490" y="140" width="17.5" height="24" fill="#3b82f6" fillOpacity="0.5" stroke="currentColor" strokeOpacity="0.4" />
+  <rect x="507.5" y="140" width="17.5" height="24" fill="#3b82f6" fillOpacity="0.25" stroke="currentColor" strokeOpacity="0.4" />
+  <rect x="525" y="140" width="17.5" height="24" fill="#3b82f6" fillOpacity="0.5" stroke="currentColor" strokeOpacity="0.4" />
+  <rect x="542.5" y="140" width="17.5" height="24" fill="#3b82f6" fillOpacity="0.25" stroke="currentColor" strokeOpacity="0.4" />
+  <text x="570" y="157" textAnchor="start" fill="currentColor" fontSize="13.5" fillOpacity="0.8">… 48 more bytes</text>
+  <text x="0" y="200" textAnchor="start" fill="currentColor" fontSize="15" fontWeight="600">bank 5</text>
+  <rect x="0" y="210" width="262.5" height="36" fill="#3b82f6" fillOpacity="0.5" stroke="currentColor" strokeOpacity="0.5" />
+  <text x="131.25" y="233" textAnchor="middle" fill="currentColor" fontSize="13.5">display file 0: $4000–$57FF</text>
+  <rect x="350" y="210" width="262.5" height="36" fill="#3b82f6" fillOpacity="0.25" stroke="currentColor" strokeOpacity="0.5" />
+  <text x="481.25" y="233" textAnchor="middle" fill="currentColor" fontSize="13.5">display file 1: $6000–$77FF</text>
+  <rect x="0" y="210" width="700" height="36" fill="none" stroke="currentColor" strokeOpacity="0.35" />
+  <text x="350" y="274" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.85">the screen shows one of them: port $FF bit 0 XOR NextReg $6A bit 4</text>
 </svg>
 <figcaption>Radastan: two pixels a byte, half of LoRes's memory, and room for two screens in bank 5.</figcaption>
 </figure>
@@ -339,56 +343,58 @@ memory:
   followed by the offset's bits 1–0, so the picture takes one of the four 16-colour groups of the ULA+
   palette, entries 192–255.
 
-Sixteen colours are fewer than 256, but a picture rarely needs more than a few dozen. The same sunset
-in both modes:
+Sixteen colours sound like a sacrifice after 256. But be honest: how many colours does your picture really
+use? Rarely more than a few dozen. Here is the same sunset in both modes:
 
 <figure>
-<svg viewBox="0 0 700 300" role="img" aria-label="The same sunset twice on Klive's Next. Left, LoRes: a byte per pixel, 31 different colours in this picture, with smooth steps in the glow around the sun and in the sea. Right, Radastan: a nibble per pixel, the 16 most common of those colours; the glow and the sea show fewer, wider steps, the rest looks the same." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
-  <image x="10" y="10" width="336" height="252" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/lores/lores.webp`} />
-  <rect x="10" y="10" width="336" height="252" fill="none" stroke="currentColor" strokeOpacity="0.35" />
-  <image x="354" y="10" width="336" height="252" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/lores/radastan.webp`} />
-  <rect x="354" y="10" width="336" height="252" fill="none" stroke="currentColor" strokeOpacity="0.35" />
-  <text x="178" y="282" textAnchor="middle" fill="currentColor" fontSize="11">LoRes: 12K, 256 colours to choose from</text>
-  <text x="522" y="282" textAnchor="middle" fill="currentColor" fontSize="11">Radastan: 6K, 16 colours</text>
+<svg viewBox="0 0 700 292" role="img" aria-label="The same sunset twice on Klive's Next. Left, LoRes: a byte per pixel, 31 different colours in this picture, with smooth steps in the glow around the sun and in the sea. Right, Radastan: a nibble per pixel, the 16 most common of those colours; the glow and the sea show fewer, wider steps, the rest looks the same." style={{ width: "100%", height: "auto" }}>
+  <image x="0" y="0" width="344" height="258" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/lores/lores.webp`} />
+  <rect x="0" y="0" width="344" height="258" fill="none" stroke="currentColor" strokeOpacity="0.35" />
+  <image x="356" y="0" width="344" height="258" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/lores/radastan.webp`} />
+  <rect x="356" y="0" width="344" height="258" fill="none" stroke="currentColor" strokeOpacity="0.35" />
+  <text x="172" y="284" textAnchor="middle" fill="currentColor" fontSize="15">LoRes: 12K, 256 colours to choose from</text>
+  <text x="528" y="284" textAnchor="middle" fill="currentColor" fontSize="15">Radastan: 6K, 16 colours</text>
 </svg>
 <figcaption>The same picture in both modes. Radastan keeps the 16 most common colours of the LoRes picture; the glow and the sea lose their finest steps.</figcaption>
 </figure>
 
-## Part 5: Two Radastan screens
+## Two Radastan screens
 
 A Radastan screen takes 6K, so bank 5 holds two, at `$4000` and at `$6000`: **display file 0** and
 **display file 1**. Which one is shown is decided by bit 0 of the Timex control port, **port `$FF`**,
 the same bit that picks the Timex modes' second display file, exclusive-or'ed with bit 4 of NextReg `$6A`.
 
-That makes double buffering simple: draw the next picture into the screen that is not shown, then flip
-one bit. The XOR bit is there so that a program can keep port `$FF` set the way other code expects, and
-still choose either screen.
+That makes double buffering simple. Draw the next picture into the screen that is not shown, then flip
+one bit, and the new picture is there at once. The XOR bit is there so that your program can keep port
+`$FF` set the way other code expects, and still choose either screen.
 
 Plain LoRes does not look at port `$FF`: its two halves are one screen, and the Timex mode does not move
 them.
 
-## Part 6: In the ULA's place
+## In the ULA's place
 
-LoRes is not a sixth layer. When NextReg `$15` bit 7 is set, LoRes's dot **replaces the ULA's** on its way
-into the ULA layer, and from then on the machine cannot tell the two apart:
+If you read only one section, read this one. LoRes is not a sixth layer. When NextReg `$15` bit 7 is set,
+LoRes's dot **replaces the ULA's** on its way into the ULA layer, and from then on the machine cannot tell
+the two apart. It is the ULA wearing a different coat:
 
 - **The clip window.** LoRes has no clip window of its own; it uses the ULA's, the Clip Window ULA
   register, **NextReg `$1A`**, in display-area coordinates. Outside the window the ULA layer is
   transparent, and whatever is below shows through.
 - **The border** is the ULA's: LoRes covers only the display area, and the border around it keeps the
   colour port `$FE` gives it.
-- **Transparency**: NextReg `$14` applies to LoRes colours as to ULA colours (Part 3).
+- **Transparency**: NextReg `$14` applies to LoRes colours as to ULA colours, as the section From a byte
+  to a colour says.
 - **Switching off**: bit 7 of the ULA Control register, **NextReg `$68`**, which switches the ULA off,
   switches LoRes off with it.
 - **Layer order, stencil and blending** treat the LoRes picture as the ULA's
   ([putting it together](/en/under-the-hood/emulator-internals/next-display/composition/)).
 
-On the machine, with the clip window set to dots 32–223 across and lines 24–167 down:
+Let's see it on the machine, with the clip window set to dots 32–223 across and lines 24–167 down:
 
 <figure>
-<svg viewBox="0 0 700 300" role="img" aria-label="Klive's whole frame with LoRes on and the ULA's clip window set to dots 32 to 223 across and lines 24 to 167 down. Inside the window the sunset shows; between the window and the edge of the display area the grey fallback colour shows, because the ULA layer is transparent there; around it the border is the ULA's border, a light blue." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
-  <image x="140" y="6" width="420" height="280" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/lores/clip.webp`} />
-  <rect x="140" y="6" width="420" height="280" fill="none" stroke="currentColor" strokeOpacity="0.35" />
+<svg viewBox="0 0 700 466" role="img" aria-label="Klive's whole frame with LoRes on and the ULA's clip window set to dots 32 to 223 across and lines 24 to 167 down. Inside the window the sunset shows; between the window and the edge of the display area the grey fallback colour shows, because the ULA layer is transparent there; around it the border is the ULA's border, a light blue." style={{ width: "100%", height: "auto" }}>
+  <image x="0" y="0" width="700" height="466" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/lores/clip.webp`} />
+  <rect x="0" y="0" width="700" height="466" fill="none" stroke="currentColor" strokeOpacity="0.35" />
 </svg>
 <figcaption>LoRes in the ULA's place: clipped by the ULA's clip window (grey: transparent, the fallback colour shows through), inside the ULA's border.</figcaption>
 </figure>
@@ -397,59 +403,60 @@ The grey is the Fallback Colour register, **NextReg `$4A`**, which shows where n
 the clip window and the edge of the display area, the ULA layer is transparent. Around it the border is
 the ULA's, here colour 7 of port `$FE`.
 
-## Part 7: Scrolling
+## Scrolling by half a pixel
 
 LoRes has its own scroll registers: the LoRes X Scroll register, **NextReg `$32`**, 0–255, and the LoRes
 Y Scroll register, **NextReg `$33`**, 0–191. They count in **dots and lines**, not in LoRes pixels, so one
 step is half a pixel, and a scroll moves smoothly. The picture **wraps round** at 256 dots across and 192
-lines down: what leaves on one side comes back on the other, and the program never copies a byte to
+lines down: what leaves on one side comes back on the other, and your program never copies a byte to
 scroll.
 
 <figure>
-<svg viewBox="0 0 700 300" role="img" aria-label="Two LoRes pictures on Klive's Next. Left, the sunset unscrolled. Right, the same picture scrolled by 101 dots across and 75 lines down: the sun and its reflection have moved to the left and up, the hills come in again from the right, and the top of the sky appears below the sea, because the picture wraps round in both directions." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
-  <image x="10" y="10" width="336" height="252" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/lores/lores.webp`} />
-  <rect x="10" y="10" width="336" height="252" fill="none" stroke="currentColor" strokeOpacity="0.35" />
-  <image x="354" y="10" width="336" height="252" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/lores/scroll.webp`} />
-  <rect x="354" y="10" width="336" height="252" fill="none" stroke="currentColor" strokeOpacity="0.35" />
-  <text x="178" y="282" textAnchor="middle" fill="currentColor" fontSize="11">not scrolled</text>
-  <text x="522" y="282" textAnchor="middle" fill="currentColor" fontSize="11">NextReg $32 = 101, NextReg $33 = 75</text>
+<svg viewBox="0 0 700 292" role="img" aria-label="Two LoRes pictures on Klive's Next. Left, the sunset unscrolled. Right, the same picture scrolled by 101 dots across and 75 lines down: the sun and its reflection have moved to the left and up, the hills come in again from the right, and the top of the sky appears below the sea, because the picture wraps round in both directions." style={{ width: "100%", height: "auto" }}>
+  <image x="0" y="0" width="344" height="258" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/lores/lores.webp`} />
+  <rect x="0" y="0" width="344" height="258" fill="none" stroke="currentColor" strokeOpacity="0.35" />
+  <image x="356" y="0" width="344" height="258" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/lores/scroll.webp`} />
+  <rect x="356" y="0" width="344" height="258" fill="none" stroke="currentColor" strokeOpacity="0.35" />
+  <text x="172" y="284" textAnchor="middle" fill="currentColor" fontSize="15">not scrolled</text>
+  <text x="528" y="284" textAnchor="middle" fill="currentColor" fontSize="15">NextReg $32 = 101, NextReg $33 = 75</text>
 </svg>
 <figcaption>Scrolling. The picture moves by dots, half a LoRes pixel a step, and wraps round at 256 × 192 in both directions.</figcaption>
 </figure>
 
 With an odd X scroll, the 2 × 2 blocks no longer line up with the even dots: each pixel's two dots across
-land half in one block of the screen and half in the next. The ULA's own scroll registers do not move
-LoRes, and LoRes's do not move the ULA.
+land half in one block of the screen and half in the next. And the two kinds of scroll keep to themselves:
+the ULA's own scroll registers do not move LoRes, and LoRes's do not move the ULA.
 
-## Part 8: What a screen costs
+## What a screen costs
 
-The reason for a mode like this is memory and time. A program that redraws the whole screen every frame
-has to copy every byte of it, and at the Spectrum's 3.5 MHz the Z80's fastest copy, `LDIR`, takes 21
+So why bother with a mode like this at all? Memory and time. A program that redraws the whole screen every
+frame has to copy every byte of it, and at the Spectrum's 3.5 MHz the Z80's fastest copy, `LDIR`, takes 21
 T-states a byte. A 128K frame is 70,908 T-states:
 
 <figure>
-<svg viewBox="0 0 700 245" role="img" aria-label="A bar chart, to scale, of the bytes one full screen takes and the frames a 3.5 megahertz Z80 needs to copy them with LDIR at 21 T-states a byte, in 70,908 T-state frames: the ULA 6,912 bytes, 2.0 frames, two colours per 8 by 8 cell; Radastan 6,144 bytes, 1.8 frames, 16 colours; LoRes 12,288 bytes, 3.6 frames, 256 colours; Layer 2 at 256 by 192, 49,152 bytes, 14.6 frames; Layer 2 at 320 by 256, 81,920 bytes, 24.3 frames." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
-  <text x="350" y="22" textAnchor="middle" fill="currentColor" fontSize="11.5" fontWeight="600">bytes for a full screen, and frames at 3.5 MHz to copy them with LDIR</text>
-  <text x="160" y="56" textAnchor="end" fill="currentColor" fontSize="11">ULA</text>
-  <text x="160" y="69" textAnchor="end" fill="currentColor" fontSize="9.5" fillOpacity="0.75">2 colours per 8 × 8 cell</text>
-  <rect x="170" y="44" width="30.4" height="22" fill="currentColor" fillOpacity="0.25" stroke="currentColor" />
-  <text x="208.4" y="60" textAnchor="start" fill="currentColor" fontSize="10.5">6,912 bytes · 2.0 frames</text>
-  <text x="160" y="96" textAnchor="end" fill="currentColor" fontSize="11">Radastan</text>
-  <text x="160" y="109" textAnchor="end" fill="currentColor" fontSize="9.5" fillOpacity="0.75">16 colours</text>
-  <rect x="170" y="84" width="27.0" height="22" fill="#3b82f6" fillOpacity="0.55" stroke="#3b82f6" />
-  <text x="205.0" y="100" textAnchor="start" fill="currentColor" fontSize="10.5">6,144 bytes · 1.8 frames</text>
-  <text x="160" y="136" textAnchor="end" fill="currentColor" fontSize="11">LoRes</text>
-  <text x="160" y="149" textAnchor="end" fill="currentColor" fontSize="9.5" fillOpacity="0.75">256 colours</text>
-  <rect x="170" y="124" width="54.0" height="22" fill="#3b82f6" fillOpacity="0.55" stroke="#3b82f6" />
-  <text x="232.0" y="140" textAnchor="start" fill="currentColor" fontSize="10.5">12,288 bytes · 3.6 frames</text>
-  <text x="160" y="176" textAnchor="end" fill="currentColor" fontSize="11">Layer 2, 256 × 192</text>
-  <text x="160" y="189" textAnchor="end" fill="currentColor" fontSize="9.5" fillOpacity="0.75">256 colours</text>
-  <rect x="170" y="164" width="216.0" height="22" fill="#e8912d" fillOpacity="0.55" stroke="#e8912d" />
-  <text x="394.0" y="180" textAnchor="start" fill="currentColor" fontSize="10.5">49,152 bytes · 14.6 frames</text>
-  <text x="160" y="216" textAnchor="end" fill="currentColor" fontSize="11">Layer 2, 320 × 256</text>
-  <text x="160" y="229" textAnchor="end" fill="currentColor" fontSize="9.5" fillOpacity="0.75">256 colours</text>
-  <rect x="170" y="204" width="360.0" height="22" fill="#e8912d" fillOpacity="0.55" stroke="#e8912d" />
-  <text x="538.0" y="220" textAnchor="start" fill="currentColor" fontSize="10.5">81,920 bytes · 24.3 frames</text>
+<svg viewBox="0 0 700 330" role="img" aria-label="A bar chart, to scale, of the bytes one full screen takes and the frames a 3.5 megahertz Z80 needs to copy them with LDIR at 21 T-states a byte, in 70,908 T-state frames: the ULA 6,912 bytes, 2.0 frames, two colours per 8 by 8 cell; Radastan 6,144 bytes, 1.8 frames, 16 colours; LoRes 12,288 bytes, 3.6 frames, 256 colours; Layer 2 at 256 by 192, 49,152 bytes, 14.6 frames; Layer 2 at 320 by 256, 81,920 bytes, 24.3 frames." style={{ width: "100%", height: "auto" }}>
+  <text x="350" y="18" textAnchor="middle" fill="currentColor" fontSize="16.5" fontWeight="600">bytes for a full screen, and frames at 3.5 MHz to copy them with LDIR</text>
+  <text x="146" y="60" textAnchor="end" fill="currentColor" fontSize="15">ULA</text>
+  <text x="146" y="77" textAnchor="end" fill="currentColor" fontSize="13.5" fillOpacity="0.75">2 colours per</text>
+  <text x="146" y="93" textAnchor="end" fill="currentColor" fontSize="13.5" fillOpacity="0.75">8 × 8 cell</text>
+  <rect x="158" y="44" width="29.95" height="26" fill="currentColor" fillOpacity="0.25" stroke="currentColor" />
+  <text x="195.95" y="62" textAnchor="start" fill="currentColor" fontSize="13.5">6,912 bytes · 2.0 frames</text>
+  <text x="146" y="118" textAnchor="end" fill="currentColor" fontSize="15">Radastan</text>
+  <text x="146" y="135" textAnchor="end" fill="currentColor" fontSize="13.5" fillOpacity="0.75">16 colours</text>
+  <rect x="158" y="102" width="26.63" height="26" fill="#3b82f6" fillOpacity="0.55" stroke="#3b82f6" />
+  <text x="192.63" y="120" textAnchor="start" fill="currentColor" fontSize="13.5">6,144 bytes · 1.8 frames</text>
+  <text x="146" y="176" textAnchor="end" fill="currentColor" fontSize="15">LoRes</text>
+  <text x="146" y="193" textAnchor="end" fill="currentColor" fontSize="13.5" fillOpacity="0.75">256 colours</text>
+  <rect x="158" y="160" width="53.25" height="26" fill="#3b82f6" fillOpacity="0.55" stroke="#3b82f6" />
+  <text x="219.25" y="178" textAnchor="start" fill="currentColor" fontSize="13.5">12,288 bytes · 3.6 frames</text>
+  <text x="146" y="234" textAnchor="end" fill="currentColor" fontSize="15">Layer 2, 256 × 192</text>
+  <text x="146" y="251" textAnchor="end" fill="currentColor" fontSize="13.5" fillOpacity="0.75">256 colours</text>
+  <rect x="158" y="218" width="213" height="26" fill="#e8912d" fillOpacity="0.55" stroke="#e8912d" />
+  <text x="379" y="236" textAnchor="start" fill="currentColor" fontSize="13.5">49,152 bytes · 14.6 frames</text>
+  <text x="146" y="292" textAnchor="end" fill="currentColor" fontSize="15">Layer 2, 320 × 256</text>
+  <text x="146" y="309" textAnchor="end" fill="currentColor" fontSize="13.5" fillOpacity="0.75">256 colours</text>
+  <rect x="158" y="276" width="355" height="26" fill="#e8912d" fillOpacity="0.55" stroke="#e8912d" />
+  <text x="521" y="294" textAnchor="start" fill="currentColor" fontSize="13.5">81,920 bytes · 24.3 frames</text>
 </svg>
 <figcaption>What a full screen costs. LoRes gives every dot-block its own colour for less than twice the ULA's memory and a quarter of Layer 2's.</figcaption>
 </figure>
@@ -462,50 +469,43 @@ again: a 16-colour screen smaller than the ULA's own.
 The Next can run its CPU at up to 28 MHz, which cuts every copy time. The proportions between the modes
 stay the same.
 
-## Part 9: How Klive does it
-
-### One renderer
+## How Klive does it
 
 Klive draws LoRes in `zxnextUlaRenderLoResScreen`, in `zxnext-ula.c`, the C file of the Next's WASM core
 that draws the ULA layer. When NextReg `$15` bit 7 is set, it replaces the ULA's renderer for the
 display area, after the border has been drawn, which is why the border stays the ULA's. For every dot it
 takes the ULA's clip window, adds the scroll, wraps Y at 192, and reads the byte from bank 5 at the
-address of Part 2, or, in Radastan mode, the nibble from the display file of Part 5. The index then goes
-through the ULA's palette and the NextReg `$14` test, like any ULA dot.
+address the section Where the bytes are gives, or, in Radastan mode, the nibble from the display file the
+section Two Radastan screens chooses. The index then goes through the ULA's palette and the NextReg `$14`
+test, like any ULA dot.
 
 The registers, NextReg `$15` bit 7, `$32`, `$33` and `$6A`, are kept in `zxnext-layer2.c`, with the two
 address functions.
 
-Writing this article found one difference from the hardware: in Radastan mode with ULA+ on, Klive used
-the whole offset as the high nibble, instead of `11` and the offset's bits 1–0 of Part 4. A test that
-used offset `$0E` could not see it, because both rules give `$E` for that offset. Klive now follows the
-hardware, and the test checks an offset that tells the two rules apart.
-
-### In the IDE
-
-The [Layers strip](/en/guides/next/layers/) shows the ULA layer alone, and with LoRes on that is the LoRes
-picture, inside the ULA's clip window.
-
-### Where to read the code
+In the IDE, the [Layers strip](/en/guides/next/layers/) shows the ULA layer alone, and with LoRes on that
+is the LoRes picture, inside the ULA's clip window. And if you want to read the code yourself, here is
+where it lives:
 
 | What | Where |
 |---|---|
 | The LoRes and Radastan renderer | `zxnextUlaRenderLoResScreen` in `src/emu/machines/zxNext/wasm/zxnext/zxnext-ula.c` |
 | The registers and the two address functions | `zxnextLoResStandardAddress`, `zxnextLoResRadastanAddress` in `src/emu/machines/zxNext/wasm/zxnext/zxnext-layer2.c` |
 | The rules, checked on the machine | `test/zxnext-hw/ula/lores.test.ts` |
-| This article's pictures | `test/zxnext-hw/layers/next-display-scene.test.ts`, "next-display lores" |
+| This chapter's pictures | `test/zxnext-hw/layers/next-display-scene.test.ts`, "next-display lores" |
 
-## Summary
+## What to take home
 
-- **LoRes** (NextReg `$15` bit 7) draws **128 × 96 pixels** of 2 × 2 dots across the display area, a
-  **byte per pixel**, any of 256 colours, in **12K**.
-- The bytes are in **bank 5**, rows of 128 bytes, the top half at `$4000`–`$57FF` and the bottom half at
-  `$6000`–`$77FF`. LoRes reads a byte per dot through the CPU's port of bank 5, and never delays the CPU.
-- A LoRes byte is an index into the **ULA's palette**; NextReg `$6A` bits 3–0 add a **palette offset** to
-  its high nibble.
-- **Radastan** (NextReg `$6A` bit 5) stores **two pixels a byte**: 16 colours in **6K**, the offset as the
-  index's high nibble (`11` and offset bits 1–0 with ULA+). Bank 5 holds **two Radastan screens**, chosen
-  by port `$FF` bit 0 XOR NextReg `$6A` bit 4.
-- Both **take the ULA's place**: the ULA's clip window, border, transparency test, switch and layer
-  position.
-- NextReg `$32` and `$33` **scroll** by dots, half a pixel a step, wrapping at 256 × 192.
+Time to pack up. **LoRes**, switched on by NextReg `$15` bit 7, draws **128 × 96 pixels** of 2 × 2
+dots across the display area, a **byte per pixel**, any of 256 colours, in **12K**. The bytes sit in
+**bank 5** in rows of 128 bytes, the top half at `$4000`–`$57FF` and the bottom half at `$6000`–`$77FF`, with
+nothing scrambled. LoRes reads a byte per dot through the CPU's port of bank 5, and never delays the CPU.
+
+A LoRes byte is an index into the **ULA's palette**, and NextReg `$6A` bits 3–0 add a **palette offset** to
+its high nibble. **Radastan**, NextReg `$6A` bit 5, stores **two pixels a byte**: 16 colours in **6K**, with
+the offset as the index's high nibble, or `11` and the offset's bits 1–0 with ULA+. Bank 5 holds **two
+Radastan screens**, and port `$FF` bit 0 XOR NextReg `$6A` bit 4 chooses the one you see.
+
+Both modes **take the ULA's place**: the ULA's clip window, border, transparency test, switch and position
+among the layers. NextReg `$32` and `$33` **scroll** them by dots, half a pixel a step, wrapping at
+256 × 192. Fat pixels, lots of colour, little memory: not a bad deal for a screen that looks like a step
+backwards.

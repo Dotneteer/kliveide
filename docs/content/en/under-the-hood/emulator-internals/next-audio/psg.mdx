@@ -159,7 +159,7 @@ Inside, one chip has a handful of parts, all driven by one clock:
 - A **volume table**, the chip's DAC, which turns each channel's 4- or 5-bit volume into a level.
 - Three **outputs**, channels **A**, **B** and **C**, each 0 to 255 units, which go to the mixer.
 
-Hey, notice something: every one of these parts is a small counter or a register. None of them can make a
+Here is something to notice: every one of these parts is a small counter or a register. None of them can make a
 curve. Everything the chip plays is built from on/off signals and steps of volume, and that is exactly why the
 AY sounds the way it does.
 
@@ -1169,7 +1169,7 @@ why). And if you want to read the code yourself, here is where it lives:
 
 ## What to take home
 
-So, what have we got? One AY chip has **three tone generators**, **one noise generator**, a **mixer
+Let's take stock. One AY chip has **three tone generators**, **one noise generator**, a **mixer
 register**, a fixed volume or the **envelope** for each channel, and a logarithmic **volume table**. Out come
 three outputs, A, B and C, each 0 to 255 units. Your program reaches its **16 registers** through **port
 `$FFFD`**, which selects one (bits 7–5 clear), and **port `$BFFD`**, which writes it; reads come from port

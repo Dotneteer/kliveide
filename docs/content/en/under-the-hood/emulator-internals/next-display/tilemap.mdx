@@ -4,92 +4,96 @@ description: "How the ZX Spectrum Next's tilemap draws a full-width picture from
 
 import { Callout } from 'nextra/components'
 
-# ZX Spectrum Next: The Tilemap
+# The Tilemap: A Screen of 8 × 8 Tiles
 
-Game consoles were built on one idea: most of a game screen is the same few graphics repeated, so
-store each graphic once, and the screen as a list of which goes where. The idea saves time as much as
-memory. When the scenery scrolls, the hardware moves the whole picture, and the program only adds what
-comes into view: a new entry in the list for each cell, instead of every dot of the new graphics.
+Look closely at almost any scrolling game, and you will notice that the scenery repeats. The same brick,
+the same patch of grass, the same pipe, over and over. Game consoles were built on exactly that
+observation: store each little graphic once, and keep the screen as a list of which one goes where. So
+what does the Next do with the idea, and how small can a full-width picture get?
 
-The Next's tilemap is that idea. A 320 × 256 picture would take 80K as a Layer 2 bitmap; the tilemap
-draws one in **2.5K**: a grid of 40 × 32 small numbers, each naming an 8 × 8 tile to draw there. Each
-tile can be mirrored, rotated, given its own 16 colours and put above or below the Spectrum's screen,
-tile by tile, and the whole grid scrolls by the dot. Bringing a new column of scenery onto the
-screen means writing 32 map entries, 64 bytes; drawing the same 8-dot column into a 320 × 256 Layer 2
-picture means writing 2,048 bytes, 32 times as many.
+It matters for time as much as for memory. When the scenery scrolls, the hardware moves the whole picture,
+and your program only adds what comes into view: a new entry in the list for each cell, instead of every
+dot of the new graphics. The Next's tilemap is that idea. A 320 × 256 picture would take 80K as a Layer 2
+bitmap; the tilemap draws one from **2.5K**: a grid of 40 × 32 small numbers, each naming an 8 × 8 tile to
+draw there. Each tile can be mirrored, rotated, given its own 16 colours and put above or below the
+Spectrum's screen, tile by tile, and the whole grid scrolls by the dot. Bringing a new column of scenery
+onto the screen means writing 32 map entries, 64 bytes; drawing the same 8-dot column into a 320 × 256
+Layer 2 picture means writing 2,048 bytes, 32 times as many. Not a bad deal, is it?
 
-This article explains the tilemap from the bytes in memory to the dots on screen. It assumes the
-[big picture](/en/under-the-hood/emulator-internals/next-display/overview/) and
-[colours and palettes](/en/under-the-hood/emulator-internals/next-display/palettes/).
+Read [the big picture](/en/under-the-hood/emulator-internals/next-display/overview/) and
+[colours and palettes](/en/under-the-hood/emulator-internals/next-display/palettes/) first: the tilemap
+uses the wide area, the clip windows and the palette offsets they explain.
 
-### How this article is organised
+## The road ahead
 
-- **The map and the tiles** ([Part 1](#part-1-the-map-and-the-tiles)): what is stored where, and how much
-  of bank 5 it takes.
-- **The attribute byte** ([Part 2](#part-2-the-attribute-byte)) and **a tile's dots**
-  ([Part 3](#part-3-a-tiles-dots)).
-- **Eight orientations** ([Part 4](#part-4-eight-orientations)): mirror and rotate, on the machine. If you
-  read only one part, read this one.
-- **Text mode** ([Part 5](#part-5-text-mode)), **40 or 80 columns** ([Part 6](#part-6-40-or-80-columns)),
-  **above or below the ULA** ([Part 7](#part-7-above-or-below-the-ula)).
-- **Scrolling and clipping** ([Part 8](#part-8-scrolling-and-clipping)), **fetching**
-  ([Part 9](#part-9-fetching-a-character-ahead)) and **the emulator** ([Part 10](#part-10-how-klive-does-it)).
+We start with the bytes: the map that says which tile goes where, the tile definitions that say what each
+tile looks like, and the small piece of memory, bank 5 and half of bank 7, where both must live. That
+corner is cramped, so we work out how big each table is, which layouts fit, and one trap that catches a
+program moving its tables into bank 7. Then we take a map entry apart: its attribute byte, a tile's 4-bit
+dots, and the key idea, the eight orientations that mirroring and rotation give every tile for free. After
+that come text mode, 80 columns, and how a tile decides whether it sits above or below the ULA. We finish
+with scrolling and clipping, how the tilemap fetches its bytes one character ahead of the beam, and how
+Klive draws the same.
 
 <Callout type="info">
 The pictures are Klive's Next with the tilemap alone on screen (the ULA switched off, the fallback
 colour black), at 128K/+3 timing and 50 Hz. Each picture is written by a test that first checks the
-dots this article describes.
+dots the text describes.
 </Callout>
 
-## Part 1: The map and the tiles
+## The map and the tiles
 
 The tilemap covers the 320 × 256 **wide area** with a grid of **40 columns by 32 rows** of 8 × 8
 cells. What it draws comes from **two separate areas of memory**, each with a start address of its
 own:
 
 1. The **map** says *which* tile goes where. It has one entry per cell, row after row, 40 entries to a
-   row: the number of the tile to draw in the cell and, in a second byte, how to draw it (Part 2). The
-   map holds no dots at all.
+   row: the number of the tile to draw in the cell and, in a second byte, how to draw it (you meet that
+   byte in the attribute byte's section). The map holds no dots at all.
 2. The **tile definitions** say what each tile *looks like*. They hold the tiles' dots, 32 bytes for
    each tile, tile 0 first, then tile 1, and so on. They say nothing about where a tile appears.
 
-The map refers to the tile definitions only by number, so any number of cells can name the same tile,
-and changing one tile's 32 bytes changes every cell that shows it, while changing one map entry
-changes one cell.
-
 <figure>
-<svg viewBox="0 0 700 390" role="img" aria-label="The tilemap's grid over the 320 by 256 wide area: 40 columns by 32 rows of 8 by 8 cells, drawn larger so the cells can be seen, with the ULA's display area dashed inside it. One cell, column 14 of row 9, is highlighted and magnified on the right, its outline matching the cell exactly: it holds a map entry, a tile number and an attribute, and the tile's 8 by 8 dots, each a 4-bit number, come from the tile definitions. The map is stored row after row: the entry of column c in row r is number r times 40 plus c." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
+<svg viewBox="0 0 700 372" role="img" aria-label="The tilemap's grid over the 320 by 256 wide area: 40 columns by 32 rows of 8 by 8 cells, drawn larger so the cells can be seen, with the ULA's display area dashed inside it. One cell, column 14 of row 9, is highlighted and magnified on the right, its outline matching the cell exactly: it holds a map entry, a tile number and an attribute, and the tile's 8 by 8 dots, each a 4-bit number, come from the tile definitions. The map is stored row after row: the entry of column c in row r is number r times 40 plus c." style={{ width: "100%", height: "auto" }}>
   <defs>
     <pattern id="tm-grid" width="10" height="10" patternUnits="userSpaceOnUse">
       <path d="M10,0 V10 H0" fill="none" stroke="#30a46c" strokeOpacity="0.45" strokeWidth="0.7" />
     </pattern>
   </defs>
-  <rect x="20" y="20" width="400" height="320" fill="url(#tm-grid)" stroke="#30a46c" />
-  <rect x="60" y="60" width="320" height="240" fill="none" stroke="currentColor" strokeOpacity="0.55" strokeDasharray="5 3" />
-  <text x="220" y="215" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.85">the ULA's display area</text>
-  <rect x="160" y="110" width="10" height="10" fill="#30a46c" fillOpacity="0.85" stroke="#30a46c" />
-  <line x1="170" y1="110" x2="468" y2="60" stroke="#30a46c" strokeOpacity="0.7" />
-  <line x1="170" y1="120" x2="468" y2="260" stroke="#30a46c" strokeOpacity="0.7" />
-  <rect x="468" y="60" width="200" height="200" fill="#30a46c" fillOpacity="0.08" stroke="#30a46c" strokeWidth="1.5" />
-  <path d="M493,60 V260 M518,60 V260 M543,60 V260 M568,60 V260 M593,60 V260 M618,60 V260 M643,60 V260 M468,85 H668 M468,110 H668 M468,135 H668 M468,160 H668 M468,185 H668 M468,210 H668 M468,235 H668" fill="none" stroke="#30a46c" strokeOpacity="0.4" />
-  <rect x="493" y="85" width="25" height="150" fill="#30a46c" fillOpacity="0.5" />
-  <rect x="493" y="85" width="125" height="25" fill="#30a46c" fillOpacity="0.5" />
-  <rect x="493" y="135" width="100" height="25" fill="#30a46c" fillOpacity="0.5" />
-  <text x="568" y="284" textAnchor="middle" fill="currentColor" fontSize="11">one cell: 8 × 8 dots, 4 bits each</text>
-  <text x="568" y="304" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.8">map entry r × 40 + c:</text>
-  <text x="568" y="320" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.8">tile number, attribute</text>
-  <text x="220" y="362" textAnchor="middle" fill="currentColor" fontSize="11">40 × 32 cells over the wide area (column 14, row 9 highlighted)</text>
+  <rect x="0" y="0" width="400" height="320" fill="url(#tm-grid)" stroke="#30a46c" />
+  <rect x="40" y="40" width="320" height="240" fill="none" stroke="currentColor" strokeOpacity="0.55" strokeDasharray="5 3" />
+  <text x="200" y="200" textAnchor="middle" fill="currentColor" fontSize="15" fillOpacity="0.85">the ULA's display area</text>
+  <rect x="140" y="90" width="10" height="10" fill="#30a46c" fillOpacity="0.85" stroke="#30a46c" />
+  <line x1="150" y1="90" x2="480" y2="20" stroke="#30a46c" strokeOpacity="0.7" />
+  <line x1="150" y1="100" x2="480" y2="240" stroke="#30a46c" strokeOpacity="0.7" />
+  <rect x="480" y="20" width="220" height="220" fill="#30a46c" fillOpacity="0.08" stroke="#30a46c" strokeWidth="1.5" />
+  <path d="M507.5,20 V240 M535,20 V240 M562.5,20 V240 M590,20 V240 M617.5,20 V240 M645,20 V240 M672.5,20 V240 M480,47.5 H700 M480,75 H700 M480,102.5 H700 M480,130 H700 M480,157.5 H700 M480,185 H700 M480,212.5 H700" fill="none" stroke="#30a46c" strokeOpacity="0.4" />
+  <rect x="507.5" y="47.5" width="27.5" height="165" fill="#30a46c" fillOpacity="0.5" />
+  <rect x="507.5" y="47.5" width="137.5" height="27.5" fill="#30a46c" fillOpacity="0.5" />
+  <rect x="507.5" y="102.5" width="110" height="27.5" fill="#30a46c" fillOpacity="0.5" />
+  <text x="590" y="264" textAnchor="middle" fill="currentColor" fontSize="15">one cell: 8 × 8 dots,</text>
+  <text x="590" y="282" textAnchor="middle" fill="currentColor" fontSize="15">4 bits each</text>
+  <text x="590" y="308" textAnchor="middle" fill="currentColor" fontSize="15" fillOpacity="0.8">map entry r × 40 + c:</text>
+  <text x="590" y="326" textAnchor="middle" fill="currentColor" fontSize="15" fillOpacity="0.8">tile number, attribute</text>
+  <text x="200" y="344" textAnchor="middle" fill="currentColor" fontSize="15">40 × 32 cells over the wide area</text>
+  <text x="200" y="362" textAnchor="middle" fill="currentColor" fontSize="15">(column 14, row 9 highlighted)</text>
 </svg>
 <figcaption>The tilemap's grid: 40 × 32 cells over the whole wide area. Each cell is drawn from two places: its entry in the map, which names a tile, and that tile's dots in the tile definitions.</figcaption>
 </figure>
 
-### Where the two areas can be: bank 5 and bank 7
+The map refers to the tile definitions only by number, so any number of cells can name the same tile.
+See what that gives you? change one tile's 32 bytes, and every cell that shows it changes at
+once; change one map entry, and only that one cell changes. A whole meadow of grass can sway in the wind
+from a single 32-byte write.
+
+## Bank 5 and bank 7: where the tables can live
 
 The map and the tile definitions cannot be anywhere in the Next's memory. The tilemap reads its bytes
 through the same memory port as the ULA, and that port reaches only one kind of memory: the **block
 RAM inside the FPGA**, which holds exactly **24K**: all 16K of **bank 5**, and the first 8K of **bank
 7**. The rest of the Next's RAM, the main memory outside the FPGA, is out of the tilemap's reach; that
-is why its areas are so small. (The [ULA article](/en/under-the-hood/emulator-internals/next-display/ula/#part-1-the-same-ula-new-memory)
+is why its areas are so small. (The ULA chapter's
+[The same ULA, new memory](/en/under-the-hood/emulator-internals/next-display/ula/#the-same-ula-new-memory)
 explains why the screen memory is kept inside the FPGA.)
 
 For the CPU, this block RAM simply *is* banks 5 and 7. Counted in the 8K pages of the Next's MMU,
@@ -99,40 +103,42 @@ there is no copy of these pages in the main memory. Bank 7's second half, page 1
 memory, and the tilemap cannot use it.
 
 <figure>
-<svg viewBox="0 0 700 280" role="img" aria-label="The block RAM inside the FPGA, which holds 24 kilobytes: bank 5, which is 8K pages 10 and 11, and the first half of bank 7, page 14. It has two ports. The CPU uses one, whenever it reads or writes page 10, 11 or 14, wherever they are paged in; bank 5 is normally at 4000 to 7FFF. The ULA and the tilemap use the other. The second half of bank 7, page 15, is in the main memory outside the FPGA, and the tilemap cannot reach it." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
+<svg viewBox="0 0 700 320" role="img" aria-label="The block RAM inside the FPGA, which holds 24 kilobytes: bank 5, which is 8K pages 10 and 11, and the first half of bank 7, page 14. It has two ports. The CPU uses one, whenever it reads or writes page 10, 11 or 14, wherever they are paged in; bank 5 is normally at 4000 to 7FFF. The ULA and the tilemap use the other. The second half of bank 7, page 15, is in the main memory outside the FPGA, and the tilemap cannot reach it." style={{ width: "100%", height: "auto" }}>
   <defs>
     <pattern id="tm-hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
       <line x1="0" y1="0" x2="0" y2="8" stroke="currentColor" strokeOpacity="0.3" strokeWidth="2" />
     </pattern>
     <marker id="tm-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-      <path d="M0,0 L10,5 L0,10 z" fill="currentColor" fillOpacity="0.6" />
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
     </marker>
   </defs>
-  <rect x="170" y="20" width="360" height="180" rx="8" fill="currentColor" fillOpacity="0.04" stroke="currentColor" strokeOpacity="0.5" />
-  <text x="350" y="42" textAnchor="middle" fill="currentColor" fontSize="12" fontWeight="600">block RAM inside the FPGA: 24K</text>
-  <rect x="190" y="60" width="160" height="40" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" />
-  <text x="270" y="85" textAnchor="middle" fill="currentColor" fontSize="11">page 10</text>
-  <rect x="350" y="60" width="160" height="40" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" />
-  <text x="430" y="85" textAnchor="middle" fill="currentColor" fontSize="11">page 11</text>
-  <text x="350" y="116" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.85">bank 5: 16K (normally at $4000–$7FFF)</text>
-  <rect x="190" y="132" width="160" height="40" fill="#30a46c" fillOpacity="0.25" stroke="#30a46c" />
-  <text x="270" y="157" textAnchor="middle" fill="currentColor" fontSize="11">page 14</text>
-  <text x="270" y="188" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.85">bank 7, first 8K</text>
-  <rect x="20" y="70" width="110" height="60" rx="6" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.5" />
-  <text x="75" y="98" textAnchor="middle" fill="currentColor" fontSize="12" fontWeight="600">CPU</text>
-  <text x="75" y="116" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">pages 10, 11, 14</text>
-  <line x1="130" y1="100" x2="168" y2="100" stroke="currentColor" strokeOpacity="0.6" markerEnd="url(#tm-arrow)" />
-  <text x="150" y="92" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">port 1</text>
-  <rect x="570" y="70" width="110" height="60" rx="6" fill="#30a46c" fillOpacity="0.08" stroke="#30a46c" />
-  <text x="625" y="96" textAnchor="middle" fill="currentColor" fontSize="12" fontWeight="600">ULA</text>
-  <text x="625" y="114" textAnchor="middle" fill="currentColor" fontSize="12" fontWeight="600">+ tilemap</text>
-  <line x1="570" y1="100" x2="532" y2="100" stroke="currentColor" strokeOpacity="0.6" markerEnd="url(#tm-arrow)" />
-  <text x="550" y="92" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">port 2</text>
-  <rect x="350" y="226" width="160" height="34" fill="url(#tm-hatch)" stroke="currentColor" strokeOpacity="0.45" />
-  <text x="430" y="248" textAnchor="middle" fill="currentColor" fontSize="11">page 15</text>
-  <text x="530" y="240" textAnchor="start" fill="currentColor" fontSize="11">bank 7, second 8K:</text>
-  <text x="530" y="256" textAnchor="start" fill="currentColor" fontSize="11">main memory, out of reach</text>
-  <text x="170" y="248" textAnchor="start" fill="currentColor" fontSize="11" fillOpacity="0.8">outside the FPGA:</text>
+  <rect x="180" y="10" width="340" height="226" rx="8" fill="currentColor" fillOpacity="0.04" stroke="currentColor" strokeOpacity="0.5" />
+  <text x="350" y="38" textAnchor="middle" fill="currentColor" fontSize="16.5" fontWeight="600">block RAM inside the FPGA: 24K</text>
+  <rect x="200" y="56" width="150" height="44" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" />
+  <text x="275" y="83" textAnchor="middle" fill="currentColor" fontSize="15">page 10</text>
+  <rect x="350" y="56" width="150" height="44" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" />
+  <text x="425" y="83" textAnchor="middle" fill="currentColor" fontSize="15">page 11</text>
+  <text x="350" y="122" textAnchor="middle" fill="currentColor" fontSize="15" fillOpacity="0.85">bank 5: 16K (normally at $4000–$7FFF)</text>
+  <rect x="200" y="144" width="150" height="44" fill="#30a46c" fillOpacity="0.25" stroke="#30a46c" />
+  <text x="275" y="171" textAnchor="middle" fill="currentColor" fontSize="15">page 14</text>
+  <text x="275" y="212" textAnchor="middle" fill="currentColor" fontSize="15" fillOpacity="0.85">bank 7, first 8K</text>
+  <rect x="0" y="80" width="120" height="76" rx="6" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.5" />
+  <text x="60" y="106" textAnchor="middle" fill="currentColor" fontSize="16.5" fontWeight="600">CPU</text>
+  <text x="60" y="126" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.8">pages 10,</text>
+  <text x="60" y="143" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.8">11, 14</text>
+  <line x1="120" y1="118" x2="178" y2="118" stroke="currentColor" strokeWidth="1.8" strokeOpacity="0.7" markerEnd="url(#tm-arrow)" />
+  <text x="150" y="108" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.8">port 1</text>
+  <rect x="580" y="80" width="120" height="76" rx="6" fill="#30a46c" fillOpacity="0.08" stroke="#30a46c" />
+  <text x="640" y="113" textAnchor="middle" fill="currentColor" fontSize="16.5" fontWeight="600">ULA</text>
+  <text x="640" y="133" textAnchor="middle" fill="currentColor" fontSize="16.5" fontWeight="600">+ tilemap</text>
+  <line x1="580" y1="118" x2="522" y2="118" stroke="currentColor" strokeWidth="1.8" strokeOpacity="0.7" markerEnd="url(#tm-arrow)" />
+  <text x="550" y="108" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.8">port 2</text>
+  <text x="200" y="285" textAnchor="start" fill="currentColor" fontSize="15" fillOpacity="0.8">outside the FPGA:</text>
+  <rect x="350" y="258" width="150" height="44" fill="url(#tm-hatch)" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="425" y="285" textAnchor="middle" fill="currentColor" fontSize="15">page 15</text>
+  <text x="514" y="270" textAnchor="start" fill="currentColor" fontSize="15">bank 7, second 8K:</text>
+  <text x="514" y="288" textAnchor="start" fill="currentColor" fontSize="15">main memory,</text>
+  <text x="514" y="306" textAnchor="start" fill="currentColor" fontSize="15">out of reach</text>
 </svg>
 <figcaption>The memory the tilemap can use: 24K of block RAM, bank 5 and the first half of bank 7. The CPU reaches the same bytes through the other port.</figcaption>
 </figure>
@@ -154,23 +160,25 @@ The two areas choose their bank independently: the map can be in bank 7 and the 
 other way round. An area that runs past the end of its bank continues from the bank's start: past 16K
 in bank 5, past 8K in bank 7.
 
-### How big the two areas are
+## How big the two tables are
 
-The size of each area is not fixed: it follows from four choices a program makes in the Tilemap Control
-register, **NextReg `$6B`**. Each is explained in its own part below; here is what each does to the
-memory.
+The size of each area is not fixed: it follows from four choices your program makes in the Tilemap
+Control register, **NextReg `$6B`**. Each gets its own section further on; here is only what each does to
+the memory.
 
 - **A map entry is 2 bytes or 1.** Normally an entry is two bytes: the tile number, and an
   **attribute** byte that says how to draw the tile (its colours, mirroring, rotation). When every
   tile can be drawn the same way, a program can drop the attribute byte and use one shared attribute
-  for all tiles; each entry is then **1 byte**, the tile number alone (Part 2).
+  for all tiles; each entry is then **1 byte**, the tile number alone (see the attribute byte's section).
 - **The grid is 40 or 80 columns.** 40 × 32 is 1,280 cells. In **80-column** mode the cells are half as
-  wide and there are 80 × 32 = 2,560 of them, so the map holds twice as many entries (Part 6).
+  wide and there are 80 × 32 = 2,560 of them, so the map holds twice as many entries (see 40 or 80
+  columns).
 - **A tile is 32 bytes or 8.** A normal tile has 8 × 8 dots of **4 bits** each, two dots in a byte: 8
   rows of 4 bytes, **32 bytes**. In **text mode** a dot is a single bit, as in the Spectrum's font: 8
-  rows of 1 byte, **8 bytes** a tile (Part 5).
+  rows of 1 byte, **8 bytes** a tile (see Text mode).
 - **There are 256 tiles or 512.** A tile number is a byte, 0–255; in **512-tile** mode the attribute
-  lends a ninth bit, and the tile definitions can hold twice as many tiles (Part 2).
+  lends a ninth bit, and the tile definitions can hold twice as many tiles (see the attribute byte's
+  section).
 
 The size of each area is then a product:
 
@@ -182,41 +190,48 @@ The size of each area is then a product:
 That has to fit in bank 5, which is only 16K, and the ULA's screen already uses 6.75K of it:
 
 <figure>
-<svg viewBox="0 0 700 300" role="img" aria-label="The sizes of the tilemap's tables against the 16 kilobytes of bank 5, to scale. The ULA's screen: 6,912 bytes. A 40 by 32 map of 1-byte entries: 1,280 bytes; of 2-byte entries: 2,560. An 80 by 32 map of 2-byte entries: 5,120 bytes. 256 text-mode tiles of 8 bytes: 2,048 bytes. 256 tiles of 32 bytes: 8,192 bytes. 512 tiles of 32 bytes: 16,384 bytes, the whole bank." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
-  <rect x="200" y="20" width="480" height="236" fill="none" stroke="currentColor" strokeOpacity="0.15" />
-  <line x1="680" y1="20" x2="680" y2="256" stroke="currentColor" strokeOpacity="0.5" strokeDasharray="4 3" />
-  <text x="680" y="272" textAnchor="end" fill="currentColor" fontSize="10" fillOpacity="0.8">16K: all of bank 5</text>
-  <text x="192" y="44" textAnchor="end" fill="currentColor" fontSize="11">the ULA's screen</text>
-  <rect x="200" y="30" width="202.5" height="22" fill="#3b82f6" fillOpacity="0.4" stroke="#3b82f6" />
-  <text x="410" y="45" textAnchor="start" fill="currentColor" fontSize="10">6,912</text>
-  <text x="192" y="76" textAnchor="end" fill="currentColor" fontSize="11">map: 40 × 32, 1-byte entries</text>
-  <rect x="200" y="62" width="37.5" height="22" fill="#30a46c" fillOpacity="0.4" stroke="#30a46c" />
-  <text x="245" y="77" textAnchor="start" fill="currentColor" fontSize="10">1,280</text>
-  <text x="192" y="108" textAnchor="end" fill="currentColor" fontSize="11">map: 40 × 32, 2-byte entries</text>
-  <rect x="200" y="94" width="75" height="22" fill="#30a46c" fillOpacity="0.4" stroke="#30a46c" />
-  <text x="283" y="109" textAnchor="start" fill="currentColor" fontSize="10">2,560</text>
-  <text x="192" y="140" textAnchor="end" fill="currentColor" fontSize="11">map: 80 × 32, 2-byte entries</text>
-  <rect x="200" y="126" width="150" height="22" fill="#30a46c" fillOpacity="0.4" stroke="#30a46c" />
-  <text x="358" y="141" textAnchor="start" fill="currentColor" fontSize="10">5,120</text>
-  <text x="192" y="172" textAnchor="end" fill="currentColor" fontSize="11">256 text-mode tiles, 8 bytes</text>
-  <rect x="200" y="158" width="60" height="22" fill="#30a46c" fillOpacity="0.25" stroke="#30a46c" />
-  <text x="268" y="173" textAnchor="start" fill="currentColor" fontSize="10">2,048</text>
-  <text x="192" y="204" textAnchor="end" fill="currentColor" fontSize="11">256 tiles, 32 bytes each</text>
-  <rect x="200" y="190" width="240" height="22" fill="#30a46c" fillOpacity="0.25" stroke="#30a46c" />
-  <text x="448" y="205" textAnchor="start" fill="currentColor" fontSize="10">8,192</text>
-  <text x="192" y="236" textAnchor="end" fill="currentColor" fontSize="11">512 tiles, 32 bytes each</text>
-  <rect x="200" y="222" width="480" height="22" fill="#30a46c" fillOpacity="0.25" stroke="#30a46c" />
-  <text x="440" y="237" textAnchor="middle" fill="currentColor" fontSize="10">16,384</text>
-  <text x="350" y="292" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.8">each bar to scale, in bytes</text>
+<svg viewBox="0 0 700 366" role="img" aria-label="The sizes of the tilemap's tables against the 16 kilobytes of bank 5, to scale. The ULA's screen: 6,912 bytes. A 40 by 32 map of 1-byte entries: 1,280 bytes; of 2-byte entries: 2,560. An 80 by 32 map of 2-byte entries: 5,120 bytes. 256 text-mode tiles of 8 bytes: 2,048 bytes. 256 tiles of 32 bytes: 8,192 bytes. 512 tiles of 32 bytes: 16,384 bytes, the whole bank." style={{ width: "100%", height: "auto" }}>
+  <rect x="140" y="10" width="559" height="326" fill="none" stroke="currentColor" strokeOpacity="0.15" />
+  <line x1="699" y1="10" x2="699" y2="336" stroke="currentColor" strokeOpacity="0.5" strokeDasharray="4 3" />
+  <text x="130" y="31" textAnchor="end" fill="currentColor" fontSize="15">the ULA's</text>
+  <text x="130" y="49" textAnchor="end" fill="currentColor" fontSize="15">screen</text>
+  <rect x="140" y="20" width="236.3" height="30" fill="#3b82f6" fillOpacity="0.4" stroke="#3b82f6" />
+  <text x="384" y="40" textAnchor="start" fill="currentColor" fontSize="13.5">6,912</text>
+  <text x="130" y="77" textAnchor="end" fill="currentColor" fontSize="15">map: 40 × 32,</text>
+  <text x="130" y="95" textAnchor="end" fill="currentColor" fontSize="15">1-byte entries</text>
+  <rect x="140" y="66" width="43.8" height="30" fill="#30a46c" fillOpacity="0.4" stroke="#30a46c" />
+  <text x="192" y="86" textAnchor="start" fill="currentColor" fontSize="13.5">1,280</text>
+  <text x="130" y="123" textAnchor="end" fill="currentColor" fontSize="15">map: 40 × 32,</text>
+  <text x="130" y="141" textAnchor="end" fill="currentColor" fontSize="15">2-byte entries</text>
+  <rect x="140" y="112" width="87.5" height="30" fill="#30a46c" fillOpacity="0.4" stroke="#30a46c" />
+  <text x="236" y="132" textAnchor="start" fill="currentColor" fontSize="13.5">2,560</text>
+  <text x="130" y="169" textAnchor="end" fill="currentColor" fontSize="15">map: 80 × 32,</text>
+  <text x="130" y="187" textAnchor="end" fill="currentColor" fontSize="15">2-byte entries</text>
+  <rect x="140" y="158" width="175" height="30" fill="#30a46c" fillOpacity="0.4" stroke="#30a46c" />
+  <text x="323" y="178" textAnchor="start" fill="currentColor" fontSize="13.5">5,120</text>
+  <text x="130" y="215" textAnchor="end" fill="currentColor" fontSize="15">256 text-mode</text>
+  <text x="130" y="233" textAnchor="end" fill="currentColor" fontSize="15">tiles, 8 bytes</text>
+  <rect x="140" y="204" width="70" height="30" fill="#30a46c" fillOpacity="0.25" stroke="#30a46c" />
+  <text x="218" y="224" textAnchor="start" fill="currentColor" fontSize="13.5">2,048</text>
+  <text x="130" y="261" textAnchor="end" fill="currentColor" fontSize="15">256 tiles,</text>
+  <text x="130" y="279" textAnchor="end" fill="currentColor" fontSize="15">32 bytes each</text>
+  <rect x="140" y="250" width="280" height="30" fill="#30a46c" fillOpacity="0.25" stroke="#30a46c" />
+  <text x="428" y="270" textAnchor="start" fill="currentColor" fontSize="13.5">8,192</text>
+  <text x="130" y="307" textAnchor="end" fill="currentColor" fontSize="15">512 tiles,</text>
+  <text x="130" y="325" textAnchor="end" fill="currentColor" fontSize="15">32 bytes each</text>
+  <rect x="140" y="296" width="559" height="30" fill="#30a46c" fillOpacity="0.25" stroke="#30a46c" />
+  <text x="420" y="316" textAnchor="middle" fill="currentColor" fontSize="13.5">16,384</text>
+  <text x="140" y="358" textAnchor="start" fill="currentColor" fontSize="13.5" fillOpacity="0.8">each bar to scale, in bytes</text>
+  <text x="700" y="358" textAnchor="end" fill="currentColor" fontSize="13.5" fillOpacity="0.8">16K: all of bank 5</text>
 </svg>
 <figcaption>The tilemap's tables against bank 5. A full map and 256 tiles do not fit in bank 5 beside the ULA's screen.</figcaption>
 </figure>
 
 The sums are tight. A map of 2,560 bytes and 256 tiles of 8,192 come to 10,752 bytes, and with the
 ULA's 6,912 that is 17,664: more than bank 5 holds. This is where bank 7 earns its place: its 8K is
-exactly the size of 256 tiles.
+exactly the size of 256 tiles. Coincidence? I doubt it.
 
-### Layouts that fit
+## Layouts that fit
 
 Here are four common ways to share the 24K, each with the values for NextRegs `$6E` and `$6F`. Bank 5's
 addresses are those the CPU normally sees; bank 7's assume it is paged in at `$C000`. The bytes right
@@ -233,59 +248,60 @@ suit a program that does not return to BASIC.
 Two of these give something up. The first uses bank 7's first half, which is also where a 128K program
 keeps its **shadow screen** (port `$7FFD` bit 3): the two cannot be used at once. The third fills bank
 5 with tiles, so the ULA, which reads bank 5 for its own screen, would show tile bytes as a scrambled
-picture; a program switches it off with bit 7 of the ULA Control register, NextReg `$68`. The text
+picture; your program switches it off with bit 7 of the ULA Control register, NextReg `$68`. The text
 layout's tile definitions start at `$6F00` but hold only characters 32–127: a character's tile number is
 its code, so tiles 0–31 are simply never used, and their 256 bytes may hold anything.
 
-### A trap: moving a setup from bank 5 to bank 7
+## A trap: moving a setup from bank 5 to bank 7
 
-The 8K limit of bank 7 is easy to forget, because to the CPU bank 7 looks like any other 16K bank.
-Here is how it catches a program out.
+Let me warn you about this one. The 8K limit of bank 7 is easy to forget, because to the CPU bank 7
+looks like any other 16K bank. Here is how it catches a program out.
 
-Suppose a program has the map at `$4000` and the tile definitions at `$6000`, both in bank 5: NextReg
+Suppose your program has the map at `$4000` and the tile definitions at `$6000`, both in bank 5: NextReg
 `$6E` is `$00` (bank 5, offset 0) and NextReg `$6F` is `$20` (bank 5, offset 32 × 256 = 8K). It works.
 Now the program copies all of bank 5 into bank 7, byte for byte, to free bank 5 for something else, and
-switches both areas to bank 7 with the same offsets: `$6E` = `$80` and `$6F` = `$A0`.
+switches both areas to bank 7 with the same offsets: `$6E` = `$80` and `$6F` = `$A0`. What could possibly
+go wrong?
 
 <figure>
-<svg viewBox="0 0 700 300" role="img" aria-label="Moving a tilemap setup from bank 5 to bank 7 by copying the bank. Top: bank 5, all block RAM: the map at 4000 to 5FFF, the tiles at 6000 to 7FFF; NextReg 6E = 00 points at the map, NextReg 6F = 20 at the tiles, and both work. The bank is copied into bank 7. Bottom: the map's copy lands in page 14, which is block RAM, and NextReg 6E = 80 finds it. The tiles' copy lands in page 15, which is main memory, out of the tilemap's reach. NextReg 6F = A0 asks for offset 8K in bank 7, which wraps round to the start of page 14: the tilemap reads the map's bytes as tile definitions." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
+<svg viewBox="0 0 700 304" role="img" aria-label="Moving a tilemap setup from bank 5 to bank 7 by copying the bank. Top: bank 5, all block RAM: the map at 4000 to 5FFF, the tiles at 6000 to 7FFF; NextReg 6E = 00 points at the map, NextReg 6F = 20 at the tiles, and both work. The bank is copied into bank 7. Bottom: the map's copy lands in page 14, which is block RAM, and NextReg 6E = 80 finds it. The tiles' copy lands in page 15, which is main memory, out of the tilemap's reach. NextReg 6F = A0 asks for offset 8K in bank 7, which wraps round to the start of page 14: the tilemap reads the map's bytes as tile definitions." style={{ width: "100%", height: "auto" }}>
   <defs>
     <pattern id="tm-hatch2" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
       <line x1="0" y1="0" x2="0" y2="8" stroke="currentColor" strokeOpacity="0.3" strokeWidth="2" />
     </pattern>
     <marker id="tm-arrow2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-      <path d="M0,0 L10,5 L0,10 z" fill="currentColor" fillOpacity="0.6" />
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
     </marker>
     <marker id="tm-arrow3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M0,0 L10,5 L0,10 z" fill="#e5484d" />
     </marker>
   </defs>
-  <text x="140" y="70" textAnchor="end" fill="currentColor" fontSize="12" fontWeight="600">bank 5</text>
-  <text x="140" y="86" textAnchor="end" fill="currentColor" fontSize="10" fillOpacity="0.8">block RAM</text>
-  <rect x="150" y="54" width="200" height="40" fill="#30a46c" fillOpacity="0.3" stroke="#30a46c" />
-  <text x="250" y="72" textAnchor="middle" fill="currentColor" fontSize="11">the map</text>
-  <text x="250" y="87" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">$4000–$5FFF</text>
-  <rect x="350" y="54" width="200" height="40" fill="#30a46c" fillOpacity="0.15" stroke="#30a46c" />
-  <text x="450" y="72" textAnchor="middle" fill="currentColor" fontSize="11">the tiles</text>
-  <text x="450" y="87" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">$6000–$7FFF</text>
-  <text x="150" y="40" textAnchor="start" fill="currentColor" fontSize="11">$6E = $00 ✓</text>
-  <text x="350" y="40" textAnchor="start" fill="currentColor" fontSize="11">$6F = $20 ✓</text>
-  <line x1="250" y1="98" x2="250" y2="168" stroke="currentColor" strokeOpacity="0.5" strokeDasharray="4 3" markerEnd="url(#tm-arrow2)" />
-  <line x1="450" y1="98" x2="450" y2="168" stroke="currentColor" strokeOpacity="0.5" strokeDasharray="4 3" markerEnd="url(#tm-arrow2)" />
-  <text x="350" y="138" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.8">copied byte for byte</text>
-  <text x="140" y="190" textAnchor="end" fill="currentColor" fontSize="12" fontWeight="600">bank 7</text>
-  <rect x="150" y="172" width="200" height="40" fill="#30a46c" fillOpacity="0.3" stroke="#30a46c" />
-  <text x="250" y="190" textAnchor="middle" fill="currentColor" fontSize="11">page 14: the map's copy</text>
-  <text x="250" y="205" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">block RAM</text>
-  <rect x="350" y="172" width="200" height="40" fill="url(#tm-hatch2)" stroke="currentColor" strokeOpacity="0.45" />
-  <text x="450" y="190" textAnchor="middle" fill="currentColor" fontSize="11">page 15: the tiles' copy</text>
-  <text x="450" y="205" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">main memory: out of reach</text>
-  <text x="140" y="226" textAnchor="end" fill="currentColor" fontSize="11">$6E = $80 ✓</text>
-  <text x="140" y="241" textAnchor="end" fill="currentColor" fontSize="11">finds the map</text>
-  <path d="M350,214 C350,282 168,282 164,218" fill="none" stroke="#e5484d" strokeWidth="1.5" markerEnd="url(#tm-arrow3)" />
-  <text x="560" y="250" textAnchor="start" fill="#e5484d" fontSize="11">$6F = $A0 ✗</text>
-  <text x="560" y="266" textAnchor="start" fill="#e5484d" fontSize="11">8K into bank 7</text>
-  <text x="560" y="282" textAnchor="start" fill="#e5484d" fontSize="11">wraps to page 14</text>
+  <text x="130" y="68" textAnchor="end" fill="currentColor" fontSize="16.5" fontWeight="600">bank 5</text>
+  <text x="130" y="86" textAnchor="end" fill="currentColor" fontSize="13.5" fillOpacity="0.8">block RAM</text>
+  <text x="140" y="30" textAnchor="start" fill="currentColor" fontSize="15">$6E = $00 ✓</text>
+  <text x="420" y="30" textAnchor="start" fill="currentColor" fontSize="15">$6F = $20 ✓</text>
+  <rect x="140" y="44" width="280" height="52" fill="#30a46c" fillOpacity="0.3" stroke="#30a46c" />
+  <text x="280" y="66" textAnchor="middle" fill="currentColor" fontSize="15">the map</text>
+  <text x="280" y="85" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.8">$4000–$5FFF</text>
+  <rect x="420" y="44" width="279" height="52" fill="#30a46c" fillOpacity="0.15" stroke="#30a46c" />
+  <text x="560" y="66" textAnchor="middle" fill="currentColor" fontSize="15">the tiles</text>
+  <text x="560" y="85" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.8">$6000–$7FFF</text>
+  <line x1="280" y1="100" x2="280" y2="168" stroke="currentColor" strokeWidth="1.8" strokeOpacity="0.6" strokeDasharray="4 3" markerEnd="url(#tm-arrow2)" />
+  <line x1="560" y1="100" x2="560" y2="168" stroke="currentColor" strokeWidth="1.8" strokeOpacity="0.6" strokeDasharray="4 3" markerEnd="url(#tm-arrow2)" />
+  <text x="420" y="139" textAnchor="middle" fill="currentColor" fontSize="15" fillOpacity="0.8">copied byte for byte</text>
+  <text x="130" y="203" textAnchor="end" fill="currentColor" fontSize="16.5" fontWeight="600">bank 7</text>
+  <rect x="140" y="172" width="280" height="52" fill="#30a46c" fillOpacity="0.3" stroke="#30a46c" />
+  <text x="280" y="194" textAnchor="middle" fill="currentColor" fontSize="15">page 14: the map's copy</text>
+  <text x="280" y="213" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.8">block RAM</text>
+  <rect x="420" y="172" width="279" height="52" fill="url(#tm-hatch2)" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="560" y="194" textAnchor="middle" fill="currentColor" fontSize="15">page 15: the tiles' copy</text>
+  <text x="560" y="213" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.8">main memory: out of reach</text>
+  <text x="130" y="246" textAnchor="end" fill="currentColor" fontSize="15">$6E = $80 ✓</text>
+  <text x="130" y="264" textAnchor="end" fill="currentColor" fontSize="15">finds the map</text>
+  <path d="M420,226 V274 H156 V230" fill="none" stroke="#e5484d" strokeWidth="1.8" strokeLinejoin="round" markerEnd="url(#tm-arrow3)" />
+  <text x="440" y="252" textAnchor="start" fill="#e5484d" fontSize="15">$6F = $A0 ✗</text>
+  <text x="440" y="270" textAnchor="start" fill="#e5484d" fontSize="15">8K into bank 7</text>
+  <text x="440" y="288" textAnchor="start" fill="#e5484d" fontSize="15">wraps to page 14</text>
 </svg>
 <figcaption>Copying bank 5 into bank 7 moves the tiles into page 15, where the tilemap cannot read. Asking for them 8K into bank 7 wraps round to the start of page 14, the map.</figcaption>
 </figure>
@@ -297,51 +313,54 @@ bank 7, does not reach page 15 anyway: only the low 13 bits of the address are u
 wraps round to 0, the start of page 14. The tilemap reads its tile definitions **from the map's bytes**:
 tiles 0–79 are made of the 2,560 bytes of the map, and tiles 80–255 of whatever else was copied from
 bank 5's `$4A00`–`$5FFF`, often the ULA's screen. The screen shows the right arrangement of cells, each
-drawn as noise. (Klive's Next draws exactly this: with `$A0`, the picture is identical to the one with
-`$80`.)
+drawn as noise. Every tile is in the right place, and every one of them is garbage. (Klive's Next draws
+exactly this: with `$A0`, the picture is identical to the one with `$80`.)
 
 What works instead is to put everything the tilemap reads into bank 5 or page 14, never page 15:
 
 - **The tiles in bank 7, the map in bank 5.** Copy the 8K of tile definitions to the start of bank 7
   and set NextReg `$6F` to `$80`; leave the map in bank 5 with NextReg `$6E` at `$00`. This is the
-  "256 tiles beside the ULA" layout above.
+  "256 tiles beside the ULA" layout of Layouts that fit.
 - **Both in bank 7, if they fit in 8K together.** A map of 2,560 bytes and 176 tiles of 32 bytes come
   to exactly 8,192: for instance the map at offset 0 (`$6E` = `$80`) and the tiles at offset 10, right
   after the map's 2,560 bytes (`$6F` = `$8A`).
 
 After a reset, NextReg `$6E` is `$2C` and NextReg `$6F` is `$0C`: the map at `$6C00` and the tiles at
-`$4C00`, inside the ULA's bitmap. Programs set both before they switch the tilemap on.
+`$4C00`, inside the ULA's bitmap. So set both yourself before you switch the tilemap on.
 
-## Part 2: The attribute byte
+## The attribute byte
 
 A map entry is **two bytes**: the tile number, 0–255, and an **attribute** byte that says how to draw
 it:
 
 <figure>
-<svg viewBox="0 0 700 220" role="img" aria-label="A tilemap entry: two bytes. The first is the tile number, 0 to 255. The second is the attribute: bits 7 to 4 the palette offset, bit 3 X mirror, bit 2 Y mirror, bit 1 rotate 90 degrees clockwise, bit 0 ULA over tilemap, or in 512-tile mode the ninth bit of the tile number. With NextReg 6B bit 5 set, the entry is only the tile number, and every tile uses the attribute in NextReg 6C." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
-  <text x="170" y="26" textAnchor="middle" fill="currentColor" fontSize="12" fontWeight="600">byte 0: the tile number</text>
-  <rect x="50" y="38" width="240" height="34" fill="#30a46c" fillOpacity="0.35" stroke="#30a46c" />
-  <text x="170" y="60" textAnchor="middle" fill="currentColor" fontSize="11">tile 0–255</text>
-  <text x="490" y="26" textAnchor="middle" fill="currentColor" fontSize="12" fontWeight="600">byte 1: the attribute</text>
-  <rect x="330" y="38" width="120" height="34" fill="#30a46c" fillOpacity="0.2" stroke="#30a46c" />
-  <text x="390" y="60" textAnchor="middle" fill="currentColor" fontSize="11">palette offset</text>
-  <rect x="450" y="38" width="40" height="34" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.45" />
-  <text x="470" y="60" textAnchor="middle" fill="currentColor" fontSize="11">X</text>
-  <rect x="490" y="38" width="40" height="34" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.45" />
-  <text x="510" y="60" textAnchor="middle" fill="currentColor" fontSize="11">Y</text>
-  <rect x="530" y="38" width="40" height="34" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.45" />
-  <text x="550" y="60" textAnchor="middle" fill="currentColor" fontSize="11">R</text>
-  <rect x="570" y="38" width="40" height="34" fill="#3b82f6" fillOpacity="0.2" stroke="#3b82f6" />
-  <text x="590" y="60" textAnchor="middle" fill="currentColor" fontSize="11">U</text>
-  <text x="390" y="90" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">bits 7–4</text>
-  <text x="470" y="90" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">3</text>
-  <text x="510" y="90" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">2</text>
-  <text x="550" y="90" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">1</text>
-  <text x="590" y="90" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">0</text>
-  <text x="330" y="126" textAnchor="start" fill="currentColor" fontSize="11">X: mirror across · Y: mirror down · R: rotate 90° clockwise</text>
-  <text x="330" y="146" textAnchor="start" fill="currentColor" fontSize="11">U: the ULA over this tile, or tile bit 8 in 512-tile mode</text>
-  <text x="350" y="190" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.8">with NextReg $6B bit 5, an entry is the tile number only, and NextReg $6C</text>
-  <text x="350" y="208" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.8">is the attribute of every tile: half the map, the same look everywhere</text>
+<svg viewBox="0 0 700 266" role="img" aria-label="A tilemap entry: two bytes. The first is the tile number, 0 to 255. The second is the attribute: bits 7 to 4 the palette offset, bit 3 X mirror, bit 2 Y mirror, bit 1 rotate 90 degrees clockwise, bit 0 ULA over tilemap, or in 512-tile mode the ninth bit of the tile number. With NextReg 6B bit 5 set, the entry is only the tile number, and every tile uses the attribute in NextReg 6C." style={{ width: "100%", height: "auto" }}>
+  <text x="125" y="24" textAnchor="middle" fill="currentColor" fontSize="16.5" fontWeight="600">byte 0: the tile number</text>
+  <rect x="1" y="38" width="249" height="40" fill="#30a46c" fillOpacity="0.35" stroke="#30a46c" />
+  <text x="125" y="63" textAnchor="middle" fill="currentColor" fontSize="15">tile 0–255</text>
+  <text x="495" y="24" textAnchor="middle" fill="currentColor" fontSize="16.5" fontWeight="600">byte 1: the attribute</text>
+  <rect x="290" y="38" width="170" height="40" fill="#30a46c" fillOpacity="0.2" stroke="#30a46c" />
+  <text x="375" y="63" textAnchor="middle" fill="currentColor" fontSize="15">palette offset</text>
+  <rect x="460" y="38" width="60" height="40" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="490" y="63" textAnchor="middle" fill="currentColor" fontSize="15">X</text>
+  <rect x="520" y="38" width="60" height="40" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="550" y="63" textAnchor="middle" fill="currentColor" fontSize="15">Y</text>
+  <rect x="580" y="38" width="60" height="40" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="610" y="63" textAnchor="middle" fill="currentColor" fontSize="15">R</text>
+  <rect x="640" y="38" width="59" height="40" fill="#3b82f6" fillOpacity="0.2" stroke="#3b82f6" />
+  <text x="670" y="63" textAnchor="middle" fill="currentColor" fontSize="15">U</text>
+  <text x="375" y="98" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.8">bits 7–4</text>
+  <text x="490" y="98" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.8">3</text>
+  <text x="550" y="98" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.8">2</text>
+  <text x="610" y="98" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.8">1</text>
+  <text x="670" y="98" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.8">0</text>
+  <text x="290" y="130" textAnchor="start" fill="currentColor" fontSize="15">X: mirror across</text>
+  <text x="290" y="148" textAnchor="start" fill="currentColor" fontSize="15">Y: mirror down</text>
+  <text x="290" y="166" textAnchor="start" fill="currentColor" fontSize="15">R: rotate 90° clockwise</text>
+  <text x="290" y="184" textAnchor="start" fill="currentColor" fontSize="15">U: the ULA over this tile,</text>
+  <text x="290" y="202" textAnchor="start" fill="currentColor" fontSize="15">or tile bit 8 in 512-tile mode</text>
+  <text x="350" y="236" textAnchor="middle" fill="currentColor" fontSize="15" fillOpacity="0.8">with NextReg $6B bit 5, an entry is the tile number only, and NextReg $6C</text>
+  <text x="350" y="254" textAnchor="middle" fill="currentColor" fontSize="15" fillOpacity="0.8">is the attribute of every tile: half the map, the same look everywhere</text>
 </svg>
 <figcaption>A map entry: the tile number and its attribute byte, or the tile number alone with one attribute for all.</figcaption>
 </figure>
@@ -350,20 +369,20 @@ When every tile can be drawn the same way, the attribute is wasted space. Bit 5 
 register, **NextReg `$6B`**, removes it: each entry is then one byte, the map halves to 1,280 bytes, and
 every tile uses the Default Tilemap Attribute register, **NextReg `$6C`**.
 
-**512 tiles.** Bit 1 of NextReg `$6B` doubles the tile numbers: bit 0 of the attribute becomes the
-ninth bit of the tile number, 0–511, and 512 tiles take the whole of bank 5. The bit no longer says
-"ULA over this tile", so in 512-tile mode every tile is below the ULA unless bit 0 of NextReg `$6B` puts
-the whole tilemap on top (Part 7).
+Need more than 256 tiles? Bit 1 of NextReg `$6B` switches on **512-tile mode**: bit 0 of the attribute
+becomes the ninth bit of the tile number, 0–511, and 512 tiles take the whole of bank 5. The bit no longer
+says "ULA over this tile", so in 512-tile mode every tile is below the ULA unless bit 0 of NextReg `$6B`
+puts the whole tilemap on top (see Above or below the ULA).
 
-## Part 3: A tile's dots
+## A tile's dots
 
 A tile is **8 × 8 dots of 4 bits**: 32 bytes, 4 bytes for each row, two dots in a byte, the high nibble
 on the left. The dot at column *x* of row *y* of tile *t* is in byte *t* × 32 + *y* × 4 + *x* ÷ 2 of the
 tile definitions.
 
 A 4-bit dot is a number 0–15, and the attribute's **palette offset** becomes the high four bits of
-the index into the tilemap palette, as the
-[palette article](/en/under-the-hood/emulator-internals/next-display/palettes/#the-other-layers-a-dot-and-an-offset)
+the index into the tilemap palette, as the palettes chapter's
+[A dot and an offset](/en/under-the-hood/emulator-internals/next-display/palettes/#the-other-layers-a-dot-and-an-offset)
 explains. So one tile can be drawn in any of 16 sets of 16 colours: a red and a blue enemy, or a
 lit and an unlit window, are the same 32 bytes with a different offset. Bit 4 of NextReg `$6B` chooses
 which of the two tilemap palettes the tilemap uses.
@@ -372,46 +391,48 @@ The tilemap's **transparency** is decided on the 4-bit dot before the palette: a
 3–0 of the Tilemap Transparency Index register, **NextReg `$4C`**, `$F` after a reset, is transparent,
 whatever the offset. So the empty parts of a tile let the layers below it show.
 
-## Part 4: Eight orientations
+## Eight orientations
 
-Bits 3–1 of the attribute turn a tile into any of **eight** versions of itself: the eight ways an 8 × 8
-square can be laid down, four turns and their mirror images. One tile drawn eight times, with
-attributes `$00` to `$0E`; the red dot is the tile's top-left dot:
+If you remember one thing about the tilemap, make it this. Bits 3–1 of the attribute turn a tile
+into any of **eight** versions of itself: the eight ways an 8 × 8 square can be laid down, four turns and
+their mirror images. Here is one tile drawn eight times, with attributes `$00` to `$0E`; the red dot is
+the tile's top-left dot:
 
 <figure>
-<svg viewBox="0 0 700 350" role="img" aria-label="One tile, an F with a red dot at its top-left corner, drawn eight times on Klive's Next with attribute bits 3 to 1 set to every combination. Top row: attribute 00 as stored; 02 rotated clockwise, the red dot now top right; 04 mirrored down, red bottom left; 06 rotated, then mirrored down, red bottom right. Bottom row: 08 mirrored across, red top right; 0A rotated, then mirrored across, red top left; 0C mirrored both ways, red bottom right; 0E rotated, then mirrored both ways, red bottom left." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
-  <image x="62" y="10" width="576" height="320" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/tilemap/orientations.webp`} />
-  <rect x="62" y="10" width="576" height="320" fill="none" stroke="currentColor" strokeOpacity="0.35" />
-  <text x="158" y="154" textAnchor="middle" fill="#fff" fontSize="11">$00: as stored</text>
-  <text x="286" y="154" textAnchor="middle" fill="#fff" fontSize="11">$02: rotate</text>
-  <text x="414" y="154" textAnchor="middle" fill="#fff" fontSize="11">$04: Y mirror</text>
-  <text x="542" y="154" textAnchor="middle" fill="#fff" fontSize="11">$06: rotate, Y</text>
-  <text x="158" y="282" textAnchor="middle" fill="#fff" fontSize="11">$08: X mirror</text>
-  <text x="286" y="282" textAnchor="middle" fill="#fff" fontSize="11">$0A: rotate, X</text>
-  <text x="414" y="282" textAnchor="middle" fill="#fff" fontSize="11">$0C: X and Y</text>
-  <text x="542" y="282" textAnchor="middle" fill="#fff" fontSize="11">$0E: all three</text>
+<svg viewBox="0 0 700 389" role="img" aria-label="One tile, an F with a red dot at its top-left corner, drawn eight times on Klive's Next with attribute bits 3 to 1 set to every combination. Top row: attribute 00 as stored; 02 rotated clockwise, the red dot now top right; 04 mirrored down, red bottom left; 06 rotated, then mirrored down, red bottom right. Bottom row: 08 mirrored across, red top right; 0A rotated, then mirrored across, red top left; 0C mirrored both ways, red bottom right; 0E rotated, then mirrored both ways, red bottom left." style={{ width: "100%", height: "auto" }}>
+  <image x="0" y="0" width="700" height="389" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/tilemap/orientations.webp`} />
+  <rect x="0.5" y="0.5" width="699" height="388" fill="none" stroke="currentColor" strokeOpacity="0.35" />
+  <text x="117" y="180" textAnchor="middle" fill="#fff" fontSize="15">$00: as stored</text>
+  <text x="272" y="180" textAnchor="middle" fill="#fff" fontSize="15">$02: rotate</text>
+  <text x="428" y="180" textAnchor="middle" fill="#fff" fontSize="15">$04: Y mirror</text>
+  <text x="583" y="180" textAnchor="middle" fill="#fff" fontSize="15">$06: rotate, Y</text>
+  <text x="117" y="336" textAnchor="middle" fill="#fff" fontSize="15">$08: X mirror</text>
+  <text x="272" y="336" textAnchor="middle" fill="#fff" fontSize="15">$0A: rotate, X</text>
+  <text x="428" y="336" textAnchor="middle" fill="#fff" fontSize="15">$0C: X and Y</text>
+  <text x="583" y="336" textAnchor="middle" fill="#fff" fontSize="15">$0E: all three</text>
 </svg>
-<figcaption>The eight orientations of one tile on the machine. The test that drew them checks the red dot of each against the rule below.</figcaption>
+<figcaption>The eight orientations of one tile on the machine. Follow the red dot: each one lands where the rule below says it must.</figcaption>
 </figure>
 
 The rotate bit always turns the tile **90 degrees clockwise**: there is no setting for the other
 direction or for half a turn, because the mirrors provide those. The rule is: **rotate 90 degrees
-clockwise first, then mirror**. Rotation moves the tile's
-dot (*u*, *v*) to (7 − *v*, *u*); then X mirror takes the column *x* to 7 − *x*, and Y mirror the row *y*
-to 7 − *y*. The two mirrors together are a half turn, 180 degrees, so rotate plus X and Y (`$0E`)
-is 90 + 180 = 270 degrees clockwise: 90 degrees anticlockwise.
+clockwise first, then mirror**. Rotation moves the tile's dot (*u*, *v*) to (7 − *v*, *u*); then X mirror
+takes the column *x* to 7 − *x*, and Y mirror the row *y* to 7 − *y*. The two mirrors together are a half
+turn, 180 degrees, so rotate plus X and Y (`$0E`) is 90 + 180 = 270 degrees clockwise: 90 degrees
+anticlockwise. I always remember it as "turn, then flip".
 
-The hardware does it without moving a single dot. To draw the dot at column *x*, row *y* of the cell,
-it simply reads a different dot of the tile: it turns *x* into 7 − *x* for X mirror (and, because a
-rotation also flips across, for rotate too, the two cancelling when both are set), turns *y* into
-7 − *y* for Y mirror, and for rotate swaps the two before it forms the address. Three bits of the
-attribute change three bits of the address: the transformation costs nothing.
+Now notice how neat the hardware is about it: it does all this without moving a single dot. To draw the
+dot at column *x*, row *y* of the cell, it simply reads a different dot of the tile: it turns *x* into
+7 − *x* for X mirror (and, because a rotation also flips across, for rotate too, the two cancelling when
+both are set), turns *y* into 7 − *y* for Y mirror, and for rotate swaps the two before it forms the
+address. Three bits of the attribute change three bits of the address: the transformation costs nothing.
 
 Why eight? Because game graphics are full of symmetry. A pipe, a wall, a corner, a ladder, a character
 facing left or right: one tile per shape covers every direction, and the tile set, which is the
-expensive part of bank 5, shrinks by up to eight times.
+expensive part of bank 5, shrinks by up to eight times. A corner piece, after all, does not care which
+corner it is in.
 
-## Part 5: Text mode
+## Text mode
 
 Bit 3 of NextReg `$6B` switches the tilemap to **text mode**. A tile becomes a character in the way
 the Spectrum's font is: **1 bit a dot, 8 bytes a tile**, one byte a row, bit 7 on the left. Two
@@ -422,61 +443,62 @@ A dot of one bit cannot pick a colour by itself, so the attribute does more of t
 become a **7-bit palette offset**, and the dot is bit 0 of the index. So every character picks its own
 **pair** of palette entries, even for paper and odd for ink, from 128 pairs. The price is the other
 attribute bits: in text mode there is no mirroring and no rotation, and bit 0 of the attribute is
-colour too.
+colour too. Fair enough: few people want their letters upside down.
 
 Transparency changes with it: a text-mode dot is transparent when its **colour**, after the palette,
 equals the value in the Global Transparency Colour register, NextReg `$14`, the rule the ULA and
-Layer 2 use, and not when its index matches NextReg `$4C`. On the machine, 80 columns of text mode,
-with four colour pairs:
+Layer 2 use, and not when its index matches NextReg `$4C`. Here it is on the machine, 80 columns of text
+mode, with four colour pairs:
 
 <figure>
-<svg viewBox="0 0 700 170" role="img" aria-label="A close-up from Klive's Next of the tilemap in text mode at 80 columns: the left half of the screen, 40 of the 80 characters, four rows. Each row uses another attribute and so another pair of palette entries: white on black, yellow on dark blue, cyan on dark red, green on black. The characters are the Spectrum's font, copied into bank 5 as tiles 32 to 127." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
-  <image x="20" y="10" width="660" height="132" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/tilemap/text.webp`} />
-  <rect x="20" y="10" width="660" height="132" fill="none" stroke="currentColor" strokeOpacity="0.35" />
-  <text x="350" y="162" textAnchor="middle" fill="currentColor" fontSize="12" fontWeight="600">attributes $00, $02, $04, $06: entry pairs 0–1, 2–3, 4–5, 6–7</text>
+<svg viewBox="0 0 700 170" role="img" aria-label="A close-up from Klive's Next of the tilemap in text mode at 80 columns: the left half of the screen, 40 of the 80 characters, four rows. Each row uses another attribute and so another pair of palette entries: white on black, yellow on dark blue, cyan on dark red, green on black. The characters are the Spectrum's font, copied into bank 5 as tiles 32 to 127." style={{ width: "100%", height: "auto" }}>
+  <image x="0" y="0" width="700" height="140" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/tilemap/text.webp`} />
+  <rect x="0.5" y="0.5" width="699" height="139" fill="none" stroke="currentColor" strokeOpacity="0.35" />
+  <text x="350" y="162" textAnchor="middle" fill="currentColor" fontSize="15">attributes $00, $02, $04, $06: entry pairs 0–1, 2–3, 4–5, 6–7</text>
 </svg>
 <figcaption>Text mode at 80 columns: the left half of the screen, four rows. A whole 80 × 32 screen of it is 5,120 bytes of map and 768 bytes of font.</figcaption>
 </figure>
 
-## Part 6: 40 or 80 columns
+## 40 or 80 columns
 
 Bit 6 of NextReg `$6B` doubles the columns to **80 × 32**. The cells keep their 8 dots, but the dots are
 14 MHz dots, half as wide, so 80 cells fill the same 320-dot width as 40 did, 640 dots across, like
 Layer 2's 640 mode. The map doubles to 80 entries a row, 5,120 bytes with attributes.
 
 <figure>
-<svg viewBox="0 0 700 200" role="img" aria-label="The same width of screen in the two column modes. 40 columns: each cell is 8 standard dots wide, and a row of 40 cells fills the 320-dot wide area. 80 columns: each cell is 8 dots of half the width, and 80 cells fill the same width. The map has 40 or 80 entries per row." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
-  <text x="60" y="34" textAnchor="start" fill="currentColor" fontSize="12" fontWeight="600">40 columns: a cell is 8 dots of 7 MHz</text>
-  <rect x="60" y="44" width="580" height="34" fill="none" stroke="#30a46c" />
-  <path d="M132.5,44 v34 M205,44 v34 M277.5,44 v34 M350,44 v34 M422.5,44 v34 M495,44 v34 M567.5,44 v34" fill="none" stroke="#30a46c" />
-  <rect x="60" y="44" width="72.5" height="34" fill="#30a46c" fillOpacity="0.3" />
-  <text x="96" y="66" textAnchor="middle" fill="currentColor" fontSize="10">8 dots</text>
-  <text x="60" y="114" textAnchor="start" fill="currentColor" fontSize="12" fontWeight="600">80 columns: a cell is 8 dots of 14 MHz, half as wide</text>
-  <rect x="60" y="124" width="580" height="34" fill="none" stroke="#30a46c" />
-  <path d="M96.25,124 v34 M132.5,124 v34 M168.75,124 v34 M205,124 v34 M241.25,124 v34 M277.5,124 v34 M313.75,124 v34 M350,124 v34 M386.25,124 v34 M422.5,124 v34 M458.75,124 v34 M495,124 v34 M531.25,124 v34 M567.5,124 v34 M603.75,124 v34" fill="none" stroke="#30a46c" />
-  <rect x="60" y="124" width="36.25" height="34" fill="#30a46c" fillOpacity="0.3" />
-  <text x="350" y="186" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.8">the same width: 8 of 40 cells above, 16 of 80 below</text>
+<svg viewBox="0 0 700 206" role="img" aria-label="The same width of screen in the two column modes. 40 columns: each cell is 8 standard dots wide, and a row of 40 cells fills the 320-dot wide area. 80 columns: each cell is 8 dots of half the width, and 80 cells fill the same width. The map has 40 or 80 entries per row." style={{ width: "100%", height: "auto" }}>
+  <text x="0" y="22" textAnchor="start" fill="currentColor" fontSize="16.5" fontWeight="600">40 columns: a cell is 8 dots of 7 MHz</text>
+  <rect x="1" y="34" width="698" height="40" fill="none" stroke="#30a46c" />
+  <path d="M88.25,34 v40 M175.5,34 v40 M262.75,34 v40 M350,34 v40 M437.25,34 v40 M524.5,34 v40 M611.75,34 v40" fill="none" stroke="#30a46c" />
+  <rect x="1" y="34" width="87.25" height="40" fill="#30a46c" fillOpacity="0.3" />
+  <text x="44.6" y="59" textAnchor="middle" fill="currentColor" fontSize="13.5">8 dots</text>
+  <text x="0" y="114" textAnchor="start" fill="currentColor" fontSize="16.5" fontWeight="600">80 columns: a cell is 8 dots of 14 MHz, half as wide</text>
+  <rect x="1" y="126" width="698" height="40" fill="none" stroke="#30a46c" />
+  <path d="M44.6,126 v40 M88.25,126 v40 M131.9,126 v40 M175.5,126 v40 M219.1,126 v40 M262.75,126 v40 M306.4,126 v40 M350,126 v40 M393.6,126 v40 M437.25,126 v40 M480.9,126 v40 M524.5,126 v40 M568.1,126 v40 M611.75,126 v40 M655.4,126 v40" fill="none" stroke="#30a46c" />
+  <rect x="1" y="126" width="43.6" height="40" fill="#30a46c" fillOpacity="0.3" />
+  <text x="350" y="196" textAnchor="middle" fill="currentColor" fontSize="15" fillOpacity="0.8">the same width: 8 of 40 cells above, 16 of 80 below</text>
 </svg>
 <figcaption>40 and 80 columns over the same width of screen. In 80 columns, each cell is half as wide.</figcaption>
 </figure>
 
-Eighty columns are for text: with text mode, an 80 × 32 screen of characters, the size of a terminal
-or a word processor, from 5K of map and a font. With 4-bit tiles they work as well, at half the width
-per dot.
+Eighty columns are for text: with text mode, you get an 80 × 32 screen of characters, the size of a
+terminal or a word processor, from 5K of map and a font. With 4-bit tiles they work as well, at half the
+width per dot.
 
-## Part 7: Above or below the ULA
+## Above or below the ULA
 
 The tilemap and the ULA are mixed into one layer before the layer order is applied, and the attribute's
 bit 0 decides, tile by tile, which of the two is in front: 0 puts the tile above the ULA, 1 puts the
 ULA above the tile. Bit 0 of NextReg `$6B` overrides every tile and puts the whole tilemap on top. The
-[composition article](/en/under-the-hood/emulator-internals/next-display/composition/#part-3-the-ula-and-the-tilemap-become-one)
+composition chapter's
+[The ULA and the tilemap become one](/en/under-the-hood/emulator-internals/next-display/composition/#the-ula-and-the-tilemap-become-one)
 explains the mix, and its stencil mode.
 
 This is how a game puts a tile-based playfield behind a Spectrum-style status panel, or a text window
-in front of the Spectrum's screen, and why the tilemap and the ULA share one memory: they are, in the
-end, one layer.
+in front of the Spectrum's screen. It is also why the tilemap and the ULA share one memory: they are, in
+the end, one layer.
 
-## Part 8: Scrolling and clipping
+## Scrolling and clipping
 
 The tilemap has its own scroll: an X offset of 10 bits, bits 1–0 of the Tilemap X Scroll MSB register,
 **NextReg `$2F`**, above the Tilemap X Scroll LSB register, **NextReg `$30`**, and a Y offset in the
@@ -490,15 +512,15 @@ Tilemap Offset Y register, **NextReg `$31`**. The picture wraps round at its own
 The grid covers exactly the wide area, so a scroll never shows anything but the map: what leaves on one
 side comes back on the other. A game that scrolls endlessly writes the next column of tiles into the
 map column that has just left the screen, one byte or two per row, 32 rows: 64 bytes for a whole new
-column.
+column. The landscape is a treadmill, and the player never sees the belt.
 
 The tilemap's clip window, the Clip Window Tilemap register, **NextReg `$1B`**, works in the wide
 area: X in units of two 7 MHz dots (four dots in 80 columns), so 0–159 covers the width, and Y one unit a
-line. It starts as 0–159, 0–255, the whole grid, as the
-[big picture](/en/under-the-hood/emulator-internals/next-display/overview/#the-clip-window-a-rectangle-for-each-layer)
+line. It starts as 0–159, 0–255, the whole grid, as
+[the big picture](/en/under-the-hood/emulator-internals/next-display/overview/#clip-windows-a-rectangle-for-each-layer)
 describes.
 
-## Part 9: Fetching a character ahead
+## Fetching a character ahead
 
 The tilemap reads bank 5 through the **same port of the block RAM as the ULA**. The ULA, which needs its
 bytes at exact moments, goes first; the tilemap takes every cycle the ULA does not use. The block RAM
@@ -510,29 +532,29 @@ two bytes, then the tile's row, a read for each dot. When the beam reaches the n
 waiting, and the halves swap.
 
 <figure>
-<svg viewBox="0 0 700 220" role="img" aria-label="The tilemap fetching one character ahead. While cell n is drawn from one half of a 16-dot buffer, the tilemap reads cell n plus 1 into the other half: first its map entry, the tile number and the attribute, then the tile's row, one read per dot. At the cell boundary the halves swap: cell n plus 1 is drawn while cell n plus 2 is fetched." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
-  <text x="60" y="30" textAnchor="start" fill="currentColor" fontSize="12" fontWeight="600">drawn</text>
-  <rect x="140" y="16" width="200" height="26" fill="#30a46c" fillOpacity="0.45" stroke="#30a46c" />
-  <text x="240" y="34" textAnchor="middle" fill="currentColor" fontSize="11">cell n, from half A</text>
-  <rect x="340" y="16" width="200" height="26" fill="#30a46c" fillOpacity="0.2" stroke="#30a46c" />
-  <text x="440" y="34" textAnchor="middle" fill="currentColor" fontSize="11">cell n+1, from half B</text>
-  <text x="60" y="80" textAnchor="start" fill="currentColor" fontSize="12" fontWeight="600">fetched</text>
-  <rect x="140" y="66" width="40" height="26" fill="currentColor" fillOpacity="0.1" stroke="currentColor" strokeOpacity="0.5" />
-  <text x="160" y="84" textAnchor="middle" fill="currentColor" fontSize="10">tile</text>
-  <rect x="180" y="66" width="40" height="26" fill="currentColor" fillOpacity="0.1" stroke="currentColor" strokeOpacity="0.5" />
-  <text x="200" y="84" textAnchor="middle" fill="currentColor" fontSize="10">attr</text>
-  <rect x="220" y="66" width="110" height="26" fill="#30a46c" fillOpacity="0.2" stroke="#30a46c" />
-  <text x="275" y="84" textAnchor="middle" fill="currentColor" fontSize="10">8 dots of n+1 → B</text>
-  <rect x="340" y="66" width="40" height="26" fill="currentColor" fillOpacity="0.1" stroke="currentColor" strokeOpacity="0.5" />
-  <text x="360" y="84" textAnchor="middle" fill="currentColor" fontSize="10">tile</text>
-  <rect x="380" y="66" width="40" height="26" fill="currentColor" fillOpacity="0.1" stroke="currentColor" strokeOpacity="0.5" />
-  <text x="400" y="84" textAnchor="middle" fill="currentColor" fontSize="10">attr</text>
-  <rect x="420" y="66" width="110" height="26" fill="#30a46c" fillOpacity="0.45" stroke="#30a46c" />
-  <text x="475" y="84" textAnchor="middle" fill="currentColor" fontSize="10">8 dots of n+2 → A</text>
-  <path d="M340,10 v100" fill="none" stroke="#e5484d" strokeDasharray="4 3" />
-  <text x="340" y="126" textAnchor="middle" fill="#e5484d" fontSize="11">the halves swap at each cell edge</text>
-  <text x="350" y="168" textAnchor="middle" fill="currentColor" fontSize="11">reads go through bank 5's second port, after the ULA's; the settings</text>
-  <text x="350" y="186" textAnchor="middle" fill="currentColor" fontSize="11">(bases, text mode, 512 tiles, on top) are taken as each cell is fetched</text>
+<svg viewBox="0 0 700 200" role="img" aria-label="The tilemap fetching one character ahead. While cell n is drawn from one half of a 16-dot buffer, the tilemap reads cell n plus 1 into the other half: first its map entry, the tile number and the attribute, then the tile's row, one read per dot. At the cell boundary the halves swap: cell n plus 1 is drawn while cell n plus 2 is fetched." style={{ width: "100%", height: "auto" }}>
+  <text x="0" y="38" textAnchor="start" fill="currentColor" fontSize="15" fontWeight="600">drawn</text>
+  <rect x="100" y="16" width="300" height="34" fill="#30a46c" fillOpacity="0.45" stroke="#30a46c" />
+  <text x="250" y="38" textAnchor="middle" fill="currentColor" fontSize="15">cell n, from half A</text>
+  <rect x="400" y="16" width="299" height="34" fill="#30a46c" fillOpacity="0.2" stroke="#30a46c" />
+  <text x="550" y="38" textAnchor="middle" fill="currentColor" fontSize="15">cell n+1, from half B</text>
+  <text x="0" y="92" textAnchor="start" fill="currentColor" fontSize="15" fontWeight="600">fetched</text>
+  <rect x="100" y="70" width="60" height="34" fill="currentColor" fillOpacity="0.1" stroke="currentColor" strokeOpacity="0.5" />
+  <text x="130" y="92" textAnchor="middle" fill="currentColor" fontSize="13.5">tile</text>
+  <rect x="160" y="70" width="60" height="34" fill="currentColor" fillOpacity="0.1" stroke="currentColor" strokeOpacity="0.5" />
+  <text x="190" y="92" textAnchor="middle" fill="currentColor" fontSize="13.5">attr</text>
+  <rect x="220" y="70" width="168" height="34" fill="#30a46c" fillOpacity="0.2" stroke="#30a46c" />
+  <text x="304" y="92" textAnchor="middle" fill="currentColor" fontSize="13.5">8 dots of n+1 → B</text>
+  <rect x="400" y="70" width="60" height="34" fill="currentColor" fillOpacity="0.1" stroke="currentColor" strokeOpacity="0.5" />
+  <text x="430" y="92" textAnchor="middle" fill="currentColor" fontSize="13.5">tile</text>
+  <rect x="460" y="70" width="60" height="34" fill="currentColor" fillOpacity="0.1" stroke="currentColor" strokeOpacity="0.5" />
+  <text x="490" y="92" textAnchor="middle" fill="currentColor" fontSize="13.5">attr</text>
+  <rect x="520" y="70" width="168" height="34" fill="#30a46c" fillOpacity="0.45" stroke="#30a46c" />
+  <text x="604" y="92" textAnchor="middle" fill="currentColor" fontSize="13.5">8 dots of n+2 → A</text>
+  <path d="M400,8 V114" fill="none" stroke="#e5484d" strokeWidth="1.5" strokeDasharray="4 3" />
+  <text x="400" y="134" textAnchor="middle" fill="#e5484d" fontSize="15">the halves swap at each cell edge</text>
+  <text x="350" y="170" textAnchor="middle" fill="currentColor" fontSize="15">reads go through bank 5's second port, after the ULA's; the settings</text>
+  <text x="350" y="188" textAnchor="middle" fill="currentColor" fontSize="15">(bases, text mode, 512 tiles, on top) are taken as each cell is fetched</text>
 </svg>
 <figcaption>The tilemap fetches each cell while the one before it is drawn. A change to a tilemap setting shows from the next cell fetched.</figcaption>
 </figure>
@@ -540,52 +562,51 @@ waiting, and the halves swap.
 A scrolled screen does not line its cells up with the fetch: then a stretch of 8 dots on screen is the
 end of one tile and the start of the next, and the tilemap reads the second map entry part-way. Its
 settings, the base addresses, the attribute mode, text mode, 512 tiles and the on-top bit, are taken
-again for every cell it fetches, so a program or the Copper can change them between two cells of the
+again for every cell it fetches, so your program or the Copper can change them between two cells of the
 same line.
 
-## Part 10: How Klive does it
-
-### One renderer
+## How Klive does it
 
 Klive's Next core draws the tilemap with one function, `zxnextUlaRenderTilemapScreen`, which works
 through the wide area dot by dot. For each dot it applies the scroll and the wrap at 320 or 640, finds
 the map entry at row × 40 (or 80) + column, reads the tile number and attribute (or uses NextReg `$6C`),
-and reads the dot: in standard mode through the orientation rule of Part 4, the high or low nibble of
-byte *t* × 32 + *y* × 4 + *x* ÷ 2, transparent when it equals NextReg `$4C`; in text mode bit 7 − *x* of byte
-*t* × 8 + *y*, transparent by its colour. It writes the colour with the below flag into the tilemap's
-buffer for stage 2. Bank 7's 8K wraps as on the hardware.
+and reads the dot. In standard mode it goes through the orientation rule of Eight orientations, takes the
+high or low nibble of byte *t* × 32 + *y* × 4 + *x* ÷ 2, and treats the dot as transparent when it equals
+NextReg `$4C`; in text mode it takes bit 7 − *x* of byte *t* × 8 + *y*, transparent by its colour. It
+writes the colour with the below flag into the tilemap's buffer for stage 2. Bank 7's 8K wraps as on the
+hardware.
 
-The fetch of Part 9 is not modelled: on the hardware it never delays anything, so there is nothing to
-imitate.
+The fetch one character ahead is not modelled: on the hardware it never delays anything, so there is
+nothing to imitate. Sometimes the best emulation of a detail is to leave it out.
 
-### In the IDE
-
-The [Tilemap Inspector](/en/guides/next/tilemap-inspector/) shows the map, the tile definitions and the
-registers, and the [Layers](/en/guides/next/layers/) view shows the tilemap alone.
-
-### Where to read the code
+In the IDE, the [Tilemap Inspector](/en/guides/next/tilemap-inspector/) shows the map, the tile
+definitions and the registers, and the [Layers](/en/guides/next/layers/) view shows the tilemap alone.
+And if you want to read the code yourself, here is where it lives:
 
 | What | Where |
 |---|---|
 | The renderer and its orientation rule | `src/emu/machines/zxNext/wasm/zxnext/zxnext-ula.c` |
 | The tilemap's registers | `zxnext-tilemap.c` in the same folder |
-| The pictures of this article, with the dots they check | `test/zxnext-hw/layers/next-display-scene.test.ts` |
+| The pictures above, with the dots they check | `test/zxnext-hw/layers/next-display-scene.test.ts` |
 
-## Summary
+## What to take home
 
-- The **tilemap** draws the 320 × 256 wide area from a grid of **40 × 32** (or 80 × 32) cells of 8 × 8
-  dots: a **map**, one entry per cell, and **tile definitions**, both in bank 5 or the 8K of bank 7, at
-  the multiples of 256 bytes set in NextRegs **`$6E`** and **`$6F`**.
-- An entry is a **tile number** and an **attribute**: palette offset, X mirror, Y mirror, rotate, and the
-  ULA-over-tile bit (or the ninth tile bit in **512-tile** mode). NextReg `$6B` bit 5 drops the attribute
-  for the one in NextReg `$6C`.
-- A tile is 32 bytes, **4 bits a dot**; the palette offset adds the high four bits, and a dot equal to
-  NextReg **`$4C`** is transparent.
-- Rotate (90 degrees clockwise) then mirror gives **eight orientations** of each tile, at no cost:
-  the hardware changes which dot it reads.
-- **Text mode** makes tiles 1 bit a dot, 8 bytes each, with a 7-bit palette offset for a colour pair per
-  character and no mirroring; **80 columns** halves the width of a cell.
-- The tilemap scrolls by its own offsets (NextRegs `$2F`, `$30`, `$31`), wrapping at its own size, and
-  clips in wide-area units (NextReg `$1B`).
-- It reads bank 5 after the ULA, **one character ahead**, and takes its settings afresh for every cell.
-- Klive draws it with one renderer, dot by dot, by the same rules.
+To wrap up: the tilemap draws the 320 × 256 wide area from a grid of **40 × 32** cells of
+8 × 8 dots, or 80 × 32 cells of half the width. It needs two tables: a **map**, one entry per cell, and the
+**tile definitions**, both in the 24K of block RAM, bank 5 or the first 8K of bank 7, at the multiples of
+256 bytes set in NextRegs **`$6E`** and **`$6F`**. Bank 7's second half is out of reach, and an offset past
+8K wraps back to its start, which is the trap waiting for anyone who copies bank 5 into bank 7 wholesale.
+
+A map entry is a **tile number** and an **attribute**: a 4-bit palette offset, X mirror, Y mirror, rotate,
+and the ULA-over-tile bit, which becomes the ninth tile bit in **512-tile** mode. Bit 5 of NextReg `$6B`
+drops the attribute and uses the one in NextReg `$6C` for every tile, halving the map. A tile is 32 bytes,
+**4 bits a dot**; the palette offset adds the high four bits, and a dot equal to NextReg **`$4C`** is
+transparent. Rotate 90 degrees clockwise, then mirror, and every tile has **eight orientations**, at no cost
+at all: the hardware simply changes which dot it reads.
+
+**Text mode** makes tiles 1 bit a dot, 8 bytes each, with a 7-bit palette offset that gives every character
+its own colour pair and no mirroring; **80 columns** halves the width of a cell. The tilemap scrolls by its
+own offsets in NextRegs `$2F`, `$30` and `$31`, wrapping at its own size, and clips in wide-area units with
+NextReg `$1B`. It reads bank 5 after the ULA, **one character ahead**, and takes its settings afresh for
+every cell, so the Copper can change them in the middle of a line. Klive draws it with one renderer, dot by
+dot, by the same rules. The rest is your level design.
