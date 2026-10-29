@@ -35,7 +35,7 @@ function sampleStairs(b, values, t0, dt) {
 }
 
 const svgOpen = (w, h, label) =>
-  `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="${esc(label)}" style={{ width: "100%", maxWidth: "${w}px", height: "auto" }}>`;
+  `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="${esc(label)}" style={{ width: "100%", height: "auto" }}>`;
 
 function text(x, y, s, o = {}) {
   return `  <text x="${r(x)}" y="${r(y)}"${o.anchor ? ` textAnchor="${o.anchor}"` : ""} fill="${o.fill ?? "currentColor"}" fontSize="${o.size ?? 13}"${o.bold ? ' fontWeight="bold"' : ""}${o.family ? ` fontFamily="${o.family}"` : ""}>${esc(s)}</text>`;

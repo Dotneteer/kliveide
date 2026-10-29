@@ -288,6 +288,24 @@ function plateaus(values: number[], min = 4): number[] {
   return out;
 }
 
+// --- TurboSound Next (article 4): a chip select is a $FFFD write of %1 pp 111 cc - bit 7 set, bits 6-5 the
+//     chip's pan (bit 6 left, bit 5 right), bits 4-2 = 111, bits 1-0 the chip (11 chip 0, 10 chip 1, 01 chip 2)
+const CHIP_CODE = [0b11, 0b10, 0b01];
+const PAN_BOTH = 0b11;
+const selectChip = (s: NextTestSession, chip: number, pan = PAN_BOTH) => s.out(0xfffd, 0x80 | (pan << 5) | 0x1c | CHIP_CODE[chip]);
+/** A TurboSound scene: NextReg $08 with TurboSound on (bit 1), then `setup`, recorded for `frames` */
+async function tsScene(setup: (s: NextTestSession) => void, frames = 3, nr08 = NR08 | 0x02): Promise<AudioSample[]> {
+  const s = await session();
+  await s.loadCode(" .org $8000\nStart: di\nPark: jr Park", { entry: "Start" });
+  s.setNextReg(0x08, nr08);
+  s.runFrames(2);
+  setup(s);
+  s.runFrames(2);
+  return s.startAudio().runFrames(frames).audio();
+}
+/** C5, E5 and G5 as periods, one per chip */
+const CHORD = [209, 166, 140];
+
 describe("Audio series scenes", () => {
   it("overview: every source plays its tone at the rate its settings give, on both sides, in the mixer's proportions", async () => {
     const scenes = { beeper: await beeper(), psg: await psg(), dac: await dac(), pi: await pi() };
@@ -561,5 +579,56 @@ Inner:  djnz Inner        ; 13 * 255 + 8
         JSON.stringify({ rate: RATE, gain: MIXER_GAIN, periods, hz: periods.map(toneOf), channels: alone.map((v) => v.slice(0, 960).map((x) => Math.round(x * 32768))) }) + "\n"
       );
     }
+  });
+  // --- TurboSound Next (article 4)
+  it("turbosound: off, only the selected chip plays; on, all three; off again, the chip selected last", async () => {
+    const play = (s: NextTestSession) => CHORD.forEach((p, chip) => { selectChip(s, chip); tone(s, 1, p); });
+    const hz = (v: AudioSample[]) => [toneOf(209), toneOf(166), toneOf(140)].map((f) => magnitudeAt(side(v, "left"), f, RATE));
+    const on = await tsScene(play);
+    // --- With TurboSound off from the start, the select writes do nothing: chip 0 gets all three setups,
+    //     the last one wins (period 140), and only chip 0 is heard
+    const off = await tsScene(play, 3, NR08);
+    // --- TurboSound on, the chord set up (chip 2 selected last), then switched off: chip 2 alone plays on
+    const frozen = await tsScene((s) => { play(s); s.setNextReg(0x08, NR08); });
+    const [onM, offM, frozenM] = [on, off, frozen].map(hz);
+    const strong = Math.max(...onM) / 3;
+    expect(onM.every((m) => m > strong), "on: all three notes").toBe(true);
+    expect(offM.map((m) => m > strong)).toEqual([false, false, true]);
+    expect(frozenM.map((m) => m > strong)).toEqual([false, false, true]);
+    expect(Math.max(...side(on, "left").map(units))).toBeLessThanOrEqual(3 * 255 + 2);
+    save("turbosound", "on", on, { periods: CHORD }, 480);
+    save("turbosound", "off", off, { periods: CHORD }, 480);
+    save("turbosound", "frozen", frozen, { periods: CHORD }, 480);
+  });
+
+  it("turbosound: each chip panned to its own place: chip 0 left, chip 1 both sides, chip 2 right", async () => {
+    const pans = [0b10, 0b11, 0b01];
+    const v = await tsScene((s) => CHORD.forEach((p, chip) => { selectChip(s, chip, pans[chip]); tone(s, 1, p); }));
+    const at = (which: "left" | "right") => CHORD.map((p) => magnitudeAt(side(v, which), toneOf(p), RATE));
+    const strong = Math.max(...at("left"), ...at("right")) / 3;
+    expect(at("left").map((m) => m > strong)).toEqual([true, true, false]);
+    expect(at("right").map((m) => m > strong)).toEqual([false, true, true]);
+    save("turbosound", "panned", v, { periods: CHORD, pans }, 480);
+  });
+
+  it("turbosound: nine channels at full volume stay within 3 x 510 = 1,530 units a side in ABC stereo", async () => {
+    // --- Three chords of three notes: chip 0 C major, chip 1 F major, chip 2 G major, an octave apart
+    const periods = [
+      [418, 332, 279], // C4 E4 G4
+      [313, 248, 209], // F4 A4 C5
+      [140, 111, 93] //   G5 B5 D6
+    ];
+    const v = await tsScene((s) =>
+      periods.forEach((ps, chip) => {
+        selectChip(s, chip);
+        ps.forEach((p, c) => tone(s, c, p, 0x38));
+      })
+    );
+    for (const which of ["left", "right"] as const) {
+      const u = side(v, which).map(units);
+      expect(Math.max(...u), which).toBeLessThanOrEqual(1530 + 2);
+      expect(Math.max(...u), which).toBeGreaterThan(900);
+    }
+    save("turbosound", "nine", v, { periods }, 960);
   });
 });

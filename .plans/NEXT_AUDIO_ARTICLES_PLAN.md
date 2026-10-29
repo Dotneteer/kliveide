@@ -11,8 +11,13 @@ structure, the explaining and figure rules, and the corrections the project auth
 reviewing the screen series; this plan does not repeat them, it only adds what is specific to sound.
 Fold any new lesson from this series' reviews into that file.
 
-Status: **the background page (§3) and articles 1 (§2), 2 (§4), 3 (§5) and 7 (§9) are written;
-articles 4–6 and 8 are planned.** Open questions
+Status: **the background page (§3) and articles 1–4 (§2, §4–§6) and 7 (§9) are written; articles 5, 6
+and 8 are planned.** All written chapters follow the book style of `.ai/hardware-articles-guide.md`
+(Structure, Figures): titles without the machine ("The Big Picture: Four Sources, One Mixer", "The Beeper:
+EAR, MIC and the Tape", "One AY Chip: Tones, Noise and Envelopes", "TurboSound: Three AY Chips Behind Two
+Ports", "The Mixer: One Sum, Three Outputs"), no "Part" headings, figures sized for print. Articles 5, 6
+and 8 are written that way from the start; the plan's "article N" numbering stays only as this plan's own
+bookkeeping, never in the text. Open questions
 are in §13.
 
 ---
@@ -520,6 +525,23 @@ Figures (≈ 9):
 Verify: the selection write's exact bit pattern and pan encoding; the stereo/mono sum formulas and
 their widths; what "frozen when disabled" means at the register level; reset scope of mode `11`; read
 paths.
+
+**As built.** `next-audio/turbosound.mdx`, eight Parts and eight figures (`docs/authoring/next-audio/turbosound-figures.cjs`);
+figures 5 and 6 of the list became one (ABC, ACB and mono side by side). No core difference found
+(`zxnext-psg.c`; `turbosound-mix.test.ts`, `ay-stereo-mode.test.ts` pin it). Captures: scenes "turbosound" (on /
+off from the start / switched off after; per-chip panning; nine channels). Facts established:
+- Chip select `%1 pp 111 cc`: `cc` 11 chip 0, 10 chip 1, 01 chip 2, **00 also chip 0**; pan bit 6 left, bit 5
+  right; taken only with TurboSound on. Register select needs bits 7–5 = 000; every other value is ignored.
+- Stereo per chip: **ABC L = A + B, R = C + B; ACB L = A + C, R = C + B** (C, not B, in the middle); mono
+  L = R = A + B + C, and mono wins over ACB. Per side 510 stereo / 765 mono; three chips 1,530 / 2,295.
+- TurboSound off: only the selected chip is heard and selects are ignored ("frozen"): a TurboSound program
+  with TurboSound off lands all its parts in chip 0, the last setup wins. Switching off after selecting chip 2
+  leaves chip 2 alone audible.
+- Every select rewrites the pan (`$FE` puts chip 1 back to both sides; `$DE` keeps it left).
+- Reset and mode `11`: registers cleared, chip 0 selected, pans `11`; a soft reset keeps NextRegs `$08`/`$09`.
+- Nine channels at full volume do reach 1,530 at moments when all are high (the capture touches it).
+- The book placeholder `17-ay.mdx` was corrected (§0.6): the chip is selected by a `$FFFD` write with TurboSound
+  on, ABC/ACB is NextReg `$08` bit 5 and mono NextReg `$09` bits 7–5.
 
 ---
 

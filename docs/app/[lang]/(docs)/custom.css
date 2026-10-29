@@ -43,16 +43,15 @@ samp {
 }
 
 /*
- * --- Hand-written figures (<figure> with an inline SVG diagram and a <figcaption>). A quiet panel
- * holds the drawing and its caption together, with room around it so it stands apart from the
- * text. <Shot> screenshots carry module classes and keep their own look, hence :not([class]).
+ * --- Hand-written figures (<figure> with an inline SVG diagram and a <figcaption>). No panel: the
+ * drawing stands on the page itself, like a figure in a printed book, with room above and below it
+ * so it stands apart from the text, and it takes the whole column width (in print, every millimetre
+ * of a figure's width is type size). A thin rule separates the caption. <Shot> screenshots carry
+ * module classes and keep their own look, hence :not([class]).
  */
 article figure:not([class]) {
   margin: 2.25rem 0;
-  padding: 1.5rem 1.25rem 1rem;
-  border: 1px solid var(--site-line);
-  border-radius: 8px;
-  background: var(--site-panel);
+  padding: 0;
 }
 
 article figure:not([class]) > svg {
@@ -84,13 +83,20 @@ article figure + ol > li {
   margin: 0.5rem 0;
 }
 
+/*
+ * The badge is centred on the middle of the first line's capitals, not on its line box: Overpass
+ * puts its capitals above the middle of the line, so a badge centred in the 1.5rem line sits 3px
+ * low. For the same reason its digit gets 0.1rem more room at the top than at the bottom.
+ */
 article figure + ol > li::before {
   content: counter(shot-marker);
   position: absolute;
   left: 0;
-  top: 0.1rem;
+  top: -0.1rem;
+  box-sizing: border-box;
   width: 1.5rem;
   height: 1.5rem;
+  padding-top: 0.1rem;
   display: grid;
   place-items: center;
   border-radius: 4px;
