@@ -840,7 +840,7 @@ the six sound cards on four channels, the port families and feeding samples on t
 
 You can read those source chapters in any order. [The Mixer: One Sum, Three Outputs](/en/under-the-hood/emulator-internals/next-audio/mixer/)
 comes after them, since it adds up their levels: the sum in full, the jack, the speaker and HDMI. And the
-last chapter, From the Machine to Your Speakers, is mostly about Klive itself: how an emulator turns all
+last chapter, [From the Machine to Your Speakers: Sound in an Emulator](/en/under-the-hood/emulator-internals/next-audio/klive-audio/), is mostly about Klive itself: how an emulator turns all
 this into 48,000 samples a second.
 
 ## How Klive does it
@@ -860,7 +860,7 @@ The hardware's mixer adds its inputs continuously. Klive adds them only at the m
 sample: while a frame runs, every 28,000,000 ÷ 48,000 ≈ 583 master clocks at the usual rate of 48,000
 samples a second, it asks each source for its level at that moment, adds them as the mixer does, and
 stores the result. The frame's samples go to the host's sound card, which plays them while the next
-frame runs. The last chapter, From the Machine to Your Speakers, follows that path, and what happens to it
+frame runs. The last chapter, [From the Machine to Your Speakers: Sound in an Emulator](/en/under-the-hood/emulator-internals/next-audio/klive-audio/), follows that path, and what happens to it
 at a breakpoint.
 
 Klive's sum keeps the hardware's **proportions**, but not its zero:

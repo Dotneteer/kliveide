@@ -558,6 +558,36 @@ function earOf(values: number[], start = false): boolean[] {
 }
 const edgesOf = (b: boolean[]) => b.map((e, i) => (i > 0 && e !== b[i - 1] ? i : -1)).filter((i) => i >= 0);
 
+
+// --- The last chapter (article 8): Klive's own audio path. zxnext-audio-mixer.c: one sample every
+//     28 MHz / rate clocks, the schedule carried across frame ends; the beeper and the AY averaged over
+//     each sample's window (the jack and the speaker), the sum's value at the sample's moment for HDMI.
+
+/** A beeper tone: port $FE bit 4 flipped every 44 + 13 x (n - 1) T-states, on output `output` */
+async function beeperTone(n: number, output: "jack" | "hdmi"): Promise<AudioSample[]> {
+  const s = await session();
+  await s.loadCode(
+    `
+        .org $8000
+Start:  di
+        nextreg $07,0
+        nextreg $08,$${NR08.toString(16)}
+        ld c,$fe
+        ld a,$10
+Loop:   out (c),a         ; 12
+        xor $10           ; 7
+        ld b,${n}         ; 7
+Dly:    djnz Dly          ; 13 * (n - 1) + 8
+        jp Loop           ; 10
+`,
+    { entry: "Start" }
+  );
+  s.audioOutput(output);
+  return record(s);
+}
+const TONE_N = 12;
+const TONE_HALF = 44 + 13 * (TONE_N - 1); // --- 187 T-states: 9,358 Hz
+
 describe("Audio series scenes", () => {
   it("overview: every source plays its tone at the rate its settings give, on both sides, in the mixer's proportions", async () => {
     const scenes = { beeper: await beeper(), psg: await psg(), dac: await dac(), pi: await pi() };
@@ -1121,6 +1151,57 @@ Edges:  .defw 0
     const seconds = (s.tacts - t0) / CPU_HZ;
     const edges = s.peekWord(s.symbol("Edges"));
     expect(relativeError(edges / seconds, 2000), "a 1,000 Hz square: 2,000 edges a second").toBeLessThan(0.03);
+  });
+
+
+  it("klive: a frame carries 972 or 973 samples, and the fraction of a sample carries to the next", async () => {
+    const s = await session();
+    await s.loadCode(" .org $8000\nStart: di\nPark: jr Park", { entry: "Start" });
+    s.runFrames(2).startAudio();
+    const counts: number[] = [];
+    for (let f = 0; f < 40; f++) {
+      const before = s.audio().length;
+      s.runFrames(1);
+      counts.push(s.audio().length - before);
+    }
+    // --- the frame in 28 MHz clocks, from the counts' long-run average
+    const perFrame = counts.reduce((a, b) => a + b, 0) / counts.length;
+    const lo = Math.floor(perFrame);
+    expect(new Set(counts), "only two sizes").toEqual(new Set([lo, lo + 1]));
+    // --- 128K timing: 456 x 311 dots of 7 MHz = 567,264 clocks; x 48,000 / 28 MHz = 972.45
+    const exact = (456 * 311 * 4 * RATE) / MASTER_CLOCK;
+    expect(lo).toBe(Math.floor(exact));
+    // --- every prefix of frames has within one sample of the exact total: nothing is lost
+    let total = 0;
+    counts.forEach((c, i) => {
+      total += c;
+      expect(Math.abs(total - (i + 1) * exact), `after ${i + 1} frames`).toBeLessThan(1);
+    });
+    const out = process.env.NEXT_AUDIO_SHOTS;
+    if (out) {
+      mkdirSync(join(out, "klive-audio"), { recursive: true });
+      writeFileSync(join(out, "klive-audio", "carry.json"), JSON.stringify({ rate: RATE, exact, counts }) + "\n");
+    }
+  });
+
+  it("klive: averaging the window keeps a 9,358 Hz beeper tone clean; point sampling adds an alias at 1,209 Hz", async () => {
+    const f = CPU_HZ / (2 * TONE_HALF); // --- 9,358 Hz
+    const alias = 5 * f - RATE; // --- the fifth harmonic, 46,791 Hz, folds back to 1,209 Hz
+    expect(Math.round(alias)).toBe(-1209);
+    const jack = await beeperTone(TONE_N, "jack");
+    const hdmi = await beeperTone(TONE_N, "hdmi");
+    const mag = (v: AudioSample[], hz: number) => magnitudeAt(side(v, "left"), Math.abs(hz), RATE);
+    // --- each output has its own gain (12.8 the jack, 7.34 HDMI): compare each alias with its own tone
+    const ratio = (v: AudioSample[], hz: number) => mag(v, hz) / mag(v, f);
+    expect(ratio(hdmi, alias), "point sampling: an alias a fifth of the tone").toBeGreaterThan(0.15);
+    expect(ratio(jack, alias), "averaged: the alias almost gone").toBeLessThan(0.01);
+    // --- an average is a rough filter: the third harmonic's alias, 28,075 Hz folded to 19,925 Hz, is
+    //     only about halved
+    const third = 3 * f - RATE;
+    expect(ratio(jack, third) / ratio(hdmi, third), "the 19,925 Hz alias: about half").toBeGreaterThan(0.4);
+    expect(ratio(jack, third) / ratio(hdmi, third)).toBeLessThan(0.75);
+    save("klive-audio", "jack", jack, { hz: f, alias: -alias, halfTacts: TONE_HALF, cpuHz: CPU_HZ }, 2880);
+    save("klive-audio", "hdmi", hdmi, { hz: f, alias: -alias, halfTacts: TONE_HALF, cpuHz: CPU_HZ }, 2880);
   });
 
 });

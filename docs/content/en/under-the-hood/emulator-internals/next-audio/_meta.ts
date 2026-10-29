@@ -5,5 +5,6 @@ export default {
   turbosound: "TurboSound Next",
   dacs: "The 8-bit DACs",
   "pi-audio": "Audio from the Raspberry Pi",
-  mixer: "The mixer and the outputs"
+  mixer: "The mixer and the outputs",
+  "klive-audio": "From the machine to your speakers"
 };

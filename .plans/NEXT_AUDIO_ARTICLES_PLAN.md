@@ -11,11 +11,10 @@ structure, the explaining and figure rules, and the corrections the project auth
 reviewing the screen series; this plan does not repeat them, it only adds what is specific to sound.
 Fold any new lesson from this series' reviews into that file.
 
-Status: **the background page (§3) and articles 1–7 (§2, §4–§9) are written; article 8 is planned.** All written chapters follow the book style of `.ai/hardware-articles-guide.md`
+Status: **the series is complete**: the background page (§3) and articles 1–8 (§2, §4–§10) are written. All written chapters follow the book style of `.ai/hardware-articles-guide.md`
 (Structure, Figures): titles without the machine ("The Big Picture: Four Sources, One Mixer", "The Beeper:
 EAR, MIC and the Tape", "One AY Chip: Tones, Noise and Envelopes", "TurboSound: Three AY Chips Behind Two
-Ports", "The 8-Bit DACs: Four Channels, Six Sound Cards", "Audio from the Raspberry Pi: Samples on Four Wires", "The Mixer: One Sum, Three Outputs"), no "Part" headings, figures sized for print. Article 8 is
-written that way from the start; the plan's "article N" numbering stays only as this plan's own
+Ports", "The 8-Bit DACs: Four Channels, Six Sound Cards", "Audio from the Raspberry Pi: Samples on Four Wires", "The Mixer: One Sum, Three Outputs", "From the Machine to Your Speakers: Sound in an Emulator"), no "Part" headings, figures sized for print.  the plan's "article N" numbering stays only as this plan's own
 bookkeeping, never in the text. Open questions
 are in §13.
 
@@ -817,6 +816,28 @@ Verify: everything against Klive's code (`zxnext-audio-mixer.c`, `AudioDeviceBas
 worklet); timing claims measured, not assumed.
 
 ---
+
+### As built (article 8)
+
+- Written as `klive-audio.mdx`, "From the Machine to Your Speakers: Sound in an Emulator", with six figures
+  (`docs/authoring/next-audio/klive-audio-figures.cjs`): samples across a frame's end with the captured counts per
+  frame (972/973, 972.45 exact at 128K timing and 48 kHz), point sampling against averaging the window, the
+  captured spectra of a 9,358 Hz beeper tone through HDMI and the jack, the pipeline, the worklet's queue (its own
+  rules run on a timeline) and the series map. The plan's DC-filter capture is the mixer chapter's; this chapter
+  links it. The planned figures on breakpoints and on running faster than real time became a list in the text.
+- Measured, not assumed: the fifth harmonic's alias at 1,209 Hz is 14 dB below the tone point-sampled and 44 dB
+  below it averaged; the third harmonic's alias at 19,925 Hz is only about halved by averaging (the text says an
+  average is a rough filter).
+- **Finding, fixed: the worklet's three-frame hold-back rarely applied to a running machine.** Its lone-frame
+  rule (play once a frame's worth of pairs has passed since the last store, for the debugger's single frames)
+  fired first in normal priming: frames 20.26 ms apart and 512-sample callbacks 10.67 ms apart mean two callbacks,
+  1,024 pairs, often pass between frames, more than a frame's 973. Running the real `Sampling.worklet.js` on that
+  timing, play started after one or two frames and the queue rode 12-31 ms (0 at its low point with 10 ms of
+  jitter). The lone-frame wait is now two frames (`LONE_WAIT_FRAMES`, its own `fix` commit before this article's):
+  play starts after three frames, 64-75 ms in, and the queue keeps 24-39 ms in hand at its low point with up to
+  10 ms of jitter. The article and its queue figure describe the fixed worklet.
+- Not described: Klive's clock multiplier (it keeps the frame rate; only unthrottled modes run ahead, and of those
+  only rendering to video applies to the Next).
 
 ## 11. Facts the survey already established
 

@@ -612,9 +612,8 @@ Should you care? For most sound, no: 48,000 samples a second is enough for anyth
 background chapter explains under
 [Fast enough](/en/under-the-hood/emulator-internals/computer-sound/#fast-enough-or-it-sounds-wrong).
 For the sharp edges of the beeper it is a small cost: an edge that moves by up to one sample adds a faint
-roughness, a little aliasing, to a high beeper tone that the jack plays clean. A later chapter, on how the
-sound gets from the emulator to your speakers, shows the same choice in an emulator, which must sample
-too.
+roughness, a little aliasing, to a high beeper tone that the jack plays clean. [The last chapter](/en/under-the-hood/emulator-internals/next-audio/klive-audio/#a-moment-or-a-window) shows the same
+choice in an emulator, which must sample too.
 
 The constant level travels with the numbers: a silent Next sends 1,536 × 4 = 6,144 in every word.
 
