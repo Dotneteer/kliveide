@@ -527,8 +527,8 @@ A program saves to tape by switching **port `$FE` bit 3**, MIC, in a pattern of 
 data. The **MIC socket** of the Next carries that pattern to a tape recorder, as the 48K's did.
 
 The MIC line is not bit 3 alone, though. It is bit 3 combined with the tape input (see Loading from tape)
-and with the EAR bit that the Raspberry Pi's audio link can produce (the chapter on audio from the
-Raspberry Pi, still to come) by an **exclusive or**: the line is 1 when an odd number of the three are 1.
+and with the EAR bit that the Raspberry Pi's audio link can produce ([the chapter on audio from the
+Raspberry Pi](/en/under-the-hood/emulator-internals/next-audio/pi-audio/#loading-a-tape-from-the-pi)) by an **exclusive or**: the line is 1 when an odd number of the three are 1.
 The same line feeds both the MIC socket and the mixer's MIC input:
 
 <figure>

@@ -11,12 +11,11 @@ structure, the explaining and figure rules, and the corrections the project auth
 reviewing the screen series; this plan does not repeat them, it only adds what is specific to sound.
 Fold any new lesson from this series' reviews into that file.
 
-Status: **the background page (§3) and articles 1–5 (§2, §4–§7) and 7 (§9) are written; articles 6
-and 8 are planned.** All written chapters follow the book style of `.ai/hardware-articles-guide.md`
+Status: **the background page (§3) and articles 1–7 (§2, §4–§9) are written; article 8 is planned.** All written chapters follow the book style of `.ai/hardware-articles-guide.md`
 (Structure, Figures): titles without the machine ("The Big Picture: Four Sources, One Mixer", "The Beeper:
 EAR, MIC and the Tape", "One AY Chip: Tones, Noise and Envelopes", "TurboSound: Three AY Chips Behind Two
-Ports", "The 8-Bit DACs: Four Channels, Six Sound Cards", "The Mixer: One Sum, Three Outputs"), no "Part" headings, figures sized for print. Articles 6 and 8
-are written that way from the start; the plan's "article N" numbering stays only as this plan's own
+Ports", "The 8-Bit DACs: Four Channels, Six Sound Cards", "Audio from the Raspberry Pi: Samples on Four Wires", "The Mixer: One Sum, Three Outputs"), no "Part" headings, figures sized for print. Article 8 is
+written that way from the start; the plan's "article N" numbering stays only as this plan's own
 bookkeeping, never in the text. Open questions
 are in §13.
 
@@ -675,6 +674,23 @@ Verify: the enable encoding, pin direction, mute and EAR routing; sample width a
 threshold rule; the read/latch protocol; clocking (master/slave; the slave bit is disabled).
 
 ---
+
+### As built (article 6)
+
+- Written as `pi-audio.mdx`, "Audio from the Raspberry Pi: Samples on Four Wires", with nine figures
+  (`docs/authoring/next-audio/pi-audio-figures.cjs`): the link both ways, one sample period's timing, NextReg
+  `$A2`, the four `$A2` settings captured (stereo, mono from either word, a side muted), a sample to the 10-bit
+  word, the left word latched half a period before the right (captured), the Pi's share of the mixer, the
+  `$2C`/`$2D` read, and the EAR rule on a noisy 250 Hz wave (captured) beside a plain threshold worked out for the
+  same wave. The plan's separate pin-direction figure is folded into the link figure.
+- **Finding: the EAR bit rises at a rising wave's zero crossing, not at three quarters.** The rule ORs the top two
+  bits of the left and the right latch, and between the two latches the left word is a sample ahead; on a rising
+  wave one reads `01` and the other `10` at the crossing, and `01 or 10 = 11`. It falls only when both are below
+  `$100`. Klive's `zxnext-pi-i2s.c` does exactly that (a faithful copy of the bitwise OR); the scene test models the
+  two latch moments and pins both thresholds on a clean sine. The article explains it as the "surprise".
+- The Next → Pi direction is described from the hardware (the 13-bit mixer sums, top bit inverted, at the top of
+  each word) and stated as not emulated. A Z80 loop counting port `$FE` bit 6 edges from a streamed 1,000 Hz square
+  sees 2,000 a second (asserted, no figure).
 
 ## 9. Article 7 — The mixer and the outputs
 

@@ -349,7 +349,7 @@ up to 1,023 units.
 The link also works the other way, sending the Next's own sound to the Pi. And the Pi's stream can be
 turned into the EAR bit of the tape input, so that the Next loads a program the Pi plays. The **PI I2S
 Audio Control register, NextReg `$A2`**, sets it all up. The capture above is a 1,000 Hz sine, streamed
-in. The Pi chapter, still to come, explains the link.
+in. [Audio from the Raspberry Pi: Samples on Four Wires](/en/under-the-hood/emulator-internals/next-audio/pi-audio/) explains the link.
 
 ## Generators and level writers
 
@@ -835,8 +835,8 @@ covers port `$FE`, the tape input, the speaker-only beeper, and music from one b
 the envelope and the volume tables apart, and sets the AY against the YM. Then
 [TurboSound: Three AY Chips Behind Two Ports](/en/under-the-hood/emulator-internals/next-audio/turbosound/)
 puts three chips behind two ports, with panning, ABC, ACB and mono. [The 8-Bit DACs: Four Channels, Six Sound Cards](/en/under-the-hood/emulator-internals/next-audio/dacs/) covers
-the six sound cards on four channels, the port families and feeding samples on time, and Audio from the
-Raspberry Pi, still to come, the I2S link in both directions and the tape input from the Pi.
+the six sound cards on four channels, the port families and feeding samples on time, and
+[Audio from the Raspberry Pi: Samples on Four Wires](/en/under-the-hood/emulator-internals/next-audio/pi-audio/) the I2S link in both directions and the tape input from the Pi.
 
 You can read those source chapters in any order. [The Mixer: One Sum, Three Outputs](/en/under-the-hood/emulator-internals/next-audio/mixer/)
 comes after them, since it adds up their levels: the sum in full, the jack, the speaker and HDMI. And the

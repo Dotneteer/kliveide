@@ -3,7 +3,7 @@ import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { createSession, type AudioSample, type NextTestSession } from "../../harness/zxnext";
+import { createSession, piI2sWord, type AudioSample, type NextTestSession, type PiI2sSamples } from "../../harness/zxnext";
 import { ay, edgeStep, frequency, MASTER_CLOCK, relativeError, side, swing } from "./_audio-helpers";
 
 /*
@@ -495,6 +495,69 @@ const DRUM = (() => {
   });
 })();
 
+
+// --- The Pi chapter (article 6) ------------------------------------------------------------------------
+//     zxnext.vhd ~2239-2246: NextReg $A2 bits 7-6 enable left / right, 3-2 mute, 0 to EAR; ~2314-2315 a side
+//     whose enable is clear takes the other side's word, and off, muted or routed to EAR it is the rest word
+//     $200; ~2317-2330 the EAR bit rises at L(9..8) or R(9..8) = "11", falls at "00". i2s.vhd: the top 10 of
+//     13 bits, sign inverted. i2s_receive.vhd: the left word latched at WS rising (mid-period), the right at
+//     WS falling (the period's end). ~6449: the MIC line is port $FE bit 3 xor the tape input xor the EAR bit.
+
+/** A parked CPU, NextReg $A2 = `a2`, the stream connected, then `frames` frames recorded after `settle` */
+async function piScene(a2: number, stream: PiI2sSamples, frames = 2, settle = 2): Promise<AudioSample[]> {
+  const s = await session();
+  await s.loadCode(" .org $8000\nStart: di\nPark: jr Park", { entry: "Start" });
+  s.setNextReg(0x08, NR08).setNextReg(0xa2, a2).piI2sConnect(stream);
+  s.runFrames(settle);
+  return s.startAudio().runFrames(frames).audio();
+}
+const PI_AMP = 32000;
+/** Left a 1,000 Hz sine, right a 1,500 Hz one */
+const PI_TWO: PiI2sSamples = {
+  rate: RATE,
+  sample: (k) => [Math.round(PI_AMP * Math.sin((2 * Math.PI * 1000 * k) / RATE)), Math.round(PI_AMP * Math.sin((2 * Math.PI * 1500 * k) / RATE))]
+};
+/** The Pi's word swing in mixer units: (s >> 6) per step */
+const piUnits = (v: number) => units(v);
+
+/** A slow 250 Hz sine with noise that repeats every period (192 samples), the same on both sides */
+const EAR_PERIOD = RATE / 250;
+const EAR_NOISE = (() => {
+  let x = 0x2468;
+  return [...Array(EAR_PERIOD)].map(() => {
+    x = (x * 1103515245 + 12345) & 0x7fffffff;
+    return ((x >> 16) % 14001) - 7000;
+  });
+})();
+const earWave = (k: number) => {
+  const p = ((k % EAR_PERIOD) + EAR_PERIOD) % EAR_PERIOD;
+  return Math.max(-32768, Math.min(32767, Math.round(26000 * Math.sin((2 * Math.PI * p) / EAR_PERIOD) + EAR_NOISE[p])));
+};
+/**
+ * The EAR bit by the hardware's rule on a stream with the same word on both sides: at each sample's
+ * mid-period the left latch takes sample k, at its end the right latch takes it too, and after each latch
+ * the bit rises at L(9..8) or R(9..8) = "11" and falls at "00". Between the two latches the left word is a
+ * sample ahead of the right, so a rising wave that steps from just below the middle ("01") to just above
+ * it ("10") reads "11": the bit rises at the upward zero crossing.
+ */
+function earOf(values: number[], start = false): boolean[] {
+  let ear = start;
+  let l = 0x200, r = 0x200;
+  const step = () => {
+    const t = ((l >> 8) | (r >> 8)) & 3;
+    if (t === 3) ear = true;
+    else if (t === 0) ear = false;
+  };
+  return values.map((v) => {
+    l = piI2sWord(v);
+    step();
+    r = piI2sWord(v);
+    step();
+    return ear;
+  });
+}
+const edgesOf = (b: boolean[]) => b.map((e, i) => (i > 0 && e !== b[i - 1] ? i : -1)).filter((i) => i >= 0);
+
 describe("Audio series scenes", () => {
   it("overview: every source plays its tone at the rate its settings give, on both sides, in the mixer's proportions", async () => {
     const scenes = { beeper: await beeper(), psg: await psg(), dac: await dac(), pi: await pi() };
@@ -955,4 +1018,109 @@ Right:  .defb ${SINE32.join(",")}
     expect(swing(u.slice(after, after + 200)), "then the last level holds").toBe(0);
     save("dacs", "drum", v, { lengthMs, prescaler: DMA_P, samples: DRUM_LEN, from: start }, Math.min(v.length, start + 7200));
   });
+
+  it("pi: NextReg $A2 chooses stereo, mono from the left or the right word, and mutes a side", async () => {
+    const at = (v: AudioSample[], which: "left" | "right", hz: number) => magnitudeAt(side(v, which), hz, RATE);
+    const modes = { stereo: 0xc0, monoLeft: 0x80, monoRight: 0x40, muteLeft: 0xc8 } as const;
+    const got: Record<string, AudioSample[]> = {};
+    for (const [name, a2] of Object.entries(modes)) got[name] = await piScene(a2, PI_TWO);
+    const has = (v: AudioSample[], which: "left" | "right", hz: number) => at(v, which, hz) > 0.01;
+    const expectSides = (name: string, left: number | null, right: number | null) => {
+      const v = got[name];
+      for (const [which, hz] of [["left", left], ["right", right]] as const) {
+        for (const f of [1000, 1500]) expect(has(v, which, f), `${name} ${which} ${f} Hz`).toBe(hz === f);
+      }
+    };
+    expectSides("stereo", 1000, 1500);
+    expectSides("monoLeft", 1000, 1000);
+    expectSides("monoRight", 1500, 1500);
+    expectSides("muteLeft", null, 1500);
+    expect(swing(side(got.muteLeft, "left")), "muted: the rest word, flat").toBe(0);
+    // --- one word step is one mixer unit: a full sine swings 2 x 32,000 / 64 = 1,000 units
+    expect(swing(side(got.stereo, "left").map(piUnits))).toBeCloseTo(1000, -1);
+    for (const [name, v] of Object.entries(got)) save("pi-audio", name, v, { a2: modes[name as keyof typeof modes] }, 240);
+  });
+
+  it("pi: each sample's left word lands half a sample period before its right word", async () => {
+    // --- 1,000 samples a second, alternating +-20,000: the left side steps half a millisecond before the right
+    const v = await piScene(0xc0, { rate: 1000, sample: (k) => (k % 2 ? [20000, 20000] : [-20000, -20000]) }, 3);
+    const steps = (x: number[]) => x.map((y, i) => (i > 0 && Math.abs(y - x[i - 1]) > 0.01 ? i : -1)).filter((i) => i >= 0);
+    const l = steps(side(v, "left"));
+    const r = steps(side(v, "right"));
+    expect(l.length).toBeGreaterThan(20);
+    const firstR = r.find((i) => i > l[0])!;
+    expect(firstR - l[0], "24 samples: half of 1 ms at 48 kHz").toBeGreaterThanOrEqual(23);
+    expect(firstR - l[0]).toBeLessThanOrEqual(25);
+    expect(l[1] - l[0], "one step a millisecond").toBeCloseTo(48, -1);
+    save("pi-audio", "latch", v, { rate: 1000 }, 480);
+  });
+
+  it("pi: routed to EAR, a noisy slow wave becomes a clean one-bit signal by the hysteresis", async () => {
+    const v = await piScene(0xc1, { rate: RATE, sample: (k) => [earWave(k), earWave(k)] }, 2, 40);
+    const u = side(v, "left").map(units);
+    // --- the Pi's word leaves the mixer while routed; the EAR bit is heard on the MIC line (128 units)
+    //     (an edge inside a sample splits its step over two samples: one edge, not two)
+    const edges: number[] = [];
+    u.forEach((y, i) => {
+      if (i > 1 && Math.abs(y - u[i - 2]) > 100 && (edges.length === 0 || i - edges[edges.length - 1] > 3)) edges.push(i - 1);
+    });
+    const ms = (u.length / RATE) * 1000;
+    expect(edges.length / ms, "two edges per 4 ms period, no chatter").toBeCloseTo(0.5, 1);
+    // --- the captured edges sit where the hysteresis rule puts them: find the stream's phase
+    let best = { shift: 0, miss: Infinity };
+    for (let shift = 0; shift < EAR_PERIOD; shift++) {
+      const sim = earOf([...Array(u.length + EAR_PERIOD)].map((_, k) => earWave(k + shift))).slice(EAR_PERIOD);
+      const simEdges = edgesOf(sim);
+      const miss = edges.reduce((t, e) => t + Math.min(...simEdges.map((x) => Math.abs(x - e))), 0);
+      if (miss < best.miss) best = { shift, miss };
+    }
+    expect(best.miss / edges.length, "every edge within a sample or two of the rule").toBeLessThan(2.5);
+    // --- a plain threshold at zero would have switched many more times on the same wave
+    const plain = [...Array(u.length)].map((_, k) => earWave(k + best.shift + EAR_PERIOD) >= 0);
+    const plainEdges = plain.filter((e, i) => i > 0 && e !== plain[i - 1]).length;
+    expect(plainEdges, "a plain threshold chatters").toBeGreaterThan(2 * edges.length);
+    // --- a clean sine shows where the two thresholds really are: up at the zero crossing, down at -16,384
+    const clean = (k: number) => Math.round(26000 * Math.sin((2 * Math.PI * k) / EAR_PERIOD));
+    const ce = edgesOf(earOf([...Array(2 * EAR_PERIOD)].map((_, k) => clean(k)), true));
+    const fallAt = Math.round((EAR_PERIOD * (Math.PI + Math.asin(16384 / 26000))) / (2 * Math.PI));
+    expect(ce[0], "falls once both words are below a quarter").toBeGreaterThanOrEqual(fallAt - 1);
+    expect(ce[0]).toBeLessThanOrEqual(fallAt + 1);
+    expect(ce[1], "rises at the upward zero crossing").toBe(EAR_PERIOD);
+    const samples = [...Array(u.length)].map((_, k) => earWave(k + best.shift));
+    save("pi-audio", "ear", v, { shift: best.shift, period: EAR_PERIOD, input: samples }, 960);
+  });
+
+  it("pi: a tone the Pi streams to EAR reads back from port $FE bit 6, as a tape would", async () => {
+    const s = await session();
+    await s.loadCode(
+      `
+        .org $8000
+Start:  di
+        ld hl,0
+        ld d,0
+        ld bc,20000
+Loop:   in a,($fe)
+        and $40
+        cp d
+        jr z,Same
+        ld d,a
+        inc hl
+Same:   dec bc
+        ld a,b
+        or c
+        jr nz,Loop
+        ld (Edges),hl
+Done:   jr Done
+Edges:  .defw 0
+`,
+      { entry: "Start" }
+    );
+    s.setNextReg(0xa2, 0xc1).piI2sConnect({ rate: RATE, sample: (k) => (Math.floor(k / 24) % 2 ? [32000, 32000] : [-32000, -32000]) });
+    const t0 = s.tacts;
+    s.runTo("Done");
+    const seconds = (s.tacts - t0) / CPU_HZ;
+    const edges = s.peekWord(s.symbol("Edges"));
+    expect(relativeError(edges / seconds, 2000), "a 1,000 Hz square: 2,000 edges a second").toBeLessThan(0.03);
+  });
+
 });
