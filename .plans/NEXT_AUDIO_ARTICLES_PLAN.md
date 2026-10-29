@@ -11,8 +11,8 @@ structure, the explaining and figure rules, and the corrections the project auth
 reviewing the screen series; this plan does not repeat them, it only adds what is specific to sound.
 Fold any new lesson from this series' reviews into that file.
 
-Status: **the background page (§3) and articles 1 (§2), 2 (§4) and 7 (§9) are written; articles 3–6
-and 8 are planned.** Open questions
+Status: **the background page (§3) and articles 1 (§2), 2 (§4), 3 (§5) and 7 (§9) are written;
+articles 4–6 and 8 are planned.** Open questions
 are in §13.
 
 ---
@@ -455,6 +455,27 @@ Figures (≈ 12):
 Verify: the clock division inside the chip (`I_SEL_L`), counter widths and wrap behaviour, LFSR length
 and taps, envelope step counts and shape table, both volume tables, read masks, reset values, R14/R15
 inputs, `$BFF5` format. Every period/frequency recomputed by script.
+
+**As built.** `next-audio/psg.mdx`, ten Parts and twelve figures (`docs/authoring/next-audio/psg-figures.cjs`).
+No core difference found: `zxnext-psg.c` follows the design, and `ay-psg.test.ts` already pinned it. The
+captures are `next-audio-scene.test.ts` scenes "psg" (A4; tone/noise/both/neither; noise periods 1 and 31; the
+16 envelope shapes, asserted to fall into 8 groups sample for sample; the climb in YM and AY mode; the
+envelope bass; a chord). Figures 3 (clock chain), 8 (shape bits worked) and 11 (read masks) of the list became
+text (the formula, two worked shapes, a list). Facts established:
+- Counters step 218,750 times a second (`I_SEL_L` = 1: 1.75 MHz ÷ 8); noise at half that, 109,375 ÷ period.
+  A4 = period 249, 439.26 Hz; range 26.7 Hz (4,095) to 109,375 Hz; 0 plays as 1 for tone, noise and envelope.
+- The noise LFSR (bit 0 XOR bit 2 into bit 16, a 1 fed in when all zero) is **not maximal-length**: from reset
+  it repeats after **114,681** steps (computed by script), not 131,071.
+- **A channel with tone and noise both off plays its volume as a steady level**, not silence (found when a
+  test assumed otherwise): silence is volume 0; the steady level is how 128K programs played samples.
+- Fixed volume v uses YM entry 2v + 1; the AY table is louder at every volume 1–14 (8: 40 vs 27). The YM
+  table has 29 distinct levels (three equal low pairs); AY mode's envelope has 16, over the same time.
+- Shapes: 0–3 = 9 and 4–7 = 15 exactly; a write to R13 restarts and steps at once. Ramp = 32 × period ÷
+  218,750 s (146 µs to 9.6 s). Envelope bass: shape 8 at period 14 and shape 10 at period 7, both 488.3 Hz.
+- `$FFFD` selects a register only with bits 7–5 = 000 (5-bit number; 16–31 dropped on write, `$FF` in YM,
+  register − 16 in AY mode); chip select needs bit 7 and bits 4–2 = 111 and TurboSound on. `$BFFD` reads
+  as `$FFFD` on +3 timing. R14/R15 inputs read `$FF` (pulled up), outputs read back.
+- The 128K's ~1.77 MHz clock: a tune is 1.3 % (23 cents) lower on the Next (as the overview already said).
 
 ---
 

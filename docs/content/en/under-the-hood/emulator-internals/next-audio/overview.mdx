@@ -316,7 +316,7 @@ special value written to port `$FFFD` (one with bit 7 set, which no register num
 three chips at full volume a side gets at most 2,295.
 
 The capture above is chip 0's channel B, with period 109: a square wave of 1,003 Hz, written once and
-left alone. The AY chips are explained in article 3 (one chip) and article 4 (three chips, the stereo
+left alone. The AY chips are explained in [article 3](/en/under-the-hood/emulator-internals/next-audio/psg/) (one chip) and article 4 (three chips, the stereo
 modes and panning).
 
 ### Four 8-bit DACs
@@ -811,7 +811,7 @@ machine that sounds exactly like a 128K until something asks for more.
 |---|---|---|
 | 1 | The big picture | this article |
 | 2 | [The beeper, EAR and MIC](/en/under-the-hood/emulator-internals/next-audio/beeper/) | port `$FE`, the tape input, the speaker-only beeper, and music from one bit |
-| 3 | One AY chip | tone counters, noise, the envelope, the volume tables, AY against YM |
+| 3 | [One AY chip](/en/under-the-hood/emulator-internals/next-audio/psg/) | tone counters, noise, the envelope, the volume tables, AY against YM |
 | 4 | TurboSound Next | three chips behind two ports, panning, ABC, ACB and mono |
 | 5 | The 8-bit DACs | the six sound cards on four channels, the port families, feeding samples on time |
 | 6 | Audio from the Raspberry Pi | the I2S link in both directions, and the tape input from the Pi |

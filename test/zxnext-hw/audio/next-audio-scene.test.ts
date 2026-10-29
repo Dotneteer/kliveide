@@ -235,6 +235,48 @@ function magnitudeAt(values: number[], hz: number, rate: number): number {
   return Math.hypot(re, im) / values.length;
 }
 
+// --- One AY chip (article 3): chip 0 written between frames through $FFFD/$BFFD, with the CPU parked;
+//     `mode` is NextReg $06 bits 1-0 (0 YM, 1 AY). Recording starts straight after `setup`.
+async function psgScene(setup: (s: NextTestSession) => void, frames: number, mode = 0): Promise<AudioSample[]> {
+  const s = await session();
+  await s.loadCode(" .org $8000\nStart: di\nPark: jr Park", { entry: "Start" });
+  s.setNextReg(0x08, NR08).setNextReg(0x06, (s.nextRegValue(0x06) & 0xfc) | mode);
+  s.runFrames(2);
+  setup(s);
+  return s.startAudio().runFrames(frames).audio();
+}
+const PSG_TICK_HZ = 1_750_000 / 8; // --- 218,750 counter steps a second
+const toneOf = (period: number) => PSG_TICK_HZ / (2 * Math.max(1, period));
+const units = (v: number) => (v * 32768) / MIXER_GAIN;
+/** A channel's tone: period, fixed volume 15, and R7 with only that channel's tone on */
+function tone(s: NextTestSession, channel: number, period: number, r7 = 0x3f & ~(1 << channel)): void {
+  ay(s, 2 * channel, period & 0xff);
+  ay(s, 2 * channel + 1, period >> 8);
+  ay(s, 8 + channel, 0x0f);
+  ay(s, 7, r7);
+}
+/** Crossings of the middle level a second: how often an on/off signal flips (a sample that holds an
+ *  edge has a level in between, so counting changed samples would count most edges twice) */
+function flipsPerSecond(values: number[]): number {
+  const mid = (Math.max(...values) + Math.min(...values)) / 2;
+  let flips = 0;
+  for (let i = 1; i < values.length; i++) if (values[i - 1] < mid !== values[i] < mid) flips++;
+  return (flips * RATE) / values.length;
+}
+/** Plateaus: runs of at least `min` equal samples, as their values */
+function plateaus(values: number[], min = 4): number[] {
+  const out: number[] = [];
+  let run = 1;
+  for (let i = 1; i <= values.length; i++) {
+    if (i < values.length && values[i] === values[i - 1]) run++;
+    else {
+      if (run >= min) out.push(values[i - 1]);
+      run = 1;
+    }
+  }
+  return out;
+}
+
 describe("Audio series scenes", () => {
   it("overview: every source plays its tone at the rate its settings give, on both sides, in the mixer's proportions", async () => {
     const scenes = { beeper: await beeper(), psg: await psg(), dac: await dac(), pi: await pi() };
@@ -344,5 +386,149 @@ Inner:  djnz Inner        ; 13 * 255 + 8
       return [hz, magnitudeAt(left, hz, RATE)];
     });
     save("beeper", "two-voices", samples, { passTacts: TWO_PASS, slotTacts: TWO_SLOT, steps: TWO_STEPS, hz: [f1, f2], spectrum });
+  });
+  // --- One AY chip (article 3)
+  it("psg: A4 is period 249, 439.3 Hz, and one channel at full volume swings 255 units", async () => {
+    const samples = await psgScene((s) => tone(s, 0, 249), 3);
+    const left = side(samples, "left");
+    expect(relativeError(frequency(left, RATE), toneOf(249))).toBeLessThan(0.005);
+    expect(units(Math.max(...left))).toBeCloseTo(255, -1);
+    expect(units(Math.min(...left))).toBeCloseTo(0, -1);
+    save("psg", "a4", samples, { hz: toneOf(249) }, 480);
+  });
+
+  it("psg: tone, noise, tone AND noise, and neither (a steady level) on channel A", async () => {
+    // --- R7 bit 0 tone A off, bit 3 noise A off (active low); noise period 8, tone period 109
+    const set = (r7: number) => (s: NextTestSession) => {
+      ay(s, 6, 8);
+      tone(s, 0, 109, r7);
+    };
+    const run = async (r7: number) => side(await psgScene(set(r7), 2), "left");
+    const toneOnly = await run(0x3e);
+    const noiseOnly = await run(0x37);
+    const both = await run(0x36);
+    const neither = await run(0x3f);
+    expect(relativeError(frequency(toneOnly, RATE), toneOf(109))).toBeLessThan(0.01);
+    // --- Where the tone is low for a whole sample, tone AND noise is silent; where it is high, it is noise
+    toneOnly.forEach((v, i) => {
+      if (v === 0) expect(both[i], `sample ${i}`).toBe(0);
+    });
+    expect(both.some((v, i) => toneOnly[i] > 0 && v === 0)).toBe(true);
+    expect(both.some((v) => units(v) > 250)).toBe(true);
+    // --- (the first sample straddles the R7 write)
+    expect(new Set(neither.slice(1)).size).toBe(1);
+    expect(units(neither[1])).toBeCloseTo(255, -1);
+    // --- Noise period 8: 109,375 / 8 = 13,672 shifts a second; the output bit changes on about half
+    expect(flipsPerSecond(noiseOnly)).toBeGreaterThan(4000);
+    const save2 = (name: string, v: number[]) =>
+      save("psg", name, v.map((x) => [x, x]).map(([l, r]) => ({ left: l, right: r })) as unknown as AudioSample[], {}, 480);
+    save2("mix-tone", toneOnly);
+    save2("mix-noise", noiseOnly);
+    save2("mix-both", both);
+    save2("mix-neither", neither);
+  });
+
+  it("psg: the noise period sets how often the level changes: period 1 against period 31", async () => {
+    const run = async (period: number) =>
+      side(await psgScene((s) => { ay(s, 6, period); ay(s, 8, 0x0f); ay(s, 7, 0x37); }, 3), "left");
+    const fast = await run(1);
+    const slow = await run(31);
+    // --- 109,375 / 31 = 3,528 shifts a second, about half of them change the bit
+    expect(flipsPerSecond(slow)).toBeGreaterThan(1400);
+    expect(flipsPerSecond(slow)).toBeLessThan(2200);
+    expect(flipsPerSecond(fast)).toBeGreaterThan(5 * flipsPerSecond(slow));
+    save("psg", "noise-1", fast.map((v) => ({ left: v, right: v })) as unknown as AudioSample[], {}, 480);
+    save("psg", "noise-31", slow.map((v) => ({ left: v, right: v })) as unknown as AudioSample[], { shiftsPerSecond: 109375 / 31 }, 480);
+  });
+
+  it("psg: the 16 envelope shapes reduce to 8: shapes 0-3 play as 9, shapes 4-7 as 15", async () => {
+    const EP = 20; // --- 20 ticks a step: 91 µs, 32 steps 2.9 ms
+    const shapes: number[][] = [];
+    for (let shape = 0; shape < 16; shape++) {
+      const left = side(
+        await psgScene((s) => {
+          ay(s, 7, 0x3f);
+          ay(s, 11, EP);
+          ay(s, 12, 0);
+          ay(s, 8, 0x10);
+          ay(s, 13, shape);
+        }, 1),
+        "left"
+      );
+      shapes.push(left.slice(0, 480));
+    }
+    for (let shape = 0; shape < 4; shape++) expect(shapes[shape], `shape ${shape}`).toEqual(shapes[9]);
+    for (let shape = 4; shape < 8; shape++) expect(shapes[shape], `shape ${shape}`).toEqual(shapes[15]);
+    const distinct = new Set(shapes.map((v) => v.join(",")));
+    expect(distinct.size).toBe(8);
+    const out = process.env.NEXT_AUDIO_SHOTS;
+    if (out) {
+      mkdirSync(join(out, "psg"), { recursive: true });
+      writeFileSync(join(out, "psg", "envelopes.json"), JSON.stringify({ rate: RATE, gain: MIXER_GAIN, stepTicks: EP, shapes }) + "\n");
+    }
+  });
+
+  it("psg: the envelope climbs in 32 steps in YM mode and in 16 in AY mode, in the same time", async () => {
+    const EP = 60; // --- a step every 274 µs, 13 samples
+    const run = async (mode: number) =>
+      side(
+        await psgScene((s) => {
+          ay(s, 7, 0x3f);
+          ay(s, 11, EP);
+          ay(s, 12, 0);
+          ay(s, 8, 0x10);
+          ay(s, 13, 0x0d); // --- /‾ : one climb, then held at the top
+        }, 1, mode),
+        "left"
+      );
+    const ym = await run(0);
+    const ayMode = await run(1);
+    const climb = (v: number[]) => [...new Set(plateaus(v.slice(0, Math.round((32 * EP * RATE) / PSG_TICK_HZ) + 20)))];
+    // --- YM: 32 steps, but the table's lowest entries come in equal pairs (1, 1, 2, 2, 3, 3): 29 levels
+    expect(climb(ym).length).toBeGreaterThanOrEqual(27);
+    expect(climb(ym).length).toBeLessThanOrEqual(29);
+    expect(climb(ayMode).length).toBeLessThanOrEqual(16);
+    expect(climb(ayMode).length).toBeGreaterThanOrEqual(14);
+    // --- Both end at the top, 255 units, at the same moment
+    expect(units(ym[ym.length - 1])).toBeCloseTo(255, -1);
+    expect(units(ayMode[ayMode.length - 1])).toBeCloseTo(255, -1);
+    const keep = 600;
+    save("psg", "climb-ym", ym.map((v) => ({ left: v, right: v })) as unknown as AudioSample[], { stepTicks: EP }, keep);
+    save("psg", "climb-ay", ayMode.map((v) => ({ left: v, right: v })) as unknown as AudioSample[], { stepTicks: EP }, keep);
+  });
+
+  it("psg: the envelope as a waveform: shapes 8 and 10 at 488 Hz", async () => {
+    const run = async (shape: number, ep: number) =>
+      side(await psgScene((s) => { ay(s, 7, 0x3f); ay(s, 11, ep); ay(s, 12, 0); ay(s, 8, 0x10); ay(s, 13, shape); }, 3), "left");
+    const saw = await run(0x08, 14); // --- 32 steps of 14 ticks: 218,750 / 448 = 488.3 Hz
+    const tri = await run(0x0a, 7); //  --- 64 steps of 7 ticks: the same
+    for (const v of [saw, tri]) expect(relativeError(frequency(v.slice(100), RATE), PSG_TICK_HZ / 448)).toBeLessThan(0.01);
+    save("psg", "buzz-saw", saw.map((v) => ({ left: v, right: v })) as unknown as AudioSample[], { hz: PSG_TICK_HZ / 448 }, 480);
+    save("psg", "buzz-tri", tri.map((v) => ({ left: v, right: v })) as unknown as AudioSample[], { hz: PSG_TICK_HZ / 448 }, 480);
+  });
+
+  it("psg: a C major chord, C5 E5 G5 on channels A, B, C, each alone and all three", async () => {
+    const periods = [209, 166, 140];
+    const both = (s: NextTestSession, r7: number) => periods.forEach((p, c) => tone(s, c, p, r7));
+    const alone = [];
+    for (let c = 0; c < 3; c++) {
+      // --- Only this channel is written: a channel whose tone and noise are both off is not silent,
+      //     it plays its volume as a steady level, so the others must stay at volume 0
+      const v = await psgScene((s) => tone(s, c, periods[c]), 2);
+      // --- ABC stereo: A and B on the left, C on the right
+      alone.push(side(v, c === 2 ? "right" : "left"));
+      expect(relativeError(frequency(alone[c], RATE), toneOf(periods[c])), "ABC"[c]).toBeLessThan(0.01);
+    }
+    const all = await psgScene((s) => both(s, 0x38), 2);
+    // --- The left side is A + B exactly (one sum per sample in the mixer), the right C + B
+    const left = side(all, "left");
+    left.forEach((v, i) => expect(Math.abs(v - (alone[0][i] + alone[1][i]))).toBeLessThan(2 / 32768));
+    const out = process.env.NEXT_AUDIO_SHOTS;
+    if (out) {
+      writeFileSync(
+        join(out, "psg", "chord.json"),
+        JSON.stringify({ rate: RATE, gain: MIXER_GAIN, periods, hz: periods.map(toneOf), channels: alone.map((v) => v.slice(0, 960).map((x) => Math.round(x * 32768))) }) + "\n"
+      );
+    }
   });
 });

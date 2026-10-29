@@ -35,6 +35,9 @@ to and replace what it supersedes.
   `test/zxnext-hw/layers/next-display-scene.test.ts`). A claim such as "the left border still counts as
   the line above" gets a test that turns a colour on exactly there. Make the test able to fail: a check on
   a blank dot, or on a pattern that looks the same after the change, proves nothing.
+- **When a capture test fails, find out whether the machine or your expectation is wrong before changing
+  either.** An AY chord test failed because it assumed a channel with tone and noise off is silent; it plays
+  its volume as a steady level. The expectation was wrong, and the finding became a point in the article.
 - **Never write about the testing inside an article.** "A test runs all six on the machine" confused the
   reader (which machine? why tests?). One callout near the top may say the pictures come from checked
   tests; nothing else about how the facts were verified belongs in the text.
