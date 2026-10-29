@@ -38,6 +38,10 @@ to and replace what it supersedes.
 - **When a capture test fails, find out whether the machine or your expectation is wrong before changing
   either.** An AY chord test failed because it assumed a channel with tone and noise off is silent; it plays
   its volume as a steady level. The expectation was wrong, and the finding became a point in the article.
+- **A hanging label belongs to the next instruction, even across an `.org`.** In Klive's assembler, `End:` alone
+  on a line followed by `.org $C000` takes the value `$C000`, so `ld b,End-Start` in a scene program counted 234
+  bytes instead of 16 and the DMA ran garbage. End a block's label on the same line as its last byte, or write
+  the length out.
 - **Never write about the testing inside an article.** "A test runs all six on the machine" confused the
   reader (which machine? why tests?). One callout near the top may say the pictures come from checked
   tests; nothing else about how the facts were verified belongs in the text.

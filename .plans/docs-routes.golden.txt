@@ -641,6 +641,7 @@
 /en/under-the-hood/emulator-internals/debugger-loop/index.html
 /en/under-the-hood/emulator-internals/ht1080z-video/index.html
 /en/under-the-hood/emulator-internals/next-audio/beeper/index.html
+/en/under-the-hood/emulator-internals/next-audio/dacs/index.html
 /en/under-the-hood/emulator-internals/next-audio/mixer/index.html
 /en/under-the-hood/emulator-internals/next-audio/overview/index.html
 /en/under-the-hood/emulator-internals/next-audio/psg/index.html

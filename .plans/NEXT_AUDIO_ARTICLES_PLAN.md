@@ -11,12 +11,12 @@ structure, the explaining and figure rules, and the corrections the project auth
 reviewing the screen series; this plan does not repeat them, it only adds what is specific to sound.
 Fold any new lesson from this series' reviews into that file.
 
-Status: **the background page (§3) and articles 1–4 (§2, §4–§6) and 7 (§9) are written; articles 5, 6
+Status: **the background page (§3) and articles 1–5 (§2, §4–§7) and 7 (§9) are written; articles 6
 and 8 are planned.** All written chapters follow the book style of `.ai/hardware-articles-guide.md`
 (Structure, Figures): titles without the machine ("The Big Picture: Four Sources, One Mixer", "The Beeper:
 EAR, MIC and the Tape", "One AY Chip: Tones, Noise and Envelopes", "TurboSound: Three AY Chips Behind Two
-Ports", "The Mixer: One Sum, Three Outputs"), no "Part" headings, figures sized for print. Articles 5, 6
-and 8 are written that way from the start; the plan's "article N" numbering stays only as this plan's own
+Ports", "The 8-Bit DACs: Four Channels, Six Sound Cards", "The Mixer: One Sum, Three Outputs"), no "Part" headings, figures sized for print. Articles 6 and 8
+are written that way from the start; the plan's "article N" numbering stays only as this plan's own
 bookkeeping, never in the text. Open questions
 are in §13.
 
@@ -589,6 +589,26 @@ Verify: every port decode condition and its enable bit; the `$FB`/`$F1`/`$F9` co
 channel each mirror reaches and reset values; the DMA prescaler's time base and formula; CTC rates.
 
 ---
+
+### As built (article 5)
+
+- Written as `dacs.mdx`, "The 8-Bit DACs: Four Channels, Six Sound Cards", with eight figures
+  (`docs/authoring/next-audio/dacs-figures.cjs`): the staircase, the four channels into two sides, the port map
+  (cards, NextReg `$84` bits and the channel each port writes, the NextReg mirrors as its last row), Covox stereo,
+  the four timers, one sine three ways at two CPU speeds, a drum hit, and the DACs' share of the mixer. The plan's
+  separate figures for mono ports, the enable bits and the clashes are folded into the port map and the text.
+- Facts checked: the channels hold and reset to `$80`, and `reset or not nr_08_dac_en` holds them there while the
+  DACs are off (writes ignored); ports decode on the low byte only; `$FB` is Pentagon's only with Soundrive mode 2
+  off; `$F1`/`$F9` with mode 2 on never reach `$7FFD`/`$DFFD`/`$1FFD` (`port_fd` is only A1–A0 = 01); `$DF` reads
+  are the Kempston joystick while Specdrum is enabled and the mouse is off; a port write beats a NextReg mirror in
+  the same clock (not stated). Klive's `zxnext-dac.c` matched every rule, no core change.
+- The DMA paces one byte per 32 × P master clocks, but in burst mode each byte also costs a few CPU clocks to get
+  the bus back: P = 55 gives 968 Hz for a 16-byte sine at 3.5 MHz and 964 Hz at 7 MHz against 994 Hz from the
+  prescaler alone, and the 2,048-byte drum lasts about 131 ms against 128.7. The text says "about 875,000 ÷ P,
+  a little under". The CTC rate (28 MHz ÷ 16 ÷ 109) is exact at every CPU speed.
+- The Copper is described, not captured: its list restarts every frame (311 or 312 lines, prime-ish against any
+  table length), so a looped capture would show a seam that is about the scene, not the DACs.
+- No listening clips (Q3 still open).
 
 ## 8. Article 6 — Audio from the Raspberry Pi
 

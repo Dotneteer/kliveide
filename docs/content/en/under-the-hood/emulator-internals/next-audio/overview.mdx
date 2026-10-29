@@ -335,8 +335,8 @@ The Spectrum and Pentagon world had half a dozen sound cards built on such DACs 
 Specdrum and others), each on its own ports. The Next answers on all of their ports, so their software
 plays unchanged. It also adds three NextRegs, `$2C` to `$2E`, through which the Copper, or a program with
 no free port, can write them. The capture above is a sine wave, 16 steps per cycle, written to **port
-`$DF`**, Specdrum's port, which writes channels A and D at once and so reaches both sides. The DAC
-chapter, still to come, explains them in full.
+`$DF`**, Specdrum's port, which writes channels A and D at once and so reaches both sides. [The 8-Bit DACs: Four Channels, Six Sound Cards](/en/under-the-hood/emulator-internals/next-audio/dacs/)
+explains them in full.
 
 ## The Raspberry Pi's audio
 
@@ -465,7 +465,7 @@ Here are the same two captures, with the CPU's writes marked under them:
 The DAC's sine costs 16 writes per cycle, 16,055 a second, each one on time. If a write comes late, the
 step comes late, and the wave is distorted. Your program can afford that for a drum hit or a word of
 speech, or it can hand the job to the DMA, which copies a sample to a DAC port at a fixed rate on its own
-(the DAC chapter shows how). The AY's tone costs nothing while it plays. That is why games of the 128K era
+([the DAC chapter](/en/under-the-hood/emulator-internals/next-audio/dacs/#who-times-the-writes) shows how). The AY's tone costs nothing while it plays. That is why games of the 128K era
 played their music on the AY: the program runs the game and touches the chip only when the tune moves to
 the next note, typically once every frame.
 
@@ -681,7 +681,7 @@ and a sample player plays its samples faster. Chipmunks, anyone?
 Contention, which stops the CPU at certain moments when it touches the screen memory at 3.5 MHz (see
 [ZX Spectrum: How the Screen Is Drawn](/en/under-the-hood/emulator-internals/spectrum-display/)), also
 stretches a loop that runs in that memory, and its note comes out lower. A DMA transfer timed by its own
-prescaler, or the Copper, does not depend on the CPU's speed (the DAC chapter returns to this).
+prescaler, or the Copper, does not depend on the CPU's speed ([the DAC chapter](/en/under-the-hood/emulator-internals/next-audio/dacs/#who-times-the-writes) returns to this).
 
 A third rate, **48,000 samples a second**, belongs to HDMI only: it is how the finished sum is sent over
 the cable, not how any sound is made. The background chapter's section
@@ -834,9 +834,9 @@ covers port `$FE`, the tape input, the speaker-only beeper, and music from one b
 [One AY Chip: Tones, Noise and Envelopes](/en/under-the-hood/emulator-internals/next-audio/psg/) takes the tone counters, the noise,
 the envelope and the volume tables apart, and sets the AY against the YM. Then
 [TurboSound: Three AY Chips Behind Two Ports](/en/under-the-hood/emulator-internals/next-audio/turbosound/)
-puts three chips behind two ports, with panning, ABC, ACB and mono. The 8-bit DACs, still to come, cover
+puts three chips behind two ports, with panning, ABC, ACB and mono. [The 8-Bit DACs: Four Channels, Six Sound Cards](/en/under-the-hood/emulator-internals/next-audio/dacs/) covers
 the six sound cards on four channels, the port families and feeding samples on time, and Audio from the
-Raspberry Pi, also to come, the I2S link in both directions and the tape input from the Pi.
+Raspberry Pi, still to come, the I2S link in both directions and the tape input from the Pi.
 
 You can read those source chapters in any order. [The Mixer: One Sum, Three Outputs](/en/under-the-hood/emulator-internals/next-audio/mixer/)
 comes after them, since it adds up their levels: the sum in full, the jack, the speaker and HDMI. And the
