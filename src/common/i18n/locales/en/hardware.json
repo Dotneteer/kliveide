@@ -19,6 +19,10 @@
   "@hardware.colours.tvc": {
     "context": "Value of the Colours row in the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the Videoton TV Computer (TVC), a Hungarian home and school computer of the 1980s: 16 colours exist; in its three graphics modes 2, 4 or all 16 can be on screen at once."
   },
+  "hardware.colours.enterprise": "256; 2, 4, 16 or 256 on screen",
+  "@hardware.colours.enterprise": {
+    "context": "Value of the Colours row in the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the Enterprise 64/128, a British home computer of 1985 with the NICK video chip and the DAVE sound chip: 256 colours exist; a line can show 2, 4, 16 or all 256 of them at once."
+  },
   "hardware.attributes.spectrum": "32 × 24 cells of 8 × 8 px, FLASH",
   "@hardware.attributes.spectrum": {
     "context": "Value of the Attributes row in the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts): colour is set per character cell, 32 columns by 24 rows of 8 by 8 pixels, and cells can FLASH. FLASH is a BASIC keyword: keep it."
@@ -46,6 +50,10 @@
   "hardware.text.tvc": "No text mode: a 512, 256 or 128 × 240 bitmap",
   "@hardware.text.tvc": {
     "context": "Value of the Text row in the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the Videoton TV Computer (TVC), a Hungarian home and school computer of the 1980s: it has no character screen; BASIC draws its letters into a bitmap of 512, 256 or 128 dots by 240 lines, depending on the colour mode."
+  },
+  "hardware.text.enterprise": "Character modes, 40 or 84 columns",
+  "@hardware.text.enterprise": {
+    "context": "Value of the Text row in the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the Enterprise 64/128, a British home computer of 1985 with the NICK video chip and the DAVE sound chip: NICK draws text in its character modes (40 columns as the operating system sets them up); 84-column text is drawn in a bitmap mode."
   },
   "hardware.layers.next": "ULA, Layer 2 (up to 320 × 256), tilemap, sprites, copper",
   "@hardware.layers.next": {
@@ -99,6 +107,10 @@
   "hardware.timing.tvc": "A 6845 CRTC, 2 T-states a character; the CPU waits on video RAM access",
   "@hardware.timing.tvc": {
     "context": "Value of the Timing row in the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the Videoton TV Computer (TVC), a Hungarian home and school computer of the 1980s: the video chip is a 6845 CRT controller (keep 6845 and CRTC), which reads one byte every 2 CPU clock cycles (T-states); the CPU is briefly held whenever it reads or writes the video memory."
+  },
+  "hardware.timing.enterprise": "NICK runs on its own 14.24 MHz clock, 57 slots a line; the CPU waits on video RAM",
+  "@hardware.timing.enterprise": {
+    "context": "Value of the timing note in the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the Enterprise 64/128, a British home computer of 1985 with the NICK video chip and the DAVE sound chip: the video chip has a clock of its own, a line is 57 time slots, and the processor is held back when it uses the video memory."
   },
   "hardware.rom.timexHome": "HOME ROM; your copy, or the 48K ROM",
   "@hardware.rom.timexHome": {
@@ -164,6 +176,14 @@
   "@hardware.rom.tvcExth": {
     "context": "Role of a ROM image in the ROM row of the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the Videoton TV Computer (TVC): the 8K chip that extends the operating system. Lowercase."
   },
+  "hardware.rom.epExos": "EXOS and the word processor",
+  "@hardware.rom.epExos": {
+    "context": "Role of a ROM image in the ROM row in the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the Enterprise 64/128, a British home computer of 1985 with the NICK video chip and the DAVE sound chip: the 32K ROM holding EXOS, the operating system, and the built-in word processor. EXOS is a name, keep it."
+  },
+  "hardware.rom.epBasic": "IS-BASIC cartridge",
+  "@hardware.rom.epBasic": {
+    "context": "Role of a ROM image in the ROM row in the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the Enterprise 64/128, a British home computer of 1985 with the NICK video chip and the DAVE sound chip: the 16K cartridge holding IS-BASIC. IS-BASIC is a name, keep it."
+  },
   "hardware.rom.ozFlash": "OZ, {cardType} flash",
   "@hardware.rom.ozFlash": {
     "context": "Role of the Cambridge Z88's internal ROM in the ROM row of the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) when it sits in a flash chip. OZ is the Z88's operating system: keep it.",
@@ -186,6 +206,10 @@
   "hardware.sound.tvc": "Tone generator with a 4-bit volume DAC",
   "@hardware.sound.tvc": {
     "context": "Value of the Sound row in the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the Videoton TV Computer (TVC), a Hungarian home and school computer of the 1980s: one programmable square-wave channel whose loudness is set by a 4-bit digital-to-analogue converter, which can also play sampled sound."
+  },
+  "hardware.sound.enterprise": "DAVE: three tone channels and noise, stereo",
+  "@hardware.sound.enterprise": {
+    "context": "Value of the Sound row in the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the Enterprise 64/128, a British home computer of 1985 with the NICK video chip and the DAVE sound chip: DAVE is the sound chip's name, keep it."
   },
   "hardware.sound.nextDac": "4-channel DAC (SpecDrum)",
   "@hardware.sound.nextDac": {
@@ -313,6 +337,10 @@
   "hardware.keyboard.tvc": "Hungarian layout",
   "@hardware.keyboard.tvc": {
     "context": "Value of the Keyboard row in the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the Videoton TV Computer (TVC), a Hungarian home and school computer of the 1980s: the keyboard has the Hungarian key layout, with keys for the accented letters."
+  },
+  "hardware.keyboard.enterprise": "UK layout, built-in joystick",
+  "@hardware.keyboard.enterprise": {
+    "context": "Value of the Keyboard row in the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the Enterprise 64/128, a British home computer of 1985 with the NICK video chip and the DAVE sound chip: a British keyboard with a joystick built into it."
   },
   "hardware.keyboard.next": "Next, with extended keys",
   "@hardware.keyboard.next": {

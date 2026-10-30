@@ -1,0 +1,8 @@
+{
+  // Type-checks the Enterprise harness and the tests that use it:
+  //   npx tsc -p test/harness/enterprise/tsconfig.json
+  "extends": "../../tsconfig.json",
+  "compilerOptions": { "noEmit": true, "lib": ["ESNext", "DOM"], "module": "esnext" },
+  "include": ["./**/*.ts", "../../ep-hw/**/*.ts"],
+  "exclude": ["node_modules"]
+}

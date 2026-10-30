@@ -39,7 +39,8 @@ import {
   MI_SCORPION,
   MI_HT1080Z,
   MC_HT_MODEL,
-  MI_TVC
+  MI_TVC,
+  MI_ENTERPRISE
 } from "./constants";
 import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_DOCK, MEDIA_MICRODRIVE_1, MEDIA_MICRODRIVE_2, MEDIA_TAPE } from "@common/structs/project-const";
 import { Ht1080zChars, type Ht1080zCharSetId, ht1080zCharsFor, TvcChars, Zx80Chars, Zx81Chars, ZxNextChars, ZxSpectrumChars } from "./char-codes";
@@ -66,6 +67,7 @@ import {
 import { ZX80_MODELS, ZX81_MODELS } from "@emu/machines/zx8081/zx8081MachineInfo";
 import { HT1080Z_MODELS } from "@emu/machines/ht1080z/ht1080zMachineInfo";
 import { TVC_MODELS } from "@emu/machines/tvc/tvcMachineInfo";
+import { EP_MODELS } from "@emu/machines/enterprise/epMachineInfo";
 import { SCORPION_MODELS, SP128_MODELS } from "@emu/machines/zxSpectrum128/sp128Timings";
 import { P3_MODELS } from "@emu/machines/zxSpectrumP3e/p3RomSets";
 import { TIMEX_MODELS } from "@emu/machines/timex/timexModels";
@@ -713,6 +715,33 @@ export const machineRegistry: MachineInfo[] = [
       ) => new Z80Disassembler(memorySections, memoryContents, partitionLabels, options),
       // --- RST 30h's function byte, in every program (the OS vectors it through RAM)
       [CT_CUSTOM_DISASSEMBLER]: () => new TvcCustomDisassembler(),
+      [CT_DISASSEMBLER_VIEW]: {
+        showRamOption: false,
+        showScreenOption: false
+      }
+    }
+  },
+  {
+    // --- `.plans/ENTERPRISE_PLAN.md`: the 128 (and, from Phase 6, the 64) as models (D2). The IDE's
+    // --- surfaces arrive phase by phase: the picture (3), sound (4), keyboard and FILE: (5), the
+    // --- debugger's partitions, history and profile (7), Run and tapes (8), EXDOS (9).
+    machineId: MI_ENTERPRISE,
+    displayName: "Enterprise",
+    charSet: ZxSpectrumChars,
+    features: {
+      [MF_Z80]: true,
+      // --- Run and Debug come with Klive's FILE: ROM (Phase 8, §12)
+      [MF_INJECT_SUPPORT]: false,
+      [MF_ALLOW_SCAN_LINES]: false
+    },
+    models: EP_MODELS,
+    toolInfo: {
+      [CT_DISASSEMBLER]: (
+        memorySections: MemorySection[],
+        memoryContents: Uint8Array,
+        partitionLabels?: string[],
+        options?: DisassemblyOptions
+      ) => new Z80Disassembler(memorySections, memoryContents, partitionLabels, options),
       [CT_DISASSEMBLER_VIEW]: {
         showRamOption: false,
         showScreenOption: false

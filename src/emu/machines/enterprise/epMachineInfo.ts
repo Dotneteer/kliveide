@@ -1,0 +1,66 @@
+import type { MachineConfigSet, MachineModel } from "@common/machines/info-types";
+
+import { MC_EP_CARTRIDGE, MC_EP_MODEL } from "@common/machines/constants";
+import type { EpRomSetId } from "./EpRoms";
+
+/**
+ * The Enterprise 64/128: its models and the facts the host, the core and the renderer share
+ * (`.plans/ENTERPRISE_PLAN.md` §4.3, D2).
+ */
+
+/** The CPU clock: the 8 MHz crystal divided by 2 */
+export const EP_CLOCK = 4_000_000;
+
+/** EXOS's frame: 312 NICK lines of 256.22 T, 79 941.9 T (the core's `EP_NOMINAL_FRAME_TACTS`) */
+export const EP_TACTS_IN_FRAME = 79_942;
+
+/** The TV picture (D7): the unblanked slots 10-55 (46 x 16 pixels), 288 lines; the core's `EP_SCREEN_*` */
+export const EP_SCREEN_WIDTH = 736;
+export const EP_SCREEN_HEIGHT = 288;
+
+/**
+ * The width of a pixel against its height, as the emulator panel draws it: Klive shows a Spectrum
+ * pixel (7 MHz) square, and a NICK pixel (14.2375 MHz) lasts 7 / 14.2375 of one.
+ */
+export const EP_PIXEL_ASPECT = 7_000_000 / 14_237_536;
+
+/**
+ * The physical memory's layout in the core (`ep.c`): only the segments that hold something have room
+ * in it; every other segment reads FFh from the unmapped block. The IDE's partitions are segment numbers.
+ */
+export const EP_SEGMENT_SIZE = 0x4000;
+export const EP_PHYS_EXOS = 0x00000;
+export const EP_PHYS_CART = 0x08000;
+export const EP_PHYS_FILEIO = 0x0c000;
+export const EP_PHYS_EXDOS = 0x10000;
+export const EP_PHYS_RAM = 0x18000;
+export const EP_PHYS_VRAM = 0x28000;
+export const EP_PHYS_UNMAPPED = 0x38000;
+
+/** The ROMs present (`epConfigure`'s mask) */
+export const EP_ROM_CART = 0x01;
+export const EP_ROM_FILEIO = 0x02;
+export const EP_ROM_EXDOS = 0x04;
+
+/** The models (D2): the 128 runs EXOS 2.1 and IS-BASIC 2.1 in 128K; the 64 EXOS 2.0 and IS-BASIC 2.0 in 64K */
+export const EP_MODELS: MachineModel[] = [
+  {
+    modelId: "ep128",
+    displayName: "Enterprise 128",
+    config: { [MC_EP_MODEL]: "128" }
+  }
+];
+
+/** What the core needs to know about a model (`epConfigure`) */
+export type EpHardware = {
+  /** 128K of RAM (F8h-FFh); 64K otherwise (FCh-FFh) */
+  is128: boolean;
+  /** IS-BASIC in the cartridge slot (`MC_EP_CARTRIDGE`) */
+  cartridge: boolean;
+  romSet: EpRomSetId;
+};
+
+export function resolveEpHardware(config: MachineConfigSet | undefined): EpHardware {
+  const is128 = config?.[MC_EP_MODEL] !== "64";
+  return { is128, cartridge: config?.[MC_EP_CARTRIDGE] !== false, romSet: is128 ? "21" : "20" };
+}

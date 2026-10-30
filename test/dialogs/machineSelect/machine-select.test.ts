@@ -62,7 +62,8 @@ describe("Select Machine dialog", () => {
     const h = open();
     const sections = h.vm.sections.filter((s) => s.kind !== "favorites");
     expect(sections.map((s) => s.id)).toEqual(machineRegistry.map((m) => m.machineId));
-    expect(sections.filter((s) => s.kind === "leaf").map((s) => s.id)).toEqual(["zxnext", "scorpion"]);
+    // --- The Enterprise is a one-model leaf until its 64 joins (`.plans/ENTERPRISE_PLAN.md` Phase 6)
+    expect(sections.filter((s) => s.kind === "leaf").map((s) => s.id)).toEqual(["zxnext", "scorpion", "ep"]);
     const z88 = sections.find((s) => s.id === "z88")!;
     expect(z88.kind === "machine" && z88.rows).toHaveLength(10);
   });

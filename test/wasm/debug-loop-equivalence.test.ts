@@ -11,6 +11,7 @@ import { createSession as createNextSession } from "../harness/zxnext";
 import { createZ88Session, Z88_FLAT_RAM_LAYOUT } from "../harness/z88";
 import { createZx81Session } from "../harness/zx81";
 import { createTvcSession } from "../harness/tvc";
+import { createEpSession } from "../harness/enterprise";
 
 /**
  * The debugger's in-core loop decides exactly as the instruction-by-instruction loop does
@@ -118,6 +119,14 @@ const MACHINES: Record<string, () => Promise<Setup>> = {
     s.runFrames(20);
     s.wasm.tvcWritePort(0x02, 0x50);
     return { machine: s.machine as unknown as Machine, prefix: "tvc", base: 0x8000, counter: 0x9000, di: true, port: 0x0058 };
+  },
+  // --- The program and its counter in video RAM (page 2 = segment FCh) and the port NICK's (80h): every
+  // --- fetch, counter access and port read is held for NICK's slot grid (`.plans/ENTERPRISE_PLAN.md` §6)
+  ep: async () => {
+    const s = await createEpSession();
+    s.runFrames(20);
+    s.wasm.epWritePort(0xb2, 0xfc);
+    return { machine: s.machine as unknown as Machine, prefix: "ep", base: 0x8000, counter: 0x9000, di: true, port: 0x0080 };
   }
 };
 
