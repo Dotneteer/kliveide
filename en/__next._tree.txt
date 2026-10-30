@@ -8,4 +8,4 @@
 :HL["/_next/static/css/c61eacdb39d25666.css","style"]
 2:[["children",{"s":"__PAGE__","h":160}]]
 1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":65648,"c":"$Q2"}]]
-0:{"b":"xkh-_fRXmRmKER7G-slU2","t":{"t":{"s":"","h":131152,"c":"$Q1"}}}
+0:{"b":"vW2BX9AhS_BVQQC4TZtrZ","t":{"t":{"s":"","h":131152,"c":"$Q1"}}}
