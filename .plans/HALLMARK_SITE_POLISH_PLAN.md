@@ -241,6 +241,31 @@ Once the author picks it:
    recognises), add it to `doc:check` so new pages stay clean.
 4. Em dashes: decided by H8 (c). If they go, it is a separate batch, since there are many.
 
+#### As built (step 4, first batch)
+
+- **The check**: `scripts/check-docs-prose.cjs`, `npm run doc:check:prose` (`--summary`, `--area`,
+  `--rule`, and `--strict` for when it joins `doc:check`). Six rules: `buzzword`, `filler`, `just`,
+  `dash`, `dots`, `arrow-link`. It reads prose only: fenced code, inline code (even when it wraps),
+  link targets, URLs, JSX attributes other than `alt`/`caption`/`title`, imports and front matter
+  other than the description are blanked first, keeping line and column numbers. A line that should
+  stay carries `{/* prose-ok: <why> */}` on itself or the line above. The generated
+  `reference/whats-new.mdx` is skipped.
+- **False positives found on real pages and exempted**, each pinned by `test/docs/docs-prose.test.ts`
+  (10 tests): an en dash with no space beside it is a range (`1–3`, `` `$0000`–`$3FFF` ``); a dash
+  alone in a table cell means "none"; "Just My Code" is a setting; "not just", "has just drawn",
+  "just after", "just left of" are exact; "note that" and "whether you" count only at the start of
+  a sentence ("a note that", "depends on whether you"); a fence's indentation no longer swallows the
+  blank line before it (which let a code comment's dash through).
+- **Baseline**: 429 findings on 79 pages (get-started 6, guides 206, reference 90, under-the-hood
+  127; dash 285, filler 105, just 30, buzzword 8, dots 1).
+- **Batch 1, Reference: 90 to 0**, on 14 pages. Dashes became commas, colons or brackets; the
+  Copper and DMA pages' 18 headings (`## WR6 — Control Commands`) became `## WR6: Control Commands`
+  (no link pointed at them; the one link into the DMA page, `#runtime-patching-pattern`, is to a
+  heading without a dash). "Powerful" macros became "macros with arguments"; "Let's assume" became
+  "Say"; "easily" went. `doc:check` passes (no broken links or anchors).
+- **Next batches**: Under the Hood (127), then Guides (206), then Get Started (6) last, because any
+  change there sends its five translations back through `doc:i18n:todo`/`merge` as whole pages.
+
 ### 5. Documentation chrome
 
 Run the step-0 sloplint findings for the doc pages through the site's own CSS: the Nextra sidebar,

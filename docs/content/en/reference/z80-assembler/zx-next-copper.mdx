@@ -4,7 +4,7 @@ description: "The .copper pragma writes ZX Spectrum Next Copper lists as readabl
 
 # `.copper` Pragma Reference
 
-The `.copper` pragma lets you write a ZX Spectrum Next **Copper list** as readable instructions — `wait`, `move`, `nop`, `halt` — instead of hand-encoded `.defb` bytes. Each `.copper` line emits exactly one two-byte Copper instruction. The pragma is only available when targeting the ZX Spectrum Next (`.model next`).
+The `.copper` pragma lets you write a ZX Spectrum Next **Copper list** as readable instructions (`wait`, `move`, `nop`, `halt`) instead of hand-encoded `.defb` bytes. Each `.copper` line emits exactly one two-byte Copper instruction. The pragma is only available when targeting the ZX Spectrum Next (`.model next`).
 
 ## Overview
 
@@ -29,7 +29,7 @@ ListEnd:
 
 ## Encoding
 
-Copper words are emitted **big-endian** — high byte first — because that is the order the Copper reads them. This is the opposite of `.dw`, so do not build Copper lists with `.dw`.
+Copper words are emitted **big-endian**, high byte first, because that is the order the Copper reads them. This is the opposite of `.dw`, so do not build Copper lists with `.dw`.
 
 | Instruction | High byte | Low byte | Fields |
 |---|---|---|---|
@@ -40,7 +40,7 @@ A WAIT is satisfied when the Copper's line counter equals `line` **and** the hor
 
 ---
 
-## WAIT — Wait for a Raster Position
+## WAIT: Wait for a Raster Position
 
 **Syntax:**
 
@@ -65,7 +65,7 @@ A line past the end of the frame, or a horizontal position past the end of the l
 
 ---
 
-## MOVE — Write a NextReg
+## MOVE: Write a NextReg
 
 **Syntax:**
 
@@ -78,7 +78,7 @@ A line past the end of the frame, or a horizontal position past the end of the l
 | `reg` | `$00`–`$7F` | The NextReg to write |
 | `value` | 8 bits (`-128`–`255`) | The value to write |
 
-The register field is only 7 bits wide. A register above `$7F` is an **error**, never silently masked — masking would turn a typo such as `$80` into a write to register `$00`.
+The register field is only 7 bits wide. A register above `$7F` is an **error**, never silently masked: masking would turn a typo such as `$80` into a write to register `$00`.
 
 **Examples:**
 
@@ -92,7 +92,7 @@ A MOVE to register `0` is legal: the Copper treats it as a **NOP** and ignores t
 
 ---
 
-## NOP — No Operation
+## NOP: No Operation
 
 ```z80klive
 .copper nop                 ; emits $00, $00
@@ -102,7 +102,7 @@ A MOVE to register `0` is legal: the Copper treats it as a **NOP** and ignores t
 
 ---
 
-## HALT — Stop Until the Next Restart
+## HALT: Stop Until the Next Restart
 
 ```z80klive
 .copper halt                ; emits $FF, $FF
@@ -112,7 +112,7 @@ A MOVE to register `0` is legal: the Copper treats it as a **NOP** and ignores t
 
 ---
 
-## WORD — Any Copper Word (Escape Hatch)
+## WORD: Any Copper Word (Escape Hatch)
 
 ```z80klive
 .copper word <expr>
@@ -151,7 +151,7 @@ Band: .macro(atLine, colour)
 
 ---
 
-## Complete Example — A Two-Colour Split
+## Complete Example: A Two-Colour Split
 
 ```z80klive
     .model next

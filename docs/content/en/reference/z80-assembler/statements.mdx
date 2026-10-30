@@ -34,7 +34,7 @@ This construct is a shorter way to multiply __HL__ with 64. It is equivalent to 
 The `.loop` statement accepts an expression. The compiler repeats the instructions within the 
 loop's body according to the value of the expression. The `.endl` statement marks the end of the loop.
 
-> **Note**: You can use many flavors for the `.endl` block closing statement. `.endl`, `endl`, `.lend`, `lend` are all accepted &mdash; with uppercase letters, too.
+> **Note**: You can use many flavors for the `.endl` block closing statement. `.endl`, `endl`, `.lend`, `lend` are all accepted, in uppercase letters too.
 
 Look at this code:
 
@@ -394,7 +394,7 @@ The compiler translates the code to this:
 .db #15, #80, #07
 ```
 
-> **Note**: You can use many flavors for the `.endw` block closing statement. `.endw`, `endw`, `.wend`, and `wend` are all accepted &mdash; with uppercase letters, too.
+> **Note**: You can use many flavors for the `.endw` block closing statement. `.endw`, `endw`, `.wend`, and `wend` are all accepted, in uppercase letters too.
 
 ## The FOR..NEXT Loop
 
@@ -562,8 +562,8 @@ Nonetheless, you can use the `.elif` statement to create the code snippet above 
 
 ## IF and Scopes
 
-Unlike the loop statements, `.if` does not provide its local scope. Whenever you create a symbol, a label, or a variable, those get into the current scope. This code defines a label with the same name in each branch. Because the compiler evaluates the `.if` branches from top to down, it either compiles one of the `.elif` branches &mdash;
-the first with a matching condition &mdash; or the else branch. Thus, this code does not define `MyLabel` twice:
+Unlike the loop statements, `.if` does not provide its local scope. Whenever you create a symbol, a label, or a variable, those get into the current scope. This code defines a label with the same name in each branch. Because the compiler evaluates the `.if` branches from top to down, it either compiles one of the `.elif` branches
+(the first with a matching condition) or the else branch. Thus, this code does not define `MyLabel` twice:
 
 ```z80klive
 branch = 4 ; Try to set up a different value
@@ -744,7 +744,7 @@ When the compiler finds a closing statement (such as `.endw`, `.endl`, `.until`,
 
 ## The BREAK statement
 
-You can exit the loop &mdash; independently of the loop's exit condition &mdash; with the `.break` statement:
+You can exit the loop with the `.break` statement, whatever the loop's exit condition:
 
 ```z80klive
 ; LOOP sample

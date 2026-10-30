@@ -104,6 +104,7 @@
     "doc:build": "npm run doc:assets && cd docs && npm run build",
     "doc:check": "npm run doc:check:routes && npm run doc:check:links && npm run doc:check:guide-images && npm run doc:check:highlighting && npm run doc:check:weight && npm run doc:check:release-links && npm run doc:i18n:check",
     "doc:check:release-links": "node scripts/check-docs-release-links.cjs",
+    "doc:check:prose": "node scripts/check-docs-prose.cjs",
     "doc:check:weight": "node scripts/check-docs-weight.cjs",
     "doc:i18n:check": "node scripts/docs-i18n.cjs check",
     "doc:i18n:todo": "node scripts/docs-i18n.cjs todo",
