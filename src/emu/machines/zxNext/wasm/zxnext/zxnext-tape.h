@@ -13,5 +13,8 @@ static uint32_t zxnextTapeGetMode(void);
 static uint32_t zxnextTapeGetEarBit(void);
 static uint32_t zxnextTapeGetMicBit(void);
 static void zxnextTapeProcessMicBit(uint32_t value);
+/* The conditioned EAR input (port $FE bit 6, the MIC line) and the per-instruction step */
+static uint32_t zxnextTapeGetInput(void);
+static void zxnextTapeBeforeInstruction(void);
 
 #endif

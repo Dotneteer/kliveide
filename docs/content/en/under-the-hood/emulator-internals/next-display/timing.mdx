@@ -4,187 +4,189 @@ description: "How the ZX Spectrum Next counts its picture: the two counters that
 
 import { Callout } from 'nextra/components'
 
-# ZX Spectrum Next: The Frame and the Beam
+# The Frame and the Beam: Two Counters, Four Timings
 
 A 48K game that changes the border colour at an exact T-state, to draw stripes that line up with the
-picture, works on the Next. So does a 128K demo that does the same on a frame of a different shape,
-and a Pentagon demo on a third. And the same machine sends a sharp picture to a modern monitor over
-HDMI, a standard that was written decades after any of them.
+picture, works on the Next. So does a 128K demo that does the same on a frame of a different shape, and a
+Pentagon demo on a third. And the very same machine sends a sharp picture to a modern monitor over HDMI, a
+standard none of those programs had ever heard of. One machine, four old frames and a new cable. How?
 
-All of it rests on **two counters**. One counts the dots of a line, the other the lines of a frame.
-Every event of the picture, the blanking, the sync pulses, the display area, the interrupts, is a
-moment at which these counters reach a certain value. Change a handful of those values and the
-Next becomes a different machine. This article is about the counters: what they count, the shapes
-of frame they can make, and how the picture they time leaves the machine.
+Well, all of it rests on **two counters**. One counts the dots of a line, the other the lines of a frame.
+Every event of the picture, the blanking, the sync pulses, the display area, the interrupts, is simply a
+moment at which these counters reach a certain value. Change a handful of those values, and the Next becomes
+a different machine. Why should you care? Because every effect that touches the screen at the right moment,
+a split border, a raster bar, a status panel that stays still while the playfield scrolls, is timed against
+these counters. Know them, and you know exactly when your program's writes reach the screen.
 
-This is the second article of the series. It builds on
-[the first](/en/under-the-hood/emulator-internals/next-display/overview/), and on
-[ZX Spectrum: How the Screen Is Drawn](/en/under-the-hood/emulator-internals/spectrum-display/),
-whose Part 1 explains the original 48K frame. [How a Television Draws a
-Picture](/en/under-the-hood/emulator-internals/crt-display/) explains the beam, blanking and sync.
+Everything here builds on the previous chapter,
+[The Big Picture: Five Producers, Four Layers, One Dot](/en/under-the-hood/emulator-internals/next-display/overview/), and on
+[ZX Spectrum: How the Screen Is Drawn](/en/under-the-hood/emulator-internals/spectrum-display/), whose
+section on the frame explains the original 48K one. If the beam, blanking and sync are new to you,
+[How a Television Draws a Picture](/en/under-the-hood/emulator-internals/crt-display/) explains them first.
 
-### How this article is organised
+## The road ahead
 
-- **Two counters** ([Part 1](#part-1-two-counters)): what they count, and how every part of the
-  frame is a range of their values. If you read only one part, read this one.
-- **Four timings, two frame rates** ([Part 2](#part-2-four-timings-two-frame-rates)): the 48K, the
-  128K, the +3 and the Pentagon, and what 60 Hz does to each.
-- **Interrupts** ([Part 3](#part-3-interrupts)): the frame interrupt, the line interrupt, and how
-  lines are numbered, for the display area and for the wide area.
-- **Dots, ticks and T-states** ([Part 4](#part-4-dots-ticks-and-t-states)): one clock for the
-  picture and the CPU, at every CPU speed.
-- **From counters to cables** ([Part 5](#part-5-from-counters-to-cables)): RGB, the scan doubler
-  and VGA, and HDMI.
-- **The emulator** ([Part 6](#part-6-how-klive-does-it)): how Klive counts the same frame.
+We start with the two counters themselves: what they count, and how every part of the frame is nothing more
+than a range of their values. That is the key idea, and if you read only one section, make it that one. Then
+come the four shapes of frame the Next can count, copied from the 48K, the 128K, the +3 and the Pentagon,
+and what 60 Hz does to them. After that, the interrupts: the frame interrupt the Spectrum always had, the
+line interrupt the Next adds, and the curious way its lines are numbered. Next, the one clock behind the
+picture and the CPU, at every CPU speed. Then we follow the picture out of the machine, as RGB, through the
+scan doubler as VGA, or as HDMI, and finish with how Klive counts the same frame.
 
 <Callout type="info">
-The figures use the **128K/+3 timing at 50 Hz** unless they say otherwise, and the frame rates are
-those of the master clock at exactly 28 MHz (VGA mode 0, or HDMI). Klive emulates every timing of
-this article.
+The figures use the **128K/+3 timing at 50 Hz** unless they say otherwise, and the frame rates are those of
+the master clock at exactly 28 MHz (VGA mode 0, or HDMI). Klive emulates every timing described here.
 </Callout>
 
-## Part 1: Two counters
+## Two counters
 
-The beam's position is held in two counters. The **horizontal counter** counts the dots of a line at
-7 MHz, one step per dot, from 0 at the start of the line's blanking to the last dot of the line, 455
-in 128K timing, and then starts again. Each time it starts again, the **vertical counter** counts one
-more line, from 0 to the last line of the frame, 310, and then the frame starts again.
+The beam's position is held in two counters. The **horizontal counter** counts the dots of a line at 7 MHz,
+one step per dot, from 0 at the start of the line's blanking to the last dot of the line, 455 in 128K
+timing, and then starts again. Each time it starts again, the **vertical counter** counts one more line,
+from 0 to the last line of the frame, 310, and then the frame starts again.
 
-That is all the timing there is. Everything else is a **comparison** with these two numbers:
+That is all the timing there is. Really. Everything else is a **comparison** with these two numbers:
 
-- **Blanking**: dots 0 to 95 of every line, and lines 0 to 7 of every frame. Nothing is shown there;
-  the beam returns.
+- **Blanking**: dots 0 to 95 of every line, and lines 0 to 7 of every frame. Nothing is shown there; the
+  beam returns.
 - **Sync**: the horizontal sync pulse on dots 16 to 47, the vertical one on lines 1 to 4, inside the
   blanking, where a monitor looks for them.
 - **The display area**: dots 136 to 391, lines 64 to 255, the Spectrum's 256 × 192.
-- **The wide area**: dots 104 to 423, lines 32 to 287, the 320 × 256 of Layer 2's wide modes, the
-  tilemap and the sprites.
+- **The wide area**: dots 104 to 423, lines 32 to 287, the 320 × 256 of Layer 2's wide modes, the tilemap
+  and the sprites.
 - **The border**: everything else that is not blanked.
 
+Here is the whole frame drawn to scale, so you can see how much of it is never shown at all:
+
 <figure>
-<svg viewBox="0 0 700 410" role="img" aria-label="The Next frame in 128K timing at 50 Hz, drawn to scale: 456 dots across by 311 lines. The horizontal counter runs from 0 to 455: dots 0 to 95 are blanking, with the horizontal sync from 16 to 47; the display area runs from dot 136 to 391, and the wide area from 104 to 423. The vertical counter runs from 0 to 310: lines 0 to 7 are blanking, with the vertical sync on lines 1 to 4; the display area runs from line 64 to 255, and the wide area from line 32 to 287. The frame interrupt is raised on line 1, at dot 128." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
-  <rect x="64" y="54" width="456.0" height="311.0" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.5" />
-  <rect x="64" y="54" width="96.0" height="311.0" fill="currentColor" fillOpacity="0.16" />
-  <rect x="160.0" y="54" width="360.0" height="8.0" fill="currentColor" fillOpacity="0.16" />
-  <rect x="80.0" y="54" width="32.0" height="311.0" fill="currentColor" fillOpacity="0.3" />
-  <rect x="64" y="55.0" width="456.0" height="4.0" fill="currentColor" fillOpacity="0.3" />
-  <rect x="168.0" y="86.0" width="320.0" height="256.0" fill="none" stroke="currentColor" strokeOpacity="0.7" strokeDasharray="5 4" />
-  <rect x="200.0" y="118.0" width="256.0" height="192.0" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" strokeWidth="1.2" />
-  <circle cx="192.0" cy="55.5" r="4" fill="#e5484d" />
-  <line x1="64" y1="48" x2="64" y2="54" stroke="currentColor" strokeOpacity="0.6" />
-  <text x="64" y="44" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">0</text>
-  <line x1="160" y1="48" x2="160" y2="54" stroke="currentColor" strokeOpacity="0.6" />
-  <text x="160" y="44" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">96</text>
-  <line x1="200" y1="48" x2="200" y2="54" stroke="currentColor" strokeOpacity="0.6" />
-  <text x="200" y="44" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">136</text>
-  <line x1="456" y1="48" x2="456" y2="54" stroke="currentColor" strokeOpacity="0.6" />
-  <text x="456" y="44" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">392</text>
-  <text x="519" y="44" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">455</text>
-  <text x="292" y="22" textAnchor="middle" fill="currentColor" fontSize="12">horizontal counter: dots of one line</text>
-  <line x1="58" y1="62" x2="64" y2="62" stroke="currentColor" strokeOpacity="0.6" />
-  <text x="55" y="66" textAnchor="end" fill="currentColor" fontSize="10" fillOpacity="0.8">8</text>
-  <line x1="58" y1="118" x2="64" y2="118" stroke="currentColor" strokeOpacity="0.6" />
-  <text x="55" y="122" textAnchor="end" fill="currentColor" fontSize="10" fillOpacity="0.8">64</text>
-  <line x1="58" y1="310" x2="64" y2="310" stroke="currentColor" strokeOpacity="0.6" />
-  <text x="55" y="314" textAnchor="end" fill="currentColor" fontSize="10" fillOpacity="0.8">256</text>
-  <text x="55" y="368" textAnchor="end" fill="currentColor" fontSize="10" fillOpacity="0.8">310</text>
-  <text x="16" y="214" textAnchor="middle" fill="currentColor" fontSize="12" transform="rotate(-90 16 210)">vertical counter: lines</text>
-  <text x="112" y="254" textAnchor="middle" fill="currentColor" fontSize="11">blanking</text>
-  <text x="96" y="294" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.85" transform="rotate(-90 96 290)">HSYNC</text>
-  <text x="328" y="210" textAnchor="middle" fill="currentColor" fontSize="13" fontWeight="600">display area</text>
-  <text x="328" y="228" textAnchor="middle" fill="currentColor" fontSize="11">dots 136–391, lines 64–255</text>
-  <text x="328" y="102" textAnchor="middle" fill="currentColor" fontSize="11">wide area: dots 104–423, lines 32–287</text>
-  <text x="504" y="354" textAnchor="end" fill="currentColor" fontSize="11" fillOpacity="0.8">border</text>
-  <line x1="196" y1="55" x2="244" y2="76" stroke="#e5484d" strokeWidth="1.2" />
-  <text x="248" y="80" fill="#e5484d" fontSize="11">frame interrupt: line 1, dot 128</text>
-  <text x="536" y="194" fill="currentColor" fontSize="12">one frame:</text>
-  <text x="536" y="210" fill="currentColor" fontSize="12">311 lines</text>
-  <text x="536" y="230" fill="currentColor" fontSize="11" fillOpacity="0.8">one line:</text>
-  <text x="536" y="245" fill="currentColor" fontSize="11" fillOpacity="0.8">456 dots =</text>
-  <text x="536" y="260" fill="currentColor" fontSize="11" fillOpacity="0.8">228 T-states</text>
-  <text x="536" y="275" fill="currentColor" fontSize="11" fillOpacity="0.8">at 3.5 MHz</text>
+<svg viewBox="0 0 700 531" role="img" aria-label="The Next frame in 128K timing at 50 Hz, drawn to scale: 456 dots across by 311 lines. The horizontal counter runs from 0 to 455: dots 0 to 95 are blanking, with the horizontal sync from 16 to 47; the display area runs from dot 136 to 391, and the wide area from 104 to 423. The vertical counter runs from 0 to 310: lines 0 to 7 are blanking, with the vertical sync on lines 1 to 4; the display area runs from line 64 to 255, and the wide area from line 32 to 287. The frame interrupt is raised on line 1, at dot 128. One frame is 311 lines; one line is 456 dots, 228 T-states at 3.5 MHz." style={{ width: "100%", height: "auto" }}>
+  <rect x="66" y="58" width="634" height="432.4" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.5" />
+  <rect x="66" y="58" width="133.5" height="432.4" fill="currentColor" fillOpacity="0.16" />
+  <rect x="199.5" y="58" width="500.5" height="11.1" fill="currentColor" fillOpacity="0.16" />
+  <rect x="88.2" y="58" width="44.5" height="432.4" fill="currentColor" fillOpacity="0.3" />
+  <rect x="66" y="59.4" width="634" height="5.6" fill="currentColor" fillOpacity="0.3" />
+  <rect x="210.6" y="102.5" width="444.9" height="355.9" fill="none" stroke="currentColor" strokeOpacity="0.7" strokeDasharray="5 4" />
+  <rect x="255.1" y="147" width="355.9" height="266.9" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" strokeWidth="1.2" />
+  <circle cx="244" cy="60.1" r="4.5" fill="#e5484d" />
+  <text x="383" y="20" textAnchor="middle" fill="currentColor" fontSize="16.5" fontWeight="600">horizontal counter: dots of one line</text>
+  <line x1="66" y1="51" x2="66" y2="58" stroke="currentColor" strokeOpacity="0.6" strokeWidth="1" />
+  <text x="66" y="46" textAnchor="start" fill="currentColor" fontSize="13.5" fillOpacity="0.85">0</text>
+  <line x1="199.5" y1="51" x2="199.5" y2="58" stroke="currentColor" strokeOpacity="0.6" strokeWidth="1" />
+  <text x="199.5" y="46" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.85">96</text>
+  <line x1="255.1" y1="51" x2="255.1" y2="58" stroke="currentColor" strokeOpacity="0.6" strokeWidth="1" />
+  <text x="255.1" y="46" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.85">136</text>
+  <line x1="611" y1="51" x2="611" y2="58" stroke="currentColor" strokeOpacity="0.6" strokeWidth="1" />
+  <text x="611" y="46" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.85">392</text>
+  <text x="700" y="46" textAnchor="end" fill="currentColor" fontSize="13.5" fillOpacity="0.85">455</text>
+  <line x1="59" y1="69.1" x2="66" y2="69.1" stroke="currentColor" strokeOpacity="0.6" strokeWidth="1" />
+  <text x="56" y="74.1" textAnchor="end" fill="currentColor" fontSize="13.5" fillOpacity="0.85">8</text>
+  <line x1="59" y1="147" x2="66" y2="147" stroke="currentColor" strokeOpacity="0.6" strokeWidth="1" />
+  <text x="56" y="152" textAnchor="end" fill="currentColor" fontSize="13.5" fillOpacity="0.85">64</text>
+  <line x1="59" y1="413.9" x2="66" y2="413.9" stroke="currentColor" strokeOpacity="0.6" strokeWidth="1" />
+  <text x="56" y="418.9" textAnchor="end" fill="currentColor" fontSize="13.5" fillOpacity="0.85">256</text>
+  <text x="56" y="490.4" textAnchor="end" fill="currentColor" fontSize="13.5" fillOpacity="0.85">310</text>
+  <text x="14" y="274.2" textAnchor="middle" fill="currentColor" fontSize="16.5" fontWeight="600" transform="rotate(-90 14 274.2)">vertical counter: lines</text>
+  <text x="166.1" y="322.2" textAnchor="middle" fill="currentColor" fontSize="15" transform="rotate(-90 166.1 322.2)">blanking</text>
+  <text x="115.5" y="322.2" textAnchor="middle" fill="currentColor" fontSize="13.5" transform="rotate(-90 115.5 322.2)">HSYNC</text>
+  <text x="433.1" y="269.3" textAnchor="middle" fill="currentColor" fontSize="16.5" fontWeight="600">display area</text>
+  <text x="433.1" y="291.3" textAnchor="middle" fill="currentColor" fontSize="15">dots 136–391, lines 64–255</text>
+  <text x="433.1" y="122.5" textAnchor="middle" fill="currentColor" fontSize="15">wide area: dots 104–423, lines 32–287</text>
+  <text x="692" y="480.4" textAnchor="end" fill="currentColor" fontSize="15" fillOpacity="0.85">border</text>
+  <line x1="244" y1="64.1" x2="244" y2="85.8" stroke="#e5484d" strokeWidth="1.4" />
+  <text x="252" y="90.8" fill="#e5484d" fontSize="15">frame interrupt: line 1, dot 128</text>
+  <text x="0" y="520.4" fill="currentColor" fontSize="15">one frame: 311 lines · one line: 456 dots = 228 T-states at 3.5 MHz</text>
 </svg>
 <figcaption>The 128K frame at 50 Hz to scale, with the counter values where things begin: one unit across is one dot, one unit down is one line. The grey parts are blanking, the darker bands inside them the sync pulses; the red dot is the frame interrupt.</figcaption>
 </figure>
 
-### Three numbers that make it fit
+Look how much room the blanking takes on the left: 96 dots of every line, more than a fifth, go by
+while the beam flies back. Your program's time keeps running there all the same.
 
-- **7 MHz dots.** One step of the horizontal counter is one dot of the 256-wide picture, and half a
-  T-state of a 3.5 MHz CPU, exactly as on the Spectrum.
+## Three numbers that make it fit
+
+Three numbers hold the frame together, and they are worth knowing by heart:
+
+- **7 MHz dots.** One step of the horizontal counter is one dot of the 256-wide picture, and half a T-state
+  of a 3.5 MHz CPU, exactly as on the Spectrum.
 - **456 dots a line**, 228 T-states: the 128K's line. A 48K line is 448 dots, 224 T-states.
-- **311 lines a frame**: 456 × 311 = 141,816 dots, 70,908 T-states. The 48K's frame is 312 lines,
-  69,888 T-states.
+- **311 lines a frame**: 456 × 311 = 141,816 dots, 70,908 T-states. The 48K's frame is 312 lines, 69,888
+  T-states.
+
+Unroll the frame, and the two counters become two strips:
 
 <figure>
-<svg viewBox="0 0 700 250" role="img" aria-label="The two counters of the 128K timing at 50 Hz, as strips. The horizontal counter counts 456 dots, 0 to 455: blanking from 0 to 95 with the sync pulse from 16 to 47, the left border from 96 to 135, the display area from 136 to 391, the right border from 392 to 455; the wide area spans 104 to 423. Then it starts again at 0. The vertical counter counts 311 lines, 0 to 310: blanking on lines 0 to 7 with the sync pulse on lines 1 to 4, the top border to line 63, the display area from 64 to 255, the bottom border from 256 to 310; the wide area spans lines 32 to 287. The frame interrupt is on line 1." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
-  <text x="20" y="26" fill="currentColor" fontSize="12" fontWeight="600">horizontal counter (dots)</text>
-  <rect x="60.0" y="52" width="20.8" height="26" fill="currentColor" fillOpacity="0.16" stroke="currentColor" strokeOpacity="0.45" />
-  <rect x="80.8" y="52" width="41.6" height="26" fill="currentColor" fillOpacity="0.3" stroke="currentColor" strokeOpacity="0.45" />
-  <text x="101.6" y="69" textAnchor="middle" fill="currentColor" fontSize="10">sync</text>
-  <rect x="122.4" y="52" width="62.4" height="26" fill="currentColor" fillOpacity="0.16" stroke="currentColor" strokeOpacity="0.45" />
-  <text x="153.6" y="69" textAnchor="middle" fill="currentColor" fontSize="10">blank</text>
-  <rect x="184.8" y="52" width="52.0" height="26" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.45" />
-  <rect x="236.8" y="52" width="332.8" height="26" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" />
-  <text x="403.2" y="69" textAnchor="middle" fill="currentColor" fontSize="10">display area</text>
-  <rect x="569.6" y="52" width="83.2" height="26" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.45" />
-  <text x="611.2" y="69" textAnchor="middle" fill="currentColor" fontSize="10">border</text>
-  <path d="M195.2,48 v-6 H611.2 v6" fill="none" stroke="currentColor" strokeOpacity="0.7" strokeDasharray="4 3" />
-  <text x="403.2" y="39" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.85">wide area 104–423</text>
-  <line x1="60.0" y1="78" x2="60.0" y2="84" stroke="currentColor" strokeOpacity="0.6" />
-  <text x="60.0" y="95" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">0</text>
-  <line x1="184.8" y1="78" x2="184.8" y2="84" stroke="currentColor" strokeOpacity="0.6" />
-  <text x="184.8" y="95" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">96</text>
-  <line x1="236.8" y1="78" x2="236.8" y2="84" stroke="currentColor" strokeOpacity="0.6" />
-  <text x="236.8" y="95" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">136</text>
-  <line x1="569.6" y1="78" x2="569.6" y2="84" stroke="currentColor" strokeOpacity="0.6" />
-  <text x="569.6" y="95" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">392</text>
-  <line x1="651.5" y1="78" x2="651.5" y2="84" stroke="currentColor" strokeOpacity="0.6" />
-  <text x="651.5" y="95" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">455</text>
-  <text x="658.8" y="69" fill="currentColor" fontSize="10" fillOpacity="0.8">→ 0</text>
-  <text x="20" y="144" fill="currentColor" fontSize="12" fontWeight="600">vertical counter (lines)</text>
-  <rect x="60.0" y="170" width="1.9" height="26" fill="currentColor" fillOpacity="0.16" stroke="currentColor" strokeOpacity="0.45" />
-  <rect x="61.9" y="170" width="7.5" height="26" fill="currentColor" fillOpacity="0.3" stroke="currentColor" strokeOpacity="0.45" />
-  <rect x="69.4" y="170" width="5.6" height="26" fill="currentColor" fillOpacity="0.16" stroke="currentColor" strokeOpacity="0.45" />
-  <rect x="75.0" y="170" width="105.3" height="26" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.45" />
-  <text x="127.7" y="187" textAnchor="middle" fill="currentColor" fontSize="10">top border</text>
-  <rect x="180.3" y="170" width="361.0" height="26" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" />
-  <text x="360.8" y="187" textAnchor="middle" fill="currentColor" fontSize="10">display area</text>
-  <rect x="541.3" y="170" width="103.4" height="26" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.45" />
-  <text x="593.0" y="187" textAnchor="middle" fill="currentColor" fontSize="10">bottom border</text>
-  <path d="M120.2,166 v-6 H601.4 v6" fill="none" stroke="currentColor" strokeOpacity="0.7" strokeDasharray="4 3" />
-  <text x="360.8" y="157" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.85">wide area 32–287</text>
-  <line x1="60.0" y1="196" x2="60.0" y2="202" stroke="currentColor" strokeOpacity="0.6" />
-  <text x="60.0" y="213" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">0</text>
-  <line x1="75.0" y1="196" x2="75.0" y2="202" stroke="currentColor" strokeOpacity="0.6" />
-  <text x="75.0" y="213" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">8</text>
-  <line x1="180.3" y1="196" x2="180.3" y2="202" stroke="currentColor" strokeOpacity="0.6" />
-  <text x="180.3" y="213" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">64</text>
-  <line x1="541.3" y1="196" x2="541.3" y2="202" stroke="currentColor" strokeOpacity="0.6" />
-  <text x="541.3" y="213" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">256</text>
-  <line x1="642.8" y1="196" x2="642.8" y2="202" stroke="currentColor" strokeOpacity="0.6" />
-  <text x="642.8" y="213" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.8">310</text>
-  <text x="650.7" y="187" fill="currentColor" fontSize="10" fillOpacity="0.8">→ 0</text>
-  <circle cx="62.8" cy="183" r="3.5" fill="#e5484d" />
-  <text x="69.8" y="226" fill="#e5484d" fontSize="10">frame interrupt</text>
+<svg viewBox="0 0 700 278" role="img" aria-label="The two counters of the 128K timing at 50 Hz, as strips. The horizontal counter counts 456 dots, 0 to 455: blanking from 0 to 95 with the sync pulse from 16 to 47, the left border from 96 to 135, the display area from 136 to 391, the right border from 392 to 455; the wide area spans 104 to 423. Then it starts again at 0. The vertical counter counts 311 lines, 0 to 310: blanking on lines 0 to 7 with the sync pulse on lines 1 to 4, the top border to line 63, the display area from 64 to 255, the bottom border from 256 to 310; the wide area spans lines 32 to 287. The frame interrupt is on line 1." style={{ width: "100%", height: "auto" }}>
+  <text x="0" y="24" fill="currentColor" fontSize="16.5" fontWeight="600">horizontal counter (dots)</text>
+  <rect x="0" y="70" width="22.9" height="32" fill="currentColor" fillOpacity="0.16" stroke="currentColor" strokeOpacity="0.45" />
+  <rect x="22.9" y="70" width="45.8" height="32" fill="currentColor" fillOpacity="0.3" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="45.8" y="91" textAnchor="middle" fill="currentColor" fontSize="13.5">sync</text>
+  <rect x="68.6" y="70" width="68.6" height="32" fill="currentColor" fillOpacity="0.16" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="102.9" y="91" textAnchor="middle" fill="currentColor" fontSize="13.5">blank</text>
+  <rect x="137.3" y="70" width="57.2" height="32" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.45" />
+  <rect x="194.5" y="70" width="366" height="32" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" />
+  <text x="377.5" y="91" textAnchor="middle" fill="currentColor" fontSize="13.5">display area</text>
+  <rect x="560.5" y="70" width="91.5" height="32" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="606.2" y="91" textAnchor="middle" fill="currentColor" fontSize="13.5">border</text>
+  <path d="M148.7,66 v-7 H606.2 v7" fill="none" stroke="currentColor" strokeOpacity="0.7" strokeWidth="1.2" strokeDasharray="4 3" strokeLinejoin="round" />
+  <text x="377.5" y="54" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.9">wide area 104–423</text>
+  <line x1="0" y1="102" x2="0" y2="109" stroke="currentColor" strokeOpacity="0.6" strokeWidth="1" />
+  <text x="0" y="124" textAnchor="start" fill="currentColor" fontSize="13.5" fillOpacity="0.85">0</text>
+  <line x1="137.3" y1="102" x2="137.3" y2="109" stroke="currentColor" strokeOpacity="0.6" strokeWidth="1" />
+  <text x="137.3" y="124" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.85">96</text>
+  <line x1="194.5" y1="102" x2="194.5" y2="109" stroke="currentColor" strokeOpacity="0.6" strokeWidth="1" />
+  <text x="194.5" y="124" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.85">136</text>
+  <line x1="560.5" y1="102" x2="560.5" y2="109" stroke="currentColor" strokeOpacity="0.6" strokeWidth="1" />
+  <text x="560.5" y="124" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.85">392</text>
+  <line x1="650.6" y1="102" x2="650.6" y2="109" stroke="currentColor" strokeOpacity="0.6" strokeWidth="1" />
+  <text x="650.6" y="124" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.85">455</text>
+  <text x="658" y="92" fill="currentColor" fontSize="15" fillOpacity="0.85">→ 0</text>
+  <text x="0" y="168" fill="currentColor" fontSize="16.5" fontWeight="600">vertical counter (lines)</text>
+  <rect x="0" y="214" width="2.1" height="32" fill="currentColor" fillOpacity="0.16" stroke="currentColor" strokeOpacity="0.45" />
+  <rect x="2.1" y="214" width="8.4" height="32" fill="currentColor" fillOpacity="0.3" stroke="currentColor" strokeOpacity="0.45" />
+  <rect x="10.5" y="214" width="6.3" height="32" fill="currentColor" fillOpacity="0.16" stroke="currentColor" strokeOpacity="0.45" />
+  <rect x="16.8" y="214" width="117.4" height="32" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="75.5" y="235" textAnchor="middle" fill="currentColor" fontSize="13.5">top border</text>
+  <rect x="134.2" y="214" width="402.5" height="32" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" />
+  <text x="335.4" y="235" textAnchor="middle" fill="currentColor" fontSize="13.5">display area</text>
+  <rect x="536.7" y="214" width="115.3" height="32" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="594.3" y="235" textAnchor="middle" fill="currentColor" fontSize="13.5">bottom border</text>
+  <path d="M67.1,210 v-7 H603.8 v7" fill="none" stroke="currentColor" strokeOpacity="0.7" strokeWidth="1.2" strokeDasharray="4 3" strokeLinejoin="round" />
+  <text x="335.4" y="198" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.9">wide area 32–287</text>
+  <line x1="0" y1="246" x2="0" y2="253" stroke="currentColor" strokeOpacity="0.6" strokeWidth="1" />
+  <text x="0" y="268" textAnchor="start" fill="currentColor" fontSize="13.5" fillOpacity="0.85">0</text>
+  <line x1="16.8" y1="246" x2="16.8" y2="253" stroke="currentColor" strokeOpacity="0.6" strokeWidth="1" />
+  <text x="14.8" y="268" textAnchor="start" fill="currentColor" fontSize="13.5" fillOpacity="0.85">8</text>
+  <line x1="134.2" y1="246" x2="134.2" y2="253" stroke="currentColor" strokeOpacity="0.6" strokeWidth="1" />
+  <text x="134.2" y="268" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.85">64</text>
+  <line x1="536.7" y1="246" x2="536.7" y2="253" stroke="currentColor" strokeOpacity="0.6" strokeWidth="1" />
+  <text x="536.7" y="268" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.85">256</text>
+  <line x1="649.9" y1="246" x2="649.9" y2="253" stroke="currentColor" strokeOpacity="0.6" strokeWidth="1" />
+  <text x="649.9" y="268" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.85">310</text>
+  <text x="658" y="236" fill="currentColor" fontSize="15" fillOpacity="0.85">→ 0</text>
+  <circle cx="3.1" cy="230" r="4" fill="#e5484d" />
+  <line x1="3.1" y1="226" x2="3.1" y2="189" stroke="#e5484d" strokeWidth="1.4" />
+  <text x="11.1" y="194" fill="#e5484d" fontSize="15">frame interrupt</text>
 </svg>
 <figcaption>The same counters as two strips, to scale. At the end of each strip the counter goes back to 0; the vertical counter steps once each time the horizontal one does.</figcaption>
 </figure>
 
-### Counters that start early
+## Counters that start early
 
-The producers of the picture do not simply wait for the beam. A dot has to be fetched from memory and
-looked up in a palette before it can be shown, so each producer works a little ahead of the beam,
-with counters of its own that start before the area they draw. The ULA's counter starts 12 dots
-before the display area, the counter of the wide area 16 dots before it and 2 lines above it. The
-picture still appears exactly where the main counters say: the head start is used up by the work.
+The producers of the picture do not simply wait for the beam. A dot has to be fetched from memory and looked
+up in a palette before it can be shown, so each producer works a little ahead of the beam, with counters of
+its own that start before the area they draw. The ULA's counter starts 12 dots before the display area, the
+counter of the wide area 16 dots before it and 2 lines above it. The picture still appears exactly where the
+main counters say: the head start is used up by the work. Think of a kitchen that starts cooking before you
+sit down, so the plate arrives exactly when you do.
 
-A program can change the timing at any moment, but the counters take a new timing only **at the end
-of a frame**, when both of them go back to 0. A frame is never half one shape and half another.
+Your program can change the timing at any moment, but the counters take a new timing only **at the end of a
+frame**, when both of them go back to 0. A frame is never half one shape and half another.
 
-## Part 2: Four timings, two frame rates
+## Four timings, two frame rates
 
-The Next can count four shapes of frame. Bits 6–4 of the Machine Type register, NextReg `$03`, choose one (with bit 7 set to allow
-the change), and the machine type the Next starts with chooses it at power-on:
+The Next can count four shapes of frame. Bits 6–4 of the Machine Type register, NextReg `$03`, choose one
+(with bit 7 set to allow the change), and the machine type the Next starts with chooses it at power-on:
 
 | Timing | Dots a line | T-states a line at 3.5 MHz | Lines (50 Hz) | T-states a frame | Display area from line | Frame rate at 28 MHz |
 |---|---|---|---|---|---|---|
@@ -193,559 +195,579 @@ the change), and the machine type the Next starts with chooses it at power-on:
 | +2A/+2B/+3 | 456 | 228 | 311 | 70,908 | 64 | 49.36 Hz |
 | Pentagon | 448 | 224 | 320 | 71,680 | 80 | 48.83 Hz |
 
-Why copy them so exactly? Because the shape of the frame is a **contract** with the programs. A
-program that changes the border at a counted T-state, or rewrites an attribute just before the beam
-reaches it, is written for one frame. Give it a frame one line longer and its stripes drift. So the
-Next does not have one frame that is "close enough": it has the frame of each machine, to the dot.
+Why copy them so exactly? Because the shape of the frame is a **contract** with the programs. A program that
+changes the border at a counted T-state, or rewrites an attribute just before the beam reaches it, is written
+for one frame. Give it a frame one line longer, and its stripes drift. So the Next does not have one frame
+that is "close enough": it has the frame of each machine, to the dot.
 
-The 128K and the +3 share a frame. What differs is small but real: the +3's frame interrupt comes one
-T-state earlier, and the two machines hold up the CPU in different memory banks and in a different
-pattern (Part 4). The Pentagon, a Russian clone, has a taller frame, wider vertical blanking and no
-contention at all.
+The 128K and the +3 share a frame. What differs is small but real: the +3's frame interrupt comes one T-state
+earlier, and the two machines hold up the CPU in different memory banks and in a different pattern (more on
+that in Dots, ticks and T-states below). The Pentagon, a Russian clone, has a taller frame, wider vertical
+blanking and no contention at all. Here are all four side by side:
 
 <figure>
-<svg viewBox="0 0 700 548" role="img" aria-label="Four frames drawn at the same scale. 48K timing: 448 dots by 312 lines, the display area from line 64, the interrupt on line 0. 128K and +3 timing: 456 by 311, the display area from line 64, the interrupt on line 1. Pentagon timing: 448 by 320 with wider vertical blanking, the display area from line 80, the interrupt on the last line. 128K timing at 60 Hz: 456 by 264, the display area from line 40, the interrupt on line 0; the wide area then fills every visible line." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
-  <text x="30" y="22" fill="currentColor" fontSize="12" fontWeight="600">48K: 448 × 312</text>
-  <rect x="30" y="34" width="277.8" height="193.4" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.5" />
-  <rect x="30" y="34" width="59.5" height="193.4" fill="currentColor" fillOpacity="0.16" />
-  <rect x="89.5" y="34" width="218.2" height="5.0" fill="currentColor" fillOpacity="0.16" />
-  <rect x="39.9" y="34" width="19.8" height="193.4" fill="currentColor" fillOpacity="0.3" />
-  <rect x="30" y="34.6" width="277.8" height="2.5" fill="currentColor" fillOpacity="0.3" />
-  <rect x="89.5" y="53.8" width="198.4" height="158.7" fill="none" stroke="currentColor" strokeOpacity="0.7" strokeDasharray="5 4" />
-  <rect x="109.4" y="73.7" width="158.7" height="119.0" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" strokeWidth="1.2" />
-  <circle cx="101.9" cy="34.3" r="4" fill="#e5484d" />
-  <text x="30" y="250.4" fill="currentColor" fontSize="11" fillOpacity="0.8">50.08 Hz · display from line 64</text>
-  <text x="375" y="22" fill="currentColor" fontSize="12" fontWeight="600">128K/+2 and +3: 456 × 311</text>
-  <rect x="375" y="34" width="282.7" height="192.8" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.5" />
-  <rect x="375" y="34" width="59.5" height="192.8" fill="currentColor" fillOpacity="0.16" />
-  <rect x="434.5" y="34" width="223.2" height="5.0" fill="currentColor" fillOpacity="0.16" />
-  <rect x="384.9" y="34" width="19.8" height="192.8" fill="currentColor" fillOpacity="0.3" />
-  <rect x="375" y="34.6" width="282.7" height="2.5" fill="currentColor" fillOpacity="0.3" />
-  <rect x="439.5" y="53.8" width="198.4" height="158.7" fill="none" stroke="currentColor" strokeOpacity="0.7" strokeDasharray="5 4" />
-  <rect x="459.3" y="73.7" width="158.7" height="119.0" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" strokeWidth="1.2" />
-  <circle cx="454.4" cy="34.9" r="4" fill="#e5484d" />
-  <text x="375" y="250.4" fill="currentColor" fontSize="11" fillOpacity="0.8">49.36 Hz · display from line 64</text>
-  <text x="30" y="288" fill="currentColor" fontSize="12" fontWeight="600">Pentagon: 448 × 320</text>
-  <rect x="30" y="300" width="277.8" height="198.4" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.5" />
-  <rect x="30" y="300" width="39.7" height="198.4" fill="currentColor" fillOpacity="0.16" />
-  <rect x="69.7" y="300" width="238.1" height="9.9" fill="currentColor" fillOpacity="0.16" />
-  <rect x="39.9" y="300" width="19.8" height="198.4" fill="currentColor" fillOpacity="0.3" />
-  <rect x="30" y="300.6" width="277.8" height="8.7" fill="currentColor" fillOpacity="0.3" />
-  <rect x="89.5" y="329.8" width="198.4" height="158.7" fill="none" stroke="currentColor" strokeOpacity="0.7" strokeDasharray="5 4" />
-  <rect x="109.4" y="349.6" width="158.7" height="119.0" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" strokeWidth="1.2" />
-  <circle cx="302.2" cy="498.1" r="4" fill="#e5484d" />
-  <text x="30" y="516.4" fill="currentColor" fontSize="11" fillOpacity="0.8">48.83 Hz · display from line 80</text>
-  <text x="375" y="288" fill="currentColor" fontSize="12" fontWeight="600">128K at 60 Hz: 456 × 264</text>
-  <rect x="375" y="300" width="282.7" height="163.7" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.5" />
-  <rect x="375" y="300" width="59.5" height="163.7" fill="currentColor" fillOpacity="0.16" />
-  <rect x="434.5" y="300" width="223.2" height="5.0" fill="currentColor" fillOpacity="0.16" />
-  <rect x="384.9" y="300" width="19.8" height="163.7" fill="currentColor" fillOpacity="0.3" />
-  <rect x="375" y="300.6" width="282.7" height="2.5" fill="currentColor" fillOpacity="0.3" />
-  <rect x="439.5" y="305.0" width="198.4" height="158.7" fill="none" stroke="currentColor" strokeOpacity="0.7" strokeDasharray="5 4" />
-  <rect x="459.3" y="324.8" width="158.7" height="119.0" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" strokeWidth="1.2" />
-  <circle cx="454.4" cy="300.3" r="4" fill="#e5484d" />
-  <text x="375" y="516.4" fill="currentColor" fontSize="11" fillOpacity="0.8">58.15 Hz · display from line 40</text>
+<svg viewBox="0 0 700 612.5964912280701" role="img" aria-label="Four frames drawn at the same scale. 48K timing: 448 dots by 312 lines, the display area from line 64, the interrupt on line 0, 50.08 Hz. 128K and +3 timing: 456 by 311, the display area from line 64, the interrupt on line 1, 49.36 Hz. Pentagon timing: 448 by 320 with wider vertical blanking, the display area from line 80, the interrupt on the last line, 48.83 Hz. 128K timing at 60 Hz: 456 by 264, the display area from line 40, the interrupt on line 0, 58.15 Hz; the wide area then fills every visible line." style={{ width: "100%", height: "auto" }}>
+  <text x="0" y="20" fill="currentColor" fontSize="16.5" fontWeight="600">48K: 448 × 312</text>
+  <rect x="0" y="30" width="334" height="232.6" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.5" />
+  <rect x="0" y="30" width="71.6" height="232.6" fill="currentColor" fillOpacity="0.16" />
+  <rect x="71.6" y="30" width="262.5" height="6" fill="currentColor" fillOpacity="0.16" />
+  <rect x="11.9" y="30" width="23.9" height="232.6" fill="currentColor" fillOpacity="0.3" />
+  <rect x="0" y="30.7" width="334" height="3" fill="currentColor" fillOpacity="0.3" />
+  <rect x="71.6" y="53.9" width="238.6" height="190.9" fill="none" stroke="currentColor" strokeOpacity="0.7" strokeDasharray="5 4" />
+  <rect x="95.4" y="77.7" width="190.9" height="143.2" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" strokeWidth="1.2" />
+  <circle cx="86.5" cy="30.4" r="4.5" fill="#e5484d" />
+  <text x="0" y="292.6" fill="currentColor" fontSize="15" fillOpacity="0.85">50.08 Hz · display from line 64</text>
+  <text x="360" y="20" fill="currentColor" fontSize="16.5" fontWeight="600">128K/+2 and +3: 456 × 311</text>
+  <rect x="360" y="30" width="340" height="231.9" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.5" />
+  <rect x="360" y="30" width="71.6" height="231.9" fill="currentColor" fillOpacity="0.16" />
+  <rect x="431.6" y="30" width="268.4" height="6" fill="currentColor" fillOpacity="0.16" />
+  <rect x="371.9" y="30" width="23.9" height="231.9" fill="currentColor" fillOpacity="0.3" />
+  <rect x="360" y="30.7" width="340" height="3" fill="currentColor" fillOpacity="0.3" />
+  <rect x="437.5" y="53.9" width="238.6" height="190.9" fill="none" stroke="currentColor" strokeOpacity="0.7" strokeDasharray="5 4" />
+  <rect x="461.4" y="77.7" width="190.9" height="143.2" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" strokeWidth="1.2" />
+  <circle cx="455.4" cy="31.1" r="4.5" fill="#e5484d" />
+  <text x="360" y="292.6" fill="currentColor" fontSize="15" fillOpacity="0.85">49.36 Hz · display from line 64</text>
+  <text x="0" y="330" fill="currentColor" fontSize="16.5" fontWeight="600">Pentagon: 448 × 320</text>
+  <rect x="0" y="340" width="334" height="238.6" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.5" />
+  <rect x="0" y="340" width="47.7" height="238.6" fill="currentColor" fillOpacity="0.16" />
+  <rect x="47.7" y="340" width="286.3" height="11.9" fill="currentColor" fillOpacity="0.16" />
+  <rect x="11.9" y="340" width="23.9" height="238.6" fill="currentColor" fillOpacity="0.3" />
+  <rect x="0" y="340.7" width="334" height="10.4" fill="currentColor" fillOpacity="0.3" />
+  <rect x="71.6" y="375.8" width="238.6" height="190.9" fill="none" stroke="currentColor" strokeOpacity="0.7" strokeDasharray="5 4" />
+  <rect x="95.4" y="399.6" width="190.9" height="143.2" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" strokeWidth="1.2" />
+  <circle cx="327.3" cy="578.2" r="4.5" fill="#e5484d" />
+  <text x="0" y="602.6" fill="currentColor" fontSize="15" fillOpacity="0.85">48.83 Hz · display from line 80</text>
+  <text x="360" y="330" fill="currentColor" fontSize="16.5" fontWeight="600">128K at 60 Hz: 456 × 264</text>
+  <rect x="360" y="340" width="340" height="196.8" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.5" />
+  <rect x="360" y="340" width="71.6" height="196.8" fill="currentColor" fillOpacity="0.16" />
+  <rect x="431.6" y="340" width="268.4" height="6" fill="currentColor" fillOpacity="0.16" />
+  <rect x="371.9" y="340" width="23.9" height="196.8" fill="currentColor" fillOpacity="0.3" />
+  <rect x="360" y="340.7" width="340" height="3" fill="currentColor" fillOpacity="0.3" />
+  <rect x="437.5" y="346" width="238.6" height="190.9" fill="none" stroke="currentColor" strokeOpacity="0.7" strokeDasharray="5 4" />
+  <rect x="461.4" y="369.8" width="190.9" height="143.2" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" strokeWidth="1.2" />
+  <circle cx="455.4" cy="340.4" r="4.5" fill="#e5484d" />
+  <text x="360" y="602.6" fill="currentColor" fontSize="15" fillOpacity="0.85">58.15 Hz · display from line 40</text>
 </svg>
 <figcaption>The four frames at the same scale, each with its display area (blue), its wide area (dashed) and its frame interrupt (red). The Pentagon's interrupt is on the last line of its frame, so its head start comes from the bottom.</figcaption>
 </figure>
 
-One column of the table deserves a second look: the frame rate. The Next's dots are exactly 7 MHz,
-a quarter of its 28 MHz clock. The original 128K ran its dots slightly faster, at about 7.09 MHz,
-so its frame took 50.02 per second. The same frame on the Next runs at **49.36 Hz**, 1.3% slower.
-A program cannot see the difference: every frame has the same number of T-states, every line the same
-number of dots. Only a stopwatch can.
+One column of the table deserves a second look: the frame rate. The Next's dots are exactly 7 MHz, a quarter
+of its 28 MHz clock. The original 128K ran its dots slightly faster, at about 7.09 MHz, so its frame took
+50.02 per second. The same frame on the Next runs at **49.36 Hz**, 1.3% slower. Can your program see the
+difference? No. Every frame has the same number of T-states, every line the same number of dots. Only a
+stopwatch can tell.
 
-### 60 Hz
+## The 60 Hz frame
 
-Bit 2 of the Peripheral 1 Setting register, NextReg `$05`, switches any timing but the Pentagon to **60 Hz**. Nothing changes along the
-line. The frame loses lines: 264 instead of 311 or 312, and the display area starts on line 40
-instead of 64. Above and below it, 32 lines of border are left, exactly the extra lines of the wide
-area, so at 60 Hz the wide area fills every visible line and there is no border above or below it at
-all. The frame rate becomes 58.15 Hz (128K) or 59.19 Hz (48K).
+Bit 2 of the Peripheral 1 Setting register, NextReg `$05`, switches any timing but the Pentagon to **60 Hz**.
+Nothing changes along the line. The frame loses lines: 264 instead of 311 or 312, and the display area starts
+on line 40 instead of 64. Above and below it, 32 lines of border are left, exactly the extra lines of the wide
+area, so at 60 Hz the wide area fills every visible line and there is no border above or below it at all.
+The frame rate becomes 58.15 Hz (128K) or 59.19 Hz (48K).
 
 <figure>
-<svg viewBox="0 0 700 290" role="img" aria-label="The 128K frame at 50 Hz and at 60 Hz, side by side at the same scale. At 50 Hz the frame has 311 lines and the display area starts on line 64, with 24 lines of border visible above the wide area and 23 below it. At 60 Hz the frame has 264 lines and the display area starts on line 40: the wide area begins on line 8, the first visible line, and ends on line 263, the last, so no border is left above or below it." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
-  <text x="40" y="22" fill="currentColor" fontSize="12" fontWeight="600">50 Hz: 311 lines</text>
-  <rect x="40" y="34" width="301.0" height="205.3" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.5" />
-  <rect x="40" y="34" width="63.4" height="205.3" fill="currentColor" fillOpacity="0.16" />
-  <rect x="103.4" y="34" width="237.6" height="5.3" fill="currentColor" fillOpacity="0.16" />
-  <rect x="50.6" y="34" width="21.1" height="205.3" fill="currentColor" fillOpacity="0.3" />
-  <rect x="40" y="34.7" width="301.0" height="2.6" fill="currentColor" fillOpacity="0.3" />
-  <rect x="108.6" y="55.1" width="211.2" height="169.0" fill="none" stroke="currentColor" strokeOpacity="0.7" strokeDasharray="5 4" />
-  <rect x="129.8" y="76.2" width="169.0" height="126.7" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" strokeWidth="1.2" />
-  <text x="380" y="22" fill="currentColor" fontSize="12" fontWeight="600">60 Hz: 264 lines</text>
-  <rect x="380" y="34" width="301.0" height="174.2" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.5" />
-  <rect x="380" y="34" width="63.4" height="174.2" fill="currentColor" fillOpacity="0.16" />
-  <rect x="443.4" y="34" width="237.6" height="5.3" fill="currentColor" fillOpacity="0.16" />
-  <rect x="390.6" y="34" width="21.1" height="174.2" fill="currentColor" fillOpacity="0.3" />
-  <rect x="380" y="34.7" width="301.0" height="2.6" fill="currentColor" fillOpacity="0.3" />
-  <rect x="448.6" y="39.3" width="211.2" height="169.0" fill="none" stroke="currentColor" strokeOpacity="0.7" strokeDasharray="5 4" />
-  <rect x="469.8" y="60.4" width="169.0" height="126.7" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" strokeWidth="1.2" />
-  <text x="190.5" y="261.3" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.8">border above and below the wide area</text>
-  <text x="530.5" y="230.2" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.8">the wide area fills every visible line</text>
+<svg viewBox="0 0 700 298" role="img" aria-label="The 128K frame at 50 Hz and at 60 Hz, side by side at the same scale. At 50 Hz the frame has 311 lines and the display area starts on line 64, with 24 lines of border visible above the wide area and 23 below it. At 60 Hz the frame has 264 lines and the display area starts on line 40: the wide area begins on line 8, the first visible line, and ends on line 263, the last, so no border is left above or below it." style={{ width: "100%", height: "auto" }}>
+  <text x="0" y="20" fill="currentColor" fontSize="16.5" fontWeight="600">50 Hz: 311 lines</text>
+  <rect x="0" y="32" width="340" height="231.9" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.5" />
+  <rect x="0" y="32" width="71.6" height="231.9" fill="currentColor" fillOpacity="0.16" />
+  <rect x="71.6" y="32" width="268.4" height="6" fill="currentColor" fillOpacity="0.16" />
+  <rect x="11.9" y="32" width="23.9" height="231.9" fill="currentColor" fillOpacity="0.3" />
+  <rect x="0" y="32.7" width="340" height="3" fill="currentColor" fillOpacity="0.3" />
+  <rect x="77.5" y="55.9" width="238.6" height="190.9" fill="none" stroke="currentColor" strokeOpacity="0.7" strokeDasharray="5 4" />
+  <rect x="101.4" y="79.7" width="190.9" height="143.2" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" strokeWidth="1.2" />
+  <text x="360" y="20" fill="currentColor" fontSize="16.5" fontWeight="600">60 Hz: 264 lines</text>
+  <rect x="360" y="32" width="340" height="196.8" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.5" />
+  <rect x="360" y="32" width="71.6" height="196.8" fill="currentColor" fillOpacity="0.16" />
+  <rect x="431.6" y="32" width="268.4" height="6" fill="currentColor" fillOpacity="0.16" />
+  <rect x="371.9" y="32" width="23.9" height="196.8" fill="currentColor" fillOpacity="0.3" />
+  <rect x="360" y="32.7" width="340" height="3" fill="currentColor" fillOpacity="0.3" />
+  <rect x="437.5" y="38" width="238.6" height="190.9" fill="none" stroke="currentColor" strokeOpacity="0.7" strokeDasharray="5 4" />
+  <rect x="461.4" y="61.8" width="190.9" height="143.2" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" strokeWidth="1.2" />
+  <text x="170" y="287.9" textAnchor="middle" fill="currentColor" fontSize="15" fillOpacity="0.85">border above and below the wide area</text>
+  <text x="530" y="252.8" textAnchor="middle" fill="currentColor" fontSize="15" fillOpacity="0.85">the wide area fills every visible line</text>
 </svg>
 <figcaption>The 128K frame at 50 and at 60 Hz, at the same scale. The 60 Hz frame has 47 fewer lines, taken from the border above and below.</figcaption>
 </figure>
 
-Here is the scene of the first article, the same program, drawn by Klive at both rates:
+What does that look like on the screen? Here is the scene of the previous chapter, the same program, drawn by
+Klive at both rates:
 
 <figure>
-<svg viewBox="0 0 700 300" role="img" aria-label="The scene of the first article, drawn by Klive's Next core at 50 Hz and at 60 Hz, each in the 360 by 288 window Klive shows. At 50 Hz the picture sits in the middle of the window with border all round. At 60 Hz the picture moves up: the display area starts 24 lines into the window instead of 48, the top of the wide area is cut off, the tiles at the bottom reach the last line of the frame, and the window below it stays black because the frame has no more lines." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
-  <image x="20" y="10" width="320" height="256" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/timing/hz50.webp`} />
-  <rect x="20" y="10" width="320" height="256" fill="none" stroke="currentColor" strokeOpacity="0.35" />
-  <image x="360" y="10" width="320" height="256" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/timing/hz60.webp`} />
-  <rect x="360" y="10" width="320" height="256" fill="none" stroke="currentColor" strokeOpacity="0.35" />
-  <text x="180" y="288" textAnchor="middle" fill="currentColor" fontSize="12">50 Hz</text>
-  <text x="520" y="288" textAnchor="middle" fill="currentColor" fontSize="12">60 Hz: the same program, NextReg $05 bit 2 set</text>
+<svg viewBox="0 0 700 322" role="img" aria-label="The scene of the previous chapter, drawn by Klive's Next core at 50 Hz and at 60 Hz, each in the 360 by 288 window Klive shows. At 50 Hz the picture sits in the middle of the window with border all round. At 60 Hz the picture moves up: the display area starts 24 lines into the window instead of 48, the top of the wide area is cut off, the tiles at the bottom reach the last line of the frame, and the window below it stays black because the frame has no more lines." style={{ width: "100%", height: "auto" }}>
+  <image x="0" y="0" width="340" height="272" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/timing/hz50.webp`} />
+  <rect x="0" y="0" width="340" height="272" fill="none" stroke="currentColor" strokeOpacity="0.35" />
+  <image x="360" y="0" width="340" height="272" preserveAspectRatio="none" style={{ imageRendering: "pixelated" }} href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/images/en/under-the-hood/next-display/timing/hz60.webp`} />
+  <rect x="360" y="0" width="340" height="272" fill="none" stroke="currentColor" strokeOpacity="0.35" />
+  <text x="170" y="296" textAnchor="middle" fill="currentColor" fontSize="15">50 Hz</text>
+  <text x="530" y="296" textAnchor="middle" fill="currentColor" fontSize="15">60 Hz: the same program,</text>
+  <text x="530" y="314" textAnchor="middle" fill="currentColor" fontSize="15">NextReg $05 bit 2 set</text>
 </svg>
 <figcaption>The same window, two frame rates. At 60 Hz the picture moves up and the window has fewer lines to show: the top of the wide area falls outside it, and below the last line of the frame there is nothing to draw.</figcaption>
 </figure>
 
-## Part 3: Interrupts
+## The frame interrupt
 
-### The frame interrupt
-
-Once in every frame, at a fixed value of the two counters, the ULA raises the **frame interrupt**,
-the Spectrum's 50 times a second. It comes near the top of the frame, well before the display
-area, so that a program that waits for it with `HALT` has time to update the screen before the beam
-gets there:
+Once in every frame, at a fixed value of the two counters, the ULA raises the **frame interrupt**, the
+Spectrum's 50 times a second. It comes near the top of the frame, well before the display area, so that a
+program that waits for it with `HALT` has time to update the screen before the beam gets there:
 
 - **48K**: on line 0, 64 lines before the display area.
 - **128K/+2** and **+3**: on line 1, 63 lines before it (the +3's one T-state earlier on the line).
-- **60 Hz**: on line 0, only 40 lines before it. A program that needs all of the 50 Hz head start does
-  not get it at 60 Hz.
+- **60 Hz**: on line 0, only 40 lines before it. A program that needs all of the 50 Hz head start does not
+  get it at 60 Hz.
 - **Pentagon**: on the very last line of the frame, so its 80 lines of head start begin at the bottom.
 
-These are the moments the original machines used, so the T-states between the interrupt and any dot
-of the screen are those of the original; the Spectrum article lists them. The interrupt line is held
-for 32 CPU cycles in 48K and +3 timing and 36 in 128K and Pentagon timing. Bit 2 of the Line Interrupt Control register, NextReg `$22`, switches the frame interrupt off.
+These are the moments the original machines used, so the T-states between the interrupt and any dot of the
+screen are those of the original; the Spectrum screen chapter lists them. The interrupt line is held for 32
+CPU cycles in 48K and +3 timing and 36 in 128K and Pentagon timing. Bit 2 of the Line Interrupt Control
+register, NextReg `$22`, switches the frame interrupt off.
 
-### The line interrupt
+## The line interrupt
 
-The Next adds a second one: the **line interrupt**, raised before a line chosen by the program. Bit 1 of the Line Interrupt Control register, NextReg `$22`, switches it on, and the line number is nine bits, bit 0 of NextReg `$22` and the eight bits of the Line Interrupt Value register, NextReg `$23`.
+The Next adds a second one: the **line interrupt**, raised before a line your program chooses. Bit 1 of the
+Line Interrupt Control register, NextReg `$22`, switches it on, and the line number is nine bits, bit 0 of
+NextReg `$22` and the eight bits of the Line Interrupt Value register, NextReg `$23`.
 
-The line numbers are counted from the display area, not from the top of the frame: **line 0 is the
-first line of the display area**, 191 the last, and the numbers go on through the bottom border to the
-end of the frame and then continue at the top of the next one. So the lines of the top border have the
-highest numbers: in 128K timing at 50 Hz, the first line of the frame is 247 and the line just above
-the display area is 310. The Active Video Line registers, NextRegs `$1E` and `$1F`, read the line the beam is on, in the same numbers:
-bit 8 in NextReg `$1E`, the low eight bits in NextReg `$1F`. They are two reads, and the beam can move on between
-them. Read NextReg `$1E` at the end of line 255 and NextReg `$1F` just after the line has become 256, and the two
-halves say 0; the other way round they can say 511. The safe way reads NextReg `$1E`, then `$1F`, then `$1E`
-again, and tries again if the two NextReg `$1E` reads differ.
+Now, here comes the curious part. The line numbers are counted from the display area, not from the top of
+the frame: **line 0 is the first line of the display area**, 191 the last, and the numbers go on through the
+bottom border to the end of the frame and then continue at the top of the next one. So the lines of the top
+border have the highest numbers: in 128K timing at 50 Hz, the first line of the frame is 247 and the line
+just above the display area is 310.
+
+The Active Video Line registers, NextRegs `$1E` and `$1F`, read the line the beam is on, in the same numbers:
+bit 8 in NextReg `$1E`, the low eight bits in NextReg `$1F`. They are two reads, and the beam can move on
+between them. Read NextReg `$1E` at the end of line 255 and NextReg `$1F` just after the line has become 256,
+and the two halves say 0; the other way round they can say 511. So let me give you the safe way: read NextReg
+`$1E`, then `$1F`, then `$1E` again, and try again if the two NextReg `$1E` reads differ.
 
 "Before the line" is meant literally. The interrupt for line *n* is raised on line *n* − 1, near the
-right-hand end of its display area, at its dot 243. From there to the start of line *n*'s display area
-the beam still has the right border, the blanking and the left border to draw: a little over 100
-T-states at 3.5 MHz, enough for a program to set up a change that must be in place when line *n*
-begins.
+right-hand end of its display area, at its dot 243. From there to the start of line *n*'s display area the
+beam still has the right border, the blanking and the left border to draw: a little over 100 T-states at
+3.5 MHz, enough for your program to set up a change that must be in place when line *n* begins.
 
 <figure>
-<svg viewBox="0 0 700 320" role="img" aria-label="The 128K frame with the numbers the line interrupt uses. Line 0 is the first line of the display area; the numbers count down the display area to 191, on through the bottom border to 246, and wrap past the end of the frame, so the lines above the display area are 247 to 310. The frame interrupt is raised on line 1 of the counter, near the top. A line interrupt for line 100 is raised at the end of line 99, near the right edge of its display area, a little before line 100 begins." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
-  <defs>
-    <marker id="tm5-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-      <path d="M0,0 L10,5 L0,10 z" fill="currentColor" fillOpacity="0.6" />
-    </marker>
-  </defs>
-  <rect x="40" y="30" width="401.3" height="273.7" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.5" />
-  <rect x="40" y="30" width="84.5" height="273.7" fill="currentColor" fillOpacity="0.16" />
-  <rect x="124.5" y="30" width="316.8" height="7.0" fill="currentColor" fillOpacity="0.16" />
-  <rect x="54.1" y="30" width="28.2" height="273.7" fill="currentColor" fillOpacity="0.3" />
-  <rect x="40" y="30.9" width="401.3" height="3.5" fill="currentColor" fillOpacity="0.3" />
-  <rect x="159.7" y="86.3" width="225.3" height="169.0" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" strokeWidth="1.2" />
-  <circle cx="152.6" cy="31.3" r="4" fill="#e5484d" />
-  <rect x="124.5" y="174.3" width="316.8" height="1.4" fill="#e5484d" fillOpacity="0.7" />
-  <circle cx="373.5" cy="173.4" r="4" fill="#e5484d" />
-  <line x1="373.5" y1="173.4" x2="330.4" y2="206.0" stroke="#e5484d" strokeWidth="1.2" />
-  <text x="326.9" y="211.3" textAnchor="end" fill="#e5484d" fontSize="11">line interrupt for line 100:</text>
-  <text x="326.9" y="225.3" textAnchor="end" fill="#e5484d" fontSize="11">raised near the end of line 99</text>
-  <text x="172.0" y="169.0" fill="#e5484d" fontSize="11">line 100</text>
-  <line x1="152.6" y1="31.3" x2="216.0" y2="52.9" stroke="#e5484d" strokeWidth="1.2" />
-  <text x="219.5" y="56.4" fill="#e5484d" fontSize="11">frame interrupt</text>
-  <line x1="445.3" y1="30.4" x2="455.3" y2="30.4" stroke="currentColor" strokeOpacity="0.6" />
-  <text x="459.3" y="34.4" fill="currentColor" fontSize="11">247: the first line of the frame</text>
-  <line x1="445.3" y1="86.8" x2="455.3" y2="86.8" stroke="currentColor" strokeOpacity="0.6" />
-  <text x="459.3" y="90.8" fill="currentColor" fontSize="11">0: the first display line</text>
-  <line x1="445.3" y1="254.8" x2="455.3" y2="254.8" stroke="currentColor" strokeOpacity="0.6" />
-  <text x="459.3" y="258.8" fill="currentColor" fontSize="11">191: the last display line</text>
-  <line x1="445.3" y1="303.2" x2="455.3" y2="303.2" stroke="currentColor" strokeOpacity="0.6" />
-  <text x="459.3" y="307.2" fill="currentColor" fontSize="11">246: the last line of the frame</text>
-  <text x="459.3" y="68.7" fill="currentColor" fontSize="10" fillOpacity="0.7">… 310 is the line just above it</text>
-  <text x="459.3" y="18" fill="currentColor" fontSize="12" fontWeight="600">line numbers (NextRegs $23, $1E, $1F)</text>
+<svg viewBox="0 0 700 388" role="img" aria-label="The 128K frame with the numbers the line interrupt uses. Line 0 is the first line of the display area; the numbers count down the display area to 191, on through the bottom border to 246, and wrap past the end of the frame, so the lines above the display area are 247 to 310. The frame interrupt is raised on line 1 of the counter, near the top. A line interrupt for line 100 is raised at the end of line 99, near the right edge of its display area, a little before line 100 begins." style={{ width: "100%", height: "auto" }}>
+  <rect x="0" y="44" width="492.5" height="335.9" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.5" />
+  <rect x="0" y="44" width="103.7" height="335.9" fill="currentColor" fillOpacity="0.16" />
+  <rect x="103.7" y="44" width="388.8" height="8.6" fill="currentColor" fillOpacity="0.16" />
+  <rect x="17.3" y="44" width="34.6" height="335.9" fill="currentColor" fillOpacity="0.3" />
+  <rect x="0" y="45.1" width="492.5" height="4.3" fill="currentColor" fillOpacity="0.3" />
+  <rect x="146.9" y="113.1" width="276.5" height="207.4" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" strokeWidth="1.2" />
+  <text x="0" y="22" fill="currentColor" fontSize="16.5" fontWeight="600">line numbers (NextRegs $23, $1E, $1F)</text>
+  <circle cx="138.2" cy="45.6" r="4.5" fill="#e5484d" />
+  <line x1="138.2" y1="49.6" x2="138.2" y2="78.6" stroke="#e5484d" strokeWidth="1.4" />
+  <text x="146.2" y="83.6" fill="#e5484d" fontSize="15">frame interrupt</text>
+  <rect x="103.7" y="221.1" width="388.8" height="1.6" fill="#e5484d" fillOpacity="0.8" />
+  <text x="157.7" y="215.1" fill="#e5484d" fontSize="15">line 100</text>
+  <circle cx="409.3" cy="220.6" r="4.5" fill="#e5484d" />
+  <line x1="409.3" y1="224.6" x2="409.3" y2="247" stroke="#e5484d" strokeWidth="1.4" />
+  <text x="401.3" y="263" textAnchor="end" fill="#e5484d" fontSize="15">line interrupt for line 100:</text>
+  <text x="401.3" y="281" textAnchor="end" fill="#e5484d" fontSize="15">raised near the end of line 99</text>
+  <line x1="494.5" y1="44" x2="502.5" y2="44" stroke="currentColor" strokeOpacity="0.6" strokeWidth="1" />
+  <text x="506.5" y="55" fill="currentColor" fontSize="15">247: the first line of the frame</text>
+  <text x="506.5" y="91.1" fill="currentColor" fontSize="13.5" fillOpacity="0.8">… 310 is the line just above it</text>
+  <line x1="494.5" y1="113.1" x2="502.5" y2="113.1" stroke="currentColor" strokeOpacity="0.6" strokeWidth="1" />
+  <text x="506.5" y="118.1" fill="currentColor" fontSize="15">0: the first display line</text>
+  <line x1="494.5" y1="319.4" x2="502.5" y2="319.4" stroke="currentColor" strokeOpacity="0.6" strokeWidth="1" />
+  <text x="506.5" y="324.4" fill="currentColor" fontSize="15">191: the last display line</text>
+  <line x1="494.5" y1="379.9" x2="502.5" y2="379.9" stroke="currentColor" strokeOpacity="0.6" strokeWidth="1" />
+  <text x="506.5" y="380.9" fill="currentColor" fontSize="15">246: the last line of the frame</text>
 </svg>
 <figcaption>The line numbers of the line interrupt in 128K timing at 50 Hz, and when it is raised: for line 100, near the end of line 99's display area.</figcaption>
 </figure>
 
-### Line numbers for the wide area
+## Line numbers for the wide area
 
-Line 0 is the first line of the **display area**, the ULA's 256 × 192. That suits the ULA and Layer 2
-at 256 × 192, whose rows count from the same line. It does not suit the layers of the wide area. The
-tilemap, the sprites and Layer 2 in its 320 × 256 and 640 × 256 modes count their rows from the top of
-the **wide area**, 32 lines higher. Their row 0 is line 279 in 128K timing at 50 Hz, their row 32 is line
-0, and their last 32 rows are lines 192 to 223. A program that wants an interrupt before row *r* of
-the wide area has to ask for line *r* − 32, wrapped round the frame: a different number in every
-timing, because the frames have different numbers of lines (row 0 is line 280 in 48K timing, 288 in
-Pentagon timing, and 232 at 60 Hz).
+Line 0 is the first line of the **display area**, the ULA's 256 × 192. That suits the ULA and Layer 2 at
+256 × 192, whose rows count from the same line. It does not suit the layers of the wide area. The tilemap,
+the sprites and Layer 2 in its 320 × 256 and 640 × 256 modes count their rows from the top of the **wide
+area**, 32 lines higher. Their row 0 is line 279 in 128K timing at 50 Hz, their row 32 is line 0, and their
+last 32 rows are lines 192 to 223. A program that wants an interrupt before row *r* of the wide area has to
+ask for line *r* − 32, wrapped round the frame: a different number in every timing, because the frames have
+different numbers of lines (row 0 is line 280 in 48K timing, 288 in Pentagon timing, and 232 at 60 Hz).
+Uhm, nobody wants to keep that table in their head.
 
-The Vertical Line Count Offset register, NextReg `$64`, removes the problem. It is an **offset** added to the line numbers: the first line of
-the display area gets the number the offset says, instead of 0. Set it to **32**, and line 0 becomes
-the first line of the wide area, so the line numbers are exactly the rows of the 320 × 256 layers, in
-every timing. The offset applies to everything that uses the numbers: the line interrupt, the active
-line read through NextRegs `$1E` and `$1F`, and the Copper. A new offset takes effect when the beam next reaches the
-first line of the display area, so it can take up to a frame.
+The Vertical Line Count Offset register, NextReg `$64`, removes the problem. It is an **offset** added to the
+line numbers: the first line of the display area gets the number the offset says, instead of 0. Set it to
+**32**, and line 0 becomes the first line of the wide area, so the line numbers are exactly the rows of the
+320 × 256 layers, in every timing. The offset applies to everything that uses the numbers: the line
+interrupt, the active line read through NextRegs `$1E` and `$1F`, and the Copper. A new offset takes effect
+when the beam next reaches the first line of the display area, so it can take up to a frame.
 
 <figure>
-<svg viewBox="0 0 700 262" role="img" aria-label="The 128K frame at 50 Hz with two numberings of its lines side by side. Without an offset, NextReg 64 at 0, line 0 is the first line of the display area: the first line of the wide area is then 279, the display area runs from 0 to 191, the wide area ends on line 223, and the frame ends on line 246. With an offset of 32, line 0 is the first line of the wide area: the display area runs from 32 to 223, the wide area ends on line 255, and the line numbers match the 320 by 256 coordinates of the tilemap, the sprites and the wide Layer 2 modes." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
-  <rect x="40" y="40" width="301.0" height="205.3" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.5" />
-  <rect x="40" y="40" width="63.4" height="205.3" fill="currentColor" fillOpacity="0.16" />
-  <rect x="103.4" y="40" width="237.6" height="5.3" fill="currentColor" fillOpacity="0.16" />
-  <rect x="50.6" y="40" width="21.1" height="205.3" fill="currentColor" fillOpacity="0.3" />
-  <rect x="40" y="40.7" width="301.0" height="2.6" fill="currentColor" fillOpacity="0.3" />
-  <rect x="108.6" y="61.1" width="211.2" height="169.0" fill="none" stroke="currentColor" strokeOpacity="0.7" strokeDasharray="5 4" />
-  <rect x="129.8" y="82.2" width="169.0" height="126.7" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" strokeWidth="1.2" />
-  <text x="380.96000000000004" y="22" textAnchor="middle" fill="currentColor" fontSize="12" fontWeight="600">NextReg $64 = 0</text>
-  <text x="460.96000000000004" y="22" textAnchor="middle" fill="#e5484d" fontSize="12" fontWeight="600">NextReg $64 = 32</text>
-  <line x1="343.0" y1="40.3" x2="483.0" y2="40.3" stroke="currentColor" strokeOpacity="0.2" strokeDasharray="2 3" />
-  <text x="380.96000000000004" y="44.3" textAnchor="middle" fill="currentColor" fontSize="12">247</text>
-  <text x="460.96000000000004" y="44.3" textAnchor="middle" fill="#e5484d" fontSize="12" fontWeight="600">279</text>
-  <text x="489.0" y="44.3" fill="currentColor" fontSize="10" fillOpacity="0.75">first line of the frame</text>
-  <line x1="343.0" y1="61.5" x2="483.0" y2="61.5" stroke="currentColor" strokeOpacity="0.2" strokeDasharray="2 3" />
-  <text x="380.96000000000004" y="65.5" textAnchor="middle" fill="currentColor" fontSize="12">279</text>
-  <text x="460.96000000000004" y="65.5" textAnchor="middle" fill="#e5484d" fontSize="12" fontWeight="600">0</text>
-  <text x="489.0" y="65.5" fill="currentColor" fontSize="10" fillOpacity="0.75">first line of the wide area</text>
-  <line x1="343.0" y1="82.6" x2="483.0" y2="82.6" stroke="currentColor" strokeOpacity="0.2" strokeDasharray="2 3" />
-  <text x="380.96000000000004" y="86.6" textAnchor="middle" fill="currentColor" fontSize="12">0</text>
-  <text x="460.96000000000004" y="86.6" textAnchor="middle" fill="#e5484d" fontSize="12" fontWeight="600">32</text>
-  <text x="489.0" y="86.6" fill="currentColor" fontSize="10" fillOpacity="0.75">first line of the display area</text>
-  <line x1="343.0" y1="208.6" x2="483.0" y2="208.6" stroke="currentColor" strokeOpacity="0.2" strokeDasharray="2 3" />
-  <text x="380.96000000000004" y="212.6" textAnchor="middle" fill="currentColor" fontSize="12">191</text>
-  <text x="460.96000000000004" y="212.6" textAnchor="middle" fill="#e5484d" fontSize="12" fontWeight="600">223</text>
-  <text x="489.0" y="212.6" fill="currentColor" fontSize="10" fillOpacity="0.75">last line of the display area</text>
-  <line x1="343.0" y1="229.8" x2="483.0" y2="229.8" stroke="currentColor" strokeOpacity="0.2" strokeDasharray="2 3" />
-  <text x="380.96000000000004" y="233.8" textAnchor="middle" fill="currentColor" fontSize="12">223</text>
-  <text x="460.96000000000004" y="233.8" textAnchor="middle" fill="#e5484d" fontSize="12" fontWeight="600">255</text>
-  <text x="489.0" y="233.8" fill="currentColor" fontSize="10" fillOpacity="0.75">last line of the wide area</text>
-  <line x1="343.0" y1="244.9" x2="483.0" y2="244.9" stroke="currentColor" strokeOpacity="0.2" strokeDasharray="2 3" />
-  <text x="380.96000000000004" y="248.9" textAnchor="middle" fill="currentColor" fontSize="12">246</text>
-  <text x="460.96000000000004" y="248.9" textAnchor="middle" fill="#e5484d" fontSize="12" fontWeight="600">278</text>
-  <text x="489.0" y="248.9" fill="currentColor" fontSize="10" fillOpacity="0.75">last line of the frame</text>
+<svg viewBox="0 0 700 349" role="img" aria-label="The 128K frame at 50 Hz with two numberings of its lines side by side. Without an offset, NextReg 64 at 0, line 0 is the first line of the display area: the first line of the frame is 247, the first line of the wide area 279, the display area runs from 0 to 191, the wide area ends on line 223, and the frame ends on line 246. With an offset of 32, line 0 is the first line of the wide area: the frame starts on line 279, the display area runs from 32 to 223, the wide area ends on line 255, the frame on line 278, and the line numbers match the 320 by 256 coordinates of the tilemap, the sprites and the wide Layer 2 modes." style={{ width: "100%", height: "auto" }}>
+  <rect x="0" y="56" width="414" height="282.4" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.5" />
+  <rect x="0" y="56" width="87.2" height="282.4" fill="currentColor" fillOpacity="0.16" />
+  <rect x="87.2" y="56" width="326.9" height="7.3" fill="currentColor" fillOpacity="0.16" />
+  <rect x="14.5" y="56" width="29.1" height="282.4" fill="currentColor" fillOpacity="0.3" />
+  <rect x="0" y="56.9" width="414" height="3.6" fill="currentColor" fillOpacity="0.3" />
+  <rect x="94.4" y="85.1" width="290.6" height="232.4" fill="none" stroke="currentColor" strokeOpacity="0.7" strokeDasharray="5 4" />
+  <rect x="123.5" y="114.1" width="232.4" height="174.3" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" strokeWidth="1.2" />
+  <text x="477" y="20" textAnchor="middle" fill="currentColor" fontSize="15" fontWeight="600">NextReg $64 =</text>
+  <text x="446" y="42" textAnchor="middle" fill="currentColor" fontSize="15" fontWeight="600">0</text>
+  <text x="508" y="42" textAnchor="middle" fill="#e5484d" fontSize="15" fontWeight="600">32</text>
+  <line x1="416" y1="56.5" x2="424" y2="56.5" stroke="currentColor" strokeOpacity="0.35" strokeWidth="1" strokeDasharray="2 3" />
+  <line x1="468" y1="56.5" x2="486" y2="56.5" stroke="currentColor" strokeOpacity="0.35" strokeWidth="1" strokeDasharray="2 3" />
+  <line x1="530" y1="56.5" x2="540" y2="56.5" stroke="currentColor" strokeOpacity="0.35" strokeWidth="1" strokeDasharray="2 3" />
+  <text x="446" y="61.5" textAnchor="middle" fill="currentColor" fontSize="15">247</text>
+  <text x="508" y="61.5" textAnchor="middle" fill="#e5484d" fontSize="15" fontWeight="600">279</text>
+  <text x="546" y="61.5" fill="currentColor" fontSize="13.5" fillOpacity="0.85">first line of the frame</text>
+  <line x1="416" y1="85.5" x2="424" y2="85.5" stroke="currentColor" strokeOpacity="0.35" strokeWidth="1" strokeDasharray="2 3" />
+  <line x1="468" y1="85.5" x2="486" y2="85.5" stroke="currentColor" strokeOpacity="0.35" strokeWidth="1" strokeDasharray="2 3" />
+  <line x1="530" y1="85.5" x2="540" y2="85.5" stroke="currentColor" strokeOpacity="0.35" strokeWidth="1" strokeDasharray="2 3" />
+  <text x="446" y="90.5" textAnchor="middle" fill="currentColor" fontSize="15">279</text>
+  <text x="508" y="90.5" textAnchor="middle" fill="#e5484d" fontSize="15" fontWeight="600">0</text>
+  <text x="546" y="90.5" fill="currentColor" fontSize="13.5" fillOpacity="0.85">first line of the wide area</text>
+  <line x1="416" y1="114.6" x2="424" y2="114.6" stroke="currentColor" strokeOpacity="0.35" strokeWidth="1" strokeDasharray="2 3" />
+  <line x1="468" y1="114.6" x2="486" y2="114.6" stroke="currentColor" strokeOpacity="0.35" strokeWidth="1" strokeDasharray="2 3" />
+  <line x1="530" y1="114.6" x2="540" y2="114.6" stroke="currentColor" strokeOpacity="0.35" strokeWidth="1" strokeDasharray="2 3" />
+  <text x="446" y="119.6" textAnchor="middle" fill="currentColor" fontSize="15">0</text>
+  <text x="508" y="119.6" textAnchor="middle" fill="#e5484d" fontSize="15" fontWeight="600">32</text>
+  <text x="546" y="119.6" fill="currentColor" fontSize="13.5" fillOpacity="0.85">first line of the display area</text>
+  <line x1="416" y1="288" x2="424" y2="288" stroke="currentColor" strokeOpacity="0.35" strokeWidth="1" strokeDasharray="2 3" />
+  <line x1="468" y1="288" x2="486" y2="288" stroke="currentColor" strokeOpacity="0.35" strokeWidth="1" strokeDasharray="2 3" />
+  <line x1="530" y1="288" x2="540" y2="288" stroke="currentColor" strokeOpacity="0.35" strokeWidth="1" strokeDasharray="2 3" />
+  <text x="446" y="293" textAnchor="middle" fill="currentColor" fontSize="15">191</text>
+  <text x="508" y="293" textAnchor="middle" fill="#e5484d" fontSize="15" fontWeight="600">223</text>
+  <text x="546" y="293" fill="currentColor" fontSize="13.5" fillOpacity="0.85">last line of the display area</text>
+  <line x1="416" y1="317.1" x2="424" y2="317.1" stroke="currentColor" strokeOpacity="0.35" strokeWidth="1" strokeDasharray="2 3" />
+  <line x1="468" y1="317.1" x2="486" y2="317.1" stroke="currentColor" strokeOpacity="0.35" strokeWidth="1" strokeDasharray="2 3" />
+  <line x1="530" y1="317.1" x2="540" y2="317.1" stroke="currentColor" strokeOpacity="0.35" strokeWidth="1" strokeDasharray="2 3" />
+  <text x="446" y="322.1" textAnchor="middle" fill="currentColor" fontSize="15">223</text>
+  <text x="508" y="322.1" textAnchor="middle" fill="#e5484d" fontSize="15" fontWeight="600">255</text>
+  <text x="546" y="322.1" fill="currentColor" fontSize="13.5" fillOpacity="0.85">last line of the wide area</text>
+  <line x1="416" y1="337.9" x2="424" y2="337.9" stroke="currentColor" strokeOpacity="0.35" strokeWidth="1" strokeDasharray="2 3" />
+  <line x1="468" y1="337.9" x2="486" y2="337.9" stroke="currentColor" strokeOpacity="0.35" strokeWidth="1" strokeDasharray="2 3" />
+  <line x1="530" y1="337.9" x2="540" y2="337.9" stroke="currentColor" strokeOpacity="0.35" strokeWidth="1" strokeDasharray="2 3" />
+  <text x="446" y="342.9" textAnchor="middle" fill="currentColor" fontSize="15">246</text>
+  <text x="508" y="342.9" textAnchor="middle" fill="#e5484d" fontSize="15" fontWeight="600">278</text>
+  <text x="546" y="342.9" fill="currentColor" fontSize="13.5" fillOpacity="0.85">last line of the frame</text>
 </svg>
 <figcaption>The same frame, two numberings. With the offset at 32 (red), line 0 is the top of the wide area, and a line number is the row of the tilemap, the sprites and the wide Layer 2 modes; the display area then runs from line 32 to 223.</figcaption>
 </figure>
 
-Splitting the screen with the line interrupt has a weakness: the CPU reacts only when its current
-instruction ends, a few T-states later or earlier from frame to frame. The Copper, which the
-[last article of the series](/en/under-the-hood/emulator-internals/next-display/raster-effects/#part-4-the-copper)
+Splitting the screen with the line interrupt has one weakness, though: the CPU reacts only when its current
+instruction ends, a few T-states later or earlier from frame to frame. The Copper, which the chapter on
+[changing the picture mid-frame](/en/under-the-hood/emulator-internals/next-display/raster-effects/#the-coppers-two-instructions)
 explains, does the same job without that jitter, with the same line numbers.
 
-## Part 4: Dots, ticks and T-states
+## Dots, ticks and T-states
 
-The picture and the CPU run on one clock. The **28 MHz master clock** ticks four times for every
-dot; the 14 MHz half dots of the first article's pipeline take two ticks each. The CPU's clock is
-made from the same clock, at the speed set by the CPU Speed register, NextReg `$07`: 3.5, 7, 14 or 28 MHz. So a T-state always
+The picture and the CPU run on one clock. The **28 MHz master clock** ticks four times for every dot; the
+14 MHz half dots of the previous chapter's pipeline take two ticks each. The CPU's clock is made from the same
+clock, at the speed set by the CPU Speed register, NextReg `$07`: 3.5, 7, 14 or 28 MHz. So a T-state always
 lasts a whole number of ticks, and the CPU and the beam can never drift apart.
 
 <figure>
-<svg viewBox="0 0 700 330" role="img" aria-label="Sixteen ticks of the 28 MHz master clock, which make four dots of the beam. Below them: 14 MHz half dots, two per dot; 7 MHz dots, four ticks each; and the CPU's T-states at its four speeds. At 3.5 MHz one T-state lasts two dots, at 7 MHz one dot, at 14 MHz half a dot, and at 28 MHz one tick." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
-  <text x="178" y="53" textAnchor="end" fill="currentColor" fontSize="12">28 MHz master clock</text>
-  <rect x="191" y="34" width="28" height="28" rx="3" fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeOpacity="0.45" />
-  <text x="205.0" y="52" textAnchor="middle" fill="currentColor" fontSize="10">tick</text>
-  <rect x="221" y="34" width="28" height="28" rx="3" fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeOpacity="0.45" />
-  <rect x="251" y="34" width="28" height="28" rx="3" fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeOpacity="0.45" />
-  <rect x="281" y="34" width="28" height="28" rx="3" fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeOpacity="0.45" />
-  <rect x="311" y="34" width="28" height="28" rx="3" fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeOpacity="0.45" />
-  <rect x="341" y="34" width="28" height="28" rx="3" fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeOpacity="0.45" />
-  <rect x="371" y="34" width="28" height="28" rx="3" fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeOpacity="0.45" />
-  <rect x="401" y="34" width="28" height="28" rx="3" fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeOpacity="0.45" />
-  <rect x="431" y="34" width="28" height="28" rx="3" fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeOpacity="0.45" />
-  <rect x="461" y="34" width="28" height="28" rx="3" fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeOpacity="0.45" />
-  <rect x="491" y="34" width="28" height="28" rx="3" fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeOpacity="0.45" />
-  <rect x="521" y="34" width="28" height="28" rx="3" fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeOpacity="0.45" />
-  <rect x="551" y="34" width="28" height="28" rx="3" fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeOpacity="0.45" />
-  <rect x="581" y="34" width="28" height="28" rx="3" fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeOpacity="0.45" />
-  <rect x="611" y="34" width="28" height="28" rx="3" fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeOpacity="0.45" />
-  <rect x="641" y="34" width="28" height="28" rx="3" fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeOpacity="0.45" />
-  <text x="178" y="93" textAnchor="end" fill="currentColor" fontSize="12">14 MHz: half dots</text>
-  <rect x="191" y="74" width="58" height="28" rx="3" fill="currentColor" fillOpacity="0.12" stroke="currentColor" strokeOpacity="0.45" />
-  <text x="220.0" y="92" textAnchor="middle" fill="currentColor" fontSize="10">½ dot</text>
-  <rect x="251" y="74" width="58" height="28" rx="3" fill="currentColor" fillOpacity="0.12" stroke="currentColor" strokeOpacity="0.45" />
-  <text x="280.0" y="92" textAnchor="middle" fill="currentColor" fontSize="10">½ dot</text>
-  <rect x="311" y="74" width="58" height="28" rx="3" fill="currentColor" fillOpacity="0.12" stroke="currentColor" strokeOpacity="0.45" />
-  <text x="340.0" y="92" textAnchor="middle" fill="currentColor" fontSize="10">½ dot</text>
-  <rect x="371" y="74" width="58" height="28" rx="3" fill="currentColor" fillOpacity="0.12" stroke="currentColor" strokeOpacity="0.45" />
-  <text x="400.0" y="92" textAnchor="middle" fill="currentColor" fontSize="10">½ dot</text>
-  <rect x="431" y="74" width="58" height="28" rx="3" fill="currentColor" fillOpacity="0.12" stroke="currentColor" strokeOpacity="0.45" />
-  <text x="460.0" y="92" textAnchor="middle" fill="currentColor" fontSize="10">½ dot</text>
-  <rect x="491" y="74" width="58" height="28" rx="3" fill="currentColor" fillOpacity="0.12" stroke="currentColor" strokeOpacity="0.45" />
-  <text x="520.0" y="92" textAnchor="middle" fill="currentColor" fontSize="10">½ dot</text>
-  <rect x="551" y="74" width="58" height="28" rx="3" fill="currentColor" fillOpacity="0.12" stroke="currentColor" strokeOpacity="0.45" />
-  <text x="580.0" y="92" textAnchor="middle" fill="currentColor" fontSize="10">½ dot</text>
-  <rect x="611" y="74" width="58" height="28" rx="3" fill="currentColor" fillOpacity="0.12" stroke="currentColor" strokeOpacity="0.45" />
-  <text x="640.0" y="92" textAnchor="middle" fill="currentColor" fontSize="10">½ dot</text>
-  <text x="178" y="133" textAnchor="end" fill="currentColor" fontSize="12">7 MHz: dots</text>
-  <rect x="191" y="114" width="118" height="28" rx="3" fill="#3b82f6" fillOpacity="0.2" stroke="#3b82f6" />
-  <text x="250.0" y="132" textAnchor="middle" fill="currentColor" fontSize="10">dot</text>
-  <rect x="311" y="114" width="118" height="28" rx="3" fill="#3b82f6" fillOpacity="0.2" stroke="#3b82f6" />
-  <text x="370.0" y="132" textAnchor="middle" fill="currentColor" fontSize="10">dot</text>
-  <rect x="431" y="114" width="118" height="28" rx="3" fill="#3b82f6" fillOpacity="0.2" stroke="#3b82f6" />
-  <text x="490.0" y="132" textAnchor="middle" fill="currentColor" fontSize="10">dot</text>
-  <rect x="551" y="114" width="118" height="28" rx="3" fill="#3b82f6" fillOpacity="0.2" stroke="#3b82f6" />
-  <text x="610.0" y="132" textAnchor="middle" fill="currentColor" fontSize="10">dot</text>
-  <text x="178" y="173" textAnchor="end" fill="currentColor" fontSize="12">CPU at 3.5 MHz</text>
-  <rect x="191" y="154" width="238" height="28" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
-  <text x="310.0" y="172" textAnchor="middle" fill="currentColor" fontSize="10">1 T-state</text>
-  <rect x="431" y="154" width="238" height="28" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
-  <text x="550.0" y="172" textAnchor="middle" fill="currentColor" fontSize="10">1 T-state</text>
-  <text x="178" y="213" textAnchor="end" fill="currentColor" fontSize="12">CPU at 7 MHz</text>
-  <rect x="191" y="194" width="118" height="28" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
-  <text x="250.0" y="212" textAnchor="middle" fill="currentColor" fontSize="10">1 T</text>
-  <rect x="311" y="194" width="118" height="28" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
-  <text x="370.0" y="212" textAnchor="middle" fill="currentColor" fontSize="10">1 T</text>
-  <rect x="431" y="194" width="118" height="28" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
-  <text x="490.0" y="212" textAnchor="middle" fill="currentColor" fontSize="10">1 T</text>
-  <rect x="551" y="194" width="118" height="28" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
-  <text x="610.0" y="212" textAnchor="middle" fill="currentColor" fontSize="10">1 T</text>
-  <text x="178" y="253" textAnchor="end" fill="currentColor" fontSize="12">CPU at 14 MHz</text>
-  <rect x="191" y="234" width="58" height="28" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
-  <text x="220.0" y="252" textAnchor="middle" fill="currentColor" fontSize="10">1 T</text>
-  <rect x="251" y="234" width="58" height="28" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
-  <text x="280.0" y="252" textAnchor="middle" fill="currentColor" fontSize="10">1 T</text>
-  <rect x="311" y="234" width="58" height="28" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
-  <text x="340.0" y="252" textAnchor="middle" fill="currentColor" fontSize="10">1 T</text>
-  <rect x="371" y="234" width="58" height="28" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
-  <text x="400.0" y="252" textAnchor="middle" fill="currentColor" fontSize="10">1 T</text>
-  <rect x="431" y="234" width="58" height="28" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
-  <text x="460.0" y="252" textAnchor="middle" fill="currentColor" fontSize="10">1 T</text>
-  <rect x="491" y="234" width="58" height="28" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
-  <text x="520.0" y="252" textAnchor="middle" fill="currentColor" fontSize="10">1 T</text>
-  <rect x="551" y="234" width="58" height="28" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
-  <text x="580.0" y="252" textAnchor="middle" fill="currentColor" fontSize="10">1 T</text>
-  <rect x="611" y="234" width="58" height="28" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
-  <text x="640.0" y="252" textAnchor="middle" fill="currentColor" fontSize="10">1 T</text>
-  <text x="178" y="293" textAnchor="end" fill="currentColor" fontSize="12">CPU at 28 MHz</text>
-  <rect x="191" y="274" width="28" height="28" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
-  <text x="205.0" y="292" textAnchor="middle" fill="currentColor" fontSize="10">T</text>
-  <rect x="221" y="274" width="28" height="28" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
-  <rect x="251" y="274" width="28" height="28" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
-  <rect x="281" y="274" width="28" height="28" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
-  <rect x="311" y="274" width="28" height="28" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
-  <rect x="341" y="274" width="28" height="28" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
-  <rect x="371" y="274" width="28" height="28" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
-  <rect x="401" y="274" width="28" height="28" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
-  <rect x="431" y="274" width="28" height="28" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
-  <rect x="461" y="274" width="28" height="28" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
-  <rect x="491" y="274" width="28" height="28" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
-  <rect x="521" y="274" width="28" height="28" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
-  <rect x="551" y="274" width="28" height="28" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
-  <rect x="581" y="274" width="28" height="28" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
-  <rect x="611" y="274" width="28" height="28" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
-  <rect x="641" y="274" width="28" height="28" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
-  <text x="430" y="20" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.8">16 ticks of 35.7 ns = 4 dots = 0.57 µs</text>
+<svg viewBox="0 0 700 344" role="img" aria-label="Sixteen ticks of the 28 MHz master clock, which make four dots of the beam. Below them: 14 MHz half dots, two per dot; 7 MHz dots, four ticks each; and the CPU's T-states at its four speeds. At 3.5 MHz one T-state lasts two dots, at 7 MHz one dot, at 14 MHz half a dot, and at 28 MHz one tick." style={{ width: "100%", height: "auto" }}>
+  <text x="420" y="20" textAnchor="middle" fill="currentColor" fontSize="15" fillOpacity="0.85">16 ticks of 35.7 ns = 4 dots = 0.57 µs</text>
+  <text x="0" y="53.5" fill="currentColor" fontSize="15">28 MHz</text>
+  <text x="0" y="70.5" fill="currentColor" fontSize="15">master clock</text>
+  <rect x="141" y="40" width="33" height="34" rx="3" fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="157.5" y="62" textAnchor="middle" fill="currentColor" fontSize="13.5">tick</text>
+  <rect x="176" y="40" width="33" height="34" rx="3" fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeOpacity="0.45" />
+  <rect x="211" y="40" width="33" height="34" rx="3" fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeOpacity="0.45" />
+  <rect x="246" y="40" width="33" height="34" rx="3" fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeOpacity="0.45" />
+  <rect x="281" y="40" width="33" height="34" rx="3" fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeOpacity="0.45" />
+  <rect x="316" y="40" width="33" height="34" rx="3" fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeOpacity="0.45" />
+  <rect x="351" y="40" width="33" height="34" rx="3" fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeOpacity="0.45" />
+  <rect x="386" y="40" width="33" height="34" rx="3" fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeOpacity="0.45" />
+  <rect x="421" y="40" width="33" height="34" rx="3" fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeOpacity="0.45" />
+  <rect x="456" y="40" width="33" height="34" rx="3" fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeOpacity="0.45" />
+  <rect x="491" y="40" width="33" height="34" rx="3" fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeOpacity="0.45" />
+  <rect x="526" y="40" width="33" height="34" rx="3" fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeOpacity="0.45" />
+  <rect x="561" y="40" width="33" height="34" rx="3" fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeOpacity="0.45" />
+  <rect x="596" y="40" width="33" height="34" rx="3" fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeOpacity="0.45" />
+  <rect x="631" y="40" width="33" height="34" rx="3" fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeOpacity="0.45" />
+  <rect x="666" y="40" width="33" height="34" rx="3" fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="0" y="97.5" fill="currentColor" fontSize="15">14 MHz:</text>
+  <text x="0" y="114.5" fill="currentColor" fontSize="15">half dots</text>
+  <rect x="141" y="84" width="68" height="34" rx="3" fill="currentColor" fillOpacity="0.12" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="175" y="106" textAnchor="middle" fill="currentColor" fontSize="13.5">½ dot</text>
+  <rect x="211" y="84" width="68" height="34" rx="3" fill="currentColor" fillOpacity="0.12" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="245" y="106" textAnchor="middle" fill="currentColor" fontSize="13.5">½ dot</text>
+  <rect x="281" y="84" width="68" height="34" rx="3" fill="currentColor" fillOpacity="0.12" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="315" y="106" textAnchor="middle" fill="currentColor" fontSize="13.5">½ dot</text>
+  <rect x="351" y="84" width="68" height="34" rx="3" fill="currentColor" fillOpacity="0.12" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="385" y="106" textAnchor="middle" fill="currentColor" fontSize="13.5">½ dot</text>
+  <rect x="421" y="84" width="68" height="34" rx="3" fill="currentColor" fillOpacity="0.12" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="455" y="106" textAnchor="middle" fill="currentColor" fontSize="13.5">½ dot</text>
+  <rect x="491" y="84" width="68" height="34" rx="3" fill="currentColor" fillOpacity="0.12" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="525" y="106" textAnchor="middle" fill="currentColor" fontSize="13.5">½ dot</text>
+  <rect x="561" y="84" width="68" height="34" rx="3" fill="currentColor" fillOpacity="0.12" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="595" y="106" textAnchor="middle" fill="currentColor" fontSize="13.5">½ dot</text>
+  <rect x="631" y="84" width="68" height="34" rx="3" fill="currentColor" fillOpacity="0.12" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="665" y="106" textAnchor="middle" fill="currentColor" fontSize="13.5">½ dot</text>
+  <text x="0" y="150" fill="currentColor" fontSize="15">7 MHz: dots</text>
+  <rect x="141" y="128" width="138" height="34" rx="3" fill="#3b82f6" fillOpacity="0.2" stroke="#3b82f6" />
+  <text x="210" y="150" textAnchor="middle" fill="currentColor" fontSize="13.5">dot</text>
+  <rect x="281" y="128" width="138" height="34" rx="3" fill="#3b82f6" fillOpacity="0.2" stroke="#3b82f6" />
+  <text x="350" y="150" textAnchor="middle" fill="currentColor" fontSize="13.5">dot</text>
+  <rect x="421" y="128" width="138" height="34" rx="3" fill="#3b82f6" fillOpacity="0.2" stroke="#3b82f6" />
+  <text x="490" y="150" textAnchor="middle" fill="currentColor" fontSize="13.5">dot</text>
+  <rect x="561" y="128" width="138" height="34" rx="3" fill="#3b82f6" fillOpacity="0.2" stroke="#3b82f6" />
+  <text x="630" y="150" textAnchor="middle" fill="currentColor" fontSize="13.5">dot</text>
+  <text x="0" y="185.5" fill="currentColor" fontSize="15">CPU at</text>
+  <text x="0" y="202.5" fill="currentColor" fontSize="15">3.5 MHz</text>
+  <rect x="141" y="172" width="278" height="34" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
+  <text x="280" y="194" textAnchor="middle" fill="currentColor" fontSize="13.5">1 T-state</text>
+  <rect x="421" y="172" width="278" height="34" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
+  <text x="560" y="194" textAnchor="middle" fill="currentColor" fontSize="13.5">1 T-state</text>
+  <text x="0" y="229.5" fill="currentColor" fontSize="15">CPU at</text>
+  <text x="0" y="246.5" fill="currentColor" fontSize="15">7 MHz</text>
+  <rect x="141" y="216" width="138" height="34" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
+  <text x="210" y="238" textAnchor="middle" fill="currentColor" fontSize="13.5">1 T</text>
+  <rect x="281" y="216" width="138" height="34" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
+  <text x="350" y="238" textAnchor="middle" fill="currentColor" fontSize="13.5">1 T</text>
+  <rect x="421" y="216" width="138" height="34" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
+  <text x="490" y="238" textAnchor="middle" fill="currentColor" fontSize="13.5">1 T</text>
+  <rect x="561" y="216" width="138" height="34" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
+  <text x="630" y="238" textAnchor="middle" fill="currentColor" fontSize="13.5">1 T</text>
+  <text x="0" y="273.5" fill="currentColor" fontSize="15">CPU at</text>
+  <text x="0" y="290.5" fill="currentColor" fontSize="15">14 MHz</text>
+  <rect x="141" y="260" width="68" height="34" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
+  <text x="175" y="282" textAnchor="middle" fill="currentColor" fontSize="13.5">1 T</text>
+  <rect x="211" y="260" width="68" height="34" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
+  <text x="245" y="282" textAnchor="middle" fill="currentColor" fontSize="13.5">1 T</text>
+  <rect x="281" y="260" width="68" height="34" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
+  <text x="315" y="282" textAnchor="middle" fill="currentColor" fontSize="13.5">1 T</text>
+  <rect x="351" y="260" width="68" height="34" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
+  <text x="385" y="282" textAnchor="middle" fill="currentColor" fontSize="13.5">1 T</text>
+  <rect x="421" y="260" width="68" height="34" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
+  <text x="455" y="282" textAnchor="middle" fill="currentColor" fontSize="13.5">1 T</text>
+  <rect x="491" y="260" width="68" height="34" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
+  <text x="525" y="282" textAnchor="middle" fill="currentColor" fontSize="13.5">1 T</text>
+  <rect x="561" y="260" width="68" height="34" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
+  <text x="595" y="282" textAnchor="middle" fill="currentColor" fontSize="13.5">1 T</text>
+  <rect x="631" y="260" width="68" height="34" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
+  <text x="665" y="282" textAnchor="middle" fill="currentColor" fontSize="13.5">1 T</text>
+  <text x="0" y="317.5" fill="currentColor" fontSize="15">CPU at</text>
+  <text x="0" y="334.5" fill="currentColor" fontSize="15">28 MHz</text>
+  <rect x="141" y="304" width="33" height="34" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
+  <text x="157.5" y="326" textAnchor="middle" fill="currentColor" fontSize="13.5">T</text>
+  <rect x="176" y="304" width="33" height="34" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
+  <rect x="211" y="304" width="33" height="34" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
+  <rect x="246" y="304" width="33" height="34" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
+  <rect x="281" y="304" width="33" height="34" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
+  <rect x="316" y="304" width="33" height="34" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
+  <rect x="351" y="304" width="33" height="34" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
+  <rect x="386" y="304" width="33" height="34" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
+  <rect x="421" y="304" width="33" height="34" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
+  <rect x="456" y="304" width="33" height="34" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
+  <rect x="491" y="304" width="33" height="34" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
+  <rect x="526" y="304" width="33" height="34" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
+  <rect x="561" y="304" width="33" height="34" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
+  <rect x="596" y="304" width="33" height="34" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
+  <rect x="631" y="304" width="33" height="34" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
+  <rect x="666" y="304" width="33" height="34" rx="3" fill="#e8912d" fillOpacity="0.2" stroke="#e8912d" />
 </svg>
 <figcaption>Four dots of the beam in ticks of the master clock, and how long a CPU T-state lasts at each speed. At 3.5 MHz, the Spectrum's speed, a T-state is two dots.</figcaption>
 </figure>
 
-What changes with the CPU speed is only how much a program can do in a line: 228 T-states in a 128K
-line at 3.5 MHz, 456 at 7 MHz, 912 at 14 MHz and 1,824 at 28 MHz. The beam does not care: it counts
-its 7 MHz dots whatever the CPU does.
+What changes with the CPU speed is only how much your program can do in a line: 228 T-states in a 128K line
+at 3.5 MHz, 456 at 7 MHz, 912 at 14 MHz and 1,824 at 28 MHz. The beam does not care. It counts its 7 MHz dots
+whatever the CPU does, like a metronome that has never heard of the band.
 
-**Contention**, the ULA holding up the CPU when both want the screen memory, exists only at
-**3.5 MHz**, the speed the old programs were written for. It follows the pattern of the chosen timing,
-the 48K's, the 128K's or the +3's, and the Pentagon has none. At 7 MHz and above the CPU is never held
-up, and bit 6 of the Peripheral 3 Setting register, NextReg `$08`, switches contention off at 3.5 MHz too. How contention works is explained
-in [Part 5 of the Spectrum
-article](/en/under-the-hood/emulator-internals/spectrum-display/#part-5-sharing-the-memory); the Next
-reproduces it exactly.
+**Contention**, the ULA holding up the CPU when both want the screen memory, exists only at **3.5 MHz**, the
+speed the old programs were written for. It follows the pattern of the chosen timing, the 48K's, the 128K's
+or the +3's, and the Pentagon has none. At 7 MHz and above the CPU is never held up, and bit 6 of the
+Peripheral 3 Setting register, NextReg `$08`, switches contention off at 3.5 MHz too. How contention works is
+explained in the Spectrum screen chapter's
+[Sharing the memory](/en/under-the-hood/emulator-internals/spectrum-display/#part-5-sharing-the-memory); the
+Next reproduces it exactly.
 
-## Part 5: From counters to cables
+## From counters to cables
 
-The video pipeline of the first article puts out a **9-bit colour** at 14 MHz, together with the
-blanking and the two sync signals. Its lines come at about 15.5 kHz (7 MHz divided by 448 or 456
-dots), the line rate of a European television. That is fine for a television, and much too slow for a
-computer monitor. The Next has three ways out.
+The video pipeline of the previous chapter puts out a **9-bit colour** at 14 MHz, together with the blanking
+and the two sync signals. Its lines come at about 15.5 kHz (7 MHz divided by 448 or 456 dots), the line rate
+of a European television. That is fine for a television, and much too slow for a computer monitor. So the
+Next has three ways out:
 
 <figure>
-<svg viewBox="0 0 700 300" role="img" aria-label="The road from the video pipeline to the connectors. The pipeline puts out a 9-bit colour at 14 MHz with blanking and sync, in lines of about 15.5 kHz. Three outputs take it from there. With the scan doubler off, NextReg 05 bit 0 clear, it goes out as RGB at 15 kHz, as a television expects. With the scan doubler on, every line is sent twice at double speed for a VGA monitor at 31 kHz, with optional scanlines from NextReg 09. The HDMI output takes a 360 by 288 window, sends every line twice, and becomes 720 by 576 at about 50 Hz, or 720 by 480 at 60 Hz. VGA modes 0 to 6, NextReg 11, set the master clock from 28 to 33 MHz; HDMI works only in modes 0 and 1." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
+<svg viewBox="0 0 700 290" role="img" aria-label="The road from the video pipeline to the connectors. The pipeline puts out a 9-bit colour at 14 MHz with blanking and sync, in lines of about 15.5 kHz. Three outputs take it from there. With the scan doubler off, NextReg 05 bit 0 clear, it goes out as RGB at 15 kHz, as a television expects. With the scan doubler on, every line is sent twice at double speed for a VGA monitor at 31 kHz, with optional scanlines from NextReg 09. The HDMI output takes a 360 by 288 window, sends every line twice, and becomes 720 by 576 at about 50 Hz, or 720 by 480 at 60 Hz. VGA modes 0 to 6, NextReg 11, set the master clock from 28 to 33 MHz; HDMI works only in modes 0 and 1." style={{ width: "100%", height: "auto" }}>
   <defs>
     <marker id="tm7-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-      <path d="M0,0 L10,5 L0,10 z" fill="currentColor" fillOpacity="0.6" />
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor" fillOpacity="0.7" />
     </marker>
   </defs>
-  <rect x="20" y="110" width="170" height="80" rx="6" fill="#e5484d" fillOpacity="0.08" stroke="#e5484d" />
-  <text x="105" y="136" textAnchor="middle" fill="currentColor" fontSize="12" fontWeight="600">video pipeline</text>
-  <text x="105" y="154" textAnchor="middle" fill="currentColor" fontSize="11">9-bit RGB at 14 MHz</text>
-  <text x="105" y="170" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.8">lines at ~15.5 kHz</text>
-  <rect x="300" y="28" width="260" height="64" rx="6" fill="currentColor" fillOpacity="0.05" stroke="currentColor" strokeOpacity="0.45" />
-  <text x="314" y="48" fill="currentColor" fontSize="12" fontWeight="600">RGB, 15 kHz</text>
-  <text x="314" y="65" fill="currentColor" fontSize="11">scan doubler off (NextReg $05 bit 0 = 0)</text>
-  <text x="314" y="81" fill="currentColor" fontSize="11" fillOpacity="0.75">a television or a CRT monitor</text>
-  <line x1="190" y1="150" x2="298" y2="60" stroke="currentColor" strokeOpacity="0.6" markerEnd="url(#tm7-arrow)" />
-  <line x1="560" y1="60" x2="600" y2="60" stroke="currentColor" strokeOpacity="0.6" markerEnd="url(#tm7-arrow)" />
-  <rect x="602" y="48" width="12" height="24" rx="2" fill="currentColor" fillOpacity="0.35" />
-  <rect x="300" y="118" width="260" height="64" rx="6" fill="currentColor" fillOpacity="0.05" stroke="currentColor" strokeOpacity="0.45" />
-  <text x="314" y="138" fill="currentColor" fontSize="12" fontWeight="600">scan doubler → VGA, 31 kHz</text>
-  <text x="314" y="155" fill="currentColor" fontSize="11">each line twice (NextReg $05 bit 0 = 1)</text>
-  <text x="314" y="171" fill="currentColor" fontSize="11" fillOpacity="0.75">scanlines: NextReg $09 bits 1–0</text>
-  <line x1="190" y1="150" x2="298" y2="150" stroke="currentColor" strokeOpacity="0.6" markerEnd="url(#tm7-arrow)" />
-  <line x1="560" y1="150" x2="600" y2="150" stroke="currentColor" strokeOpacity="0.6" markerEnd="url(#tm7-arrow)" />
-  <rect x="602" y="138" width="12" height="24" rx="2" fill="currentColor" fillOpacity="0.35" />
-  <rect x="300" y="208" width="260" height="64" rx="6" fill="currentColor" fillOpacity="0.05" stroke="currentColor" strokeOpacity="0.45" />
-  <text x="314" y="228" fill="currentColor" fontSize="12" fontWeight="600">HDMI: 720 × 576 (720 × 480)</text>
-  <text x="314" y="245" fill="currentColor" fontSize="11">the 360 × 288 window, lines twice</text>
-  <text x="314" y="261" fill="currentColor" fontSize="11" fillOpacity="0.75">VGA modes 0 and 1 only</text>
-  <line x1="190" y1="150" x2="298" y2="240" stroke="currentColor" strokeOpacity="0.6" markerEnd="url(#tm7-arrow)" />
-  <line x1="560" y1="240" x2="600" y2="240" stroke="currentColor" strokeOpacity="0.6" markerEnd="url(#tm7-arrow)" />
-  <rect x="602" y="228" width="12" height="24" rx="2" fill="currentColor" fillOpacity="0.35" />
-  <text x="105" y="230" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.8">VGA modes 0–6 (NextReg $11):</text>
-  <text x="105" y="246" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.8">master clock 28–33 MHz</text>
+  <rect x="0" y="108" width="176" height="74" rx="6" fill="#e5484d" fillOpacity="0.08" stroke="#e5484d" />
+  <text x="88" y="132" textAnchor="middle" fill="currentColor" fontSize="16.5" fontWeight="600">video pipeline</text>
+  <text x="88" y="152" textAnchor="middle" fill="currentColor" fontSize="15">9-bit RGB at 14 MHz</text>
+  <text x="88" y="170" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.85">lines at ~15.5 kHz</text>
+  <text x="0" y="210" fill="currentColor" fontSize="13.5" fillOpacity="0.85">VGA modes 0–6</text>
+  <text x="0" y="227" fill="currentColor" fontSize="13.5" fillOpacity="0.85">(NextReg $11):</text>
+  <text x="0" y="244" fill="currentColor" fontSize="13.5" fillOpacity="0.85">master clock</text>
+  <text x="0" y="261" fill="currentColor" fontSize="13.5" fillOpacity="0.85">28–33 MHz</text>
+  <path d="M176,145 H204" fill="none" stroke="currentColor" strokeOpacity="0.7" strokeWidth="1.6" strokeLinejoin="round" />
+  <path d="M204,47 V243" fill="none" stroke="currentColor" strokeOpacity="0.7" strokeWidth="1.6" strokeLinejoin="round" />
+  <rect x="232" y="8" width="326" height="78" rx="6" fill="currentColor" fillOpacity="0.05" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="244" y="31" fill="currentColor" fontSize="16.5" fontWeight="600">RGB, 15 kHz</text>
+  <text x="244" y="52" fill="currentColor" fontSize="13.5">scan doubler off (NextReg $05 bit 0 = 0)</text>
+  <text x="244" y="71" fill="currentColor" fontSize="13.5" fillOpacity="0.8">a television or a CRT monitor</text>
+  <path d="M204,47 H230" fill="none" stroke="currentColor" strokeOpacity="0.7" strokeWidth="1.6" markerEnd="url(#tm7-arrow)" strokeLinejoin="round" />
+  <path d="M558,47 H684" fill="none" stroke="currentColor" strokeOpacity="0.7" strokeWidth="1.6" markerEnd="url(#tm7-arrow)" strokeLinejoin="round" />
+  <rect x="686" y="34" width="14" height="26" rx="2" fill="currentColor" fillOpacity="0.35" />
+  <rect x="232" y="106" width="326" height="78" rx="6" fill="currentColor" fillOpacity="0.05" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="244" y="129" fill="currentColor" fontSize="16.5" fontWeight="600">scan doubler → VGA, 31 kHz</text>
+  <text x="244" y="150" fill="currentColor" fontSize="13.5">each line twice (NextReg $05 bit 0 = 1)</text>
+  <text x="244" y="169" fill="currentColor" fontSize="13.5" fillOpacity="0.8">scanlines: NextReg $09 bits 1–0</text>
+  <path d="M204,145 H230" fill="none" stroke="currentColor" strokeOpacity="0.7" strokeWidth="1.6" markerEnd="url(#tm7-arrow)" strokeLinejoin="round" />
+  <path d="M558,145 H684" fill="none" stroke="currentColor" strokeOpacity="0.7" strokeWidth="1.6" markerEnd="url(#tm7-arrow)" strokeLinejoin="round" />
+  <rect x="686" y="132" width="14" height="26" rx="2" fill="currentColor" fillOpacity="0.35" />
+  <rect x="232" y="204" width="326" height="78" rx="6" fill="currentColor" fillOpacity="0.05" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="244" y="227" fill="currentColor" fontSize="16.5" fontWeight="600">HDMI: 720 × 576 (720 × 480)</text>
+  <text x="244" y="248" fill="currentColor" fontSize="13.5">the 360 × 288 window, lines twice</text>
+  <text x="244" y="267" fill="currentColor" fontSize="13.5" fillOpacity="0.8">VGA modes 0 and 1 only</text>
+  <path d="M204,243 H230" fill="none" stroke="currentColor" strokeOpacity="0.7" strokeWidth="1.6" markerEnd="url(#tm7-arrow)" strokeLinejoin="round" />
+  <path d="M558,243 H684" fill="none" stroke="currentColor" strokeOpacity="0.7" strokeWidth="1.6" markerEnd="url(#tm7-arrow)" strokeLinejoin="round" />
+  <rect x="686" y="230" width="14" height="26" rx="2" fill="currentColor" fillOpacity="0.35" />
 </svg>
 <figcaption>The three outputs. The video pipeline's picture is the same for all of them; what differs is how its lines are sent.</figcaption>
 </figure>
 
-### RGB at 15 kHz
+## RGB at 15 kHz
 
-With the **scan doubler off**, that is with bit 0 of the Peripheral 1 Setting register, NextReg `$05`, clear, the picture leaves exactly as the counters
-time it: one line per line, 15.5 kHz, 50 frames a second. A television or an old monitor with an RGB
-(SCART) input shows it the way it showed a Spectrum.
+The first way out is the simplest. With the **scan doubler off**, that is with bit 0 of the Peripheral 1
+Setting register, NextReg `$05`, clear, the picture leaves exactly as the counters time it: one line per line,
+15.5 kHz, 50 frames a second. A television or an old monitor with an RGB (SCART) input shows it the way it
+showed a Spectrum.
 
-### The scan doubler and VGA
+## The scan doubler and VGA
 
-A VGA monitor wants lines at least twice as fast, about 31 kHz. The **scan doubler** gets there
-without changing the frame. It writes each line into a line buffer as the pipeline makes it, at
-14 MHz, and reads it out **twice**, each time at 28 MHz, double speed. Two output lines fit into the
-time of one input line, so the monitor gets a 31 kHz picture with every line shown twice, one line
-behind the original.
+A VGA monitor wants lines at least twice as fast, about 31 kHz. The **scan doubler** gets there without
+changing the frame. It writes each line into a line buffer as the pipeline makes it, at 14 MHz, and reads it
+out **twice**, each time at 28 MHz, double speed. Two output lines fit into the time of one input line, so
+the monitor gets a 31 kHz picture with every line shown twice, one line behind the original.
 
 <figure>
-<svg viewBox="0 0 700 220" role="img" aria-label="Scan doubling over time. The input lines 1, 2 and 3 arrive one after the other, each taking one line time of about 65 microseconds. While line 2 is being written into the line buffer, line 1 is read out of it twice, each time at double speed, so two output lines fit into one input line time. The output runs one line behind the input, and its lines are half as long, at about 31 kHz instead of 15.5 kHz. With scanlines on, the second copy of each line is darkened." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
+<svg viewBox="0 0 700 218" role="img" aria-label="Scan doubling over time. The input lines 1, 2 and 3 arrive one after the other, each taking one line time of about 65 microseconds. While line 2 is being written into the line buffer, line 1 is read out of it twice, each time at double speed, so two output lines fit into one input line time. The output runs one line behind the input, and its lines are half as long, at about 31 kHz instead of 15.5 kHz. With scanlines on, the second copy of each line is darkened." style={{ width: "100%", height: "auto" }}>
   <defs>
     <marker id="tm8-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-      <path d="M0,0 L10,5 L0,10 z" fill="currentColor" fillOpacity="0.6" />
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor" fillOpacity="0.7" />
     </marker>
   </defs>
-  <text x="138" y="62" textAnchor="end" fill="currentColor" fontSize="12">in, 15 kHz</text>
-  <text x="138" y="140" textAnchor="end" fill="currentColor" fontSize="12">out, 31 kHz</text>
-  <rect x="151" y="44" width="168" height="30" rx="4" fill="#3b82f6" fillOpacity="0.12" stroke="#3b82f6" />
-  <text x="235.0" y="64" textAnchor="middle" fill="currentColor" fontSize="12">line 1</text>
-  <rect x="321" y="44" width="168" height="30" rx="4" fill="#3b82f6" fillOpacity="0.2" stroke="#3b82f6" />
-  <text x="405.0" y="64" textAnchor="middle" fill="currentColor" fontSize="12">line 2</text>
-  <rect x="491" y="44" width="168" height="30" rx="4" fill="#3b82f6" fillOpacity="0.28" stroke="#3b82f6" />
-  <text x="575.0" y="64" textAnchor="middle" fill="currentColor" fontSize="12">line 3</text>
-  <rect x="321.0" y="122" width="83.0" height="30" rx="4" fill="#3b82f6" fillOpacity="0.12" stroke="#3b82f6" />
-  <text x="362.5" y="142" textAnchor="middle" fill="currentColor" fontSize="11">line 1</text>
-  <rect x="406.0" y="122" width="83.0" height="30" rx="4" fill="#3b82f6" fillOpacity="0.06" stroke="#3b82f6" strokeDasharray="4 3" />
-  <text x="447.5" y="142" textAnchor="middle" fill="currentColor" fontSize="11">line 1</text>
-  <rect x="491.0" y="122" width="83.0" height="30" rx="4" fill="#3b82f6" fillOpacity="0.20" stroke="#3b82f6" />
-  <text x="532.5" y="142" textAnchor="middle" fill="currentColor" fontSize="11">line 2</text>
-  <rect x="576.0" y="122" width="83.0" height="30" rx="4" fill="#3b82f6" fillOpacity="0.10" stroke="#3b82f6" strokeDasharray="4 3" />
-  <text x="617.5" y="142" textAnchor="middle" fill="currentColor" fontSize="11">line 2</text>
-  <line x1="235.0" y1="76" x2="362.5" y2="120" stroke="currentColor" strokeOpacity="0.6" markerEnd="url(#tm8-arrow)" />
-  <line x1="235.0" y1="76" x2="447.5" y2="120" stroke="currentColor" strokeOpacity="0.6" markerEnd="url(#tm8-arrow)" />
-  <path d="M152,166 v6 H318 v-6" fill="none" stroke="currentColor" strokeOpacity="0.6" />
-  <text x="235.0" y="188" textAnchor="middle" fill="currentColor" fontSize="11">one line time, ~65 µs</text>
-  <text x="405.0" y="188" textAnchor="middle" fill="currentColor" fontSize="11">written once, read twice</text>
-  <text x="405.0" y="204" textAnchor="middle" fill="currentColor" fontSize="10" fillOpacity="0.75">the dashed copy is the one scanlines darken</text>
-  <text x="475.0" y="30" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.8">time →</text>
+  <text x="400" y="20" textAnchor="middle" fill="currentColor" fontSize="15" fillOpacity="0.85">time →</text>
+  <text x="0" y="50" fill="currentColor" fontSize="15">in</text>
+  <text x="0" y="67" fill="currentColor" fontSize="15">15 kHz</text>
+  <text x="0" y="138" fill="currentColor" fontSize="15">out</text>
+  <text x="0" y="155" fill="currentColor" fontSize="15">31 kHz</text>
+  <rect x="100" y="36" width="198" height="34" rx="4" fill="#3b82f6" fillOpacity="0.12" stroke="#3b82f6" />
+  <text x="199" y="58" textAnchor="middle" fill="currentColor" fontSize="15">line 1</text>
+  <rect x="302" y="36" width="198" height="34" rx="4" fill="#3b82f6" fillOpacity="0.2" stroke="#3b82f6" />
+  <text x="401" y="58" textAnchor="middle" fill="currentColor" fontSize="15">line 2</text>
+  <rect x="504" y="36" width="198" height="34" rx="4" fill="#3b82f6" fillOpacity="0.28" stroke="#3b82f6" />
+  <text x="603" y="58" textAnchor="middle" fill="currentColor" fontSize="15">line 3</text>
+  <rect x="302" y="124" width="98" height="34" rx="4" fill="#3b82f6" fillOpacity="0.12" stroke="#3b82f6" />
+  <text x="351" y="146" textAnchor="middle" fill="currentColor" fontSize="15">line 1</text>
+  <rect x="404" y="124" width="98" height="34" rx="4" fill="#3b82f6" fillOpacity="0.06" stroke="#3b82f6" strokeDasharray="4 3" />
+  <text x="453" y="146" textAnchor="middle" fill="currentColor" fontSize="15">line 1</text>
+  <rect x="504" y="124" width="98" height="34" rx="4" fill="#3b82f6" fillOpacity="0.2" stroke="#3b82f6" />
+  <text x="553" y="146" textAnchor="middle" fill="currentColor" fontSize="15">line 2</text>
+  <rect x="606" y="124" width="98" height="34" rx="4" fill="#3b82f6" fillOpacity="0.1" stroke="#3b82f6" strokeDasharray="4 3" />
+  <text x="655" y="146" textAnchor="middle" fill="currentColor" fontSize="15">line 2</text>
+  <path d="M199,70 V92 H453" fill="none" stroke="currentColor" strokeOpacity="0.7" strokeWidth="1.6" strokeLinejoin="round" />
+  <path d="M351,92 V122" fill="none" stroke="currentColor" strokeOpacity="0.7" strokeWidth="1.6" markerEnd="url(#tm8-arrow)" strokeLinejoin="round" />
+  <path d="M453,92 V122" fill="none" stroke="currentColor" strokeOpacity="0.7" strokeWidth="1.6" markerEnd="url(#tm8-arrow)" strokeLinejoin="round" />
+  <path d="M101,170 v7 H297 v-7" fill="none" stroke="currentColor" strokeOpacity="0.6" strokeWidth="1.2" strokeLinejoin="round" />
+  <text x="199" y="198" textAnchor="middle" fill="currentColor" fontSize="15">one line time, ~65 µs</text>
+  <text x="502" y="188" textAnchor="middle" fill="currentColor" fontSize="15">written once, read twice</text>
+  <text x="502" y="208" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.8">the dashed copy is the one scanlines darken</text>
 </svg>
 <figcaption>Scan doubling: each input line is written once and read out twice at double speed, while the next line is being written.</figcaption>
 </figure>
 
-Twice as many lines, each repeated, look smoother than a television ever did. For those who miss the
-dark gaps between the lines of a CRT, bits 1–0 of the Peripheral 4 Setting register, NextReg `$09`, darken one of each pair of lines by
-50%, 25% or 12.5%: **scanlines**.
+Twice as many lines, each repeated, look smoother than a television ever did. Do you miss the dark gaps
+between the lines of a CRT? Bits 1–0 of the Peripheral 4 Setting register, NextReg `$09`, darken one of each
+pair of lines by 50%, 25% or 12.5%: **scanlines**.
 
-Some monitors refuse the Next's 50 Hz frame. For them there are seven **VGA modes**, chosen in the Video Timing register, NextReg `$11`: modes 0 to 6 set the master clock from 28 MHz in steps up to 33 MHz. Everything is
-timed by that clock, so everything speeds up together, the CPU, the beam, the frame rate, by up to
-18%, until the monitor accepts it.
+Some monitors refuse the Next's 50 Hz frame. For them there are seven **VGA modes**, chosen in the Video
+Timing register, NextReg `$11`: modes 0 to 6 set the master clock from 28 MHz in steps up to 33 MHz.
+Everything is timed by that clock, so everything speeds up together, the CPU, the beam, the frame rate, by up
+to 18%, until the monitor accepts it.
 
-### HDMI
+## HDMI
 
-HDMI does not accept a television's timing at all: it carries fixed television standards, and the
-Next uses two, **720 × 576 at 50 Hz** and **720 × 480 at 60 Hz**. The Next fits its picture into them
-without changing the frame. It takes a **window** of 360 × 288 dots around the wide area, 720 pixels of
-14 MHz across, and sends every line twice: 576 lines. (At 60 Hz the window is 360 × 240 and the lines
-become 480.)
+HDMI does not accept a television's timing at all: it carries fixed television standards, and the Next uses
+two, **720 × 576 at 50 Hz** and **720 × 480 at 60 Hz**. The Next fits its picture into them without changing
+the frame. It takes a **window** of 360 × 288 dots around the wide area, 720 pixels of 14 MHz across, and
+sends every line twice: 576 lines. (At 60 Hz the window is 360 × 240 and the lines become 480.)
 
-The pixels pass through a small buffer of 8,192 pixels, about eleven lines, which is written at
-14 MHz and read at the HDMI pixel clock. And here is the trick that keeps it small: the HDMI clock is
-not a free-running 27 MHz. It is **made from the Next's own 28 MHz clock**, with a ratio chosen for
-each timing and frame rate, so that one HDMI frame lasts exactly as long as one Next frame. The two
-never drift apart, and the buffer never fills or runs dry. The price is a frame rate a little away
-from the standard one, the Next's own 49.36 Hz in 128K timing, which monitors accept. HDMI works in
-VGA modes 0 and 1 only; the higher modes switch it off.
+The pixels pass through a small buffer of 8,192 pixels, about eleven lines, which is written at 14 MHz and
+read at the HDMI pixel clock. And here is the trick that keeps it small, and I think it is a lovely one: the
+HDMI clock is not a free-running 27 MHz. It is **made from the Next's own 28 MHz clock**, with a ratio chosen
+for each timing and frame rate, so that one HDMI frame lasts exactly as long as one Next frame. The two never
+drift apart, and the buffer never fills or runs dry. The price is a frame rate a little away from the
+standard one, the Next's own 49.36 Hz in 128K timing, which monitors accept. HDMI works in VGA modes 0 and 1
+only; the higher modes switch it off.
 
 <figure>
-<svg viewBox="0 0 700 250" role="img" aria-label="The HDMI path. From the Next's frame, a window of 360 by 288 dots is taken: 720 pixels of 14 MHz across and 288 lines. The pixels are written into a buffer of 8,192 pixels, about eleven lines, at 14 MHz, and read out at the HDMI clock, each line twice, giving 720 by 576 pixels. The HDMI clock, about 27 MHz, is made from the Next's own 28 MHz clock with a ratio chosen for each timing, so that one HDMI frame takes exactly as long as one Next frame and the two never drift apart." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
+<svg viewBox="0 0 700 248" role="img" aria-label="The HDMI path. From the Next's frame, a window of 360 by 288 dots is taken: 720 pixels of 14 MHz across and 288 lines. The pixels are written into a buffer of 8,192 pixels, about eleven lines, at 14 MHz, and read out at the HDMI clock, each line twice, giving 720 by 576 pixels. The HDMI clock, about 27 MHz, is made from the Next's own 28 MHz clock with a ratio chosen for each timing, so that one HDMI frame takes exactly as long as one Next frame and the two never drift apart." style={{ width: "100%", height: "auto" }}>
   <defs>
     <marker id="tm9-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-      <path d="M0,0 L10,5 L0,10 z" fill="currentColor" fillOpacity="0.6" />
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor" fillOpacity="0.7" />
     </marker>
   </defs>
-  <rect x="20" y="40" width="164.2" height="112.0" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.5" />
-  <rect x="20" y="40" width="34.6" height="112.0" fill="currentColor" fillOpacity="0.16" />
-  <rect x="54.6" y="40" width="129.6" height="2.9" fill="currentColor" fillOpacity="0.16" />
-  <rect x="25.8" y="40" width="11.5" height="112.0" fill="currentColor" fillOpacity="0.3" />
-  <rect x="20" y="40.4" width="164.2" height="1.4" fill="currentColor" fillOpacity="0.3" />
-  <rect x="57.4" y="51.5" width="115.2" height="92.2" fill="none" stroke="currentColor" strokeOpacity="0.7" strokeDasharray="5 4" />
-  <rect x="69.0" y="63.0" width="92.2" height="69.1" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" strokeWidth="1.2" />
-  <rect x="51.7" y="45.8" width="129.6" height="103.7" fill="none" stroke="#e5484d" strokeWidth="1.5" strokeDasharray="5 3" />
-  <text x="102" y="28" textAnchor="middle" fill="currentColor" fontSize="12" fontWeight="600">the Next's frame</text>
-  <text x="102" y="174" textAnchor="middle" fill="#e5484d" fontSize="11">a 360 × 288 window</text>
-  <text x="102" y="190" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.8">720 × 288 pixels of 14 MHz</text>
-  <rect x="250" y="70" width="170" height="70" rx="6" fill="currentColor" fillOpacity="0.05" stroke="currentColor" strokeOpacity="0.45" />
-  <text x="335" y="94" textAnchor="middle" fill="currentColor" fontSize="12" fontWeight="600">pixel buffer</text>
-  <text x="335" y="111" textAnchor="middle" fill="currentColor" fontSize="11">8,192 pixels: ~11 lines</text>
-  <text x="335" y="127" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.75">in at 14 MHz, out at ~27</text>
-  <line x1="190" y1="105" x2="248" y2="105" stroke="currentColor" strokeOpacity="0.6" markerEnd="url(#tm9-arrow)" />
-  <line x1="420" y1="105" x2="478" y2="105" stroke="currentColor" strokeOpacity="0.6" markerEnd="url(#tm9-arrow)" />
-  <rect x="480" y="50" width="200" height="110" rx="4" fill="currentColor" fillOpacity="0.05" stroke="currentColor" strokeOpacity="0.45" />
-  <rect x="490" y="60" width="180" height="9" fill="#3b82f6" fillOpacity="0.3" />
-  <rect x="490" y="71" width="180" height="9" fill="#3b82f6" fillOpacity="0.18" />
-  <rect x="490" y="82" width="180" height="9" fill="#3b82f6" fillOpacity="0.3" />
-  <rect x="490" y="93" width="180" height="9" fill="#3b82f6" fillOpacity="0.18" />
-  <rect x="490" y="104" width="180" height="9" fill="#3b82f6" fillOpacity="0.3" />
-  <rect x="490" y="115" width="180" height="9" fill="#3b82f6" fillOpacity="0.18" />
-  <rect x="490" y="126" width="180" height="9" fill="#3b82f6" fillOpacity="0.3" />
-  <rect x="490" y="137" width="180" height="9" fill="#3b82f6" fillOpacity="0.18" />
-  <text x="580" y="180" textAnchor="middle" fill="currentColor" fontSize="12" fontWeight="600">720 × 576, every line twice</text>
-  <text x="580" y="196" textAnchor="middle" fill="currentColor" fontSize="11" fillOpacity="0.8">(720 × 480 at 60 Hz)</text>
-  <rect x="250" y="190" width="170" height="44" rx="6" fill="currentColor" fillOpacity="0.05" stroke="currentColor" strokeOpacity="0.45" strokeDasharray="4 3" />
-  <text x="335" y="208" textAnchor="middle" fill="currentColor" fontSize="11">HDMI clock: made from</text>
-  <text x="335" y="224" textAnchor="middle" fill="currentColor" fontSize="11">28 MHz, set per timing</text>
-  <line x1="335" y1="190" x2="335" y2="142" stroke="currentColor" strokeOpacity="0.5" strokeDasharray="3 3" markerEnd="url(#tm9-arrow)" />
+  <text x="100" y="22" textAnchor="middle" fill="currentColor" fontSize="16.5" fontWeight="600">the Next's frame</text>
+  <rect x="0" y="40" width="200" height="136.4" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.5" />
+  <rect x="0" y="40" width="42.1" height="136.4" fill="currentColor" fillOpacity="0.16" />
+  <rect x="42.1" y="40" width="157.9" height="3.5" fill="currentColor" fillOpacity="0.16" />
+  <rect x="7" y="40" width="14" height="136.4" fill="currentColor" fillOpacity="0.3" />
+  <rect x="0" y="40.4" width="200" height="1.8" fill="currentColor" fillOpacity="0.3" />
+  <rect x="45.6" y="54" width="140.4" height="112.3" fill="none" stroke="currentColor" strokeOpacity="0.7" strokeDasharray="5 4" />
+  <rect x="59.6" y="68.1" width="112.3" height="84.2" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" strokeWidth="1.2" />
+  <rect x="38.6" y="47" width="157.9" height="126.3" fill="none" stroke="#e5484d" strokeWidth="1.8" strokeDasharray="5 3" />
+  <text x="100" y="200.4" textAnchor="middle" fill="#e5484d" fontSize="15">a 360 × 288 window</text>
+  <text x="100" y="218.4" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.85">720 × 288 pixels of 14 MHz</text>
+  <rect x="246" y="72" width="196" height="76" rx="6" fill="currentColor" fillOpacity="0.05" stroke="currentColor" strokeOpacity="0.45" />
+  <text x="344" y="96" textAnchor="middle" fill="currentColor" fontSize="16.5" fontWeight="600">pixel buffer</text>
+  <text x="344" y="117" textAnchor="middle" fill="currentColor" fontSize="15">8,192 pixels: ~11 lines</text>
+  <text x="344" y="136" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.8">in at 14 MHz, out at ~27</text>
+  <path d="M202,110 H244" fill="none" stroke="currentColor" strokeOpacity="0.7" strokeWidth="1.6" markerEnd="url(#tm9-arrow)" strokeLinejoin="round" />
+  <path d="M442,110 H486" fill="none" stroke="currentColor" strokeOpacity="0.7" strokeWidth="1.6" markerEnd="url(#tm9-arrow)" strokeLinejoin="round" />
+  <rect x="488" y="40" width="212" height="136" rx="4" fill="currentColor" fillOpacity="0.05" stroke="currentColor" strokeOpacity="0.45" />
+  <rect x="498" y="50" width="192" height="13" fill="#3b82f6" fillOpacity="0.3" />
+  <rect x="498" y="65" width="192" height="13" fill="#3b82f6" fillOpacity="0.18" />
+  <rect x="498" y="80" width="192" height="13" fill="#3b82f6" fillOpacity="0.3" />
+  <rect x="498" y="95" width="192" height="13" fill="#3b82f6" fillOpacity="0.18" />
+  <rect x="498" y="110" width="192" height="13" fill="#3b82f6" fillOpacity="0.3" />
+  <rect x="498" y="125" width="192" height="13" fill="#3b82f6" fillOpacity="0.18" />
+  <rect x="498" y="140" width="192" height="13" fill="#3b82f6" fillOpacity="0.3" />
+  <rect x="498" y="155" width="192" height="13" fill="#3b82f6" fillOpacity="0.18" />
+  <text x="594" y="200" textAnchor="middle" fill="currentColor" fontSize="16.5" fontWeight="600">720 × 576,</text>
+  <text x="594" y="220" textAnchor="middle" fill="currentColor" fontSize="15">every line twice</text>
+  <text x="594" y="238" textAnchor="middle" fill="currentColor" fontSize="13.5" fillOpacity="0.85">(720 × 480 at 60 Hz)</text>
+  <rect x="246" y="196" width="196" height="50" rx="6" fill="currentColor" fillOpacity="0.05" stroke="currentColor" strokeOpacity="0.45" strokeDasharray="4 3" />
+  <text x="344" y="217" textAnchor="middle" fill="currentColor" fontSize="15">HDMI clock: made from</text>
+  <text x="344" y="235" textAnchor="middle" fill="currentColor" fontSize="15">28 MHz, set per timing</text>
+  <path d="M344,196 V150" fill="none" stroke="currentColor" strokeOpacity="0.6" strokeWidth="1.4" strokeDasharray="3 3" markerEnd="url(#tm9-arrow)" strokeLinejoin="round" />
 </svg>
 <figcaption>The HDMI path: a 360 × 288 window of the Next's frame, a small buffer, and every line sent twice. The HDMI clock is made from the Next's clock, so one HDMI frame lasts exactly one Next frame.</figcaption>
 </figure>
 
-HDMI also carries 8 bits per colour channel, not 3. The Next makes 8 from 3 by repeating them:
-level 5, `101`, becomes `10110110`. [The palette article](/en/under-the-hood/emulator-internals/next-display/palettes/#part-7-from-palette-to-screen) of the series comes back to this.
+HDMI also carries 8 bits per colour channel, not 3. The Next makes 8 from 3 by repeating them: level 5,
+`101`, becomes `10110110`. The palettes chapter's
+[From palette to screen](/en/under-the-hood/emulator-internals/next-display/palettes/#from-palette-to-screen)
+comes back to this.
 
-## Part 6: How Klive does it
+## How Klive does it
 
-### Counting in ticks
+Klive's Next core counts time the way the machine does: in **ticks of the 28 MHz clock**. A frame is the dots
+of a line, times the lines of the frame, times four ticks: 567,264 ticks in 128K timing. Each CPU T-state
+moves the count on by as many ticks as it lasts at the current speed, eight at 3.5 MHz, one at 28 MHz, and the
+beam's position is the count divided by four. Contention, the line interrupt, the Copper and the raster of the
+previous chapter all read this one count.
 
-Klive's Next core counts time the way the machine does: in **ticks of the 28 MHz clock**. A frame is
-the dots of a line, times the lines of the frame, times four ticks: 567,264 ticks in 128K timing. Each
-CPU T-state moves the count on by as many ticks as it lasts at the current speed, eight at 3.5 MHz,
-one at 28 MHz, and the beam's position is the count divided by four. Contention, the line interrupt,
-the Copper and the raster of the first article all read this one count.
+At the start of every frame, `zxnextTimingSelect` reads the timing from the Machine Type register, NextReg
+`$03`, and the frame rate from the Peripheral 1 Setting register, NextReg `$05`, as the machine does at the
+end of the previous frame, and sets the frame's numbers: the dots of a line and the lines of the frame, where
+the display area starts, where and for how many cycles the frame interrupt is raised, and which contention
+pattern applies. A timing change made in the middle of a frame waits for the next one, as on the machine.
 
-### The timing of each frame
-
-At the start of every frame, `zxnextTimingSelect` reads the timing from the Machine Type register, NextReg `$03`, and the frame rate from the Peripheral 1 Setting register, NextReg `$05`, as the machine does at the end of the previous frame, and sets the frame's numbers: the
-dots of a line and the lines of the frame, where the display area starts, where and for how many
-cycles the frame interrupt is raised, and which contention pattern applies. A timing change made in
-the middle of a frame waits for the next one, as on the machine.
-
-### The picture window
-
-The picture Klive shows is the **360 × 288** window that HDMI shows, stored as 720 × 288 pixels, one for
-each 14 MHz half dot. At 60 Hz the frame ends after line 263, so the window's last 40 rows have no
-frame to show and stay black, as the 60 Hz picture of Part 2 shows. What the real machine does after
-the pipeline, the scan doubler, scanlines, the HDMI buffer, is not emulated: Klive's picture is the
-pipeline's own output.
-
-### Where to read the code
+The picture Klive shows is the **360 × 288** window that HDMI shows, stored as 720 × 288 pixels, one for each
+14 MHz half dot. At 60 Hz the frame ends after line 263, so the window's last 40 rows have no frame to show
+and stay black, as the 60 Hz picture in The 60 Hz frame shows. What the real machine does after the pipeline,
+the scan doubler, scanlines, the HDMI buffer, is not emulated: Klive's picture is the pipeline's own output.
+And if you want to read the code yourself, here is where it lives:
 
 | What | Where |
 |---|---|
@@ -755,25 +777,26 @@ pipeline's own output.
 | The frame interrupt and the interrupt status registers | `zxnext-interrupts.c` |
 | The line interrupt, with the line counter it shares with the Copper | `zxnext-copper.c` |
 
-## Summary
+## What to take home
 
-- Two counters time the whole picture: one counts the **7 MHz dots** of a line, the other the **lines**
-  of a frame. Blanking, sync, the display area, the wide area and the interrupts are all ranges or
-  moments of their values.
-- The Next has the frames of four machines, **48K** (448 × 312), **128K/+2** and **+3** (456 × 311) and
-  **Pentagon** (448 × 320), chosen by NextReg `$03` and taken only at the end of a frame. Programs that
-  count T-states find exactly the frame they were written for.
-- **60 Hz** (NextReg `$05` bit 2) shortens the frame to 264 lines; the wide area then fills every visible line.
-- At exactly 7 MHz dots, the frames run at **50.08, 49.36 and 48.83 Hz**: the 128K's frame is 1.3% slower
-  than on the original, with the same T-states.
-- The **frame interrupt** comes where the originals had it; the **line interrupt** (NextRegs `$22` and `$23`) comes
-  just before a chosen line, numbered from the first line of the display area. An offset of 32 in
-  NextReg `$64` numbers the lines from the top of the wide area instead, the rows of the 320 × 256
-  layers.
-- One **28 MHz** clock ticks four times per dot and drives the CPU at 3.5, 7, 14 or 28 MHz. Contention
-  exists only at 3.5 MHz.
-- The picture leaves as **RGB at 15 kHz**, through the **scan doubler** as VGA at 31 kHz, or as **HDMI**
-  720 × 576, a 360 × 288 window with every line twice, on a clock made from the Next's own so that the
-  frames never drift.
-- Klive counts the same frame in **28 MHz ticks**, chooses each frame's timing at its start, and shows
-  the window HDMI shows.
+Let's rewind. Two counters time the whole picture: one counts the **7 MHz dots** of a line, the other
+the **lines** of a frame. Blanking, sync, the display area, the wide area and the interrupts are all nothing
+more than ranges or moments of their values.
+
+The Next has the frames of four machines: the **48K** (448 dots × 312 lines), the **128K/+2** and **+3**
+(456 × 311) and the **Pentagon** (448 × 320), chosen by NextReg `$03` and taken only at the end of a frame, so
+a program that counts T-states finds exactly the frame it was written for. **60 Hz**, NextReg `$05` bit 2,
+shortens the frame to 264 lines, and the wide area then fills every visible line. Because the dots are exactly
+7 MHz, the frames run at **50.08, 49.36 and 48.83 Hz**: the 128K's frame is 1.3% slower than on the original,
+with the same T-states.
+
+The **frame interrupt** comes where the originals had it. The **line interrupt**, NextRegs `$22` and `$23`,
+comes just before a chosen line, numbered from the first line of the display area, and an offset of 32 in
+NextReg `$64` numbers the lines from the top of the wide area instead, the rows of the 320 × 256 layers.
+Behind it all, one **28 MHz** clock ticks four times per dot and drives the CPU at 3.5, 7, 14 or 28 MHz, and
+contention exists only at 3.5 MHz.
+
+The picture leaves as **RGB at 15 kHz**, through the **scan doubler** as VGA at 31 kHz, or as **HDMI**
+720 × 576, a 360 × 288 window with every line twice, on a clock made from the Next's own so that the frames
+never drift. Klive counts the same frame in **28 MHz ticks**, chooses each frame's timing at its start, and
+shows the window HDMI shows. Two counters, and the whole picture dances to them.

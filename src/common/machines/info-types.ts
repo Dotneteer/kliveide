@@ -216,6 +216,8 @@ export type MachineMenuInfo = {
   devices?: Partial<Record<MachineDeviceMenuId, MachineMenuRenderer>>;
   /** Machine-specific hardware actions, in a submenu named after the machine */
   hardwareItems?: MachineMenuRenderer;
+  /** Machine-specific sound choices, after the levels in Machine › Sound */
+  soundItems?: MachineMenuRenderer;
   /** The machine's views, under View › Machine Views (they open in the IDE) */
   viewItems?: MachineMenuRenderer;
   /** Machine-specific debugging commands, at the end of the Debug menu */

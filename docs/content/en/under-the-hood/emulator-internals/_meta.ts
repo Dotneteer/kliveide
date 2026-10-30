@@ -4,11 +4,13 @@ export default {
   "next-core": "The ZX Spectrum Next core and the FPGA",
   "reverse-debugging": "How reverse debugging works",
   "crt-display": "How a television draws a picture",
+  "computer-sound": "How a computer makes sound",
   "zx81-display": "ZX81: how the screen is drawn",
   "zx81-tape": "ZX81: how programs go to tape",
   "spectrum-display": "ZX Spectrum: how the screen is drawn",
   "spectrum-accuracy": "ZX Spectrum: how Klive's accuracy is tested",
   "next-display": "ZX Spectrum Next: how the screen is drawn",
+  "next-audio": "ZX Spectrum Next: how the sound is made",
   "ht1080z-video": "HT-1080Z: how the screen is drawn",
   "tvc-video": "Videoton TVC: how the picture is made"
 };

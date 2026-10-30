@@ -15,10 +15,12 @@ import { logEmuEvent } from "@main/registeredMachines";
 import { CimHandler } from "@main/fat32/CimHandlers";
 import { openHardDiskImage } from "@main/hard-disk-images";
 import type { BlockDevice } from "@common/diskfs/blockDevice";
-import { appSettings, saveAppSettings, setSettingValue } from "@main/settings-utils";
+import { appSettings, getSettingValue, saveAppSettings, setSettingValue } from "@main/settings-utils";
 import { getEmuApi } from "@common/messaging/MainToEmuMessenger";
 import { getIdeApi } from "@messaging/MainToIdeMessenger";
-import { SETTING_EMU_SCANLINE_EFFECT } from "@common/settings/setting-const";
+import { SETTING_EMU_NEXT_AUDIO_OUTPUT, SETTING_EMU_SCANLINE_EFFECT } from "@common/settings/setting-const";
+import { NEXT_AUDIO_OUTPUTS, normalizeNextAudioOutput } from "@common/settings/next-audio-output";
+import { englishLabel } from "@common/i18n/labels";
 import { ensureSdCardBackupIfEnabled } from "./sd-card-backup";
 import { withSdCardAccess } from "../sd-card-access";
 import { t } from "@common/i18n/i18n";
@@ -79,6 +81,30 @@ export const sdCardMenuRenderer: MachineMenuRenderer = (windowInfo) => {
     }
   });
   return items;
+};
+
+/**
+ * Which of the Next's sound outputs Klive plays (`next-audio-output.ts`): the jack, the internal
+ * speaker or HDMI. A setting rather than a machine option, so switching needs no restart.
+ */
+export const soundOutputMenuRenderer: MachineMenuRenderer = () => {
+  const current = normalizeNextAudioOutput(getSettingValue(SETTING_EMU_NEXT_AUDIO_OUTPUT));
+  return [
+    {
+      id: "zx_next_sound_output",
+      label: t("menu.next.soundOutput"),
+      submenu: NEXT_AUDIO_OUTPUTS.map((option) => ({
+        id: `zx_next_sound_output_${option.value}`,
+        label: option.label,
+        type: "radio",
+        checked: current === option.value,
+        click: async () => {
+          setSettingValue(SETTING_EMU_NEXT_AUDIO_OUTPUT, option.value);
+          await logEmuEvent(`Sound output: ${englishLabel(option)}`);
+        }
+      }))
+    }
+  ];
 };
 
 export const hotkeyMenuRenderer: MachineMenuRenderer = () => {

@@ -20,6 +20,7 @@ import { ht1080zHardwareRenderer, ht1080zTapeMenuRenderer } from "./ht1080z-menu
 import { tvcDiskMenuRenderer, tvcTapeMenuRenderer } from "./tvc-menus";
 import {
   hotkeyMenuRenderer,
+  soundOutputMenuRenderer,
   initializeZxSpectrumNext,
   nextDebugMenuRenderer,
   nextViewsMenuRenderer,
@@ -137,10 +138,12 @@ export const machineMenuRegistry: Record<string, MachineMenuInfo> = {
   },
   [MI_ZXNEXT]: {
     devices: {
+      tape: tapeMenuRenderer,
       sdCard: sdCardMenuRenderer,
       input: combine(joystickMenuRenderer, mouseMenuRenderer)
     },
     hardwareItems: hotkeyMenuRenderer,
+    soundItems: soundOutputMenuRenderer,
     viewItems: combine(spectrumIdeRenderer, nextViewsMenuRenderer),
     debugItems: nextDebugMenuRenderer,
     initializer: initializeZxSpectrumNext,

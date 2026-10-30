@@ -27,26 +27,72 @@ to and replace what it supersedes.
   changeset. Existing tests can be blind to a difference (a Radastan test used offset `$0E`, for which
   the right and the wrong rule agree): when a test passes but you doubt it, add a case that tells the two
   rules apart and watch it fail first.
+- **Suspect behaviour inherited from another machine's emulator.** A core that grew out of an older one
+  can keep that machine's quirks: the Next's port `$FE` bit 6 kept the 48K's analogue EAR decay, which the
+  Next's logic does not have, and a parity test pinned it. Check every read-back and timing rule an article
+  states against the reference, even where an existing test agrees with Klive.
 - **Prove subtle claims on the emulated machine before writing them**, with a checked test (for the Next,
   `test/zxnext-hw/layers/next-display-scene.test.ts`). A claim such as "the left border still counts as
   the line above" gets a test that turns a colour on exactly there. Make the test able to fail: a check on
   a blank dot, or on a pattern that looks the same after the change, proves nothing.
+- **When a capture test fails, find out whether the machine or your expectation is wrong before changing
+  either.** An AY chord test failed because it assumed a channel with tone and noise off is silent; it plays
+  its volume as a steady level. The expectation was wrong, and the finding became a point in the article.
+- **A hanging label belongs to the next instruction, even across an `.org`.** In Klive's assembler, `End:` alone
+  on a line followed by `.org $C000` takes the value `$C000`, so `ld b,End-Start` in a scene program counted 234
+  bytes instead of 16 and the DMA ran garbage. End a block's label on the same line as its last byte, or write
+  the length out.
 - **Never write about the testing inside an article.** "A test runs all six on the machine" confused the
   reader (which machine? why tests?). One callout near the top may say the pictures come from checked
   tests; nothing else about how the facts were verified belongs in the text.
 
 ## Structure
 
+The articles are also meant to be printed as a **book for engineers**: each article is a chapter, and a
+topic such as Sound or Screen is a part of the book that groups its chapters. The project author set the
+rules below on the TurboSound chapter (`next-audio/turbosound.mdx`, the model), and every Next chapter
+now follows them, text and figures: Sound (`computer-sound.mdx`, `next-audio/`) and Screen
+(`next-display/`). The other machines' pages (`spectrum-display.mdx`, `zx81-display.mdx`, `crt-display.mdx`,
+...) still follow the old shape (`## Part N`, a linked list of Parts, a bulleted Summary, small figures)
+until they are reworked. A new chapter starts in the new shape.
+- **Vary the conversational openers across chapters.** Read as a book, the same line in every chapter
+  becomes a tic: "So, what have we got?" once opened 16 closing retellings and "Hey, notice" sat in 12
+  chapters, and "my friend" ended three. Use each such phrase in a few chapters at most, and give each
+  closing its own first line.
+
+- **The title names the chapter's subject, without the machine** ("TurboSound: Three AY Chips Behind Two
+  Ports", not "ZX Spectrum Next: TurboSound Next"): the book's part says which machine. Specific enough to
+  stand in a table of contents beside its neighbours.
 - An **opening hook** (a puzzle or familiar observation), then, **first of all**, a short paragraph on
-  why the subject matters in practice (for sprites: why games need them), then the audience and what to
-  read first.
-- **"How this article is organised"**: a linked list of the Parts, one line each, and "if you read only one
-  part" where it fits.
+  why the subject matters in practice (for sprites: why games need them), then what to read first, as
+  "the previous chapter" or by title, not "article N".
+- **An opening overview** under an inviting heading of its own ("The road ahead", not "What's in this
+  chapter"): a short flowing paragraph that walks through what follows in order and says where the key idea
+  is, **with no links and no list**.
 - A `<Callout type="info">` naming the configuration the numbers are for (timing, rate, CPU speed).
-- `## Part N: …` with `### …` subsections; short paragraphs; plain words first, the register's name
-  second; **bold the one term a paragraph introduces**.
-- End with **"How Klive does it"** (the matching code, the IDE view, a "Where to read the code" table)
-  and a **Summary**. A series ends with a part that ties all its articles together.
+- **No "Part"** anywhere: sections are `##` headings that name their subject ("Panning a whole chip"), and
+  cross-references name the section or chapter ("the mixer chapter's Headroom"). **Balanced headings**: no
+  `###` that would be the only one under its `##`; prefer one level throughout. Short paragraphs; plain
+  words first, the register's name second; **bold the one term a paragraph introduces**.
+- End with **"How Klive does it"** (the matching code, the IDE view, the "where to read the code" table
+  inside it, not under a heading of its own) and **a closing retelling** under an inviting heading ("What
+  to take home", not "The chapter in a nutshell"): a few fluent paragraphs with the key numbers, not a
+  bulleted list.
+- **"Chapter" is a technical word**: use it only when you point at a chapter ("the previous chapter", "the
+  mixer chapter's Headroom"), not to talk about the text the reader is in ("everything here builds on…",
+  "these pages"). A series ends with a chapter that ties
+  all its chapters together.
+- **Tone: playful, for engineers.** Light humour and images ("the other two politely look the other way",
+  "an empty room in an old house", "a crackle that no musician ordered") keep rigid topics readable; the
+  numbers stay exact. A joke never replaces a fact, never needs a date or a claim you cannot check, and
+  never sits in a register description or a figure.
+- **A company of friends discussing engineering.** The author writes as "I", talking to "you": "I" for an
+  opinion, a piece of advice or a warning ("here is my advice", "let me warn you", "I always remember them
+  like this"), never for an invented experience ("I have seen this bite many programs" is fiction). Use a
+  few conversational openers where they fit ("Hey, notice…", "Have you ever…?", "Uhm", "Well", "So, what
+  have we got?") and questions to the reader, and mix short sentences with longer ones. Sparingly: a handful
+  per section, not one per paragraph.
+- Changing a heading changes its anchor: search the other pages for links to the old one and update them.
 
 ## Explaining
 
@@ -70,7 +116,9 @@ to and replace what it supersedes.
   which values never match.
 - **Give practical uses** for modes and options: what each is for in a real program, not only what it
   does. A list with a sentence of application each beat a state diagram.
-- **Show real code for effects**: a commented listing (`text` fence), then "how it works" as numbered
+- **Show real code for effects**: a commented listing in a `z80klive` fence for Z80 code, so the site
+  highlights it (a `text` fence for anything the Z80 grammar does not know, such as a Copper list, and for bit
+  diagrams), then "how it works" as numbered
   steps or bullets. Check the listing's numbers against the program the test actually runs.
 - **Explain why**, briefly: why the hardware is shaped this way, why a list writes in the border of the
   line before instead of at dot 0.
@@ -91,17 +139,29 @@ to and replace what it supersedes.
 
 ## Figures
 
+- **Figures are printed too**, in a book column about 16 cm wide, which shrinks a 700-unit figure to roughly
+  0.23 mm per unit. Size them for that: **no text under 13.5 units** (about 10 pt in print; labels 15,
+  titles 16.5), and **use the whole width**: drawings and plots run from x = 0 to 700, label columns are
+  narrow (about 130 units, with labels broken over two lines), and nothing leaves an empty margin. The
+  TurboSound generator (`docs/authoring/next-audio/turbosound-figures.cjs`) has the sizes as constants.
+  The page does its part: a figure has no panel, border or background (`article figure:not([class])`
+  in `docs/app/[lang]/(docs)/custom.css`), and the SVG has no `maxWidth`, so the drawing stands on the
+  page and fills the whole column, like a figure in a printed book. A thin rule separates the caption.
 - **Place a figure right after the sentence that introduces it**, then explain it. Never several
   paragraphs of explanation followed by the figure.
 - **Every figure must help.** One that does not (a mode state diagram) is replaced by a list; two figures
   showing the same cases twice are merged; a figure with two cases is split into two figures, each with a
   one-line lead-in.
-- Inline `<figure><svg viewBox="0 0 700 H" role="img" aria-label="…" style={{ width: "100%", maxWidth:
-  "700px", height: "auto" }}>` with a `<figcaption>`; the `aria-label` describes the figure fully.
+- Inline `<figure><svg viewBox="0 0 700 H" role="img" aria-label="…" style={{ width: "100%", height:
+  "auto" }}>` (older figures still carry `maxWidth: "700px"`; drop it when reworking them) with a `<figcaption>`; the `aria-label` describes the figure fully.
   Neutral strokes and text in `currentColor`; highlight colours `#e8912d` orange, `#3b82f6` blue,
   `#a855f7` purple, `#30a46c` green, `#e5484d` red. One colour per subject across a series (for the Next:
   ULA/LoRes blue, Layer 2 orange, tilemap green, sprites purple, border grey, winner/transparency marks
   red).
+- **Arrows run horizontally and vertically** wherever the layout allows: a line that is almost level or almost
+  upright reads as a drawing slip, so route it in straight runs with right-angle turns. And give every arrow a
+  last straight run longer than its arrowhead (about 13 units at stroke 1.8), or the head swallows the line and
+  looks stunted: leave enough room between boxes for it.
 - Draw to scale where scale carries meaning, and say so. Put two things on one scale when the reader
   must line them up (a picture and the beam's timeline under it, dot 320 on both).
 - **Make close-ups big**: a magnified detail takes most of the figure's width.
@@ -121,6 +181,13 @@ to and replace what it supersedes.
   Layers System register, NextReg `$15`"); after that "NextReg `$15`". A bare hex number is a value.
   Never invent an official name you cannot cite.
 - Relaxed and direct, never chatty.
+- **Talk to the reader, not into the air.** The project author found the audio articles growing sterile, a
+  neutral voice describing the machine to nobody, and asked for the voice of the ZX81 display article: "you"
+  and "your program" ("Switch TurboSound on, select chip 2, and chip 2 stays selected"), "let's" for a worked
+  example, an imperative for what the reader should do ("set NextReg `$08` yourself"), and a word of
+  admiration or warning where the hardware earns one ("Notice how neat this is", "this catches almost everyone
+  out"). Keep the facts, the precision and the structure; change who is being spoken to. Captions may say
+  "you" too. Not every sentence: a register's bits are still stated plainly.
 
 ## Mechanics
 

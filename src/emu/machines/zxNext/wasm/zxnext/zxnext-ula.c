@@ -129,8 +129,6 @@ static uint8_t ulaPlusEnabled;
 /* zxnext.vhd port_bf3b_ulap_mode / port_bf3b_ulap_index. */
 static uint8_t ulaPlusMode;
 static uint8_t ulaPlusIndex;
-static uint32_t ulaPortBit4ChangedFrom0Tacts;
-static uint32_t ulaPortBit4ChangedFrom1Tacts;
 
 static void zxnextUlaReset(void) {
   portFeValue = 0xffu;
@@ -161,8 +159,6 @@ static void zxnextUlaReset(void) {
   zxnextKeyboardSetCancelExtended(0u); /* nr_68_cancel_extended_keys <= '0' (~5006) */
   ulaPlusMode = 0u;
   ulaPlusIndex = 0u;
-  ulaPortBit4ChangedFrom0Tacts = 0u;
-  ulaPortBit4ChangedFrom1Tacts = 0u;
   for (uint32_t i = 0; i < ZXNEXT_PIXEL_COUNT; i++) {
     zxnextPixelBuffer[i] = ZXNEXT_TRANSPARENT_PIXEL;
   }
@@ -170,17 +166,14 @@ static void zxnextUlaReset(void) {
 
 static inline uint32_t zxnextUlaReadPortFe(uint32_t address) {
   uint8_t portValue = (uint8_t)zxnextKeyboardReadPort(address);
-  uint8_t bit4Sensed = earBit;
-  if (!bit4Sensed && ulaPortBit4ChangedFrom1Tacts > ulaPortBit4ChangedFrom0Tacts) {
-    uint32_t chargeTime = ulaPortBit4ChangedFrom1Tacts - ulaPortBit4ChangedFrom0Tacts;
-    chargeTime = chargeTime > 700u ? 2800u : 4u * chargeTime;
-    bit4Sensed = (tacts - ulaPortBit4ChangedFrom1Tacts) < chargeTime;
-  }
+  /* zxnext.vhd ~3456: bit 6 = (i_AUDIO_EAR xor pi_fe_ear) or port_fe_ear or (port_fe_mic and issue 2),
+     a plain OR at the read. The 48K's ULA keeps reading 1 for a while after EAR is cleared (its pin is
+     an analogue line that takes time to fall); the Next does not, so no decay is modelled here. */
   uint8_t bit6 = 0u;
-  if (bit4Sensed) bit6 = 0x40u;
+  if (earBit) bit6 = 0x40u;
   if (micBit && ((zxnextNextRegs[0x08u] & 0x01u) != 0u)) bit6 = 0x40u;
-  /* zxnext.vhd ~3456: (i_AUDIO_EAR xor pi_fe_ear) or ...; the physical tape input is not modelled */
-  if (zxnextPiI2sGetFeEar()) bit6 = 0x40u;
+  /* zxnext.vhd ~3456: (i_AUDIO_EAR xor pi_fe_ear) or ...: the conditioned tape input (zxnext-tape.c) */
+  if (zxnextTapeGetInput() ^ zxnextPiI2sGetFeEar()) bit6 = 0x40u;
   return (portValue & 0xbfu) | bit6;
 }
 
@@ -194,13 +187,9 @@ static inline void zxnextUlaWritePortFe(uint32_t value) {
     zxnextUlaScheduleLatch(ZXNEXT_ULA_LATCH_BORDER, borderColor, zxnextRasterBorderTact(currentFrameTact));
   }
   micBit = (byteValue & 0x08u) != 0u;
-  uint8_t bit4 = (byteValue & 0x10u) != 0u;
-  if (earBit && !bit4) {
-    ulaPortBit4ChangedFrom1Tacts = tacts;
-  } else if (!earBit && bit4) {
-    ulaPortBit4ChangedFrom0Tacts = tacts;
-  }
-  earBit = bit4;
+  /* The SAVE capture follows port $FE bit 3 (the player's SA-BYTES trap; zxnext-tape.c) */
+  zxnextTapeProcessMicBit(micBit);
+  earBit = (byteValue & 0x10u) != 0u;
 }
 
 static inline uint32_t zxnextUlaRgb333Color(uint32_t rgb333) {

@@ -9,7 +9,14 @@ for future articles.
 
 Status: **all ten articles written** (`next-display/overview.mdx`, `timing.mdx`, `palettes.mdx`,
 `ula.mdx`, `lores.mdx`, `layer2.mdx`, `tilemap.mdx`, `sprites.mdx`, `composition.mdx`,
-`raster-effects.mdx`). The series is complete.
+`raster-effects.mdx`). The series is complete. All ten were later reworked to the book style of
+`.ai/hardware-articles-guide.md` (Structure, Figures): titles without the machine ("The Big Picture: Five
+Producers, Four Layers, One Dot", "The Frame and the Beam: Two Counters, Four Timings", "Colours and
+Palettes: From an 8-Bit Index to a 9-Bit Colour", "The ULA Layer: The Spectrum's Screen, Extended", "LoRes
+and Radastan: Big Pixels in the ULA's Place", "Layer 2: A Byte for Every Dot", "The Tilemap: A Screen of
+8 × 8 Tiles", "Sprites: 128 Pictures and Two Line Buffers", "Putting It Together: Four Layers, One
+Colour", "Raster Effects: Changing the Picture Mid-Frame"), no "Part" headings, and every hand-written
+figure re-laid out for print. The "article N" numbers below are this plan's bookkeeping only.
 
 ### As built (article 1)
 

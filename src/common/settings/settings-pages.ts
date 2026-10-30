@@ -29,6 +29,7 @@ import {
   type UiLanguageState
 } from "@common/i18n/languages";
 import { MOUSE_POINTER_DISPLAYS, MOUSE_SENSITIVITIES } from "./mouse-capture";
+import { NEXT_AUDIO_OUTPUTS } from "./next-audio-output";
 import { ACCENT_MENU_ITEMS, DEFAULT_ACCENT } from "@common/theming/accents";
 import { machineRegistry } from "@common/machines/machine-registry";
 import {
@@ -85,6 +86,7 @@ import {
   SETTING_EMU_TV_NOISE,
   SETTING_EMU_ULA_LATE_TIMING,
   SETTING_EMU_ULA_SNOW,
+  SETTING_EMU_NEXT_AUDIO_OUTPUT,
   SETTING_EMU_SCORPION_ROM,
   SETTING_EMU_SHOW_BEAM_POSITION,
   SETTING_EMU_SHOW_INSTANT_SCREEN,
@@ -631,6 +633,17 @@ export const SETTINGS_ROWS: SettingsRow[] = [
     editor: "switch",
     source: setting(SETTING_EMU_TV_NOISE),
     when: { kind: "machine", machineIds: TV_NOISE_MACHINE_IDS }
+  },
+  {
+    id: "nextAudioOutput",
+    page: "emulator",
+    groupKey: "settings.group.sound",
+    titleKey: "settings.emulator.nextAudioOutput.title",
+    descriptionKey: "settings.emulator.nextAudioOutput.description",
+    editor: "select",
+    source: setting(SETTING_EMU_NEXT_AUDIO_OUTPUT),
+    options: tableOptions(() => NEXT_AUDIO_OUTPUTS),
+    when: { kind: "machine", machineIds: [MI_ZXNEXT] }
   },
   {
     id: "ulaSnow",

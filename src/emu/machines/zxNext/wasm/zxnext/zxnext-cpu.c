@@ -472,6 +472,8 @@ static void zxnextCpuReset(void) {
 }
 
 static uint32_t zxnextCpuExecuteInstruction(void) {
+  /* The tape first: its input stage up to now, and the LD-BYTES / SA-BYTES trap, which may move PC */
+  zxnextTapeBeforeInstruction();
   uint16_t pcBefore = (uint16_t)z80GetPc();
   uint32_t previousTacts = z80GetTacts();
   uint8_t rawIntSignal = zxnextCpuShouldRaiseInt() != 0u;

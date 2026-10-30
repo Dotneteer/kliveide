@@ -9,3 +9,14 @@ published to the site or indexed by search.
 - `book-plan.md` — the chapter plan and outstanding decisions for the author.
   (Was `content/book/toc.md`, which meant its "Open Questions for You" section
   was being served publicly at `/book/toc/` and indexed by Pagefind.)
+- `next-audio/computer-sound-figures.cjs` — generates the figures of
+  `content/en/under-the-hood/emulator-internals/computer-sound.mdx` in place
+  (between its `{/* fig:<name> */}` markers) and prints the numbers its text
+  quotes. Edit the script, not the generated SVG.
+- `next-audio/overview-figures.cjs` (helpers in `next-audio/_svg.cjs`) — the
+  figures of `next-audio/overview.mdx`, drawn from the machine captures in
+  `next-audio/captures/`, which `test/zxnext-hw/audio/next-audio-scene.test.ts`
+  writes with `NEXT_AUDIO_SHOTS=docs/authoring/next-audio/captures`.
+- `next-audio/mixer-figures.cjs` — the figures of `next-audio/mixer.mdx`:
+  computed from the hardware's rules, plus the Klive capture
+  `next-audio/captures/mixer/beeper-start.json`.

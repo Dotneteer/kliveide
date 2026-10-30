@@ -932,5 +932,10 @@
   "@menu.if1.boot": {
     "context": "Machine › Interfaces (ZX Spectrum 48K and 128K, Interface 1 connected): resets the machine and types RUN, which makes the Interface 1 load and run the program called 'run' from the cartridge in Microdrive 1.",
     "maxChars": 50
+  },
+  "menu.next.soundOutput": "Output",
+  "@menu.next.soundOutput": {
+    "context": "Machine › Sound (ZX Spectrum Next): submenu choosing which of the Next's sound outputs the emulator plays (audio jack, internal speaker or HDMI). It sits under the volume levels of the Sound menu, so 'Output' means the sound output.",
+    "maxChars": 30
   }
 }

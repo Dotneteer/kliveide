@@ -41,5 +41,7 @@ export const HT_VIDEO_DASH = "HtVideoDash";
 /** The ZX Spectrum ULA's late timing and snow effect (`.plans/SPECTRUM_ULA_ACCURACY_PLAN.md` Phases 4, 5) */
 export const ULA_LATE_TIMING = "UlaLateTiming";
 export const ULA_SNOW = "UlaSnow";
+// --- The ZX Spectrum Next output the audio stream plays: "jack", "speaker" or "hdmi"
+export const NEXT_AUDIO_OUTPUT = "NextAudioOutput";
 export const AUDIO_SAMPLE_RATE = "AudioSampleRate";
 export const BEEPER_SAMPLES = "BeeperSamples";

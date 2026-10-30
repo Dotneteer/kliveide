@@ -3,6 +3,11 @@
 
 #include <stdint.h>
 
+/* The output the stream plays (zxnextAudioMixerSetOutput) */
+#define ZXNEXT_AUDIO_OUT_JACK 0u
+#define ZXNEXT_AUDIO_OUT_SPEAKER 1u
+#define ZXNEXT_AUDIO_OUT_HDMI 2u
+
 static void zxnextAudioMixerReset(void);
 static void zxnextAudioMixerBeginFrame(void);
 static void zxnextAudioMixerOnFrameWrap(void);
@@ -13,6 +18,8 @@ static void zxnextAudioMixerSetEarLevelMilli(int32_t level);
 static void zxnextAudioMixerSetMicLevelMilli(int32_t level);
 static void zxnextAudioMixerSetPsgOutput(uint32_t left, uint32_t right);
 static void zxnextAudioMixerSetVolumeScaleMilli(uint32_t scale);
+static void zxnextAudioMixerSetOutput(uint32_t output);
+static uint32_t zxnextAudioMixerGetOutput(void);
 static int32_t zxnextAudioMixerGetMixedLeftWord(void);
 static int32_t zxnextAudioMixerGetMixedRightWord(void);
 static uint32_t zxnextAudioMixerAppendCurrentSample(void);

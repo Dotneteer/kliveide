@@ -1,0 +1,874 @@
+---
+description: "How the ZX Spectrum Next's beeper works: the two sound bits of port $FE, EAR and MIC, and their levels in the mixer, a note made by a timing loop and why the CPU's speed and contention change its pitch, two voices from one bit with short pulses, saving to tape through the MIC socket, the input stage that cleans up a tape's signal before port $FE bit 6 reads it, the issue 2 keyboard, the internal speaker's beeper-only mode, and how Klive emulates all of it."
+---
+
+import { Callout } from 'nextra/components'
+
+# The Beeper: EAR, MIC and the Tape
+
+Manic Miner plays a two-voice tune on a machine whose sound is a single bit. The same bit's
+neighbour tells the tape recorder what to save, and the same port reads back what the tape plays.
+So how does one bit make music, and how do music and data share one wire without tripping over each
+other?
+
+The beeper is the oldest sound on the Next, and still the one every Spectrum program knows. A 48K
+game's music and effects, the click of a key in BASIC, the screech of a program loading, and every
+program ever saved to cassette all go through it. Your Next runs those programs unchanged, so it has to
+reproduce the beeper exactly: the levels, the timing, and the small details of what a program reads
+back, which some old programs depend on more than their authors would like to admit.
+
+Read [The Big Picture: Four Sources, One Mixer](/en/under-the-hood/emulator-internals/next-audio/overview/) first: it
+introduces the four kinds of sound source, and this is the first of them. If square waves and sound from
+a single bit are new to you, the background chapter
+[How a Computer Makes Sound](/en/under-the-hood/emulator-internals/computer-sound/) explains them, and
+[ZX Spectrum: How the Screen Is Drawn](/en/under-the-hood/emulator-internals/spectrum-display/)
+explains port `$FE`, which the beeper shares with the border, and contention. Where the beeper's
+levels go after the mixer is the subject of
+[The Mixer: One Sum, Three Outputs](/en/under-the-hood/emulator-internals/next-audio/mixer/).
+
+## The road ahead
+
+We start with the port: the two bits of port `$FE` that make sound, why there are two of them, and how
+loud each one is in the mixer. Then you play a note with a timing loop, and see why the CPU's speed and
+contention change its pitch, the second one in a rather surprising way. The key idea comes next: how short
+pulses let a single bit play two voices at once, and what that trick costs. After that, the tape: saving
+through the MIC socket, then loading through the EAR socket, where an input stage cleans up the tape's
+signal before your program reads it, and where the issue 2 keyboard still lurks. We end with the internal
+speaker, which can keep the beeper all to itself, and with how Klive does all of this.
+
+<Callout type="info">
+The CPU runs at **3.5 MHz** with contention **off** unless a section says otherwise; times in T-states are
+CPU clock cycles at that speed. Levels are in the **units of the Next's mixer**, whose sum runs from 0
+to 8,191 per side. The waveforms are captured from Klive's emulated Next, from programs checked to do
+what the text says, at 48,000 samples a second; they show Klive's mix, which stands for the sound after
+the audio jack's capacitor and so moves around zero.
+</Callout>
+
+## Two bits of sound
+
+The beeper lives in **port `$FE`**, the ULA's port. Any write to an even port address (address bit 0 is 0)
+writes it, and three of its fields matter:
+
+<figure>
+{/* fig:bits */}
+<svg viewBox="0 0 700 206" role="img" aria-label="Port $FE as two strips of eight bits, bit 7 on the left. Written: bits 7 to 5 are ignored, bit 4 is EAR, the beeper, bit 3 is MIC, the tape output, and bits 2 to 0 are the border colour. Read: bit 7 reads 1, bit 6 is the tape input, bit 5 reads 1, and bits 4 to 0 are the keyboard, one bit per key of the selected rows, 0 for a key held. Any even port address is port $FE, and bit 6 also reads the EAR and MIC bits back." style={{ width: "100%", height: "auto" }}>
+  <text x="137.5" y="18" textAnchor="middle" fill="currentColor" fontSize="13.5">7</text>
+  <text x="212.5" y="18" textAnchor="middle" fill="currentColor" fontSize="13.5">6</text>
+  <text x="287.5" y="18" textAnchor="middle" fill="currentColor" fontSize="13.5">5</text>
+  <text x="362.5" y="18" textAnchor="middle" fill="currentColor" fontSize="13.5">4</text>
+  <text x="437.5" y="18" textAnchor="middle" fill="currentColor" fontSize="13.5">3</text>
+  <text x="512.5" y="18" textAnchor="middle" fill="currentColor" fontSize="13.5">2</text>
+  <text x="587.5" y="18" textAnchor="middle" fill="currentColor" fontSize="13.5">1</text>
+  <text x="662.5" y="18" textAnchor="middle" fill="currentColor" fontSize="13.5">0</text>
+  <text x="0" y="61" fill="currentColor" fontSize="15" fontWeight="bold">write</text>
+  <rect x="102" y="30" width="221" height="52" rx="5" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.6" />
+  <text x="212.5" y="61" textAnchor="middle" fill="currentColor" fontSize="15">ignored</text>
+  <rect x="327" y="30" width="71" height="52" rx="5" fill="#3b82f6" fillOpacity="0.16" stroke="#3b82f6" strokeWidth="2" strokeOpacity="1" />
+  <text x="362.5" y="52" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">EAR</text>
+  <text x="362.5" y="70" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">beeper</text>
+  <rect x="402" y="30" width="71" height="52" rx="5" fill="#3b82f6" fillOpacity="0.16" stroke="#3b82f6" strokeWidth="2" strokeOpacity="1" />
+  <text x="437.5" y="52" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">MIC</text>
+  <text x="437.5" y="70" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">tape out</text>
+  <rect x="477" y="30" width="221" height="52" rx="5" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.6" />
+  <text x="587.5" y="61" textAnchor="middle" fill="currentColor" fontSize="15">border colour</text>
+  <text x="0" y="133" fill="currentColor" fontSize="15" fontWeight="bold">read</text>
+  <rect x="102" y="102" width="71" height="52" rx="5" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.6" />
+  <text x="137.5" y="133" textAnchor="middle" fill="currentColor" fontSize="15">1</text>
+  <rect x="177" y="102" width="71" height="52" rx="5" fill="#3b82f6" fillOpacity="0.16" stroke="#3b82f6" strokeWidth="2" strokeOpacity="1" />
+  <text x="212.5" y="124" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">tape</text>
+  <text x="212.5" y="142" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">input</text>
+  <rect x="252" y="102" width="71" height="52" rx="5" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.6" />
+  <text x="287.5" y="133" textAnchor="middle" fill="currentColor" fontSize="15">1</text>
+  <rect x="327" y="102" width="371" height="52" rx="5" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.6" />
+  <text x="512.5" y="124" textAnchor="middle" fill="currentColor" fontSize="15">keyboard: one bit per key</text>
+  <text x="512.5" y="142" textAnchor="middle" fill="currentColor" fontSize="15">of the selected rows, 0 = held</text>
+  <text x="100" y="196" fill="currentColor" fontSize="15">any even port address is port $FE; bit 6 also reads the EAR and MIC bits back</text>
+</svg>
+{/* /fig:bits */}
+<figcaption>Port $FE as a program writes it and reads it, bit 7 on the left. Blue bits are the beeper's and the tape's; grey bits do other jobs or always read 1.</figcaption>
+</figure>
+
+- **Bit 4, EAR**, is the beeper: the bit your program switches on and off to make a sound.
+- **Bit 3, MIC**, is the tape output: the bit your program switches to save data to tape. You hear it
+  too, more quietly.
+- **Bits 2–0** are the border colour.
+
+Bits 7–5 of a write are ignored. A reset clears the port: EAR and MIC start low, so a machine that has
+just been switched on is silent.
+
+Why two sound bits? Because the 48K had two outputs with two jobs, sharing one circuit. Its ULA has a
+single pin for the tape sockets and the speaker: bits 4 and 3 drive it through resistors of different
+values, and the signal from the EAR socket arrives on the same pin. That is why MIC is quieter than EAR,
+and why what a program writes to bits 4 and 3 shows up when it reads the port back (more on that in What
+port `$FE` bit 6 reads). The Next has no such pin: everything is logic inside its FPGA. It keeps the two
+bits, their loudness and the read-back rules anyway, so that the programs that relied on them still work.
+
+Reading port `$FE` returns the keyboard in bits 4–0 (a 0 for each key held in the rows the address
+selects), **bit 6, the tape input**, and 1 in bits 7 and 5. With no key held and nothing on bit 6, a
+read gives `$BF`.
+
+## EAR and MIC in the mixer
+
+The mixer adds each bit as a fixed level, the same on the left and the right side:
+
+- **EAR** adds **512** while port `$FE` bit 4 is 1, and 0 while it is 0.
+- **MIC** adds **128** while the MIC line is 1, and 0 while it is 0. The MIC line is bit 3 combined
+  with the tape input (see Saving to tape); with no tape playing it is just bit 3.
+
+The two bits together give four levels, 0, 128, 512 and 640. Drawn on the mixer's whole range, they turn
+out to be a small part of it:
+
+<figure>
+{/* fig:levels */}
+<svg viewBox="0 0 700 318" role="img" aria-label="Two scales. Top, the mixer's whole range for one side, 0 to 8,191, as a long bar; EAR and MIC together take its first 640 units, a short blue stretch at the left end. Bottom, that stretch enlarged to 0 to 700, with the four levels the two bits can make drawn as bars to scale: neither bit 0, MIC alone 128, EAR alone 512, both 640." style={{ width: "100%", height: "auto" }}>
+  <text x="0" y="20" fill="currentColor" fontSize="15" fontWeight="bold">the mixer's range, one side</text>
+  <rect x="0.5" y="32" width="699" height="24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeOpacity="0.5" />
+  <rect x="0.5" y="32" width="54.6" height="24" fill="#3b82f6" fillOpacity="0.8" stroke="#3b82f6" strokeWidth="1.5" />
+  <line x1="0" y1="56" x2="0" y2="62" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="0" y="78" textAnchor="start" fill="currentColor" fontSize="13.5">0</text>
+  <line x1="54.6" y1="56" x2="54.6" y2="62" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="54.6" y="78" textAnchor="middle" fill="#3b82f6" fontSize="13.5" fontWeight="bold">640</text>
+  <line x1="174.8" y1="56" x2="174.8" y2="62" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="174.8" y="78" textAnchor="middle" fill="currentColor" fontSize="13.5">2,048</text>
+  <line x1="349.5" y1="56" x2="349.5" y2="62" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="349.5" y="78" textAnchor="middle" fill="currentColor" fontSize="13.5">4,096</text>
+  <line x1="524.3" y1="56" x2="524.3" y2="62" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="524.3" y="78" textAnchor="middle" fill="currentColor" fontSize="13.5">6,144</text>
+  <line x1="699" y1="56" x2="699" y2="62" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="699" y="78" textAnchor="end" fill="currentColor" fontSize="13.5">8,191</text>
+  <line x1="0" y1="84" x2="120" y2="118" stroke="currentColor" strokeWidth="1" strokeDasharray="4 3" strokeOpacity="0.4" />
+  <line x1="54.6" y1="84" x2="650.3" y2="118" stroke="currentColor" strokeWidth="1" strokeDasharray="4 3" strokeOpacity="0.4" />
+  <text x="120" y="112" fill="currentColor" fontSize="15" fontWeight="bold">enlarged: 0 to 700</text>
+  <text x="110" y="146" textAnchor="end" fill="#3b82f6" fontSize="15" fontWeight="bold">neither</text>
+  <text x="126" y="146" fill="currentColor" fontSize="15" fontWeight="bold">0</text>
+  <text x="110" y="184" textAnchor="end" fill="#3b82f6" fontSize="15" fontWeight="bold">MIC</text>
+  <rect x="120" y="166" width="106.1" height="26" fill="#3b82f6" fillOpacity="0.75" stroke="#3b82f6" strokeWidth="1.5" />
+  <text x="232.1" y="184" fill="currentColor" fontSize="15" fontWeight="bold">128</text>
+  <text x="110" y="222" textAnchor="end" fill="#3b82f6" fontSize="15" fontWeight="bold">EAR</text>
+  <rect x="120" y="204" width="424.2" height="26" fill="#3b82f6" fillOpacity="0.75" stroke="#3b82f6" strokeWidth="1.5" />
+  <text x="550.2" y="222" fill="currentColor" fontSize="15" fontWeight="bold">512</text>
+  <text x="110" y="260" textAnchor="end" fill="#3b82f6" fontSize="15" fontWeight="bold">EAR + MIC</text>
+  <rect x="120" y="242" width="530.3" height="26" fill="#3b82f6" fillOpacity="0.75" stroke="#3b82f6" strokeWidth="1.5" />
+  <text x="656.3" y="260" fill="currentColor" fontSize="15" fontWeight="bold">640</text>
+  <line x1="120" y1="284" x2="700" y2="284" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <line x1="120" y1="280" x2="120" y2="288" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="120" y="306" textAnchor="middle" fill="currentColor" fontSize="13.5">0</text>
+  <line x1="226.1" y1="280" x2="226.1" y2="288" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="226.1" y="306" textAnchor="middle" fill="currentColor" fontSize="13.5">128</text>
+  <line x1="332.1" y1="280" x2="332.1" y2="288" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="332.1" y="306" textAnchor="middle" fill="currentColor" fontSize="13.5">256</text>
+  <line x1="438.2" y1="280" x2="438.2" y2="288" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="438.2" y="306" textAnchor="middle" fill="currentColor" fontSize="13.5">384</text>
+  <line x1="544.2" y1="280" x2="544.2" y2="288" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="544.2" y="306" textAnchor="middle" fill="currentColor" fontSize="13.5">512</text>
+  <line x1="650.3" y1="280" x2="650.3" y2="288" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="650.3" y="306" textAnchor="middle" fill="currentColor" fontSize="13.5">640</text>
+</svg>
+{/* /fig:levels */}
+<figcaption>EAR and MIC in the mixer, drawn to scale. Top: the four levels the two bits can make, against the sum's whole range of one side. Bottom: the same four levels, enlarged.</figcaption>
+</figure>
+
+EAR is four times as loud as MIC, the ratio the 48K's two resistors gave them. Small on that scale, yes,
+but don't mistake the beeper for a quiet source: its 512 is twice what one AY channel at full volume adds
+(255), and about a quarter of the DACs' largest swing on one side. Nor does it rest in the middle, as the
+DACs do. Its silence is 0, so the first time a program sets bit 4, the sum jumps by 512, and the speaker
+clicks, just as it did on the 48K (the mixer chapter's
+[Silence is 1,536](/en/under-the-hood/emulator-internals/next-audio/mixer/#silence-is-1536)
+explains why the other sources do not click).
+
+## A note from a loop
+
+The beeper holds whatever level it was given last. That's all it does. To play a note, your program
+switches bit 4 on and off at the note's pitch, and it has to do the switching itself, at exactly the right
+moments. The usual way is a loop that counts the time between two writes in T-states. Here is the loop
+behind the overview's beeper capture:
+
+```z80klive
+        di                  ; no interrupts: they would stretch the loop
+        ld c,$fe
+        ld a,$10            ; bit 4 set: EAR on
+Loop:   out (c),a           ; 12 T-states   write EAR
+        xor $10             ;  7            the next write's EAR is the opposite
+        ld b,133            ;  7
+Dly:    djnz Dly            ; 13 × 132 + 8  wait
+        jp Loop             ; 10
+```
+
+How it works:
+
+1. `out (c),a` writes the EAR bit; the speaker's cone moves.
+2. `xor $10` flips bit 4 of A, so the next write is the opposite level.
+3. `djnz` counts B down from 133. Each round that jumps back costs 13 T-states and the last one 8, so the
+   wait is 13 × 132 + 8 = 1,724 T-states.
+4. One pass of the loop is 12 + 7 + 7 + 1,724 + 10 = **1,760 T-states**: half a period of the note,
+   since it takes two passes to go up and come back down.
+5. The loop closes with `jp Loop` rather than `jr Loop`. A `jr` would be a byte shorter (2 bytes
+   against 3) but slower: it takes 12 T-states where `jp` takes 10. In a timing loop the speed is what
+   counts, and every T-state is part of the note: with `jr`, a pass would be 1,762 T-states and the note
+   993 Hz.
+
+At 3.5 MHz, 1,760 T-states take 1,760 ÷ 3,500,000 = 503 µs. A whole period is twice that, so the note is
+3,500,000 ÷ (2 × 1,760) = **994 Hz**:
+
+<figure>
+{/* fig:note */}
+<svg viewBox="0 0 700 330" role="img" aria-label="Four milliseconds of the loop's note, captured from the machine: a square wave of 994 Hz, 512 units from bottom to top, centred on zero. Each high and each low half is one pass of the loop, 1,760 T-states or 503 microseconds; a whole period, two passes, is 1,006 microseconds." style={{ width: "100%", height: "auto" }}>
+  <defs>
+    <marker id="bp-note-0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
+    </marker>
+    <marker id="bp-note-1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#3b82f6" />
+    </marker>
+  </defs>
+  <line x1="48" y1="199.4" x2="700" y2="199.4" stroke="currentColor" strokeWidth="1" strokeOpacity="0.2" />
+  <text x="42" y="204.4" textAnchor="end" fill="currentColor" fontSize="13.5">−256</text>
+  <line x1="48" y1="139" x2="700" y2="139" stroke="currentColor" strokeWidth="1" strokeOpacity="0.4" />
+  <text x="42" y="144" textAnchor="end" fill="currentColor" fontSize="13.5">0</text>
+  <line x1="48" y1="78.6" x2="700" y2="78.6" stroke="currentColor" strokeWidth="1" strokeOpacity="0.2" />
+  <text x="42" y="83.6" textAnchor="end" fill="currentColor" fontSize="13.5">+256</text>
+  <path d="M48,199.5 L51.4,199.5 L51.4,199.5 L54.8,199.5 L54.8,199.3 L58.2,199.3 L58.2,199.3 L61.6,199.3 L61.6,199.3 L65,199.3 L65,199.3 L68.4,199.3 L68.4,199.3 L71.8,199.3 L71.8,112.4 L75.2,112.4 L75.2,78.5 L78.6,78.5 L78.6,78.5 L82,78.5 L82,78.5 L85.4,78.5 L85.4,78.5 L88.8,78.5 L88.8,78.5 L92.1,78.5 L92.1,78.7 L95.5,78.7 L95.5,78.7 L98.9,78.7 L98.9,78.7 L102.3,78.7 L102.3,78.7 L105.7,78.7 L105.7,78.7 L109.1,78.7 L109.1,78.7 L112.5,78.7 L112.5,78.7 L115.9,78.7 L115.9,78.7 L119.3,78.7 L119.3,78.7 L122.7,78.7 L122.7,78.7 L126.1,78.7 L126.1,78.7 L129.5,78.7 L129.5,78.7 L132.9,78.7 L132.9,78.7 L136.3,78.7 L136.3,78.7 L139.7,78.7 L139.7,78.7 L143.1,78.7 L143.1,78.7 L146.5,78.7 L146.5,78.7 L149.9,78.7 L149.9,78.7 L153.3,78.7 L153.3,149 L156.7,149 L156.7,199.5 L160.1,199.5 L160.1,199.5 L163.5,199.5 L163.5,199.5 L166.9,199.5 L166.9,199.5 L170.3,199.5 L170.3,199.5 L173.6,199.5 L173.6,199.5 L177,199.5 L177,199.5 L180.4,199.5 L180.4,199.5 L183.8,199.5 L183.8,199.5 L187.2,199.5 L187.2,199.5 L190.6,199.5 L190.6,199.5 L194,199.5 L194,199.5 L197.4,199.5 L197.4,199.5 L200.8,199.5 L200.8,199.5 L204.2,199.5 L204.2,199.5 L207.6,199.5 L207.6,199.5 L211,199.5 L211,199.5 L214.4,199.5 L214.4,199.5 L217.8,199.5 L217.8,199.3 L221.2,199.3 L221.2,199.3 L224.6,199.3 L224.6,199.3 L228,199.3 L228,199.3 L231.4,199.3 L231.4,199.3 L234.8,199.3 L234.8,145.7 L238.2,145.7 L238.2,78.5 L241.6,78.5 L241.6,78.5 L245,78.5 L245,78.5 L248.4,78.5 L248.4,78.5 L251.8,78.5 L251.8,78.5 L255.1,78.5 L255.1,78.5 L258.5,78.5 L258.5,78.7 L261.9,78.7 L261.9,78.7 L265.3,78.7 L265.3,78.7 L268.7,78.7 L268.7,78.7 L272.1,78.7 L272.1,78.7 L275.5,78.7 L275.5,78.7 L278.9,78.7 L278.9,78.7 L282.3,78.7 L282.3,78.7 L285.7,78.7 L285.7,78.7 L289.1,78.7 L289.1,78.7 L292.5,78.7 L292.5,78.7 L295.9,78.7 L295.9,78.7 L299.3,78.7 L299.3,78.7 L302.7,78.7 L302.7,78.7 L306.1,78.7 L306.1,78.7 L309.5,78.7 L309.5,78.7 L312.9,78.7 L312.9,78.7 L316.3,78.7 L316.3,116 L319.7,116 L319.7,199.5 L323.1,199.5 L323.1,199.5 L326.5,199.5 L326.5,199.5 L329.9,199.5 L329.9,199.5 L333.3,199.5 L333.3,199.5 L336.6,199.5 L336.6,199.5 L340,199.5 L340,199.5 L343.4,199.5 L343.4,199.5 L346.8,199.5 L346.8,199.5 L350.2,199.5 L350.2,199.5 L353.6,199.5 L353.6,199.5 L357,199.5 L357,199.5 L360.4,199.5 L360.4,199.5 L363.8,199.5 L363.8,199.5 L367.2,199.5 L367.2,199.5 L370.6,199.5 L370.6,199.5 L374,199.5 L374,199.5 L377.4,199.5 L377.4,199.5 L380.8,199.5 L380.8,199.5 L384.2,199.5 L384.2,199.3 L387.6,199.3 L387.6,199.3 L391,199.3 L391,199.3 L394.4,199.3 L394.4,199.3 L397.8,199.3 L397.8,178.8 L401.2,178.8 L401.2,78.5 L404.6,78.5 L404.6,78.5 L408,78.5 L408,78.5 L411.4,78.5 L411.4,78.5 L414.8,78.5 L414.8,78.5 L418.1,78.5 L418.1,78.5 L421.5,78.5 L421.5,78.7 L424.9,78.7 L424.9,78.7 L428.3,78.7 L428.3,78.7 L431.7,78.7 L431.7,78.7 L435.1,78.7 L435.1,78.7 L438.5,78.7 L438.5,78.7 L441.9,78.7 L441.9,78.7 L445.3,78.7 L445.3,78.7 L448.7,78.7 L448.7,78.7 L452.1,78.7 L452.1,78.7 L455.5,78.7 L455.5,78.7 L458.9,78.7 L458.9,78.7 L462.3,78.7 L462.3,78.7 L465.7,78.7 L465.7,78.7 L469.1,78.7 L469.1,78.7 L472.5,78.7 L472.5,78.7 L475.9,78.7 L475.9,78.7 L479.3,78.7 L479.3,82.7 L482.7,82.7 L482.7,199.5 L486.1,199.5 L486.1,199.5 L489.5,199.5 L489.5,199.5 L492.9,199.5 L492.9,199.5 L496.3,199.5 L496.3,199.5 L499.6,199.5 L499.6,199.5 L503,199.5 L503,199.5 L506.4,199.5 L506.4,199.5 L509.8,199.5 L509.8,199.5 L513.2,199.5 L513.2,199.5 L516.6,199.5 L516.6,199.5 L520,199.5 L520,199.5 L523.4,199.5 L523.4,199.5 L526.8,199.5 L526.8,199.5 L530.2,199.5 L530.2,199.5 L533.6,199.5 L533.6,199.5 L537,199.5 L537,199.5 L540.4,199.5 L540.4,199.5 L543.8,199.5 L543.8,199.5 L547.2,199.5 L547.2,199.3 L550.6,199.3 L550.6,199.3 L554,199.3 L554,199.3 L557.4,199.3 L557.4,199.3 L560.8,199.3 L560.8,199.3 L564.2,199.3 L564.2,91 L567.6,91 L567.6,78.5 L571,78.5 L571,78.5 L574.4,78.5 L574.4,78.5 L577.8,78.5 L577.8,78.5 L581.1,78.5 L581.1,78.5 L584.5,78.5 L584.5,78.7 L587.9,78.7 L587.9,78.7 L591.3,78.7 L591.3,78.7 L594.7,78.7 L594.7,78.7 L598.1,78.7 L598.1,78.7 L601.5,78.7 L601.5,78.7 L604.9,78.7 L604.9,78.7 L608.3,78.7 L608.3,78.7 L611.7,78.7 L611.7,78.7 L615.1,78.7 L615.1,78.7 L618.5,78.7 L618.5,78.7 L621.9,78.7 L621.9,78.7 L625.3,78.7 L625.3,78.7 L628.7,78.7 L628.7,78.7 L632.1,78.7 L632.1,78.7 L635.5,78.7 L635.5,78.7 L638.9,78.7 L638.9,78.7 L642.3,78.7 L642.3,78.7 L645.7,78.7 L645.7,170.5 L649.1,170.5 L649.1,199.5 L652.5,199.5 L652.5,199.5 L655.9,199.5 L655.9,199.5 L659.3,199.5 L659.3,199.5 L662.6,199.5 L662.6,199.5 L666,199.5 L666,199.5 L669.4,199.5 L669.4,199.5 L672.8,199.5 L672.8,199.5 L676.2,199.5 L676.2,199.5 L679.6,199.5 L679.6,199.5 L683,199.5 L683,199.5 L686.4,199.5 L686.4,199.5 L689.8,199.5 L689.8,199.5 L693.2,199.5 L693.2,199.5 L696.6,199.5 L696.6,199.5 L700,199.5" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinejoin="round" />
+  <line x1="70.7" y1="40" x2="70.7" y2="68.2" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.35" />
+  <line x1="152.7" y1="40" x2="152.7" y2="242" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.35" />
+  <line x1="234.7" y1="209.8" x2="234.7" y2="242" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.35" />
+  <line x1="72.7" y1="36" x2="150.7" y2="36" stroke="#3b82f6" strokeWidth="1.5" markerEnd="url(#bp-note-1)" />
+  <line x1="150.7" y1="36" x2="72.7" y2="36" stroke="#3b82f6" strokeWidth="1.5" markerEnd="url(#bp-note-1)" />
+  <text x="70.7" y="26" fill="#3b82f6" fontSize="15" fontWeight="bold">one pass: 1,760 T-states, 503 µs</text>
+  <line x1="72.7" y1="246" x2="232.7" y2="246" stroke="currentColor" strokeWidth="1.5" markerEnd="url(#bp-note-0)" />
+  <line x1="232.7" y1="246" x2="72.7" y2="246" stroke="currentColor" strokeWidth="1.5" markerEnd="url(#bp-note-0)" />
+  <text x="70.7" y="266" fill="currentColor" fontSize="15">one period, two passes: 1,006 µs, so 994 Hz</text>
+  <line x1="48" y1="290" x2="700" y2="290" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <line x1="48" y1="285" x2="48" y2="295" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="48" y="312" textAnchor="start" fill="currentColor" fontSize="13.5">0 ms</text>
+  <line x1="211" y1="285" x2="211" y2="295" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="211" y="312" textAnchor="middle" fill="currentColor" fontSize="13.5">1 ms</text>
+  <line x1="374" y1="285" x2="374" y2="295" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="374" y="312" textAnchor="middle" fill="currentColor" fontSize="13.5">2 ms</text>
+  <line x1="537" y1="285" x2="537" y2="295" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="537" y="312" textAnchor="middle" fill="currentColor" fontSize="13.5">3 ms</text>
+  <line x1="700" y1="285" x2="700" y2="295" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="700" y="312" textAnchor="end" fill="currentColor" fontSize="13.5">4 ms</text>
+</svg>
+{/* /fig:note */}
+<figcaption>The loop's note, captured from the machine: a square wave whose halves are each one pass of the loop, 1,760 T-states. Klive's mix centres the wave on zero, as the capacitor after the jack does.</figcaption>
+</figure>
+
+The loop's length is the only thing that sets the pitch, and it changes in steps of 13 T-states, one round
+of `djnz`. B = 132 gives 1,747 T-states and 1,002 Hz, B = 134 gives 1,773 and 987 Hz. So your program
+cannot hit every pitch exactly, and a beeper tune is slightly out of tune wherever its notes fall between
+those steps. A loop with a finer step (another instruction of 4 T-states in the wait, for example) gets
+closer.
+
+## The CPU's speed and contention
+
+Because the pitch is a count of T-states, it is only as steady as the CPU's clock. Two things change how
+long the same loop takes:
+
+- **The CPU's speed.** The Next's CPU runs at 3.5, 7, 14 or 28 MHz, set by the **CPU Speed register,
+  NextReg `$07`**. A T-state at 7 MHz lasts half as long, so the same loop plays twice as high: 1,989 Hz,
+  an octave up. A 48K beeper tune played with the CPU at a higher speed is too high and too fast, like a
+  record on the wrong speed.
+- **Contention.** At 3.5 MHz, the Next stops the CPU for a few T-states when it reads memory from
+  `$4000` to `$7FFF` while the screen is being drawn, as the 48K's ULA did (see
+  [Contention](/en/under-the-hood/emulator-internals/spectrum-display/#contention)). A loop that runs in that
+  memory gets longer while the beam is on a line of the picture, and its note drops while it is. The
+  **Peripheral 3 Setting register, NextReg `$08`**, bit 6 switches contention off, and at 7 MHz and above
+  there is none.
+
+Here is the same loop three ways:
+
+<figure>
+{/* fig:speeds */}
+<svg viewBox="0 0 700 394" role="img" aria-label="The same beeper loop captured three times, 18 milliseconds each, on one time scale. At 3.5 MHz it is an even square wave of 994 Hz. At 7 MHz the periods are half as long: 1,989 Hz. At 3.5 MHz with the loop in contended memory and contention on, the wave changes during the frame: in the border its periods are those of 994 Hz; in the shaded stretch, while the picture's lines are drawn, every pass is stretched from 1,760 to about 2,007 T-states and the note drops to about 872 Hz; then it comes back to 994 Hz in the border." style={{ width: "100%", height: "auto" }}>
+  <line x1="120" y1="50" x2="700" y2="50" stroke="currentColor" strokeWidth="1" strokeOpacity="0.25" />
+  <path d="M120,79.4 L120.7,79.4 L120.7,79.4 L121.3,79.4 L121.3,79.4 L122,79.4 L122,20.9 L122.7,20.9 L122.7,20.5 L123.4,20.5 L123.4,20.5 L124,20.5 L124,20.5 L124.7,20.5 L124.7,20.5 L125.4,20.5 L125.4,20.5 L126,20.5 L126,20.6 L126.7,20.6 L126.7,20.6 L127.4,20.6 L127.4,20.6 L128.1,20.6 L128.1,20.6 L128.7,20.6 L128.7,20.6 L129.4,20.6 L129.4,20.6 L130.1,20.6 L130.1,20.6 L130.7,20.6 L130.7,20.6 L131.4,20.6 L131.4,20.6 L132.1,20.6 L132.1,20.6 L132.8,20.6 L132.8,20.6 L133.4,20.6 L133.4,20.6 L134.1,20.6 L134.1,20.6 L134.8,20.6 L134.8,20.6 L135.4,20.6 L135.4,20.6 L136.1,20.6 L136.1,20.6 L136.8,20.6 L136.8,20.6 L137.5,20.6 L137.5,20.6 L138.1,20.6 L138.1,71.1 L138.8,71.1 L138.8,79.5 L139.5,79.5 L139.5,79.5 L140.1,79.5 L140.1,79.5 L140.8,79.5 L140.8,79.5 L141.5,79.5 L141.5,79.5 L142.2,79.5 L142.2,79.5 L142.8,79.5 L142.8,79.5 L143.5,79.5 L143.5,79.5 L144.2,79.5 L144.2,79.5 L144.8,79.5 L144.8,79.5 L145.5,79.5 L145.5,79.5 L146.2,79.5 L146.2,79.5 L146.9,79.5 L146.9,79.5 L147.5,79.5 L147.5,79.5 L148.2,79.5 L148.2,79.5 L148.9,79.5 L148.9,79.5 L149.5,79.5 L149.5,79.5 L150.2,79.5 L150.2,79.5 L150.9,79.5 L150.9,79.4 L151.6,79.4 L151.6,79.4 L152.2,79.4 L152.2,79.4 L152.9,79.4 L152.9,79.4 L153.6,79.4 L153.6,79.4 L154.2,79.4 L154.2,37 L154.9,37 L154.9,20.5 L155.6,20.5 L155.6,20.5 L156.3,20.5 L156.3,20.5 L156.9,20.5 L156.9,20.5 L157.6,20.5 L157.6,20.5 L158.3,20.5 L158.3,20.6 L158.9,20.6 L158.9,20.6 L159.6,20.6 L159.6,20.6 L160.3,20.6 L160.3,20.6 L160.9,20.6 L160.9,20.6 L161.6,20.6 L161.6,20.6 L162.3,20.6 L162.3,20.6 L163,20.6 L163,20.6 L163.6,20.6 L163.6,20.6 L164.3,20.6 L164.3,20.6 L165,20.6 L165,20.6 L165.6,20.6 L165.6,20.6 L166.3,20.6 L166.3,20.6 L167,20.6 L167,20.6 L167.7,20.6 L167.7,20.6 L168.3,20.6 L168.3,20.6 L169,20.6 L169,20.6 L169.7,20.6 L169.7,20.6 L170.3,20.6 L170.3,54.9 L171,54.9 L171,79.5 L171.7,79.5 L171.7,79.5 L172.4,79.5 L172.4,79.5 L173,79.5 L173,79.5 L173.7,79.5 L173.7,79.5 L174.4,79.5 L174.4,79.5 L175,79.5 L175,79.5 L175.7,79.5 L175.7,79.5 L176.4,79.5 L176.4,79.5 L177.1,79.5 L177.1,79.5 L177.7,79.5 L177.7,79.5 L178.4,79.5 L178.4,79.5 L179.1,79.5 L179.1,79.5 L179.7,79.5 L179.7,79.5 L180.4,79.5 L180.4,79.5 L181.1,79.5 L181.1,79.5 L181.8,79.5 L181.8,79.5 L182.4,79.5 L182.4,79.5 L183.1,79.5 L183.1,79.4 L183.8,79.4 L183.8,79.4 L184.4,79.4 L184.4,79.4 L185.1,79.4 L185.1,79.4 L185.8,79.4 L185.8,79.4 L186.5,79.4 L186.5,53.3 L187.1,53.3 L187.1,20.5 L187.8,20.5 L187.8,20.5 L188.5,20.5 L188.5,20.5 L189.1,20.5 L189.1,20.5 L189.8,20.5 L189.8,20.5 L190.5,20.5 L190.5,20.5 L191.2,20.5 L191.2,20.6 L191.8,20.6 L191.8,20.6 L192.5,20.6 L192.5,20.6 L193.2,20.6 L193.2,20.6 L193.8,20.6 L193.8,20.6 L194.5,20.6 L194.5,20.6 L195.2,20.6 L195.2,20.6 L195.9,20.6 L195.9,20.6 L196.5,20.6 L196.5,20.6 L197.2,20.6 L197.2,20.6 L197.9,20.6 L197.9,20.6 L198.5,20.6 L198.5,20.6 L199.2,20.6 L199.2,20.6 L199.9,20.6 L199.9,20.6 L200.6,20.6 L200.6,20.6 L201.2,20.6 L201.2,20.6 L201.9,20.6 L201.9,20.6 L202.6,20.6 L202.6,38.8 L203.2,38.8 L203.2,79.5 L203.9,79.5 L203.9,79.5 L204.6,79.5 L204.6,79.5 L205.3,79.5 L205.3,79.5 L205.9,79.5 L205.9,79.5 L206.6,79.5 L206.6,79.5 L207.3,79.5 L207.3,79.5 L207.9,79.5 L207.9,79.5 L208.6,79.5 L208.6,79.5 L209.3,79.5 L209.3,79.5 L210,79.5 L210,79.5 L210.6,79.5 L210.6,79.5 L211.3,79.5 L211.3,79.5 L212,79.5 L212,79.5 L212.6,79.5 L212.6,79.5 L213.3,79.5 L213.3,79.5 L214,79.5 L214,79.5 L214.7,79.5 L214.7,79.5 L215.3,79.5 L215.3,79.5 L216,79.5 L216,79.4 L216.7,79.4 L216.7,79.4 L217.3,79.4 L217.3,79.4 L218,79.4 L218,79.4 L218.7,79.4 L218.7,69.4 L219.4,69.4 L219.4,20.5 L220,20.5 L220,20.5 L220.7,20.5 L220.7,20.5 L221.4,20.5 L221.4,20.5 L222,20.5 L222,20.5 L222.7,20.5 L222.7,20.5 L223.4,20.5 L223.4,20.6 L224.1,20.6 L224.1,20.6 L224.7,20.6 L224.7,20.6 L225.4,20.6 L225.4,20.6 L226.1,20.6 L226.1,20.6 L226.7,20.6 L226.7,20.6 L227.4,20.6 L227.4,20.6 L228.1,20.6 L228.1,20.6 L228.8,20.6 L228.8,20.6 L229.4,20.6 L229.4,20.6 L230.1,20.6 L230.1,20.6 L230.8,20.6 L230.8,20.6 L231.4,20.6 L231.4,20.6 L232.1,20.6 L232.1,20.6 L232.8,20.6 L232.8,20.6 L233.4,20.6 L233.4,20.6 L234.1,20.6 L234.1,20.6 L234.8,20.6 L234.8,22.5 L235.5,22.5 L235.5,79.5 L236.1,79.5 L236.1,79.5 L236.8,79.5 L236.8,79.5 L237.5,79.5 L237.5,79.5 L238.1,79.5 L238.1,79.5 L238.8,79.5 L238.8,79.5 L239.5,79.5 L239.5,79.5 L240.2,79.5 L240.2,79.5 L240.8,79.5 L240.8,79.5 L241.5,79.5 L241.5,79.5 L242.2,79.5 L242.2,79.5 L242.8,79.5 L242.8,79.5 L243.5,79.5 L243.5,79.5 L244.2,79.5 L244.2,79.5 L244.9,79.5 L244.9,79.5 L245.5,79.5 L245.5,79.5 L246.2,79.5 L246.2,79.5 L246.9,79.5 L246.9,79.5 L247.5,79.5 L247.5,79.5 L248.2,79.5 L248.2,79.4 L248.9,79.4 L248.9,79.4 L249.6,79.4 L249.6,79.4 L250.2,79.4 L250.2,79.4 L250.9,79.4 L250.9,79.4 L251.6,79.4 L251.6,26.6 L252.2,26.6 L252.2,20.5 L252.9,20.5 L252.9,20.5 L253.6,20.5 L253.6,20.5 L254.3,20.5 L254.3,20.5 L254.9,20.5 L254.9,20.5 L255.6,20.5 L255.6,20.6 L256.3,20.6 L256.3,20.6 L256.9,20.6 L256.9,20.6 L257.6,20.6 L257.6,20.6 L258.3,20.6 L258.3,20.6 L259,20.6 L259,20.6 L259.6,20.6 L259.6,20.6 L260.3,20.6 L260.3,20.6 L261,20.6 L261,20.6 L261.6,20.6 L261.6,20.6 L262.3,20.6 L262.3,20.6 L263,20.6 L263,20.6 L263.7,20.6 L263.7,20.6 L264.3,20.6 L264.3,20.6 L265,20.6 L265,20.6 L265.7,20.6 L265.7,20.6 L266.3,20.6 L266.3,20.6 L267,20.6 L267,20.6 L267.7,20.6 L267.7,65.4 L268.4,65.4 L268.4,79.5 L269,79.5 L269,79.5 L269.7,79.5 L269.7,79.5 L270.4,79.5 L270.4,79.5 L271,79.5 L271,79.5 L271.7,79.5 L271.7,79.5 L272.4,79.5 L272.4,79.5 L273.1,79.5 L273.1,79.5 L273.7,79.5 L273.7,79.5 L274.4,79.5 L274.4,79.5 L275.1,79.5 L275.1,79.5 L275.7,79.5 L275.7,79.5 L276.4,79.5 L276.4,79.5 L277.1,79.5 L277.1,79.5 L277.8,79.5 L277.8,79.5 L278.4,79.5 L278.4,79.5 L279.1,79.5 L279.1,79.5 L279.8,79.5 L279.8,79.5 L280.4,79.5 L280.4,79.4 L281.1,79.4 L281.1,79.4 L281.8,79.4 L281.8,79.4 L282.5,79.4 L282.5,79.4 L283.1,79.4 L283.1,79.4 L283.8,79.4 L283.8,42.8 L284.5,42.8 L284.5,20.5 L285.1,20.5 L285.1,20.5 L285.8,20.5 L285.8,20.5 L286.5,20.5 L286.5,20.5 L287.2,20.5 L287.2,20.5 L287.8,20.5 L287.8,20.6 L288.5,20.6 L288.5,20.6 L289.2,20.6 L289.2,20.6 L289.8,20.6 L289.8,20.6 L290.5,20.6 L290.5,20.6 L291.2,20.6 L291.2,20.6 L291.9,20.6 L291.9,20.6 L292.5,20.6 L292.5,20.6 L293.2,20.6 L293.2,20.6 L293.9,20.6 L293.9,20.6 L294.5,20.6 L294.5,20.6 L295.2,20.6 L295.2,20.6 L295.9,20.6 L295.9,20.6 L296.6,20.6 L296.6,20.6 L297.2,20.6 L297.2,20.6 L297.9,20.6 L297.9,20.6 L298.6,20.6 L298.6,20.6 L299.2,20.6 L299.2,20.6 L299.9,20.6 L299.9,49.1 L300.6,49.1 L300.6,79.5 L301.3,79.5 L301.3,79.5 L301.9,79.5 L301.9,79.5 L302.6,79.5 L302.6,79.5 L303.3,79.5 L303.3,79.5 L303.9,79.5 L303.9,79.5 L304.6,79.5 L304.6,79.5 L305.3,79.5 L305.3,79.5 L305.9,79.5 L305.9,79.5 L306.6,79.5 L306.6,79.5 L307.3,79.5 L307.3,79.5 L308,79.5 L308,79.5 L308.6,79.5 L308.6,79.5 L309.3,79.5 L309.3,79.5 L310,79.5 L310,79.5 L310.6,79.5 L310.6,79.5 L311.3,79.5 L311.3,79.5 L312,79.5 L312,79.5 L312.7,79.5 L312.7,79.5 L313.3,79.5 L313.3,79.4 L314,79.4 L314,79.4 L314.7,79.4 L314.7,79.4 L315.3,79.4 L315.3,79.4 L316,79.4 L316,58.9 L316.7,58.9 L316.7,20.5 L317.4,20.5 L317.4,20.5 L318,20.5 L318,20.5 L318.7,20.5 L318.7,20.5 L319.4,20.5 L319.4,20.5 L320,20.5 L320,20.5 L320.7,20.5 L320.7,20.6 L321.4,20.6 L321.4,20.6 L322.1,20.6 L322.1,20.6 L322.7,20.6 L322.7,20.6 L323.4,20.6 L323.4,20.6 L324.1,20.6 L324.1,20.6 L324.7,20.6 L324.7,20.6 L325.4,20.6 L325.4,20.6 L326.1,20.6 L326.1,20.6 L326.8,20.6 L326.8,20.6 L327.4,20.6 L327.4,20.6 L328.1,20.6 L328.1,20.6 L328.8,20.6 L328.8,20.6 L329.4,20.6 L329.4,20.6 L330.1,20.6 L330.1,20.6 L330.8,20.6 L330.8,20.6 L331.5,20.6 L331.5,20.6 L332.1,20.6 L332.1,33 L332.8,33 L332.8,79.5 L333.5,79.5 L333.5,79.5 L334.1,79.5 L334.1,79.5 L334.8,79.5 L334.8,79.5 L335.5,79.5 L335.5,79.5 L336.2,79.5 L336.2,79.5 L336.8,79.5 L336.8,79.5 L337.5,79.5 L337.5,79.5 L338.2,79.5 L338.2,79.5 L338.8,79.5 L338.8,79.5 L339.5,79.5 L339.5,79.5 L340.2,79.5 L340.2,79.5 L340.9,79.5 L340.9,79.5 L341.5,79.5 L341.5,79.5 L342.2,79.5 L342.2,79.5 L342.9,79.5 L342.9,79.5 L343.5,79.5 L343.5,79.5 L344.2,79.5 L344.2,79.5 L344.9,79.5 L344.9,79.5 L345.6,79.5 L345.6,79.4 L346.2,79.4 L346.2,79.4 L346.9,79.4 L346.9,79.4 L347.6,79.4 L347.6,79.4 L348.2,79.4 L348.2,75.2 L348.9,75.2 L348.9,20.5 L349.6,20.5 L349.6,20.5 L350.3,20.5 L350.3,20.5 L350.9,20.5 L350.9,20.5 L351.6,20.5 L351.6,20.5 L352.3,20.5 L352.3,20.5 L352.9,20.5 L352.9,20.6 L353.6,20.6 L353.6,20.6 L354.3,20.6 L354.3,20.6 L355,20.6 L355,20.6 L355.6,20.6 L355.6,20.6 L356.3,20.6 L356.3,20.6 L357,20.6 L357,20.6 L357.6,20.6 L357.6,20.6 L358.3,20.6 L358.3,20.6 L359,20.6 L359,20.6 L359.7,20.6 L359.7,20.6 L360.3,20.6 L360.3,20.6 L361,20.6 L361,20.6 L361.7,20.6 L361.7,20.6 L362.3,20.6 L362.3,20.6 L363,20.6 L363,20.6 L363.7,20.6 L363.7,20.6 L364.4,20.6 L364.4,20.6 L365,20.6 L365,75.9 L365.7,75.9 L365.7,79.5 L366.4,79.5 L366.4,79.5 L367,79.5 L367,79.5 L367.7,79.5 L367.7,79.5 L368.4,79.5 L368.4,79.5 L369.1,79.5 L369.1,79.5 L369.7,79.5 L369.7,79.5 L370.4,79.5 L370.4,79.5 L371.1,79.5 L371.1,79.5 L371.7,79.5 L371.7,79.5 L372.4,79.5 L372.4,79.5 L373.1,79.5 L373.1,79.5 L373.8,79.5 L373.8,79.5 L374.4,79.5 L374.4,79.5 L375.1,79.5 L375.1,79.5 L375.8,79.5 L375.8,79.5 L376.4,79.5 L376.4,79.5 L377.1,79.5 L377.1,79.5 L377.8,79.5 L377.8,79.4 L378.4,79.4 L378.4,79.4 L379.1,79.4 L379.1,79.4 L379.8,79.4 L379.8,79.4 L380.5,79.4 L380.5,79.4 L381.1,79.4 L381.1,32.3 L381.8,32.3 L381.8,20.5 L382.5,20.5 L382.5,20.5 L383.1,20.5 L383.1,20.5 L383.8,20.5 L383.8,20.5 L384.5,20.5 L384.5,20.5 L385.2,20.5 L385.2,20.6 L385.8,20.6 L385.8,20.6 L386.5,20.6 L386.5,20.6 L387.2,20.6 L387.2,20.6 L387.8,20.6 L387.8,20.6 L388.5,20.6 L388.5,20.6 L389.2,20.6 L389.2,20.6 L389.9,20.6 L389.9,20.6 L390.5,20.6 L390.5,20.6 L391.2,20.6 L391.2,20.6 L391.9,20.6 L391.9,20.6 L392.5,20.6 L392.5,20.6 L393.2,20.6 L393.2,20.6 L393.9,20.6 L393.9,20.6 L394.6,20.6 L394.6,20.6 L395.2,20.6 L395.2,20.6 L395.9,20.6 L395.9,20.6 L396.6,20.6 L396.6,20.6 L397.2,20.6 L397.2,59.6 L397.9,59.6 L397.9,79.5 L398.6,79.5 L398.6,79.5 L399.3,79.5 L399.3,79.5 L399.9,79.5 L399.9,79.5 L400.6,79.5 L400.6,79.5 L401.3,79.5 L401.3,79.5 L401.9,79.5 L401.9,79.5 L402.6,79.5 L402.6,79.5 L403.3,79.5 L403.3,79.5 L404,79.5 L404,79.5 L404.6,79.5 L404.6,79.5 L405.3,79.5 L405.3,79.5 L406,79.5 L406,79.5 L406.6,79.5 L406.6,79.5 L407.3,79.5 L407.3,79.5 L408,79.5 L408,79.5 L408.7,79.5 L408.7,79.5 L409.3,79.5 L409.3,79.5 L410,79.5 L410,79.5 L410.7,79.5 L410.7,79.4 L411.3,79.4 L411.3,79.4 L412,79.4 L412,79.4 L412.7,79.4 L412.7,79.4 L413.4,79.4 L413.4,48.6 L414,48.6 L414,20.5 L414.7,20.5 L414.7,20.5 L415.4,20.5 L415.4,20.5 L416,20.5 L416,20.5 L416.7,20.5 L416.7,20.5 L417.4,20.5 L417.4,20.6 L418.1,20.6 L418.1,20.6 L418.7,20.6 L418.7,20.6 L419.4,20.6 L419.4,20.6 L420.1,20.6 L420.1,20.6 L420.7,20.6 L420.7,20.6 L421.4,20.6 L421.4,20.6 L422.1,20.6 L422.1,20.6 L422.8,20.6 L422.8,20.6 L423.4,20.6 L423.4,20.6 L424.1,20.6 L424.1,20.6 L424.8,20.6 L424.8,20.6 L425.4,20.6 L425.4,20.6 L426.1,20.6 L426.1,20.6 L426.8,20.6 L426.8,20.6 L427.5,20.6 L427.5,20.6 L428.1,20.6 L428.1,20.6 L428.8,20.6 L428.8,20.6 L429.5,20.6 L429.5,43.5 L430.1,43.5 L430.1,79.5 L430.8,79.5 L430.8,79.5 L431.5,79.5 L431.5,79.5 L432.2,79.5 L432.2,79.5 L432.8,79.5 L432.8,79.5 L433.5,79.5 L433.5,79.5 L434.2,79.5 L434.2,79.5 L434.8,79.5 L434.8,79.5 L435.5,79.5 L435.5,79.5 L436.2,79.5 L436.2,79.5 L436.9,79.5 L436.9,79.5 L437.5,79.5 L437.5,79.5 L438.2,79.5 L438.2,79.5 L438.9,79.5 L438.9,79.5 L439.5,79.5 L439.5,79.5 L440.2,79.5 L440.2,79.5 L440.9,79.5 L440.9,79.5 L441.6,79.5 L441.6,79.5 L442.2,79.5 L442.2,79.5 L442.9,79.5 L442.9,79.4 L443.6,79.4 L443.6,79.4 L444.2,79.4 L444.2,79.4 L444.9,79.4 L444.9,79.4 L445.6,79.4 L445.6,64.7 L446.3,64.7 L446.3,20.5 L446.9,20.5 L446.9,20.5 L447.6,20.5 L447.6,20.5 L448.3,20.5 L448.3,20.5 L448.9,20.5 L448.9,20.5 L449.6,20.5 L449.6,20.5 L450.3,20.5 L450.3,20.6 L450.9,20.6 L450.9,20.6 L451.6,20.6 L451.6,20.6 L452.3,20.6 L452.3,20.6 L453,20.6 L453,20.6 L453.6,20.6 L453.6,20.6 L454.3,20.6 L454.3,20.6 L455,20.6 L455,20.6 L455.6,20.6 L455.6,20.6 L456.3,20.6 L456.3,20.6 L457,20.6 L457,20.6 L457.7,20.6 L457.7,20.6 L458.3,20.6 L458.3,20.6 L459,20.6 L459,20.6 L459.7,20.6 L459.7,20.6 L460.3,20.6 L460.3,20.6 L461,20.6 L461,20.6 L461.7,20.6 L461.7,27.3 L462.4,27.3 L462.4,79.5 L463,79.5 L463,79.5 L463.7,79.5 L463.7,79.5 L464.4,79.5 L464.4,79.5 L465,79.5 L465,79.5 L465.7,79.5 L465.7,79.5 L466.4,79.5 L466.4,79.5 L467.1,79.5 L467.1,79.5 L467.7,79.5 L467.7,79.5 L468.4,79.5 L468.4,79.5 L469.1,79.5 L469.1,79.5 L469.7,79.5 L469.7,79.5 L470.4,79.5 L470.4,79.5 L471.1,79.5 L471.1,79.5 L471.8,79.5 L471.8,79.5 L472.4,79.5 L472.4,79.5 L473.1,79.5 L473.1,79.5 L473.8,79.5 L473.8,79.5 L474.4,79.5 L474.4,79.5 L475.1,79.5 L475.1,79.4 L475.8,79.4 L475.8,79.4 L476.5,79.4 L476.5,79.4 L477.1,79.4 L477.1,79.4 L477.8,79.4 L477.8,79.4 L478.5,79.4 L478.5,22 L479.1,22 L479.1,20.5 L479.8,20.5 L479.8,20.5 L480.5,20.5 L480.5,20.5 L481.2,20.5 L481.2,20.5 L481.8,20.5 L481.8,20.5 L482.5,20.5 L482.5,20.6 L483.2,20.6 L483.2,20.6 L483.8,20.6 L483.8,20.6 L484.5,20.6 L484.5,20.6 L485.2,20.6 L485.2,20.6 L485.9,20.6 L485.9,20.6 L486.5,20.6 L486.5,20.6 L487.2,20.6 L487.2,20.6 L487.9,20.6 L487.9,20.6 L488.5,20.6 L488.5,20.6 L489.2,20.6 L489.2,20.6 L489.9,20.6 L489.9,20.6 L490.6,20.6 L490.6,20.6 L491.2,20.6 L491.2,20.6 L491.9,20.6 L491.9,20.6 L492.6,20.6 L492.6,20.6 L493.2,20.6 L493.2,20.6 L493.9,20.6 L493.9,20.6 L494.6,20.6 L494.6,70.1 L495.3,70.1 L495.3,79.5 L495.9,79.5 L495.9,79.5 L496.6,79.5 L496.6,79.5 L497.3,79.5 L497.3,79.5 L497.9,79.5 L497.9,79.5 L498.6,79.5 L498.6,79.5 L499.3,79.5 L499.3,79.5 L500,79.5 L500,79.5 L500.6,79.5 L500.6,79.5 L501.3,79.5 L501.3,79.5 L502,79.5 L502,79.5 L502.6,79.5 L502.6,79.5 L503.3,79.5 L503.3,79.5 L504,79.5 L504,79.5 L504.7,79.5 L504.7,79.5 L505.3,79.5 L505.3,79.5 L506,79.5 L506,79.5 L506.7,79.5 L506.7,79.5 L507.3,79.5 L507.3,79.4 L508,79.4 L508,79.4 L508.7,79.4 L508.7,79.4 L509.4,79.4 L509.4,79.4 L510,79.4 L510,79.4 L510.7,79.4 L510.7,38.1 L511.4,38.1 L511.4,20.5 L512,20.5 L512,20.5 L512.7,20.5 L512.7,20.5 L513.4,20.5 L513.4,20.5 L514.1,20.5 L514.1,20.5 L514.7,20.5 L514.7,20.6 L515.4,20.6 L515.4,20.6 L516.1,20.6 L516.1,20.6 L516.7,20.6 L516.7,20.6 L517.4,20.6 L517.4,20.6 L518.1,20.6 L518.1,20.6 L518.8,20.6 L518.8,20.6 L519.4,20.6 L519.4,20.6 L520.1,20.6 L520.1,20.6 L520.8,20.6 L520.8,20.6 L521.4,20.6 L521.4,20.6 L522.1,20.6 L522.1,20.6 L522.8,20.6 L522.8,20.6 L523.4,20.6 L523.4,20.6 L524.1,20.6 L524.1,20.6 L524.8,20.6 L524.8,20.6 L525.5,20.6 L525.5,20.6 L526.1,20.6 L526.1,20.6 L526.8,20.6 L526.8,53.9 L527.5,53.9 L527.5,79.5 L528.1,79.5 L528.1,79.5 L528.8,79.5 L528.8,79.5 L529.5,79.5 L529.5,79.5 L530.2,79.5 L530.2,79.5 L530.8,79.5 L530.8,79.5 L531.5,79.5 L531.5,79.5 L532.2,79.5 L532.2,79.5 L532.8,79.5 L532.8,79.5 L533.5,79.5 L533.5,79.5 L534.2,79.5 L534.2,79.5 L534.9,79.5 L534.9,79.5 L535.5,79.5 L535.5,79.5 L536.2,79.5 L536.2,79.5 L536.9,79.5 L536.9,79.5 L537.5,79.5 L537.5,79.5 L538.2,79.5 L538.2,79.5 L538.9,79.5 L538.9,79.5 L539.6,79.5 L539.6,79.5 L540.2,79.5 L540.2,79.4 L540.9,79.4 L540.9,79.4 L541.6,79.4 L541.6,79.4 L542.2,79.4 L542.2,79.4 L542.9,79.4 L542.9,54.2 L543.6,54.2 L543.6,20.5 L544.3,20.5 L544.3,20.5 L544.9,20.5 L544.9,20.5 L545.6,20.5 L545.6,20.5 L546.3,20.5 L546.3,20.5 L546.9,20.5 L546.9,20.6 L547.6,20.6 L547.6,20.6 L548.3,20.6 L548.3,20.6 L549,20.6 L549,20.6 L549.6,20.6 L549.6,20.6 L550.3,20.6 L550.3,20.6 L551,20.6 L551,20.6 L551.6,20.6 L551.6,20.6 L552.3,20.6 L552.3,20.6 L553,20.6 L553,20.6 L553.7,20.6 L553.7,20.6 L554.3,20.6 L554.3,20.6 L555,20.6 L555,20.6 L555.7,20.6 L555.7,20.6 L556.3,20.6 L556.3,20.6 L557,20.6 L557,20.6 L557.7,20.6 L557.7,20.6 L558.4,20.6 L558.4,20.6 L559,20.6 L559,37.7 L559.7,37.7 L559.7,79.5 L560.4,79.5 L560.4,79.5 L561,79.5 L561,79.5 L561.7,79.5 L561.7,79.5 L562.4,79.5 L562.4,79.5 L563.1,79.5 L563.1,79.5 L563.7,79.5 L563.7,79.5 L564.4,79.5 L564.4,79.5 L565.1,79.5 L565.1,79.5 L565.7,79.5 L565.7,79.5 L566.4,79.5 L566.4,79.5 L567.1,79.5 L567.1,79.5 L567.8,79.5 L567.8,79.5 L568.4,79.5 L568.4,79.5 L569.1,79.5 L569.1,79.5 L569.8,79.5 L569.8,79.5 L570.4,79.5 L570.4,79.5 L571.1,79.5 L571.1,79.5 L571.8,79.5 L571.8,79.5 L572.5,79.5 L572.5,79.4 L573.1,79.4 L573.1,79.4 L573.8,79.4 L573.8,79.4 L574.5,79.4 L574.5,79.4 L575.1,79.4 L575.1,70.4 L575.8,70.4 L575.8,20.5 L576.5,20.5 L576.5,20.5 L577.2,20.5 L577.2,20.5 L577.8,20.5 L577.8,20.5 L578.5,20.5 L578.5,20.5 L579.2,20.5 L579.2,20.5 L579.8,20.5 L579.8,20.6 L580.5,20.6 L580.5,20.6 L581.2,20.6 L581.2,20.6 L581.9,20.6 L581.9,20.6 L582.5,20.6 L582.5,20.6 L583.2,20.6 L583.2,20.6 L583.9,20.6 L583.9,20.6 L584.5,20.6 L584.5,20.6 L585.2,20.6 L585.2,20.6 L585.9,20.6 L585.9,20.6 L586.6,20.6 L586.6,20.6 L587.2,20.6 L587.2,20.6 L587.9,20.6 L587.9,20.6 L588.6,20.6 L588.6,20.6 L589.2,20.6 L589.2,20.6 L589.9,20.6 L589.9,20.6 L590.6,20.6 L590.6,20.6 L591.3,20.6 L591.3,21.6 L591.9,21.6 L591.9,79.5 L592.6,79.5 L592.6,79.5 L593.3,79.5 L593.3,79.5 L593.9,79.5 L593.9,79.5 L594.6,79.5 L594.6,79.5 L595.3,79.5 L595.3,79.5 L595.9,79.5 L595.9,79.5 L596.6,79.5 L596.6,79.5 L597.3,79.5 L597.3,79.5 L598,79.5 L598,79.5 L598.6,79.5 L598.6,79.5 L599.3,79.5 L599.3,79.5 L600,79.5 L600,79.5 L600.6,79.5 L600.6,79.5 L601.3,79.5 L601.3,79.5 L602,79.5 L602,79.5 L602.7,79.5 L602.7,79.5 L603.3,79.5 L603.3,79.5 L604,79.5 L604,79.5 L604.7,79.5 L604.7,79.4 L605.3,79.4 L605.3,79.4 L606,79.4 L606,79.4 L606.7,79.4 L606.7,79.4 L607.4,79.4 L607.4,79.4 L608,79.4 L608,27.6 L608.7,27.6 L608.7,20.5 L609.4,20.5 L609.4,20.5 L610,20.5 L610,20.5 L610.7,20.5 L610.7,20.5 L611.4,20.5 L611.4,20.5 L612.1,20.5 L612.1,20.6 L612.7,20.6 L612.7,20.6 L613.4,20.6 L613.4,20.6 L614.1,20.6 L614.1,20.6 L614.7,20.6 L614.7,20.6 L615.4,20.6 L615.4,20.6 L616.1,20.6 L616.1,20.6 L616.8,20.6 L616.8,20.6 L617.4,20.6 L617.4,20.6 L618.1,20.6 L618.1,20.6 L618.8,20.6 L618.8,20.6 L619.4,20.6 L619.4,20.6 L620.1,20.6 L620.1,20.6 L620.8,20.6 L620.8,20.6 L621.5,20.6 L621.5,20.6 L622.1,20.6 L622.1,20.6 L622.8,20.6 L622.8,20.6 L623.5,20.6 L623.5,20.6 L624.1,20.6 L624.1,64.3 L624.8,64.3 L624.8,79.5 L625.5,79.5 L625.5,79.5 L626.2,79.5 L626.2,79.5 L626.8,79.5 L626.8,79.5 L627.5,79.5 L627.5,79.5 L628.2,79.5 L628.2,79.5 L628.8,79.5 L628.8,79.5 L629.5,79.5 L629.5,79.5 L630.2,79.5 L630.2,79.5 L630.9,79.5 L630.9,79.5 L631.5,79.5 L631.5,79.5 L632.2,79.5 L632.2,79.5 L632.9,79.5 L632.9,79.5 L633.5,79.5 L633.5,79.5 L634.2,79.5 L634.2,79.5 L634.9,79.5 L634.9,79.5 L635.6,79.5 L635.6,79.5 L636.2,79.5 L636.2,79.5 L636.9,79.5 L636.9,79.5 L637.6,79.5 L637.6,79.4 L638.2,79.4 L638.2,79.4 L638.9,79.4 L638.9,79.4 L639.6,79.4 L639.6,79.4 L640.3,79.4 L640.3,43.8 L640.9,43.8 L640.9,20.5 L641.6,20.5 L641.6,20.5 L642.3,20.5 L642.3,20.5 L642.9,20.5 L642.9,20.5 L643.6,20.5 L643.6,20.5 L644.3,20.5 L644.3,20.6 L645,20.6 L645,20.6 L645.6,20.6 L645.6,20.6 L646.3,20.6 L646.3,20.6 L647,20.6 L647,20.6 L647.6,20.6 L647.6,20.6 L648.3,20.6 L648.3,20.6 L649,20.6 L649,20.6 L649.7,20.6 L649.7,20.6 L650.3,20.6 L650.3,20.6 L651,20.6 L651,20.6 L651.7,20.6 L651.7,20.6 L652.3,20.6 L652.3,20.6 L653,20.6 L653,20.6 L653.7,20.6 L653.7,20.6 L654.4,20.6 L654.4,20.6 L655,20.6 L655,20.6 L655.7,20.6 L655.7,20.6 L656.4,20.6 L656.4,48.2 L657,48.2 L657,79.5 L657.7,79.5 L657.7,79.5 L658.4,79.5 L658.4,79.5 L659.1,79.5 L659.1,79.5 L659.7,79.5 L659.7,79.5 L660.4,79.5 L660.4,79.5 L661.1,79.5 L661.1,79.5 L661.7,79.5 L661.7,79.5 L662.4,79.5 L662.4,79.5 L663.1,79.5 L663.1,79.5 L663.8,79.5 L663.8,79.5 L664.4,79.5 L664.4,79.5 L665.1,79.5 L665.1,79.5 L665.8,79.5 L665.8,79.5 L666.4,79.5 L666.4,79.5 L667.1,79.5 L667.1,79.5 L667.8,79.5 L667.8,79.5 L668.4,79.5 L668.4,79.5 L669.1,79.5 L669.1,79.5 L669.8,79.5 L669.8,79.4 L670.5,79.4 L670.5,79.4 L671.1,79.4 L671.1,79.4 L671.8,79.4 L671.8,79.4 L672.5,79.4 L672.5,60 L673.1,60 L673.1,20.5 L673.8,20.5 L673.8,20.5 L674.5,20.5 L674.5,20.5 L675.2,20.5 L675.2,20.5 L675.8,20.5 L675.8,20.5 L676.5,20.5 L676.5,20.6 L677.2,20.6 L677.2,20.6 L677.8,20.6 L677.8,20.6 L678.5,20.6 L678.5,20.6 L679.2,20.6 L679.2,20.6 L679.9,20.6 L679.9,20.6 L680.5,20.6 L680.5,20.6 L681.2,20.6 L681.2,20.6 L681.9,20.6 L681.9,20.6 L682.5,20.6 L682.5,20.6 L683.2,20.6 L683.2,20.6 L683.9,20.6 L683.9,20.6 L684.6,20.6 L684.6,20.6 L685.2,20.6 L685.2,20.6 L685.9,20.6 L685.9,20.6 L686.6,20.6 L686.6,20.6 L687.2,20.6 L687.2,20.6 L687.9,20.6 L687.9,20.6 L688.6,20.6 L688.6,32 L689.3,32 L689.3,79.5 L689.9,79.5 L689.9,79.5 L690.6,79.5 L690.6,79.5 L691.3,79.5 L691.3,79.5 L691.9,79.5 L691.9,79.5 L692.6,79.5 L692.6,79.5 L693.3,79.5 L693.3,79.5 L694,79.5 L694,79.5 L694.6,79.5 L694.6,79.5 L695.3,79.5 L695.3,79.5 L696,79.5 L696,79.5 L696.6,79.5 L696.6,79.5 L697.3,79.5 L697.3,79.5 L698,79.5 L698,79.5 L698.7,79.5 L698.7,79.5 L699.3,79.5 L699.3,79.5 L700,79.5" fill="none" stroke="#3b82f6" strokeWidth="1.4" strokeLinejoin="round" />
+  <text x="0" y="38" fill="#3b82f6" fontSize="15" fontWeight="bold">3.5 MHz</text>
+  <text x="0" y="56" fill="currentColor" fontSize="13.5">994 Hz</text>
+  <line x1="120" y1="156" x2="700" y2="156" stroke="currentColor" strokeWidth="1" strokeOpacity="0.25" />
+  <path d="M120,185.5 L120.7,185.5 L120.7,185.5 L121.3,185.5 L121.3,167.6 L122,167.6 L122,126.5 L122.7,126.5 L122.7,126.5 L123.4,126.5 L123.4,126.5 L124,126.5 L124,126.5 L124.7,126.5 L124.7,126.5 L125.4,126.5 L125.4,126.5 L126,126.5 L126,126.5 L126.7,126.5 L126.7,126.5 L127.4,126.5 L127.4,126.5 L128.1,126.5 L128.1,126.5 L128.7,126.5 L128.7,126.5 L129.4,126.5 L129.4,140.2 L130.1,140.2 L130.1,185.5 L130.7,185.5 L130.7,185.5 L131.4,185.5 L131.4,185.5 L132.1,185.5 L132.1,185.5 L132.8,185.5 L132.8,185.5 L133.4,185.5 L133.4,185.5 L134.1,185.5 L134.1,185.5 L134.8,185.5 L134.8,185.5 L135.4,185.5 L135.4,185.5 L136.1,185.5 L136.1,185.5 L136.8,185.5 L136.8,185.5 L137.5,185.5 L137.5,175.7 L138.1,175.7 L138.1,126.5 L138.8,126.5 L138.8,126.5 L139.5,126.5 L139.5,126.5 L140.1,126.5 L140.1,126.5 L140.8,126.5 L140.8,126.5 L141.5,126.5 L141.5,126.5 L142.2,126.5 L142.2,126.5 L142.8,126.5 L142.8,126.5 L143.5,126.5 L143.5,126.5 L144.2,126.5 L144.2,126.5 L144.8,126.5 L144.8,126.5 L145.5,126.5 L145.5,132.2 L146.2,132.2 L146.2,185.5 L146.9,185.5 L146.9,185.5 L147.5,185.5 L147.5,185.5 L148.2,185.5 L148.2,185.5 L148.9,185.5 L148.9,185.5 L149.5,185.5 L149.5,185.5 L150.2,185.5 L150.2,185.5 L150.9,185.5 L150.9,185.5 L151.6,185.5 L151.6,185.5 L152.2,185.5 L152.2,185.5 L152.9,185.5 L152.9,185.5 L153.6,185.5 L153.6,183.9 L154.2,183.9 L154.2,126.5 L154.9,126.5 L154.9,126.5 L155.6,126.5 L155.6,126.5 L156.3,126.5 L156.3,126.5 L156.9,126.5 L156.9,126.5 L157.6,126.5 L157.6,126.5 L158.3,126.5 L158.3,126.5 L158.9,126.5 L158.9,126.5 L159.6,126.5 L159.6,126.5 L160.3,126.5 L160.3,126.5 L160.9,126.5 L160.9,126.5 L161.6,126.5 L161.6,126.5 L162.3,126.5 L162.3,183.1 L163,183.1 L163,185.5 L163.6,185.5 L163.6,185.5 L164.3,185.5 L164.3,185.5 L165,185.5 L165,185.5 L165.6,185.5 L165.6,185.5 L166.3,185.5 L166.3,185.5 L167,185.5 L167,185.5 L167.7,185.5 L167.7,185.5 L168.3,185.5 L168.3,185.5 L169,185.5 L169,185.5 L169.7,185.5 L169.7,185.5 L170.3,185.5 L170.3,133 L171,133 L171,126.5 L171.7,126.5 L171.7,126.5 L172.4,126.5 L172.4,126.5 L173,126.5 L173,126.5 L173.7,126.5 L173.7,126.5 L174.4,126.5 L174.4,126.5 L175,126.5 L175,126.5 L175.7,126.5 L175.7,126.5 L176.4,126.5 L176.4,126.5 L177.1,126.5 L177.1,126.5 L177.7,126.5 L177.7,126.5 L178.4,126.5 L178.4,175 L179.1,175 L179.1,185.5 L179.7,185.5 L179.7,185.5 L180.4,185.5 L180.4,185.5 L181.1,185.5 L181.1,185.5 L181.8,185.5 L181.8,185.5 L182.4,185.5 L182.4,185.5 L183.1,185.5 L183.1,185.5 L183.8,185.5 L183.8,185.5 L184.4,185.5 L184.4,185.5 L185.1,185.5 L185.1,185.5 L185.8,185.5 L185.8,185.5 L186.5,185.5 L186.5,141 L187.1,141 L187.1,126.5 L187.8,126.5 L187.8,126.5 L188.5,126.5 L188.5,126.5 L189.1,126.5 L189.1,126.5 L189.8,126.5 L189.8,126.5 L190.5,126.5 L190.5,126.5 L191.2,126.5 L191.2,126.5 L191.8,126.5 L191.8,126.5 L192.5,126.5 L192.5,126.5 L193.2,126.5 L193.2,126.5 L193.8,126.5 L193.8,126.5 L194.5,126.5 L194.5,166.9 L195.2,166.9 L195.2,185.5 L195.9,185.5 L195.9,185.5 L196.5,185.5 L196.5,185.5 L197.2,185.5 L197.2,185.5 L197.9,185.5 L197.9,185.5 L198.5,185.5 L198.5,185.5 L199.2,185.5 L199.2,185.5 L199.9,185.5 L199.9,185.5 L200.6,185.5 L200.6,185.5 L201.2,185.5 L201.2,185.5 L201.9,185.5 L201.9,185.5 L202.6,185.5 L202.6,149.1 L203.2,149.1 L203.2,126.5 L203.9,126.5 L203.9,126.5 L204.6,126.5 L204.6,126.5 L205.3,126.5 L205.3,126.5 L205.9,126.5 L205.9,126.5 L206.6,126.5 L206.6,126.5 L207.3,126.5 L207.3,126.5 L207.9,126.5 L207.9,126.5 L208.6,126.5 L208.6,126.5 L209.3,126.5 L209.3,126.5 L210,126.5 L210,126.5 L210.6,126.5 L210.6,158.8 L211.3,158.8 L211.3,185.5 L212,185.5 L212,185.5 L212.6,185.5 L212.6,185.5 L213.3,185.5 L213.3,185.5 L214,185.5 L214,185.5 L214.7,185.5 L214.7,185.5 L215.3,185.5 L215.3,185.5 L216,185.5 L216,185.5 L216.7,185.5 L216.7,185.5 L217.3,185.5 L217.3,185.5 L218,185.5 L218,185.5 L218.7,185.5 L218.7,157.2 L219.4,157.2 L219.4,126.5 L220,126.5 L220,126.5 L220.7,126.5 L220.7,126.5 L221.4,126.5 L221.4,126.5 L222,126.5 L222,126.5 L222.7,126.5 L222.7,126.5 L223.4,126.5 L223.4,126.5 L224.1,126.5 L224.1,126.5 L224.7,126.5 L224.7,126.5 L225.4,126.5 L225.4,126.5 L226.1,126.5 L226.1,126.5 L226.7,126.5 L226.7,150.7 L227.4,150.7 L227.4,185.5 L228.1,185.5 L228.1,185.5 L228.8,185.5 L228.8,185.5 L229.4,185.5 L229.4,185.5 L230.1,185.5 L230.1,185.5 L230.8,185.5 L230.8,185.5 L231.4,185.5 L231.4,185.5 L232.1,185.5 L232.1,185.5 L232.8,185.5 L232.8,185.5 L233.4,185.5 L233.4,185.5 L234.1,185.5 L234.1,185.5 L234.8,185.5 L234.8,165.3 L235.5,165.3 L235.5,126.5 L236.1,126.5 L236.1,126.5 L236.8,126.5 L236.8,126.5 L237.5,126.5 L237.5,126.5 L238.1,126.5 L238.1,126.5 L238.8,126.5 L238.8,126.5 L239.5,126.5 L239.5,126.5 L240.2,126.5 L240.2,126.5 L240.8,126.5 L240.8,126.5 L241.5,126.5 L241.5,126.5 L242.2,126.5 L242.2,126.5 L242.8,126.5 L242.8,142.6 L243.5,142.6 L243.5,185.5 L244.2,185.5 L244.2,185.5 L244.9,185.5 L244.9,185.5 L245.5,185.5 L245.5,185.5 L246.2,185.5 L246.2,185.5 L246.9,185.5 L246.9,185.5 L247.5,185.5 L247.5,185.5 L248.2,185.5 L248.2,185.5 L248.9,185.5 L248.9,185.5 L249.6,185.5 L249.6,185.5 L250.2,185.5 L250.2,185.5 L250.9,185.5 L250.9,173.4 L251.6,173.4 L251.6,126.5 L252.2,126.5 L252.2,126.5 L252.9,126.5 L252.9,126.5 L253.6,126.5 L253.6,126.5 L254.3,126.5 L254.3,126.5 L254.9,126.5 L254.9,126.5 L255.6,126.5 L255.6,126.5 L256.3,126.5 L256.3,126.5 L256.9,126.5 L256.9,126.5 L257.6,126.5 L257.6,126.5 L258.3,126.5 L258.3,126.5 L259,126.5 L259,134.6 L259.6,134.6 L259.6,185.5 L260.3,185.5 L260.3,185.5 L261,185.5 L261,185.5 L261.6,185.5 L261.6,185.5 L262.3,185.5 L262.3,185.5 L263,185.5 L263,185.5 L263.7,185.5 L263.7,185.5 L264.3,185.5 L264.3,185.5 L265,185.5 L265,185.5 L265.7,185.5 L265.7,185.5 L266.3,185.5 L266.3,185.5 L267,185.5 L267,181.4 L267.7,181.4 L267.7,126.5 L268.4,126.5 L268.4,126.5 L269,126.5 L269,126.5 L269.7,126.5 L269.7,126.5 L270.4,126.5 L270.4,126.5 L271,126.5 L271,126.5 L271.7,126.5 L271.7,126.5 L272.4,126.5 L272.4,126.5 L273.1,126.5 L273.1,126.5 L273.7,126.5 L273.7,126.5 L274.4,126.5 L274.4,126.5 L275.1,126.5 L275.1,126.5 L275.7,126.5 L275.7,185.5 L276.4,185.5 L276.4,185.5 L277.1,185.5 L277.1,185.5 L277.8,185.5 L277.8,185.5 L278.4,185.5 L278.4,185.5 L279.1,185.5 L279.1,185.5 L279.8,185.5 L279.8,185.5 L280.4,185.5 L280.4,185.5 L281.1,185.5 L281.1,185.5 L281.8,185.5 L281.8,185.5 L282.5,185.5 L282.5,185.5 L283.1,185.5 L283.1,185.5 L283.8,185.5 L283.8,130.6 L284.5,130.6 L284.5,126.5 L285.1,126.5 L285.1,126.5 L285.8,126.5 L285.8,126.5 L286.5,126.5 L286.5,126.5 L287.2,126.5 L287.2,126.5 L287.8,126.5 L287.8,126.5 L288.5,126.5 L288.5,126.5 L289.2,126.5 L289.2,126.5 L289.8,126.5 L289.8,126.5 L290.5,126.5 L290.5,126.5 L291.2,126.5 L291.2,126.5 L291.9,126.5 L291.9,177.3 L292.5,177.3 L292.5,185.5 L293.2,185.5 L293.2,185.5 L293.9,185.5 L293.9,185.5 L294.5,185.5 L294.5,185.5 L295.2,185.5 L295.2,185.5 L295.9,185.5 L295.9,185.5 L296.6,185.5 L296.6,185.5 L297.2,185.5 L297.2,185.5 L297.9,185.5 L297.9,185.5 L298.6,185.5 L298.6,185.5 L299.2,185.5 L299.2,185.5 L299.9,185.5 L299.9,138.6 L300.6,138.6 L300.6,126.5 L301.3,126.5 L301.3,126.5 L301.9,126.5 L301.9,126.5 L302.6,126.5 L302.6,126.5 L303.3,126.5 L303.3,126.5 L303.9,126.5 L303.9,126.5 L304.6,126.5 L304.6,126.5 L305.3,126.5 L305.3,126.5 L305.9,126.5 L305.9,126.5 L306.6,126.5 L306.6,126.5 L307.3,126.5 L307.3,126.5 L308,126.5 L308,169.2 L308.6,169.2 L308.6,185.5 L309.3,185.5 L309.3,185.5 L310,185.5 L310,185.5 L310.6,185.5 L310.6,185.5 L311.3,185.5 L311.3,185.5 L312,185.5 L312,185.5 L312.7,185.5 L312.7,185.5 L313.3,185.5 L313.3,185.5 L314,185.5 L314,185.5 L314.7,185.5 L314.7,185.5 L315.3,185.5 L315.3,185.5 L316,185.5 L316,146.8 L316.7,146.8 L316.7,126.5 L317.4,126.5 L317.4,126.5 L318,126.5 L318,126.5 L318.7,126.5 L318.7,126.5 L319.4,126.5 L319.4,126.5 L320,126.5 L320,126.5 L320.7,126.5 L320.7,126.5 L321.4,126.5 L321.4,126.5 L322.1,126.5 L322.1,126.5 L322.7,126.5 L322.7,126.5 L323.4,126.5 L323.4,126.5 L324.1,126.5 L324.1,161.2 L324.7,161.2 L324.7,185.5 L325.4,185.5 L325.4,185.5 L326.1,185.5 L326.1,185.5 L326.8,185.5 L326.8,185.5 L327.4,185.5 L327.4,185.5 L328.1,185.5 L328.1,185.5 L328.8,185.5 L328.8,185.5 L329.4,185.5 L329.4,185.5 L330.1,185.5 L330.1,185.5 L330.8,185.5 L330.8,185.5 L331.5,185.5 L331.5,185.5 L332.1,185.5 L332.1,154.8 L332.8,154.8 L332.8,126.5 L333.5,126.5 L333.5,126.5 L334.1,126.5 L334.1,126.5 L334.8,126.5 L334.8,126.5 L335.5,126.5 L335.5,126.5 L336.2,126.5 L336.2,126.5 L336.8,126.5 L336.8,126.5 L337.5,126.5 L337.5,126.5 L338.2,126.5 L338.2,126.5 L338.8,126.5 L338.8,126.5 L339.5,126.5 L339.5,126.5 L340.2,126.5 L340.2,153.1 L340.9,153.1 L340.9,185.5 L341.5,185.5 L341.5,185.5 L342.2,185.5 L342.2,185.5 L342.9,185.5 L342.9,185.5 L343.5,185.5 L343.5,185.5 L344.2,185.5 L344.2,185.5 L344.9,185.5 L344.9,185.5 L345.6,185.5 L345.6,185.5 L346.2,185.5 L346.2,185.5 L346.9,185.5 L346.9,185.5 L347.6,185.5 L347.6,185.5 L348.2,185.5 L348.2,162.9 L348.9,162.9 L348.9,126.5 L349.6,126.5 L349.6,126.5 L350.3,126.5 L350.3,126.5 L350.9,126.5 L350.9,126.5 L351.6,126.5 L351.6,126.5 L352.3,126.5 L352.3,126.5 L352.9,126.5 L352.9,126.5 L353.6,126.5 L353.6,126.5 L354.3,126.5 L354.3,126.5 L355,126.5 L355,126.5 L355.6,126.5 L355.6,126.5 L356.3,126.5 L356.3,145 L357,145 L357,185.5 L357.6,185.5 L357.6,185.5 L358.3,185.5 L358.3,185.5 L359,185.5 L359,185.5 L359.7,185.5 L359.7,185.5 L360.3,185.5 L360.3,185.5 L361,185.5 L361,185.5 L361.7,185.5 L361.7,185.5 L362.3,185.5 L362.3,185.5 L363,185.5 L363,185.5 L363.7,185.5 L363.7,185.5 L364.4,185.5 L364.4,171 L365,171 L365,126.5 L365.7,126.5 L365.7,126.5 L366.4,126.5 L366.4,126.5 L367,126.5 L367,126.5 L367.7,126.5 L367.7,126.5 L368.4,126.5 L368.4,126.5 L369.1,126.5 L369.1,126.5 L369.7,126.5 L369.7,126.5 L370.4,126.5 L370.4,126.5 L371.1,126.5 L371.1,126.5 L371.7,126.5 L371.7,126.5 L372.4,126.5 L372.4,136.9 L373.1,136.9 L373.1,185.5 L373.8,185.5 L373.8,185.5 L374.4,185.5 L374.4,185.5 L375.1,185.5 L375.1,185.5 L375.8,185.5 L375.8,185.5 L376.4,185.5 L376.4,185.5 L377.1,185.5 L377.1,185.5 L377.8,185.5 L377.8,185.5 L378.4,185.5 L378.4,185.5 L379.1,185.5 L379.1,185.5 L379.8,185.5 L379.8,185.5 L380.5,185.5 L380.5,179.1 L381.1,179.1 L381.1,126.5 L381.8,126.5 L381.8,126.5 L382.5,126.5 L382.5,126.5 L383.1,126.5 L383.1,126.5 L383.8,126.5 L383.8,126.5 L384.5,126.5 L384.5,126.5 L385.2,126.5 L385.2,126.5 L385.8,126.5 L385.8,126.5 L386.5,126.5 L386.5,126.5 L387.2,126.5 L387.2,126.5 L387.8,126.5 L387.8,126.5 L388.5,126.5 L388.5,128.8 L389.2,128.8 L389.2,185.5 L389.9,185.5 L389.9,185.5 L390.5,185.5 L390.5,185.5 L391.2,185.5 L391.2,185.5 L391.9,185.5 L391.9,185.5 L392.5,185.5 L392.5,185.5 L393.2,185.5 L393.2,185.5 L393.9,185.5 L393.9,185.5 L394.6,185.5 L394.6,185.5 L395.2,185.5 L395.2,185.5 L395.9,185.5 L395.9,185.5 L396.6,185.5 L396.6,185.5 L397.2,185.5 L397.2,128.3 L397.9,128.3 L397.9,126.5 L398.6,126.5 L398.6,126.5 L399.3,126.5 L399.3,126.5 L399.9,126.5 L399.9,126.5 L400.6,126.5 L400.6,126.5 L401.3,126.5 L401.3,126.5 L401.9,126.5 L401.9,126.5 L402.6,126.5 L402.6,126.5 L403.3,126.5 L403.3,126.5 L404,126.5 L404,126.5 L404.6,126.5 L404.6,126.5 L405.3,126.5 L405.3,179.7 L406,179.7 L406,185.5 L406.6,185.5 L406.6,185.5 L407.3,185.5 L407.3,185.5 L408,185.5 L408,185.5 L408.7,185.5 L408.7,185.5 L409.3,185.5 L409.3,185.5 L410,185.5 L410,185.5 L410.7,185.5 L410.7,185.5 L411.3,185.5 L411.3,185.5 L412,185.5 L412,185.5 L412.7,185.5 L412.7,185.5 L413.4,185.5 L413.4,136.3 L414,136.3 L414,126.5 L414.7,126.5 L414.7,126.5 L415.4,126.5 L415.4,126.5 L416,126.5 L416,126.5 L416.7,126.5 L416.7,126.5 L417.4,126.5 L417.4,126.5 L418.1,126.5 L418.1,126.5 L418.7,126.5 L418.7,126.5 L419.4,126.5 L419.4,126.5 L420.1,126.5 L420.1,126.5 L420.7,126.5 L420.7,126.5 L421.4,126.5 L421.4,171.7 L422.1,171.7 L422.1,185.5 L422.8,185.5 L422.8,185.5 L423.4,185.5 L423.4,185.5 L424.1,185.5 L424.1,185.5 L424.8,185.5 L424.8,185.5 L425.4,185.5 L425.4,185.5 L426.1,185.5 L426.1,185.5 L426.8,185.5 L426.8,185.5 L427.5,185.5 L427.5,185.5 L428.1,185.5 L428.1,185.5 L428.8,185.5 L428.8,185.5 L429.5,185.5 L429.5,144.4 L430.1,144.4 L430.1,126.5 L430.8,126.5 L430.8,126.5 L431.5,126.5 L431.5,126.5 L432.2,126.5 L432.2,126.5 L432.8,126.5 L432.8,126.5 L433.5,126.5 L433.5,126.5 L434.2,126.5 L434.2,126.5 L434.8,126.5 L434.8,126.5 L435.5,126.5 L435.5,126.5 L436.2,126.5 L436.2,126.5 L436.9,126.5 L436.9,126.5 L437.5,126.5 L437.5,163.5 L438.2,163.5 L438.2,185.5 L438.9,185.5 L438.9,185.5 L439.5,185.5 L439.5,185.5 L440.2,185.5 L440.2,185.5 L440.9,185.5 L440.9,185.5 L441.6,185.5 L441.6,185.5 L442.2,185.5 L442.2,185.5 L442.9,185.5 L442.9,185.5 L443.6,185.5 L443.6,185.5 L444.2,185.5 L444.2,185.5 L444.9,185.5 L444.9,185.5 L445.6,185.5 L445.6,152.4 L446.3,152.4 L446.3,126.5 L446.9,126.5 L446.9,126.5 L447.6,126.5 L447.6,126.5 L448.3,126.5 L448.3,126.5 L448.9,126.5 L448.9,126.5 L449.6,126.5 L449.6,126.5 L450.3,126.5 L450.3,126.5 L450.9,126.5 L450.9,126.5 L451.6,126.5 L451.6,126.5 L452.3,126.5 L452.3,126.5 L453,126.5 L453,126.5 L453.6,126.5 L453.6,155.4 L454.3,155.4 L454.3,185.5 L455,185.5 L455,185.5 L455.6,185.5 L455.6,185.5 L456.3,185.5 L456.3,185.5 L457,185.5 L457,185.5 L457.7,185.5 L457.7,185.5 L458.3,185.5 L458.3,185.5 L459,185.5 L459,185.5 L459.7,185.5 L459.7,185.5 L460.3,185.5 L460.3,185.5 L461,185.5 L461,185.5 L461.7,185.5 L461.7,160.6 L462.4,160.6 L462.4,126.5 L463,126.5 L463,126.5 L463.7,126.5 L463.7,126.5 L464.4,126.5 L464.4,126.5 L465,126.5 L465,126.5 L465.7,126.5 L465.7,126.5 L466.4,126.5 L466.4,126.5 L467.1,126.5 L467.1,126.5 L467.7,126.5 L467.7,126.5 L468.4,126.5 L468.4,126.5 L469.1,126.5 L469.1,126.5 L469.7,126.5 L469.7,147.4 L470.4,147.4 L470.4,185.5 L471.1,185.5 L471.1,185.5 L471.8,185.5 L471.8,185.5 L472.4,185.5 L472.4,185.5 L473.1,185.5 L473.1,185.5 L473.8,185.5 L473.8,185.5 L474.4,185.5 L474.4,185.5 L475.1,185.5 L475.1,185.5 L475.8,185.5 L475.8,185.5 L476.5,185.5 L476.5,185.5 L477.1,185.5 L477.1,185.5 L477.8,185.5 L477.8,168.7 L478.5,168.7 L478.5,126.5 L479.1,126.5 L479.1,126.5 L479.8,126.5 L479.8,126.5 L480.5,126.5 L480.5,126.5 L481.2,126.5 L481.2,126.5 L481.8,126.5 L481.8,126.5 L482.5,126.5 L482.5,126.5 L483.2,126.5 L483.2,126.5 L483.8,126.5 L483.8,126.5 L484.5,126.5 L484.5,126.5 L485.2,126.5 L485.2,126.5 L485.9,126.5 L485.9,139.3 L486.5,139.3 L486.5,185.5 L487.2,185.5 L487.2,185.5 L487.9,185.5 L487.9,185.5 L488.5,185.5 L488.5,185.5 L489.2,185.5 L489.2,185.5 L489.9,185.5 L489.9,185.5 L490.6,185.5 L490.6,185.5 L491.2,185.5 L491.2,185.5 L491.9,185.5 L491.9,185.5 L492.6,185.5 L492.6,185.5 L493.2,185.5 L493.2,185.5 L493.9,185.5 L493.9,176.7 L494.6,176.7 L494.6,126.5 L495.3,126.5 L495.3,126.5 L495.9,126.5 L495.9,126.5 L496.6,126.5 L496.6,126.5 L497.3,126.5 L497.3,126.5 L497.9,126.5 L497.9,126.5 L498.6,126.5 L498.6,126.5 L499.3,126.5 L499.3,126.5 L500,126.5 L500,126.5 L500.6,126.5 L500.6,126.5 L501.3,126.5 L501.3,126.5 L502,126.5 L502,131.1 L502.6,131.1 L502.6,185.5 L503.3,185.5 L503.3,185.5 L504,185.5 L504,185.5 L504.7,185.5 L504.7,185.5 L505.3,185.5 L505.3,185.5 L506,185.5 L506,185.5 L506.7,185.5 L506.7,185.5 L507.3,185.5 L507.3,185.5 L508,185.5 L508,185.5 L508.7,185.5 L508.7,185.5 L509.4,185.5 L509.4,185.5 L510,185.5 L510,184.8 L510.7,184.8 L510.7,126.5 L511.4,126.5 L511.4,126.5 L512,126.5 L512,126.5 L512.7,126.5 L512.7,126.5 L513.4,126.5 L513.4,126.5 L514.1,126.5 L514.1,126.5 L514.7,126.5 L514.7,126.5 L515.4,126.5 L515.4,126.5 L516.1,126.5 L516.1,126.5 L516.7,126.5 L516.7,126.5 L517.4,126.5 L517.4,126.5 L518.1,126.5 L518.1,126.5 L518.8,126.5 L518.8,182 L519.4,182 L519.4,185.5 L520.1,185.5 L520.1,185.5 L520.8,185.5 L520.8,185.5 L521.4,185.5 L521.4,185.5 L522.1,185.5 L522.1,185.5 L522.8,185.5 L522.8,185.5 L523.4,185.5 L523.4,185.5 L524.1,185.5 L524.1,185.5 L524.8,185.5 L524.8,185.5 L525.5,185.5 L525.5,185.5 L526.1,185.5 L526.1,185.5 L526.8,185.5 L526.8,133.9 L527.5,133.9 L527.5,126.5 L528.1,126.5 L528.1,126.5 L528.8,126.5 L528.8,126.5 L529.5,126.5 L529.5,126.5 L530.2,126.5 L530.2,126.5 L530.8,126.5 L530.8,126.5 L531.5,126.5 L531.5,126.5 L532.2,126.5 L532.2,126.5 L532.8,126.5 L532.8,126.5 L533.5,126.5 L533.5,126.5 L534.2,126.5 L534.2,126.5 L534.9,126.5 L534.9,174 L535.5,174 L535.5,185.5 L536.2,185.5 L536.2,185.5 L536.9,185.5 L536.9,185.5 L537.5,185.5 L537.5,185.5 L538.2,185.5 L538.2,185.5 L538.9,185.5 L538.9,185.5 L539.6,185.5 L539.6,185.5 L540.2,185.5 L540.2,185.5 L540.9,185.5 L540.9,185.5 L541.6,185.5 L541.6,185.5 L542.2,185.5 L542.2,185.5 L542.9,185.5 L542.9,142.1 L543.6,142.1 L543.6,126.5 L544.3,126.5 L544.3,126.5 L544.9,126.5 L544.9,126.5 L545.6,126.5 L545.6,126.5 L546.3,126.5 L546.3,126.5 L546.9,126.5 L546.9,126.5 L547.6,126.5 L547.6,126.5 L548.3,126.5 L548.3,126.5 L549,126.5 L549,126.5 L549.6,126.5 L549.6,126.5 L550.3,126.5 L550.3,126.5 L551,126.5 L551,165.9 L551.6,165.9 L551.6,185.5 L552.3,185.5 L552.3,185.5 L553,185.5 L553,185.5 L553.7,185.5 L553.7,185.5 L554.3,185.5 L554.3,185.5 L555,185.5 L555,185.5 L555.7,185.5 L555.7,185.5 L556.3,185.5 L556.3,185.5 L557,185.5 L557,185.5 L557.7,185.5 L557.7,185.5 L558.4,185.5 L558.4,185.5 L559,185.5 L559,150.1 L559.7,150.1 L559.7,126.5 L560.4,126.5 L560.4,126.5 L561,126.5 L561,126.5 L561.7,126.5 L561.7,126.5 L562.4,126.5 L562.4,126.5 L563.1,126.5 L563.1,126.5 L563.7,126.5 L563.7,126.5 L564.4,126.5 L564.4,126.5 L565.1,126.5 L565.1,126.5 L565.7,126.5 L565.7,126.5 L566.4,126.5 L566.4,126.5 L567.1,126.5 L567.1,157.8 L567.8,157.8 L567.8,185.5 L568.4,185.5 L568.4,185.5 L569.1,185.5 L569.1,185.5 L569.8,185.5 L569.8,185.5 L570.4,185.5 L570.4,185.5 L571.1,185.5 L571.1,185.5 L571.8,185.5 L571.8,185.5 L572.5,185.5 L572.5,185.5 L573.1,185.5 L573.1,185.5 L573.8,185.5 L573.8,185.5 L574.5,185.5 L574.5,185.5 L575.1,185.5 L575.1,158.2 L575.8,158.2 L575.8,126.5 L576.5,126.5 L576.5,126.5 L577.2,126.5 L577.2,126.5 L577.8,126.5 L577.8,126.5 L578.5,126.5 L578.5,126.5 L579.2,126.5 L579.2,126.5 L579.8,126.5 L579.8,126.5 L580.5,126.5 L580.5,126.5 L581.2,126.5 L581.2,126.5 L581.9,126.5 L581.9,126.5 L582.5,126.5 L582.5,126.5 L583.2,126.5 L583.2,149.7 L583.9,149.7 L583.9,185.5 L584.5,185.5 L584.5,185.5 L585.2,185.5 L585.2,185.5 L585.9,185.5 L585.9,185.5 L586.6,185.5 L586.6,185.5 L587.2,185.5 L587.2,185.5 L587.9,185.5 L587.9,185.5 L588.6,185.5 L588.6,185.5 L589.2,185.5 L589.2,185.5 L589.9,185.5 L589.9,185.5 L590.6,185.5 L590.6,185.5 L591.3,185.5 L591.3,166.2 L591.9,166.2 L591.9,126.5 L592.6,126.5 L592.6,126.5 L593.3,126.5 L593.3,126.5 L593.9,126.5 L593.9,126.5 L594.6,126.5 L594.6,126.5 L595.3,126.5 L595.3,126.5 L595.9,126.5 L595.9,126.5 L596.6,126.5 L596.6,126.5 L597.3,126.5 L597.3,126.5 L598,126.5 L598,126.5 L598.6,126.5 L598.6,126.5 L599.3,126.5 L599.3,141.6 L600,141.6 L600,185.5 L600.6,185.5 L600.6,185.5 L601.3,185.5 L601.3,185.5 L602,185.5 L602,185.5 L602.7,185.5 L602.7,185.5 L603.3,185.5 L603.3,185.5 L604,185.5 L604,185.5 L604.7,185.5 L604.7,185.5 L605.3,185.5 L605.3,185.5 L606,185.5 L606,185.5 L606.7,185.5 L606.7,185.5 L607.4,185.5 L607.4,174.4 L608,174.4 L608,126.5 L608.7,126.5 L608.7,126.5 L609.4,126.5 L609.4,126.5 L610,126.5 L610,126.5 L610.7,126.5 L610.7,126.5 L611.4,126.5 L611.4,126.5 L612.1,126.5 L612.1,126.5 L612.7,126.5 L612.7,126.5 L613.4,126.5 L613.4,126.5 L614.1,126.5 L614.1,126.5 L614.7,126.5 L614.7,126.5 L615.4,126.5 L615.4,133.5 L616.1,133.5 L616.1,185.5 L616.8,185.5 L616.8,185.5 L617.4,185.5 L617.4,185.5 L618.1,185.5 L618.1,185.5 L618.8,185.5 L618.8,185.5 L619.4,185.5 L619.4,185.5 L620.1,185.5 L620.1,185.5 L620.8,185.5 L620.8,185.5 L621.5,185.5 L621.5,185.5 L622.1,185.5 L622.1,185.5 L622.8,185.5 L622.8,185.5 L623.5,185.5 L623.5,182.5 L624.1,182.5 L624.1,126.5 L624.8,126.5 L624.8,126.5 L625.5,126.5 L625.5,126.5 L626.2,126.5 L626.2,126.5 L626.8,126.5 L626.8,126.5 L627.5,126.5 L627.5,126.5 L628.2,126.5 L628.2,126.5 L628.8,126.5 L628.8,126.5 L629.5,126.5 L629.5,126.5 L630.2,126.5 L630.2,126.5 L630.9,126.5 L630.9,126.5 L631.5,126.5 L631.5,126.5 L632.2,126.5 L632.2,184.4 L632.9,184.4 L632.9,185.5 L633.5,185.5 L633.5,185.5 L634.2,185.5 L634.2,185.5 L634.9,185.5 L634.9,185.5 L635.6,185.5 L635.6,185.5 L636.2,185.5 L636.2,185.5 L636.9,185.5 L636.9,185.5 L637.6,185.5 L637.6,185.5 L638.2,185.5 L638.2,185.5 L638.9,185.5 L638.9,185.5 L639.6,185.5 L639.6,185.5 L640.3,185.5 L640.3,131.6 L640.9,131.6 L640.9,126.5 L641.6,126.5 L641.6,126.5 L642.3,126.5 L642.3,126.5 L642.9,126.5 L642.9,126.5 L643.6,126.5 L643.6,126.5 L644.3,126.5 L644.3,126.5 L645,126.5 L645,126.5 L645.6,126.5 L645.6,126.5 L646.3,126.5 L646.3,126.5 L647,126.5 L647,126.5 L647.6,126.5 L647.6,126.5 L648.3,126.5 L648.3,176.4 L649,176.4 L649,185.5 L649.7,185.5 L649.7,185.5 L650.3,185.5 L650.3,185.5 L651,185.5 L651,185.5 L651.7,185.5 L651.7,185.5 L652.3,185.5 L652.3,185.5 L653,185.5 L653,185.5 L653.7,185.5 L653.7,185.5 L654.4,185.5 L654.4,185.5 L655,185.5 L655,185.5 L655.7,185.5 L655.7,185.5 L656.4,185.5 L656.4,139.7 L657,139.7 L657,126.5 L657.7,126.5 L657.7,126.5 L658.4,126.5 L658.4,126.5 L659.1,126.5 L659.1,126.5 L659.7,126.5 L659.7,126.5 L660.4,126.5 L660.4,126.5 L661.1,126.5 L661.1,126.5 L661.7,126.5 L661.7,126.5 L662.4,126.5 L662.4,126.5 L663.1,126.5 L663.1,126.5 L663.8,126.5 L663.8,126.5 L664.4,126.5 L664.4,168.2 L665.1,168.2 L665.1,185.5 L665.8,185.5 L665.8,185.5 L666.4,185.5 L666.4,185.5 L667.1,185.5 L667.1,185.5 L667.8,185.5 L667.8,185.5 L668.4,185.5 L668.4,185.5 L669.1,185.5 L669.1,185.5 L669.8,185.5 L669.8,185.5 L670.5,185.5 L670.5,185.5 L671.1,185.5 L671.1,185.5 L671.8,185.5 L671.8,185.5 L672.5,185.5 L672.5,147.7 L673.1,147.7 L673.1,126.5 L673.8,126.5 L673.8,126.5 L674.5,126.5 L674.5,126.5 L675.2,126.5 L675.2,126.5 L675.8,126.5 L675.8,126.5 L676.5,126.5 L676.5,126.5 L677.2,126.5 L677.2,126.5 L677.8,126.5 L677.8,126.5 L678.5,126.5 L678.5,126.5 L679.2,126.5 L679.2,126.5 L679.9,126.5 L679.9,126.5 L680.5,126.5 L680.5,160.1 L681.2,160.1 L681.2,185.5 L681.9,185.5 L681.9,185.5 L682.5,185.5 L682.5,185.5 L683.2,185.5 L683.2,185.5 L683.9,185.5 L683.9,185.5 L684.6,185.5 L684.6,185.5 L685.2,185.5 L685.2,185.5 L685.9,185.5 L685.9,185.5 L686.6,185.5 L686.6,185.5 L687.2,185.5 L687.2,185.5 L687.9,185.5 L687.9,185.5 L688.6,185.5 L688.6,155.9 L689.3,155.9 L689.3,126.5 L689.9,126.5 L689.9,126.5 L690.6,126.5 L690.6,126.5 L691.3,126.5 L691.3,126.5 L691.9,126.5 L691.9,126.5 L692.6,126.5 L692.6,126.5 L693.3,126.5 L693.3,126.5 L694,126.5 L694,126.5 L694.6,126.5 L694.6,126.5 L695.3,126.5 L695.3,126.5 L696,126.5 L696,126.5 L696.6,126.5 L696.6,152.1 L697.3,152.1 L697.3,185.5 L698,185.5 L698,185.5 L698.7,185.5 L698.7,185.5 L699.3,185.5 L699.3,185.5 L700,185.5" fill="none" stroke="#3b82f6" strokeWidth="1.4" strokeLinejoin="round" />
+  <text x="0" y="144" fill="#3b82f6" fontSize="15" fontWeight="bold">7 MHz</text>
+  <text x="0" y="162" fill="currentColor" fontSize="13.5">1,989 Hz</text>
+  <rect x="252.6" y="218" width="388" height="88" fill="#3b82f6" fillOpacity="0.12" stroke="#3b82f6" strokeWidth="1" strokeOpacity="0.4" />
+  <text x="446.6" y="328" textAnchor="middle" fill="#3b82f6" fontSize="13.5" fontWeight="bold">the picture's lines: a pass takes</text>
+  <text x="446.6" y="345.5" textAnchor="middle" fill="#3b82f6" fontSize="13.5" fontWeight="bold">about 2,007 T-states, 872 Hz</text>
+  <text x="186.3" y="328" textAnchor="middle" fill="currentColor" fontSize="13.5">border:</text>
+  <text x="186.3" y="345.5" textAnchor="middle" fill="currentColor" fontSize="13.5">994 Hz</text>
+  <text x="670.3" y="328" textAnchor="middle" fill="currentColor" fontSize="13.5">border:</text>
+  <text x="670.3" y="345.5" textAnchor="middle" fill="currentColor" fontSize="13.5">994 Hz</text>
+  <line x1="120" y1="262" x2="700" y2="262" stroke="currentColor" strokeWidth="1" strokeOpacity="0.25" />
+  <path d="M120,291.4 L120.7,291.4 L120.7,291.4 L121.3,291.4 L121.3,291.4 L122,291.4 L122,235.9 L122.7,235.9 L122.7,232.5 L123.4,232.5 L123.4,232.5 L124,232.5 L124,232.5 L124.7,232.5 L124.7,232.5 L125.4,232.5 L125.4,232.5 L126,232.5 L126,232.5 L126.7,232.5 L126.7,232.6 L127.4,232.6 L127.4,232.6 L128.1,232.6 L128.1,232.6 L128.7,232.6 L128.7,232.6 L129.4,232.6 L129.4,232.6 L130.1,232.6 L130.1,232.6 L130.7,232.6 L130.7,232.6 L131.4,232.6 L131.4,232.6 L132.1,232.6 L132.1,232.6 L132.8,232.6 L132.8,232.6 L133.4,232.6 L133.4,232.6 L134.1,232.6 L134.1,232.6 L134.8,232.6 L134.8,232.6 L135.4,232.6 L135.4,232.6 L136.1,232.6 L136.1,232.6 L136.8,232.6 L136.8,232.6 L137.5,232.6 L137.5,232.6 L138.1,232.6 L138.1,280 L138.8,280 L138.8,291.5 L139.5,291.5 L139.5,291.5 L140.1,291.5 L140.1,291.5 L140.8,291.5 L140.8,291.5 L141.5,291.5 L141.5,291.5 L142.2,291.5 L142.2,291.5 L142.8,291.5 L142.8,291.5 L143.5,291.5 L143.5,291.5 L144.2,291.5 L144.2,291.5 L144.8,291.5 L144.8,291.5 L145.5,291.5 L145.5,291.5 L146.2,291.5 L146.2,291.5 L146.9,291.5 L146.9,291.5 L147.5,291.5 L147.5,291.5 L148.2,291.5 L148.2,291.5 L148.9,291.5 L148.9,291.5 L149.5,291.5 L149.5,291.5 L150.2,291.5 L150.2,291.4 L150.9,291.4 L150.9,291.4 L151.6,291.4 L151.6,291.4 L152.2,291.4 L152.2,291.4 L152.9,291.4 L152.9,291.4 L153.6,291.4 L153.6,291.4 L154.2,291.4 L154.2,252 L154.9,252 L154.9,232.5 L155.6,232.5 L155.6,232.5 L156.3,232.5 L156.3,232.5 L156.9,232.5 L156.9,232.5 L157.6,232.5 L157.6,232.5 L158.3,232.5 L158.3,232.5 L158.9,232.5 L158.9,232.6 L159.6,232.6 L159.6,232.6 L160.3,232.6 L160.3,232.6 L160.9,232.6 L160.9,232.6 L161.6,232.6 L161.6,232.6 L162.3,232.6 L162.3,232.6 L163,232.6 L163,232.6 L163.6,232.6 L163.6,232.6 L164.3,232.6 L164.3,232.6 L165,232.6 L165,232.6 L165.6,232.6 L165.6,232.6 L166.3,232.6 L166.3,232.6 L167,232.6 L167,232.6 L167.7,232.6 L167.7,232.6 L168.3,232.6 L168.3,232.6 L169,232.6 L169,232.6 L169.7,232.6 L169.7,232.6 L170.3,232.6 L170.3,263.9 L171,263.9 L171,291.5 L171.7,291.5 L171.7,291.5 L172.4,291.5 L172.4,291.5 L173,291.5 L173,291.5 L173.7,291.5 L173.7,291.5 L174.4,291.5 L174.4,291.5 L175,291.5 L175,291.5 L175.7,291.5 L175.7,291.5 L176.4,291.5 L176.4,291.5 L177.1,291.5 L177.1,291.5 L177.7,291.5 L177.7,291.5 L178.4,291.5 L178.4,291.5 L179.1,291.5 L179.1,291.5 L179.7,291.5 L179.7,291.5 L180.4,291.5 L180.4,291.5 L181.1,291.5 L181.1,291.5 L181.8,291.5 L181.8,291.5 L182.4,291.5 L182.4,291.5 L183.1,291.5 L183.1,291.4 L183.8,291.4 L183.8,291.4 L184.4,291.4 L184.4,291.4 L185.1,291.4 L185.1,291.4 L185.8,291.4 L185.8,291.4 L186.5,291.4 L186.5,268.3 L187.1,268.3 L187.1,232.5 L187.8,232.5 L187.8,232.5 L188.5,232.5 L188.5,232.5 L189.1,232.5 L189.1,232.5 L189.8,232.5 L189.8,232.5 L190.5,232.5 L190.5,232.5 L191.2,232.5 L191.2,232.6 L191.8,232.6 L191.8,232.6 L192.5,232.6 L192.5,232.6 L193.2,232.6 L193.2,232.6 L193.8,232.6 L193.8,232.6 L194.5,232.6 L194.5,232.6 L195.2,232.6 L195.2,232.6 L195.9,232.6 L195.9,232.6 L196.5,232.6 L196.5,232.6 L197.2,232.6 L197.2,232.6 L197.9,232.6 L197.9,232.6 L198.5,232.6 L198.5,232.6 L199.2,232.6 L199.2,232.6 L199.9,232.6 L199.9,232.6 L200.6,232.6 L200.6,232.6 L201.2,232.6 L201.2,232.6 L201.9,232.6 L201.9,232.6 L202.6,232.6 L202.6,247.7 L203.2,247.7 L203.2,291.5 L203.9,291.5 L203.9,291.5 L204.6,291.5 L204.6,291.5 L205.3,291.5 L205.3,291.5 L205.9,291.5 L205.9,291.5 L206.6,291.5 L206.6,291.5 L207.3,291.5 L207.3,291.5 L207.9,291.5 L207.9,291.5 L208.6,291.5 L208.6,291.5 L209.3,291.5 L209.3,291.5 L210,291.5 L210,291.5 L210.6,291.5 L210.6,291.5 L211.3,291.5 L211.3,291.5 L212,291.5 L212,291.5 L212.6,291.5 L212.6,291.5 L213.3,291.5 L213.3,291.5 L214,291.5 L214,291.5 L214.7,291.5 L214.7,291.5 L215.3,291.5 L215.3,291.4 L216,291.4 L216,291.4 L216.7,291.4 L216.7,291.4 L217.3,291.4 L217.3,291.4 L218,291.4 L218,291.4 L218.7,291.4 L218.7,284.4 L219.4,284.4 L219.4,232.5 L220,232.5 L220,232.5 L220.7,232.5 L220.7,232.5 L221.4,232.5 L221.4,232.5 L222,232.5 L222,232.5 L222.7,232.5 L222.7,232.5 L223.4,232.5 L223.4,232.5 L224.1,232.5 L224.1,232.6 L224.7,232.6 L224.7,232.6 L225.4,232.6 L225.4,232.6 L226.1,232.6 L226.1,232.6 L226.7,232.6 L226.7,232.6 L227.4,232.6 L227.4,232.6 L228.1,232.6 L228.1,232.6 L228.8,232.6 L228.8,232.6 L229.4,232.6 L229.4,232.6 L230.1,232.6 L230.1,232.6 L230.8,232.6 L230.8,232.6 L231.4,232.6 L231.4,232.6 L232.1,232.6 L232.1,232.6 L232.8,232.6 L232.8,232.6 L233.4,232.6 L233.4,232.6 L234.1,232.6 L234.1,232.6 L234.8,232.6 L234.8,232.6 L235.5,232.6 L235.5,290.5 L236.1,290.5 L236.1,291.5 L236.8,291.5 L236.8,291.5 L237.5,291.5 L237.5,291.5 L238.1,291.5 L238.1,291.5 L238.8,291.5 L238.8,291.5 L239.5,291.5 L239.5,291.5 L240.2,291.5 L240.2,291.5 L240.8,291.5 L240.8,291.5 L241.5,291.5 L241.5,291.5 L242.2,291.5 L242.2,291.5 L242.8,291.5 L242.8,291.5 L243.5,291.5 L243.5,291.5 L244.2,291.5 L244.2,291.5 L244.9,291.5 L244.9,291.5 L245.5,291.5 L245.5,291.5 L246.2,291.5 L246.2,291.5 L246.9,291.5 L246.9,291.5 L247.5,291.5 L247.5,291.4 L248.2,291.4 L248.2,291.4 L248.9,291.4 L248.9,291.4 L249.6,291.4 L249.6,291.4 L250.2,291.4 L250.2,291.4 L250.9,291.4 L250.9,291.4 L251.6,291.4 L251.6,291.4 L252.2,291.4 L252.2,288.7 L252.9,288.7 L252.9,232.5 L253.6,232.5 L253.6,232.5 L254.3,232.5 L254.3,232.5 L254.9,232.5 L254.9,232.5 L255.6,232.5 L255.6,232.5 L256.3,232.5 L256.3,232.5 L256.9,232.5 L256.9,232.5 L257.6,232.5 L257.6,232.5 L258.3,232.5 L258.3,232.6 L259,232.6 L259,232.6 L259.6,232.6 L259.6,232.6 L260.3,232.6 L260.3,232.6 L261,232.6 L261,232.6 L261.6,232.6 L261.6,232.6 L262.3,232.6 L262.3,232.6 L263,232.6 L263,232.6 L263.7,232.6 L263.7,232.6 L264.3,232.6 L264.3,232.6 L265,232.6 L265,232.6 L265.7,232.6 L265.7,232.6 L266.3,232.6 L266.3,232.6 L267,232.6 L267,232.6 L267.7,232.6 L267.7,232.6 L268.4,232.6 L268.4,232.6 L269,232.6 L269,232.6 L269.7,232.6 L269.7,232.6 L270.4,232.6 L270.4,232.6 L271,232.6 L271,256.2 L271.7,256.2 L271.7,291.5 L272.4,291.5 L272.4,291.5 L273.1,291.5 L273.1,291.5 L273.7,291.5 L273.7,291.5 L274.4,291.5 L274.4,291.5 L275.1,291.5 L275.1,291.5 L275.7,291.5 L275.7,291.5 L276.4,291.5 L276.4,291.5 L277.1,291.5 L277.1,291.5 L277.8,291.5 L277.8,291.5 L278.4,291.5 L278.4,291.5 L279.1,291.5 L279.1,291.5 L279.8,291.5 L279.8,291.5 L280.4,291.5 L280.4,291.5 L281.1,291.5 L281.1,291.5 L281.8,291.5 L281.8,291.5 L282.5,291.5 L282.5,291.5 L283.1,291.5 L283.1,291.5 L283.8,291.5 L283.8,291.5 L284.5,291.5 L284.5,291.5 L285.1,291.5 L285.1,291.4 L285.8,291.4 L285.8,291.4 L286.5,291.4 L286.5,291.4 L287.2,291.4 L287.2,291.4 L287.8,291.4 L287.8,291.4 L288.5,291.4 L288.5,291.4 L289.2,291.4 L289.2,291.4 L289.8,291.4 L289.8,238.2 L290.5,238.2 L290.5,232.5 L291.2,232.5 L291.2,232.5 L291.9,232.5 L291.9,232.5 L292.5,232.5 L292.5,232.5 L293.2,232.5 L293.2,232.5 L293.9,232.5 L293.9,232.5 L294.5,232.5 L294.5,232.5 L295.2,232.5 L295.2,232.6 L295.9,232.6 L295.9,232.6 L296.6,232.6 L296.6,232.6 L297.2,232.6 L297.2,232.6 L297.9,232.6 L297.9,232.6 L298.6,232.6 L298.6,232.6 L299.2,232.6 L299.2,232.6 L299.9,232.6 L299.9,232.6 L300.6,232.6 L300.6,232.6 L301.3,232.6 L301.3,232.6 L301.9,232.6 L301.9,232.6 L302.6,232.6 L302.6,232.6 L303.3,232.6 L303.3,232.6 L303.9,232.6 L303.9,232.6 L304.6,232.6 L304.6,232.6 L305.3,232.6 L305.3,232.6 L305.9,232.6 L305.9,232.6 L306.6,232.6 L306.6,232.6 L307.3,232.6 L307.3,232.6 L308,232.6 L308,244.4 L308.6,244.4 L308.6,291.5 L309.3,291.5 L309.3,291.5 L310,291.5 L310,291.5 L310.6,291.5 L310.6,291.5 L311.3,291.5 L311.3,291.5 L312,291.5 L312,291.5 L312.7,291.5 L312.7,291.5 L313.3,291.5 L313.3,291.5 L314,291.5 L314,291.5 L314.7,291.5 L314.7,291.5 L315.3,291.5 L315.3,291.5 L316,291.5 L316,291.5 L316.7,291.5 L316.7,291.5 L317.4,291.5 L317.4,291.5 L318,291.5 L318,291.5 L318.7,291.5 L318.7,291.5 L319.4,291.5 L319.4,291.5 L320,291.5 L320,291.5 L320.7,291.5 L320.7,291.5 L321.4,291.5 L321.4,291.5 L322.1,291.5 L322.1,291.4 L322.7,291.4 L322.7,291.4 L323.4,291.4 L323.4,291.4 L324.1,291.4 L324.1,291.4 L324.7,291.4 L324.7,291.4 L325.4,291.4 L325.4,291.4 L326.1,291.4 L326.1,291.4 L326.8,291.4 L326.8,244.3 L327.4,244.3 L327.4,232.5 L328.1,232.5 L328.1,232.5 L328.8,232.5 L328.8,232.5 L329.4,232.5 L329.4,232.5 L330.1,232.5 L330.1,232.5 L330.8,232.5 L330.8,232.5 L331.5,232.5 L331.5,232.5 L332.1,232.5 L332.1,232.6 L332.8,232.6 L332.8,232.6 L333.5,232.6 L333.5,232.6 L334.1,232.6 L334.1,232.6 L334.8,232.6 L334.8,232.6 L335.5,232.6 L335.5,232.6 L336.2,232.6 L336.2,232.6 L336.8,232.6 L336.8,232.6 L337.5,232.6 L337.5,232.6 L338.2,232.6 L338.2,232.6 L338.8,232.6 L338.8,232.6 L339.5,232.6 L339.5,232.6 L340.2,232.6 L340.2,232.6 L340.9,232.6 L340.9,232.6 L341.5,232.6 L341.5,232.6 L342.2,232.6 L342.2,232.6 L342.9,232.6 L342.9,232.6 L343.5,232.6 L343.5,232.6 L344.2,232.6 L344.2,232.6 L344.9,232.6 L344.9,244 L345.6,244 L345.6,291.5 L346.2,291.5 L346.2,291.5 L346.9,291.5 L346.9,291.5 L347.6,291.5 L347.6,291.5 L348.2,291.5 L348.2,291.5 L348.9,291.5 L348.9,291.5 L349.6,291.5 L349.6,291.5 L350.3,291.5 L350.3,291.5 L350.9,291.5 L350.9,291.5 L351.6,291.5 L351.6,291.5 L352.3,291.5 L352.3,291.5 L352.9,291.5 L352.9,291.5 L353.6,291.5 L353.6,291.5 L354.3,291.5 L354.3,291.5 L355,291.5 L355,291.5 L355.6,291.5 L355.6,291.5 L356.3,291.5 L356.3,291.5 L357,291.5 L357,291.5 L357.6,291.5 L357.6,291.5 L358.3,291.5 L358.3,291.5 L359,291.5 L359,291.5 L359.7,291.5 L359.7,291.4 L360.3,291.4 L360.3,291.4 L361,291.4 L361,291.4 L361.7,291.4 L361.7,291.4 L362.3,291.4 L362.3,291.4 L363,291.4 L363,291.4 L363.7,291.4 L363.7,251.2 L364.4,251.2 L364.4,232.5 L365,232.5 L365,232.5 L365.7,232.5 L365.7,232.5 L366.4,232.5 L366.4,232.5 L367,232.5 L367,232.5 L367.7,232.5 L367.7,232.5 L368.4,232.5 L368.4,232.5 L369.1,232.5 L369.1,232.6 L369.7,232.6 L369.7,232.6 L370.4,232.6 L370.4,232.6 L371.1,232.6 L371.1,232.6 L371.7,232.6 L371.7,232.6 L372.4,232.6 L372.4,232.6 L373.1,232.6 L373.1,232.6 L373.8,232.6 L373.8,232.6 L374.4,232.6 L374.4,232.6 L375.1,232.6 L375.1,232.6 L375.8,232.6 L375.8,232.6 L376.4,232.6 L376.4,232.6 L377.1,232.6 L377.1,232.6 L377.8,232.6 L377.8,232.6 L378.4,232.6 L378.4,232.6 L379.1,232.6 L379.1,232.6 L379.8,232.6 L379.8,232.6 L380.5,232.6 L380.5,232.6 L381.1,232.6 L381.1,232.6 L381.8,232.6 L381.8,238.6 L382.5,238.6 L382.5,291.5 L383.1,291.5 L383.1,291.5 L383.8,291.5 L383.8,291.5 L384.5,291.5 L384.5,291.5 L385.2,291.5 L385.2,291.5 L385.8,291.5 L385.8,291.5 L386.5,291.5 L386.5,291.5 L387.2,291.5 L387.2,291.5 L387.8,291.5 L387.8,291.5 L388.5,291.5 L388.5,291.5 L389.2,291.5 L389.2,291.5 L389.9,291.5 L389.9,291.5 L390.5,291.5 L390.5,291.5 L391.2,291.5 L391.2,291.5 L391.9,291.5 L391.9,291.5 L392.5,291.5 L392.5,291.5 L393.2,291.5 L393.2,291.5 L393.9,291.5 L393.9,291.5 L394.6,291.5 L394.6,291.5 L395.2,291.5 L395.2,291.5 L395.9,291.5 L395.9,291.5 L396.6,291.5 L396.6,291.4 L397.2,291.4 L397.2,291.4 L397.9,291.4 L397.9,291.4 L398.6,291.4 L398.6,291.4 L399.3,291.4 L399.3,291.4 L399.9,291.4 L399.9,291.4 L400.6,291.4 L400.6,261.5 L401.3,261.5 L401.3,232.5 L401.9,232.5 L401.9,232.5 L402.6,232.5 L402.6,232.5 L403.3,232.5 L403.3,232.5 L404,232.5 L404,232.5 L404.6,232.5 L404.6,232.5 L405.3,232.5 L405.3,232.5 L406,232.5 L406,232.6 L406.6,232.6 L406.6,232.6 L407.3,232.6 L407.3,232.6 L408,232.6 L408,232.6 L408.7,232.6 L408.7,232.6 L409.3,232.6 L409.3,232.6 L410,232.6 L410,232.6 L410.7,232.6 L410.7,232.6 L411.3,232.6 L411.3,232.6 L412,232.6 L412,232.6 L412.7,232.6 L412.7,232.6 L413.4,232.6 L413.4,232.6 L414,232.6 L414,232.6 L414.7,232.6 L414.7,232.6 L415.4,232.6 L415.4,232.6 L416,232.6 L416,232.6 L416.7,232.6 L416.7,232.6 L417.4,232.6 L417.4,232.6 L418.1,232.6 L418.1,232.6 L418.7,232.6 L418.7,240.5 L419.4,240.5 L419.4,291.5 L420.1,291.5 L420.1,291.5 L420.7,291.5 L420.7,291.5 L421.4,291.5 L421.4,291.5 L422.1,291.5 L422.1,291.5 L422.8,291.5 L422.8,291.5 L423.4,291.5 L423.4,291.5 L424.1,291.5 L424.1,291.5 L424.8,291.5 L424.8,291.5 L425.4,291.5 L425.4,291.5 L426.1,291.5 L426.1,291.5 L426.8,291.5 L426.8,291.5 L427.5,291.5 L427.5,291.5 L428.1,291.5 L428.1,291.5 L428.8,291.5 L428.8,291.5 L429.5,291.5 L429.5,291.5 L430.1,291.5 L430.1,291.5 L430.8,291.5 L430.8,291.5 L431.5,291.5 L431.5,291.5 L432.2,291.5 L432.2,291.5 L432.8,291.5 L432.8,291.4 L433.5,291.4 L433.5,291.4 L434.2,291.4 L434.2,291.4 L434.8,291.4 L434.8,291.4 L435.5,291.4 L435.5,291.4 L436.2,291.4 L436.2,291.4 L436.9,291.4 L436.9,291.4 L437.5,291.4 L437.5,255.5 L438.2,255.5 L438.2,232.5 L438.9,232.5 L438.9,232.5 L439.5,232.5 L439.5,232.5 L440.2,232.5 L440.2,232.5 L440.9,232.5 L440.9,232.5 L441.6,232.5 L441.6,232.5 L442.2,232.5 L442.2,232.5 L442.9,232.5 L442.9,232.6 L443.6,232.6 L443.6,232.6 L444.2,232.6 L444.2,232.6 L444.9,232.6 L444.9,232.6 L445.6,232.6 L445.6,232.6 L446.3,232.6 L446.3,232.6 L446.9,232.6 L446.9,232.6 L447.6,232.6 L447.6,232.6 L448.3,232.6 L448.3,232.6 L448.9,232.6 L448.9,232.6 L449.6,232.6 L449.6,232.6 L450.3,232.6 L450.3,232.6 L450.9,232.6 L450.9,232.6 L451.6,232.6 L451.6,232.6 L452.3,232.6 L452.3,232.6 L453,232.6 L453,232.6 L453.6,232.6 L453.6,232.6 L454.3,232.6 L454.3,232.6 L455,232.6 L455,232.6 L455.6,232.6 L455.6,238.5 L456.3,238.5 L456.3,291.5 L457,291.5 L457,291.5 L457.7,291.5 L457.7,291.5 L458.3,291.5 L458.3,291.5 L459,291.5 L459,291.5 L459.7,291.5 L459.7,291.5 L460.3,291.5 L460.3,291.5 L461,291.5 L461,291.5 L461.7,291.5 L461.7,291.5 L462.4,291.5 L462.4,291.5 L463,291.5 L463,291.5 L463.7,291.5 L463.7,291.5 L464.4,291.5 L464.4,291.5 L465,291.5 L465,291.5 L465.7,291.5 L465.7,291.5 L466.4,291.5 L466.4,291.5 L467.1,291.5 L467.1,291.5 L467.7,291.5 L467.7,291.5 L468.4,291.5 L468.4,291.5 L469.1,291.5 L469.1,291.5 L469.7,291.5 L469.7,291.5 L470.4,291.5 L470.4,291.4 L471.1,291.4 L471.1,291.4 L471.8,291.4 L471.8,291.4 L472.4,291.4 L472.4,291.4 L473.1,291.4 L473.1,291.4 L473.8,291.4 L473.8,291.4 L474.4,291.4 L474.4,260.8 L475.1,260.8 L475.1,232.5 L475.8,232.5 L475.8,232.5 L476.5,232.5 L476.5,232.5 L477.1,232.5 L477.1,232.5 L477.8,232.5 L477.8,232.5 L478.5,232.5 L478.5,232.5 L479.1,232.5 L479.1,232.5 L479.8,232.5 L479.8,232.6 L480.5,232.6 L480.5,232.6 L481.2,232.6 L481.2,232.6 L481.8,232.6 L481.8,232.6 L482.5,232.6 L482.5,232.6 L483.2,232.6 L483.2,232.6 L483.8,232.6 L483.8,232.6 L484.5,232.6 L484.5,232.6 L485.2,232.6 L485.2,232.6 L485.9,232.6 L485.9,232.6 L486.5,232.6 L486.5,232.6 L487.2,232.6 L487.2,232.6 L487.9,232.6 L487.9,232.6 L488.5,232.6 L488.5,232.6 L489.2,232.6 L489.2,232.6 L489.9,232.6 L489.9,232.6 L490.6,232.6 L490.6,232.6 L491.2,232.6 L491.2,232.6 L491.9,232.6 L491.9,232.6 L492.6,232.6 L492.6,232.6 L493.2,232.6 L493.2,287.3 L493.9,287.3 L493.9,291.5 L494.6,291.5 L494.6,291.5 L495.3,291.5 L495.3,291.5 L495.9,291.5 L495.9,291.5 L496.6,291.5 L496.6,291.5 L497.3,291.5 L497.3,291.5 L497.9,291.5 L497.9,291.5 L498.6,291.5 L498.6,291.5 L499.3,291.5 L499.3,291.5 L500,291.5 L500,291.5 L500.6,291.5 L500.6,291.5 L501.3,291.5 L501.3,291.5 L502,291.5 L502,291.5 L502.6,291.5 L502.6,291.5 L503.3,291.5 L503.3,291.5 L504,291.5 L504,291.5 L504.7,291.5 L504.7,291.5 L505.3,291.5 L505.3,291.5 L506,291.5 L506,291.5 L506.7,291.5 L506.7,291.5 L507.3,291.5 L507.3,291.4 L508,291.4 L508,291.4 L508.7,291.4 L508.7,291.4 L509.4,291.4 L509.4,291.4 L510,291.4 L510,291.4 L510.7,291.4 L510.7,291.4 L511.4,291.4 L511.4,258.8 L512,258.8 L512,232.5 L512.7,232.5 L512.7,232.5 L513.4,232.5 L513.4,232.5 L514.1,232.5 L514.1,232.5 L514.7,232.5 L514.7,232.5 L515.4,232.5 L515.4,232.5 L516.1,232.5 L516.1,232.5 L516.7,232.5 L516.7,232.6 L517.4,232.6 L517.4,232.6 L518.1,232.6 L518.1,232.6 L518.8,232.6 L518.8,232.6 L519.4,232.6 L519.4,232.6 L520.1,232.6 L520.1,232.6 L520.8,232.6 L520.8,232.6 L521.4,232.6 L521.4,232.6 L522.1,232.6 L522.1,232.6 L522.8,232.6 L522.8,232.6 L523.4,232.6 L523.4,232.6 L524.1,232.6 L524.1,232.6 L524.8,232.6 L524.8,232.6 L525.5,232.6 L525.5,232.6 L526.1,232.6 L526.1,232.6 L526.8,232.6 L526.8,232.6 L527.5,232.6 L527.5,232.6 L528.1,232.6 L528.1,232.6 L528.8,232.6 L528.8,232.6 L529.5,232.6 L529.5,234.3 L530.2,234.3 L530.2,291.5 L530.8,291.5 L530.8,291.5 L531.5,291.5 L531.5,291.5 L532.2,291.5 L532.2,291.5 L532.8,291.5 L532.8,291.5 L533.5,291.5 L533.5,291.5 L534.2,291.5 L534.2,291.5 L534.9,291.5 L534.9,291.5 L535.5,291.5 L535.5,291.5 L536.2,291.5 L536.2,291.5 L536.9,291.5 L536.9,291.5 L537.5,291.5 L537.5,291.5 L538.2,291.5 L538.2,291.5 L538.9,291.5 L538.9,291.5 L539.6,291.5 L539.6,291.5 L540.2,291.5 L540.2,291.5 L540.9,291.5 L540.9,291.5 L541.6,291.5 L541.6,291.5 L542.2,291.5 L542.2,291.5 L542.9,291.5 L542.9,291.5 L543.6,291.5 L543.6,291.5 L544.3,291.5 L544.3,291.4 L544.9,291.4 L544.9,291.4 L545.6,291.4 L545.6,291.4 L546.3,291.4 L546.3,291.4 L546.9,291.4 L546.9,291.4 L547.6,291.4 L547.6,291.4 L548.3,291.4 L548.3,260.9 L549,260.9 L549,232.5 L549.6,232.5 L549.6,232.5 L550.3,232.5 L550.3,232.5 L551,232.5 L551,232.5 L551.6,232.5 L551.6,232.5 L552.3,232.5 L552.3,232.5 L553,232.5 L553,232.5 L553.7,232.5 L553.7,232.6 L554.3,232.6 L554.3,232.6 L555,232.6 L555,232.6 L555.7,232.6 L555.7,232.6 L556.3,232.6 L556.3,232.6 L557,232.6 L557,232.6 L557.7,232.6 L557.7,232.6 L558.4,232.6 L558.4,232.6 L559,232.6 L559,232.6 L559.7,232.6 L559.7,232.6 L560.4,232.6 L560.4,232.6 L561,232.6 L561,232.6 L561.7,232.6 L561.7,232.6 L562.4,232.6 L562.4,232.6 L563.1,232.6 L563.1,232.6 L563.7,232.6 L563.7,232.6 L564.4,232.6 L564.4,232.6 L565.1,232.6 L565.1,232.6 L565.7,232.6 L565.7,232.6 L566.4,232.6 L566.4,232.6 L567.1,232.6 L567.1,288 L567.8,288 L567.8,291.5 L568.4,291.5 L568.4,291.5 L569.1,291.5 L569.1,291.5 L569.8,291.5 L569.8,291.5 L570.4,291.5 L570.4,291.5 L571.1,291.5 L571.1,291.5 L571.8,291.5 L571.8,291.5 L572.5,291.5 L572.5,291.5 L573.1,291.5 L573.1,291.5 L573.8,291.5 L573.8,291.5 L574.5,291.5 L574.5,291.5 L575.1,291.5 L575.1,291.5 L575.8,291.5 L575.8,291.5 L576.5,291.5 L576.5,291.5 L577.2,291.5 L577.2,291.5 L577.8,291.5 L577.8,291.5 L578.5,291.5 L578.5,291.5 L579.2,291.5 L579.2,291.5 L579.8,291.5 L579.8,291.5 L580.5,291.5 L580.5,291.5 L581.2,291.5 L581.2,291.4 L581.9,291.4 L581.9,291.4 L582.5,291.4 L582.5,291.4 L583.2,291.4 L583.2,291.4 L583.9,291.4 L583.9,291.4 L584.5,291.4 L584.5,291.4 L585.2,291.4 L585.2,271 L585.9,271 L585.9,232.5 L586.6,232.5 L586.6,232.5 L587.2,232.5 L587.2,232.5 L587.9,232.5 L587.9,232.5 L588.6,232.5 L588.6,232.5 L589.2,232.5 L589.2,232.5 L589.9,232.5 L589.9,232.5 L590.6,232.5 L590.6,232.6 L591.3,232.6 L591.3,232.6 L591.9,232.6 L591.9,232.6 L592.6,232.6 L592.6,232.6 L593.3,232.6 L593.3,232.6 L593.9,232.6 L593.9,232.6 L594.6,232.6 L594.6,232.6 L595.3,232.6 L595.3,232.6 L595.9,232.6 L595.9,232.6 L596.6,232.6 L596.6,232.6 L597.3,232.6 L597.3,232.6 L598,232.6 L598,232.6 L598.6,232.6 L598.6,232.6 L599.3,232.6 L599.3,232.6 L600,232.6 L600,232.6 L600.6,232.6 L600.6,232.6 L601.3,232.6 L601.3,232.6 L602,232.6 L602,232.6 L602.7,232.6 L602.7,232.6 L603.3,232.6 L603.3,232.6 L604,232.6 L604,289.9 L604.7,289.9 L604.7,291.5 L605.3,291.5 L605.3,291.5 L606,291.5 L606,291.5 L606.7,291.5 L606.7,291.5 L607.4,291.5 L607.4,291.5 L608,291.5 L608,291.5 L608.7,291.5 L608.7,291.5 L609.4,291.5 L609.4,291.5 L610,291.5 L610,291.5 L610.7,291.5 L610.7,291.5 L611.4,291.5 L611.4,291.5 L612.1,291.5 L612.1,291.5 L612.7,291.5 L612.7,291.5 L613.4,291.5 L613.4,291.5 L614.1,291.5 L614.1,291.5 L614.7,291.5 L614.7,291.5 L615.4,291.5 L615.4,291.5 L616.1,291.5 L616.1,291.5 L616.8,291.5 L616.8,291.5 L617.4,291.5 L617.4,291.5 L618.1,291.5 L618.1,291.4 L618.8,291.4 L618.8,291.4 L619.4,291.4 L619.4,291.4 L620.1,291.4 L620.1,291.4 L620.8,291.4 L620.8,291.4 L621.5,291.4 L621.5,291.4 L622.1,291.4 L622.1,265 L622.8,265 L622.8,232.5 L623.5,232.5 L623.5,232.5 L624.1,232.5 L624.1,232.5 L624.8,232.5 L624.8,232.5 L625.5,232.5 L625.5,232.5 L626.2,232.5 L626.2,232.5 L626.8,232.5 L626.8,232.5 L627.5,232.5 L627.5,232.6 L628.2,232.6 L628.2,232.6 L628.8,232.6 L628.8,232.6 L629.5,232.6 L629.5,232.6 L630.2,232.6 L630.2,232.6 L630.9,232.6 L630.9,232.6 L631.5,232.6 L631.5,232.6 L632.2,232.6 L632.2,232.6 L632.9,232.6 L632.9,232.6 L633.5,232.6 L633.5,232.6 L634.2,232.6 L634.2,232.6 L634.9,232.6 L634.9,232.6 L635.6,232.6 L635.6,232.6 L636.2,232.6 L636.2,232.6 L636.9,232.6 L636.9,232.6 L637.6,232.6 L637.6,232.6 L638.2,232.6 L638.2,232.6 L638.9,232.6 L638.9,232.6 L639.6,232.6 L639.6,232.6 L640.3,232.6 L640.3,232.6 L640.9,232.6 L640.9,287.9 L641.6,287.9 L641.6,291.5 L642.3,291.5 L642.3,291.5 L642.9,291.5 L642.9,291.5 L643.6,291.5 L643.6,291.5 L644.3,291.5 L644.3,291.5 L645,291.5 L645,291.5 L645.6,291.5 L645.6,291.5 L646.3,291.5 L646.3,291.5 L647,291.5 L647,291.5 L647.6,291.5 L647.6,291.5 L648.3,291.5 L648.3,291.5 L649,291.5 L649,291.5 L649.7,291.5 L649.7,291.5 L650.3,291.5 L650.3,291.5 L651,291.5 L651,291.5 L651.7,291.5 L651.7,291.5 L652.3,291.5 L652.3,291.5 L653,291.5 L653,291.5 L653.7,291.5 L653.7,291.5 L654.4,291.5 L654.4,291.5 L655,291.5 L655,291.4 L655.7,291.4 L655.7,291.4 L656.4,291.4 L656.4,291.4 L657,291.4 L657,288.9 L657.7,288.9 L657.7,232.5 L658.4,232.5 L658.4,232.5 L659.1,232.5 L659.1,232.5 L659.7,232.5 L659.7,232.5 L660.4,232.5 L660.4,232.5 L661.1,232.5 L661.1,232.6 L661.7,232.6 L661.7,232.6 L662.4,232.6 L662.4,232.6 L663.1,232.6 L663.1,232.6 L663.8,232.6 L663.8,232.6 L664.4,232.6 L664.4,232.6 L665.1,232.6 L665.1,232.6 L665.8,232.6 L665.8,232.6 L666.4,232.6 L666.4,232.6 L667.1,232.6 L667.1,232.6 L667.8,232.6 L667.8,232.6 L668.4,232.6 L668.4,232.6 L669.1,232.6 L669.1,232.6 L669.8,232.6 L669.8,232.6 L670.5,232.6 L670.5,232.6 L671.1,232.6 L671.1,232.6 L671.8,232.6 L671.8,232.6 L672.5,232.6 L672.5,232.6 L673.1,232.6 L673.1,232.6 L673.8,232.6 L673.8,286.1 L674.5,286.1 L674.5,291.5 L675.2,291.5 L675.2,291.5 L675.8,291.5 L675.8,291.5 L676.5,291.5 L676.5,291.5 L677.2,291.5 L677.2,291.5 L677.8,291.5 L677.8,291.5 L678.5,291.5 L678.5,291.5 L679.2,291.5 L679.2,291.5 L679.9,291.5 L679.9,291.5 L680.5,291.5 L680.5,291.5 L681.2,291.5 L681.2,291.5 L681.9,291.5 L681.9,291.5 L682.5,291.5 L682.5,291.5 L683.2,291.5 L683.2,291.5 L683.9,291.5 L683.9,291.5 L684.6,291.5 L684.6,291.5 L685.2,291.5 L685.2,291.5 L685.9,291.5 L685.9,291.5 L686.6,291.5 L686.6,291.5 L687.2,291.5 L687.2,291.4 L687.9,291.4 L687.9,291.4 L688.6,291.4 L688.6,291.4 L689.3,291.4 L689.3,291.4 L689.9,291.4 L689.9,246.1 L690.6,246.1 L690.6,232.5 L691.3,232.5 L691.3,232.5 L691.9,232.5 L691.9,232.5 L692.6,232.5 L692.6,232.5 L693.3,232.5 L693.3,232.6 L694,232.6 L694,232.6 L694.6,232.6 L694.6,232.6 L695.3,232.6 L695.3,232.6 L696,232.6 L696,232.6 L696.6,232.6 L696.6,232.6 L697.3,232.6 L697.3,232.6 L698,232.6 L698,232.6 L698.7,232.6 L698.7,232.6 L699.3,232.6 L699.3,232.6 L700,232.6" fill="none" stroke="#3b82f6" strokeWidth="1.4" strokeLinejoin="round" />
+  <text x="0" y="250" fill="#3b82f6" fontSize="15" fontWeight="bold">3.5 MHz,</text>
+  <text x="0" y="268" fill="#3b82f6" fontSize="15" fontWeight="bold">contended</text>
+  <text x="0" y="286" fill="currentColor" fontSize="13.5">994 / 872 Hz</text>
+  <line x1="120" y1="360" x2="700" y2="360" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <line x1="120" y1="355" x2="120" y2="365" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="120" y="382" textAnchor="start" fill="currentColor" fontSize="13.5">0 ms</text>
+  <line x1="216.7" y1="355" x2="216.7" y2="365" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="216.7" y="382" textAnchor="middle" fill="currentColor" fontSize="13.5">3 ms</text>
+  <line x1="313.3" y1="355" x2="313.3" y2="365" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="313.3" y="382" textAnchor="middle" fill="currentColor" fontSize="13.5">6 ms</text>
+  <line x1="410" y1="355" x2="410" y2="365" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="410" y="382" textAnchor="middle" fill="currentColor" fontSize="13.5">9 ms</text>
+  <line x1="506.7" y1="355" x2="506.7" y2="365" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="506.7" y="382" textAnchor="middle" fill="currentColor" fontSize="13.5">12 ms</text>
+  <line x1="603.3" y1="355" x2="603.3" y2="365" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="603.3" y="382" textAnchor="middle" fill="currentColor" fontSize="13.5">15 ms</text>
+  <line x1="700" y1="355" x2="700" y2="365" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="700" y="382" textAnchor="end" fill="currentColor" fontSize="13.5">18 ms</text>
+</svg>
+{/* /fig:speeds */}
+<figcaption>The same loop captured three times, 18 ms each. At 7 MHz every pass takes half as long and the note is an octave higher. Placed in contended memory at 3.5 MHz with contention on, the loop plays 994 Hz in the border and is stretched to about 872 Hz while the picture's lines are drawn (shaded).</figcaption>
+</figure>
+
+Contention does not lower the note; it **breaks it in two**. It happens only while the beam is on one of
+the picture's 192 lines, not in the border above and below, so the loop runs at two speeds in every frame:
+
+- In the border, about 8 ms of each 20 ms frame, a pass takes its 1,760 T-states, and the note is 994 Hz.
+- On the picture's lines, about 12 ms of each frame, the CPU is held up again and again, and in this capture a
+  pass takes about 2,007 T-states: 872 Hz.
+
+So the pitch drops and comes back 50 times a second, and what the ear hears is a rough, warbling tone, not a
+lower note. Counting every period of a frame and dividing by 20 ms would give about 918 Hz, but that is only
+arithmetic: no pass of the loop ever plays it.
+
+How much a pass is stretched depends on the loop, not only on contention. Each of its memory accesses is held
+up by up to 6 T-states, depending on where it falls in the ULA's repeating pattern of 8 T-states, and a pass
+does not fall on the pattern the same way each time. Another loop, or the same loop at another address, is
+stretched by a different amount; the 2,007 T-states are this loop's. What every such loop shares is the
+shape: full speed in the border, slower on the picture's lines.
+
+This is why beeper music on the Spectrum usually runs from `$8000` and up, and with interrupts off: an
+interrupt would take the CPU away from the loop every 20 ms and leave a gap in the note. My advice for your
+own beeper code is the same: keep it out of contended memory, and keep the interrupts off while it plays.
+
+## Two voices from one bit
+
+A square wave is one voice. Can you write two square waves at once to one bit? Not simply: when one voice
+wants the bit high and the other wants it low, there is no level in between to give. The trick that
+beeper music uses instead is to make each voice a train of **short pulses**, one at the start of each of
+its periods, and to keep the bit low the rest of the time. Pulses this short rarely need the bit at the
+same moment, so the bit can carry both trains, and a train of pulses at a voice's pitch sounds at that
+pitch just as a square wave does. Notice how little this asks of the hardware: nothing at all. It is all
+in the program.
+
+This program plays two voices. Every pass of its loop gives each voice one fixed **slot** of time, and
+in its slot a voice either switches EAR on or leaves it off. Each voice keeps an 8-bit counter, its
+**phase**, and adds its **step** to it on every pass; when the addition carries out of 8 bits, the voice
+has finished a period and takes its slot with EAR on:
+
+```z80klive
+        ld hl,0             ; H, L: the two voices' phases
+        ld de,$0405         ; D, E: their steps, 4 and 5
+Loop:   ld a,h              ;  4
+        add a,d             ;  4    voice 1's phase + its step
+        ld h,a              ;  4
+        sbc a,a             ;  4    $FF if that carried, 0 if not
+        and $10             ;  7    ... so A is EAR on or off
+        out ($fe),a         ; 11    voice 1's slot begins
+        ld a,l              ;  4
+        add a,e             ;  4    the same for voice 2
+        ld l,a              ;  4
+        sbc a,a             ;  4
+        and $10             ;  7
+        out ($fe),a         ; 11    voice 2's slot begins
+        ld a,0              ;  7
+        nop                 ;  4    four nops: voice 2's slot is
+        nop                 ;  4    as long as voice 1's
+        nop                 ;  4
+        nop                 ;  4
+        out ($fe),a         ; 11    both slots over: EAR off
+        jp Loop             ; 10
+```
+
+How it works:
+
+1. Every instruction always takes the same time, whatever the phases hold: `sbc a,a` turns the carry
+   into a mask instead of a jump. One pass is always **112 T-states**, so the loop runs
+   3,500,000 ÷ 112 = 31,250 times a second.
+2. Voice 1's slot runs from its `out` to voice 2's `out`, 34 T-states (23 for the five instructions in
+   between and 11 for the `out` itself). Voice 2's slot runs from its `out` to the last one, also 34. The
+   remaining 44 T-states of the pass, from the last `out` round to the first, EAR is off.
+3. Voice 1's phase gains 4 each pass, so it carries once every 256 ÷ 4 = 64 passes: its pitch is
+   31,250 × 4 ÷ 256 = **488.3 Hz**. Voice 2's gains 5, and carries every 51 or 52 passes: on average
+   31,250 × 5 ÷ 256 = **610.4 Hz**. The two notes are a major third apart, a ratio of exactly 5 to 4.
+4. The slots of a pass follow each other and never overlap, so the bit is exactly the two pulse trains
+   added together.
+
+Here is the bit over 8 ms, worked out from the program, which is the same arithmetic the CPU does:
+
+<figure>
+{/* fig:twovoice */}
+<svg viewBox="0 0 700 418" role="img" aria-label="Eight milliseconds of the two-voice program, worked out from its arithmetic. Top row, voice 1: a short pulse every 2.05 milliseconds, 488 Hz. Middle row, voice 2: a short pulse about every 1.64 milliseconds, 610 Hz. Bottom row, the bit itself: both trains of pulses together. Under them, one pass of the loop enlarged: 112 T-states, of which the first 34 are voice 1's slot, the next 34 voice 2's, and the last 44 always off. One pass takes 32 microseconds, and the loop runs 31,250 passes a second." style={{ width: "100%", height: "auto" }}>
+  <text x="0" y="26" fill="#3b82f6" fontSize="15" fontWeight="bold">voice 1</text>
+  <text x="0" y="45" fill="currentColor" fontSize="13.5">488 Hz</text>
+  <line x1="120" y1="50" x2="700" y2="50" stroke="#3b82f6" strokeWidth="1" strokeOpacity="0.5" />
+  <rect x="266.2" y="10" width="2" height="40" fill="#3b82f6" fillOpacity="0.9" stroke="#3b82f6" strokeWidth="1" />
+  <rect x="414.6" y="10" width="2" height="40" fill="#3b82f6" fillOpacity="0.9" stroke="#3b82f6" strokeWidth="1" />
+  <rect x="563.1" y="10" width="2" height="40" fill="#3b82f6" fillOpacity="0.9" stroke="#3b82f6" strokeWidth="1" />
+  <text x="0" y="92" fill="#3b82f6" fontSize="15" fontWeight="bold">voice 2</text>
+  <text x="0" y="111" fill="currentColor" fontSize="13.5">610 Hz</text>
+  <line x1="120" y1="116" x2="700" y2="116" stroke="#3b82f6" strokeWidth="1" strokeOpacity="0.5" />
+  <rect x="239" y="76" width="2" height="40" fill="#3b82f6" fillOpacity="0.9" stroke="#3b82f6" strokeWidth="1" />
+  <rect x="357.3" y="76" width="2" height="40" fill="#3b82f6" fillOpacity="0.9" stroke="#3b82f6" strokeWidth="1" />
+  <rect x="475.7" y="76" width="2" height="40" fill="#3b82f6" fillOpacity="0.9" stroke="#3b82f6" strokeWidth="1" />
+  <rect x="594" y="76" width="2" height="40" fill="#3b82f6" fillOpacity="0.9" stroke="#3b82f6" strokeWidth="1" />
+  <text x="0" y="158" fill="#e5484d" fontSize="15" fontWeight="bold">the bit</text>
+  <text x="0" y="177" fill="currentColor" fontSize="13.5">EAR: both</text>
+  <line x1="120" y1="182" x2="700" y2="182" stroke="#e5484d" strokeWidth="1" strokeOpacity="0.5" />
+  <rect x="266.2" y="142" width="2" height="40" fill="#e5484d" fillOpacity="0.9" stroke="#e5484d" strokeWidth="1" />
+  <rect x="414.6" y="142" width="2" height="40" fill="#e5484d" fillOpacity="0.9" stroke="#e5484d" strokeWidth="1" />
+  <rect x="563.1" y="142" width="2" height="40" fill="#e5484d" fillOpacity="0.9" stroke="#e5484d" strokeWidth="1" />
+  <rect x="239" y="142" width="2" height="40" fill="#e5484d" fillOpacity="0.9" stroke="#e5484d" strokeWidth="1" />
+  <rect x="357.3" y="142" width="2" height="40" fill="#e5484d" fillOpacity="0.9" stroke="#e5484d" strokeWidth="1" />
+  <rect x="475.7" y="142" width="2" height="40" fill="#e5484d" fillOpacity="0.9" stroke="#e5484d" strokeWidth="1" />
+  <rect x="594" y="142" width="2" height="40" fill="#e5484d" fillOpacity="0.9" stroke="#e5484d" strokeWidth="1" />
+  <line x1="120" y1="204" x2="700" y2="204" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <line x1="120" y1="199" x2="120" y2="209" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="120" y="226" textAnchor="start" fill="currentColor" fontSize="13.5">0 ms</text>
+  <line x1="192.5" y1="199" x2="192.5" y2="209" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="192.5" y="226" textAnchor="middle" fill="currentColor" fontSize="13.5">1 ms</text>
+  <line x1="265" y1="199" x2="265" y2="209" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="265" y="226" textAnchor="middle" fill="currentColor" fontSize="13.5">2 ms</text>
+  <line x1="337.5" y1="199" x2="337.5" y2="209" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="337.5" y="226" textAnchor="middle" fill="currentColor" fontSize="13.5">3 ms</text>
+  <line x1="410" y1="199" x2="410" y2="209" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="410" y="226" textAnchor="middle" fill="currentColor" fontSize="13.5">4 ms</text>
+  <line x1="482.5" y1="199" x2="482.5" y2="209" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="482.5" y="226" textAnchor="middle" fill="currentColor" fontSize="13.5">5 ms</text>
+  <line x1="555" y1="199" x2="555" y2="209" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="555" y="226" textAnchor="middle" fill="currentColor" fontSize="13.5">6 ms</text>
+  <line x1="627.5" y1="199" x2="627.5" y2="209" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="627.5" y="226" textAnchor="middle" fill="currentColor" fontSize="13.5">7 ms</text>
+  <line x1="700" y1="199" x2="700" y2="209" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="700" y="226" textAnchor="end" fill="currentColor" fontSize="13.5">8 ms</text>
+  <text x="0" y="288" fill="currentColor" fontSize="15" fontWeight="bold">one pass,</text>
+  <text x="0" y="306" fill="currentColor" fontSize="15" fontWeight="bold">enlarged</text>
+  <rect x="121" y="264" width="174.1" height="56" rx="4" fill="#3b82f6" fillOpacity="0.18" stroke="#3b82f6" strokeWidth="1.6" strokeOpacity="1" />
+  <text x="208.1" y="287" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">voice 1's slot</text>
+  <text x="208.1" y="307" textAnchor="middle" fill="currentColor" fontSize="13.5">on if its phase carried</text>
+  <rect x="297.1" y="264" width="174" height="56" rx="4" fill="#3b82f6" fillOpacity="0.18" stroke="#3b82f6" strokeWidth="1.6" strokeOpacity="1" />
+  <text x="384.1" y="287" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">voice 2's slot</text>
+  <text x="384.1" y="307" textAnchor="middle" fill="currentColor" fontSize="13.5">on if its phase carried</text>
+  <rect x="473.1" y="264" width="225.9" height="56" rx="4" fill="none" stroke="currentColor" strokeWidth="1.6" strokeOpacity="0.5" />
+  <text x="586.1" y="297" textAnchor="middle" fill="currentColor" fontSize="15" fontWeight="bold">always off</text>
+  <line x1="120" y1="334" x2="700" y2="334" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <line x1="120" y1="329" x2="120" y2="339" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="120" y="356" textAnchor="start" fill="currentColor" fontSize="13.5">0 T</text>
+  <line x1="296.1" y1="329" x2="296.1" y2="339" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="296.1" y="356" textAnchor="middle" fill="currentColor" fontSize="13.5">34 T</text>
+  <line x1="472.1" y1="329" x2="472.1" y2="339" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="472.1" y="356" textAnchor="middle" fill="currentColor" fontSize="13.5">68 T</text>
+  <line x1="700" y1="329" x2="700" y2="339" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="700" y="356" textAnchor="end" fill="currentColor" fontSize="13.5">112 T</text>
+  <text x="410" y="382" textAnchor="middle" fill="currentColor" fontSize="15">one pass: 112 T-states, 32 µs; 31,250 passes a second</text>
+</svg>
+{/* /fig:twovoice */}
+<figcaption>The two voices and the bit they share, over 8 ms. Each voice switches EAR on for one 34 T-state slot (9.7 µs) once per period; the bit carries both trains of pulses, which never meet.</figcaption>
+</figure>
+
+The pulses are far too short to hear one by one; what your ear hears is how often they come. A frequency
+spectrum of the captured sound, which shows how strong each pitch in it is, finds both notes:
+
+<figure>
+{/* fig:spectrum */}
+<svg viewBox="0 0 700 300" role="img" aria-label="The spectrum of the two-voice program's captured sound from 100 to 1,300 Hz: how strong each frequency is, the strongest drawn full height. There are four peaks and almost nothing between them: the two notes at 488 and 610 Hz, voices 1 and 2, and their overtones at twice their pitch, 977 and 1,221 Hz." style={{ width: "100%", height: "auto" }}>
+  <line x1="58" y1="250" x2="700" y2="250" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <path d="M58,248.8 L60.7,248.1 L63.4,248.3 L66,249.3 L68.7,249.1 L71.4,248.5 L74.1,248.1 L76.7,247.8 L79.4,248.1 L82.1,248.5 L84.8,247.8 L87.4,247.8 L90.1,248.7 L92.8,248.4 L95.5,247.7 L98.1,248.3 L100.8,248.6 L103.5,247.6 L106.2,247.9 L108.8,248.8 L111.5,247.7 L114.2,247.6 L116.9,248.7 L119.5,247.9 L122.2,247.3 L124.9,248.3 L127.6,248.4 L130.2,247.6 L132.9,248.6 L135.6,248.1 L138.3,246.1 L140.9,246.4 L143.6,248.6 L146.3,247.3 L149,246.7 L151.6,248.4 L154.3,247.3 L157,245.8 L159.6,247.4 L162.3,248 L165,245.7 L167.7,246.4 L170.4,248.5 L173,245.9 L175.7,245.6 L178.4,248.3 L181.1,246.1 L183.7,244.7 L186.4,247.6 L189.1,247 L191.8,244.1 L194.4,246.1 L197.1,247.5 L199.8,242.7 L202.5,242.9 L205.1,247.5 L207.8,244.2 L210.5,242.6 L213.2,246.9 L215.8,244.3 L218.5,240.8 L221.2,244.5 L223.9,245.3 L226.5,239.3 L229.2,241.6 L231.9,246.5 L234.6,237.6 L237.2,237.5 L239.9,246.9 L242.6,235.2 L245.3,230.9 L247.9,243.7 L250.6,231.1 L253.3,216.5 L256,230.5 L258.6,221.4 L261.3,158.6 L264,110.7 L266.7,103.6 L269.3,141.4 L272,203.5 L274.7,240.1 L277.4,218 L280,227.2 L282.7,243.1 L285.4,230.8 L288.1,233.9 L290.7,242.3 L293.4,234.5 L296.1,236.9 L298.8,241.4 L301.4,233.5 L304.1,237 L306.8,240.5 L309.5,228.3 L312.1,232.4 L314.8,240.2 L317.5,216.1 L320.2,215.5 L322.8,241.5 L325.5,171.4 L328.2,100.9 L330.8,68.2 L333.5,91.2 L336.2,157.5 L338.9,232.2 L341.6,218.3 L344.2,211 L346.9,233.9 L349.6,236.2 L352.3,225.3 L354.9,235.1 L357.6,243.4 L360.3,232.6 L363,236.1 L365.6,246.1 L368.3,237.6 L371,237.2 L373.7,245.3 L376.3,241.3 L379,238.7 L381.7,244.1 L384.3,243.9 L387,239.8 L389.7,242.1 L392.4,245.6 L395.1,244.9 L397.7,247.9 L400.4,245.2 L403.1,241.4 L405.8,243.7 L408.4,247.6 L411.1,242.4 L413.8,241.9 L416.5,246 L419.1,244.4 L421.8,242.8 L424.5,245.6 L427.2,245.4 L429.8,243.2 L432.5,245.1 L435.2,246 L437.9,243.8 L440.5,244.8 L443.2,245.9 L445.9,244.2 L448.6,245.7 L451.2,247.5 L453.9,244.3 L456.6,245.3 L459.3,248.6 L461.9,242.9 L464.6,241.5 L467.3,244.7 L470,244.3 L472.6,243 L475.3,246.6 L478,244.7 L480.7,241.6 L483.3,244.7 L486,244.6 L488.7,240.4 L491.4,243.3 L494,244.8 L496.7,238.2 L499.4,240.5 L502.1,245.3 L504.7,234.2 L507.4,234.1 L510.1,246.3 L512.8,228 L515.4,221.3 L518.1,244.6 L520.8,202.4 L523.5,142.6 L526.1,105.7 L528.8,112 L531.5,158.9 L534.2,221.9 L536.8,229.9 L539.5,215.4 L542.2,231.1 L544.8,242.4 L547.5,228.3 L550.2,233.9 L552.9,247.3 L555.6,234.5 L558.2,235.1 L560.9,247.4 L563.6,238.7 L566.3,236.2 L568.9,245.1 L571.6,242.1 L574.3,237.7 L577,244.4 L579.6,242.4 L582.3,235.9 L585,240.9 L587.7,244.4 L590.3,233.5 L593,233.3 L595.7,244 L598.4,242 L601,236.9 L603.7,243.3 L606.4,243.8 L609.1,236.8 L611.7,241.3 L614.4,246.1 L617.1,236 L619.8,237.5 L622.4,249.5 L625.1,235.4 L627.8,232.6 L630.5,245.2 L633.1,235.5 L635.8,225.7 L638.5,236.6 L641.2,236.3 L643.8,212.8 L646.5,216.5 L649.2,241.4 L651.9,172.3 L654.5,106 L657.2,74.4 L659.9,93.3 L662.6,152.9 L665.2,223.6 L667.9,226 L670.6,212.7 L673.3,230.3 L675.9,242.4 L678.6,227.1 L681.3,232.1 L683.9,248.8 L686.6,235.3 L689.3,233.9 L692,245.3 L694.7,240.6 L697.3,235.6 L700,242.4" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinejoin="round" />
+  <text x="266.7" y="75.6" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">488 Hz</text>
+  <text x="266.7" y="93.6" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">voice 1</text>
+  <text x="330.8" y="40.2" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">610 Hz</text>
+  <text x="330.8" y="58.2" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">voice 2</text>
+  <text x="526.1" y="95.7" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">977 Hz</text>
+  <text x="657.2" y="64.4" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">1,221 Hz</text>
+  <text x="50" y="73.2" textAnchor="end" fill="currentColor" fontSize="13.5">strong</text>
+  <text x="50" y="255" textAnchor="end" fill="currentColor" fontSize="13.5">none</text>
+  <line x1="58" y1="250" x2="58" y2="256" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="58" y="274" textAnchor="middle" fill="currentColor" fontSize="13.5">100 Hz</text>
+  <line x1="165" y1="250" x2="165" y2="256" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="165" y="274" textAnchor="middle" fill="currentColor" fontSize="13.5">300 Hz</text>
+  <line x1="272" y1="250" x2="272" y2="256" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="272" y="274" textAnchor="middle" fill="currentColor" fontSize="13.5">500 Hz</text>
+  <line x1="379" y1="250" x2="379" y2="256" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="379" y="274" textAnchor="middle" fill="currentColor" fontSize="13.5">700 Hz</text>
+  <line x1="486" y1="250" x2="486" y2="256" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="486" y="274" textAnchor="middle" fill="currentColor" fontSize="13.5">900 Hz</text>
+  <line x1="593" y1="250" x2="593" y2="256" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="593" y="274" textAnchor="middle" fill="currentColor" fontSize="13.5">1,100 Hz</text>
+  <line x1="700" y1="250" x2="700" y2="256" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="700" y="274" textAnchor="end" fill="currentColor" fontSize="13.5">1,300 Hz</text>
+</svg>
+{/* /fig:spectrum */}
+<figcaption>The spectrum of the two-voice program's sound, captured from the machine: how strong each frequency from 100 to 1,300 Hz is in it. The two notes stand out at 488 and 610 Hz, each with its overtone at twice its pitch.</figcaption>
+</figure>
+
+Each note comes with **overtones**, pitches at whole multiples of it (977 and 1,221 Hz are the second
+ones). A train of pulses this short has overtones almost as strong as the note itself, many of them, up
+far beyond this figure; they give the beeper's chords their buzzing, nasal colour. What lies
+between the notes is close to nothing. Voice 2's small unevenness, a period of 51 passes here and 52
+there, spreads its peak a little but does not move it.
+
+## What two voices cost
+
+Well, nothing comes for free, and a chord from one bit is no exception:
+
+- **Loudness.** A voice is on for 34 of every 7,168 T-states (voice 1's period of 64 passes), less than
+  half a percent of the time. Short pulses are quiet: the louder a voice should be, the longer its slot,
+  so a program sets the **volume of a voice by the width of its pulses**. Two voices need two slots that
+  never meet, so each can have at most half the pass.
+- **Pitch.** A voice's pitch is the loop's rate times its step divided by 256. Finer pitches need a
+  16-bit phase, which costs more T-states per pass and lowers the rate.
+- **The CPU.** While the tune plays, the CPU does nothing else: every T-state of the loop is counted.
+  This is why beeper music on the 48K played on title screens and between levels, and why the 128K's AY
+  chip, which plays by itself, was such a step forward.
+
+## Saving to tape
+
+A program saves to tape by switching **port `$FE` bit 3**, MIC, in a pattern of pulses that encodes its
+data. The **MIC socket** of the Next carries that pattern to a tape recorder, as the 48K's did.
+
+The MIC line is not bit 3 alone, though. It is bit 3 combined with the tape input (see Loading from tape)
+and with the EAR bit that the Raspberry Pi's audio link can produce ([the chapter on audio from the
+Raspberry Pi](/en/under-the-hood/emulator-internals/next-audio/pi-audio/#loading-a-tape-from-the-pi)) by an **exclusive or**: the line is 1 when an odd number of the three are 1.
+The same line feeds both the MIC socket and the mixer's MIC input:
+
+<figure>
+{/* fig:input */}
+<svg viewBox="0 0 700 548" role="img" aria-label="A diagram of the beeper's lines. Top: the EAR socket feeds the input stage, noise rejection then relaxation, whose output is the tape input. Right: the Pi's EAR bit. Port $FE bit 6 is an or of three things: the tape input exclusive-or the Pi's EAR bit; port $FE bit 4, EAR; and port $FE bit 3, MIC, and-ed with the issue 2 keyboard switch, NextReg $08 bit 0. Bottom: the MIC line is port $FE bit 3 exclusive-or the tape input exclusive-or the Pi's EAR bit; it goes to the MIC socket and into the mixer at 128 units." style={{ width: "100%", height: "auto" }}>
+  <defs>
+    <marker id="bp-in-0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
+    </marker>
+    <marker id="bp-in-1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#3b82f6" />
+    </marker>
+    <marker id="bp-in-2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#a855f7" />
+    </marker>
+  </defs>
+  <rect x="0" y="20" width="112" height="56" rx="6" fill="none" stroke="#3b82f6" strokeWidth="2" />
+  <text x="56" y="53.3" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">EAR socket</text>
+  <rect x="146" y="20" width="160" height="56" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  <text x="226" y="44.3" textAnchor="middle" fill="currentColor" fontSize="15">noise rejection</text>
+  <text x="226" y="62.3" textAnchor="middle" fill="currentColor" fontSize="15">under ~1 µs dropped</text>
+  <rect x="340" y="20" width="160" height="56" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  <text x="420" y="44.3" textAnchor="middle" fill="currentColor" fontSize="15">relaxation</text>
+  <text x="420" y="62.3" textAnchor="middle" fill="currentColor" fontSize="15">1 held ~1.17 ms → 0</text>
+  <path d="M112,48 L142,48" fill="none" stroke="#3b82f6" strokeWidth="1.8" markerEnd="url(#bp-in-1)" strokeLinejoin="round" />
+  <path d="M306,48 L336,48" fill="none" stroke="#3b82f6" strokeWidth="1.8" markerEnd="url(#bp-in-1)" strokeLinejoin="round" />
+  <path d="M500,48 L512,48 L512,410" fill="none" stroke="#3b82f6" strokeWidth="1.8" strokeLinejoin="round" />
+  <text x="504" y="106" textAnchor="end" fill="#3b82f6" fontSize="15" fontWeight="bold">tape input</text>
+  <rect x="548" y="20" width="152" height="56" rx="6" fill="none" stroke="#a855f7" strokeWidth="2" />
+  <text x="624" y="53.3" textAnchor="middle" fill="#a855f7" fontSize="15">Pi's EAR bit</text>
+  <path d="M624,76 L624,92 L694,92 L694,424 L670,424" fill="none" stroke="#a855f7" strokeWidth="1.8" markerEnd="url(#bp-in-2)" strokeLinejoin="round" />
+  <rect x="538" y="120" width="128" height="48" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  <text x="602" y="149.3" textAnchor="middle" fill="currentColor" fontSize="15">exclusive or</text>
+  <path d="M512,134 L534,134" fill="none" stroke="#3b82f6" strokeWidth="1.8" markerEnd="url(#bp-in-1)" strokeLinejoin="round" />
+  <circle cx="512" cy="134" r="4" fill="#3b82f6" />
+  <path d="M694,154 L670,154" fill="none" stroke="#a855f7" strokeWidth="1.8" markerEnd="url(#bp-in-2)" strokeLinejoin="round" />
+  <circle cx="694" cy="154" r="4" fill="#a855f7" />
+  <rect x="538" y="210" width="128" height="64" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  <text x="602" y="247.3" textAnchor="middle" fill="currentColor" fontSize="15">or</text>
+  <path d="M602,168 L602,206" fill="none" stroke="currentColor" strokeWidth="1.8" markerEnd="url(#bp-in-0)" strokeLinejoin="round" />
+  <rect x="0" y="214" width="220" height="36" rx="6" fill="none" stroke="#3b82f6" strokeWidth="2" />
+  <text x="110" y="237.3" textAnchor="middle" fill="#3b82f6" fontSize="15">port $FE bit 4 (EAR)</text>
+  <rect x="0" y="280" width="220" height="36" rx="6" fill="none" stroke="#3b82f6" strokeWidth="2" />
+  <text x="110" y="303.3" textAnchor="middle" fill="#3b82f6" fontSize="15">port $FE bit 3 (MIC)</text>
+  <rect x="0" y="336" width="220" height="36" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  <text x="110" y="359.3" textAnchor="middle" fill="currentColor" fontSize="15">issue 2: NextReg $08 bit 0</text>
+  <path d="M220,232 L534,232" fill="none" stroke="#3b82f6" strokeWidth="1.8" markerEnd="url(#bp-in-1)" strokeLinejoin="round" />
+  <rect x="290" y="284" width="100" height="84" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  <text x="340" y="331.3" textAnchor="middle" fill="currentColor" fontSize="15">and</text>
+  <path d="M220,298 L286,298" fill="none" stroke="#3b82f6" strokeWidth="1.8" markerEnd="url(#bp-in-1)" strokeLinejoin="round" />
+  <path d="M220,354 L286,354" fill="none" stroke="currentColor" strokeWidth="1.8" markerEnd="url(#bp-in-0)" strokeLinejoin="round" />
+  <path d="M390,326 L440,326 L440,256 L534,256" fill="none" stroke="currentColor" strokeWidth="1.8" markerEnd="url(#bp-in-0)" strokeLinejoin="round" />
+  <rect x="538" y="306" width="128" height="44" rx="6" fill="#3b82f6" fillOpacity="0.12" stroke="#3b82f6" strokeWidth="2" />
+  <text x="602" y="333.3" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">port $FE bit 6</text>
+  <path d="M602,274 L602,302" fill="none" stroke="currentColor" strokeWidth="1.8" markerEnd="url(#bp-in-0)" strokeLinejoin="round" />
+  <rect x="538" y="396" width="128" height="48" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  <text x="602" y="425.3" textAnchor="middle" fill="currentColor" fontSize="15">exclusive or</text>
+  <path d="M254,298 L254,432" fill="none" stroke="#3b82f6" strokeWidth="1.8" strokeLinejoin="round" />
+  <circle cx="254" cy="298" r="4" fill="#3b82f6" />
+  <path d="M254,432 L534,432" fill="none" stroke="#3b82f6" strokeWidth="1.8" markerEnd="url(#bp-in-1)" strokeLinejoin="round" />
+  <path d="M512,410 L534,410" fill="none" stroke="#3b82f6" strokeWidth="1.8" markerEnd="url(#bp-in-1)" strokeLinejoin="round" />
+  <path d="M602,444 L602,470" fill="none" stroke="#3b82f6" strokeWidth="1.8" strokeLinejoin="round" />
+  <circle cx="602" cy="470" r="4" fill="#3b82f6" />
+  <text x="450" y="462" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">the MIC line</text>
+  <rect x="300" y="504" width="140" height="40" rx="6" fill="none" stroke="#3b82f6" strokeWidth="2" />
+  <text x="370" y="529.3" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">MIC socket</text>
+  <rect x="530" y="504" width="170" height="40" rx="6" fill="none" stroke="#e5484d" strokeWidth="2" />
+  <text x="615" y="529.3" textAnchor="middle" fill="#e5484d" fontSize="15" fontWeight="bold">mixer: MIC, 128</text>
+  <path d="M602,470 L370,470 L370,500" fill="none" stroke="#3b82f6" strokeWidth="1.8" markerEnd="url(#bp-in-1)" strokeLinejoin="round" />
+  <path d="M602,470 L615,470 L615,500" fill="none" stroke="#3b82f6" strokeWidth="1.8" markerEnd="url(#bp-in-1)" strokeLinejoin="round" />
+</svg>
+{/* /fig:input */}
+<figcaption>The beeper's lines. Port $FE bit 3 is combined with the tape input and the Pi's EAR bit into the MIC line, which goes to the MIC socket and into the mixer. The EAR socket's signal passes the input stage and becomes the tape input, which port $FE bit 6 reads together with the EAR and MIC bits.</figcaption>
+</figure>
+
+Why an exclusive or? Because it keeps each signal whole. With no tape playing, the MIC line is bit 3,
+exactly what your program writes. While a tape plays and the program holds bit 3 still, the line follows
+the tape: if bit 3 is 1, upside down, which sounds the same and carries the same edges. What follows from
+that:
+
+- **A loading tape is heard**, at MIC's level of 128: the screech of a loading program comes out of the
+  speaker, as it did on the 48K.
+- **The MIC socket echoes the tape input**: a recorder plugged into it while another plays into EAR
+  records what the Next hears.
+- **A program saving data** switches bit 3 while no tape plays, and the socket carries its pulses
+  unchanged.
+
+## Loading from tape
+
+A tape recorder plays its signal into the **EAR socket**. What the Next reads from it is not the raw
+voltage but a clean level, 0 or 1, produced by an **input stage** in two steps, noise rejection and
+relaxation, both counted on the master clock.
+
+A tape's signal is analogue and noisy: near an edge it may cross the threshold several times in a row. The
+first step, **noise rejection**, passes a new level on only when it has held steady for **two ticks of the
+1.75 MHz clock**: any change starts the count again. Depending on where the ticks fall, that takes between
+0.6 and 1.14 µs, so a pulse shorter than 0.6 µs never reaches the CPU and one longer than 1.14 µs always
+does. A real edge arrives about a microsecond late, which no loader notices.
+
+## Relaxation: a level left at 1
+
+The second step deals with a tape that stops on a 1. Some recordings, and some tape circuits, leave the
+level at 1 after the last pulse instead of returning to 0, and a loader waiting for the next edge would see
+the bit stuck. The original machines did not have that problem: the 48K's input relaxed back to 0 after
+at most about 800 µs, and the ZX81 expects it to within about 1,300 µs. The Next's **relaxation** step
+copies them: a 1 that lasts 64 ticks of a 54,688 Hz clock (512 master clocks each), between 1.15 and
+1.17 ms depending on where the ticks fall, turns into a 0, until the input goes low and high again.
+
+Here are the two steps, worked out from the rules on made-up input signals:
+
+<figure>
+{/* fig:conditioning */}
+<svg viewBox="0 0 700 452" role="img" aria-label="Two panels, worked out from the input stage's rules. Top, six microseconds: the input has a glitch half a microsecond long at 1 microsecond, which the noise rejection drops, and a real rising edge at 3 microseconds, which passes about a microsecond later. Bottom, five milliseconds: the input is a tone of 600-microsecond halves for two periods and is then left at 1; the tone passes the relaxation unchanged, and the level left at 1 falls to 0 about 1.17 milliseconds after it began." style={{ width: "100%", height: "auto" }}>
+  <text x="0" y="18" fill="currentColor" fontSize="16.5" fontWeight="bold">noise rejection, over 6 µs</text>
+  <text x="256.7" y="44" textAnchor="middle" fill="#e5484d" fontSize="13.5" fontWeight="bold">glitch, 0.5 µs: dropped</text>
+  <text x="0" y="76" fill="currentColor" fontSize="15" fontWeight="bold">the socket</text>
+  <path d="M140,86.3 L233.3,86.3 L233.3,55.7 L280,55.7 L280,86.3 L420,86.3 L420,55.7 L700,55.7" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+  <text x="0" y="119" fill="#3b82f6" fontSize="15" fontWeight="bold">after</text>
+  <text x="0" y="137" fill="#3b82f6" fontSize="15" fontWeight="bold">rejection</text>
+  <path d="M140,138.3 L516.7,138.3 L516.7,107.7 L700,107.7" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinejoin="round" />
+  <text x="524.7" y="132" fill="currentColor" fontSize="13.5">passes 1.0 µs late</text>
+  <line x1="140" y1="160" x2="700" y2="160" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <line x1="140" y1="155" x2="140" y2="165" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="140" y="182" textAnchor="start" fill="currentColor" fontSize="13.5">0 µs</text>
+  <line x1="233.3" y1="155" x2="233.3" y2="165" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="233.3" y="182" textAnchor="middle" fill="currentColor" fontSize="13.5">1 µs</text>
+  <line x1="326.7" y1="155" x2="326.7" y2="165" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="326.7" y="182" textAnchor="middle" fill="currentColor" fontSize="13.5">2 µs</text>
+  <line x1="420" y1="155" x2="420" y2="165" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="420" y="182" textAnchor="middle" fill="currentColor" fontSize="13.5">3 µs</text>
+  <line x1="513.3" y1="155" x2="513.3" y2="165" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="513.3" y="182" textAnchor="middle" fill="currentColor" fontSize="13.5">4 µs</text>
+  <line x1="606.7" y1="155" x2="606.7" y2="165" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="606.7" y="182" textAnchor="middle" fill="currentColor" fontSize="13.5">5 µs</text>
+  <line x1="700" y1="155" x2="700" y2="165" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="700" y="182" textAnchor="end" fill="currentColor" fontSize="13.5">6 µs</text>
+  <text x="0" y="226" fill="currentColor" fontSize="16.5" fontWeight="bold">relaxation, over 5 ms</text>
+  <text x="274.4" y="252" textAnchor="middle" fill="currentColor" fontSize="13.5">a tone: passes unchanged</text>
+  <text x="414.8" y="252" fill="currentColor" fontSize="13.5">left at 1</text>
+  <text x="0" y="284" fill="currentColor" fontSize="15" fontWeight="bold">before</text>
+  <path d="M140,263.7 L207.2,263.7 L207.2,294.3 L274.4,294.3 L274.4,263.7 L341.6,263.7 L341.6,294.3 L408.8,294.3 L408.8,263.7 L700,263.7" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+  <text x="0" y="327" fill="#3b82f6" fontSize="15" fontWeight="bold">after</text>
+  <text x="0" y="345" fill="#3b82f6" fontSize="15" fontWeight="bold">relaxation</text>
+  <path d="M140,315.7 L207.2,315.7 L207.2,346.3 L274.4,346.3 L274.4,315.7 L341.6,315.7 L341.6,346.3 L408.8,346.3 L408.8,315.7 L539.4,315.7 L539.4,346.3 L700,346.3" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinejoin="round" />
+  <line x1="408.8" y1="354" x2="408.8" y2="372" stroke="currentColor" strokeWidth="1" strokeOpacity="0.6" />
+  <line x1="539.4" y1="354" x2="539.4" y2="372" stroke="currentColor" strokeWidth="1" strokeOpacity="0.6" />
+  <line x1="408.8" y1="366" x2="539.4" y2="366" stroke="#e5484d" strokeWidth="1.8" />
+  <text x="547.4" y="371" fill="#e5484d" fontSize="15" fontWeight="bold">1.17 ms, then 0</text>
+  <line x1="140" y1="404" x2="700" y2="404" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <line x1="140" y1="399" x2="140" y2="409" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="140" y="426" textAnchor="start" fill="currentColor" fontSize="13.5">0 ms</text>
+  <line x1="252" y1="399" x2="252" y2="409" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="252" y="426" textAnchor="middle" fill="currentColor" fontSize="13.5">1 ms</text>
+  <line x1="364" y1="399" x2="364" y2="409" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="364" y="426" textAnchor="middle" fill="currentColor" fontSize="13.5">2 ms</text>
+  <line x1="476" y1="399" x2="476" y2="409" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="476" y="426" textAnchor="middle" fill="currentColor" fontSize="13.5">3 ms</text>
+  <line x1="588" y1="399" x2="588" y2="409" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="588" y="426" textAnchor="middle" fill="currentColor" fontSize="13.5">4 ms</text>
+  <line x1="700" y1="399" x2="700" y2="409" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
+  <text x="700" y="426" textAnchor="end" fill="currentColor" fontSize="13.5">5 ms</text>
+</svg>
+{/* /fig:conditioning */}
+<figcaption>The input stage, worked out from its rules. Top, over 6 µs: a half-microsecond glitch is rejected, and a real edge passes about a microsecond late. Bottom, over 5 ms: a tone passes untouched, and a level left at 1 relaxes to 0 after about 1.17 ms.</figcaption>
+</figure>
+
+The relaxation cuts only highs longer than about 1.15 ms, so a tone with half-periods shorter than
+that, above about 430 Hz, passes untouched. A Spectrum tape is far quicker: its pilot tone's pulses are
+2,168 T-states long, 619 µs, and its data pulses shorter still. The result of both steps is the **tape
+input**, the level that port `$FE` bit 6 reads and that the MIC line carries.
+
+## What port `$FE` bit 6 reads
+
+Bit 6 is not the tape input alone. It is 1 when any of these is true at the moment of the read:
+
+1. **The tape input**, combined by exclusive or with the Pi's EAR bit, is 1.
+2. **Port `$FE` bit 4**, EAR, was last written as 1.
+3. **Port `$FE` bit 3**, MIC, was last written as 1, and the **issue 2 keyboard** is on: the Peripheral 3
+   Setting register, NextReg `$08`, bit 0 (0 after power-on).
+
+So a loader must keep EAR at 0 while it reads the tape, or bit 6 reads 1 whatever the tape plays; the
+48K ROM's loader does, and keeps MIC at 1. And bit 6 follows the bits at once: the read straight after a
+write that clears bit 4 already returns 0. On a 48K, the shared pin you met in Two bits of sound is an
+analogue line that takes a moment to fall, so a read that comes very soon after the write can still find a
+1; the Next's bit 6 is logic, and has no such delay.
+
+## The issue 2 keyboard
+
+The 48K was built in several board revisions, called issues. On the early **issue 2** boards, writing a 1
+to the MIC bit was enough to make bit 6 read 1; from **issue 3** on, only the EAR bit did. Software written
+on an issue 2 machine sometimes compared the whole byte read from port `$FE` against a fixed value, with
+bit 6 assumed to be 1, instead of testing the key bits alone. On a later machine bit 6 read 0, the
+comparison failed, and the program saw keys that were not pressed, or ignored the ones that were. Haunted
+keyboards, and all because of one bit nobody meant to test.
+
+The Next behaves as issue 3 after power-on, as most Spectrums did. NextReg `$08` bit 0 gives such a program
+the issue 2 machine it was written for: with it set, the MIC bit reads back in bit 6 too.
+
+Let me warn you, though: the setting has a price. The 48K ROM's loader holds MIC at 1 the whole time it
+listens, so with the issue 2 keyboard on, bit 6 reads 1 throughout, the loader never sees an edge, and
+loading from tape fails. A program that needs the setting should switch it on after it has loaded, not
+before.
+
+## The internal speaker
+
+The Next has a small speaker on its board, which plays the left and right sums added together. The
+Peripheral 3 Setting register, NextReg `$08`, bit 4 switches it on (1, the value after power-on) or off.
+
+The **Peripheral 2 Setting register, NextReg `$06`**, bit 6 sends the beeper **only to the internal
+speaker**. With it set, and the speaker on, EAR and MIC leave the mix that reaches the audio jack and HDMI,
+and the speaker plays them alone:
+
+<figure>
+{/* fig:speaker */}
+<svg viewBox="0 0 700 300" role="img" aria-label="Two diagrams side by side. Left, after power-on: EAR and MIC and the other sources are added in the mixer, and its sum goes to the audio jack, HDMI and the internal speaker. Right, with NextReg $06 bit 6 set and the speaker on: EAR and MIC go straight to the internal speaker, and the mixer adds only the other sources, for the jack and HDMI." style={{ width: "100%", height: "auto" }}>
+  <defs>
+    <marker id="bp-spk-0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
+    </marker>
+    <marker id="bp-spk-1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#3b82f6" />
+    </marker>
+    <marker id="bp-spk-2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#e5484d" />
+    </marker>
+  </defs>
+  <text x="0" y="20" fill="currentColor" fontSize="16.5" fontWeight="bold">after power-on</text>
+  <text x="0" y="42" fill="currentColor" fontSize="13.5">the beeper is part of the mix</text>
+  <rect x="0" y="86" width="116" height="40" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  <text x="58" y="111.3" textAnchor="middle" fill="currentColor" fontSize="15">other sources</text>
+  <rect x="0" y="166" width="116" height="40" rx="6" fill="none" stroke="#3b82f6" strokeWidth="2" />
+  <text x="58" y="191.3" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">EAR and MIC</text>
+  <rect x="148" y="76" width="64" height="140" rx="6" fill="none" stroke="#e5484d" strokeWidth="2" />
+  <text x="180" y="151.3" textAnchor="middle" fill="#e5484d" fontSize="15" fontWeight="bold">mixer</text>
+  <rect x="244" y="76" width="96" height="40" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  <text x="292" y="101.3" textAnchor="middle" fill="currentColor" fontSize="15">audio jack</text>
+  <rect x="244" y="140" width="96" height="40" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  <text x="292" y="165.3" textAnchor="middle" fill="currentColor" fontSize="15">HDMI</text>
+  <rect x="244" y="234" width="96" height="56" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  <text x="292" y="258.3" textAnchor="middle" fill="currentColor" fontSize="15">internal</text>
+  <text x="292" y="276.3" textAnchor="middle" fill="currentColor" fontSize="15">speaker</text>
+  <path d="M116,106 L144,106" fill="none" stroke="currentColor" strokeWidth="1.8" markerEnd="url(#bp-spk-0)" strokeLinejoin="round" />
+  <path d="M212,96 L240,96" fill="none" stroke="#e5484d" strokeWidth="1.8" markerEnd="url(#bp-spk-2)" strokeLinejoin="round" />
+  <path d="M212,160 L240,160" fill="none" stroke="#e5484d" strokeWidth="1.8" markerEnd="url(#bp-spk-2)" strokeLinejoin="round" />
+  <path d="M116,186 L144,186" fill="none" stroke="#3b82f6" strokeWidth="1.8" markerEnd="url(#bp-spk-1)" strokeLinejoin="round" />
+  <path d="M180,216 L180,262 L240,262" fill="none" stroke="#e5484d" strokeWidth="1.8" markerEnd="url(#bp-spk-2)" strokeLinejoin="round" />
+  <text x="360" y="20" fill="currentColor" fontSize="16.5" fontWeight="bold">NextReg $06 bit 6 set</text>
+  <text x="360" y="42" fill="currentColor" fontSize="13.5">the beeper on the speaker alone</text>
+  <rect x="360" y="86" width="116" height="40" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  <text x="418" y="111.3" textAnchor="middle" fill="currentColor" fontSize="15">other sources</text>
+  <rect x="360" y="166" width="116" height="40" rx="6" fill="none" stroke="#3b82f6" strokeWidth="2" />
+  <text x="418" y="191.3" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">EAR and MIC</text>
+  <rect x="508" y="76" width="64" height="140" rx="6" fill="none" stroke="#e5484d" strokeWidth="2" />
+  <text x="540" y="151.3" textAnchor="middle" fill="#e5484d" fontSize="15" fontWeight="bold">mixer</text>
+  <rect x="604" y="76" width="96" height="40" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  <text x="652" y="101.3" textAnchor="middle" fill="currentColor" fontSize="15">audio jack</text>
+  <rect x="604" y="140" width="96" height="40" rx="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  <text x="652" y="165.3" textAnchor="middle" fill="currentColor" fontSize="15">HDMI</text>
+  <rect x="604" y="234" width="96" height="56" rx="6" fill="none" stroke="#3b82f6" strokeWidth="2" />
+  <text x="652" y="258.3" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">internal</text>
+  <text x="652" y="276.3" textAnchor="middle" fill="#3b82f6" fontSize="15" fontWeight="bold">speaker</text>
+  <path d="M476,106 L504,106" fill="none" stroke="currentColor" strokeWidth="1.8" markerEnd="url(#bp-spk-0)" strokeLinejoin="round" />
+  <path d="M572,96 L600,96" fill="none" stroke="#e5484d" strokeWidth="1.8" markerEnd="url(#bp-spk-2)" strokeLinejoin="round" />
+  <path d="M572,160 L600,160" fill="none" stroke="#e5484d" strokeWidth="1.8" markerEnd="url(#bp-spk-2)" strokeLinejoin="round" />
+  <path d="M418,206 L418,262 L600,262" fill="none" stroke="#3b82f6" strokeWidth="1.8" markerEnd="url(#bp-spk-1)" strokeLinejoin="round" />
+  <line x1="350" y1="10" x2="350" y2="290" stroke="currentColor" strokeWidth="1" strokeOpacity="0.2" />
+</svg>
+{/* /fig:speaker */}
+<figcaption>Where the beeper goes. Left, as it is after power-on: EAR and MIC are added into the mix with every other source, and the jack, HDMI and the speaker all play it. Right, with NextReg $06 bit 6 set: EAR and MIC go to the speaker alone, and the jack and HDMI get the mix without them.</figcaption>
+</figure>
+
+What is this good for? Keeping two kinds of sound apart: key clicks, alerts and the tape's loading noise
+come from the machine itself, while the music plays in your headphones or on the television undisturbed.
+The beeper is moved, not copied: the headphones no longer hear it. On the speaker, EAR and MIC keep their
+loudness and their 4-to-1 ratio; the mixer chapter's
+[The internal speaker](/en/under-the-hood/emulator-internals/next-audio/mixer/#the-internal-speaker)
+shows the bits of the speaker's word.
+
+## How Klive does it
+
+Klive's Next core is a C program compiled to WebAssembly; the beeper, the port and the tape input are
+three parts of it.
+
+**The beeper.** Every write to port `$FE` that changes EAR or the MIC line is recorded with the moment it
+happened, to the T-state. When the mixer needs a sample, the beeper works out what share of the sample's
+time each of the four levels lasted, so an edge that falls in the middle of a sample gives it a level in
+between, as the smoothing after the real converter would. For the HDMI output (Machine › Sound › Output) it
+takes the level at the sample's moment instead, as HDMI does (the mixer chapter's
+[HDMI audio](/en/under-the-hood/emulator-internals/next-audio/mixer/#hdmi-audio)).
+
+The mixer adds EAR as 512 units and MIC as 128, and passes them through a filter that removes their
+constant level slowly, as the capacitor after the real jack does; that is why every capture here moves
+around zero. With NextReg `$06` bit 6 set and the speaker on, EAR and MIC are left out of the jack's and
+HDMI's mix and play on the internal speaker output alone.
+
+**Port `$FE`.** A write stores EAR, MIC and the border colour; a read builds bit 6 from the tape input, the
+Pi's EAR bit, the stored EAR bit and, with NextReg `$08` bit 0 set, the stored MIC bit, at the moment of the
+read. There is no analogue delay: an emulator of the 48K would model the slow fall of its shared pin, but
+the Next has none.
+
+**The tape input.** Klive's tape deck plays a `.tap` or `.tzx` file into the Next's EAR socket (see
+[Tapes](/en/guides/media/tapes/)). Its level goes through the input stage described in Loading from tape,
+counted exactly as the hardware counts it, one tick of the 1.75 MHz clock at a time; the stage is brought
+up to date only when something looks at it (an instruction, a read of port `$FE`, a sample of sound), and
+skips ahead while nothing plays. The result feeds port `$FE` bit 6 and the MIC line, so a loading tape is
+heard as on the real machine. The deck also loads quickly, by taking over the 48K ROM's loading routine
+when the program calls it, and records what the program saves through MIC into a new tape file.
+
+And if you want to read the code yourself, here is where it lives:
+
+| What | Where |
+|---|---|
+| EAR, MIC and the MIC line, the recorded changes, a sample's share of each level | `src/emu/machines/zxNext/wasm/zxnext/zxnext-beeper.c` |
+| Port `$FE` writes and reads, bit 6 | `zxnext-ula.c` in the same folder |
+| The tape deck and the input stage (noise rejection, relaxation) | `zxnext-tape.c` in the same folder |
+| The levels, the beeper's filter, the speaker-only switch | `zxnext-audio-mixer.c` in the same folder |
+
+## What to take home
+
+Let's look back at the two bits. The beeper is two bits of **port `$FE`**, which any even port address reaches:
+**bit 4, EAR**, the beeper itself, and **bit 3, MIC**, the tape output, beside the border colour in bits
+2–0. A reset clears them. In the mixer, EAR adds **512** and MIC **128** to both sides, 4 to 1 as on the
+48K, and because their silence is 0, the first switch-on clicks.
+
+A note is a **timing loop**: two passes make one period, so 1,760 T-states a pass at 3.5 MHz is
+**994 Hz**, and pitches come in steps of the loop's smallest change. The **CPU's speed** (NextReg `$07`)
+scales the pitch. **Contention** (3.5 MHz only, switched by NextReg `$08` bit 6) slows the loop only while
+the picture's lines are drawn, so the note does not drop to one lower pitch: it plays at two speeds,
+dropping and coming back 50 times a second.
+
+**Two voices** share the bit as trains of **short pulses** in slots that never meet. A voice's pitch is
+how often its pulses come, its loudness their width, and the CPU does nothing else while they play.
+
+On the tape side, the **MIC line** is bit 3 exclusive-or the tape input and the Pi's EAR bit; it feeds the
+**MIC socket** and the mixer, so a loading tape is heard and echoed. The **EAR socket** passes an **input
+stage** that rejects pulses shorter than about **a microsecond** and relaxes a 1 held for about
+**1.15–1.17 ms** to 0. **Bit 6** reads that tape input (exclusive-or the Pi's EAR bit), or the EAR bit, or,
+with the **issue 2 keyboard** (NextReg `$08` bit 0), the MIC bit, and follows them at once.
+
+Finally, NextReg `$08` bit 4 switches the **internal speaker** on, and NextReg `$06` bit 6 moves the beeper
+to the speaker alone. Klive records each change with its T-state, mixes each sample's share of every level,
+filters the constant level away as the jack's capacitor does, and runs the tape through the same input
+stage. Not bad for two bits, is it?

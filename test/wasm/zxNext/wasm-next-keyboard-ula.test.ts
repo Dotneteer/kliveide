@@ -6,7 +6,7 @@ import { ULA_BORDER_COLOR_NAMES } from "@common/messaging/EmuApi";
 /*
  * The keyboard matrix and the $FE read bits are covered by `test/zxnext-hw/keyboard/` and
  * `test/zxnext-hw/ports/port-decode` (PORT-005). What stays here is the ULA panel state, the floating
- * bus accessor and the analog EAR discharge, which the harness does not observe.
+ * bus accessor and $FE bit 6 at chosen tacts (also `test/zxnext-hw/audio/port-fe-read`).
  */
 describe("ZX Spectrum Next WASM keyboard and ULA ports", () => {
   it("reports issue 2/3 MIC contribution and border state through port $FE", async () => {
@@ -33,23 +33,19 @@ describe("ZX Spectrum Next WASM keyboard and ULA ports", () => {
     expect(wasm.doReadPort(0xffff)).toBe(0xff);
   });
 
-  it("keeps port $FE bit 6 up for the analog EAR discharge time", async () => {
+  it("drops port $FE bit 6 with the write that clears EAR: no analogue discharge", async () => {
     const wasm = await createTestZxNextWasmMachine();
 
     wasm.setTacts(100);
     wasm.doWritePort(0x00fe, 0x10);
+    expect(wasm.doReadPort(0x00fe)).toBe(0xff);
 
+    // --- zxnext.vhd ~3456: bit 6 is a plain OR of the bits at the read. The 48K's ULA kept reading 1
+    // --- for a while after EAR went low (its pin discharging); the Next does not, so it drops at once.
     wasm.setTacts(110);
     wasm.doWritePort(0x00fe, 0x00);
-
-    // --- Pinned (the values both cores agreed on at tag `pre-zxnext-ts-removal-2026-09-19`): after
-    // --- EAR goes low at tact 110, bit 6 still reads 1 at tact 149 and drops at tact 150.
-    wasm.setTacts(149);
-    expect(wasm.doReadPort(0x00fe)).toBe(0xff);
-    expect(wasm.doReadPort(0x00fe) & 0x40).toBe(0x40);
-
-    wasm.setTacts(150);
     expect(wasm.doReadPort(0x00fe)).toBe(0xbf);
+    wasm.setTacts(149);
     expect(wasm.doReadPort(0x00fe) & 0x40).toBe(0x00);
   });
 });

@@ -33,6 +33,9 @@ import { decodeHistoryPage, type HistoryRecord } from "@common/history/historyRe
 import type { ExecutionHistoryInfo } from "@common/history/historyTypes";
 import type { ProfileCounts, ProfileEdge, ProfileInfo, ProfileTouchedByte } from "@common/profile/profileTypes";
 import { DebugSupport } from "@emu/machines/DebugSupport";
+import { FAST_LOAD, NEXT_AUDIO_OUTPUT, SAVED_TO_TAPE, TAPE_MODE } from "@emu/machines/machine-props";
+import { MEDIA_TAPE } from "@common/structs/project-const";
+import type { TapeDataBlock } from "@common/structs/TapeDataBlock";
 import {
   beginSourceStep,
   type MachineView,
@@ -1378,6 +1381,42 @@ export class NextTestSession {
     if (!this.options.audioSampleRate) throw new Error("Create the session with { audioSampleRate } to record audio.");
     this.recording = [];
     return this;
+  }
+  /**
+   * Chooses which of the Next's outputs the audio stream plays, as the IDE's Sound Output setting
+   * does: `"jack"` (the default: the sum's low 12 bits, wrapping past 4,095), `"speaker"` (the mono
+   * speaker mix, NextReg $08 bit 4 and $06 bit 6) or `"hdmi"` (the whole sum, point-sampled, NextReg
+   * $09 bit 2). A host setting, not machine state: no reset changes it.
+   */
+  audioOutput(output: "jack" | "speaker" | "hdmi"): this {
+    this.machine.setMachineProperty(NEXT_AUDIO_OUTPUT, output);
+    return this;
+  }
+  /**
+   * Puts a tape in the deck, as the IDE does (`MEDIA_TAPE`): the blocks `tapeBlocksOf` makes from a
+   * `.tap` or `.tzx`, fast load on unless asked otherwise. ROM 3's LD-BYTES then plays or fast-loads
+   * them (`.plans/NEXT_TAPE_PLAN.md`).
+   */
+  insertTape(blocks: TapeDataBlock[], { fastLoad = true }: { fastLoad?: boolean } = {}): this {
+    this.machine.setMachineProperty(FAST_LOAD, fastLoad);
+    this.machine.setMachineProperty(MEDIA_TAPE, blocks);
+    return this;
+  }
+  /**
+   * Starts (`"load"`) or stops (`"passive"`) the deck by hand, as the IDE's tape mode does; normally
+   * LD-BYTES starts it. Playing ends at the tape's end or when the CPU reaches $0008.
+   */
+  tapeMode(mode: "passive" | "load"): this {
+    this.machine.setMachineProperty(TAPE_MODE, mode === "load" ? 1 : 0);
+    return this;
+  }
+  /** The Next's conditioned EAR input now: the socket after the debounce and the relaxation (device state) */
+  tapeInput(): number {
+    return this.machine.wasmV2Runtime!.exports.zxnextTapeGetInputBit();
+  }
+  /** The TZX a SAVE produced (the machine's `SAVED_TO_TAPE`), or undefined */
+  savedTape(): { name: string; contents: Uint8Array } | undefined {
+    return this.machine.getMachineProperty(SAVED_TO_TAPE);
   }
   /** The samples recorded since `startAudio` (left/right, the mixer's output range). */
   audio(): AudioSample[] {

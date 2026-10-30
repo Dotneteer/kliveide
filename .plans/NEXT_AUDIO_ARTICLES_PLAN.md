@@ -11,8 +11,12 @@ structure, the explaining and figure rules, and the corrections the project auth
 reviewing the screen series; this plan does not repeat them, it only adds what is specific to sound.
 Fold any new lesson from this series' reviews into that file.
 
-Status: **planned, nothing written.** Eight series articles plus one standalone background page,
-"How a computer makes sound" (§3), written first. Open questions are in §13.
+Status: **the series is complete**: the background page (§3) and articles 1–8 (§2, §4–§10) are written. All written chapters follow the book style of `.ai/hardware-articles-guide.md`
+(Structure, Figures): titles without the machine ("The Big Picture: Four Sources, One Mixer", "The Beeper:
+EAR, MIC and the Tape", "One AY Chip: Tones, Noise and Envelopes", "TurboSound: Three AY Chips Behind Two
+Ports", "The 8-Bit DACs: Four Channels, Six Sound Cards", "Audio from the Raspberry Pi: Samples on Four Wires", "The Mixer: One Sum, Three Outputs", "From the Machine to Your Speakers: Sound in an Emulator"), no "Part" headings, figures sized for print.  the plan's "article N" numbering stays only as this plan's own
+bookkeeping, never in the text. Open questions
+are in §13.
 
 ---
 
@@ -146,7 +150,7 @@ Found while surveying for this plan; each article decides "fix the core" or "sta
   offset, HDMI audio at 48 kHz) are not emulated; Klive hands its own sample stream to the host. Stated
   the way the screen series stated "Klive emulates none of the output stage".
 - **The tape input conditioning** (the debounce that rejects pulses under ~1.14 µs, the stuck-at-one
-  relaxation after ~1000 µs): check whether Klive's tape path models either.
+  relaxation after ~1.15 ms): *settled* — Klive models both (article 2's as-built note).
 - **Side finding**: the book placeholder `17-ay.mdx` says the AY chip is selected through NextReg `$06`
   and the stereo mode is NextReg `$08` bits 4–3. Both are wrong (selection is a port `$FFFD` write with
   bit 7 set; stereo is NextReg `$08` bit 5 and NextReg `$09` bits 7–5). Correct the placeholder in the
@@ -230,6 +234,35 @@ Figures (≈ 9):
 Verify: every source's range at the mixer; NextReg `$06`/`$08`/`$09` bits and reset values; the PSG
 clock enable's rate in the top-level clock divider.
 
+**As built.** `next-audio/overview.mdx`, nine Parts and eight figures; the series map is a table rather
+than a figure (figure 9 dropped: the hero figure already is the map). The diagrams and the captures are
+drawn by `docs/authoring/next-audio/overview-figures.cjs` (shared helpers `_svg.cjs`). The captures
+come from `test/zxnext-hw/audio/next-audio-scene.test.ts`, which writes JSON (20 ms of Klive's 16-bit
+mix at 48 kHz) to `docs/authoring/next-audio/captures/<article>/` with
+`NEXT_AUDIO_SHOTS=docs/authoring/next-audio/captures`, not to `docs/public/images` (§0.4): the figures
+are inline SVG, so the samples are generator input, not a published asset. Each scene plays about
+1,000 Hz through one source alone, and the test asserts its frequency, that both sides are equal, and
+the swings' ratios to the beeper's 512 units (AY channel 255, Specdrum DAC 254 × 4, the Pi's word 1,000);
+the beeper is measured by its edge, since Klive's DC filter drifts its midpoint for about 0.1 s.
+Facts the article established, beyond §11:
+- "Four kinds of source" (the beeper with its EAR and MIC bits, MIC also carrying the tape input; the
+  AYs; the DACs; the Pi), not six: the author's decision, EAR and MIC are one source. The mixer still
+  adds five inputs per side, two of them the beeper's.
+- The mixer's MIC input is port `$FE` bit 3 XOR the tape input XOR the Pi's EAR bit, so a loading tape
+  is heard at MIC's level; the same line drives the MIC socket. Klive does not add the tape input.
+- Silence is 1,536 per side: the DACs at `$80` add 1,024 (also when disabled: held at `$80`), the Pi
+  512 when off. Every source at its largest: 5,998.
+- The audio port enables are all in NextReg `$84` (bit 0 AY, bits 1–7 the seven DAC families), reset
+  all 1. §11's "bits 16–23 of `$82`–`$85`" is the same thing counted over the four registers.
+- AY stereo per chip: ABC is L = A + B, R = C + B (B on both sides); mono is A + B + C on both, 765 per
+  chip, hence 2,295 for three. In stereo a chip's side is at most 510.
+- The jack's converters are first-order one-bit delta-sigma at 28 MHz; issue 4's speaker takes L + R
+  (no offset; issue 2 adds one); HDMI is the 13-bit sum as a 16-bit word, 48 kHz.
+- Klive (superseded, see article 7's as-built note): at first only the jack's stream was made, so the
+  speaker-only beeper was silent. Mode `10` behaves as YM in Klive too (only bit 0 reaches the PSGs).
+- Not claimed: the beeper's pitch at 14/28 MHz (wait states not checked) — the article gives 3.5 and
+  7 MHz only.
+
 ---
 
 ## 3. The background page — How a computer makes sound
@@ -294,6 +327,19 @@ Verify: nothing machine-specific; every number recomputed by script (the alias f
 example, the CD rate arithmetic). Mechanics as for the series (§0.5), but the page lives directly in
 `emulator-internals/` and needs its own routes/assets golden entries.
 
+
+**As built.** `computer-sound.mdx`, about 2,400 words of prose and eight figures, all computed by
+`docs/authoring/next-audio/computer-sound-figures.cjs`, which rewrites the SVG between the page's
+`{/* fig:<name> */}` markers and prints the numbers the text quotes (edit the script, not the SVG).
+Examples it settled: a 1,000 Hz wave at 16,000 and 5,000 samples a second; a 4-bit DAC staircase at
+16,000 samples a second through two RC stages at 3,000 Hz (the smooth wave lags the staircase by about
+0.1 ms); a 7,000 Hz tone at 8,000 samples a second heard as 1,000 Hz (the telephone example, limit
+4,000 Hz); pulse widths of 25/50/75 % filtered to about those levels; 1,000 Hz + 3,000 Hz summed to
+1.15 of the range and clipped. A short Part "Two speakers: stereo and space" (added at the
+author's request) covers channels, mono, panning, and delay-based width, echo and reverb, with two
+more figures: three panning cases with their channel levels, and a 12 × 8 m room's echoes to scale
+(direct sound 16.3 ms, single bounces 26–39 ms); article 4 (ABC/ACB, per-chip panning) can link it. No listening clips (Q3 still open). The page is the background, so it
+has no "How Klive does it"; the overview (article 1) links it in its audience paragraph.
 ---
 
 ## 4. Article 2 — The beeper, EAR and MIC
@@ -335,6 +381,35 @@ Figures (≈ 9):
 
 Verify: port `$FE` read formula; EAR/MIC volumes; issue-2 keyboard; the debounce length and the relax
 time in the top-level files; Klive's tape path against both.
+
+**As built.** `next-audio/beeper.mdx`, eight Parts and nine figures (`docs/authoring/next-audio/beeper-figures.cjs`).
+Captures from `next-audio-scene.test.ts` (scenes "beeper": the note loop at 3.5 MHz, 7 MHz and in
+contended memory; two voices from one bit, with its spectrum); the two-voice timeline is the program's own
+arithmetic, and the input stage is simulated from its rules. Figures 5 and 9 of the list became one diagram
+of the beeper's lines (input stage, bit 6, the MIC line). Facts established:
+- **Core fix (own commit, `fix` changeset):** Klive's port `$FE` bit 6 kept reading 1 for up to 2,800
+  T-states after bit 4 was cleared, the 48K's analogue EAR decay carried over from the Spectrum cores. The
+  Next's bit 6 is a plain OR at the read, so it drops with the write. Tests FE-READ-001–003
+  (`port-fe-read.test.ts`); the pinned parity test in `wasm-next-keyboard-ula.test.ts` was rewritten.
+- Port `$FE` is any even port; bits 7–5 of a write are ignored; reset clears bits 4–0. A read gives 1 in
+  bits 7 and 5, `$BF` with no key and bit 6 low.
+- Bit 6 = (tape input XOR Pi EAR) OR EAR out OR (MIC out AND issue 2) — the *port* MIC bit, not the MIC
+  line. The MIC socket and the mixer's MIC both get port bit 3 XOR tape input XOR Pi EAR.
+- **With the issue 2 keyboard on, real-time loading through the ROM fails**: LD-BYTES holds MIC at 1, so bit
+  6 reads 1 throughout (TAPE-009, with an issue 3 control that loads).
+- Pitch: the loop of 44 + 13 × (B − 1) T-states per half period, 1,760 → 994.3 Hz; 7 MHz 1,989 Hz; the same
+  loop at `$6000` with contention on keeps 1,760 T-states (994 Hz) in the border and takes about 2,007
+  (872 Hz) on the picture's lines, so the pitch drops and comes back every frame; the 918 Hz frame average is
+  arithmetic, not a pitch (author's review), and the stretch is this loop's (at `$8000` no measurable change). Contention only at
+  3.5 MHz (and not in Pentagon timing); the article gives 3.5 and 7 MHz only, as before.
+- Two voices: a 112 T-state constant-time pass, two 34 T-state slots, 8-bit phases with steps 4 and 5:
+  488.3 Hz and 610.4 Hz. The spectrum has both notes and their second harmonics almost as strong (pulse
+  trains); nothing between.
+- Input stage: noise rejection needs two 1.75 MHz enables without a change, 0.6–1.14 µs (a 0.5 µs glitch
+  is dropped; an edge passes 1.04 µs late in the simulation); relaxation 64 enables of 512 clocks,
+  1.15–1.17 ms (1.166 ms in the simulation). Klive models both (`zxnext-tape.c`, TAPE-006/007), settling
+  §0.6's tape bullet.
+- Klive's jack/speaker beeper is the time-weighted share of each level per sample; HDMI point-samples it.
 
 ---
 
@@ -386,6 +461,27 @@ Verify: the clock division inside the chip (`I_SEL_L`), counter widths and wrap 
 and taps, envelope step counts and shape table, both volume tables, read masks, reset values, R14/R15
 inputs, `$BFF5` format. Every period/frequency recomputed by script.
 
+**As built.** `next-audio/psg.mdx`, ten Parts and twelve figures (`docs/authoring/next-audio/psg-figures.cjs`).
+No core difference found: `zxnext-psg.c` follows the design, and `ay-psg.test.ts` already pinned it. The
+captures are `next-audio-scene.test.ts` scenes "psg" (A4; tone/noise/both/neither; noise periods 1 and 31; the
+16 envelope shapes, asserted to fall into 8 groups sample for sample; the climb in YM and AY mode; the
+envelope bass; a chord). Figures 3 (clock chain), 8 (shape bits worked) and 11 (read masks) of the list became
+text (the formula, two worked shapes, a list). Facts established:
+- Counters step 218,750 times a second (`I_SEL_L` = 1: 1.75 MHz ÷ 8); noise at half that, 109,375 ÷ period.
+  A4 = period 249, 439.26 Hz; range 26.7 Hz (4,095) to 109,375 Hz; 0 plays as 1 for tone, noise and envelope.
+- The noise LFSR (bit 0 XOR bit 2 into bit 16, a 1 fed in when all zero) is **not maximal-length**: from reset
+  it repeats after **114,681** steps (computed by script), not 131,071.
+- **A channel with tone and noise both off plays its volume as a steady level**, not silence (found when a
+  test assumed otherwise): silence is volume 0; the steady level is how 128K programs played samples.
+- Fixed volume v uses YM entry 2v + 1; the AY table is louder at every volume 1–14 (8: 40 vs 27). The YM
+  table has 29 distinct levels (three equal low pairs); AY mode's envelope has 16, over the same time.
+- Shapes: 0–3 = 9 and 4–7 = 15 exactly; a write to R13 restarts and steps at once. Ramp = 32 × period ÷
+  218,750 s (146 µs to 9.6 s). Envelope bass: shape 8 at period 14 and shape 10 at period 7, both 488.3 Hz.
+- `$FFFD` selects a register only with bits 7–5 = 000 (5-bit number; 16–31 dropped on write, `$FF` in YM,
+  register − 16 in AY mode); chip select needs bit 7 and bits 4–2 = 111 and TurboSound on. `$BFFD` reads
+  as `$FFFD` on +3 timing. R14/R15 inputs read `$FF` (pulled up), outputs read back.
+- The 128K's ~1.77 MHz clock: a tune is 1.3 % (23 cents) lower on the Next (as the overview already said).
+
 ---
 
 ## 6. Article 4 — TurboSound Next
@@ -427,6 +523,23 @@ Figures (≈ 9):
 Verify: the selection write's exact bit pattern and pan encoding; the stereo/mono sum formulas and
 their widths; what "frozen when disabled" means at the register level; reset scope of mode `11`; read
 paths.
+
+**As built.** `next-audio/turbosound.mdx`, eight Parts and eight figures (`docs/authoring/next-audio/turbosound-figures.cjs`);
+figures 5 and 6 of the list became one (ABC, ACB and mono side by side). No core difference found
+(`zxnext-psg.c`; `turbosound-mix.test.ts`, `ay-stereo-mode.test.ts` pin it). Captures: scenes "turbosound" (on /
+off from the start / switched off after; per-chip panning; nine channels). Facts established:
+- Chip select `%1 pp 111 cc`: `cc` 11 chip 0, 10 chip 1, 01 chip 2, **00 also chip 0**; pan bit 6 left, bit 5
+  right; taken only with TurboSound on. Register select needs bits 7–5 = 000; every other value is ignored.
+- Stereo per chip: **ABC L = A + B, R = C + B; ACB L = A + C, R = C + B** (C, not B, in the middle); mono
+  L = R = A + B + C, and mono wins over ACB. Per side 510 stereo / 765 mono; three chips 1,530 / 2,295.
+- TurboSound off: only the selected chip is heard and selects are ignored ("frozen"): a TurboSound program
+  with TurboSound off lands all its parts in chip 0, the last setup wins. Switching off after selecting chip 2
+  leaves chip 2 alone audible.
+- Every select rewrites the pan (`$FE` puts chip 1 back to both sides; `$DE` keeps it left).
+- Reset and mode `11`: registers cleared, chip 0 selected, pans `11`; a soft reset keeps NextRegs `$08`/`$09`.
+- Nine channels at full volume do reach 1,530 at moments when all are high (the capture touches it).
+- The book placeholder `17-ay.mdx` was corrected (§0.6): the chip is selected by a `$FFFD` write with TurboSound
+  on, ABC/ACB is NextReg `$08` bit 5 and mono NextReg `$09` bits 7–5.
 
 ---
 
@@ -474,6 +587,26 @@ Verify: every port decode condition and its enable bit; the `$FB`/`$F1`/`$F9` co
 channel each mirror reaches and reset values; the DMA prescaler's time base and formula; CTC rates.
 
 ---
+
+### As built (article 5)
+
+- Written as `dacs.mdx`, "The 8-Bit DACs: Four Channels, Six Sound Cards", with eight figures
+  (`docs/authoring/next-audio/dacs-figures.cjs`): the staircase, the four channels into two sides, the port map
+  (cards, NextReg `$84` bits and the channel each port writes, the NextReg mirrors as its last row), Covox stereo,
+  the four timers, one sine three ways at two CPU speeds, a drum hit, and the DACs' share of the mixer. The plan's
+  separate figures for mono ports, the enable bits and the clashes are folded into the port map and the text.
+- Facts checked: the channels hold and reset to `$80`, and `reset or not nr_08_dac_en` holds them there while the
+  DACs are off (writes ignored); ports decode on the low byte only; `$FB` is Pentagon's only with Soundrive mode 2
+  off; `$F1`/`$F9` with mode 2 on never reach `$7FFD`/`$DFFD`/`$1FFD` (`port_fd` is only A1–A0 = 01); `$DF` reads
+  are the Kempston joystick while Specdrum is enabled and the mouse is off; a port write beats a NextReg mirror in
+  the same clock (not stated). Klive's `zxnext-dac.c` matched every rule, no core change.
+- The DMA paces one byte per 32 × P master clocks, but in burst mode each byte also costs a few CPU clocks to get
+  the bus back: P = 55 gives 968 Hz for a 16-byte sine at 3.5 MHz and 964 Hz at 7 MHz against 994 Hz from the
+  prescaler alone, and the 2,048-byte drum lasts about 131 ms against 128.7. The text says "about 875,000 ÷ P,
+  a little under". The CTC rate (28 MHz ÷ 16 ÷ 109) is exact at every CPU speed.
+- The Copper is described, not captured: its list restarts every frame (311 or 312 lines, prime-ish against any
+  table length), so a looped capture would show a seam that is about the scene, not the DACs.
+- No listening clips (Q3 still open).
 
 ## 8. Article 6 — Audio from the Raspberry Pi
 
@@ -541,6 +674,23 @@ threshold rule; the read/latch protocol; clocking (master/slave; the slave bit i
 
 ---
 
+### As built (article 6)
+
+- Written as `pi-audio.mdx`, "Audio from the Raspberry Pi: Samples on Four Wires", with nine figures
+  (`docs/authoring/next-audio/pi-audio-figures.cjs`): the link both ways, one sample period's timing, NextReg
+  `$A2`, the four `$A2` settings captured (stereo, mono from either word, a side muted), a sample to the 10-bit
+  word, the left word latched half a period before the right (captured), the Pi's share of the mixer, the
+  `$2C`/`$2D` read, and the EAR rule on a noisy 250 Hz wave (captured) beside a plain threshold worked out for the
+  same wave. The plan's separate pin-direction figure is folded into the link figure.
+- **Finding: the EAR bit rises at a rising wave's zero crossing, not at three quarters.** The rule ORs the top two
+  bits of the left and the right latch, and between the two latches the left word is a sample ahead; on a rising
+  wave one reads `01` and the other `10` at the crossing, and `01 or 10 = 11`. It falls only when both are below
+  `$100`. Klive's `zxnext-pi-i2s.c` does exactly that (a faithful copy of the bitwise OR); the scene test models the
+  two latch moments and pins both thresholds on a clean sine. The article explains it as the "surprise".
+- The Next → Pi direction is described from the hardware (the 13-bit mixer sums, top bit inverted, at the top of
+  each word) and stated as not emulated. A Z80 loop counting port `$FE` bit 6 edges from a streamed 1,000 Hz square
+  sees 2,000 a second (asserted, no figure).
+
 ## 9. Article 7 — The mixer and the outputs
 
 **Hook:** Every source adds its number to one sum, many million times a second. Nothing is ever
@@ -581,6 +731,48 @@ Figures (≈ 10):
 Verify: every input width and shift; the maximum sum; the jack DAC's input bits and the RC values;
 the speaker mix (sum, offset, the exclusive case); the HDMI sample rate and word placement in both
 board issues.
+
+**As built.** `next-audio/mixer.mdx`, seven Parts and seven figures (`docs/authoring/next-audio/mixer-figures.cjs`).
+The hardware's sum and outputs are not emulated, so six figures are computed from the hardware's rules
+(the one-bit converter simulated exactly as built); the seventh puts the hardware's sum beside a Klive
+capture (`next-audio-scene.test.ts`, scene "mixer": the beeper switched on from silence, about 104 Hz).
+Figure 10 (the control bits) dropped: the overview's register figure has them. Facts established:
+- **The jack takes the sum's low 12 bits** (both board issues), so a sum of 4,096 or more *wraps*
+  (4,343 plays as 247); HDMI gets all 13 bits. The overview's "the sum always fits, never clips" was
+  corrected in the same change. Room above silence on the jack: 2,559. Worked mixes: one chip full 2,046;
+  TurboSound stereo full 3,066, + EAR and MIC 3,706 (fit); three chips mono full + EAR 4,343 (wraps).
+- The jack's converter is first-order delta-sigma at 28 MHz: a 14-bit total, the pin is its top bit, 4,096
+  taken off when it is set; the share of on-ticks is input / 4,096 (checked by simulation).
+- Speaker: issue 4, L(11..0) + R(11..0) into a 13-bit converter; beeper only: EAR bit 10 (1,024), MIC
+  bit 8 (256). Issue 2 biases the speaker word for its transistor. `$08` bit 4 gates the pin.
+- HDMI: 16-bit word `0 & sum & 00`, 48 kHz, the sum's value at each sample with no averaging; the
+  constant level stays in the words.
+- Rest levels avoid clicks: DACs held at `$80` while disabled, the Pi at 512 while off or muted.
+- RC values of the board are not in the design, so the article gives none.
+
+**Core fix found while writing (its own commit, `fix` changeset): Klive's mixer gain.** At 29.44 Klive
+clamped 1,113 units above silence, so three AY chips at full volume (1,530) clipped in Klive but not on
+the hardware. The author chose a gain of **12.8**, matching Klive's headroom to the jack's (2,559 × 12.8
+= 32,755): what the jack plays cleanly Klive plays cleanly; a mix that wraps on the jack clamps in Klive.
+The AY stays unipolar (a filter would not add headroom: a step passes it whole). Test BEEP-009 in
+`beeper-mixer.test.ts`; two tests pinning absolute words were updated. This settles Q4: Klive keeps its
+centred mix and the article describes the difference.
+
+**Outputs emulated (author's decision, after the article): a Sound Output setting.** Klive's one stream
+plays the output chosen under Machine › Sound › Output (setting
+`emuOptions.nextAudioOutput`, `next-audio-output.ts`): the jack (default; the 12-bit wrap, computed from
+the hardware's sum beside the centred mix, bit-identical below 4,096), the internal speaker (L + R jack
+values × 6.4, `$08` bit 4 gates it, `$06` bit 6 plays EAR 1,024 / MIC 256 only; issue 4's speaker) or
+HDMI (the whole sum × 7.34, point-sampled beeper and PSGs, `$09` bit 2 silences it). Tests OUT-001 to
+OUT-005 in `audio-outputs.test.ts`. The tape input followed (`.plans/NEXT_TAPE_PLAN.md`): Klive's deck
+feeds the EAR socket through the Next's input stage into port `$FE` bit 6 and the MIC line.
+
+Klive's samples stand for the sound **after the jack's capacitor**, not the FPGA's digital sum: the
+article says so beside the beeper figure (author's review). The remaining inaudible differences are
+listed in its "What Klive leaves out": only the beeper is DC-filtered (an AY held at a fixed volume stays
+as an offset; filtering the whole sum would cost headroom, since a step passes a filter whole), the
+filter's time constant is Klive's (the board's RC values are not in the design), and Klive's HDMI is
+centred where the real words carry 6,144.
 
 ---
 
@@ -624,6 +816,28 @@ Verify: everything against Klive's code (`zxnext-audio-mixer.c`, `AudioDeviceBas
 worklet); timing claims measured, not assumed.
 
 ---
+
+### As built (article 8)
+
+- Written as `klive-audio.mdx`, "From the Machine to Your Speakers: Sound in an Emulator", with six figures
+  (`docs/authoring/next-audio/klive-audio-figures.cjs`): samples across a frame's end with the captured counts per
+  frame (972/973, 972.45 exact at 128K timing and 48 kHz), point sampling against averaging the window, the
+  captured spectra of a 9,358 Hz beeper tone through HDMI and the jack, the pipeline, the worklet's queue (its own
+  rules run on a timeline) and the series map. The plan's DC-filter capture is the mixer chapter's; this chapter
+  links it. The planned figures on breakpoints and on running faster than real time became a list in the text.
+- Measured, not assumed: the fifth harmonic's alias at 1,209 Hz is 14 dB below the tone point-sampled and 44 dB
+  below it averaged; the third harmonic's alias at 19,925 Hz is only about halved by averaging (the text says an
+  average is a rough filter).
+- **Finding, fixed: the worklet's three-frame hold-back rarely applied to a running machine.** Its lone-frame
+  rule (play once a frame's worth of pairs has passed since the last store, for the debugger's single frames)
+  fired first in normal priming: frames 20.26 ms apart and 512-sample callbacks 10.67 ms apart mean two callbacks,
+  1,024 pairs, often pass between frames, more than a frame's 973. Running the real `Sampling.worklet.js` on that
+  timing, play started after one or two frames and the queue rode 12-31 ms (0 at its low point with 10 ms of
+  jitter). The lone-frame wait is now two frames (`LONE_WAIT_FRAMES`, its own `fix` commit before this article's):
+  play starts after three frames, 64-75 ms in, and the queue keeps 24-39 ms in hand at its low point with up to
+  10 ms of jitter. The article and its queue figure describe the fixed worklet.
+- Not described: Klive's clock multiplier (it keeps the frame rate; only unthrottled modes run ahead, and of those
+  only rendering to video applies to the Next).
 
 ## 11. Facts the survey already established
 
@@ -680,8 +894,7 @@ Recorded here so the articles start from checked numbers (each still re-checked 
   page beside `crt-display.mdx`, §3, and the overview links it.)*
 - **Q3** — Listening examples: embed short generated clips (`<audio controls>`) next to the waveforms?
   It needs a new asset kind in `doc:check`, but sound is hard to understand from pictures alone.
-- **Q4** — Klive's mixer differs from the hardware's (signed, DC-filtered vs unsigned): keep Klive's
-  (it sounds the same) and describe the difference, or change the core to sum like the hardware and
-  filter once at the end?
+- **Q4** — *Settled:* Klive keeps its centred, DC-filtered mix and the mixer article describes the
+  difference; its gain is 12.8, the jack's headroom (article 7's as-built note).
 - **Q5** — Is Article 8 (Klive's audio pipeline) in scope for this series, or a separate
   `emulator-internals` page, since it is about the emulator rather than the Next?

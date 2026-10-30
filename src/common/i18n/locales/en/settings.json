@@ -1037,5 +1037,17 @@
   "settings.machine.if1Rom.description": "Empty: the second-edition ROM Klive ships. Changing it restarts the machine",
   "@settings.machine.if1Rom.description": {
     "context": "Help text under the setting 'Interface 1 ROM' (Settings dialog, Machine page): an 8K ROM file to use instead of the shipped one, for example the first edition. Wraps over several lines."
+  },
+  "settings.group.sound": "Sound",
+  "@settings.group.sound": {
+    "context": "Group heading in the Settings dialog (Emulator page). The style shows it in capitals; write it in your language's normal case."
+  },
+  "settings.emulator.nextAudioOutput.title": "ZX Spectrum Next sound output",
+  "@settings.emulator.nextAudioOutput.title": {
+    "context": "Settings dialog, Emulator page, 'Sound' group: label of a drop-down list, shown for the ZX Spectrum Next. Its choices: 'Audio jack', 'Internal speaker', 'HDMI'."
+  },
+  "settings.emulator.nextAudioOutput.description": "The Next sends its sound to three outputs, each built differently; Klive plays the one chosen here",
+  "@settings.emulator.nextAudioOutput.description": {
+    "context": "Help text under the setting 'ZX Spectrum Next sound output' (Settings dialog, Emulator page). Wraps over several lines."
   }
 }
