@@ -1,0 +1,19 @@
+SpaceWar
+2023. március 5.
+Bertók Zsolt
+
+A SpaceWar egy egyszerű bemutató játék TRSE Pascalhoz, ami a TVC unit használatát demonstrálja. Ez még nem egy játék engine, de már ez is alkalmas egyszerűbb TVC játékok elkészítésére. Igyekeztem egy jól strukturált, könnyen átlátható Pascal forrást készíteni a játékhoz.
+
+Pár szó a játékban látható dolgokról:
+
+1. A játék kezdőképe a TRSE saját képtömörítőjének a használatát mutatja be. A betömörített kezdőkép mindössze 2947 byte. Sajnos a TRSE saját image editora még nincs igazán TVC-re felkészítve, ahogy tapasztaltam 1024x960 pixel méretű képből tud megfelelőt TVC formátumú képet konvertálni, és azt is kicsit világosabbra alakítja, mint az erdeti.
+
+2. A kezdőkép után látható információs rész, ami leírja a játék kezelését, a TVC ROM rutinjait használva írja ki a szövegeket a képernyőre. A TVC ROM rutinok a TVC unitban (TVC.tru fájl) vannak implementálva, így Pascal-ból kényelmesen használhatóak, és pont olyan lassúak is, mint BASIC-ből, bár a lefordított Pascal kód miatt a végeredmény összeségében gyorsabb lesz. Ugyanígy van megvalósítva az új pálya előtti kiírás és a GAME OVER rész is.
+
+3. A játékmenet már nem használ TVC ROM rutinokat, az áttervezett karaktereket sprite-tokká alakítja (valójában kis képekké), és azokat a TVC unitban levő inline assembly forrás segítségével rakja ki a képernyőre. A lézer lövedékek kirakását is egy assembly rutin végzi a háttérben, ahogy a szükséges képernyőtörléseket is.
+
+4. A játék irányítása és hangjai is a TVC unitban található inline assembly kóddal vannak megvalósítva, amik a Pascal forrásból egyszerűen elérhetőek és használhatóak.
+
+5. Játék közben ESC billentyűt nyomvba a kereten kátható, hogy mennyi rasztersornyi időbe kerül a játéknak a "sprite"-ok és a lézerek kirakása (kék keret), és mennyi idő a játék további vezérlése, ami jellemzően a játékos- és az ellenség mozgatásának a kezelése (szürke keret). Piros keret jelzi, hogy mennyit unatkozik a Z80. Ilyenkor nem csinál semmi hasznosat a játék, csak vár a következő cursor-interruptra, ami segít, hogy a megjelenítés villogás- és szétesésmentes legyen.
+
+Hamarosan készíteni fogog egy Game Engine-t is TRSE Pascalhoz, amiben már színes és maszkolt sprite-ok lesznek, valamint hardware scroll, és digi hang lejátszása is tervben van.

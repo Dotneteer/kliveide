@@ -1,0 +1,1991 @@
+				org	6639			; A program kezdőcíme
+                         ;{BASIC Header
+				db	$0F,$0A,$0,$DD		; "10 PRINT" - basic tokens
+				db	' USR'			; " USR"
+				db	$96			; "("
+				db	'6655'			; "6655"
+				db	$95,$FF			; ")" 
+				db	$0
+                         ;}
+;      4444444444444444444444444444444444444444444444444444444444444444444				
+;         
+;                 4 szinü üzemmód
+;
+;      4444444444444444444444444444444444444444444444444444444444444444444
+;
+				
+				jp	START			; <- ez lesz a 7000-es ($1B58) cím, amit meghív a BASIC
+				
+				
+                         ;{változók, konstansok
+	VIDEOMODE		equ	$0B13			; 6-os port tükre a memóriában (video mode)
+	SAVEDVIDEOMODE		db	0			; ide mentjük el az induláskori video módot
+	BORDER			equ	$0B4F			; BORDER rendszerváltozó
+	JOYSTATE		equ	2905			; billentyűzet mátrix joystick byte
+	VIDRAMSTART		equ	$8000			; videoram kezdőcíme, ha a 2. lapra van belapozva (32768 -> $8000)                 
+				
+	SPRX			db	0			; Sprite X pozíció pixelben 0..256                             
+	SPRY			db	0			; Sprite Y pozíció pixelben 0..240
+
+	foszerMX		db	0
+	foszerMY		db	0
+	MAPszam			dw	0
+	foszerMX2		db	0
+	foszerMY2		db	0
+	foszer_kep		db	0
+	Mehet_e			db	0 ; mozgásnál mehet e az adott irányba
+	randomszam		db	0
+	targyak_rajz		db	0 ; targyak_rajz=1 akkor újra kell rajzolni a tárgylistát
+	fmx		db	0
+	fmy		db	0
+	ok		db	0
+				
+				
+	sound_PITCH		db	0
+	sound_TIME		db	0
+	
+	targy_1			db	0
+	targy_2			db	0
+	targy_3			db	0
+	palya			db	0
+	palya_max		equ	33 ; legmagasabb pálya sorszáma +1
+	mozgas_irany		db	0
+				
+	szoveg_1		db	'SOTET KASTELY 2 '
+	szoveg_1A		db	'   (2022)   '
+	szoveg_2		db	'   SPACE... '
+	szoveg_6		db	' OROSZ OLIVER  '
+	szoveg_7		db	'  JATEK KOZBEN: R-RESET Q-EXIT  '
+	szoveg_3		db	'LEVEL: '
+	szoveg_level		db	'01'
+	szoveg_4		db	'SCORE: '
+	szoveg_5		db	'GAME OVER'
+	szoveg_5B		db	'VEGIG JATSZOTTAD MIND A'
+	szoveg_5C		db	'32 PALYAT, GRATULALOK! '
+	szoveg_5D		db	'    KISZABADULTAL A    '
+	szoveg_5E		db	'   SOTET KASTELYBOL.   '
+	szoveg_score		db	'000000'
+	szoveg_scoreB		db	'000000'  ; pálya elején elmentjük, reset-nél visszatöltjük
+	szoveg_score_plusz	db	'000'			;pálya végén pontot kapunk a kivitt tárgyakért
+	karakterpoz		dw	0
+
+	SPRADDR			dw	0
+	SPRMASKADDR		dw	0
+	SPRW			db	0
+	SPRH			db	0
+	SPRVRAMADDR		dw	0			; Sprite aktuális videoram kezdőcím $8000 - $C000               
+	NEWLINEBYTES		dw	0			; 64 - sprite.Width bytes -> ennyit kell a képernyőcímhez adni, hogy a sprite következő sorának elejére mutasson
+	SAVESP			dw	0			; SP regiszter elmentésére
+	EMPTY			ds	100,$0			; 100 db nulla 
+				nop
+                         ;}
+				
+                         ;{Init
+	START			nop
+				
+				ld	hl,SpriteBaseAddrV	; A sprite atlasz fizikai kezdőcíme
+				ld	(SPRADDR),hl
+				;call 	InitVideo2  ; 2 színű mód		
+				call 	InitVideo4  ; 4 színű mód		
+				;call 	InitVideo16 ; 16 színű mód		
+				call	VIDON			; videoram belapozás a 2. lapra
+				;call 	SOUND_ON
+
+				; 4 szín beállítása
+				call	PALETTA_4
+				call	SOUND_ON
+;****************************************************************************************************************
+;                               NYITÓKÉP				
+;****************************************************************************************************************
+		START_Fokepernyo
+				ld	A,3
+				ld	(2893),A  ; Tinta szín=3
+				ld	A,0
+				ld	(2894),A  ; Karakter háttérszín=0
+				;törlés
+				;call	CLEARSCREEN
+				;
+				; itt kéne a 0-ás pályát kirajzolni.
+				ld	A,0  ; palya a MAP_masolas_fejes-hez kell
+				call	MAP_masolas_fejes
+				call	MAP_randomko
+				call	MAP_randomko_randomminta
+				;
+				call	MAP_KIRAJZOL_TELJES_KÖD_2
+				;
+;                               szöveg kiirasa  "SOTET KASTELY 2"
+				ld	BC,$0808 ; X,Y karakter pozíció
+				rst	$30	 ;címszámítás
+				db	$3
+				ld	DE,szoveg_1	;szöveg címe
+				ld	BC,15		;szöveg hossza
+				rst	$30		;írás
+				db 	$2
+;                               szöveg kiirasa  " 2022 "
+				ld	BC,$0A09 ; X,Y karakter pozíció
+				rst	$30	 ;címszámítás
+				db	$3
+				ld	DE,szoveg_1A	;szöveg címe
+				ld	BC,10		;szöveg hossza
+				rst	$30		;írás
+				db 	$2
+;                               szöveg kiirasa  "  SPACE... "
+				ld	BC,$0A10 ; X,Y karakter pozíció
+				rst	$30	 ;címszámítás
+				db	$3
+				ld	DE,szoveg_2	;szöveg címe
+				ld	BC,10		;szöveg hossza
+				rst	$30		;írás
+				db 	$2
+;                               szöveg kiirasa  "  OROSZ OLIVER "
+				ld	BC,$1317 ; X,Y karakter pozíció
+				rst	$30	 ;címszámítás
+				db	$3
+				ld	DE,szoveg_6	;szöveg címe
+				ld	BC,13		;szöveg hossza
+				rst	$30		;írás
+				db 	$2
+;                               szöveg kiirasa  "  "
+				ld	BC,$0218 ; X,Y karakter pozíció
+				rst	$30	 ;címszámítás
+				db	$3
+				ld	DE,szoveg_7	;szöveg címe
+				ld	BC,31		;szöveg hossza
+				rst	$30		;írás
+				db 	$2
+;			Főképernyő
+;			SPACE...
+	varakozas_space
+				ld	A,(2904); 
+				cp	32
+				jp	NZ,varakozas_space
+;			MAP másolása  az első pályát bemásoljuk a MAP tömbbe
+;*******************************************************************************************
+				; Teljesen új játék készítése
+;*******************************************************************************************
+				ld A,0				
+				ld (sound_TIME),A				
+				;  PONT=000000
+				ld	HL,szoveg_score
+				ld	A,48 ;"0"
+				ld	(HL),A   ;"x00000"
+				INC	HL
+				ld	(HL),A   ;"0x0000"
+				INC	HL
+				ld	(HL),A   ;"00x000"
+				INC	HL
+				ld	(HL),A   ;"000x00"
+				INC	HL
+				ld	(HL),A   ;"0000x0"
+				INC	HL
+				ld	(HL),A	 ;"00000x"
+				;  palya=01
+				ld	HL,szoveg_level
+				ld	A,48  ;"0"
+				ld	(HL),A   ;"x0"
+				inc	HL
+				ld	A,49  ;"1"
+				ld	(HL),A	 ;"0x"
+				;
+				ld	A,1 ;******************************************** 
+				ld	(palya),A		; palya=1 
+				;
+	START_palya1		
+				ld	HL,VIDRAMSTART
+				ld	(SPRVRAMADDR),HL
+
+				ld	A,(palya)  ; palya a MAP_masolas_fejes-hez kell
+				call	MAP_masolas_fejes
+				call	MAP_randomko
+				call	MAP_randomko_randomminta
+				ld	A,0
+				ld	(targy_1),A ; targy_1=0
+				ld	(targy_2),A ; targy_2=0
+				ld	(targy_3),A ; targy_3=0
+				ld	A,1 
+				ld	(targyak_rajz),A	; targyak_rajz=1 
+				;
+				; szoveg_scoreB=szoveg_score
+				ld	HL,szoveg_score
+				ld	DE,szoveg_scoreB
+				ld	BC,5
+				ldiR
+;****************************************************************************************************************
+;****************************************************************************************************************
+;*******************************  végigmegyünk a 16x15-ös MAP-on és meghatározott elemet keresünk ***************				
+;*******************************  most éppen a START helyet ahol a játékos kezd        **************************
+				ld	hl,MAP
+				ld	(MAPszam),hl
+				ld	A,15			; 6-szor fut le a CIKLUS 1
+        KERES_CIKLUS2				
+				ld	(SPRY),A		; beállítása
+				ld	A,16			; 6-szor fut le a CIKLUS 1
+	KERES_CIKLUS1			
+				ld	(SPRX),A
+				ld	hl,(MAPszam)      ; MAPszam = MAP aktuális elemére mutat
+				ld	A,(HL)            ; A = következő elem a MAP-on
+				inc 	hl                ; MAPszam = MAPszam + 1
+				ld	(MAPszam),hl		; és mentés
+				;
+				ld	B,10
+				cp	B
+				jp	NZ,KERES_NEM_10
+				;  A=10 -----------------------START hely
+				ld	A,(SPRX)
+				dec	A
+				ld	B,A
+				ld	A,15
+				SUB	B
+				ld	(foszerMX),A
+				ld	A,(SPRY)
+				ld	B,A
+				ld	A,15
+				SUB	B
+				ld	(foszerMY),A
+				ld	hl,(MAPszam)		;
+				dec	hl
+				ld	A,0
+				ld	(HL),A
+				jp	KERES_VEGE  ; 10 volt :-)
+	KERES_NEM_10		
+				; Más elemet is kereshetünk
+				;
+				;
+	KERES_VEGE		
+				; Több elemet nem keresünk 
+				ld	A,(SPRX)
+				dec	A
+				jp	NZ,KERES_CIKLUS1		;Ha A nagyobb mint 0 akkor GOTO CIKLUS 1
+				
+				ld	A,(SPRY)
+				dec	A
+				jp	NZ,KERES_CIKLUS2		;Ha A nagyobb mint 0 akkor GOTO CIKLUS 1
+
+;****************************************************************************************************************
+				; teljes térkép kirajzolása
+;				call	MAP_KIRAJZOL_TELJES
+				call	MAP_KIRAJZOL_TELJES_KÖD
+				call	MAP_KIRAJZOL_3x3
+;****************************************************************************************************************
+;                               ;       PRINT "LEVEL"
+				;
+				ld	BC,$1401 ; X,Y karakter pozíció
+				rst	$30	 ;címszámítás
+				db	$3
+				ld	DE,szoveg_3	;szöveg címe
+				ld	BC,7		;szöveg hossza
+				rst	$30		;írás
+				db 	$2
+;                               ;       PRINT "01"
+				ld	BC,$1B01 ; X,Y karakter pozíció
+				rst	$30	 ;címszámítás
+				db	$3
+				ld	DE,szoveg_level	;szöveg címe
+				ld	BC,2		;szöveg hossza
+				rst	$30		;írás
+				db	$2
+;                               ;       PRINT "score"
+				ld	BC,$0501 ; X,Y karakter pozíció
+				rst	$30	 ;címszámítás
+				db	$3
+				ld	DE,szoveg_4	;szöveg címe
+				ld	BC,7		;szöveg hossza
+				rst	$30		;írás
+				db 	$2
+;                               ;       PRINT "000120"
+				ld	BC,$0C01 ; X,Y karakter pozíció
+				rst	$30	 ;címszámítás
+				db	$3
+				ld	DE,szoveg_score	;szöveg címe
+				ld	BC,6		;szöveg hossza
+				rst	$30		;írás
+				db 	$2
+;****************************************************************************************************************
+				;
+;****************************************************************************************************************
+;
+				ld	A,(foszerMX)		; SpriteX pozíció                           
+				ld	(foszerMX2),A
+				ld	A,(foszerMY)		; SpriteY pozíció                           
+				ld	(foszerMY2),A
+				
+	MAINLOOP_3			
+				HALT
+				HALT
+				ld	A,0
+				ld	(foszer_kep),A
+				call ELJARAS_RAJZFOSZER
+				ld	A,10
+				ld	(foszer_kep),A
+				ld	A,(foszerMX2)		; SpriteX pozíció                           
+				ld	(foszerMX),A
+				ld	A,(foszerMY2)		; SpriteY pozíció                           
+				ld	(foszerMY),A
+				call ELJARAS_RAJZFOSZER
+
+				;
+;**************************************************************************************************************
+;**************************************************************************************************************
+	; Főciklus, joystick lenyomására várunk
+	MAINLOOP		;
+	;{MAINLOOP
+				call SOUND_PLAY
+
+				; tárgylista 
+				call MAP_KIRAJZOL_TARGYLISTA_3	
+				;
+				ld	A,(JOYSTATE); joystick állapot byte kiolvasása a billentyűzet mátrixból
+				cp	2
+				jp	Z,MOZGAS_fel
+				cp	4
+				jp	Z,MOZGAS_le
+				cp	32
+				jp	Z,MOZGAS_jobbra
+				cp	64
+				jp	Z,MOZGAS_balra
+				;
+				; Billentyű lenyomás....
+				ld	A,(2899);
+				cp	128
+				jp	Z,Billentyu_R
+				cp	64
+				jp	Z,Billentyu_Q
+				;ld	A,(2902);
+				;cp	4  ; debug
+				;jp	Z,Billentyu_L  ; debug
+				;
+				;HALT
+				;
+				;
+				;
+				jp	MAINLOOP
+				;				
+	;}
+;**************************************************************************************************************
+	Billentyu_R		; Pálya újraindítása
+				ld	HL,szoveg_scoreB ; szoveg_score=szoveg_scoreB
+				ld	DE,szoveg_score  ; Ne lehessen végtelen pontot gyűjteni
+				ld	BC,5
+				ldiR
+				call	START_palya1
+;**************************************************************************************************************
+	Billentyu_Q		; Teljes játék újraindítása  -vissza a főképernyőre
+				call	START_Fokepernyo
+;**************************************************************************************************************
+	Billentyu_L		; pályaugrás debug céllal
+				call ELJARAS_Pluszpalya
+				call ELJARAS_megnyeres_kicsi		
+;**************************************************************************************************************
+;**************************************************************************************************************
+				
+	MOZGAS_fel		; felfelé nyomjuk a joy-t
+				nop
+				ld	A,1
+				ld	(mozgas_irany),A
+				;
+				ld	A,(foszerMX)		; SpriteX pozíció                           
+				ld	(foszerMX2),A
+				ld	A,(foszerMY)		; SpriteY pozíció                           
+				dec 	A
+				ld	(foszerMY2),A
+				call	ELLENORZES1
+				ld	A,(Mehet_e)
+				ld	B,0
+				cp	B
+				jp 	NZ, ELJARAS_RAJZFOSZER_SCOLL_FEL
+				jp MAINLOOP
+	MOZGAS_le  		; lefelé nyomjuk a joy-t
+				nop
+				ld	A,2
+				ld	(mozgas_irany),A
+				;
+				ld	A,(foszerMX)		; SpriteX pozíció                           
+				ld	(foszerMX2),A
+				ld	A,(foszerMY)		; SpriteY pozíció                           
+				inc 	A
+				ld	(foszerMY2),A
+				CALL ELLENORZES1
+				ld	A,(Mehet_e)
+				ld	B,0
+				cp	B
+				jp 	NZ, ELJARAS_RAJZFOSZER_SCOLL_LE
+				jp MAINLOOP
+	MOZGAS_jobbra		; jobbra
+				nop
+				ld	A,3
+				ld	(mozgas_irany),A
+				;
+				ld	A,(foszerMX)		; SpriteX pozíció                           
+				inc 	A
+				ld	(foszerMX2),A
+				ld	A,(foszerMY)		; SpriteY pozíció                           
+				ld	(foszerMY2),A
+				CALL ELLENORZES1
+				ld	A,(Mehet_e)
+				ld	B,0
+				cp	B
+				jp 	NZ, ELJARAS_RAJZFOSZER_SCOLL_JOBBRA
+				jp MAINLOOP
+	MOZGAS_balra 		; balra
+				nop
+				ld	A,4
+				ld	(mozgas_irany),A
+				;
+				ld	A,(foszerMX)		; SpriteX pozíció                           
+				dec 	A
+				ld	(foszerMX2),A
+				ld	A,(foszerMY)		; SpriteY pozíció                           
+				ld	(foszerMY2),A
+				CALL ELLENORZES1
+				ld	A,(Mehet_e)
+				ld	B,0
+				cp	B
+				jp 	NZ, ELJARAS_RAJZFOSZER_SCOLL_BALRA
+				jp MAINLOOP
+				
+;**************************************************************************************************************
+;**************************************************************************************************************
+				
+	ELLENORZES1		; Ellenőrizzük, hogy az új helyre léphetünk vagy sem (foszerMX2,foszerMY2)
+				nop
+				ld	A,0      ; nem mehet
+				ld	(Mehet_e),A
+				;  koordináta vizsgálat jönne
+				ld	A,(foszerMX2)
+				ld	B,A
+				ld	A,16
+				cp	B
+				jp 	Z, ELLENORZES_VEGE
+				ld	A,255
+				cp	B
+				jp 	Z, ELLENORZES_VEGE
+
+				ld	A,(foszerMY2)
+				ld	B,A
+				ld	A,15
+				cp	B
+				jp 	Z, ELLENORZES_VEGE
+				ld	A,255
+				cp	B
+				jp 	Z, ELLENORZES_VEGE
+
+				;  elem vizsgálat következik. HL-be rakjuk a MAP első elemének címét
+				ld	hl,MAP
+				; BC= foszerMY2*16+foszerMX2
+				ld	B,0
+				ld	A,(foszerMY2)
+				sla	A  ; A=A*16
+				sla	A
+				sla	A
+				sla	A
+				ld	C,A
+				ld	A,(foszerMX2)
+				add	A,C
+				ld 	C,A
+				; HL=HL+BC        HL=MAP+foszerMY2*16+foszerMX2  tehát az elem címe
+				add	HL,BC
+				; A=map[foszerMX2,foszerMY2]
+				ld	A,(HL)
+				;
+				;
+				;ld	B,1  ; IF A=1 THEN... FAL
+				cp	1
+				jp	NZ,ELLENORZES_NEM_101
+				ret	; fal, nem mehet arra, ellenőrzés vége
+	ELLENORZES_NEM_101
+				;ld	B,2  ; IF A=1 THEN... FAL
+				cp	2
+				jp	NZ,ELLENORZES_NEM_102
+				ret	; fal, nem mehet arra, ellenőrzés vége
+	ELLENORZES_NEM_102
+				;ld	B,3  ; IF A=1 THEN... FAL
+				cp	3
+				jp	NZ,ELLENORZES_NEM_103
+				ret	; fal, nem mehet arra, ellenőrzés vége
+	ELLENORZES_NEM_103
+				;ld	B,4  ; IF A=1 THEN... FAL
+				cp	4
+				jp	NZ,ELLENORZES_NEM_104
+				ret	; fal, nem mehet arra, ellenőrzés vége
+	ELLENORZES_NEM_104
+				;ld	B,5  ; IF A=1 THEN... FAL
+				cp	5
+				jp	NZ,ELLENORZES_NEM_105
+				ret	; fal, nem mehet arra, ellenőrzés vége
+	ELLENORZES_NEM_105
+				;ld	B,6  ; IF A=1 THEN... FAL
+				cp	6
+				jp	NZ,ELLENORZES_NEM_106
+				ret	; fal, nem mehet arra, ellenőrzés vége
+	ELLENORZES_NEM_106
+				;ld	B,7  ; IF A=1 THEN... FAL
+				cp	7
+				jp	NZ,ELLENORZES_NEM_107
+				ret	; fal, nem mehet arra, ellenőrzés vége
+	ELLENORZES_NEM_107
+				;ld	B,8  ; IF A=1 THEN... FAL
+				cp	8
+				jp	NZ,ELLENORZES_NEM_108
+				ret	; fal, nem mehet arra, ellenőrzés vége
+	ELLENORZES_NEM_108
+				;ld	B,9  ; IF A=1 THEN... FAL
+				cp	9
+				jp	NZ,ELLENORZES_NEM_109
+				ret	; fal, nem mehet arra, ellenőrzés vége
+	ELLENORZES_NEM_109
+				cp	27
+				jp	NZ,ELLENORZES_NEM_27
+				ld	A,28
+				ld	(HL),A
+				call 	MAP_KIRAJZOL_3x3					;(foszerMY),(foszerMX)	
+				ret	; fal, nem mehet arra, ellenőrzés vége
+	ELLENORZES_NEM_27
+				cp	28
+				jp	NZ,ELLENORZES_NEM_28
+				ret	; fal, nem mehet arra, ellenőrzés vége
+	ELLENORZES_NEM_28
+				cp	22
+				jp	NZ,ELLENORZES_NEM_122
+				ret	; fal, nem mehet arra, ellenőrzés vége
+	ELLENORZES_NEM_122
+				;ld	B,20  ; IF A=1 THEN... eltolhato koo
+				cp	20
+				jp	NZ,ELLENORZES_NEM_120
+				;
+				call	ELTOLHATO_KO
+				;
+				ret	; Eltolható kő, még nincs lekezelve
+	ELLENORZES_NEM_120
+				;ld	B,11  ; IF A=2 THEN... EXIT 
+				cp	11
+				jp	NZ,ELLENORZES_NEM_2 ; A<>2
+				; A=2
+				call hang_effekt_0
+				jp	ELLENORZES_VEGE_MEHET
+				;ret	;EXIT 
+	ELLENORZES_NEM_2
+				;ld	B,12  ; IF A=12 THEN... KARD
+				cp	12
+				jp	NZ,ELLENORZES_NEM_3	; A<>12   -KARD
+				ld	A,(targy_2)
+				ld	(targy_3),A
+				ld	A,(targy_1)
+				ld	(targy_2),A
+				ld	A,12
+				ld	(targy_1),A
+				ld	A,0
+				ld	(HL),A
+				ld	A,1 
+				ld	(targyak_rajz),A	; targyak_rajz=0 
+				ld	A,1      
+				ld	(Mehet_e),A
+				call hang_effekt_1
+				call ELJARAS_Pluszpont
+				; A=3
+				ret	; KARD
+	ELLENORZES_NEM_3
+				;ld	B,13  ; IF A=13 THEN... ELLENFÉL
+				cp	13
+				jp	NZ,ELLENORZES_NEM_4	; A<>4
+
+				ld	A,(targy_1)
+				;ld	B,12
+				cp	12
+				jp	NZ,ELLENFEL_nincskard	; A<>3
+				; van kard
+				ld	A,0
+				ld	(HL),A
+				ld	A,1      
+				ld	(Mehet_e),A
+
+				ld	A,(targy_2)  ; elhasználjuk a kardunkat
+				ld	(targy_1),A
+				ld	A,(targy_3)
+				ld	(targy_2),A
+				ld	A,0
+				ld	(targy_3),A
+				ld	A,1 
+				ld	(targyak_rajz),A	; targyak_rajz=0 
+				call hang_effekt_2
+				call ELJARAS_Pluszpont
+				
+				ret	; 
+	ELLENFEL_nincskard	
+				; nincs kard
+				ret
+	ELLENORZES_NEM_4
+				;ld	B,14  ; IF A=5 THEN... KULCS
+				cp	14
+				jp	NZ,ELLENORZES_NEM_5 ; A<>5
+				ld	A,(targy_2)
+				ld	(targy_3),A
+				ld	A,(targy_1)
+				ld	(targy_2),A
+				ld	A,14
+				ld	(targy_1),A
+				ld	A,0
+				ld	(HL),A
+				ld	A,1 
+				ld	(targyak_rajz),A	; targyak_rajz=0 
+				ld	A,1      
+				ld	(Mehet_e),A
+				call hang_effekt_1
+				call ELJARAS_Pluszpont
+				; A=5
+				ret	;KULCS 
+	ELLENORZES_NEM_5
+				;ld	B,15  ; IF A=6 THEN...  AJTÓ
+				cp	15
+				jp	NZ,ELLENORZES_NEM_6 ; A<>6
+				; A=6
+				ld	A,(targy_1)
+				;ld	B,14
+				cp	14
+				jp	NZ,ELLENFEL_nincskulcs	; A<>5
+				; van kard
+				ld	A,0
+				ld	(HL),A
+				ld	A,1      
+				ld	(Mehet_e),A
+
+				ld	A,(targy_2)  ; elhasználjuk a kardunkat
+				ld	(targy_1),A
+				ld	A,(targy_3)
+				ld	(targy_2),A
+				ld	A,0
+				ld	(targy_3),A
+				ld	A,1 
+				ld	(targyak_rajz),A	; targyak_rajz=0 
+				call hang_effekt_2
+				call ELJARAS_Pluszpont
+				
+				ret	; 
+	ELLENFEL_nincskulcs	
+				; nincs kard
+				ret	;AJTÓ 
+	ELLENORZES_NEM_6	
+				;ld	B,16  ; IF A=16 THEN... Kalapacs
+				cp	16
+				jp	NZ,ELLENORZES_NEM_16 ; A<>5
+				ld	A,(targy_2)
+				ld	(targy_3),A
+				ld	A,(targy_1)
+				ld	(targy_2),A
+				ld	A,16
+				ld	(targy_1),A
+				ld	A,0
+				ld	(HL),A
+				ld	A,1 
+				ld	(targyak_rajz),A	; targyak_rajz=0 
+				ld	A,1      
+				ld	(Mehet_e),A
+				call hang_effekt_1
+				call ELJARAS_Pluszpont
+				ret	;
+	ELLENORZES_NEM_16
+				;ld	B,17  ; IF A=6 THEN...  AJTÓ
+				cp	17
+				jp	NZ,ELLENORZES_NEM_17 ; A<>6
+				; A=6
+				ld	A,(targy_1)
+				;ld	B,16
+				cp	16
+				jp	NZ,ELLENFEL_nincskulcs17	; A<>5
+				; van kard
+				ld	A,0
+				ld	(HL),A
+				ld	A,1      
+				ld	(Mehet_e),A
+
+				ld	A,(targy_2)  ; elhasználjuk a kardunkat
+				ld	(targy_1),A
+				ld	A,(targy_3)
+				ld	(targy_2),A
+				ld	A,0
+				ld	(targy_3),A
+				ld	A,1 
+				ld	(targyak_rajz),A	; targyak_rajz=0 
+				call hang_effekt_2
+				call ELJARAS_Pluszpont
+				
+				ret	; 
+	ELLENFEL_nincskulcs17	
+				ret	;AJTÓ 
+	ELLENORZES_NEM_17
+				;ld	B,18  ; IF A=16 THEN... Kalapacs
+				cp	18
+				jp	NZ,ELLENORZES_NEM_18 ; A<>5
+				ld	A,(targy_2)
+				ld	(targy_3),A
+				ld	A,(targy_1)
+				ld	(targy_2),A
+				ld	A,18
+				ld	(targy_1),A
+				ld	A,0
+				ld	(HL),A
+				ld	A,1 
+				ld	(targyak_rajz),A	; targyak_rajz=0 
+				ld	A,1      
+				ld	(Mehet_e),A
+				call hang_effekt_1
+				call ELJARAS_Pluszpont
+				ret	;
+	ELLENORZES_NEM_18
+				;ld	B,19  ; IF A=6 THEN...  AJTÓ
+				cp	19
+				jp	NZ,ELLENORZES_NEM_19 ; A<>6
+				; A=6
+				ld	A,(targy_1)
+				;ld	B,18
+				cp	18
+				jp	NZ,ELLENFEL_nincskulcs19	; A<>5
+				; van kard
+				ld	A,0
+				ld	(HL),A
+				ld	A,1      
+				ld	(Mehet_e),A
+
+				ld	A,(targy_2)  ; elhasználjuk a kardunkat
+				ld	(targy_1),A
+				ld	A,(targy_3)
+				ld	(targy_2),A
+				ld	A,0
+				ld	(targy_3),A
+				ld	A,1 
+				ld	(targyak_rajz),A	; targyak_rajz=0 
+				
+				call hang_effekt_2
+				call ELJARAS_Pluszpont
+				ret	; 
+	ELLENFEL_nincskulcs19	
+				ret	;AJTÓ 
+	ELLENORZES_NEM_19
+				;ld	B,23  ; IF A=12 THEN... KINCS
+				cp	23
+				jp	NZ,ELLENORZES_NEM_23	; A<>12   -KARD
+				ld	A,(targy_2)
+				ld	(targy_3),A
+				ld	A,(targy_1)
+				ld	(targy_2),A
+				ld	A,23
+				ld	(targy_1),A
+				ld	A,0
+				ld	(HL),A
+				ld	A,1 
+				ld	(targyak_rajz),A	; targyak_rajz=0 
+				ld	A,1      
+				ld	(Mehet_e),A
+				call hang_effekt_1B
+				call ELJARAS_Pluszpont
+				call ELJARAS_Pluszpont
+				call ELJARAS_Pluszpont
+				call ELJARAS_Pluszpont
+				; A=3
+				ret	; KARD
+	ELLENORZES_NEM_23
+				cp	25
+				jp	NZ,ELLENORZES_NEM_25
+				ld	A,(targy_1)
+				cp	12
+				jp	NZ,ELLENFEL_nincskard3
+				ld	A,(targy_2)
+				cp	12
+				jp	NZ,ELLENFEL_nincskard3
+				ld	A,(targy_3)
+				cp	12
+				jp	NZ,ELLENFEL_nincskard3
+				ld	A,0
+				ld	(HL),A
+				ld	A,1      
+				ld	(Mehet_e),A
+				ld	A,0;
+				ld	(targy_1),A
+				ld	(targy_2),A
+				ld	(targy_3),A
+				ld	A,1 
+				ld	(targyak_rajz),A;
+				call hang_effekt_2
+				call ELJARAS_Pluszpont
+	ELLENFEL_nincskard3	
+				ret	; 
+	ELLENORZES_NEM_25
+				cp	26
+				jp	NZ,ELLENORZES_NEM_26
+				ld	A,(targy_1)
+				cp	14
+				jp	NZ,ELLENFEL_nincskulcs3
+				ld	A,(targy_2)
+				cp	14
+				jp	NZ,ELLENFEL_nincskulcs3
+				ld	A,(targy_3)
+				cp	14
+				jp	NZ,ELLENFEL_nincskulcs3
+				ld	A,0
+				ld	(HL),A
+				ld	A,1      
+				ld	(Mehet_e),A
+				ld	A,0;
+				ld	(targy_1),A
+				ld	(targy_2),A
+				ld	(targy_3),A
+				ld	A,1 
+				ld	(targyak_rajz),A;
+				call hang_effekt_2
+				call ELJARAS_Pluszpont
+	ELLENFEL_nincskulcs3
+				ret	; 
+	ELLENORZES_NEM_26
+;*				ld	B,7  ; IF A=6 THEN...  AJTÓ
+;*				cp	B
+;*				jp	NZ,ELLENORZES_NEM_7 ; A<>7
+				; A=7
+;*				ret	; ajtó
+;*	ELLENORZES_NEM_7
+
+				;ld	B,8  ; IF A=8 THEN...  
+				;cp	B
+				;jp	NZ,ELLENORZES_NEM_8 ; A<>8
+				; A=8
+				;ret	; 
+	;ELLENORZES_NEM_8
+				;
+0
+	ELLENORZES_VEGE_MEHET
+				; minden vizsgálat vége, mehet
+				ld	A,1      
+				ld	(Mehet_e),A
+                                
+	ELLENORZES_VEGE
+				ret
+				
+;*********************************************************************************************************
+	hang_effekt_0		; kikapcs
+				ld	HL,4095
+				call	SET_SOUND_PITCH
+				ld	A,0
+				ld	(sound_TIME),A ; mentjük				
+				call	PALETTA_4C
+				ret
+;*********************************************************************************************************
+	hang_effekt_1		; valami felvétele
+				ld	HL,7600
+				call	SET_SOUND_PITCH
+				ld	A,5
+				ld	(sound_TIME),A ; mentjük				
+				;call	PALETTA_4B
+				ret
+;*********************************************************************************************************
+	hang_effekt_2		; valami kinyitása, megoldása
+				ld	HL,7200
+				call	SET_SOUND_PITCH
+				ld	A,5
+				ld	(sound_TIME),A ; mentjük				
+				;call	PALETTA_4B
+				ret
+;*********************************************************************************************************
+	hang_effekt_1B		; kincs?
+				ld	HL,7800
+				call	SET_SOUND_PITCH
+				ld	A,5
+				ld	(sound_TIME),A ; mentjük				
+				call	PALETTA_4B
+				ret
+;*********************************************************************************************************
+	ELTOLHATO_KO		;20-as elemnek mennénk neki
+				; mozgas_irany=irany, HL=map új eleme,
+				ld	A,(mozgas_irany)
+				cp	1
+				jp	z,ELTOLHATO_KO_fel
+				cp	2
+				jp	z,ELTOLHATO_KO_le
+				cp	3
+				jp	z,ELTOLHATO_KO_jobbra
+				cp	4
+				jp	z,ELTOLHATO_KO_balra
+				ret
+	ELTOLHATO_KO_fel	;
+				ld	BC,65520
+				add	HL,BC	
+				ld	A,(HL)
+				cp	0	
+				jp	NZ,ELTOLHATO_KO_fel_vege
+				ld	A,20 ;debug
+				ld	(HL),A ;debug
+				ld	BC,16 ;debug
+				add	HL,BC ;debug
+				ld	A,0 ;debug
+				ld	(HL),A ;debug
+				ld	A,1      
+				ld	(Mehet_e),A
+	ELTOLHATO_KO_fel_vege
+				ret
+	ELTOLHATO_KO_le						;
+				ld	BC,16
+				add	HL,BC	
+				ld	A,(HL)
+				cp	0	
+				jp	NZ,ELTOLHATO_KO_le_vege
+				ld	A,20 ;debug
+				ld	(HL),A ;debug
+				ld	BC,65520 ;debug
+				add	HL,BC ;debug
+				ld	A,0 ;debug
+				ld	(HL),A ;debug
+
+				ld	A,1      
+				ld	(Mehet_e),A
+
+	ELTOLHATO_KO_le_vege
+				ret
+	ELTOLHATO_KO_jobbra	;
+				;
+				inc	HL
+				ld	A,(HL)			; Ez az elem van az eltolható kő mögött
+				cp	0			; nulla e
+				jp	NZ,ELTOLHATO_KO_jobbra_vege
+				ld	A,20 ;debug
+				ld	(HL),A			;debug
+				dec	HL
+				ld	A,0 ;debug
+				ld	(HL),A ;debug
+				ld	A,1      
+				ld	(Mehet_e),A
+	ELTOLHATO_KO_jobbra_vege
+				ret
+	ELTOLHATO_KO_balra	;
+				;
+				dec	HL
+				ld	A,(HL)			; Ez az elem van az eltolható kő mögött
+				cp	0			; nulla e
+				jp	NZ,ELTOLHATO_KO_balra_vege
+				ld	A,20 ;debug
+				ld	(HL),A			;debug
+				inc	HL
+				ld	A,0 ;debug
+				ld	(HL),A ;debug
+				
+				ld	A,1      
+				ld	(Mehet_e),A
+	ELTOLHATO_KO_balra_vege
+				ret
+				;
+				ret				
+
+;*********************************************************************************************************
+;                              Egyel növeljük a pályák számát
+;*********************************************************************************************************
+	ELJARAS_Pluszpalya	
+				ld	HL,szoveg_level
+				INC	HL
+	Pluszlevel_szam
+				ld	A,(HL)  ;0X
+				inc	A
+				ld	B,58    ;Túlmentünk e a 9-en
+				CP	B
+				jp	NZ,Pluszlevel_1	
+				ld	A,48
+				ld	(HL),A
+				dec	HL
+				jp	Pluszlevel_szam
+	Pluszlevel_1		
+				ld	(HL),A
+
+				ld	A,(palya)
+				INC	A 
+				ld	(palya),A  ; palya=palya+1
+				;
+				ret
+;*********************************************************************************************************
+;                              10 pontot kap a játékos
+;*********************************************************************************************************
+	ELJARAS_Pluszpont	
+			        ; Hozzá adok pontot	
+				ld	HL,szoveg_score
+				INC	HL
+				INC	HL
+				INC	HL
+				inc	HL
+	Pluszpont_szam
+				ld	A,(HL)  ;0000X0
+				inc	A
+				ld	B,58    ;Túlmentünk e a 9-en
+				CP	B
+				jp	NZ,Pluszpont_1	
+				ld	A,48
+				ld	(HL),A
+				dec	HL
+				jp	Pluszpont_szam
+	Pluszpont_1		
+				ld	(HL),A
+				;jp	Pluszpont_print
+
+	Pluszpont_print			        
+;                               ;       PRINT "000120"  ; kiírom az új pontszámot
+				ld	BC,$0C01 ; X,Y karakter pozíció
+				rst	$30	 ;címszámítás
+				db	$3
+				ld	DE,szoveg_score	;szöveg címe
+				ld	BC,6		;szöveg hossza
+				rst	$30		;írás
+				db	$2
+				ret
+			
+;*********************************************************************************************************
+				;
+				
+      ELJARAS_RAJZFOSZER 				
+				call 	ELJARAS_RAJZFOSZER_ALAP
+				call	DRAW_fekete  ;főszereplő kirajzolása foszerMX, foszerMY karakterhelyre
+				RET
+				;
+
+      ELJARAS_RAJZFOSZER_ALAP	
+				ld	A,(foszerMX)		; SpriteX pozíció                           
+				sla	A
+				sla	A
+				sla	A
+				sla	A
+				ld	(SPRX),A		; beállítása
+				ld	A,(foszerMY)			; SpriteY pozíció
+				sla	A
+				sla	A
+				sla	A
+				sla	A
+				ld	(SPRY),A		; beállítása
+				call	CALCSPRVRAMADDR	; SprX és SprY alapján videoram cím kiszámolása. 
+				;
+				ld 	A,(foszer_kep)  ; kepe
+				ld	C,A  ;C=A
+				ld	B,A  ;C=A
+				; BC=BC*64
+				sla	C	; C <-6	 eltolás 6 bittel felfelé (*64)	
+				sla	C			;
+				sla	C			;
+				sla	C			;
+				sla	C
+				sla	C
+
+				sra	B	; B -> 2  eltolás lefelé 2 bittel
+				sra	B
+			;
+				ld	hl,SpriteBaseAddrV
+				add 	hl,bc
+				ld	(SPRADDR),hl
+				ret
+
+      ELJARAS_RAJZFOSZER_SCOLL_FEL 				
+				call 	ELJARAS_RAJZFOSZER_ALAP
+				call	DRAW_fekete
+				HALT
+				ld	HL,(SPRVRAMADDR)	; [20] a sprite aktuális pozíciójának videoram címe
+				DEC 	H
+				ld	(SPRVRAMADDR),HL
+				call	DRAW_fekete
+				call	DRAW_fekete_TOROL2
+				HALT
+				ld	HL,(SPRVRAMADDR)	; [20] a sprite aktuális pozíciójának videoram címe
+				DEC 	H				
+				ld	(SPRVRAMADDR),HL
+				call	DRAW_fekete
+				call	DRAW_fekete_TOROL2
+				HALT
+				ld	HL,(SPRVRAMADDR)	; [20] a sprite aktuális pozíciójának videoram címe
+				DEC 	H				
+				ld	(SPRVRAMADDR),HL
+				call	DRAW_fekete
+				call	DRAW_fekete_TOROL2
+				HALT
+				ld	HL,(SPRVRAMADDR)	; [20] a sprite aktuális pozíciójának videoram címe
+				DEC 	H				
+				ld	(SPRVRAMADDR),HL
+				call	DRAW_fekete
+				call	DRAW_fekete_TOROL2
+				JP	SCROLL_VEGE
+      ELJARAS_RAJZFOSZER_SCOLL_LE 				
+				call 	ELJARAS_RAJZFOSZER_ALAP
+				call	DRAW_fekete
+				;call	DRAW_fekete_TOROL1
+				HALT
+				ld	HL,(SPRVRAMADDR)	; [20] a sprite aktuális pozíciójának videoram címe
+				ld	BC,256
+				add	HL,BC
+				ld	(SPRVRAMADDR),HL
+				call	DRAW_fekete
+				call	DRAW_fekete_TOROL1
+				HALT
+				ld	HL,(SPRVRAMADDR)	; [20] a sprite aktuális pozíciójának videoram címe
+				ld	BC,256
+				add	HL,BC
+				ld	(SPRVRAMADDR),HL
+				call	DRAW_fekete
+				call	DRAW_fekete_TOROL1
+				HALT
+				ld	HL,(SPRVRAMADDR)	; [20] a sprite aktuális pozíciójának videoram címe
+				ld	BC,256
+				add	HL,BC
+				ld	(SPRVRAMADDR),HL
+				call	DRAW_fekete
+				call	DRAW_fekete_TOROL1
+				HALT
+				ld	HL,(SPRVRAMADDR)	; [20] a sprite aktuális pozíciójának videoram címe
+				ld	BC,256
+				add	HL,BC
+				ld	(SPRVRAMADDR),HL
+				call	DRAW_fekete
+				call	DRAW_fekete_TOROL1
+				JP	SCROLL_VEGE
+      ELJARAS_RAJZFOSZER_SCOLL_JOBBRA 				
+				call 	ELJARAS_RAJZFOSZER_ALAP
+				call	DRAW_fekete
+				HALT
+				ld	HL,(SPRVRAMADDR)	; [20] a sprite aktuális pozíciójának videoram címe
+				inc 	HL
+				ld	(SPRVRAMADDR),HL
+				call	DRAW_fekete
+				call DRAW_fekete_TOROL3
+				HALT
+				ld	HL,(SPRVRAMADDR)	; [20] a sprite aktuális pozíciójának videoram címe
+				inc 	HL
+				ld	(SPRVRAMADDR),HL
+				call	DRAW_fekete
+				call DRAW_fekete_TOROL3
+				HALT
+				ld	HL,(SPRVRAMADDR)	; [20] a sprite aktuális pozíciójának videoram címe
+				inc 	HL
+				ld	(SPRVRAMADDR),HL
+				call	DRAW_fekete
+				call DRAW_fekete_TOROL3
+				HALT
+				ld	HL,(SPRVRAMADDR)	; [20] a sprite aktuális pozíciójának videoram címe
+				inc 	HL
+				ld	(SPRVRAMADDR),HL
+				call	DRAW_fekete
+				call DRAW_fekete_TOROL3
+				JP	SCROLL_VEGE
+      ELJARAS_RAJZFOSZER_SCOLL_BALRA 				
+				call 	ELJARAS_RAJZFOSZER_ALAP
+				call	DRAW_fekete
+				HALT
+				ld	HL,(SPRVRAMADDR)	; [20] a sprite aktuális pozíciójának videoram címe
+				dec 	HL
+				ld	(SPRVRAMADDR),HL
+				call	DRAW_fekete
+				call	DRAW_fekete_TOROL4
+				HALT
+				ld	HL,(SPRVRAMADDR)	; [20] a sprite aktuális pozíciójának videoram címe
+				dec 	HL
+				ld	(SPRVRAMADDR),HL
+				call	DRAW_fekete
+				call	DRAW_fekete_TOROL4
+				HALT
+				ld	HL,(SPRVRAMADDR)	; [20] a sprite aktuális pozíciójának videoram címe
+				dec 	HL
+				ld	(SPRVRAMADDR),HL
+				call	DRAW_fekete
+				call	DRAW_fekete_TOROL4
+				HALT
+				ld	HL,(SPRVRAMADDR)	; [20] a sprite aktuális pozíciójának videoram címe
+				dec 	HL
+				ld	(SPRVRAMADDR),HL
+				call	DRAW_fekete
+				call	DRAW_fekete_TOROL4
+				
+	SCROLL_VEGE
+				ld	A,(foszerMX2)		; SpriteX pozíció                           
+				ld	(foszerMX),A
+				ld	A,(foszerMY2)		; SpriteY pozíció                           
+				ld	(foszerMY),A
+				; ide értünk az új pozícióba,
+				; most kellene a 3x3 környező elemet kirajzolni
+				call 	MAP_KIRAJZOL_3x3					;(foszerMY),(foszerMX)	
+				;
+				; Meg lekezelni, ha valamire ráléptünk
+				ld	hl,MAP
+				; BC= foszerMY2*16+foszerMX2
+				ld	B,0
+				ld	A,(foszerMY)
+				sla	A  ; A=A*16
+				sla	A
+				sla	A
+				sla	A
+				ld	C,A
+				ld	A,(foszerMX)
+				add	A,C
+				ld 	C,A
+				; HL=HL+BC        HL=MAP+foszerMY2*16+foszerMX2  tehát az elem címe
+				add	HL,BC
+				; A=map[foszerMX2,foszerMY2]
+				ld	A,(HL)
+
+				ld	B,11  ; IF A=11 THEN... EXIT 
+				cp	B
+				jp	NZ,ELLENORZES_NEM_11_B	; A<>11
+				;
+				; A=11 azaz EXIT
+				call ELJARAS_Pluszpalya
+				call ELJARAS_megnyeres_kicsi		
+				;
+	ELLENORZES_NEM_11_B
+				;
+				;
+				;
+				;
+				jp MAINLOOP
+				;
+				
+;**********************************************************************************************	
+	ELJARAS_megnyeres_kicsi	; azaz kijárat, EXIT 
+				;
+				; törlés ******************************************************
+				ld	D,42
+				ld	HL,VIDRAMSTART
+				ld	BC,5120
+				add	HL,BC
+				;
+	megnyeres_kicsi_c0
+				ld	A,64
+				ld	B,0
+	megnyeres_kicsi_c1	
+				ld	(HL),B
+				inc	HL
+				dec	A
+				;cp	0
+				jp	Z,megnyeres_kicsi_c2
+				jp	megnyeres_kicsi_c1
+	megnyeres_kicsi_c2	
+				ld	BC,64
+				add 	HL,BC
+				dec	D
+				jp	Z,megnyeres_kicsi_c3
+				jp	megnyeres_kicsi_c0
+	megnyeres_kicsi_c3	; **************************************************************
+				;
+				; tárgyakért plusz pont
+				ld	A,100
+				ld	(SPRX),A	
+				ld	A,84
+				ld	(SPRY),A	
+				call	CALCSPRVRAMADDR	; SprX és SprY alapján videoram cím kiszámolása. 
+				; 1-es tárgy
+				ld 	A,(targy_1)  ; kepe
+				call 	ELJARAS_TARGYLISTA_3_szamolrajzol	
+				ld	A,(targy_1)
+				cp	0
+				jp	Z,megnyeres_kicsi_nulla1
+				;
+				ld	HL,$100A         ; X,Y karakter pozíció beállítása
+				ld	(karakterpoz),HL 
+				call	ELJARAS_Pluszpont_kiir_nullaz	
+				;
+				call hang_effekt_1;
+				call ELJARAS_Pluszpont_EGY ; bármi van ott plusz 50 pont
+				call ELJARAS_Pluszpont_EGY
+				call ELJARAS_Pluszpont_EGY
+				call ELJARAS_Pluszpont_EGY
+				call ELJARAS_Pluszpont_EGY
+				call hang_effekt_0;
+				ld	A,(targy_1)
+				cp	23
+				jp	NZ,megnyeres_kicsi_nulla1
+				call hang_effekt_1;
+				call ELJARAS_Pluszpont_EGY ; kincs esetén 100 pont
+				call ELJARAS_Pluszpont_EGY
+				call ELJARAS_Pluszpont_EGY
+				call ELJARAS_Pluszpont_EGY
+				call ELJARAS_Pluszpont_EGY
+				call hang_effekt_0;
+				;
+	megnyeres_kicsi_nulla1
+				;
+				halt
+				ld	HL,(SPRVRAMADDR)	; [20] a sprite aktuális pozíciójának videoram címe
+				ld	BC,1280
+				add	HL,BC
+				ld	(SPRVRAMADDR),HL
+				; 2-es tárgy
+				ld 	A,(targy_2)  ; kepe
+				call 	ELJARAS_TARGYLISTA_3_szamolrajzol	
+				ld	A,(targy_2)
+				cp	0
+				jp	Z,megnyeres_kicsi_nulla2
+				;
+				ld	HL,$100C         ; X,Y karakter pozíció beállítása
+				ld	(karakterpoz),HL 
+				call	ELJARAS_Pluszpont_kiir_nullaz
+				;
+				call hang_effekt_1;
+				call ELJARAS_Pluszpont_EGY ; bármi van ott plusz 50 pont
+				call ELJARAS_Pluszpont_EGY
+				call ELJARAS_Pluszpont_EGY
+				call ELJARAS_Pluszpont_EGY
+				call ELJARAS_Pluszpont_EGY
+				call hang_effekt_0;
+				ld	A,(targy_2)
+				cp	23
+				jp	NZ,megnyeres_kicsi_nulla2
+				call hang_effekt_1;
+				call ELJARAS_Pluszpont_EGY ; kincs esetén 100 pont
+				call ELJARAS_Pluszpont_EGY
+				call ELJARAS_Pluszpont_EGY
+				call ELJARAS_Pluszpont_EGY
+				call ELJARAS_Pluszpont_EGY
+				call hang_effekt_0;
+				;
+	megnyeres_kicsi_nulla2
+				
+				halt
+				ld	HL,(SPRVRAMADDR)	; [20] a sprite aktuális pozíciójának videoram címe
+				ld	BC,1280
+				add	HL,BC
+				ld	(SPRVRAMADDR),HL
+
+				ld 	A,(targy_3)  ; kepe
+				call 	ELJARAS_TARGYLISTA_3_szamolrajzol	
+;*				; 3-as tárgy
+				ld	A,(targy_3)
+				cp	0
+				jp	Z,megnyeres_kicsi_nulla3
+				;
+				ld	HL,$100E         ; X,Y karakter pozíció beállítása
+				ld	(karakterpoz),HL 
+				call	ELJARAS_Pluszpont_kiir_nullaz
+				;
+				call hang_effekt_1;
+				call ELJARAS_Pluszpont_EGY ; bármi van ott plusz 50 pont
+				call ELJARAS_Pluszpont_EGY
+				call ELJARAS_Pluszpont_EGY
+				call ELJARAS_Pluszpont_EGY
+				call ELJARAS_Pluszpont_EGY
+				call hang_effekt_0;
+				ld	A,(targy_3)
+				cp	23
+				jp	NZ,megnyeres_kicsi_nulla3
+				call hang_effekt_1;
+				call ELJARAS_Pluszpont_EGY ; kincs esetén 100 pont
+				call ELJARAS_Pluszpont_EGY
+				call ELJARAS_Pluszpont_EGY
+				call ELJARAS_Pluszpont_EGY
+				call ELJARAS_Pluszpont_EGY
+				call hang_effekt_0;
+				;
+	megnyeres_kicsi_nulla3
+				
+				halt
+				; "space" kiírás
+				ld	BC,$0810 ; X,Y karakter pozíció
+				rst	$30	 ;címszámítás
+				db	$3
+				ld	DE,szoveg_2	;szöveg címe
+				ld	BC,12		;szöveg hossza
+				rst	$30		;írás
+				db	$2
+				; várakozás a SPACE lenyomására
+	megnyeres_kicsi_varakozas_space		
+				ld	A,(2904); 
+				cp	32
+				jp	NZ,megnyeres_kicsi_varakozas_space
+				; lenyomtuk a SPACE-t, indul a következő pálya
+				
+				ld	A,(palya)
+				ld	B,(palya_max)
+				;inc	B
+				cp	B
+				jp	NZ,megnyeres_kicsi_vege
+				; palya=palya_max+1     ---------végig van játszodva
+				call	ELJARAS_megnyeres
+	megnyeres_kicsi_vege
+				call	START_palya1
+;**********************************************************************************************	
+	ELJARAS_megnyeres	
+				
+				call CLEARSCREEN
+;                               szöveg kiirasa  "game over"
+				ld	BC,$0B09 ; X,Y karakter pozíció
+				rst	$30	 ;címszámítás
+				db	$3
+				ld	DE,szoveg_5	;szöveg címe
+				ld	BC,9		;szöveg hossza
+				rst	$30		;írás
+				db 	$2
+				;
+				ld	BC,$040B ; X,Y karakter pozíció
+				rst	$30	 ;címszámítás
+				db	$3
+				ld	DE,szoveg_5B	;szöveg címe
+				ld	BC,23	;szöveg hossza
+				rst	$30		;írás
+				db 	$2
+				;
+				ld	BC,$040C ; X,Y karakter pozíció
+				rst	$30	 ;címszámítás
+				db	$3
+				ld	DE,szoveg_5C	;szöveg címe
+				ld	BC,23	;szöveg hossza
+				rst	$30		;írás
+				db 	$2
+				;
+				;
+				ld	BC,$040E ; X,Y karakter pozíció
+				rst	$30	 ;címszámítás
+				db	$3
+				ld	DE,szoveg_5D	;szöveg címe
+				ld	BC,23	;szöveg hossza
+				rst	$30		;írás
+				db 	$2
+				;
+				ld	BC,$040F ; X,Y karakter pozíció
+				rst	$30	 ;címszámítás
+				db	$3
+				ld	DE,szoveg_5E	;szöveg címe
+				ld	BC,23	;szöveg hossza
+				rst	$30		;írás
+				db 	$2
+				;
+				;  "SCORE:"
+				ld	BC,$0911 ; X,Y karakter pozíció
+				rst	$30	 ;címszámítás
+				db	$3
+				ld	DE,szoveg_4	;szöveg címe
+				ld	BC,6	;szöveg hossza
+				rst	$30		;írás
+				db 	$2
+				;
+				;ld	HL,szoveg_score
+				;  "SCORE:"
+				ld	BC,$0F11 ; X,Y karakter pozíció
+				rst	$30	 ;címszámítás
+				db	$3
+				ld	DE,szoveg_score	;szöveg címe
+				ld	BC,6	;szöveg hossza
+				rst	$30		;írás
+				db 	$2
+				;
+				;
+	megnyeres_nagy_varakozas_space		; SPACE lenyomására várunk
+				ld	A,(2904); 
+				cp	32
+				jp	NZ,megnyeres_nagy_varakozas_space
+				;				
+				; Vissza a főképernyőre
+				call	START_Fokepernyo
+;**********************************************************************************************	
+	ELJARAS_Pluszpont_EGY
+				call	ELJARAS_Pluszpont
+				call	ELJARAS_Pluszpont_kiir
+				call	ELJARAS_Pluszpont_kiirplusz
+				halt
+				ret
+;**********************************************************************************************	
+	ELJARAS_Pluszpont_kiir_nullaz	
+				ld	HL,szoveg_score_plusz
+				ld	A,48 ;"0"
+				ld	(HL),A   ;"x00"
+				INC	HL
+				ld	(HL),A   ;"0x0"
+				INC	HL
+				ld	(HL),A   ;"00x"
+				ret
+;**********************************************************************************************	
+	ELJARAS_Pluszpont_kiir	
+			        ; Hozzá adok pontot	
+				ld	HL,szoveg_score_plusz
+				INC	HL
+	Pluszpont_szam_kiir
+				ld	A,(HL)  ;0000X0
+				inc	A
+				ld	B,58    ;Túlmentünk e a 9-en
+				CP	B
+				jp	NZ,Pluszpont_kiir_1	
+				ld	A,48
+				ld	(HL),A
+				dec	HL
+				jp	Pluszpont_szam_kiir
+	Pluszpont_kiir_1		
+				ld	(HL),A
+				ret
+;**********************************************************************************************	
+	ELJARAS_Pluszpont_kiirplusz	
+				; input:   karakterpoz, szoveg_score_plusz
+				ld	BC,(karakterpoz); X,Y karakter pozíció
+				rst	$30 ;címszámítás
+				db	$3
+				ld	DE,szoveg_score_plusz	;szöveg címe
+				ld	BC,3		;szöveg hossza
+				rst	$30		;írás
+				db	$2
+				ret
+;**********************************************************************************************	
+; ide egy eljárás, ami a teljes MAP-ot kirajzolja de "ködölve"
+	MAP_KIRAJZOL_TELJES_KÖD	
+				;ld	hl,MAP
+				ld	HL,2048                 ; Átugorjuk az első két sort
+				ld	BC,VIDRAMSTART		; 
+				add	HL,BC			; 
+				ld	(SPRVRAMADDR),HL	; 
+				;ld	(MAPszam),hl
+				ld	A,13			; 6-szor fut le a CIKLUS 1
+        CIKLUS2_KÖD				
+				ld	(SPRY),A		; beállítása
+				ld	A,16			; 6-szor fut le a CIKLUS 1
+	CIKLUS1_KÖD			
+				ld	(SPRX),A
+
+
+				;ld	hl,(MAPszam)      ; MAPszam = MAP aktuális elemére mutat
+				;ld	A,(HL)            ; A = következő elem a MAP-on
+				;inc 	hl                ; MAPszam = MAPszam + 1
+				;ld	(MAPszam),hl      ; és mentés
+				ld 	A,24
+				; SPRADDR -a képelem címére mutat, ezt kell beállítani A alapján
+				;LD BC,0
+				ld	C,A  ;C=A
+				ld	B,A  ;B=A
+				; BC=BC*64
+				sla	C	; C <-6	 eltolás 6 bittel felfelé (*64)	
+				sla	C			;
+				sla	C			;
+				sla	C			;
+				sla	C
+				sla	C
+
+				sra	B	; B -> 2  eltolás lefelé 2 bittel
+				sra	B
+			;
+				ld	hl,SpriteBaseAddrV
+				add 	hl,bc
+				ld	(SPRADDR),hl
+				
+
+				call	DRAW_fekete
+
+				ld	HL,(SPRVRAMADDR)	; [20] HL = a sprite vram címe a változóból
+				ld	bc,4			; hozzá adunk 4 byte-ot (4x4=16 pixel)
+				add	hl,bc
+				ld	(SPRVRAMADDR),HL
+				ld	A,(SPRX)
+				dec	A
+				jp	NZ,CIKLUS1_KÖD		;Ha A nagyobb mint 0 akkor GOTO CIKLUS 1
+				
+				ld	HL,(SPRVRAMADDR)	; [20] HL = a sprite vram címe a változóból
+				ld	bc,64*15			; 
+				add	hl,bc
+				ld	(SPRVRAMADDR),HL
+
+				ld	A,(SPRY)
+				dec	A
+				jp	NZ,CIKLUS2_KÖD		;Ha A nagyobb mint 0 akkor GOTO CIKLUS 1
+				ret				
+;**********************************************************************************************	
+; ide egy eljárás, ami a teljes MAP-ot kirajzolja de "ködölve"
+	MAP_KIRAJZOL_TELJES_KÖD_2	
+				ld	hl,MAP
+				ld	(MAPszam),hl
+
+				ld	HL,0                 ; Átugorjuk az első két sort
+				;ld	HL,2048                 ; Átugorjuk az első két sort
+
+				ld	BC,VIDRAMSTART		; 
+				add	HL,BC			; 
+				ld	(SPRVRAMADDR),HL	; 
+				ld	A,15			; 6-szor fut le a CIKLUS 1
+        CIKLUS2_KÖD2				
+				ld	(SPRY),A		; beállítása
+				ld	A,16			; 6-szor fut le a CIKLUS 1
+	CIKLUS1_KÖD2			
+				ld	(SPRX),A
+
+
+				ld	hl,(MAPszam)      ; MAPszam = MAP aktuális elemére mutat
+				ld	A,(HL)            ; A = következő elem a MAP-on
+				inc 	hl                ; MAPszam = MAPszam + 1
+				ld	(MAPszam),hl      ; és mentés
+				;ld 	A,24
+				; SPRADDR -a képelem címére mutat, ezt kell beállítani A alapján
+				;LD BC,0
+				ld	C,A  ;C=A
+				ld	B,A  ;B=A
+				; BC=BC*64
+				sla	C	; C <-6	 eltolás 6 bittel felfelé (*64)	
+				sla	C			;
+				sla	C			;
+				sla	C			;
+				sla	C
+				sla	C
+
+				sra	B	; B -> 2  eltolás lefelé 2 bittel
+				sra	B
+			;
+				ld	hl,SpriteBaseAddrV
+				add 	hl,bc
+				ld	(SPRADDR),hl
+				
+
+				call	DRAW_fekete
+
+				ld	HL,(SPRVRAMADDR)	; [20] HL = a sprite vram címe a változóból
+				ld	bc,4			; hozzá adunk 4 byte-ot (4x4=16 pixel)
+				add	hl,bc
+				ld	(SPRVRAMADDR),HL
+				ld	A,(SPRX)
+				dec	A
+				jp	NZ,CIKLUS1_KÖD2		;Ha A nagyobb mint 0 akkor GOTO CIKLUS 1
+				
+				ld	HL,(SPRVRAMADDR)	; [20] HL = a sprite vram címe a változóból
+				ld	bc,64*15			; 
+				add	hl,bc
+				ld	(SPRVRAMADDR),HL
+
+				ld	A,(SPRY)
+				dec	A
+				jp	NZ,CIKLUS2_KÖD2		;Ha A nagyobb mint 0 akkor GOTO CIKLUS 1
+				ret				
+;*******************************************************************************************
+;                      ide egy eljárás, ami a teljes MAP-ot kirajzolja
+;                      16x15 elem kirajzolása a MAP alapján
+	MAP_KIRAJZOL_TELJES
+				ld	hl,MAP
+				ld	(MAPszam),hl
+				ld	A,15			; 6-szor fut le a CIKLUS 1
+        CIKLUS2				
+				ld	(SPRY),A		; beállítása
+				ld	A,16			; 6-szor fut le a CIKLUS 1
+	CIKLUS1			
+				ld	(SPRX),A
+
+
+				ld	hl,(MAPszam)      ; MAPszam = MAP aktuális elemére mutat
+				ld	A,(HL)            ; A = következő elem a MAP-on
+				inc 	hl                ; MAPszam = MAPszam + 1
+				ld	(MAPszam),hl      ; és mentés
+				; SPRADDR -a képelem címére mutat, ezt kell beállítani A alapján
+				;LD BC,0
+				ld	C,A  ;C=A
+				ld	B,A  ;B=A
+				; BC=BC*64
+				sla	C	; C <-6	 eltolás 6 bittel felfelé (*64)	
+				sla	C			;
+				sla	C			;
+				sla	C			;
+				sla	C
+				sla	C
+
+				sra	B	; B -> 2  eltolás lefelé 2 bittel
+				sra	B
+			;
+				ld	hl,SpriteBaseAddrV
+				add 	hl,bc
+				ld	(SPRADDR),hl
+				
+
+				call	DRAW_fekete
+
+				ld	HL,(SPRVRAMADDR)	; [20] HL = a sprite vram címe a változóból
+				ld	bc,4			; hozzá adunk 4 byte-ot (4x4=16 pixel)
+				add	hl,bc
+				ld	(SPRVRAMADDR),HL
+				ld	A,(SPRX)
+				dec	A
+				jp	NZ,CIKLUS1		;Ha A nagyobb mint 0 akkor GOTO CIKLUS 1
+				
+				ld	HL,(SPRVRAMADDR)	; [20] HL = a sprite vram címe a változóból
+				ld	bc,64*15			; 
+				add	hl,bc
+				ld	(SPRVRAMADDR),HL
+
+				ld	A,(SPRY)
+				dec	A
+				jp	NZ,CIKLUS2		;Ha A nagyobb mint 0 akkor GOTO CIKLUS 1
+				ret				
+;*********************************************************************************************************************	
+;
+;*********************************************************************************************************************	
+	MAP_KIRAJZOL_TARGYLISTA_3	
+				ld	A,(targyak_rajz)
+				ld	B,1
+				cp	B
+				jp	NZ,MAP_KIRAJZOL_TARGYLISTA_3_vege
+				;
+				ld	A,100
+				ld	(SPRX),A	
+				ld	A,12
+				ld	(SPRY),A	
+				call	CALCSPRVRAMADDR	; SprX és SprY alapján videoram cím kiszámolása. 
+				ld	A,(targy_1)		; kepe
+				call	ELJARAS_TARGYLISTA_3_szamolrajzol
+				;
+				ld	HL,(SPRVRAMADDR)	; [20] a sprite aktuális pozíciójának videoram címe
+				ld	BC,5
+				add	HL,BC
+				ld	(SPRVRAMADDR),HL
+				ld	A,(targy_2)		; kepe
+				call	ELJARAS_TARGYLISTA_3_szamolrajzol
+				;
+				ld	HL,(SPRVRAMADDR)	; [20] a sprite aktuális pozíciójának videoram címe
+				ld	BC,5
+				add	HL,BC
+				ld	(SPRVRAMADDR),HL
+				ld 	A,(targy_3)  ; kepe
+				call	ELJARAS_TARGYLISTA_3_szamolrajzol
+				;
+				ld	A,0 
+				ld	(targyak_rajz),A	; targyak_rajz=0 
+        MAP_KIRAJZOL_TARGYLISTA_3_vege
+				ret
+;*********************************************************************************************************************	
+	ELJARAS_TARGYLISTA_3_szamolrajzol	
+				ld	C,A  ;C=A
+				ld	B,A  ;C=A
+				sla	C	; C <-6	 eltolás 6 bittel felfelé (*64)	
+				sla	C			;
+				sla	C			;
+				sla	C			;
+				sla	C
+				sla	C
+				sra	B	; B -> 2  eltolás lefelé 2 bittel
+				sra	B
+				ld	hl,SpriteBaseAddrV
+				add 	hl,bc
+				ld	(SPRADDR),hl
+				call	DRAW_fekete
+				ret
+;*********************************************************************************************************************	
+; ide egy eljárás, ami a teljes MAP-on ármegy és kirajzolja az animált elemeket
+	MAP_KIRAJZOL_TELJES_CSAK_ANIMACIO
+;*********************************************************************************************************************	
+; ide az eljárás ami 3x3 szomszédos MAP elemet kirajzol
+	MAP_KIRAJZOL_3x3					;(foszerMY),(foszerMX)	
+				
+			        ; beállítani az X,Y értékeit
+				ld	A,(foszerMY) ; beállítani az X,Y értékeit
+				dec	A
+				ld	(fmy),A      ; Y=Y-1
+				ld	A,(foszerMX)
+				dec	A
+				ld	(fmx),A	     ; X=X-1
+				call	MAP_koordinata_ellenorzes; ellenorzes
+				ld	A,(ok)
+				ld	B,1
+				cp	B
+				jp	NZ,nem_rajzolunk_1
+				call MAP_KIRAJZOL_EGY; rajzolunk
+		nem_rajzolunk_1
+				ld	A,(foszerMY) ; beállítani az X,Y értékeit
+				dec	A
+				ld	(fmy),A      ; Y=Y-1
+				ld	A,(foszerMX)
+				;dec	A
+				ld	(fmx),A	     ; X=X
+				call	MAP_koordinata_ellenorzes; ellenorzes
+				ld	A,(ok)
+				ld	B,1
+				cp	B
+				jp	NZ,nem_rajzolunk_2
+				call MAP_KIRAJZOL_EGY; rajzolunk
+		nem_rajzolunk_2
+				ld	A,(foszerMY) ; beállítani az X,Y értékeit
+				dec	A
+				ld	(fmy),A      ; Y=Y-1
+				ld	A,(foszerMX)
+				inc	A
+				ld	(fmx),A	     ; X=X+1
+				call	MAP_koordinata_ellenorzes; ellenorzes
+				ld	A,(ok)
+				ld	B,1
+				cp	B
+				jp	NZ,nem_rajzolunk_3
+				call MAP_KIRAJZOL_EGY; rajzolunk
+		nem_rajzolunk_3
+				ld	A,(foszerMY) ; beállítani az X,Y értékeit
+				ld	(fmy),A      ; Y=Y
+				ld	A,(foszerMX)
+				dec	A
+				ld	(fmx),A	     ; X=X-1
+				call	MAP_koordinata_ellenorzes; ellenorzes
+				ld	A,(ok)
+				ld	B,1
+				cp	B
+				jp	NZ,nem_rajzolunk_4
+				call MAP_KIRAJZOL_EGY; rajzolunk
+		nem_rajzolunk_4
+				ld	A,(foszerMY) ; beállítani az X,Y értékeit
+				ld	(fmy),A      ; Y=Y
+				ld	A,(foszerMX)
+				inc	A
+				ld	(fmx),A	     ; X=X+1
+				call	MAP_koordinata_ellenorzes; ellenorzes
+				ld	A,(ok)
+				ld	B,1
+				cp	B
+				jp	NZ,nem_rajzolunk_5
+				call MAP_KIRAJZOL_EGY; rajzolunk
+		nem_rajzolunk_5
+				ld	A,(foszerMY) ; beállítani az X,Y értékeit
+				inc	A
+				ld	(fmy),A      ; Y=Y+1
+				ld	A,(foszerMX)
+				dec	A
+				ld	(fmx),A	     ; X=X-1
+				call	MAP_koordinata_ellenorzes; ellenorzes
+				ld	A,(ok)
+				ld	B,1
+				cp	B
+				jp	NZ,nem_rajzolunk_6
+				call MAP_KIRAJZOL_EGY; rajzolunk
+		nem_rajzolunk_6
+				ld	A,(foszerMY) ; beállítani az X,Y értékeit
+				inc	A
+				ld	(fmy),A      ; Y=Y+1
+				ld	A,(foszerMX)
+				;dec	A
+				ld	(fmx),A	     ; X=X
+				call	MAP_koordinata_ellenorzes; ellenorzes
+				ld	A,(ok)
+				ld	B,1
+				cp	B
+				jp	NZ,nem_rajzolunk_7
+				call MAP_KIRAJZOL_EGY; rajzolunk
+		nem_rajzolunk_7
+				ld	A,(foszerMY) ; beállítani az X,Y értékeit
+				inc	A
+				ld	(fmy),A      ; Y=Y+1
+				ld	A,(foszerMX)
+				inc	A
+				ld	(fmx),A	     ; X=X+1
+				call	MAP_koordinata_ellenorzes; ellenorzes
+				ld	A,(ok)
+				ld	B,1
+				cp	B
+				jp	NZ,nem_rajzolunk_8
+				call MAP_KIRAJZOL_EGY; rajzolunk
+		nem_rajzolunk_8
+				
+				ret
+;*********************************************************************************************************************	
+	MAP_koordinata_ellenorzes
+				; INPUT:  fmy (2..14), fmx (0..15)
+				; OUTPUT: ok	
+				ld	A,0
+				ld	(ok),A
+				;
+				ld	A,(fmx)
+				ld	B,240
+				and	B
+				inc	A
+				dec	A
+				jp	Z,koordinata_ellenorzes_1
+				ret
+	koordinata_ellenorzes_1	
+				ld	A,(fmy)
+				ld	B,240
+				and	B
+				inc	A
+				dec	A
+				jp	Z,koordinata_ellenorzes_2
+				ret
+	koordinata_ellenorzes_2	
+				ld	A,(fmy)
+				ld	B,1
+				cp	B
+				jp	NZ,koordinata_ellenorzes_3
+				ret
+	koordinata_ellenorzes_3
+				;
+				ld	A,1
+				ld	(ok),A
+				ret
+;*********************************************************************************************************************	
+; ide kéne egy eljárás, ami 1 MAP elemet kirajzol a helyére
+	MAP_KIRAJZOL_EGY
+				ld	hl,MAP  
+				ld	B,0  ; BC= fmy*16+fmx
+				ld	A,(fmy)
+				sla	A  ; A=A*16
+				sla	A
+				sla	A
+				sla	A
+				ld	C,A
+				ld	A,(fmx)
+				add	A,C
+				ld 	C,A
+				add	HL,BC
+				ld	A,(HL)	; betöltjük az elemet
+				
+				ld	C,A  ;C=A   ; BC=BC*64
+				ld	B,A  ;B=A
+				sla	C	; C <-6	 eltolás 6 bittel felfelé (*64)	
+				sla	C			;
+				sla	C			;
+				sla	C			;
+				sla	C
+				sla	C
+				sra	B	; B -> 2  eltolás lefelé 2 bittel
+				sra	B
+				ld	hl,SpriteBaseAddrV
+				add 	hl,bc
+				ld	(SPRADDR),hl
+				
+				ld	A,(fmy)		; [13] 
+				ld	L,A			; [ 4] 
+				ld	H,0			; [ 4] 
+				add	HL,HL			; [11] 
+				add	HL,HL			; [11] 
+				add	HL,HL			; [11] 
+				add	HL,HL			; [11] HL = fmy*16
+
+				add	HL,HL			; [11] HL = SprY * 2
+				add	HL,HL			; [11] HL = SprY * 4
+				add	HL,HL			; [11] HL = SprY * 8
+				add	HL,HL			; [11] HL = SprY * 16
+				add	HL,HL			; [11] HL = SprY * 32
+				add	HL,HL			; [11] HL = SprY * 64 (64 byte egy sor, így ennyivel kell megszorozni az SprY-t)                                                        
+				ld	A,(fmx)		; [13] A = SprX
+				sla	A
+				sla	A
+;				srl	A			; [ 8] A = SprX div 2 (Shift Right Logical - jobbra tolja 1-el a biteket, balról 0 lép be a felső bitbe)
+;				srl	A			; [ 8] A = SprX div 4 -> 1 byte 4 pixel, így az X pozíció byte-okban = SprX div 4
+				ld	C,A			; [ 4] C = SprX div 4
+				ld	B,0			; [ 4] B = 0 -> BC = SprX div 4
+				add	HL,BC			; [11] HL = (SprY * 64) + (SprX div 4)                              
+				ld	BC,VIDRAMSTART		; [10] 
+				add	HL,BC			; [11] HL = VidRamStart + (SprY * 64) + (SprX div 4) <- ez a Sprite videoram kezdőcíme SprX, SprY alapján
+				ld	(SPRVRAMADDR),HL	; [16] SprVRAMAddr = HL (letároljuk SprVRamAddr változóba későbbi felhasználásra)
+				
+
+				;ld	hl,SpriteBaseAddrV
+				;add 	hl,bc
+				;ld	(SPRADDR),hl
+				call	DRAW_fekete
+				
+				ret
+;*********************************************************************************************************************	
+                 ; sound play 
+    SOUND_PLAY 
+				ld	A,(sound_TIME)
+				cp	0
+				jp	Z,Sound_TIME_nulla	; ha nulla akkor átugorjuk
+				halt
+				ld	A,(sound_TIME)
+				dec	A  ; kivonunk 1-et
+				ld	(sound_TIME),A ; mentjük				
+				cp	0
+				jp	NZ,Sound_TIME_nulla
+				; most lett nulla?
+				ld	HL,4095
+				call	SET_SOUND_PITCH
+				call	PALETTA_4C
+	Sound_TIME_nulla	
+				ret
+;*********************************************************************************************************************	
+;*********************************************************************************************************************	
+		#include "motor1_drawimage1.dt80asm"
+;*********************************************************************************************************************	
+		#include "motor1_alap_veg.dt80asm"			
+;*********************************************************************************************************************	
+		#include "motor1_MAP.dt80asm"
+;*********************************************************************************************************************	
+		#include "motor1_grafika1.dt80asm"
+;*********************************************************************************************************************	
+		#include "motor1_sound.dt80asm"
+;*********************************************************************************************************************	
+		end
+				

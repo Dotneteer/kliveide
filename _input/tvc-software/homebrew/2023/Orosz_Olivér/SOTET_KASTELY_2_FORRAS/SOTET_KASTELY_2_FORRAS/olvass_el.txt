@@ -1,0 +1,142 @@
+
+Sötét Kastély 2 forráskód.
+
+Készült 2022-ben.
+Készítette: Orosz Olivér.
+Amin fut: Videoton TVC (vagy emulátora).
+
+Mivel fordítható a kód?
+-TVC Developer Tool (222a)
+ (Windows alatt futó fejlesztõeszköz TVC-hez.)
+
+Milyen nyelvet kell hozzá ismerni?
+-Z80 8 bites processzor Assembly kódja, gépi kódja.
+-Nyilván nem árt hozzá Videoton TVC hardver ismeret sem,
+ illetve a 2-es számrendszer ismerete.
+
+A kód egy része a Developer Tool-ban talált példakód, arra épít, tehát nem 100% saját kód. Nem túl szép, életem elsõ Assembly nyelven írt programja, biztos hogy sokkal szebbet és jobbat is lehet írni, nem mondom hogy nagyon büszke vagyok rá, de valakinek ez is hasznos lehet.
+
+-------------------------------------------------------------
+Melyik fájl mire jó?
+
+Sotet_Kastely_2.dt80asm -maga a játék, a fõprogram.
+motor1_alap_veg.dt80asm -Video mód és paletta beállítása
+motor1_drawimage1.dt80asm -grafika kirajzolásának kódja
+motor1_grafika1.dt80asm -a játékban lévõ grafikák adatai
+motor1_MAP.dt80asm -pályákhoz tartozó kódok, illetve a pályák adatai
+motor1_megszakitas.dt80asm -új megszakítás rutin
+motor1_sound.dt80asm -hangokhoz szükséges kód
+
+---------------------------------------------------------
+Hogy tudok ezzel bármit is kezdeni?
+
+Indítsd el a TVC Developer Tool-t.
+Válaszd: ASM fájl megnyitása.
+Nyisd meg a Sotet_Kastely_2.dt80asm fájlt.
+Ezután válaszd a "Program" menü "ASM lefordítása" pontját.
+Ha minden jól megy akkor alul megjelenik zöld színnel a "sikeres fordítás" üzenet, és létrejön a Sotet_Kastely_2.cas fájl.
+
+Ez már a kész játék, TVC emulátorba betölthetõ, futtatható.
+---------------------------------------------------------
+Mást is tudok vele?
+-Igen, ha az elõzõ dolog már mûködik, akkor jön az érdekes rész, a programot lehet módosítani, átírni benne a kódot, értékeket, kicserélni a grafikát, a pályát, majd az elõzõ fordítás után már létre is jön a saját változatunk a játékból.
+A játék grafikája, pályák, minden szükséges részlet a mellékelt fájlokban megtalálható.
+A kódból esetleg "tanulhatunk is", vagy részleteit felhasználhatjuk saját játékainkban.
+
+---------------------------------------------------------
+Én mint a készítõ hozzájárulok, hogy bárki a fenti játékot módosítsa és saját játékát hozza ezzel létre és azt ingyenesen publikálja a TVC-s közösség számára.
+
+Játékot tehát készíthetünk vele. Azt hogy ezt a játékot mondjuk a játékfejlesztõ versenyen indíthatjuk e, azt azért elõtte kérdezzétek meg a Facebook TVC csoportjában.
+
+Kódrészleteket szabadon felhasználhatunk saját játékainkban, vagy mondjuk grafikai elemeket.
+
+-----------------------------------------------------------
+Tipp:
+-Érdemes kis dolgokkal kezdeni a módosítást, pl átírni az egyik színt, vagy a játékban lévõ szöveget. Ha fordítás után fut jól, akkor jók vagyunk.
+-Egy-egy grafikát vagy pályát kicserélhetünk másikra, az nem okozhat gondot.
+
+
+---GRAFIKA felépítése:----------------------------------------
+A játékban 28 darab kis grafikai elem, "kocka" van.
+16x16 pixel egy grafika mérete. 4 szín használható, egy pixelhez 2 bit kell, emiatt 16 pixelhez kell 32 bit, ezt osztjuk 8-al akkor kijön, hogy 4 byte határoz meg egy vízszintes sort és 16 sor van, tehát 64 byte kell egy grafika tárolásához, minden byte 4 pixelt határoz meg.
+
+4 szín lehet, emiatt szükséges "bitminta:"
+ 00- szín 0 (háttérszín)
+ 01- szín 1
+ 10- szín 2
+ 11- szín 3
+
+Egy byte-on a 4 pixel így helyezkedik el:
+bit:    76543210
+pixel:  12341234
+Tehát az elsõ pixelt a 7-es és 3-as bit írja le, a második pixelt a 6-os és 2-es pixel stb.
+Ha az 1-es pixelt akarjuk beállítani, akkor a 7-es és 3-as bitet kell beállítani attól függõen hogy 00, 01, 10, vagy 11 színt akarjuk használni.
+
+Hasznos tudni, hogy mely bit értéke mennyi 2-es számrendszerben:
+bit:    7    6    5    4    3    2    1   0
+érték: 128   64   32   16   8    4    2   1
+
+Fapados módszer, hogy papíron megrjzoljuk a grafikát (vagy rajzprogramban), és fejben átszámoljuk azt a fenti módon, hogy meglegyen a 64 byte, utána már csak be kell ezt a 64 számot írni a forráskódba. (A profibbak írnak erre programot, hogy ne fejben kelljen számolni.)
+
+Próba számítás:
+Mondjuk a 4 pixel színe a képen: 0312
+Indulunk azzal, hogy a számérték 0.
+Az elsõ pixel bitmintája 00 tehát nincs dolgunk.
+Második pixel 11. Akkor szám=szám+64+4
+Harmasik pixel 01 akkor szám=szám+2
+Negyedik pixel 10, akkor szám=szám+16
+Készen is vagyunk, az elsõ számértékünk megvan.
+Ugyanezt kell megcsinálnunk 64-szer, egyetlen grafikához.
+
+Megjegyzés: az CSAK TVC-n van így, és CSAK 4 színû módban.
+2 színû módban 1 byte 8 pixelt ír le, sorban a bitekkel ki-be kapcsoljuk a pixelt (ez kb minden gépen így van).
+16 színû módban meg 2 pixelt ír le egy byte a következõ módon:
+12121212
+Tehát az elsõ pixelhez a 7,5,3,1 bitek tartoznak, a második pixelhez a 6,4,2,0 bitek.
+
+---PÁLYA (MAP) felépítése:------------------------------------
+Egy pálya a játékban 16x15 elembõl áll, de mivel a felsõ két sor nem használt a játékban, így tárolva csak 16x13 elem van minden pályához (208 byte).
+A számértékek azt jelentik, hogy az adott helyen mi van:
+
+; 00=semmi ("út")    
+; 01-09 fal, 01-et elég lerakni, pálya indításkor random 1..9 lesz
+; 10=start -innen indul a fõszereplõ     
+; 11=exit -itt van a kijárat
+; 12=kard     
+; 13=ellenfél (kard kell hozzá)
+; 14=kulcs    
+; 15=ajtó (kulcs kell hozzá)
+; 16=kalapács 
+; 17=törhetõ kõ (kalapács kell hozzá)      	
+; 18=víz      
+; 19=tûz  (viz kell hozzá)
+; 20=eltolható kõ        	
+; 21=átjárható kõ 
+; 22=láthatatlan, fekete kõ
+; 23=kincs 		
+; 24=köd (ezt a gép magától megjeleníti, nem kell lerakni) 		
+; 25=erõs ellenfél (varázsló) --- 3 kard kell
+; 26=erõs ajtó ------------------ 3 kulcs kell 		
+; 27=láthatatlan kõ 		
+; 28=láthatatlan kõ látszik 		
+; 29= 		
+; 30=random kõ 1/A   
+; 31=random kõ 1/B 		
+; 32=random kõ 2/A   
+; 33=random kõ 2/B 		
+; 34=random kõ
+; 35= 		
+
+A "random kõ" pálya indításkor véletlenszerûen vag megjelenik vagy sem, mindegyik külön-külön ki-be kapcsolódik.
+A "random kõ 1/A" és "random kõ 1/B" kapcsolódnak egymáshoz, pálya indításkor kisorsoljuk és ha az 1/A megjelenik akkor az 1/B nem, vagy fordítva. Így két irányba véletlen elágazást tudunk csinálni, a játékos nem tudja elõre hogy 1/A vagy 1/B lesz nyitva, csak akkor látja ha oda megy.
+2/A és 2/B szintén egy másik pár az elõzõ mûködéssel.
+
+
+--------------------------------------------------------------
+
+
+
+
+
+
+

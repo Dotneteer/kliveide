@@ -1,0 +1,27 @@
+A "SZIGET" címû, klasszikus C64-es grafikus kalandjáték TVC-s BASIC átirata.
+Elkövette Dr.OG 2024-ben, a Videoton Játékfejlesztõi Verseny keretei között.
+Eredeti szerzõk: Eleanor Rice és Dr. F. C. Cannon, Micro Application.
+A C64-es változatot magyarította bizonyos ZT 1985-ben.
+Szakmai kérdésekben az átíró segítségére volt szipucsu, köszönet neki!
+
+Egy trópusi szigetrõl kell elmenekülnünk, miközben az életben maradásért küz-
+dünk. Sorsunkat a szerencse befolyásolja, de okos erõforrás-menedzsmenttel 
+javíthajuk esélyeinket. Bõvebb instrukciók a szabályokra és az irányításra 
+vonatkozóan a programban olvashatók, a vezérlés billentyûzettel történik.
+
+Kétféle verzió készült a szoftverbõl, a "SZIGET32" a kisebb TVC tulajdonosainak
+a puritánoknak és azoknak készült, akik jobban szeretik a pörgõs játékmenetet.
+A "SZIGET" a bõvített verzió, ami extra grafikákat és hanghatásokat, dallamokat
+is felvonultat. Ezt a 64k-s és pluszos gépek felhasználóinak szántuk, mivel
+jobban kihasználják a gép képességeit, így teljesebb élményt nyújtanak.
+
+Futtatás a "SZIGET" vagy "SZIGET32" fájlok betöltésével (LOAD),majd RUN parancs
+kiadásával történik. Tesztelve csak 'sima' 64k-s gépen és MiST FPGA-n lett, de 
+emulátorban 32k-s (SZIGET32) és pluszos gépen is ment, és mivel csak standard 
+BASIC utasításokat tartalmaz, így kompatibilitási problémákra nem számítunk.
+
+A .cas fájlokon kívül a disk image-n belül .bas, .ttp és .wav állományok is találhatóak, utóbbiak a méretük miatt tömörítve.
+Ezeket igazi vason is sikerült betölteni.
+
+A játékhoz jó szórakozást kíván az átíró.
+Elérhetõség, visszajelzés: orvosgab@gmail.com

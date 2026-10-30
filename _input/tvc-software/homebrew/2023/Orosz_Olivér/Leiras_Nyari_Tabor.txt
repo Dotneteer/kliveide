@@ -1,0 +1,51 @@
+
+
+Játék neve: Nyári Tábor
+Platform: Videoton TVC (64K memória szükséges)
+
+Stílusa: logikai-ügyességi-platform
+A fõszereplõt a joystick-al irányíthatjuk 4 irányba. Felfelé és lefelé csak létrán tudunk menni (illetve esni tudunk), létrát a FEL iránnyal tudunk lerakni és rögtön fel is mászunk rá.
+
+A pályákon elszórt érméket kell összegyûjtenünk. Ha ez sikerült a kijárat megnyílik és elhagyhatjuk a pályát. A pályákon létrákhoz használható elemeket is találhatunk, melyekbõl létrát építhetünk, így juthatunk a felsõbb szintekre. Az építhetõ elemek száma korlátozott, a kezdõ pályákon még nincs annyira kiszámolva, de a nehezebb szinteken már csak annyi elem van ami a pálya teljesítéséhez kell.
+
+Ha nem tudjuk teljesíteni a pályát akkor az R betû lenyomásával újra kezdhetjük az adott pályát (ez egy életünkbe kerül).
+A pályákon ellenfelekkel is találkozhatunk, ezeket megölni nem tudjuk, csak elkerülni.
+
+A játékban kapcsolókat is találunk, amik köveket kapcsolnak ki/be. Kapcsolni úgy tudunk, hogy ha ráállunk a kapcsolóra és utána vagy jobbra vagy balra lépünk.
+
+A játékban 3X16, összesen 48 pálya (képernyõ) található.
+
+Fõ képernyõn használható billentyûk:
+ B-indulás az 1-es pályáról (könnyû)
+ N-indulás a 17-es pályáról (közepes)
+ M-indulás a 33-as pályáról (nehéz)
+ SPACE-indulás az 1-es pályáról (könnyû)
+ Z-zene ki/be kapcsolása
+
+Játék közben használható billentyûk:
+ JOYSTICK-A fõszereplõ mozgatása 4 irányban
+ R-adott pálya újrakezdése (egy életünkbe kerül)
+ Q-kilépés a fõképernyõre
+ Z-zene ki/be kapcsolása
+
+A képernyõ tetején a következõ dolgokat olvashatjuk le:
+ PA -aktuális pálya sorszáma
+ EL -életeink száma
+ LE -létra elemek száma (ennyit építhetünk)
+ végül az aktuális pontszámunk.
+
+
+Készült: A 2023 decemberében megrendezett játékfejlesztõ versenyre.
+Készítette:
+ Orosz Olivér (program, grafika, pályák)
+ Kiss Károly  (zene)
+
+Videó link:
+https://youtu.be/KIXab3Hxr8g 
+
+verzió: 1.00
+A játékból két változat létezik.
+Az egyik 47 Kbyte-os, az valódi gépen nem fut (42Kbyte-nál nagyobbat nem tölt be), csak emulátoron.
+A "tömörített" az csak 18K, indítás után pillanatok alatt kicsomagolja magát és indul is. (A tömörítés részt nem én kódoltam, emiatt biztonság kedvéért adom a teljes, tömörítetlen változatot is, ha ezzel bármikor gond lenne.)
+
+

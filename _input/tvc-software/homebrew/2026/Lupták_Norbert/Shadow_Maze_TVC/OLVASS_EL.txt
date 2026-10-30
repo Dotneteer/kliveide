@@ -1,0 +1,9 @@
+KET FRISSITETT VALTOZAT
+
+Eredeti_4_palya_Sarga: az eredeti negy palya, sarga betoltokeppel.
+Random_ritkabb_falak_Feher: ritkabb random palyak, feher betoltokeppel.
+
+Mindketto egyszer hasznalhato fenykovekkel: az elso felvetel 5 masodperc
+vilagitast ad, utana a ko eltunik. Visszalepesre nincs uj aktivalas.
+A valasztott mappa CAS-fajljat toltsd be, majd RUN. OPQA iranyitas,
+SPACE inditas/tovabblepes, ESC kilepes. A joystick is hasznalhato.

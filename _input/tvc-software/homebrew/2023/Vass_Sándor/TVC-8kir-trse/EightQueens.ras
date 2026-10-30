@@ -1,0 +1,118 @@
+program EightQueens;
+@use "console"
+var
+	qpos : array[8] of Byte;
+	col, i : Byte;
+	found : Byte;
+	TIME  : Integer at $0b1D;
+	timeStamp : Integer;
+	printTable : boolean;
+
+Function checkStatus() : boolean;
+Begin
+	if col=0 then
+	Begin
+		returnvalue(true);
+		return;
+	End;
+	
+	i:=col-1;
+	while i<>255 Do
+	Begin
+	  if qpos[i] = qpos[col] Then
+	  Begin
+	    returnvalue(false);
+	    return;
+	  End;
+	  if qpos[i] = qpos[col] - (col - i) Then
+	  Begin
+	    returnvalue(false);
+	    return;
+	  End;
+	  if qpos[i] = qpos[col] + (col - i) Then
+	  Begin
+	    returnvalue(false);
+	    return;
+	  End;
+	  dec(i);
+	end;
+	returnvalue(true);
+end;
+
+procedure PrintTable();
+var x, y: Byte;
+Begin
+	for x:=0 to 8 Do
+	  for y:=0 to 8 Do
+	  Begin
+		  Console::GotoXY(x+1, y+1);
+		  if (qpos[x] = y) Then
+		    Console::WriteChar('*')
+		  else
+		    Console::WriteChar('.');
+	  end;
+end;
+
+Procedure init();
+Begin
+	for i:=0 to 8 Do
+		qpos[i] := 0;
+	col:=0;	
+	found := 0;
+	timeStamp := TIME;
+	printTable:= false;
+end;
+	
+begin
+	init();
+	Console::Write(string($82, "rjam ki a tal", $90, "latokat (i/n)\r\n> "));
+	if(Console::ReadKey() = 'i') Then
+	Begin
+		printTable:= true;
+		Console::Write("I\r\n");
+	End
+	else
+		Console::Write("N\r\n");
+		
+	while true Do
+	Begin
+	  if col = 8 then
+	  Begin
+		  // found one!
+		  inc(found);
+		  if printTable Then
+		  		PrintTable()
+		  else
+				Console::Write(".");
+		  col := 7;
+		  inc(qpos[col]);
+		  continue;
+	  end;
+	  if qpos[col] = 8 Then
+	  Begin
+		qpos[col] := 0;
+		dec(col);
+		if col = 255 then
+		Begin
+			// program done	
+ 			break;
+ 		End;
+		inc(qpos[col])  
+	  end
+	  else
+	  	if checkStatus() Then
+	  	  inc(col)
+	  	else
+	  	  inc(qpos[col]);
+	end;
+	timeStamp := TIME - timeStamp;
+	Console::Write("\r\n");
+	Console::WriteNum(found);
+	Console::Write(string(" megold", $90, "st tal", $90, "ltam "));
+	Console::WriteNum((timeStamp/20));
+	Console::Write(".");
+	Console::WriteNum((10 * timeStamp / 20) - (timeStamp/20) * 10 );
+	Console::Write(" sec alatt (");
+	Console::WriteNum(timeStamp);
+	Console::Write(" frames)\r\n");
+end.

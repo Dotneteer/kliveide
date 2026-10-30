@@ -1,0 +1,344 @@
+//================================================================================
+//                          TVC SNAKE
+//================================================================================
+
+// Konstansok
+#define §width 15
+#define §height 16
+#define §yoffset 2
+
+// Palyaadatok (16x20 = 320 byte)
+mapaddr = 30000
+
+// Kigyo poziciok tombje (max 200 elem)
+dim snakex(200)
+dim snakey(200)
+
+// Inicializalas
+graphics 16
+randomize
+setpaper 0
+
+// Egyedi karakterek definialasa
+// Kigyo fej - jobbra (180): szem es szaj jobbra
+setcharacter 180, 60, 102, 231, 255, 255, 254, 124, 56, 0, 0
+// Kigyo fej - balra (181): szem es szaj balra  
+setcharacter 181, 60, 102, 231, 255, 255, 127, 62, 28, 0, 0
+// Kigyo fej - fel (182): szem es szaj felfele
+setcharacter 182, 24, 60, 102, 231, 255, 255, 126, 60, 0, 0
+// Kigyo fej - le (183): szem es szaj lefele
+setcharacter 183, 60, 126, 255, 255, 231, 102, 60, 24, 0, 0
+
+// Kigyo farok (184): kerek test
+setcharacter 184, 24, 60, 126, 126, 126, 126, 60, 24, 0, 0
+
+// Fal karakter (185): tegla minta
+setcharacter 185, 255, 129, 165, 165, 165, 129, 255, 129, 0, 0
+
+// Gyumolcs - alma (186): alma szar es level
+setcharacter 186, 24, 24, 60, 126, 255, 255, 126, 60, 0, 0
+
+// Logo karakterek - Kigyo rajz (190-199)
+// Kigyo test - vizszintes
+setcharacter 190, 60, 126, 255, 255, 255, 255, 126, 60, 0, 0
+// Kigyo test - korbe
+setcharacter 191, 0, 126, 255, 195, 195, 255, 126, 0, 0, 0
+// Kigyo farka hegy
+setcharacter 192, 0, 0, 24, 60, 126, 60, 24, 0, 0, 0
+// Kigyo fej - szem es nyelv
+setcharacter 193, 60, 126, 219, 255, 255, 126, 24, 24, 0, 0
+
+cls
+
+// Menu - Kigyo rajz es logo
+setink 14
+// Kigyo rajz
+printat 3, 1: chr$(193)
+printat 3, 2: chr$(190)
+printat 3, 3: chr$(190)
+printat 3, 4: chr$(191)
+printat 4, 4: chr$(190)
+printat 5, 4: chr$(191)
+printat 6, 4: chr$(190)
+printat 6, 5: chr$(190)
+printat 6, 6: chr$(191)
+printat 7, 6: chr$(190)
+printat 8, 6: chr$(191)
+printat 9, 6: chr$(190)
+printat 9, 7: chr$(190)
+printat 9, 8: chr$(192)
+
+setink 10
+printat 12, 3: "K Í G Y Ó"
+
+setink 15
+printat 15, 1: "1 - Kezdo"
+printat 16, 1: "2 - Nehez"
+
+§menu.wait:
+	k$ = inkey$
+	if k$ = "1" then gamemode = 1: goto §start
+	if k$ = "2" then gamemode = 2: goto §start
+	goto §menu.wait
+
+// ============================================================================
+//                              JATEK START
+// ============================================================================
+
+§start:
+	cls
+	
+	// Palya torlese
+	setink 15
+	printat 10, 3: "Betöltés..."
+	
+	for i = 0 to 319
+		poke mapaddr + i, 0
+	next
+	
+	cls
+	
+	// Kezdo ertekek
+	x = 7
+	y = 10
+	dx = 1
+	dy = 0
+	score = 0
+	lepes = 0
+	oldx = 0
+	oldy = 0
+	snakelength = 5
+	snakehead = 0
+	snaketail = 0
+	
+	// Kezdo kigyo pozicio
+	for i = 0 to 4
+		snakex(i) = 7 - i
+		snakey(i) = 10
+	next
+	
+	// Sebesseg beallitasa
+	if gamemode = 1 then speed = 5
+	if gamemode = 2 then speed = 2
+	
+	// Fal
+	gosub §draw.walls
+	
+	// Pontszam
+	setink 15
+	printat 1, 1: "Pont:"
+	
+	// Elso etel (fal utan!)
+	gosub §new.food
+
+// ============================================================================
+//                              FO JATEK CIKLUS
+// ============================================================================
+
+§loop:
+	// Van-e mar itt valami?
+	addr = mapaddr + y * 16 + x
+	cell = peek(addr)
+	
+	// Ha igen, jatek vege
+	if cell = 1 then goto §gameover
+	
+	// Ha etel
+	if cell = 2 then gosub §eat
+	
+	// Bejeloljuk hogy van itt kigyo
+	poke addr, 1
+	
+	// Uj fej hozzaadasa a tombhoz
+	snakehead = snakehead + 1
+	if snakehead > 199 then snakehead = 0
+	snakex(snakehead) = x
+	snakey(snakehead) = y
+	
+	// Farok torles, ha tul hosszu
+	if snakehead - snaketail >= snakelength then gosub §remove.tail
+	
+	// Regi pozicio farokka valtoztatasa (ha volt)
+	if oldx > 0 then setink 14: printat oldy + §yoffset + 1, oldx + 1: chr$(184)
+	
+	// Kigyo fej kirajzolasa irany szerint
+	setink 14
+	headchar = 180
+	if dx = -1 then headchar = 181
+	if dy = -1 then headchar = 182
+	if dy = 1 then headchar = 183
+	printat y + §yoffset + 1, x + 1: chr$(headchar)
+	
+	// Regi pozicio tarolasa
+	oldx = x
+	oldy = y
+	
+	// Pont szamlalas (minden lepes)
+	lepes = lepes + 1
+	score = lepes
+	setink 15
+	printat 1, 7: score
+	
+	// Billentyuzet varakozas ciklusban
+	for d = 1 to speed
+		k$ = inkey$
+		if k$ = "w" and dy = 0 then dx = 0: dy = -1
+		if k$ = "s" and dy = 0 then dx = 0: dy = 1
+		if k$ = "a" and dx = 0 then dx = -1: dy = 0
+		if k$ = "d" and dx = 0 then dx = 1: dy = 0
+	next
+	
+	// Mozgas
+	x = x + dx
+	y = y + dy
+	
+	// Fal utkozes
+	if x < 0 or x >= §width then goto §gameover
+	if y < 0 or y >= §height then goto §gameover
+	
+	goto §loop
+
+// ============================================================================
+//                              UJ ETEL
+// ============================================================================
+
+§new.food:
+	// Random pozicio (1-tol width-2-ig, NEM a falon!)
+	foodx = rnd(§width - 2) + 1
+	foody = rnd(§height - 2) + 1
+	
+	// Ures?
+	foodaddr = mapaddr + foody * 16 + foodx
+	if peek(foodaddr) <> 0 then goto §new.food
+	
+	// Elhelyezes
+	poke foodaddr, 2
+	
+	// Kirajzolas (gyumolcs karakter)
+	setink 10
+	printat foody + §yoffset + 1, foodx + 1: chr$(186)
+	return
+
+// ============================================================================
+//                              ETEL MEGEVESE
+// ============================================================================
+
+§eat:
+	// Kigyo hossza no
+	snakelength = snakelength + 3
+	
+	// Uj etel pozicio
+	§eat.retry:
+		foodx = rnd(§width - 2) + 1
+		foody = rnd(§height - 2) + 1
+		
+		// Ures?
+		foodaddr = mapaddr + foody * 16 + foodx
+		if peek(foodaddr) <> 0 then goto §eat.retry
+	
+	// Elhelyezes
+	poke foodaddr, 2
+	
+	// Kirajzolas (gyumolcs karakter)
+	setink 10
+	printat foody + §yoffset + 1, foodx + 1: chr$(186)
+	
+	// Hang (vegul)
+	sound pitch 800, volume 10, duration 1
+	return
+
+// ============================================================================
+//                              FAROK TORLES
+// ============================================================================
+
+§remove.tail:
+	// A farok pozicioja a tombbol
+	tx = snakex(snaketail)
+	ty = snakey(snaketail)
+	
+	// Torles memoriaban es kepernyorol
+	tailaddr = mapaddr + ty * 16 + tx
+	poke tailaddr, 0
+	printat ty + §yoffset + 1, tx + 1: " "
+	
+	// Farok mutato novelese
+	snaketail = snaketail + 1
+	if snaketail > 199 then snaketail = 0
+	
+	return
+
+// ============================================================================
+//                              FAL RAJZOLASA
+// ============================================================================
+
+§draw.walls:
+	setink 6
+	
+	// Felso sor (fal karakter)
+	for i = 0 to §width
+		printat §yoffset, i: chr$(185)
+		poke mapaddr + 0 * 16 + i, 1
+	next
+	
+	// Oldalsok
+	for i = 1 to §height
+		printat i + §yoffset, 0: chr$(185)
+		poke mapaddr + i * 16 + 0, 1
+		printat i + §yoffset, §width : chr$(185)
+		poke mapaddr + i * 16 + §width , 1
+	next
+	
+	// Also sor
+	for i = 0 to §width
+		printat §height + §yoffset + 1, i: chr$(185)
+		poke mapaddr + (§height + 1) * 16 + i, 1
+	next
+	
+	return
+
+// ============================================================================
+//                              GAME OVER
+// ============================================================================
+
+§gameover:
+	sound pitch 400, volume 15, duration 5
+	
+	cls
+	setink 14
+	printat 8, 2: " JÁTÉK VÉGE!"
+	printat 10, 3: "Pont:"
+	printat 10, 8: score
+	printat 12, 2: "SPACE - Menü"
+	
+	§wait:
+		k$ = inkey$
+		if k$ <> " " then goto §wait
+	
+	// Vissza a menuhoz
+	cls
+	setink 14
+	// Kigyo rajz
+	printat 3, 1: chr$(193)
+	printat 3, 2: chr$(190)
+	printat 3, 3: chr$(190)
+	printat 3, 4: chr$(191)
+	printat 4, 4: chr$(190)
+	printat 5, 4: chr$(191)
+	printat 6, 4: chr$(190)
+	printat 6, 5: chr$(190)
+	printat 6, 6: chr$(191)
+	printat 7, 6: chr$(190)
+	printat 8, 6: chr$(191)
+	printat 9, 6: chr$(190)
+	printat 9, 7: chr$(190)
+	printat 9, 8: chr$(192)
+	
+	setink 10
+	printat 12, 3: "K I G Y O"
+	
+	setink 15
+	printat 15, 1: "1 - Kezdo"
+	printat 16, 1: "2 - Nehez"
+	goto §menu.wait
+
+end

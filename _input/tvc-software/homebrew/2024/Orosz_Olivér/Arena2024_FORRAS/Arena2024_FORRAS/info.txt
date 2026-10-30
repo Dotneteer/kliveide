@@ -1,0 +1,50 @@
+
+
+ARÉNA 2024
+
+Készült a 2024 december végén.
+Alapja a 2021-es FOGO játék volt (még BASIC nyelven íródott).
+Nyelv: Pascal, némi assemby betéttel.
+Fejlesztõ eszköz: TRSE (Turbo Rascal Syntax Error v 0.17.42) 
+
+Elméletileg minden fájlt tartalmaz.
+Az ARENA2024.RAS fájlt kell betölteni a TRSE fejlesztõeszközbe, majd a PROJECT menüpont BUILD parancsával fordítható, vagy a RUN paranccsal fordítható és futtatható is (ha beállítottuk a TRSE-n belül hogy hol találja a TVC emulátort).
+
+Ha ez mûködik, tudunk fordítani, fut a játék, utána elkezdhetjük "piszkálni" a kódot, átírni benne dolgokat, kipróbálni fut e úgy, mennyivel másabb, és így saját változatot készíthetünk a játékból.
+
+ARENA2024.RAS -Maga a játékprogram, annak kódja Pascal nyelven.
+
+A TVC_ALAP2B.TRU is egy Pascal nyelvû program, egy unit aminek az eljárásait használja a játékom.
+
+Egyéb fájlok:
+  CAR2.BIN  - karakterkészlet, 128 darab karakter képe.
+
+  OGRA.BIN  - a játékhoz tartozó grafikák, 32 darab 8x8 pixeles 4 színû kép,
+	      egy kép 16 byte méretû (2 byte széles egy sor és 8 sor van).
+  
+  OMAP1.BIN  -elsõ pálya
+  OMAP2.BIN  -második pálya
+  OMAP3.BIN  -harmadik pálya
+  OMAP4.BIN  -negyedik pálya
+     egy-egy pálya 32x30 mezõ méretû, 960 byte nagyságú, egy byte egy mezõ.
+
+
+Akár a grafika, akár a pálya "bármivel" szerkeszthetõ, de ha ez nem menne akkor
+a program kódba beszúrhatunk egy tömböt és abban is elhelyezhetõk az adatok, akár úgy hogy felsoroljuk a számokat. Nyilván akkor a tömb címe meg kell egyezzen a BIN fájl címével, vagy gondoskodnunk kell hogy a program a megfelelõ címen keresse az adatokat.
+
+
+
+YouTube link:
+
+https://youtu.be/2fMQl1mAw8o 
+
+Játékban használható billentyûk:
+  R-aktuális pálya újrakezdése
+  Q-kilépés a fõképernyõre
+  (meg a kódban van még egy...)
+
+Kellemes játékot és kellemes "bütykölést"!
+
+Orosz Olivér
+2024
+

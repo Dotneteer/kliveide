@@ -1,0 +1,129 @@
+program teszt_2grafikus_mod;
+var  
+   i,j: byte; // ciklushoz kell
+   GrMode:byte; //a megszakítást vezérli, 
+   // ha 0 akkor 16 színű módot kapcsol, 1 esetén 2 színűt
+   
+   kepernyo,po:pointer; // adatok másolásához pointerek
+
+   KEPDATA1:incbin("PIC_1.BIN");// 16 színű kép a fájlban 
+   // ez be lesz építve a CAS fájlba
+   KEPDATA2:incbin("PIC_2.BIN");// 2 színű kép a fájlban  
+   // ez be lesz építve a CAS fájlba
+
+// a saját megszakításunk ami váltogatja a képernyő módokat
+procedure megszakitas;
+begin
+ asm("	
+    push	AF // használt regiszterek mentése
+    push	BC
+	push	HL
+	out	($7),A
+	ld	A,(GrMode) // GrMode:=(GrMode+1)AND 1
+	inc	A
+	and	1
+	ld	(GrMode),A				
+	jp	Z, IT_SET_GRAPHICS2
+  // 16 színű mód beállítása
+    ld	B,2 // 2=16 színű mód, 1=4 színű mód, 0=2 színű mód
+	ld	A,($0B13)
+	and	128+64+32+16+8+4
+	or	B
+	ld	($0B13),A
+	out	($6),A
+
+	ld	HL,1919-46 //átállítása a 119. sor végére
+    ld	A,14
+	out	($70),A
+	ld	A,H
+	out	($71),A
+	ld	A,15
+	out	($70),A
+	ld	A,L
+	out	($71),A
+	jp	CURSOR_IT_END
+   // 2 színű mód beállítása
+IT_SET_GRAPHICS2	
+	ld	B,0 // 0
+	ld	A,($0B13)
+	and	128+64+32+16+8+4
+	or	B
+	ld	($0B13),A
+	out	($6),A
+
+	ld	HL,3839 // 239. sor vége
+    ld	A,14
+	out	($70),A
+	ld	A,H
+	out	($71),A
+	ld	A,15
+	out	($70),A
+	ld	A,L
+	out	($71),A
+	
+CURSOR_IT_END		
+    pop	HL // kilépéskor visszatöltés
+	pop	BC
+	pop	AF
+	ei
+ ");  
+end;
+
+
+procedure init_game;
+begin
+// RAM kiosztása:  U0, U1, VID, U3
+// és akkor 32768-tól elérhető a video ram
+   asm("	
+   ld A,$90
+   ld ($3),A
+   out ($2),A
+    ");
+
+ GrMode:=0;
+ 
+ kepernyo:=32768; // video RAM címe (bal felső sarok)
+ po:=#KEPDATA1; // a pointer a 16 színű kép adataira mutat
+
+ // a felső 120 sort bemásoljuk a képernyő memóriába
+ for j:=0 to 120 do 
+   begin
+   for i:=0 to 64 do begin kepernyo[i]:=po[i]; end;
+   kepernyo:=kepernyo+64;
+   po:=po+64;
+   end;
+
+ po:=#KEPDATA2; // 2 színű kép adataira mutat
+
+ // az alsó 120 sort bemásoljuk a képernyő memóriába
+ for j:=0 to 120 do
+   begin
+   for i:=0 to 64 do  begin kepernyo[i]:=po[i]; end;
+   kepernyo:=kepernyo+64;
+   po:=po+64;
+   end;
+
+// átállítjuk a megszakítást a saját megszakítás rutinunra
+asm("	
+  di	// megszakítások tiltása				
+  ld  HL,$0038
+  ld (HL),195		//; 195 -> JP mnemonic
+  inc HL
+  ld  BC,megszakitas //a megszakítás nevű eljárás címét betöltjük
+  ld (HL),C
+  inc HL
+  ld (HL),B //	; 0038H címen: JP CURSOR_IT_HANDLER	
+  ei		//	; megszakítások engedélyezése
+ ");  
+end;
+
+begin
+ // itt kezdődik a program indítása
+ init_game;
+ 
+ while (1=1) do  // végtelen ciklus
+     begin
+	   // ide jöhet a saját programunk
+     end;
+     
+end.

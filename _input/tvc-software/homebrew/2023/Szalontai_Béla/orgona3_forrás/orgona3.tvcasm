@@ -1,0 +1,1619 @@
+﻿                                   ORG                 6639                          ; A program kezdőcíme
+; BASIC Header
+                                   DB                  $0F,$0A,$0,$DD                ; "10 PRINT" - basic token
+                                   DB                  ' USR'                        ; " USR"
+                                   DB                  $96                           ; "("
+                                   DB                  '6659'                        ; "6659"
+                                   DB                  $95,$FF                       ; ")"
+                                   DB                  0,0,0,0,0                     ; 5 db 0, hogy 6659-nél kezdődjön a kód
+                                   
+;******************************************************************
+; 3 channel MUSIC player for VIDEOTON TVC
+; (c) 2023 by Szalontai Béla (Fast and Force)
+; v1.0 (2023.12.01)
+;******************************************************************
+                                   JP                  MAIN                          
+                                   
+;******************************************************************
+; INTERRUPT HANDLER 
+; Worst Case Execution time: 183 cycle (channel dividers must be different, otherwise 340)
+; Interrupt Frequency: ~13950 Hz
+; CPU load by IRQ: 82%
+;
+; EXX D = channel 1 act val
+; EXX B = channel 2 act val
+; EXX C = channel 3 act val
+;
+; EXX E = channel 1 act div
+; EXX H = channel 2 act div
+; EXX L = channel 3 act div
+;******************************************************************                                         
+               IT_HANDLER          EX                  AF,AF'
+               
+                                   EXX                                               ; 4+4
+                                   OUT                 (7),A                         ; 11  	ack interrupt
+; CHANNEL 1                     
+                                   DB                  $18                           ; 12 	JR MIH1 (disable channel)
+               CH1_ENABLED         DB                  $0F                           ;		or JR MIH00 <= $0F / $00 (enable channel)
+                                   DEC                 E                             ; 4	Handle Channel 1    
+                                   JR                  NZ,MIH1                       ; 12
+                                   DB                  $1E                           ; 7	LD E,n
+               CH1_DIVIDER         DB                  $01                           
+                                   LD                  A,D                           ; 4	D = channel 1 act val
+                                   OR                  A                             ; 4
+                                   JR                  NZ,MIH0_1                     ; 12
+                                   DB                  $16                           ; 7	ld D,n                           
+               CH1_VOLUME          DB                  $00                           
+                                   JR                  MIH1                          ; 12
+               MIH0_1              LD                  D,0                           ; 7
+               
+; CHANNEL 2 
+               MIH1                DB                  $18                           ; 12 	JR MIH1 (disable channel)
+               CH2_ENABLED         DB                  $0F                           ;		or JR MIH00 <= $0F / $00 (enable channel)
+                                   DEC                 H                             ; 4	Handle Channel 2
+                                   JR                  NZ,MIH2                       ; 12
+                                   DB                  $26                           ; 7	LD H,n
+               CH2_DIVIDER         DB                  $02                           
+                                   LD                  A,B                           ; 4	B = channel 2 act val
+                                   OR                  A                             ; 4
+                                   JR                  NZ,MIH1_1                     ; 12
+                                   DB                  $06                           ; 7 	LD B,n
+               CH2_VOLUME          DB                  $00                           
+                                   JR                  MIH2                          ; 12
+               MIH1_1              LD                  B,0                           ; 7
+               
+; CHANNEL 3               
+               MIH2                DB                  $18                           ; 12 	JR MIH1 (disable channel)
+               CH3_ENABLED         DB                  $0F                           ;		or JR MIH00 <= $0F / $00 (enable channel)
+                                   DEC                 L                             ; 4	Handle Channel 3
+                                   JR                  NZ,MIXER                      ; 12
+                                   DB                  $2E                           ; 7	LD L,n                           
+               CH3_DIVIDER         DB                  $03                           
+                                   LD                  A,C                           ; 4
+                                   OR                  A                             ; 4
+                                   JR                  NZ,MIH2_1                     ; 12
+                                   DB                  $0E                           ; 7	LD C,n
+               CH3_VOLUME          DB                  $00                           
+                                   JR                  MIXER                         ; 12
+               MIH2_1              LD                  C,0                           ; 7
+               
+               MIXER               LD                  A,D                           ; 4
+                                   ADD                 A,B                           ; 4
+                                   ADD                 A,C                           ; 4                        
+                                   AND                 60                            ; 7		mask
+                                   OR                  1                             ; 7		must have in 4 color graphics mode
+                                   OUT                 (6),A                         ; 11		write to sound port
+                                   
+                                   EXX                                               ; 4 + 4
+                                   EX                  AF,AF'
+                                   
+                                   
+                                   
+                                   
+                                   
+                                   
+                                   
+                                   EI                                                ; 4
+                                   RET                                               ; 10
+                                   
+;******************************************************************
+; INIT MUSIC MIXER INTERRUPT HANDLER
+;******************************************************************
+									
+               START_MUSIC_MIXER   DI                                                ; IT disabled
+                                   LD                  A,10                          ; disable CRTC CURSOR IT
+                                   OUT                 (112),A                       
+                                   LD                  A,35                          
+                                   OUT                 (113),A                       
+                                   LD                  A,$F2                         ; Sound IT counter divider LO
+                                   OUT                 (4),A                         ; (4096 - 14 = 4084 = $0FF2)
+                                   LD                  A,32+$0F                      ; Sound IT enabled, sound is OFF + divider HI
+                                   OUT                 (5),A                         ; IT frequency = Fsys / 16 / 14 = ~13950 Hz
+                                   LD                  A,195                         ; @038h -> JP 1A06 -> Address of IT_HANDLER
+                                   LD                  (56),A                        
+                                   LD                  A,$06                         ; can be relocated!
+                                   LD                  (57),A                        
+                                   LD                  A,$1A                         
+                                   LD                  (58),A                        ; set the new IT handler
+                                   IN                  A,(91)                        ; reset counter divider
+                                   EI                                                ; enable interrupt
+                                   RET                                               
+                                   
+;******************************************************************
+; RESTORE INTERRUPT HANDLER
+;******************************************************************
+               STOP_MUSIC_MIXER    DI                                                
+                                   LD                  A,10                          ; restore the original interrupt
+                                   OUT                 (112),A                       
+                                   LD                  A,3                           
+                                   OUT                 (113),A                       ; CURSOR IT enabled
+                                   LD                  A,0                           
+                                   OUT                 (4),A                         
+                                   LD                  A,0                           
+                                   OUT                 (5),A                         ; Sound IT disabled, Sound is OFF
+                                   LD                  A,245                         
+                                   LD                  (56),A                        
+                                   LD                  A,62                          
+                                   LD                  (57),A                        
+                                   LD                  A,112                         
+                                   LD                  (58),A                        ; restore old it handler
+                                   EI                                                
+                                   RET                                               
+                                   
+;******************************************************************
+; Handling volume decay + vibrato
+;******************************************************************                                
+               SOUND_PLAYER        LD                  HL,CH1_VOLUME                 
+                                   LD                  DE,AD1                        
+                                   LD                  A,(HL)                        ; check if the channel 1 is finished 
+                                   OR                  A                             
+                                   JR                  NZ,PV1                        
+                                   LD                  A,$0F                         
+                                   LD                  (CH1_ENABLED),A               ; disable CH 1
+                                   JR                  SP_CH2_1                      
+               PV1                 LD                  A,(DE)                        
+                                   DB                  $D6                           ; SUB pedal_value                             
+               PEDAL_VALUE1        DB                  $04                           
+                                   LD                  (DE),A                        
+                                   JR                  NZ,SP_CH2_1                   
+                                   DEC                 (HL)                          ; duration for ch11 is over lets decrement volume
+                                   LD                  A,(CH1_FREQ_MOD)              
+                                   XOR                 1                             
+                                   LD                  (CH1_FREQ_MOD),A              
+                                   JR                  NZ,SP_CH2_0                   
+                                   LD                  A,(CH1_DIVIDER)               ; modulation
+               VIBRATO_1_INC       DB                  $00                           ; NOP / INC A -> $00 / $3C
+                                   LD                  (CH1_DIVIDER),A               
+                                   JR                  SP_CH2_1                      
+               SP_CH2_0            LD                  A,(CH1_DIVIDER)               ; modulation
+               VIBRATO_1_DEC       DB                  $00                           ; NOP / DEC A -> $00 / $3D                             
+                                   LD                  (CH1_DIVIDER),A               
+               SP_CH2_1            INC                 DE                            
+                                   LD                  HL,CH2_VOLUME                 
+                                   LD                  A,(HL)                        ; check if the channel 2 is finished 
+                                   OR                  A                             
+                                   JR                  NZ,PV2                        
+                                   LD                  A,$0F                         
+                                   LD                  (CH2_ENABLED),A               ; disable CH 2
+                                   JR                  SP_CH3_1                      
+               PV2                 LD                  A,(DE)                        
+                                   DB                  $D6                           ; SUB pedal_value                             
+               PEDAL_VALUE2        DB                  $04                           
+                                   LD                  (DE),A                        
+                                   JR                  NZ,SP_CH3_1                   
+                                   DEC                 (HL)                          ; duration for ch2 is over lets decrement volume
+                                   LD                  A,(CH2_FREQ_MOD)              
+                                   XOR                 1                             
+                                   LD                  (CH2_FREQ_MOD),A              
+                                   JR                  NZ,SP_CH3_0                   
+                                   LD                  A,(CH2_DIVIDER)               ; modulation
+               VIBRATO_2_INC       DB                  $00                           ; NOP / INC A -> $00 / $3C                             
+                                   LD                  (CH2_DIVIDER),A               
+                                   JR                  SP_CH3_1                      
+               SP_CH3_0            LD                  A,(CH2_DIVIDER)               ; modulation
+               VIBRATO_2_DEC       DB                  $00                           ; NOP / DEC A -> $00 / $3D                             
+                                   LD                  (CH2_DIVIDER),A               
+               SP_CH3_1            INC                 DE                            
+                                   LD                  HL,CH3_VOLUME                 
+                                   LD                  A,(HL)                        ; check if the channel 3 is finished 
+                                   OR                  A                             
+                                   JR                  NZ,PV3                        
+                                   LD                  A,$0F                         
+                                   LD                  (CH3_ENABLED),A               ; disable CH 3
+                                   JR                  SP_END_1                      
+               PV3                 LD                  A,(DE)                        
+                                   DB                  $D6                           ; SUB pedal_value                             
+               PEDAL_VALUE3        DB                  $04                           
+                                   LD                  (DE),A                        
+                                   JR                  NZ,SP_END_1                   
+                                   DEC                 (HL)                          ; duration for ch3 is over lets decrement volume
+                                   LD                  A,(CH3_FREQ_MOD)              
+                                   XOR                 1                             
+                                   LD                  (CH3_FREQ_MOD),A              
+                                   JR                  NZ,SP_END_0                   
+                                   LD                  A,(CH3_DIVIDER)               ; modulation
+               VIBRATO_3_INC       DB                  $00                           ; NOP / INC A -> $00 / $3C                             
+                                   LD                  (CH3_DIVIDER),A               
+                                   JR                  SP_END_1                      
+               SP_END_0            LD                  A,(CH3_DIVIDER)               ; modulation
+               VIBRATO_3_DEC       DB                  $00                           ; NOP / DEC A -> $00 / $3D                             
+                                   LD                  (CH3_DIVIDER),A               
+               SP_END_1            RET                                               
+               
+;******************************************************************
+; MAIN PROGRAM
+;******************************************************************
+               WAIT_FOR_KEY_PRESS  EI                                                
+                                   RST                 $30                           ; waiting for keypress
+                                   DB                  $93                           
+                                   INC                 C                             
+                                   JR                  NZ,WAIT_FOR_KEY_PRESS         
+                                   RST                 $30                           ; read character then drop
+                                   DB                  $91                           
+                                   DI                                                
+                                   RET                                               
+                                   
+               MAIN                DI                                                
+                                   EXX                                               
+                                   PUSH                HL                            
+                                   PUSH                BC                            
+                                   PUSH                DE                            
+                                   EXX                                               
+                                   CALL                GRAPHICS_CONFIG               
+                                   CALL                INTRO_PICTURE                 
+                                   CALL                WAIT_FOR_KEY_PRESS            
+                                   
+                                   CALL                CLRSCR                        
+                                   CALL                HELP_PICTURE                  
+                                   CALL                WAIT_FOR_KEY_PRESS            
+                                   
+                                   CALL                CLRSCR                        
+                                   CALL                MAIN_PICTURE                  
+                                   CALL                START_MUSIC_MIXER             ; starts SOUND GENERATOR INTERRUPT
+                                   EI                                                
+                                   
+                                   LD                  A,8                           
+                                   LD                  (PEDAL_VALUE1),A              
+                                   LD                  (PEDAL_VALUE2),A              
+                                   LD                  (PEDAL_VALUE3),A              
+                                   
+;--------------------------------------------------------------------------------------------------------------------------------------
+               RUNLOOP             LD                  A,7                           ; check the ESC button
+                                   OUT                 (3),A                         ; select 7th row of keyboard matrix
+                                   IN                  A,(88)                        ; read keyboard matrix row
+                                   BIT                 3,A                           ; check ESC key is pressed                           
+                                   JR                  NZ,KEY_SPACE                  
+                                   JP                  VEGE                          
+                                   
+                                   
+               KEY_SPACE           BIT                 5,A                           ; check SPACE key is pressed
+                                   JR                  NZ,KEY_CTRL                   
+                                   ; handle repeat delay for space key
+                                   DI                                                
+                                   PUSH                AF                            
+                                   LD                  A,(PEDAL_KEY_DELAY)           
+                                   DEC                 A                             
+                                   LD                  (PEDAL_KEY_DELAY),A           
+                                   OR                  A                             
+                                   JR                  NZ,KEY_SPACE_END              
+                                   LD                  A,120                         
+                                   LD                  (PEDAL_KEY_DELAY),A           
+                                   CALL                ZENGETO_XOR                   
+                                   LD                  A,(PEDAL_VALUE1)              ; toggle pedal
+                                   CP                  8                             
+                                   JR                  NZ,KEY_SPACE2                 
+                                   LD                  A,4                           
+               KEY_SPACE1          LD                  (PEDAL_VALUE1),A              
+                                   LD                  (PEDAL_VALUE2),A              
+                                   LD                  (PEDAL_VALUE3),A              
+                                   XOR                 A                             ; end of all sound
+                                   LD                  (CH1_VOLUME),A                
+                                   LD                  (CH2_VOLUME),A                
+                                   LD                  (CH3_VOLUME),A                
+                                   EXX                                               
+                                   LD                  D,A                           ; CH1_ACT_VAL
+                                   LD                  B,A                           ; CH2_ACT_VAL                           
+                                   LD                  C,A                           ; CH3_ACT_VAL                           
+                                   EXX                                               
+                                   INC                 A                             
+                                   LD                  (CH1_DIVIDER),A               
+                                   INC                 A                             
+                                   LD                  (CH2_DIVIDER),A               
+                                   INC                 A                             
+                                   LD                  (CH3_DIVIDER),A               
+                                   JR                  KEY_SPACE_END                 
+               KEY_SPACE2          LD                  A,8                           
+                                   JR                  KEY_SPACE1                    
+               KEY_SPACE_END       POP                 AF                            
+                                   EI                                                
+                                   JR                  KEY_NEXT0                     
+                                   
+               KEY_CTRL            BIT                 4,A                           ; check CTRL key is pressed
+                                   JR                  NZ,KEY_NEXT0                  
+               					   ; on/off vibrato with CTRL key
+                                   DI                                                
+                                   PUSH                AF                            
+                                   LD                  A,(VIBRATO_KEY_DELAY)         
+                                   DEC                 A                             
+                                   LD                  (VIBRATO_KEY_DELAY),A         
+                                   OR                  A                             
+                                   JR                  NZ,KEY_CTRL_END               
+                                   LD                  A,120                         
+                                   LD                  (VIBRATO_KEY_DELAY),A         
+                                   CALL                VIBRATO_XOR                   
+                                   LD                  A,(VIBRATO_1_INC)             
+                                   CP                  $3C                           
+                                   JR                  NZ,KEY_CTRL_1                 
+                                   LD                  A,$00                         
+                                   LD                  (VIBRATO_1_INC),A             
+                                   LD                  (VIBRATO_2_INC),A             
+                                   LD                  (VIBRATO_3_INC),A             
+                                   LD                  (VIBRATO_1_DEC),A             
+                                   LD                  (VIBRATO_2_DEC),A             
+                                   LD                  (VIBRATO_3_DEC),A             
+                                   JR                  KEY_CTRL_END                  
+               KEY_CTRL_1          LD                  A,$3C                         
+                                   LD                  (VIBRATO_1_INC),A             
+                                   LD                  (VIBRATO_2_INC),A             
+                                   LD                  (VIBRATO_3_INC),A             
+                                   LD                  A,$3D                         
+                                   LD                  (VIBRATO_1_DEC),A             
+                                   LD                  (VIBRATO_2_DEC),A             
+                                   LD                  (VIBRATO_3_DEC),A             
+               KEY_CTRL_END        XOR                 A                             ; end of all sound
+                                   LD                  (CH1_VOLUME),A                
+                                   LD                  (CH2_VOLUME),A                
+                                   LD                  (CH3_VOLUME),A                
+                                   EXX                                               
+                                   LD                  D,A                           ; CH1_ACT_VAL
+                                   LD                  B,A                           ; CH2_ACT_VAL                           
+                                   LD                  C,A                           ; CH3_ACT_VAL                           
+                                   EXX                                               
+                                   INC                 A                             
+                                   LD                  (CH1_DIVIDER),A               
+                                   INC                 A                             
+                                   LD                  (CH2_DIVIDER),A               
+                                   INC                 A                             
+                                   LD                  (CH3_DIVIDER),A               
+                                   POP                 AF                            
+                                   EI                                                
+                                   
+               KEY_NEXT0           BIT                 1,A                           ; check 7th row of key matrix since it is already loaded to A register
+                                   JR                  NZ,KEY_NEXT1                  
+                                   LD                  B,$3C                         ; key: "," - sound: C2
+                                   CALL                KEY_HANDLER                   
+               KEY_NEXT1           BIT                 2,A                           
+                                   JR                  NZ,KEY_NEXT2                  
+                                   LD                  B,$35                         ; key: "." - sound: D2       
+                                   CALL                KEY_HANDLER                   
+               KEY_NEXT2           BIT                 6,A                           
+                                   JR                  NZ,KEY_NEXT3                  
+                                   LD                  B,$2F                         ; key: "-" - sound: E2       
+                                   CALL                KEY_HANDLER                   
+               KEY_NEXT3           BIT                 7,A                           
+                                   JR                  NZ,KEY_NEXT10                 
+                                   LD                  B,$3F                         ; key: "M" - sound: B1       
+                                   CALL                KEY_HANDLER                   
+               KEY_NEXT10          LD                  A,5                           ; check 5th row of key matrix        
+                                   OUT                 (3),A                         
+                                   IN                  A,(88)                        
+                                   BIT                 2,A                           
+                                   JR                  NZ,KEY_NEXT11                 
+                                   LD                  B,$38                         ; key: "L" - sound: C#2       
+                                   CALL                KEY_HANDLER                   
+               KEY_NEXT11          BIT                 6,A                           
+                                   JR                  NZ,KEY_NEXT12                 
+                                   LD                  B,$32                         ; key: "É" - sound: D#2      
+                                   CALL                KEY_HANDLER                   
+               KEY_NEXT12          BIT                 7,A                           
+                                   JR                  NZ,KEY_NEXT13                 
+                                   LD                  B,$43                         ; key: "J" - sound: A#1      
+                                   CALL                KEY_HANDLER                   
+               KEY_NEXT13          LD                  A,4                           ; check 4th row of key matrix        
+                                   OUT                 (3),A                         
+                                   IN                  A,(88)                        
+                                   BIT                 0,A                           
+                                   JR                  NZ,KEY_NEXT14                 
+                                   LD                  B,$54                         ; key: "G" - sound: F#1       
+                                   CALL                KEY_HANDLER                   
+               KEY_NEXT14          BIT                 1,A                           
+                                   JR                  NZ,KEY_NEXT15                 
+                                   LD                  B,$64                         ; key: "D" - sound: D#1       
+                                   CALL                KEY_HANDLER                   
+               KEY_NEXT15          BIT                 2,A                           
+                                   JR                  NZ,KEY_NEXT16                 
+                                   LD                  B,$71                         ; key: "S" - sound: C#1       
+                                   CALL                KEY_HANDLER                   
+               KEY_NEXT16          BIT                 4,A                           
+                                   JR                  NZ,KEY_NEXT17                 
+                                   LD                  B,$4B                         ; key: "H" - sound: G#1       
+                                   CALL                KEY_HANDLER                   
+               KEY_NEXT17          LD                  A,3                           ; check 3rd row of key matrix        
+                                   OUT                 (3),A                         
+                                   IN                  A,(88)                        
+                                   BIT                 1,A                           
+                                   JR                  NZ,KEY_NEXT18                 
+                                   LD                  B,$16                         ; key: "I" - sound: F3       
+                                   CALL                KEY_HANDLER                   
+               KEY_NEXT18          BIT                 2,A                           
+                                   JR                  NZ,KEY_NEXT19                 
+                                   LD                  B,$14                         ; key: "O" - sound: G3       
+                                   CALL                KEY_HANDLER                   
+               KEY_NEXT19          BIT                 3,A                           
+                                   JR                  NZ,KEY_NEXT20                 
+                                   LD                  B,$10                         ; key: "Ő" - sound: B3       
+                                   CALL                KEY_HANDLER                   
+               KEY_NEXT20          BIT                 5,A                           
+                                   JR                  NZ,KEY_NEXT21                 
+                                   LD                  B,$0F                         ; key: "Ú" - sound: C4       
+                                   CALL                KEY_HANDLER                   
+               KEY_NEXT21          BIT                 6,A                           
+                                   JR                  NZ,KEY_NEXT22                 
+                                   LD                  B,$12                         ; key: "P" - sound: A3       
+                                   CALL                KEY_HANDLER                   
+               KEY_NEXT22          BIT                 7,A                           
+                                   JR                  NZ,KEY_NEXT23                 
+                                   LD                  B,$18                         ; key: "U" - sound: E3       
+                                   CALL                KEY_HANDLER                   
+               KEY_NEXT23          LD                  A,2                           ; check 2nd row of key matrix
+                                   OUT                 (3),A                         
+                                   IN                  A,(88)                        
+                                   BIT                 0,A                           
+                                   JR                  NZ,KEY_NEXT24                 
+                                   LD                  B,$1E                         ; key: "T" - sound: C3       
+                                   CALL                KEY_HANDLER                   
+               KEY_NEXT24          BIT                 1,A                           
+                                   JR                  NZ,KEY_NEXT25                 
+                                   LD                  B,$24                         ; key: "E" - sound: A2       
+                                   CALL                KEY_HANDLER                   
+               KEY_NEXT25          BIT                 2,A                           
+                                   JR                  NZ,KEY_NEXT26                 
+                                   LD                  B,$28                         ; key: "W" - sound: G2       
+                                   CALL                KEY_HANDLER                   
+               KEY_NEXT26          BIT                 4,A                           
+                                   JR                  NZ,KEY_NEXT27                 
+                                   LD                  B,$1B                         ; key: "Z" - sound: D3       
+                                   CALL                KEY_HANDLER                   
+               KEY_NEXT27          BIT                 6,A                           
+                                   JR                  NZ,KEY_NEXT28                 
+                                   LD                  B,$2D                         ; key: "Q" - sound: F2       
+                                   CALL                KEY_HANDLER                   
+               KEY_NEXT28          BIT                 7,A                           
+                                   JR                  NZ,KEY_NEXT29                 
+                                   LD                  B,$20                         ; key: "R" - sound: B2       
+                                   CALL                KEY_HANDLER                   
+               KEY_NEXT29          LD                  A,1                           ; check 1st row of key matrix
+                                   OUT                 (3),A                         
+                                   IN                  A,(88)                        
+                                   BIT                 2,A                           
+                                   JR                  NZ,KEY_NEXT30                 
+                                   LD                  B,$15                         ; key: "9" - sound: F#3       
+                                   CALL                KEY_HANDLER                   
+               KEY_NEXT30          BIT                 3,A                           
+                                   JR                  NZ,KEY_NEXT31                 
+                                   LD                  B,$11                         ; key: "Ü" - sound: A#3       
+                                   CALL                KEY_HANDLER                   
+               KEY_NEXT31          BIT                 6,A                           
+                                   JR                  NZ,KEY_NEXT32                 
+                                   LD                  B,$13                         ; key: "Ö" - sound: G#3       
+                                   CALL                KEY_HANDLER                   
+               KEY_NEXT32          BIT                 7,A                           
+                                   JR                  NZ,KEY_NEXT33                 
+                                   LD                  B,$19                         ; key: "7" - sound: D#3       
+                                   CALL                KEY_HANDLER                   
+               KEY_NEXT33          LD                  A,0                           ; check 0. row of key matrix
+                                   OUT                 (3),A                         
+                                   IN                  A,(88)                        
+                                   BIT                 1,A                           
+                                   JR                  NZ,KEY_NEXT34                 
+                                   LD                  B,$26                         ; key: "3" - sound: G#2       
+                                   CALL                KEY_HANDLER                   
+               KEY_NEXT34          BIT                 2,A                           
+                                   JR                  NZ,KEY_NEXT35                 
+                                   LD                  B,$2A                         ; key: "2" - sound: F#2       
+                                   CALL                KEY_HANDLER                   
+               KEY_NEXT35          BIT                 4,A                           
+                                   JR                  NZ,KEY_NEXT36                 
+                                   LD                  B,$1C                         ; key: "6" - sound: C#3       
+                                   CALL                KEY_HANDLER                   
+               KEY_NEXT36          BIT                 7,A                           
+                                   JR                  NZ,KEY_NEXT4                  
+                                   LD                  B,$22                         ; key: "5" - sound: A#2
+                                   CALL                KEY_HANDLER                   
+               KEY_NEXT4           LD                  A,6                           ; check 6th row of key matrix        
+                                   OUT                 (3),A                         
+                                   IN                  A,(88)                        
+                                   BIT                 0,A                           
+                                   JR                  NZ,KEY_NEXT5                  
+                                   LD                  B,$50                         ; key: "B" - sound: G1       
+                                   CALL                KEY_HANDLER                   
+               KEY_NEXT5           BIT                 1,A                           
+                                   JR                  NZ,KEY_NEXT6                  
+                                   LD                  B,$5F                         ; key: "C" - sound: E1       
+                                   CALL                KEY_HANDLER                   
+               KEY_NEXT6           BIT                 2,A                           
+                                   JR                  NZ,KEY_NEXT7                  
+                                   LD                  B,$6A                         ; key: "X" - sound: D1       
+                                   CALL                KEY_HANDLER                   
+               KEY_NEXT7           BIT                 4,A                           
+                                   JR                  NZ,KEY_NEXT8                  
+                                   LD                  B,$47                         ; key: "N" - sound: A1       
+                                   CALL                KEY_HANDLER                   
+               KEY_NEXT8           BIT                 6,A                           
+                                   JR                  NZ,KEY_NEXT9                  
+                                   LD                  B,$77                         ; key: "Y" - sound: C1       
+                                   CALL                KEY_HANDLER                   
+               KEY_NEXT9           BIT                 7,A                           
+                                   JR                  NZ,KEY_NEXT_END               
+                                   LD                  B,$59                         ; key: "V" - sound: F1       
+                                   CALL                KEY_HANDLER                   
+               KEY_NEXT_END        CALL                SOUND_PLAYER                  ; let the sounds play
+                                   JP                  RUNLOOP                       
+                                   
+                                   
+               KEY_HANDLER         PUSH                AF                            
+               
+               					   ; check whether the current sound is already playing on one of the channels
+                                   LD                  A,(CH3_DIVIDER)               ; check ch3                           
+                                   CP                  B                             
+                                   JR                  Z,KEY_PLAY_CH3                
+                                   LD                  A,(CH2_DIVIDER)               ; check ch2
+                                   CP                  B                             
+                                   JR                  Z,KEY_PLAY_CH2                
+                                   LD                  A,(CH1_DIVIDER)               ; check ch1
+                                   CP                  B                             
+                                   JR                  NZ,KH_NEXT                    
+                                   
+               KEY_PLAY_CH1        HALT                                              
+                                   LD                  A,B                           
+                                   LD                  (CH1_DIVIDER),A               
+                                   LD                  A,VOL_MIX_CONST               ; ch1 is selected                                                
+                                   LD                  (CH1_VOLUME),A                
+                                   XOR                 A                             
+                                   LD                  (CH1_ENABLED),A               
+                                   LD                  (AD1),A                       
+                                   JR                  KH_END                        
+                                   
+               KEY_PLAY_CH2        HALT                                              
+                                   LD                  A,B                           
+                                   LD                  (CH2_DIVIDER),A               
+                                   LD                  A,VOL_MIX_CONST               ; ch2 is selected
+                                   LD                  (CH2_VOLUME),A                
+                                   XOR                 A                             
+                                   LD                  (CH2_ENABLED),A               
+                                   LD                  (AD2),A                       
+                                   JR                  KH_END                        
+                                   
+               KEY_PLAY_CH3        HALT                                              
+                                   LD                  A,B                           
+                                   LD                  (CH3_DIVIDER),A               
+                                   LD                  A,VOL_MIX_CONST               ; ch3 is selected
+                                   LD                  (CH3_VOLUME),A                
+                                   XOR                 A                             
+                                   LD                  (CH3_ENABLED),A               
+                                   LD                  (AD3),A                       
+                                   JR                  KH_END                        
+                                   
+                          		   ; the sound is not played yet, check which channel is free
+               KH_NEXT             LD                  A,(CH1_VOLUME)                ; check if channel 1 is free
+                                   OR                  A                             
+                                   JR                  Z,KEY_PLAY_CH1                
+                                   LD                  A,(CH2_VOLUME)                ; check if channel 2 is free                
+                                   OR                  A                             
+                                   JR                  Z,KEY_PLAY_CH2                
+                                   LD                  A,(CH3_VOLUME)                ; check if channel 3 is free                
+                                   OR                  A                             
+                                   JR                  Z,KEY_PLAY_CH3                
+                                   ; no free channel, check which channel could be used
+                                   LD                  A,(CH1_VOLUME)                ; check if the sound is released on ch1
+                                   CP                  RELEASE_VOL_CONST             
+                                   JR                  C,KEY_PLAY_CH1                ; ch3 can be used
+                                   LD                  A,(CH2_VOLUME)                ; check if the sound is released on ch2
+                                   CP                  RELEASE_VOL_CONST             
+                                   JR                  C,KEY_PLAY_CH2                ; ch2 can be used
+                                   LD                  A,(CH3_VOLUME)                ; check if the sound is released on ch3
+                                   CP                  RELEASE_VOL_CONST             
+                                   JR                  C,KEY_PLAY_CH3                ; ch1 can be used                          
+                                   
+               KH_END              POP                 AF                            
+                                   RET                                               
+                                   
+                                   
+               VEGE                CALL                STOP_MUSIC_MIXER              ; stops SOUND GENERATOR INTERRUPT
+                                   LD                  C,1                           ; C = Graphics 4
+                                   RST                 $30                           ; $30 system call                              
+                                   DB                  $4                            ; set VMODE
+                                   XOR                 A                             ; set border color                      
+                                   LD                  (2895),A                      
+                                   EXX                                               
+                                   POP                 DE                            
+                                   POP                 BC                            
+                                   POP                 HL                            
+                                   EXX                                               
+                                   
+                                   RET                                               
+                                   
+               VOL_MIX_CONST       EQU                 20                            
+               RELEASE_VOL_CONST   EQU                 19                            
+               
+               PEDAL_KEY_DELAY     DB                  120                           
+               
+               VIBRATO_KEY_DELAY   DB                  120                           
+               
+               AD1                 DB                  0                             ; actual duration 1
+               AD2                 DB                  0                             ; actual duration 2
+               AD3                 DB                  0                             ; actual duration 3
+               
+               CH1_FREQ_MOD        DB                  1                             ; channel 1 frequency modulation = 1 ON = 0 OFF
+               CH2_FREQ_MOD        DB                  1                             ; channel 2 frequency modulation = 1 ON = 0 OFF
+               CH3_FREQ_MOD        DB                  1                             ; channel 3 frequency modulation = 1 ON = 0 OFF               
+               
+;******************************************************************
+; Graphics routines
+;******************************************************************                                 
+               GRAPHICS_CONFIG     LD                  C,1                           ; C = Graphics 4
+                                   RST                 $30                           ; $30 system call                              
+                                   DB                  $4                            ; set VMODE
+                                   LD                  A,12                          ; SET VID MEM START ADDRESS to 0
+                                   OUT                 (112),A                       
+                                   LD                  A,$00                         
+                                   OUT                 (113),A                       
+                                   LD                  A,13                          
+                                   OUT                 (112),A                       
+                                   LD                  A,$00                         
+                                   OUT                 (113),A                       
+                                   LD                  A,0                           ; set palette BLACK, WHITE, DARK BLUE, RED                           
+                                   OUT                 ($60),A                       
+                                   LD                  A,85                          
+                                   OUT                 ($61),A                       
+                                   LD                  A,1                           
+                                   OUT                 ($62),A                       
+                                   LD                  A,68                          
+                                   OUT                 ($63),A                       
+                                   LD                  A,170                         ; set border to white
+                                   OUT                 (0),A                         
+                                   LD                  (2895),A                      
+                                   RET                                               
+                                   
+               INTRO_PICTURE       LD                  A,$50                         ; paging: U0, U1, VID, SYS 
+                                   OUT                 ($2),A                        
+                                   LD                  HL,INTRO_PICTURE_DATA         
+                                   LD                  DE,32768                      ; video ram on page 3
+                                   CALL                ZX7_DECOMPRESS                
+                                   RET                                               
+                                   
+               MAIN_PICTURE        LD                  A,$50                         ; paging: U0, U1, VID, SYS 
+                                   OUT                 ($2),A                        
+                                   LD                  HL,MAIN_PICTURE_DATA          
+                                   LD                  DE,32768                      ; video ram on page 3
+                                   CALL                ZX7_DECOMPRESS                
+                                   RET                                               
+                                   
+               HELP_PICTURE        LD                  A,$50                         ; paging: U0, U1, VID, SYS 
+                                   OUT                 ($2),A                        
+                                   LD                  HL,HELP_PICTURE_DATA          
+                                   LD                  DE,32768                      ; video ram on page 3
+                                   CALL                ZX7_DECOMPRESS                
+                                   RET                                               
+                                   
+               CLRSCR              LD                  A,$50                         ; tricky clear screen (atomization)
+                                   OUT                 ($2),A                        
+                                   LD                  HL,$7F00                      
+                                   LD                  B,$06                         
+               CLRSCR0             LD                  (SAVE_BC),BC                  
+                                   LD                  (SAVE_HL),HL                  
+                                   LD                  B,$3C                         
+               CLRSCR1             LD                  C,B                           
+                                   LD                  B,$41                         
+               CLRSCR2             LD                  (HL),$F0                      
+                                   INC                 HL                            
+                                   INC                 HL                            
+                                   INC                 HL                            
+                                   DJNZ                CLRSCR2                       
+                                   LD                  DE,$00C0                      
+                                   ADD                 HL,DE                         
+                                   LD                  B,C                           
+                                   DJNZ                CLRSCR1                       
+                                   LD                  HL,(SAVE_HL)                  
+                                   LD                  DE,$0041                      
+                                   ADD                 HL,DE                         
+                                   LD                  BC,(SAVE_BC)                  
+                                   DJNZ                CLRSCR0                       
+                                   RET                                               
+                                   
+               ZENGETO_XOR         LD                  HL,46303                      ; start address @ video ram                
+                                   LD                  DE,64-31                      ; columns x 64                
+                                   LD                  C,12                          ; rows                
+               ZX0                 LD                  B,31                          ; columns                
+               ZX1                 LD                  A,(HL)                        
+                                   XOR                 $FF                           
+                                   LD                  (HL),A                        
+                                   INC                 HL                            
+                                   DJNZ                ZX1                           
+                                   ADD                 HL,DE                         
+                                   DEC                 C                             
+                                   LD                  A,C                           
+                                   OR                  A                             
+                                   JR                  NZ,ZX0                        
+                                   RET                                               
+                                   
+               VIBRATO_XOR         LD                  HL,46274                      
+                                   LD                  DE,64-28                      
+                                   LD                  C,12                          
+               ZX00                LD                  B,28                          
+               ZX01                LD                  A,(HL)                        
+                                   XOR                 $FF                           
+                                   LD                  (HL),A                        
+                                   INC                 HL                            
+                                   DJNZ                ZX01                          
+                                   ADD                 HL,DE                         
+                                   DEC                 C                             
+                                   LD                  A,C                           
+                                   OR                  A                             
+                                   JR                  NZ,ZX00                       
+                                   RET                                               
+                                   
+               SAVE_BC             DW                  0                             
+               SAVE_HL             DW                  0                             
+               
+ ;******************************************************************
+ ; ZX7_DECOMPRESS
+ ; ZX7 tömörítés kitömörítő rutinja
+ ; paraméter: HL -> ZX7 tömörített adat; DE -> kitömörített adat címe
+
+               ZX7_DECOMPRESS      NOP                                               
+               DZX7STANDARD        LD                  A,$80                         
+               COPYBYTELOOPEV      LDI                                               ; copy literal byte
+               MAINLOOPEV          ADD                 A,A                           ; check next bit
+                                   JR                  Z,LOADBITS1                   ; no more bits left?
+                                   JR                  C,LENSIZESTARTOD              ; next bit indicates either literal or sequence
+                                   
+               COPYBYTELOOPOD      LDI                                               ; copy literal byte
+               MAINLOOPOD          ADD                 A,A                           ; check next bit
+                                   JR                  NC,COPYBYTELOOPEV             ; next bit indicates either literal or sequence
+                              ; determine number of bits used for length (Elias gamma coding)
+               LENSIZESTARTEV      PUSH                DE                            
+                                   LD                  BC,1                          
+                                   LD                  D,B                           
+               LENSIZELOOPEV       INC                 D                             
+                                   ADD                 A,A                           ; check next bit
+                                   JR                  Z,LOADBITS2EV                 ; no more bits left?
+                                   JR                  NC,LENSIZELOOPEV              
+                                   JP                  LENVALUESTARTEV               
+                              ; determine number of bits used for length (Elias gamma coding)
+               LENSIZESTARTOD      PUSH                DE                            
+                                   LD                  BC,1                          
+                                   LD                  D,B                           
+               LENSIZELOOPOD       INC                 D                             
+                                   ADD                 A,A                           ; check next bit
+                                   JR                  Z,LOADBITS2OD                 ; no more bits left?
+                                   JR                  NC,LENSIZELOOPOD              
+                                   JP                  LENVALUESTARTOD               
+                              ; determine length
+               LENVALUELOOPEV      ADD                 A,A                           ; check next bit
+                                   JR                  Z,LOADBITS3EV                 ; no more bits left?
+                                   RL                  C                             
+                                   RL                  B                             
+                                   JR                  C,EXITEV                      ; check end marker
+               LENVALUESTARTEV     DEC                 D                             
+                                   JR                  NZ,LENVALUELOOPEV             
+                                   INC                 BC                            ; adjust length
+                              ; determine offset
+               OFFSETSTARTOD       LD                  E,(HL)                        ; load offset flag (1 bit) + offset value (7 bits)
+                                   INC                 HL                            
+                                   SLL                 E                             ; opcode for undocumented instruction "SLL E" aka "SLS E"
+                                   JR                  NC,OFFSETENDOD                ; if offset flag is set,load 4 extra bits
+                                   ADD                 A,A                           ; check next bit
+                                   RL                  D                             ; insert first bit into D
+                                   ADD                 A,A                           ; check next bit
+                                   JR                  Z,LOADBITS4                   ; no more bits left?
+                                   RL                  D                             ; insert second bit into D
+                                   ADD                 A,A                           ; check next bit
+                                   RL                  D                             ; insert third bit into D
+                                   ADD                 A,A                           ; check next bit
+                                   JR                  Z,LOADBITS5                   ; no more bits left?
+                                   CCF                                               
+                                   JR                  C,OFFSETENDOD                 
+               OFFSETINCOD         INC                 D                             ; equivalent to adding 128 to DE
+               OFFSETENDOD         RR                  E                             ; insert inverted fourth bit into E
+                              ; copy previous sequence
+                                   EX                  (SP),HL                       ; store source,restore destination
+                                   PUSH                HL                            ; store destination
+                                   SBC                 HL,DE                         ; HL = destination - offset - 1
+                                   POP                 DE                            ; DE = destination
+                                   LDIR                                              
+                                   POP                 HL                            ; restore source address (compressed data)
+                                   JP                  MAINLOOPOD                    
+                                   
+               LOADBITS1           LD                  A,(HL)                        ; load another group of 8 bits
+                                   INC                 HL                            
+                                   RLA                                               
+                                   JR                  C,LENSIZESTARTOD              ; next bit indicates either literal or sequence
+                                   JP                  COPYBYTELOOPOD                
+                                   
+               LOADBITS2EV         LD                  A,(HL)                        ; load another group of 8 bits
+                                   INC                 HL                            
+                                   RLA                                               
+                                   JR                  NC,LENSIZELOOPEV              
+                                   JP                  LENVALUESTARTEV               
+                                   
+               LOADBITS2OD         LD                  A,(HL)                        ; load another group of 8 bits
+                                   INC                 HL                            
+                                   RLA                                               
+                                   JR                  NC,LENSIZELOOPOD              
+                                   JP                  LENVALUESTARTOD               
+                                   
+               LOADBITS3EV         LD                  A,(HL)                        ; load another group of 8 bits
+                                   INC                 HL                            
+                                   RLA                                               
+                                   RL                  C                             
+                                   RL                  B                             
+                                   JP                  NC,LENVALUESTARTEV            ; check end marker
+               EXITEV              POP                 DE                            
+                                   RET                                               
+                                   
+               LOADBITS4           LD                  A,(HL)                        ; load another group of 8 bits
+                                   INC                 HL                            
+                                   RLA                                               
+                                   RL                  D                             ; insert second bit into D
+                                   ADD                 A,A                           ; check next bit
+                                   RL                  D                             ; insert third bit into D
+                                   ADD                 A,A                           ; check next bit
+                                   CCF                                               
+                                   JR                  C,OFFSETENDOD                 
+                                   JP                  OFFSETINCOD                   
+                                   
+               LOADBITS5           LD                  A,(HL)                        ; load another group of 8 bits
+                                   INC                 HL                            
+                                   RLA                                               
+                                   CCF                                               
+                                   JR                  C,OFFSETENDOD                 
+                                   JP                  OFFSETINCOD                   
+                              ; determine length
+               LENVALUELOOPOD      ADD                 A,A                           ; check next bit
+                                   JR                  Z,LOADBITS3OD                 ; no more bits left?
+                                   RL                  C                             
+                                   RL                  B                             
+                                   JR                  C,EXITOD                      ; check end marker
+               LENVALUESTARTOD     DEC                 D                             
+                                   JR                  NZ,LENVALUELOOPOD             
+                                   INC                 BC                            ; adjust length                              
+                              ; determine offset
+               OFFSETSTARTEV       LD                  E,(HL)                        ; load offset flag (1 bit) + offset value (7 bits)
+                                   INC                 HL                            
+                                   SLL                 E                             ; opcode for undocumented instruction "SLL E" aka "SLS E"
+                                   JR                  NC,OFFSETENDEV                ; if offset flag is set,load 4 extra bits
+                                   ADD                 A,A                           ; check next bit
+                                   JR                  Z,LOADBITS6                   ; no more bits left?
+                                   RL                  D                             ; insert first bit into D
+                                   ADD                 A,A                           ; check next bit
+                                   RL                  D                             ; insert second bit into D
+                                   ADD                 A,A                           ; check next bit
+                                   JR                  Z,LOADBITS7                   ; no more bits left?
+                                   RL                  D                             ; insert third bit into D
+                                   ADD                 A,A                           ; check next bit
+                                   CCF                                               
+                                   JR                  C,OFFSETENDEV                 
+               OFFSETINCEV         INC                 D                             ; equivalent to adding 128 to DE
+               OFFSETENDEV         RR                  E                             ; insert inverted fourth bit into E
+                              ; copy previous sequence
+                                   EX                  (SP),HL                       ; store source,restore destination
+                                   PUSH                HL                            ; store destination
+                                   SBC                 HL,DE                         ; HL = destination - offset - 1
+                                   POP                 DE                            ; DE = destination
+                                   LDIR                                              
+                                   POP                 HL                            ; restore source address (compressed data)
+                                   JP                  MAINLOOPEV                    
+                                   
+               LOADBITS3OD         LD                  A,(HL)                        ; load another group of 8 bits
+                                   INC                 HL                            
+                                   RLA                                               
+                                   RL                  C                             
+                                   RL                  B                             
+                                   JP                  NC,LENVALUESTARTOD            ; check end marker
+               EXITOD              POP                 DE                            
+                                   RET                                               
+                                   
+               LOADBITS6           LD                  A,(HL)                        ; load another group of 8 bits
+                                   INC                 HL                            
+                                   RLA                                               
+                                   RL                  D                             ; insert first bit into D
+                                   ADD                 A,A                           ; check next bit
+                                   RL                  D                             ; insert second bit into D
+                                   ADD                 A,A                           ; check next bit
+                                   RL                  D                             ; insert third bit into D
+                                   ADD                 A,A                           ; check next bit
+                                   CCF                                               
+                                   JR                  C,OFFSETENDEV                 
+                                   JP                  OFFSETINCEV                   
+                                   
+               LOADBITS7           LD                  A,(HL)                        ; load another group of 8 bits
+                                   INC                 HL                            
+                                   RLA                                               
+                                   RL                  D                             ; insert third bit into D
+                                   ADD                 A,A                           ; check next bit
+                                   CCF                                               
+                                   JR                  C,OFFSETENDEV                 
+                                   JP                  OFFSETINCEV                   
+                                   RET                                               
+                                   
+               INTRO_PICTURE_DATA  DB                  $F0,$80,$60,$42,$00,$F1,$FF,$FF,$F8,$EF,$04,$06,$00,$6A,$F3,$06 
+                                   DB                  $F6,$06,$16,$F7,$FF,$FE,$0B,$FC,$FA,$04,$0F,$0E,$E1,$1A,$90,$3F 
+                                   DB                  $FF,$55,$55,$BA,$C3,$2A,$66,$DD,$AA,$DD,$32,$DA,$47,$EE,$06,$BB 
+                                   DB                  $AB,$4E,$0D,$3B,$1A,$EE,$BB,$76,$09,$AA,$C8,$0E,$AA,$FE,$65,$7E 
+                                   DB                  $BB,$EF,$3A,$5E,$F1,$04,$07,$6F,$BB,$0D,$E6,$06,$09,$D5,$30,$F7 
+                                   DB                  $0E,$8A,$3B,$D5,$BB,$77,$49,$57,$99,$3F,$0E,$0C,$6F,$3F,$79,$FD 
+                                   DB                  $73,$6B,$D8,$2F,$F9,$88,$6F,$29,$EE,$3C,$42,$B5,$0D,$FF,$7F,$46 
+                                   DB                  $3B,$18,$4A,$60,$C8,$77,$4B,$77,$2C,$82,$D6,$FC,$3F,$3F,$2E,$DE 
+                                   DB                  $67,$DD,$6B,$2A,$F0,$3A,$33,$EE,$31,$75,$DA,$6C,$74,$06,$BA,$AC 
+                                   DB                  $42,$94,$30,$FC,$7E,$C4,$31,$3F,$94,$1D,$5A,$E8,$6B,$14,$77,$F1 
+                                   DB                  $89,$C6,$12,$F0,$E2,$FF,$03,$E6,$C1,$C3,$DD,$FB,$24,$68,$3F,$F0 
+                                   DB                  $38,$D9,$2F,$74,$05,$66,$FC,$41,$DA,$4D,$0B,$30,$11,$E2,$A5,$24 
+                                   DB                  $74,$6B,$A8,$15,$EF,$3F,$11,$71,$7D,$55,$3F,$7F,$85,$BB,$F4,$38 
+                                   DB                  $65,$2F,$B8,$EC,$2B,$94,$30,$D2,$3B,$74,$F7,$30,$3F,$90,$C0,$48 
+                                   DB                  $D5,$FB,$FE,$3F,$3B,$C6,$A3,$83,$9E,$21,$D7,$05,$BB,$38,$28,$93 
+                                   DB                  $EA,$25,$D1,$C3,$0C,$17,$EE,$FF,$51,$A2,$30,$F7,$EA,$CE,$4C,$AD 
+                                   DB                  $08,$74,$EE,$3F,$78,$C7,$DE,$B5,$1F,$6B,$34,$E5,$74,$3F,$C7,$FE 
+                                   DB                  $6E,$CA,$FC,$F0,$3F,$80,$29,$DD,$30,$35,$F9,$65,$9B,$7C,$00,$63 
+                                   DB                  $70,$FF,$55,$3B,$87,$55,$70,$DD,$DD,$33,$3F,$7E,$78,$43,$BA,$7E 
+                                   DB                  $7B,$6E,$E2,$F3,$39,$9A,$51,$77,$C7,$55,$7F,$4C,$09,$C0,$57,$2D 
+                                   DB                  $1D,$3F,$47,$DB,$20,$BF,$2C,$EE,$C9,$4B,$EE,$FE,$89,$3C,$86,$54 
+                                   DB                  $54,$98,$1B,$7F,$66,$77,$C1,$C0,$B8,$E4,$0A,$85,$99,$95,$77,$F3 
+                                   DB                  $C7,$66,$D7,$7F,$7B,$3F,$90,$95,$E6,$EE,$F9,$AD,$09,$7F,$98,$7E 
+                                   DB                  $3F,$7F,$31,$E0,$E8,$4A,$89,$A8,$C8,$E9,$3F,$22,$47,$D4,$20,$F7 
+                                   DB                  $51,$BF,$71,$19,$E3,$FF,$67,$AE,$74,$02,$09,$F3,$EC,$1E,$C3,$31 
+                                   DB                  $C6,$75,$55,$3F,$7F,$D9,$6C,$B9,$78,$11,$9A,$D8,$9C,$DE,$3F,$23 
+                                   DB                  $55,$84,$A8,$3F,$F9,$5D,$D5,$6B,$91,$F1,$55,$66,$BA,$32,$EE,$06 
+                                   DB                  $CA,$25,$F1,$50,$38,$AC,$7F,$70,$1E,$44,$4B,$77,$BA,$2C,$71,$F6 
+                                   DB                  $08,$E0,$C0,$F7,$EC,$19,$F5,$CC,$EE,$CC,$C2,$17,$FF,$38,$43,$7C 
+                                   DB                  $70,$F1,$77,$43,$BF,$46,$4C,$CD,$15,$CC,$0D,$D1,$73,$02,$38,$AC 
+                                   DB                  $AD,$72,$3F,$E2,$C5,$B9,$B8,$E2,$17,$82,$D5,$7B,$99,$46,$0C,$55 
+                                   DB                  $09,$CE,$14,$99,$66,$27,$50,$82,$F0,$51,$FF,$29,$FF,$70,$C1,$25 
+                                   DB                  $81,$55,$E0,$8C,$AE,$7A,$FF,$D6,$2A,$45,$EE,$14,$BA,$D1,$FF,$C0 
+                                   DB                  $96,$F8,$B6,$B0,$BA,$15,$DC,$82,$D3,$83,$B4,$BF,$0D,$13,$FE,$CC 
+                                   DB                  $0A,$F8,$74,$EE,$31,$D4,$7F,$EF,$55,$1F,$F5,$3F,$36,$3B,$E1,$1B 
+                                   DB                  $EA,$DD,$74,$54,$AF,$0B,$D5,$4A,$BF,$55,$F7,$26,$4A,$B3,$80,$2A 
+                                   DB                  $27,$84,$1A,$C1,$44,$DB,$55,$FF,$17,$AE,$2E,$F1,$0D,$D5,$F1,$FC 
+                                   DB                  $71,$99,$6F,$71,$F8,$06,$4A,$C8,$82,$FE,$F8,$B6,$BE,$B0,$96,$83 
+                                   DB                  $9A,$00,$D0,$7C,$E2,$20,$EA,$3F,$81,$E1,$FC,$01,$BF,$8E,$6A,$E2 
+                                   DB                  $EE,$98,$3B,$E4,$05,$F6,$5A,$AC,$B2,$28,$DE,$E4,$EF,$1B,$B6,$18 
+                                   DB                  $95,$56,$F3,$13,$D2,$FC,$04,$85,$6C,$93,$B8,$E2,$1A,$FD,$76,$D5 
+                                   DB                  $06,$FE,$DA,$01,$F1,$03,$E6,$C5,$3F,$E0,$FC,$30,$C8,$36,$3F,$F7 
+                                   DB                  $AD,$08,$4A,$B9,$55,$A7,$0A,$67,$3F,$64,$D1,$F8,$42,$C3,$FD,$22 
+                                   DB                  $F2,$8C,$C3,$CA,$FB,$AA,$C9,$43,$FB,$FC,$C8,$5A,$98,$5D,$E1,$F0 
+                                   DB                  $45,$FF,$F9,$FD,$FC,$07,$BB,$FD,$FF,$F3,$70,$25,$9C,$23,$FC,$54 
+                                   DB                  $DA,$C2,$4A,$3F,$74,$71,$C0,$9B,$F2,$E6,$63,$EA,$04,$D5,$F8,$B3 
+                                   DB                  $0A,$1E,$EE,$FD,$74,$2E,$34,$D9,$03,$E8,$F3,$F9,$75,$75,$FD,$91 
+                                   DB                  $51,$D5,$F1,$F3,$41,$BF,$AB,$95,$FE,$01,$42,$F4,$6F,$3F,$B8,$3F 
+                                   DB                  $7D,$F7,$07,$64,$EA,$93,$38,$26,$F8,$C0,$E8,$51,$FC,$F2,$F3,$FE 
+                                   DB                  $F2,$36,$C4,$64,$14,$FD,$31,$74,$08,$55,$78,$EA,$3F,$BF,$02,$AA 
+                                   DB                  $BA,$BA,$E6,$76,$12,$C0,$0C,$98,$46,$76,$F4,$E6,$46,$76,$03,$D9 
+                                   DB                  $FB,$F8,$BA,$F9,$C4,$90,$62,$71,$74,$A0,$92,$F1,$BA,$18,$BB,$E6 
+                                   DB                  $D9,$BC,$30,$B8,$8B,$0F,$FE,$F7,$E2,$EA,$3F,$65,$6D,$54,$9A,$A1 
+                                   DB                  $40,$BA,$2D,$3F,$CD,$F6,$A9,$6A,$F7,$31,$44,$FF,$01,$66,$70,$F7 
+                                   DB                  $CA,$91,$FF,$82,$C4,$B6,$12,$E4,$07,$EE,$62,$B8,$FF,$71,$D8,$2F 
+                                   DB                  $A2,$D0,$8F,$FB,$74,$15,$47,$38,$FC,$DC,$04,$4D,$A3,$70,$FB,$E8 
+                                   DB                  $6D,$C7,$0F,$F0,$F4,$03,$EE,$BC,$08,$F4,$F3,$59,$D4,$D4,$61,$00 
+                                   DB                  $F9,$F1,$F4,$F6,$5F,$15,$02,$7D,$65,$93,$90,$07,$FC,$F2,$48,$90 
+                                   DB                  $78,$F6,$A0,$F0,$3B,$48,$00,$E0,$10,$3C,$3E,$10,$00,$00,$30,$74 
+                                   DB                  $3D,$80,$D1,$3E,$10,$48,$3F,$90,$55,$25,$D0,$0B,$87,$BA,$3D,$90 
+                                   DB                  $00,$70,$B0,$82,$3F,$B0,$09,$57,$3F,$C0,$3E,$C1,$06,$BD,$3F,$91 
+                                   DB                  $3D,$30,$B0,$88,$2D,$80,$29,$3F,$90,$BB,$2E,$71,$31,$3F,$70,$0A 
+                                   DB                  $21,$3F,$90,$5B,$7D,$B9,$14,$90,$61,$1D,$80,$30,$05,$14,$7F,$B8 
+                                   DB                  $36,$27,$D0,$8D,$3F,$45,$10,$08,$3F,$E0,$E0,$70,$69,$7F,$50,$C2 
+                                   DB                  $02,$48,$3F,$80,$A7,$2F,$C0,$0C,$0D,$27,$3F,$30,$3F,$8B,$9D,$06 
+                                   DB                  $A0,$94,$11,$38,$2F,$DE,$43,$76,$3F,$13,$90,$8F,$3F,$5C,$B0,$3F 
+                                   DB                  $C0,$BF,$E0,$20,$40,$70,$C5,$3F,$C0,$7C,$73,$17,$72,$97,$A1,$B0 
+                                   DB                  $6E,$3F,$39,$3D,$3F,$E0,$72,$3F,$E3,$11,$BD,$04,$6A,$3F,$C0,$E7 
+                                   DB                  $08,$BE,$3F,$0C,$74,$3F,$C0,$3A,$FF,$49,$80,$D1,$3F,$C0,$77,$3F 
+                                   DB                  $4C,$3A,$7F,$F0,$1C,$7F,$4B,$C0,$03,$ED,$02,$82,$07,$68,$3F,$E0 
+                                   DB                  $2D,$3F,$43,$D0,$E8,$3F,$90,$75,$3F,$80,$19,$3F,$DC,$22,$3F,$60 
+                                   DB                  $FF,$21,$D0,$34,$3F,$30,$4A,$F4,$A2,$70,$13,$3F,$70,$70,$3F,$01 
+                                   DB                  $B2,$3F,$70,$11,$3F,$42,$80,$16,$3F,$BC,$10,$53,$3F,$15,$AC,$37 
+                                   DB                  $1E,$5C,$7C,$50,$25,$3F,$29,$FA,$42,$64,$3F,$10,$90,$61,$3F,$70 
+                                   DB                  $C0,$1E,$7F,$F0,$84,$91,$3F,$D0,$1A,$09,$7E,$D0,$1B,$3F,$DE,$BE 
+                                   DB                  $2E,$91,$E2,$62,$35,$78,$09,$1B,$B0,$94,$E2,$AE,$55,$AF,$9F,$52 
+                                   DB                  $5E,$98,$A5,$67,$3F,$8F,$F4,$14,$30,$52,$3F,$B0,$F8,$58,$24,$CA 
+                                   DB                  $8F,$4C,$30,$A5,$32,$42,$0D,$51,$3F,$5C,$55,$4B,$74,$18,$5D,$3F 
+                                   DB                  $A3,$17,$80,$C2,$BF,$79,$36,$E3,$7F,$F9,$3F,$31,$52,$3F,$E0,$A1 
+                                   DB                  $3F,$00,$54,$3F,$B0,$4B,$94,$73,$6F,$A1,$18,$70,$C4,$3F,$80,$29 
+                                   DB                  $8B,$57,$3F,$3C,$0A,$25,$7F,$1E,$9C,$11,$69,$F7,$31,$A4,$71,$02 
+                                   DB                  $B3,$12,$87,$8F,$3F,$24,$45,$25,$3C,$71,$57,$55,$EA,$30,$8B,$9B 
+                                   DB                  $20,$00,$C3,$CD,$52,$14,$FF,$30,$BF,$96,$A7,$70,$8A,$48,$80,$C8 
+                                   DB                  $E6,$2F,$78,$8A,$5A,$85,$5E,$B4,$D1,$13,$30,$72,$64,$55,$A7,$66 
+                                   DB                  $C9,$89,$91,$56,$2F,$D4,$70,$CF,$88,$A3,$90,$95,$3F,$20,$7E,$CE 
+                                   DB                  $54,$BC,$30,$ED,$00,$A3,$3F,$10,$43,$BF,$A5,$CF,$3E,$C6,$4B,$8B 
+                                   DB                  $F8,$54,$EE,$63,$2D,$55,$B0,$D1,$00,$85,$3F,$E0,$60,$87,$BD,$24 
+                                   DB                  $C2,$05,$B1,$40,$AB,$E0,$84,$E6,$E5,$A4,$3A,$EB,$D8,$BC,$FD,$3C 
+                                   DB                  $0D,$F2,$CE,$70,$12,$F1,$28,$E0,$D6,$89,$3F,$4E,$C0,$BC,$3E,$20 
+                                   DB                  $BD,$5C,$14,$9C,$3F,$2A,$3E,$3F,$B0,$B8,$3F,$EF,$C5,$A3,$E9,$BF 
+                                   DB                  $3E,$28,$18,$82,$FB,$3F,$77,$E4,$3C,$7E,$C1,$88,$20,$48,$18,$90 
+                                   DB                  $79,$3F,$10,$1A,$97,$97,$75,$D0,$3C,$C2,$E7,$B2,$A3,$40,$20,$36 
+                                   DB                  $F3,$78,$21,$AB,$11,$E6,$18,$C9,$F1,$B1,$B5,$EB,$4F,$00,$41,$05 
+                                   DB                  $C0,$20,$80,$20,$90,$8C,$D4,$7A,$AD,$45,$C7,$2E,$2D,$94,$D8,$3A 
+                                   DB                  $FA,$63,$BF,$BF,$37,$00,$3F,$AF,$EB,$1E,$09,$46,$60,$C6,$3F,$46 
+                                   DB                  $7E,$B7,$94,$7E,$61,$FA,$79,$7C,$40,$10,$40,$D6,$3F,$3C,$20,$D0 
+                                   DB                  $47,$60,$14,$F0,$52,$7E,$D0,$10,$BC,$1F,$2F,$42,$AC,$01,$42,$B0 
+                                   DB                  $50,$B1,$89,$58,$00,$86,$46,$46,$3F,$7C,$7E,$6D,$24,$63,$3F,$30 
+                                   DB                  $2D,$AF,$3B,$06,$BC,$17,$A0,$3F,$63,$CD,$90,$3F,$20,$D0,$B5,$3F 
+                                   DB                  $FC,$A9,$63,$3F,$90,$0F,$EC,$7E,$F9,$30,$BF,$3B,$40,$50,$77,$7E 
+                                   DB                  $C4,$00,$A0,$80,$90,$F1,$33,$CF,$C4,$E1,$57,$BC,$19,$3F,$85,$EC 
+                                   DB                  $0F,$BC,$44,$E1,$42,$06,$50,$50,$60,$80,$CA,$2B,$00,$B0,$8A,$B1 
+                                   DB                  $2E,$61,$2A,$3F,$A3,$0C,$12,$3F,$70,$8A,$FF,$60,$8B,$FC,$00,$61 
+                                   DB                  $40,$CA,$61,$BD,$83,$C8,$50,$A6,$18,$56,$3F,$C5,$FB,$D0,$15,$3F 
+                                   DB                  $7B,$BC,$67,$B8,$D8,$40,$B6,$2F,$10,$0C,$3D,$3D,$10,$50,$A1,$5C 
+                                   DB                  $D0,$1B,$24,$3F,$10,$8D,$D4,$95,$D0,$AA,$3F,$40,$32,$B0,$42,$FD 
+                                   DB                  $91,$82,$7F,$0D,$0A,$21,$F6,$27,$D4,$8F,$FD,$69,$CB,$CA,$E2,$38 
+                                   DB                  $D7,$3F,$60,$30,$69,$78,$20,$45,$BC,$40,$61,$C1,$5F,$A3,$92,$95 
+                                   DB                  $D0,$78,$33,$F2,$8A,$8D,$CA,$5D,$B2,$A8,$BB,$A4,$BA,$79,$86,$BC 
+                                   DB                  $92,$C5,$D9,$90,$C0,$18,$C4,$50,$AA,$3F,$30,$49,$3F,$5A,$FA,$41 
+                                   DB                  $BC,$93,$08,$3A,$AC,$7E,$95,$88,$B0,$70,$22,$3F,$F5,$27,$3F,$A0 
+                                   DB                  $D8,$35,$BC,$CF,$40,$69,$CF,$A1,$3F,$A0,$28,$3F,$D5,$12,$E0,$E3 
+                                   DB                  $3F,$F7,$CC,$03,$C4,$B3,$2E,$00,$80,$8E,$BA,$7E,$C3,$18,$5E,$B8 
+                                   DB                  $E2,$66,$98,$96,$F9,$E5,$3F,$BF,$7B,$37,$94,$BE,$7C,$04,$D4,$6C 
+                                   DB                  $E9,$61,$BC,$3F,$8C,$3A,$7D,$F5,$49,$7B,$3F,$48,$78,$97,$7E,$90 
+                                   DB                  $2B,$50,$52,$30,$20,$D0,$1B,$3F,$FC,$5D,$21,$26,$D0,$D0,$4E,$A0 
+                                   DB                  $BC,$29,$40,$3B,$3E,$3D,$08,$BD,$7E,$85,$38,$44,$66,$3F,$63,$8B 
+                                   DB                  $D1,$FC,$B0,$49,$34,$D0,$46,$F3,$F2,$77,$F8,$F1,$02,$06,$50,$30 
+                                   DB                  $B0,$8F,$9D,$13,$1F,$3F,$16,$FA,$B3,$2D,$06,$90,$BC,$BD,$69,$9A 
+                                   DB                  $39,$2D,$23,$CB,$79,$92,$CA,$7A,$D5,$B0,$D3,$D2,$C9,$17,$3F,$9C 
+                                   DB                  $8A,$97,$80,$FE,$59,$0D,$20,$60,$35,$C0,$54,$EC,$C8,$07,$90,$BE 
+                                   DB                  $50,$3F,$3B,$81,$A2,$67,$0E,$58,$FA,$2F,$3F,$D1,$B2,$60,$A0,$A5 
+                                   DB                  $2C,$8C,$89,$0F,$CD,$10,$B5,$8E,$D1,$D3,$30,$1F,$3F,$1E,$89,$7E 
+                                   DB                  $2D,$B6,$CA,$D0,$94,$69,$55,$3F,$70,$7E,$21,$CE,$48,$D8,$FC,$00 
+                                   DB                  $30,$3F,$90,$8A,$C1,$96,$E0,$83,$5C,$2E,$A8,$84,$C0,$9E,$CC,$BE 
+                                   DB                  $7C,$01,$E1,$07,$2F,$BC,$8D,$88,$4A,$E7,$0D,$E8,$04,$70,$B0,$60 
+                                   DB                  $E9,$84,$3C,$7E,$A7,$D0,$C6,$1D,$44,$3E,$5A,$9B,$10,$2F,$DB,$94 
+                                   DB                  $D0,$57,$90,$A5,$88,$E3,$3B,$F8,$7E,$07,$D1,$FF,$E6,$21,$35,$89 
+                                   DB                  $11,$94,$88,$1C,$B0,$D9,$5C,$2F,$E9,$7E,$80,$F8,$8E,$F0,$60,$93 
+                                   DB                  $A0,$93,$B0,$C4,$BE,$C8,$77,$30,$F8,$DC,$E5,$67,$FC,$39,$B9,$7E 
+                                   DB                  $45,$4E,$CC,$92,$C0,$AA,$20,$07,$36,$3F,$78,$7E,$98,$CB,$ED,$28 
+                                   DB                  $2F,$60,$3E,$7E,$17,$E0,$9B,$7E,$48,$8A,$F0,$9A,$AC,$78,$DE,$7E 
+                                   DB                  $2D,$71,$CE,$7C,$E0,$0A,$83,$A7,$60,$7E,$9A,$88,$F5,$3B,$B0,$5C 
+                                   DB                  $2A,$10,$F7,$6E,$08,$C4,$35,$CF,$7E,$18,$41,$EE,$9E,$AB,$3F,$90 
+                                   DB                  $4C,$00,$7E,$F0,$99,$7E,$C0,$27,$74,$5B,$AC,$8B,$F1,$2F,$65,$BB 
+                                   DB                  $C4,$22,$5A,$48,$85,$66,$B1,$80,$85,$6E,$7E,$41,$44,$40,$D0,$61 
+                                   DB                  $BA,$C4,$6F,$C9,$5D,$B6,$1F,$A0,$26,$20,$89,$F1,$A7,$7E,$B0,$40 
+                                   DB                  $31,$27,$7E,$41,$70,$3F,$C7,$D7,$AF,$00,$86,$33,$AA,$2E,$20,$B0 
+                                   DB                  $76,$B3,$A1,$4E,$9A,$7E,$AC,$5F,$99,$2D,$D1,$61,$19,$8C,$E2,$2C 
+                                   DB                  $8B,$C4,$33,$F7,$98,$89,$7E,$2B,$6C,$CE,$BE,$D1,$AB,$7B,$7E,$A9 
+                                   DB                  $3C,$3A,$E5,$3D,$C3,$27,$BC,$1B,$7E,$97,$46,$22,$B2,$3F,$70,$20 
+                                   DB                  $46,$B8,$AA,$14,$32,$A4,$85,$B6,$D0,$B8,$90,$8F,$B9,$6C,$A4,$63 
+                                   DB                  $B3,$A0,$B0,$BE,$7F,$E7,$89,$0E,$90,$86,$2C,$AB,$65,$95,$4A,$A2 
+                                   DB                  $68,$B0,$BF,$EA,$D7,$70,$B4,$8D,$C3,$3E,$B7,$64,$B6,$1E,$5F,$60 
+                                   DB                  $FD,$B3,$D6,$9E,$D9,$B3,$9B,$89,$87,$F2,$B0,$B0,$20,$B4,$2C,$D4 
+                                   DB                  $2A,$1A,$65,$3F,$D0,$1D,$29,$10,$20,$3F,$D7,$C2,$14,$3D,$7E,$87 
+                                   DB                  $CD,$91,$76,$99,$D1,$20,$C0,$70,$9B,$35,$49,$B9,$56,$69,$A5,$E0 
+                                   DB                  $DB,$12,$6C,$20,$07,$BF,$3F,$D8,$E2,$E4,$7E,$93,$94,$60,$43,$F2 
+                                   DB                  $AA,$70,$58,$7C,$CE,$EE,$29,$45,$E4,$55,$6C,$59,$E0,$84,$F6,$6F 
+                                   DB                  $85,$31,$34,$7E,$D2,$71,$53,$CA,$F1,$6E,$25,$07,$CE,$EF,$1D,$FC 
+                                   DB                  $37,$54,$4A,$E4,$76,$C4,$60,$BE,$7F,$1E,$D1,$14,$E0,$2B,$7E,$80 
+                                   DB                  $97,$B9,$FE,$3F,$2B,$14,$29,$91,$E5,$96,$0B,$83,$39,$0D,$BB,$C0 
+                                   DB                  $77,$3F,$14,$73,$48,$7C,$7E,$58,$5B,$5A,$81,$4F,$D7,$77,$7E,$32 
+                                   DB                  $08,$60,$51,$D3,$13,$80,$50,$D0,$A2,$7E,$60,$76,$D6,$A3,$49,$6F 
+                                   DB                  $CB,$20,$9E,$7E,$76,$80,$9C,$DC,$89,$40,$50,$93,$7E,$D0,$CF,$7E 
+                                   DB                  $D3,$D5,$13,$10,$C4,$A8,$20,$F4,$C2,$4F,$70,$58,$6B,$FA,$4E,$5D 
+                                   DB                  $90,$22,$3A,$7E,$EE,$A5,$26,$7F,$5D,$DA,$89,$80,$6E,$71,$4C,$0A 
+                                   DB                  $FE,$52,$50,$16,$A9,$E3,$C8,$C0,$8B,$7E,$08,$B5,$C1,$BD,$7E,$41 
+                                   DB                  $30,$2F,$3F,$5F,$18,$BA,$75,$C0,$32,$EE,$08,$32,$40,$02,$F4,$7E 
+                                   DB                  $31,$C0,$57,$D4,$DF,$47,$3C,$E5,$25,$B9,$32,$83,$2C,$80,$E0,$62 
+                                   DB                  $66,$7E,$E7,$AB,$88,$7F,$2A,$7E,$F1,$3D,$CF,$ED,$5B,$F9,$A2,$03 
+                                   DB                  $FD,$0C,$A4,$14,$40,$D8,$8F,$D0,$D1,$5F,$10,$9D,$7E,$C0,$CD,$08 
+                                   DB                  $FA,$3D,$15,$1C,$C0,$FA,$8F,$96,$90,$28,$FD,$3A,$3F,$14,$9D,$C5 
+                                   DB                  $BD,$3F,$AA,$E2,$47,$BC,$75,$7D,$D0,$17,$73,$C9,$08,$AC,$5F,$00 
+                                   DB                  $69,$83,$FF,$50,$C4,$09,$E4,$7E,$47,$F7,$7A,$A0,$88,$F7,$2F,$9C 
+                                   DB                  $FE,$4C,$23,$7D,$7E,$0C,$B0,$2A,$CA,$CA,$97,$DA,$C9,$50,$FF,$77 
+                                   DB                  $3F,$82,$7B,$8B,$DC,$79,$BC,$47,$31,$4E,$8E,$FA,$3F,$72,$40,$21 
+                                   DB                  $FF,$94,$50,$7E,$B0,$B9,$7E,$8B,$9B,$1D,$5B,$70,$8D,$52,$8F,$5C 
+                                   DB                  $BD,$4B,$7E,$49,$DA,$A2,$5A,$10,$B9,$3F,$5E,$4B,$B2,$B1,$0F,$3D 
+                                   DB                  $0E,$D3,$72,$E0,$54,$D7,$DD,$09,$3F,$97,$8C,$01,$3D,$7E,$2E,$D9 
+                                   DB                  $48,$C0,$89,$F5,$DE,$3F,$63,$F3,$B0,$C6,$E2,$02,$66,$7E,$09,$C3 
+                                   DB                  $EE,$60,$92,$BB,$27,$7E,$AD,$93,$E2,$02,$5F,$82,$B3,$0C,$BE,$B9 
+                                   DB                  $37,$FA,$8A,$70,$FD,$99,$D5,$2C,$C5,$2D,$B3,$BE,$72,$41,$7F,$7E 
+                                   DB                  $0E,$C6,$54,$C0,$FE,$61,$3F,$FF,$19,$E2,$5A,$85,$DC,$7E,$F3,$86 
+                                   DB                  $DD,$0E,$51,$D5,$09,$E4,$95,$60,$B0,$3F,$82,$A4,$40,$2A,$7E,$6E 
+                                   DB                  $3F,$1B,$F7,$29,$E8,$FE,$19,$2E,$7E,$2B,$74,$58,$95,$D5,$24,$D0 
+                                   DB                  $5D,$C8,$E8,$FC,$2A,$50,$55,$7E,$C0,$D1,$D5,$40,$90,$3B,$81,$FF 
+                                   DB                  $01,$21,$46,$EB,$68,$E4,$F5,$B9,$CE,$72,$FD,$13,$FF,$7E,$04,$05 
+                                   DB                  $3F,$E9,$36,$51,$A0,$7A,$7E,$7C,$C7,$04,$50,$B4,$3F,$9E,$57,$F2 
+                                   DB                  $F4,$EA,$EB,$00,$7E,$67,$A0,$CC,$1E,$FD,$16,$D6,$17,$84,$9D,$3F 
+                                   DB                  $94,$84,$FB,$7E,$9B,$CA,$A5,$94,$9E,$7F,$3F,$36,$4B,$F2,$DC,$83 
+                                   DB                  $45,$C5,$47,$7D,$D2,$05,$ED,$A4,$3F,$A0,$85,$7A,$66,$AD,$0F,$3F 
+                                   DB                  $90,$63,$E7,$6F,$86,$21,$BA,$65,$C1,$82,$8F,$00,$65,$90,$B8,$7E 
+                                   DB                  $CC,$8D,$97,$B3,$6A,$3F,$CB,$84,$3B,$BC,$7E,$87,$3F,$7E,$01,$3C 
+                                   DB                  $AA,$5C,$01,$BD,$3F,$86,$70,$D5,$42,$D0,$89,$7E,$F0,$49,$F9,$20 
+                                   DB                  $77,$3F,$FE,$37,$7E,$F3,$3F,$77,$17,$EF,$2D,$F5,$01,$0B,$3F,$C5 
+                                   DB                  $AC,$DA,$4F,$7E,$D0,$36,$7E,$E7,$FB,$2E,$E9,$3F,$F9,$58,$40,$BC 
+                                   DB                  $25,$E0,$D2,$DC,$EB,$66,$9E,$19,$43,$80,$29,$30,$90,$90,$BF,$4C 
+                                   DB                  $D0,$FF,$F1,$8D,$7E,$E0,$A0,$FD,$30,$53,$A0,$76,$3F,$FC,$55,$7E 
+                                   DB                  $93,$46,$10,$60,$F7,$60,$2F,$76,$50,$D0,$A0,$F8,$18,$09,$C8,$7E 
+                                   DB                  $83,$CD,$BB,$D8,$BB,$7F,$D1,$DB,$7E,$6C,$40,$8B,$90,$9E,$3F,$50 
+                                   DB                  $80,$FF,$20,$21,$3F,$DB,$0A,$4E,$B6,$FF,$8B,$8B,$EE,$51,$CB,$20 
+                                   DB                  $90,$A0,$83,$BA,$D0,$69,$3F,$D0,$3F,$88,$E0,$0F,$6D,$27,$BF,$01 
+                                   DB                  $24,$C9,$2F,$15,$1D,$89,$CF,$A8,$C2,$CE,$EF,$32,$D1,$A9,$95,$12 
+                                   DB                  $E0,$8C,$C5,$47,$3F,$0F,$72,$5F,$29,$3F,$90,$EA,$EA,$7E,$C1,$F2 
+                                   DB                  $70,$37,$93,$AE,$50,$7E,$A9,$64,$E0,$2B,$38,$87,$6D,$AB,$B4,$F9 
+                                   DB                  $93,$93,$79,$26,$EC,$62,$F7,$B3,$DC,$B2,$8D,$29,$D0,$50,$DA,$67 
+                                   DB                  $75,$9F,$D5,$66,$C6,$0C,$F1,$7F,$37,$12,$3F,$BF,$C0,$B0,$C7,$BE 
+                                   DB                  $30,$4C,$5B,$B8,$5A,$10,$C6,$DE,$3F,$40,$30,$49,$40,$F8,$78,$CC 
+                                   DB                  $D8,$9A,$7C,$1F,$25,$E1,$C6,$63,$F6,$81,$9B,$60,$A0,$2C,$3F,$B3 
+                                   DB                  $14,$4D,$C1,$FA,$8E,$90,$DD,$22,$C0,$40,$24,$EB,$5E,$C4,$2C,$60 
+                                   DB                  $C6,$2E,$65,$C2,$E6,$92,$66,$80,$97,$C4,$30,$17,$3F,$38,$80,$55 
+                                   DB                  $93,$B9,$50,$07,$7B,$14,$36,$32,$D7,$6B,$A0,$EA,$73,$27,$85,$22 
+                                   DB                  $75,$AB,$2C,$BF,$C5,$CE,$3F,$80,$14,$3F,$D0,$DF,$A5,$2E,$9C,$BA 
+                                   DB                  $E6,$E1,$14,$C0,$AD,$C9,$B7,$B6,$07,$9A,$C4,$20,$E3,$C8,$2E,$95 
+                                   DB                  $FC,$67,$A8,$3A,$53,$EB,$4B,$28,$EE,$0F,$5F,$88,$6E,$09,$2B,$8C 
+                                   DB                  $69,$93,$70,$F5,$9B,$93,$FA,$5E,$1F,$B2,$FD,$71,$40,$11,$93,$3F 
+                                   DB                  $05,$80,$1F,$A5,$41,$E7,$BE,$09,$14,$BA,$7E,$BF,$4F,$7E,$7C,$0E 
+                                   DB                  $3F,$99,$BD,$CF,$7E,$3F,$C5,$79,$05,$80,$EA,$3F,$6D,$A0,$80,$0B 
+                                   DB                  $15,$C2,$AA,$E9,$7E,$A6,$A2,$2C,$7E,$A1,$92,$60,$C9,$7E,$4D,$73 
+                                   DB                  $68,$14,$EF,$89,$99,$24,$91,$F5,$5B,$EC,$95,$9C,$DC,$69,$83,$C5 
+                                   DB                  $F3,$4C,$40,$D9,$7E,$AA,$DF,$3F,$22,$84,$E5,$D3,$FC,$79,$9D,$30 
+                                   DB                  $80,$72,$29,$2F,$D2,$75,$49,$82,$6D,$82,$9D,$84,$65,$F3,$C4,$23 
+                                   DB                  $95,$CD,$15,$90,$A7,$BD,$28,$A4,$95,$F6,$3F,$B4,$13,$84,$80,$8F 
+                                   DB                  $F7,$F9,$3C,$2C,$E4,$CB,$37,$31,$E6,$4F,$7E,$2C,$89,$50,$FD,$4E 
+                                   DB                  $B7,$2B,$30,$ED,$59,$68,$1A,$D6,$64,$F8,$1E,$37,$AE,$FF,$67,$C8 
+                                   DB                  $89,$94,$E9,$CA,$CD,$FE,$7D,$5B,$27,$65,$34,$70,$CD,$42,$63,$39 
+                                   DB                  $94,$BF,$90,$3E,$9A,$F8,$3A,$97,$FE,$B8,$5C,$8D,$08,$BD,$57,$10 
+                                   DB                  $98,$7C,$24,$FC,$3F,$59,$D6,$5B,$95,$77,$10,$97,$E1,$E7,$0B,$40 
+                                   DB                  $C4,$3B,$C3,$38,$F9,$7E,$82,$E3,$69,$7E,$0E,$A8,$79,$4B,$03,$80 
+                                   DB                  $59,$F3,$0E,$82,$A4,$A3,$B1,$96,$F9,$04,$01,$C2,$FD,$36,$98,$AE 
+                                   DB                  $32,$7D,$A8,$9E,$14,$CA,$82,$C3,$CC,$3F,$D8,$16,$40,$A2,$DD,$E5 
+                                   DB                  $5A,$13,$B0,$36,$7E,$22,$77,$D7,$30,$60,$3F,$C5,$69,$0C,$9B,$85 
+                                   DB                  $CF,$74,$3F,$A4,$37,$7C,$1C,$7E,$70,$8B,$7E,$A9,$2F,$27,$1C,$3F 
+                                   DB                  $B0,$80,$A8,$BF,$AD,$1C,$A3,$BD,$87,$E9,$06,$93,$A5,$BF,$28,$8D 
+                                   DB                  $D5,$8D,$7E,$EF,$1D,$0F,$C0,$28,$8B,$3F,$81,$1D,$4D,$B0,$7A,$93 
+                                   DB                  $50,$74,$70,$17,$BE,$9E,$05,$BF,$D2,$CE,$7E,$83,$93,$CC,$7E,$F5 
+                                   DB                  $D7,$54,$C6,$16,$07,$80,$01,$7D,$8D,$F4,$13,$40,$27,$20,$A9,$07 
+                                   DB                  $16,$F8,$11,$7E,$9D,$3F,$00,$11,$3F,$DA,$2F,$DB,$7B,$0E,$21,$A0 
+                                   DB                  $7F,$A9,$2E,$16,$28,$30,$B5,$FC,$3E,$54,$7E,$49,$CB,$CB,$AD,$91 
+                                   DB                  $1C,$3F,$2F,$B7,$A0,$56,$09,$DF,$9A,$7B,$90,$75,$2E,$E0,$FC,$97 
+                                   DB                  $74,$7E,$E9,$DD,$9C,$EC,$FC,$10,$21,$E1,$80,$B5,$C2,$B9,$2F,$90 
+                                   DB                  $2A,$E2,$75,$AE,$CD,$E2,$54,$CB,$8E,$3F,$88,$10,$D2,$2F,$80,$84 
+                                   DB                  $80,$BF,$3F,$0E,$2B,$61,$FD,$AC,$B3,$B1,$5C,$DD,$9C,$19,$E7,$52 
+                                   DB                  $F2,$00,$32,$04,$80,$A0,$BF,$80,$5D,$B0,$50,$A2,$63,$D0,$D9,$81 
+                                   DB                  $F0,$0D,$4C,$3F,$80,$15,$79,$6A,$68,$A0,$0E,$9A,$75,$19,$7E,$B5 
+                                   DB                  $81,$8F,$80,$0D,$9F,$EF,$96,$7F,$EF,$4E,$B0,$AC,$30,$D4,$7E,$6C 
+                                   DB                  $12,$C1,$80,$84,$FF,$89,$4B,$E0,$F8,$3F,$07,$FE,$7E,$50,$14,$3F 
+                                   DB                  $9C,$80,$2D,$7F,$20,$E1,$3F,$C1,$3C,$76,$7C,$7E,$F1,$18,$53,$1B 
+                                   DB                  $2C,$17,$10,$80,$17,$90,$BA,$2D,$60,$C7,$34,$04,$E0,$7C,$7E,$79 
+                                   DB                  $C5,$4E,$E5,$F3,$81,$80,$80,$40,$28,$80,$7A,$2B,$FD,$6F,$CA,$2E 
+                                   DB                  $E7,$F3,$50,$C7,$7E,$84,$BD,$5C,$A4,$CC,$D4,$D2,$87,$80,$79,$58 
+                                   DB                  $16,$BF,$67,$DC,$3F,$C1,$46,$45,$7E,$B8,$32,$30,$63,$BE,$00,$39 
+                                   DB                  $C3,$80,$97,$B5,$10,$A9,$C8,$80,$50,$60,$80,$10,$86,$ED,$7E,$E7 
+                                   DB                  $63,$42,$80,$F3,$A2,$55,$93,$6C,$C8,$3F,$7B,$44,$43,$70,$7E,$7E 
+                                   DB                  $15,$56,$00,$89,$8F,$9B,$80,$0B,$C9,$85,$E0,$E1,$75,$FF,$87,$BF 
+                                   DB                  $14,$1F,$7E,$1A,$B1,$5A,$60,$C0,$A2,$2F,$8B,$E5,$90,$59,$42,$80 
+                                   DB                  $C1,$96,$A0,$67,$C9,$1E,$FD,$1C,$51,$65,$3F,$34,$B5,$D1,$EB,$32 
+                                   DB                  $06,$10,$40,$80,$92,$BD,$B0,$BF,$7C,$D0,$12,$CC,$C6,$F1,$75,$58 
+                                   DB                  $BC,$3F,$76,$C3,$E1,$33,$91,$CC,$81,$37,$26,$8F,$FF,$F0,$BF,$15 
+                                   DB                  $C7,$10,$A7,$7E,$08,$37,$3F,$19,$C4,$42,$CD,$91,$B4,$F9,$83,$81 
+                                   DB                  $7B,$1E,$DC,$1A,$60,$A0,$0A,$D0,$33,$83,$23,$52,$83,$AA,$C0,$DA 
+                                   DB                  $E3,$7A,$91,$8D,$80,$0F,$22,$00,$FF,$D1,$44,$EE,$29,$7E,$3D,$81 
+                                   DB                  $A5,$BF,$8B,$A4,$69,$74,$5D,$1A,$00,$C9,$18,$80,$C0,$80,$20,$D0 
+                                   DB                  $56,$D0,$3F,$80,$10,$98,$FC,$A7,$E0,$3F,$4E,$80,$9F,$DC,$37,$D6 
+                                   DB                  $D9,$E0,$9C,$80,$1F,$60,$3F,$0B,$F9,$21,$C9,$1F,$7E,$39,$AE,$5A 
+                                   DB                  $3F,$C0,$70,$CB,$B8,$72,$D0,$80,$E2,$BA,$83,$BF,$06,$E2,$0C,$41 
+                                   DB                  $FD,$B0,$1A,$F9,$FD,$79,$D5,$C1,$CF,$56,$CC,$D1,$61,$80,$D1,$19 
+                                   DB                  $7F,$50,$60,$FC,$B5,$DC,$35,$52,$FF,$BB,$39,$EE,$79,$7F,$FE,$47 
+                                   DB                  $F3,$3F,$0E,$85,$80,$E1,$21,$FD,$A6,$3F,$40,$99,$0E,$93,$A2,$91 
+                                   DB                  $B9,$20,$6E,$2D,$C0,$69,$E6,$35,$E9,$C9,$CC,$9B,$80,$E0,$B6,$86 
+                                   DB                  $94,$D6,$73,$06,$E0,$C0,$08,$4B,$90,$7E,$14,$FA,$9F,$15,$2F,$1E 
+                                   DB                  $3F,$D0,$89,$95,$5E,$1D,$FA,$CF,$5F,$7F,$F6,$E5,$9A,$14,$10,$62 
+                                   DB                  $F9,$D8,$80,$DF,$3F,$5B,$37,$3F,$07,$3F,$1F,$79,$DE,$2B,$8D,$DE 
+                                   DB                  $0F,$C3,$59,$69,$40,$40,$D8,$1C,$AB,$C6,$2E,$F9,$F9,$17,$05,$A7 
+                                   DB                  $EE,$6B,$3F,$3F,$0D,$14,$96,$D8,$B4,$4A,$80,$01,$10,$B0,$60,$C0 
+                                   DB                  $79,$A5,$48,$0C,$D0,$CA,$F9,$AB,$64,$3F,$A6,$81,$9E,$3F,$29,$DB 
+                                   DB                  $54,$80,$9E,$32,$7F,$D0,$15,$E1,$3F,$BF,$9F,$87,$0A,$79,$AA,$1F 
+                                   DB                  $3F,$7D,$80,$77,$AF,$37,$3F,$07,$14,$80,$14,$83,$55,$73,$F4,$15 
+                                   DB                  $3A,$A2,$86,$A0,$A0,$67,$E5,$7D,$DA,$2C,$13,$FD,$A6,$A5,$04,$60 
+                                   DB                  $ED,$0E,$07,$CD,$9D,$70,$1F,$3F,$53,$5C,$01,$80,$00,$D0,$83,$C9 
+                                   DB                  $20,$80,$1D,$4B,$20,$B1,$0E,$90,$93,$5F,$30,$27,$5D,$51,$98,$2D 
+                                   DB                  $3F,$4D,$A9,$0C,$96,$AB,$CB,$1A,$DE,$98,$FF,$48,$80,$18,$FF,$73 
+                                   DB                  $92,$B9,$3F,$C0,$8A,$DD,$04,$90,$52,$6D,$96,$DC,$64,$3F,$A3,$AD 
+                                   DB                  $65,$C5,$84,$C1,$F3,$97,$C5,$02,$85,$80,$5D,$8D,$54,$1F,$C6,$6C 
+                                   DB                  $49,$C2,$CD,$2B,$06,$86,$0E,$48,$97,$A5,$01,$EE,$9B,$7B,$3F,$C5 
+                                   DB                  $2E,$1B,$7C,$3F,$8A,$62,$C3,$80,$DB,$1F,$2D,$1C,$C7,$BD,$35,$16 
+                                   DB                  $80,$62,$80,$E8,$1A,$07,$20,$A2,$DE,$96,$CE,$E2,$3F,$6C,$80,$C0 
+                                   DB                  $90,$9F,$3F,$9E,$58,$B0,$80,$FF,$32,$2C,$15,$8A,$9D,$34,$20,$FB 
+                                   DB                  $3C,$02,$EA,$8F,$50,$00,$02,$3F,$9A,$2F,$32,$26,$9F,$3F,$1F,$B8 
+                                   DB                  $22,$88,$3F,$CA,$9A,$C2,$BB,$A7,$CD,$47,$DF,$3F,$54,$3C,$79,$F7 
+                                   DB                  $42,$94,$AD,$02,$00,$3F,$12,$E1,$3F,$81,$3D,$26,$94,$90,$27,$3F 
+                                   DB                  $60,$80,$70,$B0,$80,$FB,$3F,$01,$B9,$0D,$3C,$88,$74,$3F,$C8,$07 
+                                   DB                  $32,$B0,$00,$3F,$3F,$26,$82,$9A,$30,$12,$99,$A9,$C1,$80,$10,$41 
+                                   DB                  $80,$92,$B7,$C0,$BD,$7F,$40,$07,$00,$30,$BF,$45,$25,$AB,$42,$00 
+                                   DB                  $B2,$3F,$07,$80,$70,$8F,$EE,$7E,$61,$FF,$CA,$3F,$BF,$37,$8E,$1C 
+                                   DB                  $3F,$65,$C6,$A1,$10,$5A,$3F,$96,$7D,$F1,$B0,$80,$CB,$87,$3F,$D9 
+                                   DB                  $39,$40,$BF,$45,$0A,$FF,$80,$08,$EB,$3F,$23,$42,$A6,$88,$F0,$38 
+                                   DB                  $BF,$C9,$C5,$A0,$E7,$1E,$91,$85,$C7,$63,$7F,$A8,$67,$84,$19,$27 
+                                   DB                  $0A,$D6,$3F,$11,$80,$15,$3F,$65,$BF,$86,$84,$08,$A0,$90,$FF,$6A 
+                                   DB                  $B0,$E3,$E3,$3F,$E6,$DC,$2F,$42,$B4,$11,$20,$C0,$20,$A8,$45,$60 
+                                   DB                  $3F,$80,$C4,$E4,$47,$95,$5A,$44,$8B,$3F,$47,$C0,$F4,$98,$56,$E9 
+                                   DB                  $58,$80,$56,$00,$6F,$11,$2E,$A0,$D0,$3C,$23,$00,$9D,$98,$AD,$85 
+                                   DB                  $84,$B7,$3F,$9A,$9E,$09,$92,$C8,$8E,$A2,$2B,$3A,$C6,$0B,$04,$87 
+                                   DB                  $91,$3F,$C0,$34,$3F,$8B,$D5,$05,$17,$7B,$0A,$23,$3F,$10,$27,$3F 
+                                   DB                  $CE,$D5,$E0,$85,$EC,$21,$05,$C0,$FE,$3F,$70,$30,$BE,$1C,$60,$0E 
+                                   DB                  $D0,$A0,$C0,$A9,$3F,$35,$05,$C2,$7E,$10,$03,$17,$03,$78,$AA,$E1 
+                                   DB                  $88,$88,$FF,$18,$3F,$8A,$70,$89,$83,$B8,$8F,$3F,$6E,$03,$E4,$6F 
+                                   DB                  $E0,$2B,$D2,$2A,$97,$B7,$D0,$05,$13,$29,$51,$20,$5D,$FF,$36,$D9 
+                                   DB                  $38,$30,$06,$AA,$3F,$81,$1A,$E5,$7A,$B7,$7D,$3F,$B0,$4D,$3F,$F8 
+                                   DB                  $BF,$51,$D0,$39,$C8,$CD,$A2,$A7,$3F,$C0,$3F,$5A,$C0,$CF,$F1,$33 
+                                   DB                  $1E,$7F,$E1,$4B,$3F,$BC,$12,$70,$03,$0B,$10,$D0,$E9,$3F,$97,$9C 
+                                   DB                  $D0,$0E,$D7,$2E,$19,$73,$07,$F6,$A5,$EA,$9D,$79,$CC,$A4,$C2,$BF 
+                                   DB                  $E2,$E8,$3F,$D9,$EA,$3F,$8F,$F8,$29,$A0,$FE,$BE,$3F,$30,$23,$3F 
+                                   DB                  $95,$3E,$62,$59,$47,$BA,$10,$B9,$EB,$09,$31,$C0,$18,$8E,$7F,$74 
+                                   DB                  $96,$1D,$90,$3F,$80,$84,$F8,$3F,$15,$90,$F6,$B3,$F1,$7C,$00,$29 
+                                   DB                  $1C,$56,$3F,$B0,$AB,$30,$9C,$2E,$15,$51,$FE,$AF,$39,$00,$34,$89 
+                                   DB                  $BF,$0C,$AF,$23,$56,$F5,$CE,$E0,$A6,$07,$94,$35,$C2,$78,$3F,$0F 
+                                   DB                  $90,$5D,$36,$07,$BF,$03,$7B,$08,$96,$27,$90,$3F,$E3,$77,$4B,$B8 
+                                   DB                  $50,$8C,$9B,$39,$39,$7F,$10,$16,$8E,$E8,$7F,$FF,$64,$5A,$E7,$45 
+                                   DB                  $23,$E3,$1C,$93,$F8,$A8,$0E,$2E,$25,$3F,$E2,$63,$FC,$56,$50,$FF 
+                                   DB                  $57,$7F,$6D,$AD,$5B,$CA,$3C,$7F,$50,$F8,$44,$A2,$72,$70,$92,$0C 
+                                   DB                  $04,$21,$B1,$11,$84,$2A,$B4,$AE,$22,$C6,$3E,$0A,$03,$E1,$52,$6C 
+                                   DB                  $00,$80,$A2,$E3,$4C,$93,$00,$60,$C3,$08,$39,$3F,$F9,$41,$EF,$3F 
+                                   DB                  $00,$01,$CA,$3F,$00,$80,$3F,$E8,$00,$00,$04 
+                                   
+                                   
+               MAIN_PICTURE_DATA   DB                  $F0,$80,$87,$00,$28,$F7,$FE,$04,$FF,$F4,$2C,$FF,$FF,$0C,$F1,$FF 
+                                   DB                  $24,$FC,$F2,$06,$62,$FA,$04,$F2,$FF,$F8,$64,$1D,$F7,$36,$3E,$EE 
+                                   DB                  $60,$DD,$22,$F3,$BB,$66,$DD,$BB,$93,$47,$06,$BF,$35,$06,$47,$FF 
+                                   DB                  $19,$11,$48,$0F,$52,$70,$04,$BA,$18,$3E,$E8,$1B,$39,$F8,$F1,$F6 
+                                   DB                  $04,$46,$66,$0D,$F3,$6C,$55,$08,$55,$3F,$F7,$AA,$01,$DD,$22,$DD 
+                                   DB                  $F0,$D5,$AA,$66,$9B,$0A,$BB,$77,$03,$F1,$53,$86,$01,$3F,$F3,$66 
+                                   DB                  $FD,$BB,$55,$8F,$5E,$E6,$DD,$F8,$40,$29,$01,$FF,$AA,$F8,$E2,$DD 
+                                   DB                  $B8,$F0,$8C,$0A,$FB,$EE,$FF,$54,$FF,$77,$A0,$99,$7D,$76,$23,$5D 
+                                   DB                  $5E,$48,$00,$E3,$08,$FE,$F3,$3F,$E6,$EE,$22,$FC,$2B,$6B,$A6,$3D 
+                                   DB                  $64,$31,$99,$EF,$1F,$3C,$FC,$6F,$34,$C0,$94,$74,$F0,$60,$77,$86 
+                                   DB                  $F0,$50,$E2,$BA,$52,$48,$FC,$46,$6B,$AA,$10,$F8,$8E,$3F,$CA,$27 
+                                   DB                  $F0,$E0,$03,$78,$F7,$61,$B2,$0F,$F8,$F3,$DD,$38,$51,$DF,$46,$77 
+                                   DB                  $3B,$50,$B3,$0A,$99,$18,$FC,$F3,$39,$CB,$43,$BB,$AA,$3F,$D8,$19 
+                                   DB                  $FB,$DD,$23,$B8,$B1,$3F,$B8,$DB,$5E,$77,$3C,$D5,$7C,$51,$FF,$6C 
+                                   DB                  $FF,$30,$28,$D3,$29,$FE,$03,$DC,$83,$89,$FF,$2F,$7A,$D5,$4A,$5C 
+                                   DB                  $64,$EF,$57,$00,$10,$47,$FC,$0D,$BE,$50,$3F,$A3,$8C,$70,$D5,$99 
+                                   DB                  $85,$7E,$1A,$68,$4B,$1E,$3B,$DE,$03,$FF,$3F,$1C,$FF,$2B,$EE,$BA 
+                                   DB                  $77,$5B,$4F,$BB,$6D,$1C,$BF,$14,$9F,$5D,$11,$63,$03,$BF,$F8,$1A 
+                                   DB                  $63,$E0,$6F,$78,$FF,$00,$C2,$1F,$34,$58,$61,$77,$FF,$E1,$7E,$F0 
+                                   DB                  $F3,$51,$35,$DC,$37,$14,$78,$BF,$14,$FF,$70,$EE,$21,$70,$E6,$FF 
+                                   DB                  $71,$83,$63,$F8,$D1,$EE,$54,$F1,$A3,$13,$BB,$D9,$FD,$2A,$2A,$6C 
+                                   DB                  $55,$1B,$70,$55,$77,$B8,$A7,$63,$F4,$06,$CA,$46,$9D,$68,$76,$EC 
+                                   DB                  $3F,$9A,$B3,$19,$D5,$EE,$FF,$0D,$3C,$33,$8E,$F1,$FF,$18,$38,$FB 
+                                   DB                  $77,$76,$C2,$BB,$C7,$D4,$C3,$0C,$EC,$58,$F3,$F0,$2D,$FE,$75,$EE 
+                                   DB                  $28,$B7,$BE,$CC,$3F,$2A,$36,$3F,$D8,$20,$DD,$95,$15,$F7,$55,$42 
+                                   DB                  $93,$B8,$33,$A7,$0D,$2D,$74,$8F,$D0,$0D,$67,$F3,$45,$AC,$F8,$10 
+                                   DB                  $5E,$CE,$30,$99,$C8,$90,$F8,$88,$F6,$DD,$F2,$C0,$F0,$7B,$93,$C8 
+                                   DB                  $DE,$32,$F0,$6B,$B3,$57,$E6,$31,$FF,$4D,$2D,$21,$65,$2B,$FE,$F3 
+                                   DB                  $38,$4C,$FF,$3B,$78,$5B,$82,$2D,$0D,$DD,$28,$AE,$A3,$EE,$CF,$3F 
+                                   DB                  $E0,$99,$2C,$78,$F2,$6D,$82,$B2,$B5,$D2,$F2,$92,$C7,$BB,$54,$2E 
+                                   DB                  $D7,$27,$EE,$42,$21,$CA,$D7,$06,$10,$28,$C0,$90,$77,$77,$89,$C0 
+                                   DB                  $F6,$1B,$BF,$BD,$78,$76,$5B,$2E,$A1,$77,$2E,$47,$FE,$45,$93,$FE 
+                                   DB                  $0A,$7C,$1B,$DE,$0E,$B3,$03,$45,$C2,$D0,$18,$CC,$82,$81,$D2,$BD 
+                                   DB                  $5F,$45,$64,$43,$F1,$65,$C1,$7D,$13,$33,$7F,$06,$4C,$13,$04,$D1 
+                                   DB                  $3F,$D8,$68,$9E,$99,$F6,$0B,$05,$FA,$A3,$5C,$0B,$1C,$D9,$00,$A4 
+                                   DB                  $A0,$F8,$E9,$3F,$F1,$61,$A5,$01,$66,$00,$D0,$52,$70,$04,$50,$05 
+                                   DB                  $65,$5C,$80,$AC,$04,$10,$CA,$D1,$70,$44,$11,$E0,$00,$51,$0C,$C0 
+                                   DB                  $30,$48,$10,$E0,$58,$3F,$70,$70,$B9,$1C,$C2,$A5,$7E,$11,$0D,$28 
+                                   DB                  $0C,$B0,$D0,$86,$97,$3F,$F0,$2D,$69,$1C,$B0,$D0,$3F,$00,$59,$3F 
+                                   DB                  $22,$17,$90,$E3,$29,$10,$7F,$B0,$4E,$3F,$D0,$9C,$44,$00,$30,$84 
+                                   DB                  $D0,$3F,$80,$FF,$3F,$28,$3C,$1C,$62,$7F,$70,$09,$E4,$7F,$ED,$04 
+                                   DB                  $10,$5A,$3F,$80,$3F,$0C,$FF,$19,$E0,$22,$33,$90,$00,$00,$66,$00 
+                                   DB                  $30,$8C,$BA,$33,$C0,$00,$98,$17,$E0,$14,$43,$A8,$76,$18,$E4,$37 
+                                   DB                  $08,$70,$15,$B6,$1E,$8D,$50,$01,$21,$82,$3F,$F0,$D0,$F0,$78,$17 
+                                   DB                  $B4,$08,$D0,$3B,$1E,$00,$36,$32,$3F,$00,$0C,$FD,$00,$C7,$81,$D9 
+                                   DB                  $00,$D0,$60,$CF,$B0,$83,$94,$3F,$A0,$E3,$93,$02,$55,$00,$7B,$D9 
+                                   DB                  $B0,$00,$AF,$E7,$AF,$EF,$55,$E0,$03,$7D,$EC,$DA,$03,$65,$70,$AB 
+                                   DB                  $04,$19,$1A,$4C,$30,$1A,$80,$F4,$10,$08,$E0,$67,$3E,$0D,$89,$13 
+                                   DB                  $B0,$50,$B0,$8A,$A6,$34,$A7,$A7,$3F,$26,$B0,$D0,$1A,$21,$70,$B0 
+                                   DB                  $41,$3F,$D0,$50,$70,$1E,$3F,$D0,$83,$09,$3F,$C2,$BF,$68,$32,$FE 
+                                   DB                  $3F,$1A,$08,$D3,$7F,$D0,$F1,$3F,$10,$E8,$3F,$F0,$58,$3F,$C0,$F0 
+                                   DB                  $84,$83,$BF,$07,$82,$7C,$3F,$FF,$7B,$24,$12,$B0,$BF,$9E,$3F,$71 
+                                   DB                  $FF,$22,$80,$F0,$86,$FF,$D7,$19,$80,$15,$C0,$27,$2E,$C8,$00,$D0 
+                                   DB                  $3E,$3F,$40,$B0,$B4,$9B,$05,$E0,$30,$CF,$03,$0C,$3B,$A6,$4E,$B2 
+                                   DB                  $1C,$0B,$CD,$D7,$0C,$82,$DB,$D0,$74,$FD,$B4,$0C,$B0,$29,$3F,$0F 
+                                   DB                  $8F,$9B,$32,$14,$E8,$10,$5D,$3F,$84,$BB,$5D,$3F,$AA,$8A,$00,$0B 
+                                   DB                  $03,$BF,$29,$8B,$3F,$41,$D0,$84,$7F,$2A,$FF,$08,$E0,$7E,$3F,$1E 
+                                   DB                  $FF,$19,$F0,$11,$BA,$9E,$04,$03,$4D,$00,$80,$05,$5B,$FA,$09,$C5 
+                                   DB                  $BC,$8F,$ED,$19,$7D,$CB,$34,$C6,$DE,$08,$54,$30,$96,$15,$D7,$1E 
+                                   DB                  $C0,$08,$7C,$11,$1E,$00,$48,$AF,$3F,$2A,$7C,$08,$35,$C8,$20,$70 
+                                   DB                  $B4,$15,$B0,$5C,$15,$00,$DA,$7E,$3F,$98,$C1,$49,$00,$10,$F0,$01 
+                                   DB                  $24,$00,$E0,$B0,$E3,$58,$B0,$E7,$58,$9E,$2C,$D0,$E8,$17,$00,$08 
+                                   DB                  $DC,$09,$1A,$11,$2F,$40,$70,$B8,$FF,$03,$2D,$2E,$9A,$04,$D6,$11 
+                                   DB                  $C0,$3F,$70,$41,$30,$12,$3F,$A0,$E6,$36,$03,$83,$3E,$3F,$28,$3D 
+                                   DB                  $3F,$00,$60,$91,$50,$A2,$0C,$A0,$B0,$09,$A4,$3F,$BF,$09,$13,$0D 
+                                   DB                  $50,$82,$D1,$90,$3D,$3F,$90,$0D,$58,$3F,$BF,$F0,$7A,$EC,$3F,$36 
+                                   DB                  $7F,$70,$B4,$04,$10,$E7,$F0,$10,$FF,$2F,$D0,$0D,$08,$9E,$23,$0D 
+                                   DB                  $B8,$00,$3A,$05,$38,$00,$B4,$38,$83,$D2,$3F,$29,$78,$50,$07,$86 
+                                   DB                  $1C,$0F,$1A,$00,$87,$0B,$70,$0F,$70,$E1,$0E,$C3,$18,$0B,$0D,$0E 
+                                   DB                  $0D,$06,$F0,$E1,$05,$78,$C3,$0E,$78,$0D,$87,$1F,$C3,$16,$07,$16 
+                                   DB                  $0D,$BD,$23,$0F,$17,$04,$0E,$81,$26,$61,$1C,$C3,$38,$86,$3C,$DC 
+                                   DB                  $22,$1F,$C0,$7F,$34,$86,$41,$42,$C1,$18,$43,$38,$83,$09,$06,$E0 
+                                   DB                  $68,$06,$38,$14,$1C,$82,$87,$49,$34,$0F,$90,$14,$29,$60,$31,$00 
+                                   DB                  $03,$83,$C2,$86,$C2,$69,$34,$23,$18,$82,$14,$C2,$04,$06,$C1,$70 
+                                   DB                  $78,$38,$23,$0E,$14,$82,$E1,$6B,$14,$1F,$28,$1F,$C0,$00,$E1,$38 
+                                   DB                  $C3,$C3,$70,$C3,$17,$42,$3C,$82,$2C,$80,$0C,$1C,$1C,$86,$85,$78 
+                                   DB                  $C2,$1C,$65,$B4,$67,$70,$07,$0D,$1D,$0D,$70,$85,$1B,$1C,$F9,$16 
+                                   DB                  $11,$0B,$61,$18,$80,$13,$F0,$0F,$61,$43,$70,$96,$86,$D2,$9E,$6B 
+                                   DB                  $1F,$3F,$C1,$A4,$78,$94,$23,$70,$87,$C9,$00,$5A,$E1,$3C,$1C,$1A 
+                                   DB                  $14,$86,$84,$F0,$2D,$1E,$FD,$14,$25,$00,$87,$95,$0E,$C2,$4A,$3F 
+                                   DB                  $E9,$0F,$C2,$83,$1C,$C3,$68,$F0,$05,$0F,$3F,$DA,$15,$D0,$0F,$C2 
+                                   DB                  $ED,$1F,$A9,$8C,$3C,$F0,$96,$00,$C1,$0B,$78,$85,$F0,$0E,$18,$C1 
+                                   DB                  $18,$E0,$9F,$1B,$1C,$83,$57,$D0,$1A,$7E,$14,$14,$11,$00,$81,$C1 
+                                   DB                  $F3,$14,$D0,$0D,$23,$06,$3C,$87,$30,$42,$34,$26,$F0,$28,$0B,$42 
+                                   DB                  $0D,$69,$0A,$83,$16,$1F,$C3,$76,$1F,$3F,$1C,$50,$E0,$BF,$60,$FF 
+                                   DB                  $85,$60,$E0,$9E,$38,$A0,$BF,$30,$0E,$86,$FF,$16,$86,$07,$70,$A7 
+                                   DB                  $36,$1D,$0B,$C3,$D7,$0D,$C4,$8A,$E1,$18,$50,$B4,$97,$81,$49,$61 
+                                   DB                  $F0,$3C,$05,$49,$81,$23,$84,$D2,$F0,$1C,$C1,$3C,$28,$7F,$F0,$07 
+                                   DB                  $1C,$62,$87,$82,$60,$D4,$0D,$C3,$8A,$14,$BF,$00,$0B,$86,$C1,$78 
+                                   DB                  $38,$03,$C1,$69,$0E,$E0,$1E,$92,$1B,$DE,$2E,$09,$25,$0D,$78,$00 
+                                   DB                  $07,$1A,$1E,$E1,$F0,$85,$69,$43,$19,$78,$B0,$34,$1A,$3C,$34,$83 
+                                   DB                  $EB,$61,$1F,$25,$1C,$92,$3F,$01,$82,$34,$81,$38,$82,$2C,$1C,$86 
+                                   DB                  $B8,$3F,$78,$0C,$C0,$09,$06,$18,$60,$29,$14,$32,$85,$28,$C4,$59 
+                                   DB                  $06,$BF,$14,$83,$38,$7C,$85,$F1,$1F,$0F,$0A,$F0,$04,$81,$8B,$0B 
+                                   DB                  $24,$83,$AD,$70,$18,$1E,$05,$0B,$68,$1F,$F2,$50,$14,$A8,$E7,$0E 
+                                   DB                  $B2,$E4,$41,$1C,$53,$30,$C3,$99,$4D,$B6,$18,$E1,$DE,$0C,$87,$43 
+                                   DB                  $0B,$BD,$B2,$85,$D0,$B3,$0E,$3C,$38,$0D,$06,$0F,$29,$89,$C0,$38 
+                                   DB                  $94,$83,$C1,$64,$C1,$CA,$C1,$18,$49,$70,$16,$FA,$E5,$DC,$A0,$D3 
+                                   DB                  $85,$83,$E1,$10,$43,$60,$78,$4F,$3F,$D2,$39,$B6,$64,$B6,$3C,$2C 
+                                   DB                  $C2,$0E,$C5,$FC,$41,$EB,$9B,$86,$0D,$83,$84,$58,$28,$3F,$60,$3C 
+                                   DB                  $BA,$1E,$F0,$31,$C7,$5A,$07,$C5,$67,$9A,$8E,$05,$85,$86,$D0,$4C 
+                                   DB                  $0A,$43,$BF,$B9,$61,$81,$06,$83,$B1,$71,$42,$82,$3C,$1A,$C2,$3F 
+                                   DB                  $F8,$1B,$06,$9C,$1C,$1E,$C1,$0C,$14,$1A,$7F,$30,$78,$B6,$30,$83 
+                                   DB                  $C1,$14,$C3,$41,$38,$3F,$41,$19,$69,$F0,$18,$FA,$EA,$B0,$07,$82 
+                                   DB                  $90,$FF,$31,$3C,$D0,$F0,$30,$C1,$0E,$79,$68,$1E,$16,$C3,$06,$61 
+                                   DB                  $4A,$70,$B0,$1E,$82,$B8,$83,$A0,$82,$A0,$7F,$C1,$06,$CD,$2C,$38 
+                                   DB                  $E0,$AF,$1B,$81,$B0,$8D,$0C,$83,$06,$F3,$D8,$24,$0A,$06,$0D,$43 
+                                   DB                  $20,$1A,$F0,$08,$4D,$00,$00,$00,$7F,$D0,$00,$00,$08 
+                                   
+               HELP_PICTURE_DATA   DB                  $F0,$80,$87,$00,$28,$F7,$FE,$04,$FF,$F4,$2C,$FF,$FF,$0C,$F1,$FF 
+                                   DB                  $24,$FC,$F2,$06,$62,$FA,$04,$F2,$FF,$F8,$64,$1D,$F7,$36,$3E,$EE 
+                                   DB                  $60,$DD,$22,$F3,$BB,$66,$DD,$BB,$93,$47,$06,$BF,$35,$06,$47,$FF 
+                                   DB                  $19,$11,$48,$0F,$52,$70,$04,$BA,$18,$3E,$E8,$1B,$39,$F8,$F1,$F6 
+                                   DB                  $04,$46,$66,$0D,$F3,$6C,$55,$08,$55,$3F,$F7,$AA,$01,$DD,$22,$DD 
+                                   DB                  $F0,$D5,$AA,$66,$9B,$0A,$BB,$77,$03,$F1,$53,$86,$01,$3F,$F3,$66 
+                                   DB                  $FD,$BB,$55,$8F,$5E,$E6,$DD,$F8,$40,$29,$01,$FF,$AA,$F8,$E2,$DD 
+                                   DB                  $B8,$F0,$8C,$0A,$FB,$EE,$FF,$54,$FF,$77,$A0,$99,$7D,$76,$23,$5D 
+                                   DB                  $5E,$48,$00,$E3,$08,$FE,$F3,$3F,$E6,$EE,$22,$FC,$2B,$6B,$A6,$3D 
+                                   DB                  $64,$31,$99,$EF,$1F,$3C,$FC,$6F,$34,$C0,$94,$74,$F0,$60,$77,$86 
+                                   DB                  $F0,$50,$E2,$BA,$52,$48,$FC,$46,$6B,$AA,$10,$F8,$8E,$3F,$CA,$27 
+                                   DB                  $F0,$E0,$03,$78,$F7,$61,$B2,$0F,$F8,$F3,$DD,$38,$51,$DF,$46,$77 
+                                   DB                  $3B,$50,$B3,$0A,$99,$18,$FC,$F3,$39,$CB,$43,$BB,$AA,$3F,$D8,$19 
+                                   DB                  $FB,$DD,$23,$B8,$B1,$3F,$B8,$DB,$5E,$77,$3C,$D5,$7C,$51,$FF,$6C 
+                                   DB                  $FF,$30,$28,$D3,$29,$FE,$03,$DC,$83,$89,$FF,$2F,$7A,$D5,$4A,$5C 
+                                   DB                  $64,$EF,$57,$00,$10,$47,$FC,$0D,$BE,$50,$3F,$A3,$8C,$70,$D5,$99 
+                                   DB                  $85,$7E,$1A,$68,$4B,$1E,$3B,$DE,$03,$FF,$3F,$1C,$FF,$2B,$EE,$BA 
+                                   DB                  $77,$5B,$4F,$BB,$6D,$1C,$BF,$14,$9F,$5D,$11,$63,$03,$BF,$F8,$1A 
+                                   DB                  $63,$E0,$6F,$78,$FF,$00,$C2,$1F,$34,$58,$61,$77,$FF,$E1,$7E,$F0 
+                                   DB                  $F3,$51,$35,$DC,$37,$14,$78,$BF,$14,$FF,$70,$EE,$21,$70,$E6,$FF 
+                                   DB                  $71,$83,$63,$F8,$D1,$EE,$54,$F1,$A3,$13,$BB,$D9,$FD,$2A,$2A,$6C 
+                                   DB                  $55,$1B,$70,$55,$77,$B8,$A7,$63,$F4,$06,$CA,$46,$9D,$68,$76,$EC 
+                                   DB                  $3F,$9A,$B3,$19,$D5,$EE,$FF,$0D,$3C,$33,$8E,$F1,$FF,$18,$38,$FB 
+                                   DB                  $77,$76,$C2,$BB,$C7,$D4,$C3,$0C,$EC,$58,$F3,$F0,$2D,$FE,$75,$EE 
+                                   DB                  $28,$B7,$BE,$CC,$3F,$2A,$36,$3F,$D8,$20,$DD,$95,$15,$F7,$55,$42 
+                                   DB                  $93,$B8,$33,$A7,$0D,$2D,$74,$8F,$D0,$0D,$67,$F3,$45,$AC,$F8,$10 
+                                   DB                  $5E,$CE,$30,$99,$C8,$90,$F8,$88,$F6,$DD,$F2,$C0,$F0,$7B,$93,$C8 
+                                   DB                  $DE,$32,$F0,$6B,$B3,$57,$E6,$31,$FF,$4D,$2D,$21,$65,$2B,$FE,$F3 
+                                   DB                  $38,$4C,$FF,$3B,$78,$5B,$82,$2D,$0D,$DD,$28,$AE,$A3,$EE,$CF,$3F 
+                                   DB                  $E0,$99,$2C,$78,$F2,$6D,$82,$B2,$B5,$D2,$F2,$92,$C7,$BB,$54,$2E 
+                                   DB                  $D7,$27,$EE,$42,$21,$CA,$D7,$06,$10,$28,$C0,$90,$77,$77,$89,$C0 
+                                   DB                  $F6,$1B,$BF,$BD,$78,$76,$5B,$2E,$A1,$77,$2E,$47,$FE,$45,$93,$FE 
+                                   DB                  $0A,$7C,$1B,$DE,$0E,$B3,$03,$45,$C2,$D0,$18,$CC,$82,$81,$D2,$BD 
+                                   DB                  $5F,$45,$64,$43,$F1,$65,$C1,$7D,$13,$33,$7F,$06,$4C,$13,$04,$D1 
+                                   DB                  $3F,$D8,$68,$9E,$99,$F6,$0B,$05,$FA,$A3,$5C,$0B,$1C,$D9,$00,$A4 
+                                   DB                  $A0,$F8,$E9,$3F,$F1,$61,$A5,$00,$C7,$A3,$00,$E0,$04,$0D,$D0,$E1 
+                                   DB                  $1A,$BA,$07,$02,$D2,$11,$2B,$42,$70,$51,$3F,$A9,$26,$B4,$90,$0F 
+                                   DB                  $B4,$9A,$3F,$E1,$11,$3D,$23,$78,$B4,$F9,$11,$79,$E1,$08,$F9,$6C 
+                                   DB                  $40,$3F,$82,$F0,$49,$78,$86,$69,$30,$0B,$34,$0B,$0D,$E1,$0B,$70 
+                                   DB                  $50,$0B,$22,$1C,$C3,$06,$7E,$69,$18,$08,$0F,$38,$3A,$D2,$06,$13 
+                                   DB                  $01,$60,$1A,$07,$C3,$34,$A4,$3C,$C1,$17,$70,$06,$38,$07,$15,$3F 
+                                   DB                  $E0,$37,$29,$38,$70,$70,$A1,$D2,$58,$B4,$88,$B0,$E0,$A1,$62,$70 
+                                   DB                  $3F,$E1,$D0,$B4,$DB,$3F,$C2,$0C,$D2,$03,$29,$D0,$E0,$01,$E1,$86 
+                                   DB                  $07,$B0,$D2,$94,$B0,$D5,$18,$93,$5C,$07,$58,$91,$8C,$B0,$85,$78 
+                                   DB                  $2A,$78,$A4,$56,$D0,$14,$B9,$3F,$2A,$0A,$87,$22,$06,$D2,$B0,$60 
+                                   DB                  $18,$41,$0C,$E0,$1C,$D2,$E1,$66,$01,$C2,$0D,$03,$85,$67,$1A,$61 
+                                   DB                  $C2,$3C,$5C,$A3,$42,$B4,$41,$BF,$78,$EE,$7D,$05,$A5,$7F,$C9,$89 
+                                   DB                  $3C,$BF,$72,$78,$2A,$31,$7F,$74,$E1,$54,$39,$D2,$CA,$43,$D2,$C3 
+                                   DB                  $01,$AE,$4B,$1F,$BF,$7E,$7C,$03,$5C,$46,$F0,$19,$7F,$06,$3C,$2A 
+                                   DB                  $83,$60,$58,$7F,$6D,$E0,$0D,$78,$51,$0A,$C1,$03,$03,$50,$B0,$61 
+                                   DB                  $14,$14,$CC,$33,$C2,$06,$43,$E0,$28,$AC,$01,$7F,$E0,$C1,$F0,$7F 
+                                   DB                  $26,$16,$E0,$38,$C1,$70,$38,$07,$58,$00,$E1,$A8,$01,$3A,$00,$C7 
+                                   DB                  $FB,$01,$81,$BD,$D2,$28,$B9,$D0,$78,$76,$3F,$B4,$83,$EB,$3F,$97 
+                                   DB                  $28,$35,$36,$59,$0D,$01,$78,$0B,$85,$03,$69,$83,$D2,$16,$0A,$BA 
+                                   DB                  $0B,$84,$05,$38,$86,$0D,$14,$B6,$CB,$01,$68,$19,$F0,$61,$F0,$FE 
+                                   DB                  $86,$69,$70,$42,$D0,$89,$74,$82,$78,$8B,$E6,$B0,$69,$82,$8F,$7F 
+                                   DB                  $71,$BA,$5E,$3B,$B6,$03,$43,$58,$38,$E0,$A4,$82,$A3,$D6,$20,$B4 
+                                   DB                  $60,$A5,$CC,$E8,$AD,$C9,$E1,$68,$16,$03,$5A,$C0,$8A,$C3,$7E,$D2 
+                                   DB                  $CD,$0A,$3D,$7F,$6B,$BC,$4D,$78,$14,$C4,$81,$70,$14,$69,$0A,$D0 
+                                   DB                  $68,$D0,$28,$F4,$7F,$C4,$A5,$CD,$82,$C4,$00,$78,$4B,$EA,$A0,$E1 
+                                   DB                  $D0,$83,$A2,$26,$95,$06,$84,$BA,$59,$C2,$F4,$C1,$EA,$00,$B4,$0E 
+                                   DB                  $AD,$81,$94,$56,$05,$D6,$F3,$A7,$F6,$C0,$39,$FD,$30,$38,$FD,$43 
+                                   DB                  $0A,$55,$B8,$1B,$C4,$18,$B3,$94,$86,$3C,$B9,$8F,$C1,$31,$F4,$95 
+                                   DB                  $83,$23,$FB,$B4,$31,$A8,$80,$A1,$BF,$D3,$BB,$C1,$46,$D2,$12,$14 
+                                   DB                  $F9,$09,$F6,$F9,$01,$FC,$85,$55,$AC,$70,$52,$F7,$A4,$A4,$B9,$E5 
+                                   DB                  $8B,$E0,$49,$B9,$E1,$39,$8C,$CD,$BB,$5C,$44,$F6,$14,$69,$C2,$85 
+                                   DB                  $9F,$0C,$09,$CF,$F6,$01,$C4,$FF,$28,$3F,$A5,$54,$78,$F7,$99,$A1 
+                                   DB                  $0A,$E6,$FB,$3A,$48,$61,$0A,$B5,$3A,$4B,$F9,$04,$39,$BB,$FF,$03 
+                                   DB                  $3B,$15,$D2,$82,$B0,$90,$0F,$85,$A9,$CF,$30,$A0,$A8,$D7,$34,$2D 
+                                   DB                  $04,$4E,$3F,$68,$45,$DA,$3A,$50,$04,$92,$B5,$3F,$7F,$D0,$25,$C5 
+                                   DB                  $5D,$89,$5C,$12,$41,$29,$00,$EE,$1C,$7F,$82,$88,$8F,$78,$06,$05 
+                                   DB                  $BF,$4B,$F9,$09,$75,$2A,$CB,$D3,$C1,$7F,$00,$C3,$14,$C2,$29,$F0 
+                                   DB                  $14,$E0,$0C,$F4,$10,$01,$C1,$19,$1F,$CF,$5C,$07,$F3,$8C,$02,$F1 
+                                   DB                  $00,$87,$70,$0B,$74,$E2,$51,$ED,$25,$38,$E7,$24,$86,$25,$D6,$38 
+                                   DB                  $A5,$A1,$1E,$68,$3F,$F1,$EE,$A8,$1B,$48,$3F,$C3,$02,$5B,$0D,$B3 
+                                   DB                  $7F,$82,$53,$AD,$3B,$B7,$72,$0F,$02,$93,$B0,$2C,$51,$86,$1C,$85 
+                                   DB                  $68,$96,$C3,$70,$5A,$C1,$C2,$7A,$C8,$E1,$B1,$3C,$E1,$86,$C3,$5E 
+                                   DB                  $36,$08,$4B,$61,$77,$38,$7F,$B8,$EE,$85,$57,$BE,$B4,$BF,$4C,$8C 
+                                   DB                  $7C,$3C,$26,$2D,$78,$3F,$82,$C3,$07,$FD,$13,$58,$83,$75,$34,$16 
+                                   DB                  $29,$3F,$70,$C5,$3D,$05,$2F,$E0,$67,$B2,$7F,$B8,$DE,$08,$09,$04 
+                                   DB                  $85,$7C,$30,$0E,$1A,$22,$C2,$67,$87,$83,$EE,$14,$FF,$DA,$3F,$94 
+                                   DB                  $E9,$7F,$C8,$16,$68,$8F,$FF,$C6,$E7,$BB,$DD,$72,$81,$61,$96,$7F 
+                                   DB                  $09,$12,$F8,$D8,$89,$7F,$66,$BE,$47,$8D,$3F,$83,$C1,$06,$55,$3C 
+                                   DB                  $AA,$19,$A1,$76,$BB,$7F,$08,$E7,$0F,$05,$EA,$FA,$75,$95,$FB,$2E 
+                                   DB                  $09,$C2,$BF,$B8,$44,$65,$40,$7F,$C1,$70,$A7,$FC,$05,$05,$78,$86 
+                                   DB                  $68,$0B,$C6,$ED,$8D,$45,$F0,$96,$FE,$05,$B2,$42,$DF,$09,$B0,$79 
+                                   DB                  $41,$A7,$BB,$81,$56,$7F,$86,$33,$38,$C2,$59,$70,$84,$03,$8F,$BF 
+                                   DB                  $12,$0F,$06,$35,$10,$B0,$05,$CE,$FD,$0B,$46,$14,$C1,$4F,$7E,$BA 
+                                   DB                  $90,$05,$38,$7A,$BF,$99,$FE,$40,$16,$5A,$00,$D0,$2A,$FD,$65,$89 
+                                   DB                  $6A,$C8,$EB,$05,$5B,$E1,$C3,$C1,$5F,$C6,$E8,$09,$78,$BA,$94,$21 
+                                   DB                  $D0,$78,$22,$3F,$0D,$78,$3E,$37,$13,$87,$74,$E0,$32,$9A,$EB,$70 
+                                   DB                  $D8,$7E,$96,$DB,$86,$EF,$AB,$70,$B9,$EB,$BB,$DD,$14,$53,$2A,$6B 
+                                   DB                  $E1,$C5,$39,$FD,$5C,$16,$91,$61,$C7,$D7,$8B,$07,$F1,$05,$CC,$5D 
+                                   DB                  $E8,$FE,$07,$A7,$1C,$22,$C3,$16,$62,$FC,$96,$03,$34,$44,$78,$57 
+                                   DB                  $B0,$B9,$BF,$60,$36,$C0,$AE,$6C,$A7,$B4,$01,$D6,$30,$E0,$8C,$37 
+                                   DB                  $85,$5F,$01,$05,$6A,$3F,$94,$89,$9D,$03,$B0,$15,$92,$B7,$3A,$D6 
+                                   DB                  $9A,$47,$70,$FF,$6D,$B9,$BF,$81,$EE,$C3,$E4,$85,$42,$F0,$A8,$F3 
+                                   DB                  $FA,$35,$C7,$B0,$B4,$FF,$47,$BD,$EF,$05,$35,$03,$E7,$FF,$47,$B9 
+                                   DB                  $49,$FB,$00,$3C,$DB,$CF,$76,$D8,$9B,$B9,$FD,$7B,$61,$D8,$02,$80 
+                                   DB                  $17,$52,$E1,$7F,$DE,$03,$69,$07,$C3,$AD,$30,$7F,$96,$7F,$0A,$06 
+                                   DB                  $43,$73,$09,$76,$00,$57,$FF,$19,$6B,$09,$38,$D5,$86,$7D,$B9,$0B 
+                                   DB                  $43,$0D,$68,$1C,$73,$2B,$E1,$03,$90,$1D,$14,$6D,$98,$0B,$E0,$29 
+                                   DB                  $9D,$E5,$3A,$85,$52,$F3,$7F,$FF,$90,$43,$C1,$50,$64,$97,$68,$B0 
+                                   DB                  $3D,$D2,$FC,$F7,$63,$FA,$D7,$04,$AC,$00,$B1,$5C,$0D,$03,$7A,$C1 
+                                   DB                  $45,$87,$AC,$71,$8D,$89,$96,$AA,$87,$70,$A7,$3F,$22,$59,$E4,$08 
+                                   DB                  $A6,$C1,$FE,$53,$D6,$3F,$13,$9F,$57,$5A,$0C,$84,$81,$E9,$EA,$94 
+                                   DB                  $C9,$26,$D0,$AB,$B0,$55,$8E,$B8,$1D,$86,$34,$B7,$28,$49,$38,$03 
+                                   DB                  $78,$82,$A5,$7F,$82,$95,$CB,$F6,$FF,$C1,$7B,$09,$49,$30,$32,$0D 
+                                   DB                  $C3,$CF,$FF,$B9,$0B,$D9,$33,$0D,$87,$FE,$3D,$10,$E0,$43,$0D,$1A 
+                                   DB                  $06,$BB,$41,$34,$A4,$3C,$C8,$07,$CD,$39,$CC,$67,$F4,$9D,$CD,$7A 
+                                   DB                  $03,$0C,$B5,$69,$0E,$68,$41,$88,$B4,$A3,$85,$60,$C9,$4B,$0D,$52 
+                                   DB                  $D0,$B7,$50,$97,$7F,$C1,$76,$3F,$01,$61,$29,$D2,$D0,$8C,$0E,$94 
+                                   DB                  $B0,$07,$AC,$0D,$CC,$CC,$0B,$34,$F6,$EB,$03,$BF,$47,$78,$27,$C8 
+                                   DB                  $03,$9B,$39,$32,$69,$06,$B4,$3D,$70,$42,$1A,$BF,$BD,$FD,$11,$43 
+                                   DB                  $01,$80,$BF,$C2,$3C,$68,$56,$D0,$38,$FD,$7D,$5B,$25,$C5,$BC,$3F 
+                                   DB                  $96,$78,$E4,$FA,$3D,$7E,$7E,$70,$27,$03,$25,$3C,$B5,$B9,$F3,$79 
+                                   DB                  $03,$78,$1E,$88,$0F,$04,$3D,$D3,$B9,$11,$BB,$05,$BF,$0D,$B8,$12 
+                                   DB                  $69,$7F,$D2,$4A,$C8,$07,$CC,$9A,$86,$1A,$85,$38,$7F,$83,$8C,$7F 
+                                   DB                  $06,$3C,$3B,$06,$2C,$53,$1C,$89,$63,$36,$E0,$70,$0B,$C3,$63,$78 
+                                   DB                  $92,$B9,$F3,$C1,$0B,$03,$2C,$E0,$28,$7F,$C2,$29,$B1,$7F,$83,$14 
+                                   DB                  $60,$86,$D1,$34,$38,$FD,$4A,$07,$C5,$10,$92,$E2,$86,$61,$96,$39 
+                                   DB                  $8E,$43,$10,$22,$DA,$86,$27,$0E,$AD,$4B,$AF,$38,$17,$53,$00,$E0 
+                                   DB                  $05,$8A,$A4,$C2,$44,$A9,$C4,$2A,$F0,$0A,$35,$FA,$73,$9C,$42,$B4 
+                                   DB                  $29,$BA,$2D,$21,$A4,$C2,$F2,$3F,$AE,$24,$78,$0D,$78,$09,$F4,$DB 
+                                   DB                  $8F,$FC,$99,$C1,$89,$E0,$15,$2D,$A3,$3D,$E0,$45,$D4,$C2,$73,$68 
+                                   DB                  $CD,$74,$FC,$19,$B6,$E9,$C0,$9D,$27,$0D,$38,$07,$F4,$6C,$82,$E0 
+                                   DB                  $60,$C1,$B3,$14,$A9,$FE,$D9,$13,$38,$B0,$24,$87,$C2,$4E,$09,$51 
+                                   DB                  $C6,$CB,$FA,$2A,$34,$A5,$38,$BE,$C4,$DC,$06,$38,$C2,$F0,$69,$FC 
+                                   DB                  $E6,$F7,$44,$CA,$AA,$07,$3F,$AA,$82,$7F,$96,$54,$78,$00,$77,$64 
+                                   DB                  $89,$36,$C2,$9C,$09,$C3,$90,$4A,$25,$94,$BE,$4E,$48,$D2,$C6,$6D 
+                                   DB                  $7F,$BE,$17,$85,$5A,$4B,$07,$E0,$B1,$05,$60,$27,$8C,$0B,$53,$FE 
+                                   DB                  $AE,$0B,$16,$8E,$6D,$C2,$2A,$09,$F7,$6D,$0B,$3C,$30,$F9,$37,$2A 
+                                   DB                  $C2,$DA,$C6,$4C,$98,$3D,$2F,$AE,$02,$B4,$75,$D9,$3F,$69,$D7,$DD 
+                                   DB                  $81,$D4,$AA,$F7,$74,$3F,$69,$BC,$5F,$7E,$0B,$2A,$D7,$04,$5B,$37 
+                                   DB                  $DD,$7E,$89,$F3,$02,$4A,$FC,$85,$A6,$FC,$C3,$BF,$07,$B1,$AC,$53 
+                                   DB                  $06,$3B,$82,$8D,$17,$78,$0F,$EC,$65,$BA,$14,$ED,$0C,$C2,$3D,$09 
+                                   DB                  $71,$E0,$29,$8D,$3D,$70,$26,$6A,$84,$B8,$13,$38,$11,$28,$A1,$3E 
+                                   DB                  $36,$0F,$27,$00,$C2,$48,$18,$D2,$C6,$2D,$00,$A4,$36,$9F,$2C,$0A 
+                                   DB                  $AE,$E1,$5E,$E0,$87,$2D,$D1,$52,$2E,$56,$FD,$10,$49,$3F,$1E,$00 
+                                   DB                  $78,$8B,$C2,$44,$D0,$88,$45,$B0,$6E,$2F,$44,$C6,$D2,$AA,$FF,$C3 
+                                   DB                  $03,$29,$78,$0D,$C4,$16,$0D,$BA,$25,$83,$06,$A6,$C2,$80,$7A,$CA 
+                                   DB                  $68,$05,$B4,$6E,$40,$54,$C6,$52,$E0,$C0,$15,$70,$68,$FF,$37,$8C 
+                                   DB                  $3E,$4F,$B5,$72,$A6,$C2,$F8,$74,$05,$E0,$21,$A5,$78,$A9,$3F,$53 
+                                   DB                  $C6,$2A,$A9,$FB,$A2,$01,$06,$78,$97,$CD,$50,$FE,$B5,$D3,$82,$05 
+                                   DB                  $48,$C0,$05,$90,$86,$A6,$3E,$C6,$45,$3C,$81,$EF,$61,$E1,$DD,$41 
+                                   DB                  $90,$F6,$6E,$93,$F7,$D8,$85,$D2,$34,$88,$05,$A4,$78,$C3,$66,$3F 
+                                   DB                  $44,$C6,$A4,$B8,$F6,$7F,$37,$14,$9F,$D5,$91,$92,$58,$0F,$BF,$74 
+                                   DB                  $05,$80,$BA,$CA,$30,$0C,$FF,$41,$C1,$68,$FC,$C1,$BE,$00,$F9,$30 
+                                   DB                  $06,$56,$00,$C2,$82,$45,$B5,$4F,$B0,$E7,$D5,$99,$D7,$03,$05,$F7 
+                                   DB                  $E6,$B4,$D2,$2B,$83,$5F,$F8,$46,$DD,$81,$B0,$20,$96,$02,$C3,$06 
+                                   DB                  $58,$F0,$21,$29,$0A,$80,$86,$8B,$B7,$8C,$B7,$03,$86,$2C,$78,$D0 
+                                   DB                  $FD,$9D,$7F,$0D,$AD,$35,$78,$3F,$92,$7A,$47,$0E,$94,$E9,$F9,$06 
+                                   DB                  $85,$4C,$61,$1A,$86,$0D,$73,$C2,$0B,$B2,$F3,$0D,$1A,$BE,$FF,$28 
+                                   DB                  $BE,$FE,$03,$26,$B7,$55,$70,$A8,$2F,$B4,$36,$03,$BE,$B5,$ED,$08 
+                                   DB                  $60,$68,$65,$68,$E0,$E1,$97,$24,$C2,$E1,$C0,$E7,$B4,$69,$86,$F9 
+                                   DB                  $05,$B0,$D0,$FF,$06,$BE,$41,$C9,$C4,$63,$FF,$3F,$09,$36,$34,$D1 
+                                   DB                  $BC,$0D,$34,$E1,$30,$B3,$D7,$07,$7F,$69,$20,$C7,$2F,$49,$4A,$FE 
+                                   DB                  $EF,$3E,$03,$3F,$B0,$60,$45,$05,$F2,$EF,$06,$BE,$FF,$6D,$BA,$EE 
+                                   DB                  $03,$28,$BF,$2A,$E8,$4A,$3C,$87,$47,$FE,$29,$2D,$7F,$C6,$88,$5F 
+                                   DB                  $D0,$58,$58,$BF,$67,$75,$E1,$38,$39,$DF,$7F,$C6,$FD,$3B,$06,$7E 
+                                   DB                  $F6,$AB,$11,$E7,$7F,$82,$B4,$D8,$2F,$83,$7F,$F1,$97,$52,$7F,$F6 
+                                   DB                  $74,$33,$C4,$39,$07,$B0,$E1,$7B,$B9,$F6,$54,$BB,$1C,$DC,$7F,$E1 
+                                   DB                  $FF,$8F,$28,$C3,$30,$7F,$A6,$AF,$31,$BE,$FE,$60,$38,$D5,$50,$D0 
+                                   DB                  $ED,$99,$C6,$14,$DF,$22,$FB,$42,$87,$61,$38,$19,$3E,$47,$86,$7A 
+                                   DB                  $C6,$86,$05,$B4,$C3,$8A,$A8,$06,$78,$BE,$2E,$B0,$0A,$53,$B0,$CA 
+                                   DB                  $F9,$3C,$BB,$21,$B9,$00,$AE,$3F,$02,$F6,$84,$29,$B6,$38,$0E,$23 
+                                   DB                  $00,$44,$E0,$A3,$6A,$E0,$D1,$B6,$D2,$09,$8A,$30,$49,$38,$0D,$03 
+                                   DB                  $55,$86,$05,$FF,$BD,$03,$62,$35,$0D,$69,$1A,$D0,$B3,$E0,$38,$68 
+                                   DB                  $B0,$82,$38,$BC,$7F,$BF,$41,$86,$1C,$C2,$3C,$06,$09,$8A,$E9,$38 
+                                   DB                  $93,$EC,$03,$A3,$80,$97,$BD,$CB,$69,$96,$78,$29,$78,$D2,$B3,$28 
+                                   DB                  $D2,$FE,$00,$03,$E8,$3F,$E2,$99,$B0,$BD,$FC,$05,$45,$22,$9B,$CA 
+                                   DB                  $B4,$2E,$A3,$FA,$EF,$71,$BD,$CB,$06,$68,$E1,$6C,$BF,$37,$2B,$E1 
+                                   DB                  $41,$81,$83,$C2,$94,$9F,$BF,$39,$4C,$11,$34,$12,$85,$1A,$85,$03 
+                                   DB                  $BF,$F4,$3F,$2E,$03,$72,$38,$74,$7E,$BD,$29,$92,$A7,$2D,$E1,$7F 
+                                   DB                  $68,$B3,$D2,$A5,$BC,$EF,$08,$7F,$80,$05,$C3,$5C,$46,$3F,$2C,$7F 
+                                   DB                  $86,$17,$29,$16,$F0,$BD,$FD,$03,$83,$FF,$14,$D2,$6A,$B3,$41,$29 
+                                   DB                  $C1,$0B,$97,$59,$C2,$06,$7F,$AB,$B5,$83,$8B,$06,$1C,$8F,$30,$19 
+                                   DB                  $D2,$FD,$E0,$85,$A5,$F7,$D0,$1C,$AF,$6A,$58,$03,$88,$B7,$84,$B4 
+                                   DB                  $4C,$C7,$A1,$D2,$64,$94,$46,$B4,$AC,$3F,$E0,$C1,$E6,$85,$AE,$84 
+                                   DB                  $22,$AA,$3F,$1A,$36,$31,$35,$87,$57,$D0,$07,$12,$62,$70,$96,$51 
+                                   DB                  $9E,$DC,$62,$3A,$38,$82,$98,$1C,$86,$01,$78,$0D,$29,$E3,$FD,$96 
+                                   DB                  $B9,$4F,$DB,$C1,$4E,$D5,$5A,$0B,$C9,$15,$83,$14,$2D,$93,$C5,$1A 
+                                   DB                  $07,$FE,$01,$05,$89,$B4,$BD,$BD,$7F,$C1,$36,$8D,$EB,$85,$01,$94 
+                                   DB                  $F9,$B5,$10,$78,$87,$96,$57,$67,$C4,$35,$68,$1D,$8C,$19,$C9,$61 
+                                   DB                  $60,$D3,$07,$3F,$3C,$40,$B4,$D7,$F5,$05,$86,$E2,$A5,$F5,$3F,$04 
+                                   DB                  $B0,$57,$85,$01,$23,$3F,$29,$92,$4F,$2B,$FB,$8E,$05,$B5,$22,$84 
+                                   DB                  $77,$42,$5C,$14,$A6,$C5,$BB,$76,$C9,$96,$4C,$C0,$DD,$9A,$0D,$7A 
+                                   DB                  $56,$C9,$69,$8D,$A4,$F9,$A1,$BF,$AE,$85,$41,$B0,$95,$3F,$A1,$4B 
+                                   DB                  $7A,$E1,$85,$03,$70,$96,$16,$EB,$FE,$81,$09,$81,$F7,$3C,$76,$73 
+                                   DB                  $0C,$D2,$72,$34,$28,$5D,$3F,$85,$D8,$BF,$DD,$3F,$57,$85,$01,$31 
+                                   DB                  $A5,$28,$06,$2A,$09,$38,$F5,$77,$07,$C1,$02,$C1,$03,$BD,$47,$00 
+                                   DB                  $C1,$43,$0D,$78,$0B,$61,$07,$B0,$FF,$DF,$36,$0D,$07,$01,$AE,$C3 
+                                   DB                  $81,$05,$C1,$1A,$E9,$7F,$C1,$A3,$C9,$85,$01,$85,$D3,$C7,$51,$83 
+                                   DB                  $D4,$00,$B0,$0F,$09,$C7,$1F,$A1,$29,$94,$30,$0C,$E7,$4F,$58,$FF 
+                                   DB                  $30,$E5,$83,$23,$D2,$E7,$3F,$0C,$B1,$F6,$C6,$F2,$09,$FD,$E6,$E0 
+                                   DB                  $1F,$0C,$0F,$89,$95,$49,$29,$5E,$BB,$69,$33,$0B,$34,$C7,$2B,$86 
+                                   DB                  $3C,$BF,$D7,$69,$9E,$95,$87,$4C,$49,$9A,$F9,$8D,$D1,$C3,$1A,$86 
+                                   DB                  $B9,$F9,$57,$7F,$48,$BF,$07,$E6,$E0,$FF,$C1,$E6,$2F,$05,$C1,$F8 
+                                   DB                  $A9,$FB,$6A,$70,$01,$A1,$B8,$EF,$FA,$55,$A0,$BF,$FC,$FF,$DF,$90 
+                                   DB                  $55,$83,$54,$FF,$E9,$84,$F2,$01,$39,$D2,$3F,$BF,$54,$88,$DF,$C1 
+                                   DB                  $E8,$0B,$B0,$B0,$CF,$AE,$CD,$CF,$32,$A4,$D0,$3D,$41,$63,$A5,$AA 
+                                   DB                  $F5,$A8,$DD,$F4,$23,$BB,$70,$08,$FD,$B7,$E0,$A5,$BB,$75,$9A,$83 
+                                   DB                  $C5,$B0,$09,$FB,$47,$24,$C1,$FD,$C5,$4C,$C2,$78,$C1,$E2,$A7,$FB 
+                                   DB                  $B1,$0E,$39,$B1,$7F,$01,$2C,$F0,$5A,$DF,$7F,$D0,$DC,$FD,$AA,$1E 
+                                   DB                  $F9,$B9,$FD,$AE,$69,$05,$FC,$7F,$09,$81,$1D,$C3,$23,$FF,$C1,$7E 
+                                   DB                  $C5,$47,$EC,$7F,$1F,$83,$55,$B0,$85,$0D,$70,$82,$B0,$0C,$06,$61 
+                                   DB                  $6B,$C1,$AF,$BF,$FD,$3D,$C3,$6D,$78,$29,$BB,$32,$39,$C2,$29,$FC 
+                                   DB                  $7F,$09,$8D,$15,$E0,$77,$F5,$29,$85,$AF,$EE,$C1,$F0,$9A,$B1,$23 
+                                   DB                  $B4,$2E,$92,$11,$F9,$14,$E0,$2B,$ED,$B3,$84,$CB,$F1,$DC,$69,$00 
+                                   DB                  $0E,$C6,$E1,$7B,$07,$00,$E0,$74,$5C,$00,$5E,$C1,$04,$8C,$71,$46 
+                                   DB                  $E7,$B0,$8D,$B9,$E4,$B0,$35,$C2,$D1,$23,$CE,$14,$3F,$78,$B8,$10 
+                                   DB                  $94,$3F,$B4,$3F,$3F,$18,$9C,$A8,$E0,$E4,$F1,$4E,$D0,$3F,$D0,$8C 
+                                   DB                  $42,$FE,$B7,$D3,$BD,$23,$E4,$03,$BB,$F7,$69,$C3,$BB,$FB,$C8,$AA 
+                                   DB                  $3C,$B6,$E7,$A9,$9E,$B6,$ED,$FC,$F7,$FD,$B5,$5E,$0D,$07,$DC,$4D 
+                                   DB                  $B0,$B9,$03,$A4,$3C,$C3,$16,$05,$8A,$C5,$F4,$38,$89,$BD,$F9,$6D 
+                                   DB                  $03,$B4,$D7,$BB,$E1,$FF,$C9,$77,$FE,$DF,$02,$C9,$0B,$B0,$BB,$F7 
+                                   DB                  $C2,$48,$78,$27,$0A,$3C,$A5,$78,$A9,$F9,$5C,$B0,$BB,$A2,$D0,$C0 
+                                   DB                  $F0,$0B,$24,$FE,$59,$2D,$03,$AA,$B3,$8E,$FD,$92,$EE,$EA,$E4,$83 
+                                   DB                  $BF,$46,$CD,$BB,$94,$FF,$BF,$10,$61,$BF,$C2,$FF,$C0,$9E,$90,$A6 
+                                   DB                  $B7,$F4,$03,$D9,$8B,$A8,$3E,$80,$EA,$7F,$A9,$03,$67,$61,$5F,$B5 
+                                   DB                  $F7,$2E,$3F,$32,$FF,$C5,$2A,$AE,$B2,$6A,$D0,$EF,$57,$7E,$00,$C3 
+                                   DB                  $BB,$6B,$F5,$7B,$14,$96,$FC,$D0,$51,$7F,$83,$21,$F7,$7B,$5F,$7F 
+                                   DB                  $D7,$0C,$B5,$F3,$EB,$D5,$78,$87,$7E,$03,$4E,$16,$70,$FF,$BF,$50 
+                                   DB                  $BA,$87,$FE,$C3,$C3,$FF,$BF,$4C,$69,$C1,$52,$E1,$05,$DF,$C5,$E0 
+                                   DB                  $7F,$F1,$00,$0D,$03,$AD,$80,$4B,$E3,$28,$94,$E9,$BE,$45,$B0,$20 
+                                   DB                  $0E,$70,$BA,$B8,$D0,$E1,$58,$8B,$28,$B4,$76,$8B,$A1,$FA,$BA,$DD 
+                                   DB                  $E0,$38,$5E,$C4,$69,$48,$1A,$E5,$D4,$CA,$97,$C4,$EF,$86,$03,$BE 
+                                   DB                  $36,$06,$87,$8E,$61,$86,$9F,$06,$07,$1E,$0D,$D9,$3F,$EC,$28,$A4 
+                                   DB                  $FE,$EF,$64,$78,$57,$69,$BC,$BF,$58,$B0,$54,$69,$C2,$A4,$E1,$86 
+                                   DB                  $A7,$D0,$07,$5F,$D5,$0E,$87,$BF,$C6,$36,$FE,$D4,$BA,$97,$80,$5B 
+                                   DB                  $03,$5A,$FD,$35,$60,$CE,$F6,$3E,$C3,$7E,$05,$5D,$07,$5C,$E1,$87 
+                                   DB                  $92,$3F,$A1,$25,$BE,$49,$3F,$BC,$FF,$36,$8D,$5D,$4E,$26,$BE,$FA 
+                                   DB                  $BD,$0D,$AA,$D7,$78,$1E,$FF,$1D,$BE,$B4,$BA,$5A,$D2,$BA,$3B,$F0 
+                                   DB                  $7F,$03,$77,$20,$8D,$85,$85,$7E,$77,$E1,$0D,$B4,$C6,$F8,$7F,$42 
+                                   DB                  $7F,$00,$66,$87,$1E,$D3,$1F,$00,$C6,$EF,$12,$98,$5E,$DF,$E0,$09 
+                                   DB                  $74,$00,$E1,$0F,$82,$D4,$00,$0E,$70,$3F,$85,$02,$04,$41,$09,$5A 
+                                   DB                  $02,$0B,$3B,$C7,$E2,$10,$58,$0D,$8D,$6B,$0E,$12,$07,$0D,$0B,$01 
+                                   DB                  $22,$7B,$88,$03,$05,$0B,$D8,$B8,$26,$09,$05,$00,$21,$38,$0A,$01 
+                                   DB                  $00,$2C,$0A,$0B,$DF,$ED,$87,$C9,$C2,$C3,$0F,$1C,$C1,$05,$06,$43 
+                                   DB                  $8C,$90,$60,$E1,$0E,$0B,$03,$7A,$06,$61,$02,$0A,$E3,$04,$86,$02 
+                                   DB                  $25,$0B,$05,$16,$42,$22,$05,$43,$55,$0F,$06,$01,$19,$3F,$C1,$A2 
+                                   DB                  $C3,$4B,$3A,$1E,$0D,$38,$3F,$0F,$29,$A0,$BD,$0A,$07,$4B,$0F,$49 
+                                   DB                  $05,$7E,$06,$0B,$7A,$20,$29,$08,$0B,$14,$0B,$78,$CC,$3F,$A1,$03 
+                                   DB                  $50,$85,$29,$70,$ED,$D3,$C3,$F0,$25,$15,$30,$F0,$84,$80,$2E,$85 
+                                   DB                  $39,$B7,$05,$FB,$C5,$D9,$2C,$EF,$A9,$FC,$00,$41,$02,$49,$18,$E0 
+                                   DB                  $60,$28,$29,$C1,$C2,$1C,$49,$29,$DD,$2F,$1C,$A9,$46,$58,$F7,$06 
+                                   DB                  $A4,$4A,$01,$86,$4B,$86,$58,$29,$42,$1C,$80,$36,$2D,$42,$96,$0A 
+                                   DB                  $94,$0D,$83,$28,$06,$1C,$05,$A1,$1A,$78,$0F,$29,$2C,$42,$0D,$4B 
+                                   DB                  $C0,$01,$25,$14,$3C,$1C,$2D,$0B,$03,$43,$25,$43,$24,$2C,$0D,$1B 
+                                   DB                  $46,$3C,$80,$3F,$96,$4B,$42,$84,$87,$5A,$2D,$5B,$49,$3F,$4B,$87 
+                                   DB                  $03,$96,$0E,$F7,$A5,$1A,$00,$05,$96,$24,$09,$0B,$25,$1A,$07,$36 
+                                   DB                  $49,$0B,$41,$42,$31,$2C,$60,$1C,$B9,$24,$D8,$28,$2C,$45,$16,$07 
+                                   DB                  $34,$8B,$3F,$E4,$9A,$82,$C1,$03,$78,$0E,$81,$52,$24,$4A,$6B,$0D 
+                                   DB                  $0B,$20,$49,$92,$7B,$12,$54,$3F,$05,$94,$06,$C3,$0D,$06,$2C,$16 
+                                   DB                  $7B,$06,$03,$49,$07,$42,$29,$0A,$29,$3F,$02,$06,$3C,$83,$42,$61 
+                                   DB                  $21,$85,$84,$38,$1A,$3F,$86,$05,$C3,$38,$07,$78,$94,$83,$BF,$07 
+                                   DB                  $BF,$0E,$ED,$0B,$87,$E0,$FF,$0D,$05,$86,$8E,$19,$0B,$34,$E0,$7B 
+                                   DB                  $8A,$41,$4B,$1C,$7F,$60,$1C,$F9,$85,$EF,$A2,$05,$23,$18,$0D,$07 
+                                   DB                  $BF,$A6,$10,$07,$0A,$25,$09,$A3,$98,$C0,$98,$0B,$04,$CD,$AF,$07 
+                                   DB                  $BB,$3B,$0E,$3F,$05,$24,$86,$86,$84,$2E,$03,$A4,$05,$8C,$23,$06 
+                                   DB                  $1A,$05,$7A,$0A,$20,$7F,$70,$37,$F8,$3C,$38,$A9,$0C,$03,$0A,$D6 
+                                   DB                  $FC,$F0,$F2,$1A,$EF,$D2,$44,$F0,$AF,$05,$70,$3E,$34,$9C,$CC,$9F 
+                                   DB                  $07,$03,$6A,$B8,$06,$03,$63,$D2,$FF,$79,$F0,$53,$BA,$EF,$6F,$07 
+                                   DB                  $05,$AA,$3F,$23,$0C,$EA,$32,$2D,$E4,$05,$35,$44,$02,$1C,$8B,$EE 
+                                   DB                  $07,$0E,$02,$35,$FF,$16,$83,$A4,$17,$5F,$86,$C3,$76,$05,$C1,$82 
+                                   DB                  $03,$77,$6C,$2E,$0A,$52,$02,$8D,$A3,$14,$FB,$B9,$FA,$41,$08,$0A 
+                                   DB                  $09,$B0,$31,$05,$C4,$F4,$20,$DF,$C2,$C9,$C0,$F0,$09,$04,$B4,$EF 
+                                   DB                  $E7,$09,$F9,$4E,$1D,$46,$3F,$0C,$91,$1C,$7E,$01,$C3,$20,$00,$00 
+                                   DB                  $0F,$FA,$00,$00,$01           
+                                   
+                                   
+                                   
+                                   
+                                   END                                           

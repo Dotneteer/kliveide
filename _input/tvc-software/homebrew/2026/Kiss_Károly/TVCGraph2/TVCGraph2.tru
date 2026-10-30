@@ -1,0 +1,4625 @@
+/*==============================================================================
+	TVC Graph2 - VIDEOTON TV-Computer Grafikai Motor (2 Színű Monokróm Mód)
+	TRSE Rascal unit (Graphics 2 mód: 512x240 képpont, 2 szín)
+	
+	Csúcssebességre hangolt gépi kódú (Z80) grafikai könyvtár:
+	- Vonalrajzolás (Bresenham szakasz, vízszintes és függőleges gyorsvonal)
+	- Téglalap és kitöltött téglalap (gyorsított 8-pixel/bájt pásztázással)
+	- Kör és kitöltött kör (2:1 képpontarány-korrigált arányos körök)
+	- Háromszög és kitöltött háromszög (osztásmentes élkövetés)
+	- Pontrajzolás (Plot) és villámgyors képernyőtörlés (Cls)
+	
+	Memóriahasználat (Graphics 2):
+	- VRAM kezdőcím: $8000 (32768) - $BBFF (48127) -> 15360 bájt (64 bájt/sor)
+	- Képernyő mérete: 512 képpont széles, 240 képpont magas
+	- 8 képpont / bájt (0: Háttér / fekete, 1: Előtér / fehér vagy kiválasztott szín)
+	- Sor kezdőcím: $8000 + Y * 64
+	- Bájt oszlop: X >> 3 (0..63)
+	- Képpont pozíció a bájton belül: X & 7 (0: bit 7, 1: bit 6, ..., 7: bit 0)
+	
+	Használati módok:
+	1. Közvetlen hívások (Direct - leggyorsabb): A rajzolási műveletek előtt
+	   egyszer bekapcsoljuk a videómemóriát a VRAMOn() hívással, majd a rajzolások
+	   végeztével a VRAMOff() hívással visszaállítjuk a normál memóriát.
+	2. Automatikus hívások: Automatikusan be- és kikapcsolják a VRAM-ot
+	   minden egyes rajzolási utasításnál.
+	
+	Mintaprogram (Test.ras):
+	-----------------------------------------------------------------------------
+	program Test;
+	@use "TVCGraph2"
+	begin
+	   TVCGraph2::InitGraphics();       // 2-színű grafikus mód (512x240) indítása
+	   TVCGraph2::Cls(0);              // Képernyő törlése a 0. színnel
+	   
+	   // Gyors, kötegelt rajzolás VRAM bekapcsolással:
+	   TVCGraph2::VRAMOn();
+	   TVCGraph2::RectDirect(10, 10, 501, 230, 1);           // 1. színű keret
+	   TVCGraph2::FillCircleDirect(256, 120, 40, 1);         // 1. színű teli kör
+	   TVCGraph2::CircleDirect(256, 120, 50, 1);             // 1. színű körvonal
+	   TVCGraph2::LineDirect(10, 10, 501, 230, 1);           // Átlós egyenes vonal
+	   TVCGraph2::FillTriangleDirect(100, 200, 200, 140, 300, 200, 1); // Háromszög
+	   TVCGraph2::VRAMOff();
+	   
+	   while (1) do begin end;
+	end.
+==============================================================================*/
+Unit TVCGraph2;
+
+var
+	// Globális eljárás paraméterek (minden koordináta 16-bites integer az egységes paraméterátadásért)
+	X1             : integer;
+	Y1             : integer;
+	X2             : integer;
+	Y2             : integer;
+	X3             : integer;
+	Y3             : integer;
+	CX             : integer;
+	CY             : integer;
+	X              : integer;
+	Y              : integer;
+	Radius         : integer;
+	Color          : byte;
+
+	// Belső munkaváltozók
+	DX             : integer;
+	DY             : integer;
+	SX             : integer;
+	SY             : integer;
+	ERR            : integer;
+	E2             : integer;
+	CUR_X          : integer;
+	CUR_Y          : integer;
+	BL_INCE1       : integer;
+	BL_INCE2       : integer;
+	T_SAVESP       : integer;
+	// FillTriangle változók
+	FT_X1, FT_Y1   : integer;
+	FT_X2, FT_Y2   : integer;
+	FT_X3, FT_Y3   : integer;
+	FT_CURY        : integer;
+	FT_VCOUNT      : integer;
+	FT_COL         : byte;
+	ELONG          : array[10] of byte;
+	ESHORT         : array[10] of byte;
+
+
+	// HLine & FillRect változók
+	T_X1           : integer;
+	T_X2           : integer;
+	T_Y            : integer;
+	T_Y1           : integer;
+	T_Y2           : integer;
+	T_COL          : byte;
+	T_FILL         : byte;
+	T_BC1          : byte;
+	T_BC2          : byte;
+	T_P1           : byte;
+	T_P2           : byte;
+	T_VCOUNT       : byte;
+	T_MID          : byte;
+
+	// Circle változók
+	CIRC_X         : integer;
+	CIRC_Y         : integer;
+	CIRC_D         : integer;
+	CIRC_DX        : integer;
+	CIRC_DXY       : integer;
+
+	// Bitmaszk táblázatok a 8-pixel/bájt monokróm módhoz
+	BIT_SET_TAB : array[8] of byte = (
+		$80, $40, $20, $10, $08, $04, $02, $01
+	);
+
+	BIT_CLR_TAB : array[8] of byte = (
+		$7F, $BF, $DF, $EF, $F7, $FB, $FD, $FE
+	);
+
+	SPAN_LEFT_TAB : array[8] of byte = (
+		$FF, $7F, $3F, $1F, $0F, $07, $03, $01
+	);
+
+	SPAN_RIGHT_TAB : array[8] of byte = (
+		$80, $C0, $E0, $F0, $F8, $FC, $FE, $FF
+	);
+
+	// Memórialapozás konstansai
+	const PAGE_VID_ON  : byte    = $50; // U0, VID, U2, SYS -> VRAM a $8000..$BBFF címen
+	const PAGE_NORM    : byte    = $70; // U0, U1, U2, SYS  -> Normál RAM/ROM
+
+
+/*==============================================================================
+	LAPOZÁS ÉS GRAFIKUS MÓD (VRAM BE- ÉS KIKAPCSOLÁS)
+==============================================================================*/
+
+/**
+TVC Graphics 2 (512x240, 2 szín) grafikus képernyőmód inicializálása.<br/>
+Beállítja a $0B13 rendszerváltozót és a 6-os I/O portot.<br/>
+<br/>
+Példa a használatára:<br/>
+TVCGraph2::InitGraphics();<br/>
+<br/>
+ENGLISH:<br/>
+-------------<br/>
+Initialize TVC Graphics 2 mode (512x240, 2 colors).<br/>
+<br/>
+Example:<br/>
+TVCGraph2::InitGraphics();<br/>
+**/
+procedure InitGraphics();
+begin
+	Asm("
+		ld   C,0
+		rst  $30
+		db   $04
+	");
+end;
+
+/**
+Videómemória (VRAM) közvetlen belapozása a processzor memóriatérképébe ($8000..$BBFF).<br/>
+Kötelező hívás a közvetlen (...Direct) grafikai eljárások használata előtt!<br/>
+<br/>
+Példa a használatára:<br/>
+TVCGraph2::VRAMOn();<br/>
+// ... közvetlen rajzolások ...<br/>
+TVCGraph2::VRAMOff();<br/>
+<br/>
+ENGLISH:<br/>
+-------------<br/>
+Page-in VRAM to CPU memory space ($8000..$BBFF).<br/>
+<br/>
+Example:<br/>
+TVCGraph2::VRAMOn();<br/>
+TVCGraph2::VRAMOff();<br/>
+**/
+procedure VRAMOn();
+begin
+	Asm("
+		ld   A,$50
+		ld   ($0003),A
+		out  ($02),A
+	");
+end;
+
+/**
+Videómemória (VRAM) kilapozása, a normál rendszermemória visszaállítása.<br/>
+A közvetlen (...Direct) rajzolási blokkok befejezésekor hívandó.<br/>
+<br/>
+Példa a használatára:<br/>
+TVCGraph2::VRAMOff();<br/>
+<br/>
+ENGLISH:<br/>
+-------------<br/>
+Page-out VRAM, restore normal system RAM mapping.<br/>
+<br/>
+Example:<br/>
+TVCGraph2::VRAMOff();<br/>
+**/
+procedure VRAMOff();
+begin
+	Asm("
+		ld   A,$70
+		ld   ($0003),A
+		out  ($02),A
+	");
+end;
+
+
+/*==============================================================================
+	DIREKT RAJZOLÓ RUTINOK (feltételezik, hogy a VRAM be van lapozva: VRAMOn)
+==============================================================================*/
+
+/**
+Egyetlen képpont kirajzolása közvetlen videómemória eléréssel (VRAM belapozva).<br/>
+<br/>
+Paraméterek:
+<ul>
+<li>X: a képpont vízszintes pozíciója (0-511)</li>
+<li>Y: a képpont függőleges pozíciója (0-239)</li>
+<li>Color: a színérték (0 = törlés/fekete, 1 = beállítás/fehér)</li>
+</ul>
+<br/>
+<br/>
+Példa a használatára:<br/>
+TVCGraph2::VRAMOn();<br/>
+TVCGraph2::PlotDirect(256, 120, 1);<br/>
+TVCGraph2::VRAMOff();<br/>
+<br/>
+ENGLISH:<br/>
+-------------<br/>
+Draw single pixel at (X, Y) with Color (0-1). Direct VRAM access.<br/>
+<br/>
+Params:
+<ul>
+<li>X: pixel X coordinate (0-511)</li>
+<li>Y: pixel Y coordinate (0-239)</li>
+<li>Color: color index (0-1)</li>
+</ul>
+**/
+procedure PlotDirect(X, Y : global integer; Color : global byte);
+begin
+	Asm("
+TVCGraph2_PD_ENTRY:
+		; HL = $8000 + Y * 64
+		ld   A,(TVCGraph2_Y)
+		ld   B,A
+		and  $03
+		rlca
+		rlca
+		rlca
+		rlca
+		rlca
+		rlca
+		ld   L,A
+		ld   A,B
+		srl  A
+		srl  A
+		add  A,$80
+		ld   H,A
+
+		; HL += (X >> 3)
+		ld   A,(TVCGraph2_X)
+		ld   E,A
+		ld   A,(TVCGraph2_X+1)
+		ld   D,A
+		srl  D
+		rr   E
+		srl  D
+		rr   E
+		srl  D
+		rr   E
+		ld   A,E
+		add  A,L
+		ld   L,A
+		jr   NC,TVCGraph2_Plot_nc
+		inc  H
+TVCGraph2_Plot_nc:
+
+		; Bit index P = X & 7
+		ld   A,(TVCGraph2_X)
+		and  $07
+		ld   E,A
+		ld   D,0
+
+		; Color vizsgálata
+		ld   A,(TVCGraph2_Color)
+		or   A
+		jr   Z,TVCGraph2_Plot_clr
+
+		; Color == 1 (SET bit)
+		push HL
+		ld   HL,TVCGraph2_BIT_SET_TAB
+		add  HL,DE
+		ld   A,(HL)
+		pop  HL
+		or   (HL)
+		ld   (HL),A
+		ret
+
+TVCGraph2_Plot_clr:
+		; Color == 0 (CLR bit)
+		push HL
+		ld   HL,TVCGraph2_BIT_CLR_TAB
+		add  HL,DE
+		ld   A,(HL)
+		pop  HL
+		and  (HL)
+		ld   (HL),A
+		ret
+	");
+end;
+
+/**
+Vízszintes vonal rajzolása közvetlen videómemória eléréssel (VRAM belapozva).<br/>
+A kezdő és záró részbájtokat maszktáblázatból, a belső egész bájtokat
+maximális gépi sebességgel ($FF/$00) tölti ki.<br/>
+<br/>
+Paraméterek:
+<ul>
+<li>X1: a kezdőpont X koordinátája (0-511)</li>
+<li>Y: a vonal Y sora (0-239)</li>
+<li>X2: a végpont X koordinátája (0-511)</li>
+<li>Color: a színérték (0-1)</li>
+</ul>
+<br/>
+<br/>
+Példa a használatára:<br/>
+TVCGraph2::VRAMOn();<br/>
+TVCGraph2::HLineDirect(10, 100, 500, 1);<br/>
+TVCGraph2::VRAMOff();<br/>
+<br/>
+ENGLISH:<br/>
+-------------<br/>
+Draw fast horizontal line from (X1, Y) to (X2, Y) with Color (0-1). Direct VRAM access.<br/>
+<br/>
+Params:
+<ul>
+<li>X1: start X coordinate (0-511)</li>
+<li>Y: line Y coordinate (0-239)</li>
+<li>X2: end X coordinate (0-511)</li>
+<li>Color: color index (0-1)</li>
+</ul>
+**/
+procedure HLineDirect(X1, Y, X2 : global integer; Color : global byte);
+begin
+	Asm("
+TVCGraph2_HLD_ENTRY:
+		; --- X1 <= X2 rendezés (16-bites összehasonlítás) ---
+		ld   HL,(TVCGraph2_X1)
+		ld   DE,(TVCGraph2_X2)
+		or   A
+		sbc  HL,DE
+		jr   C,TVCGraph2_HLD_xsorted
+		jr   Z,TVCGraph2_HLD_xsorted
+
+		; Csere X1 <-> X2
+		ld   HL,(TVCGraph2_X1)
+		ld   DE,(TVCGraph2_X2)
+		ld   (TVCGraph2_X1),DE
+		ld   (TVCGraph2_X2),HL
+TVCGraph2_HLD_xsorted:
+
+		; BC1 = X1 >> 3, P1 = X1 & 7
+		ld   A,(TVCGraph2_X1)
+		and  $07
+		ld   (TVCGraph2_T_P1),A
+		ld   A,(TVCGraph2_X1)
+		ld   E,A
+		ld   A,(TVCGraph2_X1+1)
+		ld   D,A
+		srl  D
+		rr   E
+		srl  D
+		rr   E
+		srl  D
+		rr   E
+		ld   A,E
+		ld   (TVCGraph2_T_BC1),A
+
+		; BC2 = X2 >> 3, P2 = X2 & 7
+		ld   A,(TVCGraph2_X2)
+		and  $07
+		ld   (TVCGraph2_T_P2),A
+		ld   A,(TVCGraph2_X2)
+		ld   E,A
+		ld   A,(TVCGraph2_X2+1)
+		ld   D,A
+		srl  D
+		rr   E
+		srl  D
+		rr   E
+		srl  D
+		rr   E
+		ld   A,E
+		ld   (TVCGraph2_T_BC2),A
+
+		; --- HL = $8000 + Y * 64 + BC1 ---
+		ld   A,(TVCGraph2_Y)
+		ld   B,A
+		and  $03
+		rlca
+		rlca
+		rlca
+		rlca
+		rlca
+		rlca
+		ld   L,A
+		ld   A,B
+		srl  A
+		srl  A
+		add  A,$80
+		ld   H,A
+
+		ld   A,(TVCGraph2_T_BC1)
+		add  A,L
+		ld   L,A
+		jr   NC,TVCGraph2_HLD_hl_ok
+		inc  H
+TVCGraph2_HLD_hl_ok:
+
+		; Fill byte beállítása ($FF ha Color==1, $00 ha Color==0)
+		ld   A,(TVCGraph2_Color)
+		or   A
+		jr   Z,TVCGraph2_HLD_fill0
+		ld   A,$FF
+		jr   TVCGraph2_HLD_fill_set
+TVCGraph2_HLD_fill0:
+		xor  A
+TVCGraph2_HLD_fill_set:
+		ld   (TVCGraph2_T_FILL),A
+
+		; --- Egy bájtos szakasz ellenőrzése (BC1 == BC2) ---
+		ld   A,(TVCGraph2_T_BC1)
+		ld   B,A
+		ld   A,(TVCGraph2_T_BC2)
+		cp   B
+		jp   NZ,TVCGraph2_HLD_multibyte
+
+		; ==============================================================
+		; EGYETLEN BÁJTON BELÜLI SZAKASZ (BC1 == BC2)
+		; Mask = SPAN_LEFT_TAB[P1] & SPAN_RIGHT_TAB[P2]
+		; ==============================================================
+		ld   A,(TVCGraph2_T_P1)
+		ld   E,A
+		ld   D,0
+		ld   IY,TVCGraph2_SPAN_LEFT_TAB
+		add  IY,DE
+		ld   B,(IY+0)
+
+		ld   A,(TVCGraph2_T_P2)
+		ld   E,A
+		ld   IY,TVCGraph2_SPAN_RIGHT_TAB
+		add  IY,DE
+		ld   A,(IY+0)
+		and  B                   ; A = Mask
+		ld   C,A                 ; C = Mask
+
+		ld   A,(TVCGraph2_Color)
+		or   A
+		jr   Z,TVCGraph2_HLD_single_clr
+
+		; Set bits
+		ld   A,(HL)
+		or   C
+		ld   (HL),A
+		ret
+
+TVCGraph2_HLD_single_clr:
+		; Clr bits
+		ld   A,C
+		cpl
+		and  (HL)
+		ld   (HL),A
+		ret
+
+		; ==============================================================
+		; TÖBB BÁJTOS SZAKASZ (BC1 < BC2)
+		; ==============================================================
+TVCGraph2_HLD_multibyte:
+		; --- 1. Bal oldali bájt kitöltése (SPAN_LEFT_TAB[P1]) ---
+		ld   A,(TVCGraph2_T_P1)
+		ld   E,A
+		ld   D,0
+		ld   IY,TVCGraph2_SPAN_LEFT_TAB
+		add  IY,DE
+		ld   C,(IY+0)            ; C = Left Mask
+
+		ld   A,(TVCGraph2_Color)
+		or   A
+		jr   Z,TVCGraph2_HLD_m_left_clr
+
+		ld   A,(HL)
+		or   C
+		ld   (HL),A
+		inc  HL
+		jr   TVCGraph2_HLD_middle
+
+TVCGraph2_HLD_m_left_clr:
+		ld   A,C
+		cpl
+		and  (HL)
+		ld   (HL),A
+		inc  HL
+
+		; --- 2. Belső egész bájtok kitöltése (BC2 - BC1 - 1) ---
+TVCGraph2_HLD_middle:
+		ld   A,(TVCGraph2_T_BC2)
+		ld   B,A
+		ld   A,(TVCGraph2_T_BC1)
+		ld   C,A
+		ld   A,B
+		sub  C
+		dec  A
+		jr   Z,TVCGraph2_HLD_right_byte
+		ld   B,A
+		ld   A,(TVCGraph2_T_FILL)
+
+TVCGraph2_HLD_mid_loop:
+		ld   (HL),A
+		inc  HL
+		djnz TVCGraph2_HLD_mid_loop
+
+		; --- 3. Jobb oldali bájt kitöltése (SPAN_RIGHT_TAB[P2]) ---
+TVCGraph2_HLD_right_byte:
+		ld   A,(TVCGraph2_T_P2)
+		ld   E,A
+		ld   D,0
+		ld   IY,TVCGraph2_SPAN_RIGHT_TAB
+		add  IY,DE
+		ld   C,(IY+0)            ; C = Right Mask
+
+		ld   A,(TVCGraph2_Color)
+		or   A
+		jr   Z,TVCGraph2_HLD_m_right_clr
+
+		ld   A,(HL)
+		or   C
+		ld   (HL),A
+		ret
+
+TVCGraph2_HLD_m_right_clr:
+		ld   A,C
+		cpl
+		and  (HL)
+		ld   (HL),A
+		ret
+	");
+end;
+
+/**
+Függőleges vonal rajzolása közvetlen videómemória eléréssel (VRAM belapozva).<br/>
+Közvetlen Z80 soronkénti címzéssel (+64 bájt/sor) húzza a vonalat.<br/>
+<br/>
+Paraméterek:
+<ul>
+<li>X: a vonal X pozíciója (0-511)</li>
+<li>Y1: a kezdőpont Y koordinátája (0-239)</li>
+<li>Y2: a végpont Y koordinátája (0-239)</li>
+<li>Color: a színérték (0-1)</li>
+</ul>
+<br/>
+<br/>
+Példa a használatára:<br/>
+TVCGraph2::VRAMOn();<br/>
+TVCGraph2::VLineDirect(256, 10, 230, 1);<br/>
+TVCGraph2::VRAMOff();<br/>
+<br/>
+ENGLISH:<br/>
+-------------<br/>
+Draw fast vertical line from (X, Y1) to (X, Y2) with Color (0-1). Direct VRAM access.<br/>
+<br/>
+Params:
+<ul>
+<li>X: line X coordinate (0-511)</li>
+<li>Y1: start Y coordinate (0-239)</li>
+<li>Y2: end Y coordinate (0-239)</li>
+<li>Color: color index (0-1)</li>
+</ul>
+**/
+procedure VLineDirect(X, Y1, Y2 : global integer; Color : global byte);
+begin
+	Asm("
+TVCGraph2_VLD_ENTRY:
+		; --- Y1 <= Y2 rendezés (16-bit) ---
+		ld   HL,(TVCGraph2_Y1)
+		ld   DE,(TVCGraph2_Y2)
+		ld   A,L
+		cp   E
+		jr   C,TVCGraph2_VLD_ysorted
+		jr   Z,TVCGraph2_VLD_ysorted
+		ld   (TVCGraph2_Y1),DE
+		ld   (TVCGraph2_Y2),HL
+TVCGraph2_VLD_ysorted:
+
+		; --- Sorok száma = Y2 - Y1 + 1 ---
+		ld   A,(TVCGraph2_Y2)
+		ld   B,A
+		ld   A,(TVCGraph2_Y1)
+		sub  B
+		neg
+		inc  A
+		ld   B,A                   ; B = sorok száma (1..240)
+
+		; --- HL = $8000 + Y1 * 64 + (X >> 3) ---
+		ld   A,(TVCGraph2_Y1)
+		ld   C,A
+		and  $03
+		rlca
+		rlca
+		rlca
+		rlca
+		rlca
+		rlca
+		ld   L,A
+		ld   A,C
+		srl  A
+		srl  A
+		add  A,$80
+		ld   H,A
+
+		; HL += (X >> 3)
+		ld   A,(TVCGraph2_X)
+		ld   E,A
+		ld   A,(TVCGraph2_X+1)
+		ld   D,A
+		srl  D
+		rr   E
+		srl  D
+		rr   E
+		srl  D
+		rr   E
+		ld   A,E
+		add  A,L
+		ld   L,A
+		jr   NC,TVCGraph2_VLD_hl_ok
+		inc  H
+TVCGraph2_VLD_hl_ok:
+
+		; Maszk C-be
+		ld   A,(TVCGraph2_X)
+		and  $07
+		ld   E,A
+		ld   D,0
+
+		ld   A,(TVCGraph2_Color)
+		or   A
+		jr   Z,TVCGraph2_VLD_run_clr
+
+		; Color == 1 (SET)
+		push HL
+		ld   HL,TVCGraph2_BIT_SET_TAB
+		add  HL,DE
+		ld   C,(HL)
+		pop  HL
+
+		ld   DE,64
+TVCGraph2_VLD_set_loop:
+		ld   A,(HL)
+		or   C
+		ld   (HL),A
+		add  HL,DE
+		djnz TVCGraph2_VLD_set_loop
+		ret
+
+TVCGraph2_VLD_run_clr:
+		; Color == 0 (CLR)
+		push HL
+		ld   HL,TVCGraph2_BIT_CLR_TAB
+		add  HL,DE
+		ld   C,(HL)
+		pop  HL
+
+		ld   DE,64
+TVCGraph2_VLD_clr_loop:
+		ld   A,(HL)
+		and  C
+		ld   (HL),A
+		add  HL,DE
+		djnz TVCGraph2_VLD_clr_loop
+		ret
+	");
+end;
+
+/**
+Általános ferde vonal rajzolása Bresenham algoritmussal közvetlen VRAM eléréssel.<br/>
+8-fázisú állapotgéppel, kibontott gépi kódú ciklusokkal és 8-bites számlálóval.<br/>
+<br/>
+Paraméterek:
+<ul>
+<li>X1: kezdőpont X koordinátája (0-511)</li>
+<li>Y1: kezdőpont Y koordinátája (0-239)</li>
+<li>X2: végpont X koordinátája (0-511)</li>
+<li>Y2: végpont Y koordinátája (0-239)</li>
+<li>Color: a színérték (0-1)</li>
+</ul>
+<br/>
+<br/>
+Példa a használatára:<br/>
+TVCGraph2::VRAMOn();<br/>
+TVCGraph2::LineDirect(10, 10, 500, 230, 1);<br/>
+TVCGraph2::VRAMOff();<br/>
+<br/>
+ENGLISH:<br/>
+-------------<br/>
+Draw arbitrary line from (X1, Y1) to (X2, Y2) using unrolled Bresenham state machine. Direct VRAM access.<br/>
+<br/>
+Params:
+<ul>
+<li>X1: start X coordinate (0-511)</li>
+<li>Y1: start Y coordinate (0-239)</li>
+<li>X2: end X coordinate (0-511)</li>
+<li>Y2: end Y coordinate (0-239)</li>
+<li>Color: color index (0-1)</li>
+</ul>
+**/
+procedure LineDirect(X1, Y1, X2, Y2 : global integer; Color : global byte);
+begin
+	Asm("
+
+TVCGraph2_LD_ENTRY:
+		; --- 1. Vízszintes és függőleges gyorsvonal elágazás ---
+		ld   A,(TVCGraph2_Y1)
+		ld   B,A
+		ld   A,(TVCGraph2_Y2)
+		cp   B
+		jr   NZ,TVCGraph2_FL_not_h
+		ld   HL,(TVCGraph2_Y1)
+		ld   (TVCGraph2_Y),HL
+		call TVCGraph2_HLD_ENTRY
+		ret
+TVCGraph2_FL_not_h:
+		ld   HL,(TVCGraph2_X1)
+		ld   DE,(TVCGraph2_X2)
+		or   A
+		sbc  HL,DE
+		jr   NZ,TVCGraph2_FL_not_v
+		ld   HL,(TVCGraph2_X1)
+		ld   (TVCGraph2_X),HL
+		call TVCGraph2_VLD_ENTRY
+		ret
+TVCGraph2_FL_not_v:
+
+		; --- 2. Normalizálás: Y1 <= Y2 biztosítása ---
+		ld   HL,(TVCGraph2_Y1)
+		ld   DE,(TVCGraph2_Y2)
+		ld   A,L
+		cp   E
+		jr   C,TVCGraph2_FL_ysorted
+		jr   Z,TVCGraph2_FL_ysorted
+		ld   (TVCGraph2_Y1),DE
+		ld   (TVCGraph2_Y2),HL
+		ld   HL,(TVCGraph2_X1)
+		ld   DE,(TVCGraph2_X2)
+		ld   (TVCGraph2_X1),DE
+		ld   (TVCGraph2_X2),HL
+TVCGraph2_FL_ysorted:
+
+		; --- 3. Kezdő VRAM cím HL-be: HL = $8000 + Y1 * 64 + (X1 >> 3) ---
+		ld   A,(TVCGraph2_Y1)
+		ld   B,A
+		and  $03
+		rlca
+		rlca
+		rlca
+		rlca
+		rlca
+		rlca
+		ld   L,A
+		ld   A,B
+		srl  A
+		srl  A
+		add  A,$80
+		ld   H,A
+		ld   A,(TVCGraph2_X1)
+		ld   E,A
+		ld   A,(TVCGraph2_X1+1)
+		ld   D,A
+		srl  D
+		rr   E
+		srl  D
+		rr   E
+		srl  D
+		rr   E
+		ld   A,E
+		add  A,L
+		ld   L,A
+		jr   NC,TVCGraph2_FL_hl_ok
+		inc  H
+TVCGraph2_FL_hl_ok:
+
+		; Shadow bankba átadás: HL' = VRAM cím, DE' = 64 (rowstep)
+		ld   DE,64
+		ex   DE,HL
+		push DE
+		push HL
+		exx
+		pop  DE
+		pop  HL
+		exx
+
+		; DY = Y2 - Y1
+		ld   A,(TVCGraph2_Y2)
+		ld   B,A
+		ld   A,(TVCGraph2_Y1)
+		sub  B
+		neg
+		ld   L,A
+		ld   H,0
+		ld   (TVCGraph2_DY),HL
+
+		; DX = |X2 - X1|, SX = +1 vagy -1
+		ld   HL,(TVCGraph2_X2)
+		ld   DE,(TVCGraph2_X1)
+		or   A
+		sbc  HL,DE
+		jr   NC,TVCGraph2_FL_sx_pos
+		ld   HL,(TVCGraph2_X1)
+		ld   DE,(TVCGraph2_X2)
+		or   A
+		sbc  HL,DE
+		ld   (TVCGraph2_DX),HL
+		ld   A,255
+		ld   (TVCGraph2_SX),A
+		jr   TVCGraph2_FL_dispatch
+TVCGraph2_FL_sx_pos:
+		ld   (TVCGraph2_DX),HL
+		ld   A,1
+		ld   (TVCGraph2_SX),A
+TVCGraph2_FL_dispatch:
+
+		; Kezdő pixel index (X1 & 7) -> C regiszter
+		ld   A,(TVCGraph2_X1)
+		and  $07
+		ld   C,A
+
+		; DX és DY összehasonlítása: X-Major (DX >= DY) vagy Y-Major (DY > DX)
+		ld   DE,(TVCGraph2_DY)
+		ld   HL,(TVCGraph2_DX)
+		or   A
+		sbc  HL,DE
+		jp   C,TVCGraph2_BL_Y_MAJOR
+
+		; ==============================================================
+				; Check if DX <= 255 for 8-bit fast loop
+		ld   A,(TVCGraph2_DX+1)
+		or   A
+		jp   Z,TVCGraph2_BL_X_MAJOR_8BIT
+
+; X-MAJOR ÁG (DX >= DY)
+		; ==============================================================
+TVCGraph2_BL_X_MAJOR_16BIT:
+		ld   HL,(TVCGraph2_DX)
+		inc  HL
+		push HL
+		exx
+		pop  BC
+		exx
+
+		; DE = 2*DY (ince1)
+		ld   HL,(TVCGraph2_DY)
+		add  HL,HL
+		ld   (TVCGraph2_BL_INCE1),HL
+		ld   D,H
+		ld   E,L
+
+		; BC = 2*DY - 2*DX (ince2)
+		ld   HL,(TVCGraph2_DX)
+		add  HL,HL
+		ex   DE,HL
+		or   A
+		sbc  HL,DE
+		ld   B,H
+		ld   C,L
+
+		; Kezdő hiba: HL = 2*DY - DX
+		ld   HL,(TVCGraph2_BL_INCE1)
+		ld   DE,(TVCGraph2_DX)
+		or   A
+		sbc  HL,DE
+		ld   DE,(TVCGraph2_BL_INCE1)
+
+		; Color és SX szerinti elágazás
+		ld   A,(TVCGraph2_Color)
+		or   A
+		jp   Z,TVCGraph2_XM_CLR_DISP
+		ld   A,(TVCGraph2_SX)
+		cp   1
+		jp   NZ,TVCGraph2_XM_SET_NEG
+
+		; --- X-Major, Color 1, SX = +1 ---
+		ld   A,(TVCGraph2_X1)
+		and  $07
+		cp   0
+		jp   Z,TVCGraph2_XM_SP_0
+		cp   1
+		jp   Z,TVCGraph2_XM_SP_1
+		cp   2
+		jp   Z,TVCGraph2_XM_SP_2
+		cp   3
+		jp   Z,TVCGraph2_XM_SP_3
+		cp   4
+		jp   Z,TVCGraph2_XM_SP_4
+		cp   5
+		jp   Z,TVCGraph2_XM_SP_5
+		cp   6
+		jp   Z,TVCGraph2_XM_SP_6
+		jp   TVCGraph2_XM_SP_7
+TVCGraph2_XM_SP_0:
+		exx
+TVCGraph2_XM_SP_0_noexx:
+		set  7,(HL)
+		dec  BC
+		ld   A,B
+		or   C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM_SP_0_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM_SP_1_noexx
+TVCGraph2_XM_SP_0_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM_SP_1_noexx
+TVCGraph2_XM_SP_1:
+		exx
+TVCGraph2_XM_SP_1_noexx:
+		set  6,(HL)
+		dec  BC
+		ld   A,B
+		or   C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM_SP_1_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM_SP_2_noexx
+TVCGraph2_XM_SP_1_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM_SP_2_noexx
+TVCGraph2_XM_SP_2:
+		exx
+TVCGraph2_XM_SP_2_noexx:
+		set  5,(HL)
+		dec  BC
+		ld   A,B
+		or   C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM_SP_2_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM_SP_3_noexx
+TVCGraph2_XM_SP_2_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM_SP_3_noexx
+TVCGraph2_XM_SP_3:
+		exx
+TVCGraph2_XM_SP_3_noexx:
+		set  4,(HL)
+		dec  BC
+		ld   A,B
+		or   C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM_SP_3_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM_SP_4_noexx
+TVCGraph2_XM_SP_3_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM_SP_4_noexx
+TVCGraph2_XM_SP_4:
+		exx
+TVCGraph2_XM_SP_4_noexx:
+		set  3,(HL)
+		dec  BC
+		ld   A,B
+		or   C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM_SP_4_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM_SP_5_noexx
+TVCGraph2_XM_SP_4_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM_SP_5_noexx
+TVCGraph2_XM_SP_5:
+		exx
+TVCGraph2_XM_SP_5_noexx:
+		set  2,(HL)
+		dec  BC
+		ld   A,B
+		or   C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM_SP_5_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM_SP_6_noexx
+TVCGraph2_XM_SP_5_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM_SP_6_noexx
+TVCGraph2_XM_SP_6:
+		exx
+TVCGraph2_XM_SP_6_noexx:
+		set  1,(HL)
+		dec  BC
+		ld   A,B
+		or   C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM_SP_6_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM_SP_7_noexx
+TVCGraph2_XM_SP_6_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM_SP_7_noexx
+TVCGraph2_XM_SP_7:
+		exx
+TVCGraph2_XM_SP_7_noexx:
+		set  0,(HL)
+		inc  HL
+		dec  BC
+		ld   A,B
+		or   C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM_SP_7_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM_SP_0_noexx
+TVCGraph2_XM_SP_7_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM_SP_0_noexx
+
+		; --- X-Major, Color 1, SX = -1 ---
+TVCGraph2_XM_SET_NEG:
+		ld   A,(TVCGraph2_X1)
+		and  $07
+		cp   0
+		jp   Z,TVCGraph2_XM_SN_0
+		cp   1
+		jp   Z,TVCGraph2_XM_SN_1
+		cp   2
+		jp   Z,TVCGraph2_XM_SN_2
+		cp   3
+		jp   Z,TVCGraph2_XM_SN_3
+		cp   4
+		jp   Z,TVCGraph2_XM_SN_4
+		cp   5
+		jp   Z,TVCGraph2_XM_SN_5
+		cp   6
+		jp   Z,TVCGraph2_XM_SN_6
+		jp   TVCGraph2_XM_SN_7
+TVCGraph2_XM_SN_0:
+		exx
+TVCGraph2_XM_SN_0_noexx:
+		set  7,(HL)
+		dec  HL
+		dec  BC
+		ld   A,B
+		or   C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM_SN_0_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM_SN_7_noexx
+TVCGraph2_XM_SN_0_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM_SN_7_noexx
+TVCGraph2_XM_SN_1:
+		exx
+TVCGraph2_XM_SN_1_noexx:
+		set  6,(HL)
+		dec  BC
+		ld   A,B
+		or   C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM_SN_1_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM_SN_0_noexx
+TVCGraph2_XM_SN_1_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM_SN_0_noexx
+TVCGraph2_XM_SN_2:
+		exx
+TVCGraph2_XM_SN_2_noexx:
+		set  5,(HL)
+		dec  BC
+		ld   A,B
+		or   C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM_SN_2_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM_SN_1_noexx
+TVCGraph2_XM_SN_2_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM_SN_1_noexx
+TVCGraph2_XM_SN_3:
+		exx
+TVCGraph2_XM_SN_3_noexx:
+		set  4,(HL)
+		dec  BC
+		ld   A,B
+		or   C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM_SN_3_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM_SN_2_noexx
+TVCGraph2_XM_SN_3_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM_SN_2_noexx
+TVCGraph2_XM_SN_4:
+		exx
+TVCGraph2_XM_SN_4_noexx:
+		set  3,(HL)
+		dec  BC
+		ld   A,B
+		or   C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM_SN_4_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM_SN_3_noexx
+TVCGraph2_XM_SN_4_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM_SN_3_noexx
+TVCGraph2_XM_SN_5:
+		exx
+TVCGraph2_XM_SN_5_noexx:
+		set  2,(HL)
+		dec  BC
+		ld   A,B
+		or   C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM_SN_5_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM_SN_4_noexx
+TVCGraph2_XM_SN_5_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM_SN_4_noexx
+TVCGraph2_XM_SN_6:
+		exx
+TVCGraph2_XM_SN_6_noexx:
+		set  1,(HL)
+		dec  BC
+		ld   A,B
+		or   C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM_SN_6_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM_SN_5_noexx
+TVCGraph2_XM_SN_6_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM_SN_5_noexx
+TVCGraph2_XM_SN_7:
+		exx
+TVCGraph2_XM_SN_7_noexx:
+		set  0,(HL)
+		dec  BC
+		ld   A,B
+		or   C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM_SN_7_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM_SN_6_noexx
+TVCGraph2_XM_SN_7_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM_SN_6_noexx
+
+TVCGraph2_XM_CLR_DISP:
+		ld   A,(TVCGraph2_SX)
+		cp   1
+		jp   NZ,TVCGraph2_XM_CLR_NEG
+		; --- X-Major, Color 0, SX = +1 ---
+		ld   A,(TVCGraph2_X1)
+		and  $07
+		cp   0
+		jp   Z,TVCGraph2_XM_CP_0
+		cp   1
+		jp   Z,TVCGraph2_XM_CP_1
+		cp   2
+		jp   Z,TVCGraph2_XM_CP_2
+		cp   3
+		jp   Z,TVCGraph2_XM_CP_3
+		cp   4
+		jp   Z,TVCGraph2_XM_CP_4
+		cp   5
+		jp   Z,TVCGraph2_XM_CP_5
+		cp   6
+		jp   Z,TVCGraph2_XM_CP_6
+		jp   TVCGraph2_XM_CP_7
+TVCGraph2_XM_CP_0:
+		exx
+TVCGraph2_XM_CP_0_noexx:
+		res  7,(HL)
+		dec  BC
+		ld   A,B
+		or   C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM_CP_0_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM_CP_1_noexx
+TVCGraph2_XM_CP_0_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM_CP_1_noexx
+TVCGraph2_XM_CP_1:
+		exx
+TVCGraph2_XM_CP_1_noexx:
+		res  6,(HL)
+		dec  BC
+		ld   A,B
+		or   C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM_CP_1_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM_CP_2_noexx
+TVCGraph2_XM_CP_1_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM_CP_2_noexx
+TVCGraph2_XM_CP_2:
+		exx
+TVCGraph2_XM_CP_2_noexx:
+		res  5,(HL)
+		dec  BC
+		ld   A,B
+		or   C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM_CP_2_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM_CP_3_noexx
+TVCGraph2_XM_CP_2_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM_CP_3_noexx
+TVCGraph2_XM_CP_3:
+		exx
+TVCGraph2_XM_CP_3_noexx:
+		res  4,(HL)
+		dec  BC
+		ld   A,B
+		or   C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM_CP_3_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM_CP_4_noexx
+TVCGraph2_XM_CP_3_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM_CP_4_noexx
+TVCGraph2_XM_CP_4:
+		exx
+TVCGraph2_XM_CP_4_noexx:
+		res  3,(HL)
+		dec  BC
+		ld   A,B
+		or   C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM_CP_4_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM_CP_5_noexx
+TVCGraph2_XM_CP_4_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM_CP_5_noexx
+TVCGraph2_XM_CP_5:
+		exx
+TVCGraph2_XM_CP_5_noexx:
+		res  2,(HL)
+		dec  BC
+		ld   A,B
+		or   C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM_CP_5_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM_CP_6_noexx
+TVCGraph2_XM_CP_5_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM_CP_6_noexx
+TVCGraph2_XM_CP_6:
+		exx
+TVCGraph2_XM_CP_6_noexx:
+		res  1,(HL)
+		dec  BC
+		ld   A,B
+		or   C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM_CP_6_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM_CP_7_noexx
+TVCGraph2_XM_CP_6_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM_CP_7_noexx
+TVCGraph2_XM_CP_7:
+		exx
+TVCGraph2_XM_CP_7_noexx:
+		res  0,(HL)
+		inc  HL
+		dec  BC
+		ld   A,B
+		or   C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM_CP_7_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM_CP_0_noexx
+TVCGraph2_XM_CP_7_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM_CP_0_noexx
+
+		; --- X-Major, Color 0, SX = -1 ---
+TVCGraph2_XM_CLR_NEG:
+		ld   A,(TVCGraph2_X1)
+		and  $07
+		cp   0
+		jp   Z,TVCGraph2_XM_CN_0
+		cp   1
+		jp   Z,TVCGraph2_XM_CN_1
+		cp   2
+		jp   Z,TVCGraph2_XM_CN_2
+		cp   3
+		jp   Z,TVCGraph2_XM_CN_3
+		cp   4
+		jp   Z,TVCGraph2_XM_CN_4
+		cp   5
+		jp   Z,TVCGraph2_XM_CN_5
+		cp   6
+		jp   Z,TVCGraph2_XM_CN_6
+		jp   TVCGraph2_XM_CN_7
+TVCGraph2_XM_CN_0:
+		exx
+TVCGraph2_XM_CN_0_noexx:
+		res  7,(HL)
+		dec  HL
+		dec  BC
+		ld   A,B
+		or   C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM_CN_0_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM_CN_7_noexx
+TVCGraph2_XM_CN_0_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM_CN_7_noexx
+TVCGraph2_XM_CN_1:
+		exx
+TVCGraph2_XM_CN_1_noexx:
+		res  6,(HL)
+		dec  BC
+		ld   A,B
+		or   C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM_CN_1_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM_CN_0_noexx
+TVCGraph2_XM_CN_1_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM_CN_0_noexx
+TVCGraph2_XM_CN_2:
+		exx
+TVCGraph2_XM_CN_2_noexx:
+		res  5,(HL)
+		dec  BC
+		ld   A,B
+		or   C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM_CN_2_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM_CN_1_noexx
+TVCGraph2_XM_CN_2_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM_CN_1_noexx
+TVCGraph2_XM_CN_3:
+		exx
+TVCGraph2_XM_CN_3_noexx:
+		res  4,(HL)
+		dec  BC
+		ld   A,B
+		or   C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM_CN_3_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM_CN_2_noexx
+TVCGraph2_XM_CN_3_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM_CN_2_noexx
+TVCGraph2_XM_CN_4:
+		exx
+TVCGraph2_XM_CN_4_noexx:
+		res  3,(HL)
+		dec  BC
+		ld   A,B
+		or   C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM_CN_4_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM_CN_3_noexx
+TVCGraph2_XM_CN_4_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM_CN_3_noexx
+TVCGraph2_XM_CN_5:
+		exx
+TVCGraph2_XM_CN_5_noexx:
+		res  2,(HL)
+		dec  BC
+		ld   A,B
+		or   C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM_CN_5_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM_CN_4_noexx
+TVCGraph2_XM_CN_5_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM_CN_4_noexx
+TVCGraph2_XM_CN_6:
+		exx
+TVCGraph2_XM_CN_6_noexx:
+		res  1,(HL)
+		dec  BC
+		ld   A,B
+		or   C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM_CN_6_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM_CN_5_noexx
+TVCGraph2_XM_CN_6_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM_CN_5_noexx
+TVCGraph2_XM_CN_7:
+		exx
+TVCGraph2_XM_CN_7_noexx:
+		res  0,(HL)
+		dec  BC
+		ld   A,B
+		or   C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM_CN_7_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM_CN_6_noexx
+TVCGraph2_XM_CN_7_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM_CN_6_noexx
+
+		
+
+TVCGraph2_BL_X_MAJOR_8BIT:
+; X-MAJOR ÁG (DX >= DY)
+		; ==============================================================
+TVCGraph2_BL_X_MAJOR:
+		ld   HL,(TVCGraph2_DX)
+		inc  HL
+		push HL
+		exx
+		pop  BC
+		exx
+
+		; DE = 2*DY (ince1)
+		ld   HL,(TVCGraph2_DY)
+		add  HL,HL
+		ld   (TVCGraph2_BL_INCE1),HL
+		ld   D,H
+		ld   E,L
+
+		; BC = 2*DY - 2*DX (ince2)
+		ld   HL,(TVCGraph2_DX)
+		add  HL,HL
+		ex   DE,HL
+		or   A
+		sbc  HL,DE
+		ld   B,H
+		ld   C,L
+
+		; Kezdő hiba: HL = 2*DY - DX
+		ld   HL,(TVCGraph2_BL_INCE1)
+		ld   DE,(TVCGraph2_DX)
+		or   A
+		sbc  HL,DE
+		ld   DE,(TVCGraph2_BL_INCE1)
+
+		; Color és SX szerinti elágazás
+		ld   A,(TVCGraph2_Color)
+		or   A
+		jp   Z,TVCGraph2_XM8_CLR_DISP
+		ld   A,(TVCGraph2_SX)
+		cp   1
+		jp   NZ,TVCGraph2_XM8_SET_NEG
+
+		; --- X-Major, Color 1, SX = +1 ---
+		ld   A,(TVCGraph2_X1)
+		and  $07
+		cp   0
+		jp   Z,TVCGraph2_XM8_SP_0
+		cp   1
+		jp   Z,TVCGraph2_XM8_SP_1
+		cp   2
+		jp   Z,TVCGraph2_XM8_SP_2
+		cp   3
+		jp   Z,TVCGraph2_XM8_SP_3
+		cp   4
+		jp   Z,TVCGraph2_XM8_SP_4
+		cp   5
+		jp   Z,TVCGraph2_XM8_SP_5
+		cp   6
+		jp   Z,TVCGraph2_XM8_SP_6
+		jp   TVCGraph2_XM8_SP_7
+TVCGraph2_XM8_SP_0:
+		exx
+TVCGraph2_XM8_SP_0_noexx:
+		set  7,(HL)
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM8_SP_0_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM8_SP_1_noexx
+TVCGraph2_XM8_SP_0_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM8_SP_1_noexx
+TVCGraph2_XM8_SP_1:
+		exx
+TVCGraph2_XM8_SP_1_noexx:
+		set  6,(HL)
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM8_SP_1_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM8_SP_2_noexx
+TVCGraph2_XM8_SP_1_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM8_SP_2_noexx
+TVCGraph2_XM8_SP_2:
+		exx
+TVCGraph2_XM8_SP_2_noexx:
+		set  5,(HL)
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM8_SP_2_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM8_SP_3_noexx
+TVCGraph2_XM8_SP_2_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM8_SP_3_noexx
+TVCGraph2_XM8_SP_3:
+		exx
+TVCGraph2_XM8_SP_3_noexx:
+		set  4,(HL)
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM8_SP_3_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM8_SP_4_noexx
+TVCGraph2_XM8_SP_3_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM8_SP_4_noexx
+TVCGraph2_XM8_SP_4:
+		exx
+TVCGraph2_XM8_SP_4_noexx:
+		set  3,(HL)
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM8_SP_4_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM8_SP_5_noexx
+TVCGraph2_XM8_SP_4_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM8_SP_5_noexx
+TVCGraph2_XM8_SP_5:
+		exx
+TVCGraph2_XM8_SP_5_noexx:
+		set  2,(HL)
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM8_SP_5_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM8_SP_6_noexx
+TVCGraph2_XM8_SP_5_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM8_SP_6_noexx
+TVCGraph2_XM8_SP_6:
+		exx
+TVCGraph2_XM8_SP_6_noexx:
+		set  1,(HL)
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM8_SP_6_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM8_SP_7_noexx
+TVCGraph2_XM8_SP_6_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM8_SP_7_noexx
+TVCGraph2_XM8_SP_7:
+		exx
+TVCGraph2_XM8_SP_7_noexx:
+		set  0,(HL)
+		inc  HL
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM8_SP_7_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM8_SP_0_noexx
+TVCGraph2_XM8_SP_7_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM8_SP_0_noexx
+
+		; --- X-Major, Color 1, SX = -1 ---
+TVCGraph2_XM8_SET_NEG:
+		ld   A,(TVCGraph2_X1)
+		and  $07
+		cp   0
+		jp   Z,TVCGraph2_XM8_SN_0
+		cp   1
+		jp   Z,TVCGraph2_XM8_SN_1
+		cp   2
+		jp   Z,TVCGraph2_XM8_SN_2
+		cp   3
+		jp   Z,TVCGraph2_XM8_SN_3
+		cp   4
+		jp   Z,TVCGraph2_XM8_SN_4
+		cp   5
+		jp   Z,TVCGraph2_XM8_SN_5
+		cp   6
+		jp   Z,TVCGraph2_XM8_SN_6
+		jp   TVCGraph2_XM8_SN_7
+TVCGraph2_XM8_SN_0:
+		exx
+TVCGraph2_XM8_SN_0_noexx:
+		set  7,(HL)
+		dec  HL
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM8_SN_0_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM8_SN_7_noexx
+TVCGraph2_XM8_SN_0_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM8_SN_7_noexx
+TVCGraph2_XM8_SN_1:
+		exx
+TVCGraph2_XM8_SN_1_noexx:
+		set  6,(HL)
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM8_SN_1_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM8_SN_0_noexx
+TVCGraph2_XM8_SN_1_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM8_SN_0_noexx
+TVCGraph2_XM8_SN_2:
+		exx
+TVCGraph2_XM8_SN_2_noexx:
+		set  5,(HL)
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM8_SN_2_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM8_SN_1_noexx
+TVCGraph2_XM8_SN_2_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM8_SN_1_noexx
+TVCGraph2_XM8_SN_3:
+		exx
+TVCGraph2_XM8_SN_3_noexx:
+		set  4,(HL)
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM8_SN_3_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM8_SN_2_noexx
+TVCGraph2_XM8_SN_3_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM8_SN_2_noexx
+TVCGraph2_XM8_SN_4:
+		exx
+TVCGraph2_XM8_SN_4_noexx:
+		set  3,(HL)
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM8_SN_4_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM8_SN_3_noexx
+TVCGraph2_XM8_SN_4_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM8_SN_3_noexx
+TVCGraph2_XM8_SN_5:
+		exx
+TVCGraph2_XM8_SN_5_noexx:
+		set  2,(HL)
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM8_SN_5_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM8_SN_4_noexx
+TVCGraph2_XM8_SN_5_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM8_SN_4_noexx
+TVCGraph2_XM8_SN_6:
+		exx
+TVCGraph2_XM8_SN_6_noexx:
+		set  1,(HL)
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM8_SN_6_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM8_SN_5_noexx
+TVCGraph2_XM8_SN_6_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM8_SN_5_noexx
+TVCGraph2_XM8_SN_7:
+		exx
+TVCGraph2_XM8_SN_7_noexx:
+		set  0,(HL)
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM8_SN_7_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM8_SN_6_noexx
+TVCGraph2_XM8_SN_7_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM8_SN_6_noexx
+
+TVCGraph2_XM8_CLR_DISP:
+		ld   A,(TVCGraph2_SX)
+		cp   1
+		jp   NZ,TVCGraph2_XM8_CLR_NEG
+		; --- X-Major, Color 0, SX = +1 ---
+		ld   A,(TVCGraph2_X1)
+		and  $07
+		cp   0
+		jp   Z,TVCGraph2_XM8_CP_0
+		cp   1
+		jp   Z,TVCGraph2_XM8_CP_1
+		cp   2
+		jp   Z,TVCGraph2_XM8_CP_2
+		cp   3
+		jp   Z,TVCGraph2_XM8_CP_3
+		cp   4
+		jp   Z,TVCGraph2_XM8_CP_4
+		cp   5
+		jp   Z,TVCGraph2_XM8_CP_5
+		cp   6
+		jp   Z,TVCGraph2_XM8_CP_6
+		jp   TVCGraph2_XM8_CP_7
+TVCGraph2_XM8_CP_0:
+		exx
+TVCGraph2_XM8_CP_0_noexx:
+		res  7,(HL)
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM8_CP_0_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM8_CP_1_noexx
+TVCGraph2_XM8_CP_0_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM8_CP_1_noexx
+TVCGraph2_XM8_CP_1:
+		exx
+TVCGraph2_XM8_CP_1_noexx:
+		res  6,(HL)
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM8_CP_1_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM8_CP_2_noexx
+TVCGraph2_XM8_CP_1_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM8_CP_2_noexx
+TVCGraph2_XM8_CP_2:
+		exx
+TVCGraph2_XM8_CP_2_noexx:
+		res  5,(HL)
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM8_CP_2_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM8_CP_3_noexx
+TVCGraph2_XM8_CP_2_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM8_CP_3_noexx
+TVCGraph2_XM8_CP_3:
+		exx
+TVCGraph2_XM8_CP_3_noexx:
+		res  4,(HL)
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM8_CP_3_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM8_CP_4_noexx
+TVCGraph2_XM8_CP_3_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM8_CP_4_noexx
+TVCGraph2_XM8_CP_4:
+		exx
+TVCGraph2_XM8_CP_4_noexx:
+		res  3,(HL)
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM8_CP_4_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM8_CP_5_noexx
+TVCGraph2_XM8_CP_4_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM8_CP_5_noexx
+TVCGraph2_XM8_CP_5:
+		exx
+TVCGraph2_XM8_CP_5_noexx:
+		res  2,(HL)
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM8_CP_5_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM8_CP_6_noexx
+TVCGraph2_XM8_CP_5_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM8_CP_6_noexx
+TVCGraph2_XM8_CP_6:
+		exx
+TVCGraph2_XM8_CP_6_noexx:
+		res  1,(HL)
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM8_CP_6_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM8_CP_7_noexx
+TVCGraph2_XM8_CP_6_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM8_CP_7_noexx
+TVCGraph2_XM8_CP_7:
+		exx
+TVCGraph2_XM8_CP_7_noexx:
+		res  0,(HL)
+		inc  HL
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM8_CP_7_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM8_CP_0_noexx
+TVCGraph2_XM8_CP_7_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM8_CP_0_noexx
+
+		; --- X-Major, Color 0, SX = -1 ---
+TVCGraph2_XM8_CLR_NEG:
+		ld   A,(TVCGraph2_X1)
+		and  $07
+		cp   0
+		jp   Z,TVCGraph2_XM8_CN_0
+		cp   1
+		jp   Z,TVCGraph2_XM8_CN_1
+		cp   2
+		jp   Z,TVCGraph2_XM8_CN_2
+		cp   3
+		jp   Z,TVCGraph2_XM8_CN_3
+		cp   4
+		jp   Z,TVCGraph2_XM8_CN_4
+		cp   5
+		jp   Z,TVCGraph2_XM8_CN_5
+		cp   6
+		jp   Z,TVCGraph2_XM8_CN_6
+		jp   TVCGraph2_XM8_CN_7
+TVCGraph2_XM8_CN_0:
+		exx
+TVCGraph2_XM8_CN_0_noexx:
+		res  7,(HL)
+		dec  HL
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM8_CN_0_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM8_CN_7_noexx
+TVCGraph2_XM8_CN_0_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM8_CN_7_noexx
+TVCGraph2_XM8_CN_1:
+		exx
+TVCGraph2_XM8_CN_1_noexx:
+		res  6,(HL)
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM8_CN_1_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM8_CN_0_noexx
+TVCGraph2_XM8_CN_1_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM8_CN_0_noexx
+TVCGraph2_XM8_CN_2:
+		exx
+TVCGraph2_XM8_CN_2_noexx:
+		res  5,(HL)
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM8_CN_2_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM8_CN_1_noexx
+TVCGraph2_XM8_CN_2_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM8_CN_1_noexx
+TVCGraph2_XM8_CN_3:
+		exx
+TVCGraph2_XM8_CN_3_noexx:
+		res  4,(HL)
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM8_CN_3_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM8_CN_2_noexx
+TVCGraph2_XM8_CN_3_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM8_CN_2_noexx
+TVCGraph2_XM8_CN_4:
+		exx
+TVCGraph2_XM8_CN_4_noexx:
+		res  3,(HL)
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM8_CN_4_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM8_CN_3_noexx
+TVCGraph2_XM8_CN_4_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM8_CN_3_noexx
+TVCGraph2_XM8_CN_5:
+		exx
+TVCGraph2_XM8_CN_5_noexx:
+		res  2,(HL)
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM8_CN_5_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM8_CN_4_noexx
+TVCGraph2_XM8_CN_5_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM8_CN_4_noexx
+TVCGraph2_XM8_CN_6:
+		exx
+TVCGraph2_XM8_CN_6_noexx:
+		res  1,(HL)
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM8_CN_6_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM8_CN_5_noexx
+TVCGraph2_XM8_CN_6_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM8_CN_5_noexx
+TVCGraph2_XM8_CN_7:
+		exx
+TVCGraph2_XM8_CN_7_noexx:
+		res  0,(HL)
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_XM8_CN_7_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		jp   TVCGraph2_XM8_CN_6_noexx
+TVCGraph2_XM8_CN_7_noy:
+		add  HL,DE
+		exx
+		jp   TVCGraph2_XM8_CN_6_noexx
+
+		; ==============================================================
+		; Y-MAJOR ÁG (DY > DX)
+		; ==============================================================
+TVCGraph2_BL_Y_MAJOR:
+		ld   HL,(TVCGraph2_DY)
+		inc  HL
+		push HL
+		exx
+		pop  BC
+		exx
+
+		; DE = 2*DX (ince1)
+		ld   HL,(TVCGraph2_DX)
+		add  HL,HL
+		ld   (TVCGraph2_BL_INCE1),HL
+		ld   D,H
+		ld   E,L
+
+		; BC = 2*DX - 2*DY (ince2)
+		ld   HL,(TVCGraph2_DY)
+		add  HL,HL
+		ex   DE,HL
+		or   A
+		sbc  HL,DE
+		ld   B,H
+		ld   C,L
+
+		; Kezdő hiba: HL = 2*DX - DY
+		ld   HL,(TVCGraph2_BL_INCE1)
+		ld   DE,(TVCGraph2_DY)
+		or   A
+		sbc  HL,DE
+		ld   DE,(TVCGraph2_BL_INCE1)
+
+		ld   A,(TVCGraph2_Color)
+		or   A
+		jp   Z,TVCGraph2_YM_CLR_DISP
+		ld   A,(TVCGraph2_SX)
+		cp   1
+		jp   NZ,TVCGraph2_YM_SET_NEG
+
+		; --- Y-Major, Color 1, SX = +1 ---
+		ld   A,(TVCGraph2_X1)
+		and  $07
+		cp   0
+		jp   Z,TVCGraph2_YM_SP_0
+		cp   1
+		jp   Z,TVCGraph2_YM_SP_1
+		cp   2
+		jp   Z,TVCGraph2_YM_SP_2
+		cp   3
+		jp   Z,TVCGraph2_YM_SP_3
+		cp   4
+		jp   Z,TVCGraph2_YM_SP_4
+		cp   5
+		jp   Z,TVCGraph2_YM_SP_5
+		cp   6
+		jp   Z,TVCGraph2_YM_SP_6
+		jp   TVCGraph2_YM_SP_7
+TVCGraph2_YM_SP_0:
+		exx
+TVCGraph2_YM_SP_0_noexx:
+		set  7,(HL)
+		add  HL,DE
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_YM_SP_0_nox
+		add  HL,BC
+		jp   TVCGraph2_YM_SP_1
+TVCGraph2_YM_SP_0_nox:
+		add  HL,DE
+		jp   TVCGraph2_YM_SP_0
+TVCGraph2_YM_SP_1:
+		exx
+TVCGraph2_YM_SP_1_noexx:
+		set  6,(HL)
+		add  HL,DE
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_YM_SP_1_nox
+		add  HL,BC
+		jp   TVCGraph2_YM_SP_2
+TVCGraph2_YM_SP_1_nox:
+		add  HL,DE
+		jp   TVCGraph2_YM_SP_1
+TVCGraph2_YM_SP_2:
+		exx
+TVCGraph2_YM_SP_2_noexx:
+		set  5,(HL)
+		add  HL,DE
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_YM_SP_2_nox
+		add  HL,BC
+		jp   TVCGraph2_YM_SP_3
+TVCGraph2_YM_SP_2_nox:
+		add  HL,DE
+		jp   TVCGraph2_YM_SP_2
+TVCGraph2_YM_SP_3:
+		exx
+TVCGraph2_YM_SP_3_noexx:
+		set  4,(HL)
+		add  HL,DE
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_YM_SP_3_nox
+		add  HL,BC
+		jp   TVCGraph2_YM_SP_4
+TVCGraph2_YM_SP_3_nox:
+		add  HL,DE
+		jp   TVCGraph2_YM_SP_3
+TVCGraph2_YM_SP_4:
+		exx
+TVCGraph2_YM_SP_4_noexx:
+		set  3,(HL)
+		add  HL,DE
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_YM_SP_4_nox
+		add  HL,BC
+		jp   TVCGraph2_YM_SP_5
+TVCGraph2_YM_SP_4_nox:
+		add  HL,DE
+		jp   TVCGraph2_YM_SP_4
+TVCGraph2_YM_SP_5:
+		exx
+TVCGraph2_YM_SP_5_noexx:
+		set  2,(HL)
+		add  HL,DE
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_YM_SP_5_nox
+		add  HL,BC
+		jp   TVCGraph2_YM_SP_6
+TVCGraph2_YM_SP_5_nox:
+		add  HL,DE
+		jp   TVCGraph2_YM_SP_5
+TVCGraph2_YM_SP_6:
+		exx
+TVCGraph2_YM_SP_6_noexx:
+		set  1,(HL)
+		add  HL,DE
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_YM_SP_6_nox
+		add  HL,BC
+		jp   TVCGraph2_YM_SP_7
+TVCGraph2_YM_SP_6_nox:
+		add  HL,DE
+		jp   TVCGraph2_YM_SP_6
+TVCGraph2_YM_SP_7:
+		exx
+TVCGraph2_YM_SP_7_noexx:
+		set  0,(HL)
+		add  HL,DE
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_YM_SP_7_nox
+		add  HL,BC
+		exx
+		inc  HL
+		exx
+		jp   TVCGraph2_YM_SP_0
+TVCGraph2_YM_SP_7_nox:
+		add  HL,DE
+		jp   TVCGraph2_YM_SP_7
+
+TVCGraph2_YM_SET_NEG:
+		; --- Y-Major, Color 1, SX = -1 ---
+		ld   A,(TVCGraph2_X1)
+		and  $07
+		cp   0
+		jp   Z,TVCGraph2_YM_SN_0
+		cp   1
+		jp   Z,TVCGraph2_YM_SN_1
+		cp   2
+		jp   Z,TVCGraph2_YM_SN_2
+		cp   3
+		jp   Z,TVCGraph2_YM_SN_3
+		cp   4
+		jp   Z,TVCGraph2_YM_SN_4
+		cp   5
+		jp   Z,TVCGraph2_YM_SN_5
+		cp   6
+		jp   Z,TVCGraph2_YM_SN_6
+		jp   TVCGraph2_YM_SN_7
+TVCGraph2_YM_SN_0:
+		exx
+TVCGraph2_YM_SN_0_noexx:
+		set  7,(HL)
+		add  HL,DE
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_YM_SN_0_nox
+		add  HL,BC
+		exx
+		dec  HL
+		exx
+		jp   TVCGraph2_YM_SN_7
+TVCGraph2_YM_SN_0_nox:
+		add  HL,DE
+		jp   TVCGraph2_YM_SN_0
+TVCGraph2_YM_SN_1:
+		exx
+TVCGraph2_YM_SN_1_noexx:
+		set  6,(HL)
+		add  HL,DE
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_YM_SN_1_nox
+		add  HL,BC
+		jp   TVCGraph2_YM_SN_0
+TVCGraph2_YM_SN_1_nox:
+		add  HL,DE
+		jp   TVCGraph2_YM_SN_1
+TVCGraph2_YM_SN_2:
+		exx
+TVCGraph2_YM_SN_2_noexx:
+		set  5,(HL)
+		add  HL,DE
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_YM_SN_2_nox
+		add  HL,BC
+		jp   TVCGraph2_YM_SN_1
+TVCGraph2_YM_SN_2_nox:
+		add  HL,DE
+		jp   TVCGraph2_YM_SN_2
+TVCGraph2_YM_SN_3:
+		exx
+TVCGraph2_YM_SN_3_noexx:
+		set  4,(HL)
+		add  HL,DE
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_YM_SN_3_nox
+		add  HL,BC
+		jp   TVCGraph2_YM_SN_2
+TVCGraph2_YM_SN_3_nox:
+		add  HL,DE
+		jp   TVCGraph2_YM_SN_3
+TVCGraph2_YM_SN_4:
+		exx
+TVCGraph2_YM_SN_4_noexx:
+		set  3,(HL)
+		add  HL,DE
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_YM_SN_4_nox
+		add  HL,BC
+		jp   TVCGraph2_YM_SN_3
+TVCGraph2_YM_SN_4_nox:
+		add  HL,DE
+		jp   TVCGraph2_YM_SN_4
+TVCGraph2_YM_SN_5:
+		exx
+TVCGraph2_YM_SN_5_noexx:
+		set  2,(HL)
+		add  HL,DE
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_YM_SN_5_nox
+		add  HL,BC
+		jp   TVCGraph2_YM_SN_4
+TVCGraph2_YM_SN_5_nox:
+		add  HL,DE
+		jp   TVCGraph2_YM_SN_5
+TVCGraph2_YM_SN_6:
+		exx
+TVCGraph2_YM_SN_6_noexx:
+		set  1,(HL)
+		add  HL,DE
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_YM_SN_6_nox
+		add  HL,BC
+		jp   TVCGraph2_YM_SN_5
+TVCGraph2_YM_SN_6_nox:
+		add  HL,DE
+		jp   TVCGraph2_YM_SN_6
+TVCGraph2_YM_SN_7:
+		exx
+TVCGraph2_YM_SN_7_noexx:
+		set  0,(HL)
+		add  HL,DE
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_YM_SN_7_nox
+		add  HL,BC
+		jp   TVCGraph2_YM_SN_6
+TVCGraph2_YM_SN_7_nox:
+		add  HL,DE
+		jp   TVCGraph2_YM_SN_7
+
+TVCGraph2_YM_CLR_DISP:
+		ld   A,(TVCGraph2_SX)
+		cp   1
+		jp   NZ,TVCGraph2_YM_CLR_NEG
+		; --- Y-Major, Color 0, SX = +1 ---
+		ld   A,(TVCGraph2_X1)
+		and  $07
+		cp   0
+		jp   Z,TVCGraph2_YM_CP_0
+		cp   1
+		jp   Z,TVCGraph2_YM_CP_1
+		cp   2
+		jp   Z,TVCGraph2_YM_CP_2
+		cp   3
+		jp   Z,TVCGraph2_YM_CP_3
+		cp   4
+		jp   Z,TVCGraph2_YM_CP_4
+		cp   5
+		jp   Z,TVCGraph2_YM_CP_5
+		cp   6
+		jp   Z,TVCGraph2_YM_CP_6
+		jp   TVCGraph2_YM_CP_7
+TVCGraph2_YM_CP_0:
+		exx
+TVCGraph2_YM_CP_0_noexx:
+		res  7,(HL)
+		add  HL,DE
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_YM_CP_0_nox
+		add  HL,BC
+		jp   TVCGraph2_YM_CP_1
+TVCGraph2_YM_CP_0_nox:
+		add  HL,DE
+		jp   TVCGraph2_YM_CP_0
+TVCGraph2_YM_CP_1:
+		exx
+TVCGraph2_YM_CP_1_noexx:
+		res  6,(HL)
+		add  HL,DE
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_YM_CP_1_nox
+		add  HL,BC
+		jp   TVCGraph2_YM_CP_2
+TVCGraph2_YM_CP_1_nox:
+		add  HL,DE
+		jp   TVCGraph2_YM_CP_1
+TVCGraph2_YM_CP_2:
+		exx
+TVCGraph2_YM_CP_2_noexx:
+		res  5,(HL)
+		add  HL,DE
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_YM_CP_2_nox
+		add  HL,BC
+		jp   TVCGraph2_YM_CP_3
+TVCGraph2_YM_CP_2_nox:
+		add  HL,DE
+		jp   TVCGraph2_YM_CP_2
+TVCGraph2_YM_CP_3:
+		exx
+TVCGraph2_YM_CP_3_noexx:
+		res  4,(HL)
+		add  HL,DE
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_YM_CP_3_nox
+		add  HL,BC
+		jp   TVCGraph2_YM_CP_4
+TVCGraph2_YM_CP_3_nox:
+		add  HL,DE
+		jp   TVCGraph2_YM_CP_3
+TVCGraph2_YM_CP_4:
+		exx
+TVCGraph2_YM_CP_4_noexx:
+		res  3,(HL)
+		add  HL,DE
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_YM_CP_4_nox
+		add  HL,BC
+		jp   TVCGraph2_YM_CP_5
+TVCGraph2_YM_CP_4_nox:
+		add  HL,DE
+		jp   TVCGraph2_YM_CP_4
+TVCGraph2_YM_CP_5:
+		exx
+TVCGraph2_YM_CP_5_noexx:
+		res  2,(HL)
+		add  HL,DE
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_YM_CP_5_nox
+		add  HL,BC
+		jp   TVCGraph2_YM_CP_6
+TVCGraph2_YM_CP_5_nox:
+		add  HL,DE
+		jp   TVCGraph2_YM_CP_5
+TVCGraph2_YM_CP_6:
+		exx
+TVCGraph2_YM_CP_6_noexx:
+		res  1,(HL)
+		add  HL,DE
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_YM_CP_6_nox
+		add  HL,BC
+		jp   TVCGraph2_YM_CP_7
+TVCGraph2_YM_CP_6_nox:
+		add  HL,DE
+		jp   TVCGraph2_YM_CP_6
+TVCGraph2_YM_CP_7:
+		exx
+TVCGraph2_YM_CP_7_noexx:
+		res  0,(HL)
+		add  HL,DE
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_YM_CP_7_nox
+		add  HL,BC
+		exx
+		inc  HL
+		exx
+		jp   TVCGraph2_YM_CP_0
+TVCGraph2_YM_CP_7_nox:
+		add  HL,DE
+		jp   TVCGraph2_YM_CP_7
+
+TVCGraph2_YM_CLR_NEG:
+		; --- Y-Major, Color 0, SX = -1 ---
+		ld   A,(TVCGraph2_X1)
+		and  $07
+		cp   0
+		jp   Z,TVCGraph2_YM_CN_0
+		cp   1
+		jp   Z,TVCGraph2_YM_CN_1
+		cp   2
+		jp   Z,TVCGraph2_YM_CN_2
+		cp   3
+		jp   Z,TVCGraph2_YM_CN_3
+		cp   4
+		jp   Z,TVCGraph2_YM_CN_4
+		cp   5
+		jp   Z,TVCGraph2_YM_CN_5
+		cp   6
+		jp   Z,TVCGraph2_YM_CN_6
+		jp   TVCGraph2_YM_CN_7
+TVCGraph2_YM_CN_0:
+		exx
+TVCGraph2_YM_CN_0_noexx:
+		res  7,(HL)
+		add  HL,DE
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_YM_CN_0_nox
+		add  HL,BC
+		exx
+		dec  HL
+		exx
+		jp   TVCGraph2_YM_CN_7
+TVCGraph2_YM_CN_0_nox:
+		add  HL,DE
+		jp   TVCGraph2_YM_CN_0
+TVCGraph2_YM_CN_1:
+		exx
+TVCGraph2_YM_CN_1_noexx:
+		res  6,(HL)
+		add  HL,DE
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_YM_CN_1_nox
+		add  HL,BC
+		jp   TVCGraph2_YM_CN_0
+TVCGraph2_YM_CN_1_nox:
+		add  HL,DE
+		jp   TVCGraph2_YM_CN_1
+TVCGraph2_YM_CN_2:
+		exx
+TVCGraph2_YM_CN_2_noexx:
+		res  5,(HL)
+		add  HL,DE
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_YM_CN_2_nox
+		add  HL,BC
+		jp   TVCGraph2_YM_CN_1
+TVCGraph2_YM_CN_2_nox:
+		add  HL,DE
+		jp   TVCGraph2_YM_CN_2
+TVCGraph2_YM_CN_3:
+		exx
+TVCGraph2_YM_CN_3_noexx:
+		res  4,(HL)
+		add  HL,DE
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_YM_CN_3_nox
+		add  HL,BC
+		jp   TVCGraph2_YM_CN_2
+TVCGraph2_YM_CN_3_nox:
+		add  HL,DE
+		jp   TVCGraph2_YM_CN_3
+TVCGraph2_YM_CN_4:
+		exx
+TVCGraph2_YM_CN_4_noexx:
+		res  3,(HL)
+		add  HL,DE
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_YM_CN_4_nox
+		add  HL,BC
+		jp   TVCGraph2_YM_CN_3
+TVCGraph2_YM_CN_4_nox:
+		add  HL,DE
+		jp   TVCGraph2_YM_CN_4
+TVCGraph2_YM_CN_5:
+		exx
+TVCGraph2_YM_CN_5_noexx:
+		res  2,(HL)
+		add  HL,DE
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_YM_CN_5_nox
+		add  HL,BC
+		jp   TVCGraph2_YM_CN_4
+TVCGraph2_YM_CN_5_nox:
+		add  HL,DE
+		jp   TVCGraph2_YM_CN_5
+TVCGraph2_YM_CN_6:
+		exx
+TVCGraph2_YM_CN_6_noexx:
+		res  1,(HL)
+		add  HL,DE
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_YM_CN_6_nox
+		add  HL,BC
+		jp   TVCGraph2_YM_CN_5
+TVCGraph2_YM_CN_6_nox:
+		add  HL,DE
+		jp   TVCGraph2_YM_CN_6
+TVCGraph2_YM_CN_7:
+		exx
+TVCGraph2_YM_CN_7_noexx:
+		res  0,(HL)
+		add  HL,DE
+		dec  C
+		ret  Z
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph2_YM_CN_7_nox
+		add  HL,BC
+		jp   TVCGraph2_YM_CN_6
+TVCGraph2_YM_CN_7_nox:
+		add  HL,DE
+		jp   TVCGraph2_YM_CN_7
+
+TVCGraph2_BL_ALL_DONE_SHADOW:
+		exx
+		ret
+	
+	");
+end;
+
+/**
+Téglalap körvonal kirajzolása közvetlen VRAM eléréssel.<br/>
+2 vízszintes és 2 függőleges gyorsvonalból állítja össze a keretet.<br/>
+<br/>
+Paraméterek:
+<ul>
+<li>X1: bal-felső sarok X koordinátája (0-511)</li>
+<li>Y1: bal-felső sarok Y koordinátája (0-239)</li>
+<li>X2: jobb-alsó sarok X koordinátája (0-511)</li>
+<li>Y2: jobb-alsó sarok Y koordinátája (0-239)</li>
+<li>Color: a színérték (0-1)</li>
+</ul>
+<br/>
+<br/>
+Példa a használatára:<br/>
+TVCGraph2::VRAMOn();<br/>
+TVCGraph2::RectDirect(20, 20, 480, 220, 1);<br/>
+TVCGraph2::VRAMOff();<br/>
+<br/>
+ENGLISH:<br/>
+-------------<br/>
+Draw rectangle outline from (X1, Y1) to (X2, Y2) with Color (0-1). Direct VRAM access.<br/>
+<br/>
+Params:
+<ul>
+<li>X1: top-left X coordinate (0-511)</li>
+<li>Y1: top-left Y coordinate (0-239)</li>
+<li>X2: bottom-right X coordinate (0-511)</li>
+<li>Y2: bottom-right Y coordinate (0-239)</li>
+<li>Color: color index (0-1)</li>
+</ul>
+**/
+procedure RectDirect(X1, Y1, X2, Y2 : global integer; Color : global byte);
+begin
+	HLineDirect(X1, Y1, X2, Color);
+	HLineDirect(X1, Y2, X2, Color);
+	VLineDirect(X1, Y1, Y2, Color);
+	VLineDirect(X2, Y1, Y2, Color);
+end;
+
+/**
+Kitöltött téglalap kirajzolása közvetlen VRAM eléréssel.<br/>
+A maszkokat egyszer számítja ki, majd soronként ultragyorsan másol.<br/>
+<br/>
+Paraméterek:
+<ul>
+<li>X1: bal-felső sarok X koordinátája (0-511)</li>
+<li>Y1: bal-felső sarok Y koordinátája (0-239)</li>
+<li>X2: jobb-alsó sarok X koordinátája (0-511)</li>
+<li>Y2: jobb-alsó sarok Y koordinátája (0-239)</li>
+<li>Color: a kitöltőszín (0-1)</li>
+</ul>
+<br/>
+<br/>
+Példa a használatára:<br/>
+TVCGraph2::VRAMOn();<br/>
+TVCGraph2::FillRectDirect(50, 50, 450, 190, 1);<br/>
+TVCGraph2::VRAMOff();<br/>
+<br/>
+ENGLISH:<br/>
+-------------<br/>
+Draw filled rectangle from (X1, Y1) to (X2, Y2) with Color (0-1). Direct VRAM access.<br/>
+<br/>
+Params:
+<ul>
+<li>X1: top-left X coordinate (0-511)</li>
+<li>Y1: top-left Y coordinate (0-239)</li>
+<li>X2: bottom-right X coordinate (0-511)</li>
+<li>Y2: bottom-right Y coordinate (0-239)</li>
+<li>Color: color index (0-1)</li>
+</ul>
+**/
+procedure FillRectDirect(X1, Y1, X2, Y2 : global integer; Color : global byte);
+begin
+	Asm("
+		; Y1 <= Y2 rendezés
+		ld   HL,(TVCGraph2_Y1)
+		ld   DE,(TVCGraph2_Y2)
+		ld   A,L
+		cp   E
+		jr   C,TVCGraph2_FRD_ysorted
+		jr   Z,TVCGraph2_FRD_ysorted
+		ld   (TVCGraph2_Y1),DE
+		ld   (TVCGraph2_Y2),HL
+TVCGraph2_FRD_ysorted:
+
+		; Sorok száma: DY = Y2 - Y1 + 1
+		ld   A,(TVCGraph2_Y2)
+		ld   B,A
+		ld   A,(TVCGraph2_Y1)
+		sub  B
+		neg
+		inc  A
+		ld   (TVCGraph2_T_VCOUNT),A  ; T_VCOUNT = sorok száma
+
+		; X1 <= X2 rendezés
+		ld   HL,(TVCGraph2_X1)
+		ld   DE,(TVCGraph2_X2)
+		or   A
+		sbc  HL,DE
+		jr   C,TVCGraph2_FRD_xsorted
+		jr   Z,TVCGraph2_FRD_xsorted
+		ld   HL,(TVCGraph2_X1)
+		ld   DE,(TVCGraph2_X2)
+		ld   (TVCGraph2_X1),DE
+		ld   (TVCGraph2_X2),HL
+TVCGraph2_FRD_xsorted:
+
+		; BC1 = X1 >> 3, P1 = X1 & 7
+		ld   A,(TVCGraph2_X1)
+		and  $07
+		ld   (TVCGraph2_T_P1),A
+		ld   A,(TVCGraph2_X1)
+		ld   E,A
+		ld   A,(TVCGraph2_X1+1)
+		ld   D,A
+		srl  D
+		rr   E
+		srl  D
+		rr   E
+		srl  D
+		rr   E
+		ld   A,E
+		ld   (TVCGraph2_T_BC1),A
+
+		; BC2 = X2 >> 3, P2 = X2 & 7
+		ld   A,(TVCGraph2_X2)
+		and  $07
+		ld   (TVCGraph2_T_P2),A
+		ld   A,(TVCGraph2_X2)
+		ld   E,A
+		ld   A,(TVCGraph2_X2+1)
+		ld   D,A
+		srl  D
+		rr   E
+		srl  D
+		rr   E
+		srl  D
+		rr   E
+		ld   A,E
+		ld   (TVCGraph2_T_BC2),A
+
+		; HL = $8000 + Y1 * 64 + BC1
+		ld   A,(TVCGraph2_Y1)
+		ld   B,A
+		and  $03
+		rlca
+		rlca
+		rlca
+		rlca
+		rlca
+		rlca
+		ld   L,A
+		ld   A,B
+		srl  A
+		srl  A
+		add  A,$80
+		ld   H,A
+		ld   A,(TVCGraph2_T_BC1)
+		add  A,L
+		ld   L,A
+		jr   NC,TVCGraph2_FRD_hl_ok
+		inc  H
+TVCGraph2_FRD_hl_ok:
+
+		; FILL byte
+		ld   A,(TVCGraph2_Color)
+		or   A
+		jr   Z,TVCGraph2_FRD_fill0
+		ld   A,$FF
+		jr   TVCGraph2_FRD_fill_set
+TVCGraph2_FRD_fill0:
+		xor  A
+TVCGraph2_FRD_fill_set:
+		ld   (TVCGraph2_T_FILL),A
+
+		; BC1 == BC2 vizsgálat
+		ld   A,(TVCGraph2_T_BC1)
+		ld   B,A
+		ld   A,(TVCGraph2_T_BC2)
+		cp   B
+		jp   NZ,TVCGraph2_FRD_multibyte
+
+		; --- Egybájtos téglalap ---
+		ld   A,(TVCGraph2_T_P1)
+		ld   E,A
+		ld   D,0
+		ld   IY,TVCGraph2_SPAN_LEFT_TAB
+		add  IY,DE
+		ld   B,(IY+0)
+
+		ld   A,(TVCGraph2_T_P2)
+		ld   E,A
+		ld   IY,TVCGraph2_SPAN_RIGHT_TAB
+		add  IY,DE
+		ld   A,(IY+0)
+		and  B                   ; A = Mask
+		ld   C,A
+
+		ld   DE,64
+		ld   A,(TVCGraph2_Color)
+		or   A
+		jr   Z,TVCGraph2_FRD_s_clr
+
+		; Single SET
+		ld   A,(TVCGraph2_T_VCOUNT)
+		ld   B,A
+TVCGraph2_FRD_s_set_loop:
+		ld   A,(HL)
+		or   C
+		ld   (HL),A
+		add  HL,DE
+		djnz TVCGraph2_FRD_s_set_loop
+		ret
+
+TVCGraph2_FRD_s_clr:
+		ld   A,C
+		cpl
+		ld   C,A
+		ld   A,(TVCGraph2_T_VCOUNT)
+		ld   B,A
+TVCGraph2_FRD_s_clr_loop:
+		ld   A,(HL)
+		and  C
+		ld   (HL),A
+		add  HL,DE
+		djnz TVCGraph2_FRD_s_clr_loop
+		ret
+
+		; --- Több-bájtos téglalap ---
+TVCGraph2_FRD_multibyte:
+		; Bal maszk
+		ld   A,(TVCGraph2_T_P1)
+		ld   E,A
+		ld   D,0
+		ld   IY,TVCGraph2_SPAN_LEFT_TAB
+		add  IY,DE
+		ld   A,(IY+0)
+		ld   (TVCGraph2_T_P1),A   ; T_P1 = LeftMask
+
+		; Jobb maszk
+		ld   A,(TVCGraph2_T_P2)
+		ld   E,A
+		ld   IY,TVCGraph2_SPAN_RIGHT_TAB
+		add  IY,DE
+		ld   A,(IY+0)
+		ld   (TVCGraph2_T_P2),A   ; T_P2 = RightMask
+
+		; Középső bájtok száma = BC2 - BC1 - 1
+		ld   A,(TVCGraph2_T_BC2)
+		ld   B,A
+		ld   A,(TVCGraph2_T_BC1)
+		ld   C,A
+		ld   A,B
+		sub  C
+		dec  A
+		ld   (TVCGraph2_T_MID),A  ; T_MID = belső bájtok száma
+
+		ld   A,(TVCGraph2_Color)
+		or   A
+		jp   Z,TVCGraph2_FRD_m_clr_loop
+
+		; Multibyte SET
+TVCGraph2_FRD_m_set_row:
+		push HL
+		; 1. Bal bájt
+		ld   A,(TVCGraph2_T_P1)
+		or   (HL)
+		ld   (HL),A
+		inc  HL
+
+		; 2. Belső bájtok
+		ld   A,(TVCGraph2_T_MID)
+		or   A
+		jr   Z,TVCGraph2_FRD_m_set_right
+		ld   B,A
+		ld   A,(TVCGraph2_T_FILL)
+TVCGraph2_FRD_m_set_mid:
+		ld   (HL),A
+		inc  HL
+		djnz TVCGraph2_FRD_m_set_mid
+
+TVCGraph2_FRD_m_set_right:
+		; 3. Jobb bájt
+		ld   A,(TVCGraph2_T_P2)
+		or   (HL)
+		ld   (HL),A
+
+		pop  HL
+		ld   DE,64
+		add  HL,DE
+		ld   A,(TVCGraph2_T_VCOUNT)
+		dec  A
+		ld   (TVCGraph2_T_VCOUNT),A
+		jr   NZ,TVCGraph2_FRD_m_set_row
+		ret
+
+		; Multibyte CLR
+TVCGraph2_FRD_m_clr_loop:
+		ld   A,(TVCGraph2_T_P1)
+		cpl
+		ld   (TVCGraph2_T_P1),A
+		ld   A,(TVCGraph2_T_P2)
+		cpl
+		ld   (TVCGraph2_T_P2),A
+
+TVCGraph2_FRD_m_clr_row:
+		push HL
+		ld   A,(TVCGraph2_T_P1)
+		and  (HL)
+		ld   (HL),A
+		inc  HL
+
+		ld   A,(TVCGraph2_T_MID)
+		or   A
+		jr   Z,TVCGraph2_FRD_m_clr_right
+		ld   B,A
+		xor  A
+TVCGraph2_FRD_m_clr_mid:
+		ld   (HL),A
+		inc  HL
+		djnz TVCGraph2_FRD_m_clr_mid
+
+TVCGraph2_FRD_m_clr_right:
+		ld   A,(TVCGraph2_T_P2)
+		and  (HL)
+		ld   (HL),A
+
+		pop  HL
+		ld   DE,64
+		add  HL,DE
+		ld   A,(TVCGraph2_T_VCOUNT)
+		dec  A
+		ld   (TVCGraph2_T_VCOUNT),A
+		jr   NZ,TVCGraph2_FRD_m_clr_row
+		ret
+	");
+end;
+
+/**
+Tökéletesen kerek körvonal kirajzolása közvetlen VRAM eléréssel.<br/>
+A TVC 2:1 fizikai képarányához igazított inkrementális másodfokú különbségi algoritmussal.<br/>
+<br/>
+Paraméterek:
+<ul>
+<li>CX: középpont X koordinátája (0-511)</li>
+<li>CY: középpont Y koordinátája (0-239)</li>
+<li>Radius: függőleges sugár (R képpontban, vízszintes sugár automatikusan 2*R)</li>
+<li>Color: a színérték (0-1)</li>
+</ul>
+<br/>
+<br/>
+Példa a használatára:<br/>
+TVCGraph2::VRAMOn();<br/>
+TVCGraph2::CircleDirect(256, 120, 50, 1);<br/>
+TVCGraph2::VRAMOff();<br/>
+<br/>
+ENGLISH:<br/>
+-------------<br/>
+Draw physically round circle outline centered at (CX, CY) with Radius (2:1 aspect ratio). Direct VRAM access.<br/>
+<br/>
+Params:
+<ul>
+<li>CX: center X coordinate (0-511)</li>
+<li>CY: center Y coordinate (0-239)</li>
+<li>Radius: vertical radius (horizontal radius is automatically 2*R)</li>
+<li>Color: color index (0-1)</li>
+</ul>
+**/
+procedure CircleDirect(CX, CY, Radius : global integer; Color : global byte);
+begin
+	Asm("
+		; Radius == 0 vizsgálat
+		ld   HL,(TVCGraph2_Radius)
+		ld   A,L
+		or   H
+		jr   NZ,TVCGraph2_CD_start
+		ld   HL,(TVCGraph2_CX)
+		ld   (TVCGraph2_X),HL
+		ld   HL,(TVCGraph2_CY)
+		ld   (TVCGraph2_Y),HL
+		call TVCGraph2_PD_ENTRY
+		ret
+
+TVCGraph2_CD_start:
+		; 1. Kezdőértékek:
+		; X = 2 * Radius
+		ld   HL,(TVCGraph2_Radius)
+		add  HL,HL
+		ld   (TVCGraph2_FT_Y1),HL      ; FT_Y1 = X
+		ld   (TVCGraph2_FT_Y2),HL      ; FT_Y2 = X_LAST
+
+		; E = 0
+		ld   HL,0
+		ld   (TVCGraph2_FT_X3),HL      ; FT_X3 = E (16-bit signed error)
+
+		; Y = 0
+		xor  A
+		ld   (TVCGraph2_FT_CURY),A     ; FT_CURY = Y
+
+		; Sorbáziscím Y = CY: HL = $8000 + CY * 64
+		ld   A,(TVCGraph2_CY)
+		ld   B,A
+		and  $03
+		rlca
+		rlca
+		rlca
+		rlca
+		rlca
+		rlca
+		ld   L,A
+		ld   A,B
+		srl  A
+		srl  A
+		add  A,$80
+		ld   H,A
+		ld   (TVCGraph2_FT_X1),HL      ; FT_X1 = ROW_BOT
+		ld   (TVCGraph2_FT_X2),HL      ; FT_X2 = ROW_TOP
+
+		; Color elágazás
+		ld   A,(TVCGraph2_Color)
+		or   A
+		jp   Z,TVCGraph2_CD_c0_loop
+
+		; ==============================================================
+		; COLOR 1 LOOP (SET BITS)
+		; ==============================================================
+TVCGraph2_CD_c1_loop:
+		; Ha Y > 0: E -= (8*Y - 4) és léptetjük a sorcímeket
+		ld   A,(TVCGraph2_FT_CURY)
+		or   A
+		jr   Z,TVCGraph2_CD_c1_span
+
+		; Sorbáziscímek frissítése:
+		; ROW_BOT += 64
+		ld   HL,(TVCGraph2_FT_X1)
+		ld   DE,64
+		add  HL,DE
+		ld   (TVCGraph2_FT_X1),HL
+
+		; ROW_TOP -= 64
+		ld   HL,(TVCGraph2_FT_X2)
+		ld   DE,64
+		or   A
+		sbc  HL,DE
+		ld   (TVCGraph2_FT_X2),HL
+
+		; DE = 8 * Y - 4
+		ld   A,(TVCGraph2_FT_CURY)
+		ld   L,A
+		ld   H,0
+		add  HL,HL                     ; 2Y
+		add  HL,HL                     ; 4Y
+		add  HL,HL                     ; 8Y
+		ld   DE,4
+		or   A
+		sbc  HL,DE                     ; HL = 8Y - 4
+		ex   DE,HL                     ; DE = 8Y - 4
+
+		; E -= (8*Y - 4)
+		ld   HL,(TVCGraph2_FT_X3)
+		or   A
+		sbc  HL,DE
+		ld   (TVCGraph2_FT_X3),HL
+
+		; while (E < 0 && X > 0)
+TVCGraph2_CD_c1_while_e:
+		ld   HL,(TVCGraph2_FT_X3)
+		bit  7,H                       ; E < 0 vizsgálat
+		jr   Z,TVCGraph2_CD_c1_span    ; Ha E >= 0, kész
+
+		ld   HL,(TVCGraph2_FT_Y1)      ; X vizsgálat
+		ld   A,L
+		or   H
+		jr   Z,TVCGraph2_CD_c1_span    ; Ha X == 0, kész
+
+		; DE = 2 * X - 1
+		ld   HL,(TVCGraph2_FT_Y1)
+		add  HL,HL
+		dec  HL
+		ex   DE,HL                     ; DE = 2X - 1
+
+		; E += (2X - 1)
+		ld   HL,(TVCGraph2_FT_X3)
+		add  HL,DE
+		ld   (TVCGraph2_FT_X3),HL
+
+		; X -= 1
+		ld   HL,(TVCGraph2_FT_Y1)
+		dec  HL
+		ld   (TVCGraph2_FT_Y1),HL
+		jr   TVCGraph2_CD_c1_while_e
+
+TVCGraph2_CD_c1_span:
+		; Pontok kirajzolása I = X .. X_LAST
+		ld   HL,(TVCGraph2_FT_Y1)
+		ld   (TVCGraph2_FT_Y3),HL      ; FT_Y3 = I (kezdőérték = X)
+
+TVCGraph2_CD_c1_span_loop:
+		; I (FT_Y3) vs X_LAST (FT_Y2)
+		ld   HL,(TVCGraph2_FT_Y2)
+		ld   DE,(TVCGraph2_FT_Y3)
+		or   A
+		sbc  HL,DE
+		jp   C,TVCGraph2_CD_c1_span_done
+
+		; --- 1. Jobb oldali pont: XR = CX + I ---
+		ld   HL,(TVCGraph2_CX)
+		ld   DE,(TVCGraph2_FT_Y3)
+		add  HL,DE                     ; HL = XR
+		; maszk:
+		ld   A,L
+		and  $07
+		ld   C,A
+		ld   B,0
+		push HL
+		ld   HL,TVCGraph2_BIT_SET_TAB
+		add  HL,BC
+		ld   C,(HL)                    ; C = bitmaszk
+		pop  DE                        ; DE = XR
+		; bájteltolás: A = (E >> 3) | (D & 1 ? 0x20 : 0)
+		ld   A,E
+		rrca
+		rrca
+		rrca
+		and  $1F
+		bit  0,D
+		jr   Z,TVCGraph2_CD_c1_r_no512
+		or   $20
+TVCGraph2_CD_c1_r_no512:
+		; A = bájteltolás
+		ld   E,A
+		ld   D,0
+		; 1a. ROW_BOT (CY + Y)
+		ld   HL,(TVCGraph2_FT_X1)
+		add  HL,DE
+		ld   A,(HL)
+		or   C
+		ld   (HL),A
+		; 1b. ROW_TOP (CY - Y)
+		ld   A,(TVCGraph2_FT_CURY)
+		or   A
+		jr   Z,TVCGraph2_CD_c1_left
+		ld   HL,(TVCGraph2_FT_X2)
+		add  HL,DE
+		ld   A,(HL)
+		or   C
+		ld   (HL),A
+
+TVCGraph2_CD_c1_left:
+		; --- 2. Bal oldali pont: XL = CX - I ---
+		ld   HL,(TVCGraph2_CX)
+		ld   DE,(TVCGraph2_FT_Y3)
+		or   A
+		sbc  HL,DE                     ; HL = XL
+		ld   A,L
+		and  $07
+		ld   C,A
+		ld   B,0
+		push HL
+		ld   HL,TVCGraph2_BIT_SET_TAB
+		add  HL,BC
+		ld   C,(HL)                    ; C = bitmaszk
+		pop  DE                        ; DE = XL
+		ld   A,E
+		rrca
+		rrca
+		rrca
+		and  $1F
+		bit  0,D
+		jr   Z,TVCGraph2_CD_c1_l_no512
+		or   $20
+TVCGraph2_CD_c1_l_no512:
+		ld   E,A
+		ld   D,0
+		; 2a. ROW_BOT (CY + Y)
+		ld   HL,(TVCGraph2_FT_X1)
+		add  HL,DE
+		ld   A,(HL)
+		or   C
+		ld   (HL),A
+		; 2b. ROW_TOP (CY - Y)
+		ld   A,(TVCGraph2_FT_CURY)
+		or   A
+		jr   Z,TVCGraph2_CD_c1_next_i
+		ld   HL,(TVCGraph2_FT_X2)
+		add  HL,DE
+		ld   A,(HL)
+		or   C
+		ld   (HL),A
+
+TVCGraph2_CD_c1_next_i:
+		; I += 1
+		ld   HL,(TVCGraph2_FT_Y3)
+		inc  HL
+		ld   (TVCGraph2_FT_Y3),HL
+		jp   TVCGraph2_CD_c1_span_loop
+
+TVCGraph2_CD_c1_span_done:
+		; X_LAST = X
+		ld   HL,(TVCGraph2_FT_Y1)
+		ld   (TVCGraph2_FT_Y2),HL
+
+		; Y += 1
+		ld   HL,TVCGraph2_FT_CURY
+		inc  (HL)
+		ld   A,(HL)
+		ld   HL,TVCGraph2_Radius
+		cp   (HL)
+		jp   C,TVCGraph2_CD_c1_loop
+		jp   Z,TVCGraph2_CD_c1_loop
+		ret
+
+		; ==============================================================
+		; COLOR 0 LOOP (CLEAR BITS)
+		; ==============================================================
+TVCGraph2_CD_c0_loop:
+		ld   A,(TVCGraph2_FT_CURY)
+		or   A
+		jr   Z,TVCGraph2_CD_c0_span
+
+		; ROW_BOT += 64
+		ld   HL,(TVCGraph2_FT_X1)
+		ld   DE,64
+		add  HL,DE
+		ld   (TVCGraph2_FT_X1),HL
+
+		; ROW_TOP -= 64
+		ld   HL,(TVCGraph2_FT_X2)
+		ld   DE,64
+		or   A
+		sbc  HL,DE
+		ld   (TVCGraph2_FT_X2),HL
+
+		; DE = 8 * Y - 4
+		ld   A,(TVCGraph2_FT_CURY)
+		ld   L,A
+		ld   H,0
+		add  HL,HL
+		add  HL,HL
+		add  HL,HL
+		ld   DE,4
+		or   A
+		sbc  HL,DE
+		ex   DE,HL
+
+		; E -= (8*Y - 4)
+		ld   HL,(TVCGraph2_FT_X3)
+		or   A
+		sbc  HL,DE
+		ld   (TVCGraph2_FT_X3),HL
+
+TVCGraph2_CD_c0_while_e:
+		ld   HL,(TVCGraph2_FT_X3)
+		bit  7,H
+		jr   Z,TVCGraph2_CD_c0_span
+
+		ld   HL,(TVCGraph2_FT_Y1)
+		ld   A,L
+		or   H
+		jr   Z,TVCGraph2_CD_c0_span
+
+		ld   HL,(TVCGraph2_FT_Y1)
+		add  HL,HL
+		dec  HL
+		ex   DE,HL
+
+		ld   HL,(TVCGraph2_FT_X3)
+		add  HL,DE
+		ld   (TVCGraph2_FT_X3),HL
+
+		ld   HL,(TVCGraph2_FT_Y1)
+		dec  HL
+		ld   (TVCGraph2_FT_Y1),HL
+		jr   TVCGraph2_CD_c0_while_e
+
+TVCGraph2_CD_c0_span:
+		ld   HL,(TVCGraph2_FT_Y1)
+		ld   (TVCGraph2_FT_Y3),HL
+
+TVCGraph2_CD_c0_span_loop:
+		ld   HL,(TVCGraph2_FT_Y2)
+		ld   DE,(TVCGraph2_FT_Y3)
+		or   A
+		sbc  HL,DE
+		jp   C,TVCGraph2_CD_c0_span_done
+
+		; --- 1. XR = CX + I ---
+		ld   HL,(TVCGraph2_CX)
+		ld   DE,(TVCGraph2_FT_Y3)
+		add  HL,DE
+		ld   A,L
+		and  $07
+		ld   C,A
+		ld   B,0
+		push HL
+		ld   HL,TVCGraph2_BIT_CLR_TAB
+		add  HL,BC
+		ld   C,(HL)                    ; C = clear maszk (~mask)
+		pop  DE
+		ld   A,E
+		rrca
+		rrca
+		rrca
+		and  $1F
+		bit  0,D
+		jr   Z,TVCGraph2_CD_c0_r_no512
+		or   $20
+TVCGraph2_CD_c0_r_no512:
+		ld   E,A
+		ld   D,0
+		ld   HL,(TVCGraph2_FT_X1)
+		add  HL,DE
+		ld   A,(HL)
+		and  C
+		ld   (HL),A
+		ld   A,(TVCGraph2_FT_CURY)
+		or   A
+		jr   Z,TVCGraph2_CD_c0_left
+		ld   HL,(TVCGraph2_FT_X2)
+		add  HL,DE
+		ld   A,(HL)
+		and  C
+		ld   (HL),A
+
+TVCGraph2_CD_c0_left:
+		; --- 2. XL = CX - I ---
+		ld   HL,(TVCGraph2_CX)
+		ld   DE,(TVCGraph2_FT_Y3)
+		or   A
+		sbc  HL,DE
+		ld   A,L
+		and  $07
+		ld   C,A
+		ld   B,0
+		push HL
+		ld   HL,TVCGraph2_BIT_CLR_TAB
+		add  HL,BC
+		ld   C,(HL)
+		pop  DE
+		ld   A,E
+		rrca
+		rrca
+		rrca
+		and  $1F
+		bit  0,D
+		jr   Z,TVCGraph2_CD_c0_l_no512
+		or   $20
+TVCGraph2_CD_c0_l_no512:
+		ld   E,A
+		ld   D,0
+		ld   HL,(TVCGraph2_FT_X1)
+		add  HL,DE
+		ld   A,(HL)
+		and  C
+		ld   (HL),A
+		ld   A,(TVCGraph2_FT_CURY)
+		or   A
+		jr   Z,TVCGraph2_CD_c0_next_i
+		ld   HL,(TVCGraph2_FT_X2)
+		add  HL,DE
+		ld   A,(HL)
+		and  C
+		ld   (HL),A
+
+TVCGraph2_CD_c0_next_i:
+		ld   HL,(TVCGraph2_FT_Y3)
+		inc  HL
+		ld   (TVCGraph2_FT_Y3),HL
+		jp   TVCGraph2_CD_c0_span_loop
+
+TVCGraph2_CD_c0_span_done:
+		ld   HL,(TVCGraph2_FT_Y1)
+		ld   (TVCGraph2_FT_Y2),HL
+
+		ld   HL,TVCGraph2_FT_CURY
+		inc  (HL)
+		ld   A,(HL)
+		ld   HL,TVCGraph2_Radius
+		cp   (HL)
+		jp   C,TVCGraph2_CD_c0_loop
+		jp   Z,TVCGraph2_CD_c0_loop
+		ret
+	");
+end;
+
+/**
+Tökéletesen kerek körvonal kirajzolása közvetlen VRAM eléréssel (CircleDirect alias).<br/>
+<br/>
+Paraméterek:
+<ul>
+<li>CX: középpont X koordinátája (0-511)</li>
+<li>CY: középpont Y koordinátája (0-239)</li>
+<li>Radius: függőleges sugár (R képpontban)</li>
+<li>Color: a színérték (0-1)</li>
+</ul>
+**/
+procedure CircleDirectFast(CX, CY, Radius : global integer; Color : global byte);
+begin
+	CircleDirect(CX, CY, Radius, Color);
+end;
+
+/**
+Kitöltött kör kirajzolása 2:1 képarány-korrekcióval és szimmetrikus bájtsávokkal.<br/>
+<br/>
+Paraméterek:
+<ul>
+<li>CX: középpont X koordinátája (0-511)</li>
+<li>CY: középpont Y koordinátája (0-239)</li>
+<li>Radius: függőleges sugár (R képpontban)</li>
+<li>Color: a kitöltőszín (0-1)</li>
+</ul>
+<br/>
+<br/>
+Példa a használatára:<br/>
+TVCGraph2::VRAMOn();<br/>
+TVCGraph2::FillCircleDirect(256, 120, 40, 1);<br/>
+TVCGraph2::VRAMOff();<br/>
+<br/>
+ENGLISH:<br/>
+-------------<br/>
+Draw filled circle centered at (CX, CY) with Radius (2:1 aspect ratio). Direct VRAM access.<br/>
+<br/>
+Params:
+<ul>
+<li>CX: center X coordinate (0-511)</li>
+<li>CY: center Y coordinate (0-239)</li>
+<li>Radius: vertical radius</li>
+<li>Color: color index (0-1)</li>
+</ul>
+**/
+procedure FillCircleDirect(CX, CY, Radius : global integer; Color : global byte);
+var
+	c_cx, c_cy, c_r : integer;
+	c_col : byte;
+	c_x, c_y : integer;
+	c_x2, c_dx : integer;
+	c_rem4, c_rem_step : integer;
+begin
+	if (Radius = 0) then
+	begin
+		PlotDirect(CX, CY, Color);
+		return;
+	end;
+
+	c_cx := CX;
+	c_cy := CY;
+	c_r := Radius;
+	c_col := Color;
+
+	c_x := 2 * c_r;
+	c_x2 := c_x * c_x;
+	c_dx := 2 * c_x - 1;
+	c_rem4 := 4 * c_r * c_r;
+	c_rem_step := 4;
+
+	fori c_y := 0 to c_r do
+	begin
+		while (c_x > 0) do
+		begin
+			if (c_x2 <= c_rem4) then break;
+			c_x2 := c_x2 - c_dx;
+			c_dx := c_dx - 2;
+			c_x := c_x - 1;
+		end;
+
+		if (c_y = 0) then
+		begin
+			HLineDirect(c_cx - c_x, c_cy, c_cx + c_x, c_col);
+		end
+		else
+		begin
+			HLineDirect(c_cx - c_x, c_cy + c_y, c_cx + c_x, c_col);
+			HLineDirect(c_cx - c_x, c_cy - c_y, c_cx + c_x, c_col);
+		end;
+
+		c_rem4 := c_rem4 - c_rem_step;
+		c_rem_step := c_rem_step + 8;
+	end;
+end;
+
+/**
+Háromszög körvonal kirajzolása 3 csúcspont között közvetlen VRAM eléréssel.<br/>
+<br/>
+Paraméterek:
+<ul>
+<li>X1, Y1: 1. csúcspont koordinátái</li>
+<li>X2, Y2: 2. csúcspont koordinátái</li>
+<li>X3, Y3: 3. csúcspont koordinátái</li>
+<li>Color: a színérték (0-1)</li>
+</ul>
+<br/>
+<br/>
+Példa a használatára:<br/>
+TVCGraph2::VRAMOn();<br/>
+TVCGraph2::TriangleDirect(100, 200, 256, 40, 400, 200, 1);<br/>
+TVCGraph2::VRAMOff();<br/>
+<br/>
+ENGLISH:<br/>
+-------------<br/>
+Draw triangle outline between (X1,Y1), (X2,Y2), (X3,Y3). Direct VRAM access.<br/>
+<br/>
+Params:
+<ul>
+<li>X1, Y1: vertex 1 coordinates</li>
+<li>X2, Y2: vertex 2 coordinates</li>
+<li>X3, Y3: vertex 3 coordinates</li>
+<li>Color: color index (0-1)</li>
+</ul>
+**/
+procedure TriangleDirect(X1, Y1, X2, Y2, X3, Y3 : global integer; Color : global byte);
+var
+	tx1, ty1, tx2, ty2, tx3, ty3 : integer;
+	tcol : byte;
+begin
+	tx1 := X1; ty1 := Y1;
+	tx2 := X2; ty2 := Y2;
+	tx3 := X3; ty3 := Y3;
+	tcol := Color;
+	LineDirect(tx1, ty1, tx2, ty2, tcol);
+	LineDirect(tx2, ty2, tx3, ty3, tcol);
+	LineDirect(tx3, ty3, tx1, ty1, tcol);
+end;
+
+/**
+Kitöltött háromszög kirajzolása Scanline pásztázó soros interpolációval közvetlen VRAM eléréssel.<br/>
+<br/>
+Paraméterek:
+<ul>
+<li>X1, Y1: 1. csúcspont koordinátái</li>
+<li>X2, Y2: 2. csúcspont koordinátái</li>
+<li>X3, Y3: 3. csúcspont koordinátái</li>
+<li>Color: a kitöltőszín (0-1)</li>
+</ul>
+<br/>
+<br/>
+Példa a használatára:<br/>
+TVCGraph2::VRAMOn();<br/>
+TVCGraph2::FillTriangleDirect(100, 200, 256, 40, 400, 200, 1);<br/>
+TVCGraph2::VRAMOff();<br/>
+<br/>
+ENGLISH:<br/>
+-------------<br/>
+Draw filled triangle between 3 vertices using scanline interpolation. Direct VRAM access.<br/>
+<br/>
+Params:
+<ul>
+<li>X1, Y1: vertex 1 coordinates</li>
+<li>X2, Y2: vertex 2 coordinates</li>
+<li>X3, Y3: vertex 3 coordinates</li>
+<li>Color: color index (0-1)</li>
+</ul>
+**/
+procedure FillTriangleDirect(X1, Y1, X2, Y2, X3, Y3 : global integer; Color : global byte);
+begin
+	Asm("
+		ld   A,(TVCGraph2_Color)
+		ld   (TVCGraph2_FT_COL),A
+
+		ld   HL,(TVCGraph2_X1)
+		ld   (TVCGraph2_FT_X1),HL
+		ld   HL,(TVCGraph2_Y1)
+		ld   (TVCGraph2_FT_Y1),HL
+
+		ld   HL,(TVCGraph2_X2)
+		ld   (TVCGraph2_FT_X2),HL
+		ld   HL,(TVCGraph2_Y2)
+		ld   (TVCGraph2_FT_Y2),HL
+
+		ld   HL,(TVCGraph2_X3)
+		ld   (TVCGraph2_FT_X3),HL
+		ld   HL,(TVCGraph2_Y3)
+		ld   (TVCGraph2_FT_Y3),HL
+
+		; 1. Rendezés Y szerint: Y1 <= Y2 <= Y3
+		; 1a. (X1,Y1) vs (X2,Y2)
+		ld   HL,(TVCGraph2_FT_Y1)
+		ld   DE,(TVCGraph2_FT_Y2)
+		ld   A,L
+		cp   E
+		jr   C,TVCGraph2_FT_s1
+		jr   Z,TVCGraph2_FT_s1
+		ld   (TVCGraph2_FT_Y1),DE
+		ld   (TVCGraph2_FT_Y2),HL
+		ld   HL,(TVCGraph2_FT_X1)
+		ld   DE,(TVCGraph2_FT_X2)
+		ld   (TVCGraph2_FT_X1),DE
+		ld   (TVCGraph2_FT_X2),HL
+TVCGraph2_FT_s1:
+
+		; 1b. (X1,Y1) vs (X3,Y3)
+		ld   HL,(TVCGraph2_FT_Y1)
+		ld   DE,(TVCGraph2_FT_Y3)
+		ld   A,L
+		cp   E
+		jr   C,TVCGraph2_FT_s2
+		jr   Z,TVCGraph2_FT_s2
+		ld   (TVCGraph2_FT_Y1),DE
+		ld   (TVCGraph2_FT_Y3),HL
+		ld   HL,(TVCGraph2_FT_X1)
+		ld   DE,(TVCGraph2_FT_X3)
+		ld   (TVCGraph2_FT_X1),DE
+		ld   (TVCGraph2_FT_X3),HL
+TVCGraph2_FT_s2:
+
+		; 1c. (X2,Y2) vs (X3,Y3)
+		ld   HL,(TVCGraph2_FT_Y2)
+		ld   DE,(TVCGraph2_FT_Y3)
+		ld   A,L
+		cp   E
+		jr   C,TVCGraph2_FT_s3
+		jr   Z,TVCGraph2_FT_s3
+		ld   (TVCGraph2_FT_Y2),DE
+		ld   (TVCGraph2_FT_Y3),HL
+		ld   HL,(TVCGraph2_FT_X2)
+		ld   DE,(TVCGraph2_FT_X3)
+		ld   (TVCGraph2_FT_X2),DE
+		ld   (TVCGraph2_FT_X3),HL
+TVCGraph2_FT_s3:
+
+		; Lapos háromszög (Y1 == Y3): egyetlen HLine
+		ld   A,(TVCGraph2_FT_Y1)
+		ld   B,A
+		ld   A,(TVCGraph2_FT_Y3)
+		cp   B
+		jr   NZ,TVCGraph2_FT_GENERAL
+
+		ld   HL,(TVCGraph2_FT_X1)
+		ld   (TVCGraph2_X1),HL
+		ld   HL,(TVCGraph2_FT_X2)
+		ld   (TVCGraph2_X2),HL
+		ld   HL,(TVCGraph2_FT_Y1)
+		ld   (TVCGraph2_Y),HL
+		ld   A,(TVCGraph2_FT_COL)
+		ld   (TVCGraph2_Color),A
+		call TVCGraph2_HLD_ENTRY
+
+		ld   HL,(TVCGraph2_FT_X1)
+		ld   (TVCGraph2_X1),HL
+		ld   HL,(TVCGraph2_FT_X3)
+		ld   (TVCGraph2_X2),HL
+		ld   HL,(TVCGraph2_FT_Y1)
+		ld   (TVCGraph2_Y),HL
+		ld   A,(TVCGraph2_FT_COL)
+		ld   (TVCGraph2_Color),A
+		call TVCGraph2_HLD_ENTRY
+		jp   TVCGraph2_FT_DONE
+
+TVCGraph2_FT_GENERAL:
+		; Hosszú él: (X1,Y1) -> (X3,Y3)
+		ld   IX,TVCGraph2_ELONG
+		ld   HL,(TVCGraph2_FT_X1)
+		ld   (TVCGraph2_BL_INCE1),HL  ; xa
+		ld   A,(TVCGraph2_FT_Y1)
+		ld   C,A                      ; ya
+		ld   HL,(TVCGraph2_FT_X3)
+		ld   (TVCGraph2_BL_INCE2),HL  ; xb
+		ld   A,(TVCGraph2_FT_Y3)
+		ld   E,A                      ; yb
+		call TVCGraph2_FT_EDGE_INIT
+
+		; 1. Felső szakasz: Y1..Y2
+		ld   A,(TVCGraph2_FT_Y1)
+		ld   B,A
+		ld   A,(TVCGraph2_FT_Y2)
+		cp   B
+		jp   Z,TVCGraph2_FT_LOWER_ONLY
+
+		; Rövid él: (X1,Y1) -> (X2,Y2)
+		ld   IX,TVCGraph2_ESHORT
+		ld   HL,(TVCGraph2_FT_X1)
+		ld   (TVCGraph2_BL_INCE1),HL
+		ld   A,(TVCGraph2_FT_Y1)
+		ld   C,A
+		ld   HL,(TVCGraph2_FT_X2)
+		ld   (TVCGraph2_BL_INCE2),HL
+		ld   A,(TVCGraph2_FT_Y2)
+		ld   E,A
+		call TVCGraph2_FT_EDGE_INIT
+
+		ld   A,(TVCGraph2_FT_Y1)
+		ld   (TVCGraph2_FT_CURY),A
+		ld   A,(TVCGraph2_FT_Y2)
+		ld   B,A
+		ld   A,(TVCGraph2_FT_Y1)
+		sub  B
+		neg
+		inc  A
+		ld   (TVCGraph2_FT_VCOUNT),A
+		call TVCGraph2_FT_ROWLOOP
+
+TVCGraph2_FT_LOWER_ONLY:
+		; 2. Alsó szakasz: Y2..Y3
+		ld   A,(TVCGraph2_FT_Y2)
+		ld   B,A
+		ld   A,(TVCGraph2_FT_Y3)
+		cp   B
+		jp   Z,TVCGraph2_FT_DONE
+
+		; Rövid él: (X2,Y2) -> (X3,Y3)
+		ld   IX,TVCGraph2_ESHORT
+		ld   HL,(TVCGraph2_FT_X2)
+		ld   (TVCGraph2_BL_INCE1),HL
+		ld   A,(TVCGraph2_FT_Y2)
+		ld   C,A
+		ld   HL,(TVCGraph2_FT_X3)
+		ld   (TVCGraph2_BL_INCE2),HL
+		ld   A,(TVCGraph2_FT_Y3)
+		ld   E,A
+		call TVCGraph2_FT_EDGE_INIT
+
+		ld   A,(TVCGraph2_FT_Y1)
+		ld   B,A
+		ld   A,(TVCGraph2_FT_Y2)
+		cp   B
+		jp   Z,TVCGraph2_FT_LOWER_START
+
+		; Ha volt felső szakasz, az Y2 sort már kirajzoltuk -> léptetünk 1 sort előre
+		ld   IX,TVCGraph2_ESHORT
+		call TVCGraph2_FT_EDGE_ADVANCE
+		ld   A,(TVCGraph2_FT_Y2)
+		inc  A
+		ld   (TVCGraph2_FT_CURY),A
+		ld   A,(TVCGraph2_FT_Y3)
+		ld   B,A
+		ld   A,(TVCGraph2_FT_Y2)
+		sub  B
+		neg
+		ld   (TVCGraph2_FT_VCOUNT),A
+		call TVCGraph2_FT_ROWLOOP
+		jp   TVCGraph2_FT_DONE
+
+TVCGraph2_FT_LOWER_START:
+		ld   A,(TVCGraph2_FT_Y2)
+		ld   (TVCGraph2_FT_CURY),A
+		ld   A,(TVCGraph2_FT_Y3)
+		ld   B,A
+		ld   A,(TVCGraph2_FT_Y2)
+		sub  B
+		neg
+		inc  A
+		ld   (TVCGraph2_FT_VCOUNT),A
+		call TVCGraph2_FT_ROWLOOP
+		jp   TVCGraph2_FT_DONE
+
+; ==============================================================
+; FT_ROWLOOP - sorok kirajzolása ELONG/ESHORT X-koordinátái közt
+; ==============================================================
+TVCGraph2_FT_ROWLOOP:
+		ld   A,(TVCGraph2_FT_VCOUNT)
+		or   A
+		ret  Z
+TVCGraph2_FT_RL_BODY:
+		ld   HL,(TVCGraph2_ELONG+0)
+		ld   (TVCGraph2_X1),HL
+		ld   HL,(TVCGraph2_ESHORT+0)
+		ld   (TVCGraph2_X2),HL
+		ld   A,(TVCGraph2_FT_CURY)
+		ld   L,A
+		ld   H,0
+		ld   (TVCGraph2_Y),HL
+		ld   A,(TVCGraph2_FT_COL)
+		ld   (TVCGraph2_Color),A
+		call TVCGraph2_HLD_ENTRY
+
+		ld   IX,TVCGraph2_ELONG
+		call TVCGraph2_FT_EDGE_ADVANCE
+		ld   IX,TVCGraph2_ESHORT
+		call TVCGraph2_FT_EDGE_ADVANCE
+
+		ld   A,(TVCGraph2_FT_CURY)
+		inc  A
+		ld   (TVCGraph2_FT_CURY),A
+		ld   A,(TVCGraph2_FT_VCOUNT)
+		dec  A
+		ld   (TVCGraph2_FT_VCOUNT),A
+		jr   NZ,TVCGraph2_FT_RL_BODY
+		ret
+
+; ==============================================================
+; FT_EDGE_INIT - él inicializálása
+; BE: IX=állapottömb, INCE1=xa (16-bit), C=ya, INCE2=xb (16-bit), E=yb
+; ==============================================================
+TVCGraph2_FT_EDGE_INIT:
+		; DY = yb - ya  (kiszámítjuk ELŐSZÖR, amíg E=yb és C=ya érintetlen)
+		ld   A,E
+		sub  C                     ; A = yb - ya
+		ld   (IX+6),A              ; DY
+
+		; X = xa
+		ld   HL,(TVCGraph2_BL_INCE1)
+		ld   (IX+0),L              ; X low
+		ld   (IX+1),H              ; X high
+
+		; DX = |xb - xa|, SX = sign
+		ld   HL,(TVCGraph2_BL_INCE2)
+		ld   DE,(TVCGraph2_BL_INCE1)
+		or   A
+		sbc  HL,DE                 ; HL = xb - xa
+		jr   NC,TVCGraph2_FT_EI_POS
+
+		; xb < xa -> DX = xa - xb, SX = -1 ($FFFF)
+		ld   HL,(TVCGraph2_BL_INCE1)
+		ld   DE,(TVCGraph2_BL_INCE2)
+		or   A
+		sbc  HL,DE
+		ld   (IX+4),L              ; DX low
+		ld   (IX+5),H              ; DX high
+		ld   (IX+2),$FF            ; SX low (-1)
+		ld   (IX+3),$FF            ; SX high (-1)
+		jr   TVCGraph2_FT_EI_ERR
+
+TVCGraph2_FT_EI_POS:
+		ld   (IX+4),L              ; DX low
+		ld   (IX+5),H              ; DX high
+		ld   (IX+2),1              ; SX low (+1)
+		ld   (IX+3),0              ; SX high (+1)
+
+TVCGraph2_FT_EI_ERR:
+		xor  A
+		ld   (IX+7),A              ; ERR low = 0
+		ld   (IX+8),A              ; ERR high = 0
+		ret
+
+; ==============================================================
+; FT_EDGE_ADVANCE - egy sorral léptet
+; ==============================================================
+TVCGraph2_FT_EDGE_ADVANCE:
+		ld   A,(IX+6)
+		or   A
+		ret  Z
+		ld   L,(IX+7)
+		ld   H,(IX+8)              ; HL = ERR
+		ld   E,(IX+4)
+		ld   D,(IX+5)              ; DE = DX
+		add  HL,DE                 ; HL = ERR + DX
+
+TVCGraph2_FT_EA_LOOP:
+		ld   A,(IX+6)
+		ld   C,A
+		ld   B,0                   ; BC = DY
+		or   A
+		sbc  HL,BC
+		jr   C,TVCGraph2_FT_EA_DONE
+
+		; X += SX (16-bites összeadás)
+		ld   E,(IX+0)
+		ld   D,(IX+1)              ; DE = X
+		ld   A,(IX+2)
+		ld   C,A
+		ld   A,(IX+3)
+		ld   B,A                   ; BC = SX
+		ex   DE,HL
+		add  HL,BC
+		ex   DE,HL
+		ld   (IX+0),E
+		ld   (IX+1),D
+		jr   TVCGraph2_FT_EA_LOOP
+
+TVCGraph2_FT_EA_DONE:
+		add  HL,BC                 ; visszaadjuk az utolsó kivonást
+		ld   (IX+7),L
+		ld   (IX+8),H
+		ret
+
+TVCGraph2_FT_DONE:
+	");
+end;
+
+/**
+Teljes videómemória (15360 bájt, $8000..$BBFF) törlése vagy feltöltése közvetlen VRAM eléréssel.<br/>
+<br/>
+Paraméterek:
+<ul>
+<li>Color: 0 = fekete képernyő ($00), 1 = fehér képernyő ($FF)</li>
+</ul>
+<br/>
+<br/>
+Példa a használatára:<br/>
+TVCGraph2::VRAMOn();<br/>
+TVCGraph2::ClsDirect(0);<br/>
+TVCGraph2::VRAMOff();<br/>
+<br/>
+ENGLISH:<br/>
+-------------<br/>
+Clear or fill entire VRAM with Color (0 or 1). Direct VRAM access.<br/>
+<br/>
+Params:
+<ul>
+<li>Color: fill color (0 = black, 1 = white)</li>
+</ul>
+**/
+procedure ClsDirect(Color : global byte);
+begin
+	Asm("
+		ld   A,(TVCGraph2_Color)
+		or   A
+		jr   Z,TVCGraph2_Cls_zero
+		ld   D,$FF
+		ld   E,$FF
+		jr   TVCGraph2_Cls_exec
+TVCGraph2_Cls_zero:
+		ld   D,0
+		ld   E,0
+
+TVCGraph2_Cls_exec:
+		di
+		ld   (TVCGraph2_T_SAVESP),SP
+		ld   SP,$BC00
+
+		ld   B,240
+TVCGraph2_Cls_loop:
+		push DE
+		push DE
+		push DE
+		push DE
+		push DE
+		push DE
+		push DE
+		push DE
+		push DE
+		push DE
+		push DE
+		push DE
+		push DE
+		push DE
+		push DE
+		push DE
+		push DE
+		push DE
+		push DE
+		push DE
+		push DE
+		push DE
+		push DE
+		push DE
+		push DE
+		push DE
+		push DE
+		push DE
+		push DE
+		push DE
+		push DE
+		push DE
+		djnz TVCGraph2_Cls_loop
+
+		ld   SP,(TVCGraph2_T_SAVESP)
+		ei
+	");
+end;
+
+
+/*==============================================================================
+	AUTOMATIKUS LAPOZÁSÚ ELJÁRÁSOK (Automatikus VRAM be- és kikapcsolás)
+==============================================================================*/
+
+/**
+Egyetlen képpont kirajzolása (automatikus VRAM be- és kikapcsolással).<br/>
+<br/>
+Paraméterek:
+<ul>
+<li>X: a képpont vízszintes pozíciója (0-511)</li>
+<li>Y: a képpont függőleges pozíciója (0-239)</li>
+<li>Color: a színérték (0 = törlés/fekete, 1 = beállítás/fehér)</li>
+</ul>
+<br/>
+<br/>
+Példa a használatára:<br/>
+TVCGraph2::Plot(256, 120, 1);<br/>
+<br/>
+ENGLISH:<br/>
+-------------<br/>
+Draw single pixel at (X, Y) with Color (0-1). Automatic VRAM paging.<br/>
+<br/>
+Params:
+<ul>
+<li>X: pixel X coordinate (0-511)</li>
+<li>Y: pixel Y coordinate (0-239)</li>
+<li>Color: color index (0-1)</li>
+</ul>
+**/
+procedure Plot(X, Y : global integer; Color : global byte);
+begin
+	VRAMOn();
+	PlotDirect(X, Y, Color);
+	VRAMOff();
+end;
+
+/**
+Vízszintes vonal rajzolása (automatikus VRAM be- és kikapcsolással).<br/>
+<br/>
+Paraméterek:
+<ul>
+<li>X1: a kezdőpont X koordinátája (0-511)</li>
+<li>Y: a vonal Y sora (0-239)</li>
+<li>X2: a végpont X koordinátája (0-511)</li>
+<li>Color: a színérték (0-1)</li>
+</ul>
+<br/>
+<br/>
+Példa a használatára:<br/>
+TVCGraph2::HLine(10, 100, 500, 1);<br/>
+<br/>
+ENGLISH:<br/>
+-------------<br/>
+Draw horizontal line from (X1, Y) to (X2, Y) with Color (0-1). Automatic VRAM paging.<br/>
+<br/>
+Params:
+<ul>
+<li>X1: start X coordinate (0-511)</li>
+<li>Y: line Y coordinate (0-239)</li>
+<li>X2: end X coordinate (0-511)</li>
+<li>Color: color index (0-1)</li>
+</ul>
+**/
+procedure HLine(X1, Y, X2 : global integer; Color : global byte);
+begin
+	VRAMOn();
+	HLineDirect(X1, Y, X2, Color);
+	VRAMOff();
+end;
+
+/**
+Függőleges vonal rajzolása (automatikus VRAM be- és kikapcsolással).<br/>
+<br/>
+Paraméterek:
+<ul>
+<li>X: a vonal X pozíciója (0-511)</li>
+<li>Y1: a kezdőpont Y koordinátája (0-239)</li>
+<li>Y2: a végpont Y koordinátája (0-239)</li>
+<li>Color: a színérték (0-1)</li>
+</ul>
+<br/>
+<br/>
+Példa a használatára:<br/>
+TVCGraph2::VLine(256, 10, 230, 1);<br/>
+<br/>
+ENGLISH:<br/>
+-------------<br/>
+Draw vertical line from (X, Y1) to (X, Y2) with Color (0-1). Automatic VRAM paging.<br/>
+<br/>
+Params:
+<ul>
+<li>X: line X coordinate (0-511)</li>
+<li>Y1: start Y coordinate (0-239)</li>
+<li>Y2: end Y coordinate (0-239)</li>
+<li>Color: color index (0-1)</li>
+</ul>
+**/
+procedure VLine(X, Y1, Y2 : global integer; Color : global byte);
+begin
+	VRAMOn();
+	VLineDirect(X, Y1, Y2, Color);
+	VRAMOff();
+end;
+
+/**
+Általános ferde vonal rajzolása Bresenham algoritmussal (automatikus VRAM be- és kikapcsolással).<br/>
+<br/>
+Paraméterek:
+<ul>
+<li>X1: kezdőpont X koordinátája (0-511)</li>
+<li>Y1: kezdőpont Y koordinátája (0-239)</li>
+<li>X2: végpont X koordinátája (0-511)</li>
+<li>Y2: végpont Y koordinátája (0-239)</li>
+<li>Color: a színérték (0-1)</li>
+</ul>
+<br/>
+<br/>
+Példa a használatára:<br/>
+TVCGraph2::Line(10, 10, 500, 230, 1);<br/>
+<br/>
+ENGLISH:<br/>
+-------------<br/>
+Draw line from (X1, Y1) to (X2, Y2) with Color (0-1). Automatic VRAM paging.<br/>
+<br/>
+Params:
+<ul>
+<li>X1: start X coordinate (0-511)</li>
+<li>Y1: start Y coordinate (0-239)</li>
+<li>X2: end X coordinate (0-511)</li>
+<li>Y2: end Y coordinate (0-239)</li>
+<li>Color: color index (0-1)</li>
+</ul>
+**/
+procedure Line(X1, Y1, X2, Y2 : global integer; Color : global byte);
+begin
+	VRAMOn();
+	LineDirect(X1, Y1, X2, Y2, Color);
+	VRAMOff();
+end;
+
+/**
+Téglalap körvonal kirajzolása (automatikus VRAM be- és kikapcsolással).<br/>
+<br/>
+Paraméterek:
+<ul>
+<li>X1: bal-felső sarok X koordinátája (0-511)</li>
+<li>Y1: bal-felső sarok Y koordinátája (0-239)</li>
+<li>X2: jobb-alsó sarok X koordinátája (0-511)</li>
+<li>Y2: jobb-alsó sarok Y koordinátája (0-239)</li>
+<li>Color: a színérték (0-1)</li>
+</ul>
+<br/>
+<br/>
+Példa a használatára:<br/>
+TVCGraph2::Rect(20, 20, 480, 220, 1);<br/>
+<br/>
+ENGLISH:<br/>
+-------------<br/>
+Draw rectangle outline from (X1, Y1) to (X2, Y2) with Color (0-1). Automatic VRAM paging.<br/>
+<br/>
+Params:
+<ul>
+<li>X1: top-left X coordinate (0-511)</li>
+<li>Y1: top-left Y coordinate (0-239)</li>
+<li>X2: bottom-right X coordinate (0-511)</li>
+<li>Y2: bottom-right Y coordinate (0-239)</li>
+<li>Color: color index (0-1)</li>
+</ul>
+**/
+procedure Rect(X1, Y1, X2, Y2 : global integer; Color : global byte);
+begin
+	VRAMOn();
+	RectDirect(X1, Y1, X2, Y2, Color);
+	VRAMOff();
+end;
+
+/**
+Kitöltött téglalap kirajzolása (automatikus VRAM be- és kikapcsolással).<br/>
+<br/>
+Paraméterek:
+<ul>
+<li>X1: bal-felső sarok X koordinátája (0-511)</li>
+<li>Y1: bal-felső sarok Y koordinátája (0-239)</li>
+<li>X2: jobb-alsó sarok X koordinátája (0-511)</li>
+<li>Y2: jobb-alsó sarok Y koordinátája (0-239)</li>
+<li>Color: a kitöltőszín (0-1)</li>
+</ul>
+<br/>
+<br/>
+Példa a használatára:<br/>
+TVCGraph2::FillRect(50, 50, 450, 190, 1);<br/>
+<br/>
+ENGLISH:<br/>
+-------------<br/>
+Draw filled rectangle from (X1, Y1) to (X2, Y2) with Color (0-1). Automatic VRAM paging.<br/>
+<br/>
+Params:
+<ul>
+<li>X1: top-left X coordinate (0-511)</li>
+<li>Y1: top-left Y coordinate (0-239)</li>
+<li>X2: bottom-right X coordinate (0-511)</li>
+<li>Y2: bottom-right Y coordinate (0-239)</li>
+<li>Color: color index (0-1)</li>
+</ul>
+**/
+procedure FillRect(X1, Y1, X2, Y2 : global integer; Color : global byte);
+begin
+	VRAMOn();
+	FillRectDirect(X1, Y1, X2, Y2, Color);
+	VRAMOff();
+end;
+
+/**
+Tökéletesen kerek körvonal kirajzolása 2:1 képaránnyal (automatikus VRAM be- és kikapcsolással).<br/>
+<br/>
+Paraméterek:
+<ul>
+<li>CX: középpont X koordinátája (0-511)</li>
+<li>CY: középpont Y koordinátája (0-239)</li>
+<li>Radius: függőleges sugár (R képpontban, vízszintes sugár automatikusan 2*R)</li>
+<li>Color: a színérték (0-1)</li>
+</ul>
+<br/>
+<br/>
+Példa a használatára:<br/>
+TVCGraph2::Circle(256, 120, 50, 1);<br/>
+<br/>
+ENGLISH:<br/>
+-------------<br/>
+Draw round circle outline centered at (CX, CY) with Radius. Automatic VRAM paging.<br/>
+<br/>
+Params:
+<ul>
+<li>CX: center X coordinate (0-511)</li>
+<li>CY: center Y coordinate (0-239)</li>
+<li>Radius: vertical radius</li>
+<li>Color: color index (0-1)</li>
+</ul>
+**/
+procedure Circle(CX, CY, Radius : global integer; Color : global byte);
+begin
+	VRAMOn();
+	CircleDirect(CX, CY, Radius, Color);
+	VRAMOff();
+end;
+
+/**
+Tökéletesen kerek körvonal kirajzolása 2:1 képaránnyal (Circle alias).<br/>
+<br/>
+Paraméterek:
+<ul>
+<li>CX: középpont X koordinátája (0-511)</li>
+<li>CY: középpont Y koordinátája (0-239)</li>
+<li>Radius: függőleges sugár (R képpontban)</li>
+<li>Color: a színérték (0-1)</li>
+</ul>
+**/
+procedure CircleFast(CX, CY, Radius : global integer; Color : global byte);
+begin
+	VRAMOn();
+	CircleDirectFast(CX, CY, Radius, Color);
+	VRAMOff();
+end;
+
+/**
+Kitöltött kör kirajzolása 2:1 képarány-korrekcióval (automatikus VRAM be- és kikapcsolással).<br/>
+<br/>
+Paraméterek:
+<ul>
+<li>CX: középpont X koordinátája (0-511)</li>
+<li>CY: középpont Y koordinátája (0-239)</li>
+<li>Radius: függőleges sugár (R képpontban)</li>
+<li>Color: a kitöltőszín (0-1)</li>
+</ul>
+<br/>
+<br/>
+Példa a használatára:<br/>
+TVCGraph2::FillCircle(256, 120, 40, 1);<br/>
+<br/>
+ENGLISH:<br/>
+-------------<br/>
+Draw filled circle centered at (CX, CY) with Radius. Automatic VRAM paging.<br/>
+<br/>
+Params:
+<ul>
+<li>CX: center X coordinate (0-511)</li>
+<li>CY: center Y coordinate (0-239)</li>
+<li>Radius: vertical radius</li>
+<li>Color: color index (0-1)</li>
+</ul>
+**/
+procedure FillCircle(CX, CY, Radius : global integer; Color : global byte);
+begin
+	VRAMOn();
+	FillCircleDirect(CX, CY, Radius, Color);
+	VRAMOff();
+end;
+
+/**
+Háromszög körvonal kirajzolása (automatikus VRAM be- és kikapcsolással).<br/>
+<br/>
+Paraméterek:
+<ul>
+<li>X1, Y1: 1. csúcspont koordinátái</li>
+<li>X2, Y2: 2. csúcspont koordinátái</li>
+<li>X3, Y3: 3. csúcspont koordinátái</li>
+<li>Color: a színérték (0-1)</li>
+</ul>
+<br/>
+<br/>
+Példa a használatára:<br/>
+TVCGraph2::Triangle(100, 200, 256, 40, 400, 200, 1);<br/>
+<br/>
+ENGLISH:<br/>
+-------------<br/>
+Draw triangle outline between (X1,Y1), (X2,Y2), (X3,Y3). Automatic VRAM paging.<br/>
+<br/>
+Params:
+<ul>
+<li>X1, Y1: vertex 1 coordinates</li>
+<li>X2, Y2: vertex 2 coordinates</li>
+<li>X3, Y3: vertex 3 coordinates</li>
+<li>Color: color index (0-1)</li>
+</ul>
+**/
+procedure Triangle(X1, Y1, X2, Y2, X3, Y3 : global integer; Color : global byte);
+begin
+	VRAMOn();
+	TriangleDirect(X1, Y1, X2, Y2, X3, Y3, Color);
+	VRAMOff();
+end;
+
+/**
+Kitöltött háromszög kirajzolása Scanline interpolációval (automatikus VRAM be- és kikapcsolással).<br/>
+<br/>
+Paraméterek:
+<ul>
+<li>X1, Y1: 1. csúcspont koordinátái</li>
+<li>X2, Y2: 2. csúcspont koordinátái</li>
+<li>X3, Y3: 3. csúcspont koordinátái</li>
+<li>Color: a kitöltőszín (0-1)</li>
+</ul>
+<br/>
+<br/>
+Példa a használatára:<br/>
+TVCGraph2::FillTriangle(100, 200, 256, 40, 400, 200, 1);<br/>
+<br/>
+ENGLISH:<br/>
+-------------<br/>
+Draw filled triangle between 3 vertices using scanline interpolation. Automatic VRAM paging.<br/>
+<br/>
+Params:
+<ul>
+<li>X1, Y1: vertex 1 coordinates</li>
+<li>X2, Y2: vertex 2 coordinates</li>
+<li>X3, Y3: vertex 3 coordinates</li>
+<li>Color: color index (0-1)</li>
+</ul>
+**/
+procedure FillTriangle(X1, Y1, X2, Y2, X3, Y3 : global integer; Color : global byte);
+begin
+	VRAMOn();
+	FillTriangleDirect(X1, Y1, X2, Y2, X3, Y3, Color);
+	VRAMOff();
+end;
+
+/**
+Képernyő törlése vagy feltöltése (automatikus VRAM be- és kikapcsolással).<br/>
+<br/>
+Paraméterek:
+<ul>
+<li>Color: 0 = fekete képernyő ($00), 1 = fehér képernyő ($FF)</li>
+</ul>
+<br/>
+<br/>
+Példa a használatára:<br/>
+TVCGraph2::Cls(0);<br/>
+<br/>
+ENGLISH:<br/>
+-------------<br/>
+Clear or fill entire screen with Color (0 or 1). Automatic VRAM paging.<br/>
+<br/>
+Params:
+<ul>
+<li>Color: fill color (0 = black, 1 = white)</li>
+</ul>
+**/
+procedure Cls(Color : global byte);
+begin
+	VRAMOn();
+	ClsDirect(Color);
+	VRAMOff();
+end;
+
+end.

@@ -1,0 +1,897 @@
+program O_04;
+/*
+    ARÉNA 2024
+    Készült a 2022-es FOGO játék alapján
+*/
+@use "tvc_alap2B"
+var  
+   // általános célra, ciklusokhoz
+   a,b,i,j: byte;
+   // aktuálisan kezelt sprite sorszáma 0..49
+   sprite: byte; 
+   // koordináták ideiglenes tárolására
+   cx,cy: byte;
+   // jelezzük hogy a főszereplő lépett e már, 
+   // ha igen jöhetnek a sprite-ok 
+   lep:byte;
+   // maga a program milyen üzemmódban van
+   jatekmod:byte;
+   Rfoszer,Rfoszer2:byte;
+   // RANDOM generáláshoz egy "véletlen szám"
+   Rell:byte;
+   // pointerek memóriaműveletekhez
+   pom,pr:pointer;
+   // pontszámot tároljuk ebben a 4 byte-ban
+   pont:array[] of byte=(0,0,0,0);
+   // EZT a pontszámot adjuk hozzá a valódi pontszámhoz
+   pontx:array[] of byte=(0,0,0,0);
+   // hangeffekt tárolására
+   soundtomb3:array[] of byte=(0,0,0,0,0,0,0,0,0,0,0,0);
+   // hanyadik pályán is vagyunk
+   palya:byte;
+   // pályán belül "hanyadik szint", hányszor volt már a pálya
+   szint:byte;
+   // pályán lévő összes felvehető bónusz darabszáma   
+   bonusz:byte;
+   
+   // SPRITE-ok adatai
+   jx,jy,jm,ja:array[50]of byte;
+
+   // főszereplő helyzete a pályán   
+   fx,fy:byte;
+   // főszereplő adott irányba léphet (1) vagy sem (0)
+   LH: byte;  
+   
+   // 2 szin:  ABCDEFGH
+   // 4 szín:  ABCDABCD
+   // 16 szín:  ABABABAB
+   
+   // PÁLYA mérete 32x30 lesz, lehetséges elemek:
+   //  0=üres
+   //  1=fal
+   //  2=ellenfél
+   //  3=főszereplő
+   //  4=felvehető cucc
+   //  5=bomba
+   //  6= "robbanás"
+   //  7=Random fal
+   //  8=piros kő pálya végi meghalás effekthez
+   //  9=zöld kő pálya végi megnyerés effekthez
+   // 10=plusz ellenfél "1-es szint"
+   // 11=plusz ellenfél "2-es szint"
+   // 12=plusz ellenfél "3-as szint"
+   // 13=
+   
+  // Ezt a területet "robbantja be" a bomba
+  // ez tárolja a bomba "animációját"
+  BOMBADATA:array[]of byte=( 
+    0,0,0,0,0,4,0,0,0,0,0,
+    0,0,0,0,4,3,4,0,0,0,0,
+    0,0,4,4,3,3,3,4,4,0,0,
+    0,0,4,3,2,2,2,3,4,0,0,
+    0,4,3,2,1,1,1,2,3,4,0,
+    4,3,3,2,1,0,1,2,3,3,4,
+    0,4,3,2,1,1,1,2,3,4,0,
+    0,0,4,3,2,2,2,3,4,0,0,
+    0,0,4,4,3,3,3,4,4,0,0,
+    0,0,0,0,4,3,4,0,0,0,0,
+    0,0,0,0,0,4,0,0,0,0,0
+   );
+   
+   // grafika adatai, 32 kis kép, 1 kép 16 byte
+   @define GRAPOZ 21840   // 32x16 byte
+   KEPDATA:incbin("OGRA.BIN",@GRAPOZ);
+   
+   // PÁLYA mérete 32x30=960 byte
+   @define MAPPOZ1 18000   // 960 byte
+   MAPDATA1:incbin("OMAP1.BIN",@MAPPOZ1);
+   @define MAPPOZ2 18960   // 960 byte
+   MAPDATA2:incbin("OMAP2.BIN",@MAPPOZ2);
+   @define MAPPOZ3 19920   // 960 byte
+   MAPDATA3:incbin("OMAP3.BIN",@MAPPOZ3);
+   @define MAPPOZ4 20880   // 960 byte
+   MAPDATA4:incbin("OMAP4.BIN",@MAPPOZ4);
+//   28416-ig tartanak a pálya adatok
+
+
+procedure hangeffekt_1;// bónusz felvétele
+begin
+   // HANG magasság 1..255 között lehet (mély..magas)
+   soundtomb3[0]:=60;
+   soundtomb3[1]:=100;
+   soundtomb3[2]:=200;
+   soundtomb3[3]:=220;
+   soundtomb3[4]:=150;
+   soundtomb3[5]:=0; // 0 érték jelzi, hogy "nincs több hang
+   TVC_alapunit2B::soundciim2:=#soundtomb3;
+   TVC_alapunit2B::soundX2:=2;
+   TVC_alapunit2B::soundTempo2:=2;
+   TVC_alapunit2B::soundErtek2:=TVC_alapunit2B::soundciim2[0];
+end;
+procedure hangeffekt_2;// robbant
+begin
+   soundtomb3[0]:=40;
+   soundtomb3[1]:=80;
+   soundtomb3[2]:=100;
+   soundtomb3[3]:=100;
+   soundtomb3[4]:=90;
+   soundtomb3[5]:=80;
+   soundtomb3[6]:=0;
+   TVC_alapunit2B::soundciim2:=#soundtomb3;
+   TVC_alapunit2B::soundX2:=2;
+   TVC_alapunit2B::soundTempo2:=2;
+   TVC_alapunit2B::soundErtek2:=TVC_alapunit2B::soundciim2[0];
+end;
+procedure hangeffekt_3;//
+begin
+   soundtomb3[0]:=40;
+   soundtomb3[1]:=80;
+   soundtomb3[2]:=100;
+   soundtomb3[3]:=100;
+   soundtomb3[4]:=90;
+   soundtomb3[5]:=80;
+   soundtomb3[6]:=70;
+   soundtomb3[7]:=60;
+   soundtomb3[8]:=40;
+   soundtomb3[9]:=0;
+   TVC_alapunit2B::soundciim2:=#soundtomb3;
+   TVC_alapunit2B::soundX2:=2;
+   TVC_alapunit2B::soundTempo2:=2;
+   TVC_alapunit2B::soundErtek2:=TVC_alapunit2B::soundciim2[0];
+end;
+
+
+// Kiirjuk az aktuális pontszámot, 4x2=8 számjegyet
+// TVC_alapunit2 tartalmazza a karakterkészletet és 
+// a kiíró eljárást is
+procedure PONT_irpont;
+var ic:byte;
+begin
+ TVC_alapunit2B::szamol_kepernyo_ertek(48,0);	
+ for ic:=0 to 4 do // 4 byte-on tároljuk
+  begin
+  // felső 4 bit	  
+  a:=48+(pont[ic] SHR 4)&15;
+  TVC_alapunit2B::forras:=#TVC_alapunit2B::CARDATA+a SHL 3; 
+  TVC_alapunit2B::putimage_a8x8_color3();
+  TVC_alapunit2B::kepernyo:=TVC_alapunit2B::kepernyo+2;
+  // alsó 4 bit	  
+  a:=48+pont[ic]&15;
+  TVC_alapunit2B::forras:=#TVC_alapunit2B::CARDATA+a SHL 3; 
+  TVC_alapunit2B::putimage_a8x8_color3();
+  TVC_alapunit2B::kepernyo:=TVC_alapunit2B::kepernyo+2;
+  end;
+end;
+
+procedure PONT_nullazas;
+begin
+ pont[0]:=0;pont[1]:=0;pont[2]:=0;pont[3]:=0;	
+end;
+/*
+ Pontszám 4 byte-on van tárolva, byte felső 4 bitje az egyik 
+ számjegy, alsó 4 bitje a másik számjegy, összesen 8 jegy
+*/
+procedure PONT_pluszpont;
+begin
+ // egyes
+ a:=pont[3]&15+pontx[3]&15;
+ if a>9 then begin a:=a-10; b:=1; end else b:=0;
+ pont[3]:=pont[3]&240+a&15;
+ // tizes
+ a:=(pont[3]&240)SHR 4+(pontx[3]&240)SHR 4+b;
+ if a>9 then begin a:=a-10; b:=1; end else b:=0;
+ pont[3]:=pont[3]&15+a SHL 4;
+ // szazas
+ a:=pont[2]&15+pontx[2]&15+b;
+ if a>9 then begin a:=a-10; b:=1; end else b:=0;
+ pont[2]:=pont[2]&240+a&15;
+ // ezres
+ a:=(pont[2]&240)SHR 4+(pontx[2]&240)SHR 4+b;
+ if a>9 then begin a:=a-10; b:=1; end else b:=0;
+ pont[2]:=pont[2]&15+a SHL 4;
+ // tizezres
+ a:=pont[1]&15+pontx[1]&15+b;
+ if a>9 then begin a:=a-10; b:=1; end else b:=0;
+ pont[1]:=pont[1]&240+a&15;
+ // szazezres
+ a:=(pont[1]&240)SHR 4+(pontx[1]&240)SHR 4+b;
+ if a>9 then begin a:=a-10; b:=1; end else b:=0;
+ pont[1]:=pont[1]&15+a SHL 4;
+ // millios
+ a:=pont[0]&15+pontx[0]&15+b;
+ if a>9 then begin a:=a-10; b:=1; end else b:=0;
+ pont[0]:=pont[0]&240+a&15;
+ // tizmillios
+ a:=(pont[0]&240)SHR 4+(pontx[0]&240)SHR 4+b;
+ if a>9 then begin a:=a-10; b:=1; end else b:=0;
+ pont[0]:=pont[0]&15+a SHL 4;
+ 
+ PONT_irpont;
+//end;
+end;
+
+procedure rajzol_egy_elem_elso;
+begin
+   Rell:=Rell+1;	  
+   a:=pom[0];
+   
+   // főszereplő 4 lehetséges START helyből egyik 
+   // helyen "feléled", többi helyet töröljük
+   if a=3 then
+      begin 
+	  if Rfoszer2=Rfoszer then // EZ AZ
+	     begin fx:=i; fy:=j; end
+	     else begin pom[0]:=0; end; // EZ NEM AZ
+	  Rfoszer2:=Rfoszer2+1;
+      end;
+
+   // Magasabb szinten bekapcsolódnak a játékba a 
+   // magasabb sorszámú ellenfelek, tehát TÖBB ellenfél lesz   
+   if a=10 then // ellenfél 2
+     if szint>0 then begin a:=2; pom[0]:=2; end else begin pom[0]:=0; a:=0; end;
+   if a=11 then // ellenfél 3
+     if szint>1 then begin a:=2; pom[0]:=2; end else begin pom[0]:=0; a:=0; end;
+   if a=12 then // ellenfél 4
+     if szint>2 then begin a:=2; pom[0]:=2; end else begin pom[0]:=0; a:=0; end;
+   
+   if a=2 then // ellenfél 1
+      begin 
+	    pom[0]:=0; // töröljük a helyét 
+	    if (Rell&1)=1 then
+	     begin // bekapcsoljuk az ellenfelet
+		 jx[sprite]:=i; 
+         jy[sprite]:=j; 
+         jm[sprite]:=1;
+         ja[sprite]:=0;
+         ja[sprite]:=sprite & 1;
+         if sprite<49 then sprite:=sprite+1;
+         end;
+      Rell:=Rell+1;   
+	  end;
+	  
+	  
+   if a=4 then // felvehető cucc
+      begin 
+      Rell:=Rell+1;   
+	  if (Rell&2)=0 then 
+	    begin
+		// helyén marad és hozzá adjuk az összes darabszámhoz   
+	    bonusz:=bonusz+1; 
+	    end else 
+		begin pom[0]:=0; end; // töröljük a pályáról
+      end;
+      
+//   if a=5 then // BOMBA
+//   if a=6 then // "robbanás"
+
+   // Bizonyos FAL elemek random jelennek meg
+   if a=7 then // random FAL elem
+      begin 
+      Rell:=Rell+1;   
+	  if (Rell&2)=2 then 
+	    begin
+	    pom[0]:=1; // megjelenik
+	    end else 
+		begin pom[0]:=0; end; // vagy sem
+      end;
+      
+
+   a:=pom[0];
+   // képernyő cím kiszámítása
+   TVC_alapunit2B::szamol_kepernyo_ertek(i SHL 1,j SHL 3);
+   
+   // a rafika címére mutatunk
+   TVC_alapunit2B::forras:=#KEPDATA+a SHL 4;
+   // és mehet a rajz
+   TVC_alapunit2B::rak_hatter_2x8;
+   
+   // Következő elemre mutatunk a pályán
+   pom:=pom+1;
+   TVC_alapunit2B::random_szamgeneralas;
+   // Rell értékét kicsit változtatjuk
+   Rell:=Rell+TVC_alapunit2B::ran;   
+	
+end;   
+/*
+    Egy elemet kirajzol a képernyőre, paraméterként 
+    a pálya (MAP) X és Y koordinátáját kéri
+*/
+procedure rajz_egyelem(ax,ay:byte);
+var ba:byte;
+begin
+   // képernyő cím kiszámítása
+   TVC_alapunit2B::szamol_kepernyo_ertek(ax SHL 1,ay SHL 3);
+   // a pálya tömb megfelelő sorára mutatunk
+   pr:=31000+ay SHL 5;
+   // és az X-edik elemet vesszük
+   ba:=pr[ax];
+   // a rafika címére mutatunk
+   TVC_alapunit2B::forras:=#KEPDATA+ba SHL 4;
+   // és mehet a rajz
+   TVC_alapunit2B::rak_hatter_2x8;
+end;
+
+//  ----------- PÁLYA INDÍTÁSA -----------
+
+procedure programresz_INITGAME;
+var L:byte;
+begin
+
+ TVC_alapunit2B::random_szamgeneralas;
+ 
+ // itt tároljuk majd az aktuális pályát, tehát ide 
+ // töltjük be az újat
+ pom:=31000; 
+ 
+ // ha többedszer van már a pálya, lehet nehezíteni
+ if palya=0 then palya:=1;
+ a:=palya-1;
+ szint:=a SHR 2;
+ 
+// négy alap pálya forog végtelenítve, a PÁLYA változó alsó 2 bitje
+ L:=a&3; // (0,1,2,3)
+ CASE L of
+	  0:pr:=#MAPDATA1; // level 1
+	  1:pr:=#MAPDATA2; // level 2
+	  2:pr:=#MAPDATA3; // level 3
+	  3:pr:=#MAPDATA4; // level 4
+      end;
+ 
+ // **************** Pálya átmásolása
+ // lassú módszer, lehetne sokkal gyorsabban is
+ for j:=0 to 30 do
+ for i:=0 to 32 do
+    begin
+    pom[0]:=pr[0]; pom:=pom+1; pr:=pr+1;
+    end;
+  
+ Rfoszer2:=0;
+ // a 4 starthely közül választunk egyet 
+ Rfoszer:=(TVC_alapunit2B::ran SHR 1)&3; // 0,1,2,3
+ 
+ TVC_alapunit2B::random_szamgeneralas;
+
+ // Összes sprite törlése
+ for sprite:=0 to 50 do //0..49
+      begin jm[sprite]:=0; end;
+
+sprite:=0;
+bonusz:=0;
+pom:=31000; // MAP elejére mutatunk majd "végigpásztázzuk"
+
+// Rell változó segít random elemeket kirakni, nem kirakni a
+// pályára
+Rell:=TVC_alapunit2B::ran;
+	
+for j:=0 to 30 do //0..29
+ begin
+    Rell:=Rell SHR 1;	  
+    for i:=0 to 32 do //0..31
+      begin
+	  // random generáljuk majd kirajzoljuk az elemeket
+      rajzol_egy_elem_elso;
+      end; // I
+  end; // J
+
+ // SPRITE-ok utólag rajzolva
+ for sprite:=0 to 50 do //0..49
+      begin 
+      if jm[sprite]=1 then
+          begin
+          cx:=jx[sprite]; cy:=jy[sprite];
+          pom:=31000+cy SHL 5;
+		  pom[cx]:=2;	  
+		  rajz_egyelem(cx,cy);// rajz
+          end; 
+      end;
+ 
+ jatekmod:=4;
+ // ****************** JÁTÉKCÍM kiírása
+ TVC_alapunit2B::szamol_kepernyo_ertek(0,0);
+ TVC_alapunit2B::szovegXb:=0;
+ TVC_alapunit2B::szoveg:="ARÉNA 2024";
+ TVC_alapunit2B::SZOVEG_konvertal;
+ TVC_alapunit2B::SZOVEG_IR;
+ 
+ // Vörössé varázsoljuk a játék nevét
+ for j:=0 to 8 do 
+  begin
+  TVC_alapunit2B::szamol_kepernyo_ertek(0,j);
+  for i:=0 to 22 do
+   begin TVC_alapunit2B::kepernyo[i]:=TVC_alapunit2B::kepernyo[i]&15; end;
+  end;
+ 
+ // ****************** pontszám kiírása
+ PONT_irpont;
+
+ // ****************** PÁLYA kiírása 
+ TVC_alapunit2B::szamol_kepernyo_ertek(30,0);
+ TVC_alapunit2B::szovegXb:=0;
+ TVC_alapunit2B::byte_to_string2(palya);
+ TVC_alapunit2B::SZOVEG_IR;
+ 
+end;
+
+/*
+  ----------- egy ELLENFÉL mozgatása ----------------
+*/
+procedure egy_lepes_ellenfel;
+begin
+ if jm[sprite]=0 then return; // ha nem létezik kilépés
+ // mozog/nem mozog kapcsoló "kapcsolgatása" minden körben
+ ja[sprite]:=1-ja[sprite]; 
+ if ja[sprite]=0 then return; // csak minden 2. fázisban lép
+
+ cx:=jx[sprite]; cy:=jy[sprite];
+
+ // --------------- ELLENFÉL FEL -------------------
+ if cy>fy then // ---------- FEL ------------------- 
+	    begin
+        pom:=31000-32+cy SHL 5;
+        LH:=0;
+        if pom[cx]=0 then LH:=1;
+        if pom[cx]=3 then begin LH:=0; jatekmod:=5; end;
+        
+		if LH=1 then
+		   begin
+		   pom[cx+32]:=0;	  
+		   rajz_egyelem(cx,cy);// rajz
+		   jy[sprite]:=jy[sprite]-1; 
+		   pom[cx]:=2;	  
+		   rajz_egyelem(cx,cy-1);// rajz
+		   return;
+           end;
+        end;
+        
+ // --------------- ELLENFÉL LE -------------------
+ if cy<fy then // ---------- LE ------------------- 
+	    begin
+        pom:=31000+cy SHL 5;
+        LH:=0;
+        if pom[cx+32]=0 then LH:=1;
+//        if pom[cx+32]=3 then LH:=1;
+        if pom[cx+32]=3 then begin LH:=0; jatekmod:=5; end;
+        
+		if LH=1 then
+		  begin
+		  pom[cx]:=0;	  
+		  rajz_egyelem(cx,cy);// rajz
+		  jy[sprite]:=jy[sprite]+1; 
+		  pom[cx+32]:=2;	  
+		  rajz_egyelem(cx,cy+1);// rajz
+          return;
+          end;
+        end;
+        
+ // --------------- ELLENFÉL BALRA -------------------
+ if cx>fx then // ---------- BALRA ------------------- 
+	    begin
+        pom:=31000+cy SHL 5;
+        LH:=0;
+        if pom[cx-1]=0 then LH:=1;
+//        if pom[cx-1]=3 then LH:=1;
+        if pom[cx-1]=3 then begin LH:=0; jatekmod:=5; end;
+        
+		if LH=1 then
+		   begin
+		   pom[cx]:=0;	  
+		   rajz_egyelem(cx,cy);// rajz
+		   jx[sprite]:=jx[sprite]-1; 
+		   pom[cx-1]:=2;	  
+		   rajz_egyelem(cx-1,cy);// rajz
+		   return;
+           end;
+        end;
+ // --------------- ELLENFÉL JOBBRA -------------------
+ if cx<fx then // ---------- JOBBRA ------------------- 
+	    begin
+        pom:=31000+cy SHL 5;
+        LH:=0;
+        if pom[cx+1]=0 then LH:=1;
+//        if pom[cx+1]=3 then LH:=1;
+        if pom[cx+1]=3 then begin LH:=0; jatekmod:=5; end;
+        
+		if LH=1 then
+		   begin
+		   pom[cx]:=0;	  
+		   rajz_egyelem(cx,cy);// rajz
+		   jx[sprite]:=jx[sprite]+1; 
+		   pom[cx+1]:=2;	  
+		   rajz_egyelem(cx+1,cy);// rajz
+		   return;
+           end;
+        end;
+end;
+// ******* felveszünk egy bogyót ***********
+procedure felvesz_bonusz;
+begin
+ // 00000010 pontot adunk hozzá a pontszámhoz
+ pontx[0]:=0; pontx[1]:=0; pontx[2]:=0; pontx[3]:=16; 
+ PONT_pluszpont;
+ 
+ hangeffekt_1;
+ if bonusz>0 then bonusz:=bonusz-1;
+ // ha nem maradt a pályán több bónusz akkor nyertünk
+ if bonusz=0 then begin  jatekmod:=6; end;  // -nyertél
+end;
+
+procedure varakozunk(V1:byte);
+begin
+   for i:=0 to V1 do // várakozunk
+     begin
+	  asm("	
+       halt  // sebesség korlátozása
+       ");  
+     end;
+end;
+// R1-n 
+// R2-t cserélni R3-ra
+procedure robbantas(R1,R2,R3:byte);
+var bombdataciim:byte;
+begin
+   hangeffekt_2;
+   pontx[0]:=0; pontx[1]:=0; pontx[2]:=0; pontx[3]:=4; 
+   bombdataciim:=0;
+   for j:=0 to 11 do
+     begin
+     for i:=0 to 11 do
+       begin
+	       
+	   if BOMBADATA[bombdataciim]=R1 then 
+	     begin
+	     cx:=fx-5+i;
+	     cy:=fy-5+j;
+	     if cx<32 then if cy<30 then if cy>0 then 
+	         begin
+	         pom:=31000+cy SHL 5;
+	         
+		     if pom[cx]=2 then // ellenfél
+		        for sprite:=0 to 50 do 
+		          begin
+				  if jm[sprite]>0 then
+                  begin 
+	              if jx[sprite]=cx then
+	                if jy[sprite]=cy then
+	                 begin jm[sprite]:=0; pom[cx]:=0; PONT_pluszpont; end;
+                  end;
+                  end;
+                  
+		     if pom[cx]=R2 then // keresett elem
+		     		begin
+					pom[cx]:=R3;
+					rajz_egyelem(cx,cy);
+					end;
+	         end; // pályán van
+	     end; // R1
+	     
+	   bombdataciim:=bombdataciim+1;  
+	   end;// i
+      end;// j	   
+end;
+
+// --------------  Főszereplő mozgatása játék közben  --------
+procedure foszereplo_mozgatasa;
+ var 
+    bomba_robban:byte;
+	mj:pointer;
+begin
+ bomba_robban:=0;	
+ lep:=0;	
+ 
+ mj:=2897;  // billentyűzet tömb kezdőcíme, innen 10 byte tárolja
+            // a lenyomott gombokat és a joystick állapotát
+/*
+ if (mj[7]&32)>0 then // SPACE
+   begin 
+   end;
+ */  
+ if (mj[2]&128)>0 then // R -ujrakezdes
+   begin  
+//   jatekmod:=3;
+   jatekmod:=5;	   
+   end;
+ if (mj[2]&64)>0 then // Q -kilépés
+   begin  
+   jatekmod:=2;
+   end;
+ if (mj[5]&4)>0 then // L -pályaugrás, csak tesztelésre
+   begin
+   jatekmod:=6;
+   end;
+ // --------------  Főszereplő FEL -------------------
+ if (mj[8]&2)>0 then // joystick FEL
+// if (a&2)=2 then // ---------- FEL ------------------- 
+	    begin
+        pom:=31000-32+fy SHL 5;
+        LH:=0;
+        if pom[fx]=0 then LH:=1; // üres
+        if pom[fx]=2 then // ellenfél
+			begin LH:=0; jatekmod:=5; end;
+        if pom[fx]=4 then // felvehető
+			begin LH:=1; felvesz_bonusz; end;
+        if pom[fx]=5 then // BOMBA
+			begin LH:=1; bomba_robban:=1; end;
+        
+		if LH=1 then
+		  begin
+		  pom[fx+32]:=0;	  
+		  rajz_egyelem(fx,fy);// rajz
+		  fy:=fy-1; 
+		  pom[fx]:=3;	  
+		  rajz_egyelem(fx,fy);// rajz
+          lep:=1; 
+          end;
+        end;
+ // ---------------  Főszereplő LE -------------------
+ if (mj[8]&4)>0 then // joystick LE
+// if (a&4)=4 then // ----------- LE -------------------
+		begin
+        pom:=31000+fy SHL 5;
+        LH:=0;
+        if pom[fx+32]=0 then LH:=1;
+        if pom[fx+32]=2 then // ellenfél
+				begin LH:=0; jatekmod:=5; end;
+        if pom[fx+32]=4 then // felvehető
+				begin LH:=1; felvesz_bonusz; end;
+        if pom[fx+32]=5 then // BOMBA
+				begin LH:=1; bomba_robban:=1; end;
+        
+		if LH=1 then
+		  begin
+		  pom[fx]:=0;
+		  rajz_egyelem(fx,fy);// rajz
+		  fy:=fy+1; 
+		  pom[fx+32]:=3;
+		  rajz_egyelem(fx,fy);// rajz
+          lep:=1; 
+          end;
+        end;
+ // ----------------  Főszereplő JOBBRA --------------
+ if (mj[8]&32)>0 then // joystick jobbra
+// if (a&32)=32 then // ---------- JOBBRA --------------
+		begin 
+        pom:=31000+fy SHL 5;
+        LH:=0;
+        if pom[fx+1]=0 then LH:=1;
+        if pom[fx+1]=2 then // ellenfél
+				begin LH:=0; jatekmod:=5; end;
+        if pom[fx+1]=4 then // felvehető
+				begin LH:=1; felvesz_bonusz; end;
+        if pom[fx+1]=5 then // BOMBA
+			begin LH:=1; bomba_robban:=1; end;
+        
+		if LH=1 then
+		  begin
+		  pom[fx]:=0;
+		  rajz_egyelem(fx,fy);// rajz
+		  fx:=fx+1; 
+		  pom[fx]:=3;
+		  rajz_egyelem(fx,fy);// rajz
+          lep:=1; 
+          end;
+		end;
+ // ----------------  Főszereplő BALRA --------------
+ if (mj[8]&64)>0 then // joystick balra
+// if (a&64)=64 then // ---------- BALRA --------------
+		begin 
+        pom:=31000-1+fy SHL 5;
+        LH:=0;
+        if pom[fx]=0 then LH:=1;
+        if pom[fx]=2 then // ellenfél
+				begin LH:=0; jatekmod:=5; end;
+        if pom[fx]=4 then // felvehető
+				begin LH:=1; felvesz_bonusz; end;
+        if pom[fx]=5 then // BOMBA
+				begin LH:=1; bomba_robban:=1; end;
+        
+		if LH=1 then
+		  begin
+		  pom[fx+1]:=0;
+		  rajz_egyelem(fx,fy);// rajz
+		  fx:=fx-1; pom[fx+1]:=3;
+		  rajz_egyelem(fx,fy);// rajz
+          lep:=1; 
+          end;
+		end;
+
+
+ // robbanás grafikai effektje
+ if bomba_robban=1 then
+   begin
+   robbantas(1,0,6);
+   varakozunk(5);
+   robbantas(2,0,6);    
+   varakozunk(5);
+   robbantas(3,0,6);    
+   varakozunk(5);
+   robbantas(4,0,6);    
+   varakozunk(5);
+   varakozunk(5);
+   robbantas(1,6,0);
+   varakozunk(5);
+   robbantas(2,6,0);
+   varakozunk(5);
+   robbantas(3,6,0);
+   varakozunk(5);
+   robbantas(4,6,0);
+   end;
+		
+end;
+/*
+  -------------------  program fő vezérlő része  -------------
+
+*/
+procedure programresz_GAME;
+begin
+ 
+ foszereplo_mozgatasa; 
+
+ //   mi léptünk, sprite-ok is lépnének, egyébként nem
+ 
+ if lep=1 then // ha mi is léptünk már..
+     begin 
+	 // maximum 50 sprite mozgatása
+     for sprite:=0 to 50 do egy_lepes_ellenfel;
+	  asm("	
+       halt  // sebesség korlátozása
+       halt  // sebesség korlátozása
+       halt  // sebesség korlátozása
+       halt  // sebesség korlátozása
+       ");  
+     end;// LEP=1
+		
+end;
+
+//           jatekmod = 5
+procedure programresz_GAME_OVER_1;// pálya vége, vesztés
+begin
+hangeffekt_3;
+for j:=0 to 15 do //0..29
+ begin
+ for i:=0 to 32 do //0..31
+  begin
+    TVC_alapunit2B::szamol_kepernyo_ertek(i SHL 1,j SHL 3);
+    TVC_alapunit2B::forras:=#KEPDATA+128;
+    TVC_alapunit2B::rak_hatter_2x8;
+    
+    TVC_alapunit2B::szamol_kepernyo_ertek(i SHL 1,(29-j) SHL 3);
+    TVC_alapunit2B::forras:=#KEPDATA+128;
+    TVC_alapunit2B::rak_hatter_2x8;
+  end; // I
+ varakozunk(2);
+ end; // J
+ 
+ jatekmod:=3;
+ 
+end;
+
+//           jatekmod = 6
+procedure programresz_GAME_OVER_2;// pálya vége, nyerés
+begin
+	
+for j:=0 to 15 do //0..29
+ begin
+ for i:=0 to 32 do //0..31
+  begin
+    TVC_alapunit2B::szamol_kepernyo_ertek(i SHL 1,j SHL 3);
+    TVC_alapunit2B::forras:=#KEPDATA+144;
+    TVC_alapunit2B::rak_hatter_2x8;
+    
+    TVC_alapunit2B::szamol_kepernyo_ertek(i SHL 1,(29-j) SHL 3);
+    TVC_alapunit2B::forras:=#KEPDATA+144;
+    TVC_alapunit2B::rak_hatter_2x8;
+  end; // I
+ varakozunk(2);
+ end; // J
+ 
+ // következő pályára kerülünk
+ if palya<99 then palya:=palya+1;
+ 
+ jatekmod:=3;
+ 
+end;
+
+procedure programresz_FOKEPERNYO;
+begin
+
+ // képernyő törlés	
+ TVC_alapunit2B::kepernyotorles(0);
+ // egy vörös csík
+ TVC_alapunit2B::szamol_kepernyo_ertek(0,60);
+ TVC_alapunit2B::rajz_egyszinu_egysor(%00001111);
+
+ TVC_alapunit2B::szamol_kepernyo_ertek(54,0);
+ TVC_alapunit2B::szovegXb:=0;
+ TVC_alapunit2B::szoveg:="v1.00";
+ TVC_alapunit2B::SZOVEG_konvertal;
+ TVC_alapunit2B::SZOVEG_IR;
+ 
+ TVC_alapunit2B::szamol_kepernyo_ertek(22,42);
+ TVC_alapunit2B::szovegXb:=0;
+ TVC_alapunit2B::szoveg:="ARÉNA 2024";
+ TVC_alapunit2B::SZOVEG_konvertal;
+ TVC_alapunit2B::SZOVEG_IR;
+ 
+ TVC_alapunit2B::szamol_kepernyo_ertek(0,70);
+ TVC_alapunit2B::szovegXb:=0;
+ TVC_alapunit2B::szoveg:="Harcos! Eljött a napja\ hogy    bizonyítson!  ";
+ TVC_alapunit2B::SZOVEG_konvertal;
+ TVC_alapunit2B::SZOVEG_IR;
+ TVC_alapunit2B::szoveg:="Ez nem leánytábor\itt az élete a tét! ";
+ TVC_alapunit2B::SZOVEG_konvertal;
+ TVC_alapunit2B::SZOVEG_IR;
+ TVC_alapunit2B::szoveg:="Legyen      kemény\ gyßozze le az ellenfeleit\ ";
+ TVC_alapunit2B::SZOVEG_konvertal;
+ TVC_alapunit2B::SZOVEG_IR;
+ TVC_alapunit2B::szoveg:="és váljon az aréna legkiválóbb harcosává!";
+ TVC_alapunit2B::SZOVEG_konvertal;
+ TVC_alapunit2B::SZOVEG_IR;
+
+ TVC_alapunit2B::szamol_kepernyo_ertek(22,220);
+ TVC_alapunit2B::szovegXb:=0;
+ TVC_alapunit2B::szoveg:=" space..";
+ TVC_alapunit2B::SZOVEG_konvertal;
+ TVC_alapunit2B::SZOVEG_IR;
+
+ TVC_alapunit2B::szamol_kepernyo_ertek(0,230);
+ TVC_alapunit2B::szovegXb:=0;
+ TVC_alapunit2B::szoveg:="OROSZ OLIVÉR\ TRSE\ VIDEOTON TVC";
+ TVC_alapunit2B::SZOVEG_konvertal;
+ TVC_alapunit2B::SZOVEG_IR;
+
+ // Szürkévé varázsoljuk az alsó feliratot
+ for j:=0 to 8 do 
+  begin
+  TVC_alapunit2B::szamol_kepernyo_ertek(0,230+j);
+  for i:=0 to 64 do
+   begin TVC_alapunit2B::kepernyo[i]:=TVC_alapunit2B::kepernyo[i]&15; end;
+  end;
+
+ // SPACE lenyomására várunk
+ TVC_alapunit2B::VARAKOZIK_SPACE_LENYOMASRA_ESFELENGEDESRE;
+ 
+ // új játék kezdése...
+ 
+ PONT_nullazas;   // nulla pont
+ palya:=1;        // és első pálya
+ //
+ 
+ jatekmod:=3;     // pálya "betöltése", indítása
+	
+end;
+
+begin
+
+ TVC_alapunit2B::init_Graphics(1); // video mód beállítása
+ TVC_alapunit2B::set_Vmemory32768;
+ TVC_alapunit2B::init_4colors(64,80,68,84);
+ 
+ TVC_alapunit2B::kepkocka:=0;
+ // megszakítás játssza le a hangeffekteket
+ TVC_alapunit2B::megszakitas_init;
+
+ jatekmod:=2; // főképernyővel indul a játék
+ 
+ // egy végtelen ciklusban fut a játék magja
+   while (1=1) do 
+     begin
+
+     // sebesség visszafogása
+     while (TVC_alapunit2B::kepkocka<2) do  begin end;
+     TVC_alapunit2B::kepkocka:=0;
+/*	     
+      // ez is egy változat a sebesség visszafogására
+	  asm("	
+       halt  // sebesség korlátozása
+       ");  
+*/	     
+     CASE jatekmod of
+	     2:programresz_FOKEPERNYO; // főképernyő
+	     3:programresz_INITGAME; // új játék kezdése
+	     4:programresz_GAME; // maga a játék
+	     5:programresz_GAME_OVER_1;// pálya vége : vesztés
+	     6:programresz_GAME_OVER_2;// pálya vége : nyerés
+     end;
+	        
+     end;
+end.

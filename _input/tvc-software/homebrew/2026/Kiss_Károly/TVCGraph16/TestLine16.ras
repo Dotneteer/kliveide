@@ -1,0 +1,369 @@
+program TestLine16;
+/*==============================================================================
+   TVC GRAPHICS 16 BENCHMARK & TEST PROGRAM
+   Graphics 16 (128x240, 16 szín) Teljesítmény- és Alakzatteszt
+   
+   Minden algoritmusváltozatot külön tesztel és méri a futásidőt
+   a TVC hardveres 50 Hz-es rendszertimerével ($0B1D: 20 ms / tick).
+==============================================================================*/
+
+@use "TVCGraph16"
+
+var
+	// Időmérő és teszt változók
+	t_start, t_end, t_diff : integer;
+	i, j, k                : integer;
+	test_num               : byte;
+	col                    : byte;
+	score_y                : integer;
+
+	// Eredmény tárolók (tick-ekben: 1 tick = 20 ms)
+	res_hline              : integer;
+	res_vline              : integer;
+	res_line               : integer;
+	res_rect               : integer;
+	res_fillrect           : integer;
+	res_circle             : integer;
+	res_fillcircle         : integer;
+	res_triangle           : integer;
+	res_filltriangle       : integer;
+	res_cls                : integer;
+
+	// Jól olvasható, teljesen arányos 4x8-as karakterkészlet (112 bájt)
+	font_data : array[112] of byte = (
+		// 0:
+		$06, $09, $09, $09, $09, $09, $09, $06,
+		// 1:
+		$02, $06, $02, $02, $02, $02, $02, $07,
+		// 2:
+		$06, $09, $01, $01, $02, $04, $08, $0F,
+		// 3:
+		$0E, $01, $01, $06, $06, $01, $01, $0E,
+		// 4:
+		$09, $09, $09, $0F, $01, $01, $01, $01,
+		// 5:
+		$0F, $08, $08, $0E, $01, $01, $09, $06,
+		// 6:
+		$06, $08, $08, $0E, $09, $09, $09, $06,
+		// 7:
+		$0F, $01, $01, $02, $02, $04, $04, $04,
+		// 8:
+		$06, $09, $09, $06, $09, $09, $09, $06,
+		// 9:
+		$06, $09, $09, $07, $01, $01, $01, $06,
+		// 10: ':' (Kettőspont)
+		$00, $06, $06, $00, $00, $06, $06, $00,
+		// 11: 'T' (Tick)
+		$0F, $06, $02, $02, $02, $02, $02, $02,
+		// 12: 'M' (Milli)
+		$09, $0F, $0F, $09, $09, $09, $09, $09,
+		// 13: 'S' (Sec)
+		$07, $08, $08, $06, $01, $01, $01, $0E
+	);
+
+
+/*==============================================================================
+	SEGÉDFÜGGVÉNYEK: IDŐMÉRÉS ÉS KIÍRÁS
+==============================================================================*/
+
+// 16-bites hardveres timer lekérése a $0B1D címről
+function GetTimer() : integer;
+begin
+	Asm("
+		ld   HL,($0B1D)
+	");
+end;
+
+// 4x8-as karakter kirajzolása (px, py) pozícióra (Graphics 16: 128x240)
+procedure DrawChar(px, py : integer; char_idx, color : byte);
+var
+	row, b : byte;
+	c_offset : integer;
+begin
+	if (char_idx > 13) then return;
+	c_offset := char_idx * 8;
+	fori row := 0 to 7 do
+	begin
+		b := font_data[c_offset + row];
+		if ((b & $08) <> 0) then TVCGraph16::PlotDirect(px + 0, py + row, color);
+		if ((b & $04) <> 0) then TVCGraph16::PlotDirect(px + 1, py + row, color);
+		if ((b & $02) <> 0) then TVCGraph16::PlotDirect(px + 2, py + row, color);
+		if ((b & $01) <> 0) then TVCGraph16::PlotDirect(px + 3, py + row, color);
+	end;
+end;
+
+// Egész szám (0-99999) kiírása
+procedure DrawNumber(px, py : integer; num : integer; color : byte);
+var
+	d5, d4, d3, d2, d1 : byte;
+	started : boolean;
+	cur_x : integer;
+begin
+	d5 := num / 10000;
+	num := num - d5 * 10000;
+	d4 := num / 1000;
+	num := num - d4 * 1000;
+	d3 := num / 100;
+	num := num - d3 * 100;
+	d2 := num / 10;
+	d1 := num - d2 * 10;
+
+	cur_x := px;
+	started := false;
+
+	if (d5 > 0) then begin DrawChar(cur_x, py, d5, color); cur_x := cur_x + 5; started := true; end;
+	if (d4 > 0 or started) then begin DrawChar(cur_x, py, d4, color); cur_x := cur_x + 5; started := true; end;
+	if (d3 > 0 or started) then begin DrawChar(cur_x, py, d3, color); cur_x := cur_x + 5; started := true; end;
+	if (d2 > 0 or started) then begin DrawChar(cur_x, py, d2, color); cur_x := cur_x + 5; started := true; end;
+	DrawChar(cur_x, py, d1, color);
+end;
+
+// Eredménysor megjelenítése egy teszthez (128x240 szélességhez igazítva)
+procedure DisplayResultBar(y_pos : integer; test_id : byte; ticks : integer);
+var
+	bar_w : integer;
+begin
+	// 1. Sorszám kiírása (pl. 1: .. 10:) Világoszöld színnel (Color 12)
+	if (test_id = 10) then
+	begin
+		DrawChar(4, y_pos, 1, 12);
+		DrawChar(9, y_pos, 0, 12);
+		DrawChar(14, y_pos, 10, 12); // ':'
+	end
+	else
+	begin
+		DrawChar(8, y_pos, test_id, 12);
+		DrawChar(13, y_pos, 10, 12); // ':'
+	end;
+
+	// 2. Eredmény tick-ekben (pl. "75 T") Világoszöld színnel (Color 12)
+	DrawNumber(19, y_pos, ticks, 12);
+	DrawChar(35, y_pos, 11, 12); // 'T'
+
+	// 3. Eredmény milliszekundumban (pl. "1500 MS") Sárga színnel (Color 14)
+	DrawNumber(42, y_pos, ticks * 20, 14);
+	DrawChar(62, y_pos, 12, 14); // 'M'
+	DrawChar(67, y_pos, 13, 14); // 'S'
+
+	// 4. Vizuális teljesítmény-sáv (Piros színnel - Color 10)
+	bar_w := ticks / 6;
+	if (bar_w > 48) then bar_w := 48;
+	if (bar_w < 2) then bar_w := 2;
+	TVCGraph16::FillRectDirect(75, y_pos + 1, 75 + bar_w, y_pos + 6, 10);
+end;
+
+
+/*==============================================================================
+	FŐPROGRAM: TELJESÍTMÉNY-MÉRÉSEK
+==============================================================================*/
+begin
+	// TVC Graphics 16 grafikus mód (128x240, 16 szín) inicializálása
+	TVCGraph16::InitGraphics();
+
+	// --------------------------------------------------------------------------
+	// 1. TESZT: Fast Horizontal Lines (HLineDirect - 1000 vonal)
+	// --------------------------------------------------------------------------
+	TVCGraph16::Cls(0);
+	TVCGraph16::VRAMOn();
+
+	t_start := GetTimer();
+	for i := 0 to 999 do
+	begin
+		TVCGraph16::HLineDirect(5, mod(i, 230) + 5, 122, mod(i, 15) + 1);
+	end;
+	t_end := GetTimer();
+	if (t_end >= t_start) then res_hline := t_end - t_start else res_hline := (65535 - t_start) + t_end;
+
+	// --------------------------------------------------------------------------
+	// 2. TESZT: Fast Vertical Lines (VLineDirect - 1000 vonal)
+	// --------------------------------------------------------------------------
+	TVCGraph16::ClsDirect(0);
+
+	t_start := GetTimer();
+	for i := 0 to 999 do
+	begin
+		TVCGraph16::VLineDirect(mod(i, 120) + 4, 10, 230, mod(i, 15) + 1);
+	end;
+	t_end := GetTimer();
+	if (t_end >= t_start) then res_vline := t_end - t_start else res_vline := (65535 - t_start) + t_end;
+
+	// --------------------------------------------------------------------------
+	// 3. TESZT: Fast Bresenham Radial Lines (LineDirect - 1000 átlós vonal)
+	// --------------------------------------------------------------------------
+	TVCGraph16::ClsDirect(0);
+
+	t_start := GetTimer();
+	for i := 0 to 999 do
+	begin
+		TVCGraph16::LineDirect(64, 120, mod(i * 7, 120) + 4, mod(i * 11, 220) + 10, mod(i, 15) + 1);
+	end;
+	t_end := GetTimer();
+	if (t_end >= t_start) then res_line := t_end - t_start else res_line := (65535 - t_start) + t_end;
+
+	// --------------------------------------------------------------------------
+	// 4. TESZT: Fast Rectangles (RectDirect - 500 téglalap keret)
+	// --------------------------------------------------------------------------
+	TVCGraph16::ClsDirect(0);
+
+	t_start := GetTimer();
+	for i := 0 to 499 do
+	begin
+		TVCGraph16::RectDirect(mod(i * 3, 50) + 5, mod(i * 5, 100) + 10, mod(i * 3, 50) + 70, mod(i * 5, 100) + 120, mod(i, 15) + 1);
+	end;
+	t_end := GetTimer();
+	if (t_end >= t_start) then res_rect := t_end - t_start else res_rect := (65535 - t_start) + t_end;
+
+	// --------------------------------------------------------------------------
+	// 5. TESZT: Fast Filled Rectangles (FillRectDirect - 200 kitöltött téglalap)
+	// --------------------------------------------------------------------------
+	TVCGraph16::ClsDirect(0);
+
+	t_start := GetTimer();
+	for i := 0 to 199 do
+	begin
+		TVCGraph16::FillRectDirect(mod(i * 7, 70) + 5, mod(i * 9, 140) + 10, mod(i * 7, 70) + 35, mod(i * 9, 140) + 50, mod(i, 15) + 1);
+	end;
+	t_end := GetTimer();
+	if (t_end >= t_start) then res_fillrect := t_end - t_start else res_fillrect := (65535 - t_start) + t_end;
+
+	// --------------------------------------------------------------------------
+	// 6. TESZT: Fast Circles (CircleDirect - 300 kör)
+	// --------------------------------------------------------------------------
+	TVCGraph16::ClsDirect(0);
+
+	t_start := GetTimer();
+	for i := 0 to 299 do
+	begin
+		TVCGraph16::CircleDirectFast(64, 120, mod(i, 55) + 5, mod(i, 15) + 1);
+	end;
+	t_end := GetTimer();
+	if (t_end >= t_start) then res_circle := t_end - t_start else res_circle := (65535 - t_start) + t_end;
+
+	// --------------------------------------------------------------------------
+	// 7. TESZT: Fast Filled Circles (FillCircleDirect - 100 kitöltött kör)
+	// --------------------------------------------------------------------------
+	TVCGraph16::ClsDirect(0);
+
+	t_start := GetTimer();
+	for i := 0 to 99 do
+	begin
+		TVCGraph16::FillCircleDirect(mod(i * 13, 80) + 24, mod(i * 17, 140) + 50, mod(i, 20) + 5, mod(i, 15) + 1);
+	end;
+	t_end := GetTimer();
+	if (t_end >= t_start) then res_fillcircle := t_end - t_start else res_fillcircle := (65535 - t_start) + t_end;
+
+	// --------------------------------------------------------------------------
+	// 8. TESZT: Fast Triangles (TriangleDirect - 300 háromszög)
+	// --------------------------------------------------------------------------
+	TVCGraph16::ClsDirect(0);
+
+	t_start := GetTimer();
+	for i := 0 to 299 do
+	begin
+		TVCGraph16::TriangleDirect(mod(i * 3, 110) + 5, mod(i * 5, 200) + 10, mod(i * 7, 110) + 5, mod(i * 9, 200) + 10, 64, 120, mod(i, 15) + 1);
+	end;
+	t_end := GetTimer();
+	if (t_end >= t_start) then res_triangle := t_end - t_start else res_triangle := (65535 - t_start) + t_end;
+
+	// --------------------------------------------------------------------------
+	// 9. TESZT: Fast Filled Triangles (FillTriangleDirect - 100 kitöltött háromszög)
+	// --------------------------------------------------------------------------
+	TVCGraph16::ClsDirect(0);
+
+	t_start := GetTimer();
+	for i := 0 to 99 do
+	begin
+		TVCGraph16::FillTriangleDirect(mod(i * 11, 100) + 10, mod(i * 13, 180) + 20, mod(i * 7, 100) + 15, mod(i * 17, 180) + 30, mod(i * 5, 100) + 20, mod(i * 3, 180) + 40, mod(i, 15) + 1);
+	end;
+	t_end := GetTimer();
+	if (t_end >= t_start) then res_filltriangle := t_end - t_start else res_filltriangle := (65535 - t_start) + t_end;
+
+	// --------------------------------------------------------------------------
+	// 10. TESZT: Screen Clear (ClsDirect - 100 teljes 15.36 KB-os képernyőtörlés)
+	// --------------------------------------------------------------------------
+	t_start := GetTimer();
+	for i := 0 to 99 do
+	begin
+		TVCGraph16::ClsDirect(mod(i, 16));
+	end;
+	t_end := GetTimer();
+	if (t_end >= t_start) then res_cls := t_end - t_start else res_cls := (65535 - t_start) + t_end;
+
+
+	// ==========================================================================
+	// EREDMÉNYEK MEGJELENÍTÉSE (SCOREBOARD)
+	// ==========================================================================
+	TVCGraph16::ClsDirect(0);
+
+	// Díszkeret (Világoszöld keret - Color 12)
+	TVCGraph16::RectDirect(2, 5, 125, 234, 12);
+	TVCGraph16::RectDirect(3, 7, 124, 232, 12);
+	TVCGraph16::HLineDirect(4, 24, 123, 12);
+
+	// Fejléc felirat: "BENCHMARK 16"
+	// B:
+	TVCGraph16::VLineDirect(6, 11, 19, 14); TVCGraph16::HLineDirect(6, 11, 8, 14); TVCGraph16::HLineDirect(6, 15, 8, 14); TVCGraph16::HLineDirect(6, 19, 8, 14); TVCGraph16::VLineDirect(8, 11, 19, 14);
+	// E:
+	TVCGraph16::VLineDirect(10, 11, 19, 14); TVCGraph16::HLineDirect(10, 11, 12, 14); TVCGraph16::HLineDirect(10, 15, 12, 14); TVCGraph16::HLineDirect(10, 19, 12, 14);
+	// N:
+	TVCGraph16::VLineDirect(14, 11, 19, 14); TVCGraph16::LineDirect(14, 11, 16, 19, 14); TVCGraph16::VLineDirect(16, 11, 19, 14);
+	// C:
+	TVCGraph16::VLineDirect(18, 11, 19, 14); TVCGraph16::HLineDirect(18, 11, 20, 14); TVCGraph16::HLineDirect(18, 19, 20, 14);
+	// H:
+	TVCGraph16::VLineDirect(22, 11, 19, 14); TVCGraph16::HLineDirect(22, 15, 24, 14); TVCGraph16::VLineDirect(24, 11, 19, 14);
+	// M:
+	TVCGraph16::VLineDirect(26, 11, 19, 14); TVCGraph16::LineDirect(26, 11, 28, 15, 14); TVCGraph16::LineDirect(28, 15, 30, 11, 14); TVCGraph16::VLineDirect(30, 11, 19, 14);
+	// A:
+	TVCGraph16::VLineDirect(32, 11, 19, 14); TVCGraph16::HLineDirect(32, 11, 34, 14); TVCGraph16::HLineDirect(32, 15, 34, 14); TVCGraph16::VLineDirect(34, 11, 19, 14);
+	// R:
+	TVCGraph16::VLineDirect(36, 11, 19, 14); TVCGraph16::HLineDirect(36, 11, 38, 14); TVCGraph16::HLineDirect(36, 15, 38, 14); TVCGraph16::VLineDirect(38, 11, 15, 14); TVCGraph16::LineDirect(37, 15, 38, 19, 14);
+	// K:
+	TVCGraph16::VLineDirect(40, 11, 19, 14); TVCGraph16::LineDirect(42, 11, 41, 15, 14); TVCGraph16::LineDirect(41, 15, 42, 19, 14);
+
+	// "16":
+	DrawChar(46, 12, 1, 13);
+	DrawChar(51, 12, 6, 13);
+
+	// Oszlop elválasztó vonal
+	TVCGraph16::HLineDirect(4, 30, 123, 12);
+
+	// Eredmények kiírása soronként
+	DisplayResultBar(34,  1, res_hline);        // 1: Fast HLine (1000x)
+	DisplayResultBar(49,  2, res_vline);        // 2: Fast VLine (1000x)
+	DisplayResultBar(64,  3, res_line);         // 3: Bresenham Line (1000x)
+	DisplayResultBar(79,  4, res_rect);         // 4: Rectangles (500x)
+	DisplayResultBar(94,  5, res_fillrect);     // 5: FillRect (200x)
+	DisplayResultBar(109, 6, res_circle);       // 6: Circles (300x)
+	DisplayResultBar(124, 7, res_fillcircle);   // 7: FillCircle (100x)
+	DisplayResultBar(139, 8, res_triangle);     // 8: Triangles (300x)
+	DisplayResultBar(154, 9, res_filltriangle); // 9: FillTriangle (100x)
+	DisplayResultBar(169, 10, res_cls);         // 10: Screen Cls (100x)
+
+	// Alsó dekoráció és minták (különböző színekkel demonstrálva a 16 színt)
+	TVCGraph16::HLineDirect(4, 186, 123, 12);
+
+	// 1. Körvonal (Sárga - Color 14)
+	TVCGraph16::CircleDirect(14, 210, 8, 14);
+
+	// 2. Kitöltött kör (Piros - Color 10)
+	TVCGraph16::FillCircleDirect(33, 210, 7, 10);
+
+	// 3. Háromszög körvonal (Ciánkék - Color 13)
+	TVCGraph16::TriangleDirect(46, 224, 54, 196, 62, 224, 13);
+
+	// 4. Kitöltött háromszög (Kék - Color 9)
+	TVCGraph16::FillTriangleDirect(67, 224, 75, 196, 83, 224, 9);
+
+	// 5. Téglalap körvonal (Világoszöld - Color 12)
+	TVCGraph16::RectDirect(88, 198, 103, 222, 12);
+
+	// 6. Kitöltött téglalap (Magenta - Color 11)
+	TVCGraph16::FillRectDirect(108, 198, 123, 222, 11);
+
+	TVCGraph16::VRAMOff();
+
+	// Végtelen ciklus
+	while (1) do
+	begin
+	end;
+end.

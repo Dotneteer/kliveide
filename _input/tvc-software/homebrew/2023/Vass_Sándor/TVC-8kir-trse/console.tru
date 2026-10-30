@@ -1,0 +1,175 @@
+Unit Console;
+// @use "format"
+@use "system/str"
+
+var
+	X, Y: Byte;
+	len : Byte;
+	const CURSOR_LEFT : Byte 	= $13;
+	const CURSOR_RIGHT: Byte 	= $04;
+	const CURSOR_UP : Byte 		= $05;
+	const CURSOR_DOWN: Byte 	= $18;
+	
+	
+/**
+Sets text X (horizontal) and Y (vertical) position. 
+<ul>
+<li>X: 1 - 64 in Graphics 2</li>
+<li>X: 1 - 32 in Graphics 4</li>
+<li>X: 1 - 16 in Graphics 16</li>
+<li>Y: 1 - 24 in all graphics modes</li>
+</ul>
+Example: Crt::GotoXY(1, 23);<br/><br/>
+Uses the system (firmware) function.
+**/
+procedure GotoXY(X, Y : global byte);
+begin
+	Asm("
+		ld A,[Console_X]
+		ld B,A
+		ld A,[Console_Y]
+		ld C,A
+		rst $30 		// TV-Computer ROM routine call
+		db $23 		// CPOS - set position
+	");
+end;
+
+/**
+Writes the text specified in the param to the current position.
+Example: Write("TRSE CRT Tutorial");<br/><br/>
+Uses the system (firmware) function.
+**/
+procedure Write(Text : ^byte);
+begin
+	len := 0;
+	while (Text[len] <> 0) do
+		inc (len);
+	if(len=0) Then
+		return;
+	Asm("
+			ld DE,[Console_Text]	// text 
+			ld B,0
+			ld A,[Console_len]
+			ld C,A
+			rst $30 				// TV-Computer ROM routine call
+			db $22 				// ED_BKOUT - write text
+	");
+end;
+
+procedure WriteNum(num : Integer);
+var 	txtBuf : array[6] of Byte;
+Begin
+	str::itoa(num, #txtBuf, 10);
+	Write(#txtBuf);
+end;
+
+
+/**
+Writes the Text param to the specified character position.<br/>
+Params:
+<ul>
+<li>1. horizontal char. pos. 1 - 16 / 32 / 64</li>
+<li>2. vertical char. pos.   1 - 24</li>
+<li>3. text to write. Text length: 1 - 254</li>
+</ul>
+Example: WriteAt(10, 7, "TRSE CRT Tutorial");<br/><br/>
+Uses the system (firmware) function.
+**/
+procedure WriteAt(X, Y : global byte; Text : ^byte);
+begin
+	len := 0;
+	while (Text[len] > 0) do
+		inc (len);
+	Asm("
+			// 
+			ld A,[Console_X]
+			ld B,A
+			ld A,[Console_Y]
+			ld C,A
+			rst $30 				// TV-Computer ROM routine call
+			db $23 				// CPOS function - set position
+			// Write
+			ld DE,localVariable_Console_WriteAt_Console_Text	// text 
+			ld B,0
+			ld A,[Console_len]
+			ld C,A
+			rst $30 				// TV-Computer ROM routine call
+			db $22 				// ED_BKOUT function - write text
+	");
+end;
+
+procedure ReadLine(buffer: ^Byte, maxLen: Byte);
+Begin
+	if maxLen=0 Then
+		return;
+	asm("
+		rst $30
+		db $24	// CFIX
+		ld hl, localVariable_Console_ReadLine_Console_buffer
+		ld e,[hl]
+		inc hl
+		ld d,[hl]
+		ex de,hl
+		ld a,[localVariable_Console_ReadLine_Console_maxLen]
+		ld d,a
+ReadLine_Console_Loop:
+		push de
+		rst $30
+		db $A1	// ED-CHIN
+		pop de
+		ld [hl],c
+		ld a,$0D
+		cp c
+		jr z,ReadLine_Console_Return	// RETURN pressed
+		ld a,$1B
+		cp c
+		jr z,ReadLine_Console_Esc	// ESC pressed
+		dec d
+		jr z,ReadLine_Console_Return	// size limit reached, HL still points to the last available position
+		inc hl
+		jr ReadLine_Console_Loop
+ReadLine_Console_Esc:
+		ld hl, localVariable_Console_ReadLine_Console_buffer
+		ld e,[hl]
+		inc hl
+		ld d,[hl]
+		ex de,hl
+ReadLine_Console_Return:
+		xor a
+		ld [hl],a
+	");
+end;
+
+procedure EditorOut(enabled : boolean);
+var 
+	EDOUT_CODE : byte at $0b0a;
+Begin
+	if enabled then
+		EDOUT_CODE := 2
+	else		
+		EDOUT_CODE := 0;
+End;
+
+
+function ReadKey() : Byte;
+Begin
+	asm("
+		rst $30
+		db $91
+		ld a,c
+	");
+End;
+
+procedure WriteChar(c : Byte);
+Begin
+	asm("
+		ld a,[Console_c];
+		ld c,a
+		rst $30
+		db $21
+	");
+End;
+
+
+
+end.

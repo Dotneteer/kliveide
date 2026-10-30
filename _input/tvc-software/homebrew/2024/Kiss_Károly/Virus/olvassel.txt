@@ -1,0 +1,31 @@
+VIRUS - Videoton TV Computer logikai játék 1, vagy 2 személy részére.
+
+A játék hasonlít az amőba játékhoz, azzal a különbséggel, hogy
+itt 4 egyforma és azonos méretű vírust kell kirakni egymás mellé.
+A vírusoknak 3 mérete van: kicsi, közepes, nagy. A saját vírusunk
+bármlyeik mezőre tehettjük, de ha van már ott egy vírus, akkor
+annak mérete eggyel nő és átszíneződik a saját színünkre.
+A vírus nagy méret után újra kicsi méretű lesz.
+
+A program futtatásához 64 kb memória szükséges.
+Irányítás: 
+	1-es játékos: Beépített joy, vagy Joy1, 1-es joy tűzgomb vagy Return
+	2-es játékos: WSAD billentyűk, vagy Joy2, 2-es joy tűzgomb vagy Space
+
+Köszönet a következőknek:
+Beethovennek a Virus című szerzeményéért, ami a menüben szól (sajnos ő már nem tudja elolvasni a köszönetet)
+Balázs Árpádnak a Bodzavirág című dalért, ami a nyertes örömére szólal meg.
+Valakinek aki elindította az AI forradalmat, a címkép logó AI által készített, plusz a nyerő kép is.
+Lénárt Attillának a BMPtoTVC képkonvertálóért, amivel a menü logóját konvertáltam.
+Bertók Zsoltnak a BmpToTVCSprite képkonverterért, a TRSE Game Engine rutinjaiért, a TVCDigi konverteréért, plusz a sok segítségért.
+Nicolaas Ervik Groeneboomnak a Turbo Rascal Syntax Error (TRSE) keretrendszerért, amiben készült az egész program.
+Major Tamásnak a DevToolért, amiben a nyertes zene lejátszója lett fordítva binárisként.
+Szalontai Bélának aki elkészítette a nyertes zene wavetable lejátszóját és a kedvemért átírta fix címre, hogy nekem is jó legyen.
+Márta Krisztiánnak az auTVC tömörítőért, amivel a végső program be lett tömörítve, így elkerülve az utántöltögetést és a 42k-s fájl limitet.
+Lakatos Attilának a tesztelésért.
+
+A program elkészítéséhez felhasználtam még a saját Midi2TVC programomat, illetve a zeneszerkesztéshez a https://onlinesequencer.net/ oldalt.
+
+
+(c) 2024 Kiss Károly - WWW.TVC.HU
+https://youtu.be/BsWGH6Zaxu0

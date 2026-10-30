@@ -1,0 +1,130 @@
+				; 2 grafikus mód beállítása megszakításból Videoton TV-Computerre
+				; A képernyő felső 120 sora Graphics 16 módba vált, a kép alső 120 sora pedig Graphics 2-be
+				; Bertók Zsolt, 2023. november 6.
+				org	6639			; TVC BASIC programs start address -> 6639 ($19EF)
+                                ;{BASIC Header
+				db	$0F,$0A,$0,$DD		; "10 PRINT" - basic token
+				db	' USR'			; " USR"
+				db	$96			; "("
+				db	'6659'			; "6659"
+				db	$95,$FF			; ")"                         
+				db	0,0,0,0,0		; BASIC header length is 20 bytes with this 5 zero, and the code starting address is 6659 ($1A03)
+                                ;}				
+				jp	START
+				
+				;{ Konstansok
+				; rendszer
+	SYS_IT_START_ADDR	equ	56			; 38H  - System Interrupt Handler kezdőcíme a memóriában (U0 page)
+	SYS_IT_PORT		equ	7			; 07H  - Cursor / Hang interrupt törlés port
+	SYS_IT_REQUEST_PORT	equ	89			; 59H   - Függőben levő IT kérések. 4-0 bitek: Cursor/Hang | Csatolo 3 | Csatolo 2 | Csatolo 1 | Csatolo 0
+	SYS_GRAPH_MODE		equ	$0B13			; GRAPHICS rendszerváltozó - a grafikus mód beállításának memóriacíme (a 6-os port tükre)
+	GRAPHICS_MODE_PORT	equ	6			; 0-1. bitek: graphics mode - 0: Graphics 2; 1: Graphics 4; 2: Graphics 16     	
+	P_SAVE			equ	3			; memória lapozás másolata a memóriában
+	MEM_PAGES_PORT		equ	2			; memória lapozás beállítás portja
+	VRAM_START		equ	$8000			; VIDEORAM kezdőcím - U2: 32768 ($8000)
+				; Grafikus módok
+	GRAPHICS2		equ	0
+	GRAPHICS4		equ	1
+	GRAPHICS16		equ	2
+				; CRTC 6845 konstansok
+	CRTC_REG_PORT		equ	$70			; CRTC regiszter kiválasztó port
+	CRTC_DATA_PORT		equ	$71			; CRTC regiszter adat port                    
+	CRTC_CURSOR_POS_HI	equ	14			; CRTC 14. regiszter: a raszter-megszakítás pozíció felső byte
+	CRTC_CURSOR_POS_LO	equ	15			; CRTC 14. regiszter: a raszter-megszakítás pozíció alsó byte
+				; képernyő cursor-megszakítás pozíciók 
+	CRTC_LINE_119		equ	1919-46                 ; 119. sor vége: (119 / 4)*64+63 - A -46 finomhangolás, mivel idő a a grafikus mód beállítás, a cursor-megszakítás átállítás és közben nem áll meg a raszter, ezért kicsit korábbra kell tenni a megszakítást, hogy legyen ideje ezeknek lefutni.
+	CRTC_LINE_239		equ	3839			; 239. sor vége: (239 / 4)*64+63 - Itt nem kell finohangolás, mivel még 16 sornyi VIDEORAM van a kép alján pluszban, meg még az alsó és felső keret is.
+				;}
+				
+				;{ Változók
+	GrMode                  db      0			; 1: Graphics 16; 0: Graphics 2
+				;}
+				
+				; a program kezdete
+	START			
+				; videoram belapozása
+				ld	A,$90			; memórialapozás értéke: U0,U1,VID,U3 -> $90
+				ld	(P_SAVE),A		; érték elmentése a P_SAVE rendszerváltozóba
+				out	(MEM_PAGES_PORT),A	; érték kiküldése a memórialapozás portra
+				; a kép felső részének kimásolása (16 színű)
+				ld	HL,PIC_1		; felső kép kezdőcíme
+				ld	DE,VRAM_START		; VIDEORAM kezdőcíme
+				ld	BC,7680			; képdarab mérete
+				ldir				; másolás
+				; a kép alsó részének kimásolása (2 színű)
+				ld	HL,PIC_2		; felső kép kezdőcíme
+				ld	DE,VRAM_START+120*64	; VIDEORAM 120. sorának kezdőcíme
+				ld	BC,7680			; képdarab mérete
+				ldir				; másolás
+				; átállítjuk a megszakítást a saját megszakítás rutinunra
+				di				; megszakítások tiltása				
+				ld	HL,SYS_IT_START_ADDR
+				ld	(HL),195		; 195 -> JP mnemonic
+				inc	HL
+				ld	(HL),low(IT_HANDLER)
+				inc	HL
+				ld	(HL),high(IT_HANDLER)	; 0038H címen: JP CURSOR_IT_HANDLER
+				ei				; megszakítások engedélyezése
+				; a program főciklusa
+	MAIN_LOOP		nop				; ide jöhet a saját program
+				jp	MAIN_LOOP				
+
+                                ;{ IT_HANDLER - saját megszakításkezelő
+				; ez egy minimalizált megszakításkezelő, amiben a grafikus módok átállítások is benne vannak
+	IT_HANDLER		push	AF
+				push	BC
+				push	HL			; a negszakításban használt regiszterek mentése a stack-re
+				out	(SYS_IT_PORT),A		; megszakítás kérés nyugtázása (A értéke közömbös)
+				; GrMode változó léptetése - értéke 0 vagy 1 lesz	
+				ld	A,(GrMode)
+				inc	A
+				and	1			; a GrMode változóban 0 és 1 váltakozik
+				ld	(GrMode),A				
+				jp	z,IT_SET_GRAPHICS2	; ha 0 van A regiszterben az "and 1" után, akkor Graphics 2-re kell váltani
+				; 16 színű mód beállítása
+	IT_SET_GRAPHICS16	ld	B,GRAPHICS16
+				ld	A,(SYS_GRAPH_MODE)
+				and	128+64+32+16+8+4	; clear bit #0 and #1
+				or	B			; set graph mode to bit #0 and #1
+				ld	(SYS_GRAPH_MODE),A	; save to system variable
+				out	(GRAPHICS_MODE_PORT),A	; send to port
+				; cursor-megszakítás pozíciójának átállítása a 119. sor végére
+				ld	HL,CRTC_LINE_119
+				ld	A,CRTC_CURSOR_POS_HI
+				out	(CRTC_REG_PORT),A	; cursor pos felső byte regiszter kiválasztása 
+				ld	A,H
+				out	(CRTC_DATA_PORT),A	; H-ban levő cursor pos felső byte kiírása
+				ld	A,CRTC_CURSOR_POS_LO
+				out	(CRTC_REG_PORT),A	; cursor pos alsó byte regiszter kiválasztása
+				ld	A,L
+				out	(CRTC_DATA_PORT),A	; az L-ben levő cursor pos alsó byte kiírása
+				jp	CURSOR_IT_END
+				; 2 színű mód beállítása
+	IT_SET_GRAPHICS2	ld	B,GRAPHICS2
+				ld	A,(SYS_GRAPH_MODE)
+				and	128+64+32+16+8+4	; clear bit #0 and #1
+				or	B			; set graph mode to bit #0 and #1
+				ld	(SYS_GRAPH_MODE),A	; save to system variable
+				out	(GRAPHICS_MODE_PORT),A	; send to port
+				; cursor-megszakítás pozíciójának átállítása a 239. sor végére
+				ld	HL,CRTC_LINE_239
+				ld	A,CRTC_CURSOR_POS_HI
+				out	(CRTC_REG_PORT),A	; cursor pos felső byte regiszter kiválasztása 
+				ld	A,H
+				out	(CRTC_DATA_PORT),A	; H-ban levő cursor pos felső byte kiírása
+				ld	A,CRTC_CURSOR_POS_LO
+				out	(CRTC_REG_PORT),A	; cursor pos alsó byte regiszter kiválasztása
+				ld	A,L
+				out	(CRTC_DATA_PORT),A	; az L-ben levő cursor pos alsó byte kiírása
+				; a használt regiszterek visszaállítása a stack-ről
+	CURSOR_IT_END		pop	HL
+				pop	BC
+				pop	AF
+				ei				; megszakítások engedélyezése
+				ret
+                                ;}																			
+				
+	PIC_1			incbin	"pic_1.bin"		; felső képdarab Graphics 16 módnak megfelelően (120 sor x 64 byte)
+	PIC_2			incbin	"pic_2.bin"		; alsó képdarab Graphics 2 módnak megfelelően (120 sor x 64 byte)
+
+				END				; A program vége. Elhagynató!

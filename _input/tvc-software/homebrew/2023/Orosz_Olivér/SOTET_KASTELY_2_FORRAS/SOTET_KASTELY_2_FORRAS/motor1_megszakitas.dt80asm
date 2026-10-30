@@ -1,0 +1,94 @@
+		; Az INCLUDE file nem tartalmazhat  END és INCBIN utasításokat, de eltekintve szabványos asm file
+		; Ide írható a saját kód..
+
+				
+     megszak_ok		db	0
+     SYS_IT_START_ADDR        EQU  56                                      ; System Interrupt Handler kezdőcíme a memóriában (U0 page)
+     SYS_IT_FLAG              EQU  2848                                    ; IT megszakítás futását jelző flag memóriacíme (fut: 255; nem fut: 0)
+     SYS_IT_PORT              EQU  7                                       ; Cursor / Hang interrupt törlés port
+     SYS_IT_REQUEST_PORT      EQU  89                                      ; Függőben levő IT kérések. 4-0 bitek: Cursor/Hang | Csatolo 3 | Csatolo 2 | Csatolo 1 | Csatolo 0
+				
+     KEYBOARD_ROW_SELECT_PORT EQU  3                                       
+     KEY_READ_PORT            EQU  88                                      
+                              ; billentyűzet mátrix                        ;                   |7.bit|6.bit|5.bit|4.bit|3.bit|2.bit|1.bit|0.bit|
+     KEYBOARD_0               EQU  2897                                    ; bill. mátrix 0.sor: 4 ! | 1 ' |  Í  | 6 / | 0 & | 2 " | 3 + | 5 % |
+     KEYBOARD_1               EQU  2898                                    ; bill. mátrix 1.sor: 7 = |  Ö  |  Ó  | É # |  Ü  | 9 ) | 8 ( | ^ ~ |        
+	KEYBOARD_2		equ	2899			; bill. mátrix 2.sor:  R  |  Q  | @ ' |  Z  | ; $ |  W  |  E  |  T  |
+     KEYBOARD_3               EQU  2900                                    ; bill. mátrix 3.sor:  U  |  P  |  Ú  | [ { |  Ő  |  O  |  I  | ] } |
+     KEYBOARD_4               EQU  2901                                    ; bill. mátrix 4.sor:  F  |  A  | < > |  H  | \ | |  S  |  D  |  G  |
+     KEYBOARD_5               EQU  2902                                    ; bill. mátrix 5.sor:  J  |  É  |  Ü  | Ret |  Á  |  L  |  K  | Del |
+     KEYBOARD_6               EQU  2903                                    ; bill. mátrix 6.sor:  V  |  Y  |Lock |  N  |Shift|  X  |  C  |  B  |
+     KEYBOARD_7               EQU  2904                                    ; bill. mátrix 7.sor:  M  |  =  |Space|Ctrl | Esc | : . | ? , | Alt |
+				
+     PORT_3_MEM_MIRROR        EQU  2833                                    ; a 3-as port tükörképe a memóriában
+     PORT_5_MEM_MIRROR        EQU  2834                                    ; a 5-ös port tükörképe a memóriában
+     PORT_6_MEM_MIRROR        EQU  2835                                    ; a 6-os port tükörképe a memóriában
+				
+				
+                              ;{Megszakítás kezelő (INTERRUPT HANDLER)
+                              ; saját megszakításkezelő és a beállítása
+     JUMP_TO_SELF_ITERRUPT    JP   SELF_INTERRUPT                          ; Ezt az utasítást másolva a rendszer megszakítás elejére átirányítódik át a megszakításra a saját rutinra.
+     
+                              ;{SELF_INTERRUPT
+                              ; saját megszakításkezelő
+     SELF_INTERRUPT           DI                                           
+                              ;{ Interrupt init
+                              PUSH AF                                      ; save registers 
+                              PUSH BC                                      
+                              PUSH DE                                      
+                              PUSH HL                                      
+                              LD   A,255                                   
+                              LD   (SYS_IT_FLAG),A                         ; set IT_FLAG (IT is running)
+                              ;}
+                              ;{ Reset cursor/sound IT
+                              IN   A,(SYS_IT_REQUEST_PORT)                 ; get IT source                              
+                              OUT  (SYS_IT_PORT),A                         
+                              ;}
+                              ;{ fill keyboard matrix
+                              LD   A,(PORT_3_MEM_MIRROR)                   ; 0-3 bits: keyboard row select
+                              AND  128+64+32+16                            ; clear 0-3 bits
+                              LD   C,A                                     
+                              LD   HL,KEYBOARD_0                           ; Keyboard matrix start address
+                              LD   B,10                                    ; Keyboard matrix length in bytes                              
+     SET_KEYBOARD_MATRIX_LOOP LD   A,C                                     
+                              OUT  (KEYBOARD_ROW_SELECT_PORT),A            ; select keyboard matrix row
+                              IN   A,(KEY_READ_PORT)                       ; read keyboard matrix row data          
+                              CPL                                          
+                              LD   (HL),A                                  ; copy keyboard matrix row data
+                              INC  HL                                      
+                              INC  C                                       
+                              DJNZ SET_KEYBOARD_MATRIX_LOOP                
+                              ;}
+                              ;{saját kód a megszakításban
+                              ; itt lehetne bármi, amit megszakításból szeretnénk csinálni                              
+                              ;}                                         
+				;
+				
+				ld	A,(megszak_ok) ; OK=OK+1
+				inc	A
+;				ld	A,1
+				ld	(megszak_ok),A
+				;
+				;
+                              ;{ Interrupt finalizing
+                              XOR  A                                       ; A = 0                              
+                              LD   (SYS_IT_FLAG),A                         ; clear IT_FLAG (IT is not running)
+     IT_END                   POP  HL                                      ; restore registers
+                              POP  DE                                      
+                              POP  BC                                      
+                              POP  AF                                      
+                              EI                                           ; enable interrupts
+                              ;}
+                              RET                                          ; return                              
+                              ;} // GAME_INTERRUPT
+
+                              ;{SET_SELF_INTERRUPT
+                              ; megszakításkezelő átállítása a sajátra
+     SET_SELF_INTERRUPT       DI                                           ; disable interrupts
+                              LD   HL,JUMP_TO_SELF_ITERRUPT                ; HL -> JUMP_TO_SELF_ITERRUPT 
+                              LD   DE,SYS_IT_START_ADDR                    ; DE -> System Interrupt Handler starting address
+                              LDI                                          ; copy  
+                              LDI                                          ; 3
+                              LDI                                          ; bytes (what is the "JP SOUND_INTERRUPT" instruction) 
+                              EI                                           ; enable interrupts    
+                              RET                                          

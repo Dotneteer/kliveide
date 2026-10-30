@@ -1,0 +1,1166 @@
+Unit TVC_alapunit2;
+/* 
+ 2. verzió
+ VIDEOTON TVC programozásához
+ hasznos eljárások
+ utolsó változat: 2024 január 25
+---------- VÁLTOZÓK:  --------------------------------------
+          ran : véletlenszám 0..255 között
+   keretszin  : a keret színe
+   kepernyo   : ide rajzolunk
+   forras     : innen rajzoljuk a grafikát
+---------- ELJÁRÁSOK: --------------------------------------
+procedure set_Vmemory32768;
+procedure init_Graphics(param1);
+procedure init_4colors(param1,param2,param3,param4);
+procedure kepernyotorles(param1);
+procedure VARAKOZIK_SPACE_LENYOMASRA_ESFELENGEDESRE;
+procedure VARAKOZIK_BARMILYEN_BILLENTYU_LENYOMASRA;
+procedure random_szamgeneralas;
+procedure szamol_kepernyo_ertek(X (byte),Y (pixel));
+
+procedure rajz_egyszinu_egysor(szín);
+procedure rajz_egyszinu_8x8(szín);
+procedure rajz_egyszinu_4x16(param1:global byte);
+procedure rajz_egyszinu_6x21(param1:global byte);
+procedure rak_hatter_6x21;  // grafika kirakása
+
+procedure SZOVEG_konvertal;
+procedure SZOVEG_IR;
+procedure byte_to_string(param4:global byte);
+
+------------------------------------------------------------
+*/
+var  
+   // a megszakítás beállítja -már ha fut
+   keretszin:byte absolute $0B4F;
+   // paraméterek átadásához az eljárásokhoz
+   param1,param2,param3,param4,param5: byte; 
+   kepkocka,GrMode: byte;
+   kepernyo,forras,mem:pointer;
+   ran:byte; //( random szám )
+   ib:byte;
+   byte_1b:byte=0;
+   memoria_mod:byte absolute $0003;
+   
+   szovegADAT:byte;
+   szoveg:string; // max 80 karakteres szöveg
+   szovegbyte:array[80]of byte;
+   szoveg2:string; // max 80 karakteres szöveg
+   szovegbyte2:array[80]of byte;
+   szovegXb,szovegYb:byte;//
+   //
+   //  ------   SOUND   ---------
+   hangvalaszto:byte;
+   soundciim1,soundciim2:pointer;
+   soundX1,soundX2:byte;
+   soundTempo1,soundTempo2:byte;
+   soundErtek,soundErtek1,soundErtek2:byte;
+   
+   @define PORT_3_MEM_MIRROR 2833    
+   @define PORT_5_MEM_MIRROR 2834
+   @define PORT_6_MEM_MIRROR 2835
+   const SOUND_PORT_LO:byte=$4;   // 0-7. bitek: sound PITCH alsó 8 bit portja                             
+   const SOUND_PORT_HI:byte=$5;   // 0-3. bitek: sound PITCH felső 4 bit portja        | 4. bit: hang 0-tilt, 1-engedélyez | 5. bit: hang IT 0-tilt, 1-engedélyez | 6-7. bitek: bal-jobb magnó motor vezérlés          
+   const SOUND_VOLUME_PORT:byte=$6; // 2-5. bitek: sound VOLUME portja (0-15 értékekkel) | 0-1. bitek: grafikus mód | 6. bit: ??? | 7. bit: nyomtató/STORBE
+   const MAX_VOLUME:byte=15;      //  maximális hangerő érték
+   const SILENT_PITCH:integer=4095;   // a szünet PITCH értéke
+   // 128 SHL 5 = 4095
+   SOUND_PLAYING:byte=0; //1 (TRUE): lejátszás folyik; 0 (FALSE): nincs lejátszás     
+   SOUND_PORT_HI_MASK:byte=0; //maszk a Pitch felső 4 bitjének kiküldéshez a SOUND_PORT_HI-ra
+   MUSIC_VOLUME:byte=10; // a zenelejátszás hangereje (0 a csönd, 15 a max hangerő)
+   soundvol:byte=0;
+   soundpitch:integer;
+   
+   //
+   //
+// PC-s karakterkód megfelelője a programomban:
+// csak 0..127 kódok használhatóak
+//          ékezetes és speciális karakterek:
+// |=ALT+W (124)    ¤=ALT+Ű (164)    ß=ALT+Á (223) 
+// |A=Á |E=É |I=Í |O=Ó |U=Ú  ¤O=Ö ¤U=Ü  ßO=Ő  ßU=Ű
+// |a=á |e=é |i=í |o=ó |u=ú  ¤o=ö ¤u=ü  ßo=ő  ßu=ű
+// ,=ALT+Q=\ (092)    ;=ALT+Ú=× (215) 
+// Csak kóddal bevihető: ő Ő ű Ű , ;
+// Minden más működik: áÁéÉíÍóÓöÖüÜúÚ
+// Speciális karakterek: .:!?=+-
+//
+   szovegkonv:array[] of byte=(   // karakterek konvertálásához táblázat
+/* 00..15 *///0,102,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+/* 00..15 */0,102,91,92,93,94,95,97,98,27,28,29,33,30,34,35,
+/* 16..31 */0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+/* 32..47 */32,38,0,102,36,37,105,39,41,42,106,45,0,46,37,44,
+/* 48..63 */48,49,50,51,52,53,54,55,56,57,43,0,59,58,60,39,
+/* 64..79 */32,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,
+/* 80..95 */80,81,82,83,84,85,86,87,88,89,90,107,40,108,0,0,
+/* 96..111 */0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,
+/* 112..127 */16,17,18,19,20,21,22,23,24,25,26,0,124,0,0,0
+	);
+
+   
+//   @define CARPOZ 28960  //  1024 byte
+//   CARDATA:incbin("CAR2.BIN",@CARPOZ);// 128 karakter, 8byte/karakter
+   CARDATA:incbin("CAR2.BIN");// 128 karakter, 8byte/karakter
+
+procedure SOUND_OFF();
+begin
+	asm("	
+      LD   HL,2834
+      LD   A,[HL]  // A = port #5 mirror
+      AND  128+64               // clear lower 6 bits (0-3: PITCH; 4:SOUND IT, 5:SOUND SIGN)
+      LD   [HL],A  // set new value to system variable
+      OUT  ($5),A    // send new value to port #5
+      XOR   A                    // A = 0 (FALSE)
+      LD   [TVC_alapunit2_SOUND_PLAYING],A    // SOUND_PLAYING = FALSE                              
+    ");
+end;
+// ; paraméter: soundvol = VOLUME (0 - 15)
+procedure SOUND_VOLUME(soundvol:global byte);
+begin
+	asm("	
+      LD   A,[TVC_alapunit2_soundvol]
+      SLA  A                    // rotate left volume bits
+      SLA  A                    // rotate left again
+      LD   E,A                  // L = 2 bits rotated volume
+      LD   HL,@PORT_6_MEM_MIRROR
+      LD   A,[HL]// A = port #6 mirror
+      AND  128+64+2+1           // clear 2-5. bits in A register
+      OR   E                    // add volume to A register 
+      LD   [HL],A// set value to port #6 mirror
+      OUT  ($6),A// send value to port #6
+    ");
+end;
+// 
+// 128 SHL 5 = 4095   "csend"
+// PITCH érték = ADATbyte SHL 5 
+// 128 = 4096
+// 0 = 0  -vége
+// 1..127 hang (integer = byte SHL 5)
+procedure SOUND_PITCH(soundpitch:global integer);
+begin
+	asm("	
+	 LD   DE,[TVC_alapunit2_soundpitch]
+     LD   A,E                  // A = SOUND_PITCH lower 8 bits
+     OUT  ($4),A    // send to port #4
+     LD   HL,@PORT_5_MEM_MIRROR
+     LD   A,[HL]// A = port #5 mirror
+     AND  128+64+32+16         // clear lower 4 bits                         
+     OR   D                    // add PITCH hi 4 bits to A register                                                                                                                     
+     OUT  ($5),A    // send value to port #5
+    ");
+end;
+procedure SOUND_ON();
+begin
+	asm("	
+	  LD   HL,@PORT_5_MEM_MIRROR
+      LD   A,[HL]  //  A = port #5 mirror
+      AND  128+64                 //  clear lower 6 bits
+      OR   16                     //  enable sound sign (#4 bit)
+      LD   [HL],A  //  set new value to system variable
+      OUT  ($5),A      //  send new value to port #5
+      LD   [TVC_alapunit2_SOUND_PORT_HI_MASK],A //  init SOUND_PORT_HI_MASK
+      LD    A,1                 // 
+      LD   [TVC_alapunit2_SOUND_PLAYING],A      //  SOUND_PLAYING = True
+    ");
+ SOUND_PITCH(SILENT_PITCH);    
+ SOUND_VOLUME(MUSIC_VOLUME);
+end;
+
+//
+// 2+1 csatorna lejátszása
+// 2 csatornás zene
+// 2. csatornán hangeffekt ha van
+//
+/*
+   hangvalaszto:byte;
+   soundciim1,soundciim2:pointer;
+   soundX1,soundX2:byte;
+   soundTempo1,soundTempo2:byte;
+   soundErtek,soundErtek1,soundErtek2:byte;
+   */
+procedure megszakitas_zene_lejatszas3;
+begin
+ // megírjuk Pascalban és majd átírjuk ha lesz rá mód
+	
+end;
+/*
+  2 csatornas zene lejatszasa
+  hangvalaszto = 0..1 erteke megmondja melyik csatorna szol
+  soundErtek = a megszolalo hang byte formaban 0..255
+  0 = nincs tobb hang
+  255 = "csend"
+*/
+procedure megszakitas_zene_lejatszas1;
+begin
+asm("	
+    ld A,(TVC_alapunit2_hangvalaszto) // 0..1
+	inc	A
+	and	1
+	ld	(TVC_alapunit2_hangvalaszto),A				
+	jp	NZ, IT_SOUND_ZENE2_START // 2-es csatorna
+	// 1-es csatorna
+IT_SOUND_ZENE1_START  // 1-es csatorna
+    ld A,(TVC_alapunit2_soundX1) // ha nulla akkor nincs zene
+    AND 255
+    jp	Z, IT_SOUND_ZENE1_VEGE_NEMA // ha nulla, akkor ugrás a végére
+    LD B,1
+    SUB B   // soundX1:=soundX1-1;
+    ld (TVC_alapunit2_soundX1),A
+    jp	Z, IT_SOUND_ZENE1_UJADAT 
+    // ------------------
+    LD A,(TVC_alapunit2_soundErtek1)
+    LD (TVC_alapunit2_soundErtek),A
+    //
+    jp IT_SOUND_ZENE1_LEJATSZIK
+IT_SOUND_ZENE1_UJADAT  
+    // vége a hangnak, a következő hangot kell vennünk
+     LD HL,(TVC_alapunit2_soundciim1) // egyel nagyobb tombelem
+     LD DE,1
+     ADD HL,DE
+     LD (TVC_alapunit2_soundciim1),HL
+     
+     LD A,(HL)
+     LD (TVC_alapunit2_soundErtek1),A
+     LD (TVC_alapunit2_soundErtek),A
+     INC A
+     DEC A
+     jp	Z, IT_SOUND_ZENE1_VEGE_NEMA // nema, vege
+     LD A,(TVC_alapunit2_soundTempo1)  //
+     LD (TVC_alapunit2_soundX1),A
+     jp IT_SOUND_ZENE1_LEJATSZIK
+//    jp IT_SOUND_ZENE1_VEGE
+IT_SOUND_ZENE1_VEGE_NEMA
+    // nincs hang aminek szólnia kellene, az ures hang szol
+     LD A,255  // 4095 lesz
+     LD (TVC_alapunit2_soundErtek),A
+     LD A,0
+     ld (TVC_alapunit2_soundX1),A
+    //
+IT_SOUND_ZENE1_LEJATSZIK
+    //
+     ld A,(TVC_alapunit2_soundErtek)
+     LD D,A
+     AND 15
+     RL A
+     RL A
+     RL A
+     RL A
+//     RL A
+     OR 15
+     LD E,A
+     LD A,D
+     AND 240
+     RR A
+     RR A
+     RR A
+     RR A
+     LD D,A   //DE=SOUND_PITCH ertek
+     
+     LD   A,E                  // A = SOUND_PITCH lower 8 bits
+     OUT  ($4),A    // send to port #4
+     LD   HL,@PORT_5_MEM_MIRROR
+     LD   A,[HL]// A = port #5 mirror
+     AND  128+64+32+16         // clear lower 4 bits                         
+     OR   D                    // add PITCH hi 4 bits to A register                                                                                                                     
+     OUT  ($5),A    // send value to port #5
+     
+     jp IT_SOUND_ZENE1_VEGE
+    //
+    //
+    //
+IT_SOUND_ZENE2_START  // 2-es csatorna
+    ld A,(TVC_alapunit2_soundX2) // ha nulla akkor nincs zene
+    AND 255
+    jp	Z, IT_SOUND_ZENE2_VEGE_NEMA // ha nulla, akkor ugrás a végére
+    LD B,1
+    SUB B   // soundX1:=soundX1-1;
+    ld (TVC_alapunit2_soundX2),A
+    jp	Z, IT_SOUND_ZENE2_UJADAT 
+    // ------------------
+    LD A,(TVC_alapunit2_soundErtek2)
+    LD (TVC_alapunit2_soundErtek),A
+    //
+    jp IT_SOUND_ZENE2_LEJATSZIK
+IT_SOUND_ZENE2_UJADAT  
+    // vége a hangnak, a következő hangot kell vennünk
+     LD HL,(TVC_alapunit2_soundciim2) // egyel nagyobb tombelem
+     LD DE,1
+     ADD HL,DE
+     LD (TVC_alapunit2_soundciim2),HL
+     
+     LD A,(HL)
+     LD (TVC_alapunit2_soundErtek2),A
+     LD (TVC_alapunit2_soundErtek),A
+     INC A
+     DEC A
+     jp	Z, IT_SOUND_ZENE2_VEGE_NEMA // nema, vege
+     LD A,(TVC_alapunit2_soundTempo2)  //
+     LD (TVC_alapunit2_soundX2),A
+     jp IT_SOUND_ZENE2_LEJATSZIK
+//    jp IT_SOUND_ZENE1_VEGE
+IT_SOUND_ZENE2_VEGE_NEMA
+    // nincs hang aminek szólnia kellene, az ures hang szol
+     LD A,255  // 4095 lesz
+     LD (TVC_alapunit2_soundErtek),A
+     LD A,0
+     ld (TVC_alapunit2_soundX2),A
+    //
+IT_SOUND_ZENE2_LEJATSZIK
+    //
+     ld A,(TVC_alapunit2_soundErtek)
+     LD D,A
+     AND 15
+     RL A
+     RL A
+     RL A
+     RL A
+//     RL A
+     OR 15
+     LD E,A
+     LD A,D
+     AND 248
+     RR A
+     RR A
+     RR A
+     RR A
+     LD D,A   //DE=SOUND_PITCH ertek
+     
+     LD   A,E                  // A = SOUND_PITCH lower 8 bits
+     OUT  ($4),A    // send to port #4
+     LD   HL,@PORT_5_MEM_MIRROR
+     LD   A,[HL]// A = port #5 mirror
+     AND  128+64+32+16         // clear lower 4 bits                         
+     OR   D                    // add PITCH hi 4 bits to A register                                                                                                                     
+     OUT  ($5),A    // send value to port #5
+     
+
+IT_SOUND_ZENE1_VEGE // minden zene vege
+     RET
+ ");  
+end;
+// a saját megszakításunk ami váltogatja a képernyő módokat
+// MEG+
+procedure megszakitas_eljaras;
+begin
+ asm("	
+//MEGSZAKITAS_START 
+    push	AF // használt regiszterek mentése
+    push	BC
+    push	DE
+	push	HL
+	out	($7),A // megszakitas vegrehajtva jelzes
+	//
+	ld	A,(TVC_alapunit2_GrMode) // GrMode:=(GrMode+1)AND 1
+	inc	A
+	and	1
+	ld	(TVC_alapunit2_GrMode),A				
+	jp	Z, IT_SET_GRAPHICS2
+	
+	//
+	//    GrMode=1 
+	//
+    // uj képkocka rajzolható jelzés, kepkocka:=kepkocka+1;
+    ld A,(TVC_alapunit2_kepkocka)
+    inc A
+//    ld C,1
+//    add A,C
+    ld (TVC_alapunit2_kepkocka),A
+    
+    // keretszín beállítása
+    ld A,0
+    out ($0),A
+    
+//    ld	B,2 // 2=16 színű mód, 1=4 színű mód, 0=2 színű mód
+//	ld	A,($0B13)
+//	and	128+64+32+16+8+4
+//	or	B
+//	ld	($0B13),A
+//	out	($6),A
+
+	ld	HL,1919-46 //átállítása a 119. sor végére
+    ld	A,14
+	out	($70),A
+	ld	A,H
+	out	($71),A
+	ld	A,15
+	out	($70),A
+	ld	A,L
+	out	($71),A
+	jp	CURSOR_IT_END  // megszakitas vege
+	
+   // 2 színű mód beállítása
+IT_SET_GRAPHICS2	
+    //
+	//    GrMode=0 
+	//
+//	ld	B,0 // 0
+//	ld	A,($0B13)
+//	and	128+64+32+16+8+4
+//	or	B
+//	ld	($0B13),A
+//	out	($6),A
+
+    // --------------------------------------------
+    // HANG eljátszás
+    CALL TVC_alapunit2_megszakitas_zene_lejatszas1
+
+    // keretszín beállítása
+    ld A,0 // 2
+    out ($0),A
+    // --------------------------------------------
+    // billentyűzet kezelése
+    ld A,($0B11)
+    and $F0
+    ld C,A
+    
+    ld HL,$0B51
+    PUSH HL
+    POP IY
+    ld B,10
+ugras_billentyu    
+    ld A,C
+    out ($03),A
+    in A,($58)
+    cpl
+    ld (HL),A
+    inc C
+    inc HL
+    DJNZ ugras_billentyu
+    // ----------------------------------------------
+
+	ld	HL,3839 // 239. sor vége
+    ld	A,14
+	out	($70),A
+	ld	A,H
+	out	($71),A
+	ld	A,15
+	out	($70),A
+	ld	A,L
+	out	($71),A
+	
+
+CURSOR_IT_END	// megszakítás vége	
+
+    pop	HL // kilépéskor visszatöltés
+    pop	DE
+	pop	BC
+	pop	AF
+	ei
+ ");  
+end;
+//
+// MEG++
+procedure megszakitas_init;
+begin
+ // hang
+// soundciim1:=32768; soundciim2:=32768;
+// soundX1:=255; soundX2:=255;
+// soundErtek1:=4095; soundErtek2:=4095;
+ SOUND_ON();
+ // 
+asm("	
+  di	// megszakítások tiltása				
+  ld  HL,$0038
+  ld (HL),195		//; 195 -> JP mnemonic
+  inc HL
+  ld  BC,TVC_alapunit2_megszakitas_eljaras //a megszakítás nevű eljárás címét betöltjük
+  ld (HL),C
+  inc HL
+  ld (HL),B //	; 0038H címen: JP CURSOR_IT_HANDLER	
+  ei		//	; megszakítások engedélyezése
+ ");  
+end;
+
+
+// video RAM-ot belapozzuk 32768-tól $90-el hívva
+procedure set_Vmemory32768; // U0, U1, VID, U3
+begin
+   asm("	
+   ld A,$90 // video kiosztás értéke
+   ld ($3),A
+   out ($2),A
+    ");
+end;
+// csak a RAM látszik minden lapon
+procedure set_RAM32768; // U0, U1, U2, U3
+begin
+   asm("	
+   ld A,$B0 // 
+   ld ($3),A
+   out ($2),A
+    ");
+end;
+
+// bekapcsoljuk a kívánt video módot
+// (2)=128x240/16   (1)=256x240/4   (0)=512x240/2
+procedure init_Graphics(param1:global byte);
+begin
+   asm("	
+    LD   A,[TVC_alapunit2_param1] // video mód 0,1,2
+    LD C,A
+    RST  $30                           
+	db $4
+    ");
+end;
+// ---   4 szin beallitasa ------------------------------
+// csak 4 színű módban van értelme
+procedure init_4colors(param1,param2,param3,param4:global byte);
+begin
+  asm("	
+		 ld	A,[TVC_alapunit2_param1]		// 4 szin beallitasa
+		 out	($60),A
+		 ld	A,[TVC_alapunit2_param2]
+		 out	($61),A
+		 ld	A,[TVC_alapunit2_param3]
+		 out	($62),A
+		 ld	A,[TVC_alapunit2_param4]
+		 out	($63),A
+  ");
+end;
+// ---------------------------------------------
+// SPACE lenyomására majd felengedésére vár
+procedure VARAKOZIK_SPACE_LENYOMASRA_ESFELENGEDESRE;
+begin
+// 2897-től 10 byte a billentyűzet állapot
+// 2904-es cím ..X..... bitje a SPACE billentyű
+	asm("	
+varakozas_space
+				nop
+				HALT
+				ld  HL,2904
+				ld	a,(HL) 
+				cp	32
+				jp	NZ,varakozas_space // lenyomásra vár
+varakozas_space2
+				ld  HL,2904
+				ld	a,(HL) 
+				cp	32
+				jp	Z,varakozas_space2 // és felengedésre
+    ");
+end;
+// ----------------------------------------------------
+procedure random_szamgeneralas;
+begin
+  asm("	
+	  LD A,R
+	  LD [TVC_alapunit2_ran],A
+  ");
+end;
+// ----------------------------------------------------
+// Nem működik, mást kell írni helyette.
+// bit=0 =lenyomott
+// tehát a byte értéke más mint 255
+// akkor van valami lenyomva
+procedure VARAKOZIK_BARMILYEN_BILLENTYU_LENYOMASRA;
+begin
+	asm("	
+		rst	$30
+		db	$91// Várakozás billentyű lenyomásra
+		ret
+    ");
+end;
+// -----------------------------------------------------------
+// -----------------------------------------------------------
+// -----------------------------------------------------------
+// -----------------------------------------------------------
+// -----------------------------------------------------------
+// ------- Teljes képernyő letörlése -------------------------
+procedure kepernyotorles(param1:global byte);
+begin
+if memoria_mod<>$90 then set_Vmemory32768;
+kepernyo:=32768;
+for param2:=0 to 240 do
+	    begin 
+		fill(kepernyo,param1,64); 
+		kepernyo:=kepernyo+64; 
+		end;
+end;
+//                               X byte,  Y pixel
+procedure szamol_kepernyo_ertek(param1,param2:global byte);
+begin
+kepernyo:=32768+param1;
+asm("	
+	  LD H,0
+	  LD A,[TVC_alapunit2_param2]  // HL:=ye*64
+	  LD L,A
+	  SLA L
+	  RL H
+	  SLA L
+	  RL H
+	  SLA L
+	  RL H
+	  SLA L
+	  RL H
+	  SLA L
+	  RL H
+	  SLA L
+	  RL H
+	  ex DE,HL // DE=HL
+	  LD HL,[TVC_alapunit2_kepernyo] // HL=kepernyo
+	  ADD HL,DE		   // HL=HL+DE  (kepernyo+ye*64)
+	  LD [TVC_alapunit2_kepernyo],HL // kepernyo=HL
+    ");
+end;
+
+procedure rajz_egyszinu_egysor(param1:global byte);
+begin
+  fill(kepernyo,param1,63);
+end;
+/*
+procedure rajz_egyszinu_1x8(param1:global byte);
+begin
+ for ib:=0 to 8 do // 0..8
+   begin
+   kepernyo[0]:=param1;
+   kepernyo:=kepernyo+64;
+   end;
+end;
+*/
+/*
+procedure rak_hatter_2x8;
+begin
+ for ib:=0 to 8 do // 0..7
+   begin
+   kepernyo[0]:=forras[0];
+   kepernyo[1]:=forras[1];
+   kepernyo:=kepernyo+64; forras:=forras+2;
+   end;
+end;
+*/
+// illene átírni gépi kódra
+procedure rak_hatter_6x21;
+begin
+ for ib:=0 to 21 do // 0..23
+   begin
+   kepernyo[0]:=forras[0];
+   kepernyo[1]:=forras[1];
+   kepernyo[2]:=forras[2];
+   kepernyo[3]:=forras[3];
+   kepernyo[4]:=forras[4];
+   kepernyo[5]:=forras[5];
+   kepernyo:=kepernyo+64; forras:=forras+6;
+   end;
+end;
+// illene átírni gépi kódra   ****
+procedure rak_hatter_4x16;
+begin
+ asm("
+     LD HL,[TVC_alapunit2_forras]
+     LD DE,[TVC_alapunit2_kepernyo]  // DE -cél, képernyő, ide rajzolunk
+     LD A,16			   // 16 sor lesz
+putimage_4x16_ciklusx
+     LD [TVC_alapunit2_byte_1b],A
+     LDI  //   HL = forrás
+     LDI  //   DE = cél
+     LDI
+     LDI
+     EX DE,HL     // HL:=kepernyo címe  DE:=forrás
+     LD BC,60
+     ADD HL,BC    //kepernyo:=kepernyo+63 -egy sorral lejjebb
+	 EX DE,HL     // DE=képernyő   HL=forrás
+	 
+     LD A,[TVC_alapunit2_byte_1b]   // ciklus számláló
+     DEC A            // -1
+     JP NZ,putimage_4x16_ciklusx // ha még nem nulla ugrás vissza
+     ");
+	/*
+ for ib:=0 to 16 do // 0..15
+   begin
+   kepernyo[0]:=forras[0];
+   kepernyo[1]:=forras[1];
+   kepernyo[2]:=forras[2];
+   kepernyo[3]:=forras[3];
+   kepernyo:=kepernyo+64; forras:=forras+4;
+   end;
+*/   
+end;
+// illene átírni gépi kódra
+procedure rak_hatter_4x16B;
+begin
+ for ib:=0 to 16 do // 0..23
+   begin
+   kepernyo[0]:=forras[0]|240;
+   kepernyo[1]:=forras[1]|240;
+   kepernyo[2]:=forras[2]|240;
+   kepernyo[3]:=forras[3]|240;
+   kepernyo:=kepernyo+64; forras:=forras+4;
+   end;
+end;
+// illene átírni gépi kódra
+procedure rak_hatter_2x8;
+begin
+ for ib:=0 to 8 do // 0..23
+   begin
+   kepernyo[0]:=forras[0];
+   kepernyo[1]:=forras[1];
+   kepernyo:=kepernyo+64; forras:=forras+2;
+   end;
+end;
+/*
+procedure ment_hatter_2x8;
+begin
+ for ib:=0 to 8 do // 0..8
+   begin
+   forras[0]:=kepernyo[0];
+   forras[1]:=kepernyo[1];
+   kepernyo:=kepernyo+64; forras:=forras+2;
+   end;
+end;
+*/
+procedure rajz_egyszinu_2x8(param1:global byte);
+begin
+ for ib:=0 to 8 do // 0..8
+   begin
+   kepernyo[0]:=param1;
+   kepernyo[1]:=param1;
+   kepernyo:=kepernyo+64;
+   end;
+end;
+/*
+procedure rajz_egyszinu_4x8(param1:global byte);
+begin
+ for ib:=0 to 8 do // 0..8
+   begin
+   kepernyo[0]:=param1;
+   kepernyo[1]:=param1;
+   kepernyo[2]:=param1;
+   kepernyo[3]:=param1;
+   kepernyo:=kepernyo+64;
+   end;
+end;
+*/
+
+procedure rajz_egyszinu_4x16(param1:global byte);
+begin
+ for ib:=0 to 16 do // 0..15
+   begin
+   kepernyo[0]:=param1;
+   kepernyo[1]:=param1;
+   kepernyo[2]:=param1;
+   kepernyo[3]:=param1;
+   kepernyo:=kepernyo+64;
+   end;
+end;
+
+procedure rajz_egyszinu_6x21(param1:global byte);
+begin
+ for ib:=0 to 21 do // 0..15
+   begin
+   kepernyo[0]:=param1;
+   kepernyo[1]:=param1;
+   kepernyo[2]:=param1;
+   kepernyo[3]:=param1;
+   kepernyo[4]:=param1;
+   kepernyo[5]:=param1;
+   kepernyo:=kepernyo+64;
+   end;
+end;
+
+procedure putimage_a8x8_color3();
+begin
+ asm("	
+     LD DE,(TVC_alapunit2_kepernyo)  // DE -cél, képernyő, ide rajzolunk
+     RES 0,E		   // DE mindenképp páros legyen
+     LD BC,(TVC_alapunit2_forras)    // BC -forrás, innen rajzolunk, itt a grafika
+     LD A,8			   // 8 sor lesz
+putimage_a8x8_color3_ciklus
+     LD [TVC_alapunit2_byte_1b],A
+
+     EX DE,HL     // HL:=kepernyo címe
+     LD A,(BC)    // adat betöltése   BC=forrás címe
+     
+     LD D,A
+     SRL D
+     SRL D     // 4 felső bitet alulra toljuk
+     SRL D
+     SRL D
+     LD A,D
+     SLA A
+     SLA A     // a 4 bitet vissza fel
+     SLA A
+     SLA A
+     OR D      // és összefésüljük
+	 LD (HL),A    // ki is küldjük
+	 SET 0,L      // HL:=HL+1
+     LD A,(BC)    // adat betöltés újra
+     INC BC       // forras:=forras+1
+     
+     LD D,A
+     SLA D
+     SLA D
+     SLA D		// alsó 4 bitet fel
+     SLA D
+     LD A,D
+     SRL A
+     SRL A      // vissza le
+     SRL A
+     SRL A
+     OR D      // és összefésüljük
+	 LD (HL),A    // és kiírjuk
+     LD D,0
+     LD E,63      
+     ADD HL,DE    //kepernyo:=kepernyo+63 -egy sorral lejjebb
+	 EX DE,HL     // DE:=HL   HL-t DE-be mentjük
+     
+     LD A,[TVC_alapunit2_byte_1b]   // ciklus számláló
+     DEC A            // -1
+     JP NZ,putimage_a8x8_color3_ciklus // ha még nem nulla
+     // és ide fut ha elérte a nullát
+     ");
+end;
+/*
+procedure PONTSZAM3_nullaz;
+begin
+ mem[0]:=48;mem[1]:=48;mem[2]:=48;
+end;
+procedure PONTSZAM3_ad1;
+begin
+ mem[2]:=mem[2]+1;
+ if mem[2]>57 then
+   begin
+   mem[2]:=48;
+   mem[1]:=mem[1]+1;
+   if mem[1]>57 then 
+     begin
+     mem[1]:=48;
+     mem[0]:=mem[0]+1;
+     if mem[0]>57 then 
+        begin
+        mem[0]:=57;
+        end;
+     end;
+   end;
+end;
+procedure PONTSZAM3_vesz1;
+begin
+ mem[2]:=mem[2]-1;
+ if mem[2]<48 then
+   begin
+   mem[2]:=57;
+   mem[1]:=mem[1]-1;
+   if mem[1]<48 then 
+     begin
+     mem[1]:=57;
+     mem[0]:=mem[0]-1;
+     if mem[0]<48 then 
+        begin
+        mem[0]:=48;
+        end;
+     end;
+   end;
+end;
+procedure PONTSZAM3_kiir(param1,param2:global byte);// 3 jegyű számot kiír 
+begin
+ szamol_kepernyo_ertek(param1,param2);
+ for param3:=0 to 3 do
+   begin
+   param4:=mem[param3];
+   forras:=@CARPOZ+param4 SHL 3; 
+   putimage_a8x8_color3();
+   kepernyo:=kepernyo+2;	  
+   end;
+end;
+*/
+// megadja a szöveg hosszát karakterben kiírás szerint
+//procedure SZOVEG_HOSSZ;
+//begin
+//end;
+//
+// SZOVEG változóban lévő szöveg kódolását alakítja PC-sről 
+// TVC-sre, plusz ékezetes karaktereket kezeli
+procedure SZOVEG_konvertal;
+begin
+ param2:=0; param1:=0; param5:=0;
+ while (param1=0) do
+   begin
+   param3:=szoveg[param2];
+   if param3=0 then begin param1:=1; end // kilépés
+     ELSE
+     begin
+	     
+	 param4:=param3;
+     case param4 of // PC-s ASCII ékezetes karakterek
+	    193:param3:=2;// Á  
+	    201:param3:=3;// É
+	    205:param3:=4;// Í
+	    211:param3:=5;// Ó
+	    214:param3:=6;// Ö
+	    218:param3:=7;// Ú
+	    220:param3:=8;// Ü
+	    225:param3:=9;// á  
+	    233:param3:=10;// é
+	    237:param3:=11;// í
+	    243:param3:=12;// ó
+	    246:param3:=13;// ö
+	    250:param3:=14;// ú
+	    252:param3:=15;// ü
+     end;
+     
+	 //param3:=param4;    
+//	 if param3>127 then param3:=1; // 127-nél nagyobb kód ne legyen
+     param4:=param3;
+	 if param3<128 then param4:=szovegkonv[param3];
+ 
+     if param4=124 then // | ALT+W (124)
+           begin
+	       inc(param2);    
+	       param3:=szoveg[param2];
+	       param4:=szovegkonv[param3];
+	       case param4 of
+		        65:param4:=91;// A-Á
+		        69:param4:=92;// E-É
+		        73:param4:=93;// I-Í
+		        79:param4:=94;// O-Ó		 
+		        85:param4:=97;// U-Ú
+		        1:param4:=27;// a-á
+		        5:param4:=28;//e-é
+		        9:param4:=29;//i-í
+		        15:param4:=33;//o-ö
+		        21:param4:=34;//u-ú
+	       end;
+//	       if param4=65 then param4:=91;// Á
+//	       if param4=69 then param4:=92;// É
+//	       if param4=73 then param4:=93;// Í
+//	       if param4=79 then param4:=94;// Ó
+//	       if param4=85 then param4:=97;// Ú
+	       
+//	       if param4=97 then param4:=27;// Á
+//	       if param4=101 then param4:=28;// É
+//	       if param4=105 then param4:=29;// Í
+//	       if param4=111 then param4:=33;// Ó
+//	       if param4=117 then param4:=34;// Ú
+           end;
+       if param4=164 then // ¤=ALT+Ű (164)
+           begin
+	       inc(param2);    
+	       param3:=szoveg[param2];
+	       param4:=szovegkonv[param3];
+	       case param4 of
+		        79:param4:=95;//  -Ö
+		        85:param4:=98;//  -Ü
+		        15:param4:=30;// -ö
+		        21:param4:=35;// -ü
+	       end;
+//	       if param4=79 then param4:=95;// Ö
+//	       if param4=85 then param4:=98;// Ü
+
+//	       if param4=111 then param4:=30;// Ö
+//	       if param4=117 then param4:=35;// ü
+           end;
+       if param4=215 then param4:=47;
+       
+       if param4=223 then // ß=ALT+Á (223)
+           begin
+	       inc(param2);    
+	       param3:=szoveg[param2];
+	       param4:=szovegkonv[param3];
+	       case param4 of
+		        79:param4:=96;//  -Ő
+		        85:param4:=99;//  -Ű
+		        15:param4:=31;// -ő
+		        21:param4:=36;// -ű
+	       end;
+//	       if param4=79 then param4:=96;// Ő
+//	       if param4=85 then param4:=99;// Ű
+
+//	       if param4=111 then param4:=31;// Ő
+//	       if param4=117 then param4:=36;// Ű
+           end;
+     
+	 if param4>127 then param4:=32; // 127-nél nagyobb kód ne legyen
+	 
+//	 if param4=16 then param4:=39; // kerdojel
+//	 if param4=17 then param4:=37; // pont
+//	 if param4=61 then param4:=16; // p betu
+	 szoveg[param5]:=param4;
+     inc(param5);
+     end;
+   inc(param2);
+   end;
+szoveg[param5]:=0;
+end;
+// 'A=Á 'E=É 'I=Í 'O=Ó %O=Ö $O=Ő 'U=Ú %U=Ü $U=Ű
+// 'a=á 'e=é 'i=í 'o=ó %o=ö $o=ő 'u=ú %u=ü $u=ű
+// '=39  %=37  $=36 
+procedure SZOVEG_IR;
+begin
+	
+// lehet először konvertálni kéne 
+//
+// param1:=szoveg[0];
+// param1:=10;
+ param2:=0; param1:=0;
+// mem:=16384; // #2000
+// for param2:=0 to param1 do
+while (param1=0) do
+   begin
+//   param3:=szoveg[param2]&127;
+   param3:=szoveg[param2];
+   if param3=0 then begin param1:=1; end // kilépés
+      ELSE
+       begin // karakter kiírása
+       /*
+       if param3=39 then // '
+           begin
+	       inc(param2);    
+	       param3:=szoveg[param2];
+	       if param3=65 then param3:=91;// Á
+	       if param3=69 then param3:=92;// É
+	       if param3=73 then param3:=93;// Í
+	       if param3=79 then param3:=94;// Ó
+	       if param3=85 then param3:=97;// Ú
+           end;
+       if param3=37 then // %
+           begin
+	       inc(param2);    
+	       param3:=szoveg[param2];
+	       if param3=79 then param3:=95;// Ö
+	       if param3=85 then param3:=98;// Ö
+           end;
+       if param3=36 then // $
+           begin
+	       inc(param2);    
+	       param3:=szoveg[param2];
+	       if param3=79 then param3:=96;// Ő
+	       if param3=85 then param3:=99;// Ű
+           end;
+           */
+//       mem[param2]:=param3;
+//       if param3>127 then param3:=0;
+       //param3:=param3&127;
+//       forras:=@CARPOZ+param3 SHL 3; 
+       forras:=#CARDATA+param3 SHL 3; 
+       putimage_a8x8_color3();
+       kepernyo:=kepernyo+2;
+       szovegXb:=szovegXb+2;
+       if (szovegXb>62) then // egy sorral lejjebb
+           begin 
+	       szovegXb:=0; 
+	       szovegYb:=szovegYb+8;
+		   kepernyo:=kepernyo+7*64;
+           end;
+       end;
+   inc(param2);
+   end;
+end;
+
+procedure byte_to_string2(param4:global byte);
+begin
+ param1:=0;
+ param2:=48;
+ param3:=param4;
+// if param3>99 then begin inc(param2); param3:=param3-100; end;
+// if param3>99 then begin inc(param2); param3:=param3-100; end;
+// szoveg[param1]:=param2; inc(param1);
+ param2:=48;
+ if param3>9 then begin inc(param2); param3:=param3-10; end;
+ if param3>9 then begin inc(param2); param3:=param3-10; end;
+ if param3>9 then begin inc(param2); param3:=param3-10; end;
+ if param3>9 then begin inc(param2); param3:=param3-10; end;
+ if param3>9 then begin inc(param2); param3:=param3-10; end;
+ if param3>9 then begin inc(param2); param3:=param3-10; end;
+ if param3>9 then begin inc(param2); param3:=param3-10; end;
+ if param3>9 then begin inc(param2); param3:=param3-10; end;
+ if param3>9 then begin inc(param2); param3:=param3-10; end;
+ szoveg[param1]:=param2; inc(param1);
+ param2:=48;
+ if param3>0 then begin inc(param2); dec(param3); end;
+ if param3>0 then begin inc(param2); dec(param3); end;
+ if param3>0 then begin inc(param2); dec(param3); end;
+ if param3>0 then begin inc(param2); dec(param3); end;
+ if param3>0 then begin inc(param2); dec(param3); end;
+ if param3>0 then begin inc(param2); dec(param3); end;
+ if param3>0 then begin inc(param2); dec(param3); end;
+ if param3>0 then begin inc(param2); dec(param3); end;
+ if param3>0 then begin inc(param2); dec(param3); end;
+ szoveg[param1]:=param2; inc(param1);
+ szoveg[param1]:=0; // vége
+ inc(param1);
+ szoveg[param1]:=0; // vége
+end;
+
+procedure byte_to_string(param4:global byte);
+begin
+ param1:=0;
+ param2:=48;
+ param3:=param4;
+ if param3>99 then begin inc(param2); param3:=param3-100; end;
+ if param3>99 then begin inc(param2); param3:=param3-100; end;
+ szoveg[param1]:=param2; inc(param1);
+ param2:=48;
+ if param3>9 then begin inc(param2); param3:=param3-10; end;
+ if param3>9 then begin inc(param2); param3:=param3-10; end;
+ if param3>9 then begin inc(param2); param3:=param3-10; end;
+ if param3>9 then begin inc(param2); param3:=param3-10; end;
+ if param3>9 then begin inc(param2); param3:=param3-10; end;
+ if param3>9 then begin inc(param2); param3:=param3-10; end;
+ if param3>9 then begin inc(param2); param3:=param3-10; end;
+ if param3>9 then begin inc(param2); param3:=param3-10; end;
+ if param3>9 then begin inc(param2); param3:=param3-10; end;
+ szoveg[param1]:=param2; inc(param1);
+ param2:=48;
+ if param3>0 then begin inc(param2); dec(param3); end;
+ if param3>0 then begin inc(param2); dec(param3); end;
+ if param3>0 then begin inc(param2); dec(param3); end;
+ if param3>0 then begin inc(param2); dec(param3); end;
+ if param3>0 then begin inc(param2); dec(param3); end;
+ if param3>0 then begin inc(param2); dec(param3); end;
+ if param3>0 then begin inc(param2); dec(param3); end;
+ if param3>0 then begin inc(param2); dec(param3); end;
+ if param3>0 then begin inc(param2); dec(param3); end;
+ szoveg[param1]:=param2; inc(param1);
+ szoveg[param1]:=0; // vége
+ inc(param1);
+ szoveg[param1]:=0; // vége
+end;
+
+/*
+procedure PONTSZAM6_nullaz;
+begin
+ mem[0]:=48;mem[1]:=48;mem[2]:=48;mem[3]:=48;mem[4]:=48;mem[5]:=48;
+end;
+procedure PONTSZAM6_ad1;
+begin
+ mem[5]:=mem[5]+1;
+ if mem[5]>57 then
+   begin
+   mem[5]:=48;
+   mem[4]:=mem[4]+1;
+   if mem[4]>57 then 
+     begin
+     mem[4]:=48;
+     mem[3]:=mem[3]+1;
+     if mem[3]>57 then 
+        begin
+        mem[3]:=48;
+        mem[2]:=mem[2]+1;
+        if mem[2]>57 then 
+           begin
+           mem[2]:=48;
+           mem[1]:=mem[1]+1;
+	       if mem[1]>57 then mem[1]:=48;    
+           end;
+        end;
+     end;
+   end;
+end;
+*/
+// 8x8 pixeles karatert rajzol grafikával 
+// 4 színű módban -- FEHER     11
+/*
+procedure PONTSZAM6_kiir(param1,param2:global byte);// 6 jegyű számot kiír 
+begin
+ szamol_kepernyo_ertek(param1,param2);
+ for param3:=0 to 6 do
+   begin
+   param4:=mem[param3];
+   forras:=@CARPOZ+param4 SHL 3; 
+   putimage_a8x8_color3();
+   kepernyo:=kepernyo+2;	  
+   end;
+end;
+*/
+// -----------------------------------------------------------
+// -----------------------------------------------------------
+// ---------------------------- VÉGE az unitnak ------------------
+end.

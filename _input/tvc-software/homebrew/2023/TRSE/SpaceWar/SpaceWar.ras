@@ -1,0 +1,986 @@
+program SpaceWar;
+/*==================================================================
+This tutorial presents the TVC unit by a game demo.
+
+The TVC unit uses the VIDEOTON TV-Computer system ROM routines 
+and some helper functions coded in Assembly.
+TVC unit procedure and function names mostly use Turbo Pascal names.
+
+Author:  Bery (Zsolt Bertók)
+Version: March 5, 2023.
+==================================================================*/
+@use "tvc"
+@use "compression"
+
+@export "resources/images/SpaceWar.flf" "resources/images/SpaceWar.bin" 256 // create compressed title image from SpaceWar.flf picture
+
+var	
+	TitleSreenImage : incbin("resources/images/SpaceWar.bin") compressed; // compressed title image
+	// Consts
+	const SCREEN_WIDTH  : byte = 64; // Screen with:        64 bytes
+	const SCREEN_HEIGHT : byte = 240;// Screen height:     240 lines
+	const CHAR_WIDTH		: byte = 2;	 // One character width:   2 bytes
+	const CHAR_HEIGHT   : byte = 10; // One character height: 10 lines
+	// Player
+	const PLAYER_WIDTH	: byte = 4;  // 4 bytes = 2 characters
+	const PLAYER_HEIGHT	: byte = 20; // 20 lines
+	const PLAYER_YPOS   : byte = 220;
+	const P_EXPLOSION_Y : byte = 23;
+	// Characters
+	const XWING_TOP_CHAR: byte = 154;
+	const XWING_BOT_CHAR: byte = 156;	
+	const TIE_TOP_CHAR	: byte = 158;
+	const TIE_BOT_CHAR	: byte = 160;
+	const EXP1_TOP_CHAR	: byte = 162;
+	const Exp1_BOT_CHAR	: byte = 164;	
+	const EXP2_TOP_CHAR	: byte = 166;
+	const Exp2_BOT_CHAR	: byte = 168;	
+	const EXP3_TOP_CHAR	: byte = 170;
+	const Exp3_BOT_CHAR	: byte = 172;	
+	const EXP_DURATION  : byte = 4;
+	const EXP_SOUND     : integer = 1000;
+	// Moves
+	const MOVE_NONE			: byte = 0;
+	const MOVE_LEFT			: byte = 1;
+	const MOVE_RIGHT		: byte = 2;
+	const MOVE_UP				: byte = 3;
+	const MOVE_DOWN			:	byte = 4;
+	// Laser
+	const LASER_NO 			: byte = 10;
+	const LASER_DELAY		: byte = 15;
+	const LASER_LENGTH	: byte = 5;
+	const RED_LASER_BYTE: byte = 136; // Palette #3 color to first pixel
+	const GREEN_LASER_BYTE: byte = 8; // Palette #2 color to first pixel
+	// Enemy
+	const ENEMY_NO 			: byte = 7;
+	const ENEMY_MOVES		: byte = 20;
+	const ENEMY_WIDTH		: byte = 4;  // 4 bytes - 2 characters
+	const ENEMY_HEIGHT	: byte = 20; // 20 lines
+	const ATTACK_DELAY  : integer = 500;
+	// Enemy state
+	const DESTROYED			: byte = 0;
+	const EXPLOSION			: byte = 1;
+	const SIDE_MOVE		  : byte = 2;
+	const ATTACK		  	: byte = 3;
+	const FLY_BACK      : byte = 4;
+	// The color indices of the palette
+	const COLOR_BLACK   : byte = 0;
+	const COLOR_WHITE   : byte = 1;
+	const COLOR_GREEN   : byte = 2;
+	const COLOR_RED     : byte = 3;
+	// Variables
+	i, nr, b					  : byte;
+	// X-Wing char defs
+	XWingCharTop1				: array[10] of byte = (1,1,1,1,1,1,3,3,130,134);
+	XWingCharTop2				: array[10] of byte = (128,128,128,128,128,192,192,64,97,33);
+	XWingCharBot1				: array[10] of byte = (132,199,254,242,254,243,143,1,12,0);
+	XWingCharBot2				: array[10] of byte = (33,227,127,79,127,207,241,128,48,0);
+	// Tie Fighter char defs
+	TieCharTop1					: array[10] of byte = (128,192,192,192,192,195,197,202,253,253);
+	TieCharTop2					: array[10] of byte = (1,3,3,3,3,195,163,83,191,191);
+	TieCharBot1					: array[10] of byte = (202,197,195,192,192,192,192,128,0,0);
+	TieCharBot2					: array[10] of byte = (83,163,195,3,3,3,3,1,0,0);
+	// Explosion
+	Explosion1CharTop1	: array[10] of byte = (0,0,0,0,0,0,0,0,0,2);
+	Explosion1CharTop2	: array[10] of byte = (0,0,0,0,0,4,0,0,0,0);
+	Explosion1CharBot1	: array[10] of byte = (0,0,0,0,0,0,0,0,0,64);
+	Explosion1CharBot2	: array[10] of byte = (0,160,192,208,224,160,0,0,0,0);	
+	Explosion2CharTop1	: array[10] of byte = (0,0,0,0,0,0,0,4,16,4);
+	Explosion2CharTop2	: array[10] of byte = (0,0,32,8,0,0,18,0,0,0);
+	Explosion2CharBot1	: array[10] of byte = (0,0,0,0,0,0,128,0,32,8);
+	Explosion2CharBot2	: array[10] of byte = (0,16,4,0,8,0,72,0,128,0);	
+	Explosion3CharTop1	: array[10] of byte = (0,0,0,0,0,16,64,8,0,64);
+	Explosion3CharTop2	: array[10] of byte = (0,128,0,64,0,0,16,64,8,0);
+	Explosion3CharBot1	: array[10] of byte = (0,0,0,0,64,16,8,2,0,4);
+	Explosion3CharBot2	: array[10] of byte = (0,0,0,0,2,0,8,2,16,0);
+	// Game
+	IsGameEnd           : boolean = false;	
+	Level			          : byte = 1;
+	LevelPos            : byte;
+	IsBorderRasterOn    : boolean = false;
+	// Laser
+	LaserRec 						= record
+        									IsActive	: boolean;
+													XPos		 	: byte;
+													YPos		 	: byte;
+    										end;  
+	LaserCountdown 			: byte = 0;
+	LaserSoundPitch			: integer;
+	LaserSoundDuration	: byte;
+	// Player	
+	PlayerLive          : boolean = true;
+	PlayerXPos					: byte = 31;
+	PlayerMove					: byte = 0;	
+	PlayerLasers	 			: array[LASER_NO] of LaserRec;
+	PlayerExplosionLevel: byte = 0;
+	PlayerExpPhase      : byte;	
+	PlayerExplosionDelay: byte;
+	// Enemies
+	EnemyRec 						= record
+        									State					: byte;
+        									BaseXPos			: byte;
+        									BaseYPos			: byte;
+        									BaseDirection : byte;
+													XPos		 			: byte;
+													YPos		 			: byte;
+													Direction			: byte;
+													MoveStep      : byte;
+													IsMoved				: boolean;
+													LaserCountdown: byte;
+													ExplosionCount: byte;
+													ExplosionPhase: byte;
+													ExplosionDelay: byte;
+    										end;    										
+  Enemies	 						: array[ENEMY_NO] of EnemyRec;
+  EnemyLasers					: array[LASER_NO] of LaserRec;
+  EnemyMinLaserDelay	: byte = 100;
+  EnemyCount				  : byte;
+  EnemyMoveNr         : byte = 0;
+  EnemyAttackCountDown: integer;
+  EnemyAttackShip     : byte;
+  ShootingEnemyNr     : byte;
+  // Music
+  const MUSIC_DURATION: byte = 6;
+  const MUSIC_LENGTH  : integer = 364;
+  MusicPos		  			: integer = 109;
+  MusicPitch          : integer = 4095;
+	MusicVolume         : byte = 15;
+	MusicDuration				: byte = 1;	
+	MusicData						: array [MUSIC_LENGTH] of integer  = 
+ 												 (3349,4095,4095,4095,4095,4095,3349,3349,3349,4095,4095,4095,4095,4095,3349,3349,3349,4095,4095,4095,3349,4095,4095,4095,3349,
+													4095,3349,4095,3349,3349,4095,3349,3503,4095,4095,4095,4095,4095,3349,3349,3503,4095,4095,4095,4095,4095,3349,3349,3503,4095,
+													4095,4095,3349,4095,4095,4095,3503,4095,3503,4095,3503,3503,4095,3503,3598,4095,4095,4095,4095,4095,4095,4095,3598,4095,4095,
+													4095,3598,3598,4095,3598,3677,4095,4095,4095,4095,4095,4095,4095,3677,4095,4095,4095,3701,3652,4095,3598,3723,4095,4095,3598,
+													3349,3537,4095,3598,3723,4095,4095,4095,3349,4095,4095,3349,3537,4095,4095,4095,4095,4095,4095,4095,3598,4095,4095,4095,4095,
+													3626,4095,3677,3626,4095,4095,4095,4095,4095,4095,4095,3349,4095,4095,4095,4095,4095,3349,4095,3537,4095,4095,4095,4095,4095,
+													3598,4095,3626,4095,3349,4095,3626,3537,4095,3723,3677,4095,4095,4095,4095,4095,4095,4095,4095,4095,4095,4095,3349,4095,4095,
+													3349,3537,4095,4095,4095,4095,4095,3598,4095,3626,4095,4095,3537,3723,4095,4095,3626,3816,4095,4095,4095,4095,4095,4095,4095,
+													3537,4095,4095,4095,3626,3598,4095,3537,3723,4095,4095,4095,4095,3626,4095,3537,3349,4095,4095,4095,3349,4095,4095,3349,3537,
+													4095,4095,4095,4095,4095,4095,4095,4095,4095,4095,4095,3349,4095,4095,3349,3537,4095,4095,4095,4095,4095,4095,4095,3598,4095,
+													4095,4095,4095,3626,4095,3677,3626,4095,4095,4095,4095,4095,4095,4095,3349,4095,4095,4095,4095,4095,3349,4095,3537,4095,4095,
+													4095,4095,4095,3598,4095,3626,4095,3349,4095,3626,3537,4095,3723,3677,4095,4095,4095,4095,4095,4095,4095,4095,4095,4095,4095,
+													3349,4095,4095,3349,3537,4095,4095,4095,4095,4095,4095,3598,3626,4095,4095,3537,3723,4095,4095,3626,3816,4095,4095,4095,4095,
+													4095,4095,4095,3816,4095,4095,4095,3626,3598,4095,3537,3723,4095,4095,4095,4095,3626,4095,3537,3349,4095,4095,4095,3349,4095,
+													4095,3349,3537,4095,4095,4095,4095,4095,4095,4095,4095,4095,4095,4095);	
+ 												 
+
+
+
+	procedure PlayMusic();
+	begin
+		Dec(MusicDuration);
+		if (MusicDuration = 0) then
+		begin			
+			TVC::Sound(TVC::SILENT_SOUND);
+			MusicPitch := MusicData[MusicPos]; // next note of music
+			if (MusicPitch <> TVC::SILENT_SOUND) then
+			begin
+				MusicVolume := TVC::MAX_VOLUME;
+				TVC::Volume(MusicVolume);
+				MusicDuration := MUSIC_DURATION;
+			end
+			else
+				MusicDuration := MUSIC_DURATION - 2;
+			TVC::Sound(MusicPitch); // Play current note
+			inc (MusicPos);
+			if (MusicPos > MUSIC_LENGTH) then
+				MusicPos := 0;
+		end
+		else
+		begin
+			if (MusicPitch <> TVC::SILENT_SOUND) then
+			begin
+				MusicVolume := MusicVolume - 1; 
+				TVC::Volume(MusicVolume);
+			end;
+		end;
+	end; /* PlayMusic */
+	
+	
+	procedure TitleScreen();
+	begin    
+		TVC::SetGraphicsMode(TVC::GRAPHICS16); // set graphic mode to title screen
+		TVC::SetMemory(TVC::MEM_VID_ON); // mapping VIDEORAM to memory page #2
+		Compression::Decompress(#TitleSreenImage, $8000);
+		// Waiting for the SPACE key to be pressed and playing music
+		while ((not TVC::SpacePressed) and (not TVC::Joystick(1, TVC::JOY_FIRE))) do
+		begin
+		  TVC::WaitForSync();
+		  PlayMusic();
+		end;
+		TVC::Sound(4095); // silent
+	end; /* TitleScreen */
+	
+	
+	procedure InitGame();
+	begin		
+		TVC::SetGraphicsMode(TVC::GRAPHICS4); // set graphic mode to game
+		// define chars
+		// Player ship
+		TVC::DefChar(XWING_TOP_CHAR,   #XWingCharTop1); // User define charater to chr(154) from RunL1p1 data (10 bytes)
+		TVC::DefChar(XWING_TOP_CHAR+1, #XWingCharTop2);
+		TVC::DefChar(XWING_BOT_CHAR,   #XWingCharBot1); // User define charater to chr(154) from RunL1p1 data (10 bytes)
+		TVC::DefChar(XWING_BOT_CHAR+1, #XWingCharBot2);
+		// Enemy ship
+		TVC::DefChar(TIE_TOP_CHAR,   #TieCharTop1);
+		TVC::DefChar(TIE_TOP_CHAR+1, #TieCharTop2);
+		TVC::DefChar(TIE_BOT_CHAR,   #TieCharBot1);
+		TVC::DefChar(TIE_BOT_CHAR+1, #TieCharBot2);		
+		// Explosion
+		TVC::DefChar(EXP1_TOP_CHAR,   #Explosion1CharTop1);
+		TVC::DefChar(EXP1_TOP_CHAR+1, #Explosion1CharTop2);
+		TVC::DefChar(EXP1_BOT_CHAR,   #Explosion1CharBot1);
+		TVC::DefChar(EXP1_BOT_CHAR+1, #Explosion1CharBot2);
+		
+		TVC::DefChar(EXP2_TOP_CHAR,   #Explosion2CharTop1);
+		TVC::DefChar(EXP2_TOP_CHAR+1, #Explosion2CharTop2);
+		TVC::DefChar(EXP2_BOT_CHAR,   #Explosion2CharBot1);
+		TVC::DefChar(EXP2_BOT_CHAR+1, #Explosion2CharBot2);
+		
+		TVC::DefChar(EXP3_TOP_CHAR,   #Explosion3CharTop1);
+		TVC::DefChar(EXP3_TOP_CHAR+1, #Explosion3CharTop2);
+		TVC::DefChar(EXP3_BOT_CHAR,   #Explosion3CharBot1);
+		TVC::DefChar(EXP3_BOT_CHAR+1, #Explosion3CharBot2);		
+		// Create 4 Player ship images from the 4 redefined characters
+		TVC::CreateCharImage(XWING_TOP_CHAR, 4, COLOR_BLACK, COLOR_WHITE);
+		// Create 4 Enemy ship images from the 4 redefined characters
+		TVC::CreateCharImage(TIE_TOP_CHAR, 4, COLOR_BLACK, COLOR_GREEN); 
+		// Create explosion images from redefined characters
+		TVC::CreateCharImage(EXP1_TOP_CHAR, 4, COLOR_BLACK, COLOR_RED); 
+		TVC::CreateCharImage(EXP2_TOP_CHAR, 4, COLOR_BLACK, COLOR_RED); 
+		TVC::CreateCharImage(EXP3_TOP_CHAR, 4, COLOR_BLACK, COLOR_RED); 
+		// set the raster-interrupt position to the end of the specified line 
+		TVC::SetRasterInterruptPos(60);		
+	end; /* InitGame */
+	
+	
+  procedure DisplayHeader(DisplayLevel : boolean);
+  begin		
+	  TVC::TextBackground(COLOR_RED);
+		TVC::FillRect(0, 0, 64, 10);
+		TVC::SetColor(COLOR_BLACK);
+		if (DisplayLevel) then
+		  TVC::WriteAt(1, 1, "LEVEL: ")
+		else
+		  TVC::WriteAt(1, 1, "TRSE");
+		TVC::WriteAt(25, 1, "BerySoft");
+		TVC::SetColor(COLOR_WHITE); // White
+		TVC::WriteAt(12, 1, "SPACE WAR");
+		TVC::ByteToStr(Level);
+		if (DisplayLevel) then
+		  TVC::WriteAt(7, 1, #TVC_NumStr);
+		TVC::TextBackground(COLOR_BLACK);
+		TVC::SetColor(COLOR_RED);
+  end; /* DisplayHeader */
+
+
+	procedure GameInfo();
+	begin	  
+		// Set 4-color palette
+		TVC::SetPalette(0, TVC::PALETTE_BLACK);
+		TVC::SetPalette(1, TVC::PALETTE_WHITE);
+		TVC::SetPalette(2, TVC::PALETTE_GREEN);
+		TVC::SetPalette(3, TVC::PALETTE_RED);
+		TVC::ClearScreen(); // clear the screen
+		TVC::SetBorder(TVC::BORDER_RED);		
+    // Display game control information
+		DisplayHeader(False);
+		TVC::SetColor(COLOR_WHITE);
+		TVC::WriteAt(13, 4, "CONTROL");
+		TVC::SetColor(COLOR_GREEN);
+		TVC::WriteAt(6, 6, " JOY LEFT - MOVE LEFT");
+		TVC::WriteAt(6, 7, "JOY RIGHT - MOVE RIGHT");
+		TVC::WriteAt(6, 8, " JOY FIRE - FIRE");
+		TVC::WriteAt(6, 9, "    SPACE - FIRE");
+		TVC::SetColor(COLOR_RED);
+		TVC::WriteAt(6,10, "      ESC - SPEED ANALYSIS");
+		TVC::SetColor(COLOR_GREEN);
+		TVC::WriteAt(3,12, "Press SPACE or FIRE to START");
+		TVC::SetColor(COLOR_WHITE);
+		TVC::WriteAt(9,12, "SPACE");
+		TVC::WriteAt(18,12, "FIRE");
+		TVC::SetColor(COLOR_RED);
+		TVC::WriteAt(7,17, "SPEED ANALYSIS INFO");
+		TVC::SetColor(COLOR_GREEN);
+		TVC::WriteAt(4,19, "BLUE BORDER - GAME SPRITES");
+		TVC::WriteAt(4,20, "GRAY BORDER - GAME CONTROL");
+		TVC::WriteAt(4,21, " RED BORDER - GAME IDLE TIME");
+		TVC::SetColor(COLOR_RED);
+		TVC::WriteAt(4,23, "Developed with TRSE Pascal");
+		TVC::SetColor(COLOR_WHITE);
+		TVC::WriteAt(6,24, "TVC Unit Tutorial Game");
+		// Waiting for the SPACE key to be pressed and playing music
+		while ((not TVC::SpacePressed) and (not TVC::Joystick(1, TVC::JOY_FIRE))) do
+		begin
+		  TVC::WaitForSync();
+		  PlayMusic();
+		end;
+		TVC::Sound(TVC::SILENT_SOUND); // silent
+		// Display header of the game screen
+		TVC::ClearScreen();
+		DisplayHeader(True);
+	end; /* GameInfo */
+	
+	
+	procedure InitNewLevel();
+	begin
+		IsGameEnd := False;
+		// Init Player
+		PlayerXPos := 31;
+		// Init lasers
+		for i := 0 to LASER_NO-1 do
+		begin
+			PlayerLasers[i].IsActive := False;
+			EnemyLasers[i].IsActive := False;
+		end;		
+	  // Init enemies
+	  EnemyCount  := ENEMY_NO;
+	  EnemyMoveNr	:= 0;
+	  LevelPos    := Level-1;
+	  if (LevelPos > 8) then
+	    LevelPos := 8;
+	  // Enemy #0	  
+	  Enemies[0].BaseXPos := 20;
+	  Enemies[0].BaseYPos := 10 + LevelPos*10;
+	  Enemies[0].BaseDirection  := MOVE_RIGHT;
+	  Enemies[0].LaserCountdown := 100;
+	  // Enemy #1
+	  Enemies[1].BaseXPos := 1;
+	  Enemies[1].BaseYPos := 30 + LevelPos*10;
+	  Enemies[1].BaseDirection  := MOVE_RIGHT;
+	  Enemies[1].LaserCountdown := 10;
+	  // Enemy #2
+	  Enemies[2].BaseXPos := 59;
+	  Enemies[2].BaseYPos := 30 + LevelPos*10;
+	  Enemies[2].BaseDirection  := MOVE_LEFT;
+	  Enemies[2].LaserCountdown := 20;
+	  // Enemy #3
+	  Enemies[3].BaseXPos := 28;
+	  Enemies[3].BaseYPos := 55 + LevelPos*10;
+	  Enemies[3].BaseDirection  := MOVE_LEFT;
+	  Enemies[3].LaserCountdown := 30;
+	  // Enemy #4
+	  Enemies[4].BaseXPos := 32;
+	  Enemies[4].BaseYPos := 55 + LevelPos*10;
+	  Enemies[4].BaseDirection  := MOVE_RIGHT;
+	  Enemies[4].LaserCountdown := 40;
+	  // Enemy #5
+	  Enemies[5].BaseXPos := 8;
+	  Enemies[5].BaseYPos := 80 + LevelPos*10;
+	  Enemies[5].BaseDirection  := MOVE_RIGHT;
+	  Enemies[5].LaserCountdown := 50;
+	  // Enemy #6
+	  Enemies[6].BaseXPos := 52;
+	  Enemies[6].BaseYPos := 80 + LevelPos*10;
+	  Enemies[6].BaseDirection  := MOVE_LEFT;
+	  Enemies[6].LaserCountdown := 60;
+	  EnemyAttackShip := 6;
+	  i := 0;
+	  while (i < ENEMY_NO) do
+	  begin
+		  Enemies[i].State    := SIDE_MOVE;
+		  Enemies[i].XPos 		:= Enemies[i].BaseXPos;
+		  Enemies[i].YPos 		:= Enemies[i].BaseYPos;
+		  Enemies[i].Direction:= Enemies[i].BaseDirection;
+		  Enemies[i].MoveStep	:= ENEMY_MOVES;
+		  Enemies[i].IsMoved	:= True; // forcing put
+		  Inc(i);
+	  end;
+	  EnemyAttackCountDown := ATTACK_DELAY;
+	end; /* InitNewLevel */
+	
+	
+	procedure InitNewGame();
+	begin
+		Level := 1;
+		EnemyMinLaserDelay := 100;
+		PlayerLive := True;
+		TVC::ClearScreen();
+		DisplayHeader(True);
+		InitNewLevel();
+	end; /* InitNewGame */
+	
+		
+	procedure StartLaserSound();
+	begin
+		LaserSoundPitch := 3700;
+		LaserSoundDuration := 20;
+		TVC::Sound(LaserSoundPitch);	
+	end; /* StartLaserSound */
+	
+	
+	procedure StartEnemyLaserSound();
+	begin
+		LaserSoundPitch := 3900;
+		LaserSoundDuration := 10;
+		TVC::Sound(LaserSoundPitch);	
+	end; /* StartEnemyLaserSound */
+	
+	
+	procedure PlayLaserSound();
+	begin		
+		if ((LaserSoundDuration > 0) and PlayerLive) then
+		begin
+			Dec (LaserSoundDuration);
+			if (LaserSoundDuration > 0) then
+			begin
+				LaserSoundPitch := LaserSoundPitch - 40;
+				TVC::Sound(LaserSoundPitch);
+			end
+			else
+				TVC::Sound(TVC::SILENT_SOUND);			
+		end;
+	end; /* PlayLaserSound */
+	
+	
+	procedure PlayerFire();
+	begin
+		if (LaserCountdown = 0) then
+		begin
+			i := 0;
+			while ((i < LASER_NO-1) and PlayerLasers[i].IsActive) do
+				inc (i);
+			if (not PlayerLasers[i].IsActive) then
+			begin			
+				PlayerLasers[i].IsActive := True;
+				PlayerLasers[i].XPos := PlayerXPos + 2;
+				PlayerLasers[i].YPos := PLAYER_YPOS - CHAR_HEIGHT + 1;
+				LaserCountdown := LASER_DELAY;
+				StartLaserSound()
+			end;
+		end;
+	end; /* PlayerFire */
+	
+	
+	procedure PutLasers();
+	begin		
+		for i := 0 to LASER_NO-1 do
+		begin
+			// Player lasers
+			if (PlayerLasers[i].IsActive) then
+			begin
+				if (PlayerLasers[i].YPos >= 10) then
+				begin
+					TVC::VerticalBytes(PlayerLasers[i].XPos, PlayerLasers[i].YPos, LASER_LENGTH, RED_LASER_BYTE);
+					// clear from previous position
+					TVC::VerticalBytes(PlayerLasers[i].XPos, PlayerLasers[i].YPos+LASER_LENGTH, LASER_LENGTH, 0);
+					PlayerLasers[i].YPos -= LASER_LENGTH // move player laser by 5 lines to top of the screen
+				end
+				else
+			  begin
+				  // laser reached the top of the screen
+				  PlayerLasers[i].IsActive := False;
+				  // remove laser from the screen
+					TVC::VerticalBytes(PlayerLasers[i].XPos, PlayerLasers[i].YPos+LASER_LENGTH, LASER_LENGTH, 0);
+			  end;
+			end;
+			// Enemy lasers
+			if (EnemyLasers[i].IsActive) then
+			begin
+				TVC::VerticalBytes(EnemyLasers[i].XPos, EnemyLasers[i].YPos, LASER_LENGTH, GREEN_LASER_BYTE);
+				if (EnemyLasers[i].YPos < 245) then
+				begin
+					TVC::VerticalBytes(EnemyLasers[i].XPos, EnemyLasers[i].YPos-LASER_LENGTH, LASER_LENGTH, 0);
+					EnemyLasers[i].YPos += LASER_LENGTH; // move enemy laser by 5 lines to bottom of the screen
+				end
+				else
+			  begin
+				  // laser reached the top of the screen
+				  EnemyLasers[i].IsActive := False;
+			  end;
+			end;
+		end;
+		if (LaserCountdown > 0) then
+			Dec(LaserCountdown);
+		PlayLaserSound();
+	end; /* PutLasers */
+	
+	
+	procedure PutPlayer();
+	begin
+		if (PlayerLive) then
+		begin
+			TVC::PutCharImage(PlayerXPos, PLAYER_YPOS, XWING_TOP_CHAR, 2); // put 2 character image (X_Wing top) to PlayerXPos, PLAYER_YPOS
+			TVC::PutCharImage(PlayerXPos, PLAYER_YPOS+CHAR_HEIGHT, XWING_BOT_CHAR, 2); // put 2 character image (X_Wing bottom) to PlayerXPos, PLAYER_YPOS
+			// Clear X-Wing from prev. position
+			if (PlayerMove = MOVE_LEFT) then
+				TVC::FillRect(PlayerXPos+PLAYER_WIDTH, PLAYER_YPOS, 1, PLAYER_HEIGHT);
+			if (PlayerMove = MOVE_RIGHT) then
+				TVC::FillRect(PlayerXPos-1, PLAYER_YPOS, 1, PLAYER_HEIGHT);
+		end;
+	end; /* PutPlayer */
+	
+	
+	procedure PlayerControl();
+	begin		
+		PlayerMove := MOVE_NONE;
+		if (PlayerLive) then
+		begin
+			if (TVC::Joystick(1, TVC::JOY_LEFT) and (PlayerXPos > 0)) then
+			begin
+				Dec(PlayerXPos);
+				PlayerMove := MOVE_LEFT;
+		  end;
+			if (TVC::Joystick(1, TVC::JOY_RIGHT) and (PlayerXPos < SCREEN_WIDTH - PLAYER_WIDTH)) then
+			begin
+				Inc(PlayerXPos);
+				PlayerMove := MOVE_RIGHT;
+		  end;
+		  if (TVC::Joystick(1, TVC::JOY_FIRE) or TVC::SpacePressed()) then
+		  	PlayerFire();
+	  end;
+	  if (TVC::EscPressed) then
+	  begin
+		  TVC::Sound(TVC::SILENT_SOUND);
+		  while (TVC::EscPressed) do
+		    TVC::Delay(1);
+		  IsBorderRasterOn := not IsBorderRasterOn;
+	  end;
+	end; /* PlayerControl */
+	
+	
+	procedure PutEnemies();
+	begin
+		i := 0;
+		while (i < ENEMY_NO) do
+		begin					
+			if (Enemies[i].IsMoved and (Enemies[i].State >= SIDE_MOVE)) then
+			begin				
+   			TVC::PutCharImage(Enemies[i].XPos, Enemies[i].YPos, TIE_TOP_CHAR, 2);
+				TVC::PutCharImage(Enemies[i].XPos, Enemies[i].YPos+10, TIE_BOT_CHAR, 2);
+				case (Enemies[i].Direction) offpage of 
+					MOVE_LEFT	:begin
+												TVC::FillRect(Enemies[i].XPos+ENEMY_WIDTH, Enemies[i].YPos, 1, ENEMY_HEIGHT);
+												if (Enemies[i].State = ATTACK) then
+													TVC::FillRect(Enemies[i].XPos+1, Enemies[i].YPos-4, ENEMY_WIDTH, 4)
+												else
+												begin
+													if (Enemies[i].State = FLY_BACK) then
+														TVC::FillRect(Enemies[i].XPos+1, Enemies[i].YPos+ENEMY_HEIGHT, ENEMY_WIDTH, 4);
+												end;
+											end;
+					MOVE_RIGHT:	begin
+												TVC::FillRect(Enemies[i].XPos-1, Enemies[i].YPos, 1, ENEMY_HEIGHT);
+												if (Enemies[i].State = ATTACK) then	
+													TVC::FillRect(Enemies[i].XPos-1, Enemies[i].YPos-4, ENEMY_WIDTH, 4)
+												else
+												begin
+													if (Enemies[i].State = FLY_BACK) then
+														TVC::FillRect(Enemies[i].XPos-1, Enemies[i].YPos+ENEMY_HEIGHT, ENEMY_WIDTH, 4);
+												end;
+											end;
+					MOVE_UP  :	TVC::FillRect(Enemies[i].XPos, Enemies[i].YPos+ENEMY_HEIGHT, ENEMY_WIDTH, 4);
+					MOVE_DOWN:	TVC::FillRect(Enemies[i].XPos, Enemies[i].YPos-4, ENEMY_WIDTH, 4);
+		    end; /* case Enemies[i].Direction */
+				Enemies[i].IsMoved := False;
+			end
+			else
+			begin
+				if (Enemies[i].State = EXPLOSION) then
+				begin
+					dec (Enemies[i].ExplosionDelay);
+					if (Enemies[i].ExplosionDelay = 0) then
+					begin
+						Enemies[i].ExplosionDelay := EXP_DURATION;
+						Inc(Enemies[i].ExplosionPhase);
+						if (Enemies[i].ExplosionPhase > 3) then
+							Enemies[i].ExplosionPhase := 1;
+						case (Enemies[i].ExplosionPhase) of
+							1 : begin
+									TVC::PutCharImage(Enemies[i].XPos, Enemies[i].YPos, EXP1_TOP_CHAR, 2);
+									TVC::PutCharImage(Enemies[i].XPos, Enemies[i].YPos+CHAR_HEIGHT, EXP1_BOT_CHAR, 2);
+									TVC::Sound(150);
+								end;
+						2 : begin
+									TVC::PutCharImage(Enemies[i].XPos, Enemies[i].YPos, EXP2_TOP_CHAR, 2);
+									TVC::PutCharImage(Enemies[i].XPos, Enemies[i].YPos+CHAR_HEIGHT, EXP2_BOT_CHAR, 2);									
+									TVC::Sound(50);
+								end;
+						3 : begin
+									TVC::PutCharImage(Enemies[i].XPos, Enemies[i].YPos, EXP3_TOP_CHAR, 2);
+									TVC::PutCharImage(Enemies[i].XPos, Enemies[i].YPos+CHAR_HEIGHT, EXP3_BOT_CHAR, 2);
+									TVC::Sound(100);
+								end;
+						end; /* case */					
+					end /* if Enemies[i].ExplosionDelay = 0 */
+					else
+						TVC::Sound(TVC::SILENT_SOUND);
+				end; /* if Enemies[i].State = EXPLOSION */
+			end;
+			Inc (i);
+		end;
+	end; /* PutEnemies */
+	
+	
+	procedure EnemyShoot();
+	begin
+		nr := 0;
+		while ((nr < LASER_NO-1) and EnemyLasers[nr].IsActive) do
+			inc (nr);
+		if (not EnemyLasers[nr].IsActive) then
+		begin			
+			EnemyLasers[nr].IsActive := True;
+			EnemyLasers[nr].XPos := Enemies[i].XPos + 2;
+			EnemyLasers[nr].YPos := Enemies[i].YPos + ENEMY_HEIGHT;
+			StartEnemyLaserSound();
+		end;
+	end; /* EnemyShoot */
+	
+	
+	procedure MoveEnemies();
+	begin		
+		i := 0;
+		while (i < ENEMY_NO) do
+		begin
+			if (Enemies[i].State > EXPLOSION) then
+			begin
+				if (EnemyMoveNr = i) then
+				begin
+					case (Enemies[i].State) offpage of
+						SIDE_MOVE:begin
+												Enemies[i].IsMoved := True;
+												Dec(Enemies[i].MoveStep);
+												if (Enemies[i].Direction = MOVE_RIGHT) then
+												begin							
+													if (Enemies[i].MoveStep > 0) then
+														Inc(Enemies[i].XPos)
+													else
+													begin
+														Enemies[i].Direction:= MOVE_LEFT;
+														Enemies[i].MoveStep := ENEMY_MOVES;
+													end;
+												end
+												else
+												if (Enemies[i].Direction = MOVE_LEFT) then
+												begin
+													if (Enemies[i].MoveStep > 0) then
+														Dec(Enemies[i].XPos)
+													else
+													begin
+														Enemies[i].Direction:= MOVE_RIGHT;
+														Enemies[i].MoveStep := ENEMY_MOVES;
+													end;
+												end;
+											end; /* SIDE_MOVE */
+						ATTACK:		begin
+												Enemies[i].IsMoved := True;
+												Enemies[i].Direction := MOVE_DOWN;
+												if (Enemies[i].YPos < 140) then
+													Enemies[i].YPos := Enemies[i].YPos + 4
+												else
+												begin
+												  Enemies[i].State := FLY_BACK;
+												  EnemyShoot();
+												end;
+												if (Enemies[i].XPos < PlayerXPos) then
+												begin
+													Inc (Enemies[i].XPos);
+													Enemies[i].Direction := MOVE_RIGHT;
+												end
+												else
+												begin
+													if (Enemies[i].XPos > PlayerXPos) then
+													begin
+														Dec (Enemies[i].XPos);
+														Enemies[i].Direction := MOVE_LEFT;
+													end;
+												end;
+											end;
+						FLY_BACK:	begin
+												Enemies[i].IsMoved := True;
+												Enemies[i].Direction := MOVE_UP;
+						 						if (Enemies[i].YPos > Enemies[i].BaseYPos) then
+													Enemies[i].YPos := Enemies[i].YPos - 4
+												else
+												begin
+												  Enemies[i].State := SIDE_MOVE;
+												  Enemies[i].Direction := Enemies[i].BaseDirection;
+												end;
+												if (Enemies[i].XPos < Enemies[i].BaseXPos) then
+												begin
+													Inc (Enemies[i].XPos);
+													Enemies[i].Direction := MOVE_RIGHT;
+												end
+												else
+												begin
+													if (Enemies[i].XPos > Enemies[i].BaseXPos) then
+													begin
+														Dec (Enemies[i].XPos);
+														Enemies[i].Direction := MOVE_LEFT;
+													end;
+												end;
+							 				end;
+					end; /* case (Enemies[i].State) */
+				end; /* if EnemyMoveNr = i */
+				// Shooting
+				if (PlayerLive) then
+				begin
+					Dec(Enemies[i].LaserCountdown);
+					if (Enemies[i].LaserCountdown = 0) then
+					begin
+						b := 10 + TVC::Rnd();
+						if (b > EnemyMinLaserDelay) then
+							Enemies[i].LaserCountdown := EnemyMinLaserDelay
+						else
+							Enemies[i].LaserCountdown := b;
+						EnemyShoot();
+					end;
+				end;
+			end /* if (Enemies[i].State > EXPLOSION) */
+			else
+			begin
+				// Enemy explosion
+				if (Enemies[i].State = EXPLOSION) then
+				begin
+					Dec(Enemies[i].ExplosionCount);					
+					if (Enemies[i].ExplosionCount = 0) then
+					begin
+						// Enemy is destroyed
+						Enemies[i].State := DESTROYED;
+						TVC::Sound(TVC::SILENT_SOUND);
+						// Remove enemy ship from the screen
+						TVC::FillRect(Enemies[i].XPos, Enemies[i].YPos, ENEMY_WIDTH, ENEMY_HEIGHT);
+						// Decrement the number of enemies and checking level completion
+						Dec(EnemyCount);
+						if (PlayerLive and (EnemyCount = 0)) then
+							IsGameEnd := True; // Player is live and all enemies are destroyed
+					end;
+				end;
+			end;
+			// Next enemy
+			Inc(i);
+		end; /* while i */
+		Inc(EnemyMoveNr);
+		if (EnemyMoveNr = ENEMY_NO) then
+			EnemyMoveNr := 0;
+		if (Level >= 3) then
+		begin
+			Dec (EnemyAttackCountDown);
+			// start enemy attack
+			if (EnemyAttackCountDown = 0) then
+			begin
+				EnemyAttackCountDown := ATTACK_DELAY;
+				// Attacker selection			
+				i := EnemyAttackShip;
+				while (Enemies[i].State <> ATTACK) do
+				begin			
+					i := EnemyAttackShip;
+					while ((i > 0) and (Enemies[i].State <> SIDE_MOVE)) do
+						Dec(i);
+					if (Enemies[i].State = SIDE_MOVE) then
+					begin
+						Enemies[i].State := ATTACK;
+						Enemies[i].BaseXPos := Enemies[i].XPos;
+						Enemies[i].BaseYPos := Enemies[i].YPos;
+						Enemies[i].BaseDirection := Enemies[i].Direction;
+				  end;
+					Dec (EnemyAttackShip);
+					if (EnemyAttackShip = 0) then
+					  EnemyAttackShip := ENEMY_NO - 1;
+				end;
+			end;	  	
+		end;
+	end; /* MoveEnemies */
+	
+	
+	procedure CheckingIfALaserHitThePlayer();
+	begin
+		if (PlayerLive) then
+		begin
+			i := 0;
+			while (PlayerLive and (i < LASER_NO-1)) do
+			begin
+				if (EnemyLasers[i].IsActive) then
+				begin
+					if (EnemyLasers[i].YPos >= PLAYER_YPOS and (EnemyLasers[i].YPos < PLAYER_YPOS + PLAYER_HEIGHT)) then
+					begin
+						if (EnemyLasers[i].XPos >= PlayerXPos and (EnemyLasers[i].XPos < PlayerXPos + PLAYER_WIDTH)) then
+						begin
+							// Enemy's laser hit the Player
+							PlayerLive := False;
+							PlayerExplosionLevel := EXP_DURATION*3*5;
+							PlayerExpPhase 			 := 0;
+							PlayerExplosionDelay := 1;							
+						end;
+					end;
+				end;
+				Inc(i);
+			end; /* while */
+		end
+		else
+		begin
+			// Player explosion
+			Dec (PlayerExplosionLevel);
+			if (PlayerExplosionLevel > 0) then
+			begin
+				Dec (PlayerExplosionDelay);
+				if (PlayerExplosionDelay = 0) then
+				begin
+					PlayerExplosionDelay := EXP_DURATION;
+					Inc (PlayerExpPhase);
+					if (PlayerExpPhase > 3) then
+						PlayerExpPhase := 1;
+					case (PlayerExpPhase) of
+						1 : begin
+									TVC::PutCharImage(PlayerXPos, PLAYER_YPOS, EXP1_TOP_CHAR, 2);
+									TVC::PutCharImage(PlayerXPos, PLAYER_YPOS+CHAR_HEIGHT, EXP1_BOT_CHAR, 2);
+									TVC::Sound(150);
+								end;
+						2 : begin
+									TVC::PutCharImage(PlayerXPos, PLAYER_YPOS, EXP2_TOP_CHAR, 2);
+									TVC::PutCharImage(PlayerXPos, PLAYER_YPOS+CHAR_HEIGHT, EXP2_BOT_CHAR, 2);									
+									TVC::Sound(50);
+								end;
+						3 : begin
+									TVC::PutCharImage(PlayerXPos, PLAYER_YPOS, EXP3_TOP_CHAR, 2);
+									TVC::PutCharImage(PlayerXPos, PLAYER_YPOS+CHAR_HEIGHT, EXP3_BOT_CHAR, 2);
+									TVC::Sound(100);
+								end;
+					end; /* case */
+				end
+				else
+					TVC::Sound(TVC::SILENT_SOUND);
+			end
+			else
+			begin
+				IsGameEnd := True;
+				// remove plaxyer explosion
+				TVC::FillRect(PlayerXPos, PLAYER_YPOS, PLAYER_WIDTH, PLAYER_HEIGHT);
+			end;
+		end;
+	end; /* CheckingIfALaserHitThePlayer */
+	
+	
+	procedure CheckingIfALaserHitAnEnemy();
+	begin
+		i := 0;
+		while (i < LASER_NO) do
+		begin
+			if (PlayerLasers[i].IsActive) then
+			begin
+				nr := 0;
+				while (nr < ENEMY_NO) do
+				begin
+					if (Enemies[nr].State > EXPLOSION) then
+					begin
+						if (PlayerLasers[i].YPos < Enemies[nr].YPos + ENEMY_HEIGHT and (PlayerLasers[i].YPos >= Enemies[nr].YPos)) then
+						begin
+							if (PlayerLasers[i].XPos >= Enemies[nr].XPos and (PlayerLasers[i].XPos < Enemies[nr].XPos + ENEMY_WIDTH)) then
+							begin
+								// remove laser
+								PlayerLasers[i].IsActive := False;								
+								TVC::VerticalBytes(PlayerLasers[i].XPos, PlayerLasers[i].YPos+5, 5, 0);
+								// Player's laser hit an Enemy
+								Enemies[nr].State := EXPLOSION;
+								Enemies[nr].ExplosionCount := 12;
+								Enemies[nr].ExplosionPhase := 0;
+								Enemies[nr].ExplosionDelay := 1;
+								// Remove enemy ship from the screen
+								TVC::FillRect(Enemies[nr].XPos, Enemies[nr].YPos, ENEMY_WIDTH, ENEMY_HEIGHT);
+							end;
+						end;
+					end;
+					Inc(nr);
+				end; /* while enemy */
+			end;
+			Inc(i);
+		end; /* while PlayerLasers */
+	end; /* CheckingIfALaserHitAnEnemy */
+	
+	
+	procedure GameOver();
+	begin
+		TVC::Sound(TVC::SILENT_SOUND);
+		// Waiting for the SPACE key to be released
+		while (TVC::SpacePressed() or (TVC::Joystick(1, TVC::JOY_FIRE))) do
+			TVC::Delay(1);
+	  // Dsplay GAME OVER
+		TVC::TextBackground(COLOR_RED);
+		TVC::FillRect(5, 90, 54, 70);
+		TVC::SetColor(COLOR_WHITE);
+		TVC::WriteAt(8, 11, "G A M E   O V E R");
+		TVC::SetColor(COLOR_BLACK);
+		TVC::WriteAt(7, 13, "Press SPACE or");
+		TVC::SetColor(COLOR_WHITE);
+		TVC::WriteAt(13, 13, "SPACE");
+		TVC::WriteAt(22, 13, "FIRE");
+		TVC::SetColor(COLOR_BLACK);
+    TVC::WriteAt(11, 15, "to");
+    TVC::SetColor(COLOR_WHITE);
+    TVC::WriteAt(14, 15, "NEW GAME");
+		TVC::TextBackground(COLOR_BLACK); // Black
+		// Waiting for the SPACE key to be pressed
+		while ((not TVC::SpacePressed) and (not TVC::Joystick(1, TVC::JOY_FIRE))) do
+			TVC::Delay(1);
+		// Init New Game
+		InitNewGame();
+	end; /* GameOver */
+	
+	
+	procedure NewLevel();
+	begin
+		TVC::Sound(TVC::SILENT_SOUND);
+		Inc (Level);
+		if (EnemyMinLaserDelay > 20) then
+			EnemyMinLaserDelay := EnemyMinLaserDelay - 20;		
+		// Waiting for the SPACE key to be released
+		while (TVC::SpacePressed() or (TVC::Joystick(1, TVC::JOY_FIRE))) do
+			TVC::Delay(1);
+	  // Display Congratulation
+	  TVC::SetPalette(2, TVC::PALETTE_DARK_GREEN);
+		TVC::TextBackground(COLOR_GREEN);
+		TVC::FillRect(5, 90, 54, 70);
+		TVC::SetColor(COLOR_WHITE);
+		TVC::WriteAt(9, 11, "CONGRATULATION!");
+		TVC::SetColor(COLOR_BLACK);
+		TVC::WriteAt(7, 13, "Press SPACE or FIRE");
+		TVC::SetColor(COLOR_WHITE);
+		TVC::WriteAt(13, 13, "SPACE");
+		TVC::WriteAt(22, 13, "FIRE");
+		TVC::SetColor(COLOR_BLACK); // Black
+		TVC::WriteAt(11, 15, "to LEVEL");
+		TVC::SetColor(COLOR_WHITE);
+		TVC::ByteToStr(Level);
+		TVC::WriteAt(20, 15, #TVC_NumStr);
+		TVC::TextBackground(COLOR_BLACK); // Black
+		// Waiting for the SPACE key to be pressed
+		while ((not TVC::SpacePressed) and (not TVC::Joystick(1, TVC::JOY_FIRE))) do
+			TVC::Delay(1);		
+		TVC::ClearScreen();
+		TVC::SetPalette(2, TVC::PALETTE_GREEN);
+		DisplayHeader(True);
+		InitNewLevel();
+	end; /* NewLevel */
+	
+	
+begin
+	TitleScreen();
+	InitGame();
+	GameInfo();
+	InitNewLevel();	
+	while (true) do
+	begin
+		// Game Main Loop
+		while (not IsGameEnd) do
+		begin
+			TVC::WaitForSync(); // waiting for raster-interrupt for smooth movement
+			if (IsBorderRasterOn) then
+				TVC::Out(TVC::SYS_BORDER_PORT, TVC::BORDER_BLUE);
+			PutLasers();		
+			PutEnemies();
+			PutPlayer();
+			if (IsBorderRasterOn) then
+				TVC::Out(TVC::SYS_BORDER_PORT, TVC::BORDER_GRAY);
+			CheckingIfALaserHitThePlayer();
+			CheckingIfALaserHitAnEnemy();
+			PlayerControl();
+			MoveEnemies();
+			if (IsBorderRasterOn) then
+				TVC::Out(TVC::SYS_BORDER_PORT, TVC::BORDER_RED);
+		end; /* Game Main Loop */
+		if (PlayerLive) then
+			NewLevel()
+		else
+		  GameOver();
+	end; /* infinity game loop */
+end.

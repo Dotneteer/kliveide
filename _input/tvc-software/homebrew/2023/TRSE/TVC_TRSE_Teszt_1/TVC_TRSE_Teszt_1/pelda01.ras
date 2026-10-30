@@ -1,0 +1,227 @@
+program Teszt_09;
+//
+// Videoton TVC-re próbáluk programot írni, fordítani
+// a TRSE 0.14 fejlesztőeszközzel.
+// Célplatformnak válasszuk mondjuk a Spectrumot.
+// Project settings -> Target Settings
+// pipa: Override default target setting
+// program start adress: $1A01
+// pipa: Ignore BASIC SYS start
+// fordítsunk egy VALAMI.BIN-t
+// utána futtassuk az OSSZEFUZ.BAT fájlt ami a 
+// VALAMI.BIN elé másolja a CASBIN.BIN fájlt és 
+// létrehozza a .CAS fájlt, ami már TVC emulátorban
+// futtatható.
+//
+var  
+    
+	a,i,j,s,e:byte;
+	ii:integer;
+	Ran:byte; //( random szám )
+	
+	kepernyo:pointer of byte;
+	po2:pointer of byte;
+	mem:pointer of byte;
+	
+	xe,ye:byte;
+
+    // ebben a tömbben tároljuk a pályát
+    // 16x15-ös pálya, 240 byte
+    map:array[241]of byte;
+	
+  	// grafikai adatok, a kő és az ellenfél, 1 elem= 64 byte
+    grafika:array[]of byte=(
+        // blokk 0 -kő
+        51,255,255,238,68,85,119,221,170,187,255,170,221,255,255,204,187,255,255,170,255,255,255,68,187,255,238,136,255,255,221,0,255,255,136,0,255,255,68,204,187,255,153,170,119,85,17,68,187,170,170,238,85,0,0,68,0,34,136,136,17,68,0,0,
+        // blokk 1 -ellenfél
+        0,160,160,128,16,80,80,64,32,160,160,160,48,112,240,96,32,0,128,32,48,16,192,32,32,240,240,160,48,192,0,224,16,144,224,64,0,240,240,160,80,160,160,192,160,208,118,160,208,243,240,208,177,248,32,160,80,160,16,0,0,80,32,128,
+        
+		0);  //
+
+// bekapcsoljuk a kívánt video módot, majd a 
+// video RAM-ot belapozzuk 32768-tól.
+procedure init_Graphics(mode:byte);
+begin
+	asm("	
+         LD   C,mode // 0,1,2 = 2,4,16 color
+         RST  $30                           
+	     db $4 //
+		 ld	A,$50 // video ram belapozása
+		 ld	($3),A
+		 out ($2),A
+    ");
+end;
+procedure init_4colors();
+begin
+	asm("	
+		 ld	A,$55		// 4 szin beallitasa
+		 out	($63),A
+		 ld	A,$41		
+		 out	($62),A
+		 ld	A,$44		
+		 out	($61),A
+		 ld	A,$00		
+		 out	($60),A
+    ");
+end;
+// Ran byte változó tartalma random 0..255 lesz
+procedure random_szamgeneralas;
+begin
+  asm("	
+      NOP
+	  LD A,R
+	  LD [Ran],A
+  ");
+end;
+// 16x16 pixeles objektumot rajzol cpclr színnel
+procedure putimage_color(cpclr:byte,po3:pointer of byte);
+var ig0:byte;
+begin
+for ig0:=0 to 16 do
+	   begin 
+       po3[0]:=cpclr;
+       po3[1]:=cpclr; 
+       po3[2]:=cpclr;
+       po3[3]:=cpclr; 
+       po3:=po3+64; 
+       end;
+end;
+// 16x16 pixeles objektumot rajzol grafikával
+procedure putimage_a(po4:pointer of byte);
+var ig1:byte;
+begin
+for ig1:=0 to 16 do
+	   begin
+       po4[0]:=grafika[ii]; inc(ii);
+       po4[1]:=grafika[ii]; inc(ii); 
+       po4[2]:=grafika[ii]; inc(ii);
+       po4[3]:=grafika[ii]; inc(ii); 
+       po4:=po4+64; 
+       end;
+end;
+
+procedure kiszamol_kepernyo_ertek();
+begin
+kepernyo:=32768+xe;
+	asm("	
+	  NOP
+	  LD H,0
+	  LD A,[ye]
+	  LD L,A
+	  SLA L
+	  RL H
+	  SLA L
+	  RL H
+	  SLA L
+	  RL H
+	  SLA L
+	  RL H
+	  SLA L
+	  RL H
+	  SLA L
+	  RL H
+	  ex DE,HL
+	  LD HL,[kepernyo]
+	  ADD HL,DE
+	  LD [kepernyo],HL
+    ");
+end;
+
+// -----------------------------------------------------
+// -----------------------------------------------------
+// --------------------------------------------------
+// --------------- Indítunk egy pályát --------------
+procedure palya_generalas;
+var xf,yf:byte;
+begin
+
+// ----------  feltöltjük a MAP tömböt random elemekkel 
+random_szamgeneralas;
+e:=(31+Ran)&63; a:=Ran;
+for i:=0 to 240 do
+ begin
+ random_szamgeneralas; inc(e);
+ if e>120 then e:=22;
+ for j:=0 to e do inc(a);
+ map[i]:=(Ran+a)&3;
+ end;	
+
+	
+// 16x15-ös "pálya" kirajzolása
+po2:=32768; e:=0;
+for j:=0 to 15 do
+  begin
+  kepernyo:=po2;
+  for i:=0 to 16 do
+     begin
+	 s:=map[e]; inc(e);
+	 CASE s of
+		0:begin putimage_color(0,kepernyo); end;// semmi -fekete kocka
+		1:begin ii:=0;putimage_a(kepernyo); end;// fal kirajzolása
+		2:begin putimage_color(15,kepernyo); end;// piros kocka
+		3:begin ii:=0;putimage_a(kepernyo); end;// fal kirajzolása
+	end;
+    kepernyo:=kepernyo+4;
+    end;
+  po2:=po2+1024; // 16*64=1024, 16 sorral lejjebb megyünk
+  end;
+
+
+// kirajzolunk három ellenfelet a pályára
+// 1. ellenfél
+xe:=11; ye:=36; kiszamol_kepernyo_ertek();
+ii:=64; putimage_a(kepernyo);
+// 2. ellenfél
+xe:=51; ye:=75; kiszamol_kepernyo_ertek();
+ii:=64; putimage_a(kepernyo);
+// 3. ellenfél
+xe:=31; ye:=138; kiszamol_kepernyo_ertek();
+ii:=64; putimage_a(kepernyo);
+// "akárhány" ellenfél kirajzolható
+
+end;
+// SPACE lenyomására majd felengedésére vár
+procedure VARAKOZIK_SPACE_LENYOMASRA;
+begin
+	asm("	
+varakozas_space
+				nop
+				HALT
+				ld  HL,2904
+				ld	a,(HL) 
+				cp	32
+				jp	NZ,varakozas_space // lenyomásra vár
+varakozas_space2
+				ld  HL,2904
+				ld	a,(HL) 
+				cp	32
+				jp	Z,varakozas_space2 // és felengedésre
+    ");
+end;
+// ---------------------------------------------
+// --------------------------------------------------
+// ------------- ITT kezdődik majd a program --------
+// --------------------------------------------------
+begin
+	
+	init_Graphics(1); // 4 színű mód bekapcsolása
+	init_4colors();   // 4 szín beállítása
+    
+	asm("	
+	  NOP
+START
+	  HALT
+	  NOP
+    ");
+    
+    // megjelenítjük a pályát
+    palya_generalas;
+    // várunk SPACE lenyomására
+    VARAKOZIK_SPACE_LENYOMASRA;	
+    // ugrunk a pályagenerálás elé
+	asm("	
+	  NOP
+	  jp START
+	  NOP
+    ");
+end.

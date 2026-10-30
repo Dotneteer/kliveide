@@ -1,0 +1,82 @@
+
+
+Üdv!
+
+Egy lehetséges módszer arra, hogy PASCAL nyelven készíthessünk 
+programokat, játékokat Videoton TVC számítógépre.
+
+Szükséges fejlesztõeszköz:
+Turbo Rascal Syntax Error  0.14 (vagy újabb?)
+
+Indírsunk egy új projektet.
+Célplatformnak válasszuk a ZX Spectrumot (de valószínûleg más Z80 alapú gép is jó, pl Amstrad CPC)
+
+A PROJECT SETTINGS-nél a TARGET SETTINGS lapon
+x-eljük be, hogy "Ovveride default target settings"
+
+"Program start adress"-hez írjunk be $1A01-et.
+x-eljük be, hogy "Ignore BASIC.SYS start.
+
+Ezekkel elérjük, hogy tisztán a mi kódunk fog lefordulni (az elejéhez egy ugró utasítást szúr a fordító, meg a végéhez valami számoló algoritmust), és a $1A01 címre fordít.
+
+Ha ez megvan, tallózzuk be a forráskódot, vagy másoljuk be a létrehozott projekt könyvtárba.
+A fejlesztõeszközben bal oldalt ott lesz a fájlok listája. 
+A RAS kiterjesztésû fájlok a PASCAL forráskódok.
+
+Nyissuk meg mondjuk a PELDA01.RAS-t.
+Jobb oldalt a nagy ablakban szerkeszthetjük a kódot.
+
+Ha készen vagyunk válasszuk a PROJECT menü BUILD pontját.
+Ekkor a RTSE megkisérli lefordítani a programunkat gépi kódra.
+Ha hibát talál benne, akkor azt a szerkesztõ ablak alatt szép piros színnel kiírja. Ha nem talál benne hibát, akkor azt zöld színnel jelzi.
+Hibátlan fordításnál létrejön egy ASM és egy BIN kiterjesztésû fájl.
+Az ASM egy assembly forráskód, ellenõrizhetjük hogy a programban mit mire fordít a program. A BIN pedig maga a gépi kód.
+
+------------------------------------------------------------------
+No, megvan a BIN fájl, hogy tudjuk ezt TVC-n futtatni?
+Nincs más dolgunk, mint elé másolni a CAS fájl fejlécét, meg a BASIC indító kódját. Ez benne van a CASBIN.BIN fájlban, 162 byte.
+Hogy másoljuk elé? Futtassuk az OSSZEFUZ_PELDA01.BAT fájlt, ami a sima COPY paranccsal összefûzi a két fájlt és létrehozza a 
+PELDA01.CAS fájlt, ami már emulátorban futtatható.
+
+Az OSSZEFUZ_PELDA01.BAT egy szövegfájl, szerkeszthetjük, átírhatjuk benne a fájlneveket, ha nem felelnek meg.
+
+Röviden ennyi.
+
+Orosz Olivér
+2023.január 17.
+
+-------------------------------------------------------------------
+PELDA00:
+Semmi különös, csak egy FOR ciklussal egy ferde "vonalat" maszatolunk a képernyõre (elõtte bekapcsoljuk a 4 színû grafikát, meg belapozzuk a képernyõmemóriát 32768-ra).
+
+
+PELDA01:
+A program rajzol egy véletlenszerû "pályát" a képernyõre, majd
+három szereplõt is kirajzol a pálya fölé.
+Ha lenyomjuk a SPACE billentyût új pályát generál. Ennyi.
+Ebben még semmi nem mozog, semmi nem mûködik.
+
+PELDA02:
+Féljáték. Egy "logóval" indul (space), majd egy fõképernyõ jön be, onnan space-re indul a "játék".
+Egy elõre tárolt pályát tölt be és jelenít meg a program, azon 0..9 darab ellenfél helyezhetõ el, ezek az ellenfelek véletlenszerûen mozognak a pályán, falakon nem tudnak átmenni, egymáson igen.
+Van egy kék figura is, õ a fõszereplõ, õt a joystickkal tudjuk irányítani. Ütközni, pontot szerezni, más pályára jutni nem tudunk.
+Használható billenyûk:
+  R- "reset", újraindítja a pályát
+  Q- "quit", pálya elhagyása, kilépés a menübe
+-------------------------------------------------------------------
+utóirat:
+A TRSE sok beépített eljárást tartalmaz, de ami gépfüggõ (pl háttérszín beállítása), azt nekünk kell megírni és használni programunkban.
+
+Nem tökéletes a rendszer, a TRSE fejlesztés alatt áll.
+Nálam ha tömbelemet használtam matek képletben, címszámításban akkor hibát okozott, rosszul fordított. Például:
+Nem mûködött ez:
+ Valami:=32768+y[3]*64;
+De így már jó volt:
+ a:=y[3];
+ Valami:=32768+a*64;
+
+
+
+
+
+

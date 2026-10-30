@@ -1,0 +1,47 @@
+
+
+ BANDI A HÕS
+
+ 
+ Platform: Videoton TVC
+ Elméletileg fut 32K és 64K gépeken is.
+ Verzió: 1.00
+
+ Készült: 2023-ban a Facebook csoportban meghirdetett játékfejlesztõ versenyre.
+ Készítette: Orosz Olivér Péter.
+
+ Stílus: Labirintusjáték, kicsit rpg-szerû körítéssel.
+ Cél, hogy a 4x4 szobából álló labirintusban (kastélyban) össze szedj három kulcsot és megtaláld a faludból elrabolt 20 túszt. A kulcsok mellett kardot, pajzsot és pénzt is gyûjthetünk. A játékban harcolni nem tudunk, minden ellenfelet kerüljünk el. Normál játék esetén kétszer ütközhetünk ellenféllel, harmadik ütközésre vége a játéknak. Gyerek módban nincsenek ellenfelek, békésen van idõnk felfedezni a szobákat, össze szedni a tárgyakat.
+Jó tudni, az emberi ellenfelek sétálgatnak a képernyõn, ekkor sebeznek minket, de van egy "pihenõ módjuk" amikor megállnak, csak a körvonaluk látszik, akkor nem sebeznek, ha szükséges át mehetünk rajtuk.
+Minden teremben van egy rejtett kincs is, ami nem látható, de ha megtaláljuk és felvesszük akkor egy "X" jelöli a helyét, lehetõséget adva arra hogy térképezzünk vagy megjegyezzük a helyüket.
+
+Irányítás:
+Játék közben az 1-es (beépített) joystickkal mozoghatunk 4 irányban.
+A "Q" billentyû lenyomásával kiléphetünk a játékból a fõképernyõre.
+
+Fõképernyõn:
+SPACE billentyû lenyomására indul a normál játék.
+"B" billentyûvel indítható a "gyerek mód" ellenfelek nélkül.
+"I" billentyûre elolvashatjuk újra a bevezetõ szöveget.
+
+Az utolsó képernyõn megtaláljuk az elrabolt társainkat. Az ügyességünktõl függ, hogy hány társunkat tudjuk kiszabadítani (össze szedett tárgyak, kincsek függvényében), a ki nem szabadított társakat csontvázak jelképezik a képernyõn, ezzel ösztönözve minket hogy fussunk még egy kört és szabadítsuk ki az összes társunkat.
+
+Készült:
+2023 február-március hónapjában.
+Pascal nyelven (Turbo Rascal Syntax Error fejlesztõeszközzel).
+Köszönet Bertók Zsoltnak a közbenjárásért, hogy a TRSE az év elejétõl támogatja a TVC-re való fejlesztést is.
+
+Programkód mérete= kb 11 Kbyte,
+karakterkészlet= 1 Kbyte,
+térkép (16 szoba)= 2.6 Kbyte,
+grafika = 4 Kbyte (64 darab 16x16 pixeles grafika),
+fõképernyõn lévõ kép= 5Kbyte,
+összes szöveg kb= 1 Kbyte
+Pascal forráskód kb= 1600 sor, kb 42 Kbyte.
+
+Video link: https://youtu.be/BkYlscgrlgI 
+
+Köszönöm ha kipróbáltad!
+Orosz Olivér
+
+2023 április 1.
