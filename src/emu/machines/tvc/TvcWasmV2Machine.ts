@@ -977,9 +977,15 @@ export class TvcWasmV2Machine extends TvcWasmHost implements IExecutionHistorySo
   /** TVC dots (12.5 MHz) are narrower than they are tall */
   getAspectRatio = (): [number, number] => [TVC_PIXEL_ASPECT, 1];
 
-  /** Whether the television has lost the picture (a CRTC programmed without usable syncs) */
+  /**
+   * Whether the television has lost the picture (a CRTC programmed without usable syncs). Only once
+   * the machine has run a frame: the core's TV starts out of sync at reset, but a machine that has
+   * not run has no last frame to judge, and the panel shows its empty background, not noise.
+   */
   isVideoSignalLost(): boolean {
-    return this.wasmV2Runtime?.exports.tvcIsVideoSignalLost() !== 0;
+    const exports = this.wasmV2Runtime?.exports;
+    if (!exports || exports.tvcGetFrames() === 0) return false;
+    return exports.tvcIsVideoSignalLost() !== 0;
   }
 
   /**
