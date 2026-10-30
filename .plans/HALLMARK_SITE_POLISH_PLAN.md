@@ -315,6 +315,39 @@ Run the step-0 sloplint findings for the doc pages through the site's own CSS: t
 tables, `<Shot>`, code blocks, callouts. Typical targets: small letter-spaced headings, focus rings
 on the sidebar and the copy button, horizontal scroll from wide tables and code at 320 px.
 
+#### As built (step 5)
+
+Each step 0 finding for the doc pages was measured in the built site (Puppeteer, both colour
+schemes) before anything changed; three were real, the rest were Nextra's chrome or a marketing-page
+rule misread on a doc page.
+
+- **Fixed: the search field's edge (rule 40).** Nextra draws the field with a 5% tint only: 1.12:1
+  against the navbar in light, 1.31:1 in dark, where a field needs 3:1. `.nextra-search input` now has
+  an inset 1px edge of half the text colour over the page (`color-mix` of `--site-fg` and `--site-bg`):
+  3.28:1 light, 4.49:1 dark. An inset shadow keeps the field's size; Nextra's focus ring replaces it.
+- **Fixed: the line length (rule 25).** Prose ran to about 115 characters at 1440 px. Running text
+  (`p`, lists, `dl`, blockquotes, not inside tables, figures or cards) stops at 62ch: at most 86
+  characters on the CRT article (70ch was tried first and still gave 99: Overpass sets about 1.4
+  characters per `ch`). Figures, screenshots, code and tables keep the full column, as the theming
+  notes ask for figures. Checked by eye on an article, a Get Started page with a screenshot and its
+  steps, and a reference page with tables. The command reference stays at about 88, the threshold,
+  where code spans widen its lines.
+- **Fixed: headings that end on one word (F26)**: `text-wrap: balance` on article headings.
+- **Dismissed, measured: the accent links (rule 40, "4.33:1").** The link colour is 5.27:1 by the WCAG
+  formula in light and 7.87:1 in dark; the linter samples the anti-aliased pixels of thin glyphs. The
+  accent is the app's own token and is not changed.
+- **Dismissed, measured: "hidden text" (rule 62).** Every hidden word (2,523 on the guide and the
+  Library page alike) is in the sidebar's collapsed folders; no article text is hidden.
+- **Left: Nextra's chrome.** The sidebar's folder titles wrap on a phone (49a/49b: they are page
+  titles; two lines is right), the 500 weight (F19) is Nextra's active navbar tab and its ⌘K hint, and
+  the search field's `transition-all` is Nextra's own.
+- **Found on the way and fixed: a broken operator table.** In the Z80 expressions reference, the
+  `` `|` `` of Bitwise OR ended its table cell, so the row showed a stray backtick in two columns; it is
+  `` `\|` `` now and renders as code.
+- After: sloplint on the four doc pages from step 0 shows no search-field, measure (except the
+  command reference's 88) or heading finding; `npm run doc:check` passes. Recorded in
+  `.ai/ui-theming-intent-and-lessons.md`.
+
 ### 6. Records
 
 - `.ai/ui-theming-intent-and-lessons.md`, website section: the rules adopted here and every waiver

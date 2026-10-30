@@ -3108,6 +3108,15 @@ drift. Change a neutral or the default accent in the app, and the site changes w
   emulator): a 2.4:1 recording sat in the 16:10 frame as a thin strip under a dark band.
 - **Landing section headings are 2rem**, above the 1.75rem feature headings they contain. At 1.5rem
   "What Klive does" was smaller than the headings under it.
+- **Docs prose stops at 62ch** (`docs/app/[lang]/(docs)/custom.css`): about 86 characters a line,
+  against Nextra's full column of about 115. Overpass is narrow, about 1.4 characters per `ch`, so a
+  `ch` figure from another face misleads; measure characters per rendered line. Only prose is held
+  in: figures, screenshots, code and tables keep the full column. Headings use `text-wrap: balance`.
+- **Nextra's search field gets a visible edge**: its own is a 5% tint (1.12:1 in light). Half the text
+  colour over the page (`color-mix` of two tokens, 3.3:1 light, 4.5:1 dark), drawn as an inset shadow
+  so the field keeps its size. Measure contrast through a canvas, not by parsing `oklch()` strings,
+  and remember a pixel-sampling linter reports thin anti-aliased glyphs below their real ratio (the
+  accent link is 5.27:1 by the WCAG formula, sloplint said 4.33).
 - **Screenshots in the docs are dark** (decision D4), whatever the page's theme; their frame and
   markers use the tokens.
 - **A docs link card is title first, then its description**, padded as a whole
