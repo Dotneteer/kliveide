@@ -15,8 +15,15 @@ const rules = (source: string) => (proseFindings(source) as Finding[]).map((f) =
 describe("check-docs-prose", () => {
   it("reports buzzwords, filler and the opener phrases", () => {
     expect(rules("A powerful way to work, seamlessly.")).toEqual(["buzzword:powerful", "buzzword:seamlessly"]);
-    expect(rules("Let's start. Simply press Run.")).toEqual(["filler:Let's", "filler:Simply"]);
+    expect(rules("Let's start. Simply press Run.")).toEqual(["lets:Let's", "softener:Simply"]);
     expect(rules("Note that it stops. Whether you like it or not.")).toEqual(["filler:Note that", "filler:Whether you"]);
+  });
+
+  it("keeps 'let's', 'simply', 'easily' and 'just' in Under the Hood's voice, and only there", () => {
+    const area = (source: string, name: string) => (proseFindings(source, name) as Finding[]).map((f) => f.rule);
+    const text = "Let's step back. The Next simply shrugs. Just so. In order to win.";
+    expect(area(text, "under-the-hood")).toEqual(["filler"]);
+    expect(area(text, "guides")).toEqual(["lets", "softener", "just", "filler"]);
   });
 
   it("leaves 'note that' and 'whether you' alone inside a sentence", () => {

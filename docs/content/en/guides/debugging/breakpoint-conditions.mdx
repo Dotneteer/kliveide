@@ -41,10 +41,10 @@ From the command prompt, the same breakpoint is
 
 ## Conditions and hit counts
 
-Every breakpoint &mdash; execution, memory, I/O, NextReg, bank-relative, label-anchored and
-source-code &mdash; can carry a **condition** and a **hit count rule**. The machine stops only if
+Every breakpoint (execution, memory, I/O, NextReg, bank-relative, label-anchored and
+source-code) can carry a **condition** and a **hit count rule**. The machine stops only if
 the condition is true; a hit is counted only when it is, and the rule then decides whether this hit
-stops. A hit is counted once each time the program reaches the breakpoint &mdash; also when you step
+stops. A hit is counted once each time the program reaches the breakpoint, also when you step
 onto it, or go back to it in the [execution history](/en/guides/debugging/reverse-debugging/).
 
 Some examples:
@@ -87,8 +87,8 @@ Names are case-insensitive.
 - Flags, each 0 or 1: `SF` (sign), `ZF` (zero), `F5F` or `YF` (bit 5), `HF` (half carry), `F3F` or
   `XF` (bit 3), `PVF`, `PF` or `VF` (parity/overflow), `NF` (subtract), `CF` (carry). `C` and `H`
   are registers, which is why the flags have their own names.
-- `VAL` &mdash; the byte read or written (memory), the port value (I/O), the new register value
-  (NextReg). `ADDR` &mdash; the address or the 16-bit port accessed. Not on execution breakpoints.
+- `VAL`: the byte read or written (memory), the port value (I/O), the new register value
+  (NextReg). `ADDR`: the address or the 16-bit port accessed. Not on execution breakpoints.
 
 ### Memory
 
@@ -102,7 +102,7 @@ Names are case-insensitive.
 The address is any expression: `w[HL]`, `[IX+3]`, `w[score]`.
 
 - `w[HL]` reads memory as the CPU sees it now; the address wraps at `$FFFF`.
-- `b[05:$C010]` reads partition `05` at the offset of `$C010`, whatever is paged in &mdash; the same
+- `b[05:$C010]` reads partition `05` at the offset of `$C010`, whatever is paged in: the same
   spelling as `bp-set 05:$C010`.
 - `b[0A:+$0100]` (ZX Spectrum Next) reads 16K bank `0A` at offset `$0100`.
 - `b[05:Flags]` (ZX Spectrum Next) reads the bank-local label `Flags` of a `.nex.dis` sidecar in
@@ -121,7 +121,7 @@ Next); `s8(x)`, `s16(x)` and `s32(x)` read the low 8, 16 or 32 bits of `x` as a 
 Four functions take no argument and read the machine: `tstates()` is the number of T-states since
 the machine started, `cpufreq()` the current CPU clock in Hz (turbo included), `frame()` the number
 of frames since the machine started, and `slots()` the partition paged into each slot, as text
-(`R0 B5 B2 B0`) &mdash; so `slots()` can only be a whole [logpoint](#logpoints) placeholder.
+(`R0 B5 B2 B0`), so `slots()` can only be a whole [logpoint](#logpoints) placeholder.
 
 ### Operators
 

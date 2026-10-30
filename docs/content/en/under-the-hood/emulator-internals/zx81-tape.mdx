@@ -661,7 +661,7 @@ Each round of `Wait` takes 68 T-states, so 256 rounds without sound are 17,408 T
 That is far longer than the 1.5 ms silence between bits, and far shorter than the 5 s leader. A
 silence that long can mean only one thing: **the tape is between programs**.
 
-Then `InByte` does not return. When `DJNZ` runs out, the code simply carries on with the next
+Then `InByte` does not return. When `DJNZ` runs out, the code carries on with the next
 instruction in the ROM, at `$035F`.
 
 ### What a silence means

@@ -266,6 +266,49 @@ Once the author picks it:
 - **Next batches**: Under the Hood (127), then Guides (206), then Get Started (6) last, because any
   change there sends its five translations back through `doc:i18n:todo`/`merge` as whole pages.
 
+#### As built (step 4, second batch: Under the Hood, dashes)
+
+- **The author's voice for these articles wins over the check.** `.ai/hardware-articles-guide.md`
+  asks for a playful voice for engineers, speaking to "you", with "let's" for a worked example and a
+  few conversational openers. "Let's" is now its own rule, `lets`, which does not apply in
+  Under the Hood (`notIn`); it is still reported in Guides and Get Started (a test pins both).
+  Findings are now listed in reading order.
+- **Dashes: 17 to 0.** The two contributor pages (`get-source`, `wasm-toolchain`) take colons and
+  commas; in the ZX81 display article, "Part 4: The trick — the CPU executes the screen" became
+  "Part 4: The trick: the CPU executes the screen", and its one link (on the same page) points at the
+  new anchor, checked in the built HTML. The DACs figure's dash means "none" in a table drawn in
+  SVG, so it stays, marked `prose-ok`.
+- **"simply", "just", "easily": the author chose "trim the tic, keep the voice".** 84 findings,
+  almost all "simply" (about 50), "just" and "easily", most carrying meaning in the voice above ("The
+  Next simply shrugs", "Did your ship just fly into a rock?", "the buffer just shown", "parts measure
+  easily"). The 27 "simply"s that only padded a statement went ("is simply the bitmap address" became
+  "is the bitmap address"); the rest stay. "simply" and "easily" are now the `softener` rule, and
+  it and `just` do not apply in Under the Hood (`notIn`), as `lets` does not; `filler` ("note
+  that", "in order to") still does. The Next overview's figure legend of CPU speeds ("· 7 · 14 · 28")
+  is marked `prose-ok`.
+- **Under the Hood: 127 to 0.** `doc:check` passes. Left: Guides 206, Get Started 6.
+
+#### As built (step 4, done: Guides, Get Started, and the check in `doc:check`)
+
+- **Guides: 206 to 0**, on 36 pages (195 dashes, the rest "simply", "just", one "let's" and one
+  "seamlessly"), split by folder among three agents and checked together. No heading changed, so
+  no anchor moved. Bullets like "**Apply** — saves" became "**Apply**: saves"; asides became brackets
+  or commas. Four lines keep a dash on purpose, each marked `prose-ok` at the end of the line, since a
+  comment line would break a table: three quote the app's own UI text ("Ready – waiting for machine
+  to run", "*No machine — default ramp*", "Locals — {frame}"), and one is a snapshot table's "not
+  stored" mark. A JSX comment inside a table cell renders nothing (checked in the built HTML: the
+  markers appear only in the embedded page source, never in the visible page).
+- **Get Started: 6 to 0** on two pages (`install`, `load-from-tape`). Their five translations were
+  not re-translated whole: each language's page had only the matching sentences changed (the dash
+  pairs to brackets, the dash to a colon, "a powerful technique" dropped; Hungarian also lost a second
+  dash pair in the same sentence), then went through `doc:i18n:merge`, which checked the structure and
+  recorded the new English source. Every language is complete again, nothing out of date.
+- **`doc:check` now runs `doc:check:prose -- --strict --summary`**, which fails on any finding (checked
+  both ways: exit 1 with a dash added to a page, 0 clean). From here a new page meets the rules or
+  says why not with `prose-ok`.
+- **Totals: 429 findings on 79 pages to 0.** Kept on purpose: 7 `prose-ok` markers, about 25
+  "simply"s and Under the Hood's "let's", "just" and "easily" (the author's voice).
+
 ### 5. Documentation chrome
 
 Run the step-0 sloplint findings for the doc pages through the site's own CSS: the Nextra sidebar,

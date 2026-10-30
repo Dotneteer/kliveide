@@ -8,8 +8,8 @@ import { Callout } from 'nextra/components'
 
 A ZX Spectrum Next program usually uploads its sprite patterns once and then moves its sprites every
 frame by writing four or five attribute bytes each. When the picture is wrong, the cause is almost
-always in those bytes &mdash; a wrong pattern number, a sprite attached to the wrong anchor, a stale
-fifth byte, the ninth bit of X &mdash; and the Z80 cannot read any of them back. The **Sprite
+always in those bytes (a wrong pattern number, a sprite attached to the wrong anchor, a stale
+fifth byte, the ninth bit of X), and the Z80 cannot read any of them back. The **Sprite
 Inspector** shows them, decoded, next to the pattern memory they point into.
 
 It is one document with two linked views: **Sprites** (the 128 attribute slots) and **Patterns**
@@ -36,7 +36,7 @@ The document arranges itself by its own width, so docking it in a narrow split b
 window:
 
 - **Narrow**: **Sprites** and **Patterns** are tabs, and the inspector is a band under the list with
-  the selection's details on the left and the sprite-space map on the right &mdash; both visible at
+  the selection's details on the left and the sprite-space map on the right, both visible at
   once. Drag the splitter above the band to trade list rows for band height.
 - **Medium**: tabs, and the inspector is a rail beside the list, full height.
 - **Wide**: **Both** is offered too: the table and the pattern sheet side by side, with the rail.
@@ -47,7 +47,7 @@ window:
 
 The toolbar is one line at every width. It holds the view tabs, the active view's own controls (the
 table's filter; the pattern format and palette offset), the sprite palette (**Live** follows NextReg
-`$43` bit 3; **1** and **2** pin a palette &mdash; a ring marks the one the hardware is drawing with),
+`$43` bit 3; **1** and **2** pin a palette; a ring marks the one the hardware is drawing with),
 and the zoom and checkerboard when there is room. Whatever does not fit is in the **⋯** menu, which
 also holds **Show raw attribute bytes**, the format of unused pattern slots, and **Export pattern RAM
 as .spr**. The document remembers these, and the pane sizes, with the workspace.
@@ -67,11 +67,11 @@ The line under the toolbar holds what applies to every sprite. A raised flag (`O
 |---|---|
 | **Sprites** | NextReg `$15` bit 0; `OFF` in amber when the sprite layer is hidden |
 | **Over border** | `$15` bit 1 |
-| **Clip** | The **effective** clip window in sprite space. `$19` is in different units in each mode &mdash; X is doubled over the border with clipping on, there is no clip over the border without it, and without the border the window is relative to the paper and stops at line 223. The tooltip has the raw `$19` values. |
+| **Clip** | The **effective** clip window in sprite space. `$19` is in different units in each mode: X is doubled over the border with clipping on, there is no clip over the border without it, and without the border the window is relative to the paper and stops at line 223. The tooltip has the raw `$19` values. |
 | **Order** | `$15` bits 4-2: the layer order, top first |
 | **On top** | Which sprite wins where two overlap (`$15` bit 6) |
 | **$4B** | The transparency index |
-| **Last visible** | The highest slot with its visible bit set &mdash; the engine looks no further |
+| **Last visible** | The highest slot with its visible bit set; the engine looks no further |
 | **Status** | `too many` and `collision` from `$303B` |
 | **Upload** | Where the next port `$57` byte (sprite and attribute byte) and `$5B` byte (pattern slot and byte) will go |
 | **Mirror** | The sprite NextRegs `$35`-`$39`/`$75`-`$79` write; `(tied)` when `$09` bit 4 ties it to the upload index |
@@ -89,7 +89,7 @@ sideways, so a row keeps its identity. The filter shows **Up to last visible** (
 |---|---|
 | **#** | The slot. A relative sprite carries `↳7`, the anchor it is attached to. |
 | **vis** | A filled dot when the sprite is drawn; a ring when its own visible bit is set but its anchor is hidden; nothing when its bit is clear. |
-| **pattern** | A thumbnail and the pattern number: `40` for an 8-bit sprite, `81` for a 4-bit one &mdash; the 4-bit numbering names 128-byte halves, so `81` is the high half of 256-byte slot 40. |
+| **pattern** | A thumbnail and the pattern number: `40` for an 8-bit sprite, `81` for a 4-bit one; the 4-bit numbering names 128-byte halves, so `81` is the high half of 256-byte slot 40. |
 | **x**, **y** | The **effective** position. A relative also shows its own offset, `Δ+16,+0`. |
 | **fmt**, **pal** | `8`, or `4·lo` / `4·hi` for a 4-bit sprite (which half of the slot it reads), and the palette offset (`+2` when it is added to the anchor's). |
 | **xform** | `R`, `X`, `Y` lit for rotate and the two mirrors. |
@@ -108,23 +108,23 @@ A dot after the slot number marks a row whose bytes changed since the machine la
 
 The **note** column gives one short reason; the inspector spells out all of them:
 
-- `hidden: visible bit clear` &mdash; attribute 3, bit 7.
-- `hidden: anchor #7 not visible` &mdash; a relative sprite is only visible when its anchor is. The
+- `hidden: visible bit clear`: attribute 3, bit 7.
+- `hidden: anchor #7 not visible`: a relative sprite is only visible when its anchor is. The
   anchor is the nearest non-relative slot *before* it, visible or not.
-- `hidden: no anchor` &mdash; a relative sprite in slot 0, or after only relatives.
+- `hidden: no anchor`: a relative sprite in slot 0, or after only relatives.
 - `sprites disabled ($15 bit 0)`.
-- `off screen`, `outside clip window`, `partly clipped` &mdash; against the effective clip window. An X
+- `off screen`, `outside clip window`, `partly clipped`: against the effective clip window. An X
   above 319 or a Y above 255 wraps to a negative position.
 - `pattern is all transparent`, `pattern is blank`.
-- `4-byte: attr4 ignored` (grey) &mdash; a four-byte sprite whose stale fifth byte would change it if
+- `4-byte: attr4 ignored` (grey): a four-byte sprite whose stale fifth byte would change it if
   attribute 3 bit 6 were set. Writing four bytes where five were meant is a classic bug.
 
 Right-click a row to copy its attributes as `nextreg` instructions or as a `.db` line, or to show its
 pattern. Double-click the thumbnail to go to the pattern.
 
 The same menu sets a [sprite attribute breakpoint](/en/guides/next/next-breakpoints/#sprite-attribute-breakpoints-zx-spectrum-next):
-**Break on attribute write** stops whenever any attribute byte of the sprite is written &mdash;
-through port `$57` or the NextReg mirrors, by the CPU, the DMA or the Copper &mdash; and **Run until
+**Break on attribute write** stops whenever any attribute byte of the sprite is written
+(through port `$57` or the NextReg mirrors, by the CPU, the DMA or the Copper), and **Run until
 attribute write** does it once. A sprite with a breakpoint shows a dot before its number; the menu
 then offers **Edit breakpoint…**, where you can narrow it to some of the five bytes, and **Remove
 attribute-write breakpoint**.
@@ -139,7 +139,7 @@ in **⋯**.
 - **8-bit** shows 64 patterns of 256 bytes, **4-bit** 128 patterns of 128 bytes.
 - **As used** (the default) draws each 256-byte slot the way the sprites that use it read it: as one
   8-bit pattern, or as two 4-bit halves. A slot no sprite uses is drawn in the **unused** format.
-- A badge counts the sprites that use a pattern &mdash; in the accent when one of them is visible.
+- A badge counts the sprites that use a pattern, in the accent when one of them is visible.
   Unused and blank patterns are dimmed.
 - A slot read **both** as 8-bit and as 4-bit gets an amber corner. That is almost always a bug.
 - An amber bar under a cell marks where the next byte written to port `$5B` will go.
@@ -183,16 +183,16 @@ The band or the rail shows the selection. Its header line sums it up: `Sprite #9
 pattern 9 · 8-bit`.
 
 For a **sprite**: its pattern **as stored** and **as shown** (rotated and mirrored the way the
-hardware does it &mdash; it rotates first, then mirrors &mdash; and scaled), the colours it uses, the
+hardware does it, which rotates first and then mirrors, and scaled), the colours it uses, the
 reason it may be hidden (in amber, only when there is one), and every field with its **effective**
-value &mdash; what the hardware draws. Where the slot's own bytes say something else, as they do for a
+value: what the hardware draws. Where the slot's own bytes say something else, as they do for a
 relative sprite, that follows in the secondary colour: `132 · own Δ+16`.
 
 The **sprite-space map** is the whole 320×256 sprite area: the paper, the effective clip window
 (dashed) and every visible sprite as an outline, the selected one filled. Click an outline to select
 that sprite.
 
-For a **pattern**: the pattern large, a hint about its content, and the sprites that use it &mdash;
+For a **pattern**: the pattern large, a hint about its content, and the sprites that use it;
 for a slot that is read both ways, the users of the other reading too. The header line gives its
 byte range in pattern RAM, and the map fills every sprite that uses it.
 

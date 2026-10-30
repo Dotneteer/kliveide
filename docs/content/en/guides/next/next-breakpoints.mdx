@@ -24,7 +24,7 @@ counts, conditions, logpoints and one-shots work on all three, as on any other b
 
 ## NextReg Write Breakpoints (ZX Spectrum Next)
 
-Every other breakpoint names a **place** &mdash; an address, an offset in a bank, a source line. A
+Every other breakpoint names a **place**: an address, an offset in a bank, a source line. A
 NextReg write breakpoint names an **event**: stop when a particular Next Register is written.
 
 ```
@@ -51,8 +51,8 @@ bp-set nr:$07=$03/$0f    ; only when its low nibble becomes $3
 ```
 
 The value is part of the breakpoint's identity, so `nr:$07` and `nr:$07=$03` are two breakpoints and
-both can be set at once. The same thing can be typed as options &mdash; `bp-set nr:$07 -v $03 -m $0f`
-&mdash; which is what the [Breakpoint Dialog](/en/guides/debugging/breakpoints/) writes for you.
+both can be set at once. The same thing can be typed as options (`bp-set nr:$07 -v $03 -m $0f`),
+which is what the [Breakpoint Dialog](/en/guides/debugging/breakpoints/) writes for you.
 
 ### Copper Writes
 
@@ -71,10 +71,10 @@ or by Klive's own display hotkeys are never reported.
 <Callout type="warning">
 **The machine stops *after* the instruction that wrote the register, not before it.** A Z80
 instruction cannot be interrupted part-way, and several NextReg writes can happen inside one of them
-&mdash; a DMA burst to `$253B`, or a busy copper list &mdash; so a breakpoint that tried to withhold
+(a DMA burst to `$253B`, or a busy copper list), so a breakpoint that tried to withhold
 the write would have to drop or duplicate some of them.
 
-Nothing is lost by this. The breakpoint reports the value the register held **and** the value just
+Nothing is lost by this. The breakpoint reports the value the register held **and** the value
 written, so the row reads `$00 → $03`: you see both sides of the change rather than only the one a
 stop-before would have shown.
 </Callout>
@@ -86,7 +86,7 @@ once the machine has stopped on it. The output pane says the same thing in words
 NextReg breakpoint: $07 (CPU speed) $00 -> $03 at PC=$8005
 ```
 
-The row and the message both name **where the write came from** — the address of the instruction
+The row and the message both name **where the write came from**: the address of the instruction
 that did it, and the partition that address was paged from. On a Next the same address means
 different code depending on what is paged there, so the address alone does not identify the
 instruction.
@@ -124,8 +124,8 @@ bp-set cu:$00B
 ```
 
 - A `MOVE` (or a `NOP`) fires when the Copper issues it.
-- A `WAIT` fires when its condition is **satisfied** &mdash; when the raster reaches the line and
-  position it waits for &mdash; not when the Copper arrives at it. That is the moment that matters:
+- A `WAIT` fires when its condition is **satisfied** (when the raster reaches the line and
+  position it waits for), not when the Copper arrives at it. That is the moment that matters:
   "the beam has reached line 96".
 - The `HALT` (`WAIT 511,63`) never completes, so a breakpoint on it never fires.
 
@@ -144,8 +144,8 @@ In a condition, `ADDR` is the list index and `VAL` is the 16-bit instruction wor
 **The Copper runs on to the end of the Z80 instruction.** The Copper executes at 28 MHz, locked to the
 beam, and the machine can only stop between Z80 instructions. By the time it stops, the Copper may
 have completed several more instructions. The stop message, the Breakpoints view and the
-[Copper List](/en/guides/next/copper/) therefore report the **hit** &mdash; the instruction and the
-beam position where it completed &mdash; separately from where the Copper is now.
+[Copper List](/en/guides/next/copper/) therefore report the **hit** (the instruction and the
+beam position where it completed) separately from where the Copper is now.
 </Callout>
 
 ```

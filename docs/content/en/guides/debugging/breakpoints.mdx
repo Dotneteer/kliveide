@@ -209,7 +209,7 @@ bp-set 05:+$0100
 ```
 
 This breaks at offset `$0100` of 16K bank 5. The bank is a 16K bank number in hexadecimal, and the
-offset runs from `$0000` to `$3FFF` &mdash; the units of a NEX file and the `.bank` pragma. `bp-del`
+offset runs from `$0000` to `$3FFF`: the units of a NEX file and the `.bank` pragma. `bp-del`
 and `bp-en` take the same form. The banks are `00`-`6F` on the ZX Spectrum Next, `00`-`07` on the
 128K, +2A/+3, +2E/+3E and Pentagon, and `00`-`0F` on the Scorpion. The 48K and the Timex name their
 RAM as the 128K does in 48K mode (bank 5 at `$4000`, bank 2 at `$8000`, bank 0 at `$C000`), so a

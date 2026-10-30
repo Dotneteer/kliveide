@@ -79,7 +79,7 @@ When Klive IDE is selected in the search result list, the right pane shows the P
 If you cannot or prefer not to run an installer (a locked-down machine, no admin rights, or a USB stick), download `KliveIde-Portable-{version}-x64.zip` instead. It needs no setup and writes nothing to the registry.
 
 1. Before extracting, right-click the downloaded `.zip` file, select **Properties**, check **Unblock**, and click **OK**. Without this step, Windows marks every extracted file as downloaded from the internet and may warn you separately for each executable. (In PowerShell: `Unblock-File .\KliveIde-Portable-{version}-x64.zip`.)
-2. Extract the archive into a **new, empty folder** — the files sit at the root of the archive, not inside a folder of their own.
+2. Extract the archive into a **new, empty folder**: the files sit at the root of the archive, not inside a folder of their own.
 3. Run `Klive IDE.exe` from that folder.
 
 This copy is fully portable: it keeps everything it writes in a `KliveData` folder next to `Klive IDE.exe`, and nothing in your user profile.

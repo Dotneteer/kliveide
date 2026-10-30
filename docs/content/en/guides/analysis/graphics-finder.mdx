@@ -23,7 +23,7 @@ That shows the ZX Spectrum 48K's character set: every 8×8 character of the ROM 
 
 ## Finding a graphic
 
-The parameter you sweep is the **width** — how many bytes make one pixel row. Press **←** and **→**
+The parameter you sweep is the **width**: how many bytes make one pixel row. Press **←** and **→**
 to change it by one byte; a sprite snaps into focus when the width is right. **↑** and **↓** scroll by
 a pixel row, **PgUp** and **PgDn** by a row of frames. *Go to* aligns the frames to the address you
 give, so the graphic you are after starts at a frame's top-left corner.
@@ -45,7 +45,7 @@ With [code coverage](/en/guides/analysis/code-coverage/) on, **Dim unread** dims
 Graphics are read data, so they stand out while code and unused buffers recede.
 
 **Show candidates** lists places that look like graphics: fonts, the UDG area, and data the program
-read but never executed or wrote, ranked by how often it was read. They are guesses — check each one.
+read but never executed or wrote, ranked by how often it was read. They are guesses; check each one.
 
 ## Naming it
 

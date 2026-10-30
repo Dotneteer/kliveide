@@ -28,8 +28,8 @@ Open **Settings › Integrations** (see [Settings](/en/guides/customizing/settin
 
 The dialog is built around two summary blocks, with the setup controls between them:
 
-- **In use** — the assembler Klive uses right now, and whether it still works.
-- **To apply** — the executable you are setting up, and the result of its last test.
+- **In use**: the assembler Klive uses right now, and whether it still works.
+- **To apply**: the executable you are setting up, and the result of its last test.
 
 ### The In use block: is the current setup still good?
 
@@ -44,15 +44,15 @@ The block reports the outcome like this:
 | `Not working`, with the **SJASMPLUS is not usable** badge | The configured executable is missing or failed, with the reason next to it (for example, `Path does not exist: ...`). |
 
 <Callout type="warning" emoji="💡">
-A `Not working` state means Klive cannot assemble SJASMPLUS sources until you fix it. If the folder simply moved back, press `Test again`; otherwise set up the executable at its new location, as described below.
+A `Not working` state means Klive cannot assemble SJASMPLUS sources until you fix it. If the folder moved back, press `Test again`; otherwise set up the executable at its new location, as described below.
 </Callout>
 
 ### Choosing the executable
 
 The `Source` row selects where the executable comes from:
 
-- **Local executable** — SjasmPlus is already on your machine. Press `Select executable...` and pick the binary. Any `sjasmplus` executable found on your `PATH` is offered as a one-click shortcut in the `On PATH` row.
-- **Online release** — let Klive fetch one for you. It lists the latest 20 official SjasmPlus GitHub releases, marks how many builds each one offers for your system, and preselects a compatible stable release and asset. Choose a target folder with `Select folder...`, then press `Download...`.
+- **Local executable**: SjasmPlus is already on your machine. Press `Select executable...` and pick the binary. Any `sjasmplus` executable found on your `PATH` is offered as a one-click shortcut in the `On PATH` row.
+- **Online release**: let Klive fetch one for you. It lists the latest 20 official SjasmPlus GitHub releases, marks how many builds each one offers for your system, and preselects a compatible stable release and asset. Choose a target folder with `Select folder...`, then press `Download...`.
 
 A download is installed into a versioned folder, `<the folder you chose>/sjasmplus/<release tag>`, so several releases can live side by side. Klive never overwrites an existing one: if that folder is already there, the download stops with `SJASMPLUS release folder already exists`. Delete it first, or pick another folder.
 
@@ -72,9 +72,9 @@ The `Save to` row decides where the setting goes. By default, Klive saves the in
 
 Three buttons close the loop:
 
-- **Test again** — re-runs the test on the executable currently shown in **To apply**. Use it after you restore a missing folder, or to double-check a setup.
-- **Apply** — saves the setup and closes the dialog. It stays disabled until a test has passed, so a broken executable can never be saved.
-- **Close** — leaves the settings untouched. If you picked an executable but did not apply it, Klive asks before discarding it.
+- **Test again**: re-runs the test on the executable currently shown in **To apply**. Use it after you restore a missing folder, or to double-check a setup.
+- **Apply**: saves the setup and closes the dialog. It stays disabled until a test has passed, so a broken executable can never be saved.
+- **Close**: leaves the settings untouched. If you picked an executable but did not apply it, Klive asks before discarding it.
 
 When you test an executable that is not the configured one, the **In use** block steps back from its own verdict and tells you what the new result means for your setup: `Press Apply to replace it with the executable below` when the tested executable works, or `Unchanged — the executable below failed its test` when it does not. The two blocks never show a success and a failure that look like they are about the same thing.
 

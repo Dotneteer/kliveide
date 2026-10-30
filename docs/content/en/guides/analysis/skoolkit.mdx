@@ -17,7 +17,7 @@ formats. SkoolKit itself is not needed.
 
 ## Importing
 
-Open the program first — a snapshot, a NEX file, your project — so its bytes are in the machine.
+Open the program first (a snapshot, a NEX file, your project) so its bytes are in the machine.
 Then use **Import SkoolKit File...** from the tools button of the Disassembly view, or:
 
 ```
@@ -46,8 +46,8 @@ A `DEFM` or `DEFB` that lists strings and numbers, such as `DEFM "LIN","E"+128` 
 for a string whose last character has bit 7 set), is read as the bytes it spells, and
 `DEFS 10,$FF` as ten `$FF` bytes.
 
-Skool macros such as `#R32768` are kept as text. What Klive does not model — other `@` directives,
-text between entries, `*` entry points — is kept with the bank, so exporting an unedited import
+Skool macros such as `#R32768` are kept as text. What Klive does not model (other `@` directives,
+text between entries, `*` entry points) is kept with the bank, so exporting an unedited import
 gives the file back. Two labels that differ only in case are imported as `NAME` and `NAME_2`.
 
 `@bank` switches the bank at `$C000` in a 128K file. Addresses in the ROM go to *your* ROM

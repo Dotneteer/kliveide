@@ -60,14 +60,14 @@ A lista melletti részletek a kijelölt blokkot írják le: a hosszát és az el
 
 <ClickableImage src="/images/getting-started/tape-viewer.png" width={900} />
 
-Egy **fejlécet** kijelölve megtekinthető a 19 bájtjának magyarázata. A bájtok mezők szerint csoportosítva jelennek meg – jelzőbájt, típus, a tízkarakteres név, három kétbájtos érték és az ellenőrzőösszeg –, alattuk pedig a mezők listája a dekódolt értékekkel. Ha egy bájtra vagy mezőre mutatunk (vagy a <kbd>Tab</kbd> billentyűvel lépkedünk a listán), mindkettő kiemelődik, és elolvasható, mit jelent az adott mező; egy program automatikus indítási sora vagy egy kód betöltési címe már kezdettől magyarázattal jelenik meg. A három kétbájtos érték jelentése fájltípusonként más, és a magyarázat ezt is megadja.
+Egy **fejlécet** kijelölve megtekinthető a 19 bájtjának magyarázata. A bájtok mezők szerint csoportosítva jelennek meg (jelzőbájt, típus, a tízkarakteres név, három kétbájtos érték és az ellenőrzőösszeg), alattuk pedig a mezők listája a dekódolt értékekkel. Ha egy bájtra vagy mezőre mutatunk (vagy a <kbd>Tab</kbd> billentyűvel lépkedünk a listán), mindkettő kiemelődik, és elolvasható, mit jelent az adott mező; egy program automatikus indítási sora vagy egy kód betöltési címe már kezdettől magyarázattal jelenik meg. A három kétbájtos érték jelentése fájltípusonként más, és a magyarázat ezt is megadja.
 
 <ClickableImage src="/images/getting-started/tape-header-bytes.png" width={560} />
 
 A **Leválasztás** paranccsal egy blokk teljes egészében, saját dokumentumban tekinthető meg: memóriatartalomként (ez a kód alapértelmezése), visszafejtésként azon a címen, ahová a blokk betöltődik, teljes BASIC-listaként vagy képernyőként. Ehhez használhatjuk a blokk részletei melletti gombot (a nyila a nézetet választja ki), a sorában lévő ikont, a dupla kattintást vagy az <kbd>Enter</kbd> billentyűt. A **Vissza** gomb visszavisz a kazettához. A fejléc nélküli blokknak nincs saját betöltési címe: a **Listázás** mezőbe írt címen visszafejthető, ha pedig tudjuk, hogy programról van szó, a jobb gombos menü **Olvasás BASIC-ként** parancsával BASIC-ként is beolvasható.
 
 <Callout type="warning" emoji="⚠️">
-Egyes TZX blokkokat – tiszta hangokat, impulzussorozatokat, tiszta adatot, közvetlen és CSW felvételeket, általánosított adatot – a Klive megjelenít, de **nem játssza le**. Az ilyen blokkokat igénylő kazettát egy figyelmeztető sáv jelzi, és a betöltése sikertelen lehet.
+Egyes TZX blokkokat (tiszta hangokat, impulzussorozatokat, tiszta adatot, közvetlen és CSW felvételeket, általánosított adatot) a Klive megjelenít, de **nem játssza le**. Az ilyen blokkokat igénylő kazettát egy figyelmeztető sáv jelzi, és a betöltése sikertelen lehet.
 </Callout>
 
 ## Kazetta betöltése az IDE-ből
@@ -86,7 +86,7 @@ Minden más gépen, például a ZX Spectrum Nexten, a gombok és a menüpontok l
 
 ## Hogyan működik a gyors betöltés?
 
-A gyors betöltés egy hatékony technikát alkalmaz: a ROM-rutinok elfogását (ROM hooking). Futás közben az emulátor – minden ZX Spectrum modellen – a `PC` regisztert figyelve észleli, amikor a végrehajtás eléri a ROM betöltő rutinjának belépési pontját.
+A gyors betöltés a ROM-rutinok elfogását (ROM hooking) alkalmazza. Futás közben az emulátor minden ZX Spectrum modellen a `PC` regisztert figyelve észleli, amikor a végrehajtás eléri a ROM betöltő rutinjának belépési pontját.
 
 Amikor a végrehajtás eléri a betöltő rutint, a gyors betöltés felfüggeszti a gépet, és a kazettafájl adatait közvetlenül a memóriába írja. Közben a Z80 regisztereit (a jelzőbiteket is beleértve) pontosan úgy állítja be, ahogy a ROM-ban lévő algoritmus tenné.
 

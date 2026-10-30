@@ -515,7 +515,7 @@ covers: in 256 × 192, the display area, one unit a dot; in the wide modes, the 
 **two** 7 MHz dots (four dots in 640 × 256) so that 0–159 spans the 320 positions, and Y one unit a
 line. The clip window starts as 0–255, 0–191, which in a wide mode leaves the bottom 64 lines clipped
 until your program writes 0–159, 0–255. Yes, that one catches people: switch to 320 × 256, forget the
-clip window, and the bottom of your picture is simply missing. The
+clip window, and the bottom of your picture is missing. The
 [big picture](/en/under-the-hood/emulator-internals/next-display/overview/#clip-windows-a-rectangle-for-each-layer)
 has the details of both.
 
@@ -610,7 +610,7 @@ names a **shadow** picture for double buffering, and only NextReg `$12`'s is eve
 they point at banks 8 and 11, which suits 256 × 192; move the shadow to 13 or beyond for the wide modes.
 
 Bits 5–4 of NextReg `$70` choose **256 × 192** over the display area, or **320 × 256** and **640 × 256**
-over the wide area. The address of a dot is simply its two coordinates side by side, with the one that
+over the wide area. The address of a dot is its two coordinates side by side, with the one that
 is 256 long in the low byte. That is why the bytes run **across** in 256 × 192 and **down** in the wide
 modes, one column per 256-byte page. In **640 × 256** a byte holds **two 4-bit dots**, high nibble
 first, because Layer 2 gets one byte per 7 MHz dot in every mode, and the palette offset in bits 3–0 of

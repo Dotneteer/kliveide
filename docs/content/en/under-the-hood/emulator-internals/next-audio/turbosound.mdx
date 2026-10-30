@@ -384,7 +384,7 @@ ABC, ACB and mono place the channels inside a chip. **Panning** then places the 
 - `00`: muted, the chip's equivalent of being sent to its room.
 
 The pan works on the chip's own mix, after ABC, ACB or mono. With pan `10`, the chip's left side goes to the
-mixer's left, and its right side is simply dropped. Let's try it with three chips, each playing one note on
+mixer's left, and its right side is dropped. Let's try it with three chips, each playing one note on
 channel B (the middle channel in ABC), with chip 0 panned left, chip 1 to both sides and chip 2 right:
 
 <figure>
@@ -575,7 +575,7 @@ you want to read the code yourself, here is where it lives:
 So, what have we got? TurboSound puts three AY chips behind the 128K's ports `$FFFD` and `$BFFD`, and only the
 **selected chip** answers. A register select always has bits 7–5 clear, so the Next uses values that look like
 `%1 pp 111 cc` to pick a chip instead: `cc` names the chip (`11`, `10` and `01` for chips 0, 1 and 2) and `pp`
-sets its pan. Written with both pan bits, they are simply `$FF`, `$FE` and `$FD`.
+sets its pan. Written with both pan bits, they are `$FF`, `$FE` and `$FD`.
 
 Bit 1 of NextReg `$08` switches TurboSound on. While it is off, as after power-on, only the selected chip sounds
 and the selection is frozen, which puts every 128K program on chip 0 without it ever knowing.

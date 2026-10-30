@@ -655,7 +655,7 @@ Copper just to change a value in its list.
 ## Where a list ends
 
 Here is a surprise: the Copper has **no end instruction**, and it does not know how long a list is. It
-simply goes on to the next instruction in its memory, and after instruction 1,023 it goes on with
+goes on to the next instruction in its memory, and after instruction 1,023 it goes on with
 instruction 0. What lies beyond the last instruction your program wrote is whatever the memory held
 before: an older list, or zeros, which are `MOVE $00, $00`, the NOP. A list that just stops being written
 would run on through them, wrap round, and start again from instruction 0 at once, wherever the beam

@@ -6,8 +6,8 @@ import { Callout } from 'nextra/components'
 
 # Video Layers
 
-A ZX Spectrum Next picture is four layers &mdash; the ULA (or LoRes), the tilemap, Layer 2 and the
-sprites &mdash; mixed by one of eight priority modes (NextReg `$15`), two of which blend Layer 2 with
+A ZX Spectrum Next picture is four layers (the ULA or LoRes, the tilemap, Layer 2 and the
+sprites), mixed by one of eight priority modes (NextReg `$15`), two of which blend Layer 2 with
 the ULA or the tilemap. On top of that come the Layer 2 palette priority bit, stencil mode, the tilemap
 above or below the ULA per tile, a global transparency colour (`$14`), a fallback colour (`$4A`) and four
 clip windows. When a pixel is wrong, the screen does not tell you which layer drew it.
@@ -33,26 +33,26 @@ screen:
   order, top layer first**. The order follows `$15` live, including changes the Copper makes.
 - Click a chip to **hide** or show that layer. **S** shows the layer **alone** (solo) over a
   checkerboard, so its transparent pixels are visible.
-- A layer the *program* has switched off has its name struck through &mdash; a different thing from
+- A layer the *program* has switched off has its name struck through: a different thing from
   hiding it here.
 - The checkerboard button marks **transparency**: where no layer is opaque, the screen shows magenta
   instead of the fallback colour (`$4A`). With a solo layer, it marks that layer's transparent pixels.
 - The dashed-square button draws the four **clip windows**, each in its layer's colour.
 - The crosshair button turns on the **pixel probe**.
 - **All** shows every layer again.
-- **×** closes the strip: it first returns to the composite picture &mdash; every layer shown, no
-  solo, no transparency marking, the clip windows and the probe off &mdash; then hides the strip.
+- **×** closes the strip: it first returns to the composite picture (every layer shown, no
+  solo, no transparency marking, the clip windows and the probe off), then hides the strip.
   **Settings › Emulator › Show the Layers strip**, or the status bar's right-click menu, brings it back.
 
-While any layer is hidden or soloed, or transparency is marked, a pill on the screen says so &mdash;
-`Layers: sprites hidden` &mdash; so a forgotten toggle is never mistaken for a bug in your program.
+While any layer is hidden or soloed, or transparency is marked, a pill on the screen says so
+(`Layers: sprites hidden`), so a forgotten toggle is never mistaken for a bug in your program.
 
 ## Toggling While Paused
 
 When the machine is paused, a toggle redraws the paused picture at once. Klive records each layer and
 the mixer's registers for every part of the frame the beam drew with different settings, so the
-redrawn picture is exact even when the Copper or your code changed `$15`, `$4A` or a palette mid-frame
-&mdash; on both sides of the beam. This recording runs only while the strip, the probe or the Layers
+redrawn picture is exact even when the Copper or your code changed `$15`, `$4A` or a palette mid-frame,
+on both sides of the beam. This recording runs only while the strip, the probe or the Layers
 document is open.
 
 <Callout type="info">
@@ -71,7 +71,7 @@ The probe shows:
 
 - the pixel's colour and **the rule that chose it**: the top opaque layer in this order, the Layer 2
   priority bit, a sprite over the ULA border, stencil, a blend, or the fallback colour;
-- each layer's value at that pixel &mdash; its colour, *transparent* or *disabled* &mdash; with the
+- each layer's value at that pixel (its colour, *transparent* or *disabled*), with the
   Layer 2 priority bit, the tile's "below the ULA" bit and the ULA border flag;
 - the priority mode, stencil and fallback colour **in force for that pixel**, which under a Copper
   split differ from line to line;
@@ -89,13 +89,13 @@ static picture:
 
 ![The Layers document: the priority stack, and a card per layer with its picture, state and clip window](/images/working-with-ide/layers-document.png)
 
-- **Priority, top first** &mdash; the stack `$15` selects, with the Layer 2 priority pixels, the
+- **Priority, top first**: the stack `$15` selects, with the Layer 2 priority pixels, the
   ULA/tilemap pair (and stencil), and for the blend modes what is blended with what.
-- **A card per layer** &mdash; its picture alone, whether the program has it on, its clip window, its
+- **A card per layer**: its picture alone, whether the program has it on, its clip window, its
   state in the debug view, and the reasons it might not be on the screen: switched off, an empty clip
   window, every pixel transparent, hidden here, or another layer soloed. Click a picture, or **Solo**,
   to show that layer alone on the emulator screen.
-- **Composite** &mdash; the machine's own picture, with no layer hidden.
+- **Composite**: the machine's own picture, with no layer hidden.
 
 ## The Command
 

@@ -47,11 +47,28 @@ const RULES = [
     id: "filler",
     why: "cut it; the sentence works without it",
     // --- "Note that" and "Whether you" only open a sentence ("a note that...", "depends on whether you")
-    re: /\b(?:simply|easily|let['’]s|dive into|deep dive|it['’]s worth noting|in order to)\b|(?<![\w,]\s)\b(?:note that|whether you)\b/gi
+    re: /\b(?:dive into|deep dive|it['’]s worth noting|in order to)\b|(?<![\w,]\s)\b(?:note that|whether you)\b/gi
+  },
+  {
+    // --- Under the Hood's playful voice keeps them where they carry it ("The Next simply shrugs");
+    // --- its padding ones were cut in step 4's second batch, by the author's decision
+    id: "softener",
+    why: "cut it, unless it carries the meaning",
+    notIn: ["under-the-hood"],
+    re: /\b(?:simply|easily)\b/gi
+  },
+  {
+    // --- Under the Hood speaks to the reader on purpose, "let's" for a worked example included: the
+    // --- project author asked for that voice (.ai/hardware-articles-guide.md, "Wording rules")
+    id: "lets",
+    why: "say it directly",
+    notIn: ["under-the-hood"],
+    re: /\blet['’]s\b/gi
   },
   {
     id: "just",
     why: "cut it, unless it means exactly or only",
+    notIn: ["under-the-hood"],
     // --- Not "Just My Code" (a setting), "not just" (not only), "has just drawn" (a moment ago), nor
     // --- "just after", "just left of" and the other exact positions and times
     re: /(?<!\b(?:not|has|have|had|was|were|is|are)\s)\bjust\b(?!\s+(?:My Code|after|before|as|like|enough|below|above|once|the same|one|two|a few|a single|in time|beyond|past|under|over|outside|inside|behind|ahead|left|right|where|when|what|how|that|this|these|those)\b)/gi
@@ -97,14 +114,15 @@ function proseOf(source) {
   return text;
 }
 
-/** The findings of one page: { line, column, rule, match, text } */
-function proseFindings(source) {
+/** The findings of one page: { line, column, rule, match, text }; `area` drops the rules it is exempt from */
+function proseFindings(source, area) {
   const lines = proseOf(source).split("\n");
   const original = source.split("\n");
   const findings = [];
   lines.forEach((line, i) => {
     if (/prose-ok/.test(line) || /prose-ok/.test(lines[i - 1] ?? "")) return;
     for (const rule of RULES) {
+      if (area && rule.notIn?.includes(area)) continue;
       for (const m of line.matchAll(rule.re)) {
         // --- Shown as the page has it (link targets were blanked), without the spaces a rule needed
         const raw = original[i].slice(m.index, m.index + m[0].length);
@@ -113,7 +131,7 @@ function proseFindings(source) {
       }
     }
   });
-  return findings;
+  return findings.sort((x, y) => x.line - y.line || x.column - y.column);
 }
 
 function pages(dir) {
@@ -130,7 +148,7 @@ function checkDocsProse({ areas = AREAS, rules } = {}) {
     for (const file of pages(join(contentDir, area))) {
       const page = relative(contentDir, file).split(sep).join("/");
       if (GENERATED.has(page)) continue;
-      for (const f of proseFindings(readFileSync(file, "utf8"))) {
+      for (const f of proseFindings(readFileSync(file, "utf8"), area)) {
         if (!rules || rules.includes(f.rule)) results.push({ area, page, ...f });
       }
     }

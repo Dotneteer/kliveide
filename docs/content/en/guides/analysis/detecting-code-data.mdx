@@ -30,8 +30,8 @@ the Pentagon, the Scorpion, the Timex machines, the ZX80 and the ZX81.
 <Shot src="guides/analysis/detecting-code-data/detect-dialog.webp" alt="The Detect code and data dialog listing banks with their code, data and unknown bytes" caption="The Detect code and data dialog." width={560} />
 
 The dialog lists one row per bank: how much of it is code, data and still unknown, how many
-changes it proposes, and how many of *your* regions it disagrees with. **Show** lists the warnings —
-self-modifying code, instructions that overlap, code bytes that are also read — each with a link to
+changes it proposes, and how many of *your* regions it disagrees with. **Show** lists the warnings
+(self-modifying code, instructions that overlap, code bytes that are also read), each with a link to
 the address. Untick a bank to leave it alone, then press **Apply**.
 
 The same thing as a command:
@@ -45,7 +45,7 @@ ann-detect -reach -apply
 
 Detection reports three levels of evidence, and you choose which to use:
 
-- **Observed**: the coverage flags. A byte fetched as code is code — the opcode *and* its operands;
+- **Observed**: the coverage flags. A byte fetched as code is code: the opcode *and* its operands;
   a byte only read or written is data. When a byte was both, code wins and a warning says so.
 - **Reached** (*Follow branches*, `-reach`): code that never ran but that the code which did run
   jumps or calls into, and the instructions after a conditional branch. This recovers error
@@ -54,7 +54,7 @@ Detection reports three levels of evidence, and you choose which to use:
 - **Inferred**: *Text* (`-text`) proposes printable runs as text; *Pointer tables* (`-words`)
   proposes a run of words that mostly point at code as `.defw`.
 
-Bytes with no evidence stay as they are, unless you tick *Unknown is data* (`-unknown bytes`) — useful
+Bytes with no evidence stay as they are, unless you tick *Unknown is data* (`-unknown bytes`), useful
 for a program you have exercised completely. On the Spectrum machines the screen in bank 5 (and bank
 7 on the 128K) is proposed as *skip*, the same range the listing already hides.
 
