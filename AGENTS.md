@@ -87,7 +87,10 @@ React 19 + Next 16.
   the latest release tag has them.
 - **Moving or renaming a page needs an entry in `docs/redirects.json`** (old path -> new path);
   `scripts/build-doc-redirects.cjs` writes a redirect stub for it, and the route golden fails the
-  build when an old URL disappears.
+  build when an old URL disappears. **Every link to the old path moves too**, translations and the
+  landing page's `features.ts` included: the stub is for outside links, and `next dev` writes no stubs,
+  so a stale link is a "missing param in generateStaticParams" error there. `doc:check:links` fails
+  on a link to any `redirects.json` key.
 - **`docs/package.json` must keep `--webpack` on `dev` and `build`.** Next 16
   defaults to Turbopack, which rejects Nextra's non-serializable `mdxOptions` -
   and those options are what register the custom `z80klive` Shiki grammar used

@@ -147,14 +147,14 @@
   "pages": {
     "get-started/debug-your-program": "5e12d9572befaf65",
     "get-started/first-assembly-program": "b6a5d878ff10f363",
-    "get-started/first-basic-program": "bbd3c8ee657c1dfb",
+    "get-started/first-basic-program": "6d437a2efb6a9e08",
     "get-started/first-next-program": "4ac0943ba8bfab69",
     "get-started/index": "4d5113cd95f44857",
     "get-started/load-from-tape": "34fe0a7f91a1e063",
     "get-started/meet-the-emulator": "cdd9796881ac1379",
     "get-started/meet-the-ide": "20bbf34c7cced725",
     "get-started/save-and-share": "16c8b679d87f4bb0",
-    "get-started/where-next": "3c9589d3643bd4c7",
-    "get-started/install": "eb68f029643be4ae"
+    "get-started/where-next": "181f3b2800886775",
+    "get-started/install": "20a1df9060a19950"
   }
 }

@@ -29,7 +29,7 @@ export const FEATURES: Feature[] = [
     id: "basicDebug",
     since: "0.63.0",
     image: { localized: "get-started/basic-debug.webp" },
-    more: { area: "guides", rest: "languages/zx-basic/" }
+    more: { area: "guides", rest: "languages/klive-basic/" }
   },
   {
     id: "timeTravel",

@@ -8,6 +8,10 @@
  * External links are not fetched - this is a fast, offline, deterministic check
  * meant to run in CI on every docs build.
  *
+ * A link to an old address listed in docs/redirects.json also fails, although it resolves (to
+ * the redirect stub): a page links the page itself. `next dev` writes no stubs, so such a link is
+ * a "missing param in generateStaticParams" error there, and a visitor takes an extra hop here.
+ *
  * Usage: node scripts/check-docs-links.cjs [--verbose]
  */
 const { existsSync, readdirSync, readFileSync, statSync } = require("node:fs");
@@ -67,6 +71,14 @@ function resolveRelative(href, pageUrl) {
   return u.pathname + u.hash;
 }
 
+/** Old addresses (docs/redirects.json keys), normalized to a trailing slash, with their new ones */
+function redirectSources() {
+  const file = join(repoRoot, "docs", "redirects.json");
+  if (!existsSync(file)) return new Map();
+  const slash = (u) => (u.endsWith("/") ? u : u + "/");
+  return new Map(Object.entries(JSON.parse(readFileSync(file, "utf8"))).map(([from, to]) => [slash(from), to]));
+}
+
 function checkDocsLinks({ verbose = false } = {}) {
   if (!existsSync(outDir)) {
     throw new Error(`No build output at ${outDir}. Run 'npm run doc:build' first.`);
@@ -74,6 +86,8 @@ function checkDocsLinks({ verbose = false } = {}) {
   const basePath = detectBasePath();
   const files = htmlFiles(outDir);
   const broken = new Map(); // target -> Set(pages referencing it)
+  const moved = redirectSources();
+  const stale = new Map(); // old address -> Set(pages linking to it)
   let checked = 0;
 
   for (const file of files) {
@@ -94,6 +108,13 @@ function checkDocsLinks({ verbose = false } = {}) {
       if (basePath && !target.startsWith(basePath + "/") && target !== basePath) continue;
       const sitePath = basePath ? target.slice(basePath.length) || "/" : target;
       checked += 1;
+      const bare = sitePath.split("#")[0].split("?")[0];
+      const old = moved.get(bare.endsWith("/") ? bare : bare + "/");
+      // --- The redirect stub itself points at the new address, so it never matches here
+      if (old) {
+        if (!stale.has(raw)) stale.set(raw, new Set());
+        stale.get(raw).add(page);
+      }
       if (!resolves(sitePath)) {
         if (!broken.has(raw)) broken.set(raw, new Set());
         broken.get(raw).add(page);
@@ -106,7 +127,15 @@ function checkDocsLinks({ verbose = false } = {}) {
       (basePath ? ` (basePath "${basePath}")` : "")
   );
 
+  for (const [target, pages] of [...stale].sort()) {
+    const bare = target.split("#")[0];
+    const to = moved.get(bare.endsWith("/") ? bare : bare + "/");
+    console.error(`  ${target} is an old address (docs/redirects.json): link ${to} instead`);
+    for (const p of verbose ? [...pages] : [...pages].slice(0, 3)) console.error(`      referenced by ${p}`);
+  }
+
   if (broken.size === 0) {
+    if (stale.size) return false;
     console.log("No broken internal links or images.");
     return true;
   }
