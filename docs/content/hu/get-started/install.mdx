@@ -79,7 +79,7 @@ Ha a találati listában a Klive IDE van kijelölve, a jobb oldali panelen megje
 Ha nem tudunk vagy nem szeretnénk telepítőt futtatni (például zárolt gépen, rendszergazdai jogok nélkül vagy USB-kulcsról), töltsük le helyette a `KliveIde-Portable-{version}-x64.zip` fájlt. Nem igényel telepítést, és semmit sem ír a beállításjegyzékbe (registry).
 
 1. Kicsomagolás előtt kattintsunk a jobb gombbal a letöltött `.zip` fájlra, válasszuk a **Tulajdonságok** (Properties) parancsot, jelöljük be a **Tiltás feloldása** (Unblock) jelölőnégyzetet, és kattintsunk az **OK** gombra. E lépés nélkül a Windows minden kicsomagolt fájlt internetről letöltöttként jelöl meg, és minden egyes programfájlnál külön figyelmeztetést jeleníthet meg. (PowerShellben: `Unblock-File .\KliveIde-Portable-{version}-x64.zip`.)
-2. Csomagoljuk ki az archívumot egy **új, üres mappába** – a fájlok az archívum gyökerében vannak, nem egy saját mappában.
+2. Csomagoljuk ki az archívumot egy **új, üres mappába**: a fájlok az archívum gyökerében vannak, nem egy saját mappában.
 3. Futtassuk a mappában található `Klive IDE.exe` fájlt.
 
 Ez a példány teljesen hordozható: mindent, amit ír, a `Klive IDE.exe` melletti `KliveData` mappában tárol, a felhasználói profilban pedig semmit.
@@ -123,6 +123,6 @@ Ezután a fájl dupla kattintással, vagy terminálból a `./KliveIdeSetup-{vers
 
 ## Az első indítás
 
-Első indításkor a Klive az emulátorablakot mutatja egy kikapcsolt ZX Spectrum 48K-val. A Klive felajánlhatja a **Boriel BASIC**, egy külső ZX BASIC fordító beállítását is. Ehhez az oktatóanyaghoz nincs rá szükség: a Klive saját, beépített BASIC-fordítóval rendelkezik. Ha később mégis szeretnénk használni a Boriel BASIC-et, a [ZX BASIC útmutató (angolul)](/en/guides/languages/zx-basic/#using-boriel-basic) leírja a beállítását.
+Első indításkor a Klive az emulátorablakot mutatja egy kikapcsolt ZX Spectrum 48K-val. A Klive felajánlhatja a **Boriel BASIC**, egy külső ZX BASIC fordító beállítását is. Ehhez az oktatóanyaghoz nincs rá szükség: a Klive saját, beépített BASIC-fordítóval rendelkezik. Ha később mégis szeretnénk használni a Boriel BASIC-et, a [ZX BASIC útmutató (angolul)](/en/guides/languages/klive-basic/#using-boriel-basic) leírja a beállítását.
 
 Következő lépésként [ismerkedjünk meg az emulátorral](/hu/get-started/meet-the-emulator/).

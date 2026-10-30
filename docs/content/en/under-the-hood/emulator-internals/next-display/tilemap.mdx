@@ -250,7 +250,7 @@ keeps its **shadow screen** (port `$7FFD` bit 3): the two cannot be used at once
 5 with tiles, so the ULA, which reads bank 5 for its own screen, would show tile bytes as a scrambled
 picture; your program switches it off with bit 7 of the ULA Control register, NextReg `$68`. The text
 layout's tile definitions start at `$6F00` but hold only characters 32–127: a character's tile number is
-its code, so tiles 0–31 are simply never used, and their 256 bytes may hold anything.
+its code, so tiles 0–31 are never used, and their 256 bytes may hold anything.
 
 ## A trap: moving a setup from bank 5 to bank 7
 
@@ -422,7 +422,7 @@ turn, 180 degrees, so rotate plus X and Y (`$0E`) is 90 + 180 = 270 degrees cloc
 anticlockwise. I always remember it as "turn, then flip".
 
 Now notice how neat the hardware is about it: it does all this without moving a single dot. To draw the
-dot at column *x*, row *y* of the cell, it simply reads a different dot of the tile: it turns *x* into
+dot at column *x*, row *y* of the cell, it reads a different dot of the tile: it turns *x* into
 7 − *x* for X mirror (and, because a rotation also flips across, for rotate too, the two cancelling when
 both are set), turns *y* into 7 − *y* for Y mirror, and for rotate swaps the two before it forms the
 address. Three bits of the attribute change three bits of the address: the transformation costs nothing.

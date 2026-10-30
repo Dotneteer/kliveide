@@ -99,7 +99,7 @@ at (0, 0) at the top-left corner of the border.
 Why 512 positions for a 320-dot screen? So that a sprite can be **partly off** any edge. A 16-dot
 sprite moving left from X 0 goes to X 511, 510, …: positions wrap round at 512, so at X 500 its first
 12 dots are past the right of sprite space, out of sight, and its last 4 come back in at X 0–3. To your
-program it is simply X −12, and the sprite never notices that it went round the back. The same happens
+program it is X −12, and the sprite never notices that it went round the back. The same happens
 at the top with Y. With 8 bits, X could not even reach the right-hand side of a 320-dot screen; the
 ninth bit reaches it and leaves 192 hidden positions across and 256 down, more than the widest sprite.
 
@@ -348,7 +348,7 @@ shows the rule worked out dot by dot; for a 16 × 16 pattern, replace its 7 by 1
 ## Four sizes
 
 Bits 4–3 of byte 4 scale a sprite **across** and bits 2–1 scale it **down**, independently: `00` is 1×,
-`01` 2×, `10` 4× and `11` 8×. Each dot is simply repeated, 2, 4 or 8 times, so an 8× sprite is 128 × 128
+`01` 2×, `10` 4× and `11` 8×. Each dot is repeated, 2, 4 or 8 times, so an 8× sprite is 128 × 128
 dots, two fifths of the screen's width, drawn from the same 16 × 16 pattern. Here is the ship in six
 sizes:
 

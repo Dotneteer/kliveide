@@ -55,6 +55,9 @@ export const EmuStatusBar = ({ show, showPerformanceInfo = true }: EmuStatusBarP
    * restored with no frame run at all - would otherwise leave the PC of an earlier frame on show.
    */
   useSelector(s => s.emulatorState?.machineState);
+  // --- A move into the past (or back) changes the PC with the machine still paused: re-render too
+  useSelector(s => s.emulatorState?.reverseDebug?.behindSeconds);
+  useSelector(s => s.emulatorState?.historyPosition);
   const counter = useRef(0);
   const mainApi = useMainApi();
   const showMediaInfo = useGlobalSetting(SETTING_EMU_SHOW_MEDIA_INFO);

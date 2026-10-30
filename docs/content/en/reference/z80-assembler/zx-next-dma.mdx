@@ -38,7 +38,7 @@ To run the program, upload it to the zxnDMA port:
     otir
 ```
 
-## WR6 — Control Commands
+## WR6: Control Commands
 
 These sub-commands each emit a single WR6 command byte.
 
@@ -60,7 +60,7 @@ These sub-commands each emit a single WR6 command byte.
 .dma continue
 ```
 
-### READMASK — Set Read Mask
+### READMASK: Set Read Mask
 
 Emits `$BB` followed by a mask byte that selects which WR registers are echoed back when read.
 
@@ -74,7 +74,7 @@ Emits `$BB` followed by a mask byte that selects which WR registers are echoed b
 .dma readmask $7E    ; emits $BB, $7E
 ```
 
-### CMD — Raw WR6 Command (Escape Hatch)
+### CMD: Raw WR6 Command (Escape Hatch)
 
 Emits any arbitrary WR6 command byte. Use this for vendor-specific or future commands not covered by the named sub-commands.
 
@@ -90,7 +90,7 @@ Emits any arbitrary WR6 command byte. Use this for vendor-specific or future com
 
 ---
 
-## WR0 — Port A Configuration (Direction, Address, Block Length)
+## WR0: Port A Configuration (Direction, Address, Block Length)
 
 Configures the transfer direction, type, and optionally the source address and block length.
 
@@ -137,7 +137,7 @@ The assembler **always** sets all four follow-byte indicator bits (D3–D6) in t
 
 ---
 
-## WR1 — Port A Timing and Address Mode
+## WR1: Port A Timing and Address Mode
 
 Configures port A (source) addressing and optional cycle timing.
 
@@ -167,7 +167,7 @@ When `cycle_length` is specified, an additional timing byte is emitted after the
 
 ---
 
-## WR2 — Port B Timing, Address Mode, and Prescaler
+## WR2: Port B Timing, Address Mode, and Prescaler
 
 Configures port B (destination) addressing, optional cycle timing, and the ZX Next prescaler extension.
 
@@ -184,7 +184,7 @@ Configures port B (destination) addressing, optional cycle timing, and the ZX Ne
 | `port_type` | `memory` \| `io` | Whether port B is a memory address or I/O port |
 | `addr_mode` | `increment` \| `decrement` \| `fixed` | How the address changes after each byte |
 | `cycle_length` | `2t` \| `3t` \| `4t` | Bus cycle length *(optional)* |
-| `prescaler` | expression | 8-bit prescaler value — ZX Next extension *(optional; requires cycle_length)* |
+| `prescaler` | expression | 8-bit prescaler value, a ZX Next extension *(optional; requires cycle_length)* |
 
 When `cycle_length` is specified, a timing byte is emitted. When `prescaler` is also specified, an additional prescaler byte follows (D5 of the timing byte is set to indicate its presence).
 
@@ -199,7 +199,7 @@ When `cycle_length` is specified, a timing byte is emitted. When `prescaler` is 
 
 ---
 
-## WR3 — Interrupt and Match Control
+## WR3: Interrupt and Match Control
 
 Configures interrupt generation and pattern-match stop conditions.
 
@@ -231,7 +231,7 @@ When both `mask_expr` and `match_expr` are provided, D3 and D4 are set and the t
 
 ---
 
-## WR4 — Operating Mode and Port B Address
+## WR4: Operating Mode and Port B Address
 
 Configures the DMA operating mode and optionally the port B (destination) address.
 
@@ -268,7 +268,7 @@ The assembler **always** sets D2 and D3 (the address follow-byte indicator bits)
 
 ---
 
-## WR5 — Restart and /CE//WAIT Behaviour
+## WR5: Restart and /CE//WAIT Behaviour
 
 Configures whether the DMA restarts automatically and the /CE//WAIT signal polarity.
 
@@ -295,7 +295,7 @@ Configures whether the DMA restarts automatically and the /CE//WAIT signal polar
 
 ## Runtime Patching Pattern
 
-Real DMA programs are stored in memory as a fixed byte table. Before activating the transfer, calling code patches specific fields — typically the source address and block length — with runtime values. Omitting the optional address/length parameters from `wr0` (and the address from `wr4`) is designed for exactly this use case.
+Real DMA programs are stored in memory as a fixed byte table. Before activating the transfer, calling code patches specific fields, typically the source address and block length, with runtime values. Omitting the optional address/length parameters from `wr0` (and the address from `wr4`) is designed for exactly this use case.
 
 Instead of raw `DB`/`DW` bytes, write:
 
@@ -332,7 +332,7 @@ RunDma:
     otir
 ```
 
-This is identical to what the `api_sprite.asm` pattern does with raw `DB`/`DW` bytes — except the labels now have self-documenting names and the byte encoding is verified by the assembler.
+This is identical to what the `api_sprite.asm` pattern does with raw `DB`/`DW` bytes, except that the labels now have self-documenting names and the byte encoding is verified by the assembler.
 
 ---
 
@@ -340,7 +340,7 @@ This is identical to what the `api_sprite.asm` pattern does with raw `DB`/`DW` b
 
 The following two programs produce **identical byte sequences**.
 
-### Before — raw bytes
+### Before: raw bytes
 
 ```z80klive
 spriteDMAProgram:
@@ -356,7 +356,7 @@ spriteDMAProgram:
     DB %1'00001'11          ; WR6: ENABLE
 ```
 
-### After — `.dma` pragma
+### After: `.dma` pragma
 
 ```z80klive
 spriteDMAProgram:
@@ -378,7 +378,7 @@ Both emit: `$7D $00 $00 $00 $00 $14 $28 $AD $5B $00 $82 $CF $87`
 
 ---
 
-## Complete Example — Copy 32 Bytes from `$4000` to `$4800`
+## Complete Example: Copy 32 Bytes from `$4000` to `$4800`
 
 ```z80klive
 .model next

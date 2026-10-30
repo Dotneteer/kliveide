@@ -8,8 +8,8 @@ import { Callout, Steps } from 'nextra/components'
 
 When the machine is paused, the **Call Stack** panel answers *who called this code*, and the
 **Variables** panel shows the program's variables by name, with their types. For a program built
-with source-level debug information &mdash; Klive BASIC, Boriel BASIC, or C built with z88dk
-&mdash; both work at the level of your source: frames are SUBs, FUNCTIONs and C functions, and
+with source-level debug information (Klive BASIC, Boriel BASIC, or C built with z88dk),
+both work at the level of your source: frames are SUBs, FUNCTIONs and C functions, and
 variables are decoded by type. For an assembly program the Call Stack shows the raw stack.
 
 <Shot
@@ -61,7 +61,7 @@ line it stands at. The bottom row is the main program.
   this frame**), runs until control is back in that frame and stops at the return point there. It is
   Step Out repeated, done as one run.
 
-When the machine stops in code that has no statements &mdash; the runtime, or machine code &mdash;
+When the machine stops in code that has no statements (the runtime, or machine code),
 the top row reads *runtime code at* an address, or *runtime error:* and the error. Click it to
 expand the raw return addresses between the stack pointer and your innermost routine.
 
@@ -91,7 +91,7 @@ has up to four sections:
 | Section | Shows |
 | --- | --- |
 | **Returned** | After a step out of a FUNCTION, or a step over a statement that called FUNCTIONs: the value each returned. |
-| **Locals —** *routine* | The parameters and local variables of the frame selected in the Call Stack panel. |
+| **Locals —** *routine* | The parameters and local variables of the frame selected in the Call Stack panel. {/* prose-ok: the panel's own heading text, Locals — routine */} |
 | **Globals** | The program's global variables. |
 | **Watch** | BASIC expressions you add yourself. |
 

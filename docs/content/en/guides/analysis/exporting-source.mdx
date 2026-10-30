@@ -28,7 +28,7 @@ The save dialog opens in the **export folder**:
 When you save somewhere else, Klive remembers that folder for the next export: in the project's
 settings while a Klive project is open (relative to the project when the folder is inside it),
 otherwise in your user settings. It is the `export.sourceFolder` setting, so you can also set it with
-[`set`](/en/reference/commands#set) — `set -p export.sourceFolder asm` for one project,
+[`set`](/en/reference/commands#set): `set -p export.sourceFolder asm` for one project,
 `set -u export.sourceFolder ~/asm` for every export outside a project. A project uses only its own
 value, so a folder chosen outside a project never takes over a project's exports.
 
@@ -57,16 +57,16 @@ script can tell.
 The export takes care of the cases where a disassembly's text would *not* assemble back to the same
 bytes:
 
-- **Non-canonical encodings** — the `NEG` and `RETN` mirrors, the alternative `IM` encodings, the
-  long `LD (nn),HL`, a `DD`/`FD` prefix that has no effect, undefined `ED` opcodes — are written as
+- **Non-canonical encodings** (the `NEG` and `RETN` mirrors, the alternative `IM` encodings, the
+  long `LD (nn),HL`, a `DD`/`FD` prefix that has no effect, undefined `ED` opcodes) are written as
   `.defb` with the instruction in the comment.
 - An instruction that **runs past its region** is written as the bytes the region holds.
 - **Copper** and **DMA** programs, and the ROM's inline `RST $08` / `RST $28` bytes, are `.defb` with
   their decoding as the comment.
 - A **label** the assembler would not accept (`hl`, `ld`, a name that differs from another only in
   case) is renamed, and the output says how.
-- A name used in an operand but defined **outside the range** — a ROM routine, a label in another
-  bank — becomes `NAME .equ $NNNN`.
+- A name used in an operand but defined **outside the range** (a ROM routine, a label in another
+  bank) becomes `NAME .equ $NNNN`.
 - A **skip region** is exported as its bytes; `-skip gap` leaves it out and starts a new `.org`
   instead, and says the result is shorter.
 

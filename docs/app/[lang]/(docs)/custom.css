@@ -20,6 +20,25 @@ article h4 {
   font-family: var(--site-font-display);
   font-weight: 700;
   letter-spacing: 0;
+  /* --- No heading ends on one stranded word (Hallmark F26) */
+  text-wrap: balance;
+}
+
+/* --- Running text keeps a readable line (Hallmark rule 25: about 88 characters at most). Overpass
+   --- is narrow, about 1.4 characters per `ch`: at 70ch lines still reached 99 characters, at 62ch
+   --- they stop near 87; Nextra's full column ran to about 115. Only prose is held in: figures,
+   --- screenshots, code and tables keep the full column (a hand-drawn figure fills it on purpose,
+   --- see .ai/ui-theming-intent-and-lessons.md). */
+article :is(p, ul, ol, dl, blockquote):not(table *, figure *, .nextra-cards *) {
+  max-width: 62ch;
+}
+
+/* --- The search field's edge: Nextra draws it with a 5% tint only, 1.12:1 against the navbar in the
+   --- light theme and 1.31:1 in the dark one. A field needs 3:1 (WCAG 1.4.11). Half the text colour
+   --- over the page reaches 3.3:1 in light and 4.3:1 in dark. An inset shadow, so the field keeps its
+   --- size; Nextra's focus ring replaces it while focused. */
+.nextra-search input {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--site-fg) 50%, var(--site-bg));
 }
 
 code,

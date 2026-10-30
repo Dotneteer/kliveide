@@ -98,6 +98,9 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   const audioSampleRate = useSelector((s) => s.emulatorState?.audioSampleRate);
   const emuViewVersion = useSelector((s) => s.emulatorState?.emuViewVersion);
   const isDebugging = useSelector((s) => s.emulatorState?.isDebugging ?? false);
+  // --- Where reverse debugging stands: how far behind the present, and the history cursor
+  const reverseBehind = useSelector((s) => s.emulatorState?.reverseDebug?.behindSeconds);
+  const historyPosition = useSelector((s) => s.emulatorState?.historyPosition);
 
   const fastLoad = useGlobalSetting(SETTING_EMU_FAST_LOAD);
   const htVideoCut = useGlobalSetting(SETTING_EMU_HT_VIDEO_CUT);
@@ -450,6 +453,20 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     controller?.machine?.getAspectRatio,
     updateScreenDimensions
   ]);
+
+  /*
+   * A move into the past - a step back, Reverse Continue, a selected history row - and the return
+   * to the present put the machine there by replaying frames with their side effects suppressed,
+   * and the machine stays paused: no frame event and no state change redraws the picture, so the
+   * screen kept showing the present. The machine's pixel buffer already holds the past; draw it,
+   * and say the PC the machine is at now in the pause overlay.
+   */
+  useEffect(() => {
+    displayScreenData();
+    if (machineState === MachineControllerState.Paused) setPauseOverlay();
+    // --- Only a move redraws; a state change has its own handler
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reverseBehind, historyPosition, displayScreenData, setPauseOverlay]);
 
   /*
    * Refit once the machine's tool strip (the Z88 slot cards, the Spectrum media strip) is in the

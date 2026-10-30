@@ -88,13 +88,13 @@ The body of the `1 REM` line starts at 16514 ($4082), the classic home of ZX81 m
 
 ### Spelling out the whole program
 
-If your code starts at the program image's base — $4009 (VERSN) on the ZX81, $4000 on the ZX80 — Klive takes it as the complete program, with the system variables, BASIC lines and display file written by you in `.defb`/`.defw`, as many ZX81 sources are. Klive then only checks that `E_LINE`, `VARS` and `D_FILE` agree with the image.
+If your code starts at the program image's base ($4009, VERSN, on the ZX81; $4000 on the ZX80), Klive takes it as the complete program, with the system variables, BASIC lines and display file written by you in `.defb`/`.defw`, as many ZX81 sources are. Klive then only checks that `E_LINE`, `VARS` and `D_FILE` agree with the image.
 
 ## Rules of the machines
 
 - **Below $8000.** The ZX80/ZX81 display hardware turns every instruction fetched at $8000 or above into a `NOP`; code there cannot run. The assembler warns about it.
 - **IX, IY and AF'.** In SLOW mode the ROM's display routine runs on every frame and needs `IY = $4000`, `IX` and the alternate `AF` intact. Save and restore them if you use them.
-- **No $76 in a ZX80 REM line.** The ZX80 finds the end of a BASIC line by its `$76` (NEWLINE) byte, so the REM line cannot hold one — `HALT` and `LD (HL),(HL)` among others. Klive reports the address; spell out the whole program to avoid it. The ZX81 walks lines by their length and has no such limit.
+- **No $76 in a ZX80 REM line.** The ZX80 finds the end of a BASIC line by its `$76` (NEWLINE) byte, so the REM line cannot hold one: no `HALT` and no `LD (HL),(HL)`, among others. Klive reports the address; spell out the whole program to avoid it. The ZX81 walks lines by their length and has no such limit.
 - **Printing on the ZX80.** The ZX80's print routine (`RST $10`) keeps the print position in the alternate registers: DE' points into the display file, BC' counts columns and lines. Code called by `USR` must load them first (`exx`, `ld de,($400E)`, `ld bc,($4024)`, `exx`) and store them back when done (`exx`, `ex de,hl`, `ld ($4024),bc`, `ld ($400E),hl`, `ld ($4010),hl`, `exx`), as the ROM's `PRINT` does; the ZX80 project template shows it. The ZX80 has no `PRINT AT`: print NEWLINEs and spaces instead.
 - **The character set.** Use `.defzx` for text: the machines do not use ASCII.
 - **No banks.** `.bank` is not available under these models.

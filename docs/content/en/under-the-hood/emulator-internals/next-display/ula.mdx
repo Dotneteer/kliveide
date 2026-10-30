@@ -299,7 +299,7 @@ On the Spectrum the attribute byte of a cell covers 8 × 8 dots. Mode `010` give
 bitmap** a colour byte of its own. The bitmap stays at `$4000`, and the colour bytes are a second copy of its
 layout at `$6000`: the colour of the bitmap byte at `$4000 + o` is the byte at **`$6000 + o`**.
 
-So the ULA's address for the colour is simply the bitmap address with one more bit set. The Spectrum's
+So the ULA's address for the colour is the bitmap address with one more bit set. The Spectrum's
 attribute address is built differently, from the row of cells, which is what made the 8 × 8 cells in the
 first place:
 

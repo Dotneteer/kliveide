@@ -125,8 +125,8 @@ bank appears as `M3` under a **DivMMC RAM** heading. Hovering any entry names it
 
 <Callout type="info">
 On the ZX Next a RAM partition is an **8K page**, which is the granularity of the machine's own MMU.
-Code and tools that think in 16K banks &mdash; the `.bank` pragma, a NEX file's banks, the
-`.nex` viewer &mdash; address them in pairs: 16K bank *B* is the two partitions `2B` and `2B+1`, its
+Code and tools that think in 16K banks (the `.bank` pragma, a NEX file's banks, the
+`.nex` viewer) address them in pairs: 16K bank *B* is the two partitions `2B` and `2B+1`, its
 low half first. So 16K bank 5 is partitions `0A` and `0B`.
 </Callout>
 

@@ -309,6 +309,19 @@ Eleven recipes; the rest of the pages were deliberately left ungenerated.
   chip (`_historyChip_`), the historical disassembly row (`[data-history-exec="true"]`) and the
   "present" bands (`[role="note"]`) before it photographs. It ends with `em-sti` and checks every band
   is gone: a machine command returns to the present.
+- `recipes/landing-reverse.cjs` — the landing page's reverse-debugging video
+  (`landing/reverse-debugging.mp4` and its WebP poster), **recorded with Klive's own IDE + Emulator
+  recording**, started and stopped through the application menu (`recording_ide_emu_start_stop`),
+  as are the reverse steps (`reverse_continue`, `history_present`), so no command text shows once
+  recording starts. Lessons: seed `windowRecording.pointer`/`clicks` off (Playwright's clicks never
+  move the system pointer, so a drawn one sits still); **the IDE keeps a file's text once it has
+  opened it, even across closing the project**, so a recipe that writes its own program puts it in a
+  file the IDE has not seen and makes it the build root while the project is closed; the recording
+  lands in `<home>/KliveExports/video`, so give the run its own `userHome`; FFmpeg trims and
+  re-encodes it, and `sharp` writes the poster (FFmpeg builds often lack libwebp).
+  `LANDING_REVERSE_DIAG=1` photographs the emulator after each Reverse Continue instead: the check
+  that found the emulator window kept the present's picture, PC and status bar while the machine was
+  in the past (fixed in `EmulatorPanel.tsx` and `EmuStatusBar.tsx`).
 - `recipes/code-coverage.cjs` — the running-app check of code coverage and the heat map on the
   48K (staged shots only; the page has no images yet). It verifies the editor strip, `coverage
   status`/`coverage smc`, the disassembly's coverage cell and the memory view's heat cells from the

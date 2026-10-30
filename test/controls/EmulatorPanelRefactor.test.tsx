@@ -574,6 +574,133 @@ describe("EmulatorPanel", () => {
  * clipped it. The moment `.display` gained the bezel's `overflow: hidden`, the whole ROM/RAM/card
  * UI vanished. The strip must be a sibling of the screen box, not a child of it.
  */
+/*
+ * Reverse debugging puts the machine in the past (and back) by replaying frames with their side
+ * effects suppressed, with the machine paused all along: no frame event and no state change. The
+ * screen kept the present's picture and the pause label the present's PC.
+ */
+describe("EmulatorPanel after a move into the past", () => {
+  it("redraws the picture and the pause label's PC when the history position changes", async () => {
+    const controller = createController();
+    controller.isDebugging = true;
+    controller.machine = {
+      baseClockFrequency: 3_500_000,
+      frameTactMultiplier: 1,
+      frames: 1,
+      getAspectRatio: vi.fn(() => [2, 1]),
+      getDefaultKeyMapping: vi.fn(() => ({})),
+      getKeyCodeSet: vi.fn(() => ({})),
+      getPixelBuffer: vi.fn(() => new Uint32Array(4)),
+      machineId: "test-machine",
+      pc: 0x8040,
+      renderInstantScreen: vi.fn(() => new Uint32Array(4)),
+      screenHeightInPixels: 192,
+      screenWidthInPixels: 256,
+      setMachineProperty: vi.fn(),
+      tactsInFrame: 70_000,
+      uiFrameFrequency: 2
+    };
+    const captured = {
+      controllerChanged: undefined as (controller: unknown) => Promise<void>,
+      stateChanged: undefined as (state: unknown) => Promise<void>
+    };
+    const displayScreenData = vi.fn();
+    const emulatorState: Record<string, unknown> = {
+      audioSampleRate: 44_100,
+      emuViewVersion: 1,
+      machineState: MachineControllerState.Paused,
+      soundLevel: 0.25
+    };
+    const store = {
+      dispatch: vi.fn(),
+      getState: vi.fn(() => ({ emulatorState, globalSettings: {} }))
+    };
+
+    vi.doMock("@renderer/core/useMachineController", () => ({
+      useMachineController: (
+        controllerChanged: typeof captured.controllerChanged,
+        stateChanged: typeof captured.stateChanged
+      ) => {
+        captured.controllerChanged = controllerChanged;
+        captured.stateChanged = stateChanged;
+        return controller;
+      }
+    }));
+    vi.doMock("@renderer/core/RendererProvider", () => ({
+      getGlobalSetting: () => false,
+      useGlobalSetting: () => false,
+      useSelector: (selector: (state: unknown) => unknown) => selector(store.getState()),
+      useStore: () => store,
+      useDispatch: () => vi.fn()
+    }));
+    vi.doMock("@renderer/core/MainApi", () => ({
+      useMainApi: () => ({ saveBinaryFile: vi.fn(), saveDiskChanges: vi.fn() })
+    }));
+    vi.doMock("@renderer/appEmu/recording/RecordingContext", () => ({
+      useRecordingManager: () => ({ current: { onMachinePaused: vi.fn(), onMachineRunning: vi.fn() } })
+    }));
+    vi.doMock("@renderer/features/emulator/useEmulatorScreen", () => ({
+      useEmulatorScreen: () => ({
+        canvasHeight: 192,
+        canvasWidth: 256,
+        displayScreenData,
+        calculateDimensions: vi.fn(),
+        imageBuffer8: { current: new Uint8Array([1]) },
+        screenElement: { current: null } as MutableRefObject<HTMLCanvasElement>,
+        updateScreenDimensions: vi.fn(),
+        xRatio: { current: 2 },
+        yRatio: { current: 3 }
+      })
+    }));
+    vi.doMock("@renderer/features/emulator/useEmulatorAudio", () => ({
+      useEmulatorAudio: () => ({
+        beeperRenderer: { current: { play: vi.fn(), suspend: vi.fn(() => Promise.resolve()) } },
+        initAudio: vi.fn(() => Promise.resolve())
+      })
+    }));
+    vi.doMock("@renderer/features/emulator/useEmulatorKeyboard", () => ({
+      useEmulatorKeyboard: () => ({ setKeyData: vi.fn() })
+    }));
+    vi.doMock("@renderer/features/emulator/EmulatorOverlay", () => ({
+      EmulatorOverlay: ({ overlay, showOverlay }: { overlay?: string; showOverlay: boolean }) =>
+        showOverlay ? <div>{overlay}</div> : null
+    }));
+    vi.doMock("@renderer/appEmu/tool-registry", () => ({
+      machineEmuToolRegistry: []
+    }));
+
+    const { EmulatorPanel } = await import("@renderer/features/emulator/EmulatorPanel");
+    const { rerender } = render(<EmulatorPanel />);
+    await act(async () => {
+      await captured.controllerChanged(controller);
+      await captured.stateChanged({ oldState: MachineControllerState.Running, newState: MachineControllerState.Paused });
+    });
+    await waitFor(() => expect(screen.getByText("Paused (PC: $8040)")).toBeInTheDocument());
+
+    // --- Reverse Continue lands in the past: the store says so, no frame and no state change follow
+    displayScreenData.mockClear();
+    controller.machine.pc = 0x8010;
+    emulatorState.historyPosition = 4621;
+    emulatorState.reverseDebug = { active: true, mode: "navigating", behindSeconds: 0.659 };
+    await act(async () => {
+      rerender(<EmulatorPanel />);
+    });
+    expect(displayScreenData).toHaveBeenCalled();
+    await waitFor(() => expect(screen.getByText("Paused (PC: $8010)")).toBeInTheDocument());
+
+    // --- Return to the present
+    displayScreenData.mockClear();
+    controller.machine.pc = 0x8040;
+    emulatorState.historyPosition = undefined;
+    emulatorState.reverseDebug = { active: true, mode: "live" };
+    await act(async () => {
+      rerender(<EmulatorPanel />);
+    });
+    expect(displayScreenData).toHaveBeenCalled();
+    await waitFor(() => expect(screen.getByText("Paused (PC: $8040)")).toBeInTheDocument());
+  });
+});
+
 describe("EmulatorPanel machine tool area", () => {
   it("renders machine tools outside the screen box so a clipped display cannot hide them", async () => {
     const controller = createController();

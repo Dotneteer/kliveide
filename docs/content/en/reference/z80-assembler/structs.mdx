@@ -169,7 +169,7 @@ Object2D.DY: 5
 
 ## Structure initialization
 
-The `.struct` definition does not emit any code; it just tells the compiler the layout and initial contents of a structure. To allocate space for a particular structure, you need to initialize it with the name of the structure plus a pair of opening and closing parentheses, just like these samples show:
+The `.struct` definition does not emit any code; it only tells the compiler the layout and initial contents of a structure. To allocate space for a particular structure, you need to initialize it with the name of the structure plus a pair of opening and closing parentheses, just like these samples show:
 
 ```z80klive
 ; Initalize an Object2D
@@ -221,7 +221,7 @@ Field initializers can be used to change the default structure initializer. A fi
 
 [_identifier_] __`->`__ _byte-emitter-pragma_
 
-For a moment, let's forget that _identifier_ is optional. When you use it, it must be one of the structure's field names. The _byte-emitter-pragma_ is one of the Klive pragmas you can use to define a structure body, namely these:  `.defb`, `.defw`, `.defm`, `.defn`, `.defc`, `.defs`, `.fillb`, `.fillw`, `.defg`,  or `.defgx`.
+Set aside for now that _identifier_ is optional. When you use it, it must be one of the structure's field names. The _byte-emitter-pragma_ is one of the Klive pragmas you can use to define a structure body, namely these:  `.defb`, `.defw`, `.defm`, `.defn`, `.defc`, `.defs`, `.fillb`, `.fillw`, `.defg`,  or `.defgx`.
 
 > **Note**: You can use the label syntax for field names; thus, you can add an optional colon after the _identifier_.
 
@@ -276,7 +276,7 @@ Obj6: Object2D()
 
 ## Fluent Structure Initialization
 
-The assembler allows flexible initialization, where you do not use field names. The compiler emits bytes as the byte emitter pragmas would do if you were not within a structure initialization. Let's assume you initialize an `Object2D` this way:
+The assembler allows flexible initialization, where you do not use field names. The compiler emits bytes as the byte emitter pragmas would do if you were not within a structure initialization. Say you initialize an `Object2D` this way:
 
 ```z80klive
 Obj7: Object2D()

@@ -33,7 +33,7 @@ The parts build on each other, from the general idea to the finest detail:
   ([Part 1](#part-1-how-an-old-television-draws-a-picture)), the chips and interrupt signals involved
   ([Part 2](#part-2-the-players)), and how the screen is stored in memory
   ([Part 3](#part-3-the-display-file)).
-- **The central idea** ([Part 4](#part-4-the-trick--the-cpu-executes-the-screen)): the CPU executes
+- **The central idea** ([Part 4](#part-4-the-trick-the-cpu-executes-the-screen)): the CPU executes
   the screen, then a whole frame at a glance, with the routine that runs it and the endless loop your
   programs run inside. If you read only one part, read this one.
 - **The text and the borders** ([Part 5](#part-5-drawing-each-line-eight-times) and
@@ -134,7 +134,7 @@ microsecond**, 50 times a second, forever. Programmers call this **racing the be
 **PAL and NTSC.** "50 times a second" is the European **PAL** standard: a line every 64 µs and 50
 pictures a second, with 625 lines split into two interlaced halves of 312½. North America and
 Japan use **NTSC**: about 60 pictures a second, with 525 lines in halves of 262½. Home computers
-like the ZX81 ignore the interlacing and simply draw the same half-frame every time.
+like the ZX81 ignore the interlacing and draw the same half-frame every time.
 
 The ZX81 handles both with the same 207 T-state line, which fits either standard. The US machine
 (sold as the Timex Sinclair 1000) only draws fewer border lines: 263 lines a frame, about 60 frames
@@ -238,7 +238,7 @@ So the word `HELLO` at the start of a line is stored like this:
 Now look at that `$76` again with a Z80 programmer's eyes. **`$76` is the opcode of `HALT`.** That is
 no accident.
 
-## Part 4: The trick — the CPU executes the screen
+## Part 4: The trick: the CPU executes the screen
 
 When the ROM wants to draw the text lines, it does something that looks absurd: it **jumps into the
 display file**, as if the screen were code. Precisely, it jumps to `D_FILE + $8000`.
@@ -263,7 +263,7 @@ and the `NOP`s a halted CPU keeps executing, both of which this article relies o
 
 The ULA works its magic in both halves:
 
-**First half — steal the byte.** If A15 is high *and* the fetched byte has **bit 6 clear**, the ULA:
+**First half: steal the byte.** If A15 is high *and* the fetched byte has **bit 6 clear**, the ULA:
 
 1. keeps a copy of the byte (it is a character code), and
 2. forces **`$00`** onto the data bus instead.
@@ -272,7 +272,7 @@ The CPU never sees the character. It sees `$00`, which is `NOP`, executes it, an
 next byte. Every character code, `$00`–`$3F` and `$80`–`$BF`, has bit 6 clear, so each one
 is stolen and becomes a `NOP`.
 
-**Second half — fetch the dots.** During the refresh, the address bus carries `I × 256 + R`. The ULA
+**Second half: fetch the dots.** During the refresh, the address bus carries `I × 256 + R`. The ULA
 keeps the top part (from the I register, which the ROM sets to `$1E`) but replaces the lower nine
 address bits with:
 
@@ -495,7 +495,7 @@ all the time. As [Zilog's manual](https://www.zilog.com/docs/z80/um0080.pdf) put
 instruction". While interrupts are on, the display runs only instructions that end with the refresh
 of their M1 cycle (`EI`, `JP (HL)`, the stolen `NOP`s and the `NOP`s inside `HALT`). So at that one
 moment the address bus carries the refresh address, and A6 is bit 6 of R, not of PC. Everywhere else
-interrupts are simply switched off: the CPU ignores INT unless they have been enabled, and only the
+interrupts are switched off: the CPU ignores INT unless they have been enabled, and only the
 display code enables them, just before it runs a line.
 
 R is a counter of M1 cycles, and the ROM can load it with `LD R,A`. So **R is a countdown timer**:
@@ -622,7 +622,7 @@ countdown. A halted CPU keeps making one M1 cycle every 4 T-states, just as the 
 have. A line of 5 characters reaches its `HALT` 27 M1 cycles sooner and spends them inside the `HALT`
 instead; a bare `NEWLINE` spends all 32 there. Either way the interrupt comes at the same moment
 ("Why `$DD`?" below counts the cycles). And the ULA draws nothing for the missing characters, because
-it only draws the bytes it steals, so the rest of the line simply shows paper.
+it only draws the bytes it steals, so the rest of the line shows paper.
 
 Klive shows it on its 1K model. After `PRINT "HELLO"` the whole display file is 33 bytes: 25
 `NEWLINE`s, 5 characters on the first line and 3 on the last (the "0/0" report), with every line in
@@ -1653,7 +1653,7 @@ instruction. Three examples, tried on Klive's emulator by poking a byte into the
 screen:
 
 - **Harmless:** `$40` is `LD B,B`, which changes nothing. The line keeps its exact timing, and the
-  position simply shows no character, because the ULA only draws the bytes it steals.
+  position shows no character, because the ULA only draws the bytes it steals.
 - **The picture breaks:** `$78` is `LD A,B`. It overwrites A, which holds the `$DD` that the
   display code loads into R before every line (Part 5 explains why). With R loaded wrongly, the
   interrupt that ends a line comes at the wrong moment. Some lines measured only 71 T-states
@@ -1822,7 +1822,7 @@ does that for the **ROM**. The RAM is wired straight to the CPU's address bus, s
 own refresh address, `I × 256 + R`, unchanged.
 
 So point I at **RAM** instead of the ROM (at `$40`–`$7F` on a 16K machine), and the byte that becomes
-the next 8 dots is simply the byte at address `I × 256 + R`. And R counts up by one with every
+the next 8 dots is the byte at address `I × 256 + R`. And R counts up by one with every
 `NOP`. Run 32 `NOP`s with I and R set up, and the ULA draws **32 consecutive bytes of RAM** as one
 line of 256 dots: a bitmap.
 

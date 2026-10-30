@@ -3045,9 +3045,13 @@ drift. Change a neutral or the default accent in the app, and the site changes w
   down the generic landing-page kit: Inter-like fonts, an 800-weight headline with negative letter
   spacing, one headline word in the accent, a mono version pill, uppercase letter-spaced mono
   eyebrows, grey body text, arrow links, pill tags, equal "bento" tiles, a numbered step strip,
-  zigzag features and a centred closing call to action. Do not bring any of them back.
+  zigzag features and a centred closing call to action. Do not bring any of them back. Nor the
+  ones Hallmark's audit found after that (`.plans/HALLMARK_SITE_POLISH_PLAN.md`, `docs/design.md`):
+  a label above a heading, middle-dot lists (`A · B · C`), "Not X. Y." headlines, stock lines
+  ("What makes X different", "Ready to...?", "Read more", "Get started" as a button), em and en
+  dashes in landing texts, and a see-through blurred header.
 - **The Spectrum colours stay small, on the landing page only:** a 6px four-colour rule at the top
-  and a square before each feature's label. Never a band, a block or a colour behind running text.
+  and a square before each feature's heading. Never a band, a block or a colour behind running text.
 - **A mark beside a label lines up with its capitals, not with the line box:** it sits on the
   baseline (`align-items: baseline`) and is `1cap` tall. Overpass puts its capitals above the
   middle of the line, so a mark centred in the line box (`align-items: center`) sits visibly low.
@@ -3063,11 +3067,24 @@ drift. Change a neutral or the default accent in the app, and the site changes w
   links are underlined, without arrows.
 - **The landing page is a data sheet:** headline beside an "At a glance" table, the carousel full
   width, then tables (machines, also included, the four steps) and feature rows that are always
-  text left, picture right. Sections are divided by a 2px rule in the text colour.
+  text left, picture right. Sections are divided by a 2px rule in the text colour, with one gap
+  (`--lp-section-gap`). A feature's heading is its link to the docs (no "Read more"), and its text
+  stays near 30 words. The page ends on its job: the Download button again, with the tutorial.
 - **The landing header is one row that never scrolls the page sideways:** its links mirror the docs'
   navbar tabs and hide below the width the longest language needs (`.lp-nav` in
-  `docs/landing/landing.css`, 900px for German's 855px with five links). Adding a link or a language
-  means measuring every language again, at each width just above the cut-off, in the running site.
+  `docs/landing/landing.css`, 900px for German's 855px with five links). Below that width the links
+  and GitHub move into a menu (`.lp-menu`, a native `<details>`, so it works without script) that
+  takes the GitHub icon's place. The header is sticky and solid, never see-through. **The tools row (language,
+  theme, GitHub) must fit 320px too**: below 420px the language button drops its name and keeps the
+  globe (`.lp-lang-name`), because with the name Portuguese needs 385px. Adding a link, a tool or a
+  language means measuring every language again, at each width just above each cut-off, in the
+  running site; `.hallmark`'s `sloplint --render` (rule 34) catches a page that scrolls sideways.
+- **Nothing hidden may widen the page:** the skip link waits *above* the page (`transform`), never
+  off to its side with `left: -999px`, and full-screen sizes use `100%` / `dvh`, never `100vw` / `vh`.
+- **Landing headings may break inside a word, never past the screen:** `overflow-wrap: break-word`
+  always, and `hyphens: auto` under 640px only (the `<html lang>` picks the rules), because German's
+  "Entwicklungsstudio" alone is wider than a 320px headline line. Hyphenation stays off on wider
+  screens, where it would only chop English headings for no reason.
 - **Every landing picture opens full size** (`docs/landing/ImageViewer.tsx`): an inset panel over
   the dimmed page, dark in both themes, the picture always fitted - never scrolled, no "actual size".
   A full-screen viewer felt strange. The pictures stay plain links to their files, so they work
@@ -3084,6 +3101,22 @@ drift. Change a neutral or the default accent in the app, and the site changes w
   it is its pause button** (WCAG 2.2.2): implicit stops - on hover, on focus, after the first click,
   under reduced motion - made it look broken, because the pointer rests on it and a clicked arrow
   keeps the focus. Reduced motion turns off the flying, not the advancing. Its pictures come from `scripts/doc-shots/recipes/landing.cjs`.
+  **Its first item is a video, the page's signature** (reverse debugging, recorded by Klive itself
+  through `recipes/landing-reverse.cjs`): muted, started by script, played once before the carousel
+  moves on, paused by the pause button, and left on its poster under reduced motion and without
+  script. It is not a viewer link. Record it near 16:10 (an 800 x 820 IDE beside a 520 x 440
+  emulator): a 2.4:1 recording sat in the 16:10 frame as a thin strip under a dark band.
+- **Landing section headings are 2rem**, above the 1.75rem feature headings they contain. At 1.5rem
+  "What Klive does" was smaller than the headings under it.
+- **Docs prose stops at 62ch** (`docs/app/[lang]/(docs)/custom.css`): about 86 characters a line,
+  against Nextra's full column of about 115. Overpass is narrow, about 1.4 characters per `ch`, so a
+  `ch` figure from another face misleads; measure characters per rendered line. Only prose is held
+  in: figures, screenshots, code and tables keep the full column. Headings use `text-wrap: balance`.
+- **Nextra's search field gets a visible edge**: its own is a 5% tint (1.12:1 in light). Half the text
+  colour over the page (`color-mix` of two tokens, 3.3:1 light, 4.5:1 dark), drawn as an inset shadow
+  so the field keeps its size. Measure contrast through a canvas, not by parsing `oklch()` strings,
+  and remember a pixel-sampling linter reports thin anti-aliased glyphs below their real ratio (the
+  accent link is 5.27:1 by the WCAG formula, sloplint said 4.33).
 - **Screenshots in the docs are dark** (decision D4), whatever the page's theme; their frame and
   markers use the tokens.
 - **A docs link card is title first, then its description**, padded as a whole

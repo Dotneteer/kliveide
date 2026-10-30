@@ -8,9 +8,9 @@ import { Callout } from 'nextra/components'
 
 A ZX Spectrum Next tilemap program writes a map of one- or two-byte entries and a set of 8×8 tile
 definitions into bank 5 or bank 7, then points six NextRegs at them. When the picture is wrong, the
-cause is usually in that setup &mdash; a base address that overlaps the ULA screen or the other table,
+cause is usually in that setup (a base address that overlaps the ULA screen or the other table,
 attribute-less mode with a two-byte map, 512-tile mode quietly taking attribute bit 0, a palette
-offset, the scroll and clip units &mdash; and none of it can be read back from the Z80. The **Tilemap
+offset, the scroll and clip units), and none of it can be read back from the Z80. The **Tilemap
 Inspector** shows the map and its definitions as the hardware decodes them.
 
 It is one document with two linked views: **Map** (the 40×32 or 80×32 map) and **Tiles** (the 256 or
@@ -38,7 +38,7 @@ own width:
 
 - **Narrow**: **Map** and **Tiles** are tabs, and the inspector is a band under them.
 - **Medium**: tabs, and the inspector is a rail beside the view.
-- **Wide**: **Both** is offered too &mdash; the map and the tile sheet side by side, with the rail.
+- **Wide**: **Both** is offered too: the map and the tile sheet side by side, with the rail.
   **Both** is the default; where it does not fit, the tab decides.
 
 ![The Tilemap Inspector in a narrow document: the Tiles tab, and the band listing the cells that use tile 8](/images/working-with-ide/tilemap-inspector-tiles.png)
@@ -46,7 +46,7 @@ own width:
 The toolbar holds the view tabs, the map mode, the tile sheet's palette offset, the tilemap palette
 (**Live** follows NextReg `$6B` bit 4; **1** and **2** pin a palette, and a ring marks the one the
 hardware is drawing with), and the zoom, **Grid** and **Indices** switches when there is room.
-Whatever does not fit &mdash; and the tile sheet's zoom and the checkerboard &mdash; is in the **⋯**
+Whatever does not fit (and the tile sheet's zoom and the checkerboard) is in the **⋯**
 menu. The document remembers these, and the pane sizes, with the workspace.
 
 <Callout type="info">
@@ -67,7 +67,7 @@ The line under the toolbar summarises the tilemap's registers. Diagnostics come 
 | **Map**, **Defs** | Where the map (`$6E`) and the definitions (`$6F`) start, as bank:offset; the tooltip adds the physical address and the Z80 address when the page is mapped |
 | **Scroll** | `$2F`/`$30` (X, 10 bits) and `$31` (Y) |
 | **Clip** | The four `$1B` values; the tooltip gives the window in layer pixels and which value the next write sets |
-| **$4C** | The transparent nibble &mdash; or, in text mode, **$14**, the global transparency colour |
+| **$4C** | The transparent nibble or, in text mode, **$14**, the global transparency colour |
 | **Priority** | Over or below the ULA: per cell (attribute bit 0), always below in 512-tile mode, always over with `$6B` bit 0 |
 | **Palette** | First or second tilemap palette (`$6B` bit 4) |
 | **Copper** | `running` when the Copper is on: it may change these registers per line |
@@ -81,18 +81,18 @@ tilemap bug and stays invisible until the program writes to one of them:
 - `map overlaps ULA attributes`, `tiles overlap ULA bitmap`, `map overlaps tiles`, and so on. They are
   warnings, not errors: sharing bank 5 is legal and sometimes deliberate. The ULA ones disappear when
   the ULA is turned off (`$68` bit 7).
-- `map wraps in bank 7`, `tiles wrap in bank 7` &mdash; bank 7 is an 8K memory for the tilemap, so a
+- `map wraps in bank 7`, `tiles wrap in bank 7`: bank 7 is an 8K memory for the tilemap, so a
   table that runs past 8K continues at the start of bank 7, not into the next page.
-- `table wraps` (grey) &mdash; a full table of 256 or 512 tiles would run past the end of its bank, but
+- `table wraps` (grey): a full table of 256 or 512 tiles would run past the end of its bank, but
   the tiles in use do not.
-- `tilemap off`, and `512 tiles: below ULA` &mdash; in 512-tile mode attribute bit 0 is the ninth bit
+- `tilemap off`, and `512 tiles: below ULA`: in 512-tile mode attribute bit 0 is the ninth bit
   of the tile number, so no cell can ask to be over the ULA unless `$6B` bit 0 forces the tilemap on
   top.
 
 ## The Map View
 
 **Whole map** (the default) draws the map unscrolled: cell (0, 0) at the top left. The dashed outline
-is the part the screen shows &mdash; the clip window moved by the scroll, which can wrap round both
+is the part the screen shows: the clip window moved by the scroll, which can wrap round both
 edges. **As displayed** applies the scroll and the clip window, so the view matches the tilemap layer
 as it reaches the screen, with the clip window outlined.
 
@@ -127,7 +127,7 @@ large, with rulers and a grid, the tilemap palette, and a preview at 1×, 2× an
 read its position, its stored nibble (or bit, in text mode) and the palette index it draws, or why it
 is transparent.
 
-The snapshot is frozen when you take it &mdash; the tile's bytes **and the tilemap palette** &mdash; so
+The snapshot is frozen when you take it (the tile's bytes **and the tilemap palette**), so
 it keeps its colours after the program changes them or the machine stops:
 
 - Taken from a **cell**, it uses that cell's palette offset and opens **As shown**: rotated, then
@@ -143,14 +143,14 @@ back with the workspace.
 
 ## The Inspector
 
-For a **cell**: its tile **as stored** and **as shown** &mdash; rotated first, then mirrored, the way
-the hardware does it &mdash; then every field with the raw bytes: the tile number (`300 (bit 8 from
+For a **cell**: its tile **as stored** and **as shown** (rotated first, then mirrored, the way
+the hardware does it), then every field with the raw bytes: the tile number (`300 (bit 8 from
 attr)` in 512-tile mode), the attribute, the palette offset, the transform and the priority; the entry
 three ways (bank:offset, physical, and the Z80 address when mapped); the colours the cell shows; and,
 in amber, every reason it may not be on screen: the tilemap is off, the cell is outside the visible
 window, all of its pixels are transparent, or it is below the ULA.
 
-For a **tile**: the tile large, its bytes, and the cells that use it &mdash; click one to select it on
+For a **tile**: the tile large, its bytes, and the cells that use it; click one to select it on
 the map.
 
 ## Related

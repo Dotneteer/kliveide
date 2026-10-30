@@ -60,14 +60,14 @@ Os detalhes ao lado da lista descrevem o bloco selecionado: o seu comprimento e 
 
 <ClickableImage src="/images/getting-started/tape-viewer.png" width={900} />
 
-Selecione um **cabeçalho** para ver os seus 19 bytes explicados. Os bytes estão agrupados por campo — flag, tipo, o nome de dez caracteres, três valores de dois bytes e o checksum — por cima de uma lista dos campos com os respetivos valores descodificados. Aponte para um byte ou para um campo (ou percorra a lista com a tecla Tab) para realçar ambos e ler o significado do campo; a linha de arranque automático de um programa, ou o endereço de carregamento do código, é explicada logo de início. Os três valores de dois bytes significam coisas diferentes consoante o tipo de ficheiro, e a explicação indica qual.
+Selecione um **cabeçalho** para ver os seus 19 bytes explicados. Os bytes estão agrupados por campo (flag, tipo, o nome de dez caracteres, três valores de dois bytes e o checksum) por cima de uma lista dos campos com os respetivos valores descodificados. Aponte para um byte ou para um campo (ou percorra a lista com a tecla Tab) para realçar ambos e ler o significado do campo; a linha de arranque automático de um programa, ou o endereço de carregamento do código, é explicada logo de início. Os três valores de dois bytes significam coisas diferentes consoante o tipo de ficheiro, e a explicação indica qual.
 
 <ClickableImage src="/images/getting-started/tape-header-bytes.png" width={560} />
 
 **Destacar** um bloco mostra-o por inteiro num documento próprio: como dump de memória (a vista predefinida para código), como desmontagem no endereço para onde o bloco é carregado, como listagem BASIC completa, ou como ecrã. Utilize o botão ao lado dos detalhes do bloco (a sua seta escolhe a vista), o ícone na respetiva linha, um duplo clique, ou <kbd>Enter</kbd>. **Retroceder** volta à cassete. Um bloco sem cabeçalho não tem endereço de carregamento próprio: escreva um na caixa **Listar em** para o desmontar nesse endereço, e clique nele com o botão direito para **Ler como BASIC** quando se souber que é um programa.
 
 <Callout type="warning" emoji="⚠️">
-Alguns blocos TZX — tons puros, sequências de impulsos, dados puros, gravações diretas e CSW, dados generalizados — são mostrados, mas **ignorados** pelo Klive na reprodução. Uma cassete que precise deles é assinalada com uma faixa de aviso, e o seu carregamento pode falhar.
+Alguns blocos TZX (tons puros, sequências de impulsos, dados puros, gravações diretas e CSW, dados generalizados) são mostrados, mas **ignorados** pelo Klive na reprodução. Uma cassete que precise deles é assinalada com uma faixa de aviso, e o seu carregamento pode falhar.
 </Callout>
 
 ## Carregar uma cassete a partir do IDE
@@ -86,7 +86,7 @@ Em qualquer outra máquina, como o ZX Spectrum Next, os botões e as entradas do
 
 ## Como funciona o carregamento rápido
 
-O modo de carregamento rápido aplica uma técnica poderosa: a interceção da ROM (ROM hooking). Enquanto o emulador corre, vigia o registo `PC` à espera do ponto de entrada da rotina de carregamento da ROM, em todos os modelos de ZX Spectrum.
+O modo de carregamento rápido usa a interceção da ROM (ROM hooking). Enquanto o emulador corre, vigia o registo `PC` à espera do ponto de entrada da rotina de carregamento da ROM, em todos os modelos de ZX Spectrum.
 
 Quando a execução chega à rotina de carregamento, o mecanismo de carregamento rápido suspende a máquina e injeta os dados do ficheiro da cassete diretamente na memória. Ao fazê-lo, o algoritmo define os registos do Z80 (incluindo as flags) da mesma forma que o algoritmo da ROM.
 

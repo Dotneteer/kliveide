@@ -39,7 +39,7 @@ Open a `.z88` file from the Explorer to see its contents:
   or one card's. Select a bank to see its details: where it is paged in, the other bank numbers that
   reach it (a card smaller than its slot repeats across the slot), and any breakpoints OZvm saved in
   it.
-- **Pop out** a bank &mdash; with its row's icon, by double-clicking the row, or with Enter &mdash;
+- **Pop out** a bank (with its row's icon, by double-clicking the row, or with Enter)
   to open it as its own document, as a **memory dump** or a **disassembly** (the arrow beside
   **Pop out** chooses). The disassembly starts at the address the snapshot pages the bank in, or
   `$C000` when it is not paged in, and reads the bytes as Z88 code: OZ system calls after `RST 20h`
@@ -61,7 +61,7 @@ You can reach them from:
 - the Explorer's context menu on a `.z88` file;
 - the [`z88-snapshot`](/en/reference/commands/#z88-snapshot) command;
 - **File › Open File...** (or dropping the file onto the Emulator window), which
-  does what the file's *Autorun* flag says, as OZvm does &mdash; it runs the snapshot if the flag is
+  does what the file's *Autorun* flag says, as OZvm does: it runs the snapshot if the flag is
   set, and stops in the debugger at the program counter if it is not.
 
 Klive makes the machine fit the snapshot. If the current machine is not a Cambridge Z88, or its

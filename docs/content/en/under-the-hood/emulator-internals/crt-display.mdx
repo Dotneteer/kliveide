@@ -141,7 +141,7 @@ forever. Programmers call this **racing the beam**.
 **PAL and NTSC.** "50 times a second" is the European **PAL** standard: a line every 64 µs and 50
 pictures a second, with 625 lines split into two interlaced halves of 312½. North America and
 Japan use **NTSC**: about 60 pictures a second, with 525 lines in halves of 262½. Home computers
-like the ZX81 ignore the interlacing and simply draw the same half-frame every time.
+like the ZX81 ignore the interlacing and draw the same half-frame every time.
 
 The ZX81 handles both with the same 207 T-state line, which fits either standard. The US machine
 (sold as the Timex Sinclair 1000) only draws fewer border lines: 263 lines a frame, about 60 frames
@@ -274,7 +274,7 @@ measures an angle or computes anything: the colour-difference voltages simply co
 circuit. All it needs is a reference wave, and the next section shows where that comes from.
 </Callout>
 
-This wave is simply added to the luminance. Where the picture is coloured, the brightness signal
+This wave is added to the luminance. Where the picture is coloured, the brightness signal
 wiggles up and down very fast around its average level; where it is grey, it does not wiggle.
 
 The subcarrier frequency is chosen very carefully, with an exact relation to the line frequency, so

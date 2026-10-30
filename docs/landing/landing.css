@@ -1,7 +1,7 @@
 /*
  * The landing page: the data-sheet layout of .plans/DOCS_SITE_REDESIGN_PLAN.md (R2-R5). Colours and
  * type come only from app/tokens.css. The four Spectrum colours appear in exactly two places: the
- * rule at the top of the page and the small square before each feature's label.
+ * rule at the top of the page and the small square before each feature's heading.
  *
  * Type rules (R2): headings bold, never tighter than normal spacing; labels in bold body type and
  * sentence case, never uppercase or letter-spaced; body text in the full text colour, grey only for
@@ -16,6 +16,8 @@
 
 body.lp-body,
 div.lp-body {
+  /* --- One gap for every section of the sheet; the 2px rules, not the space, divide them */
+  --lp-section-gap: 3rem;
   margin: 0;
   background: var(--site-bg);
   color: var(--site-fg);
@@ -36,6 +38,8 @@ div.lp-body {
   font-weight: 700;
   letter-spacing: 0;
   text-wrap: pretty;
+  overflow-wrap: break-word;
+  min-width: 0;
   margin: 0;
 }
 
@@ -81,10 +85,12 @@ div.lp-body {
   padding-right: max(1.25rem, env(safe-area-inset-right, 0px));
 }
 
+/* --- Hidden above the page rather than off to its side, so it never widens the page */
 .lp-skip {
   position: absolute;
-  left: -999px;
+  left: 1rem;
   top: 0.5rem;
+  transform: translateY(calc(-100% - 1rem));
   z-index: 20;
   padding: 0.5rem 1rem;
   background: var(--site-accent);
@@ -93,7 +99,7 @@ div.lp-body {
 }
 
 .lp-skip:focus {
-  left: 1rem;
+  transform: none;
 }
 
 .lp :focus-visible {
@@ -119,8 +125,8 @@ div.lp-body {
   position: sticky;
   top: 0;
   z-index: 10;
-  background: color-mix(in srgb, var(--site-bg) 86%, transparent);
-  backdrop-filter: blur(10px);
+  /* --- Solid, not see-through: the blurred translucent bar is the generic AI nav (Hallmark 42) */
+  background: var(--site-bg);
   border-bottom: 1px solid var(--site-line);
 }
 
@@ -232,6 +238,51 @@ div.lp-body {
   background: var(--site-accent-soft);
 }
 
+/* --- The phone menu: the header's links and GitHub, below the width where they fit in the row */
+.lp-menu {
+  position: relative;
+  display: none;
+}
+
+.lp-menu > summary {
+  list-style: none;
+}
+
+.lp-menu > summary::-webkit-details-marker {
+  display: none;
+}
+
+.lp-menu[open] > summary {
+  color: var(--site-fg);
+  background: var(--site-hover);
+}
+
+.lp-menu-list {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.375rem);
+  display: grid;
+  min-width: 14rem;
+  width: max-content;
+  padding: 0.375rem;
+  background: var(--site-raised);
+  border: 1px solid var(--site-line);
+  border-radius: 8px;
+  box-shadow: 0 16px 40px rgb(0 0 0 / 0.28);
+}
+
+.lp-menu-list a {
+  padding: 0.5rem 0.625rem;
+  border-radius: 5px;
+  text-decoration: none;
+  font-size: 0.9375rem;
+  white-space: nowrap;
+}
+
+.lp-menu-list a:hover {
+  background: var(--site-accent-soft);
+}
+
 .lp-lang-menu small {
   color: var(--site-subtle);
   font-family: var(--site-font-mono);
@@ -278,7 +329,7 @@ div.lp-body {
   grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
   gap: 4rem;
   align-items: start;
-  padding: 3.5rem 0 3rem;
+  padding: 3.5rem 0 var(--lp-section-gap);
 }
 
 .lp-top h1 {
@@ -332,7 +383,7 @@ div.lp-body {
 /* ------------------------------------------------------------------ the hero carousel */
 
 .lp-carousel-band {
-  margin-bottom: 3.5rem;
+  margin-bottom: var(--lp-section-gap);
 }
 
 .lp-carousel {
@@ -417,7 +468,9 @@ div.lp-body {
   cursor: zoom-in;
 }
 
-.lp-slide img {
+.lp-slide img,
+.lp-slide video {
+  display: block;
   width: 100%;
   height: 100%;
   object-fit: contain;
@@ -488,14 +541,15 @@ div.lp-body {
 /* ------------------------------------------------------------------ the sheet's sections */
 
 .lp-sec {
-  padding: 2.5rem 0;
+  padding: var(--lp-section-gap) 0;
   border-top: 2px solid var(--site-fg);
 }
 
 .lp-sec > h2,
 .lp-sec > div > h2 {
   margin-bottom: 1.25rem;
-  font-size: 1.5rem;
+  font-size: 2rem;
+  line-height: 1.15;
 }
 
 .lp-two {
@@ -538,19 +592,39 @@ div.lp-body {
   scroll-margin-top: 4.5rem;
 }
 
+.lp-feature:last-child {
+  padding-bottom: 0;
+}
+
 .lp-feature-copy {
   min-width: 0;
 }
 
-/* --- The square stands on the text's baseline and is exactly as tall as a capital letter, so it
+/* --- The feature heading carries the Spectrum square (no label above it: Hallmark's eyebrow,
+   --- rule 54) and is the link to the feature's documentation (no "Read more").
+   --- The square stands on the text's baseline and is exactly as tall as a capital letter, so it
    --- lines up with the capitals. Centring it in the line box (align-items: center) set it low:
    --- Overpass places its capitals above the middle of the line. */
-.lp-label {
-  display: inline-flex;
+.lp-feature h3 {
+  display: flex;
   align-items: baseline;
-  gap: 0.5rem;
-  font-size: 0.9375rem;
-  font-weight: 700;
+  gap: 0.625rem;
+  margin: 0 0 1rem;
+  font-size: 1.75rem;
+  line-height: 1.15;
+}
+
+.lp-feature h3 a {
+  min-width: 0;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.15em;
+  text-decoration-color: var(--site-line-strong);
+}
+
+.lp-feature h3 a:hover {
+  color: var(--site-accent);
+  text-decoration-color: currentColor;
 }
 
 .lp-square {
@@ -566,12 +640,6 @@ div.lp-body {
 .lp-square-3 { background: var(--site-spectrum-green); }
 .lp-square-4 { background: var(--site-spectrum-yellow); }
 .lp-square-5 { background: var(--site-stripe-cyan); }
-
-.lp-feature h3 {
-  margin: 0.5rem 0 1rem;
-  font-size: 1.75rem;
-  line-height: 1.15;
-}
 
 .lp-feature p {
   margin: 0 0 1rem;
@@ -590,14 +658,6 @@ div.lp-body {
 
 .lp-feature li + li {
   margin-top: 0.25rem;
-}
-
-.lp-more {
-  color: var(--site-accent) !important;
-  font-weight: 700;
-  text-decoration: underline;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 0.2em;
 }
 
 .lp-feature-media {
@@ -652,13 +712,14 @@ div.lp-body {
   align-items: center;
   justify-content: space-between;
   gap: 1.5rem;
-  padding: 2rem 0 3.5rem;
+  padding: var(--lp-section-gap) 0;
   border-top: 2px solid var(--site-fg);
 }
 
 .lp-end h2 {
   margin-bottom: 0.25rem;
-  font-size: 1.5rem;
+  font-size: 2rem;
+  line-height: 1.15;
 }
 
 .lp-end p {
@@ -670,8 +731,8 @@ div.lp-body {
 /* --- An inset panel over the dimmed page; the picture always fits, nothing scrolls. Its colours
    --- are the dark theme's in both themes: a screenshot reads best on a dark surround. */
 .lp-viewer {
-  width: calc(100vw - 8rem);
-  height: calc(100vh - 6rem);
+  width: calc(100% - 8rem);
+  height: calc(100dvh - 6rem);
   max-width: none;
   max-height: none;
   margin: auto;
@@ -798,8 +859,14 @@ div.lp-body {
 /* --- The header is one row that cannot wrap: below the width the longest language needs (German,
    855px with five links), the links give way rather than scroll the page sideways */
 @media (max-width: 900px) {
-  .lp-nav {
+  .lp-nav,
+  .lp-github {
     display: none;
+  }
+
+  /* --- The menu takes the GitHub icon's place, so the row is no wider than before */
+  .lp-menu {
+    display: block;
   }
 }
 
@@ -813,6 +880,24 @@ div.lp-body {
   .lp-loop td {
     display: block;
     width: auto;
+  }
+}
+
+/* --- The tools row must fit 320px in every language. Below this width the language button keeps
+   --- only its globe (its accessible name stays "Language"): with the name, Portuguese needs 385px */
+@media (max-width: 420px) {
+  .lp-lang-name {
+    display: none;
+  }
+}
+
+/* --- A long compound ("Entwicklungsstudio") is wider than a phone's headline line: hyphenate it
+   --- in the page's language there, rather than break it anywhere or scroll the page */
+@media (max-width: 640px) {
+  .lp h1,
+  .lp h2,
+  .lp h3 {
+    hyphens: auto;
   }
 }
 
@@ -830,8 +915,8 @@ div.lp-body {
   }
 
   .lp-viewer {
-    width: calc(100vw - 2rem);
-    height: calc(100vh - 2rem);
+    width: calc(100% - 2rem);
+    height: calc(100dvh - 2rem);
   }
 }
 

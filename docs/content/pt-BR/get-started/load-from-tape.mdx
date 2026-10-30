@@ -60,14 +60,14 @@ Os detalhes ao lado da lista descrevem o bloco selecionado: o tamanho e a soma d
 
 <ClickableImage src="/images/getting-started/tape-viewer.png" width={900} />
 
-Selecione um **cabeçalho** para ver os seus 19 bytes explicados. Os bytes são agrupados por campo — flag, tipo, o nome de dez caracteres, três valores de dois bytes e a soma de verificação — acima de uma lista dos campos com os valores decodificados. Aponte para um byte ou um campo (ou percorra a lista com Tab) para destacar os dois e ler o que o campo significa; a linha de início automático de um programa, ou o endereço de carga de um código, já vem explicado desde o início. Os três valores de dois bytes significam coisas diferentes para cada tipo de arquivo, e a explicação diz quais.
+Selecione um **cabeçalho** para ver os seus 19 bytes explicados. Os bytes são agrupados por campo (flag, tipo, o nome de dez caracteres, três valores de dois bytes e a soma de verificação) acima de uma lista dos campos com os valores decodificados. Aponte para um byte ou um campo (ou percorra a lista com Tab) para destacar os dois e ler o que o campo significa; a linha de início automático de um programa, ou o endereço de carga de um código, já vem explicado desde o início. Os três valores de dois bytes significam coisas diferentes para cada tipo de arquivo, e a explicação diz quais.
 
 <ClickableImage src="/images/getting-started/tape-header-bytes.png" width={560} />
 
 **Destaque** um bloco para vê-lo inteiro em um documento próprio: como um dump de memória (o padrão para código), como uma desmontagem no endereço em que o bloco é carregado, como uma listagem BASIC completa ou como uma tela. Use o botão ao lado dos detalhes do bloco (a seta dele escolhe a visualização), o ícone na linha do bloco, um clique duplo ou <kbd>Enter</kbd>. **Voltar** retorna à fita. Um bloco sem cabeçalho não tem endereço de carga próprio: digite um na caixa **Listar em** para desmontá-lo ali, e clique nele com o botão direito para **Ler como BASIC** quando souber que é um programa.
 
 <Callout type="warning" emoji="⚠️">
-Alguns blocos TZX — tons puros, sequências de pulsos, dados puros, gravações diretas e CSW, dados generalizados — são mostrados, mas **não tocados** pelo Klive. Uma fita que precisa deles é marcada com um aviso, e o carregamento dela pode falhar.
+Alguns blocos TZX (tons puros, sequências de pulsos, dados puros, gravações diretas e CSW, dados generalizados) são mostrados, mas **não tocados** pelo Klive. Uma fita que precisa deles é marcada com um aviso, e o carregamento dela pode falhar.
 </Callout>
 
 ## Carregue uma fita pelo IDE
@@ -86,7 +86,7 @@ Em qualquer outra máquina, como o ZX Spectrum Next, os botões e as opções do
 
 ## Como funciona o carregamento rápido
 
-O modo de carregamento rápido usa uma técnica poderosa: o ROM hooking. Enquanto o emulador roda, ele observa o registrador `PC` à espera do ponto de entrada da rotina de carregamento da ROM, em todos os modelos de ZX Spectrum.
+O modo de carregamento rápido usa o ROM hooking. Enquanto o emulador roda, ele observa o registrador `PC` à espera do ponto de entrada da rotina de carregamento da ROM, em todos os modelos de ZX Spectrum.
 
 Quando a execução chega à rotina de carregamento, o mecanismo de carregamento rápido suspende a máquina e injeta os dados do arquivo de fita diretamente na memória. Ao fazer isso, o algoritmo define os registradores do Z80 (inclusive as flags) da mesma forma que o algoritmo da ROM.
 

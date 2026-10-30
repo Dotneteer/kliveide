@@ -87,7 +87,10 @@ React 19 + Next 16.
   the latest release tag has them.
 - **Moving or renaming a page needs an entry in `docs/redirects.json`** (old path -> new path);
   `scripts/build-doc-redirects.cjs` writes a redirect stub for it, and the route golden fails the
-  build when an old URL disappears.
+  build when an old URL disappears. **Every link to the old path moves too**, translations and the
+  landing page's `features.ts` included: the stub is for outside links, and `next dev` writes no stubs,
+  so a stale link is a "missing param in generateStaticParams" error there. `doc:check:links` fails
+  on a link to any `redirects.json` key.
 - **`docs/package.json` must keep `--webpack` on `dev` and `build`.** Next 16
   defaults to Turbopack, which rejects Nextra's non-serializable `mdxOptions` -
   and those options are what register the custom `z80klive` Shiki grammar used
@@ -116,6 +119,11 @@ React 19 + Next 16.
   are `.plans/GUIDES_OVERHAUL_PLAN.md` (§2, §3).
 - **Links in `docs/content/` are absolute** (`/en/guides/...`): pages are served with a trailing slash,
   so a relative `./sibling` link resolves *under* the page; `doc:check:links` now resolves and fails them.
+- **Klive's own pages pass a wording check** (`doc:check:prose`, part of `doc:check`): no em dashes or
+  spaced en dashes, no buzzwords ("powerful", "seamless"), no filler ("simply", "easily", "let's",
+  "Note that", "just" that adds nothing). Under the Hood keeps "let's", "simply", "just" and "easily":
+  its voice is the author's (`.ai/hardware-articles-guide.md`). A line that must keep one says why
+  with `{/* prose-ok: <why> */}`. The landing page's design rules are `docs/design.md`.
 
 - **Before planning or writing an "Under the hood" article about how a machine works** (like the ZX
   Spectrum Next screen series in `docs/content/en/under-the-hood/emulator-internals/next-display/`),

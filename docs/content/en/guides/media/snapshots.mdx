@@ -85,7 +85,7 @@ The warnings are there because the machine differs from the one the snapshot was
 +2E and +3E use the +E ROMs, not Amstrad's, so a program that calls into the ROM at a
 version-specific address may behave differently. Klive's +2A and +3 models boot the Amstrad ROMs,
 so a +2A or +3 snapshot loaded on one of them gets no such warning. Klive also warns when the snapshot uses something
-it does not emulate &mdash; an AY chip on a 48K, an M.G.T. interface, the Issue
+it does not emulate: an AY chip on a 48K, an M.G.T. interface, the Issue
 2 keyboard, the alternate ULA timings, or a custom ROM. A snapshot taken with the
 [Interface 1](/en/guides/media/microdrives/) connects it on the 48K and the 128K (disconnecting
 the DivMMC) and pages its ROM in when the snapshot says so; other machines warn that they do not have one.
@@ -134,7 +134,7 @@ Klive captures; the other two lose a little, and Klive tells you exactly what af
 | | `.szx` | `.z80` (written as version 3) | `.sna` |
 |---|---|---|---|
 | Registers, RAM, border, paging | ✓ | ✓ | ✓ |
-| Position in the video frame | ✓ | ✓ | &mdash; (starts at the interrupt) |
+| Position in the video frame | ✓ | ✓ | &mdash; (starts at the interrupt) {/* prose-ok: the table's mark for not stored */} |
 | AY sound chip | ✓ | ✓ | &mdash; |
 | `$1FFD` (+2A/+3/+2E/+3E) | ✓ | ✓ | &mdash; |
 | HALT | ✓ | ✓ (the program counter stays on the `HALT`) | ✓ (same) |

@@ -245,7 +245,7 @@ how the card is stored in the file:
 | **Other programs** | The common format: other emulators read it, your computer can mount it, and SD card writers copy it to a real card | Read by Spectrum emulators that take hard-disk images | Klive only |
 | **Used for** | Cards you share or put on real hardware | Exchanging disks with other emulators | The ZX Spectrum Next's card (`ks2.cim`), and large cards that are mostly empty |
 
-That is the whole difference between a `.cim` and an `.img`: the `.cim` simply omits the unused
+That is the whole difference between a `.cim` and an `.img`: the `.cim` omits the unused
 sectors. The card is the same, sector for sector, but a sector nothing has been written to takes no
 room in the file. An all-but-empty 16 GB card therefore costs a few megabytes of disk space instead
 of 16 GB, and the file grows as you fill the card. The price is that only Klive can open it: to use

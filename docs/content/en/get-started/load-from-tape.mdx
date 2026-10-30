@@ -60,14 +60,14 @@ The details beside the list describe the selected block: its length and checksum
 
 <ClickableImage src="/images/getting-started/tape-viewer.png" width={900} />
 
-Select a **header** to see its 19 bytes explained. The bytes are grouped by field — flag, type, the ten-character name, three two-byte values and the checksum — above a list of the fields with their decoded values. Point at a byte or a field (or tab through the list) to highlight both and read what the field means; the autostart line of a program, or the load address of code, is explained from the start. The three two-byte values mean different things for each type of file, and the explanation says which.
+Select a **header** to see its 19 bytes explained. The bytes are grouped by field (flag, type, the ten-character name, three two-byte values and the checksum) above a list of the fields with their decoded values. Point at a byte or a field (or tab through the list) to highlight both and read what the field means; the autostart line of a program, or the load address of code, is explained from the start. The three two-byte values mean different things for each type of file, and the explanation says which.
 
 <ClickableImage src="/images/getting-started/tape-header-bytes.png" width={560} />
 
 **Pop out** a block to see all of it in its own document: as a memory dump (the default for code), as a disassembly at the address the block loads to, as a full BASIC listing, or as a screen. Use the button beside the block's details (its arrow chooses the view), the icon on its row, a double-click, or <kbd>Enter</kbd>. **Go Back** returns to the tape. A block with no header has no load address of its own: type one in the **List at** box to disassemble it there, and right-click it to **Read as BASIC** when you know it is a program.
 
 <Callout type="warning" emoji="⚠️">
-Some TZX blocks — pure tones, pulse sequences, pure data, direct and CSW recordings, generalized data — are shown but **not played** by Klive. A tape that needs them is marked with a banner, and its loading may fail.
+Some TZX blocks (pure tones, pulse sequences, pure data, direct and CSW recordings, generalized data) are shown but **not played** by Klive. A tape that needs them is marked with a banner, and its loading may fail.
 </Callout>
 
 ## Load a tape from the IDE
@@ -86,7 +86,7 @@ On any other machine, such as the ZX Spectrum Next, the buttons and the menu ent
 
 ## How fast load works
 
-The Fast Load mode applies a powerful technique: ROM hooking. While the emulator runs, it watches the `PC` register for the entry point of the ROM's load routine, on every ZX Spectrum model.
+The Fast Load mode uses ROM hooking. While the emulator runs, it watches the `PC` register for the entry point of the ROM's load routine, on every ZX Spectrum model.
 
 When the execution reaches the load routine, the Fast Load mechanism suspends the machine and injects the data from the tape file directly into the memory. While doing this, the algorithm sets the Z80 registers (including the flags) in the same way as the algorithm in the ROM.
 

@@ -1,17 +1,17 @@
 ---
-description: "The Klive Assembler provides a powerful way to declare and apply macros in the code."
+description: "The Klive Assembler lets you declare macros, with arguments, and apply them in the code."
 ---
 
 # Macros
 
-The Klive Assembler provides a powerful way to declare and apply macros in the code. While in most programming languages and assemblers, the macros are preprocessor constructs and use simple
+The Klive Assembler lets you declare macros, with arguments, and apply them in the code. While in most programming languages and assemblers, the macros are preprocessor constructs and use simple
 text replacement, the Klive implementation is different.
 
 > **Note**: Unlike in C, C++ (and some Z80 Assemblers), Klive macros emit only code (through instructions and pragmas); they cannot be used as user-defined functions. When you pass parameters to macros, any parameter expression is evaluated instantly, so you cannot use unknown symbols or variables, ones that will get their values only somewhere later in the code.
 
 ## Getting Started with Macros
 
-The best way to show you what macros can do is actual code. Let's start with a simple parameterless macro:
+Macros are best shown in code. Here is a macro with no parameters:
 
 ```z80klive
 Delay: 
@@ -21,7 +21,7 @@ Delay:
     .endm
 ```
 
-You can easily use this macro in your code:
+Use this macro in your code like this:
 
 ```z80klive
 ld b,#24
@@ -43,9 +43,9 @@ DelayLoop_2: djnz DelayLoop_2
 
 As you expect, it takes care that the `DelayLoop` label remains local within the scope of the macro; otherwise, it would lead to a duplicated label name.
 
-This macro is named `Delay`, and it uses the value of the __B__ register to create a `djnz` loop. You can easily apply this macro.
+This macro is named `Delay`, and it uses the value of the __B__ register to create a `djnz` loop.
 
-Now, let's enhance this macro with an argument:
+Now give this macro an argument:
 
 ```z80klive
 Delay: 
@@ -56,7 +56,7 @@ Delay:
     .endm
 ```
 
-As the body of the macro suggests, `{{wait}}` is a placeholder for the `wait` argument. While other assemblers do not use a separate markup for a placeholder (they'd just use `wait`),  Klive applies this markup for 
+As the body of the macro suggests, `{{wait}}` is a placeholder for the `wait` argument. While other assemblers do not use a separate markup for a placeholder (they use `wait` alone),  Klive applies this markup for 
 two reasons: first, it is visually better and more eye-catching; second, it allows the compiler to provide better performance. 
 
 You can use this macro passing an argument value for `wait`:
@@ -305,7 +305,7 @@ Arguments are identifiers. Thus, the corresponding naming rules are applied to t
 
 You can invoke a macro with as many parameters as many arguments its declaration has or even with fewer parameters. If the macro invocation has more parameters than arguments, the compiler raises an error.
 
-Let's assume you've created this macro declaration:
+Say you have declared this macro:
 
 ```z80klive
 MyMacro: .macro(arg1, arg2, arg2)
@@ -378,7 +378,7 @@ You can pass _anything_ as a macro parameter that is a _valid operand_ of a Z80 
 - C-port (`(c)`)
 - Expression (e.g. `(MyId << 1) + 23`, `#4000`, `12*sin(pi()/4)`, `"ld " + "a,b"`, etc.)
 
-You should be careful when you use parentheses in expressions. Let's assume you declare this macro:
+Take care with parentheses in expressions. Say you declare this macro:
 
 ```z80klive
 SetHlValue:
@@ -457,7 +457,7 @@ ei
 
 ## Passing Multiple Lines in a Macro Parameter
 
-If you pass multiple lines in a macro parameter where the corresponding argument reference is used instead of an entire instruction line, the compiler will apply all those lines. In this case, the individual lines should be separated by new line characters (`\r\n`). The `&` operator, when applied for two strings, does this step for you, as it concatenates the two strings with `\r\n` between them. Let's assume you invoke the `ShortDi` macro with this code:
+If you pass multiple lines in a macro parameter where the corresponding argument reference is used instead of an entire instruction line, the compiler will apply all those lines. In this case, the individual lines should be separated by new line characters (`\r\n`). The `&` operator, when applied for two strings, does this step for you, as it concatenates the two strings with `\r\n` between them. Say you invoke the `ShortDi` macro with this code:
 
 ```z80klive
 ShortDi("ld a,#7f" & "in a,(#fe)")
@@ -515,7 +515,7 @@ EndLabel:
 
 Here, the `ld hl,GetBoundaries` instruction fills __HL__ with the start address of the macro, while the `ld de,EndLabel` instruction puts the address of the next instruction following the macro into __DE__.
 
-Let's assume you use the macro this way:
+Say you use the macro this way:
 
 ```z80klive
 .org #8000

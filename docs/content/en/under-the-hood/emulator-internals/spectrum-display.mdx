@@ -627,7 +627,7 @@ addresses to skip it.
 
 The ULA and the CPU share the lower 16K, and the ULA cannot wait: if it is late, the picture is
 wrong. So when both want that memory at the same time, the ULA wins, and it makes the CPU wait by
-**stopping the CPU's clock**. The Z80 is simply frozen for a few T-states, and carries on when the
+**stopping the CPU's clock**. The Z80 is frozen for a few T-states, and carries on when the
 ULA is done. This is called **contention**, and the memory from `$4000` to `$7FFF` is the **contended
 memory**.
 

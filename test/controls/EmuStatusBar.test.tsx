@@ -9,7 +9,7 @@ import { describe, it, expect, vi } from "vitest";
 import React from "react";
 import { renderWithProviders, act } from "../react-test-utils";
 import { EmuStatusBar } from "@renderer/appEmu/StatusBar/EmuStatusBar";
-import { setMachineStateAction } from "@state/actions";
+import { setHistoryPositionAction, setMachineStateAction, setReverseDebugStateAction } from "@state/actions";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 
 // ---------------------------------------------------------------------------
@@ -160,6 +160,46 @@ describe("EmuStatusBar — PC after a state change", () => {
       store.dispatch(setMachineStateAction(MachineControllerState.Paused, 0xf523), "emu");
     });
     expect(container.textContent).toContain("F523");
+    mockController.machine.pc = 0x8000;
+  });
+});
+
+/*
+ * Reverse debugging moves the machine into the past and back with it still paused: no frame and no
+ * state change. The PC shown must follow the machine all the same (it stayed at the present's).
+ */
+describe("EmuStatusBar — PC after a move into the past", () => {
+  it("follows a step back and a Reverse Continue, and the return to the present", async () => {
+    let container: HTMLElement;
+    let store: ReturnType<typeof renderWithProviders>["store"];
+    mockController.machine.pc = 0x8040;
+    await act(async () => {
+      ({ container, store } = renderWithProviders(<EmuStatusBar show={true} />));
+      store.dispatch(setMachineStateAction(MachineControllerState.Paused, 0x8040), "emu");
+    });
+    expect(container.textContent).toContain("8040");
+
+    // --- A step back: the history cursor moves
+    mockController.machine.pc = 0x801f;
+    await act(async () => {
+      store.dispatch(setHistoryPositionAction(1, 41), "emu");
+    });
+    expect(container.textContent).toContain("801F");
+
+    // --- A Reverse Continue landing frames back: the timeline says how far behind
+    mockController.machine.pc = 0x8010;
+    await act(async () => {
+      store.dispatch(setReverseDebugStateAction({ active: true, mode: "navigating", behindSeconds: 0.06 }), "emu");
+    });
+    expect(container.textContent).toContain("8010");
+
+    // --- Back to the present
+    mockController.machine.pc = 0x8040;
+    await act(async () => {
+      store.dispatch(setHistoryPositionAction(0), "emu");
+      store.dispatch(setReverseDebugStateAction({ active: true, mode: "live" }), "emu");
+    });
+    expect(container.textContent).toContain("8040");
     mockController.machine.pc = 0x8000;
   });
 });

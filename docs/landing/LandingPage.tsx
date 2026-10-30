@@ -1,7 +1,7 @@
 /**
  * The landing page, in any language: the data-sheet layout of .plans/DOCS_SITE_REDESIGN_PLAN.md
  * (R3), with the app's colour tokens and the site's Overpass type (R1, R2). The Spectrum colours
- * appear only as the four-colour rule at the top and the square before each feature's label.
+ * appear only as the four-colour rule at the top and the square before each feature's heading.
  *
  * A server component rendered at build time: it reads the dictionary, the release facts and the
  * localized screenshots from disk. The Download button, the theme switch, the language menu, the
@@ -44,6 +44,15 @@ const EXPAND = (
   </span>
 );
 
+/** The header's links to the documentation areas: their text key and area */
+const NAV = [
+  ["nav.getStarted", "get-started"],
+  ["nav.guides", "guides"],
+  ["nav.reference", "reference"],
+  ["nav.underTheHood", "under-the-hood"],
+  ["nav.library", "library"]
+] as const;
+
 /** The steps of the "Write, build, run, debug" table */
 const LOOP = ["write", "build", "run", "debug"] as const;
 
@@ -63,6 +72,7 @@ export default function LandingPage({ lang }: Readonly<{ lang: string }>) {
   const features = FEATURES.filter((f) => versionAtMost(f.since, site.latestRelease)).slice(0, SHOWN_FEATURES);
   const slides = HERO_SLIDES.map((s) => ({
     src: imageUrl(s.image, lang),
+    ...(s.video ? { video: `${basePath}/images/${s.video}` } : {}),
     alt: t(s.caption),
     caption: t(s.caption),
     width: s.width,
@@ -78,11 +88,11 @@ export default function LandingPage({ lang }: Readonly<{ lang: string }>) {
     [
       ["ZX Spectrum", t("machines.spectrum"), "0.1.0"],
       ["ZX Spectrum Next", "", "0.1.0"],
-      ["ZX80 · ZX81", "", "0.1.0"],
+      ["ZX80, ZX81", "", "0.1.0"],
       [t("machines.clonesLabel"), t("machines.clones"), "0.1.0"],
       ["Cambridge Z88", "", "0.1.0"],
       ["HT-1080Z", "", "0.65.0"],
-      ["Videoton TVC", "64K · 64K+", "0.66.0"]
+      ["Videoton TVC", "64K, 64K+", "0.66.0"]
     ] as [string, string, string][]
   )
     .filter(([, , since]) => versionAtMost(since, site.latestRelease))
@@ -101,16 +111,33 @@ export default function LandingPage({ lang }: Readonly<{ lang: string }>) {
             <span>Klive IDE</span>
           </Link>
           <nav className="lp-nav" aria-label="Klive">
-            <Link href={docsHref(lang, "get-started")}>{t("nav.getStarted")}</Link>
-            <Link href={docsHref(lang, "guides")}>{t("nav.guides")}</Link>
-            <Link href={docsHref(lang, "reference")}>{t("nav.reference")}</Link>
-            <Link href={docsHref(lang, "under-the-hood")}>{t("nav.underTheHood")}</Link>
-            <Link href={docsHref(lang, "library")}>{t("nav.library")}</Link>
+            {NAV.map(([key, area]) => (
+              <Link key={area} href={docsHref(lang, area)}>
+                {t(key)}
+              </Link>
+            ))}
           </nav>
           <div className="lp-tools">
             <LanguageSelect current={lang} label={t("nav.language")} languages={languages} />
             <ThemeToggle label={t("nav.theme")} />
-            <a className="lp-icon-button" href={GITHUB} aria-label={t("nav.github")} title={t("nav.github")}>
+            {/* --- Where the links do not fit (below 900px) they move into this menu, with GitHub.
+                --- A native disclosure: it opens and its links work without script. */}
+            <details className="lp-menu">
+              <summary className="lp-icon-button" aria-label={t("nav.menu")} title={t("nav.menu")}>
+                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                  <path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+              </summary>
+              <nav className="lp-menu-list" aria-label={t("nav.menu")}>
+                {NAV.map(([key, area]) => (
+                  <Link key={area} href={docsHref(lang, area)}>
+                    {t(key)}
+                  </Link>
+                ))}
+                <a href={GITHUB}>{t("nav.github")}</a>
+              </nav>
+            </details>
+            <a className="lp-icon-button lp-github" href={GITHUB} aria-label={t("nav.github")} title={t("nav.github")}>
               <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
                 <path
                   fill="currentColor"
@@ -156,7 +183,7 @@ export default function LandingPage({ lang }: Readonly<{ lang: string }>) {
                 )}
                 <tr>
                   <th scope="row">{t("glance.runsOn")}</th>
-                  <td>macOS · Windows · Linux</td>
+                  <td>macOS, Windows, Linux</td>
                 </tr>
                 <tr>
                   <th scope="row">{t("glance.licence")}</th>
@@ -168,7 +195,7 @@ export default function LandingPage({ lang }: Readonly<{ lang: string }>) {
                 </tr>
                 <tr>
                   <th scope="row">{t("glance.worksWith")}</th>
-                  <td>sjasmplus · Boriel BASIC · z88dk · PASTA/80</td>
+                  <td>sjasmplus, Boriel BASIC, z88dk, PASTA/80</td>
                 </tr>
                 <tr>
                   <th scope="row">{t("glance.interface")}</th>
@@ -249,20 +276,16 @@ export default function LandingPage({ lang }: Readonly<{ lang: string }>) {
             return (
               <article key={f.id} id={f.id} className="lp-feature">
                 <div className="lp-feature-copy">
-                  <span className="lp-label">
+                  <h3>
                     <span className={`lp-square lp-square-${(i % 5) + 1}`} aria-hidden="true" />
-                    {t(`feature.${f.id}.tag`)}
-                  </span>
-                  <h3>{title}</h3>
+                    <Link href={docsHref(lang, f.more.area, f.more.rest)}>{title}</Link>
+                  </h3>
                   <p>{t(`feature.${f.id}.text`)}</p>
                   <ul>
                     {[1, 2, 3].map((n) => (
                       <li key={n}>{t(`feature.${f.id}.point${n}`)}</li>
                     ))}
                   </ul>
-                  <Link className="lp-more" href={docsHref(lang, f.more.area, f.more.rest)}>
-                    {t("feature.more")}
-                  </Link>
                 </div>
                 <figure className="lp-feature-media">
                   <a
@@ -281,14 +304,23 @@ export default function LandingPage({ lang }: Readonly<{ lang: string }>) {
           })}
         </section>
 
+        {/* --- The page ends on its job, the download (Hallmark rule 85), not on a slogan */}
         <section className="lp-end">
           <div>
             <h2>{t("cta.title")}</h2>
             <p>{t("cta.text")}</p>
           </div>
-          <Link className="lp-button lp-button-primary" href={docsHref(lang, "get-started")}>
-            {t("hero.getStarted")}
-          </Link>
+          <div className="lp-actions">
+            <DownloadButton
+              downloads={site.downloads}
+              releasesPage={site.releasesPage}
+              labelForOs={t("hero.download")}
+              labelGeneric={t("hero.downloadGeneric")}
+            />
+            <Link className="lp-button" href={docsHref(lang, "get-started")}>
+              {t("hero.getStarted")}
+            </Link>
+          </div>
         </section>
       </main>
 

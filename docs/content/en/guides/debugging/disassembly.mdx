@@ -7,8 +7,8 @@ import { Callout } from 'nextra/components'
 # The Disassembly View
 
 The **Disassembly** view shows memory as Z80 instructions, around the execution point or across
-the whole address space. Use it to see the code that actually runs &mdash; ROM routines, code your
-program generated, a program loaded from tape &mdash; to set breakpoints where there is no source,
+the whole address space. Use it to see the code that actually runs (ROM routines, code your
+program generated, a program loaded from tape), to set breakpoints where there is no source,
 and to see which way each conditional branch will go.
 
 <Shot
@@ -38,8 +38,8 @@ The narrow gutter left of each address holds the row's breakpoint:
 | <kbd>Ctrl</kbd>+click (<kbd>Cmd</kbd>+click on macOS) | Runs to this row |
 
 Hover the gutter to see these gestures in a tooltip. Right-clicking elsewhere on a row opens a menu
-with the same actions by name &mdash; **Add Breakpoint** / **Remove Breakpoint**, **Add One-Shot
-Breakpoint**, **Run to Here** and **Edit Breakpoint...** &mdash; followed by the annotation entries
+with the same actions by name (**Add Breakpoint** / **Remove Breakpoint**, **Add One-Shot
+Breakpoint**, **Run to Here** and **Edit Breakpoint...**), followed by the annotation entries
 (**Label...**, **End-of-Line Comment...** and others), which are described in
 [Annotating a disassembly and ROMs](/en/guides/analysis/annotations/). Breakpoints of any type can
 also be set in the [Breakpoints panel](/en/guides/debugging/breakpoints/#the-breakpoints-panel) or
@@ -50,7 +50,7 @@ with [`bp-set`](/en/reference/commands/#bp-set).
 - **Decimal**: show addresses, bytes and operands in decimal instead of hexadecimal (off by default).
 - **Sys vars**: name 16-bit data addresses after the machine's system variables (on by default).
   See [System variable names](#system-variable-names).
-- **ROM labels**: show the ROM's annotations &mdash; its labels, comments and data regions (on by
+- **ROM labels**: show the ROM's annotations: its labels, comments and data regions (on by
   default; shown when the machine's ROM has annotations). See
   [ROM annotations](/en/guides/analysis/annotations/#rom-annotations).
 - **Follow PC**: follow the program counter, as above.
@@ -76,14 +76,14 @@ ld (CHANS),hl
 ```
 
 The names come from the same table the [System Variables](/en/guides/debugging/machine-state-panels/) panel lists, so each machine
-contributes its own — the ZX Spectrum 48K, 128K and +3, the ZX Spectrum Next, the ZX81 and the
+contributes its own: the ZX Spectrum 48K, 128K and +3, the ZX Spectrum Next, the ZX81 and the
 ZX80 each have one.
 Names are spelled so an assembler would accept them: the ROM manuals print several with a space or a
 hyphen (`ATTR P`, `CH-ADD`), and every character that is not a letter, a digit or an underscore
-becomes `_` — so those read `ATTR_P` and `CH_ADD`.
+becomes `_`, so those read `ATTR_P` and `CH_ADD`.
 
 <Callout type="info" emoji="💡">
-Only **data** operands are named — the 16-bit loads and stores. `JP` and `CALL` targets keep their
+Only **data** operands are named: the 16-bit loads and stores. `JP` and `CALL` targets keep their
 `L`-prefixed labels, because the system variable area is not code: an address there matching a jump
 target is a coincidence far more often than a fact worth printing. Naming applies to the Z80 and
 Z80N machines; the Commodore 64's 6510 listing shows its addresses unchanged.
@@ -112,7 +112,7 @@ be taken, a `ret` and a `ret nz` that will return, a `call` drawn as an out-and-
 
 | Mark | Meaning |
 | --- | --- |
-| Arrow pointing up | The branch will jump **backwards**, to an address at or below its own — a loop closing. |
+| Arrow pointing up | The branch will jump **backwards**, to an address at or below its own: a loop closing. |
 | Arrow pointing down | The branch will jump **forwards**, skipping the code between. |
 | Out-and-back hook | A `CALL` or `RST` that will be taken: control leaves **and comes back**. |
 | Arrow pointing left | A `RET` or `RET cc` that will return, leaving through the stack. |
@@ -120,8 +120,8 @@ be taken, a `ret` and a `ret nz` that will return, a `call` drawn as an out-and-
 | Straight vertical line | The branch will **not** be taken; execution carries straight on to the next instruction. |
 
 Five of the six say which way control goes; the hook says something different, that control will
-return here afterwards. A `CALL` therefore looks the same whether its target is above or below —
-it is a call either way — while a `JP` to the same address shows a plain arrow. `RST n` is `CALL n`
+return here afterwards. A `CALL` therefore looks the same whether its target is above or below
+(it is a call either way), while a `JP` to the same address shows a plain arrow. `RST n` is `CALL n`
 in a one-byte encoding, so it takes the hook too, and its readout says `calls $0008` rather than
 naming a direction.
 
@@ -134,7 +134,7 @@ The mark on the row at the **execution point** is drawn at full strength, becaus
 worked out from are the flags the CPU will actually use.
 
 Every other mark is dimmed, and this difference matters. A branch ten instructions below PC is judged
-against *today's* flags, not the flags that will hold when execution finally reaches it — and the
+against *today's* flags, not the flags that will hold when execution finally reaches it, and the
 code in between will almost certainly change them. Read a dimmed mark as "this is what would happen
 if the CPU arrived here right now", not as a prediction.
 
@@ -147,14 +147,14 @@ jumps back to $0EFD  ·  NC met (C=0)  ·  12 T
 ```
 
 It names where execution goes next, which condition decided it, the flag value behind that decision,
-and the T-states the instruction will actually spend — a conditional branch costs a different number
+and the T-states the instruction will actually spend: a conditional branch costs a different number
 of cycles depending on which way it goes, and this is the one it will really take.
 
 In a narrow panel the readout shortens to `→ $0EFD  C=0  12T`. Hover it to see the full sentence.
 
 <Callout type="info" emoji="💡">
 Verdicts appear only when a machine is started. With no machine running there is no CPU state to
-judge against, so the view looks exactly as it always has — no extra column, no shifted layout.
+judge against, so the view looks exactly as it always has, with no extra column, no shifted layout.
 Verdicts are shown for Z80 and Z80N machines only.
 </Callout>
 
@@ -163,7 +163,7 @@ Verdicts are shown for Z80 and Z80N machines only.
 Three cases show a verdict but no destination, on purpose:
 
 - **`JP (C)`** on a ZX Spectrum Next jumps to an address whose low bits come from reading an I/O
-  port. That read has not happened yet, and performing it just to fill in a debugger display would
+  port. That read has not happened yet, and performing it only to fill in a debugger display would
   disturb the machine you are debugging. The readout says so rather than guessing.
 - **`RET cc` away from the execution point.** The return address sits on the stack, and the top of
   the stack belongs to whatever is executing *now*, not to the row you are looking at. It is only

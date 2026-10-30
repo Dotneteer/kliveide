@@ -49,7 +49,7 @@ dot clock, four master clocks each: **567,264** clocks. Divide one by the other 
 a second whatever the machine is doing.
 
 So Klive keeps the time of the next sample in master clocks, multiplied by the sample rate so that it stays a
-whole number, and it never starts that count afresh. When a frame ends, the schedule simply moves back by a
+whole number, and it never starts that count afresh. When a frame ends, the schedule moves back by a
 frame's length and carries on. The next frame's first sample comes 583.33 clocks after the previous frame's last
 one, wherever that falls:
 

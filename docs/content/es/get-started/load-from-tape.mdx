@@ -86,7 +86,7 @@ En cualquier otra máquina, como el ZX Spectrum Next, los botones y las entradas
 
 ## Cómo funciona la carga rápida
 
-El modo de carga rápida aplica una técnica potente: la interceptación de la ROM. Mientras el emulador funciona, vigila en el registro `PC` el punto de entrada de la rutina de carga de la ROM, en todos los modelos de ZX Spectrum.
+El modo de carga rápida usa la interceptación de la ROM. Mientras el emulador funciona, vigila en el registro `PC` el punto de entrada de la rutina de carga de la ROM, en todos los modelos de ZX Spectrum.
 
 Cuando la ejecución llega a la rutina de carga, el mecanismo de carga rápida suspende la máquina e inyecta los datos del archivo de cinta directamente en la memoria. Mientras lo hace, el algoritmo establece los registros del Z80 (incluidos los indicadores) del mismo modo que lo haría el algoritmo de la ROM.
 

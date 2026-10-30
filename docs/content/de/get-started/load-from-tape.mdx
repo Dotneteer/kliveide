@@ -60,14 +60,14 @@ Die Details neben der Liste beschreiben den ausgewählten Block: seine Länge un
 
 <ClickableImage src="/images/getting-started/tape-viewer.png" width={900} />
 
-Wählen Sie einen **Header** aus, um seine 19 Bytes erklärt zu bekommen. Die Bytes sind nach Feldern gruppiert – Flag, Typ, der zehnstellige Name, drei Zwei-Byte-Werte und die Prüfsumme –, darunter steht eine Liste der Felder mit ihren decodierten Werten. Zeigen Sie auf ein Byte oder ein Feld (oder gehen Sie mit der Tabulatortaste durch die Liste), um beide hervorzuheben und zu lesen, was das Feld bedeutet; die Autostart-Zeile eines Programms oder die Ladeadresse von Code ist von Anfang an erklärt. Die drei Zwei-Byte-Werte bedeuten je nach Dateityp etwas anderes, und die Erklärung sagt, was.
+Wählen Sie einen **Header** aus, um seine 19 Bytes erklärt zu bekommen. Die Bytes sind nach Feldern gruppiert (Flag, Typ, der zehnstellige Name, drei Zwei-Byte-Werte und die Prüfsumme), darunter steht eine Liste der Felder mit ihren decodierten Werten. Zeigen Sie auf ein Byte oder ein Feld (oder gehen Sie mit der Tabulatortaste durch die Liste), um beide hervorzuheben und zu lesen, was das Feld bedeutet; die Autostart-Zeile eines Programms oder die Ladeadresse von Code ist von Anfang an erklärt. Die drei Zwei-Byte-Werte bedeuten je nach Dateityp etwas anderes, und die Erklärung sagt, was.
 
 <ClickableImage src="/images/getting-started/tape-header-bytes.png" width={560} />
 
 Mit **Abkoppeln** öffnen Sie einen Block vollständig in einem eigenen Dokument: als Speicherauszug (die Vorgabe für Code), als Disassemblierung an der Adresse, an die der Block geladen wird, als vollständiges BASIC-Listing oder als Bildschirm. Verwenden Sie dazu die Schaltfläche neben den Details des Blocks (ihr Pfeil wählt die Ansicht), das Symbol in seiner Zeile, einen Doppelklick oder <kbd>Enter</kbd>. **Zurück** kehrt zur Kassette zurück. Ein Block ohne Header hat keine eigene Ladeadresse: Geben Sie eine in das Feld **Listen ab** ein, um ihn dort zu disassemblieren, und wählen Sie per Rechtsklick **Als BASIC lesen**, wenn Sie wissen, dass er ein Programm enthält.
 
 <Callout type="warning" emoji="⚠️">
-Einige TZX-Blöcke – reine Töne, Impulsfolgen, reine Daten, Direkt- und CSW-Aufzeichnungen, generalisierte Daten – werden zwar angezeigt, von Klive aber **nicht gespielt**. Eine Kassette, die sie benötigt, ist mit einem Banner gekennzeichnet, und das Laden kann fehlschlagen.
+Einige TZX-Blöcke (reine Töne, Impulsfolgen, reine Daten, Direkt- und CSW-Aufzeichnungen, generalisierte Daten) werden zwar angezeigt, von Klive aber **nicht gespielt**. Eine Kassette, die sie benötigt, ist mit einem Banner gekennzeichnet, und das Laden kann fehlschlagen.
 </Callout>
 
 ## Eine Kassette aus der IDE laden
@@ -86,7 +86,7 @@ Auf jeder anderen Maschine, etwa dem ZX Spectrum Next, sind die Schaltflächen u
 
 ## Wie das Schnellladen funktioniert
 
-Das Schnellladen nutzt eine wirkungsvolle Technik: ROM-Hooking. Während der Emulator läuft, überwacht er das Register `PC` auf den Einsprungpunkt der Laderoutine im ROM, und zwar bei jedem ZX-Spectrum-Modell.
+Das Schnellladen nutzt ROM-Hooking. Während der Emulator läuft, überwacht er das Register `PC` auf den Einsprungpunkt der Laderoutine im ROM, und zwar bei jedem ZX-Spectrum-Modell.
 
 Erreicht die Ausführung die Laderoutine, unterbricht das Schnellladen die Maschine und schreibt die Daten aus der Kassettendatei direkt in den Speicher. Dabei setzt der Algorithmus die Z80-Register (einschließlich der Flags) genauso, wie es der Algorithmus im ROM tun würde.
 

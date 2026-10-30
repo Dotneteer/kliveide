@@ -21,8 +21,8 @@ You can use operands and operators just like in most programming languages. Neve
   - There is no implicit conversion between strings and any numeric values.
 - When the compiler needs a 16-bit value (for example, `ld hl,NNNN`), it uses the rightmost 16 bits of an expression's value.
 - When a Z80 operation (for example, `ld a,NN`) needs an 8-bit value, it utilizes the rightmost 8 bits.
-- Besides the parentheses &mdash; `(` and `)` &mdash; you can use square brackets 
-&mdash; `[` and `]` &mdash; to group operations and change operator precedence.
+- Besides the parentheses, `(` and `)`, you can use square brackets, `[` and `]`, to group
+operations and change operator precedence.
 
 ```z80klive
 ; This is valid
@@ -34,7 +34,7 @@ ld hl,[Offset+#20]*2+BaseAddr
 
 ## Instant and Late Expression Evaluation
 
-Depending on the context in which an expression is used, the compiler evaluates it instantly or decides to postpone the evaluation. For example, when you use the `.org` pragma, the compiler applies immediate evaluation. Let's assume this is your code:
+Depending on the context in which an expression is used, the compiler evaluates it instantly or decides to postpone the evaluation. For example, when you use the `.org` pragma, the compiler applies immediate evaluation. Take this code:
 
 ```z80klive
 Start: .org #8000 + Later
@@ -91,9 +91,9 @@ in _true-value_; otherwise in _false-value_.
 
 Operator token | Precedence | Description
 ---------------|------------|------------
-`|` | 1 | Bitwise OR
+`\|` | 1 | Bitwise OR
 `^` | 2 | Bitwise XOR
-`&` | 3 | Bitwise AND &mdash; string concatenation with new line
+`&` | 3 | Bitwise AND; for strings, concatenation with a new line
 
 > **Note**: The `&` operator can be applied to two strings. If you do so, the compiler concatenates the two strings and puts a `\r\n` (new line) character pair between them. 
 
@@ -121,7 +121,7 @@ Operator token | Precedence | Description
 
 Operator token | Precedence | Description
 ---------------|------------|------------
-`+` | 7 | Addition &mdash; string concatenation
+`+` | 7 | Addition; for strings, concatenation
 `-` | 7 | Subtraction
 `*` | 8 | Multiplication
 `/` | 8 | Division
