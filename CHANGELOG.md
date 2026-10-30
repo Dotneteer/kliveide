@@ -16,13 +16,11 @@
   it joins the sound mix, and it can drive the EAR bit of port `$FE`. It stays in step with the
   debugger and reverse debugging.
 - **The Videoton TV Computer:** Klive emulates the Hungarian home computer as the TVC 64K (BASIC
-  1.2)
-  and the TVC 64K+ (BASIC 2.2, four video banks), with their ROMs, the 2-, 4- and 16-colour modes,
-  palette and border changes in the middle of a line, the clock stretch on video memory, sound, and
-  the Hungarian accented letters on the keyboard. The on-screen keyboard is the TVC's own, drawn
-  from
-  the machine with its built-in joystick: click a key, right-click it for SHIFT, and use the
-  joystick's arrows and FIRE button. Programs load from `.cas` tapes (Load and Run,
+  1.2) and the TVC 64K+ (BASIC 2.2, four video banks), with their ROMs, the 2-, 4- and 16-colour
+  modes, palette and border changes in the middle of a line, the clock stretch on video memory,
+  sound, and the Hungarian accented letters on the keyboard. The on-screen keyboard is the TVC's
+  own, drawn from the machine with its built-in joystick: click a key, right-click it for SHIFT, and
+  use the joystick's arrows and FIRE button. Programs load from `.cas` tapes (Load and Run,
   `tape-load`, the Explorer, `klive run --machine tvc`), fast or in real time, and `SAVE` writes
   `.cas` files. The HBF floppy interface with VT-DOS (Machine › Disks) reads and writes raw `.dsk`
   disks. The assembler takes `.model TVC`: Run and Debug boot BASIC, move it above the code with
@@ -51,10 +49,9 @@
   character sets and PRINT USING. The ROMs read by name in the Disassembly view and in the ROM
   annotation editor, each chip at the address BASIC runs it.
 - **Open ROM annotations from the menu:** Debug › ROM Annotations lists every machine type whose
-  ROMs
-  Klive ships, each with its ROMs; picking one opens that ROM's annotations in the ROM annotation
-  editor, starting an empty working copy for a ROM that has none. `rom-ann-open` takes the same
-  `-create` option.
+  ROMs Klive ships, each with its ROMs; picking one opens that ROM's annotations in the ROM
+  annotation editor, starting an empty working copy for a ROM that has none. `rom-ann-open` takes
+  the same `-create` option.
 - **Tapes on the ZX Spectrum Next.** Insert a .tap or .tzx with Machine › Tape › Insert, and it
   loads whenever a program uses the 48K ROM's tape routines, as LOAD "" in the Next's 48K BASIC
   does: with fast load at any CPU speed, or in real time at 3.5 MHz, through the Next's own EAR
@@ -84,8 +81,7 @@
   frames instead of three. The buffer is now sized from the frame's real length.
 - Select Machine: the small drawing of the screen was twice as wide as the real picture on the
   HT-1080Z and the ZX Spectrum Next, whose pixels are not square, and the Next's screen area was
-  drawn
-  too small inside it.
+  drawn too small inside it.
 
 ## 0.65.0 (2026-10-27)
 
