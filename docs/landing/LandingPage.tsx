@@ -72,6 +72,7 @@ export default function LandingPage({ lang }: Readonly<{ lang: string }>) {
   const features = FEATURES.filter((f) => versionAtMost(f.since, site.latestRelease)).slice(0, SHOWN_FEATURES);
   const slides = HERO_SLIDES.map((s) => ({
     src: imageUrl(s.image, lang),
+    ...(s.video ? { video: `${basePath}/images/${s.video}` } : {}),
     alt: t(s.caption),
     caption: t(s.caption),
     width: s.width,

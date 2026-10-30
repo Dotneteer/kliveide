@@ -3101,6 +3101,13 @@ drift. Change a neutral or the default accent in the app, and the site changes w
   it is its pause button** (WCAG 2.2.2): implicit stops - on hover, on focus, after the first click,
   under reduced motion - made it look broken, because the pointer rests on it and a clicked arrow
   keeps the focus. Reduced motion turns off the flying, not the advancing. Its pictures come from `scripts/doc-shots/recipes/landing.cjs`.
+  **Its first item is a video, the page's signature** (reverse debugging, recorded by Klive itself
+  through `recipes/landing-reverse.cjs`): muted, started by script, played once before the carousel
+  moves on, paused by the pause button, and left on its poster under reduced motion and without
+  script. It is not a viewer link. Record it near 16:10 (an 800 x 820 IDE beside a 520 x 440
+  emulator): a 2.4:1 recording sat in the 16:10 frame as a thin strip under a dark band.
+- **Landing section headings are 2rem**, above the 1.75rem feature headings they contain. At 1.5rem
+  "What Klive does" was smaller than the headings under it.
 - **Screenshots in the docs are dark** (decision D4), whatever the page's theme; their frame and
   markers use the tokens.
 - **A docs link card is title first, then its description**, padded as a whole

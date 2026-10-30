@@ -468,7 +468,9 @@ div.lp-body {
   cursor: zoom-in;
 }
 
-.lp-slide img {
+.lp-slide img,
+.lp-slide video {
+  display: block;
   width: 100%;
   height: 100%;
   object-fit: contain;
@@ -546,7 +548,8 @@ div.lp-body {
 .lp-sec > h2,
 .lp-sec > div > h2 {
   margin-bottom: 1.25rem;
-  font-size: 1.5rem;
+  font-size: 2rem;
+  line-height: 1.15;
 }
 
 .lp-two {
@@ -587,6 +590,10 @@ div.lp-body {
   padding: 2.5rem 0;
   border-top: 1px solid var(--site-line);
   scroll-margin-top: 4.5rem;
+}
+
+.lp-feature:last-child {
+  padding-bottom: 0;
 }
 
 .lp-feature-copy {
@@ -711,7 +718,8 @@ div.lp-body {
 
 .lp-end h2 {
   margin-bottom: 0.25rem;
-  font-size: 1.5rem;
+  font-size: 2rem;
+  line-height: 1.15;
 }
 
 .lp-end p {

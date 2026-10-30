@@ -45,11 +45,17 @@ dark one the way the app derives it; never tune one by hand. The roles:
   page, `guides-*` for the guides). Docs screenshots are dark whatever the page's theme.
 - Every landing picture is a plain link to its file and opens in the inset viewer
   (`docs/landing/ImageViewer.tsx`): fitted, never scrolled.
+- **The signature is reverse debugging**, the carousel's first item: a 9-second loop recorded with
+  Klive's own IDE + Emulator recording (`scripts/doc-shots/recipes/landing-reverse.cjs`), never a
+  mock. It starts on the first screen at 1280 x 800. Accuracy stays a feature row, not the hero:
+  Fuse is the accepted accuracy reference, and the page claims no "most accurate".
 
 ## Motion
 - Character: calm. The carousel advances every five seconds and stops only by its pause button;
   reduced motion turns off the flying, not the advancing. Transitions list their properties
   (background, filter, opacity), 0.15s; under reduced motion they end at once.
+- The video slide is muted, started by script, and plays once before the carousel moves on; the
+  pause button pauses it. Under reduced motion, and without script, it stays on its poster.
 
 ## Waivers
 Hallmark rules this site breaks on purpose, each with its reason (the author's decisions H8 in
@@ -57,10 +63,16 @@ Hallmark rules this site breaks on purpose, each with its reason (the author's d
 - **58, about 80 words per screen, and the hero's "headline, one sentence, actions".** Waived: the
   landing page is a data sheet, and its "At a glance" table sits beside the headline on purpose.
   The feature texts are kept to about 30 words each so no screen runs far past the limit.
-- **59, 120px between sections.** Waived: the sheet's sections are divided by 2px rules, not by
-  space, with one gap (`--lp-section-gap`, 3rem) everywhere.
-- **78, section headings about 52px.** Waived: a data sheet's section headings are labels for the
-  table under them, 1.5rem.
+- **59, 120px between sections.** Waived (confirmed by the author): the sheet's sections are
+  divided by 2px rules, not by space, with one gap token (`--lp-section-gap`, 3rem); rendered, the
+  gaps are 66 to 110px, the hero and its carousel the closest pair.
+- **78, section headings about 52px.** Waived (confirmed by the author): a data sheet's section
+  headings label the table under them. They are 2rem (32px), above the feature headings (1.75rem)
+  they contain, never below them.
+- **44c, the hero ends at 556px of a 900px screen.** Answered: the hero's picture is the carousel
+  straight under it, whose video starts on the first screen.
+- **77, thin sections** (the write/build/run/debug table, Install Klive). Waived: a four-column
+  table and the closing download are the sheet's own forms, not sections that need a picture.
 - **19, em and en dashes: not waived on the landing page** (none in any landing text, translations
   included); in the documentation the prose check reports them, outside the book and the Library.
 

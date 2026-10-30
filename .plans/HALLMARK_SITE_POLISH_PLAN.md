@@ -22,7 +22,7 @@ rebuilds). Rule numbers below (for example *63*) are Hallmark's.
 | H6 | **The Library is out of scope.** The imported manuals (`content/en/library/`) keep their original wording, "powerful" and all. The book is out of scope for wording too (it is unlinked, decision D6). |
 | H7 | **Translations follow the usual workflow.** Every changed landing text is a changed key in `docs/i18n/landing/en.json` with its translator context; other languages through `npm run doc:i18n:todo` / `doc:i18n:merge`, never by hand. |
 | H8 | **Decided by the author before step 2**, where Hallmark's rules clashed with the site's own choices: (a) the feature labels (an eyebrow, rule 54) **go**; the Spectrum square moves onto the feature heading. (b) Rule 58's "about 80 words per screen" is **waived** for the data sheet and its At a glance hero, but the feature texts are trimmed. (c) Em and en dashes (rule 19) are **out of the landing texts**; the docs prose check reports them (not the book or the Library). (d) The header stays **sticky but solid**, no blur or transparency (rule 42). The waivers and their reasons are in `docs/design.md`. |
-| H9 | **Open: the signature (step 3).** The one thing a visitor should remember, shown on the first screen. Candidates: the accuracy story (Klive's screen beside photos of the real machine, timing tests passed) or reverse debugging (stepping back through a bug). |
+| H9 | **Decided: the signature is reverse debugging** (step 3), the one thing a visitor should remember, shown on the first screen as a short loop recorded by Klive itself. The accuracy story stays a feature row: Fuse is the accepted accuracy reference, and the page claims no "most accurate". |
 
 ## Steps
 
@@ -194,6 +194,38 @@ Once the author picks it:
   typed into the copy, so it cannot drift.
 - It moves to the first screen beside the headline; the carousel keeps the remaining pictures.
 - The feature it represents keeps its `since` gate in `features.ts`.
+
+#### As built (step 3)
+
+- **The author chose reverse debugging** (H9), and confirmed the rule 59 waiver and the rule 78
+  waiver with section headings raised to 2rem.
+- **The video**: `docs/public/images/landing/reverse-debugging.mp4` (1440 x 820, 9.4 s, silent,
+  about 170 KB) and its WebP poster (about 52 KB), made by `scripts/doc-shots/recipes/landing-reverse.cjs`
+  with Klive's own IDE + Emulator recording. A 48K program paints the attributes one row at a time
+  and stops at its end; Reverse Continue with a breakpoint at the top of the row loop walks back a
+  row at a time (the editor's line, the CPU panel's "History · step", the status bar's "−659 ms"
+  and the emulator's picture and PC all in the past), and Return to Present puts it all back, which
+  is where the loop starts again. It is the carousel's first item, starting at y 556 of the first
+  screen at 1280 x 800; no new figure is claimed, so no number needed sourcing.
+- **The carousel** (`HeroCarousel.tsx`) plays a video slide muted, once, then moves on (not after
+  five seconds); the pause button pauses it; under reduced motion and without script it stays on its
+  poster. Checked in Chrome: plays past five seconds, advances at its end, rewinds when left, holds
+  its poster with reduced motion. New caption key `slide.reverse`, translated through
+  `doc:i18n:todo`/`merge` with the other step's texts.
+- **A Klive bug found and fixed on the way**: the emulator window kept showing the present while
+  the machine was in the past. A move into the past replays frames with their side effects
+  suppressed and leaves the machine paused, so neither the frame event nor the state change that
+  redraw the picture fired; the picture, the pause label's PC and the status bar's PC all stayed at
+  the present, against what the reverse-debugging guide says. `EmulatorPanel.tsx` now redraws and
+  relabels on every history move (`reverseDebug.behindSeconds`, `historyPosition`), and
+  `EmuStatusBar.tsx` re-renders on them. Two tests (`test/controls/EmulatorPanelRefactor.test.tsx`,
+  `test/controls/EmuStatusBar.test.tsx`) fail without the fix. This is user-visible: its commit
+  carries its own `fix` changeset.
+- **Layout**: section headings 2rem; the last feature row has no bottom padding of its own, which
+  removed the 138 px gap before the ending (gaps now 66 to 110 px).
+- **sloplint** on `/` and `/de/`: 44c answered and 77 waived in `docs/design.md`; 58, 59 and 78 are
+  the confirmed waivers; nothing else is left on the landing page. `npm run doc:check` passes (the
+  asset golden records the two new files).
 
 ### 4. Documentation wording check (our own script, H4)
 

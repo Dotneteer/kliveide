@@ -139,6 +139,10 @@
   "@hero.carousel.play": {
     "context": "Accessible label and tooltip of the same button while the carousel is paused: it starts changing pictures again."
   },
+  "slide.reverse": "Step back through your program: the screen and memory go back too",
+  "@slide.reverse": {
+    "context": "Caption under the carousel's first item, a short video of reverse debugging: the IDE steps back through a ZX Spectrum 48K program while the emulator's screen returns to how it was. One line; keep it short."
+  },
   "slide.debug": "Debug Z80 programs at the source level, register by register",
   "@slide.debug": {
     "context": "Caption under a carousel picture of the IDE paused at a breakpoint. One line; keep it short. 'Z80' is never translated."

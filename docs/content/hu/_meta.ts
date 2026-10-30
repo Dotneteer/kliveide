@@ -4,5 +4,5 @@ export default {
   "guides": { type: "page", title: "Útmutatók (angol)", href: "/en/guides/" },
   "reference": { type: "page", title: "Referencia (angol)", href: "/en/reference/" },
   "under-the-hood": { type: "page", title: "A motorháztető alatt (angol)", href: "/en/under-the-hood/" },
-  "library": { type: "page", title: "Library (angol)", href: "/en/library/" },
+  "library": { type: "page", title: "Könyvtár (angol)", href: "/en/library/" },
 };

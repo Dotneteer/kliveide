@@ -77,10 +77,22 @@ export const SHOWN_FEATURES = 5;
  * The hero carousel's pictures, in order. Localized ones come from the Get Started screenshots;
  * the others from `scripts/doc-shots/recipes/landing.cjs` (ScrollNutter.nex on the Next). `caption`
  * is a key of docs/i18n/landing/<lang>.json.
+ *
+ * A slide with a `video` (a path under public/images) plays it, with `image` as its poster: the
+ * reverse-debugging loop comes from `scripts/doc-shots/recipes/landing-reverse.cjs`, recorded with
+ * Klive's own IDE + Emulator recording. It is the first slide, the page's signature
+ * (.plans/HALLMARK_SITE_POLISH_PLAN.md, H9).
  */
-export type HeroSlide = { image: Feature["image"]; caption: string; width: number; height: number };
+export type HeroSlide = { image: Feature["image"]; video?: string; caption: string; width: number; height: number };
 
 export const HERO_SLIDES: HeroSlide[] = [
+  {
+    image: { path: "landing/reverse-debugging.webp" },
+    video: "landing/reverse-debugging.mp4",
+    caption: "slide.reverse",
+    width: 1440,
+    height: 820
+  },
   { image: { localized: "get-started/debug-paused.webp" }, caption: "slide.debug", width: 1800, height: 1153 },
   { image: { path: "landing/emulator-scrollnutter.webp" }, caption: "slide.emulator", width: 1440, height: 1184 },
   { image: { path: "landing/disassembly-scrollnutter.webp" }, caption: "slide.disassembly", width: 2200, height: 1375 },

@@ -1148,6 +1148,8 @@
 /images/landing/copper-list.webp
 /images/landing/disassembly-scrollnutter.webp
 /images/landing/emulator-scrollnutter.webp
+/images/landing/reverse-debugging.mp4
+/images/landing/reverse-debugging.webp
 /images/landing/sprite-editor.webp
 /images/landing/sprite-inspector.webp
 /images/pt-BR/get-started/basic-debug.webp

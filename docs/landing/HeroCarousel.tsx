@@ -16,11 +16,15 @@
  * - Each picture is a link to its file, which ImageViewer opens full size over the page (R5 of
  *   .plans/DOCS_SITE_REDESIGN_PLAN.md). While the viewer is open the carousel stands still; it
  *   tells us through the VIEWER_EVENT it sends on the document.
+ * - A slide with a `video` shows it muted, with the picture as its poster. Script starts it when
+ *   the slide shows, and the carousel moves on when it ends rather than after five seconds; the
+ *   pause button pauses it too. With reduced motion, or without script, it stays on its poster and
+ *   counts as a picture. It is not a link: the viewer shows pictures only.
  */
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { VIEWER_EVENT } from "./ImageViewer";
 
-export type Slide = { src: string; alt: string; caption: string; width: number; height: number };
+export type Slide = { src: string; video?: string; alt: string; caption: string; width: number; height: number };
 
 type Props = Readonly<{
   slides: Slide[];
@@ -50,6 +54,9 @@ export default function HeroCarousel({ slides, label, previousLabel, nextLabel, 
   const [viewing, setViewing] = useState(false);
   // --- Bumped by every change of picture, so the timer always restarts from a full interval
   const [tick, setTick] = useState(0);
+  // --- The visitor asked for reduced motion: videos stay on their posters
+  const [stillOnly, setStillOnly] = useState(true);
+  const videos = useRef(new Map<number, HTMLVideoElement>());
 
   const go = useCallback(
     (target: number, dir?: Move["dir"]) => {
@@ -77,10 +84,29 @@ export default function HeroCarousel({ slides, label, previousLabel, nextLabel, 
   }, []);
 
   useEffect(() => {
-    if (paused || viewing || slides.length < 2) return;
+    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setStillOnly(query.matches);
+    update();
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
+
+  // --- The current slide's video plays from the start when it shows; every other one is stopped
+  const playing = !!slides[index].video && !stillOnly;
+  useEffect(() => {
+    for (const [i, video] of videos.current) {
+      if (i === index && playing && !paused && !viewing) void video.play().catch(() => undefined);
+      else video.pause();
+      if (i !== index) video.currentTime = 0;
+    }
+  }, [index, playing, paused, viewing]);
+
+  useEffect(() => {
+    // --- A playing video moves the carousel on when it ends (onEnded), not the timer
+    if (paused || viewing || playing || slides.length < 2) return;
     const id = setTimeout(() => go(index + 1, "forward"), INTERVAL_MS);
     return () => clearTimeout(id);
-  }, [index, tick, paused, viewing, go, slides.length]);
+  }, [index, tick, paused, viewing, playing, go, slides.length]);
 
   const onKey = (e: React.KeyboardEvent) => {
     if (e.key === "ArrowRight") go(index + 1, "forward");
@@ -100,23 +126,42 @@ export default function HeroCarousel({ slides, label, previousLabel, nextLabel, 
             aria-label={slideLabel.replace("{n}", String(i + 1)).replace("{count}", String(slides.length))}
             aria-hidden={i !== index}
           >
-            <a
-              className="lp-slide-link"
-              href={slide.src}
-              data-viewer="hero"
-              data-caption={slide.caption}
-              aria-label={openLabel.replace("{title}", slide.caption)}
-              tabIndex={i === index ? undefined : -1}
-            >
-              <img
-                src={loaded.has(i) ? slide.src : undefined}
-                data-src={slide.src}
-                alt={slide.alt}
+            {slide.video ? (
+              <video
+                ref={(el) => {
+                  if (el) videos.current.set(i, el);
+                  else videos.current.delete(i);
+                }}
+                poster={slide.src}
                 width={slide.width}
                 height={slide.height}
-                decoding="async"
-              />
-            </a>
+                muted
+                playsInline
+                preload={i === 0 ? "auto" : "none"}
+                aria-label={slide.alt}
+                onEnded={() => !paused && !viewing && go(index + 1, "forward")}
+              >
+                <source src={slide.video} type="video/mp4" />
+              </video>
+            ) : (
+              <a
+                className="lp-slide-link"
+                href={slide.src}
+                data-viewer="hero"
+                data-caption={slide.caption}
+                aria-label={openLabel.replace("{title}", slide.caption)}
+                tabIndex={i === index ? undefined : -1}
+              >
+                <img
+                  src={loaded.has(i) ? slide.src : undefined}
+                  data-src={slide.src}
+                  alt={slide.alt}
+                  width={slide.width}
+                  height={slide.height}
+                  decoding="async"
+                />
+              </a>
+            )}
           </figure>
         ))}
       </div>
