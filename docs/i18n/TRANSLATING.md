@@ -44,6 +44,9 @@ the reason and stays in the next todo. `merge` also writes the language's naviga
 
 - Keep every `{placeholder}` exactly as it is. `merge` rejects a text whose placeholders differ.
 - Read the context: it says where the text appears and how long it may be.
+- No em or en dashes (— –) in the landing page's texts: join the parts with a colon, a comma or
+  a full stop, or make two sentences. A dash between clauses is one of the habits that make a page
+  read as machine-written (`docs/design.md`, Waivers).
 
 ## Pages
 

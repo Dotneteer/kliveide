@@ -21,7 +21,7 @@ rebuilds). Rule numbers below (for example *63*) are Hallmark's.
 | H5 | **No Hallmark stamp in shipped CSS** (its rule 20). The stamp and the run log stay in the ignored `.hallmark/`. |
 | H6 | **The Library is out of scope.** The imported manuals (`content/en/library/`) keep their original wording, "powerful" and all. The book is out of scope for wording too (it is unlinked, decision D6). |
 | H7 | **Translations follow the usual workflow.** Every changed landing text is a changed key in `docs/i18n/landing/en.json` with its translator context; other languages through `npm run doc:i18n:todo` / `doc:i18n:merge`, never by hand. |
-| H8 | **Open, for the author to decide before step 2.** Where Hallmark's rules clash with the site's own choices: (a) the feature labels with their colour square, an eyebrow by rule 54, kept by the redesign's R3; (b) rule 58's "about 80 words per screen" against the data-sheet tables; (c) rule 19's ban on em and en dashes; (d) the sticky blurred header, the "AI nav" of rule 42. Each is either changed or recorded as a waiver with its reason in `docs/design.md`. |
+| H8 | **Decided by the author before step 2**, where Hallmark's rules clashed with the site's own choices: (a) the feature labels (an eyebrow, rule 54) **go**; the Spectrum square moves onto the feature heading. (b) Rule 58's "about 80 words per screen" is **waived** for the data sheet and its At a glance hero, but the feature texts are trimmed. (c) Em and en dashes (rule 19) are **out of the landing texts**; the docs prose check reports them (not the book or the Library). (d) The header stays **sticky but solid**, no blur or transparency (rule 42). The waivers and their reasons are in `docs/design.md`. |
 | H9 | **Open: the signature (step 3).** The one thing a visitor should remember, shown on the first screen. Candidates: the accuracy story (Klive's screen beside photos of the real machine, timing tests passed) or reverse debugging (stepping back through a bug). |
 
 ## Steps
@@ -145,6 +145,41 @@ Every changed text keeps or replaces its key with context (H7); removed keys are
 `/hallmark redesign docs/landing` with the word *polish* in the prompt (its mode for the tells
 only) is optional, as a second opinion only; its output is read, not merged, and `sloplint --kept`
 must pass on anything taken from it.
+
+#### As built (step 2)
+
+- **Texts** (`docs/i18n/landing/en.json`, each with its translator context updated):
+  - headline "Develop for the ZX Spectrum and {next}" (6 words; was "The complete ZX Spectrum and
+    {next} development studio");
+  - "Get started" button: "Start the tutorial"; "What makes Klive different": "What Klive does";
+  - "One app. Zero glue.": "Editor, emulator and debugger together"; "Open a .nex. Understand it.":
+    "Take apart any .nex file";
+  - the five shown feature texts cut from 31 to 41 words to 25 to 31, keeping every fact (what was
+    cut is in the bullet points or the linked page);
+  - `machines.spectrum` and `machines.clones` use commas instead of middle dots, and so do the
+    hard-coded rows in `LandingPage.tsx` (Runs on, Works with, ZX80/ZX81, TVC).
+  - The English landing texts had no em or en dashes; `docs/i18n/TRANSLATING.md` now tells
+    translators not to use them (German and Hungarian have four each, fixed when re-translated).
+- **Removed keys**: `feature.more` and the eight `feature.*.tag`, from `en.json`, every translation
+  and every `docs/i18n/sources/*.json` (deleting obsolete keys, not translating).
+- **Feature rows**: no label; the heading carries the Spectrum square and is the link to the
+  feature's docs page, so "Read more" is gone.
+- **The ending**: "Ready to write your first program?" became "Install Klive": the Download button
+  again (it picks the visitor's OS) with Start the tutorial, so the page ends on its job (rule 85).
+- **Header**: solid `--site-bg`, no `backdrop-filter`. **Phone menu** (the step 1 finding): below
+  900 px a `<details>` menu (`.lp-menu`, the existing `nav.menu` text) holds the five links and
+  GitHub and takes the GitHub icon's place, so the row is no wider; it works without script.
+- **One section gap**, `--lp-section-gap` (3rem), for the hero's foot, the carousel, the sections
+  and the ending.
+- **Waivers beyond H8**, recorded in `docs/design.md` for the author to confirm: rule 59 (120 px
+  between sections; the sheet divides with 2px rules) and rule 78 (52 px section headings; the
+  sheet's are table labels at 1.5rem).
+- **Checked**: every language fits every width from 320 px; the phone menu opens and lists its six
+  links in German at 375 px with no sideways scroll; the scrolled header is sticky, solid and
+  unblurred. `sloplint` on `/` and `/de/`: the F26 stub is gone; left are 58 and 59/78 (waived),
+  44c and 77 (step 3), and 49b for feature headings that wrap on a phone, dismissed (headings are
+  sentences). `npm run doc:check` passes; each translation now has 15 outdated landing texts
+  (14 from this step), for `npm run doc:i18n:todo`.
 
 ### 3. The signature (H9)
 

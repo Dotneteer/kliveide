@@ -3045,9 +3045,13 @@ drift. Change a neutral or the default accent in the app, and the site changes w
   down the generic landing-page kit: Inter-like fonts, an 800-weight headline with negative letter
   spacing, one headline word in the accent, a mono version pill, uppercase letter-spaced mono
   eyebrows, grey body text, arrow links, pill tags, equal "bento" tiles, a numbered step strip,
-  zigzag features and a centred closing call to action. Do not bring any of them back.
+  zigzag features and a centred closing call to action. Do not bring any of them back. Nor the
+  ones Hallmark's audit found after that (`.plans/HALLMARK_SITE_POLISH_PLAN.md`, `docs/design.md`):
+  a label above a heading, middle-dot lists (`A · B · C`), "Not X. Y." headlines, stock lines
+  ("What makes X different", "Ready to...?", "Read more", "Get started" as a button), em and en
+  dashes in landing texts, and a see-through blurred header.
 - **The Spectrum colours stay small, on the landing page only:** a 6px four-colour rule at the top
-  and a square before each feature's label. Never a band, a block or a colour behind running text.
+  and a square before each feature's heading. Never a band, a block or a colour behind running text.
 - **A mark beside a label lines up with its capitals, not with the line box:** it sits on the
   baseline (`align-items: baseline`) and is `1cap` tall. Overpass puts its capitals above the
   middle of the line, so a mark centred in the line box (`align-items: center`) sits visibly low.
@@ -3063,10 +3067,14 @@ drift. Change a neutral or the default accent in the app, and the site changes w
   links are underlined, without arrows.
 - **The landing page is a data sheet:** headline beside an "At a glance" table, the carousel full
   width, then tables (machines, also included, the four steps) and feature rows that are always
-  text left, picture right. Sections are divided by a 2px rule in the text colour.
+  text left, picture right. Sections are divided by a 2px rule in the text colour, with one gap
+  (`--lp-section-gap`). A feature's heading is its link to the docs (no "Read more"), and its text
+  stays near 30 words. The page ends on its job: the Download button again, with the tutorial.
 - **The landing header is one row that never scrolls the page sideways:** its links mirror the docs'
   navbar tabs and hide below the width the longest language needs (`.lp-nav` in
-  `docs/landing/landing.css`, 900px for German's 855px with five links). **The tools row (language,
+  `docs/landing/landing.css`, 900px for German's 855px with five links). Below that width the links
+  and GitHub move into a menu (`.lp-menu`, a native `<details>`, so it works without script) that
+  takes the GitHub icon's place. The header is sticky and solid, never see-through. **The tools row (language,
   theme, GitHub) must fit 320px too**: below 420px the language button drops its name and keeps the
   globe (`.lp-lang-name`), because with the name Portuguese needs 385px. Adding a link, a tool or a
   language means measuring every language again, at each width just above each cut-off, in the

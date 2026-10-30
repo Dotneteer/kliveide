@@ -47,9 +47,9 @@
   "@nav.menu": {
     "context": "Accessible label of the header's menu button on phones."
   },
-  "hero.title": "The complete ZX Spectrum and {next} development studio",
+  "hero.title": "Develop for the ZX Spectrum and {next}",
   "@hero.title": {
-    "context": "The landing page headline. {next} is the word 'Next' (as in ZX Spectrum Next). 'ZX Spectrum' is never translated."
+    "context": "The landing page headline: what Klive is for, in at most about seven words. {next} is the word 'Next' (as in ZX Spectrum Next). 'ZX Spectrum' is never translated."
   },
   "hero.next": "Next",
   "@hero.next": {
@@ -111,9 +111,9 @@
   "@hero.otherPlatforms": {
     "context": "Link under the Download button to the page with every install kit."
   },
-  "hero.getStarted": "Get started",
+  "hero.getStarted": "Start the tutorial",
   "@hero.getStarted": {
-    "context": "The secondary button, to the tutorial."
+    "context": "The secondary button beside Download, and the button in the last section: it opens the Get Started tutorial. Say what the button does, not a slogan."
   },
   "hero.carousel.label": "Klive in action",
   "@hero.carousel.label": {
@@ -171,13 +171,13 @@
   "@machines.title": {
     "context": "Accessible label of the strip listing the emulated machines."
   },
-  "machines.spectrum": "48K · 128K · +2A/+3 · +2E/+3E",
+  "machines.spectrum": "48K, 128K, +2A/+3, +2E/+3E",
   "@machines.spectrum": {
-    "context": "ZX Spectrum models. Model names: never translated."
+    "context": "ZX Spectrum models, separated by commas. Model names: never translated."
   },
-  "machines.clones": "Pentagon · Scorpion · Timex",
+  "machines.clones": "Pentagon, Scorpion, Timex",
   "@machines.clones": {
-    "context": "Names of ZX Spectrum clones. Never translated."
+    "context": "Names of ZX Spectrum clones, separated by commas. Never translated."
   },
   "machines.clonesLabel": "Clones",
   "@machines.clonesLabel": {
@@ -239,19 +239,15 @@
   "@loop.debug.text": {
     "context": "One-line description of the 'Debug' step."
   },
-  "features.title": "What makes Klive different",
+  "features.title": "What Klive does",
   "@features.title": {
     "context": "Heading above the feature rows."
   },
-  "feature.allInOne.tag": "All in one",
-  "@feature.allInOne.tag": {
-    "context": "Short label above the feature heading."
-  },
-  "feature.allInOne.title": "One app. Zero glue.",
+  "feature.allInOne.title": "Editor, emulator and debugger together",
   "@feature.allInOne.title": {
-    "context": "Feature heading: Klive needs no other tools to be installed and configured. Keep it short and punchy."
+    "context": "Feature heading: Klive needs no other tools to be installed and configured. A plain statement, not a slogan."
   },
-  "feature.allInOne.text": "Start from a template for the 48K, 128K, +3E, Next or Z88 and press Run. Elsewhere this takes an assembler, an editor, an emulator and a debugger bridge, configured by hand.",
+  "feature.allInOne.text": "Pick a template for the 48K, 128K, +3E, Next or Z88 and press Run, with no assembler, emulator or debugger bridge to configure by hand.",
   "@feature.allInOne.text": {
     "context": "The feature's paragraph. Machine names are never translated."
   },
@@ -267,15 +263,11 @@
   "@feature.allInOne.point3": {
     "context": "Bullet point. Tool names are never translated."
   },
-  "feature.basicDebug.tag": "ZX BASIC",
-  "@feature.basicDebug.tag": {
-    "context": "Short label above the feature heading. 'ZX BASIC' is never translated."
-  },
   "feature.basicDebug.title": "Step through your BASIC, line by line",
   "@feature.basicDebug.title": {
     "context": "Feature heading: source-level debugging of compiled BASIC programs."
   },
-  "feature.basicDebug.text": "Klive's built-in ZX BASIC compiler, compatible with Boriel ZX BASIC, debugs at the source level: breakpoints on statements, Step Over and Step Into, a real call stack, live variables, and stops on runtime errors.",
+  "feature.basicDebug.text": "The built-in ZX BASIC compiler debugs at the source level: breakpoints on statements, Step Over and Step Into, a real call stack, live variables and stops on runtime errors.",
   "@feature.basicDebug.text": {
     "context": "The feature's paragraph. 'Step Over' and 'Step Into' are command names: use the translation the Klive app uses for them."
   },
@@ -291,15 +283,11 @@
   "@feature.basicDebug.point3": {
     "context": "Bullet point."
   },
-  "feature.timeTravel.tag": "Reverse debugging",
-  "@feature.timeTravel.tag": {
-    "context": "Short label above the feature heading."
-  },
   "feature.timeTravel.title": "Go back in time",
   "@feature.timeTravel.title": {
     "context": "Feature heading: the debugger can run the machine backwards."
   },
-  "feature.timeTravel.text": "Step back through every instruction with memory, devices and the screen restored. Find the last write to a byte, continue from the past, and save a whole session to open elsewhere.",
+  "feature.timeTravel.text": "Step back through every instruction, with memory, devices and the screen restored. Find the last write to a byte, or continue from any point in the past.",
   "@feature.timeTravel.text": {
     "context": "The feature's paragraph."
   },
@@ -315,15 +303,11 @@
   "@feature.timeTravel.point3": {
     "context": "Bullet point."
   },
-  "feature.accuracy.tag": "Accuracy",
-  "@feature.accuracy.tag": {
-    "context": "Short label above the feature heading."
-  },
   "feature.accuracy.title": "Tested against real hardware",
   "@feature.accuracy.title": {
     "context": "Feature heading: the emulator's timing is checked against results measured on real ZX Spectrums."
   },
-  "feature.accuracy.text": "Klive's 48K and 128K run the ZX Spectrum community's timing test programs, whose expected results come from real machines. See each result on Klive's own screen, beside photos of the real thing.",
+  "feature.accuracy.text": "Klive's 48K and 128K run the community's timing test programs, whose expected results come from real machines, and show each result beside a photo of the real thing.",
   "@feature.accuracy.text": {
     "context": "The feature's paragraph. 'Klive', '48K' and '128K' are never translated."
   },
@@ -339,15 +323,11 @@
   "@feature.accuracy.point3": {
     "context": "Bullet point. 'Snow' is the ZX Spectrum's screen glitch of that name; 'ULA' is never translated."
   },
-  "feature.speaksNext.tag": "ZX Spectrum Next",
-  "@feature.speaksNext.tag": {
-    "context": "Short label above the feature heading. Product name: never translated."
-  },
   "feature.speaksNext.title": "Speaks Next natively",
   "@feature.speaksNext.title": {
     "context": "Feature heading: Klive understands the ZX Spectrum Next's hardware."
   },
-  "feature.speaksNext.text": "Break when a program writes a Next register, with value and mask filters and old-to-new values. Set breakpoints on banks rather than addresses, program the DMA with a readable syntax, and build .nex files with palettes, Copper lists and loading bars.",
+  "feature.speaksNext.text": "Break when a program writes a Next register, filtered by value and mask. Set breakpoints on banks rather than addresses, and build .nex files with palettes, Copper lists and loading bars.",
   "@feature.speaksNext.text": {
     "context": "The feature's paragraph. 'DMA', '.nex' and 'Copper' are never translated."
   },
@@ -362,10 +342,6 @@
   "feature.speaksNext.point3": "NextZXOS boots from an emulated SD card",
   "@feature.speaksNext.point3": {
     "context": "Bullet point. 'NextZXOS' is never translated."
-  },
-  "feature.testing.tag": "Testing",
-  "@feature.testing.tag": {
-    "context": "Short label above the feature heading."
   },
   "feature.testing.title": "Test it like modern code",
   "@feature.testing.title": {
@@ -387,10 +363,6 @@
   "@feature.testing.point3": {
     "context": "Bullet point."
   },
-  "feature.disassembly.tag": "Disassembly",
-  "@feature.disassembly.tag": {
-    "context": "Short label above the feature heading."
-  },
   "feature.disassembly.title": "Disassembly that explains itself",
   "@feature.disassembly.title": {
     "context": "Feature heading: the disassembly view shows what each branch will do."
@@ -411,11 +383,7 @@
   "@feature.disassembly.point3": {
     "context": "Bullet point. 'ULA' is never translated."
   },
-  "feature.nex.tag": "Reverse engineering",
-  "@feature.nex.tag": {
-    "context": "Short label above the feature heading."
-  },
-  "feature.nex.title": "Open a .nex. Understand it.",
+  "feature.nex.title": "Take apart any .nex file",
   "@feature.nex.title": {
     "context": "Feature heading. '.nex' is a file extension: never translated."
   },
@@ -434,10 +402,6 @@
   "feature.nex.point3": "Copper lists and DMA programs decoded",
   "@feature.nex.point3": {
     "context": "Bullet point. 'Copper' and 'DMA' are never translated."
-  },
-  "feature.more": "Read more",
-  "@feature.more": {
-    "context": "Link at the end of a feature section, to its documentation."
   },
   "strip.recording": "Record the emulator and the IDE as video",
   "@strip.recording": {
@@ -459,13 +423,13 @@
   "@also.editors": {
     "context": "A row of the 'Also included' table."
   },
-  "cta.title": "Ready to write your first program?",
+  "cta.title": "Install Klive",
   "@cta.title": {
-    "context": "Heading of the closing call to action."
+    "context": "Heading of the last section before the footer, which offers the download again and the tutorial."
   },
-  "cta.text": "The Get Started tutorial takes you from installing Klive to debugging Z80 assembly and BASIC.",
+  "cta.text": "Free for macOS, Windows and Linux. The tutorial then takes you from a first program to debugging Z80 assembly and BASIC.",
   "@cta.text": {
-    "context": "Paragraph of the closing call to action."
+    "context": "Paragraph of the last section, under 'Install Klive'. 'Z80' and 'BASIC' are never translated."
   },
   "footer.license": "Klive IDE is free and open source, under the MIT license.",
   "@footer.license": {

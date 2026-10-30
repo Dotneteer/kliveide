@@ -14,7 +14,7 @@ export type Feature = {
   id: string;
   since: string;
   image: { localized: string } | { path: string };
-  /** The documentation page "Read more" opens: area and the rest of the path */
+  /** The documentation page the feature heading links to: area and the rest of the path */
   more: { area: string; rest: string };
 };
 

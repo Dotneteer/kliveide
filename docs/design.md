@@ -13,7 +13,7 @@ App's Palette"); where the two differ, that file wins and this one is corrected.
   included, write/build/run/debug), feature rows always text left and picture right.
 - Theme: custom, the app's own palette (vibe: "the IDE's own colours, a data sheet").
 - Posture: restrained. The one accent is Sinclair Blue; the four Spectrum colours appear only as
-  the 6px rule at the top of the landing page and the square before each feature label, never as a
+  the 6px rule at the top of the landing page and the square before each feature heading, never as a
   band, a block or behind running text.
 
 ## Tokens
@@ -52,12 +52,20 @@ dark one the way the app derives it; never tune one by hand. The roles:
   (background, filter, opacity), 0.15s; under reduced motion they end at once.
 
 ## Waivers
-Hallmark rules this site breaks on purpose. Each needs a reason; none is recorded until the author
-decides H8 in the plan:
-- (pending) 54, the feature labels with their Spectrum square.
-- (pending) 58, about 80 words per screen, against the data-sheet tables.
-- (pending) 19, em and en dashes.
-- (pending) 42, the sticky header with a blurred background.
+Hallmark rules this site breaks on purpose, each with its reason (the author's decisions H8 in
+`.plans/HALLMARK_SITE_POLISH_PLAN.md`):
+- **58, about 80 words per screen, and the hero's "headline, one sentence, actions".** Waived: the
+  landing page is a data sheet, and its "At a glance" table sits beside the headline on purpose.
+  The feature texts are kept to about 30 words each so no screen runs far past the limit.
+- **59, 120px between sections.** Waived: the sheet's sections are divided by 2px rules, not by
+  space, with one gap (`--lp-section-gap`, 3rem) everywhere.
+- **78, section headings about 52px.** Waived: a data sheet's section headings are labels for the
+  table under them, 1.5rem.
+- **19, em and en dashes: not waived on the landing page** (none in any landing text, translations
+  included); in the documentation the prose check reports them, outside the book and the Library.
+
+Kept from Hallmark, not waived: no label above a heading (54; the Spectrum square sits on the
+feature heading itself), and a solid, not see-through, header (42; it stays sticky).
 
 ## Exports
 None. The tokens are plain CSS custom properties in `docs/app/tokens.css`.
