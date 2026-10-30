@@ -27,7 +27,19 @@ import { fillCoreBytes, writeCoreBytes } from "@emu/machines/reverse/coreMemoryW
 import { loadEpWasmV2 } from "./wasm/EpWasmV2Loader";
 import { EpWasmHost } from "./EpWasmHost";
 import { EP_ROM_SETS } from "./EpRoms";
-import { EP_PHYS_UNMAPPED, EP_PIXEL_ASPECT, EP_ROM_CART, EP_SEGMENT_SIZE } from "./epMachineInfo";
+import {
+  EP_PHYS_UNMAPPED,
+  EP_PIXEL_ASPECT,
+  EP_ROM_CART,
+  EP_SCREEN_HEIGHT,
+  EP_SCREEN_WIDTH,
+  EP_SEGMENT_SIZE,
+  EP_TACTS_PER_LINE,
+  EP_TACTS_PER_SLOT,
+  EP_TV_FIRST_LINE,
+  EP_TV_FIRST_SLOT
+} from "./epMachineInfo";
+import { beamAt, drawnUpTo, type BeamPosition, type BeamTiming } from "@common/utils/beamGeometry";
 import type { AudioSample } from "@emu/abstractions/IAudioDevice";
 import { AUDIO_SAMPLE_RATE } from "../machine-props";
 
@@ -391,6 +403,7 @@ export class EpWasmV2Machine extends EpWasmHost implements IExecutionHistorySour
     fillCoreBytes(runtime, runtime.fileIoRom, 0xff);
     fillCoreBytes(runtime, runtime.exdosRom, 0xff);
     runtime.exports.epConfigure(hw.is128 ? 1 : 0, hw.cartridge ? EP_ROM_CART : 0);
+    runtime.exports.epNickSetLinearPalette(hw.linearPalette ? 1 : 0);
     const words = runtime.exports.epGetScreenWidth() * runtime.exports.epGetScreenHeight();
     this.screenPixels = runtime.pixelBuffer.subarray(0, words);
     this.screenPixelBytes = runtime.pixelBufferBytes.subarray(0, words * 4);
@@ -693,6 +706,41 @@ export class EpWasmV2Machine extends EpWasmHost implements IExecutionHistorySour
 
   /** NICK's pixels (14.2375 MHz) are narrower than they are tall */
   getAspectRatio = (): [number, number] => [EP_PIXEL_ASPECT, 1];
+
+  /**
+   * Whether the television has lost the picture (no vertical sync for two frames). Only once the
+   * machine has run a frame: a machine that has not run has no last frame to judge.
+   */
+  isVideoSignalLost(): boolean {
+    const exports = this.wasmV2Runtime?.exports;
+    if (!exports || exports.epGetFrames() === 0) return false;
+    return exports.epIsVideoSignalLost() !== 0;
+  }
+
+  /**
+   * The beam position overlay. The frame starts where vertical sync starts, at a slot the LPT chooses
+   * (EXOS's: slot 6); buffer pixel (0, 0) is slot 10 of the 25th line after it. A slot is 16 pixels.
+   * The paper is EXOS's text screen: slots 12-51 (its margins, one slot late), 252 lines from the
+   * 18th row. A program with another LPT moves the picture, and the paper outline no longer matches it.
+   */
+  getBeamPosition(): BeamPosition {
+    const w = this.requireWasmV2Runtime().exports;
+    const timing: BeamTiming = {
+      unit: "T",
+      tactsPerLine: EP_TACTS_PER_LINE,
+      linesPerFrame: 312,
+      firstVisibleTact: EP_TV_FIRST_LINE * EP_TACTS_PER_LINE + (EP_TV_FIRST_SLOT - w.epNickGetSyncSlot()) * EP_TACTS_PER_SLOT,
+      tactsPerBufferPixel: EP_TACTS_PER_SLOT / 16,
+      bufferWidth: EP_SCREEN_WIDTH,
+      bufferHeight: EP_SCREEN_HEIGHT,
+      paperLeft: 32,
+      paperTop: 18,
+      paperWidth: 640,
+      paperHeight: 252
+    };
+    const frameTact = w.epGetFrameTacts();
+    return beamAt(timing, frameTact, drawnUpTo(timing, frameTact));
+  }
 
   /**
    * The picture. The core draws straight into it as the beam goes, so between frames it holds the

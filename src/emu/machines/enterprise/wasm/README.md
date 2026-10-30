@@ -11,9 +11,10 @@ The hardware facts come from the research pack `_input/enterprise128/` (`NICK_VI
 `NICK_VIDEO_BACKGROUND.md`, `DAVE_MEMORY_IO.md`, `DAVE_AUDIO_BACKGROUND.md`). The code is Klive's own;
 no emulator's code was ported (plan D1).
 
-**State (Phases 1-2, 2026-10-30):** EXOS 2.1 boots to IS-BASIC 2.1. The memory map, DAVE's interrupts
-and timers, NICK's LPT walker, VINT, vertical sync, DAVE's wait states and NICK's clock stretch are in.
-No pixels yet (Phase 3), the sound is silent (Phase 4), and the keyboard has no host typer (Phase 5).
+**State (Phases 1-3, 2026-10-30):** EXOS 2.1 boots to IS-BASIC 2.1 and the picture shows it. The memory
+map, DAVE's interrupts and timers, NICK's LPT walker and pixels, VINT, vertical sync, DAVE's wait states
+and NICK's clock stretch are in. The sound is silent (Phase 4) and the keyboard has no host typer
+(Phase 5).
 
 ## Layout
 
@@ -77,7 +78,7 @@ Z80's window.
 **Not yet compared with ep128emu** (an oracle run, plan §13): its tuned latencies (≈ 356-363 ns) may
 place the window differently, which would change single-access costs but not the lock to the grid.
 
-## NICK (Phase 1: no pixels)
+## NICK
 
 The LPB is fetched on every line; the first line of a block loads the line counter and LD2, and LD1
 loads then and on every line while VRES is clear. The margins are compared before a slot's own fetch,
@@ -87,6 +88,26 @@ last byte NICK fetched.
 
 NICK's port registers are random at power-on on a real machine; the core seeds them
 (`epNickSetSeed`), and EXOS boots from any seed (its forced reload).
+
+**The picture** (plan §7.2-§7.4) is drawn as each slot runs, 16 pixels a slot:
+
+- one slot of pipeline: slot n shows what slot n - 1 fetched, and whether it was inside the margins;
+  slots that fetch nothing inside the margins (54, 55) show the last bytes again;
+- slots 56 and 0-9 are blanked (colour 0), and so is a whole VSYNC line;
+- PIXEL shows two bytes a slot, LPIXEL and the character modes one byte across it, ATTRIBUTE one
+  bitmap byte in its attribute's two colours; 2/4/16/256 colours with the guide's bit order;
+- palette 0-7 from the LPB, 8-15 from FIXBIAS; the ALT options OR their offsets onto the index;
+- **ALTIND1 is RM bit 6** (plan Q2, settled): EXOS writes RM = 73h and stores "IS-BASIC" and the
+  cursor (8Eh) with code bit 7 set, while every ordinary letter has bit 6 set. With bit 6 as ALTIND0
+  every letter would turn blue and the digits stay green. So the Programmer's Guide (and ep128emu) are
+  right, and both editions of "The Nick Chip" have the two bits the other way round;
+- colour levels from the board's resistor DAC (`epNickRgb`), or linear (`epNickSetLinearPalette`,
+  `MC_EP_PALETTE`).
+
+The TV window is slots 10-55 (736 pixels) and 288 lines from the 25th line after vertical sync starts:
+EXOS's 252-line screen has 18 lines of border above and below, and its 40 columns (margins 11-51,
+shown one slot late) sit 32 pixels from the left. No vertical sync for two frames loses the picture
+(`epIsVideoSignalLost`). `epNickGetSyncSlot` tells interlaced fields apart (each is shown as it comes).
 
 ## DAVE (plan §8.1)
 
@@ -106,6 +127,10 @@ screen's text, DAVE. `test/ep-hw/`:
 - `dave.test.ts`: the timers, tone-generator interrupts, sync hold, B4h, IM 1, BFh bit 1, VINT;
 - `nick-lpt.test.ts`: the LPB read every line, LD1/LD2, margins that run on, the floating bus, port
   83h, the frame;
-- `timing.test.ts`: DAVE's wait modes and M1s, NICK's stretch and the lock to the slot grid.
+- `timing.test.ts`: DAVE's wait modes and M1s, NICK's stretch and the lock to the slot grid;
+- `nick-picture.test.ts`: every mode and colour mode on a worked byte, FIXBIAS, the ALT options, the
+  pipeline, blanking, a mid-line border write, the colour levels, the beam, signal loss, the IS 1984
+  demo's frame, and EXOS's IS-BASIC screen (a picture hash checked by eye; `EP_SHOTS_PNG=<dir>` writes
+  the PNGs).
 
 Most run on a bare machine (`bare.ts`): the CPU in segment F8h, the LPT written by the test.

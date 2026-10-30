@@ -197,6 +197,7 @@ static inline void epClockAdvance(uint32_t halves) {
 /* An LPT that never starts vertical sync (or starts it too rarely): two nominal frames end one */
 static inline void epCheckFrameCap(void) {
   if (!epFrameCompleted && (int32_t)(epHalfClock - epFrameStartHalf) >= (int32_t)EP_MAX_FRAME_HALVES) {
+    epNickNoSyncFrames++;
     epFrameEnds(epHalfClock);
     epFrameStartHalf = epHalfClock;
     epFrames++;

@@ -1,6 +1,6 @@
 import type { MachineConfigSet, MachineModel } from "@common/machines/info-types";
 
-import { MC_EP_CARTRIDGE, MC_EP_MODEL } from "@common/machines/constants";
+import { MC_EP_CARTRIDGE, MC_EP_MODEL, MC_EP_PALETTE } from "@common/machines/constants";
 import type { EpRomSetId } from "./EpRoms";
 
 /**
@@ -37,6 +37,14 @@ export const EP_PHYS_RAM = 0x18000;
 export const EP_PHYS_VRAM = 0x28000;
 export const EP_PHYS_UNMAPPED = 0x38000;
 
+/** NICK's line: 912 clocks of 14 237 536.27 Hz, in CPU T-states (256.22) */
+export const EP_TACTS_PER_LINE = (912 * EP_CLOCK * 71) / 1_010_865_075;
+/** NICK's slot (16 clocks) in T-states (4.495) */
+export const EP_TACTS_PER_SLOT = EP_TACTS_PER_LINE / 57;
+/** The TV window (`ep-nick.c`): its first line after vertical sync starts, its first slot */
+export const EP_TV_FIRST_LINE = 25;
+export const EP_TV_FIRST_SLOT = 10;
+
 /** The ROMs present (`epConfigure`'s mask) */
 export const EP_ROM_CART = 0x01;
 export const EP_ROM_FILEIO = 0x02;
@@ -57,10 +65,17 @@ export type EpHardware = {
   is128: boolean;
   /** IS-BASIC in the cartridge slot (`MC_EP_CARTRIDGE`) */
   cartridge: boolean;
+  /** The guide's linear colour levels instead of the board's resistor DAC (`MC_EP_PALETTE`) */
+  linearPalette: boolean;
   romSet: EpRomSetId;
 };
 
 export function resolveEpHardware(config: MachineConfigSet | undefined): EpHardware {
   const is128 = config?.[MC_EP_MODEL] !== "64";
-  return { is128, cartridge: config?.[MC_EP_CARTRIDGE] !== false, romSet: is128 ? "21" : "20" };
+  return {
+    is128,
+    cartridge: config?.[MC_EP_CARTRIDGE] !== false,
+    linearPalette: config?.[MC_EP_PALETTE] === "linear",
+    romSet: is128 ? "21" : "20"
+  };
 }

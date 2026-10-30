@@ -18,7 +18,9 @@ export type Lpb = {
   vres?: boolean;
   vint?: boolean;
   reload?: boolean;
+  /** The left margin byte: bits 5-0 the slot, bit 7 MSBALT, bit 6 LSBALT */
   lm: number;
+  /** The right margin byte: bits 5-0 the slot, bits 7-6 ALTIND0 and ALTIND1 */
   rm: number;
   ld1?: number;
   ld2?: number;
@@ -30,7 +32,7 @@ export function lpbBytes(b: Lpb): number[] {
   const ld1 = b.ld1 ?? 0;
   const ld2 = b.ld2 ?? 0;
   const palette = b.palette ?? [0, 0, 0, 0, 0, 0, 0, 0];
-  return [(256 - b.lines) & 0xff, mb, b.lm & 0x3f, b.rm & 0x3f, ld1 & 0xff, ld1 >> 8, ld2 & 0xff, ld2 >> 8, ...palette];
+  return [(256 - b.lines) & 0xff, mb, b.lm & 0xff, b.rm & 0xff, ld1 & 0xff, ld1 >> 8, ld2 & 0xff, ld2 >> 8, ...palette];
 }
 
 /**
@@ -67,12 +69,19 @@ export function forceLptBase(s: EpTestSession, base: number): void {
 
 /**
  * Parks the CPU in `DI; HALT` (or `DI; JR $` with `halt: false`) in segment F8h at 0000h, pages
- * 1-3 F9h, FAh, FFh, no DAVE waits (BFh = 0Ch), every interrupt off, and loads `lpt`. Runs `settle`
+ * 1-3 F9h, FAh, FFh, no DAVE waits (BFh = 0Ch), every interrupt off, and loads `lpt` at `lptBase`
+ * (NICK's address, 3000h by default). Runs `settle`
  * frames so the LPT is running.
  */
 export function bareMachine(
   s: EpTestSession,
-  { lpt = standardLpt(), settle = 2, halt = true, bf = 0x0c }: { lpt?: Lpb[]; settle?: number; halt?: boolean; bf?: number } = {}
+  {
+    lpt = standardLpt(),
+    lptBase = 0x3000,
+    settle = 2,
+    halt = true,
+    bf = 0x0c
+  }: { lpt?: Lpb[]; lptBase?: number; settle?: number; halt?: boolean; bf?: number } = {}
 ): void {
   const w = s.wasm;
   w.epWritePort(0xb4, 0xaa);
@@ -81,7 +90,7 @@ export function bareMachine(
   s.poke(0x0000, halt ? [0xf3, 0x76] : [0xf3, 0x18, 0xfe]);
   s.machine.pc = 0x0000;
   s.machine.sp = 0x7ff0;
-  loadLpt(s, lpt);
+  loadLpt(s, lpt, lptBase);
   s.runFrames(settle);
 }
 
@@ -106,4 +115,27 @@ export function timeCode(s: EpTestSession, code: number[], { segment = 0xf9 }: {
   const start = s.wasm.epGetHalfClock();
   stepUntil(s, () => s.machine.pc === end, 1_000_000);
   return ((s.wasm.epGetHalfClock() - start) >>> 0) / 2;
+}
+
+/**
+ * Writes the picture as a PNG (2 x 4 pixels a dot: NICK's dots are about half as wide as a line is
+ * tall) when `EP_SHOTS_PNG` names a folder: how a golden's picture is checked by eye before its hash
+ * is recorded
+ */
+export async function writeShotIfAsked(s: EpTestSession, name: string): Promise<void> {
+  const dir = process.env.EP_SHOTS_PNG;
+  if (!dir) return;
+  const { default: sharp } = await import("sharp");
+  const pixels = s.screenPixels();
+  await sharp(Buffer.from(pixels.buffer, pixels.byteOffset, pixels.byteLength), { raw: { width: 736, height: 288, channels: 4 } })
+    .resize(1472, 1152, { kernel: "nearest", fit: "fill" })
+    .png()
+    .toFile(`${dir}/${name}.png`);
+}
+
+/** The SHA-1 of the picture */
+export async function pictureHash(s: EpTestSession): Promise<string> {
+  const { createHash } = await import("node:crypto");
+  const pixels = s.screenPixels();
+  return createHash("sha1").update(Buffer.from(pixels.buffer, pixels.byteOffset, pixels.byteLength)).digest("hex");
 }

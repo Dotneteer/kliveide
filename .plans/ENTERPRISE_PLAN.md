@@ -1,7 +1,8 @@
 # Enterprise 64/128 on the WASM Core — Implementation Plan
 
-**Status:** Phases 1–2 done (2026-10-30): EXOS 2.1 boots to IS-BASIC 2.1 on the core, with DAVE's
-interrupts, NICK's LPT walker, the wait states and the clock stretch; no pixels or sound yet (§18).
+**Status:** Phases 1–3 done (2026-10-30): EXOS 2.1 boots to IS-BASIC 2.1 on the core and the picture
+shows it, with DAVE's interrupts, NICK's LPT walker and renderer, the wait states and the clock
+stretch; no sound yet (§18).
 D1–D9 accepted (§16). Still open in Phase 0: reading EP64 schematic sheet 1 for Q1 (the VINT edge).
 **Input:** the research pack `_input/enterprise128/`. Read these first:
 - `README.md`: the machine at a glance, the disagreements table and the ROM decision;
@@ -678,7 +679,7 @@ Each gets one constant or define, its default and its reason in the core README.
 | # | Question | Default | Where it is discussed |
 |---|---|---|---|
 | Q1 | VINT at the start or the end of the block (does the board invert `/VIRQ`?) | end (ep128emu, measured) — revisit after reading EP64 sheet 1 | §3.5; NICK BG §2.6, N9 |
-| Q2 | Which RM bit is ALTIND1 | bit 6 (guide, ep128emu); checked by EXOS's text colours in Phase 3 | NICK BG §2.9, N8 |
+| Q2 | Which RM bit is ALTIND1 | **Settled (Phase 3): bit 6**, as the guide and ep128emu say; EXOS's text screen shows it (§18) | NICK BG §2.9, N8 |
 | Q3 | Where NICK samples a CPU request; cost per phase | the EXOS book's access points + ep128emu's latencies | §3.3; NICK BG N11 |
 | Q4 | VM 6 and undefined combinations | generic renderer (unused bits 0, ALT OR-ed) | NICK OQ6; BG §2.8 |
 | Q5 | With VRES = 0, does LD2 also reload | no (LD1 only) | NICK BG §2.6, N10 |
@@ -704,7 +705,7 @@ Each gets one constant or define, its default and its reason in the core README.
 | **0. Decisions** | Settle D1–D9 (§16) with the project author. Read EP64 schematic sheet 1 for Q1 (fetch the scan again). | D1–D9 accepted 2026-10-30 (§16). Q1 still to read; its default (end of block) stands until then. |
 | **1. Skeleton** | `ep.c` TU; segments and paging; ROM upload; ports; DAVE interrupts and timers; the half-T clock and NICK phase accumulator; NICK's slot stepper with the LPT walker and VINT but no pixels; a frame loop ending at VSYNC; loader; host; registry entry for `ep128` only; build and contract scripts. | Done 2026-10-30 (§18): `bootToBasic()` reaches IS-BASIC 2.1's "ok" (read from the LPT and video RAM); `boot.test.ts` pins EXOS's LPT; `dave.test.ts`, `nick-lpt.test.ts`. |
 | **2. Timing** | §6: DAVE waits, the NICK stretch, the phase sweep export. | Done 2026-10-30 (§18): `timing.test.ts`; the Enterprise in `debug-loop-equivalence.test.ts`. The oracle comparison with ep128emu is not done yet (it needs a manual run). |
-| **3. Picture** | §7: renderers, palette and levels, the pipeline, blanking, the TV window, beam position, VSYNC frame and field detection. | The boot picture's hash (checked by eye); `nick.test.ts`; Q2 settled by EXOS's text colours; the IS 1984 demo LPT golden. |
+| **3. Picture** | §7: renderers, palette and levels, the pipeline, blanking, the TV window, beam position, VSYNC frame and field detection. | Done 2026-10-30 (§18): the IS-BASIC picture's hash (checked by eye); `nick-picture.test.ts`; Q2 settled by EXOS's text colours (RM bit 6 is ALTIND1); the IS 1984 demo's frame; the banner and IS-BASIC seen in the running app. |
 | **4. Sound** | §8.2–§8.3, stereo out. | `sound.test.ts`; the EXOS keyclick and `SOUND` statements heard in the running app; Klive's audio path carries stereo. |
 | **5. Keyboard and `FILE:`** | §9.1, §9.2: matrix, host mapping, joysticks, the `FILE:` ROM and host side; the virtual keyboard after its design is approved. | `keyboard.test.ts`, `hostfs.test.ts`; a `.com` loads with `LOAD "FILE:…"` in the running app. |
 | **6. 64K model** | `ep64`: EXOS 2.0, IS-BASIC 2.0, 64K. | `ep64.test.ts` (boot picture hash checked by eye; RAM size). |
@@ -821,3 +822,29 @@ The core's README (`src/emu/machines/enterprise/wasm/README.md`) is the referenc
   false until Phase 8. The hardware sheet has its texts (`hardware.*.enterprise`).
 - **Not checked in the running app:** with no pixels yet, the emulator panel shows a black screen.
   Phase 3 checks the app.
+
+### Phase 3 (2026-10-30)
+
+- **The renderer is part of the slot step** (`ep-nick.c`): each slot first draws what the previous slot
+  fetched (the one-slot pipeline), then fetches. The fetch fills two data buffers and a code byte; the
+  mode, colours and ALT bits are latched at the left margin. Undefined combinations go through the same
+  rule as the defined ones (the ALT offsets OR-ed onto the index), so there is no separate generic path.
+  The core grew to 182 KB.
+- **Q2 settled: RM bit 6 is ALTIND1.** EXOS 2.1 writes RM = 73h for its text rows and stores
+  "IS-BASIC" (and the red block cursor, 8Eh) with code bit 7 set. Every ordinary letter has code bit 6
+  set, so with bit 6 as ALTIND0 the letters of "131072 bytes in system" would be blue and its digits
+  green. `nick-picture.test.ts` checks the status line's colours (red, cyan) and the next row's (green).
+- **The TV window:** slots 10–55 and 288 lines from the 25th line after vertical sync. EXOS's screen
+  sits 18 lines down and 32 pixels in; the IS 1984 demo's 512 x 256 bitmap at (80, 16), its sync from
+  slot 4.
+- **EXOS's cursor flashes** by the editor writing and erasing code 8Eh every few frames; the IS-BASIC
+  golden happens to catch it off (it is deterministic, so the hash is stable).
+- **Beam position:** `getBeamPosition` maps the frame (which starts at the sync slot) onto the window;
+  the paper outline is EXOS's text screen. The Enterprise joined `BEAM_POSITION_MACHINE_IDS`.
+- **`MC_EP_PALETTE`** (`"linear"`) switches the colour levels; no menu yet (Phase 7).
+- **In the running app** (scripted through the doc-shots harness with a seeded, throwaway profile):
+  the machine starts, the banner flashes, a key brings up IS-BASIC with its cursor, at real-time speed.
+  Typing from the host did not reach EXOS: Playwright's key taps are shorter than EXOS's 50 Hz scan
+  needs, and the host typer is Phase 5.
+- **Not done:** pixel-level checks of interlace (each field is shown as it comes, as planned).
+
