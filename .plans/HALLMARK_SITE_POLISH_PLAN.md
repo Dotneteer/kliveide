@@ -10,6 +10,12 @@ waivable on the record, **Finish** never blocks), a render linter (`scripts/slop
 widths in Chrome), and two verbs (`/hallmark audit <path>` reports, `/hallmark redesign <path>`
 rebuilds). Rule numbers below (for example *63*) are Hallmark's.
 
+**Status (branch `dotneteer/hallmark-2`): steps 0 to 6 done; step 7, the final verification, is
+next, and its commit carries the plan's changeset.** Commits: `a5398a68db` (steps 0-1), `ee9fef85e4`
+(step 2), `0a9650a018` (step 3, with the emulator window's reverse-debugging fix and its own `fix`
+changeset), `6c87e90d5b` and `ba60dc2cf8` (step 4), `8e030b4e3d` (step 5), `354b1b020f` (links to
+old addresses, found on the way), and step 6's.
+
 ## Decisions
 
 | | Decision |
@@ -354,6 +360,26 @@ rule misread on a doc page.
   from H8, as durable rules (standing instruction).
 - `AGENTS.md`, Documentation Site: one line pointing at `docs/design.md` and `doc:check:prose`.
 - This plan: the as-built note and the pinned Hallmark commit.
+
+#### As built (step 6)
+
+Most records were written with the step that made them; this step checked them against what
+shipped and filled the gaps.
+
+- `.ai/ui-theming-intent-and-lessons.md`, website section: already current. It holds the rejected
+  tells (the earlier kit and Hallmark's), the data sheet with one section gap and 2rem headings, the
+  feature heading as link, the ending on the download, the solid header and its phone menu, the
+  320px tools row, nothing hidden widening the page, headings that may hyphenate on a phone, the
+  reverse-debugging video slide, the 62ch docs measure and the search field's edge.
+- `docs/design.md`: gained the header's phone menu and a "Docs pages" section (the measure, the
+  search edge, the wording check, links never to an old address). Its waivers (58, 59, 78, 77) and
+  answers (44c) are the author's decisions or recorded as mine for review.
+- `AGENTS.md`, Documentation Site: the wording check and `docs/design.md` (step 4), and that a moved
+  page's links move with it, enforced by `doc:check:links` (found on the way).
+- `.ai/doc-screenshots-guide.md`: the `landing-reverse` recipe and what it taught.
+- `DOCS_SITE_REDESIGN_PLAN.md`: R3 and R4 say which of their parts this plan superseded.
+- This plan: the pinned Hallmark commit (`4f6a46c`, step 0), an as-built note per step, and the
+  status above.
 
 ### 7. Verify
 
