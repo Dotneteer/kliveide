@@ -10,8 +10,8 @@ waivable on the record, **Finish** never blocks), a render linter (`scripts/slop
 widths in Chrome), and two verbs (`/hallmark audit <path>` reports, `/hallmark redesign <path>`
 rebuilds). Rule numbers below (for example *63*) are Hallmark's.
 
-**Status (branch `dotneteer/hallmark-2`): steps 0 to 6 done; step 7, the final verification, is
-next, and its commit carries the plan's changeset.** Commits: `a5398a68db` (steps 0-1), `ee9fef85e4`
+**Status (branch `dotneteer/hallmark-2`): steps 0 to 7 done; the plan is complete. Its closing
+commit carries the plan's changeset.** Commits: `a5398a68db` (steps 0-1), `ee9fef85e4`
 (step 2), `0a9650a018` (step 3, with the emulator window's reverse-debugging fix and its own `fix`
 changeset), `6c87e90d5b` and `ba60dc2cf8` (step 4), `8e030b4e3d` (step 5), `354b1b020f` (links to
 old addresses, found on the way), and step 6's.
@@ -390,3 +390,25 @@ shipped and filled the gaps.
 
 Changeset: the site is not the app, so this is probably `internal`; confirm with the author before
 the commit. Intermediate commits (steps 0–5) carry none, per the plan rule.
+
+#### As built (step 7)
+
+- **Docs:** `npm run doc:build && npm run doc:check` pass: 880 routes and 1,264 assets match the
+  goldens, no broken links and none to an old address, highlighting rendered, the heaviest page
+  1.31 MB of 1.5, the wording check at 0, every translation complete.
+- **sloplint** on the six step-0 pages: every page has fewer findings than at step 0 (landing 4 to 2
+  failures in each language; the doc pages one fewer each, the search field's). Hallmark calls the
+  remaining failures Floor, but each is decided, not open:
+  - landing, rule 58 (words per screen, three text blocks in the hero): the author's data-sheet
+    waiver (H8 b); its Reflex findings 44c, 59, 77 and 78 are answered or waived in `docs/design.md`;
+  - doc pages, rules 49a (sidebar and table-of-contents entries on two lines), 58 (a landing-page
+    composition rule), 40 (the accent link, 5.27:1 by the WCAG formula, sampled lower) and 62 (the
+    sidebar's collapsed folders): measured and dismissed in steps 0 and 5; their Reflex findings
+    (49b sidebar links, 77, 44c, 39b, 79, 59) are the same composition rules.
+- **By eye:** the landing page full length in light and dark, at 1440 and 375 px, in English and
+  German (eight captures): no sideways scroll in any, the hero, the video slide, the comma lists, the
+  feature headings with their squares and the "Install Klive" ending as built.
+- **App code** (step 3's emulator fix): `npm run build:check` (no new type errors) and
+  `npm run lint:renderer` pass. `npm test`: 26,595 passed, 1 failed: `runner-machines.test.ts` timed
+  out at 30 s while the docs build and sloplint shared the machine, and passed alone (8 of 8 in
+  12.6 s). `npm run test:slow`: 29 files, 2,152 passed, 3 skipped, recorded on the current sources.
