@@ -6,7 +6,9 @@ highlight: "**The Videoton TV Computer**, the Hungarian home computer: the TVC 6
 **The Videoton TV Computer:** Klive emulates the Hungarian home computer as the TVC 64K (BASIC 1.2)
 and the TVC 64K+ (BASIC 2.2, four video banks), with their ROMs, the 2-, 4- and 16-colour modes,
 palette and border changes in the middle of a line, the clock stretch on video memory, sound, and
-the Hungarian accented letters on the keyboard. Programs load from `.cas` tapes (Load and Run,
+the Hungarian accented letters on the keyboard. The on-screen keyboard is the TVC's own, drawn from
+the machine with its built-in joystick: click a key, right-click it for SHIFT, and use the
+joystick's arrows and FIRE button. Programs load from `.cas` tapes (Load and Run,
 `tape-load`, the Explorer, `klive run --machine tvc`), fast or in real time, and `SAVE` writes
 `.cas` files. The HBF floppy interface with VT-DOS (Machine › Disks) reads and writes raw `.dsk`
 disks. The assembler takes `.model TVC`: Run and Debug boot BASIC, move it above the code with
