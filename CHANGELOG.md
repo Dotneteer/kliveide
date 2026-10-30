@@ -1,5 +1,88 @@
 # Klive IDE Changelog
 
+## 0.66.0 (2026-10-30)
+
+### Highlights
+
+- **The Videoton TV Computer**, the Hungarian home computer: the TVC 64K and 64K+, with VT-DOS
+  disks.
+
+### Features
+
+- **Raspberry Pi audio on the ZX Spectrum Next:** the Next's I2S input from the Raspberry Pi is now
+  emulated, with a sound file or a tone standing in for the Pi. `pi-audio <wav-file>` plays a WAV
+  file into it, `pi-audio -tone <hz>` plays a sine tone, and `pi-audio -off` stops it. Programs hear
+  it as on the hardware: NextReg `$A2` enables and routes it, NextRegs `$2C`–`$2E` read its samples,
+  it joins the sound mix, and it can drive the EAR bit of port `$FE`. It stays in step with the
+  debugger and reverse debugging.
+- **The Videoton TV Computer:** Klive emulates the Hungarian home computer as the TVC 64K (BASIC
+  1.2) and the TVC 64K+ (BASIC 2.2, four video banks), with their ROMs, the 2-, 4- and 16-colour
+  modes, palette and border changes in the middle of a line, the clock stretch on video memory,
+  sound, and the Hungarian accented letters on the keyboard. The on-screen keyboard is the TVC's
+  own, drawn from the machine with its built-in joystick: click a key, right-click it for SHIFT, and
+  use the joystick's arrows and FIRE button. Programs load from `.cas` tapes (Load and Run,
+  `tape-load`, the Explorer, `klive run --machine tvc`), fast or in real time, and `SAVE` writes
+  `.cas` files. The HBF floppy interface with VT-DOS (Machine › Disks) reads and writes raw `.dsk`
+  disks. The assembler takes `.model TVC`: Run and Debug boot BASIC, move it above the code with
+  `LOMEM` and call the code with `USR`, so a `RET` goes back to BASIC; Export writes a `.cas` that
+  `LOAD` runs, and a new project template prints a welcome. Debugging (with Step Over across the
+  operating system's `RST 30h` calls), the TVC Video panel, the BASIC Listing, execution history,
+  reverse debugging, code coverage, state files and the Z80 unit-test runner work as on the other
+  machines.
+- **The Cambridge Z88 User Guide on the documentation site:** the complete user guide of the Z88 and
+  its OZ operating system (edition 4.7: PipeDream, the Diary, the Filer, the Terminal, BBC BASIC,
+  FlashStore and the appendices) is now part of kliveide.net, with its own **Z88 User Guide** tab in
+  the navbar, its own sidebar, and its pages in the site search. The Cambridge Z88 machine guide
+  links to it.
+- **The Library, a new documentation area for the machines' own manuals:** the last navbar tab of
+  kliveide.net holds the manuals of the machines Klive emulates, one folder per machine. It starts
+  with the Cambridge Z88: the **Z88 User Guide** (moved here; its old addresses redirect) and the
+  newly imported **Z88 Developers' Notes** - writing applications for OZ, all of its system calls,
+  memory management, the BLINK chip, the hardware and the Z80 instruction set. Both are in the site
+  search, links between them stay on the site, and the landing page's header and the Cambridge Z88
+  machine guide link to the Library.
+- **Videoton TVC ROM annotations:** Klive now ships the TVC 64K's three BASIC 1.2 ROMs annotated —
+  the system ROM's two chips and the extension ROM — with a label on every call and jump target, a
+  synopsis for each of their 1,365 labels, and their data regions: the operating system's calls and
+  devices (graphics screen, keyboard, screen editor, sound, printer, cassette, expansion cards), the
+  statements, the built-in functions and the calculator's inline operations, the error messages, the
+  character sets and PRINT USING. The ROMs read by name in the Disassembly view and in the ROM
+  annotation editor, each chip at the address BASIC runs it.
+- **Open ROM annotations from the menu:** Debug › ROM Annotations lists every machine type whose
+  ROMs Klive ships, each with its ROMs; picking one opens that ROM's annotations in the ROM
+  annotation editor, starting an empty working copy for a ROM that has none. `rom-ann-open` takes
+  the same `-create` option.
+- **Tapes on the ZX Spectrum Next.** Insert a .tap or .tzx with Machine › Tape › Insert, and it
+  loads whenever a program uses the 48K ROM's tape routines, as LOAD "" in the Next's 48K BASIC
+  does: with fast load at any CPU speed, or in real time at 3.5 MHz, through the Next's own EAR
+  input (it drops pulses shorter than about 1.14 µs and lets a level held at 1 fall to 0 after about
+  1.15 ms), and heard as on the real machine. A SAVE is captured and offered as a .tzx.
+- **ZX Spectrum Next sound outputs.** The Next sends its sound to an audio jack, an internal speaker
+  and HDMI, each built differently; Klive now plays the one you choose under Machine › Sound ›
+  Output (or Settings › Emulator): the audio jack by default, where a very loud mix wraps around as
+  on the real jack, the internal speaker with its mono mix, its on/off switch and its beeper-only
+  mode, or HDMI with the whole sum, sampled as HDMI does and silenced by its own switch.
+
+### Fixes
+
+- The emulator's sound started after one frame instead of the intended three, so it ran with a
+  cushion of only 12-31 ms and could run dry, and fade out with a click, when frames arrived a few
+  milliseconds late. A frame now counts as a lone frame (as when the debugger steps) only after two
+  frames' worth of time without a new one.
+- On the ZX Spectrum Next, loud TurboSound music was cut off: Klive's mixer ran out of range at
+  about two AY chips at full volume, while the Next plays all three cleanly. The mix now has the
+  same room above silence as the Next's audio jack, so everything the jack plays cleanly plays
+  cleanly in Klive; the Next's sound is somewhat quieter than before as a result.
+- ZX Spectrum Next: port `$FE` bit 6 kept reading 1 for up to 2,800 T-states after a program cleared
+  the EAR bit, a delay copied from the 48K's analogue EAR pin that the Next does not have; it now
+  drops with the write, as on the real machine.
+- On the ZX Spectrum Next, sound played about half a second late: the audio buffer took the Next's
+  frame, counted in 28 MHz clocks, for eight times its real length, so playback waited for about 24
+  frames instead of three. The buffer is now sized from the frame's real length.
+- Select Machine: the small drawing of the screen was twice as wide as the real picture on the
+  HT-1080Z and the ZX Spectrum Next, whose pixels are not square, and the Next's screen area was
+  drawn too small inside it.
+
 ## 0.65.0 (2026-10-27)
 
 ### Highlights
