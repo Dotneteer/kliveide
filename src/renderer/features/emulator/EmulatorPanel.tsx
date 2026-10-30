@@ -250,7 +250,8 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
       ctrl.machine.tactsInFrame,
       ctrl.machine.baseClockFrequency,
       audioSampleRate,
-      ctrl.machine.uiFrameFrequency
+      ctrl.machine.uiFrameFrequency,
+      ctrl.machine.frameTactMultiplier
     );
 
     updateScreenDimensions();
