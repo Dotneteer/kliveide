@@ -131,15 +131,16 @@ tools:
   source-level debugging and editor intelligence.
 - ~~**`docs/content/machine-types.mdx` still says the Next is "still in development"**~~ — fixed
   (docs site modernization, Phase 0).
-- **Release status as of v0.63.0** (checked against `CHANGELOG.md` on 2026-10-18): shipped — Klive
-  BASIC and its debugger, BASIC editor intelligence, conditional/hit-count breakpoints, logpoints,
-  one-shot breakpoints, memory watchpoints and DeZog comments, `.sna`/`.z80`/`.szx` snapshots and
-  `.kls` states, the tape viewer, IDE + emulator recording, ZX80/ZX81. Not yet released — reverse
-  debugging and the execution history, code coverage, the profiler, unit tests and `klive test`,
-  the Copper/sprite/tilemap/Layer 2 inspectors and layer composition, Pentagon/Timex/Scorpion and
-  TR-DOS, the automation API, Boriel BASIC 2.x integration, z88dk C integration. The landing page gates each feature
-  on the latest release tag (`docs/` reads it at build time), so these appear when a release ships
-  them.
+- **Release status as of v0.66.0** (checked against `CHANGELOG.md` on 2026-10-30): everything this
+  note once listed as unreleased has shipped. v0.63.0: Klive BASIC and its debugger, BASIC editor
+  intelligence, the breakpoint kinds, logpoints, watchpoints, snapshots, `.kls` states, the tape
+  viewer, recording, ZX80/ZX81. v0.64.0: reverse debugging and the execution history, code
+  coverage, the profiler, unit tests and `klive test`, the Copper/sprite/tilemap/Layer 2 inspectors
+  and layer composition, Pentagon/Timex/Scorpion and TR-DOS, the automation API, Boriel BASIC 2.x.
+  v0.65.0: z88dk C, the HT-1080Z, Interface 1 and Microdrives, the Disk Explorer, the fully
+  annotated ROMs. v0.66.0: the Videoton TVC 64K/64K+, Next tapes and sound outputs, Raspberry Pi
+  audio, the documentation Library. The landing page gates each feature and machine on the latest
+  release tag (`docs/` reads it at build time), so nothing it claims is ahead of a release.
 - **The README roadmap lists memory and I/O breakpoints and custom ROMs as planned**, but both
   are shipped. The README "Technology" section still describes pure-TypeScript emulators; they
   are now C/WASM.
