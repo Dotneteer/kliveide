@@ -36,7 +36,7 @@ export default function LanguageSelect({ current, label, languages }: Props) {
           <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="1.8" />
           <path d="M3 12h18M12 3c3 3.2 3 14.8 0 18M12 3c-3 3.2-3 14.8 0 18" fill="none" stroke="currentColor" strokeWidth="1.8" />
         </svg>
-        <span>{name}</span>
+        <span className="lp-lang-name">{name}</span>
       </button>
       {open && (
         <ul className="lp-lang-menu">

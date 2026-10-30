@@ -39,12 +39,86 @@ rebuilds). Rule numbers below (for example *63*) are Hallmark's.
    what, proposed action). **This table replaces the findings guessed in step 2 below** wherever
    they differ.
 
+#### As built (step 0)
+
+- Hallmark is cloned at **`4f6a46c6dc325d40ab268c93e25c7b96676ebccd`** (2026-10-29, v2.0.0) into
+  `.hallmark/hallmark/`, with `puppeteer-core` 24.43.1 in `.hallmark/deps/` (pointed at by
+  `HALLMARK_PUPPETEER`) and the system Chrome. Nothing is installed as a skill yet. `.gitignore`
+  covers `.hallmark/` and `.claude/skills/hallmark/`.
+- `docs/design.md` is written; its Waivers section lists the four H8 items as pending.
+- The run, from `.hallmark/run/`, against `npm run doc:build` + `node scripts/serve-docs.cjs --port 4000`:
+  `node .hallmark/hallmark/skills/hallmark/scripts/sloplint.mjs --url <page> --genre modern-minimal`.
+  Pages: `/` (English landing), `/de/`, `/en/guides/debugging/advanced-debugging/`,
+  `/en/reference/commands/`, `/en/under-the-hood/emulator-internals/crt-display/`, `/en/library/`.
+  Reports are in `.hallmark/run/*.txt`, screenshots in `.hallmark/run/.hallmark/shots/`.
+- `/hallmark audit` (the judged review) is **not run yet**: the skill is not installed in a Claude
+  Code session. The findings below are sloplint's mechanical ones only.
+
+**Totals.** Landing: 4 FAIL, 4 REFLEX, 1 WARN in English, the same in German. Docs pages: 6 to 13
+FAIL and 309 to 495 REFLEX each, but over 95% of the REFLEX are one rule (49b, sidebar links that
+wrap at 320 px) counted once per link.
+
+**Sloplint is a landing-page linter.** On the docs pages its page-composition rules (58 words per
+screen, 44c/79 hero height, 59/77 section count and mass, 39b marketing button height, F25 the
+sidebar hidden on a phone) treat a documentation page as a marketing page. They are noise there and
+are dismissed as a class, not one by one. On the landing page they are real questions.
+
+| Rule | Tier | Page | Finding | Action |
+|---|---|---|---|---|
+| 34 | Floor | landing, en + de | **Scrolls sideways at 320 px**: the header's `.lp-tools` (language menu, theme toggle, GitHub icon) ends at 343 px in German, 330 px in English | Fix in step 1: the tools row must fit 320 px in every language (hide the GitHub icon or shorten the language button below a width; measure every language, as the header rule in `.ai/ui-theming-intent-and-lessons.md` says) |
+| 34 | Floor | landing | The skip link sits 999 px off screen at rest (`a.lp-skip`) | Dismiss after checking: an off-screen skip link is the standard pattern and the page clips it; or move it to the visually-hidden clip pattern so the check passes |
+| 40 | Floor | all docs | The search field's edge is 1.12:1 against the navbar | Fix in step 5: a `--site-line-strong` border on Nextra's search input |
+| 40 | Floor | reference, under the hood | A table-of-contents link at 4.33:1 (below 4.5:1) | Fix in step 5: the TOC link colour from the tokens |
+| 62 | Floor | guide, library | 42% / 93% of the page's text "hidden after load" | Check in step 5; most likely the collapsed sidebar folders and the phone menu, which are navigation, not hidden content |
+| 49a | Floor | all docs | Sidebar folder buttons ("Analysis and Reverse Engineering", "ZX Spectrum Next: how the screen works") wrap at 320 px; long TOC entries wrap at 1280 px | Dismiss for the TOC (headings are sentences). Sidebar: decide in step 5, a shorter `_meta.ts` title or accept two lines |
+| 49b | Reflex | all docs | Sidebar links wrap at 320 px (300 to 490 per page) | Dismiss: the phone menu's links are page titles; two lines is right |
+| 25 | Reflex | all docs | Running prose about 89 to 111 characters a line at 1440 px | **Real, step 5**: cap the article measure at about 75ch |
+| F26 | Finish | under the hood, landing | Headings ending on a one-word stub | Step 5: `text-wrap: balance` on headings |
+| F19 | Finish | all docs | Four font weights in use (400, 500, 600, 700) | Look in step 5: 500 is likely Nextra's own; drop it if so |
+| 58 | Floor | landing | The hero carries three text blocks before its actions (headline, lede, At a glance) | H8 (b) |
+| 58 | Floor | landing | 128 words on one screen, at the feature rows | H8 (b) |
+| 44c | Reflex | landing | The hero ends at 556 px of a 900 px screen | Step 3, with the signature |
+| 59 | Reflex | landing | Section gaps 66 to 114 px, uneven | Step 2: one section gap, from a token |
+| 77 | Reflex | landing | Thin sections: the write/build/run/debug table and the closing call to action | Step 2, item 5 (the ending); the loop table with H8 (b) |
+| 78 | Reflex | landing | Section headings 24 px under a 52 px headline | Waive in `docs/design.md` (a data sheet's headings are small on purpose), or raise them in step 2: decide with H8 |
+
+Not found by sloplint, still to do by reading: every item of step 2 (middle dots, the rebuttal
+lines, the stock phrases, the headline, the ending). The copy and punctuation rules (19, 63) are
+static checks on source files, and these runs passed URLs only ("0 file(s)"); pointed at
+`docs/landing/` they would still miss the text, which lives in `docs/i18n/landing/en.json`.
+
 ### 1. Floor fixes (whatever step 0 finds)
 
 Contrast, focus rings, reduced motion, horizontal scroll from 320 to 1920 px, controls that wrap,
 broken images. These are bugs, not taste: fix them in the site's tokens and stylesheets
 (`docs/app/tokens.css`, `docs/app/[lang]/(docs)/custom.css`, `docs/landing/landing.css`) without a
 colour literal. Already known: the viewer's `100vh` (`landing.css`) should be `100dvh`.
+
+#### As built (step 1)
+
+The landing page's Floor findings are fixed; the docs pages' Floor findings (40, 49a, 62) stay
+with step 5, as the step 0 table assigns them.
+
+- **Rule 34, the page scrolled sideways at 320 px. Two causes, not one.** The header's tools row was
+  10 px too wide in English and up to 65 px in Portuguese (it overflowed up to 385 px there). Below
+  420 px the language button now keeps only its globe (`.lp-lang-name`; the accessible name stays
+  "Language"). The second cause showed only once the first was fixed: German's headline word
+  "Entwicklungsstudio" is wider than a 320 px line by itself. Landing headings now have
+  `overflow-wrap: break-word` and `min-width: 0` (Hallmark rule 50) and, under 640 px only,
+  `hyphens: auto` in the page's language.
+- **Rule 34, the skip link** waits above the page (`transform`) instead of 999 px to its left.
+- **The viewer** is sized with `100%` and `dvh` instead of `100vw` and `vh`.
+- **Measured** in the built site for all six languages at every width from 300 to 1000 px in 10 px
+  steps (a Puppeteer script): every language fits from 320 px up. At 300 and 310 px every language
+  is still 6 to 16 px too wide (the brand and the three tools); that is below Hallmark's 320 px floor
+  and below any phone in use, so it is left.
+- `sloplint` on `/` and `/de/` after the fix: both rule 34 findings gone; what is left is 58, 44c,
+  59, 77 and 78, all waiting on H8 and steps 2 and 3. `npm run doc:check` passes.
+- **New finding, for step 2:** below 900 px the header's links are hidden and nothing replaces them
+  (the `nav.menu` text exists, but no menu button uses it). A phone visitor reaches the docs only
+  through the hero's Get started button and the footer.
+- Recorded in `.ai/ui-theming-intent-and-lessons.md` (the website section): the tools row must fit
+  320 px, nothing hidden may widen the page, and landing headings may break inside a word.
 
 ### 2. Landing page polish (`docs/landing/`, `docs/i18n/landing/en.json`)
 

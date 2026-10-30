@@ -36,6 +36,8 @@ div.lp-body {
   font-weight: 700;
   letter-spacing: 0;
   text-wrap: pretty;
+  overflow-wrap: break-word;
+  min-width: 0;
   margin: 0;
 }
 
@@ -81,10 +83,12 @@ div.lp-body {
   padding-right: max(1.25rem, env(safe-area-inset-right, 0px));
 }
 
+/* --- Hidden above the page rather than off to its side, so it never widens the page */
 .lp-skip {
   position: absolute;
-  left: -999px;
+  left: 1rem;
   top: 0.5rem;
+  transform: translateY(calc(-100% - 1rem));
   z-index: 20;
   padding: 0.5rem 1rem;
   background: var(--site-accent);
@@ -93,7 +97,7 @@ div.lp-body {
 }
 
 .lp-skip:focus {
-  left: 1rem;
+  transform: none;
 }
 
 .lp :focus-visible {
@@ -670,8 +674,8 @@ div.lp-body {
 /* --- An inset panel over the dimmed page; the picture always fits, nothing scrolls. Its colours
    --- are the dark theme's in both themes: a screenshot reads best on a dark surround. */
 .lp-viewer {
-  width: calc(100vw - 8rem);
-  height: calc(100vh - 6rem);
+  width: calc(100% - 8rem);
+  height: calc(100dvh - 6rem);
   max-width: none;
   max-height: none;
   margin: auto;
@@ -816,6 +820,24 @@ div.lp-body {
   }
 }
 
+/* --- The tools row must fit 320px in every language. Below this width the language button keeps
+   --- only its globe (its accessible name stays "Language"): with the name, Portuguese needs 385px */
+@media (max-width: 420px) {
+  .lp-lang-name {
+    display: none;
+  }
+}
+
+/* --- A long compound ("Entwicklungsstudio") is wider than a phone's headline line: hyphenate it
+   --- in the page's language there, rather than break it anywhere or scroll the page */
+@media (max-width: 640px) {
+  .lp h1,
+  .lp h2,
+  .lp h3 {
+    hyphens: auto;
+  }
+}
+
 @media (max-width: 640px) {
   .lp-top {
     padding-top: 2.5rem;
@@ -830,8 +852,8 @@ div.lp-body {
   }
 
   .lp-viewer {
-    width: calc(100vw - 2rem);
-    height: calc(100vh - 2rem);
+    width: calc(100% - 2rem);
+    height: calc(100dvh - 2rem);
   }
 }
 
