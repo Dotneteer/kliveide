@@ -106,4 +106,27 @@ describe("MachineSelectDialog — wiring", () => {
     const order = screen.getAllByTestId(/^favorite-row-/).map((el) => el.dataset.testid);
     expect(order).toEqual(["favorite-row-sp48/pal", "favorite-row-spp3e/fdd2", "favorite-row-sp128/sp128"]);
   });
+  it("draws the screen in the machine's pixel proportions: TVC dots are narrow, the Next's raster is half-pixels", () => {
+    renderWithProviders(<MachineSelectDialog data={data} onResult={vi.fn()} onClose={vi.fn()} />);
+    const rasterRatio = () => {
+      const svg = screen.getByTestId("hardware-sheet").querySelector("figure svg")!;
+      const raster = svg.querySelector("rect")!;
+      return Number(raster.getAttribute("width")) / Number(raster.getAttribute("height"));
+    };
+    // --- The +3E's pixels are square: about 352 x 288 with its border
+    expect(rasterRatio()).toBeCloseTo(352 / 288, 2);
+
+    fireEvent.click(screen.getByTestId("section-tvc"));
+    fireEvent.click(screen.getByTestId("machine-row-tvc/tvc64"));
+    // --- 560 x 288 dots of 0.56 (7 MHz over the 12.5 MHz dot clock): about 1.09, not 1.94
+    expect(rasterRatio()).toBeCloseTo((560 * 0.56) / 288, 3);
+
+    // --- The Next's 720 x 288 output buffer counts half-pixels, its 256 x 192 paper whole ones
+    fireEvent.click(screen.getByTestId("machine-row-zxnext/standard"));
+    expect(rasterRatio()).toBeCloseTo(360 / 288, 3);
+    const [raster, paper] = Array.from(
+      screen.getByTestId("hardware-sheet").querySelectorAll("figure svg rect")
+    ).map((r) => Number(r.getAttribute("width")));
+    expect(paper / raster).toBeCloseTo(256 / 360, 3);
+  });
 });

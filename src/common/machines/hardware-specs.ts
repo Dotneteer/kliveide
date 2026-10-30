@@ -62,6 +62,7 @@ import {
   HT1080Z_CLOCK_64,
   HT1080Z_CLOCK_S12,
   HT1080Z_LINES_PER_FRAME,
+  HT1080Z_PIXEL_ASPECT,
   HT1080Z_SCREEN_HEIGHT,
   HT1080Z_SCREEN_WIDTH,
   HT1080Z_TACTS_IN_FRAME,
@@ -71,6 +72,7 @@ import { HT1080Z_ROM_SETS, type Ht1080zRomSetId } from "@emu/machines/ht1080z/Ht
 import {
   TVC_CLOCK,
   TVC_LINES_PER_FRAME,
+  TVC_PIXEL_ASPECT,
   TVC_SCREEN_HEIGHT,
   TVC_SCREEN_WIDTH,
   TVC_TACTS_IN_FRAME,
@@ -121,6 +123,16 @@ export type DisplaySpec = {
   rasterHeight: number;
   /** Says what the raster is when it is not "with border" */
   rasterLabel?: string;
+  /**
+   * A raster dot's width over its height (the machine's `getAspectRatio`); square when omitted. The
+   * sheet's drawing uses it, so a raster of narrow dots is not drawn twice as wide.
+   */
+  pixelAspect?: number;
+  /**
+   * The same for the bitmap/paper size, when it counts other dots than the raster (the Next's paper
+   * is 256 Spectrum pixels, its raster half-pixels); `pixelAspect` when omitted.
+   */
+  paperPixelAspect?: number;
   colours: string;
   attributes?: string;
   text?: string;
@@ -421,6 +433,9 @@ export const HARDWARE_SPECS: Readonly<Record<string, MachineSpecs>> = {
         height: 192,
         rasterWidth: 720,
         rasterHeight: 288,
+        // --- The output buffer is in half-pixels (ZxNextWasmV2Machine's getAspectRatio); the paper in pixels
+        pixelAspect: 0.5,
+        paperPixelAspect: 1,
         rasterLabel: tx("hardware.raster.outputBuffer"),
         colours: tx("hardware.colours.next"),
         layers: tx("hardware.layers.next")
@@ -485,6 +500,7 @@ export const HARDWARE_SPECS: Readonly<Record<string, MachineSpecs>> = {
         height: 192,
         rasterWidth: HT1080Z_SCREEN_WIDTH,
         rasterHeight: HT1080Z_SCREEN_HEIGHT,
+        pixelAspect: HT1080Z_PIXEL_ASPECT,
         colours: tx("hardware.colours.monochrome"),
         text: tx("hardware.text.ht1080z")
       },
@@ -519,6 +535,7 @@ export const HARDWARE_SPECS: Readonly<Record<string, MachineSpecs>> = {
         height: 240,
         rasterWidth: TVC_SCREEN_WIDTH,
         rasterHeight: TVC_SCREEN_HEIGHT,
+        pixelAspect: TVC_PIXEL_ASPECT,
         colours: tx("hardware.colours.tvc"),
         text: tx("hardware.text.tvc")
       },

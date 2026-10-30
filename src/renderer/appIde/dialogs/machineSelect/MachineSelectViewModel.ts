@@ -67,6 +67,10 @@ export type ScreenVm = {
   height: number;
   rasterWidth: number;
   rasterHeight: number;
+  /** A raster dot's width over its height (1: square) */
+  pixelAspect: number;
+  /** A paper pixel's width over its height (the Next's differs from its raster's) */
+  paperPixelAspect: number;
   caption: string;
 };
 
@@ -247,6 +251,8 @@ function selectSheet(
       height: d.height,
       rasterWidth: d.rasterWidth,
       rasterHeight: d.rasterHeight,
+      pixelAspect: d.pixelAspect ?? 1,
+      paperPixelAspect: d.paperPixelAspect ?? d.pixelAspect ?? 1,
       caption:
         d.kind === "lcd"
           ? `${d.width} × ${d.height} LCD`

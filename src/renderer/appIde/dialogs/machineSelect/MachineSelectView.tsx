@@ -412,10 +412,13 @@ const HardwareSheet = ({ sheet, onFavoriteToggled }: { sheet: SheetVm; onFavorit
 /** The visible raster to scale, the display area inside it (an LCD for the Z88) */
 const ScreenDrawing = ({ screen }: { screen: ScreenVm }) => {
   const maxW = 160;
-  const scale = Math.min(maxW / screen.rasterWidth, 110 / screen.rasterHeight);
-  const w = screen.rasterWidth * scale;
+  // --- Widths in square units: a TVC or HT-1080Z dot is narrower than it is tall, and the Next's
+  // --- raster counts half-pixels while its paper counts whole ones
+  const rasterW = screen.rasterWidth * screen.pixelAspect;
+  const scale = Math.min(maxW / rasterW, 110 / screen.rasterHeight);
+  const w = rasterW * scale;
   const h = screen.rasterHeight * scale;
-  const iw = screen.width * scale;
+  const iw = screen.width * screen.paperPixelAspect * scale;
   const ih = screen.height * scale;
   const x = (maxW - w) / 2;
   return (
