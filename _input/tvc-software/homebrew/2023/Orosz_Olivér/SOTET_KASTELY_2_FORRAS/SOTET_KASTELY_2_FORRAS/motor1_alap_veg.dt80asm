@@ -1,0 +1,78 @@
+		; Az INCLUDE file nem tartalmazhat  END és INCBIN utasításokat, de eltekintve szabványos asm file
+		; Ide írható a saját kód..
+				
+		;{PALETTA_4		
+	PALETTA_4		
+		; Paletta beállítása ............................
+				ld	A,$55		; feher        szín 11
+				out	($63),A
+				ld	A,$41		; kék          szín 10
+				out	($62),A
+				ld	A,$44		; vörös  44    szín 01
+				out	($61),A
+				ld	A,$00		; fekete       szín 00
+				out	($60),A
+				ret
+		;}
+	PALETTA_4B		
+		; Paletta beállítása ............................
+				ld	A,$55		; fekete  00 villogáshoz
+				out	($60),A
+				ret
+		;}
+	PALETTA_4C		
+		; Paletta beállítása ............................
+				ld	A,$00		; fekete  00
+				out	($60),A
+				ret
+		;}
+                         ;{The End
+	THEEND			nop
+     ; EI                                 ; megszakítások engedélyezése
+				call	VIDOFF			; VRAM kilapozása (eredeti memória lapozás beállítása)
+				call	WAITFORANYKEY		; várakozás egy billentyű lenyomására                              
+				ret				; visszatérés a BASIC-be
+                         ;}
+				
+                         ;{VidOn                                                     
+	VIDON			ld	A,$50			; A video memória belapozása
+				ld	($3),A			; a $8000-$0BFFF területre
+				out	($2),A			; (2.lap)
+				ret
+                         ;}
+			;(initVideo16				
+	InitVideo2		
+     		                LD   C,0                           ; C = Graphics 16
+                                RST  $30                           ; $30 system call                              
+				db $4				   ; set VMODE
+				ret
+	InitVideo4		
+     		                LD   C,1                           ; C = Graphics 16
+                                RST  $30                           ; $30 system call                              
+				db $4				   ; set VMODE
+				ret
+	InitVideo16		
+     		                LD   C,2                           ; C = Graphics 16
+                                RST  $30                           ; $30 system call                              
+				db $4				   ; set VMODE
+				ret
+
+				
+                         ;{VidOff                           
+	VIDOFF			ld	A,$70			; Bekapcsoláskori memória konfiguráció visszaállítása
+				ld	($3),A
+				out	($2),A
+				ret
+                         ;}
+				
+                         ;{ClearScreen
+	CLEARSCREEN		rst	$30			; Képernyő
+				db	$5			; törlés
+				ret
+                         ;}
+				
+                         ;{WaitForAnyKey
+	WAITFORANYKEY		rst	$30
+				db	$91			; Várakozás billentyű lenyomásra
+				ret
+                         ;}

@@ -1,0 +1,211 @@
+; INCLUDE file
+; Grafikus utasítások játékokhoz				
+				
+				
+				
+				
+;*************************************************************************************************
+
+;*************************************************************************************************
+;*************************************************************************************************
+;   DRAW_fekete_TOROL4
+;   Amikor balra halad a sprite, a sprite mellé jobbra rajzol egy 1x16 byte-os fekete területet
+;*************************************************************************************************
+	DRAW_fekete_TOROL4		
+				ld	HL,(SPRVRAMADDR)
+				LD	BC,4
+				add 	HL,BC
+				ld	DE,SpriteBaseAddrV		; [14] a sprite címe a memóriában
+				ex	DE,HL			; [ 4] HL <=> DE (csere)
+				ld	A,16
+	PUTSPRITE_T4		ld	BC,64			; [10] BC = 64 (64 byte egy képernyősor)
+				call	FASTCOPYX_T4
+				ex	DE,HL			; [ 4] HL <=> DE (csere)
+				add	HL,BC			; [11] HL = HL + (64 - oszlopok) - LDI csökkenti a BC-t, így C = 64 - oszlopok
+				ex	DE,HL			; [ 4] DE <=> HL (csere vissza, azaz DE = DE + (64 - oszlopok))
+				dec	A			; [ 4] csökkentjük a kiirandó sorok számát (ciklusszámláló)                                                
+				jp	NZ,PUTSPRITE_T4		; [10/1] ha nem raktuk még ki az összes sort, akkor vissza az elejére
+				ret				; [10]
+	FASTCOPYX_T4		ldi
+				ret
+;*************************************************************************************************
+;   DRAW_fekete_TOROL3
+;   Amikor jobbra halad a sprite, a sprite mellé balra rajzol egy 1x16 byte-os fekete területet
+;*************************************************************************************************
+	DRAW_fekete_TOROL3		
+				ld	HL,(SPRVRAMADDR)
+				dec	HL
+				ld	DE,SpriteBaseAddrV		; [14] a sprite címe a memóriában
+				ex	DE,HL			; [ 4] HL <=> DE (csere)
+				ld	A,16
+	PUTSPRITE_T3		ld	BC,64			; [10] BC = 64 (64 byte egy képernyősor)
+				call	FASTCOPYX_T3
+				ex	DE,HL			; [ 4] HL <=> DE (csere)
+				add	HL,BC			; [11] HL = HL + (64 - oszlopok) - LDI csökkenti a BC-t, így C = 64 - oszlopok
+				ex	DE,HL			; [ 4] DE <=> HL (csere vissza, azaz DE = DE + (64 - oszlopok))
+				dec	A			; [ 4] csökkentjük a kiirandó sorok számát (ciklusszámláló)                                                
+				jp	NZ,PUTSPRITE_T3		; [10/1] ha nem raktuk még ki az összes sort, akkor vissza az elejére
+				ret				; [10]
+	FASTCOPYX_T3		ldi
+				ret
+;*************************************************************************************************
+;   DRAW_fekete_TOROL2
+;   Amikor felfelé halad a sprite, a sprite alá rajzol egy 4x4 byte-os fekete területet
+;*************************************************************************************************
+	DRAW_fekete_TOROL2		
+				ld	HL,(SPRVRAMADDR)
+				ld	BC,1024
+				add	HL,BC
+				ld	DE,SpriteBaseAddrV		; [14] a sprite címe a memóriában
+				ex	DE,HL			; [ 4] HL <=> DE (csere)
+				ld	A,4
+	PUTSPRITE_T2		ld	BC,64			; [10] BC = 64 (64 byte egy képernyősor)
+				call	FASTCOPYX_T2
+				ex	DE,HL			; [ 4] HL <=> DE (csere)
+				add	HL,BC			; [11] HL = HL + (64 - oszlopok) - LDI csökkenti a BC-t, így C = 64 - oszlopok
+				ex	DE,HL			; [ 4] DE <=> HL (csere vissza, azaz DE = DE + (64 - oszlopok))
+				dec	A			; [ 4] csökkentjük a kiirandó sorok számát (ciklusszámláló)                                                
+				jp	NZ,PUTSPRITE_T2		; [10/1] ha nem raktuk még ki az összes sort, akkor vissza az elejére
+				ret				; [10]
+	FASTCOPYX_T2		ldi
+				ldi
+				ldi
+				ldi
+				ret
+;*************************************************************************************************
+;   DRAW_fekete_TOROL1
+;   Amikor lefelé halad a sprite, a sprite fölé rajzol egy 4x4 byte-os fekete területet
+;*************************************************************************************************
+	DRAW_fekete_TOROL1		
+				ld	HL,(SPRVRAMADDR)
+				ld	BC,256
+				ld	a,0
+				XOR 	A
+				sbc	HL,BC
+				ld	DE,SpriteBaseAddrV		; [14] a sprite címe a memóriában
+				ex	DE,HL			; [ 4] HL <=> DE (csere)
+				ld	A,4
+	PUTSPRITE_T1		ld	BC,64			; [10] BC = 64 (64 byte egy képernyősor)
+				call	FASTCOPYX_T1
+				ex	DE,HL			; [ 4] HL <=> DE (csere)
+				add	HL,BC			; [11] HL = HL + (64 - oszlopok) - LDI csökkenti a BC-t, így C = 64 - oszlopok
+				ex	DE,HL			; [ 4] DE <=> HL (csere vissza, azaz DE = DE + (64 - oszlopok))
+				dec	A			; [ 4] csökkentjük a kiirandó sorok számát (ciklusszámláló)                                                
+				jp	NZ,PUTSPRITE_T1		; [10/1] ha nem raktuk még ki az összes sort, akkor vissza az elejére
+				ret				; [10]
+	FASTCOPYX_T1		ldi
+				ldi
+				ldi
+				ldi
+				ret
+;*************************************************************************************************
+	DRAW_fekete8x8		
+                         ; HL: sprite kezdőcíme  DE: vram pozíció  A : sprite.magassága                                                                
+				ld	HL,(SPRADDR)		; [14] a sprite címe a memóriában
+				ld	DE,(SPRVRAMADDR)	; [20] a sprite aktuális pozíciójának videoram címe
+				ld	A,8
+                         ; HL: sprite kezdőcíme DE: vram pozíció A : sprite.magassag                                                                 
+	PUTSPRITE8x8		ld	BC,64			; [10] BC = 64 (64 byte egy képernyősor)
+				call	FASTCOPYX8x8
+				ex	DE,HL			; [ 4] HL <=> DE (csere)
+				add	HL,BC			; [11] HL = HL + (64 - oszlopok) - LDI csökkenti a BC-t, így C = 64 - oszlopok
+				ex	DE,HL			; [ 4] DE <=> HL (csere vissza, azaz DE = DE + (64 - oszlopok))
+				dec	A			; [ 4] csökkentjük a kiirandó sorok számát (ciklusszámláló)                                                
+				jp	NZ,PUTSPRITE8x8		; [10/1] ha nem raktuk még ki az összes sort, akkor vissza az elejére
+				ret				; [10]
+				
+	FASTCOPYX8x8		ldi
+;*				ldi
+;*				ldi
+;*				ldi
+				
+				ret
+;*************************************************************************************************
+; DRAW_fekete  -szimpla felülírós sprite kirakás                                                                 
+; grafika: 16x16 pixel, 4x16=64 byte
+; SPRADDR-sprite címe
+; SPRVRAMADDR-ide kell kirakni, videoram címe
+;*************************************************************************************************
+	DRAW_fekete		
+                         ; HL: sprite kezdőcíme  DE: vram pozíció  A : sprite.magassága                                                                
+				ld	HL,(SPRADDR)		; [14] a sprite címe a memóriában
+				ld	DE,(SPRVRAMADDR)	; [20] a sprite aktuális pozíciójának videoram címe
+				ld	A,16
+                         ; HL: sprite kezdőcíme DE: vram pozíció A : sprite.magassag                                                                 
+	PUTSPRITE		ld	BC,64			; [10] BC = 64 (64 byte egy képernyősor)
+				call	FASTCOPYX
+				ex	DE,HL			; [ 4] HL <=> DE (csere)
+				add	HL,BC			; [11] HL = HL + (64 - oszlopok) - LDI csökkenti a BC-t, így C = 64 - oszlopok
+				ex	DE,HL			; [ 4] DE <=> HL (csere vissza, azaz DE = DE + (64 - oszlopok))
+				dec	A			; [ 4] csökkentjük a kiirandó sorok számát (ciklusszámláló)                                                
+				jp	NZ,PUTSPRITE		; [10/1] ha nem raktuk még ki az összes sort, akkor vissza az elejére
+				ret				; [10]
+				
+	FASTCOPYX		ldi
+				ldi
+				ldi
+				ldi
+				
+				ret
+;*************************************************************************************************
+; DRAW_fekete  -szimpla felülírós sprite kirakás                                                                 
+; grafika: 16x16 pixel, 4x16=64 byte
+; SPRADDR-sprite címe
+; SPRVRAMADDR-ide kell kirakni, videoram címe
+;*************************************************************************************************
+	DRAW_fekete_feles
+                         ; HL: sprite kezdőcíme  DE: vram pozíció  A : sprite.magassága                                                                
+				ld	HL,(SPRADDR)		; [14] a sprite címe a memóriában
+				ld	DE,(SPRVRAMADDR)	; [20] a sprite aktuális pozíciójának videoram címe
+				ld	A,8
+                         ; HL: sprite kezdőcíme DE: vram pozíció A : sprite.magassag                                                                 
+	PUTSPRITE_feles		ld	BC,128			; [10] BC = 64 (64 byte egy képernyősor)
+				call	FASTCOPYX_feles
+				ex	DE,HL			; [ 4] HL <=> DE (csere)
+				add	HL,BC			; [11] HL = HL + (64 - oszlopok) - LDI csökkenti a BC-t, így C = 64 - oszlopok
+				ex	DE,HL			; [ 4] DE <=> HL (csere vissza, azaz DE = DE + (64 - oszlopok))
+				inc	HL
+				inc	HL
+				inc	HL
+				inc	HL
+				dec	A			; [ 4] csökkentjük a kiirandó sorok számát (ciklusszámláló)                                                
+				jp	NZ,PUTSPRITE_feles	; [10/1] ha nem raktuk még ki az összes sort, akkor vissza az elejére
+				ret				; [10]
+				
+	FASTCOPYX_feles		ldi
+				ldi
+				ldi
+				ldi
+				
+				ret
+;*****************************************************************************************************				
+;       -Memória a sprite mögötti terület elmentésére  -most nem kell				
+;	BALL40X40BG		ds	800,$0
+;				nop
+;*****************************************************************************************************
+;    CALCSPRVRAMADDR  -címszámítás kirajzolás előtt
+;    SPRX és SPRY alapján kiszámolja a cideoram címet és azt menti SPRVRAMADDR változóba
+;    SPRVRAMADDR=SPRY*64+SPRX/4
+;*****************************************************************************************************				
+	CALCSPRVRAMADDR		ld	A,(SPRY)		; [13] 
+				ld	L,A			; [ 4] 
+				ld	H,0			; [ 4] H = 0 -> HL = SprY                                                            
+				add	HL,HL			; [11] HL = SprY * 2
+				add	HL,HL			; [11] HL = SprY * 4
+				add	HL,HL			; [11] HL = SprY * 8
+				add	HL,HL			; [11] HL = SprY * 16
+				add	HL,HL			; [11] HL = SprY * 32
+				add	HL,HL			; [11] HL = SprY * 64 (64 byte egy sor, így ennyivel kell megszorozni az SprY-t)                                                        
+				ld	A,(SPRX)		; [13] A = SprX
+				srl	A			; [ 8] A = SprX div 2 (Shift Right Logical - jobbra tolja 1-el a biteket, balról 0 lép be a felső bitbe)
+				srl	A			; [ 8] A = SprX div 4 -> 1 byte 4 pixel, így az X pozíció byte-okban = SprX div 4
+				ld	C,A			; [ 4] C = SprX div 4
+				ld	B,0			; [ 4] B = 0 -> BC = SprX div 4
+				add	HL,BC			; [11] HL = (SprY * 64) + (SprX div 4)                              
+				ld	BC,VIDRAMSTART		; [10] 
+				add	HL,BC			; [11] HL = VidRamStart + (SprY * 64) + (SprX div 4) <- ez a Sprite videoram kezdőcíme SprX, SprY alapján
+				ld	(SPRVRAMADDR),HL	; [16] SprVRAMAddr = HL (letároljuk SprVRamAddr változóba későbbi felhasználásra)
+				ld	D,H			; [ 4] D = H
+				ld	E,L			; [ 4] E = L -> DE = HL                                                           
+				ret				; [10] visszatérünk a hívási pontra
+ ;******************************************************************************************************

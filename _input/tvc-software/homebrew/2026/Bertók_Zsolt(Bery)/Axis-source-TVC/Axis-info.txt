@@ -1,0 +1,74 @@
+AXIS - VIDEOTON TV-Computer (TVC) játék
+
+Készült: 2024. november-december
+Fejlesztő: BerySoft (Bery aka Bertók Zsolt)
+Kiadás: 2024.12.26. - a 2024-es TVC játékfejlesztő versenyre kiadott verzió
+Verzió: 2025.02.15. - egy szimpla, befejezetlen zene került a címkép alá és néhány plusz komment a forráskódba
+Fejlesztőeszköz: TRSE (Turbo Rascal Syntax Error)
+Programnyelv: Rascal (Pascal) + Assembly (a GE unitban)
+
+Az AXIS egy Alien univerzumban játszódó TVC játék. Az Axis nevű holdon egy bányász kolónia van. A kolóniára bekerült egy  invazív létforma, és levadászta az embereket. A játékos talán az utolsó túlélő, aki csak úgy menekülhet meg, ha eljut a teherdokkig. Ehhez több szektoron kell átjutnia, elkerülve a xenomorphokat. A szektorok ajtói kulcskártyákkal nyithatóak, amiket össze kell szedni a szektorokban. Az ajtók a SPACE vagy joystick TŰZ gombbal nyithatóak és zárhatóak. A játékos  joystick-kal irányítható. A játék a lopakodáson, az alienek elkerülésén alapul.
+
+Youtube videó a játékról:
+https://www.youtube.com/watch?v=aTkDnj-KsZs
+
+A játék körülbelül 9-10, nem egybefüggő nap alatt készült, nem egész 2 hónap alatt, napi 3-7 óra munkával. A fejlesztés közben szemproblémám lett, ezért nem sikerült mindent megvalósítani az eredeti tervekből, és a pályák is elég gyorsan lettek a végén összerakva, amiatt az első néhány pálya után már nem volt idő elég változatosság, és újabb nehézségek alapján megtervezni azokat.
+
+Itt egy Youtube video sorozat a TRSE fejlesztőeszköz TVC-n való használatáról, amik a telepítéstől egy konkrét játék fejlesztésének fontosabb lépésein át bemutatják azt. A 16-19. részek az AXIS készítéséről szólnak:
+https://www.youtube.com/playlist?list=PLGW6Nmgx1Ou-HhkenzADsEIlYHi1oHqv6
+
+FORDÍTÁS
+---------
+A TRSE fejlesztőeszközben történő lefordításhoz az Axis.ras forráskód mellé kell másolni az "axis" mappát a tartalmával. Csak ennyire van szükség a program fordításához. Az axis mappa tartalmában többnyire benne vannak a tömörített (.zx7) bináris fájlok tömörítetlen verziói is (.bin; .sfx). Az utóbbiakra nincs szükség a program lefordításához, amennyiben van ugyanúlyan néven .zx7 fájl is. A .zx7 kiterjesztésű fájlok tömörítettek, amik a ZX7 tömörítővel vannak becsomagolva.
+
+A trse\units\TVC\ mappába kell másolni a unit mappában levő GE.tru fájlt, ami a Game Engine unit forráskódja.
+
+A többi mappa tartalmára nincs szükség, azokat csak érdekességképpen mellékeltem, hogy meg lehessen nézni, hogy milyen képekből és hangokból készültek a programba befordított grafikák és digi hangok.
+
+
+Néhány technikai érdekesség a játékról 
+======================================
+
+Alienek (Xenomorphok)
+---------------------
+A TRSE videókban bemutattam, hogy miként van leprogramozva az Alienek mozgása a pályán. De, hogy ezt fokozzam, beletettem egy egyszerű kis kódot, hogy amikor egy Alien egy folyósón "rálát" a játékosra - akár szemben van vele, akár oldalra tőle, akár mögötte -, akkor onnantól elkezdi üldözni a főhőst mindaddig, amíg nem fordul úgy be a játékos, hogy az Alien már nem "látja". Ettől izgalmasabb lett a játék, mert nem csak "vakon" bolyonganak a Xenomorphok, ami révén csak véletlenül futhatnának össze a játékossal, de simán rá is támadnak.
+
+A pályák 
+--------
+A pályák a Tile Map (csempetérkép) technikával vannak letárolva és megjelenítve. Egy pálya 15x13 elemből áll. A pályák elég egyszerű felépítésűnek tűnnek, de ennek ellenére 34 féle képdarabból (csempéből) állnak. Sőt, ezeken felül még van 6 egyéb csempesorszám, amik a kulcsok, az Alienek, és a nyitott ajtók pozícióit határozzák meg. Lett is ebből egy bug, mert amikor az Alienek átlépnek egy másik csempére, akkor az előző pozíciójukat "letörlik" a padló csempe sorszámával. Igen ám, de így letörölték a nyitott ajtót jelző csempesorszámot is, amikor áthaladtak egy ilyenen. Vagy 10 percig gondolkoztam, hogy miért nem tudok az egyik pályán becsukni egy korábban kinyitott ajtót, mire rájöttem, hogy ez az oka :) Szerencsére 2 utasítással ezt 1 perc alatt tudtam javítani.
+
+Hangok
+-------
+A játékban 6 különböző digitális hangeffekt van. Ezek 4 bites, 4 kHz-es hangok, és persze elég sok helyet foglalnak, annak ellenére, hogy igyekeztem a lehető legkisebbre szerkeszteni azokat. A méretükről lentebb.
+
+Memória
+-------
+Mivel a játékban van egy címkép, és egy kisebb győzelmi kép is, valamint digitális hangeffektek is, ezért a fejlesztés vége felé már elég szűkös kezdett lenni a memória. Emiatt sok minden tömörítve van eltárolva, és bizonyos dolgokat csak akkor csomagolok ki, amikor éppen szükség van rá. 
+
+Például:
+
+A címképet az U3 lapra, legfelső 16 kbyte-ba tömörítem ki, ez 14400 byte-ot foglal (betömörítve csak 8709 byte), mivel csak 225 soros, nem 240. Majd kitömörítés után, amikor kimásoltam a képernyőre, a helyére a digi hangeffekteket, és az ajtó sprite-animációkat tömörítem ki az U3 lapra. Ebből lett is egy bug, mert amikor a játékos megnyeri a játékot, akkor a digi hangeffekt lejátszó még fut a háttérben, de nem csinál semmit, mert arra a byte-ra mutat a lejátszó, ami éppen azt mutatja, hogy véget ért a digi hang. De amikor kitömörítem ide újra a címképet, akkor az felülírja ezt a byte-ot, így a digi lejátszó elkezdi lejátszani a címképet :) Szóval erre is figyelni kellett.
+
+A 256 (FFh) memóriacímen a TVC ASCII képernyője van, amit arra használ a TVC, hogy szimulálja a karakteres képernyőt, mivel valódi karakteres képernyő nincs. Ennek a mérete 1600 byte (64 karakter x 25 sor). Ezt követi az átdefiniálható karakterek memóriaterülete, ahol a 128-224 karakterek pontmátrixa van letárolva (960 byte). Mivel én egyiket sem használom a játékban, így ezt a memóriaterület szabadon felhasználhattam. Alapesetben a Game Engine itt tárolja a sprite-ok háttéreinek mentésére szolgáló puffereket, de mivel most ilyet sem használtam az Axisban, így ezt az 1600+960=2560 byte-ot fel tudtam használni másra. Egyrészt erre a memóriaterületre csomagolom ki a karakterkészletet tartalmazó grafikát (betömörítve 576 byte, kitömörítve 2060 byte), amiben a betűk, számok, írásjelek bitmapként vannak letárolva. Ezzel van kiírva minden szöveg a játékban. Majd a pálya kirajzolása előtt ugyanide tömörítem ki a pályát alkotó képdarabok (csempék) bitmapjeit (betömörítve: 511 byte, kitömörítve: 2112 byte), felülríva a karakterkészletet. Ez azért nem gond, mert egyszerre nincs szükség a pálya rajzolására, és szöveg kiírására is, így mindig csak az egyik van kicsomagolva erre a memóriacímre. Így az összesen 4172 byte-nyi grafika csak 1087 byte-ot foglalt betömörítve, és nagyjából 2 kbyte-ot, felváltva, kicsomagolva.
+
+Az Alien sprite-ok tömbjét a magnó munkaterületre címeztem (ennek mérete 600 byte), hiszen a játék közben nincs betöltés, így erre a memóriaterületre sincs szükség. Maximum 8 darab Aliennel számoltam, a Game Engine Sprite osztályának egy példánya 39 byte-ot foglal, így a 8 sprite 8x39 = 321 byte lett volna. Végül maximum 4 Alien van az utolsó pályákon, mert már 4 ellen is nagyon nehéz a játék, így ez a 600 byte bőségesen elég volt erre.
+
+Az összes ajtó animáció kitömörítése már nem fért el az U3 lapon, a legfelső 16 kbyte-ban, a digi hangok mellett, így a fehér, vízszintes ajtó animációnak kellett még valahol találnom egy kis helyet. A Stack (verem) a 3756-os decimális címtől 2048 byte-on át helyezkedik el. A Stack-en tárolódnak a szubrutinhívások visszatérési memóriacímei, meg paramétereket is szokás a Stack-en átadni, és a processzor regisztereit is letárolja ide időnként a gépi kódú program. De mivel ekkora Stack-re biztosan nincs szüksége a programomnak, azért egy részét felhasználtam a fehér, vízszintes ajtó animációjának kicsomagolt változatára.
+
+Az éppen képernyőn levő szintnek (szektornak) is van egy tömbje, amibe mindig bemásolom a szintek (szektorok) tömbjéből az aktuálisat. Ez nem túl nagy, csak 15x13=195 byte. Így ennek könnyen találtam a programban nyílván nem használt, BASIC változóterületen helyet.
+
+És még volt egy-két ilyen extra memóriaterület, amit felhasználtam a játékban. Szóval lehet, és gyakran kell is trükközni, hogy elférjen egy játék a TVC memóriájában.
+
+Méretek
+-------
+Mi mennyi helyet foglal körülbelül a játékban:
+29 kbyte grafika
+15 kbyte digitális hangeffekt
+13 kbyte programkód
+ 2  kbyte pályatérkép
+626 byte zene
+pár száz byte szöveg, amit kiír a játék
+
+Pályaszerkesztő
+---------------
+Még 2019-ben írtam a Fuss! játékomhoz egy pályaszerkesztőt, ezt alakítottam át az Axishoz. Fapados, de gyorsan megvolt, és ezekhez a pályákhoz megfelelt. Ennek a képernyőfotója látható itt alul.

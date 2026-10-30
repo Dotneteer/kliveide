@@ -1,0 +1,66 @@
+SHADOW MAZE - EREDETI AMSTRAD MALUS-SZABALY
+
+PONTOZAS
+Mindket verzio az eredeti CPC-forras 440-580. sorainak elvet koveti.
+A jatekos negy kozvetlen szomszedjat ellenorzi. Minden meg nem fedezett
+fal +0,2 malust ad es atvalt a felfedezett fal megjelenitesere.
+Ugyanaz a fal ugyanazon a palyan csak egyszer szamit. A mar ismert
+falnak utkozes vagy a mellette valo ujabb elhaladas nem ad uj pontot.
+A megvilagitas csak a lathatosagot valtoztatja: a meg nem fedezett
+szomszedos fal akkor is szamit, ahogy az eredeti TEST(...)=3 ellenorzesben.
+A felfedezes hangeffekttel jar. A malus a negy palyan osszeadodik,
+uj jatek inditasakor nullazodik.
+
+A kijelzo csak az egesz reszt mutatja, az eredeti INT(malus) szerint:
+1 uj fal = 0,2 -> 0 a kijelzon
+4 uj fal = 0,8 -> 0 a kijelzon
+5 uj fal = 1,0 -> 1 a kijelzon
+9 uj fal = 1,8 -> 1 a kijelzon
+10 uj fal = 2,0 -> 2 a kijelzon
+A Z80 kod egesz otodokben tarol, es kiiraskor ottel oszt, a lebegopontos
+kerekitesi hibak elkerulesere. Ez felulirja a korabbi utkozeses szabalyokat.
+
+MEGTARTOTT ELEMEK
+A betoltokepen a korabbi sarga helyett feher szerepel. A kepernyo utan
+a felhasznalo altal megadott angol utmutato jelenik meg. A SHADOW MAZE
+cim oda-vissza mozog a ket figura kozott. A zene a korabbi lassitott,
+kb. 14 Hz-es, egyszolamu TVC-atirat; a menuben szol, jatekban az effektek.
+Palyankent 120 masodperc, a fenyko 5 masodpercre vilagit.
+
+IRANYITAS
+CAS betoltese WinTVC-ben, majd RUN.
+SPACE: tovabblepes a betoltokeprol, inditas, ujrakezdes.
+O/P: balra/jobbra. Q/A: fel/le. ESC: kilepes BASIC-be.
+A joystick szinten hasznalhato. OPQA-hoz nem kell joystick-emulacio.
+Ket kepernyo kozott engedd fel a SPACE-et/joystickiranyt.
+
+ELLENORZES
+Mindket leforditott Z80 valtozat tesztelve: +0,2 uj szomszedos falankent,
+ismeret megorzese, pontozas nelkuli ismetelt utkozes, megvilagitasi allapot,
+3001 kulonbozo belso szamlalo egeszreszenek kiirasa, uj jatek nullazasa.
+A teljes zene, ismétles, effektek, OPQA, SPACE, menu es cimmozgas tesztjei
+is sikeresek. A CAS fejlec es a kod betoltesi helye ellenorizve.
+TELJES WINTVC-/VALODI TVC-FUTTATAS ITT MEG NEM TORTENT.
+
+FAJLOK
+Shadow_Maze_Z80.cas - betoltheto program
+Shadow_Maze_Z80.bin - nyers kod, 7000-es betoltesi/inditasi cim
+Shadow_Maze_Z80.asm / Shadow_Maze_Z80_forras.txt - teljes kommentelt forras
+Uj_utmutato.png / Mozgo_felirat.gif - a Z80 kodbol keszult menuelo nezet
+build_shadow_cas.py - ujraforditas Python 3 es pyz80 hasznalataval
+
+Eredeti jatek/grafika: Rayon Studio / Roya; eredeti hanganyag: Morri.
+https://rayon-studio.itch.io/shadow-maze
+
+EGYSZER HASZNALHATO FENYKOVEK
+Az elso ralepekor a ko mezoje padlova valtozik (0), es 250 rendszerorautem,
+azaz 5 masodperc vilagitas indul. A ko az adott palyan tobbet nem latszik,
+es a helyere visszalepve nem indit uj vilagitast vagy hangot. Mindket
+ko kulon egyszer hasznalhato. Uj palyan/uj jatekban ket uj ko szerepel.
+A masodik ko az aktualis vilagitasbol hatralevo idot uj 5 masodpercre allitja.
+A meglevo utmutato, mozgo cim, OPQA, lassitott zene es az eredeti
+Amstrad (+0,2/uj szomszedos fal) malus megmaradt.
+A fogyasztast, a visszalepest, a hang egyszeriseget, az idolejaratot es az
+uj palya kovetkezo ket kovet mindket gepi kodu valtozatban teszteltem.
+
+EBBEN A KIADASBAN A BETOLTOKEP FEHER (palettakod 85) maradt.

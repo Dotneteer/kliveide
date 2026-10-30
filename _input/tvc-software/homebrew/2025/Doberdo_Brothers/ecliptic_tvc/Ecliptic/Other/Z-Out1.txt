@@ -1,0 +1,6 @@
+Ez a .mod a Z-Out nevű Amigás játék első pályájának zenéje, amelyet eredetileg Rudolf Stember írt TFMX editorban. Úgy készült, hogy a hangmintákat az Amiga memóriájából kinyertük egyben, azt szétvágtuk kölönálló hangszerekre, majd a zenét hallás után teljesen újraírtuk Protrackerben. Erre a lépésre azért volt szükség, hogy az Ecliptic zenéjét megírhassuk a DevTool saját szerkesztőjében (hang-, ritmus-, és időhelyesen).
+
+Mivel a hangszereket Protrackerben finomhangoltuk (és nem a TFMX szoftveres, pszeudo nyolc csatornás mixerén keresztül vannak lejátszva), ez a zene ilyen tisztán még sosem szólalt meg.
+
+A fájl bonus tartalomként került kiadásra az Ecliptic projekthez.
+Rudolf Stembernek pedig itt, külön is köszönjük a munkáját.

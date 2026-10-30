@@ -1,0 +1,7 @@
+SpaceWar játék forráskód bemásolása a megfelelő TRSE mappákba:
+
+SpaceWar.ras  -> trse\tutorials\TVC\tutorials\
+SpaceWar.flf  -> trse\tutorials\TVC\tutorials\resources\images\
+TVC.tru       -> trse\units\TVC\
+
+Ezt követően a TRSE elindítása után a SpaceWar.ras kiválasztható és lefordítható, futatatható.

@@ -1,0 +1,47 @@
+/*
+ Osztott kép - képernyő felső ele Graphics 16, az alsó Graphics 4
+ VIDEOTON TV-Computer  TRSE + Game Engine 
+ Készítette: Bery
+ Verzió: 2024.03.15.
+*/
+program OsztottKep;
+@use "GE"
+@use "TVC"
+
+var
+	BohocZX7 	: incbin("resources/Bohoc.ZX7");
+	Text1   	: string = ("Osztott k",145,"perny",149," dem",147);
+	Text2   	: string = ("Fel",151,"l Graphics 16 m",147,"d van");
+	Text3   	: string = ("A sz",148,"veg viszont Graphics 4 m",147,"d");
+  Text4   	: string = ("TRSE + Game Engine");
+  
+begin
+	GE::SetGraphics(GE::GRAPHICS4);
+	GE::SetPalette(3, GE::PALETTE_WHITE);
+	GE::Init(GE::DIRECT_TO_SCREEN);
+	GE::SetMemory(GE::MEM_VID_ON);
+	// kép kitömörítése a képernyőre:
+	GE::ZX7Decompress(#BohocZX7, GE::SCREEN_ADDR); 
+	// Szövegek kiírása ROM rutionokkal:
+	TVC::SetColor(2);
+	TVC::WriteAt(1, 14, "VIDEOTON TV-Computer");
+	TVC::SetColor(3);
+	TVC::WriteAt(1, 16, #Text1);
+	TVC::WriteAt(1, 18, #Text2);
+	TVC::WriteAt(1, 20, #Text3);
+	TVC::SetColor(1);
+	TVC::WriteAt(1, 22, #Text4);	
+  GE::SetRasterInterruptPos(119);
+  // Főciklus
+  while (true) do
+  begin
+	  // 1. képernyőfél
+	  GE::WaitForSync();							// várakozás a cursor-megszakításra
+	  GE::Out(6, GE::GRAPHICS16); 		// átváltás Graphics 16 módra
+	  GE::SetRasterInterruptPos(119); // cursor-megszakítás pozíciójának beállítása a 119. sor végére
+	  // 2. képernyőfél
+	  GE::WaitForSync();              // várakozás a cursor-megszakításra
+	  GE::Out(6, GE::GRAPHICS4);			// átváltás Graphics 4 módra
+	  GE::SetRasterInterruptPos(239);	// cursor-megszakítás pozíciójának beállítása az utolsó sor végére
+  end;
+end.

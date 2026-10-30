@@ -1,0 +1,45 @@
+program GameIntro;
+@use "GE"
+@use "compression"
+
+var 
+	//A "betöltés előtti" címképernyő betömörítve
+	main : incbin("resources/main.bin") compressed;
+	//A cas fejléc nélkül betömörített játék (autvc.exe -oh game.cas)
+	game : incbin("resources/game-cr.bin", $4000);
+	gameLength : integer;
+
+begin
+	//Képernyő és memória beállítás
+ 	GE::SetGraphMode (GE::Graphics16);
+	GE::SetMemory(GE::MEM_48K_VID);	
+  	GE::SetBorder(GE::BORDER_BLACK);
+
+	//Kitömörítjük a címképernyőt a videramra
+	Compression::Decompress(#main, $8000);
+	while (not GE::Pressed(GE::KEY_SPACE)) do GE::GetKeyboard();	
+
+	//Memória visszalapozása normálra
+	GE::SetMemory(GE::MEM_DEFAULT);
+	
+	//Beállítjuk a másolandó méretet
+	gameLength:=sizeof(game);
+
+ 	asm ("
+		//Átmásoljuk a másoló rutint a $100-ra majd elindítjuk
+		ld	hl, CopyBegin
+		ld	de,$100
+		ld	bc,20
+		ldir	
+	  	jp	$100
+
+		//A basic kezdetére másolja az önkitömörítőt és elindítja
+	CopyBegin:
+		ld	hl, game
+		ld	de, $19ef
+		ld	bc, (gameLength)
+		ldir
+		jp	$1a00
+	CopyEnd:
+		");
+end.

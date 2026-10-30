@@ -1,0 +1,833 @@
+program JG_101; 
+// JÁTÉKNÉV GENERÁTOR 1.01
+// 2024 julius.
+//
+@use "tvc_alap2"
+var  
+   i,j,i2,j2,a: byte;
+   randomertek1,randomertek2,randomertek3:byte;
+   rand1,rand2,rand3,rand4:byte;
+   e1,e2,e3,e4,e4b:byte;
+   rand5:byte;
+   //
+   k,f:pointer;
+   s1,s2:byte;
+   x,y:byte;
+   szin:array[] of byte=(1,4,5,16,17,20,21,65,68,69,80,81,68,69,80,81,0);
+   
+   byte_1b:byte;
+   
+   forras,kepernyo:pointer;
+   
+   // 64db 8x8-as grafika:
+   GRADATA:incbin("JG100GRA.BIN");
+
+procedure putimage_2x8_normal;
+begin
+ for byte_1b:=0 to 8 do // 0..7
+   begin
+   kepernyo[0]:=forras[0];
+   kepernyo[1]:=forras[1];
+   kepernyo:=kepernyo+64; forras:=forras+2;
+   end;
+end;
+procedure putimage_2x8_or;
+begin
+ for byte_1b:=0 to 8 do // 0..7
+   begin
+   kepernyo[0]:=kepernyo[0]|forras[0];
+   kepernyo[1]:=kepernyo[1]|forras[1];
+   kepernyo:=kepernyo+64; forras:=forras+2;
+   end;
+end;
+procedure putimage_2x8_and;
+begin
+ for byte_1b:=0 to 8 do // 0..7
+   begin
+   kepernyo[0]:=kepernyo[0]&forras[0];
+   kepernyo[1]:=kepernyo[1]&forras[1];
+   kepernyo:=kepernyo+64; forras:=forras+2;
+   end;
+end;
+procedure szoveg1(by1:byte); // jelző
+begin
+ by1:=by1&127;
+ if by1>85 then by1:=by1-85;
+ e1:=by1;
+ 
+ if by1=0 then TVC_alapunit2::szoveg:=" ";	
+ if by1=1 then TVC_alapunit2::szoveg:="VÖRÖS";	
+ if by1=2 then TVC_alapunit2::szoveg:="CSENDES";	
+ if by1=3 then TVC_alapunit2::szoveg:="FEHÉR";	
+ if by1=4 then TVC_alapunit2::szoveg:="FEKETE";	
+ if by1=5 then TVC_alapunit2::szoveg:="ÁLMOS";	
+ if by1=6 then TVC_alapunit2::szoveg:="ÓRIÁS";	
+ if by1=7 then TVC_alapunit2::szoveg:="ALACSONY";	
+ if by1=8 then TVC_alapunit2::szoveg:="KÉK";	
+ if by1=9 then TVC_alapunit2::szoveg:="KARATÉS";	
+ if by1=10 then TVC_alapunit2::szoveg:="BOSSZÚS";	
+ if by1=11 then TVC_alapunit2::szoveg:="SÉRÜLT";	
+ if by1=12 then TVC_alapunit2::szoveg:="PISZKOS";	
+ if by1=13 then TVC_alapunit2::szoveg:="ALAMUSZI";	
+ if by1=14 then TVC_alapunit2::szoveg:="VÍZES";	
+ if by1=15 then TVC_alapunit2::szoveg:=" A";	
+ if by1=16 then TVC_alapunit2::szoveg:="EGY";	
+ if by1=17 then TVC_alapunit2::szoveg:="EZ"; // **	
+ if by1=18 then TVC_alapunit2::szoveg:=" ";	
+ if by1=19 then TVC_alapunit2::szoveg:="AZ";	
+ if by1=20 then TVC_alapunit2::szoveg:="ELTÉVEDT";	
+ if by1=21 then TVC_alapunit2::szoveg:="MAGÁNYOS";	
+ if by1=22 then TVC_alapunit2::szoveg:="ÉHES";	
+ if by1=23 then TVC_alapunit2::szoveg:="VÁNDORLÓ";	
+ if by1=24 then TVC_alapunit2::szoveg:="EGY";	
+ if by1=25 then TVC_alapunit2::szoveg:="EZ";	// *
+ if by1=26 then TVC_alapunit2::szoveg:="KÉT";	
+ if by1=27 then TVC_alapunit2::szoveg:="HÁROM";	
+ if by1=28 then TVC_alapunit2::szoveg:="VÉRES";	
+ if by1=29 then TVC_alapunit2::szoveg:="SÁROS";	
+ if by1=30 then TVC_alapunit2::szoveg:=" ";	
+ if by1=31 then TVC_alapunit2::szoveg:=" A";	
+ if by1=32 then TVC_alapunit2::szoveg:="PIZSAMÁS";	
+ if by1=33 then TVC_alapunit2::szoveg:="SZOMJAS";	
+ if by1=34 then TVC_alapunit2::szoveg:="CSENDES";	
+ if by1=35 then TVC_alapunit2::szoveg:="CSUHÁS";	
+ if by1=36 then TVC_alapunit2::szoveg:="KÉKSZEMßU";	
+ if by1=37 then TVC_alapunit2::szoveg:=" ";	
+ if by1=38 then TVC_alapunit2::szoveg:="VIDÁM";	
+ if by1=39 then TVC_alapunit2::szoveg:="SZOMORÚ";	
+ if by1=40 then TVC_alapunit2::szoveg:="TALPRAESETT";	
+ if by1=41 then TVC_alapunit2::szoveg:="SZERENCSÉTLEN";	
+ if by1=42 then TVC_alapunit2::szoveg:="SZERENCSÉS";	
+ if by1=43 then TVC_alapunit2::szoveg:=" A";	
+ if by1=44 then TVC_alapunit2::szoveg:="SÁNTA";	
+ if by1=45 then TVC_alapunit2::szoveg:="BUNYÓS";	
+ if by1=46 then TVC_alapunit2::szoveg:="BOXOS";	
+ if by1=47 then TVC_alapunit2::szoveg:="KÖTEKEDßO";	
+ if by1=48 then TVC_alapunit2::szoveg:="POFÁZÓS";	
+ if by1=49 then TVC_alapunit2::szoveg:="KINCSKERESßO";	
+ if by1=50 then TVC_alapunit2::szoveg:="SZÉP SZEMßU";	
+ if by1=51 then TVC_alapunit2::szoveg:="CSÚF";	
+ if by1=52 then TVC_alapunit2::szoveg:="PISZKOS";	
+ if by1=53 then TVC_alapunit2::szoveg:="HIRTELEN";	
+ if by1=54 then TVC_alapunit2::szoveg:="ALAPOS";	
+ if by1=55 then TVC_alapunit2::szoveg:="HANYAG";	
+ if by1=56 then TVC_alapunit2::szoveg:="KALAPOS";	
+ if by1=57 then TVC_alapunit2::szoveg:="CSIZMÁS";	
+ if by1=58 then TVC_alapunit2::szoveg:="ZÖLD RUHÁS";	
+ if by1=59 then TVC_alapunit2::szoveg:="NAGYKABÁTOS";	
+ if by1=60 then TVC_alapunit2::szoveg:="NAGYHAJÚ";	
+ if by1=61 then TVC_alapunit2::szoveg:="KOPASZ";	
+ if by1=62 then TVC_alapunit2::szoveg:="TÖRÖTT KEZßU";	
+ if by1=63 then TVC_alapunit2::szoveg:="RÉSZEGES";	
+ if by1=64 then TVC_alapunit2::szoveg:="SZÉDÜLT";	
+ if by1=65 then TVC_alapunit2::szoveg:="ßORÜLT";	
+ if by1=66 then TVC_alapunit2::szoveg:="TOMBOLÓ";	
+ if by1=67 then TVC_alapunit2::szoveg:="VESZETT";	
+ if by1=68 then TVC_alapunit2::szoveg:="VÁGOTT NYAKÚ";	
+ if by1=69 then TVC_alapunit2::szoveg:="KANCSLI";	
+ if by1=70 then TVC_alapunit2::szoveg:="DADOGÓS";	
+ if by1=71 then TVC_alapunit2::szoveg:="FÉLÉNK";	
+ if by1=72 then TVC_alapunit2::szoveg:="MÁSNAPOS";	
+ if by1=73 then TVC_alapunit2::szoveg:="VÉRES";	
+ if by1=74 then TVC_alapunit2::szoveg:="GYILKOS";	
+ if by1=75 then TVC_alapunit2::szoveg:="SZAKÁLLAS";	
+ if by1=76 then TVC_alapunit2::szoveg:="KEGYETLEN";	
+ if by1=77 then TVC_alapunit2::szoveg:="VAJSZIVßU";	
+ if by1=78 then TVC_alapunit2::szoveg:="HALKSZAVÚ";	
+ if by1=79 then TVC_alapunit2::szoveg:="KIABÁLÓS";	
+ if by1=80 then TVC_alapunit2::szoveg:="RÖVIDNADRÁGOS";	
+ if by1=81 then TVC_alapunit2::szoveg:="SZEGÉNYES";	
+ if by1=82 then TVC_alapunit2::szoveg:="MENEKÜLßO";	
+ if by1=83 then TVC_alapunit2::szoveg:="NAGY DUMÁS";	
+ if by1=84 then TVC_alapunit2::szoveg:="SEBHELYES";	
+ if by1=85 then TVC_alapunit2::szoveg:="VASFOGÚ";	
+end;
+
+procedure szoveg2(by2:byte); // főnév
+begin
+ by2:=by2&127;
+ if by2>102 then by2:=by2-103;
+ e2:=by2;
+// case by2 of
+ if by2=0 then TVC_alapunit2::szoveg:="NINJA";	
+ if by2=1 then TVC_alapunit2::szoveg:="HARCOS";	
+ if by2=2 then TVC_alapunit2::szoveg:="SÁRKÁNY";	
+ if by2=3 then TVC_alapunit2::szoveg:="PAP";	
+ if by2=4 then TVC_alapunit2::szoveg:="KIRÁLY";	
+ if by2=5 then TVC_alapunit2::szoveg:="JÁNOS";	
+ if by2=6 then TVC_alapunit2::szoveg:="SÁRI";	
+ if by2=7 then TVC_alapunit2::szoveg:="ROBOT";	
+ if by2=8 then TVC_alapunit2::szoveg:="ROBOTOK";	
+ if by2=9 then TVC_alapunit2::szoveg:="BÉKA";	
+ if by2=10 then TVC_alapunit2::szoveg:="KALÓZOK";	
+ if by2=11 then TVC_alapunit2::szoveg:="VÁROS";	
+ if by2=12 then TVC_alapunit2::szoveg:="LOVAS";	
+ if by2=13 then TVC_alapunit2::szoveg:="H¤OS";	
+ if by2=14 then TVC_alapunit2::szoveg:="TEVE";	
+ if by2=15 then TVC_alapunit2::szoveg:="NYUSZI";	
+ if by2=16 then TVC_alapunit2::szoveg:="GYILKOS";	
+ if by2=17 then TVC_alapunit2::szoveg:="TANÁR";	
+ if by2=18 then TVC_alapunit2::szoveg:="LOVAS";	
+ if by2=19 then TVC_alapunit2::szoveg:="VARÁZSLÓ";	
+ if by2=20 then TVC_alapunit2::szoveg:="EGÉR";	
+ if by2=21 then TVC_alapunit2::szoveg:="OROSZLÁN";	
+ if by2=22 then TVC_alapunit2::szoveg:="SÁRKÁNY";	
+ if by2=23 then TVC_alapunit2::szoveg:="KOLDUS";	
+ if by2=24 then TVC_alapunit2::szoveg:="LÁNY";	
+ if by2=25 then TVC_alapunit2::szoveg:="FIU";	
+ if by2=26 then TVC_alapunit2::szoveg:="MÁGUS";	
+ if by2=27 then TVC_alapunit2::szoveg:="VONAT";	
+ if by2=28 then TVC_alapunit2::szoveg:="POSTÁS";	
+ if by2=29 then TVC_alapunit2::szoveg:="CSERKÉSZ";	
+ if by2=30 then TVC_alapunit2::szoveg:="INDIÁN";	
+ if by2=31 then TVC_alapunit2::szoveg:="EMBER";	
+ if by2=32 then TVC_alapunit2::szoveg:="LÁNYKA";	
+ if by2=33 then TVC_alapunit2::szoveg:="FIÚCSKA";	
+ if by2=34 then TVC_alapunit2::szoveg:="RABLÓK";	
+ if by2=35 then TVC_alapunit2::szoveg:="KATONÁK";	
+ if by2=36 then TVC_alapunit2::szoveg:="TANÁRN¤O";	
+ if by2=37 then TVC_alapunit2::szoveg:="FARKAS";	
+ if by2=38 then TVC_alapunit2::szoveg:="GYERMEK";	
+ if by2=39 then TVC_alapunit2::szoveg:="RUDI";	
+ if by2=40 then TVC_alapunit2::szoveg:="SÁNDOR";	
+ if by2=41 then TVC_alapunit2::szoveg:="ESZTER";	
+ if by2=42 then TVC_alapunit2::szoveg:="KALÓZ";	
+ if by2=43 then TVC_alapunit2::szoveg:="HARCOS";	
+ if by2=44 then TVC_alapunit2::szoveg:="TOLVAJ";	
+ if by2=45 then TVC_alapunit2::szoveg:="ORK";	
+ if by2=46 then TVC_alapunit2::szoveg:="KARDHAL";	
+ if by2=47 then TVC_alapunit2::szoveg:="KALANDOR";	
+ if by2=48 then TVC_alapunit2::szoveg:="CSALÁD";	
+ if by2=49 then TVC_alapunit2::szoveg:="SZERZETES";	
+ if by2=50 then TVC_alapunit2::szoveg:="AMAZON";	
+ if by2=51 then TVC_alapunit2::szoveg:="TÖRZSFßONÖK";	
+ if by2=52 then TVC_alapunit2::szoveg:="PARASZT";	
+ if by2=53 then TVC_alapunit2::szoveg:="ASZTALOS";	
+ if by2=54 then TVC_alapunit2::szoveg:="PÁSZTOR";	
+ if by2=55 then TVC_alapunit2::szoveg:="FÁRAÓ";	
+ if by2=56 then TVC_alapunit2::szoveg:="KARD";	
+ if by2=57 then TVC_alapunit2::szoveg:="TßUZ";	
+ if by2=58 then TVC_alapunit2::szoveg:="SZEM";	
+ if by2=59 then TVC_alapunit2::szoveg:="VÁR";	
+ if by2=60 then TVC_alapunit2::szoveg:="HAJÓ";	
+ if by2=61 then TVC_alapunit2::szoveg:="KAPITÁNY";	
+ if by2=62 then TVC_alapunit2::szoveg:="CSICSKA";	
+ if by2=63 then TVC_alapunit2::szoveg:="RAB";	
+ if by2=64 then TVC_alapunit2::szoveg:="ARAB";	
+ if by2=65 then TVC_alapunit2::szoveg:="ZSARU";	
+ if by2=66 then TVC_alapunit2::szoveg:="BÉRGYILKOS";	
+ if by2=67 then TVC_alapunit2::szoveg:="NÉNIKE";	
+ if by2=68 then TVC_alapunit2::szoveg:="KÖLYÖK";	
+ if by2=69 then TVC_alapunit2::szoveg:="SZÖRNY";	
+ if by2=70 then TVC_alapunit2::szoveg:="KÍGYÓ";	
+ if by2=71 then TVC_alapunit2::szoveg:="ASSZONY";	
+ if by2=72 then TVC_alapunit2::szoveg:="KÖNYVTÁROS";	
+ if by2=73 then TVC_alapunit2::szoveg:="NINJÁK";	
+ if by2=74 then TVC_alapunit2::szoveg:="JEDIK";	
+ if by2=75 then TVC_alapunit2::szoveg:="KATONA";	
+ if by2=76 then TVC_alapunit2::szoveg:="SZAKÁCS";	
+ if by2=77 then TVC_alapunit2::szoveg:="KÓRHÁZI NßOVÉR";
+ if by2=78 then TVC_alapunit2::szoveg:="BIRODALOM";	
+ if by2=79 then TVC_alapunit2::szoveg:="KIRÁLYNßO";	
+ if by2=80 then TVC_alapunit2::szoveg:="HERCEGNßO";	
+ if by2=81 then TVC_alapunit2::szoveg:="SZOLGA";	
+ if by2=82 then TVC_alapunit2::szoveg:="LOVAS";	
+ if by2=83 then TVC_alapunit2::szoveg:="SERIFF";	
+ if by2=84 then TVC_alapunit2::szoveg:="ANDOR";	
+ if by2=85 then TVC_alapunit2::szoveg:="SZOMSZÉD";	
+ if by2=86 then TVC_alapunit2::szoveg:="IJJÁSZ";	
+ if by2=87 then TVC_alapunit2::szoveg:="KÖLTßO";	
+ if by2=88 then TVC_alapunit2::szoveg:="MATRÓZ";	
+ if by2=89 then TVC_alapunit2::szoveg:="NINDZSA";	
+ if by2=90 then TVC_alapunit2::szoveg:="MESTER";	
+ if by2=91 then TVC_alapunit2::szoveg:="APÓ";	
+ if by2=92 then TVC_alapunit2::szoveg:="MATYI";	
+ if by2=93 then TVC_alapunit2::szoveg:="LACIKA";	
+ if by2=94 then TVC_alapunit2::szoveg:="ÜGYNÖK";	
+ if by2=95 then TVC_alapunit2::szoveg:="VIKTOR";	
+ if by2=96 then TVC_alapunit2::szoveg:="EMESE";	
+ if by2=97 then TVC_alapunit2::szoveg:="MARCSI";	
+ if by2=98 then TVC_alapunit2::szoveg:="ANDRIS";	
+ if by2=99 then TVC_alapunit2::szoveg:="FERI";	
+ if by2=100 then TVC_alapunit2::szoveg:="DANI";	
+ if by2=101 then TVC_alapunit2::szoveg:="ANDROID";	
+ if by2=102 then TVC_alapunit2::szoveg:="ÉLßOHOLT";	
+	
+
+end;
+procedure szoveg3(by3:byte); // ige
+begin
+ by3:=by3&63;
+// if by3>52 then by3:=by3-53;
+ e3:=by3;
+// case by3 of
+ if by3=0 then TVC_alapunit2::szoveg:="ÚTJA";	
+ if by3=1 then TVC_alapunit2::szoveg:="HARCA";	
+ if by3=2 then TVC_alapunit2::szoveg:="BOSSZÚJA";	
+ if by3=3 then TVC_alapunit2::szoveg:="KALANDJA";	
+ if by3=4 then TVC_alapunit2::szoveg:="VISSZATÉR";	
+ if by3=5 then TVC_alapunit2::szoveg:="HAJÓRA SZÁLL";	
+ if by3=6 then TVC_alapunit2::szoveg:="TÖRTÉNETE";	
+ if by3=7 then TVC_alapunit2::szoveg:="NAPJA";	
+ if by3=8 then TVC_alapunit2::szoveg:="VÉGZETE";	
+ if by3=9 then TVC_alapunit2::szoveg:="HARCA";	
+ if by3=10 then TVC_alapunit2::szoveg:="VISSZATÉR";	
+ if by3=11 then TVC_alapunit2::szoveg:="BOSSZÚT ÁLL";	
+ if by3=12 then TVC_alapunit2::szoveg:="ÚTJA";	
+ if by3=13 then TVC_alapunit2::szoveg:="KALANDJAI";	
+ if by3=14 then TVC_alapunit2::szoveg:="KINCSE";	
+ if by3=15 then TVC_alapunit2::szoveg:="KIHÍVÁSA";	
+ if by3=16 then TVC_alapunit2::szoveg:="LÁTJA";	
+ if by3=17 then TVC_alapunit2::szoveg:="GYILKOL";	
+ if by3=18 then TVC_alapunit2::szoveg:="LÓRA ÜL";	
+ if by3=19 then TVC_alapunit2::szoveg:="VÁGTÁJA";	
+ if by3=20 then TVC_alapunit2::szoveg:="CSATÁJA";	
+ if by3=21 then TVC_alapunit2::szoveg:="HÁBORÚJA";	
+ if by3=22 then TVC_alapunit2::szoveg:="TÁVOZÁSA";	
+ if by3=23 then TVC_alapunit2::szoveg:="HÁZASSÁGA";	
+ if by3=24 then TVC_alapunit2::szoveg:="ÉLETE";	
+ if by3=25 then TVC_alapunit2::szoveg:="HALÁLA";	
+ if by3=26 then TVC_alapunit2::szoveg:="VÉGZETE";	
+ if by3=27 then TVC_alapunit2::szoveg:="KÜLDETÉSE";	
+ if by3=28 then TVC_alapunit2::szoveg:="KÜZDELME";	
+ if by3=29 then TVC_alapunit2::szoveg:="MÚLTJA";	
+ if by3=30 then TVC_alapunit2::szoveg:="LÁTOMÁSA";	
+ if by3=31 then TVC_alapunit2::szoveg:="FELADATOT KAP";	
+ if by3=32 then TVC_alapunit2::szoveg:="ÚTJA";	
+ if by3=33 then TVC_alapunit2::szoveg:="HARCA";	
+ if by3=34 then TVC_alapunit2::szoveg:="VISSZAVÁG";	
+ if by3=35 then TVC_alapunit2::szoveg:="VISSZANÉZ";	
+ if by3=36 then TVC_alapunit2::szoveg:="TARTOZÁSA";	
+ if by3=37 then TVC_alapunit2::szoveg:="ELHITTE";	
+ if by3=38 then TVC_alapunit2::szoveg:="HAZAMEGY";	
+ if by3=39 then TVC_alapunit2::szoveg:="LEVERI";	
+ if by3=40 then TVC_alapunit2::szoveg:="EREJE";	
+ if by3=41 then TVC_alapunit2::szoveg:="HATALMA";	
+ if by3=42 then TVC_alapunit2::szoveg:="BELEVÁG";	
+ if by3=43 then TVC_alapunit2::szoveg:="NEKIMEGY";	
+ if by3=44 then TVC_alapunit2::szoveg:="TERVET SZßO";	
+ if by3=45 then TVC_alapunit2::szoveg:="IDEGES";	
+ if by3=46 then TVC_alapunit2::szoveg:="VISSZAMEGY";	
+ if by3=47 then TVC_alapunit2::szoveg:="OTT TEREM";	
+ if by3=48 then TVC_alapunit2::szoveg:="LESZÁMOL";	
+ if by3=49 then TVC_alapunit2::szoveg:="NYAKAT VÁG";	
+ if by3=50 then TVC_alapunit2::szoveg:="KÉST RÁNT";	
+ if by3=51 then TVC_alapunit2::szoveg:="PUSKÁT FOG";	
+ if by3=52 then TVC_alapunit2::szoveg:="KALANDJAI";	
+ 
+ if by3=53 then TVC_alapunit2::szoveg:="VISSZATÉR";	
+ if by3=54 then TVC_alapunit2::szoveg:="REVANSOT VESZ";	
+ if by3=55 then TVC_alapunit2::szoveg:="INTÉZKEDIK";	
+ if by3=56 then TVC_alapunit2::szoveg:="A BÁZISON";	
+ if by3=57 then TVC_alapunit2::szoveg:="MOST BEGURUL";	
+ if by3=58 then TVC_alapunit2::szoveg:="TESZ VALAMIT";	
+ if by3=59 then TVC_alapunit2::szoveg:="ODA CSAP";	
+ if by3=60 then TVC_alapunit2::szoveg:="MENEKÜL";	
+ if by3=61 then TVC_alapunit2::szoveg:="VÁRAKOZIK";	
+ if by3=62 then TVC_alapunit2::szoveg:="HARCOL";	
+ if by3=63 then TVC_alapunit2::szoveg:="ELKAPJA";	
+ if by3=64 then TVC_alapunit2::szoveg:="";	
+ 
+//  end;
+end;
+procedure szoveg4(by4:byte); // sorszám
+begin
+ by4:=by4&31;
+ e4:=by4;
+ TVC_alapunit2::szoveg:=" "; e4b:=0;
+ 
+ if by4=1 then begin TVC_alapunit2::szoveg:="2";e4b:=1;end;
+ if by4=2 then begin TVC_alapunit2::szoveg:="3";e4b:=1;end;	
+ if by4=3 then begin TVC_alapunit2::szoveg:="4";e4b:=1;end;
+ if by4=4 then begin TVC_alapunit2::szoveg:="2";e4b:=1;end;	
+ if by4=5 then begin TVC_alapunit2::szoveg:="HD";e4b:=1;end;	
+ if by4=6 then begin TVC_alapunit2::szoveg:="X";e4b:=1;end;	
+ if by4=7 then begin TVC_alapunit2::szoveg:="DX";e4b:=1;end;	
+ if by4=8 then begin TVC_alapunit2::szoveg:="DLC";e4b:=1;end;	
+ if by4=9 then begin TVC_alapunit2::szoveg:="DEMÓ";e4b:=1;end;	
+ if by4=10 then begin TVC_alapunit2::szoveg:="1";e4b:=1;end;	
+ if by4=11 then begin TVC_alapunit2::szoveg:="KIEGÉSZÍTßO";e4b:=1;end;	
+ if by4=12 then begin TVC_alapunit2::szoveg:="3";e4b:=1;end;	
+ if by4=13 then begin TVC_alapunit2::szoveg:="EX";e4b:=1;end;	
+ if by4=14 then begin TVC_alapunit2::szoveg:="EX 2";e4b:=1;end;	
+ 
+end;
+procedure egy_karakterrel_jobbra;
+begin
+ TVC_alapunit2::kepernyo:=TVC_alapunit2::kepernyo+2;
+ TVC_alapunit2::szovegXb:=TVC_alapunit2::szovegXb+2;
+ if (TVC_alapunit2::szovegXb>62) then // egy sorral lejjebb
+           begin 
+	       TVC_alapunit2::szovegXb:=0; 
+	       TVC_alapunit2::szovegYb:=TVC_alapunit2::szovegYb+8;
+		   TVC_alapunit2::kepernyo:=TVC_alapunit2::kepernyo+7*64;
+           end;
+end;
+procedure random_nev_generalasa;
+begin
+
+ TVC_alapunit2::szamol_kepernyo_ertek(0,100);
+
+ for i:=0 to 16 do
+   begin 
+   TVC_alapunit2::rajz_egyszinu_egysor(0);
+   TVC_alapunit2::kepernyo:=TVC_alapunit2::kepernyo+64;
+   end;
+
+ TVC_alapunit2::szamol_kepernyo_ertek(0,100);
+ TVC_alapunit2::szovegXb:=0;
+ 
+ TVC_alapunit2::random_szamgeneralas;
+ randomertek1:=(randomertek1+TVC_alapunit2::ran+rand1)&255;
+ rand1:=rand1+1;
+ 
+ szoveg1(randomertek1);
+ TVC_alapunit2::SZOVEG_konvertal;
+ TVC_alapunit2::SZOVEG_IR; 
+ egy_karakterrel_jobbra;
+
+ randomertek2:=(randomertek2+rand2)&255;
+ rand2:=rand2+1;
+ szoveg2(randomertek2);
+ TVC_alapunit2::SZOVEG_konvertal;
+ TVC_alapunit2::SZOVEG_IR; 
+ egy_karakterrel_jobbra;
+ 
+ randomertek3:=(randomertek3+TVC_alapunit2::ran+rand3)&255;
+ rand3:=rand3+1;
+ szoveg3(randomertek3);
+ TVC_alapunit2::SZOVEG_konvertal;
+ TVC_alapunit2::SZOVEG_IR; 
+ egy_karakterrel_jobbra;
+ 
+
+  i:=(randomertek1+randomertek2+randomertek3+randomertek2+rand4)&15;
+  rand4:=rand4+1;
+  szoveg4(i);
+  if e4b>0 then
+    begin
+    TVC_alapunit2::SZOVEG_konvertal;
+    TVC_alapunit2::SZOVEG_IR; 
+    end;
+  
+/*
+ TVC_alapunit2::szamol_kepernyo_ertek(10,200);
+ TVC_alapunit2::szovegXb:=0;
+ TVC_alapunit2::byte_to_string2(e1);
+ TVC_alapunit2::SZOVEG_IR; 
+ TVC_alapunit2::kepernyo:=TVC_alapunit2::kepernyo+2;
+ TVC_alapunit2::byte_to_string2(e2);
+ TVC_alapunit2::SZOVEG_IR; 
+ TVC_alapunit2::kepernyo:=TVC_alapunit2::kepernyo+2;
+ TVC_alapunit2::byte_to_string2(e3);
+ TVC_alapunit2::SZOVEG_IR; 
+ TVC_alapunit2::kepernyo:=TVC_alapunit2::kepernyo+2;
+ TVC_alapunit2::byte_to_string2(e4);
+ TVC_alapunit2::SZOVEG_IR; 
+ */
+
+end;
+
+
+procedure egy_sor(yyy:byte); // s2
+var
+  is:byte;
+begin
+ TVC_alapunit2::szamol_kepernyo_ertek(20,120+yyy);	
+ k:=TVC_alapunit2::kepernyo;
+ for is:=0 to 16 do
+    k[is]:=s2;
+end;
+/*
+procedure random_kepernyo_generalasa_regi;
+begin
+
+ s1:=(randomertek1+rand4)&15; 
+ s2:=(randomertek2+rand1)&15;
+ s1:=szin[s1];
+ s2:=szin[s2];
+ TVC_alapunit2::init_4colors(0,s1,s2,85);
+
+
+ rand5:=rand5+1;
+ TVC_alapunit2::random_szamgeneralas;
+ s1:=TVC_alapunit2::ran;
+ 
+ if (randomertek1 & 2)=0 then s1:=0;
+ if (randomertek1 & 1)=0 then s1:=255;
+ 
+ for j:=0 to 8 do // 0..7
+ begin
+ TVC_alapunit2::szamol_kepernyo_ertek(20,120+j*8);
+ k:=TVC_alapunit2::kepernyo;
+ for i:=0 to 8 do // 0..7
+   begin
+   TVC_alapunit2::kepernyo:=k;	 
+   TVC_alapunit2::rajz_egyszinu_2x8(s1);
+   if (randomertek2 & 1)=0 then s1:=s1+1;
+   k:=k+2;
+   end;
+ end;
+
+ s2:=0;
+ if (randomertek1 & 2)=0 then s2:=15;
+ if (randomertek1 & 4)=4 then s2:=240;
+ if (randomertek1 & 8)=0 then s2:=255;
+ 
+ x:=randomertek1 & 3;
+ 
+ if x=0 then 
+     begin
+     egy_sor(1); egy_sor(2); egy_sor(4);
+	 i2:=(rand5+randomertek2)&7;
+     if i2<2 then i2:=2;   
+	 for i:=1 to i2 do
+	   begin egy_sor(4+i+i);end;
+     egy_sor(60); egy_sor(62); egy_sor(63);
+	 i2:=(rand5+randomertek1)&7;
+     if i2<2 then i2:=2;   
+	 for i:=1 to i2 do
+	   begin egy_sor(58-i-i);end;
+     end;
+ if x=1 then 
+     begin
+	 i2:=(rand5+randomertek1)&15;
+     if i2<2 then i2:=2;   
+	 for i:=0 to i2 do
+	   begin
+	   egy_sor(63-i-i);	   
+	   end;
+     end;
+ if x=2 then 
+     begin
+	 i2:=(rand5+randomertek2)&7;
+     if i2<2 then i2:=2;   
+	 for i:=0 to i2 do
+	   begin
+	   egy_sor(31-i-i);	   
+	   egy_sor(31+i+i);	   
+	   end;
+     end;
+ if x=3 then 
+     begin
+	 i2:=(rand5+randomertek3)&15;
+     if i2<3 then i2:=3;   
+	 for i:=0 to i2 do
+	   begin
+	   egy_sor(0+i+i);	   
+	   egy_sor(63-i-i);	   
+	   end;
+     end;
+
+ // x=0..15  y=0..63
+ i2:=rand5+randomertek1;
+ if (i2&1)=1 then
+   begin 
+   s2:=0; if s1=0 then s2:=240;
+   x:=(randomertek1 SHR 3)&15; if x>13 then x:=13;
+   y:=(randomertek2 SHR 2)&63; if y>54 then y:=54;
+   TVC_alapunit2::szamol_kepernyo_ertek(20+x,120+y);
+   TVC_alapunit2::rajz_egyszinu_2x8(s2);
+   
+   s2:=255; if s1=255 then s2:=15;
+   x:=(randomertek2 SHR 1)&15; if x>13 then x:=13;
+   y:=randomertek3&63; if y>54 then y:=54;
+   TVC_alapunit2::szamol_kepernyo_ertek(20+x,120+y);
+   TVC_alapunit2::rajz_egyszinu_2x8(s2);
+   end;
+ 
+ i2:=rand5+randomertek1+randomertek2;
+ if i2&2=0 then
+   begin 
+   s2:=0; if s1=0 then s2:=240;
+   x:=(randomertek2 SHR 4)&15; if x>13 then x:=13;
+   y:=(randomertek1 SHR 2)&63; if y>54 then y:=54;
+   TVC_alapunit2::szamol_kepernyo_ertek(20+x,120+y);
+   TVC_alapunit2::rajz_egyszinu_2x8(s2);
+   
+   s2:=255; if s1=255 then s2:=15;
+   x:=(randomertek3 SHR 1)&15; if x>13 then x:=13;
+   y:=randomertek1&63; if y>54 then y:=54;
+   TVC_alapunit2::szamol_kepernyo_ertek(20+x,120+y);
+   TVC_alapunit2::rajz_egyszinu_2x8(s2);
+   end;
+ 
+ if rand5&1=1 then
+   begin 
+   s2:=0; if s1=0 then s2:=15;
+   x:=(randomertek3 SHR 2)&15; if x>13 then x:=13;
+   y:=(randomertek1 SHR 2)&63; if y>54 then y:=54;
+   TVC_alapunit2::szamol_kepernyo_ertek(20+x,120+y);
+   TVC_alapunit2::rajz_egyszinu_2x8(s2);
+   end;
+   
+ if rand5&2=0 then
+   begin 
+   s2:=0; if s1=0 then s2:=0;
+   x:=(randomertek1 SHR 4)&15; if x>13 then x:=13;
+   y:=(randomertek2 SHR 1)&63; if y>54 then y:=54;
+   TVC_alapunit2::szamol_kepernyo_ertek(20+x,120+y);
+   TVC_alapunit2::rajz_egyszinu_2x8(s2);
+   end;
+	
+end;
+*/
+/*
+procedure spritegeneralas;
+begin
+   a:=(42+randomertek2&31)&63;
+end;
+*/
+procedure random_kepernyo_generalasa;
+begin
+ // színek
+ s1:=(randomertek1+rand4)&15; 
+ s2:=(randomertek2+rand1)&15;
+ s1:=szin[s1];
+ s2:=szin[s2];
+ TVC_alapunit2::init_4colors(0,s1,s2,85);
+
+  // háttércsempe
+  a:=randomertek1&15;
+  if a>9 then a:=a-9;
+  forras:=#GRADATA+a SHL 4; f:=forras;	
+
+  for j:=0 to 8 do // 0..7
+  begin
+  TVC_alapunit2::szamol_kepernyo_ertek(20,120+j*8);
+  k:=TVC_alapunit2::kepernyo;
+  for i:=0 to 8 do // 0..7
+   begin  kepernyo:=k; forras:=f;	
+   putimage_2x8_normal;  k:=k+2;  end;
+  end;
+ 
+
+  // labirintus mintázata
+  a:=10+randomertek1&31;
+  forras:=#GRADATA+a SHL 4; f:=forras;	
+  for j:=0 to 8 do // 0..7
+  begin
+  TVC_alapunit2::szamol_kepernyo_ertek(20,120+j*8);
+  k:=TVC_alapunit2::kepernyo;
+  for i:=0 to 8 do // 0..7
+    begin  kepernyo:=k; 
+    a:=10+randomertek1&31;
+    forras:=#GRADATA+a SHL 4;
+    putimage_2x8_and;  k:=k+2;  
+    randomertek1:=randomertek1+1+i&1;
+    end;
+  end;
+
+ // ALSÓ-FELSŐ CSÍKOK
+ x:=randomertek1 & 3;
+ s2:=0;
+ if (randomertek1 & 2)=0 then s2:=15;
+ if (randomertek1 & 4)=4 then s2:=240;
+ if (randomertek1 & 8)=0 then s2:=255;
+ if x=1 then 
+     begin
+	 i2:=(rand5+randomertek2)&7;
+     if i2<2 then i2:=2;  
+	 for i:=0 to i2 do
+	   begin
+	   egy_sor(0+i+i);	   
+	   egy_sor(63-i-i);	   
+	   end;
+     end;
+ if x=2 then 
+     begin
+	 i2:=(rand5+randomertek3)&15;
+     if i2<1 then i2:=1;   
+     if i2>8 then i2:=8; 
+	 for i:=0 to i2 do
+	   begin
+	   egy_sor(0+i);	   
+	   egy_sor(63-i);	   
+	   end;
+     end;
+
+
+
+   x:=(randomertek1 SHR 3)&15; if x>13 then x:=13;
+   y:=(randomertek2 SHR 2)&63; if y>54 then y:=54;
+   TVC_alapunit2::szamol_kepernyo_ertek(20+x,120+y);
+   kepernyo:=TVC_alapunit2::kepernyo;
+   a:=(42+randomertek2&31)&63; 
+   randomertek2:=randomertek2+1;
+   forras:=#GRADATA+a SHL 4; 
+   putimage_2x8_or;
+
+   x:=(randomertek2 SHR 1)&15; if x>13 then x:=13;
+   y:=randomertek3&63; if y>54 then y:=54;
+   TVC_alapunit2::szamol_kepernyo_ertek(20+x,120+y);
+   kepernyo:=TVC_alapunit2::kepernyo;
+   a:=(42+randomertek2&31)&63; 
+   randomertek2:=randomertek2+2;
+   forras:=#GRADATA+a SHL 4; 
+   putimage_2x8_or;
+   
+   x:=(randomertek2 SHR 4)&15; if x>13 then x:=13;
+   y:=(randomertek1 SHR 2)&63; if y>54 then y:=54;
+   TVC_alapunit2::szamol_kepernyo_ertek(20+x,120+y);
+   kepernyo:=TVC_alapunit2::kepernyo;
+   a:=42+randomertek2&15; 
+   randomertek2:=randomertek2+1;
+   forras:=#GRADATA+a SHL 4; 
+   putimage_2x8_or;
+   
+   x:=(randomertek3 SHR 1)&15; if x>13 then x:=13;
+   y:=randomertek1&63; if y>54 then y:=54;
+   TVC_alapunit2::szamol_kepernyo_ertek(20+x,120+y);
+   kepernyo:=TVC_alapunit2::kepernyo;
+   a:=42+randomertek2&7; 
+   forras:=#GRADATA+a SHL 4; 
+   putimage_2x8_or;
+ 
+ if rand5&1=1 then
+   begin 
+   x:=(randomertek3 SHR 2)&15; if x>13 then x:=13;
+   y:=(randomertek1 SHR 2)&63; if y>54 then y:=54;
+   TVC_alapunit2::szamol_kepernyo_ertek(20+x,120+y);
+   kepernyo:=TVC_alapunit2::kepernyo;
+   a:=(42+randomertek2&31)&63; 
+   forras:=#GRADATA+a SHL 4; 
+   putimage_2x8_or;
+   end;
+   
+ if rand5&2=0 then
+   begin 
+   x:=(randomertek1 SHR 4)&15; if x>13 then x:=13;
+   y:=(randomertek2 SHR 1)&63; if y>54 then y:=54;
+   TVC_alapunit2::szamol_kepernyo_ertek(20+x,120+y);
+   kepernyo:=TVC_alapunit2::kepernyo;
+   a:=(42+randomertek2&31)&63; 
+   randomertek2:=randomertek2+3;
+   forras:=#GRADATA+a SHL 4; 
+   putimage_2x8_or;
+   end;
+   
+   randomertek2:=randomertek2+1;
+   
+   x:=(randomertek2 SHR 3)&15; if x>13 then x:=13;
+   y:=(randomertek1 SHR 2)&63; if y>54 then y:=54;
+   TVC_alapunit2::szamol_kepernyo_ertek(20+x,120+y);
+   kepernyo:=TVC_alapunit2::kepernyo;
+   a:=42; 
+   forras:=#GRADATA+a SHL 4; 
+   putimage_2x8_normal;
+
+end;
+
+procedure random_adat_generalasa;
+begin
+	
+
+ TVC_alapunit2::random_szamgeneralas;
+ s1:=TVC_alapunit2::ran;
+
+ TVC_alapunit2::szamol_kepernyo_ertek(38,210);
+ TVC_alapunit2::szovegXb:=0;
+ i2:=11+(s1+rand1)&31;
+ TVC_alapunit2::byte_to_string2(i2);
+ TVC_alapunit2::SZOVEG_konvertal;
+ TVC_alapunit2::SZOVEG_IR; 
+ 
+ TVC_alapunit2::szamol_kepernyo_ertek(38,220);
+ TVC_alapunit2::szovegXb:=0;
+ i2:=22+((s1+rand2+rand3)SHL 1)&63;
+ TVC_alapunit2::byte_to_string2(i2);
+ TVC_alapunit2::SZOVEG_konvertal;
+ TVC_alapunit2::SZOVEG_IR; 
+	
+ TVC_alapunit2::szamol_kepernyo_ertek(40,230);
+ TVC_alapunit2::szovegXb:=0;
+ i2:=1+((s1-rand2-rand1+rand5)SHR 2)&7;
+ TVC_alapunit2::byte_to_string2(i2);
+ TVC_alapunit2::SZOVEG_konvertal;
+ TVC_alapunit2::SZOVEG_IR; 
+	
+end;
+
+begin
+ TVC_alapunit2::init_Graphics(1); // video mód beállítása
+ TVC_alapunit2::set_Vmemory32768;
+ TVC_alapunit2::init_4colors(0,68,21,85);
+ TVC_alapunit2::megszakitas_init;
+
+ TVC_alapunit2::kepernyotorles(0);
+/*
+ for i:=0 to 59 do
+   begin
+   TVC_alapunit2::szamol_kepernyo_ertek(0,i+i+i+i);
+   TVC_alapunit2::rajz_egyszinu_egysor(%00001111);
+   end;
+*/
+
+ TVC_alapunit2::szamol_kepernyo_ertek(0,10);
+ TVC_alapunit2::szovegXb:=0;
+ TVC_alapunit2::szoveg:="játéknév generátor 1.01";
+ TVC_alapunit2::SZOVEG_konvertal;
+ TVC_alapunit2::SZOVEG_IR; 
+ TVC_alapunit2::szamol_kepernyo_ertek(0,20);
+ TVC_alapunit2::szovegXb:=0;
+ TVC_alapunit2::szoveg:="(2024 -OROSZ OLIVÉR)";
+ TVC_alapunit2::SZOVEG_konvertal;
+ TVC_alapunit2::SZOVEG_IR; 
+
+ TVC_alapunit2::szamol_kepernyo_ertek(0,40);
+ TVC_alapunit2::szovegXb:=0;
+ TVC_alapunit2::szoveg:="random játéknév (space):";
+ TVC_alapunit2::SZOVEG_konvertal;
+ TVC_alapunit2::SZOVEG_IR; 
+
+
+ TVC_alapunit2::szamol_kepernyo_ertek(4,210);
+ TVC_alapunit2::szovegXb:=0;
+ TVC_alapunit2::szoveg:="CAS fájl mérete: 00 kbyte";
+ TVC_alapunit2::SZOVEG_konvertal;
+ TVC_alapunit2::SZOVEG_IR; 
+ 
+ TVC_alapunit2::szamol_kepernyo_ertek(4,220);
+ TVC_alapunit2::szovegXb:=0;
+ TVC_alapunit2::szoveg:="     értékelése: 00 százalék";
+ TVC_alapunit2::SZOVEG_konvertal;
+ TVC_alapunit2::SZOVEG_IR; 
+ TVC_alapunit2::szamol_kepernyo_ertek(2,230);
+ TVC_alapunit2::szovegXb:=0;
+ TVC_alapunit2::szoveg:="helyezés versenyen: ";
+ TVC_alapunit2::SZOVEG_konvertal;
+ TVC_alapunit2::SZOVEG_IR; 
+	
+
+
+ randomertek1:=77;
+ randomertek2:=33;
+ randomertek3:=218;
+ 
+ rand1:=7;
+ rand2:=3;
+ rand3:=1;
+ rand4:=9;
+ rand5:=172;
+
+ random_nev_generalasa;
+
+ random_kepernyo_generalasa;
+ 
+ random_adat_generalasa;
+ 
+ 
+ 
+ while (1=1) do // FŐ ciklus, cégtelen ciklus
+     begin
+	 
+     TVC_alapunit2::VARAKOZIK_SPACE_LENYOMASRA_ESFELENGEDESRE;    
+     random_nev_generalasa;
+	 
+     random_kepernyo_generalasa;
+     
+     random_adat_generalasa;
+   
+     end;
+     
+end.

@@ -1,0 +1,21 @@
+AXIS
+
+VIDEOTON TV-Computer játék
+Készítette: BerySoft (Bertók Zsolt)
+Fejlesztőeszköz: TRSE + Game Engine unit
+Készült a 2024-es TVC Játékfejlesztő Versenyre
+YouTube: https://www.youtube.com/watch?v=aTkDnj-KsZs
+Verzió: 2024. december 26.
+
+Az Axis nevű holdon egy bányász kolónia van. A kolóniát egy invaziv idegen faj lepte el, és levadászták az embereket. A játékos talán az utolsó túlélő, aki csak úgy menekülhet meg, ha eljut a teher dokkig. Ehhez több szektoron kell átjutnia, elkerülve az idegeneket. A szektorok ajtói kulcskártyákkal nyithatóak, amiket össze kell szedni a szektorokban.
+
+A piros színű kulcskártya a piros ajtót, a fehér a fehéret nyitja. Az ajtó nyitáshoz szemben kell állni az ajtóval, majd 
+a TŰZ vagy a SPACE gombot megnyomni.
+
+Az idegenekkel való találkozás halálos, ezért kerülni kell őket. Érdemes mindig úgy közlekedni, hogy fal legyen az 
+idegenek és a játékos között. Ha egy idegen elkezd támadni, minél gyorsabban be kell fordulni, hogy ne lássa a 
+játékost, így lerázható.
+
+Zenére már nem jutott idő a címkép alá, de egy következő verzióba talán ez is megvalósul.
+
+Jó szórakozást!

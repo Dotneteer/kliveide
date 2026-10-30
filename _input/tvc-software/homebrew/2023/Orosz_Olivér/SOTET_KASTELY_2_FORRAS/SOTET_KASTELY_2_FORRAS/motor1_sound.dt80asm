@@ -1,0 +1,73 @@
+;
+;  Hangeffektek lejátszásához
+;
+     PORT_3_MEM_MIRROR        EQU  2833                                    ; a 3-as port tükörképe a memóriában
+     PORT_5_MEM_MIRROR        EQU  2834                                    ; a 5-ös port tükörképe a memóriában
+     PORT_6_MEM_MIRROR        EQU  2835                                    ; a 6-os port tükörképe a memóriában
+
+     TRUE                     EQU  1                                       
+     FALSE                    EQU  0                                       
+     SOUND_PORT_LO            EQU  4                                       ; 0-7. bitek: sound PITCH alsó 8 bit portja                             
+     SOUND_PORT_HI            EQU  5                                       ; 0-3. bitek: sound PITCH felső 4 bit portja        | 4. bit: hang 0-tilt, 1-engedélyez | 5. bit: hang IT 0-tilt, 1-engedélyez | 6-7. bitek: bal-jobb magnó motor vezérlés          
+     SOUND_VOLUME_PORT        EQU  6                                       ; 2-5. bitek: sound VOLUME portja (0-15 értékekkel) | 0-1. bitek: grafikus mód | 6. bit: ??? | 7. bit: nyomtató/STORBE
+     MAX_VOLUME               EQU  15                                      ; maximális hangerő érték
+     SILENT_PITCH             EQU  4095                                    ; a szünet PITCH értéke
+				
+     SOUND_PLAYING            DB   0                                       ; 1 (TRUE): lejátszás folyik; 0 (FALSE): nincs lejátszás     
+     SOUND_PORT_HI_MASK       DB   0                                       ; maszk a Pitch felső 4 bitjének kiküldéshez a SOUND_PORT_HI-ra
+     MUSIC_VOLUME             DB   10                                      ; a zenelejátszás hangereje (0 a csönd, 15 a max hangerő)
+				
+                             ;{SOUND_ON
+                              ; TVC hang bekapcsolása 
+     SOUND_ON                 PUSH AF                                      
+                              LD   A,(PORT_5_MEM_MIRROR)                   ; A = port #5 mirror
+                              AND  128+64                                  ; clear lower 6 bits
+                              OR   16                                      ; enable sound sign (#4 bit)
+                              LD   (PORT_5_MEM_MIRROR),A                   ; set new value to system variable
+                              OUT  (SOUND_PORT_HI),A                       ; send new value to port #5
+                              LD   (SOUND_PORT_HI_MASK),A                  ; init SOUND_PORT_HI_MASK
+                              LD   A,TRUE                                  
+                              LD   (SOUND_PLAYING),A                       ; SOUND_PLAYING = True
+                              LD   A,(MUSIC_VOLUME)                        ; hangerő értéke
+                              LD   HL,SILENT_PITCH                         
+                              CALL SET_SOUND_PITCH                         ; "néma" hang kiadása                              
+                              CALL SET_VOLUME                              ; hangerő beállítása
+                              POP  AF                                      
+                              RET                                          ; return to caller
+                              ;}
+                              ;{SOUND_OFF
+                              ; TVC hang kikapcsolása
+     SOUND_OFF                PUSH AF                                      
+                              LD   A,(PORT_5_MEM_MIRROR)                   ; A = port #5 mirror
+                              AND  128+64                                  ; clear lower 6 bits (0-3: PITCH; 4:SOUND IT, 5:SOUND SIGN)
+                              LD   (PORT_5_MEM_MIRROR),A                   ; set new value to system variable
+                              OUT  (SOUND_PORT_HI),A                       ; send new value to port #5
+                              XOR  A                                       ; A = 0 (FALSE)
+                              LD   (SOUND_PLAYING),A                       ; SOUND_PLAYING = FALSE                              
+                              POP  AF                                      
+                              RET                                          ; return to caller
+                             ;{SET_VOLUME
+                              ; paraméter: A = VOLUME (0 - 15)
+                              ; TVC hangerő beállítása
+     SET_VOLUME               SLA  A                                       ; rotate left volume bits
+                              SLA  A                                       ; rotate left again
+                              LD   E,A                                     ; L = 2 bits rotated volume
+                              LD   A,(PORT_6_MEM_MIRROR)                   ; A = port #6 mirror
+                              AND  128+64+2+1                              ; clear 2-5. bits in A register
+                              OR   E                                       ; add volume to A register 
+                              LD   (PORT_6_MEM_MIRROR),A                   ; set value to port #6 mirror
+                              OUT  (SOUND_VOLUME_PORT),A                   ; send value to port #6
+                              RET                                          ; return to caller                        
+                              ;}
+                              ;{SET_SOUND_PITCH
+                              ; params: HL = sound PITCH
+                              ; hanglejátszás PITCH értékének beállítása
+     SET_SOUND_PITCH          LD   A,L                                     ; A = SOUND_PITCH lower 8 bits
+                              OUT  (SOUND_PORT_LO),A                       ; send to port #4
+                              LD   A,(PORT_5_MEM_MIRROR)                   ; A = port #5 mirror
+                              AND  128+64+32+16                            ; clear lower 4 bits                         
+                              OR   H                                       ; add PITCH hi 4 bits to A register                                                                                                                     
+                              OUT  (SOUND_PORT_HI),A                       ; send value to port #5
+                              RET                                          ; return to caller                         
+                              ;}
+				

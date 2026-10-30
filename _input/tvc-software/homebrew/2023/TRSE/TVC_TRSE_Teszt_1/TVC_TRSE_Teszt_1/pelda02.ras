@@ -1,0 +1,649 @@
+program Teszt_09;
+//
+// Videoton TVC-re próbáluk programot írni, fordítani
+// a TRSE 0.14 fejlesztőeszközzel.
+// Célplatformnak válasszuk mondjuk a Spectrumot.
+// Project settings -> Target Settings
+// pipa: Override default target setting
+// program start adress: $1A01
+// pipa: Ignore BASIC SYS start
+// fordítsunk egy VALAMI.BIN-t
+// utána futtassuk az OSSZEFUZ.BAT fájlt ami a 
+// VALAMI.BIN elé másolja a CASBIN.BIN fájlt és 
+// létrehozza a .CAS fájlt, ami már TVC emulátorban
+// futtatható.
+//
+var  
+    @define SPRITE_CIM_FOSZER 32000  //
+    @define SPRITE_CIM 32020  //
+    @define SPRITE_XE 1  //
+    @define SPRITE_YE 2  //
+    @define SPRITE_XEM 6  //
+    @define SPRITE_YEM 7  //
+    @define SPRITE_ME 0  //
+    @define SPRITE_KEP 5  //
+    @define SPRITE_SZAMOL 8  //
+    
+    jatekmod:byte;
+	a,k,i,j,s,e,fociklus,fociklusx:byte;
+	ii:integer;
+	Ran:byte; //( random szám )
+	kepernyo:pointer of byte;
+	po,p1,po2:pointer of byte;
+	mem,mem2:pointer of byte;
+	ciim:byte;
+	
+	x:byte;
+	
+  	xe,ye,me,xem,yem,kep,szamol:byte;
+  	
+   @define CARPOZ 30975  //  1024 byte, 128 karakter, 8byte/karakter
+   //   30975-31999   -- karakterkészlet a kiíráshoz
+   // 128 karakter, egyelőre ékezetek nélkül
+   CARDATA:incbin("CAR2.BIN",@CARPOZ);
+   @define SZOVEGPOZ 29950  //  kb 1024 byte
+   //   -29950-30974  -- maga a szöveg a kiíráshoz
+   TXTDATA:incbin("SZOVEG.BIN",@SZOVEGPOZ);
+  	
+	
+   grafika:array[]of byte=(
+        // blokk 0 -kő
+        51,255,255,238,68,85,119,221,170,187,255,170,221,255,255,204,187,255,255,170,255,255,255,68,187,255,238,136,255,255,221,0,255,255,136,0,255,255,68,204,187,255,153,170,119,85,17,68,187,170,170,238,85,0,0,68,0,34,136,136,17,68,0,0,
+        // blokk 1 -ellenfél
+        0,160,160,128,16,80,80,64,32,160,160,160,48,112,240,96,32,0,128,32,48,16,192,32,32,240,240,160,48,192,0,224,16,144,224,64,0,240,240,160,80,160,160,192,160,208,118,160,208,243,240,208,177,248,32,160,80,160,16,0,0,80,32,128,
+        // blokk 2 -főszereplő
+		19,95,95,78,39,175,175,175,31,223,95,223,95,31,207,111,175,25,204,31,95,25,204,111,191,255,255,206,27,207,31,205,7,255,255,142,1,15,15,8,19,175,95,140,39,255,255,78,39,15,15,78,7,239,127,14,1,239,127,8,1,14,7,0,
+		// 
+		0,0);  //
+	//
+	// 0-semmi
+	// 1-fal
+	// 9-ellenfél start
+    map:array[241]of byte;
+
+    map1:array[]of byte=(
+        1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+        1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,0,1,0,0,0,1,0,0,0,1,0,0,1,1,
+        1,1,0,1,0,0,0,0,0,0,9,0,0,1,1,1,
+        1,1,0,1,0,0,0,0,0,0,0,0,0,0,1,1,
+        1,1,0,0,0,0,0,1,0,0,0,0,0,0,1,1,
+        1,1,1,1,0,0,0,0,9,0,0,0,0,1,1,1,
+        1,1,0,0,0,0,0,0,0,0,0,1,1,1,1,1,
+        1,1,0,0,9,0,0,0,0,0,0,0,1,1,1,1,
+        1,1,1,0,0,0,1,0,9,0,0,0,0,0,1,1,
+        1,1,0,0,0,0,1,1,0,0,1,1,0,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+		);
+
+// bekapcsoljuk a kívánt video módot, majd a 
+// video RAM-ot belapozzuk 32768-tól.
+procedure init_Graphics(mode:byte);
+begin
+	asm("	
+         LD   C,mode // 0,1,2 = 2,4,16 color
+         RST  $30                           
+	     db $4 //
+		 ld	A,$50 // video ram belapozása
+		 ld	($3),A
+		 out ($2),A
+    ");
+end;
+procedure init_4colors();
+begin
+	asm("	
+		 ld	A,$55		// 4 szin beallitasa
+		 out	($63),A
+		 ld	A,$41		
+		 out	($62),A
+		 ld	A,$44		
+		 out	($61),A
+		 ld	A,$00		
+		 out	($60),A
+    ");
+end;
+// Ran byte változó tartalma random 0..255 lesz
+procedure random_szamgeneralas;
+begin
+  asm("	
+	  LD A,R
+	  LD [Ran],A
+  ");
+end;
+// 16x16 pixeles objektumot rajzol cpclr színnel
+procedure putimage_color(cpclr:byte,po3:pointer of byte);
+var ig0:byte;
+begin
+for ig0:=0 to 16 do
+	   begin 
+       po3[0]:=cpclr;
+       po3[1]:=cpclr; 
+       po3[2]:=cpclr;
+       po3[3]:=cpclr; 
+       po3:=po3+64; 
+       end;
+end;
+// 16x16 pixeles objektumot rajzol grafikával
+procedure putimage_a(po4:pointer of byte);
+var ig1:byte;
+begin
+for ig1:=0 to 16 do
+	   begin
+       po4[0]:=grafika[ii]; inc(ii);
+       po4[1]:=grafika[ii]; inc(ii); 
+       po4[2]:=grafika[ii]; inc(ii);
+       po4[3]:=grafika[ii]; inc(ii); 
+       po4:=po4+64; 
+       end;
+end;
+// 8x8 pixeles karatert rajzol grafikával
+procedure putimage_a8x8(po5:pointer of byte);
+var ig2:byte;
+begin
+for ig2:=0 to 8 do
+	   begin
+       po5[0]:=mem2[0]&240; 
+       po5[1]:=(mem2[0]&15)*16; 
+	   inc(mem2); po5:=po5+64; 
+       end;
+end;
+// -------------------------------------------------------
+procedure putimage_color_torol1_vizszintes;
+var igt0:byte;
+begin
+for igt0:=0 to 4 do
+	   begin 
+       kepernyo[0]:=0; kepernyo[1]:=0; 
+       kepernyo[2]:=0; kepernyo[3]:=0; kepernyo:=kepernyo+64; 
+       end;
+end;
+// -------------------------------------------------------
+procedure putimage_color_torol1_fuggoleges;
+var igt1:byte;
+begin
+for igt1:=0 to 16 do
+	   begin kepernyo[0]:=0; kepernyo:=kepernyo+64; end;
+end;
+// -----------------------------------------------------
+procedure kiszamol_kepernyo_ertek();
+begin
+kepernyo:=32768+xe;
+	asm("	
+	  NOP
+	  LD H,0
+	  LD A,[ye]
+	  LD L,A
+	  SLA L
+	  RL H
+	  SLA L
+	  RL H
+	  SLA L
+	  RL H
+	  SLA L
+	  RL H
+	  SLA L
+	  RL H
+	  SLA L
+	  RL H
+	  ex DE,HL
+	  LD HL,[kepernyo]
+	  ADD HL,DE
+	  LD [kepernyo],HL
+    ");
+end;
+// -----------------------------------------------------
+// megkeressük a SZOVEG.BIN-ben a TXTsor2-edik szöveget és
+// rámutatunk p1-el.  
+procedure ir_BINszoveg_KERES(TXTsor2:byte);
+begin
+ po2:=@SZOVEGPOZ; // innen indulunk
+ p1:=@SZOVEGPOZ; x:=0; 
+	asm("	
+cimke1	
+    ");
+  if po2[0]=203 then
+ 		begin 
+        x:=x+1;
+        if x=TXTsor2 then 
+             begin 
+             p1:=po2+1; 
+			 asm("	
+		  	 jp cimke2
+		     ");
+             end;
+        end;
+    po2:=po2+1;
+    if (po2>@CARPOZ) then 
+		begin 
+			 asm("	
+		  	 jp cimke2
+		     ");
+		end;
+	asm("	
+	  NOP
+	  jp cimke1
+cimke2	
+	  NOP
+    ");
+end;
+// kiírjuk a választott szöveget.
+procedure ir_BINszoveg(xx,yy,TXTsor:byte);
+begin
+ ir_BINszoveg_KERES(TXTsor);	
+ xe:=xx; ye:=yy;
+ kiszamol_kepernyo_ertek();
+ mem2:=30975; x:=1;	
+	asm("	
+ir_BINszoveg_cimke1	
+    ");
+  i:=p1[0];
+  if i=201 then x:=0;
+  if x=1 then
+    begin
+    mem2:=30975+i*8; 
+    putimage_a8x8(kepernyo); 
+    kepernyo:=kepernyo+2;	  
+    p1:=p1+1;
+    asm("	
+	  jp ir_BINszoveg_cimke1
+    ");
+   end;
+end;
+// -----------------------------------------------------
+// ----------------- GÉPI Játékos ----------------------
+// -----------------------------------------------------
+procedure sprite_gondolkodik; // 1  -gondolkodik
+begin
+ciim:=yem*16+xem;
+if (Ran&3)=0 then
+ begin
+  if yem>0 then if map[ciim-16]=0 then me:=2;
+  if yem<14 then if map[ciim+16]=0 then me:=4;
+  end;
+if (Ran&3)=1 then
+ begin
+   if xem>0 then if map[ciim-1]=0 then me:=5;
+   if xem<15 then if map[ciim+1]=0 then me:=3;
+  end;
+if (Ran&3)=2 then
+ begin
+   if yem<14 then if map[ciim+16]=0 then me:=4;
+   if yem>0 then if map[ciim-16]=0 then me:=2;
+  end;
+if (Ran&3)=3 then
+ begin
+   if xem<15 then if map[ciim+1]=0 then me:=3;
+   if xem>0 then if map[ciim-1]=0 then me:=5;
+  end;
+szamol:=0;
+end;
+procedure sprite_mozog_fel; // 2    FEL
+begin
+kepernyo:=kepernyo+12*64;
+putimage_color_torol1_vizszintes;
+ye:=ye-4; 
+inc(szamol);
+if szamol>3 then 
+	begin 
+	szamol:=0; yem:=yem-1; me:=1;
+	if (Ran&8=0) then 
+	  begin
+      ciim:=yem*16+xem;
+      if yem>0 then if map[ciim-16]=0 then me:=2;
+      end;
+	end;
+end;
+procedure sprite_mozog_jobbra; // 3  ----- JOBBRA
+begin
+putimage_color_torol1_fuggoleges;	
+xe:=xe+1; inc(szamol);
+if szamol>3 then 
+	begin
+	szamol:=0; xem:=xem+1; me:=1; 
+	if (Ran&64=0) then 
+	  begin
+      ciim:=yem*16+xem;
+	  if xem<15 then
+  		if map[ciim+1]=0 then me:=3;
+      end;
+	end;
+end;
+procedure sprite_mozog_le; //4 ----   LE
+begin
+putimage_color_torol1_vizszintes;
+ye:=ye+4; inc(szamol);
+if szamol>3 then 
+	begin
+	szamol:=0; yem:=yem+1; me:=1; 
+	if (Ran&2=0) then 
+	  begin
+      ciim:=yem*16+xem;
+	  if yem<14 then
+		  if map[ciim+16]=0 then me:=4;
+	  end;
+	end;
+end;
+procedure sprite_mozog_balra; // 5  ----  BALRA
+begin
+kepernyo:=kepernyo+3;
+putimage_color_torol1_fuggoleges;	
+xe:=xe-1; inc(szamol);
+if szamol>3 then 
+	begin
+	szamol:=0; xem:=xem-1; me:=1;   
+	if (Ran&32=0) then 
+	  begin
+      ciim:=yem*16+xem;
+	  if xem>0 then
+  			if map[ciim-1]=0 then me:=5;
+	  end;
+	end;
+end;
+
+// --------------------------------------------------
+// ---------------- Főszereplő mozgása --------------
+// --------------------------------------------------
+procedure sprite_mozgat_foszereplo_jobbra();// jobbra
+begin
+  putimage_color_torol1_fuggoleges;	
+  xe:=xe+1; inc(szamol);
+  if szamol>3 then begin xem:=xem+1; szamol:=0; me:=9; end;
+end;
+procedure sprite_mozgat_foszereplo_balra();// balra
+begin
+  kepernyo:=kepernyo+3;
+  putimage_color_torol1_fuggoleges;	
+  xe:=xe-1; inc(szamol);
+  if szamol>3 then begin xem:=xem-1; szamol:=0; me:=9; end;
+end;
+procedure sprite_mozgat_foszereplo_fel();// fel
+begin
+  kepernyo:=kepernyo+12*64;
+  putimage_color_torol1_vizszintes;   
+  ye:=ye-4; inc(szamol);
+  if szamol>3 then begin yem:=yem-1; szamol:=0; me:=9; end;
+end;
+procedure sprite_mozgat_foszereplo_le();// le
+begin
+  putimage_color_torol1_vizszintes;   
+  ye:=ye+4; inc(szamol);
+  if szamol>3 then begin yem:=yem+1; szamol:=0; me:=9; end;
+end;
+// ---------------------------------------------------------
+// --------- Főszereplő irányítása joystickkal -------------
+procedure sprite_mozgat_joystick();
+begin
+if me=9 then 
+ begin	
+ po:=2905; // a 2905-ös címen érjük el a joy-t
+ a:=po[0];
+ // FEL
+ if (a&2)=2 then // ---------- FEL ------------------- 
+	    begin 
+        ciim:=yem*16+xem; szamol:=0; 
+        if yem>0 then if map[ciim-16]=0 then me:=11;
+        end;
+ // LE
+ if (a&4)=4 then // ----------- LE -------------------
+		begin 
+        ciim:=yem*16+xem; szamol:=0; 
+        if yem<14 then if map[ciim+16]=0 then me:=12;
+		end;
+ // JOBBRA
+ if (a&32)=32 then // ---------- JOBBRA --------------
+		begin 
+        ciim:=yem*16+xem; szamol:=0; 
+        if xem<15 then if map[ciim+1]=0 then me:=13;
+		end;
+ // BALRA
+ if (a&64)=64 then // ---------- BALRA ---------------
+		begin 
+        ciim:=yem*16+xem; szamol:=0; 
+        if xem>0 then if map[ciim-1]=0 then me:=14;
+		end;
+  end;
+if me=11 then sprite_mozgat_foszereplo_fel();
+if me=12 then sprite_mozgat_foszereplo_le();
+if me=13 then sprite_mozgat_foszereplo_jobbra();
+if me=14 then sprite_mozgat_foszereplo_balra();
+end;
+// --------------------------------------------------
+// ---- A gépi és emberi játékost is ez irányítja ---
+// --- mem pointer a megfelelő sprite címére mutat --
+procedure objektum();
+begin
+// nem létezik a sprite, "kilépés"
+if mem[@SPRITE_ME]=0 then return;
+random_szamgeneralas;	
+//"betöltjük" az adatokat, közvetlenül a memóriában tároljuk ezeket, 
+// nem változóban, így nagyobb helyet foglalhatnak, bárhová 
+// helyezhetők.
+me:=mem[@SPRITE_ME]; // milyen mozgást végez
+xe:=mem[@SPRITE_XE]; // X helyzet a képernyőn (4 bixel)
+ye:=mem[@SPRITE_YE]; // Y helyzet a képernyőn (pixel)
+xem:=mem[@SPRITE_XEM]; // X helyzet a pályán
+yem:=mem[@SPRITE_YEM]; // Y helyzet a pályán
+kep:=mem[@SPRITE_KEP]; // képe, rajza
+szamol:=mem[@SPRITE_SZAMOL];
+
+kiszamol_kepernyo_ertek(); // megjelenítéshez, törléshez kell
+// s-be töltjük, hogy milyen mozgást végez a sprite
+s:=me;
+// ---------  na ez vezérli a valósi mozgást ----------
+CASE s of
+	1:sprite_gondolkodik;
+	2:sprite_mozog_fel;
+	3:sprite_mozog_jobbra;
+	4:sprite_mozog_le;
+	5:sprite_mozog_balra;
+	9:sprite_mozgat_joystick;
+    11:sprite_mozgat_foszereplo_fel();
+    12:sprite_mozgat_foszereplo_le();
+    13:sprite_mozgat_foszereplo_jobbra();
+    14:sprite_mozgat_foszereplo_balra();
+	end;
+
+// --------  kirajzoljuk az "új helyre" a sprite-ot  -------
+ii:=kep*64;
+kiszamol_kepernyo_ertek();
+putimage_a(kepernyo);
+// -----  és mentjük az adatait ---------------------------
+mem[@SPRITE_ME]:=me;
+mem[@SPRITE_XE]:=xe;
+mem[@SPRITE_YE]:=ye;
+mem[@SPRITE_XEM]:=xem;
+mem[@SPRITE_YEM]:=yem;
+mem[@SPRITE_SZAMOL]:=szamol;
+end;
+// --------------------------------------------------
+// --------------- Indítunk egy pályát --------------
+procedure palya_generalas;
+var xf,yf:byte;
+begin
+fociklusx:=0;
+mem:=@SPRITE_CIM;
+// első 10 sprite törlése, ennyi csak elég lesz, de igazából
+// akármennyi lehet, amit a gép elbír (memória, cpu)
+for i:=0 to 10 do 
+        begin mem[@SPRITE_ME]:=0; mem:=mem+10; end;
+// MAP-ba töltjük MAP1-et, hogy MAP1 legyen érintetlen
+for i:=0 to 240 do map[i]:=map1[i];
+
+// Végig megyünk a pályán és ahol 9-es elemet találunk, oda
+// rakunk egy ellenfelet (legfeljebb 10 ellenfél rakható le)
+e:=0; mem:=@SPRITE_CIM;
+ye:=0;
+for j:=0 to 15 do
+  begin
+  xe:=0;
+  for i:=0 to 16 do
+    begin
+	s:=map[e];
+	if s=9 then // 9-es elem, ellenfél
+         begin 
+	     map[e]:=0; // mem:=32000;
+    	 mem[@SPRITE_ME]:=1; //létezik e, mi a sprite
+    	 mem[@SPRITE_XE]:=xe; //x
+    	 mem[@SPRITE_YE]:=ye; //Y
+    	 mem[@SPRITE_KEP]:=1;  //kep
+    	 mem[@SPRITE_XEM]:=i; //xMAP
+    	 mem[@SPRITE_YEM]:=j; //YMAP
+    	 mem[@SPRITE_SZAMOL]:=0; // számláló
+    	 mem:=mem+10;
+         end;
+    xe:=xe+4;
+    inc(e);
+    end;// i
+  ye:=ye+16;
+  end;// j
+
+// egy emberi játékos, most fixen x=5,y=5 pozicióban kezd
+// de később érdemes ezt is megkeresni a pályán mint az ellenfelet
+mem:=@SPRITE_CIM_FOSZER;
+mem[@SPRITE_ME]:=9;    //mi a sprite
+mem[@SPRITE_XE]:=5*4;  //x
+mem[@SPRITE_YE]:=5*16; //Y
+mem[@SPRITE_KEP]:=2;   //kep
+mem[@SPRITE_XEM]:=5;   //xMAP
+mem[@SPRITE_YEM]:=5;   //YMAP
+mem[@SPRITE_SZAMOL]:=0;// számláló
+
+// 16x15-ös "pálya" kirajzolása
+po2:=32768; e:=0;
+for j:=0 to 15 do
+  begin
+  po:=po2;
+  for i:=0 to 16 do
+     begin
+	 s:=map[e]; inc(e);
+	 CASE s of
+		0:begin putimage_color(0,po); end;// semmi -fekete kocka
+		1:begin ii:=0;putimage_a(po); end;// fal kirajzolása
+	end;
+    po:=po+4;
+    end;
+  po2:=po2+1024; // 16*64=1024, 16 sorral lejjebb megyünk
+  end;
+
+ // felső két kis szöveg kiírása
+ ir_BINszoveg(8,8,5);
+ ir_BINszoveg(8,16,6);
+
+end;
+// SPACE lenyomására majd felengedésére vár
+procedure VARAKOZIK_SPACE_LENYOMASRA;
+begin
+	asm("	
+varakozas_space
+				nop
+				HALT
+				ld  HL,2904
+				ld	a,(HL) 
+				cp	32
+				jp	NZ,varakozas_space // lenyomásra vár
+varakozas_space2
+				ld  HL,2904
+				ld	a,(HL) 
+				cp	32
+				jp	Z,varakozas_space2 // és felengedésre
+    ");
+end;
+procedure VARAKOZIK_BARMILYEN_BILLENTYU_LENYOMASRA;
+begin
+	asm("	
+		rst	$30
+		db	$91// Várakozás billentyű lenyomásra
+		ret
+    ");
+end;
+// letörli a képernyőt colorr színnel /byte-al
+procedure kepernyotorles(colorr:byte);
+var po7:pointer of byte;
+    ig7:byte;
+begin
+po7:=32768;
+for ig7:=0 to 240 do
+	   begin 
+	   fill(po7,colorr,64);	   
+       po7:=po7+64; 
+       end;
+end;
+// ---------------------------------------------
+procedure programresz_LOGO; // 2
+begin
+  kepernyotorles(240);	
+  ir_BINszoveg(10,70,1);
+  ir_BINszoveg(8,200,4);
+  VARAKOZIK_SPACE_LENYOMASRA;	
+  jatekmod:=4;
+end;
+// ---------------------------------------------
+procedure programresz_FOKEPERNYO; // 4
+begin
+  kepernyotorles(15);	
+  ir_BINszoveg(8,10,2);
+  ir_BINszoveg(8,20,3);
+  ir_BINszoveg(8,200,4);
+  VARAKOZIK_SPACE_LENYOMASRA;	
+  jatekmod:=6;
+  kepernyotorles(0);	
+  palya_generalas;
+end;
+// ---------------------------------------------
+procedure programresz_JATEK; // 6
+begin
+      inc(fociklusx); // 0..255
+      
+      // csak minden 4. ciklusban mozgatjuk az ellenfelet,
+      // hogy kicsit lassabbak legyenek
+      if (fociklusx & 3)=3 then
+       begin
+	   // gépi ellenfelek mozgatása (10 sprite lehet a képernyőn)
+       mem:=@SPRITE_CIM;
+       for fociklus:=0 to 10 do
+            begin
+            ii:=128+64; objektum(); mem:=mem+10;
+            end;
+       end;
+       
+      // saját játékos mozgatása   
+      mem:=@SPRITE_CIM_FOSZER;
+      ii:=256; objektum();
+      
+      // billentyű lenyomást vizsgálja
+      mem:=2899;
+      if (mem[0]&128)=128 then begin palya_generalas; end;//R
+      if (mem[0]&64)=64 then begin jatekmod:=2; end;//Q
+end;
+// --------------------------------------------------
+// ------------- ITT kezdődik majd a program --------
+// --------------------------------------------------
+begin
+	
+	init_Graphics(1); // 4 színű mód bekapcsolása
+	init_4colors();   // 4 szín beállítása
+    
+    jatekmod:=2; // logo
+    
+	asm("	
+	  NOP
+START
+	  HALT
+	  NOP
+    ");
+    
+    CASE jatekmod of
+	     2:programresz_LOGO;
+	     4:programresz_FOKEPERNYO;
+	     6:programresz_JATEK;
+    end;
+    
+	asm("	
+	  NOP
+	  jp START
+	  NOP
+    ");
+end.

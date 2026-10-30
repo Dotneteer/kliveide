@@ -1,0 +1,38 @@
+TRSE Pascal használata ViIDEOTON TV-Computerhez
+2023. március 5.
+
+
+Hogy tudod telepíteni és használni a TRSE Pascalt?
+
+1. Töltsd le a weboldalról: 
+https://lemonspawn.com/turbo-rascal-syntax-error-expected-but-begin/downloads/
+
+2. Csomagold ki, ahová szeretnéd.
+
+3. Indítsd el a kicsomagolt trse mappából a trse.exe programot.
+
+4. Majd lépj ki belőle, hogy létrehozza az ini fájlt a következő mappában:
+c:\Users\a te windows felhasználóneved\AppData\Roaming\TRSE\
+
+5. Írd felül a fenti mappában a trse.ini fájlt azzal, amit ebben a csomagban találsz.
+
+6. Írd át a trse.ini fájlan mindenhol a "C:/Develop/trse" útvonalat arra az útvonalra, ahová te kimásoltad a TRSE-t.
+
+7. Másold be a "SpaceWar.ras" és a "tvc_tutorials.trse" fájlt a trse\tutorials\TVC\tutorials\ mappába.
+
+8. Másold be a tvc.tru fájt a trse\units\TVC\ mappába.
+
+9. Indítsd el újra a trse.exe-t
+
+10. Választ ki a Show all systems (recent projects) lenyílóból a TVC-t.
+
+11. Ekkor megjelenik alatta a (TVC) tvc_tutorials.trse sor, amit válassz ki!
+
+12. A felső menüben a Tools -> TRSE Settings menütre kattints rá.
+
+13. A Settings menüben, a TVC Emulátor sorban, tallózd ki a gépden levő a WinTVC.exe-t.
+
+
+Innentől használható a TRSE. Ki tudod választani a már létező tutorial fájlkat, amik CRTL-B-vel lefordíthatók, vagy CRTL-R-el egyből futtathatók is WinTVC-ben.
+
+A fájl menüben létrehozhatsz új fájlt is a saját programodhoz: File -> New File -> Ras source file (*.ras)

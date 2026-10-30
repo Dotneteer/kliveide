@@ -1,0 +1,1655 @@
+program Axis;
+/*
+ Axis - VIDEOTON TV-Computer (TVC) játék
+ Készült: TRSE fejlesztőeszközzel és a Game Engine unittal
+ Készítette: Bery (Bertók Zsolt)
+ Kiadás: 2024. december 26. - a 2024-es TVC játékfejlesztő versenyre
+ Verzió: 2025. február 15. - egy szimpla, befejezetlen zene került a címkép alá
+*/
+
+@use "GE" // Game Engine unit by BerySoft
+
+var
+	// Konstansok
+	// A pálya méretei
+	const LEVEL_WIDTH  		: byte = 15;   	// a pálya egy sora ennyi csempéből áll
+	const LEVEL_HEIGHT 		: byte = 13;   	// a pálya ennyi sor csempéből áll
+	const LEVEL_SIZE      : byte = LEVEL_WIDTH*LEVEL_HEIGHT;
+	const LAST_LEVEL      : byte = 10;    // az utolsó pálya sorszáma
+	// Csempe paraméterek
+	const TILE_WIDTH   		: byte = 4;    	// egy csempe bitmap szélessége byte-okban
+	const TILE_HEIGHT  		: byte = 16;   	// egy csempe bitmap magassága pixelekben
+	const TILE_SIZE    		: byte = TILE_WIDTH*TILE_HEIGHT; // egy csempe bitmap mérete byte-okban
+	const TILE_COUNT   		: byte = 33;   	// ennyi darab, pályát alkotó csempénk van
+	// Kulcskártya
+	const RED_KEY   			: byte = 0;			// a piros kulcskártya sorszáma
+	const WHITE_KEY   	  : byte = 1;			// a szürke kulcskártya sorszáma
+	const KEYCARD_COUNT   : byte = 2;     // ennyi féle kulcskértya van
+	const KEYCARD_WIDTH   : byte = 2;			// a kulcskártya sprite szélessége byte-okban
+	const KEYCARD_HEIGHT  : byte = 9;		  // a kulcskártya sprite magassága pixelekben
+	// Csempe (Tile) típusok
+	const TILE_FLOOR    	: byte = 0;			// a padló csempe, ami a járható része a pályának, azaz nem fal
+	const TILE_RED_KEY   	: byte = 1;			// a piros kulcskártya pozícióját jelző csempe
+	const TILE_WHITE_KEY  :	byte = 2;			// a fehér kulcskártya pozícióját jelző csempe
+	// const TILE_GRAY_KEY   : byte = 3;			// a szürke kulcskártya pozícióját jelző csempe
+	const TILE_OPENED_RED_DOOR	: byte = 4;	// a piros kulcskártya pozícióját jelző csempe
+	const TILE_OPENED_WHITE_DOOR:	byte = 5;	// a fehér kulcskártya pozícióját jelző csempe
+	// const TILE_OPENED_GRAY_DOOR : byte = 6;	// a fekete kulcskártya pozícióját jelző csempe	
+	const TILE_ALIEN    	: byte = 7;			// az Alienek kezdőpozícióit jelző csempe	
+	const TILE_EXIT       : byte = 8;			// a kijárat csempe	
+	const TILE_FIRST_WALL	: byte = 9;    	// az első fal csempe
+	const TILE_ENTRY 			: byte = 9;     // a bejárat csempe	
+	// Ajtó csempék
+	const TILE_RED_DOOR_V 	: byte = 30;    // a függőleges piros ajtót jelző csempe
+	const TILE_WHITE_DOOR_V : byte = 33;    // a függőleges szürke ajtót jelző csempe
+	const TILE_RED_DOOR_H 	: byte = 36;    // a vízszintes piros ajtót jelző csempe
+	const TILE_WHITE_DOOR_H : byte = 39;    // a vízszintes szürke ajtót jelző csempe
+	// Játékos
+	const PLAYER_WIDTH    : byte = 4;			// a játékos sprite szélessége byte-okban
+	const PLAYER_HEIGHT   : byte = 14;		// a játékos sprite magassága pixelekben
+	const PLAYER_ANIMCOUNT: byte = 3;	    // a játékos lépés animáció fázisainak száma
+	// Ajtó 
+	const DOOR_OPENING    : byte = 1;			// az ajtó nyílik
+	const DOOR_CLOSING    : byte = 2;			// az ajtó záródik
+	const DOOR_ANIMCOUNT	: byte = 5;			// ajtó nyitás-zárás animációs fázisainak száma
+	const DOOR_ANIM_DELAY : byte = 6;     // ajtó nyitás-zárás animáció ennyi frame-enként történjen (lassítás)
+	// Aliens
+	const ALIEN_WIDTH     : byte = 4;			// az alien sprite szélessége byte-okban
+	const ALIEN_HEIGHT    : byte = 16;		// az alien sprite magassága pixelekben
+	// Irányok
+	const NONE            : byte = 0;
+	const UP           		: byte = 1;
+	const RIGHT        		: byte = 2;
+	const DOWN         		: byte = 3;
+	const LEFT         		: byte = 4;
+	// Állapotok
+	const STATE_DEAD			: byte = 0;			// halott
+	const STATE_LIVE    	: byte = 1;			// él
+	const STATE_ATTACK    : byte = 2;			// támad
+	const STATE_DYING			: byte = 4;			// haldoklik
+	// Kulcs állapotok
+	const OFF							: byte = 0;
+	const ON							: byte = 1;
+	// Csempék
+	TileBitmapsZX7 			: incbin("axis/Tiles.zx7"); // a csempék bitmapjei egymás után bináris formátumban, az 8. csempétől kezdődően
+	TileBitmapsAddr     : integer = 256; // 256: az ACII képernyő és az áttervezhető karakterek kezdő memóriacíme. Átmenetileg ide lesz kicsomagolva a karakterkészlet is.
+	TileAddr		   			: array [TILE_COUNT] of integer at 5804; // 33*2 byte = 66 byte (84 byte szabad a 5804-es címtől)
+	TileImage      			: GE::Image;  // segéd Image változó a pálya kirajzolásához	
+	// Pályatérképek (Tile Map-ek)
+	LevelMaps      			: array[] of byte = ( // 1. szektor
+                                            10,9,10,14,14,16,22,14,15,14,16,14,17,14,11,
+																						18,0,18,0,0,0,21,0,0,0,0,0,0,0,18,
+																						20,0,27,0,24,0,27,0,28,14,15,14,11,0,18,
+																						18,0,0,0,0,0,0,0,0,0,0,0,18,0,18,
+																						23,38,39,40,14,11,0,28,15,14,11,0,18,0,18,
+																						21,0,0,0,0,18,0,0,0,0,19,0,27,0,18,
+																						18,0,10,17,14,12,0,28,26,0,18,0,0,0,18,
+																						18,1,18,0,0,0,0,0,0,2,18,0,25,0,18,
+																						18,0,23,16,26,0,28,17,14,15,12,0,20,0,18,
+																						20,0,19,0,0,0,0,0,0,0,0,0,18,0,18,
+																						18,0,10,15,35,36,37,11,0,28,16,14,12,0,18,
+																						18,0,18,0,0,0,0,18,0,0,0,0,0,0,18,
+																						13,14,14,14,26,8,28,14,14,14,14,14,14,14,12,
+                                            // 2. szektor
+																						10,14,15,14,14,9,10,14,16,14,15,14,16,14,11,
+																						18,0,0,0,0,0,19,0,0,0,0,0,0,0,18,
+																						20,0,24,0,25,0,27,0,24,0,28,17,26,0,18,
+																						18,0,0,0,18,0,0,0,0,0,0,0,0,0,18,
+																						23,26,0,28,16,14,15,14,22,14,22,15,26,0,18,
+																						18,0,0,0,0,0,0,0,27,7,21,0,0,0,18,
+																						23,14,11,0,10,14,11,0,0,0,19,0,25,0,18,
+																						18,0,13,15,12,0,18,0,25,0,20,0,18,0,18,
+																						18,0,0,0,0,0,18,0,27,0,27,0,23,14,18,
+																						23,35,36,37,11,0,18,0,0,0,0,0,27,1,18,
+																						18,0,0,0,19,0,13,16,15,14,26,0,0,0,18,
+																						18,0,0,0,18,0,0,0,0,0,0,0,25,0,18,
+																						13,26,8,28,14,14,14,14,14,14,14,14,14,14,12,
+																						// 3. szektor
+																						10,14,9,10,14,16,14,14,15,14,16,14,17,14,11,
+																						18,0,0,19,0,0,0,0,0,0,0,0,0,0,18,
+																						20,0,0,27,0,10,26,0,24,0,28,16,11,0,18,
+																						18,0,0,0,0,19,0,0,0,0,0,0,20,0,18,
+																						18,0,25,0,28,12,0,10,14,15,11,0,27,0,18,
+																						21,0,19,0,0,0,0,18,1,0,21,0,0,7,18,
+																						18,0,13,15,14,26,0,27,0,0,27,0,25,0,18,
+																						18,0,0,0,0,0,0,0,0,0,0,0,21,0,18,
+																						23,16,26,0,28,17,16,14,26,0,28,15,12,0,18,
+																						20,0,0,0,0,0,0,0,0,0,0,0,0,0,18,
+																						18,0,28,26,0,10,35,36,37,11,0,28,26,0,18,
+																						18,0,0,7,0,18,0,0,0,18,0,0,0,0,18,
+																						13,14,14,14,14,14,26,8,28,14,14,14,14,14,12,
+																						// 4. szektor
+																						10,14,15,14,14,16,22,9,15,14,16,14,17,14,11,
+																						18,0,0,0,0,0,18,0,0,0,0,0,0,0,18,
+																						19,0,28,14,26,0,18,0,28,14,26,0,25,0,18,
+																						18,0,0,0,0,0,18,0,0,0,0,0,20,0,18,
+																						18,0,10,16,11,0,27,0,25,0,24,0,27,0,18,
+																						20,0,20,0,18,0,1,0,20,0,0,0,0,0,18,
+																						18,0,27,0,27,0,28,14,12,0,10,35,36,37,18,
+																						18,0,0,0,0,0,0,0,0,0,18,0,0,0,18,
+																						18,0,24,0,28,17,14,14,11,0,18,0,0,0,18,
+																						21,0,0,0,0,0,0,0,19,0,18,0,7,0,18,
+																						18,0,28,26,0,28,26,0,27,0,18,0,0,0,18,
+																						18,0,0,0,0,0,0,0,0,0,19,0,0,0,18,
+																						13,14,14,14,14,14,14,14,14,14,14,26,8,28,12,
+																						// 5. szektor
+																						10,14,16,14,17,15,14,22,15,17,16,14,9,14,11,
+																						18,7,0,0,0,0,0,19,0,0,0,0,0,0,18,
+																						19,0,10,26,0,28,17,16,14,26,0,28,11,0,18,
+																						18,0,27,0,0,0,0,0,0,0,0,0,27,0,18,
+																						18,0,0,0,10,26,0,25,0,28,11,0,0,0,18,
+																						20,0,25,0,27,0,0,27,0,0,27,0,25,0,18,
+																						23,15,18,0,0,0,0,1,0,0,0,0,23,15,18,
+																						18,0,29,0,25,0,0,25,0,0,25,0,27,0,18,
+																						18,0,30,0,13,26,0,27,0,28,12,0,0,0,18,
+																						19,0,31,7,0,0,0,0,0,0,0,0,25,0,18,
+																						18,0,13,17,35,36,37,22,15,26,0,28,12,0,18,
+																						18,0,0,0,0,0,0,19,0,0,0,0,0,7,18,
+																						13,14,14,14,26,8,28,14,14,14,14,14,14,14,12,
+																						// 6. szektor
+																						10,14,14,14,14,9,22,14,22,14,16,14,17,14,11,
+																						18,0,0,0,0,0,21,0,18,0,0,0,0,7,18,
+																						20,0,24,0,25,0,27,0,18,0,10,14,26,0,18,
+																						18,0,0,0,20,0,0,0,18,0,18,0,0,0,18,
+																						18,0,28,14,12,0,25,0,27,0,27,0,25,0,18,
+																						21,0,0,0,0,0,18,0,0,0,0,1,20,0,18,
+																						23,15,26,0,28,16,12,0,25,0,28,16,12,0,18,
+																						18,0,0,0,0,0,0,0,20,0,0,0,0,0,18,
+																						18,0,10,16,26,0,28,17,12,0,25,0,28,17,18,
+																						20,0,27,0,0,0,0,0,0,0,21,0,0,0,18,
+																						18,0,0,0,10,35,36,37,11,0,27,0,24,0,18,
+																						18,7,25,0,20,0,0,0,19,0,0,0,0,7,18,
+																						13,14,14,14,14,26,8,28,14,14,14,14,14,14,12,
+																						// 7. szektor
+																						10,14,17,14,22,9,22,14,15,14,16,14,16,14,11,
+																						18,0,0,0,27,0,27,0,0,0,0,0,0,0,18,
+																						20,0,24,0,0,0,0,0,25,0,28,14,11,0,18,
+																						18,0,0,0,25,0,28,14,20,0,0,2,19,0,18,
+																						18,0,28,15,12,0,0,0,27,0,24,0,27,0,18,
+																						21,0,0,0,0,0,25,0,0,0,0,0,0,0,18,
+																						23,17,25,0,28,16,12,0,10,15,26,0,28,14,18,
+																						18,0,20,0,0,0,0,0,19,0,0,0,0,0,18,
+																						18,0,27,0,24,0,25,0,27,0,24,0,25,0,18,
+																						20,7,0,0,0,0,19,0,0,0,0,0,19,7,18,
+																						18,17,38,39,40,14,21,0,10,16,35,36,37,16,18,
+																						18,0,0,0,1,0,19,0,21,0,0,0,0,0,18,
+																						13,14,14,14,14,14,14,14,14,14,26,8,28,14,12,
+																						// 8. szektor
+																						10,14,14,14,14,16,14,14,15,14,22,9,17,14,11,
+																						18,7,0,0,0,0,0,0,0,0,21,0,0,0,18,
+																						20,0,10,14,16,26,0,28,11,0,27,0,25,0,18,
+																						18,0,27,0,0,0,0,0,20,0,0,0,19,0,18,
+																						18,0,0,0,28,17,26,0,13,26,0,28,12,0,18,
+																						21,0,25,0,0,0,0,0,0,0,0,0,0,0,18,
+																						18,0,13,16,26,0,28,16,26,0,25,0,28,15,18,
+																						18,0,0,0,0,0,0,0,0,0,19,0,0,1,18,
+																						23,17,11,0,28,17,26,0,25,0,27,0,25,0,18,
+																						20,0,29,0,0,0,0,0,21,0,0,0,18,0,18,
+																						18,0,30,0,24,0,25,0,13,17,26,0,27,0,18,
+																						18,0,31,0,0,7,18,0,0,0,0,0,0,7,18,
+																						13,8,28,14,14,14,14,14,14,14,14,14,14,14,12,
+																						// 9. szektor
+																						10,9,15,14,14,16,14,14,22,14,16,14,17,14,11,
+																						18,0,0,0,0,0,0,0,21,0,0,0,0,0,18,
+																						20,0,28,26,0,25,0,28,12,7,24,0,25,0,18,
+																						18,0,0,0,0,27,0,0,0,0,0,1,20,0,18,
+																						23,26,0,24,0,0,0,10,26,0,28,16,12,0,18,
+																						21,0,0,0,0,25,0,19,0,0,0,0,0,7,18,
+																						18,0,25,0,28,12,0,27,0,10,26,0,28,14,18,
+																						18,0,20,0,0,0,0,0,0,20,0,0,0,0,18,
+																						18,0,27,0,28,22,26,0,28,12,0,28,26,0,18,
+																						20,0,0,0,0,19,0,0,0,0,0,0,0,7,18,
+																						18,0,28,26,0,27,0,24,0,10,35,36,37,16,18,
+																						18,0,0,0,0,7,0,0,0,19,0,0,0,0,18,
+																						13,14,14,14,14,14,14,14,14,14,26,8,28,14,12,
+																						// 10. szektor
+																						10,14,14,22,14,16,14,14,15,14,11,9,10,14,11,
+																						18,0,0,32,0,0,0,0,0,0,19,0,27,0,18,
+																						20,1,0,33,0,28,26,0,25,0,27,0,0,0,18,
+																						18,0,0,34,0,0,0,7,19,0,0,0,25,0,18,
+																						23,15,14,12,0,25,0,28,17,26,0,28,20,0,18,
+																						21,0,0,0,0,20,0,0,2,0,0,0,27,0,18,
+																						18,0,28,22,15,12,0,25,0,28,26,0,0,0,18,
+																						18,0,0,21,7,0,0,20,0,0,0,0,28,17,18,
+																						23,26,0,27,0,25,0,13,26,0,24,0,0,0,18,
+																						20,0,0,0,0,20,0,0,0,0,0,0,25,0,18,
+																						18,0,28,26,0,10,35,36,37,11,0,28,12,0,18,
+																						18,7,0,0,0,19,0,0,0,19,0,0,0,7,18,
+																						13,14,14,14,14,14,14,8,14,14,14,14,14,14,12
+																           );
+	LevelMap						: array[LEVEL_SIZE] of byte at 6344; // az aktuális pálya térképe, 15*13=195 byte (6344: BASIC változó és munkaterület)
+	tileNr              : byte; 
+	LevelNr             : byte = 0;// akuális pálya sorszáma
+	LevelPtr            : pointer; // a LevelMaps tömbben az aktuális pályára mutató pointer	
+	LevelDone           : boolean; // szint teljesítve
+	GameOver						: boolean; // játék vége
+	WonGame             : boolean; // megnyert játék
+	FirstRun            : boolean = True; // mutatja, hogy először fut a játék címkép utáni része, és ha igen, akkor a kerettörténet kiírásra kerül
+	// Kulcskártya bitmapek
+	RedKeyBitmap   			: incbin("axis/RedKey.bin"); 				// piros kulcs grafika
+	WhiteKeyBitmap   		: incbin("axis/WhiteKey.bin");			// fehér kulcs grafika
+	// Játékos változói
+	PlayerUpAnim  	  	: incbin("axis/PlayerUp.bin");    	// Player sprite felfelé lépés animáció (4 byte x 14 pixel - 3 fázis)
+	PlayerRightAnim  	  : incbin("axis/PlayerRight.bin"); 	// Player sprite jobbra lépés animáció (4 byte x 14 pixel - 3 fázis)
+	PlayerDownAnim  	  : incbin("axis/PlayerDown.bin");  	// Player sprite lefelé lépés animáció (4 byte x 14 pixel - 3 fázis)
+	PlayerLeftAnim  	  : incbin("axis/PlayerLeft.bin");		// Player sprite balra lépés animáció (4 byte x 14 pixel - 3 fázis)
+	PlayerDeadBitmap    : incbin("axis/PlayerDead.bin");		// halott Player sprite 16x14 pixel (4 byte x 14 pixel)
+  PlayerLivesBitmap	  : incbin("axis/PlayerLives.bin");		// játékos életeket kijelző image 2 byte x 11 pixel (8x11 pixel)
+  PlayerLiveImage     : GE::Image;  // játékost ábrázoló image, ami mutatja, hogy mennyi élete van még a játékosnak
+  PLAYER_LIVES        : byte = 5;   // életek száma a játék elejént
+  PlayerLives         : byte;       // a játékos életeinek száma
+	const PLAYER_STEP_DELAY : byte = 5; // játékos járásának lassítási értéke, amitől visszaszámol
+	PlayerSprite    		: GE::Sprite; // a játékos sprite
+	PlayerMapPos        : pointer;    // a játékos aktuális pozíciója a LevelMap-en
+	PlayerTileXStep			: byte;       // a játékos vízszintes pozíciója egy csempén belül
+	PlayerTileYStep			: byte;	      // a játékos függőleges pozíciója egy csempén belül
+	PlayerNextTile      : byte;       // a játékos előtti csempe sorszáma
+	PlayerDyingTimer    : byte;       // játékos haldoklásának visszaszámláló időzítője
+	// Kulcskártya változók
+	KeyCardSprites      : array[KEYCARD_COUNT] of GE::Sprite; // Kulcskártya sprite-ok
+	KeyCardSprPtr				: pointer of GE::Sprite; // az éppen felvett kulcskártya sprite-ra mutató pointer
+	const KEY_CARD_GROUP: byte = 2; // a kulcskártyák csoportazonosítója
+	PlayerHasTheKeyCard	: array[KEYCARD_COUNT] of boolean;  // a játékosnál van-e az adott sorszámú/színű kulcskártya 
+	KeyCardInventoryXPos: byte;     // a képernyő tetején történő kulcskártya kijelzés X pozíciója
+	// Ajtó változók	
+	DoorMapPos          : pointer;    // az éppen nyíló vagy záródó ajtó pozíciója a LevelMap-en
+	HDoorSprite         : GE::Sprite; // sprite a vízszintes ajtó animációhoz
+	VDoorSprite         : GE::Sprite; // sprite a függőleges ajtó animációhoz
+	DoorSpritePtr       : pointer of GE::Sprite; // a vízszintes vagy függőleges ajtó sprite-ra mutató pointer
+	// Alien változók
+	AlienUpAnim  	  	  : incbin("axis/AlienUpAnim.bin");   // Alien sprite felfelé lépés animáció (4 byte x 16 pixel - 2 fázis)
+	AlienRightAnim  	  : incbin("axis/AlienRightAnim.bin");// Alien sprite jobbra lépés animáció (4 byte x 16 pixel - 2 fázis)
+	AlienDownAnim  	    : incbin("axis/AlienDownAnim.bin"); // Alien sprite lefelé lépés animáció (4 byte x 16 pixel - 2 fázis)
+	AlienLeftAnim  	    : incbin("axis/AlienLeftAnim.bin");	// Alien sprite balra lépés animáció (4 byte x 16 pixel - 2 fázis)
+	const ALIEN_COUNT   : byte = 4; // Alienek maximális száma egy pályán
+	const ALIEN_DELAY	  : byte = 4; // Alienek mozgásának késleltetése (sebessége)
+	const ALIEN_GROUP   : byte = 1; // Alienek csoportazonosítója
+	Aliens              : integer at 3056; // az Alien sprite-ok tömbjének kezdő memóriacíme. Egy Aliens : array[ALIEN_COUNT] of GE::Sprite tömböt kezelünk majd itt. Mérete: 8*39=312 byte. Ez a magnó munkaterületének memóriacíme, aminek 600 byte a mérete, így ott bőven elfér
+	AlienMapPos         : array[ALIEN_COUNT] of integer;    // Alien pálya térkép pozíciók tömbje
+	mapPos 							: pointer;                          // segédvéltozó a pálya térkép (LevelMap) pozícióhoz
+	Alien               : pointer of GE::Sprite;						// az aktuális Alien sprite-ra mutató pointer
+	AlienNr             : byte = 0;													// az aktuális Alien sorszáma
+	randomByte					: byte; // az Rnd() függvény kiolvasott értékét tároljuk benne
+	AlienNextTile       : byte;	// az Alien előtti csempe sorszáma
+	AlienLastDirection	: byte; // az Alien utolsó íránya, amerre mozgott	
+	AlienScreamTimer	  : byte; 	  	// az Alien ordítások közötti szünet számolására
+	ALIEN_SCREAM_DELAY  : byte = 50;	// az Alien ordítások közötti szünet időtartama (szorozva az ALIEN_DELAY-el)
+	AlienVoiceTimer	    : byte; 	  	// az Alien kerregések közötti szünet számolására
+	ALIEN_VOICE_DELAY   : byte = 150;	// az Alien kerregések közötti szünet időtartama (szorozva az ALIEN_DELAY-el)
+	// a GAME OVER felirat mintája, ami alapján ki lesz rakva a felirat
+	GameOverSample      : array[] of byte = (1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,0,1,1,1,1,0,0,0,0,1,1,1,1,0,1,0,0,0,1,0,1,1,1,1,0,1,1,1,1,
+	                                         1,0,0,0,0,1,0,0,1,0,1,0,1,0,1,0,1,0,0,0,0,0,0,0,1,0,0,1,0,1,0,0,0,1,0,1,0,0,0,0,1,0,0,1,
+	                                         1,0,1,1,0,1,1,1,1,0,1,0,1,0,1,0,1,1,1,0,0,0,0,0,1,0,0,1,0,1,0,0,0,1,0,1,1,1,0,0,1,1,1,1,
+	                                         1,0,0,1,0,1,0,0,1,0,1,0,0,0,1,0,1,0,0,0,0,0,0,0,1,0,0,1,0,0,1,0,1,0,0,1,0,0,0,0,1,0,1,0,
+	                                         1,1,1,1,0,1,0,0,1,0,1,0,0,0,1,0,1,1,1,1,0,0,0,0,1,1,1,1,0,0,0,1,0,0,0,1,1,1,1,0,1,0,0,1);	
+	// TVC ékezetes betűk: á:144; é:145; i:146; ó:147; ö:148; ő:149; ú:150; ü:151; ű:152
+	// A kerettörténet szövege
+	StoryText1	       	: string = ("Az AXIS b",144,"ny",144,"szkol",147,"ni",144,"ra beju-");
+	StoryText2	       	: string = ("tott egy invaz",146,"v l",145,"tforma,ami az");
+	StoryText3	       	: string = ("emberek ",145,"let",145,"re t",148,"r. Szinte m",144,"r");
+	StoryText4	       	: string = ("mindenki halott vagy gazdatest.");
+	StoryText5	       	: string = ("Csak ",150,"gy ",145,"lheted t",150,"l, ha eljutsz");
+	StoryText6	       	: string = ("a teherdokkig. De a k",148,"zponti");
+	StoryText7	       	: string = ("sz",144,"m",146,"t",147,"g",145,"p lez",144,"rta az oda vezet",149,"");
+	StoryText8	       	: string = ("szektorokat, az ajt",147,"kat csak ");
+	StoryText9	       	: string = ("kulcsk",144,"rty",144,"kkal lehet kinyitni.");
+  StoryText10	       	: string = ("Ajt",147,"nyit",144,"s: T",152,"z vagy SPACE");	
+	StoryText11	       	: string = ("Az Alienek nagyon agresszivek,");
+	StoryText12	       	: string = ("ez",145,"rt lopakodva k",148,"zlekedj.");	
+	InfoTextContinue    : string = ("Tov",144,"bb:T",152,"z vagy SPACE");
+	// Karakterkészlet szöveg kiíráshoz
+	CharSetZX7					: incbin("axis/CharSetHu.ZX7"); // mérete: 576 byte; kitömörítve: 2060 byte; egy karakter 2 byte x 10 pixel; összesen: 206 byte x 10 sor: SPACE-Z + a-z + ÁÉÍÓÖŐÚÜŰ + áéíóöőúüű;
+	CharSetAddr     		: integer at 256; // 256: az ACII képernyő és az áttervezhető karakterek memóraiterülete, aminek a mérete 1600 + 960 = 2560 byte. Később ugyanide lesz kicsomagolva a pálya grafikája, a csempe bitmapek.
+	// Győzelmi kép a teherdokkról
+	DokkZX7							: incbin("axis/Dokk.ZX7"); // mérete: 4378 byte; kitömörítve: 7680 byte (256x120 pixel)
+  // Digi hangeffektek
+  BlipSfxZX7          : incbin("axis/BlipSfx.zx7");   	// mérete: 479 byte; kitömörítve: 904 byte
+  BlipSFX             : integer = 4240; // erre a memóriacímre lesz kitömörítve, (4240: a Stack alsó memóriaterülete, a WhiteDoorHorizontalAnim után)
+	PickUpSfxZX7       	: incbin("axis/PickUpSFX.zx7", 32768);   	// mérete:  263 byte; kitömörítve:  616 byte
+	PickUpSFX          	: integer = 49152; // erre a memóriacímre lesz kitömörítve
+	OpenDoorSfxZX7     	: incbin("axis/OpenDoorSFX.zx7", 33031);	// mérete: 1560 byte; kitömörítve: 2760 byte
+	OpenDoorSFX			   	: integer = 49768;
+	AlienScreamSfxZX7  	: incbin("axis/AlienScreamSFX.zx7", 34591);	// mérete: 2460 byte; kitömörítve: 4128 byte
+	AlienScreamSFX		 	: integer = 52528;
+	AlienVoiceSfxZX7   	: incbin("axis/AlienVoiceSFX.zx7", 37051);	// mérete: 799 byte; kitömörítve: 3704 byte
+	AlienVoiceSFX		   	: integer = 56656;
+	DeadCrySfxZX7   	 	: incbin("axis/DeadCrySFX.zx7", 37850);	// mérete: 1434 byte; kitömörítve: 3492 byte
+	DeadCrySFX		     	: integer = 60360; // kitömörítve 63852-ig tart
+	// Ajtó animációk
+	RedDoorVerticalAnimZX7		: incbin("axis/RedDoorVerticalAnim.zx7"); 	// Piros függőleges ajtó nyitás animáció (tömörítve:  83 byte; kitömörítve: 443 byte)
+	RedDoorVerticalAnim       : integer = 63852; // erre a memóriacímre lesz kitömörítve, 443 byte hosszan
+	WhiteDoorVerticalAnimZX7	: incbin("axis/WhiteDoorVerticalAnim.zx7"); // Fehér függőleges ajtó nyitás animáció (tömörítve:  81 byte; kitömörítve: 443 byte)
+	WhiteDoorVerticalAnim			: integer = 64295; // erre a memóriacímre lesz kitömörítve, 443 byte hosszan
+	RedDoorHorizontalAnimZX7 	: incbin("axis/RedDoorHorizAnim.zx7");			// Piros vízszintes ajtó nyitás animáció (tömörítve: 175 byte; kitömörítve: 483 byte)
+	RedDoorHorizontalAnim			: integer = 64738; // erre a memóriacímre lesz kitömörítve, 483 byte hosszan
+	WhiteDoorHorizontalAnimZX7: incbin("axis/WhiteDoorHorizAnim.ZX7");		// Fehér vízszintes ajtó nyitás animáció (NINCS tömörítve: 174 byte)
+	WhiteDoorHorizontalAnim   : integer = 3756; // erre a memóriacímre lesz kitömörítve, 483 byte hosszan (3756: a Stack alsó memóriacíme, jó eséllyel 1544 byte felhasználható)
+	// Címkép
+	AxisTitleZX7       : incbin("axis/AxisTitle.zx7", 39284); // mérete: 8709 byte; kitömörítve: 14400 byte  
+	// A címkép alatti zenelejátszás változói
+	MusicPos            : integer; // a zene aktuális pozíciója (tömbindexe)
+	MusicPitch1         : integer; // hang PITCH aktuális értéke az 1. szólamban
+	MusicPitch2         : integer; // hang PITCH aktuális értéke az 2. szólamban
+	MusicDuration       : byte;    // egy hang megszólalási idejének visszaszámlálója
+	MusicVolume         : byte;    // a zene hangereje
+	MusicPlayChannel1   : boolean = False; // ez mutatja, hogy az 1. vagy a 2. hangcsatornát / szólamot kell-e lejátszani éppen
+	const MUSIC_DURATION: byte = 12; // egy hang ennyi cikluson át fog szólni (ennyiszer 20 ms)
+  // Egy kezdetleges, egyszerű zene a címkép alá. Nincs igazán befejezve, de mégis szól valami.
+	// A zene 1. szólamának a "kottája"
+	MusicChannel1       : array[] of integer = (3258,4095,3258,4095,3258,4095,3258,4095,3258,4095,3258,4095,3040,4095,3040,4095,3258,4095,3258,4095,3258,4095,3258,4095,3258,4095,
+																							3258,4095,3040,4095,3040,4095,3258,4095,3258,4095,3258,4095,3258,4095,3258,4095,3258,4095,3040,4095,3040,4095,3258,4095,3258,4095,
+																							3258,4095,3258,4095,3258,4095,3258,4095,3040,4095,3040,4095,3258,4095,3258,4095,3258,4095,3258,4095,3258,4095,3258,4095,3040,4095,
+																							3040,4095,3258,4095,3258,4095,3258,4095,3258,4095,3258,4095,3258,4095,3040,4095,3040,4095,3258,4095,3258,4095,3258,4095,3258,4095,
+																							3258,4095,3258,4095,3040,4095,3040,4095,3258,4095,3258,4095,3258,4095,3258,4095,3258,4095,3258,4095,3040,4095,3040,4095,2911,4095,
+																							3391,4095,3537,4095,3677,4095,3537,4095,3391,4095,4095,4095,3391,4095,3537,4095,3677,4095,3537,4095,3391,4095,4095,4095,3391,4095,
+																							9999);
+  // A zene 2. szólamának a "kottája"
+  MusicChannel2       : array[] of integer = (2420,4095,4095,4095,4095,4095,2420,4095,2420,4095,4095,4095,1984,4095,4095,4095,2420,4095,4095,4095,4095,4095,2420,4095,2420,4095,
+																							4095,4095,1984,4095,4095,4095,2420,4095,4095,4095,4095,4095,2420,4095,2420,4095,4095,4095,1984,4095,4095,4095,2420,4095,4095,4095,
+																							4095,4095,2420,4095,2420,4095,4095,4095,1984,4095,4095,4095,2420,4095,4095,4095,4095,4095,2420,4095,2420,4095,4095,4095,1984,4095,
+																							4095,4095,2420,4095,4095,4095,4095,4095,2420,4095,2420,4095,4095,4095,1984,4095,4095,4095,2420,4095,4095,4095,4095,4095,2420,4095,
+																							2420,4095,4095,4095,1984,4095,4095,4095,2420,4095,4095,4095,4095,4095,2420,4095,2420,4095,4095,4095,1984,4095,4095,4095,2420,4095,
+																							4095,2420,4095,2420,4095,2420,4095,2420,4095,4095,4095,2420,4095,2420,4095,2420,4095,2420,4095,2420,4095,1110,4095,4095,4095,4095,
+																							9999);
+	
+	
+// Tömörített bitmapek és hangeffektek kicsomagolása a megfelelő memóriacímekre
+procedure DecompressData(pDoorAnimsOnly : boolean);
+begin
+  // Tömörített adatok kitömörítése
+  GE::SetMemory(GE::MEM_FULL_64K);	// belapozzuk a teljes 64k RAM-ot
+  if (not pDoorAnimsOnly) then // ha nem csak az ajtó animációkat kell újra kitömöríteni
+  begin	  
+	  // csempék
+	  GE::ZX7Decompress(#TileBitmapsZX7, TileBitmapsAddr);
+	  // Hangeffektek		  
+	  GE::ZX7Decompress(#BlipSfxZX7, BlipSFX);
+		GE::ZX7Decompress(#PickUpSfxZX7, PickUpSFX);
+		GE::ZX7Decompress(#OpenDoorSfxZX7, OpenDoorSFX);
+		GE::ZX7Decompress(#AlienScreamSfxZX7, AlienScreamSFX);
+		GE::ZX7Decompress(#AlienVoiceSfxZX7, AlienVoiceSFX);
+		GE::ZX7Decompress(#DeadCrySfxZX7, DeadCrySFX);
+	end;
+	// Ajtó animációk
+	GE::ZX7Decompress(#RedDoorVerticalAnimZX7,   RedDoorVerticalAnim);
+	GE::ZX7Decompress(#RedDoorHorizontalAnimZX7, RedDoorHorizontalAnim);
+	GE::ZX7Decompress(#WhiteDoorVerticalAnimZX7, WhiteDoorVerticalAnim);	
+	GE::ZX7Decompress(#WhiteDoorHorizontalAnimZX7, WhiteDoorHorizontalAnim);	
+end; /* DecompressData */ 	
+	
+	
+// A játék alapbeállításai		
+procedure GameInit(); 
+var
+	i           : byte;
+  tileMemAddr : integer;
+begin
+ 	GE::SetGraphics(GE::Graphics4); 				// grafikus mód beállítása    
+	// A paletta 4 színének beállítása
+	GE::SetPalette(0, GE::PALETTE_BLACK);	
+	GE::SetPalette(1, GE::PALETTE_GRAY);
+	GE::SetPalette(2, GE::PALETTE_WHITE);
+	GE::SetPalette(3, GE::PALETTE_RED);
+	GE::Init(GE::DIRECT_TO_SCREEN);  				// Game Engine inicializálása - direkt a képernyőre rakunk ki mindent
+	GE::SetRasterInterruptPos(239);	 				// raszter-megszakítás pozíciójának beállítása    
+	GE::InitCharSet(#CharSetAddr, 206, 2, 10); 	// A karakterkészlet inicializállása. 2 byte széles és 10 pixel magas kerakterek.
+  DecompressData(True); // csak az ajtó animációk kitömörítése
+  // A csempék memóriacímeinek kiszámolása
+  tileMemAddr := TileBitmapsAddr;
+  for i := 0 to TILE_COUNT do
+  begin
+	  TileAddr[i] := tileMemAddr;
+	  tileMemAddr := tileMemAddr + TILE_SIZE;
+  end;
+  TileImage.Init(TileBitmapsAddr, 4, 16); // TileImage inicializálása  
+  // Játékos
+  PlayerSprite.Init(#PlayerDownAnim, 0, 0, False);
+	PlayerSprite.InitAnimation(PLAYER_ANIMCOUNT, 1, GE::LOOP_PINGPONG); // a játékos animációja 3 fázisból áll, és oda-vissza lesz animálva
+	PlayerSprite.State := STATE_LIVE;
+	PlayerLiveImage.Init(#PlayerLivesBitmap, 2, 11); // játékos életeket kijelző image 2 byte x 11 pixel
+	// Kulcskáryák
+	for i := 0 to KEYCARD_COUNT do
+	begin
+		case i of
+			RED_KEY   : KeyCardSprites[i].Init(#RedKeyBitmap,  0, 0, False);
+			WHITE_KEY : KeyCardSprites[i].Init(#WhiteKeyBitmap, 0, 0, False);
+		end;		
+		KeyCardSprites[i].State   := i;
+		KeyCardSprites[i].GroupNr := KEY_CARD_GROUP;
+	end;	
+	// Alien sprite-ok inicializálása
+	Alien := #Aliens;	// Az Alien pointer az alien sprite-ok tömbjének memóriacímére mutat, azaz az első alien sprite-ra. (Alien := Aliens[0] lenne)
+	for i := 0 to ALIEN_COUNT do
+  begin
+  	Alien.Init(#AlienRightAnim, 0, 0, False); 
+  	Alien.State   := STATE_DEAD;  // kezdetben mindet halottra állítjuk, majd a pálya kirajzolásakor lesz annyi élő, amennyi az adott pályán van
+  	Alien.GroupNr := ALIEN_GROUP;
+  	Alien.Visible := False;
+  	Alien.InitAnimation(2, 1, GE::LOOP_FORWARD); // az Alienek animációja 2 fázisból áll, és az utolsó fázis után ismét az első következik
+  	Alien += GE::SPRITE_CLASS_SIZE; // az Alien pointer az Aliens tömb következő sprite-jára mutat
+  end;
+  // Ajtó
+	VDoorSprite.Init(RedDoorVerticalAnim, 0, 0, False);
+	VDoorSprite.InitAnimation(DOOR_ANIMCOUNT, DOOR_ANIM_DELAY, GE::LOOP_FORWARD); // függőleges ajtó animáció
+	HDoorSprite.Init(RedDoorHorizontalAnim, 0, 0, False);
+	HDoorSprite.InitAnimation(DOOR_ANIMCOUNT, DOOR_ANIM_DELAY, GE::LOOP_FORWARD); // vízszintes ajtó animáció	
+end; /* GameInit */
+
+
+// változók alapértékeinek beállítása új játék megkezdéséhez
+procedure InitNewGame();
+begin
+  // Játék
+  GameOver := False; // nincs játék vége
+	WonGame  := False; // nem nyerte meg a játékos a játákot
+  // Pálya
+  LevelNr  := 1;          // 1. szint
+  LevelPtr := #LevelMaps; // LevelPtr az 1. szint csempetérképére mutat
+  PlayerLives := PLAYER_LIVES; // az életek száma a maximum
+end; /* InitNewGame */
+
+
+procedure WaitForKey();
+begin
+	// Várakozás, amíg az esetlegesen nyomva levő Tűz vagy SPACE gombokat felengedik
+	GE::GetKeyboard();
+	while (GE::Pressed(GE::JOY1_FIRE) or GE::Pressed(GE::KEY_SPACE)) do
+		GE::GetKeyboard();
+  // Várakozás a Tűz vagy SPACE gomb lenyomására
+	GE::GetKeyboard();
+	while (not GE::Pressed(GE::JOY1_FIRE) and not GE::Pressed(GE::KEY_SPACE)) do
+		GE::GetKeyboard();
+end; /* WaitForKey */
+
+
+// A tömörített címkép kicsomagolása, majd kimásolása a képernyőre
+procedure PutTitleScreen();
+begin
+	// Címképernyő kitömörítése a legfelső 16 kbyte-ra
+	GE::SetMemory(GE::MEM_FULL_64K);	// belapozzuk a teljes 64k RAM-ot
+	GE::ZX7Decompress(#AxisTitleZX7, GE::BACK_SCREEN_ADDR); // a címkép kicsomagolása a 3. memórialapra, azaz a legfelső 16k-ra
+  // Címképernyő kirakása
+  GE::SetMemory(GE::MEM_48K_VID); 	// belapozzuk a VIDEORAM-ot a 2. lapra, a másik 3x16k-s lapon RAM lesz	
+  GE::FillRect(0, 230, GE::SCREEN_WIDTH, 10, GE::GR4_COLOR0); // alsó 10 pixelsorban levő szöveg törlése
+  GE::MemCopy(GE::BACK_SCREEN_ADDR, GE::SCREEN_ADDR, 225*64);  // kép kimásolása a 3. memórialapról a videoram-ba, azaz a képernyőpre
+  GE::SetPalette(3, GE::PALETTE_RED); // a 3. palettaszínre a piros beállítása amiatt, ha a győzelmi képernyőről kerül ide a program futása, mert ott sötétpirosra van állítva
+end; /* PutTitleScreen */ 
+
+
+// A kerettörtének kiírása a képernyőre
+procedure ShowStory();
+begin
+	FirstRun := False;	
+	GE::ZX7Decompress(#CharSetZX7, #CharSetAddr); // Karakterkészlet kicsomagolása a megfelelő helyre.
+	GE::ClearScreen(GE::GR4_COLOR0); // képernyő törlése a 0-ás palettaszínnel
+	GE::SetPalette(2, GE::PALETTE_GREEN); // a 2. palettaszín zöldre állítása - ez lesz a szöveg színe. Ez a paletteszín a játék alatt fehér.
+	// akerettörténet szövegének kirakása
+	GE::WriteText( 0,   0,"AXIS");
+	GE::WriteText( 0,  30, #StoryText1);
+	GE::WriteText( 0,  45, #StoryText2);
+	GE::WriteText( 0,  60, #StoryText3);
+	GE::WriteText( 0,  75, #StoryText4);
+	GE::WriteText( 0,  90, #StoryText5);
+	GE::WriteText( 0, 105, #StoryText6);
+	GE::WriteText( 0, 120, #StoryText7);
+	GE::WriteText( 0, 135, #StoryText8);
+	GE::WriteText( 0, 150, #StoryText9);
+	GE::WriteText( 0, 165, #StoryText10);
+  GE::WriteText( 0, 180, #StoryText11);
+	GE::WriteText( 0, 195, #StoryText12);
+	GE::WriteText(11, 230, #InfoTextContinue);
+	WaitForKey();	 // várakotás egy billenytű lenyomására
+	PutTitleScreen(); // címkép kirakása ismét
+	GE::SetPalette(2, GE::PALETTE_WHITE); // a 2. palettaszín fehérre állítása 
+end; /* ShowStory */
+
+
+// zenelejátszó
+procedure PlayMusic(); 
+begin
+	MusicPlayChannel1 := not MusicPlayChannel1; // ez mutatja, hogy az 1. vagy a 2. szólamot kell-e lejátszani éppen
+	Dec(MusicDuration); // hang megszólalási hosszának csökkentése
+	if (MusicDuration = 0) then // Ha nulla, akkor jön a következő hang lejátszása
+	begin
+		// a következő hang lejátszása
+		MusicVolume := GE::MAX_VOLUME;
+		MusicPitch1 := MusicChannel1[MusicPos];
+		MusicPitch2 := MusicChannel2[MusicPos];
+		MusicDuration := MUSIC_DURATION; // az aktuális hang lejátszási hosszának beállítása
+		GE::Sound(MusicPitch1); // a hang megszólaltatása
+		inc (MusicPos); // MusicPOs a következő hangra mutat
+		if (MusicChannel1[MusicPos] = 9999) then // a zene vége
+			MusicPos := 0; // kezdjük elölről
+	end
+	else // ha még nem nulla a MusicDuration, azaz tovább szól az aktuális hang
+	begin				
+		GE::Volume(MusicVolume); // hangerő beállítása
+		if MusicPlayChannel1 then
+		begin					
+			if (MusicPitch1 <> GE::SILENT_SOUND) then 	// ha nem szünet van éppen az 1. csatornán
+				GE::Sound(MusicPitch1) 		// az 1. csatorna aktuális hangjának megszólaltatása				
+			else
+		  	GE::Sound(MusicPitch2);		// ha a 1. csatornán éppen nincs hang, akkor az 2. csatorna hangjának megszólaltatása
+		end
+		else
+		begin	
+			Dec(MusicVolume);		
+			if (MusicPitch2 <> GE::SILENT_SOUND) then 	// ha nem szünet van éppen a 2. csatornán
+				GE::Sound(MusicPitch2)		// az 2. csatorna aktuális hangjának megszólaltatása
+			else
+			  GE::Sound(MusicPitch1);		// ha a 2. csatornán éppen nincs hang, akkor az 1. csatorna hangjának megszólaltatása
+		end;	  
+	end;
+end; /* PlayMusic */
+
+
+// Címkép zenével, majd a kerettörténet kiírása
+procedure ShowTitleScreen();
+var
+	playMenuMusic : boolean;
+begin
+	PutTitleScreen();	
+  // Alien kerregés hang lejátszása és várakozás a lejátszás végéig
+  GE::SetMemory(GE::MEM_FULL_64K);	// belapozzuk a teljes 64k RAM-ot
+	GE::ZX7Decompress(#AlienVoiceSfxZX7, AlienVoiceSFX); // AlienVoiceSFX hangeffekt kitömörítése	
+  GE::DigiSoundOn(GE::DIGI_FREQ_4_KHZ, GE::DIGI_TYPE_1x4BIT); // Digi hanglejátszás bekapcsolása
+  GE::PlayDigiSound(AlienVoiceSFX); // Alien hang lejátszása
+  while GE::IsDigiSoundPlaying() do; // várakozás a digi hanglejátszás végére
+  GE::DigiSoundOff();  // Digi hanglejátszás kikapcsolása, hogy majd meg udjon szólalni a zene
+  GE::SetMemory(GE::MEM_48K_VID);		// belapozzuk a VIDEORAM-ot a 2. lapra, a másik 3 16k-s lapon RAM lesz	
+  GE::ZX7Decompress(#CharSetZX7, #CharSetAddr); // Karakterkészletet kitömörítése, mert a csempe bitmapek is ugyanezen a memóriacímen vannak, ezért korábban felülírta
+  GE::WriteText(11, 230, #InfoTextContinue);
+  // Várakozás, amíg az esetlegesen nyomva levő Tűz vagy SPACE gombokat felengedik
+	GE::GetKeyboard();
+	while (GE::Pressed(GE::JOY1_FIRE) or GE::Pressed(GE::KEY_SPACE)) do
+		GE::GetKeyboard();
+  // Zene lejátszása a címkép alatt SPACE vagy TŰZ gomb lenyomásáig
+  MusicPos := 0;
+  MusicDuration := 1;
+  MusicPlayChannel1 := False;
+  GE::Volume(GE::MAX_VOLUME); // hangerő beállítása  
+  // Zene loop
+  playMenuMusic := True;
+  while playMenuMusic do
+  begin
+	  GE::WaitForSync; 		// a képszinkronnal időzítjük a zenelejátszást, így másodpercenként 50-szer hívódik meg a zenelejátszó
+	  PlayMusic(); 				// a zene lejátszása: vagy hagyja szólni a korábban kiadott hangot, vagy kiolvassa a következő hangot, és azt szólaltaja meg
+	  GE::GetKeyboard();
+	  if (GE::Pressed(GE::JOY1_FIRE) or GE::Pressed(GE::KEY_SPACE)) then
+	    playMenuMusic := False;		
+  end;	
+  // Hang kikapcsolása
+  GE::Sound(GE::SILENT_SOUND);
+  GE::SoundOff();
+  // Történek kiírása az első indításkor
+  if FirstRun then
+    ShowStory();
+  // Pálya csempék, digi hangeffektek és ajtó animációk kitömörítése
+  DecompressData(False);
+end; /* ShowTitleScreen */ 
+
+
+// GAME OVER felirat kirakása
+procedure ShowGameOverScreen();
+var
+	x, y, line, col : byte;
+	SamplePtr : pointer of byte;
+begin	
+	GE::SetBorder(GE::BORDER_BLACK);
+	// "Ablak" kirajzolása a GAME OVER szövegnek
+	GE::FillRect( 6, 90, 52,  4, GE::GR4_COLOR0); // felső fekete keret
+  GE::FillRect( 6, 90,  1, 60, GE::GR4_COLOR0); // bal  fekete keret	
+	GE::FillRect(57, 90,  1, 60, GE::GR4_COLOR0); // jobb fekete keret	
+	GE::FillRect( 6,146, 52,  4, GE::GR4_COLOR0); // alsó fekete keret
+	GE::FillRect( 7, 94, 50, 52, GE::GR4_COLOR3); // piros háttér, azaz az "ablak" felülete
+	// GAME OVER szöveg kirajzolása mintából
+	SamplePtr := #GameOverSample;
+	y := 110;
+	for line := 0 to 5 do
+	begin
+		x := 10;
+		for col := 0 to 44 do
+		begin
+			if (SamplePtr[0] = 1) then
+				GE::FillRect(x, y, 1, 4, GE::GR4_COLOR2);
+			Inc(x);
+			Inc(SamplePtr);
+		end;
+		y += 4;
+	end;
+	GE::PlayDigiSound(AlienVoiceSFX); // Alien hang lejátszása
+	WaitForKey(); // várakozás TÚZ vagy SPACE gombra
+	// a pálya alsó részének törlése, hogy az ne maradjon kint a címkép kirakása alatt
+	GE::FillRect(0, 225, GE::SCREEN_WIDTH, 15, GE::GR4_COLOR0);
+end; /* ShowGameOverScreen */
+
+
+// Szektor kiírása egy új szint előtt, és billenyűre várakozás
+procedure ShowLevelInfo();
+var
+	i, vol : byte;
+begin	
+	GE::WaitForSync();
+	GE::DigiSoundOn(GE::DIGI_FREQ_4_KHZ, GE::DIGI_TYPE_1x4BIT); // Digi hanglejátszás bekapcsolása
+	GE::IntToStr(LevelNr);	
+	// Háttér
+	GE::FillRect(18, 95, 28, 50, GE::GR4_COLOR0);	
+	// Szöveg	
+	GE::WriteText(23, 115, "Szektor:");
+	GE::WriteText(39, 115, #GE_NumStr);
+	// Keret	
+	GE::FillRect(18, 92, 28,  3, GE::GR4_COLOR3); 	// felső piros keret
+	GE::FillRect(17, 91,  1, 58, 127);  						// bal piros keret, fehér szegéllyel	
+	GE::FillRect(46, 91,  1, 58, 238); 							// jobb piros keret, fekete szegéllyel
+	GE::FillRect(17, 91, 30,  1, GE::GR4_COLOR2); 	// felső fehér szegély
+	GE::FillRect(18,145, 28,  3, GE::GR4_COLOR3);  // alső piros keret
+	GE::FillRect(17,148, 30,  1, GE::GR4_COLOR0);  // alső fekete szegély	
+	// Hangeffekt		
+	GE::PlayDigiSound(BlipSFX);
+	GE::FillRect(0, 230, GE::SCREEN_WIDTH, 10, GE::GR4_COLOR0); // alsó 10 pixelsor törlése
+	GE::WriteText(11, 230, #InfoTextContinue);
+	// Várakozás TÚZ vagy SPACE gombra
+	WaitForKey();
+end; /* ShowLevelInfo */
+
+
+// Játék megnyerése - a teherdokk grafika kirakása és kísérő szöveg kiírása
+procedure WinningTheGame();
+begin	
+	WonGame := True; // a játékos megnyerte a játékot
+	GE::DigiSoundOff();
+	GE::SetMemory(GE::MEM_48K_VID);		// belapozzuk a VIDEORAM-ot a 2. lapra, a másik 3 16k-s lapon RAM lesz	
+	GE::ZX7Decompress(#CharSetZX7, #CharSetAddr); // Karakterkészletet kitömörítése, mert a csempe bitmapek is ugyanezen a memóriacímen vannak, ezért korábban felülírta
+	GE::SetPalette(3, GE::PALETTE_DARKRED);
+	GE::ZX7Decompress(#DokkZX7, GE::SCREEN_ADDR); // Félképernyőnyi teherdokk kép kitömörítése a videoram felső felébe, azaz a képernyő tetejére
+	GE::FillRect(0, 120, GE::SCREEN_WIDTH, 120, GE::GR4_COLOR0); // a képernyő alsó felének letörlése
+	// győzelmi szöveg kiírása
+	// TVC ékezetes betűk: á:144; é:145; i:146; ó:147; ö:148; ő:149; ú:150; ü:151; ű:152
+	GE::WriteText(0, 140, string("Gratul",144,"lok, eljutott",144,"l a dokkba!"));
+	GE::WriteText(0, 155, string("A teher-transzfer hamarosan"));
+	GE::WriteText(0, 170, string("meg",145,"rkezik, amivel elhagyhatod"));
+	GE::WriteText(0, 185, string("az Axist."));
+	GE::WriteText(11, 230, #InfoTextContinue);
+	// várakozás a TŰZ vagy a SPACE gombokra
+	WaitForKey();	
+end; /* WinningTheGame */
+
+
+// A játék pályájának inicializálása, és az aktuális pálya kirajzolása
+procedure LevelInit();
+var
+	row, col, i, idx, 
+  alienIndex, keyNr : byte;
+begin
+	GE::SetMemory(GE::MEM_48K_VID); // belapozzuk a VIDEORAM-ot a 2. lapra, a többi 3x16k-s lapon RAM lesz	
+	GE::SetBorder(GE::BORDER_BLACK);
+	GE::ZX7Decompress(#CharSetZX7, #CharSetAddr); // Karakterkészletet kitömörítése, mert a csempe bitmapek is ugyanezen a memóriacímen vannak, ezért korábban felülírta
+	ShowLevelInfo();
+	// Változók inicializálása
+	LevelDone := False;
+	// Kulcskártyák
+	for i := 0 to KEYCARD_COUNT do
+	begin
+		KeyCardSprites[i].Visible  := False;
+		PlayerHasTheKeyCard[i]     := False;
+	end;
+	KeyCardInventoryXPos := 52;
+	// Ajtók
+	VDoorSprite.Visible := False; // az ajtó nyitás-zárás animációt kirakó sprite nem látszik, mivel nincs ajtó nyitás-zárás
+	VDoorSprite.State := NONE; // semmilyen ajtóművelet nincs folyamatban
+	HDoorSprite.Visible := False; // az ajtó nyitás-zárás animációt kirakó sprite nem látszik, mivel nincs ajtó nyitás-zárás
+	HDoorSprite.State := NONE; // semmilyen ajtóművelet nincs folyamatban
+	DoorSpritePtr := #VDoorSprite;
+	// Aliens
+	Alien := #Aliens;	// Az Alien pointer az Alines tömb 0. elemére mutat, azaz -> Alien := Aliens[0]
+	for i := 0 to ALIEN_COUNT do
+  begin
+  	Alien.State   := STATE_DEAD;
+  	Alien.Visible := False;
+  	Alien += GE::SPRITE_CLASS_SIZE; // az Alien pointer az Aliens tömb következő elemére mutat
+  end;
+  AlienScreamTimer := 0;
+  AlienVoiceTimer  := ALIEN_VOICE_DELAY;  
+  // ========================================
+	// FEJLÉC INFOK - kulcskártyák, életek
+	// ========================================	
+	GE::WriteText(37, 3,"Kulcsok:");		
+	GE::WriteText(39,19,string(129,"letek:"));
+	GE::FillRect(KeyCardInventoryXPos,   3, 2, 9, 0); // 1. kulcs helyének törlése
+	GE::FillRect(KeyCardInventoryXPos+2, 3, 2, 9, 0); // 2. kulcs helyének törlése
+	// játékos életek kirakása
+	PlayerLiveImage.X := 50;
+	PlayerLiveImage.Y := 18;
+	for i := 0 to PLAYER_LIVES do
+	begin		
+		if PlayerLives > i then
+		begin
+			PlayerLiveImage.X += 2;
+			PlayerLiveImage.Put();			
+		end;
+	end;
+	// ========================================
+	// Pálya kirajzolása a csempetérkép alapján
+	// ========================================	
+	GE::ZX7Decompress(#TileBitmapsZX7, TileBitmapsAddr); // Csempe bitmapek kitömörítése, mert a karakterkészlet is ugyanezen a memóriacímen van, ezért korábban felülírta
+	GE::MemCopy(LevelPtr, #LevelMap, LEVEL_SIZE); // az aktuális pályát átmásolja a LevelMaps-ből a LevelMap-re
+	// GE::HBytesLine(GE::SCREEN_ADDR+31*64+2, 15*TILE_WIDTH, GE::GR4_COLOR0); // a pálya szöveg felé egy fekete vonal, hogy ne follyon egybe az AXIS címmel
+	alienIndex := 0; // ez mutatja, hogy melyik Alien-t inicializáljuk a LevelMap-ről
+	Alien := #Aliens;
+	i := 0;
+  TileImage.Y := 32;  
+  fori row := 1 to LEVEL_HEIGHT do
+  begin
+	  TileImage.X := 2;
+	  fori col := 1 to LEVEL_WIDTH do
+	  begin
+		  tileNr := LevelMap[i];
+		  if ((row = 1) and (tileNr = TILE_ENTRY)) then // ha LevelMap első sorában egy bejárat csempét raknánk éppen ki
+		  begin
+			  // a Játékos kezdőpozíciójának beállítása
+				PlayerSprite.State 			:= STATE_LIVE;
+				PlayerSprite.Direction 	:= DOWN;
+				PlayerSprite.Timer 			:= PLAYER_STEP_DELAY;
+				PlayerSprite.X 					:= TileImage.X;
+				PlayerSprite.Y 					:= TileImage.Y + TILE_HEIGHT; // bejárat TILE alá egy sorral
+				PlayerSprite.SetPosition();
+				PlayerSprite.ResetAnimation(#PlayerDownAnim+3);										
+				PlayerTileXStep	:= 0;
+				PlayerTileYStep := 0;				
+				PlayerMapPos 		:= #LevelMap + i + LEVEL_WIDTH; // a bejárat TILE alá egy csempesorral (LEVEL_WIDTH)				
+		  end;
+		  // a tileNr-nek megfelelő sorszámú csempe kirakása a képernyőre
+		  if (tileNr >= TILE_FIRST_WALL or tileNr = TILE_EXIT) then
+		  begin
+			  // egy pálya csempe kirakása
+			  TileImage.Bitmap := TileAddr[tileNr-TILE_EXIT]; // a TILE_FIRST_WALL csempétől vannak letárolva a bitmapek, azért 5-öt levonunk a tileNr értékéből
+		    TileImage.Put();	      		      
+      end
+      else
+      begin
+        GE::FillRect(TileImage.X, TileImage.Y, TILE_WIDTH, TILE_HEIGHT, GE::GR4_COLOR1);        
+        KeyCardSprPtr := 0;
+        case tileNr offpage of
+					TILE_RED_KEY	:	KeyCardSprPtr := #KeyCardSprites;
+					TILE_WHITE_KEY:	KeyCardSprPtr := #KeyCardSprites+GE::SPRITE_CLASS_SIZE;
+			  	TILE_ALIEN		:	begin
+													  // egy Alien kezdőpozíciójának beállítása													  
+													  Alien.State   := STATE_LIVE;
+													  Alien.Visible := True;
+													  Alien.Counter := 4; // a csempe végén áll
+													  Alien.Delay 	:= alienIndex;
+													  Alien.Timer   := TILE_FLOOR; // az Alien alatti csempe kódja van az Alien.Timer változóban
+													  Alien.X 			:= TileImage.X;
+													  Alien.Y 			:= TileImage.Y;
+													  Alien.SetPosition();
+													  Alien.WasAnimated := False;
+													  // Alien kezdő irányának beállítása
+													  randomByte := GE::Rnd();
+													  if (randomByte > 100) then // Fel vagy le irány lesz
+													  begin						  
+														  if (GE::Odd(randomByte)) then // Ha páratlan szám
+														  	Alien.Direction := UP
+														  else
+														    Alien.Direction := DOWN;
+													  end
+													  else // Jobb vagy bal irány lesz
+													  begin						  
+														  if (GE::Odd(randomByte)) then // Ha páratlan szám
+														  	Alien.Direction := RIGHT
+														  else
+														    Alien.Direction := LEFT;
+													  end;
+													  // Alien animáció beállítása az irány alapján
+													  case Alien.Direction of
+															UP    : Alien.ResetAnimation(#AlienUpAnim+3);
+															RIGHT	: Alien.ResetAnimation(#AlienRightAnim+3);
+															DOWN  : Alien.ResetAnimation(#AlienDownAnim+3);
+															LEFT	: Alien.ResetAnimation(#AlienLeftAnim+3);
+														end;
+														// Alien térkép pozíciójának beállítása
+														AlienMapPos[alienIndex] := #LevelMap + i; 
+													  inc(alienIndex);  // növeljük az Aliens tömbre mutató indexet
+													  Alien += GE::SPRITE_CLASS_SIZE; // az Alien pointer az Aliens tömb következő elemére mutat
+					  						end; // TILE_ALIEN
+				end; // case tileNr
+				if (KeyCardSprPtr > 0) then
+				begin
+					KeyCardSprPtr.Visible := True;
+					KeyCardSprPtr.X 			:= TileImage.X+1;
+					KeyCardSprPtr.Y 			:= TileImage.Y+4;
+					KeyCardSprPtr.SetPosition();
+				end;
+      end;
+      TileImage.X := TileImage.X + TILE_WIDTH; // TileImage.X-et egy csempeszélességgel növeljük
+      Inc (i);
+	  end; /* for col */
+	  TileImage.Y := TileImage.Y + TILE_HEIGHT; // TileImage.Y-t egy csempemagasággal növeljük
+  end; /* for row */
+  // GE::ZX7Decompress(#CharSetZX7, #CharSetAddr); //!!! csak teszt!
+end; /* LevelInit */
+
+
+// Játékos felvesz egy kulcskártyát
+procedure PickUpTheKeyCard(); // Kulcskártya felszedése
+begin
+	GE::FillRectAtPos(KeyCardSprPtr.Position, KEYCARD_WIDTH, KEYCARD_HEIGHT, GE::GR4_COLOR1); // Kulcskártya letörlése a képernyőről
+	// Lekérdezzük, hogy melyik kulcskártyát vette fel, és beállítjuk, hogy az már nála van - KeyCardSprPtr mutat arra a kulcskártya sprite-ra, amivel "ütközött" a játékos
+	PlayerHasTheKeyCard[KeyCardSprPtr.State] := True;
+	// Kitesszük felülre a felvett kulcskártya sprite-ját, hogy lássa a játékos, hogy melyikek vannak már nála
+	KeyCardSprPtr.X := KeyCardInventoryXPos;
+	KeyCardSprPtr.Y := 3;
+	KeyCardSprPtr.SetPosition;
+	KeyCardSprPtr.Put;
+	KeyCardSprPtr.Visible := False; // nem kell többet megjeleníteni ezt a kulcskártyát a pályán
+	KeyCardInventoryXPos += 2; // növeljük az X pozíciót, ahová a következőnek felvett kulcskártyát ki kell majd tenni fentre
+	GE::PlayDigiSound(PickUpSFX);
+end; /* PickUpTheKeyCard */
+
+
+// A játékos előtt levő következő csempe lekérdezése
+function GetPlayerNextTile() : byte;
+begin	
+	case PlayerSprite.Direction of
+		UP   	:	begin
+							mapPos := PlayerMapPos - LEVEL_WIDTH; // egy sorral fentebb mutat a LevelMap-en az mapPos
+		          PlayerNextTile := mapPos[0];
+						end;
+		RIGHT :	PlayerNextTile := PlayerMapPos[1];
+		DOWN  :	PlayerNextTile := PlayerMapPos[LEVEL_WIDTH]; // egy sorral lentebb mutat a LevelMap-en az mapPos
+		LEFT 	:	begin
+							mapPos := PlayerMapPos - 1; // egyel balra mutat a LevelMap-en az mapPos
+		          PlayerNextTile := mapPos[0];
+						end;
+	end; // case Player.Direction 
+	GetPlayerNextTile := PlayerNextTile;
+end; /* GetPlayerNextTile */
+
+
+// A játékos a csempe szélén áll?
+function PlayerOnTileEdge() : byte;
+var
+	result : boolean;
+begin	
+	case PlayerSprite.Direction of
+		UP   	:	result := PlayerTileYStep = 0;
+		RIGHT :	result := PlayerTileXStep = 0;
+		DOWN  :	result := PlayerTileYStep = 0;
+		LEFT 	:	result := PlayerTileXStep = 0;
+	end; // case Player.Direction 
+	PlayerOnTileEdge := result;
+end; /* GetPlayerNextTile */
+
+
+// Játékos ajtónyitás, ajtózárás 
+procedure PlayerOpenCloseDoor();
+begin
+	if (DoorSpritePtr.State = NONE) then // ha éppen nem nyílik vagy csukódik ajtó
+	begin
+		PlayerSprite.Timer := PLAYER_STEP_DELAY; // játékos lassítás visszaszámláló alapbeállítása (reset)
+		if PlayerOnTileEdge() then // A játékos a csempe szélén van
+		begin						
+			GetPlayerNextTile(); // a játékos előtti csempe sorszámának lekérdezése. A PlayerNextTile változóban lesz az eredmény.
+			case PlayerNextTile offpage of
+			  TILE_RED_DOOR_V			  : begin
+																  // Ha FÜGGŐLEGES? PIROS ajtó van a játékos előtt, akkor ajtó nyitás előkészítése
+																  if (PlayerHasTheKeyCard[RED_KEY]) then // van a játékosnak piros kulcskártyája
+																  begin
+																	  DoorSpritePtr         	:= #VDoorSprite;
+																		DoorSpritePtr.State			:= DOOR_OPENING;
+																		DoorSpritePtr.GroupNr		:= PlayerNextTile;
+																		DoorSpritePtr.ResetAnimation(RedDoorVerticalAnim+3);																																			
+																	end;
+																end;
+				TILE_RED_DOOR_H			  : begin
+																  // Ha VÍZSZINTES, PIROS ajtó van a játékos előtt, akkor ajtó nyitás előkészítése
+																  if (PlayerHasTheKeyCard[RED_KEY]) then // van a játékosnak piros kulcskártyája
+																  begin
+																	  DoorSpritePtr         	:= #HDoorSprite;
+																		DoorSpritePtr.State 		:= DOOR_OPENING;
+																		DoorSpritePtr.GroupNr	 	:= PlayerNextTile;
+																		DoorSpritePtr.ResetAnimation(RedDoorHorizontalAnim+3);																		
+																	end;
+																end;
+				TILE_WHITE_DOOR_V		  : begin
+																  // Ha fehér, függőleges ajtó van a játékos előtt, akkor ajtó nyitás előkészítése
+																  if (PlayerHasTheKeyCard[WHITE_KEY]) then // van a játékosnak szürke kulcskártyája
+																  begin
+																	  DoorSpritePtr         	:= #VDoorSprite;
+																		DoorSpritePtr.State 		:= DOOR_OPENING;
+																		DoorSpritePtr.GroupNr	 	:= PlayerNextTile;
+																		DoorSpritePtr.ResetAnimation(WhiteDoorVerticalAnim+3);
+																	end;
+																end;
+		    TILE_WHITE_DOOR_H			: begin
+																  // Ha FEHÉR, VÍZSZINTES ajtó van a játékos előtt, akkor ajtó nyitás előkészítése
+																  if (PlayerHasTheKeyCard[WHITE_KEY]) then // van a játékosnak FEHÉR kulcskártyája
+																  begin
+																	  DoorSpritePtr         	:= #HDoorSprite;
+																		DoorSpritePtr.State 		:= DOOR_OPENING;
+																		DoorSpritePtr.GroupNr	 	:= PlayerNextTile;
+																		DoorSpritePtr.ResetAnimation(WhiteDoorHorizontalAnim+3);
+																	end;
+																end;
+				TILE_OPENED_RED_DOOR:		begin
+				                          // Ha egy nyitott piros ajtó van a játékos előtt, akkor ajtó zárás előkészítése
+				                          if (PlayerSprite.Direction = LEFT or PlayerSprite.Direction = RIGHT) then				                          
+				                          begin
+					                          DoorSpritePtr         := #VDoorSprite;
+																		DoorSpritePtr.GroupNr := TILE_RED_DOOR_V;
+																		DoorSpritePtr.ResetAnimation(RedDoorVerticalAnim+3);
+																	end
+																	else
+																	begin
+																		DoorSpritePtr         := #HDoorSprite;
+																	  DoorSpritePtr.GroupNr := TILE_RED_DOOR_H;
+																	  DoorSpritePtr.ResetAnimation(RedDoorHorizontalAnim+3);
+																	end;
+																	DoorSpritePtr.State := DOOR_CLOSING;
+			  												end; // TILE_OPENED_RED_DOOR
+				TILE_OPENED_WHITE_DOOR:	begin
+				                          // Ha egy nyitott szürke ajtó van a játékos előtt, akkor ajtó zárás előkészítése
+				                          if (PlayerSprite.Direction = LEFT or PlayerSprite.Direction = RIGHT) then
+				                          begin
+					                          DoorSpritePtr         := #VDoorSprite;
+																		DoorSpritePtr.GroupNr := TILE_WHITE_DOOR_V;
+																		DoorSpritePtr.ResetAnimation(WhiteDoorVerticalAnim+3);
+																	end
+																	else
+																	begin
+																		DoorSpritePtr         := #HDoorSprite;
+																	  DoorSpritePtr.GroupNr := TILE_WHITE_DOOR_H;
+																	  DoorSpritePtr.ResetAnimation(#WhiteDoorHorizontalAnim+3);
+																	end;
+																	DoorSpritePtr.State := DOOR_CLOSING;
+				  											end;
+      end; // case PlayerNextTile 
+      // Ha ajtó nyitás vagy zárás kezdődik
+      if DoorSpritePtr.State <> NONE then 
+      begin
+	      if DoorSpritePtr.State = DOOR_OPENING then
+	      	DoorSpritePtr.InitAnimation(DOOR_ANIMCOUNT, DOOR_ANIM_DELAY, GE::LOOP_FORWARD) // ajtó animáció előre (nyitás)
+	      else
+	        DoorSpritePtr.InitAnimation(DOOR_ANIMCOUNT, DOOR_ANIM_DELAY, GE::LOOP_BACKWARD); // ajtó animáció visszafelé (zárás)
+				// Az ajtó térképpozíciójának (DoorMapPos), és a sprite animáció pozíciójának beállítása
+	      case PlayerSprite.Direction of
+		      LEFT	: begin
+			      				DoorMapPos      := PlayerMapPos - 1;
+										DoorSpritePtr.X := PlayerSprite.X - TILE_WIDTH;
+										DoorSpritePtr.Y := PlayerSprite.Y - 4;
+		      				end; // LEFT
+		      RIGHT : begin
+			              DoorMapPos 	    := PlayerMapPos + 1;
+										DoorSpritePtr.X := PlayerSprite.X + TILE_WIDTH;
+										DoorSpritePtr.Y := PlayerSprite.Y - 4;
+		      				end;
+		      UP    : begin
+			      				DoorMapPos      := PlayerMapPos - LEVEL_WIDTH;
+										DoorSpritePtr.X := PlayerSprite.X-1;
+										DoorSpritePtr.Y := PlayerSprite.Y - TILE_HEIGHT;
+		      				end; // UP
+		      DOWN  : begin
+			      				DoorMapPos      := PlayerMapPos + LEVEL_WIDTH;
+										DoorSpritePtr.X := PlayerSprite.X-1;
+										DoorSpritePtr.Y := PlayerSprite.Y + TILE_HEIGHT;
+		      				end; // DOWN
+	      end; // case PlayerSprite.Direction 
+	      DoorSpritePtr.Visible := True;
+	      DoorSpritePtr.SetPosition();
+	      // Ha ajtó zárás kezdődik, akkor a csempetérképre zárt ajtót csempesorszám kerül, hogy a csukódó ajtón már ne lehessen átmenni
+	      if (DoorSpritePtr.State = DOOR_CLOSING) then
+	      	DoorMapPos[0] := DoorSpritePtr.GroupNr; // a LevelMap-re bezárt ajtónak megfelelő csempesorszám kerül (a GroupNr-be van a bezárt ajtó csempesorszáma)
+	      // Ajtó nyitás digi hangeffekt lejátszásának elindítása
+			  GE::PlayDigiSound(OpenDoorSFX);
+      end; // if DoorSprite.State <> NONE 
+		end; // if PlayerOnTileEdge()
+	end; // if (DoorSprite.State = NONE) 
+end; /* PlayerOpenColoseDoor */
+
+
+// A játékos mozgatása balra
+procedure PlayerStepLeft();
+begin		
+	if PlayerTileXStep = 0 then
+	begin
+		mapPos := PlayerMapPos - 1;
+		PlayerNextTile := mapPos[0];
+	end
+	else
+	  PlayerNextTile := TILE_FLOOR;
+	PlayerSprite.Animation();  
+	if (PlayerNextTile < TILE_FIRST_WALL) then
+	begin
+		if PlayerSprite.AnimPhaseNr = 1 then
+	  begin
+	    PlayerSprite.MoveLeftBy2;
+			if (PlayerTileXStep > 0) then
+				PlayerTileXStep -= 2
+			else
+ 			begin
+				PlayerTileXStep := TILE_WIDTH-2;
+				Dec(PlayerMapPos);				
+			end;
+		end;
+  end;	  
+end; /* PlayerStepLeft */
+
+
+// A játékos mozgatása jobbra
+procedure PlayerStepRight();
+begin	
+	if PlayerTileXStep = 0 then
+		PlayerNextTile := PlayerMapPos[1]
+	else
+	  PlayerNextTile := TILE_FLOOR;
+	PlayerSprite.Animation();  
+	if (PlayerNextTile < TILE_FIRST_WALL) then
+	begin
+		if PlayerSprite.AnimPhaseNr = 1 then
+	  begin
+	    PlayerSprite.MoveRightBy2;
+			PlayerTileXStep += 2;
+			if (PlayerTileXStep = TILE_WIDTH) then
+			begin
+				PlayerTileXStep := 0;
+				Inc(PlayerMapPos);
+			end;
+		end;
+  end;
+end; /* PlayerStepRight */
+
+
+// A játékos mozgatása fel
+procedure PlayerStepUp();
+begin	
+	if PlayerTileYStep = 0 then
+	begin
+	  mapPos := PlayerMapPos - LEVEL_WIDTH;
+		PlayerNextTile := mapPos[0];
+	end
+	else
+	  PlayerNextTile := TILE_FLOOR;
+	PlayerSprite.Animation();  
+	if (PlayerNextTile < TILE_FIRST_WALL) then
+	begin
+		if PlayerSprite.AnimPhaseNr = 1 then
+	  begin
+	    PlayerSprite.MoveUpBy8;
+			if (PlayerTileYStep > 0) then
+				PlayerTileYStep -= 8 // 8 pixellel fel
+			else
+			begin
+				PlayerTileYStep := TILE_HEIGHT - 8;
+				PlayerMapPos    -= LEVEL_WIDTH;				
+			end;
+			// Sprite törlése az előző pozícióból
+			GE::FillRectAtPos(PlayerSprite.Position+(PLAYER_HEIGHT*GE::SCREEN_WIDTH), PLAYER_WIDTH, 2, GE::GR4_COLOR1);
+		end;
+  end;
+end; /* PlayerStepUp */
+
+
+// A játékos mozgatása le
+procedure PlayerStepDown();
+begin	
+	if PlayerTileYStep = 0 then
+		PlayerNextTile := PlayerMapPos[LEVEL_WIDTH]
+	else
+	  PlayerNextTile := TILE_FLOOR;
+	PlayerSprite.Animation();  
+	if (PlayerNextTile < TILE_FIRST_WALL) then
+	begin			
+		if PlayerSprite.AnimPhaseNr = 1 then
+	  begin
+	    PlayerSprite.MoveDownBy8;
+			PlayerTileYStep += 8; // 8 pixellel le
+			if (PlayerTileYStep = TILE_HEIGHT) then
+			begin
+				PlayerTileYStep := 0;
+				PlayerMapPos    += LEVEL_WIDTH;
+			end;
+			// sprite törlése az előző pozícióból
+			GE::FillRectAtPos(PlayerSprite.Position-(2*GE::SCREEN_WIDTH), PLAYER_WIDTH, 2, GE::GR4_COLOR1);
+		end;
+  end;	
+end; /* PlayerStepDown */
+
+
+// A játékos irányítása
+procedure PlayerControl; 
+begin
+	if PlayerSprite.State = STATE_LIVE then
+	begin
+		if (PlayerSprite.Timer > 0) then // játékos mozgásának lassítása
+			Dec(PlayerSprite.Timer)
+		else
+		begin		
+			PlayerNextTile := TILE_FLOOR;
+			GE::GetKeyboard(); // billentyűzet gombjainak lekérdezése (billentyű mátrix feltöltése)
+		  // Balra
+		  if GE::Pressed(GE::JOY1_LEFT) then
+		  begin
+			  PlayerSprite.Timer := PLAYER_STEP_DELAY; // játékos lassítás visszaszámláló alapbeállítása (reset)
+				if (PlayerSprite.Direction <> LEFT and PlayerTileYStep = 0) then
+				begin
+					PlayerSprite.Direction := LEFT;
+					PlayerSprite.ResetAnimation(#PlayerLeftAnim+3);
+				end;
+		  end;
+		  // Jobbra
+		  if GE::Pressed(GE::JOY1_RIGHT) then
+		  begin
+			  PlayerSprite.Timer := PLAYER_STEP_DELAY; // játékos lassítás visszaszámláló alapbeállítása (reset)
+				if (PlayerSprite.Direction <> RIGHT and PlayerTileYStep = 0) then
+				begin
+					PlayerSprite.Direction := RIGHT;
+					PlayerSprite.ResetAnimation(#PlayerRightAnim+3);
+				end;
+		  end;
+		 	// Fel
+		  if GE::Pressed(GE::JOY1_UP) then
+		  begin
+			  PlayerSprite.Timer := PLAYER_STEP_DELAY; // játékos lassítás visszaszámláló alapbeállítása (reset)
+				if (PlayerSprite.Direction <> UP and PlayerTileXStep = 0) then
+				begin
+					PlayerSprite.Direction := UP;
+					PlayerSprite.ResetAnimation(#PlayerUpAnim+3);
+				end;
+		  end;
+		  // Le 
+		  if GE::Pressed(GE::JOY1_DOWN) then
+		  begin
+			  PlayerSprite.Timer := PLAYER_STEP_DELAY; // játékos lassítás visszaszámláló alapbeállítása (reset)
+				if (PlayerSprite.Direction <> DOWN and PlayerTileXStep = 0) then
+				begin
+					PlayerSprite.Direction := DOWN;
+					PlayerSprite.ResetAnimation(#PlayerDownAnim+3); // bállítjuk a játékos animációs sprite-jait
+				end;
+		  end;
+		  if PlayerSprite.Timer = PLAYER_STEP_DELAY then
+		  begin
+			  case PlayerSprite.Direction of
+				  LEFT  : PlayerStepLeft();
+				  RIGHT	: PlayerStepRight();
+				  UP		: PlayerStepUp();
+				  DOWN	: PlayerStepDown();
+			  end;
+			end;		
+			// AJTÓ NYITÁS
+			if (GE::Pressed(GE::JOY1_FIRE) or (GE::Pressed(GE::KEY_SPACE) or (GE::Pressed(GE::KEY_RET)))) then
+			  PlayerOpenCloseDoor();		
+			// Kulcskártya felvétele
+			if (PlayerSprite.AnimPhaseNr = 2) then // csak a játékos 2. animációs fázisában vizsgáljuk, akkor léphet elég közel a kulcskártyához
+			begin							
+				KeyCardSprPtr := PlayerSprite.CollidedWith(KEY_CARD_GROUP); // KeyCardSprPtr mutat arra a sprite-ra, amelyikkel átfedésben van a játékos
+				if (KeyCardSprPtr <> 0) then // ha nullától eltér a pointer értéke, akkor a játékos átfedésbe került ("ütközött") egy kulcskártyával
+				  PickUpTheKeyCard(); // kulcskártya felvétele külön eljárásban
+			end;
+			// Ha a kijárat csempén áll, akkor teljesített a szintet
+			if (PlayerMapPos[0] = TILE_EXIT) then
+					LevelDone := True;
+		end;
+	end // if PlayerSprite.State = STATE_LIVE 
+	else
+	begin
+		// Egy kis delay, amíg a játékos haldoklik
+		if PlayerSprite.State = STATE_DYING then
+		begin
+			if PlayerDyingTimer > 0 then
+			  Dec(PlayerDyingTimer)
+			else
+			  PlayerSprite.State := STATE_DEAD;
+		end;
+	end;	
+end; /* PlayerControl */
+
+
+// Alien előtt levő következő csempe lekérdezése
+function GetAlienNextTile() : byte;
+begin
+	mapPos := AlienMapPos[AlienNr];
+	case Alien.Direction of
+		UP   :	begin
+              mapPos := mapPos - LEVEL_WIDTH; // egy sorral fentebb mutat a LevelMap-en az mapPos
+		          AlienNextTile := mapPos[0];
+						end;
+		RIGHT :	AlienNextTile := mapPos[1];
+		DOWN  :	AlienNextTile := mapPos[LEVEL_WIDTH]; // egy sorral lentebb mutat a LevelMap-en az mapPos
+		LEFT :	begin
+							Dec(mapPos); // egyel balra mutat a LevelMap-en az mapPos
+		          AlienNextTile := mapPos[0];
+						end;
+	end; // case Alien.Direction 
+	GetAlienNextTile := AlienNextTile;
+end; /* GetAlienNextTile */
+
+
+// Az Alien véletlenszerűen elfordul a folyósón, ha tud  - csempehatár elérésekor hívodik csak
+procedure AlienRandomTurn();
+begin	
+	randomByte := GE::Rnd();
+	if randomByte > 100 then
+	begin							
+		mapPos := AlienMapPos[AlienNr]; // mapPos = az Alien pozíciója a LevelMap-en
+		if (Alien.Direction = UP or Alien.Direction = DOWN) then
+		begin				
+			if GE::Odd(randomByte) then // ha a randomByte páratlan szám
+			begin
+				// először megnézzük, hogy tud-e menni jobbra
+				if (mapPos[1] < TILE_ALIEN) then 
+				begin
+					// tud jobbra menni, elfordítjuk arra
+					Alien.Direction := RIGHT;
+					Alien.ResetAnimation(#AlienRightAnim+3);
+				end
+				else
+				begin
+					// ha nem tud jobbra menni, akkor megnézzük, hogy tud-e menni balra
+					Dec(mapPos); // egyel balra mutat a LevelMap-en az mapPos
+					if (mapPos[0] < TILE_ALIEN) then // ha a balra levő csempe nem Alien és nem is fal
+					begin
+						// tud balra menni, elfordítjuk arra
+						Alien.Direction := LEFT;
+						Alien.ResetAnimation(#AlienLeftAnim+3);
+					end;							
+				end;
+			end
+			else // ha a randomByte páros szám
+			begin
+				// először megnézzük, hogy tud-e menni balra
+				Dec(mapPos); // egyel balra mutat a LevelMap-en az mapPos
+				if (mapPos[0] < TILE_ALIEN) then // ha a balra levő csempe nem Alien és nem is fal
+				begin
+					// tud balra menni, elfordítjuk arra
+					Alien.Direction := LEFT;
+					Alien.ResetAnimation(#AlienLeftAnim+3);
+				end
+				else
+				begin
+					// ha nem tud balra menni, akkor megnézzük, hogy tud-e menni jobbra 
+					if (mapPos[2] < TILE_ALIEN) then // a fentebbi Dec(maPos) miatt vizsgáljuk a mapPos[2] értékét a mapPos[1] helyett
+					begin
+						// tud jobbra menni, elfordítjuk arra
+						Alien.Direction := RIGHT;
+						Alien.ResetAnimation(#AlienRightAnim+3);
+					end
+				end;
+			end;
+		end // if (Alien.Direction = UP or Alien.Direction = DOWN) 
+		else // ha az iránya LEFT vagy RIGHT
+		begin
+			if GE::Odd(randomByte) then // ha a randomByte páratlan szám
+			begin
+				// először megnézzük, hogy tud-e menni lefelé
+				if (mapPos[LEVEL_WIDTH] < TILE_ALIEN) then
+				begin
+					// tud lefelé menni, elfordítjuk arra
+					Alien.Direction := DOWN;
+					Alien.ResetAnimation(#AlienDownAnim+3);
+				end
+				else
+				begin
+					// ha nem tud lefelé menni, akkor megnézzük, hogy tud-e menni felfelé
+					mapPos -= LEVEL_WIDTH; // egy sorral fentebb mutat a LevelMap-en az mapPos
+					if (mapPos[0] < TILE_ALIEN) then
+					begin
+						// tud felfelé menni, elfordítjuk arra
+						Alien.Direction := UP;
+						Alien.ResetAnimation(#AlienUpAnim+3);
+					end;
+				end;
+			end
+			else // ha a randomByte páros szám
+			begin
+				// először megnézzük, hogy tud-e menni felfelé								
+			  mapPos -= LEVEL_WIDTH; // egy sorral fentebb mutat a LevelMap-en az mapPos
+				if (mapPos[0] < TILE_ALIEN) then
+				begin
+					// tud felfelé menni, elfordítjuk arra
+					Alien.Direction := UP;
+					Alien.ResetAnimation(#AlienUpAnim+3);
+				end
+				else
+				begin
+					// ha nem tud felfelé menni, akkor megnézzük, hogy tud-e menni lefelé
+					if (mapPos[2*LEVEL_WIDTH] < TILE_ALIEN) then // a fentebbi mapPos -= LEVEL_WIDTH miatt vizsgáljuk a mapPos[2*LEVEL_WIDTH] értékét a mapPos[LEVEL_WIDTH] helyett
+					begin
+						// tud lefelé menni, elfordítjuk arra
+						Alien.Direction := DOWN;
+						Alien.ResetAnimation(#AlienDownAnim+3);
+					end;
+				end;
+			end;
+		end;
+	end;
+end; /* AlienRandomTurn */
+
+
+// Az Alien támadja a játékost, ha egy vonalban van vele - csempehatár elérésekor hívodik csak
+procedure AlienAttack();
+begin
+	if Alien.Y = PlayerSprite.Y then
+	begin
+		// vízszintesen egy vonalban van a játékossal
+		if Alien.X < PlayerSprite.X then
+			Alien.Direction := RIGHT
+		else
+	    Alien.Direction := LEFT;
+		if (GetAlienNextTile() < TILE_ALIEN) then
+		begin
+			if Alien.State <> STATE_ATTACK then
+			begin
+		  	Alien.State := STATE_ATTACK; // ha szabad az út arra, akkor arra fog menni, és mostantól támad
+		  	if AlienScreamTimer = 0 then
+		  	begin
+			  	AlienScreamTimer := ALIEN_SCREAM_DELAY;
+		  		GE::PlayDigiSound(AlienScreamSFX);
+		  	end;
+		  end;
+		end
+		else
+		  Alien.Direction := AlienLastDirection; // nem tud a játékos felé menni, visszaállítjuk az eredeti irányát
+	end
+	else
+	begin
+		if Alien.X = PlayerSprite.X then
+		begin
+			// fügőlegesen egy vonalban van a játékossal
+			if Alien.Y < PlayerSprite.Y then
+				Alien.Direction := DOWN
+			else
+		    Alien.Direction := UP;		
+			if (GetAlienNextTile() < TILE_ALIEN) then
+			begin
+				if Alien.State <> STATE_ATTACK then
+				begin
+			  	Alien.State := STATE_ATTACk; // ha szabad az út arra, akkor arra fog menni, és mostantól támad
+			  	if AlienScreamTimer = 0 then
+			  	begin
+				  	AlienScreamTimer := ALIEN_SCREAM_DELAY;
+			  		GE::PlayDigiSound(AlienScreamSFX);
+			  	end;
+			  end;
+			end
+			else
+			  Alien.Direction := AlienLastDirection; // nem tud a játékos felé menni, visszaállítjuk az eredeti irányát
+		end;
+	end;
+	if Alien.Direction <> AlienLastDirection then
+	begin
+		// az új iránynak megfelelő animáció beállítása
+		case Alien.Direction of
+			UP    : Alien.ResetAnimation(#AlienUpAnim+3);
+			RIGHT	: Alien.ResetAnimation(#AlienRightAnim+3);
+			DOWN  : Alien.ResetAnimation(#AlienDownAnim+3);
+			LEFT	: Alien.ResetAnimation(#AlienLeftAnim+3);
+		end;
+	end;
+end; /* AlienAttack */
+
+
+// Alienek vezérlése
+procedure AlienControl();
+var
+	turnDirection : byte; // a fordulás iránya
+	turnCount     : byte; 	
+begin
+	// a pókok mozgatása
+	Alien := #Aliens;	// Az Alien pointer az Alines tömb 0. elemére mutat, azaz -> Alien := Aliens[0]
+	for AlienNr := 0 to ALIEN_COUNT do // for ciklus, ami végigmegy az összes Alien sprite-on
+	begin
+		if (Alien.Visible) then // ha az Alien látszik, azaz aktív, a pályán van és nincs álló állapotban
+		begin
+			if Alien.Delay > 0 then // az Alienek mozgásának lassítása
+				Dec(Alien.Delay)
+			else
+			begin
+				if AlienNr = 0 then
+				begin
+					if AlienScreamTimer > 0 then
+					  Dec(AlienScreamTimer);
+					if AlienVoiceTimer > 0 then
+					  Dec(AlienVoiceTimer);
+				end;
+				Alien.Delay 	:= ALIEN_DELAY; // reseteljük az Alien sprite lépés lassítását az alapértékre
+				AlienNextTile	:= TILE_FLOOR;
+				AlienLastDirection := Alien.Direction;
+				Inc(Alien.Counter); // csempén belül lépésszámlálót növeljük
+				if (Alien.Counter > 4) then // ha elért a csempe végéhez (4 pixelenként lép, így a 4. lépésre a 16 pixel méretű csempe végén van)
+				begin
+					AlienAttack(); // az Alien elindul a játékos felé, ha egy vonalban van vele
+					if (Alien.State <> STATE_ATTACK) then
+						AlienRandomTurn();
+					if (Alien.Direction = AlienLastDirection) then // ha nem fordul el másfelé
+					begin
+						// az Alien átlépett a követkető csempére
+						Alien.Counter := 1;						
+						// Ha nincs előtte akadály, akkor az Alien pozícióját bejegyezzük a csempetérképen, és előtte letöröljük az előző pozícióból
+						if (GetAlienNextTile() < TILE_ALIEN) then // ha nincs sem fal, sem másik Alien előtte
+						begin
+							mapPos := AlienMapPos[AlienNr];
+							mapPos[0] := Alien.Timer; // Alien törlése a LevelMap-ről a korábbi pozíciójában (Alien.Timer-ben van eltárolva az alatta levő csempe kódja - ez a nyitott ajtók miatt kell, különben lehetne TILE_FLOOR-al törölni)
+							// AlienMapPos[AlienNr] beállítása az irány szerinti új csempetérkép pozícióba
+							case Alien.Direction of
+								UP    :	AlienMapPos[AlienNr] -= LEVEL_WIDTH;
+								RIGHT :	Inc(AlienMapPos[AlienNr]);
+								DOWN  :	AlienMapPos[AlienNr] += LEVEL_WIDTH;
+								LEFT  :	Dec(AlienMapPos[AlienNr]);
+							end; // case Alien.Direction 
+							mapPos := AlienMapPos[AlienNr];
+							Alien.Timer := mapPos[0]; // Az Alien alatt levő csempe eltárolása a később visszaállításhoz
+							mapPos[0] := TILE_ALIEN; // Alien elhelyezése a LevelMap-re az új pozíciójában
+						end;
+					end
+					else
+						Alien.Counter := 4; // ha elfordult, akkor még a csempe végén áll
+				end; // if (Alien.Counter > 4)
+				if (Alien.Direction = AlienLastDirection) then // Ha nem fordul el
+				begin
+					// Ha az Alien előtt nincs akadály, akkor megy előre tovább
+					if (AlienNextTile < TILE_ALIEN) then // ha nincs sem fal, sem Alien előtte
+					begin
+						// irány szerinti mozgatás
+						Alien.Animation;
+						case Alien.Direction of
+							UP		: Alien.MoveUpBy4;		// mozgatás 4 pixelsorral fel
+							RIGHT	: Alien.MoveRight;		// mozgatás 1 byte-tal (4 pixellel) jobbra
+							DOWN  : Alien.MoveDownBy4;	// mozgatás 4 pixelsorral le
+							LEFT	: Alien.MoveLeft;			// mozgatás 1 byte-tal (4 pixellel) balra
+						end;					
+					end
+					else
+					begin
+		  			// fal van előtte, irányt kell váltani
+		  			Alien.Counter := 4; // átállítjuk, hogy a csempe végén áll, így a fordulás után majd újra megvizsgálja, hogy van-e előtte akadály
+		  			Alien.State 	:= STATE_LIVE; // ha eddig támadott, most már nem
+		  			// véletlenszerűen jobbra, vagy balra fordítjuk
+		  			turnDirection := LEFT;
+		  			randomByte := GE::Rnd();
+		  			if (GE::Odd(randomByte)) then 
+		  			  turnDirection := RIGHT;
+		  			// addig fordul, amíg nem lesz előtte járható út, vagy nem fordult már 4-et
+		  			turnCount := 0;
+		  			while ((AlienNextTile >= TILE_ALIEN) and (turnCount < 4)) do
+		  			begin
+			  			Inc(turnCount);
+			  			if (turnDirection = LEFT) then
+			  			begin
+			  				// balra fordul							  			
+			  				Dec(Alien.Direction); // előző irány balra
+			  				if (Alien.Direction < UP) then
+			  			  	Alien.Direction := LEFT;
+			  			end
+		  				else
+		  				begin
+			  				// jobbra fordul							  			
+			  				Inc(Alien.Direction); // követező irány jobbra
+			  				if (Alien.Direction > LEFT) then
+			  			  	Alien.Direction := UP;									  			
+		  				end;
+		  				GetAlienNextTile(); // lekérdezzük az előtte levő csempét az új iránya alapján, az eredmény a NextTile változóban lesz
+		  			end; // while
+		        // az új iránynak megfelelő animáció beállítása
+						case Alien.Direction of
+							UP    : Alien.ResetAnimation(#AlienUpAnim+3);
+							RIGHT	: Alien.ResetAnimation(#AlienRightAnim+3);
+							DOWN  : Alien.ResetAnimation(#AlienDownAnim+3);
+							LEFT	: Alien.ResetAnimation(#AlienLeftAnim+3);
+						end;
+					end; // else: fal van előtte
+				end; // if (Alien.Direction = AlienLastDirection) then 
+			end;
+		end; // if Alien.Visible
+		Alien += GE::SPRITE_CLASS_SIZE; // az Alien pointer az Aliens tömb következő elemére mutat
+	end; // for AlienNr
+	// Alien "kerregés" hang
+	if AlienVoiceTimer = 0 then
+	begin
+		AlienVoiceTimer := ALIEN_VOICE_DELAY;
+		if (not GE::IsDigiSoundPlaying) then
+			GE::PlayDigiSound(AlienVoiceSFX);
+	end;
+end; /* AlienControl */
+
+
+// Ellenőrzés, hogy elkapta-e valamelyik Alien a játékost
+procedure CheckTheAlienChaughtThePlayer();
+var
+	caughtIt : boolean; // flag, ami jelzi, hogy valamelyik Alien elkapta a játékost
+begin
+	if PlayerSprite.State = STATE_LIVE then // ha még él a játékos, azaz még nem kapta el egy Alien sem
+	begin
+		Alien := PlayerSprite.CollidedWith(ALIEN_GROUP); // ütközött-e valamelyik Alien a játékossal
+		if Alien = 0 then // egyik Alien sem ütközött a játékossal
+		  return
+		else
+		begin
+			caughtIt := true;
+			if (PlayerSprite.AnimPhaseNr = 2) then
+			begin
+				// amikor a játékos lábai egymás mellett vannak, akkor keskenyebb a sprite rajza, 
+		    // ezért ezeket az eseteket le kell külön kezelni, mert lehet, hogy ilyenkor az Alien még nem kapta el
+				case PlayerSprite.Direction of
+					LEFT  : if (Alien.Direction <> RIGHT and Alien.X >= PlayerSprite.X+2) then caughtIt := false;
+					RIGHT	: if (Alien.Direction <> LEFT  and Alien.X <= PlayerSprite.X-2) then caughtIt := false;
+					UP    : if (Alien.Direction <> DOWN  and Alien.Y >= PlayerSprite.Y+8) then caughtIt := false;
+					DOWN  : if (Alien.Direction <> UP    and Alien.Y <= PlayerSprite.Y-8) then caughtIt := false;
+				end;
+			end;
+			// Ha elkapta egy Alien a játékost
+			if caughtIt then
+			begin
+				GE::SetBorder(GE::BORDER_RED); 					// a keret piros színű lesz
+				PlayerSprite.State := STATE_DYING;			// a játékos állapota halodoklás
+				GE::PlayDigiSound(DeadCrySFX);					// halálsikoly hangeffekt lejátszása
+				PlayerSprite.Data := #PlayerDeadBitmap;	// fekvő (halott) játákos sprite beállítása
+				PlayerDyingTimer := 100;								// játékos haldoklási visszaszámlálás indul
+				Dec(PlayerLives);
+				if PlayerLives = 0 then
+					GameOver := True;
+				// életszám kijelzésből egy élet törlése
+				GE::FillRect(PlayerLiveImage.X, PlayerLiveImage.Y, 2, 11, 0); // játékos élet kijelzés helyének törlése
+				PlayerLiveImage.X -= 2;
+		  end;
+	  end;
+	end;
+end; /* CheckTheAlienChaughtThePlayer */
+
+
+// Ajtó nyitás-zárás vezérlése
+procedure DoorControl(); 
+begin
+  if (DoorSpritePtr.State <> NONE) then // Ha ajtó nyitás vagy ajtó zárás van folyamatban
+  begin
+	  DoorSpritePtr.WasAnimated := False;
+	  DoorSpritePtr.Animation(); // ajtó nyitás-zárás animációs fázisának beállítása
+	  if (DoorSpritePtr.WasAnimated and DoorSpritePtr.AnimPhaseNr = DOOR_ANIMCOUNT) then // ha az utolsó animációs fázis is megvolt, és ismét elölről kezdené az animálás, akkor nyitva/zárja az ajtó
+	  begin		  
+		  // Ha befejeződött az ajtó nyitás/zárás animáció
+		  if (DoorSpritePtr.State = DOOR_OPENING) then // ha ajót nyitás történt eddig
+		  begin
+			  // a LevelMap-re nyitott ajtónak megfelelő csempesorszám kerül, amin át lehet menni, de jelzi, hogy ott egy nyitott ajtó van
+				case DoorSpritePtr.GroupNr of
+				  TILE_RED_DOOR_V 	: DoorMapPos[0] := TILE_OPENED_RED_DOOR;
+				  TILE_RED_DOOR_H		: DoorMapPos[0] := TILE_OPENED_RED_DOOR;
+				  TILE_WHITE_DOOR_V : DoorMapPos[0] := TILE_OPENED_WHITE_DOOR;
+				  TILE_WHITE_DOOR_H : DoorMapPos[0] := TILE_OPENED_WHITE_DOOR;
+			  end; // case
+			end;
+			DoorSpritePtr.Visible := False; // nem kell tovább kirakni az ajtó animációt, az utolsó fázisa marad kint a képernyőn
+			DoorSpritePtr.State   := NONE;  // a továbbiakban nincs ajtó nyitás-zárás folyamatban
+	  end; // Ha véget ért a nyitás vagy zárás animáció
+  end; // Ha ajtó nyitás vagy zárás van folyamatban
+end; /* DoorControl */ 
+
+
+// Az Alienek előző pozíciójában ott maradt sprite-darabjának törlése
+procedure ClearPrevPosOfAliens();
+begin
+	Alien := #Aliens; // ez megyegyezik a következő utasítással: Alien := Aliens[0], az Alien pointer az első 
+	for AlienNr := 0 to ALIEN_COUNT do // for ciklus, ami végigmegy az összes Alien sprite-on
+	begin
+		if (Alien.Visible and Alien.WasAnimated) then // ha látható és elmozdult
+		begin
+			Alien.WasAnimated := False;
+			case Alien.Direction of
+				UP    : GE::FillRectAtPos(Alien.Position+(ALIEN_HEIGHT*GE::SCREEN_WIDTH), ALIEN_WIDTH, 4, GE::GR4_COLOR1);
+				RIGHT	: GE::FillRectAtPos(Alien.Position-1, 1, ALIEN_HEIGHT, GE::GR4_COLOR1);
+				DOWN  : GE::FillRectAtPos(Alien.Position-(4*GE::SCREEN_WIDTH), ALIEN_WIDTH, 4, GE::GR4_COLOR1);
+				LEFT	: GE::FillRectAtPos(Alien.Position+ALIEN_WIDTH, 1, ALIEN_HEIGHT, GE::GR4_COLOR1);
+			end;
+		end;
+		Alien += GE::SPRITE_CLASS_SIZE; // az Alien pointer a következő alien sprite-ra mutat az Aliens tömbben
+	end; // for AlienNr
+end; /* ClearPrevPosOfAliens */			
+
+
+// Sprite-ok kirakása
+procedure RenderSprites();
+begin
+	GE::WaitForDigiSoundSync();				// várakozás a függőleges szinkronra, amit a digihang lejátszás miatti hnagmegszakítás miatt egy speciális eljárás old meg
+	GE::PutAllSprites();       				// az összes sprite kirakzolása
+	ClearPrevPosOfAliens();						// Alienek sprite-darabok letörlése az előző pozíciójukból
+	CheckTheAlienChaughtThePlayer();	// ellenőrzés, hogy valamelyik pályán levő Alien elkapta-e a játékost
+	// TESZT változó kiírás:
+	// GE::ByteToStr(PlayerTileYStep);
+	// GE::WriteText(0, 0, #GE_NumStr);	
+end; /* RenderSprites */
+
+
+begin
+	GameInit(); // a játék előkészítése
+	while (true) do
+	begin
+		InitNewGame(); 	// új játék inicializálása
+		ShowTitleScreen(); // címkép kirakása
+		// Játék ciklus
+		while (not GameOver and not WonGame) do // addig tart, amíg nem vesztette el vagy nem nyerte meg a játékos
+		begin
+			LevelInit(); // pálya előkészítése
+			// A játék főciklusa egy pályán belül
+			while (not LevelDone and PlayerSprite.State <> STATE_DEAD) do // amíg nincs a szint teljesítve és a játékos nem halott
+			begin
+				RenderSprites();
+				PlayerControl();
+				AlienControl();
+				DoorControl();
+			end;
+			if LevelDone then
+			begin
+				if LevelNr = LAST_LEVEL then
+					WinningTheGame() // a játékos megnyerte a játékot
+				else
+				begin
+          // Következő pálya
+					Inc(LevelNr);
+					LevelPtr += LEVEL_SIZE; // LevelPtr a kövekező szintre mutat
+				end;
+			end
+			else
+			begin
+				if GameOver then
+			  	ShowGameOverScreen(); // az összes életét elvesztette a játékos -> játék vége
+			end;
+		end; // while (not GameOver and not WonGame) 
+	end; //while (true) 
+end.

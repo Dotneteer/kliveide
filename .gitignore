@@ -74,6 +74,3 @@ i18n-work/
 # Website facts generated at build time (scripts/build-doc-site-info.cjs)
 docs/generated/
 docs/content/en/reference/whats-new.mdx
-
-# Videoton TVC test software from tvc.homeserver.hu (third-party, not ours to redistribute)
-_input/tvc-software/

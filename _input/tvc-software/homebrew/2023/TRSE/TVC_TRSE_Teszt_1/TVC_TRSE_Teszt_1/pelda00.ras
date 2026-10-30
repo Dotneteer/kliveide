@@ -1,0 +1,44 @@
+program Teszt_00;
+//
+// Videoton TVC-re próbáluk programot írni, fordítani
+// a TRSE 0.14 fejlesztőeszközzel.
+// Célplatformnak válasszuk mondjuk a Spectrumot.
+// Project settings -> Target Settings
+// pipa: Override default target setting
+// program start adress: $1A01
+// pipa: Ignore BASIC SYS start
+// fordítsunk egy VALAMI.BIN-t
+// utána futtassuk az OSSZEFUZ.BAT fájlt ami a 
+// VALAMI.BIN elé másolja a CASBIN.BIN fájlt és 
+// létrehozza a .CAS fájlt, ami már TVC emulátorban
+// futtatható.
+//
+var  
+	i:byte;
+	kepernyo:pointer of byte;
+// bekapcsoljuk a kívánt video módot, majd a 
+// video RAM-ot belapozzuk 32768-tól.
+procedure init_Graphics(mode:byte);
+begin
+	asm("	
+         LD   C,mode // 0,1,2 = 2,4,16 color
+         RST  $30                           
+	     db $4 //
+		 ld	A,$50 // video ram belapozása
+		 ld	($3),A
+		 out ($2),A
+    ");
+end;
+// ------------- ITT kezdődik majd a program --------
+begin
+	init_Graphics(1); // 4 színű mód bekapcsolása
+
+    kepernyo:=32768; // bal-felső sarok címe
+    for i:=0 to 64 do // ferde "vonalat" maszatolunk a képernyőre
+      begin
+	  kepernyo[0]:=15;// 00001111  -01 mind a 4 pixel
+	  kepernyo:=kepernyo+64+64+64+64+1;// le négyet és jobbra egyet
+	  // egy vízszintes sor 64 byte, 1 byte 4 pixelt ír le
+      end;
+    loop();// végtelen ciklus
+end.

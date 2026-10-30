@@ -1,0 +1,40 @@
+TVChain Reaction
+
+A játékban az a cél, hogy az összes alakzat eltűnjön a pályáról.
+Ha egy alakzatra kattintunk, akkor az működésbe lép, majd eltűnik.
+
+Az alap alakzatok:
+
+kör: Robban egy bizonyos sugarú kört. Ha egy másik alakzat ezen körön belül van, az is működésbe lép
+háromszög: Rálő egy másik alakzatra, ami szintén működésbe lép
+négyzet: Elindul függőlegesen vagy vízszintisen egy irányba, elmegy a képernyő széléig. Ha addig útjába kerül egy másik alakzat, az működésbe lép
+
+Mindez láncreakcióként addig megy, amíg nincs olyan alakzat ami működésbe lép, vagy el nem fogy az összes alakzat.
+
+Későbbi pályákon mindhárom alakzatból lesz dupla erős változat (keretes lesz a színe), amit kétszer kell eltalálni, hogy működésbe lépjen.
+Azaz amikor először eltalálja valami csak annyi történik, hogy "sima" alakzattá válik
+
+Ha sikerül 15 alakzatot leszedni egy pályán, akkor kapunk 1 csillagot, és elérhetővé válik a következő pálya. 20 alakzat 2 csillagot, 25 alakzat 3 csillagot ad.
+A pályákról bármikor kiléphetünk a Q billentyűvel.
+A menüben I billentyűvel információt kérhetünk az aktuális pályáról.
+
+A menüben P billenytűvel a Power Up menübe kerülünk, ahol elkölhetjük a csillagainkat különböző power up-okra:
+Kör:
+	Radius: a robbanás sugara nagyobb lesz
+	Double Damage Chance: Esély, hogy dupla ütést vigyen be a robbanás (ezáltal egy robbanással eltüntet egy dupla erős alakzatot is)
+	Super Circles: Olyan kör alakzatok száma a páylán, amik nagyobb sugarú kört ÉS dupla erősségű ütést visznek be
+Nényzet:
+	Damage: A négyzetek duplát ütnek
+	Double Shots Chance: Esély, hogy a négyzet két irányba is elinduljon
+	Super Squares: Olyan négyzet alakzatok száma a páylán, amik két trányba elindulnak ÉS dupla erősségű ütést visznek be
+Háromszög:
+	Damage: A háromszögek duplát ütnek
+	Extra Shot Chance: Esély, hogy a háromszög kettőt lőjjön
+	Super Triangles: Olyan háromszög alakzatok száma a páylán, amik kettőt lőnek ÉS dupla erősségű ütést visznek be
+
+A Powerupokat bármikor resetelhetjük, azaz újra kioszthatjuk a csillagainkat, erre szükség is lesz, bizonyos pályák teljesen más poerupokat igényelnek, mint a többiek.
+
+
+
+Videó a játékról: https://youtu.be/W7B-Okg1PlE
+

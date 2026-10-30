@@ -1,0 +1,15 @@
+TV-Computer bővítőkártya EPROM mentő program
+BerySoft, 2025
+Verzió: 2025. december 17.
+
+A program a TV-Computer bővítőhelyeken levő kártyákon levő,
+belapozható, 8 kbyte méretű ROM/EPROM-ot menti le. 
+A TVC számára elsődleges háttértárra történik a mentés. 
+Ez lehet floppy drive, SD Interface, Nano SD kártya, 
+vagy akár magnó is.
+
+Ideális használat, ha a mentendő ROM/EPROM-ot tartalmazó
+kártya mellett egy SD Interface, vagy Nano SD kártya, 
+vagy floppy drive van a gépre csatlakoztatva.
+
+A lementett file neve EPROM.BIN lesz.

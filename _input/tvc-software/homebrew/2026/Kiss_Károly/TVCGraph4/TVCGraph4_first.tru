@@ -1,0 +1,3239 @@
+/*==============================================================================
+	TVC Graph4 - VIDEOTON TV-Computer Grafikai Motor
+	TRSE Rascal unit (Graphics 4 mód: 256x240 képpont, 4 szín)
+	
+	Csúcssebességre hangolt gépi kódú (Z80) grafikai könyvtár:
+	- Vonalrajzolás (Bresenham szakasz, vízszintes és függőleges gyorsvonal)
+	- Téglalap és kitöltött téglalap (gyorsított pásztázással)
+	- Kör és kitöltött kör (16-bites osztásmentes körvonal és 4-utas kitöltés)
+	- Háromszög és kitöltött háromszög (osztásmentes élkövetés)
+	- Pontrajzolás (Plot) és villámgyors képernyőtörlés (Cls)
+	
+	Memóriahasználat (Graphics 4):
+	- VRAM kezdőcím: $8000 (32768) - $BBFF (48127) -> 15360 bájt (64 bájt/sor)
+	- Képernyő mérete: 256 képpont széles, 240 képpont magas
+	- 4 képpont / bájt (0-3: Paletta szín sorszámok)
+	
+	Használati módok:
+	1. Közvetlen hívások (Direct - leggyorsabb): A rajzolási műveletek előtt
+	   egyszer bekapcsoljuk a videómemóriát a VRAMOn() hívással, majd a rajzolások
+	   végeztével a VRAMOff() hívással visszaállítjuk a normál memóriát.
+	2. Automatikus hívások: Automatikusan be- és kikapcsolják a VRAM-ot
+	   minden egyes rajzolási utasításnál.
+	
+	Mintaprogram (Test.ras):
+	-----------------------------------------------------------------------------
+	program Test;
+	@use "TVCGraph4"
+	begin
+	   TVCGraph4::InitGraphics();       // Grafikus mód (256x240, 4 szín) indítása
+	   TVCGraph4::Cls(0);              // Képernyő törlése a 0. színnel
+	   
+	   // Gyors, kötegelt rajzolás VRAM bekapcsolással:
+	   TVCGraph4::VRAMOn();
+	   TVCGraph4::RectDirect(10, 10, 245, 230, 1);           // 1. színű keret
+	   TVCGraph4::FillCircleDirect(128, 120, 40, 2);         // 2. színű teli kör
+	   TVCGraph4::CircleDirectFast(128, 120, 40, 1);         // 1. színű körvonal
+	   TVCGraph4::LineDirect(10, 10, 245, 230, 3);           // 3. színű átlós vonal
+	   TVCGraph4::FillTriangleDirect(50, 180, 100, 120, 150, 180, 1); // Háromszög
+	   TVCGraph4::VRAMOff();
+	   
+	   while (1) do begin end;
+	end.
+==============================================================================*/
+Unit TVCGraph4;
+
+var
+	// Globális eljárás paraméterek
+	X1             : byte;
+	Y1             : byte;
+	X2             : byte;
+	Y2             : byte;
+	X3             : byte;
+	Y3             : byte;
+	CX             : byte;
+	CY             : byte;
+	X              : byte;
+	Y              : byte;
+	Radius         : byte;
+	Color          : byte;
+
+	// Belső munkaváltozók
+	T_Y            : byte;
+	T_X1           : byte;
+	T_X2           : byte;
+	T_COL          : byte;
+	T_FILL         : byte;
+	T_P1           : byte;
+	T_P2           : byte;
+	T_BC1          : byte;
+	T_BC2          : byte;
+	T_VCOUNT       : byte;
+	T_SAVESP       : integer;
+
+	LT_X1          : byte;
+	LT_Y1          : byte;
+	LT_X2          : byte;
+	LT_Y2          : byte;
+	LT_COL         : byte;
+	LT_MASKPTR     : integer;
+
+	BL_DX          : integer;
+	BL_DY          : integer;
+	BL_SX          : byte;
+	BL_INCE1       : integer;
+	BL_INCE2       : integer;
+	BL_INITERR     : integer;
+	BL_CNT         : byte;
+	BL_ROWSTEP     : integer;
+
+	// Körrajzoló 16-bites Bresenham változók
+	CIRC_D         : integer;
+	CIRC_DX        : integer;
+	CIRC_DXY       : integer;
+	CIRC_X         : byte;
+	CIRC_Y         : byte;
+
+	// Kitöltött háromszög Bresenham élkövető változók
+	FT_X1          : byte;
+	FT_Y1          : byte;
+	FT_X2          : byte;
+	FT_Y2          : byte;
+	FT_X3          : byte;
+	FT_Y3          : byte;
+	FT_COL         : byte;
+	FT_CURY        : byte;
+	FT_VCOUNT      : byte;
+	ELONG          : array[6] of byte;
+	ESHORT         : array[6] of byte;
+
+	// Színkitöltő táblázat (teljes bájt, 4 azonos pixel esetén)
+	FILL_TAB       : array[4] of byte = ($00, $F0, $0F, $FF);
+
+	// Vízszintes részbájt AND-maszk táblázat: SPAN_AND_TAB[p_start * 4 + p_end]
+	// p_start: 0..3, p_end: 0..3
+	SPAN_AND_TAB   : array[16] of byte = (
+		$77, $33, $11, $00,  // p_start = 0: p_end = 0, 1, 2, 3
+		$00, $BB, $99, $88,  // p_start = 1: p_end = 0, 1, 2, 3
+		$00, $00, $DD, $CC,  // p_start = 2: p_end = 0, 1, 2, 3
+		$00, $00, $00, $EE   // p_start = 3: p_end = 0, 1, 2, 3
+	);
+
+	// Színenkénti pixelpozíció maszkok: COLOR_PIX_MASKS[szín * 8 + pozíció * 2] -> (AND_MASK, OR_VAL)
+	COLOR_PIX_MASKS: array[32] of byte = (
+		// Szín 0 (háttér / fekete)
+		$77, $00,  $BB, $00,  $DD, $00,  $EE, $00,
+		// Szín 1
+		$77, $80,  $BB, $40,  $DD, $20,  $EE, $10,
+		// Szín 2
+		$77, $08,  $BB, $04,  $DD, $02,  $EE, $01,
+		// Szín 3
+		$77, $88,  $BB, $44,  $DD, $22,  $EE, $11
+	);
+
+	// Konstansok
+	const VRAM_ADDR    : integer = $8000;
+	const SCREEN_WIDTH : byte    = 64;
+	const SCREEN_HEIGHT: byte    = 240;
+	const PAGE_PORT    : byte    = $02;
+	const PAGE_VRAM    : byte    = $50; // U0, U1, VID, SYS -> VRAM a $8000-$BFFF tartományban
+	const PAGE_NORM    : byte    = $70; // U0, U1, U2, SYS  -> Normál RAM/ROM
+
+
+/*==============================================================================
+	LAPOZÁS ÉS GRAFIKUS MÓD (VRAM BE- ÉS KIKAPCSOLÁS)
+==============================================================================*/
+
+/**
+TVC Graphics 4 (256x240, 4 szín) grafikus képernyőmód inicializálása.<br/>
+Beállítja a $0B13 rendszerváltozót és a 6-os I/O portot.<br/>
+<br/><br/>
+Példa a használatára:<br/>
+TVCGraph4::InitGraphics();<br/>
+<br/>
+ENGLISH:<br/>
+-------------<br/>
+Initialize TVC Graphics 4 mode (256x240, 4 colors).<br/>
+<br/>
+Example:<br/>
+TVCGraph4::InitGraphics();<br/>
+**/
+procedure InitGraphics();
+begin
+	Asm("
+		ld   C,1
+		rst  $30
+		db   $04
+	");
+end;
+
+/**
+Videómemória (VRAM) közvetlen belapozása a processzor memóriatérképébe ($8000..$BBFF).<br/>
+Kötelező hívás a közvetlen (...Direct) grafikai eljárások használata előtt!<br/>
+<br/><br/>
+Példa a használatára:<br/>
+TVCGraph4::VRAMOn();<br/>
+// ... közvetlen rajzolások ...<br/>
+TVCGraph4::VRAMOff();<br/>
+<br/>
+ENGLISH:<br/>
+-------------<br/>
+Page-in VRAM to CPU memory space ($8000..$BBFF).<br/>
+<br/>
+Example:<br/>
+TVCGraph4::VRAMOn();<br/>
+TVCGraph4::VRAMOff();<br/>
+**/
+procedure VRAMOn();
+begin
+	Asm("
+		ld   A,$50
+		ld   ($0003),A
+		out  ($02),A
+	");
+end;
+
+/**
+Videómemória (VRAM) kilapozása, a normál rendszermemória visszaállítása.<br/>
+A közvetlen (...Direct) rajzolási blokkok befejezésekor hívandó.<br/>
+<br/><br/>
+Példa a használatára:<br/>
+TVCGraph4::VRAMOff();<br/>
+<br/>
+ENGLISH:<br/>
+-------------<br/>
+Page-out VRAM, restore normal system RAM mapping.<br/>
+<br/>
+Example:<br/>
+TVCGraph4::VRAMOff();<br/>
+**/
+procedure VRAMOff();
+begin
+	Asm("
+		ld   A,$70
+		ld   ($0003),A
+		out  ($02),A
+	");
+end;
+
+
+/*==============================================================================
+	DIREKT RAJZOLÓ RUTINOK (feltételezik, hogy a VRAM be van lapozva: VRAMOn)
+==============================================================================*/
+
+/**
+Egyetlen képpont kirajzolása közvetlen videómemória eléréssel (VRAM belapozva).<br/>
+<br/>
+Paraméterek:
+<ul>
+<li>X: a képpont vízszintes pozíciója (0-255)</li>
+<li>Y: a képpont függőleges pozíciója (0-239)</li>
+<li>Color: a paletta színsorszáma (0-3)</li>
+</ul>
+<br/><br/>
+Példa a használatára:<br/>
+TVCGraph4::VRAMOn();<br/>
+TVCGraph4::PlotDirect(128, 120, 1);<br/>
+TVCGraph4::VRAMOff();<br/>
+<br/>
+ENGLISH:<br/>
+-------------<br/>
+Plot single pixel at (X, Y) with Color (0-3). Direct VRAM access.<br/>
+<br/>
+Params:
+<ul>
+<li>X: horizontal pixel coordinate (0-255)</li>
+<li>Y: vertical pixel coordinate (0-239)</li>
+<li>Color: palette color index (0-3)</li>
+</ul>
+**/
+procedure PlotDirect(X, Y : global byte; Color : global byte);
+begin
+	Asm("
+		; HL = $8000 + Y * 64
+		ld   A,(TVCGraph4_Y)
+		ld   B,A
+		and  $03
+		rlca
+		rlca
+		rlca
+		rlca
+		rlca
+		rlca
+		ld   L,A
+		ld   A,B
+		srl  A
+		srl  A
+		add  A,$80
+		ld   H,A
+
+		; HL += (X >> 2)
+		ld   A,(TVCGraph4_X)
+		ld   B,A
+		srl  A
+		srl  A
+		add  A,L
+		ld   L,A
+		jr   NC,TVCGraph4_Plot_nc
+		inc  H
+TVCGraph4_Plot_nc:
+
+		; Offset = (Color * 8) + (Pos * 2)
+		ld   A,(TVCGraph4_Color)
+		and  $03
+		add  A,A
+		add  A,A
+		add  A,A
+		ld   E,A
+		ld   A,B
+		and  $03
+		add  A,A
+		add  A,E
+		ld   E,A
+		ld   D,0
+		push HL
+		ld   HL,TVCGraph4_COLOR_PIX_MASKS
+		add  HL,DE
+		ld   B,(HL)
+		inc  HL
+		ld   C,(HL)
+		pop  HL
+		ld   A,(HL)
+		and  B
+		or   C
+		ld   (HL),A
+	");
+end;
+
+/**
+Vízszintes vonal rajzolása közvetlen videómemória eléréssel (VRAM belapozva).<br/>
+A kezdő és záró részbájtokat maszktáblázatból, a belső egész bájtokat
+veremmutatós (SP) push utasításokkal maximális gépi sebességgel tölti ki.<br/>
+<br/>
+Paraméterek:
+<ul>
+<li>X1: a kezdőpont X koordinátája (0-255)</li>
+<li>Y: a vonal Y sora (0-239)</li>
+<li>X2: a végpont X koordinátája (0-255)</li>
+<li>Color: a paletta színsorszáma (0-3)</li>
+</ul>
+<br/><br/>
+Példa a használatára:<br/>
+TVCGraph4::VRAMOn();<br/>
+TVCGraph4::HLineDirect(10, 100, 240, 1);<br/>
+TVCGraph4::VRAMOff();<br/>
+<br/>
+ENGLISH:<br/>
+-------------<br/>
+Draw fast horizontal line from (X1, Y) to (X2, Y) with Color (0-3). Direct VRAM access.<br/>
+<br/>
+Params:
+<ul>
+<li>X1: start X coordinate (0-255)</li>
+<li>Y: line Y coordinate (0-239)</li>
+<li>X2: end X coordinate (0-255)</li>
+<li>Color: palette color index (0-3)</li>
+</ul>
+**/
+procedure HLineDirect(X1, Y, X2 : global byte; Color : global byte);
+begin
+	Asm("
+		ld   A,(TVCGraph4_Y)
+		ld   (TVCGraph4_T_Y),A
+		ld   A,(TVCGraph4_X1)
+		ld   (TVCGraph4_T_X1),A
+		ld   A,(TVCGraph4_X2)
+		ld   (TVCGraph4_T_X2),A
+		ld   A,(TVCGraph4_Color)
+		and  $03
+		ld   (TVCGraph4_T_COL),A
+
+		; Teljes bájt kitöltő érték a színhez (FILL_TAB)
+		ld   C,A
+		ld   B,0
+		ld   HL,TVCGraph4_FILL_TAB
+		add  HL,BC
+		ld   A,(HL)
+		ld   (TVCGraph4_T_FILL),A
+
+		; X1 <= X2 rendezés
+		ld   A,(TVCGraph4_T_X1)
+		ld   B,A
+		ld   A,(TVCGraph4_T_X2)
+		cp   B
+		jr   NC,TVCGraph4_HL_sorted
+		ld   (TVCGraph4_T_X1),A
+		ld   A,B
+		ld   (TVCGraph4_T_X2),A
+
+TVCGraph4_HL_sorted:
+		ld   A,(TVCGraph4_T_X1)
+		ld   B,A
+		and  $03
+		ld   (TVCGraph4_T_P1),A
+		ld   A,B
+		srl  A
+		srl  A
+		ld   (TVCGraph4_T_BC1),A
+
+		ld   A,(TVCGraph4_T_X2)
+		ld   B,A
+		and  $03
+		ld   (TVCGraph4_T_P2),A
+		ld   A,B
+		srl  A
+		srl  A
+		ld   (TVCGraph4_T_BC2),A
+
+		; Kezdő VRAM cím: HL = $8000 + Y * 64
+		ld   A,(TVCGraph4_T_Y)
+		ld   B,A
+		and  $03
+		rlca
+		rlca
+		rlca
+		rlca
+		rlca
+		rlca
+		ld   L,A
+		ld   A,B
+		srl  A
+		srl  A
+		add  A,$80
+		ld   H,A
+
+		; HL += BC1
+		ld   A,(TVCGraph4_T_BC1)
+		add  A,L
+		ld   L,A
+		jr   NC,TVCGraph4_HL_addr_ok
+		inc  H
+TVCGraph4_HL_addr_ok:
+
+		; Egyetlen bájton belüli eset? (BC1 == BC2)
+		ld   A,(TVCGraph4_T_BC1)
+		ld   B,A
+		ld   A,(TVCGraph4_T_BC2)
+		cp   B
+		jr   NZ,TVCGraph4_HL_multi
+
+		; --- Egyetlen bájt esete: P1..P2 azonnali maszkolással ---
+		; Index = P1 * 4 + P2
+		ld   A,(TVCGraph4_T_P1)
+		add  A,A
+		add  A,A
+		ld   B,A
+		ld   A,(TVCGraph4_T_P2)
+		add  A,B
+		ld   E,A
+		ld   D,0
+		ld   IX,TVCGraph4_SPAN_AND_TAB
+		add  IX,DE
+		ld   B,(IX+0)           ; B = AND maszk
+		ld   A,B
+		cpl                     ; A = ~AND maszk
+		ld   C,A
+		ld   A,(TVCGraph4_T_FILL)
+		and  C                  ; A = OR érték
+		ld   C,A
+		ld   A,(HL)
+		and  B
+		or   C
+		ld   (HL),A
+		jr   TVCGraph4_HL_done
+
+TVCGraph4_HL_multi:
+		; --- 1. Első részleges bájt: P1..3 azonnali maszkolással ---
+		; Index = P1 * 4 + 3
+		ld   A,(TVCGraph4_T_P1)
+		add  A,A
+		add  A,A
+		add  A,3
+		ld   E,A
+		ld   D,0
+		ld   IX,TVCGraph4_SPAN_AND_TAB
+		add  IX,DE
+		ld   B,(IX+0)           ; B = AND maszk
+		ld   A,B
+		cpl
+		ld   C,A
+		ld   A,(TVCGraph4_T_FILL)
+		and  C                  ; A = OR érték
+		ld   C,A
+		ld   A,(HL)
+		and  B
+		or   C
+		ld   (HL),A
+		inc  HL
+
+		; --- 2. Középső teljes bájtok száma = BC2 - BC1 - 1 ---
+		ld   A,(TVCGraph4_T_BC1)
+		ld   C,A
+		ld   A,(TVCGraph4_T_BC2)
+		sub  C
+		dec  A
+		or   A
+		jr   Z,TVCGraph4_HL_lastbyte
+
+		ld   B,A
+		ld   A,(TVCGraph4_T_FILL)
+		ld   E,A
+		bit  0,B
+		jr   Z,TVCGraph4_HL_mideven
+
+		; Páratlan bájtszám esetén az első bájtot kiírjuk
+		ld   (HL),E
+		inc  HL
+		dec  B
+		jr   Z,TVCGraph4_HL_lastbyte
+
+TVCGraph4_HL_mideven:
+		; Gyors páros feltöltés SP push DE trükkel
+		ld   D,E
+		srl  B
+		ld   A,B
+		add  A,A
+		add  A,L
+		ld   L,A
+		jr   NC,TVCGraph4_HL_midnc
+		inc  H
+TVCGraph4_HL_midnc:
+		di
+		ld   (TVCGraph4_T_SAVESP),SP
+		ld   SP,HL
+TVCGraph4_HL_pushloop:
+		push DE
+		djnz TVCGraph4_HL_pushloop
+		ld   SP,(TVCGraph4_T_SAVESP)
+		ei
+
+TVCGraph4_HL_lastbyte:
+		; --- 3. Utolsó részleges bájt: 0..P2 azonnali maszkolással ---
+		; Index = 0 * 4 + P2 = P2
+		ld   A,(TVCGraph4_T_P2)
+		ld   E,A
+		ld   D,0
+		ld   IX,TVCGraph4_SPAN_AND_TAB
+		add  IX,DE
+		ld   B,(IX+0)           ; B = AND maszk
+		ld   A,B
+		cpl
+		ld   C,A
+		ld   A,(TVCGraph4_T_FILL)
+		and  C                  ; A = OR érték
+		ld   C,A
+		ld   A,(HL)
+		and  B
+		or   C
+		ld   (HL),A
+
+TVCGraph4_HL_done:
+	");
+end;
+
+/**
+Függőleges vonal rajzolása közvetlen videómemória eléréssel (VRAM belapozva).<br/>
+2-szeresen kifejtett hurokkal és 16-bites hardveres sorléptetéssel.<br/>
+<br/>
+Paraméterek:
+<ul>
+<li>X: a vonal X oszlopa (0-255)</li>
+<li>Y1: a kezdőpont Y koordinátája (0-239)</li>
+<li>Y2: a végpont Y koordinátája (0-239)</li>
+<li>Color: a paletta színsorszáma (0-3)</li>
+</ul>
+<br/><br/>
+Példa a használatára:<br/>
+TVCGraph4::VRAMOn();<br/>
+TVCGraph4::VLineDirect(128, 20, 220, 2);<br/>
+TVCGraph4::VRAMOff();<br/>
+<br/>
+ENGLISH:<br/>
+-------------<br/>
+Draw fast vertical line from (X, Y1) to (X, Y2) with Color (0-3). Direct VRAM access.<br/>
+<br/>
+Params:
+<ul>
+<li>X: line X coordinate (0-255)</li>
+<li>Y1: start Y coordinate (0-239)</li>
+<li>Y2: end Y coordinate (0-239)</li>
+<li>Color: palette color index (0-3)</li>
+</ul>
+**/
+procedure VLineDirect(X, Y1, Y2 : global byte; Color : global byte);
+begin
+	Asm("
+		ld   A,(TVCGraph4_Y1)
+		ld   B,A
+		ld   A,(TVCGraph4_Y2)
+		ld   D,A
+
+		; Y1 <= Y2 rendezés
+		cp   B
+		jr   NC,TVCGraph4_VL_ok
+		ld   A,B
+		ld   B,D
+		ld   D,A
+
+TVCGraph4_VL_ok:
+		; Sorok száma = Y2 - Y1 + 1
+		ld   A,D
+		sub  B
+		inc  A
+		ld   (TVCGraph4_T_VCOUNT),A
+
+		; Kezdőcím: HL = $8000 + Y1 * 64
+		ld   A,B
+		and  $03
+		rlca
+		rlca
+		rlca
+		rlca
+		rlca
+		rlca
+		ld   L,A
+		ld   A,B
+		srl  A
+		srl  A
+		add  A,$80
+		ld   H,A
+
+		; HL += (X >> 2)
+		ld   A,(TVCGraph4_X)
+		ld   C,A
+		srl  A
+		srl  A
+		add  A,L
+		ld   L,A
+		jr   NC,TVCGraph4_VL_addr_ok
+		inc  H
+TVCGraph4_VL_addr_ok:
+
+		; Maszkok lekérése: C = AND maszk, A = OR maszk
+		ld   A,(TVCGraph4_Color)
+		and  $03
+		add  A,A
+		add  A,A
+		add  A,A
+		ld   B,A
+		ld   A,C
+		and  $03
+		add  A,A
+		add  A,B
+		ld   E,A
+		ld   D,0
+		push HL
+		ld   HL,TVCGraph4_COLOR_PIX_MASKS
+		add  HL,DE
+		ld   C,(HL)                     ; C = AND maszk
+		inc  HL
+		ld   A,(HL)                     ; A = OR maszk
+		ld   (TVCGraph4_VL_or1+1),A
+		ld   (TVCGraph4_VL_or2+1),A
+		ld   (TVCGraph4_VL_orodd+1),A
+		pop  HL
+
+		ld   DE,64                      ; Hardveres 16-bites sorléptető (11 T-ciklus)
+		ld   A,(TVCGraph4_T_VCOUNT)
+		ld   B,A
+		srl  B
+		jr   NC,TVCGraph4_VL_even
+
+		; Páratlan 1. pixel
+		ld   A,(HL)
+		and  C
+TVCGraph4_VL_orodd:
+		or   $00
+		ld   (HL),A
+		add  HL,DE
+
+TVCGraph4_VL_even:
+		ld   A,B
+		or   A
+		jr   Z,TVCGraph4_VL_done
+
+TVCGraph4_VL_loop:
+		; 1. Pixel
+		ld   A,(HL)
+		and  C
+TVCGraph4_VL_or1:
+		or   $00
+		ld   (HL),A
+		add  HL,DE
+
+		; 2. Pixel
+		ld   A,(HL)
+		and  C
+TVCGraph4_VL_or2:
+		or   $00
+		ld   (HL),A
+		add  HL,DE
+		djnz TVCGraph4_VL_loop
+
+TVCGraph4_VL_done:
+	");
+end;
+
+/**
+Általános egyenes szakasz rajzolása Bresenham algoritmussal (VRAM belapozva).<br/>
+100%-ban regiszter-alapú hibaszámítás árnyékregiszteres számlálóval, nulla RAM-hozzáféréssel a rajzoló ciklusban.<br/>
+<br/>
+Paraméterek:
+<ul>
+<li>X1, Y1: a kezdőpont koordinátái (X: 0-255, Y: 0-239)</li>
+<li>X2, Y2: a végpont koordinátái (X: 0-255, Y: 0-239)</li>
+<li>Color: a paletta színsorszáma (0-3)</li>
+</ul>
+<br/><br/>
+Példa a használatára:<br/>
+TVCGraph4::VRAMOn();<br/>
+TVCGraph4::LineDirect(10, 10, 240, 220, 1);<br/>
+TVCGraph4::VRAMOff();<br/>
+<br/>
+ENGLISH:<br/>
+-------------<br/>
+Draw Bresenham line from (X1, Y1) to (X2, Y2) with Color (0-3). Direct VRAM access.<br/>
+<br/>
+Params:
+<ul>
+<li>X1, Y1: start point coordinates (0-255, 0-239)</li>
+<li>X2, Y2: end point coordinates (0-255, 0-239)</li>
+<li>Color: palette color index (0-3)</li>
+</ul>
+**/
+procedure LineDirect(X1, Y1, X2, Y2 : global byte; Color : global byte);
+begin
+	if (X1 = X2) then
+	begin
+		VLineDirect(X1, Y1, Y2, Color);
+		return;
+	end;
+	if (Y1 = Y2) then
+	begin
+		HLineDirect(X1, Y1, X2, Color);
+		return;
+	end;
+
+	Asm("
+		ld   A,(TVCGraph4_Color)
+		and  $03
+		ld   (TVCGraph4_LT_COL),A
+		ld   A,(TVCGraph4_X1)
+		ld   (TVCGraph4_LT_X1),A
+		ld   A,(TVCGraph4_Y1)
+		ld   (TVCGraph4_LT_Y1),A
+		ld   A,(TVCGraph4_X2)
+		ld   (TVCGraph4_LT_X2),A
+		ld   A,(TVCGraph4_Y2)
+		ld   (TVCGraph4_LT_Y2),A
+
+		; IX = COLOR_PIX_MASKS + Color * 8
+		ld   A,(TVCGraph4_LT_COL)
+		add  A,A
+		add  A,A
+		add  A,A
+		ld   E,A
+		ld   D,0
+		ld   IX,TVCGraph4_COLOR_PIX_MASKS
+		add  IX,DE
+
+		; 1. Kezdő VRAM cím: HL = $8000 + Y1 * 64 + (X1 >> 2)
+		ld   A,(TVCGraph4_LT_Y1)
+		ld   B,A
+		and  $03
+		rlca
+		rlca
+		rlca
+		rlca
+		rlca
+		rlca
+		ld   L,A
+		ld   A,B
+		srl  A
+		srl  A
+		add  A,$80
+		ld   H,A
+
+		ld   A,(TVCGraph4_LT_X1)
+		ld   B,A
+		srl  A
+		srl  A
+		add  A,L
+		ld   L,A
+		jr   NC,TVCGraph4_BL_addr_ok
+		inc  H
+TVCGraph4_BL_addr_ok:
+		; C = X1 & 3 (kezdő pixel pozíció)
+		ld   A,B
+		and  $03
+		ld   C,A
+
+		; 2. Rowstep kiszámítása DE-ben (+64 vagy -64)
+		ld   A,(TVCGraph4_LT_Y1)
+		ld   B,A
+		ld   A,(TVCGraph4_LT_Y2)
+		sub  B
+		jr   NC,TVCGraph4_BL_dypos_step
+		ld   DE,-64
+		jr   TVCGraph4_BL_dydone_step
+TVCGraph4_BL_dypos_step:
+		ld   DE,64
+TVCGraph4_BL_dydone_step:
+
+		; 3. HL és DE átmásolása a shadow bankba (HL' = VRAM cím, DE' = rowstep)
+		ex   DE,HL
+		push DE
+		push HL
+		exx
+		pop  DE                         ; DE' = rowstep
+		pop  HL                         ; HL' = VRAM cím
+		exx
+
+		; 4. dy kiszámítása (HL = |Y2 - Y1|)
+		ld   A,(TVCGraph4_LT_Y1)
+		ld   B,A
+		ld   A,(TVCGraph4_LT_Y2)
+		sub  B
+		jr   NC,TVCGraph4_BL_dypos
+		neg
+TVCGraph4_BL_dypos:
+		ld   L,A
+		ld   H,0
+		ld   (TVCGraph4_BL_DY),HL
+
+		; 5. dx, sx vizsgálat
+		ld   A,(TVCGraph4_LT_X1)
+		ld   B,A
+		ld   A,(TVCGraph4_LT_X2)
+		sub  B
+		jr   NC,TVCGraph4_BL_dxpos
+		neg
+		ld   L,A
+		ld   H,0
+		ld   (TVCGraph4_BL_DX),HL
+		ld   A,$FF                      ; sx = -1
+		ld   (TVCGraph4_BL_SX),A
+		jr   TVCGraph4_BL_dxdone
+TVCGraph4_BL_dxpos:
+		ld   L,A
+		ld   H,0
+		ld   (TVCGraph4_BL_DX),HL
+		ld   A,1                        ; sx = +1
+		ld   (TVCGraph4_BL_SX),A
+TVCGraph4_BL_dxdone:
+
+		; --- Főirány kiválasztása: DX >= DY (X-major) vagy DY > DX (Y-major) ---
+		ld   A,(TVCGraph4_BL_DX)
+		ld   HL,TVCGraph4_BL_DY
+		cp   (HL)
+		jp   C,TVCGraph4_BL_Y_MAJOR
+
+; ==============================================================================
+; X-MAJOR ÁG (DX >= DY)
+; ==============================================================================
+TVCGraph4_BL_X_MAJOR:
+		; Pixelszám = DX + 1
+		ld   A,(TVCGraph4_BL_DX)
+		inc  A
+		exx
+		ld   B,A                        ; B' = pixelszám
+		exx
+
+		; DE = 2 * DY (ince1)
+		ld   HL,(TVCGraph4_BL_DY)
+		add  HL,HL
+		ld   (TVCGraph4_BL_INCE1),HL
+		ld   D,H
+		ld   E,L
+
+		; BC = 2 * (DY - DX) = 2*DY - 2*DX (ince2)
+		ld   HL,(TVCGraph4_BL_DX)
+		add  HL,HL
+		ex   DE,HL
+		or   A
+		sbc  HL,DE                      ; HL = 2*DY - 2*DX
+		ld   B,H
+		ld   C,L
+
+		; Kezdő hiba: err = 2*DY - DX
+		ld   HL,(TVCGraph4_BL_INCE1)
+		ld   DE,(TVCGraph4_BL_DX)
+		or   A
+		sbc  HL,DE                      ; HL = err
+
+		ld   DE,(TVCGraph4_BL_INCE1)      ; DE = ince1
+
+		; SX vizsgálata (+1 vagy -1)
+		ld   A,(TVCGraph4_BL_SX)
+		cp   1
+		jp   NZ,TVCGraph4_XMAJ_START_NEG
+
+; --- X-Major, SX = +1: Ugrás a kezdő fázisra (C = 0..3) ---
+TVCGraph4_XMAJ_START_POS:
+		ld   A,C
+		or   A
+		jr   Z,TVCGraph4_XM_p0
+		cp   1
+		jr   Z,TVCGraph4_XM_p1
+		cp   2
+		jr   Z,TVCGraph4_XM_p2
+		jr   TVCGraph4_XM_p3
+
+TVCGraph4_XM_p0:
+		exx
+		ld   A,(IX+0)
+		and  (HL)
+		or   (IX+1)
+		ld   (HL),A
+		dec  B
+		jp   Z,TVCGraph4_BL_ALL_DONE_SHADOW
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph4_XM_p0_noy
+		add  HL,BC
+		exx
+		add  HL,DE                      ; HL' += rowstep
+		exx
+		jr   TVCGraph4_XM_p1
+TVCGraph4_XM_p0_noy:
+		add  HL,DE
+		jr   TVCGraph4_XM_p1
+
+TVCGraph4_XM_p1:
+		exx
+		ld   A,(IX+2)
+		and  (HL)
+		or   (IX+3)
+		ld   (HL),A
+		dec  B
+		jp   Z,TVCGraph4_BL_ALL_DONE_SHADOW
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph4_XM_p1_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		exx
+		jr   TVCGraph4_XM_p2
+TVCGraph4_XM_p1_noy:
+		add  HL,DE
+		jr   TVCGraph4_XM_p2
+
+TVCGraph4_XM_p2:
+		exx
+		ld   A,(IX+4)
+		and  (HL)
+		or   (IX+5)
+		ld   (HL),A
+		dec  B
+		jp   Z,TVCGraph4_BL_ALL_DONE_SHADOW
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph4_XM_p2_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		exx
+		jr   TVCGraph4_XM_p3
+TVCGraph4_XM_p2_noy:
+		add  HL,DE
+		jr   TVCGraph4_XM_p3
+
+TVCGraph4_XM_p3:
+		exx
+		ld   A,(IX+6)
+		and  (HL)
+		or   (IX+7)
+		ld   (HL),A
+		inc  HL                         ; Következő VRAM bájt!
+		dec  B
+		jp   Z,TVCGraph4_BL_ALL_DONE_SHADOW
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph4_XM_p3_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		exx
+		jp   TVCGraph4_XM_p0
+TVCGraph4_XM_p3_noy:
+		add  HL,DE
+		jp   TVCGraph4_XM_p0
+
+
+; --- X-Major, SX = -1: Ugrás a kezdő fázisra (visszafelé: 3->2->1->0) ---
+TVCGraph4_XMAJ_START_NEG:
+		ld   A,C
+		cp   3
+		jr   Z,TVCGraph4_XMN_p3
+		cp   2
+		jr   Z,TVCGraph4_XMN_p2
+		cp   1
+		jr   Z,TVCGraph4_XMN_p1
+		jr   TVCGraph4_XMN_p0
+
+TVCGraph4_XMN_p3:
+		exx
+		ld   A,(IX+6)
+		and  (HL)
+		or   (IX+7)
+		ld   (HL),A
+		dec  B
+		jp   Z,TVCGraph4_BL_ALL_DONE_SHADOW
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph4_XMN_p3_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		exx
+		jr   TVCGraph4_XMN_p2
+TVCGraph4_XMN_p3_noy:
+		add  HL,DE
+		jr   TVCGraph4_XMN_p2
+
+TVCGraph4_XMN_p2:
+		exx
+		ld   A,(IX+4)
+		and  (HL)
+		or   (IX+5)
+		ld   (HL),A
+		dec  B
+		jp   Z,TVCGraph4_BL_ALL_DONE_SHADOW
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph4_XMN_p2_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		exx
+		jr   TVCGraph4_XMN_p1
+TVCGraph4_XMN_p2_noy:
+		add  HL,DE
+		jr   TVCGraph4_XMN_p1
+
+TVCGraph4_XMN_p1:
+		exx
+		ld   A,(IX+2)
+		and  (HL)
+		or   (IX+3)
+		ld   (HL),A
+		dec  B
+		jp   Z,TVCGraph4_BL_ALL_DONE_SHADOW
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph4_XMN_p1_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		exx
+		jr   TVCGraph4_XMN_p0
+TVCGraph4_XMN_p1_noy:
+		add  HL,DE
+		jr   TVCGraph4_XMN_p0
+
+TVCGraph4_XMN_p0:
+		exx
+		ld   A,(IX+0)
+		and  (HL)
+		or   (IX+1)
+		ld   (HL),A
+		dec  HL                         ; Előző VRAM bájt!
+		dec  B
+		jp   Z,TVCGraph4_BL_ALL_DONE_SHADOW
+		exx
+		bit  7,H
+		jr   NZ,TVCGraph4_XMN_p0_noy
+		add  HL,BC
+		exx
+		add  HL,DE
+		exx
+		jp   TVCGraph4_XMN_p3
+TVCGraph4_XMN_p0_noy:
+		add  HL,DE
+		jp   TVCGraph4_XMN_p3
+
+
+; ==============================================================================
+; Y-MAJOR ÁG (DY > DX)
+; ==============================================================================
+TVCGraph4_BL_Y_MAJOR:
+		; Pixelszám = DY + 1
+		ld   HL,(TVCGraph4_BL_DY)
+		ld   A,L
+		inc  A
+		exx
+		ld   B,A                        ; B' = pixelszám
+		exx
+
+		; DE = 2 * DX (ince1)
+		ld   HL,(TVCGraph4_BL_DX)
+		add  HL,HL
+		ld   (TVCGraph4_BL_INCE1),HL
+		ld   D,H
+		ld   E,L
+
+		; BC = 2 * (DX - DY) = 2*DX - 2*DY (ince2)
+		ld   HL,(TVCGraph4_BL_DY)
+		add  HL,HL
+		ex   DE,HL
+		or   A
+		sbc  HL,DE                      ; HL = 2*DX - 2*DY
+		ld   B,H
+		ld   C,L
+
+		; Kezdő hiba: err = 2*DX - DY
+		ld   HL,(TVCGraph4_BL_INCE1)
+		ld   DE,(TVCGraph4_BL_DY)
+		or   A
+		sbc  HL,DE                      ; HL = err
+
+		ld   DE,(TVCGraph4_BL_INCE1)      ; DE = ince1
+
+		ld   A,(TVCGraph4_LT_X1)
+		and  $03
+		ld   (TVCGraph4_T_P1),A           ; T_P1 = aktuális pixel pozíció (0..3)
+
+		ld   A,(TVCGraph4_BL_SX)
+		cp   1
+		jp   NZ,TVCGraph4_YMAJ_LOOP_NEG
+
+; --- Y-Major, SX = +1 ---
+TVCGraph4_YMAJ_LOOP_POS:
+		; 1. Pixel kirajzolása T_P1 alapján
+		ld   A,(TVCGraph4_T_P1)
+		or   A
+		jr   Z,TVCGraph4_YMP_p0
+		cp   1
+		jr   Z,TVCGraph4_YMP_p1
+		cp   2
+		jr   Z,TVCGraph4_YMP_p2
+
+		; p3
+		exx
+		ld   A,(IX+6)
+		and  (HL)
+		or   (IX+7)
+		ld   (HL),A
+		add  HL,DE                      ; Mindig lép Y! (HL' += rowstep)
+		dec  B
+		jp   Z,TVCGraph4_BL_ALL_DONE_SHADOW
+		exx
+		jr   TVCGraph4_YMP_plot_done
+
+TVCGraph4_YMP_p0:
+		exx
+		ld   A,(IX+0)
+		and  (HL)
+		or   (IX+1)
+		ld   (HL),A
+		add  HL,DE
+		dec  B
+		jp   Z,TVCGraph4_BL_ALL_DONE_SHADOW
+		exx
+		jr   TVCGraph4_YMP_plot_done
+
+TVCGraph4_YMP_p1:
+		exx
+		ld   A,(IX+2)
+		and  (HL)
+		or   (IX+3)
+		ld   (HL),A
+		add  HL,DE
+		dec  B
+		jp   Z,TVCGraph4_BL_ALL_DONE_SHADOW
+		exx
+		jr   TVCGraph4_YMP_plot_done
+
+TVCGraph4_YMP_p2:
+		exx
+		ld   A,(IX+4)
+		and  (HL)
+		or   (IX+5)
+		ld   (HL),A
+		add  HL,DE
+		dec  B
+		jp   Z,TVCGraph4_BL_ALL_DONE_SHADOW
+		exx
+
+TVCGraph4_YMP_plot_done:
+		; 2. Hibateszt X lépéshez (+1)
+		bit  7,H
+		jr   NZ,TVCGraph4_YMP_no_x
+		add  HL,BC
+		; X léptetés (+1)
+		ld   A,(TVCGraph4_T_P1)
+		inc  A
+		cp   4
+		jr   NZ,TVCGraph4_YMP_nowrap
+		xor  A
+		exx
+		inc  HL
+		exx
+TVCGraph4_YMP_nowrap:
+		ld   (TVCGraph4_T_P1),A
+		jp   TVCGraph4_YMAJ_LOOP_POS
+TVCGraph4_YMP_no_x:
+		add  HL,DE
+		jp   TVCGraph4_YMAJ_LOOP_POS
+
+
+; --- Y-Major, SX = -1 ---
+TVCGraph4_YMAJ_LOOP_NEG:
+		ld   A,(TVCGraph4_T_P1)
+		or   A
+		jr   Z,TVCGraph4_YMN_p0
+		cp   1
+		jr   Z,TVCGraph4_YMN_p1
+		cp   2
+		jr   Z,TVCGraph4_YMN_p2
+
+		; p3
+		exx
+		ld   A,(IX+6)
+		and  (HL)
+		or   (IX+7)
+		ld   (HL),A
+		add  HL,DE                      ; HL' += rowstep
+		dec  B
+		jp   Z,TVCGraph4_BL_ALL_DONE_SHADOW
+		exx
+		jr   TVCGraph4_YMN_plot_done
+
+TVCGraph4_YMN_p0:
+		exx
+		ld   A,(IX+0)
+		and  (HL)
+		or   (IX+1)
+		ld   (HL),A
+		add  HL,DE
+		dec  B
+		jp   Z,TVCGraph4_BL_ALL_DONE_SHADOW
+		exx
+		jr   TVCGraph4_YMN_plot_done
+
+TVCGraph4_YMN_p1:
+		exx
+		ld   A,(IX+2)
+		and  (HL)
+		or   (IX+3)
+		ld   (HL),A
+		add  HL,DE
+		dec  B
+		jp   Z,TVCGraph4_BL_ALL_DONE_SHADOW
+		exx
+		jr   TVCGraph4_YMN_plot_done
+
+TVCGraph4_YMN_p2:
+		exx
+		ld   A,(IX+4)
+		and  (HL)
+		or   (IX+5)
+		ld   (HL),A
+		add  HL,DE
+		dec  B
+		jp   Z,TVCGraph4_BL_ALL_DONE_SHADOW
+		exx
+
+TVCGraph4_YMN_plot_done:
+		; 2. Hibateszt X lépéshez (-1)
+		bit  7,H
+		jr   NZ,TVCGraph4_YMN_no_x
+		add  HL,BC
+		; X léptetés (-1)
+		ld   A,(TVCGraph4_T_P1)
+		dec  A
+		cp   $FF
+		jr   NZ,TVCGraph4_YMN_nowrap
+		ld   A,3
+		exx
+		dec  HL
+		exx
+TVCGraph4_YMN_nowrap:
+		ld   (TVCGraph4_T_P1),A
+		jp   TVCGraph4_YMAJ_LOOP_NEG
+TVCGraph4_YMN_no_x:
+		add  HL,DE
+		jp   TVCGraph4_YMAJ_LOOP_NEG
+
+TVCGraph4_BL_ALL_DONE_SHADOW:
+		exx
+TVCGraph4_BL_ALL_DONE:
+	");
+end;
+
+/**
+Téglalap körvonal rajzolása közvetlen videómemória eléréssel (VRAM belapozva).<br/>
+<br/>
+Paraméterek:
+<ul>
+<li>X1, Y1: a téglalap egyik sarka (X: 0-255, Y: 0-239)</li>
+<li>X2, Y2: a szemközti sarka (X: 0-255, Y: 0-239)</li>
+<li>Color: a paletta színsorszáma (0-3)</li>
+</ul>
+<br/><br/>
+Példa a használatára:<br/>
+TVCGraph4::VRAMOn();<br/>
+TVCGraph4::RectDirect(20, 30, 220, 180, 1);<br/>
+TVCGraph4::VRAMOff();<br/>
+<br/>
+ENGLISH:<br/>
+-------------<br/>
+Draw rectangle outline from (X1, Y1) to (X2, Y2) with Color (0-3). Direct VRAM access.<br/>
+<br/>
+Params:
+<ul>
+<li>X1, Y1: top-left corner (0-255, 0-239)</li>
+<li>X2, Y2: bottom-right corner (0-255, 0-239)</li>
+<li>Color: palette color index (0-3)</li>
+</ul>
+**/
+procedure RectDirect(X1, Y1, X2, Y2 : global byte; Color : global byte);
+begin
+	HLineDirect(X1, Y1, X2, Color);
+	HLineDirect(X1, Y2, X2, Color);
+	VLineDirect(X1, Y1, Y2, Color);
+	VLineDirect(X2, Y1, Y2, Color);
+end;
+
+/**
+Kitöltött téglalap rajzolása gyorsított pásztázással (VRAM belapozva).<br/>
+A soronkénti konstans adatokat (szín, maszkok, bájtoszlopok) csak egyszer számolja ki,
+a sorok között közvetlen +64-es ugrással léptet.<br/>
+<br/>
+Paraméterek:
+<ul>
+<li>X1, Y1: a téglalap egyik sarka (X: 0-255, Y: 0-239)</li>
+<li>X2, Y2: a szemközti sarka (X: 0-255, Y: 0-239)</li>
+<li>Color: a kitöltés paletta színsorszáma (0-3)</li>
+</ul>
+<br/><br/>
+Példa a használatára:<br/>
+TVCGraph4::VRAMOn();<br/>
+TVCGraph4::FillRectDirect(40, 50, 200, 160, 2);<br/>
+TVCGraph4::VRAMOff();<br/>
+<br/>
+ENGLISH:<br/>
+-------------<br/>
+Draw filled rectangle from (X1, Y1) to (X2, Y2) with Color (0-3). Direct VRAM access.<br/>
+<br/>
+Params:
+<ul>
+<li>X1, Y1: top-left corner (0-255, 0-239)</li>
+<li>X2, Y2: bottom-right corner (0-255, 0-239)</li>
+<li>Color: palette color index (0-3)</li>
+</ul>
+**/
+procedure FillRectDirect(X1, Y1, X2, Y2 : global byte; Color : global byte);
+begin
+	Asm("
+		; --- szín / FILL érték (egyszer) ---
+		ld   A,(TVCGraph4_Color)
+		and  $03
+		ld   (TVCGraph4_T_COL),A
+		ld   C,A
+		ld   B,0
+		ld   HL,TVCGraph4_FILL_TAB
+		add  HL,BC
+		ld   A,(HL)
+		ld   (TVCGraph4_T_FILL),A
+
+		; X1<=X2 rendezés
+		ld   A,(TVCGraph4_X1)
+		ld   B,A
+		ld   A,(TVCGraph4_X2)
+		cp   B
+		jr   NC,TVCGraph4_FRF_xsorted
+		ld   (TVCGraph4_X1),A
+		ld   A,B
+		ld   (TVCGraph4_X2),A
+TVCGraph4_FRF_xsorted:
+		ld   A,(TVCGraph4_X1)
+		ld   B,A
+		and  $03
+		ld   (TVCGraph4_T_P1),A
+		ld   A,B
+		srl  A
+		srl  A
+		ld   (TVCGraph4_T_BC1),A
+		ld   A,(TVCGraph4_X2)
+		ld   B,A
+		and  $03
+		ld   (TVCGraph4_T_P2),A
+		ld   A,B
+		srl  A
+		srl  A
+		ld   (TVCGraph4_T_BC2),A
+
+		; Y1<=Y2 rendezés
+		ld   A,(TVCGraph4_Y1)
+		ld   B,A
+		ld   A,(TVCGraph4_Y2)
+		cp   B
+		jr   NC,TVCGraph4_FRF_ysorted
+		ld   (TVCGraph4_Y1),A
+		ld   A,B
+		ld   (TVCGraph4_Y2),A
+TVCGraph4_FRF_ysorted:
+		; sorok száma
+		ld   A,(TVCGraph4_Y2)
+		ld   B,A
+		ld   A,(TVCGraph4_Y1)
+		ld   C,A
+		ld   A,B
+		sub  C
+		inc  A
+		ld   (TVCGraph4_T_VCOUNT),A
+
+		; kezdő cím: HL = $8000 + Y1*64 + BC1
+		ld   A,(TVCGraph4_Y1)
+		ld   B,A
+		and  $03
+		rlca
+		rlca
+		rlca
+		rlca
+		rlca
+		rlca
+		ld   L,A
+		ld   A,B
+		srl  A
+		srl  A
+		add  A,$80
+		ld   H,A
+		ld   A,(TVCGraph4_T_BC1)
+		add  A,L
+		ld   L,A
+		jr   NC,TVCGraph4_FRF_addrok
+		inc  H
+TVCGraph4_FRF_addrok:
+
+TVCGraph4_FRF_rowloop:
+		push HL
+		; --- span kirajzolása HL-nél (ua. logika, mint HLineDirect belseje) ---
+		ld   A,(TVCGraph4_T_BC1)
+		ld   B,A
+		ld   A,(TVCGraph4_T_BC2)
+		cp   B
+		jr   NZ,TVCGraph4_FRF_multi
+
+		ld   A,(TVCGraph4_T_P1)
+		add  A,A
+		add  A,A
+		ld   B,A
+		ld   A,(TVCGraph4_T_P2)
+		add  A,B
+		ld   E,A
+		ld   D,0
+		ld   IX,TVCGraph4_SPAN_AND_TAB
+		add  IX,DE
+		ld   B,(IX+0)
+		ld   A,B
+		cpl
+		ld   C,A
+		ld   A,(TVCGraph4_T_FILL)
+		and  C
+		ld   C,A
+		ld   A,(HL)
+		and  B
+		or   C
+		ld   (HL),A
+		jr   TVCGraph4_FRF_rowdone
+
+TVCGraph4_FRF_multi:
+		ld   A,(TVCGraph4_T_P1)
+		add  A,A
+		add  A,A
+		add  A,3
+		ld   E,A
+		ld   D,0
+		ld   IX,TVCGraph4_SPAN_AND_TAB
+		add  IX,DE
+		ld   B,(IX+0)
+		ld   A,B
+		cpl
+		ld   C,A
+		ld   A,(TVCGraph4_T_FILL)
+		and  C
+		ld   C,A
+		ld   A,(HL)
+		and  B
+		or   C
+		ld   (HL),A
+		inc  HL
+
+		ld   A,(TVCGraph4_T_BC1)
+		ld   C,A
+		ld   A,(TVCGraph4_T_BC2)
+		sub  C
+		dec  A
+		or   A
+		jr   Z,TVCGraph4_FRF_lastbyte
+		ld   B,A
+		ld   A,(TVCGraph4_T_FILL)
+		ld   E,A
+TVCGraph4_FRF_midloop:
+		ld   (HL),E
+		inc  HL
+		djnz TVCGraph4_FRF_midloop
+
+TVCGraph4_FRF_lastbyte:
+		ld   A,(TVCGraph4_T_P2)
+		ld   E,A
+		ld   D,0
+		ld   IX,TVCGraph4_SPAN_AND_TAB
+		add  IX,DE
+		ld   B,(IX+0)
+		ld   A,B
+		cpl
+		ld   C,A
+		ld   A,(TVCGraph4_T_FILL)
+		and  C
+		ld   C,A
+		ld   A,(HL)
+		and  B
+		or   C
+		ld   (HL),A
+
+TVCGraph4_FRF_rowdone:
+		pop  HL
+		ld   DE,64
+		add  HL,DE
+		ld   A,(TVCGraph4_T_VCOUNT)
+		dec  A
+		ld   (TVCGraph4_T_VCOUNT),A
+		jp   NZ,TVCGraph4_FRF_rowloop
+	");
+end;
+
+/**
+Kör körvonal rajzolása Midpoint/Bresenham algoritmussal (VRAM belapozva).
+Draw circle outline at (CX, CY) with Radius and Color (0-3). Direct VRAM access.
+**/
+
+/**
+Kör körvonal rajzolása 16-bites növekményes Bresenham algoritmussal (VRAM belapozva).<br/>
+<br/>
+Paraméterek:
+<ul>
+<li>CX: a kör középpontjának X koordinátája (0-255)</li>
+<li>CY: a kör középpontjának Y koordinátája (0-239)</li>
+<li>Radius: a kör sugara képpontokban (1-119)</li>
+<li>Color: a paletta színsorszáma (0-3)</li>
+</ul>
+<br/><br/>
+Példa a használatára:<br/>
+TVCGraph4::VRAMOn();<br/>
+TVCGraph4::CircleDirect(128, 120, 50, 1);<br/>
+TVCGraph4::VRAMOff();<br/>
+<br/>
+ENGLISH:<br/>
+-------------<br/>
+Draw circle outline at (CX, CY) with Radius and Color (0-3). Direct VRAM access.<br/>
+<br/>
+Params:
+<ul>
+<li>CX: center X coordinate (0-255)</li>
+<li>CY: center Y coordinate (0-239)</li>
+<li>Radius: radius in pixels (1-119)</li>
+<li>Color: palette color index (0-3)</li>
+</ul>
+**/
+procedure CircleDirect(CX, CY, Radius : global byte; Color : global byte);
+begin
+	Asm("
+		; CIRC_X = 0
+		xor  A
+		ld   (TVCGraph4_CIRC_X),A
+
+		; CIRC_Y = Radius
+		ld   A,(TVCGraph4_Radius)
+		ld   (TVCGraph4_CIRC_Y),A
+
+		; CIRC_DX = 6
+		ld   HL,6
+		ld   (TVCGraph4_CIRC_DX),HL
+
+		; HL = 2 * Radius
+		ld   L,A
+		ld   H,0
+		add  HL,HL
+
+		; CIRC_D = 3 - 2 * Radius
+		ld   DE,3
+		ex   DE,HL
+		or   A
+		sbc  HL,DE
+		ld   (TVCGraph4_CIRC_D),HL
+
+		; CIRC_DXY = 10 - 4 * Radius
+		ex   DE,HL
+		add  HL,HL
+		ld   DE,10
+		ex   DE,HL
+		or   A
+		sbc  HL,DE
+		ld   (TVCGraph4_CIRC_DXY),HL
+
+TVCGraph4_Circ_loop:
+		; P1: (CX + x, CY + y)
+		ld   A,(TVCGraph4_CX)
+		ld   HL,TVCGraph4_CIRC_X
+		add  A,(HL)
+		ld   (TVCGraph4_X),A
+		ld   A,(TVCGraph4_CY)
+		ld   HL,TVCGraph4_CIRC_Y
+		add  A,(HL)
+		ld   (TVCGraph4_Y),A
+		call TVCGraph4_PlotDirect
+
+		; P2: (CX - x, CY + y)
+		ld   A,(TVCGraph4_CX)
+		ld   HL,TVCGraph4_CIRC_X
+		sub  (HL)
+		ld   (TVCGraph4_X),A
+		ld   A,(TVCGraph4_CY)
+		ld   HL,TVCGraph4_CIRC_Y
+		add  A,(HL)
+		ld   (TVCGraph4_Y),A
+		call TVCGraph4_PlotDirect
+
+		; P3: (CX + x, CY - y)
+		ld   A,(TVCGraph4_CX)
+		ld   HL,TVCGraph4_CIRC_X
+		add  A,(HL)
+		ld   (TVCGraph4_X),A
+		ld   A,(TVCGraph4_CY)
+		ld   HL,TVCGraph4_CIRC_Y
+		sub  (HL)
+		ld   (TVCGraph4_Y),A
+		call TVCGraph4_PlotDirect
+
+		; P4: (CX - x, CY - y)
+		ld   A,(TVCGraph4_CX)
+		ld   HL,TVCGraph4_CIRC_X
+		sub  (HL)
+		ld   (TVCGraph4_X),A
+		ld   A,(TVCGraph4_CY)
+		ld   HL,TVCGraph4_CIRC_Y
+		sub  (HL)
+		ld   (TVCGraph4_Y),A
+		call TVCGraph4_PlotDirect
+
+		; P5: (CX + y, CY + x)
+		ld   A,(TVCGraph4_CX)
+		ld   HL,TVCGraph4_CIRC_Y
+		add  A,(HL)
+		ld   (TVCGraph4_X),A
+		ld   A,(TVCGraph4_CY)
+		ld   HL,TVCGraph4_CIRC_X
+		add  A,(HL)
+		ld   (TVCGraph4_Y),A
+		call TVCGraph4_PlotDirect
+
+		; P6: (CX - y, CY + x)
+		ld   A,(TVCGraph4_CX)
+		ld   HL,TVCGraph4_CIRC_Y
+		sub  (HL)
+		ld   (TVCGraph4_X),A
+		ld   A,(TVCGraph4_CY)
+		ld   HL,TVCGraph4_CIRC_X
+		add  A,(HL)
+		ld   (TVCGraph4_Y),A
+		call TVCGraph4_PlotDirect
+
+		; P7: (CX + y, CY - x)
+		ld   A,(TVCGraph4_CX)
+		ld   HL,TVCGraph4_CIRC_Y
+		add  A,(HL)
+		ld   (TVCGraph4_X),A
+		ld   A,(TVCGraph4_CY)
+		ld   HL,TVCGraph4_CIRC_X
+		sub  (HL)
+		ld   (TVCGraph4_Y),A
+		call TVCGraph4_PlotDirect
+
+		; P8: (CX - y, CY - x)
+		ld   A,(TVCGraph4_CX)
+		ld   HL,TVCGraph4_CIRC_Y
+		sub  (HL)
+		ld   (TVCGraph4_X),A
+		ld   A,(TVCGraph4_CY)
+		ld   HL,TVCGraph4_CIRC_X
+		sub  (HL)
+		ld   (TVCGraph4_Y),A
+		call TVCGraph4_PlotDirect
+
+		; Decision variable update (16-bit)
+		ld   HL,(TVCGraph4_CIRC_D)
+		bit  7,H
+		jr   NZ,TVCGraph4_Circ_neg
+
+		; CIRC_D >= 0:
+		ld   DE,(TVCGraph4_CIRC_DXY)
+		add  HL,DE
+		ld   (TVCGraph4_CIRC_D),HL
+
+		ld   HL,(TVCGraph4_CIRC_DXY)
+		ld   DE,8
+		add  HL,DE
+		ld   (TVCGraph4_CIRC_DXY),HL
+
+		ld   HL,TVCGraph4_CIRC_Y
+		dec  (HL)
+		jr   TVCGraph4_Circ_common
+
+TVCGraph4_Circ_neg:
+		; CIRC_D < 0:
+		ld   DE,(TVCGraph4_CIRC_DX)
+		add  HL,DE
+		ld   (TVCGraph4_CIRC_D),HL
+
+		ld   HL,(TVCGraph4_CIRC_DXY)
+		ld   DE,4
+		add  HL,DE
+		ld   (TVCGraph4_CIRC_DXY),HL
+
+TVCGraph4_Circ_common:
+		ld   HL,(TVCGraph4_CIRC_DX)
+		ld   DE,4
+		add  HL,DE
+		ld   (TVCGraph4_CIRC_DX),HL
+
+		ld   HL,TVCGraph4_CIRC_X
+		inc  (HL)
+
+		; while (CIRC_X <= CIRC_Y)
+		ld   A,(TVCGraph4_CIRC_X)
+		ld   HL,TVCGraph4_CIRC_Y
+		cp   (HL)
+		jp   C,TVCGraph4_Circ_loop
+		jp   Z,TVCGraph4_Circ_loop
+	");
+end;
+
+/**
+Ultra-gyors kör körvonal rajzolása közvetlen videómemória eléréssel (VRAM belapozva).<br/>
+A 8 szimmetrikus pontot 4 közös sor-báziscímmel és beágyazott pixelírással rajzolja ki,
+teljesen elhagyva a függvényhívási és veremkezelési költségeket.<br/>
+<br/>
+Paraméterek:
+<ul>
+<li>CX: a kör középpontjának X koordinátája (0-255)</li>
+<li>CY: a kör középpontjának Y koordinátája (0-239)</li>
+<li>Radius: a kör sugara képpontokban (1-119)</li>
+<li>Color: a paletta színsorszáma (0-3)</li>
+</ul>
+<br/><br/>
+Példa a használatára:<br/>
+TVCGraph4::VRAMOn();<br/>
+TVCGraph4::CircleDirectFast(128, 120, 50, 1);<br/>
+TVCGraph4::VRAMOff();<br/>
+<br/>
+ENGLISH:<br/>
+-------------<br/>
+Draw fast circle outline at (CX, CY) with Radius and Color (0-3). Direct VRAM access.<br/>
+<br/>
+Params:
+<ul>
+<li>CX: center X coordinate (0-255)</li>
+<li>CY: center Y coordinate (0-239)</li>
+<li>Radius: radius in pixels (1-119)</li>
+<li>Color: palette color index (0-3)</li>
+</ul>
+**/
+procedure CircleDirectFast(CX, CY, Radius : global byte; Color : global byte);
+begin
+	Asm("
+		; LT_MASKPTR = COLOR_PIX_MASKS + Color * 8
+		ld   A,(TVCGraph4_Color)
+		and  $03
+		add  A,A
+		add  A,A
+		add  A,A
+		ld   E,A
+		ld   D,0
+		ld   HL,TVCGraph4_COLOR_PIX_MASKS
+		add  HL,DE
+		ld   (TVCGraph4_LT_MASKPTR),HL
+
+		; CIRC_X = 0
+		xor  A
+		ld   (TVCGraph4_CIRC_X),A
+
+		; CIRC_Y = Radius
+		ld   A,(TVCGraph4_Radius)
+		ld   (TVCGraph4_CIRC_Y),A
+
+		; CIRC_DX = 6
+		ld   HL,6
+		ld   (TVCGraph4_CIRC_DX),HL
+
+		; HL = 2 * Radius
+		ld   L,A
+		ld   H,0
+		add  HL,HL
+
+		; CIRC_D = 3 - 2 * Radius
+		ld   DE,3
+		ex   DE,HL
+		or   A
+		sbc  HL,DE
+		ld   (TVCGraph4_CIRC_D),HL
+
+		; CIRC_DXY = 10 - 4 * Radius
+		ex   DE,HL
+		add  HL,HL
+		ld   DE,10
+		ex   DE,HL
+		or   A
+		sbc  HL,DE
+		ld   (TVCGraph4_CIRC_DXY),HL
+
+TVCGraph4_CF_loop:
+		; ==============================================================
+		; PÁR 1: Y = CY + y  ->  P1(CX + x), P2(CX - x)
+		; ==============================================================
+		ld   A,(TVCGraph4_CY)
+		ld   HL,TVCGraph4_CIRC_Y
+		add  A,(HL)
+		cp   240
+		jr   NC,TVCGraph4_CF_p12_skip
+
+		; HL = $8000 + Y * 64
+		ld   B,A
+		and  $03
+		rlca
+		rlca
+		rlca
+		rlca
+		rlca
+		rlca
+		ld   L,A
+		ld   A,B
+		srl  A
+		srl  A
+		add  A,$80
+		ld   H,A
+
+		; P1: X = CX + x
+		ld   A,(TVCGraph4_CX)
+		ld   BC,(TVCGraph4_CIRC_X)
+		add  A,C
+		push HL
+		ld   B,A
+		rrca
+		rrca
+		and  $3F
+		add  A,L
+		ld   L,A
+		jr   NC,TVCGraph4_CF_p1_ok
+		inc  H
+TVCGraph4_CF_p1_ok:
+		ld   A,B
+		and  $03
+		add  A,A
+		ld   E,A
+		ld   D,0
+		push HL
+		ld   HL,(TVCGraph4_LT_MASKPTR)
+		add  HL,DE
+		ld   B,(HL)
+		inc  HL
+		ld   C,(HL)
+		pop  HL
+		ld   A,(HL)
+		and  B
+		or   C
+		ld   (HL),A
+		pop  HL
+
+		; P2: X = CX - x
+		ld   A,(TVCGraph4_CX)
+		ld   BC,(TVCGraph4_CIRC_X)
+		sub  C
+		ld   B,A
+		rrca
+		rrca
+		and  $3F
+		add  A,L
+		ld   L,A
+		jr   NC,TVCGraph4_CF_p2_ok
+		inc  H
+TVCGraph4_CF_p2_ok:
+		ld   A,B
+		and  $03
+		add  A,A
+		ld   E,A
+		ld   D,0
+		push HL
+		ld   HL,(TVCGraph4_LT_MASKPTR)
+		add  HL,DE
+		ld   B,(HL)
+		inc  HL
+		ld   C,(HL)
+		pop  HL
+		ld   A,(HL)
+		and  B
+		or   C
+		ld   (HL),A
+
+TVCGraph4_CF_p12_skip:
+
+		; ==============================================================
+		; PÁR 2: Y = CY - y  ->  P3(CX + x), P4(CX - x)
+		; ==============================================================
+		ld   A,(TVCGraph4_CY)
+		ld   HL,TVCGraph4_CIRC_Y
+		sub  (HL)
+		cp   240
+		jr   NC,TVCGraph4_CF_p34_skip
+
+		; HL = $8000 + Y * 64
+		ld   B,A
+		and  $03
+		rlca
+		rlca
+		rlca
+		rlca
+		rlca
+		rlca
+		ld   L,A
+		ld   A,B
+		srl  A
+		srl  A
+		add  A,$80
+		ld   H,A
+
+		; P3: X = CX + x
+		ld   A,(TVCGraph4_CX)
+		ld   BC,(TVCGraph4_CIRC_X)
+		add  A,C
+		push HL
+		ld   B,A
+		rrca
+		rrca
+		and  $3F
+		add  A,L
+		ld   L,A
+		jr   NC,TVCGraph4_CF_p3_ok
+		inc  H
+TVCGraph4_CF_p3_ok:
+		ld   A,B
+		and  $03
+		add  A,A
+		ld   E,A
+		ld   D,0
+		push HL
+		ld   HL,(TVCGraph4_LT_MASKPTR)
+		add  HL,DE
+		ld   B,(HL)
+		inc  HL
+		ld   C,(HL)
+		pop  HL
+		ld   A,(HL)
+		and  B
+		or   C
+		ld   (HL),A
+		pop  HL
+
+		; P4: X = CX - x
+		ld   A,(TVCGraph4_CX)
+		ld   BC,(TVCGraph4_CIRC_X)
+		sub  C
+		ld   B,A
+		rrca
+		rrca
+		and  $3F
+		add  A,L
+		ld   L,A
+		jr   NC,TVCGraph4_CF_p4_ok
+		inc  H
+TVCGraph4_CF_p4_ok:
+		ld   A,B
+		and  $03
+		add  A,A
+		ld   E,A
+		ld   D,0
+		push HL
+		ld   HL,(TVCGraph4_LT_MASKPTR)
+		add  HL,DE
+		ld   B,(HL)
+		inc  HL
+		ld   C,(HL)
+		pop  HL
+		ld   A,(HL)
+		and  B
+		or   C
+		ld   (HL),A
+
+TVCGraph4_CF_p34_skip:
+
+		; ==============================================================
+		; PÁR 3: Y = CY + x  ->  P5(CX + y), P6(CX - y)
+		; ==============================================================
+		ld   A,(TVCGraph4_CY)
+		ld   HL,TVCGraph4_CIRC_X
+		add  A,(HL)
+		cp   240
+		jr   NC,TVCGraph4_CF_p56_skip
+
+		; HL = $8000 + Y * 64
+		ld   B,A
+		and  $03
+		rlca
+		rlca
+		rlca
+		rlca
+		rlca
+		rlca
+		ld   L,A
+		ld   A,B
+		srl  A
+		srl  A
+		add  A,$80
+		ld   H,A
+
+		; P5: X = CX + y
+		ld   A,(TVCGraph4_CX)
+		ld   BC,(TVCGraph4_CIRC_Y)
+		add  A,C
+		push HL
+		ld   B,A
+		rrca
+		rrca
+		and  $3F
+		add  A,L
+		ld   L,A
+		jr   NC,TVCGraph4_CF_p5_ok
+		inc  H
+TVCGraph4_CF_p5_ok:
+		ld   A,B
+		and  $03
+		add  A,A
+		ld   E,A
+		ld   D,0
+		push HL
+		ld   HL,(TVCGraph4_LT_MASKPTR)
+		add  HL,DE
+		ld   B,(HL)
+		inc  HL
+		ld   C,(HL)
+		pop  HL
+		ld   A,(HL)
+		and  B
+		or   C
+		ld   (HL),A
+		pop  HL
+
+		; P6: X = CX - y
+		ld   A,(TVCGraph4_CX)
+		ld   BC,(TVCGraph4_CIRC_Y)
+		sub  C
+		ld   B,A
+		rrca
+		rrca
+		and  $3F
+		add  A,L
+		ld   L,A
+		jr   NC,TVCGraph4_CF_p6_ok
+		inc  H
+TVCGraph4_CF_p6_ok:
+		ld   A,B
+		and  $03
+		add  A,A
+		ld   E,A
+		ld   D,0
+		push HL
+		ld   HL,(TVCGraph4_LT_MASKPTR)
+		add  HL,DE
+		ld   B,(HL)
+		inc  HL
+		ld   C,(HL)
+		pop  HL
+		ld   A,(HL)
+		and  B
+		or   C
+		ld   (HL),A
+
+TVCGraph4_CF_p56_skip:
+
+		; ==============================================================
+		; PÁR 4: Y = CY - x  ->  P7(CX + y), P8(CX - y)
+		; ==============================================================
+		ld   A,(TVCGraph4_CY)
+		ld   HL,TVCGraph4_CIRC_X
+		sub  (HL)
+		cp   240
+		jr   NC,TVCGraph4_CF_p78_skip
+
+		; HL = $8000 + Y * 64
+		ld   B,A
+		and  $03
+		rlca
+		rlca
+		rlca
+		rlca
+		rlca
+		rlca
+		ld   L,A
+		ld   A,B
+		srl  A
+		srl  A
+		add  A,$80
+		ld   H,A
+
+		; P7: X = CX + y
+		ld   A,(TVCGraph4_CX)
+		ld   BC,(TVCGraph4_CIRC_Y)
+		add  A,C
+		push HL
+		ld   B,A
+		rrca
+		rrca
+		and  $3F
+		add  A,L
+		ld   L,A
+		jr   NC,TVCGraph4_CF_p7_ok
+		inc  H
+TVCGraph4_CF_p7_ok:
+		ld   A,B
+		and  $03
+		add  A,A
+		ld   E,A
+		ld   D,0
+		push HL
+		ld   HL,(TVCGraph4_LT_MASKPTR)
+		add  HL,DE
+		ld   B,(HL)
+		inc  HL
+		ld   C,(HL)
+		pop  HL
+		ld   A,(HL)
+		and  B
+		or   C
+		ld   (HL),A
+		pop  HL
+
+		; P8: X = CX - y
+		ld   A,(TVCGraph4_CX)
+		ld   BC,(TVCGraph4_CIRC_Y)
+		sub  C
+		ld   B,A
+		rrca
+		rrca
+		and  $3F
+		add  A,L
+		ld   L,A
+		jr   NC,TVCGraph4_CF_p8_ok
+		inc  H
+TVCGraph4_CF_p8_ok:
+		ld   A,B
+		and  $03
+		add  A,A
+		ld   E,A
+		ld   D,0
+		push HL
+		ld   HL,(TVCGraph4_LT_MASKPTR)
+		add  HL,DE
+		ld   B,(HL)
+		inc  HL
+		ld   C,(HL)
+		pop  HL
+		ld   A,(HL)
+		and  B
+		or   C
+		ld   (HL),A
+
+TVCGraph4_CF_p78_skip:
+
+		; ==============================================================
+		; 16-bites Bresenham hibakorrekció és léptetés
+		; ==============================================================
+		ld   HL,(TVCGraph4_CIRC_D)
+		bit  7,H
+		jr   NZ,TVCGraph4_CF_dneg
+
+		; CIRC_D >= 0:
+		ld   DE,(TVCGraph4_CIRC_DXY)
+		add  HL,DE
+		ld   (TVCGraph4_CIRC_D),HL
+
+		ld   HL,(TVCGraph4_CIRC_DXY)
+		ld   DE,8
+		add  HL,DE
+		ld   (TVCGraph4_CIRC_DXY),HL
+
+		ld   HL,TVCGraph4_CIRC_Y
+		dec  (HL)
+		jr   TVCGraph4_CF_dcommon
+
+TVCGraph4_CF_dneg:
+		; CIRC_D < 0:
+		ld   DE,(TVCGraph4_CIRC_DX)
+		add  HL,DE
+		ld   (TVCGraph4_CIRC_D),HL
+
+		ld   HL,(TVCGraph4_CIRC_DXY)
+		ld   DE,4
+		add  HL,DE
+		ld   (TVCGraph4_CIRC_DXY),HL
+
+TVCGraph4_CF_dcommon:
+		ld   HL,(TVCGraph4_CIRC_DX)
+		ld   DE,4
+		add  HL,DE
+		ld   (TVCGraph4_CIRC_DX),HL
+
+		ld   HL,TVCGraph4_CIRC_X
+		inc  (HL)
+
+		; while (CIRC_X <= CIRC_Y)
+		ld   A,(TVCGraph4_CIRC_X)
+		ld   HL,TVCGraph4_CIRC_Y
+		cp   (HL)
+		jp   C,TVCGraph4_CF_loop
+		jp   Z,TVCGraph4_CF_loop
+	");
+end;
+
+/**
+Kitöltött kör rajzolása 16-bites növekményes Bresenham span vonalakkal (VRAM belapozva).<br/>
+Minden iterációban 4 gyors vízszintes szakasszal tölti ki a kör belsejét.<br/>
+<br/>
+Paraméterek:
+<ul>
+<li>CX: a kör középpontjának X koordinátája (0-255)</li>
+<li>CY: a kör középpontjának Y koordinátája (0-239)</li>
+<li>Radius: a kör sugara képpontokban (1-119)</li>
+<li>Color: a kitöltés paletta színsorszáma (0-3)</li>
+</ul>
+<br/><br/>
+Példa a használatára:<br/>
+TVCGraph4::VRAMOn();<br/>
+TVCGraph4::FillCircleDirect(128, 120, 45, 2);<br/>
+TVCGraph4::VRAMOff();<br/>
+<br/>
+ENGLISH:<br/>
+-------------<br/>
+Draw filled circle at (CX, CY) with Radius and Color (0-3). Direct VRAM access.<br/>
+<br/>
+Params:
+<ul>
+<li>CX: center X coordinate (0-255)</li>
+<li>CY: center Y coordinate (0-239)</li>
+<li>Radius: radius in pixels (1-119)</li>
+<li>Color: palette color index (0-3)</li>
+</ul>
+**/
+procedure FillCircleDirect(CX, CY, Radius : global byte; Color : global byte);
+begin
+	Asm("
+		; CIRC_X = 0
+		xor  A
+		ld   (TVCGraph4_CIRC_X),A
+
+		; CIRC_Y = Radius
+		ld   A,(TVCGraph4_Radius)
+		ld   (TVCGraph4_CIRC_Y),A
+
+		; CIRC_DX = 6
+		ld   HL,6
+		ld   (TVCGraph4_CIRC_DX),HL
+
+		; HL = 2 * Radius
+		ld   L,A
+		ld   H,0
+		add  HL,HL
+
+		; CIRC_D = 3 - 2 * Radius
+		ld   DE,3
+		ex   DE,HL
+		or   A
+		sbc  HL,DE
+		ld   (TVCGraph4_CIRC_D),HL
+
+		; CIRC_DXY = 10 - 4 * Radius
+		ex   DE,HL
+		add  HL,HL
+		ld   DE,10
+		ex   DE,HL
+		or   A
+		sbc  HL,DE
+		ld   (TVCGraph4_CIRC_DXY),HL
+
+TVCGraph4_FCirc_loop:
+		; Span 1: CY + y: CX - x to CX + x
+		ld   A,(TVCGraph4_CX)
+		ld   HL,TVCGraph4_CIRC_X
+		sub  (HL)
+		ld   (TVCGraph4_X1),A
+		ld   A,(TVCGraph4_CX)
+		ld   HL,TVCGraph4_CIRC_X
+		add  A,(HL)
+		ld   (TVCGraph4_X2),A
+		ld   A,(TVCGraph4_CY)
+		ld   HL,TVCGraph4_CIRC_Y
+		add  A,(HL)
+		ld   (TVCGraph4_Y),A
+		call TVCGraph4_HLineDirect
+
+		; Span 2: CY - y: CX - x to CX + x
+		ld   A,(TVCGraph4_CX)
+		ld   HL,TVCGraph4_CIRC_X
+		sub  (HL)
+		ld   (TVCGraph4_X1),A
+		ld   A,(TVCGraph4_CX)
+		ld   HL,TVCGraph4_CIRC_X
+		add  A,(HL)
+		ld   (TVCGraph4_X2),A
+		ld   A,(TVCGraph4_CY)
+		ld   HL,TVCGraph4_CIRC_Y
+		sub  (HL)
+		ld   (TVCGraph4_Y),A
+		call TVCGraph4_HLineDirect
+
+		; Span 3: CY + x: CX - y to CX + y
+		ld   A,(TVCGraph4_CX)
+		ld   HL,TVCGraph4_CIRC_Y
+		sub  (HL)
+		ld   (TVCGraph4_X1),A
+		ld   A,(TVCGraph4_CX)
+		ld   HL,TVCGraph4_CIRC_Y
+		add  A,(HL)
+		ld   (TVCGraph4_X2),A
+		ld   A,(TVCGraph4_CY)
+		ld   HL,TVCGraph4_CIRC_X
+		add  A,(HL)
+		ld   (TVCGraph4_Y),A
+		call TVCGraph4_HLineDirect
+
+		; Span 4: CY - x: CX - y to CX + y
+		ld   A,(TVCGraph4_CX)
+		ld   HL,TVCGraph4_CIRC_Y
+		sub  (HL)
+		ld   (TVCGraph4_X1),A
+		ld   A,(TVCGraph4_CX)
+		ld   HL,TVCGraph4_CIRC_Y
+		add  A,(HL)
+		ld   (TVCGraph4_X2),A
+		ld   A,(TVCGraph4_CY)
+		ld   HL,TVCGraph4_CIRC_X
+		sub  (HL)
+		ld   (TVCGraph4_Y),A
+		call TVCGraph4_HLineDirect
+
+		; Decision variable update (16-bit)
+		ld   HL,(TVCGraph4_CIRC_D)
+		bit  7,H
+		jr   NZ,TVCGraph4_FCirc_neg
+
+		; CIRC_D >= 0:
+		ld   DE,(TVCGraph4_CIRC_DXY)
+		add  HL,DE
+		ld   (TVCGraph4_CIRC_D),HL
+
+		ld   HL,(TVCGraph4_CIRC_DXY)
+		ld   DE,8
+		add  HL,DE
+		ld   (TVCGraph4_CIRC_DXY),HL
+
+		ld   HL,TVCGraph4_CIRC_Y
+		dec  (HL)
+		jr   TVCGraph4_FCirc_common
+
+TVCGraph4_FCirc_neg:
+		; CIRC_D < 0:
+		ld   DE,(TVCGraph4_CIRC_DX)
+		add  HL,DE
+		ld   (TVCGraph4_CIRC_D),HL
+
+		ld   HL,(TVCGraph4_CIRC_DXY)
+		ld   DE,4
+		add  HL,DE
+		ld   (TVCGraph4_CIRC_DXY),HL
+
+TVCGraph4_FCirc_common:
+		ld   HL,(TVCGraph4_CIRC_DX)
+		ld   DE,4
+		add  HL,DE
+		ld   (TVCGraph4_CIRC_DX),HL
+
+		ld   HL,TVCGraph4_CIRC_X
+		inc  (HL)
+
+		; while (CIRC_X <= CIRC_Y)
+		ld   A,(TVCGraph4_CIRC_X)
+		ld   HL,TVCGraph4_CIRC_Y
+		cp   (HL)
+		jp   C,TVCGraph4_FCirc_loop
+		jp   Z,TVCGraph4_FCirc_loop
+	");
+end;
+
+/**
+Háromszög körvonal rajzolása 3 csúcspont között (VRAM belapozva).<br/>
+<br/>
+Paraméterek:
+<ul>
+<li>X1, Y1: az 1. csúcs koordinátái (X: 0-255, Y: 0-239)</li>
+<li>X2, Y2: a 2. csúcs koordinátái (X: 0-255, Y: 0-239)</li>
+<li>X3, Y3: a 3. csúcs koordinátái (X: 0-255, Y: 0-239)</li>
+<li>Color: a paletta színsorszáma (0-3)</li>
+</ul>
+<br/><br/>
+Példa a használatára:<br/>
+TVCGraph4::VRAMOn();<br/>
+TVCGraph4::TriangleDirect(128, 30, 40, 200, 216, 200, 1);<br/>
+TVCGraph4::VRAMOff();<br/>
+<br/>
+ENGLISH:<br/>
+-------------<br/>
+Draw triangle outline between 3 points. Direct VRAM access.<br/>
+<br/>
+Params:
+<ul>
+<li>X1, Y1: 1st vertex coordinates (0-255, 0-239)</li>
+<li>X2, Y2: 2nd vertex coordinates (0-255, 0-239)</li>
+<li>X3, Y3: 3rd vertex coordinates (0-255, 0-239)</li>
+<li>Color: palette color index (0-3)</li>
+</ul>
+**/
+procedure TriangleDirect(X1, Y1, X2, Y2, X3, Y3 : global byte; Color : global byte);
+var
+	tx1, ty1, tx2, ty2, tx3, ty3, tcol : byte;
+begin
+	tx1 := X1; ty1 := Y1;
+	tx2 := X2; ty2 := Y2;
+	tx3 := X3; ty3 := Y3;
+	tcol := Color;
+	LineDirect(tx1, ty1, tx2, ty2, tcol);
+	LineDirect(tx2, ty2, tx3, ty3, tcol);
+	LineDirect(tx3, ty3, tx1, ty1, tcol);
+end;
+
+/**
+Kitöltött háromszög rajzolása osztásmentes Bresenham élkövetéssel (VRAM belapozva).<br/>
+A hosszú él és a mindenkori rövid él X koordinátáját soronként egész hibaakkumulátorral
+követi futásidejű szorzás vagy osztás nélkül.<br/>
+<br/>
+Paraméterek:
+<ul>
+<li>X1, Y1: az 1. csúcs koordinátái (X: 0-255, Y: 0-239)</li>
+<li>X2, Y2: a 2. csúcs koordinátái (X: 0-255, Y: 0-239)</li>
+<li>X3, Y3: a 3. csúcs koordinátái (X: 0-255, Y: 0-239)</li>
+<li>Color: a kitöltés paletta színsorszáma (0-3)</li>
+</ul>
+<br/><br/>
+Példa a használatára:<br/>
+TVCGraph4::VRAMOn();<br/>
+TVCGraph4::FillTriangleDirect(128, 30, 40, 200, 216, 200, 2);<br/>
+TVCGraph4::VRAMOff();<br/>
+<br/>
+ENGLISH:<br/>
+-------------<br/>
+Draw filled triangle between 3 points, division-free edge walking. Direct VRAM access.<br/>
+<br/>
+Params:
+<ul>
+<li>X1, Y1: 1st vertex coordinates (0-255, 0-239)</li>
+<li>X2, Y2: 2nd vertex coordinates (0-255, 0-239)</li>
+<li>X3, Y3: 3rd vertex coordinates (0-255, 0-239)</li>
+<li>Color: palette color index (0-3)</li>
+</ul>
+**/
+procedure FillTriangleDirect(X1, Y1, X2, Y2, X3, Y3 : global byte; Color : global byte);
+begin
+	Asm("
+		; --- bemenet mentése saját változókba ---
+		ld   A,(TVCGraph4_X1)
+		ld   (TVCGraph4_FT_X1),A
+		ld   A,(TVCGraph4_Y1)
+		ld   (TVCGraph4_FT_Y1),A
+		ld   A,(TVCGraph4_X2)
+		ld   (TVCGraph4_FT_X2),A
+		ld   A,(TVCGraph4_Y2)
+		ld   (TVCGraph4_FT_Y2),A
+		ld   A,(TVCGraph4_X3)
+		ld   (TVCGraph4_FT_X3),A
+		ld   A,(TVCGraph4_Y3)
+		ld   (TVCGraph4_FT_Y3),A
+		ld   A,(TVCGraph4_Color)
+		and  $03
+		ld   (TVCGraph4_FT_COL),A
+
+		; --- csúcsok rendezése Y szerint növekvőbe (X-szel együtt) ---
+		ld   A,(TVCGraph4_FT_Y1)
+		ld   B,A
+		ld   A,(TVCGraph4_FT_Y2)
+		cp   B
+		jp   NC,TVCGraph4_FT_S1OK
+		ld   (TVCGraph4_FT_Y1),A
+		ld   A,B
+		ld   (TVCGraph4_FT_Y2),A
+		ld   A,(TVCGraph4_FT_X1)
+		ld   B,A
+		ld   A,(TVCGraph4_FT_X2)
+		ld   (TVCGraph4_FT_X1),A
+		ld   A,B
+		ld   (TVCGraph4_FT_X2),A
+TVCGraph4_FT_S1OK:
+		ld   A,(TVCGraph4_FT_Y1)
+		ld   B,A
+		ld   A,(TVCGraph4_FT_Y3)
+		cp   B
+		jp   NC,TVCGraph4_FT_S2OK
+		ld   (TVCGraph4_FT_Y1),A
+		ld   A,B
+		ld   (TVCGraph4_FT_Y3),A
+		ld   A,(TVCGraph4_FT_X1)
+		ld   B,A
+		ld   A,(TVCGraph4_FT_X3)
+		ld   (TVCGraph4_FT_X1),A
+		ld   A,B
+		ld   (TVCGraph4_FT_X3),A
+TVCGraph4_FT_S2OK:
+		ld   A,(TVCGraph4_FT_Y2)
+		ld   B,A
+		ld   A,(TVCGraph4_FT_Y3)
+		cp   B
+		jp   NC,TVCGraph4_FT_S3OK
+		ld   (TVCGraph4_FT_Y2),A
+		ld   A,B
+		ld   (TVCGraph4_FT_Y3),A
+		ld   A,(TVCGraph4_FT_X2)
+		ld   B,A
+		ld   A,(TVCGraph4_FT_X3)
+		ld   (TVCGraph4_FT_X2),A
+		ld   A,B
+		ld   (TVCGraph4_FT_X3),A
+TVCGraph4_FT_S3OK:
+
+		; elfajult eset: Y1==Y3 -> nincs mit rajzolni
+		ld   A,(TVCGraph4_FT_Y1)
+		ld   B,A
+		ld   A,(TVCGraph4_FT_Y3)
+		cp   B
+		jp   Z,TVCGraph4_FT_DONE
+
+		; --- eset-elágazás: lapos tető / lapos alj / általános ---
+		ld   A,(TVCGraph4_FT_Y1)
+		ld   B,A
+		ld   A,(TVCGraph4_FT_Y2)
+		cp   B
+		jp   Z,TVCGraph4_FT_FLATTOP
+
+		ld   A,(TVCGraph4_FT_Y2)
+		ld   B,A
+		ld   A,(TVCGraph4_FT_Y3)
+		cp   B
+		jp   Z,TVCGraph4_FT_FLATBOTTOM
+
+		jp   TVCGraph4_FT_GENERAL
+
+; ==============================================================
+; Lapos tető (Y1==Y2): egyetlen szakasz Y1..Y3,
+; rövid él = (X2,Y1)-(X3,Y3)
+; ==============================================================
+TVCGraph4_FT_FLATTOP:
+		ld   IX,TVCGraph4_ELONG
+		ld   A,(TVCGraph4_FT_X1)
+		ld   B,A
+		ld   A,(TVCGraph4_FT_Y1)
+		ld   C,A
+		ld   A,(TVCGraph4_FT_X3)
+		ld   D,A
+		ld   A,(TVCGraph4_FT_Y3)
+		ld   E,A
+		call TVCGraph4_FT_EDGE_INIT
+
+		ld   IX,TVCGraph4_ESHORT
+		ld   A,(TVCGraph4_FT_X2)
+		ld   B,A
+		ld   A,(TVCGraph4_FT_Y1)
+		ld   C,A
+		ld   A,(TVCGraph4_FT_X3)
+		ld   D,A
+		ld   A,(TVCGraph4_FT_Y3)
+		ld   E,A
+		call TVCGraph4_FT_EDGE_INIT
+
+		ld   A,(TVCGraph4_FT_Y1)
+		ld   (TVCGraph4_FT_CURY),A
+		ld   A,(TVCGraph4_FT_Y3)
+		ld   B,A
+		ld   A,(TVCGraph4_FT_Y1)
+		ld   C,A
+		ld   A,B
+		sub  C
+		inc  A
+		ld   (TVCGraph4_FT_VCOUNT),A
+		call TVCGraph4_FT_ROWLOOP
+		jp   TVCGraph4_FT_DONE
+
+; ==============================================================
+; Lapos alj (Y2==Y3): egyetlen szakasz Y1..Y3,
+; rövid él = (X1,Y1)-(X2,Y2)
+; ==============================================================
+TVCGraph4_FT_FLATBOTTOM:
+		ld   IX,TVCGraph4_ELONG
+		ld   A,(TVCGraph4_FT_X1)
+		ld   B,A
+		ld   A,(TVCGraph4_FT_Y1)
+		ld   C,A
+		ld   A,(TVCGraph4_FT_X3)
+		ld   D,A
+		ld   A,(TVCGraph4_FT_Y3)
+		ld   E,A
+		call TVCGraph4_FT_EDGE_INIT
+
+		ld   IX,TVCGraph4_ESHORT
+		ld   A,(TVCGraph4_FT_X1)
+		ld   B,A
+		ld   A,(TVCGraph4_FT_Y1)
+		ld   C,A
+		ld   A,(TVCGraph4_FT_X2)
+		ld   D,A
+		ld   A,(TVCGraph4_FT_Y2)
+		ld   E,A
+		call TVCGraph4_FT_EDGE_INIT
+
+		ld   A,(TVCGraph4_FT_Y1)
+		ld   (TVCGraph4_FT_CURY),A
+		ld   A,(TVCGraph4_FT_Y3)
+		ld   B,A
+		ld   A,(TVCGraph4_FT_Y1)
+		ld   C,A
+		ld   A,B
+		sub  C
+		inc  A
+		ld   (TVCGraph4_FT_VCOUNT),A
+		call TVCGraph4_FT_ROWLOOP
+		jp   TVCGraph4_FT_DONE
+
+; ==============================================================
+; Általános eset (Y1<Y2<Y3): két szakasz
+; ==============================================================
+TVCGraph4_FT_GENERAL:
+		ld   IX,TVCGraph4_ELONG
+		ld   A,(TVCGraph4_FT_X1)
+		ld   B,A
+		ld   A,(TVCGraph4_FT_Y1)
+		ld   C,A
+		ld   A,(TVCGraph4_FT_X3)
+		ld   D,A
+		ld   A,(TVCGraph4_FT_Y3)
+		ld   E,A
+		call TVCGraph4_FT_EDGE_INIT
+
+		ld   IX,TVCGraph4_ESHORT
+		ld   A,(TVCGraph4_FT_X1)
+		ld   B,A
+		ld   A,(TVCGraph4_FT_Y1)
+		ld   C,A
+		ld   A,(TVCGraph4_FT_X2)
+		ld   D,A
+		ld   A,(TVCGraph4_FT_Y2)
+		ld   E,A
+		call TVCGraph4_FT_EDGE_INIT
+
+		; felső szakasz: Y1..Y2
+		ld   A,(TVCGraph4_FT_Y1)
+		ld   (TVCGraph4_FT_CURY),A
+		ld   A,(TVCGraph4_FT_Y2)
+		ld   B,A
+		ld   A,(TVCGraph4_FT_Y1)
+		ld   C,A
+		ld   A,B
+		sub  C
+		inc  A
+		ld   (TVCGraph4_FT_VCOUNT),A
+		call TVCGraph4_FT_ROWLOOP
+
+		; alsó él: (X2,Y2)-(X3,Y3), majd 1 lépés Y2+1-re
+		; (Y2 sort a felső szakasz már kirajzolta!)
+		ld   IX,TVCGraph4_ESHORT
+		ld   A,(TVCGraph4_FT_X2)
+		ld   B,A
+		ld   A,(TVCGraph4_FT_Y2)
+		ld   C,A
+		ld   A,(TVCGraph4_FT_X3)
+		ld   D,A
+		ld   A,(TVCGraph4_FT_Y3)
+		ld   E,A
+		call TVCGraph4_FT_EDGE_INIT
+		ld   IX,TVCGraph4_ESHORT
+		call TVCGraph4_FT_EDGE_ADVANCE
+
+		ld   A,(TVCGraph4_FT_Y2)
+		inc  A
+		ld   (TVCGraph4_FT_CURY),A
+		ld   A,(TVCGraph4_FT_Y3)
+		ld   B,A
+		ld   A,(TVCGraph4_FT_Y2)
+		ld   C,A
+		ld   A,B
+		sub  C
+		ld   (TVCGraph4_FT_VCOUNT),A
+		call TVCGraph4_FT_ROWLOOP
+		jp   TVCGraph4_FT_DONE
+
+; ==============================================================
+; FT_ROWLOOP - sorok kirajzolása ELONG/ESHORT X-koordinátái közt
+; ELŐFELTÉTEL: FT_CURY, FT_VCOUNT, ELONG, ESHORT beállítva
+; ==============================================================
+TVCGraph4_FT_ROWLOOP:
+		ld   A,(TVCGraph4_FT_VCOUNT)
+		or   A
+		ret  Z
+TVCGraph4_FT_RL_BODY:
+		ld   A,(TVCGraph4_ELONG)
+		ld   (TVCGraph4_X1),A
+		ld   A,(TVCGraph4_ESHORT)
+		ld   (TVCGraph4_X2),A
+		ld   A,(TVCGraph4_FT_CURY)
+		ld   (TVCGraph4_Y),A
+		ld   A,(TVCGraph4_FT_COL)
+		ld   (TVCGraph4_Color),A
+		call TVCGraph4_HLineDirect
+
+		ld   IX,TVCGraph4_ELONG
+		call TVCGraph4_FT_EDGE_ADVANCE
+		ld   IX,TVCGraph4_ESHORT
+		call TVCGraph4_FT_EDGE_ADVANCE
+
+		ld   A,(TVCGraph4_FT_CURY)
+		inc  A
+		ld   (TVCGraph4_FT_CURY),A
+		ld   A,(TVCGraph4_FT_VCOUNT)
+		dec  A
+		ld   (TVCGraph4_FT_VCOUNT),A
+		jr   NZ,TVCGraph4_FT_RL_BODY
+		ret
+
+; ==============================================================
+; FT_EDGE_INIT - él inicializálása
+; BE: IX=állapottömb, B=xa, C=ya, D=xb, E=yb  (yb>ya KÖTELEZŐ, DY>0!)
+; ==============================================================
+TVCGraph4_FT_EDGE_INIT:
+		ld   (IX+0),B              ; X = xa
+		ld   A,D
+		sub  B                      ; A = xb-xa
+		jr   NC,TVCGraph4_FT_EI_POS
+		neg
+		ld   (IX+2),A                ; DX = |xb-xa|
+		ld   A,$FF
+		ld   (IX+1),A                  ; SX = -1
+		jr   TVCGraph4_FT_EI_DONE
+TVCGraph4_FT_EI_POS:
+		ld   (IX+2),A
+		ld   A,1
+		ld   (IX+1),A
+TVCGraph4_FT_EI_DONE:
+		ld   A,E
+		sub  C                        ; A = yb-ya  (DY, mindig pozitív)
+		ld   (IX+3),A
+		xor  A
+		ld   (IX+4),A                   ; ERR = 0
+		ld   (IX+5),A
+		ret
+
+; ==============================================================
+; FT_EDGE_ADVANCE - egy sorral léptet (X frissül, hiba akkumulálódik)
+; BE: IX=állapottömb
+; Az összes lépés a teljes él bejárása alatt pontosan DX-et tesz ki,
+; így a teljes él bejárásának költsége O(DX+DY), akárcsak egy vonalé.
+; ==============================================================
+TVCGraph4_FT_EDGE_ADVANCE:
+		ld   E,(IX+4)
+		ld   D,(IX+5)               ; DE = ERR
+		ld   L,(IX+2)
+		ld   H,0                     ; HL = DX
+		add  HL,DE                    ; HL = ERR+DX
+TVCGraph4_FT_EA_LOOP:
+		ld   A,(IX+3)
+		ld   C,A
+		ld   B,0                        ; BC = DY
+		or   A
+		sbc  HL,BC
+		jr   C,TVCGraph4_FT_EA_DONE
+		ld   A,(IX+0)
+		ld   D,A
+		ld   A,(IX+1)
+		add  A,D
+		ld   (IX+0),A                    ; X += SX
+		jr   TVCGraph4_FT_EA_LOOP
+TVCGraph4_FT_EA_DONE:
+		add  HL,BC                        ; visszaadjuk az utolsó (érvénytelen) kivonást
+		ld   (IX+4),L
+		ld   (IX+5),H
+		ret
+
+TVCGraph4_FT_DONE:
+	");
+end;
+
+/**
+Képernyő villámgyors törlése / feltöltése adott színnel (VRAM belapozva).<br/>
+32-szeresen kifejtett SP push DE hurokkal a teljes 15.36 KB VRAM-ot kevesebb mint 10 ms alatt kitölti.<br/>
+<br/>
+Paraméterek:
+<ul>
+<li>Color: a kitöltés paletta színsorszáma (0-3)</li>
+</ul>
+<br/><br/>
+Példa a használatára:<br/>
+TVCGraph4::VRAMOn();<br/>
+TVCGraph4::ClsDirect(0);<br/>
+TVCGraph4::VRAMOff();<br/>
+<br/>
+ENGLISH:<br/>
+-------------<br/>
+Clear/fill entire Graphics 4 screen with Color (0-3). Direct VRAM access.<br/>
+<br/>
+Params:
+<ul>
+<li>Color: palette color index (0-3)</li>
+</ul>
+**/
+procedure ClsDirect(Color : global byte);
+begin
+	Asm("
+		ld   A,(TVCGraph4_Color)
+		and  $03
+		ld   C,A
+		ld   B,0
+		ld   HL,TVCGraph4_FILL_TAB
+		add  HL,BC
+		ld   A,(HL)
+		ld   D,A
+		ld   E,A
+		ld   HL,$8000 + 15360  ; $BC00 (a VRAM teteje)
+		ld   B,240             ; 240 * 64 bájt = 15360 bájt (7680 szó)
+
+		di
+		ld   (TVCGraph4_T_SAVESP),SP
+		ld   SP,HL
+TVCGraph4_CLS_LOOP:
+		push DE
+		push DE
+		push DE
+		push DE
+		push DE
+		push DE
+		push DE
+		push DE
+		push DE
+		push DE
+		push DE
+		push DE
+		push DE
+		push DE
+		push DE
+		push DE
+		push DE
+		push DE
+		push DE
+		push DE
+		push DE
+		push DE
+		push DE
+		push DE
+		push DE
+		push DE
+		push DE
+		push DE
+		push DE
+		push DE
+		push DE
+		push DE                ; 32 push = 64 bájt
+		djnz TVCGraph4_CLS_LOOP
+		ld   SP,(TVCGraph4_T_SAVESP)
+		ei
+	");
+end;
+
+
+/*==============================================================================
+	KÉNYELMI RUTINOK (automatikusan belapozzák és kilapozzák a VRAM-ot)
+==============================================================================*/
+
+/**
+Képpont rajzolása automatikus videómemória kezeléssel.<br/>
+<br/>
+Paraméterek:
+<ul>
+<li>X: a képpont vízszintes pozíciója (0-255)</li>
+<li>Y: a képpont függőleges pozíciója (0-239)</li>
+<li>Color: a paletta színsorszáma (0-3)</li>
+</ul>
+<br/><br/>
+Példa a használatára:<br/>
+TVCGraph4::Plot(128, 120, 1);<br/>
+<br/>
+ENGLISH:<br/>
+-------------<br/>
+Plot single pixel at (X, Y) with Color (0-3). Auto VRAM paging.<br/>
+<br/>
+Params:
+<ul>
+<li>X: horizontal pixel coordinate (0-255)</li>
+<li>Y: vertical pixel coordinate (0-239)</li>
+<li>Color: palette color index (0-3)</li>
+</ul>
+**/
+procedure Plot(X, Y : global byte; Color : global byte);
+begin
+	VRAMOn();
+	PlotDirect(X, Y, Color);
+	VRAMOff();
+end;
+
+/**
+Vízszintes vonal rajzolása automatikus videómemória kezeléssel.<br/>
+<br/>
+Paraméterek:
+<ul>
+<li>X1, X2: a kezdő és záró X koordináta (0-255)</li>
+<li>Y: a vonal sora (0-239)</li>
+<li>Color: a paletta színsorszáma (0-3)</li>
+</ul>
+<br/><br/>
+Példa a használatára:<br/>
+TVCGraph4::HLine(10, 50, 240, 1);<br/>
+<br/>
+ENGLISH:<br/>
+-------------<br/>
+Draw horizontal line from (X1, Y) to (X2, Y) with Color (0-3). Auto VRAM paging.<br/>
+<br/>
+Params:
+<ul>
+<li>X1, X2: horizontal start and end coordinates (0-255)</li>
+<li>Y: vertical line coordinate (0-239)</li>
+<li>Color: palette color index (0-3)</li>
+</ul>
+**/
+procedure HLine(X1, Y, X2 : global byte; Color : global byte);
+begin
+	VRAMOn();
+	HLineDirect(X1, Y, X2, Color);
+	VRAMOff();
+end;
+
+/**
+Függőleges vonal rajzolása automatikus videómemória kezeléssel.<br/>
+<br/>
+Paraméterek:
+<ul>
+<li>X: a vonal oszlopa (0-255)</li>
+<li>Y1, Y2: a kezdő és záró Y koordináta (0-239)</li>
+<li>Color: a paletta színsorszáma (0-3)</li>
+</ul>
+<br/><br/>
+Példa a használatára:<br/>
+TVCGraph4::VLine(128, 10, 230, 2);<br/>
+<br/>
+ENGLISH:<br/>
+-------------<br/>
+Draw vertical line from (X, Y1) to (X, Y2) with Color (0-3). Auto VRAM paging.<br/>
+<br/>
+Params:
+<ul>
+<li>X: vertical line column (0-255)</li>
+<li>Y1, Y2: start and end Y coordinates (0-239)</li>
+<li>Color: palette color index (0-3)</li>
+</ul>
+**/
+procedure VLine(X, Y1, Y2 : global byte; Color : global byte);
+begin
+	VRAMOn();
+	VLineDirect(X, Y1, Y2, Color);
+	VRAMOff();
+end;
+
+/**
+Átlós egyenes szakasz rajzolása automatikus videómemória kezeléssel.<br/>
+<br/>
+Paraméterek:
+<ul>
+<li>X1, Y1: a kezdőpont koordinátái (X: 0-255, Y: 0-239)</li>
+<li>X2, Y2: a végpont koordinátái (X: 0-255, Y: 0-239)</li>
+<li>Color: a paletta színsorszáma (0-3)</li>
+</ul>
+<br/><br/>
+Példa a használatára:<br/>
+TVCGraph4::Line(10, 10, 240, 220, 1);<br/>
+<br/>
+ENGLISH:<br/>
+-------------<br/>
+Draw line from (X1, Y1) to (X2, Y2) with Color (0-3). Auto VRAM paging.<br/>
+<br/>
+Params:
+<ul>
+<li>X1, Y1: start coordinates (0-255, 0-239)</li>
+<li>X2, Y2: end coordinates (0-255, 0-239)</li>
+<li>Color: palette color index (0-3)</li>
+</ul>
+**/
+procedure Line(X1, Y1, X2, Y2 : global byte; Color : global byte);
+begin
+	VRAMOn();
+	LineDirect(X1, Y1, X2, Y2, Color);
+	VRAMOff();
+end;
+
+/**
+Téglalap körvonal rajzolása automatikus videómemória kezeléssel.<br/>
+<br/>
+Paraméterek:
+<ul>
+<li>X1, Y1: a téglalap egyik sarka (X: 0-255, Y: 0-239)</li>
+<li>X2, Y2: a szemközti sarka (X: 0-255, Y: 0-239)</li>
+<li>Color: a paletta színsorszáma (0-3)</li>
+</ul>
+<br/><br/>
+Példa a használatára:<br/>
+TVCGraph4::Rect(20, 20, 230, 200, 1);<br/>
+<br/>
+ENGLISH:<br/>
+-------------<br/>
+Draw rectangle outline from (X1, Y1) to (X2, Y2) with Color (0-3). Auto VRAM paging.<br/>
+<br/>
+Params:
+<ul>
+<li>X1, Y1: top-left corner (0-255, 0-239)</li>
+<li>X2, Y2: bottom-right corner (0-255, 0-239)</li>
+<li>Color: palette color index (0-3)</li>
+</ul>
+**/
+procedure Rect(X1, Y1, X2, Y2 : global byte; Color : global byte);
+begin
+	VRAMOn();
+	RectDirect(X1, Y1, X2, Y2, Color);
+	VRAMOff();
+end;
+
+/**
+Kitöltött téglalap rajzolása automatikus videómemória kezeléssel.<br/>
+<br/>
+Paraméterek:
+<ul>
+<li>X1, Y1: a téglalap egyik sarka (X: 0-255, Y: 0-239)</li>
+<li>X2, Y2: a szemközti sarka (X: 0-255, Y: 0-239)</li>
+<li>Color: a kitöltés paletta színsorszáma (0-3)</li>
+</ul>
+<br/><br/>
+Példa a használatára:<br/>
+TVCGraph4::FillRect(20, 20, 230, 200, 2);<br/>
+<br/>
+ENGLISH:<br/>
+-------------<br/>
+Draw filled rectangle from (X1, Y1) to (X2, Y2) with Color (0-3). Auto VRAM paging.<br/>
+<br/>
+Params:
+<ul>
+<li>X1, Y1: top-left corner (0-255, 0-239)</li>
+<li>X2, Y2: bottom-right corner (0-255, 0-239)</li>
+<li>Color: palette color index (0-3)</li>
+</ul>
+**/
+procedure FillRect(X1, Y1, X2, Y2 : global byte; Color : global byte);
+begin
+	VRAMOn();
+	FillRectDirect(X1, Y1, X2, Y2, Color);
+	VRAMOff();
+end;
+
+/**
+Kör körvonal rajzolása automatikus videómemória kezeléssel.<br/>
+<br/>
+Paraméterek:
+<ul>
+<li>CX: a kör középpontjának X koordinátája (0-255)</li>
+<li>CY: a kör középpontjának Y koordinátája (0-239)</li>
+<li>Radius: a kör sugara (1-119)</li>
+<li>Color: a paletta színsorszáma (0-3)</li>
+</ul>
+<br/><br/>
+Példa a használatára:<br/>
+TVCGraph4::Circle(128, 120, 50, 1);<br/>
+<br/>
+ENGLISH:<br/>
+-------------<br/>
+Draw circle outline at (CX, CY) with Radius and Color (0-3). Auto VRAM paging.<br/>
+<br/>
+Params:
+<ul>
+<li>CX: center X coordinate (0-255)</li>
+<li>CY: center Y coordinate (0-239)</li>
+<li>Radius: radius in pixels (1-119)</li>
+<li>Color: palette color index (0-3)</li>
+</ul>
+**/
+procedure Circle(CX, CY, Radius : global byte; Color : global byte);
+begin
+	VRAMOn();
+	CircleDirect(CX, CY, Radius, Color);
+	VRAMOff();
+end;
+
+/**
+Ultra-gyors kör körvonal rajzolása automatikus videómemória kezeléssel.<br/>
+<br/>
+Paraméterek:
+<ul>
+<li>CX: a kör középpontjának X koordinátája (0-255)</li>
+<li>CY: a kör középpontjának Y koordinátája (0-239)</li>
+<li>Radius: a kör sugara (1-119)</li>
+<li>Color: a paletta színsorszáma (0-3)</li>
+</ul>
+<br/><br/>
+Példa a használatára:<br/>
+TVCGraph4::CircleFast(128, 120, 50, 1);<br/>
+<br/>
+ENGLISH:<br/>
+-------------<br/>
+Draw fast circle outline at (CX, CY) with Radius and Color (0-3). Auto VRAM paging.<br/>
+<br/>
+Params:
+<ul>
+<li>CX: center X coordinate (0-255)</li>
+<li>CY: center Y coordinate (0-239)</li>
+<li>Radius: radius in pixels (1-119)</li>
+<li>Color: palette color index (0-3)</li>
+</ul>
+**/
+procedure CircleFast(CX, CY, Radius : global byte; Color : global byte);
+begin
+	VRAMOn();
+	CircleDirectFast(CX, CY, Radius, Color);
+	VRAMOff();
+end;
+
+/**
+Kitöltött kör rajzolása automatikus videómemória kezeléssel.<br/>
+<br/>
+Paraméterek:
+<ul>
+<li>CX: a kör középpontjának X koordinátája (0-255)</li>
+<li>CY: a kör középpontjának Y koordinátája (0-239)</li>
+<li>Radius: a kör sugara (1-119)</li>
+<li>Color: a kitöltés paletta színsorszáma (0-3)</li>
+</ul>
+<br/><br/>
+Példa a használatára:<br/>
+TVCGraph4::FillCircle(128, 120, 50, 2);<br/>
+<br/>
+ENGLISH:<br/>
+-------------<br/>
+Draw filled circle at (CX, CY) with Radius and Color (0-3). Auto VRAM paging.<br/>
+<br/>
+Params:
+<ul>
+<li>CX: center X coordinate (0-255)</li>
+<li>CY: center Y coordinate (0-239)</li>
+<li>Radius: radius in pixels (1-119)</li>
+<li>Color: palette color index (0-3)</li>
+</ul>
+**/
+procedure FillCircle(CX, CY, Radius : global byte; Color : global byte);
+begin
+	VRAMOn();
+	FillCircleDirect(CX, CY, Radius, Color);
+	VRAMOff();
+end;
+
+/**
+Háromszög körvonal rajzolása automatikus videómemória kezeléssel.<br/>
+<br/>
+Paraméterek:
+<ul>
+<li>X1, Y1: az 1. csúcs koordinátái (X: 0-255, Y: 0-239)</li>
+<li>X2, Y2: a 2. csúcs koordinátái (X: 0-255, Y: 0-239)</li>
+<li>X3, Y3: a 3. csúcs koordinátái (X: 0-255, Y: 0-239)</li>
+<li>Color: a paletta színsorszáma (0-3)</li>
+</ul>
+<br/><br/>
+Példa a használatára:<br/>
+TVCGraph4::Triangle(128, 30, 40, 200, 216, 200, 1);<br/>
+<br/>
+ENGLISH:<br/>
+-------------<br/>
+Draw triangle outline between 3 points. Auto VRAM paging.<br/>
+<br/>
+Params:
+<ul>
+<li>X1, Y1: 1st vertex coordinates (0-255, 0-239)</li>
+<li>X2, Y2: 2nd vertex coordinates (0-255, 0-239)</li>
+<li>X3, Y3: 3rd vertex coordinates (0-255, 0-239)</li>
+<li>Color: palette color index (0-3)</li>
+</ul>
+**/
+procedure Triangle(X1, Y1, X2, Y2, X3, Y3 : global byte; Color : global byte);
+begin
+	VRAMOn();
+	TriangleDirect(X1, Y1, X2, Y2, X3, Y3, Color);
+	VRAMOff();
+end;
+
+/**
+Kitöltött háromszög rajzolása automatikus videómemória kezeléssel.<br/>
+<br/>
+Paraméterek:
+<ul>
+<li>X1, Y1: az 1. csúcs koordinátái (X: 0-255, Y: 0-239)</li>
+<li>X2, Y2: a 2. csúcs koordinátái (X: 0-255, Y: 0-239)</li>
+<li>X3, Y3: a 3. csúcs koordinátái (X: 0-255, Y: 0-239)</li>
+<li>Color: a kitöltés paletta színsorszáma (0-3)</li>
+</ul>
+<br/><br/>
+Példa a használatára:<br/>
+TVCGraph4::FillTriangle(128, 30, 40, 200, 216, 200, 2);<br/>
+<br/>
+ENGLISH:<br/>
+-------------<br/>
+Draw filled triangle between 3 points. Auto VRAM paging.<br/>
+<br/>
+Params:
+<ul>
+<li>X1, Y1: 1st vertex coordinates (0-255, 0-239)</li>
+<li>X2, Y2: 2nd vertex coordinates (0-255, 0-239)</li>
+<li>X3, Y3: 3rd vertex coordinates (0-255, 0-239)</li>
+<li>Color: palette color index (0-3)</li>
+</ul>
+**/
+procedure FillTriangle(X1, Y1, X2, Y2, X3, Y3 : global byte; Color : global byte);
+begin
+	VRAMOn();
+	FillTriangleDirect(X1, Y1, X2, Y2, X3, Y3, Color);
+	VRAMOff();
+end;
+
+/**
+Képernyő törlése / feltöltése adott színnel automatikus videómemória kezeléssel.<br/>
+<br/>
+Paraméterek:
+<ul>
+<li>Color: a kitöltés paletta színsorszáma (0-3)</li>
+</ul>
+<br/><br/>
+Példa a használatára:<br/>
+TVCGraph4::Cls(0);<br/>
+<br/>
+ENGLISH:<br/>
+-------------<br/>
+Clear/fill entire Graphics 4 screen with Color (0-3). Auto VRAM paging.<br/>
+<br/>
+Params:
+<ul>
+<li>Color: palette color index (0-3)</li>
+</ul>
+**/
+procedure Cls(Color : global byte);
+begin
+	VRAMOn();
+	ClsDirect(Color);
+	VRAMOff();
+end;
+
+end.

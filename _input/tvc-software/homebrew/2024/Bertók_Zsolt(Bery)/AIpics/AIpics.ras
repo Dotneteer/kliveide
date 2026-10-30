@@ -1,0 +1,90 @@
+/*
+ AIpics - slideshow AI által generál, TVC-re konvertált képekból
+ Készítette: Bery
+ Verzió: 2024.09.07.
+ 
+ A képek konvertálásához Lénárt Attila BMPtoTVC programját használtam, 
+ amit Sáránszki Misi színkonvertálási ötlete alapján készített.
+ A képeket a Bing AI-val és a tenger.ai-val generáltattam.
+ 
+ A programhoz szükséges Game Engine (GE) unit verzió innen tölthető le:
+ https://berysoft.hu/trse/GE-2024-05-03.zip
+
+ TVC TRSE Rascal youtube oktatósorozat pedig itt nézhető meg:
+ https://www.youtube.com/playlist?list=PLGW6Nmgx1Ou-HhkenzADsEIlYHi1oHqv6
+*/
+program AIpics; 
+@use "GE" // a TVC-s Game Engine unit-ot használjuk
+ 
+var  
+	// konstansok
+	const PIC4_ZX7_SIZE     : integer = 10044; // a 4. kép mérete tömörítve
+	const PIC5_ZX7_SIZE     : integer = 5221;  // az 5. kép mérete tömörítve
+	const PIC4_ZX7_MEM_ADDR : integer = 49152; // az U3 memórialap, a legfelső 16k RAM, kezdőcíme ($C000). Ide másoljuk át a 4. képet, mert ezt a memóriacímet elérjük akkor is, amikor a VIDEORAM be van lapozva a 2. lapra.
+	const PIC5_ZX7_MEM_ADDR : integer = 49152 + PIC4_ZX7_SIZE;  // ide másoljuk az 5. képet (a 4. után), mert ezt a memóriacímet elérjük akkor is, amikor a VIDEORAM be van lapozva a 2. lapra.
+	const NUMBER_OF_PICS    : byte = 5; // ennyi kép van a slideshow-ban
+	// karakterkészlet bitmap
+	InfoImg : incbin("resources/Info.bin"); // a "SPACE: következő" kiírás bitmapje, ami alul jelenik meg
+	// ZX7-el betömörített képek bináris formában include-olva
+	Pic1ZX7 : incbin("resources/Pic1.zx7");
+	Pic2ZX7 : incbin("resources/Pic2.zx7");
+	Pic3ZX7 : incbin("resources/Pic3.zx7");
+	// A 4. és az 5. képeknél megadjuk, hogy melyik memóriacímre forduljanak.
+	// A programunk az 1-3 tömörített képekkel együtt 24 181 byte méretű,
+	// így ha ez után tesszük a 4. és 5. képeket, akkor azok a programunk végére
+  // kerülnek, a kódunk után. Ennek okáról és részleteiről nézd meg az alábbi videót:
+  // https://youtu.be/kUHIqJyHLqY?list=PLGW6Nmgx1Ou-HhkenzADsEIlYHi1oHqv6&t=817
+	Pic4ZX7 : incbin("resources/pic4.zx7", 6639+24200); // a második paraméterben azt adjuk 
+	Pic5ZX7 : incbin("resources/pic5.zx7", 6639+24200+PIC4_ZX7_SIZE);	
+	// változók
+	InfoImage : GE::Image; // egy image osztály az Info bitmap kirakásához
+	PicNr     : byte = 1;  // ez a változó mutatja, hogy éppen hányadik kép van megjelenítve
+
+	
+	procedure WaitForSpace();
+	begin
+		// megvárjuk, amíg felengedik az esetleg nyomva tartott SPACE-t
+		GE::GetKeyboard();
+		while (GE::Pressed(GE::KEY_SPACE)) do
+		  GE::GetKeyboard();
+		  
+		// várakozunk amíg lenyomják SPACE gombot
+		while (not GE::Pressed(GE::KEY_SPACE)) do
+		  GE::GetKeyboard();
+	end; /* WaitForSpace */
+	
+	
+begin
+	// a 4. és 5. képeket felmásoljuk a 3. lapra, mert belőgnak a VIDEORAM alá, 
+  // így ha az be van lapozva, akkor nem tudjuk kirakni a képeket a képernyőre.
+	GE::SetMemory(GE::MEM_FULL_64K); // teljes 64k memória belapozása (U0,U1,U2,U3), így elérjük az U2 és U3 lapon levő 4. és 5. betömörített képet, és az U3 lapot is, ami a legfelső 16K a memóriában.
+  GE::MemCopy(#Pic4ZX7, PIC4_ZX7_MEM_ADDR, PIC4_ZX7_SIZE); // a betömörített 4. képet átmásoljuk a legfelső 16K-ba
+  GE::MemCopy(#Pic5ZX7, PIC5_ZX7_MEM_ADDR, PIC5_ZX7_SIZE); // a betömörített 5. képet átmásoljuk a legfelső 16K-ba, a 4. kép után
+  // Képernyő beállítása
+  GE::Init(GE::DIRECT_TO_SCREEN);  // Game Engine inicializálása - paraméterben azt adjuk meg, hogy direkt a képernyőre fogunk dolgozni, nem háttérképernyőre
+  GE::SetMemory(GE::MEM_48K_VID);	 // MEM_48K_VID: U0,U1,VID,U3 belapozása: mindenhol RAM van, kivéve a 2. lap, ahol VIDEORAM lesz, ahová kicsomagoljuk majd a képeket
+	GE::SetGraphics(GE::Graphics16); // grafikus mód beállítása  
+	GE::SetScreenLines(255);         // a képernyő beállítása 256 sorosra, az alapértelmezett 240 sor helyett - a plusz alsó sorokba fogjuk kitenni a kezelési infót
+	GE::ClearScreen(0);	             // A teljes (256 soros, 16K) VIDEORAM törlése
+	// alsó info szöveg kirakása	
+  InfoImage.Init(#InfoImg, 30, 8); // InfoImage változó inicializálása - megadjuk az image memóriacímét, a szélességét byte-okban, és a magasságát pixelekben
+	InfoImage.X := 17;               // az image vízszintes pozíciója kirakáskor a 17. byte lesz
+	InfoImage.Y := 244;              // az image függőleges pozíciója kirakáskor a 244. sor lesz
+	InfoImage.Put();                 // InfoImage kirakása a képernyőre, a megadott X, Y pozíciókba
+	// képek kirakása - SPACE lenyomására jön a következő kép kirakása, egy végtelenített ciklusban
+	while (true) do
+	begin
+		// a PicNr által mutatott számú képet tömörítjük ki a képernyőre
+	  case PicNr of
+		  1 : GE::ZX7Decompress(#Pic1ZX7, GE::SCREEN_ADDR); // az 1. kép kitömörítése a képernyőre
+		  2 : GE::ZX7Decompress(#Pic2ZX7, GE::SCREEN_ADDR); // a  2. kép kitömörítése a képernyőre
+		  3 : GE::ZX7Decompress(#Pic3ZX7, GE::SCREEN_ADDR); // a  3. kép kitömörítése a képernyőre
+		  4 : GE::ZX7Decompress(#PIC4_ZX7_MEM_ADDR, GE::SCREEN_ADDR); // a  4. kép kitömörítése a képernyőre
+		  5 : GE::ZX7Decompress(#PIC5_ZX7_MEM_ADDR, GE::SCREEN_ADDR); // az 5. kép kitömörítése a képernyőre
+	  end;
+    WaitForSpace(); // várakozás egy SPACE lenyomására
+    Inc(PicNr); // megnöveljük az aktuális kép számát egyel
+    if (PicNr > NUMBER_OF_PICS) then // ha a PicNr nagyobb, mint a képek száma
+      PicNr := 1; // akkor az utolsó képnél vagyunk, így a PicNr-t beállítjuk 1-re, így az utolsó után ismét az első kép lesz kirakva
+	end; /* while */
+end.

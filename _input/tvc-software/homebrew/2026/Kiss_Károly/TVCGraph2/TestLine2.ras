@@ -1,0 +1,372 @@
+program TestLine2;
+/*==============================================================================
+   TVC GRAPHICS 2 BENCHMARK & TEST PROGRAM
+   Graphics 2 (512x240, 2 szín, 8 képpont / bájt) Teljesítmény- és Alakzatteszt
+   
+   Minden algoritmusváltozatot külön tesztel és méri a futásidőt
+   a TVC hardveres 50 Hz-es rendszertimerével ($0B1D: 20 ms / tick).
+==============================================================================*/
+
+@use "TVCGraph2"
+
+var
+	// Időmérő és teszt változók
+	t_start, t_end, t_diff : integer;
+	i, j, k                : integer;
+	test_num               : byte;
+	col                    : byte;
+	score_y                : integer;
+	tx1, ty1, tx2, ty2     : integer;
+	tx3, ty3, trad         : integer;
+
+	// Eredmény tárolók (tick-ekben: 1 tick = 20 ms)
+	res_hline              : integer;
+	res_vline              : integer;
+	res_line               : integer;
+	res_rect               : integer;
+	res_fillrect           : integer;
+	res_circle             : integer;
+	res_fillcircle         : integer;
+	res_triangle           : integer;
+	res_filltriangle       : integer;
+	res_cls                : integer;
+
+	// 4x8-as karakterkészlet (számok 0-9, kettőspont, T, M, S)
+	font_data : array[112] of byte = (
+		// 0:
+		$06, $09, $09, $09, $09, $09, $09, $06,
+		// 1:
+		$02, $06, $02, $02, $02, $02, $02, $07,
+		// 2:
+		$06, $09, $01, $01, $02, $04, $08, $0F,
+		// 3:
+		$0E, $01, $01, $06, $06, $01, $01, $0E,
+		// 4:
+		$09, $09, $09, $0F, $01, $01, $01, $01,
+		// 5:
+		$0F, $08, $08, $0E, $01, $01, $09, $06,
+		// 6:
+		$06, $08, $08, $0E, $09, $09, $09, $06,
+		// 7:
+		$0F, $01, $01, $02, $02, $04, $04, $04,
+		// 8:
+		$06, $09, $09, $06, $09, $09, $09, $06,
+		// 9:
+		$06, $09, $09, $07, $01, $01, $02, $0C,
+		// 10: ':'
+		$00, $06, $06, $00, $06, $06, $00, $00,
+		// 11: 'T'
+		$1F, $04, $04, $04, $04, $04, $04, $04,
+		// 12: 'M'
+		$11, $1B, $15, $15, $11, $11, $11, $11,
+		// 13: 'S'
+		$0E, $11, $10, $0E, $01, $01, $11, $0E
+	);
+
+
+/*==============================================================================
+	IDŐMÉRŐ ÉS KIÍRÓ SEGÉDFÜGGVÉNYEK
+==============================================================================*/
+
+// TVC hardveres rendszertimer lekérdezése ($0B1D: 2 bájtos számláló)
+function GetTimer(): integer;
+begin
+	Asm("
+		ld   HL,($0B1D)
+	");
+end;
+
+// Karakter kirajzolása (4x8 pixel) 512x240-es felbontásban
+procedure DrawChar(px, py : integer; char_idx, color : byte);
+var
+	row, b : byte;
+	c_offset : integer;
+begin
+	if (char_idx > 13) then return;
+	c_offset := char_idx * 8;
+	fori row := 0 to 7 do
+	begin
+		b := font_data[c_offset + row];
+		if ((b & $08) <> 0) then TVCGraph2::PlotDirect(px + 0, py + row, color);
+		if ((b & $04) <> 0) then TVCGraph2::PlotDirect(px + 2, py + row, color);
+		if ((b & $02) <> 0) then TVCGraph2::PlotDirect(px + 4, py + row, color);
+		if ((b & $01) <> 0) then TVCGraph2::PlotDirect(px + 6, py + row, color);
+	end;
+end;
+
+// Egész szám (0-99999) kiírása
+procedure DrawNumber(px, py : integer; num : integer; color : byte);
+var
+	d5, d4, d3, d2, d1 : integer;
+	started : boolean;
+	cur_x : integer;
+begin
+	d5 := num / 10000;
+	num := num - d5 * 10000;
+	d4 := num / 1000;
+	num := num - d4 * 1000;
+	d3 := num / 100;
+	num := num - d3 * 100;
+	d2 := num / 10;
+	d1 := num - d2 * 10;
+
+	cur_x := px;
+	started := false;
+
+	if (d5 > 0) then begin DrawChar(cur_x, py, d5, color); cur_x := cur_x + 10; started := true; end;
+	if (d4 > 0 or started) then begin DrawChar(cur_x, py, d4, color); cur_x := cur_x + 10; started := true; end;
+	if (d3 > 0 or started) then begin DrawChar(cur_x, py, d3, color); cur_x := cur_x + 10; started := true; end;
+	if (d2 > 0 or started) then begin DrawChar(cur_x, py, d2, color); cur_x := cur_x + 10; started := true; end;
+	DrawChar(cur_x, py, d1, color);
+end;
+
+// Eredménysor megjelenítése egy teszthez (512x240 szélességhez igazítva)
+procedure DisplayResultBar(y_pos : integer; test_id : byte; ticks : integer);
+var
+	bar_w : integer;
+begin
+	// 1. Sorszám kiírása (pl. 1: .. 10:)
+	if (test_id = 10) then
+	begin
+		DrawChar(16, y_pos, 1, 1);
+		DrawChar(26, y_pos, 0, 1);
+		DrawChar(36, y_pos, 10, 1); // ':'
+	end
+	else
+	begin
+		DrawChar(26, y_pos, test_id, 1);
+		DrawChar(36, y_pos, 10, 1); // ':'
+	end;
+
+	// 2. Eredmény tick-ekben (pl. "75 T")
+	DrawNumber(50, y_pos, ticks, 1);
+	DrawChar(95, y_pos, 11, 1); // 'T'
+
+	// 3. Eredmény milliszekundumban (pl. "1500 MS")
+	DrawNumber(115, y_pos, ticks * 20, 1);
+	DrawChar(175, y_pos, 12, 1); // 'M'
+	DrawChar(185, y_pos, 13, 1); // 'S'
+
+	// 4. Vizuális teljesítmény-sáv
+	bar_w := ticks / 2;
+	if (bar_w > 280) then bar_w := 280;
+	if (bar_w < 4) then bar_w := 4;
+	TVCGraph2::FillRectDirect(210, y_pos + 1, 210 + bar_w, y_pos + 6, 1);
+end;
+
+
+/*==============================================================================
+	FŐPROGRAM: TELJESÍTMÉNY-MÉRÉSEK
+==============================================================================*/
+begin
+	// TVC Graphics 2 grafikus mód (512x240, 2 szín, 8 pixel/bájt) inicializálása
+	TVCGraph2::InitGraphics();
+
+	// --------------------------------------------------------------------------
+	// 1. TESZT: Fast Horizontal Lines (HLineDirect - 1000 vonal)
+	// --------------------------------------------------------------------------
+	TVCGraph2::Cls(0);
+	TVCGraph2::VRAMOn();
+
+	t_start := GetTimer();
+	for i := 0 to 999 do
+	begin
+		TVCGraph2::HLineDirect(10, mod(i, 230) + 5, 500, 1);
+	end;
+	t_end := GetTimer();
+	if (t_end >= t_start) then res_hline := t_end - t_start else res_hline := (65535 - t_start) + t_end;
+
+	// --------------------------------------------------------------------------
+	// 2. TESZT: Fast Vertical Lines (VLineDirect - 1000 vonal)
+	// --------------------------------------------------------------------------
+	TVCGraph2::ClsDirect(0);
+
+	t_start := GetTimer();
+	for i := 0 to 999 do
+	begin
+		TVCGraph2::VLineDirect(mod(i * 3, 490) + 10, 10, 230, 1);
+	end;
+	t_end := GetTimer();
+	if (t_end >= t_start) then res_vline := t_end - t_start else res_vline := (65535 - t_start) + t_end;
+
+	// --------------------------------------------------------------------------
+	// 3. TESZT: Fast Bresenham Radial Lines (LineDirect - 1000 átlós vonal)
+	// --------------------------------------------------------------------------
+	TVCGraph2::ClsDirect(0);
+
+	t_start := GetTimer();
+	for i := 0 to 999 do
+	begin
+		tx2 := mod(i * 7, 490) + 10;
+		ty2 := mod(i * 11, 220) + 10;
+		TVCGraph2::LineDirect(256, 120, tx2, ty2, 1);
+	end;
+	t_end := GetTimer();
+	if (t_end >= t_start) then res_line := t_end - t_start else res_line := (65535 - t_start) + t_end;
+
+	// --------------------------------------------------------------------------
+	// 4. TESZT: Fast Rectangles (RectDirect - 500 téglalap keret)
+	// --------------------------------------------------------------------------
+	TVCGraph2::ClsDirect(0);
+
+	t_start := GetTimer();
+	for i := 0 to 499 do
+	begin
+		TVCGraph2::RectDirect(mod(i * 3, 200) + 10, mod(i * 5, 100) + 10, mod(i * 3, 200) + 290, mod(i * 5, 100) + 120, 1);
+	end;
+	t_end := GetTimer();
+	if (t_end >= t_start) then res_rect := t_end - t_start else res_rect := (65535 - t_start) + t_end;
+
+	// --------------------------------------------------------------------------
+	// 5. TESZT: Fast Filled Rectangles (FillRectDirect - 200 kitöltött téglalap)
+	// --------------------------------------------------------------------------
+	TVCGraph2::ClsDirect(0);
+
+	t_start := GetTimer();
+	for i := 0 to 199 do
+	begin
+		TVCGraph2::FillRectDirect(mod(i * 7, 280) + 20, mod(i * 9, 140) + 10, mod(i * 7, 280) + 180, mod(i * 9, 140) + 70, 1);
+	end;
+	t_end := GetTimer();
+	if (t_end >= t_start) then res_fillrect := t_end - t_start else res_fillrect := (65535 - t_start) + t_end;
+
+	// --------------------------------------------------------------------------
+	// 6. TESZT: Fast Circles (CircleDirect - 300 kör)
+	// --------------------------------------------------------------------------
+	TVCGraph2::ClsDirect(0);
+
+	t_start := GetTimer();
+	for i := 0 to 299 do
+	begin
+		TVCGraph2::CircleDirectFast(256, 120, mod(i, 55) + 5, 1);
+	end;
+	t_end := GetTimer();
+	if (t_end >= t_start) then res_circle := t_end - t_start else res_circle := (65535 - t_start) + t_end;
+
+	// --------------------------------------------------------------------------
+	// 7. TESZT: Fast Filled Circles (FillCircleDirect - 100 kitöltött kör)
+	// --------------------------------------------------------------------------
+	TVCGraph2::ClsDirect(0);
+
+	t_start := GetTimer();
+	for i := 0 to 99 do
+	begin
+		TVCGraph2::FillCircleDirect(mod(i * 13, 300) + 100, mod(i * 17, 140) + 50, mod(i, 20) + 5, 1);
+	end;
+	t_end := GetTimer();
+	if (t_end >= t_start) then res_fillcircle := t_end - t_start else res_fillcircle := (65535 - t_start) + t_end;
+
+	// --------------------------------------------------------------------------
+	// 8. TESZT: Fast Triangles (TriangleDirect - 300 háromszög)
+	// --------------------------------------------------------------------------
+	TVCGraph2::ClsDirect(0);
+
+	t_start := GetTimer();
+	for i := 0 to 299 do
+	begin
+		TVCGraph2::TriangleDirect(mod(i * 3, 450) + 10, mod(i * 5, 200) + 10, mod(i * 7, 450) + 20, mod(i * 9, 200) + 20, 256, 120, 1);
+	end;
+	t_end := GetTimer();
+	if (t_end >= t_start) then res_triangle := t_end - t_start else res_triangle := (65535 - t_start) + t_end;
+
+	// --------------------------------------------------------------------------
+	// 9. TESZT: Fast Filled Triangles (FillTriangleDirect - 100 kitöltött háromszög)
+	// --------------------------------------------------------------------------
+	TVCGraph2::ClsDirect(0);
+
+	t_start := GetTimer();
+	for i := 0 to 99 do
+	begin
+		TVCGraph2::FillTriangleDirect(mod(i * 11, 400) + 20, mod(i * 13, 180) + 20, mod(i * 7, 400) + 40, mod(i * 17, 180) + 30, mod(i * 5, 400) + 60, mod(i * 3, 180) + 40, 1);
+	end;
+	t_end := GetTimer();
+	if (t_end >= t_start) then res_filltriangle := t_end - t_start else res_filltriangle := (65535 - t_start) + t_end;
+
+	// --------------------------------------------------------------------------
+	// 10. TESZT: Screen Clear (ClsDirect - 100 teljes 15.36 KB-os képernyőtörlés)
+	// --------------------------------------------------------------------------
+	t_start := GetTimer();
+	for i := 0 to 99 do
+	begin
+		TVCGraph2::ClsDirect(mod(i, 2));
+	end;
+	t_end := GetTimer();
+	if (t_end >= t_start) then res_cls := t_end - t_start else res_cls := (65535 - t_start) + t_end;
+
+
+	// ==========================================================================
+	// EREDMÉNYEK MEGJELENÍTÉSE (SCOREBOARD)
+	// ==========================================================================
+	TVCGraph2::ClsDirect(0);
+
+	// Díszkeret
+	TVCGraph2::RectDirect(10, 5, 501, 234, 1);
+	TVCGraph2::RectDirect(12, 7, 499, 232, 1);
+	TVCGraph2::HLineDirect(14, 24, 497, 1);
+
+	// Fejléc felirat: "BENCHMARK 2"
+	// B:
+	TVCGraph2::VLineDirect(24, 11, 19, 1); TVCGraph2::HLineDirect(24, 11, 32, 1); TVCGraph2::HLineDirect(24, 15, 32, 1); TVCGraph2::HLineDirect(24, 19, 32, 1); TVCGraph2::VLineDirect(32, 11, 19, 1);
+	// E:
+	TVCGraph2::VLineDirect(40, 11, 19, 1); TVCGraph2::HLineDirect(40, 11, 48, 1); TVCGraph2::HLineDirect(40, 15, 48, 1); TVCGraph2::HLineDirect(40, 19, 48, 1);
+	// N:
+	TVCGraph2::VLineDirect(56, 11, 19, 1); TVCGraph2::LineDirect(56, 11, 64, 19, 1); TVCGraph2::VLineDirect(64, 11, 19, 1);
+	// C:
+	TVCGraph2::VLineDirect(72, 11, 19, 1); TVCGraph2::HLineDirect(72, 11, 80, 1); TVCGraph2::HLineDirect(72, 19, 80, 1);
+	// H:
+	TVCGraph2::VLineDirect(88, 11, 19, 1); TVCGraph2::HLineDirect(88, 15, 96, 1); TVCGraph2::VLineDirect(96, 11, 19, 1);
+	// M:
+	TVCGraph2::VLineDirect(104, 11, 19, 1); TVCGraph2::LineDirect(104, 11, 112, 15, 1); TVCGraph2::LineDirect(112, 15, 120, 11, 1); TVCGraph2::VLineDirect(120, 11, 19, 1);
+	// A:
+	TVCGraph2::VLineDirect(128, 11, 19, 1); TVCGraph2::HLineDirect(128, 11, 136, 1); TVCGraph2::HLineDirect(128, 15, 136, 1); TVCGraph2::VLineDirect(136, 11, 19, 1);
+	// R:
+	TVCGraph2::VLineDirect(144, 11, 19, 1); TVCGraph2::HLineDirect(144, 11, 152, 1); TVCGraph2::HLineDirect(144, 15, 152, 1); TVCGraph2::VLineDirect(152, 11, 15, 1); TVCGraph2::LineDirect(148, 15, 152, 19, 1);
+	// K:
+	TVCGraph2::VLineDirect(160, 11, 19, 1); TVCGraph2::LineDirect(168, 11, 164, 15, 1); TVCGraph2::LineDirect(164, 15, 168, 19, 1);
+
+	// "2":
+	DrawChar(184, 12, 2, 1);
+
+	// Oszlop elválasztó vonal
+	TVCGraph2::HLineDirect(14, 30, 497, 1);
+
+	// Eredmények kiírása soronként
+	DisplayResultBar(34,  1, res_hline);        // 1: Fast HLine (1000x)
+	DisplayResultBar(49,  2, res_vline);        // 2: Fast VLine (1000x)
+	DisplayResultBar(64,  3, res_line);         // 3: Bresenham Line (1000x)
+	DisplayResultBar(79,  4, res_rect);         // 4: Rectangles (500x)
+	DisplayResultBar(94,  5, res_fillrect);     // 5: FillRect (200x)
+	DisplayResultBar(109, 6, res_circle);       // 6: Circles (300x)
+	DisplayResultBar(124, 7, res_fillcircle);   // 7: FillCircle (100x)
+	DisplayResultBar(139, 8, res_triangle);     // 8: Triangles (300x)
+	DisplayResultBar(154, 9, res_filltriangle); // 9: FillTriangle (100x)
+	DisplayResultBar(169, 10, res_cls);         // 10: Screen Cls (100x)
+
+	// Alsó dekoráció és minták
+	TVCGraph2::HLineDirect(14, 186, 497, 1);
+
+	// 1. Körvonal
+	TVCGraph2::CircleDirect(60, 210, 14, 1);
+
+	// 2. Kitöltött kör
+	TVCGraph2::FillCircleDirect(135, 210, 12, 1);
+
+	// 3. Háromszög körvonal
+	TVCGraph2::TriangleDirect(190, 224, 220, 196, 250, 224, 1);
+
+	// 4. Kitöltött háromszög
+	TVCGraph2::FillTriangleDirect(270, 224, 300, 196, 330, 224, 1);
+
+	// 5. Téglalap körvonal
+	TVCGraph2::RectDirect(350, 198, 410, 222, 1);
+
+	// 6. Kitöltött téglalap
+	TVCGraph2::FillRectDirect(430, 198, 490, 222, 1);
+
+	TVCGraph2::VRAMOff();
+
+	// Végtelen ciklus
+	while (1) do
+	begin
+	end;
+end.
