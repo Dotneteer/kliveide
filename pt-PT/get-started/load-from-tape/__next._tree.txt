@@ -6,7 +6,7 @@
 :HL["/_next/static/media/cf9548a654a0290e-s.p.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
 :HL["/_next/static/css/0f6f87e08ec092cb.css","style"]
 :HL["/_next/static/css/11c59cc40cabfed8.css","style"]
-:HL["/_next/static/css/bf5d05699805b246.css","style"]
+:HL["/_next/static/css/08e0ea915b8c2511.css","style"]
 :HL["/images/getting-started/tape-viewer.png","image"]
 :HL["/images/getting-started/tape-header-bytes.png","image"]
 :HL["/images/getting-started/tape-viewer-commands.png","image"]
@@ -16,4 +16,4 @@
 3:[["children",{"s":{"n":"mdxPath","t":"c","k":"get-started/load-from-tape","s":[]},"h":65600,"c":"$Q4"}]]
 2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
 1:[["children",{"s":{"n":"lang","t":"d","k":"pt-PT","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
-0:{"b":"yhT6fEunI72uW-kZp5UAz","t":{"t":{"s":"","h":131152,"c":"$Q1"}}}
+0:{"b":"eur03FzJ10gtv0btgCll_","t":{"t":{"s":"","h":131152,"c":"$Q1"}}}
