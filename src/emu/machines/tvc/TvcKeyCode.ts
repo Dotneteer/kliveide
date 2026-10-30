@@ -5,7 +5,9 @@ import type { KeyCodeSet } from "@emu/abstractions/IGenericKeyboardDevice";
  * `row * 8 + column` as the core's `tvcSetKeyStatus` takes them. Port 03h bits 3-0 select a row and
  * port 58h reads its columns, active low. Rows 9 and 10 are open (`.plans/VIDEOTON_TVC_PLAN.md` Q6).
  *
- * Row 8 holds the cursor keys and Tab, which BASIC's joystick 1 also reads (Tab is its fire).
+ * Row 8 holds INS, and the cursor keys and Tab, which BASIC's joystick 1 also reads (Tab is its
+ * fire). INS is in column 0 (MAME's `tvc.cpp` "LINE.8"; `test/tvc-hw/keyboard.test.ts` shows the
+ * editor inserting with it).
  */
 export const TvcKeyCode: KeyCodeSet = {
   // --- Row 0
@@ -81,6 +83,7 @@ export const TvcKeyCode: KeyCodeSet = {
   Minus: 62,
   M: 63,
   // --- Row 8
+  Ins: 64,
   Up: 65,
   Down: 66,
   Tab: 67,

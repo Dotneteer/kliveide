@@ -615,6 +615,14 @@ pinned (`canvasPixelScale` in `useEmulatorScreen`). Nothing reads the canvas's a
 the drawing code: overlays and the mouse use its CSS box. Whether a picture takes this path is
 decided by its aspect alone, so fractional zoom steps of a square-pixel machine are left as they were.
 
+**Every drawing of a machine's screen takes its pixel aspect, not only the emulator canvas.** A
+size given in dots (the Select Machine sheet's raster and paper, from `hardware-specs.ts`) is a
+size in *that machine's* dots: the TVC's 560 × 288 drawn as square units came out twice as wide as
+the real picture. A display spec carries `pixelAspect` (the machine's `getAspectRatio()[0]`) for
+any machine whose dots are not square, and the drawing multiplies widths by it. Two sizes in one
+spec need not count the same dots: the Next's raster is its 720-wide output buffer of half-pixels,
+its paper 256 whole pixels, so `paperPixelAspect` says the paper's own.
+
 **A user who has learned one control should not have to learn it twice.** The sprite editor's bank
 switch is the sidebar's, deliberately — same two segments, same meaning (*the fill is the bank you
 are looking at, the ring is the bank the machine is drawing with*), same default of following the
@@ -704,6 +712,13 @@ the photo. A drawing gives geometry and legends; only a photo gives colour.
 hints (`--color-keyht1080z-hint`) type characters the extension ROM builds from key combinations;
 the machine printed none of them. They take a colour no printed legend on that keyboard uses (burnt
 orange, dark enough for cream), so nobody mistakes them for the machine's own print.
+
+**Two key colours on one keyboard each get their own pressed tint and their own hover end.** The
+Videoton TVC has cream character keys and dark grey function keys: a hovered legend on cream takes
+`--accent-on-device-light`, one on dark grey `--accent-on-device-dark`, and each face has its own
+pressed mix (`--accent-device-pressed-tvc` / `-tvc-fn`). Marks the machine never printed (the arrows
+on the TVC's joystick) are drawn in the function keys' legend colour, on a shape that is plainly not
+a key, rather than in a hint colour: they are a control, not a legend someone could mistake for print.
 
 ## Alignment In The Register Panels
 

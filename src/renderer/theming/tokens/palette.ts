@@ -327,7 +327,22 @@ export const DEVICE = {
   ht1080zPanel: "#3f4045",
   ht1080zCase: "#e8e2d4",
   keyHt1080zSwitch: "#a9a9ac",
-  keyHt1080zSwitchEdge: "#7d7d82"
+  keyHt1080zSwitchEdge: "#7d7d82",
+  /*
+   * The Videoton TVC's keyboard: cream keys with dark grey legends, the function keys (INS, ESC,
+   * DEL, RETURN, SHIFT, LOCK, CTRL, ALT) dark grey with light legends, in a taupe metallic case;
+   * the joystick's knob is black (sampled from a photo of a TVC 64K,
+   * https://frescho.hu/wp-content/gallery/tvc-adatlap/IMG_2349.JPG, and lifted for its shading).
+   */
+  keyTvc: "#ddd6c7",
+  keyTvcEdge: "#aaa190",
+  keyTvcFn: "#6b6560",
+  keyTvcFnEdge: "#4b4642",
+  legendTvcInk: "#34312c",
+  legendTvcFnInk: "#ece8e1",
+  tvcCase: "#8f8581",
+  tvcWell: "#3b3633",
+  tvcKnob: "#1e1d1d"
 } as const;
 
 /**

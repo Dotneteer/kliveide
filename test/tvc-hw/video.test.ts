@@ -182,3 +182,21 @@ describe("TVC video: the frame interrupt (Part 10)", () => {
     expect(Math.floor(s.wasm.tvcGetFrameTacts() / 200)).toBe(175);
   });
 });
+
+describe("TVC video: isVideoSignalLost (the TV noise setting)", () => {
+  it("is false before the machine has run a frame, though the core's TV starts out of sync", async () => {
+    const s = await createTvcSession();
+    // --- The core's TV is out of sync at reset: it has seen no HSYNC or VSYNC yet
+    expect(s.wasm.tvcIsVideoSignalLost()).not.toBe(0);
+    // --- A machine that has not run shows the panel's empty background, not noise
+    expect(s.machine.isVideoSignalLost()).toBe(false);
+  });
+
+  it("is false again after a hard reset, and at the BASIC prompt", async () => {
+    const s = await createTvcSession();
+    s.bootToBasic();
+    expect(s.machine.isVideoSignalLost()).toBe(false);
+    s.machine.hardReset();
+    expect(s.machine.isVideoSignalLost()).toBe(false);
+  });
+});

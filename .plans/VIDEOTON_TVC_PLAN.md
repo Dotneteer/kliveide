@@ -1,7 +1,7 @@
 # Videoton TV Computer (TVC) on the WASM Core — Implementation Plan
 
-**Status:** Complete (2026-10-28): Phases 0-9 done, except Phase 4's virtual keyboard, which waits
-for a design from the real keyboard's layout (§17). Both models run in the app with tapes, VT-DOS
+**Status:** Complete (2026-10-28): Phases 0-9 done; Phase 4's virtual keyboard followed on
+2026-10-30 (§17, "The virtual keyboard"). Both models run in the app with tapes, VT-DOS
 disks, Run/Debug/Export and the debugger. What was built and how it differs from this plan is in §17.
 **Input:** the research pack `_input/videoton-tvc/`. Read these three first:
 - `TVC_HARDWARE_OVERVIEW.md`: the machine's blocks, timing, sound, and what the emulators get wrong;
@@ -806,5 +806,19 @@ and its sign-on needs the picture to be checked.
 - **AGENTS.md** has a Videoton TVC section; `.ai/wasm-migration-intent-and-lessons.md` the lessons;
   `README.md` lists the TVC.
 - **Not checked:** a packaged installer (the built app was run instead). Still open from earlier
-  phases: the virtual keyboard (it needs the real keyboard's layout) and a TVC tape and disk viewer.
+  phases: a TVC tape and disk viewer.
+
+### The virtual keyboard (2026-10-30)
+- `src/renderer/appEmu/Keyboard/TvcKeyboard.tsx`, drawn from a photo of a TVC 64K
+  (https://frescho.hu/wp-content/gallery/tvc-adatlap/IMG_2349.JPG): five rows stepped to the right
+  towards the back, the shifted legend above the plain one, the function keys dark grey, the
+  joystick to the right. The user asked for the keyboard directly, so it was built and reviewed from
+  a screenshot of the running app rather than from a mockup.
+- Zones as on the HT-1080Z: the face presses the key (the right button adds SHIFT), the printed
+  shifted legend presses SHIFT with it. The joystick's four directions are row 8's cursor keys and
+  its knob is FIRE (Tab); the arrows are Klive's, the machine printed none.
+- **A key the matrix table lacked: INS**, row 8 column 0 (MAME's `LINE.8`), now `TvcKeyCode.Ins`
+  and the host's Insert. `test/tvc-hw/keyboard.test.ts` shows the editor inserting with it.
+- Colours are tokens sampled from the photo (`keyTvc` and the rest in `palette.ts`).
+  `test/controls/TvcKeyboard.test.tsx` covers the keys, legends, the row steps and every zone.
 

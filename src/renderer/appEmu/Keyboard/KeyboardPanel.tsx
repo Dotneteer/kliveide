@@ -8,10 +8,11 @@ import { NextKeyboard } from "./NextKeyboard";
 import { Zx81Keyboard } from "./Zx81Keyboard";
 import { Zx80Keyboard } from "./Zx80Keyboard";
 import { Ht1080zKeyboard } from "./Ht1080zKeyboard";
+import { TvcKeyboard } from "./TvcKeyboard";
 import { resolveHt1080zHardware } from "@emu/machines/ht1080z/ht1080zMachineInfo";
 import { SETTING_EMU_KEYBOARD_LAYOUT } from "@common/settings/setting-const";
 import { useGlobalSetting, useSelector } from "@renderer/core/RendererProvider";
-import { MC_ZX80_ROM8K, MI_HT1080Z } from "@common/machines/constants";
+import { MC_ZX80_ROM8K, MI_HT1080Z, MI_TVC } from "@common/machines/constants";
 
 export type KeyboardApi = {
   signKeyStatus: (code: number, down: boolean) => void;
@@ -68,7 +69,8 @@ export const KeyboardPanel = ({
       {type === MI_HT1080Z && (
         <Ht1080zKeyboard width={width} height={height} romSet={htRomSet} apiLoaded={apiLoaded} />
       )}
-      {type !== "sp48" && type !== "timex" && type !== "z88" && type !== "zxnext" && type !== "zx81" && type !== "zx80" && type !== MI_HT1080Z && (
+      {type === MI_TVC && <TvcKeyboard width={width} height={height} apiLoaded={apiLoaded} />}
+      {type !== "sp48" && type !== "timex" && type !== "z88" && type !== "zxnext" && type !== "zx81" && type !== "zx80" && type !== MI_HT1080Z && type !== MI_TVC && (
         <Sp128Keyboard width={width} height={height} apiLoaded={apiLoaded} />
       )}
     </div>

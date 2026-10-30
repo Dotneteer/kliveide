@@ -7,9 +7,9 @@ import type { KeyMapping } from "@abstractions/KeyMapping";
  * non-Hungarian host has no keys for, are on F1-F9 (í ö ü ó ő ú é á ű); the virtual keyboard
  * (Phase 4) shows every key in its own place.
  *
- * Enter is RETURN, Backspace and Delete are DEL, Escape is ESC, Caps Lock is LOCK, Tab is TAB (the
- * joystick's fire), the arrows are the cursor keys, both shifts SHIFT, both controls CTRL and Alt
- * ALT. Text typed by the IDE goes by character instead (Phase 4's typer).
+ * Enter is RETURN, Backspace and Delete are DEL, Insert is INS, Escape is ESC, Caps Lock is LOCK,
+ * Tab is TAB (the joystick's fire), the arrows are the cursor keys, both shifts SHIFT, both controls
+ * CTRL and Alt ALT. Text typed by the IDE goes by character instead (Phase 4's typer).
  */
 export const tvcKeyMappings: KeyMapping = {
   Digit1: "N1",
@@ -89,6 +89,7 @@ export const tvcKeyMappings: KeyMapping = {
   NumpadEnter: "Return",
   Backspace: "Del",
   Delete: "Del",
+  Insert: "Ins",
   Escape: "Esc",
   CapsLock: "Lock",
   Tab: "Tab",
