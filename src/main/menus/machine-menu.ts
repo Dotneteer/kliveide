@@ -2,7 +2,8 @@
  * The Machine menu (`.plans/MENU_REDESIGN_PLAN.md` §3): the machine type, running it, speed and
  * sound, one submenu per device the machine has, the machine's own hardware actions, and Record.
  * Debugging is the Debug menu; set-once options (ROMs, the Z88's keyboard and LCD, key mapping,
- * scanlines, recording formats) are in Settings.
+ * scanlines, recording formats) are in Settings. The first item opens Settings on the Machine page,
+ * which holds every option that applies to the running machine only.
  */
 import type { MenuItemConstructorOptions } from "electron";
 
@@ -178,7 +179,16 @@ export function createMachineMenu(context: MenuContext): MenuItemConstructorOpti
   );
 
   const speed = createSpeedMenu(context);
+  const machineName = context.currentMachine?.displayName;
   const items: MenuItemConstructorOptions[] = [
+    // --- The running machine's own options: the Settings dialog's Machine page
+    {
+      id: "configure_machine",
+      label: machineName
+        ? t("menu.machine.configure", { machine: machineName })
+        : t("menu.machine.configureUnknown"),
+      click: async () => await context.openSettings("machine")
+    },
     { id: "machine_types", label: t("menu.machine.machineType"), submenu: machineTypesMenu },
     { type: "separator" },
     {

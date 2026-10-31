@@ -96,7 +96,7 @@ vi.mock("@controls/IconButton", () => ({
       data-icon={iconName}
       disabled={enable === false}
       data-selected={selected ? "true" : undefined}
-      onClick={() => { if (enable !== false) clicked?.(); }}
+      onClick={(e: any) => { if (enable !== false) clicked?.(e); }}
     >
       {iconName}
     </button>
@@ -113,7 +113,7 @@ vi.mock("@controls/IconButton", () => ({
       data-icon={iconName}
       disabled={enable === false}
       data-selected={selected ? "true" : undefined}
-      onClick={() => { if (enable !== false) clicked?.(); }}
+      onClick={(e: any) => { if (enable !== false) clicked?.(e); }}
     >
       {iconName}
     </button>
@@ -406,14 +406,17 @@ describe("ExecutionControls — Phase 8", () => {
 // ---------------------------------------------------------------------------
 
 describe("ViewControls — Phase 8", () => {
-  it("renders stay on top, instant screen, keyboard, and sound buttons", async () => {
+  it("renders the machine settings, display switch and sound buttons", async () => {
     await act(async () => {
       renderWithProviders(<ViewControls />);
     });
 
+    expect(screen.getByTitle("Machine settings")).toBeInTheDocument();
+    // --- With room to spare the switches are buttons of their own, not the folded View options
     expect(screen.getByTitle("Stay on top")).toBeInTheDocument();
     expect(screen.getByTitle("Turn on/off instant screen")).toBeInTheDocument();
     expect(screen.getByTitle("Show/Hide keyboard")).toBeInTheDocument();
+    expect(screen.queryByTitle("View options")).not.toBeInTheDocument();
     // Sound button — one of mute/unmute should be present
     const muteBtn = screen.queryByTitle("Mute sound");
     const unmuteBtn = screen.queryByTitle("Unmute sound");

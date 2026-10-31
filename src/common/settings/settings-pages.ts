@@ -625,47 +625,6 @@ export const SETTINGS_ROWS: SettingsRow[] = [
     replaces: "Machine › Scanline Effect"
   },
   {
-    id: "tvNoise",
-    page: "emulator",
-    groupKey: "settings.group.screen",
-    titleKey: "settings.emulator.tvNoise.title",
-    descriptionKey: "settings.emulator.tvNoise.description",
-    editor: "switch",
-    source: setting(SETTING_EMU_TV_NOISE),
-    when: { kind: "machine", machineIds: TV_NOISE_MACHINE_IDS }
-  },
-  {
-    id: "nextAudioOutput",
-    page: "emulator",
-    groupKey: "settings.group.sound",
-    titleKey: "settings.emulator.nextAudioOutput.title",
-    descriptionKey: "settings.emulator.nextAudioOutput.description",
-    editor: "select",
-    source: setting(SETTING_EMU_NEXT_AUDIO_OUTPUT),
-    options: tableOptions(() => NEXT_AUDIO_OUTPUTS),
-    when: { kind: "machine", machineIds: [MI_ZXNEXT] }
-  },
-  {
-    id: "ulaSnow",
-    page: "emulator",
-    groupKey: "settings.group.screen",
-    titleKey: "settings.emulator.ulaSnow.title",
-    descriptionKey: "settings.emulator.ulaSnow.description",
-    editor: "switch",
-    source: setting(SETTING_EMU_ULA_SNOW),
-    when: { kind: "machine", machineIds: ULA_TIMING_MACHINE_IDS }
-  },
-  {
-    id: "ulaLateTiming",
-    page: "emulator",
-    groupKey: "settings.group.screen",
-    titleKey: "settings.emulator.ulaLateTiming.title",
-    descriptionKey: "settings.emulator.ulaLateTiming.description",
-    editor: "switch",
-    source: setting(SETTING_EMU_ULA_LATE_TIMING),
-    when: { kind: "machine", machineIds: ULA_TIMING_MACHINE_IDS }
-  },
-  {
     id: "instantScreen",
     page: "emulator",
     groupKey: "settings.group.screen",
@@ -952,6 +911,48 @@ export const SETTINGS_ROWS: SettingsRow[] = [
     ],
     when: { kind: "machine", machineIds: [MI_TIMEX] },
     replaces: "Machine › TC2048 / TC2068 / TS2068 ROM"
+  },
+  // --- The running machine's screen and sound (only the machines they apply to)
+  {
+    id: "tvNoise",
+    page: "machine",
+    groupKey: "settings.group.screen",
+    titleKey: "settings.emulator.tvNoise.title",
+    descriptionKey: "settings.emulator.tvNoise.description",
+    editor: "switch",
+    source: setting(SETTING_EMU_TV_NOISE),
+    when: { kind: "machine", machineIds: TV_NOISE_MACHINE_IDS }
+  },
+  {
+    id: "ulaSnow",
+    page: "machine",
+    groupKey: "settings.group.screen",
+    titleKey: "settings.emulator.ulaSnow.title",
+    descriptionKey: "settings.emulator.ulaSnow.description",
+    editor: "switch",
+    source: setting(SETTING_EMU_ULA_SNOW),
+    when: { kind: "machine", machineIds: ULA_TIMING_MACHINE_IDS }
+  },
+  {
+    id: "ulaLateTiming",
+    page: "machine",
+    groupKey: "settings.group.screen",
+    titleKey: "settings.emulator.ulaLateTiming.title",
+    descriptionKey: "settings.emulator.ulaLateTiming.description",
+    editor: "switch",
+    source: setting(SETTING_EMU_ULA_LATE_TIMING),
+    when: { kind: "machine", machineIds: ULA_TIMING_MACHINE_IDS }
+  },
+  {
+    id: "nextAudioOutput",
+    page: "machine",
+    groupKey: "settings.group.sound",
+    titleKey: "settings.emulator.nextAudioOutput.title",
+    descriptionKey: "settings.emulator.nextAudioOutput.description",
+    editor: "select",
+    source: setting(SETTING_EMU_NEXT_AUDIO_OUTPUT),
+    options: tableOptions(() => NEXT_AUDIO_OUTPUTS),
+    when: { kind: "machine", machineIds: [MI_ZXNEXT] }
   },
   {
     id: "z88KeyboardLayout",

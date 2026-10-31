@@ -1,0 +1,14 @@
+@use "@styles/core.scss" as *;
+
+/*
+ * A toolbar group (`ToolbarOverflow.tsx`): one unit that stays or leaves the strip as a whole. It
+ * repeats the strip's own gap inside, so grouping changes no spacing, and it never shrinks: a
+ * group that does not fit leaves for the More menu instead.
+ */
+.group {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  height: 100%;
+  gap: var(--space-0_5);
+}

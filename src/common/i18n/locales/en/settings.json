@@ -239,27 +239,27 @@
   },
   "settings.emulator.tvNoise.title": "Show TV noise without sync",
   "@settings.emulator.tvNoise.title": {
-    "context": "Settings dialog, Emulator page, 'Screen' group: label of an on/off switch. Its help text: 'ZX80 and ZX81: noise instead of a black screen while the picture has no sync'"
+    "context": "Settings dialog, Machine page, 'Screen' group: label of an on/off switch. Its help text: 'ZX80 and ZX81: noise instead of a black screen while the picture has no sync'"
   },
   "settings.emulator.tvNoise.description": "ZX80 and ZX81: noise instead of a black screen while the picture has no sync",
   "@settings.emulator.tvNoise.description": {
-    "context": "Help text under the setting 'Show TV noise without sync' (Settings dialog, Emulator page). Wraps over several lines."
+    "context": "Help text under the setting 'Show TV noise without sync' (Settings dialog, Machine page). Wraps over several lines."
   },
   "settings.emulator.ulaSnow.title": "Show the snow effect",
   "@settings.emulator.ulaSnow.title": {
-    "context": "Settings dialog, Emulator page, 'Screen' group: label of an on/off switch, shown for the ZX Spectrum 48K and 128K. 'Snow' is the name ZX Spectrum users give to the speckles the real machine shows; translate it as the community in your language calls it, or keep it."
+    "context": "Settings dialog, Machine page, 'Screen' group: label of an on/off switch, shown for the ZX Spectrum 48K and 128K. 'Snow' is the name ZX Spectrum users give to the speckles the real machine shows; translate it as the community in your language calls it, or keep it."
   },
   "settings.emulator.ulaSnow.description": "ZX Spectrum 16K, 48K and 128K: speckles on the picture while the I register points at contended memory, as on the real machine",
   "@settings.emulator.ulaSnow.description": {
-    "context": "Help text under the setting 'Show the snow effect' (Settings dialog, Emulator page). 'I register' and 'contended memory' are ZX Spectrum terms: keep 'I' as it is. Wraps over several lines."
+    "context": "Help text under the setting 'Show the snow effect' (Settings dialog, Machine page). 'I register' and 'contended memory' are ZX Spectrum terms: keep 'I' as it is. Wraps over several lines."
   },
   "settings.emulator.ulaLateTiming.title": "Late ULA timing",
   "@settings.emulator.ulaLateTiming.title": {
-    "context": "Settings dialog, Emulator page, 'Screen' group: label of an on/off switch, shown for the ZX Spectrum 48K and 128K. ULA is the name of the Spectrum's video chip: keep it. 'Late timing' is the name of a hardware variant."
+    "context": "Settings dialog, Machine page, 'Screen' group: label of an on/off switch, shown for the ZX Spectrum 48K and 128K. ULA is the name of the Spectrum's video chip: keep it. 'Late timing' is the name of a hardware variant."
   },
   "settings.emulator.ulaLateTiming.description": "ZX Spectrum 16K, 48K and 128K: the screen, contention and the border one T-state later, as on many real machines",
   "@settings.emulator.ulaLateTiming.description": {
-    "context": "Help text under the setting 'Late ULA timing' (Settings dialog, Emulator page). A T-state is one clock cycle of the Z80 CPU: keep the term. Wraps over several lines."
+    "context": "Help text under the setting 'Late ULA timing' (Settings dialog, Machine page). A T-state is one clock cycle of the Z80 CPU: keep the term. Wraps over several lines."
   },
   "settings.emulator.instantScreen.title": "Show the instant screen",
   "@settings.emulator.instantScreen.title": {
@@ -705,7 +705,7 @@
   },
   "settings.group.screen": "Screen",
   "@settings.group.screen": {
-    "context": "Group heading in the Settings dialog (Emulator page). The style shows it in capitals; write it in your language's normal case.",
+    "context": "Group heading in the Settings dialog (Emulator and Machine pages). The style shows it in capitals; write it in your language's normal case.",
     "maxChars": 28
   },
   "settings.group.window": "Window",
@@ -1040,14 +1040,14 @@
   },
   "settings.group.sound": "Sound",
   "@settings.group.sound": {
-    "context": "Group heading in the Settings dialog (Emulator page). The style shows it in capitals; write it in your language's normal case."
+    "context": "Group heading in the Settings dialog (Machine page). The style shows it in capitals; write it in your language's normal case."
   },
   "settings.emulator.nextAudioOutput.title": "ZX Spectrum Next sound output",
   "@settings.emulator.nextAudioOutput.title": {
-    "context": "Settings dialog, Emulator page, 'Sound' group: label of a drop-down list, shown for the ZX Spectrum Next. Its choices: 'Audio jack', 'Internal speaker', 'HDMI'."
+    "context": "Settings dialog, Machine page, 'Sound' group: label of a drop-down list, shown for the ZX Spectrum Next. Its choices: 'Audio jack', 'Internal speaker', 'HDMI'."
   },
   "settings.emulator.nextAudioOutput.description": "The Next sends its sound to three outputs, each built differently; Klive plays the one chosen here",
   "@settings.emulator.nextAudioOutput.description": {
-    "context": "Help text under the setting 'ZX Spectrum Next sound output' (Settings dialog, Emulator page). Wraps over several lines."
+    "context": "Help text under the setting 'ZX Spectrum Next sound output' (Settings dialog, Machine page). Wraps over several lines."
   }
 }

@@ -92,6 +92,12 @@
   box-shadow: inset 2px 0 0 var(--accent-solid);
   font-weight: 600;
 
+  // --- The stacked layout lays the pages out as a row of tabs: the indicator moves under the tab,
+  // --- where a tab's indicator belongs (a left bar there read as a stray mark beside the label)
+  @media (max-width: 700px) {
+    box-shadow: inset 0 -2px 0 var(--accent-solid);
+  }
+
   &:hover {
     background: var(--surface-selected);
   }
