@@ -117,15 +117,15 @@ export const machineMenuRegistry: Record<string, MachineMenuInfo> = {
     helpLinks: [
       {
         labelKey: "menu.help.z88.userGuide",
-        url: "https://cambridgez88.jira.com/wiki/spaces/UG/"
+        url: "https://kliveide.net/en/library/cambridge-z88/user-guide/"
       },
       {
         labelKey: "menu.help.z88.developersNotes",
-        url: "https://cambridgez88.jira.com/wiki/spaces/DN/"
+        url: "https://kliveide.net/en/library/cambridge-z88/developers-notes/"
       },
       {
         labelKey: "menu.help.z88.bbcBasicGuide",
-        url: "https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI"
+        url: "https://kliveide.net/en/library/cambridge-z88/bbc-basic/"
       },
       {},
       {
