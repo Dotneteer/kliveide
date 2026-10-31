@@ -3,8 +3,9 @@ import classnames from "classnames";
 import type { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 import type { IDocumentHubService } from "@renderer/abstractions/IDocumentHubService";
 import { TAPE_BLOCK_VIEWER } from "@common/state/common-ids";
-import { ZxSpectrumChars, ht1080zCharsFor, type Ht1080zCharSetId } from "@common/machines/char-codes";
+import { TvcChars, ZxSpectrumChars, ht1080zCharsFor, type Ht1080zCharSetId } from "@common/machines/char-codes";
 import { HT1080Z_PROGRAM_START } from "@common/ht1080z/codePlacement";
+import { TVC_PROGRAM_START } from "@common/tvc/codePlacement";
 import { SPECTRUM_48_COLORS } from "@emu/machines/spectrum-colors";
 import { FullPanel } from "@renderer/controls/layout/Panels";
 import { EmptyState, PanelHeader } from "@renderer/controls/data";
@@ -22,6 +23,7 @@ import { basicListingText, decodeBasicProgram } from "../basicListing";
 import { createScrPixelData } from "../Next/ScrFileViewerPanel";
 import { decodeZx8081Program } from "../zx8081BasicListing";
 import { decodeHt1080zProgram } from "../ht1080zBasicListing";
+import { decodeTvcProgram } from "../tvcBasicListing";
 import { zx81DisplayRows, ZX81_PROGRAM_START } from "../PFile/pFileView";
 import { ZX80_PROGRAM_START } from "../PFile/oFileView";
 import { Zx81ScreenView } from "../PFile/Zx81ScreenView";
@@ -40,13 +42,14 @@ import { useT } from "@common/i18n/useT";
  * document, with the ZX81's detokenizer (`zx8081BasicListing.ts`) and its character-set picture. A
  * ZX80 `.O` file's program comes as `format: "zx80"`, listed by the 4K ROM's rules (it has no screen).
  * An HT-1080Z program (`format: "ht1080z"`, from the HT tape viewer) is listed at 42E9h by Level II's
- * rules, in the character set the viewer showed it in.
+ * rules, in the character set the viewer showed it in. A Videoton TVC program (`format: "tvc"`, or
+ * `"tvc22"` for BASIC 2.2's keywords, from the TVC `.cas` view) is listed at 19EFh by the TVC's rules.
  *
  * Not restored at startup: like a memory dump, it is not a project file.
  */
 
 /** Whose bytes these are: a Spectrum tape block (the default), or a part of a ZX81 `.P` or ZX80 `.O` file */
-export type TapeBlockFormat = "spectrum" | "zx81" | "zx80" | "ht1080z";
+export type TapeBlockFormat = "spectrum" | "zx81" | "zx80" | "ht1080z" | "tvc" | "tvc22";
 
 export type TapeBlockViewState = {
   view: "basic" | "screen";
@@ -134,6 +137,8 @@ const TapeBasicListing = ({
   const format = viewState?.format ?? "spectrum";
   const zx81 = format === "zx81" || format === "zx80";
   const htCharSet = viewState?.htCharSet ?? "s2";
+  // --- A Sinclair listing may use the machine font; the HT-1080Z and the TVC list in monospace
+  const sinclairFont = format !== "ht1080z" && format !== "tvc" && format !== "tvc22";
 
   const listing = useMemo(() => {
     if (format === "spectrum") return decodeBasicProgram(bytes, 0, end, { charSet: ZxSpectrumChars, showCodes });
@@ -146,6 +151,12 @@ const TapeBasicListing = ({
         backtickPairs: htCharSet === "s64",
         showCodes
       });
+    }
+    if (format === "tvc" || format === "tvc22") {
+      // --- Where LOAD puts a program file's payload
+      const memory = new Uint8Array(0x10000);
+      memory.set(bytes.subarray(0, Math.min(end, 0x10000 - TVC_PROGRAM_START)), TVC_PROGRAM_START);
+      return decodeTvcProgram(memory, { charSet: TvcChars, basic22: format === "tvc22", showCodes });
     }
     // --- A ZX81's or ZX80's lines are read where the machine keeps them, after the system variables
     const start = format === "zx80" ? ZX80_PROGRAM_START : ZX81_PROGRAM_START;
@@ -182,8 +193,8 @@ const TapeBasicListing = ({
           title={t("panels.tape.block.showCodesTitle")}
           clicked={setShowCodes}
         />
-        {format !== "ht1080z" && <ToolbarSeparator small={true} />}
-        {format !== "ht1080z" && (
+        {sinclairFont && <ToolbarSeparator small={true} />}
+        {sinclairFont && (
         <LabeledSwitch
           value={showSpectrumFont}
           label={zx81 ? t("panels.tape.block.sinclairFont") : t("panels.tape.block.spectrumFont")}
@@ -211,7 +222,7 @@ const TapeBasicListing = ({
                 [basicStyles.last]: idx === lines.length - 1
               })}
             >
-              <BasicLineDisplay spans={lines[idx]?.spans} showSpectrumFont={format !== "ht1080z" && showSpectrumFont} />
+              <BasicLineDisplay spans={lines[idx]?.spans} showSpectrumFont={sinclairFont && showSpectrumFont} />
             </div>
           )}
         />

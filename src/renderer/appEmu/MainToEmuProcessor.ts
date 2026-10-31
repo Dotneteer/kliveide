@@ -22,7 +22,9 @@ import { dockBankOf, parseDckFile } from "@common/timex/dckFile";
 import { isZx8081ProgramFileName, parseZxProgramFile } from "@emu/machines/zx8081/ZxPFile";
 import { ht1080zTapeErrorKey, isHt1080zTapeFor, parseHt1080zTapeFile } from "@emu/machines/ht1080z/Ht1080zTapeFile";
 import { isTvcCasFileName, parseTvcCasFile } from "@emu/machines/tvc/TvcCasFile";
-import { MI_ENTERPRISE, MI_TVC } from "@common/machines/constants";
+import { MI_ENTERPRISE, MI_HT1080Z, MI_TVC } from "@common/machines/constants";
+import { detectCasFormat, type CasFormat } from "@emu/machines/casFormat";
+import { machineRegistry } from "@common/machines/machine-registry";
 import { isEpTapeFileName, parseEpTapeFile } from "@emu/machines/enterprise/EpTapeFile";
 import { mediaStore } from "@emu/machines/media/media-info";
 import { screenImageOf } from "@common/headless/screenImage";
@@ -169,6 +171,22 @@ function noController(): never {
   throw new Error(MACHINE_NOT_AVAILABLE_MESSAGE);
 }
 
+/** The machine whose tape each `.cas` format is */
+const CAS_MACHINES: Readonly<Record<CasFormat, string>> = { ht1080z: MI_HT1080Z, tvc: MI_TVC };
+
+/**
+ * A `.cas` set while another machine ran - or none: at startup the remembered tape is set while the
+ * machine of the last session and the one of the project opened at startup race to be set up. It goes
+ * into the deck when its own machine is set (`setMachineType`). Module state, as a processor is
+ * created for every message.
+ */
+let pendingCasTape: { file: string; contents: Uint8Array; format: CasFormat } | undefined;
+
+/** Forgets a `.cas` waiting for its machine (tests) */
+export function clearPendingCasTape(): void {
+  pendingCasTape = undefined;
+}
+
 class EmuMessageProcessor {
   /**
    * Constructs the EmuMessageProcessor.
@@ -189,7 +207,13 @@ class EmuMessageProcessor {
   async setMachineType(machineId: string, modelId?: string, config?: Record<string, any>) {
     // --- Report whether this call's machine actually became the live one, so the caller can tell
     // --- a real success from being superseded by a later, concurrent machine change.
-    return this.machineService.setMachineType(machineId, modelId, config);
+    const applied = await this.machineService.setMachineType(machineId, modelId, config);
+    // --- A .cas set while another machine ran is this machine's tape: into the deck it goes
+    const pending = pendingCasTape;
+    if (applied !== false && pending && CAS_MACHINES[pending.format] === machineId) {
+      await this.setTapeFile(pending.file, pending.contents, false, true);
+    }
+    return applied;
   }
 
   /**
@@ -334,6 +358,29 @@ class EmuMessageProcessor {
           "info",
           t("emu.media.tape.setTitle"),
           t("emu.media.tape.setMessage", { file })
+        );
+      }
+      return;
+    }
+
+    // --- A .cas is the HT-1080Z's or the TVC's tape, in two formats: its bytes say whose. Set while
+    // --- another machine runs (or none yet, at startup), it waits for its own machine.
+    const runningMachineId = this.machineService.getMachineController()?.machine?.machineId;
+    const casFormat = file && /\.cas$/i.test(file) ? detectCasFormat(contents) : undefined;
+    pendingCasTape = undefined;
+    if (casFormat && CAS_MACHINES[casFormat] !== runningMachineId) {
+      pendingCasTape = { file, contents, format: casFormat };
+      mediaStore.addMedia({ id: MEDIA_TAPE, mediaFile: file, mediaContents: undefined });
+      // --- With no machine yet, a machine is being set up: no reason to tell
+      if (runningMachineId && !suppressError) {
+        const owner = CAS_MACHINES[casFormat];
+        await createMainApi(this.mainMessenger).displayMessageBox(
+          "info",
+          t("emu.media.tape.setTitle"),
+          t("emu.media.tape.casForOtherMachine", {
+            file,
+            machine: machineRegistry.find((m) => m.machineId === owner)?.displayName ?? owner
+          })
         );
       }
       return;

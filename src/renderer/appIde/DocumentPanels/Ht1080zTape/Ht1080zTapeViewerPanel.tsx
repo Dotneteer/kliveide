@@ -38,6 +38,9 @@ import {
 import { ht1080zPartAnatomy } from "./ht1080zTapeFields";
 import { ht1080zLineRuns, ht1080zLineText, relinkedProgram } from "./ht1080zLineText";
 import { MemoryMapStrip, type MemoryMapBlock } from "./MemoryMapStrip";
+import { detectCasFormat } from "@emu/machines/casFormat";
+import { analyzeTvcCas, type TvcCasAnalysis } from "../TvcTape/tvcCasModel";
+import { TvcCasView, type TvcCasViewState } from "../TvcTape/TvcCasView";
 import styles from "./Ht1080zTapeViewer.module.scss";
 
 /*
@@ -52,11 +55,14 @@ import styles from "./Ht1080zTapeViewer.module.scss";
  * beside a listing picks another for this document (D-Q2). A part pops out as a BASIC listing, as memory
  * or as a disassembly; the file's own bytes pop out from the summary (D-Q3: this viewer replaced the hex
  * viewer for these files).
+ *
+ * A `.cas` is also the Videoton TVC's tape, in a format of its own. Which one a file is, is read from its
+ * bytes (`detectCasFormat`), never from the running machine: a TVC tape is shown by `TvcCasView`.
  */
 
 export type Ht1080zPartView = "basic" | "memory" | "disassembly";
 
-type Ht1080zTapeViewState = {
+type Ht1080zTapeViewState = TvcCasViewState & {
   scrollPosition?: number;
   selectedPart?: number;
   partFilter?: string;
@@ -66,8 +72,13 @@ type Ht1080zTapeViewState = {
   partView?: Record<number, Ht1080zPartView>;
 };
 
-/** What the loader keeps: the analysis, and the bytes for the file's own pop-out */
-export type Ht1080zTapeFileInfo = { analysis: Ht1080zTapeAnalysis; bytes: Uint8Array };
+/**
+ * What the loader keeps: the analysis - an HT-1080Z tape's, or a TVC `.cas`'s - and the bytes for the
+ * file's own pop-out
+ */
+export type Ht1080zTapeFileInfo =
+  | { analysis: Ht1080zTapeAnalysis; tvc?: undefined; bytes: Uint8Array }
+  | { analysis?: undefined; tvc: TvcCasAnalysis; bytes: Uint8Array };
 
 type ViewContext = GenericFileContext<Ht1080zTapeFileInfo, Ht1080zTapeViewState>;
 
@@ -101,6 +112,14 @@ export function loadHt1080zTapeContents(
   fileName: string,
   clock = HT1080Z_TAPE_CLOCK
 ): { fileInfo?: Ht1080zTapeFileInfo; error?: string } {
+  if (/\.cas$/i.test(fileName)) {
+    const format = detectCasFormat(contents);
+    if (format === "tvc") {
+      const tvc = analyzeTvcCas(contents, fileName).analysis;
+      return tvc ? { fileInfo: { tvc, bytes: contents } } : { error: translate("panels.tvcTape.error.notCas") };
+    }
+    if (format === undefined) return { error: translate("panels.tvcTape.error.unknownCas") };
+  }
   const { analysis, error } = analyzeHt1080zFile(contents, fileName, clock);
   if (analysis) return { fileInfo: { analysis, bytes: contents } };
   switch (error) {
@@ -139,9 +158,19 @@ const Ht1080zTapeViewerPanel = ({ document, contents, viewState }: DocumentProps
       viewState={viewState}
       apiLoaded={() => {}}
       fileLoader={fileLoader}
-      validRenderer={(ctx) => (
-        <TapeView ctx={ctx} fullPath={fileName} runningModel={runningModel} />
-      )}
+      validRenderer={(ctx) =>
+        ctx.fileInfo?.tvc ? (
+          <TvcCasView
+            analysis={ctx.fileInfo.tvc}
+            bytes={ctx.fileInfo.bytes}
+            fullPath={fileName}
+            viewState={ctx.viewState ?? {}}
+            changeViewState={ctx.changeViewState}
+          />
+        ) : (
+          <TapeView ctx={ctx} fullPath={fileName} runningModel={runningModel} />
+        )
+      }
     />
   );
 };

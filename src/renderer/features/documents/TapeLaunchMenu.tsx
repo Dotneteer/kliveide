@@ -8,11 +8,13 @@ import { useMainApi } from "@renderer/core/MainApi";
 import { analyzeHt1080zFile } from "@renderer/appIde/DocumentPanels/Ht1080zTape/ht1080zTapeView";
 import { SETTING_EMU_FAST_LOAD } from "@common/settings/setting-const";
 import { MI_HT1080Z } from "@common/machines/constants";
+import { detectCasFormat, type CasFormat } from "@emu/machines/casFormat";
 
 import type { AppServices } from "@renderer/abstractions/AppServices";
 import type { ContextMenuInfo } from "@renderer/abstractions/ContextMenuIfo";
 
 import {
+  casFormatLoadGuard,
   casTapeLoadGuard,
   htTapeLoadGuard,
   programLoadGuard,
@@ -198,31 +200,40 @@ const TapeLaunchCommandBar = ({ path, guard, withEntry }: Props) => {
  * An HT-1080Z tape's bar: the three actions, and - for a machine-code tape, which names its start
  * address - "debug, stopping there", as a `.nex` document's bar has. Whether the file is one is read
  * from it: a `.cmd` always is, a `.cas` when it holds a SYSTEM program.
+ *
+ * A `.cas` is the Videoton TVC's tape too, in its own format: the bytes say whose tape it is
+ * (`detectCasFormat`), and the actions are enabled on that machine only. A TVC tape names no start
+ * address.
  */
 const HtTapeLaunchCommandBar = ({ path }: { path: string }) => {
   const mainApi = useMainApi();
   const [withEntry, setWithEntry] = useState(false);
+  const [casFormat, setCasFormat] = useState<CasFormat | undefined>();
+  const isCas = /\.cas$/i.test(path);
   useEffect(() => {
     let cancelled = false;
     mainApi
       .readBinaryFile(path)
       .then((bytes) => {
-        if (!cancelled) setWithEntry(analyzeHt1080zFile(bytes, path).analysis?.entry !== undefined);
+        if (cancelled) return;
+        const format = isCas ? detectCasFormat(bytes) : undefined;
+        setCasFormat(format);
+        setWithEntry(format !== "tvc" && analyzeHt1080zFile(bytes, path).analysis?.entry !== undefined);
       })
       .catch(() => {
-        if (!cancelled) setWithEntry(false);
+        if (cancelled) return;
+        setCasFormat(undefined);
+        setWithEntry(false);
       });
     return () => {
       cancelled = true;
     };
-  }, [mainApi, path]);
-  // --- A .cas is the TVC's tape too: it loads there, but names no start address
+  }, [mainApi, path, isCas]);
   const machineId = useSelector((s) => s.emulatorState?.machineId);
-  const isCas = /\.cas$/i.test(path);
   return (
     <TapeLaunchCommandBar
       path={path}
-      guard={isCas ? casTapeLoadGuard : htTapeLoadGuard}
+      guard={isCas ? casFormatLoadGuard(casFormat) : htTapeLoadGuard}
       withEntry={withEntry && machineId === MI_HT1080Z}
     />
   );
