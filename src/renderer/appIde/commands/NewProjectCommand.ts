@@ -61,8 +61,9 @@ export class NewProjectCommand extends IdeCommandBase<NewProjectCommandArgs> {
             finalMessage: t("commands.common.openFolderError", { message: errorMessage })
           };
         }
-        await ensureProjectLoaded(context.service.projectService);
-        await ensureWorkspaceLoaded(context.store);
+        // --- The new project's, not the one open before it (whose tree is still loaded at first)
+        await ensureProjectLoaded(context.service.projectService, responsePath);
+        await ensureWorkspaceLoaded(context.store, responsePath);
 
         // --- The build root arrives through a separately forwarded action, so waiting for the
         // --- workspace above says nothing about whether it has landed yet. Give it a bounded

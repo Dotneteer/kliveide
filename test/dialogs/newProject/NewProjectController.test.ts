@@ -220,6 +220,9 @@ describe("NewProjectController — creating a project", () => {
     await h.dispatch({ type: "createRequested" });
 
     expect(order).toEqual(["create", "open", "project", "workspace", "buildRoots"]);
+    // --- The waits are for the new project: the one open before it is still loaded at first
+    expect(h.ports.service.ensureProjectLoaded).toHaveBeenCalledWith("/projects/MyProject");
+    expect(h.ports.service.ensureWorkspaceLoaded).toHaveBeenCalledWith("/projects/MyProject");
     expect(h.ports.service.createProject).toHaveBeenCalledWith({
       machineId: "sp48",
       modelId: "pal",

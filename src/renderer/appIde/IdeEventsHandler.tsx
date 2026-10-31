@@ -95,7 +95,7 @@ export const IdeEventsHandler = () => {
       await mainApi.setGlobalSettingsValue(SETTING_IDE_MAXIMIZE_TOOLS, false);
 
       // --- Wait while the project is loaded
-      const projectTreeLoaded = await ensureProjectLoaded(projectService);
+      const projectTreeLoaded = await ensureProjectLoaded(projectService, state.project?.folderPath ?? undefined);
 
       // --- Restore document tabs and activate only the last active document. Skip this if the
       // --- project tree never became available - every document lookup would fail against it
@@ -231,13 +231,26 @@ export const IdeEventsHandler = () => {
  * proceeding against a not-yet-loaded (or never loaded) tree causes every subsequent lookup
  * (e.g. resolving a saved document's file to a tree node) to silently fail.
  */
-export async function ensureProjectLoaded(projectService: IProjectService): Promise<boolean> {
+/** Whether two folder paths name the same folder: separators and a trailing one do not count */
+export function isSameFolder(a: string | null | undefined, b: string | null | undefined): boolean {
+  const norm = (p: string) => p.replace(/\\/g, "/").replace(/\/+$/, "");
+  return !!a && !!b && norm(a) === norm(b);
+}
+
+/**
+ * Waits for the project tree to be loaded.
+ *
+ * With `folderPath`, the tree must be that folder's: right after a folder is opened the previous
+ * project's tree is still there (the main process forwards the folder change asynchronously), and a
+ * caller that took it for the new one opened the previous project's files.
+ */
+export async function ensureProjectLoaded(projectService: IProjectService, folderPath?: string): Promise<boolean> {
   // --- Wait up to 30 seconds for the project tree to be loaded
   let count = 0;
 
   while (count < 300) {
     const tree = projectService.getProjectTree();
-    if (tree) return true;
+    if (tree && (!folderPath || isSameFolder(tree.rootNode?.data?.fullPath, folderPath))) return true;
     count++;
     await delay(100);
   }
@@ -245,12 +258,17 @@ export async function ensureProjectLoaded(projectService: IProjectService): Prom
   return false;
 }
 
-export async function ensureWorkspaceLoaded(store: Store<AppState>) {
+/**
+ * Waits for the workspace (the restored document tabs) to be loaded; with `folderPath`, that folder's
+ * workspace, not the previous project's (see `ensureProjectLoaded`).
+ */
+export async function ensureWorkspaceLoaded(store: Store<AppState>, folderPath?: string) {
   // --- Wait up to 10 seconds for the project tree to be loaded
   let count = 0;
 
   while (count < 100) {
-    if (store.getState()?.project?.workspaceLoaded) break;
+    const project = store.getState()?.project;
+    if (project?.workspaceLoaded && (!folderPath || isSameFolder(project.folderPath, folderPath))) break;
     count++;
     await delay(100);
   }

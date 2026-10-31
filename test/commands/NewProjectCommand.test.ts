@@ -3,6 +3,7 @@ import { NewProjectCommand } from "@renderer/appIde/commands/NewProjectCommand";
 import { parseCommand } from "@renderer/appIde/services/command-parser";
 import { extractArguments } from "@renderer/appIde/services/ide-commands";
 import { createMockContext } from "./test-helpers/mock-context";
+import { ensureProjectLoaded, ensureWorkspaceLoaded } from "@renderer/appIde/IdeEventsHandler";
 import type { IdeCommandContext } from "@renderer/abstractions/IdeCommandContext";
 
 // Mock registry to avoid Monaco editor imports
@@ -231,6 +232,9 @@ describe("NewProjectCommand", () => {
 
       // Assert
       expect(mockMainApi.openFolder).toHaveBeenCalledWith("/new/project");
+      // --- Waits for the new project, not the one still loaded from before
+      expect(ensureProjectLoaded).toHaveBeenCalledWith(expect.anything(), "/new/project");
+      expect(ensureWorkspaceLoaded).toHaveBeenCalledWith(expect.anything(), "/new/project");
       expect(result.success).toBe(true);
     });
 
