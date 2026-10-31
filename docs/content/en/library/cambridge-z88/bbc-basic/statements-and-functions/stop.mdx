@@ -1,0 +1,23 @@
+---
+description: "Syntactically identical to END, STOP also prints a message to the effect that the program has stopped."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# STOP
+
+Syntactically identical to END, STOP also prints a message to the effect that the program has stopped.
+
+You can use STOP at various places in your program to aid debugging. If your program is going wrong, you can place STOP commands at various points to see the path taken by your program. (TRACE is generally a more useful aid to tracing a program's flow unless you are using formatted screen displays.)
+
+Once your program has STOP’ed you can investigate the values of the variables to find out why things happened the way they did.
+
+STOP DOES NOT CLOSE DATA FILES. If you use STOP to exit a program for debugging, CLOSE all the data files before RUNning the program again. If you don't you will get some most peculiar error messages.
+
+**Syntax**
+
+STOP
+
+**Associated Keywords**
+
+END

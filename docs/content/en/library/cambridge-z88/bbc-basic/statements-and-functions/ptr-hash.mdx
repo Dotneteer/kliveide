@@ -1,0 +1,46 @@
+---
+description: "A pseudo-variable allowing the random-access pointer of the file whose file handle is its argument to be read and changed."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# PTR#
+
+A pseudo-variable allowing the random-access pointer of the file whose file handle is its argument to be read and changed.
+
+```text
+PTR#F=PTR#F+5 :REM Move pointer to next number
+PTR#F=recordnumber*recordlength
+```
+
+Reading or writing (using BGET\#, BPUT\#, INPUT\# or PRINT\#) takes place at the current position of the pointer. The pointer is automatically updated following a read or write operation.
+
+You can use PTR\# to select which item in a file is to be read or written to next. In a random file (see the section on BBC BASIC(Z80) Files) you use PTR\# to select the record you wish to read or write.
+
+If you wish to move about in a file using PTR\# you will need to know the precise format of the data in the file.
+
+A file opened with OPENUP may be extended by setting its pointer to its end (PTR\#fnum = EXT\#fnum) and then writing to it. If you do this, you must remember to CLOSE the file when you have finished with it in order to update the directory entry.
+
+By using PTR\# you have complete control over where you read and write data in a file. This is a simple concept, but it may initially be difficult to grasp its many ramifications. The BBC BASIC(Z80) Files section has a number of examples of the use of PTR\#.
+
+PTR\#-1 Returns the number of file handles still available for the entire Z88 (not just BBC BASIC(Z80)) and the ROM release number.
+
+If you are going to display this information, you will need to do so in hexadecimal because the one (4 byte) number contains two items of information. For example:
+
+```text
+PRINT ~PTR#-1
+        5A0004
+```
+
+The last 3 digits (least significant 2 bytes) are the ROM release number. The first 2 digits (most significant 2 bytes) are the number of files handles still available for use by the filing system (&5A=90).
+
+**Syntax**
+
+```text
+PTR#<numeric>=<numeric>
+<n-var>=PTR#<numeric>
+```
+
+**Associated Keywords**
+
+OPENIN, OPENUP, OPENOUT, CLOSE\#, PRINT\#, INPUT\#, BPUT\#, BGET\#, EXT\#, EOF\#

@@ -1,0 +1,49 @@
+---
+description: "A function which converts a character string representing a number into numeric form."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# VAL
+
+A function which converts a character string representing a number into numeric form.
+
+```text
+X=VAL(A$)
+```
+
+VAL makes the best sense it can of its argument. If the argument starts with numeric characters (with or without a preceding sign), VAL will work from left to right until it meets a non numeric character. It will then 'give up' and return what it has got so far. If it can't make any sense of its argument, it returns zero.
+
+For example,
+
+```text
+PRINT VAL("-123.45.67ABC")
+```
+
+would print
+
+```text
+-123.45
+```
+
+and
+
+```text
+PRINT VAL("A+123.45")
+```
+
+would print
+
+0
+
+VAL will NOT work with hexadecimal numbers. You must use EVAL to convert hexadecimal number strings.
+
+**Syntax**
+
+```text
+<n-var>=VAL(<str>)
+```
+
+**Associated Keywords**
+
+STR$, EVAL

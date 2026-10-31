@@ -1,0 +1,49 @@
+---
+description: "The part of the FOR ... TO ... STEP statement which introduces the terminating value for the loop. When the loop control variable exceeds the value following 'TO' the loop is terminated. For example,"
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# TO
+
+The part of the FOR ... TO ... STEP statement which introduces the terminating value for the loop. When the loop control variable exceeds the value following 'TO' the loop is terminated. For example,
+
+```text
+10 FOR i=1 TO 5 STEP 1.5
+20   PRINT i
+30   NEXT
+40 PRINT "**********"
+50 PRINT i
+```
+
+will print
+
+```text
+         1
+       2.5
+         4
+**********
+       5.5
+```
+
+Irrespective of the initial value of the loop control variable and the specified terminating value, the loop will execute at least once. For example,
+
+```text
+10 FOR i= 20 TO 10
+20   PRINT i
+30 NEXT
+```
+
+will print
+
+20
+
+**Syntax**
+
+```text
+FOR <n-var>=<numeric> TO <numeric> [STEP <numeric>]
+```
+
+**Associated Keywords**
+
+FOR, NEXT, STEP

@@ -1,0 +1,40 @@
+---
+description: "A function and compatible string function which does a GET/GET$, waiting for a maximum of 'num' clock ticks of 10ms each. If no key is pressed in the time limit, INKEY will return -1 and INKEY$..."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# INKEY/INKEY$
+
+A function and compatible string function which does a GET/GET$, waiting for a maximum of 'num' clock ticks of 10ms each. If no key is pressed in the time limit, INKEY will return -1 and INKEY$ will return a null string. The INKEY function will return the ASCII value of the key pressed.
+
+```text
+key=INKEY(num)
+N=INKEY(0)
+N$=INKEY$(100)
+```
+
+You can use this function to wait for a specified time for a key to be pressed. A key can be pressed at any time before INKEY is used.
+
+Pressed keys are stored in an input buffer. Since INKEY and INKEY$ get a character from the normal input stream, you may need to empty the input buffer before you use them. You can do this with the following program line.
+
+```text
+REPEAT UNTIL INKEY(0)=-1
+```
+
+The number in brackets is the number of 'ticks' (one hundredths of a second) which BBC BASIC(Z80) will wait for a key to be pressed. After this time, BBC BASIC(Z80) will give up and return -1 or a null string. The number of 'ticks' may have any value between 0 and 32767.
+
+INKEY with a negative argument is not available on the Z88.
+
+Same key codes are returned as for GET. Please refer to GET reference for more details.
+
+**Syntax**
+
+```text
+<n-var>=INKEY(<numeric>)
+<s-var>=INKEY$(<numeric>)
+```
+
+**Associated Keywords**
+
+GET, GET$

@@ -1,0 +1,52 @@
+---
+description: "The operation of bitwise integer logical exclusive-or between two items. The two operands are internally converted to 4 byte integers before the EOR operation. EOR will return a non-zero result if..."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# EOR
+
+The operation of bitwise integer logical exclusive-or between two items. The two operands are internally converted to 4 byte integers before the EOR operation. EOR will return a non-zero result if the two items are different.
+
+```text
+X=B EOR 4
+IF A=2 EOR B=3 THEN 110
+```
+
+You can use EOR as a logical operator or as a 'bit-by-bit' (bitwise) operator. The operands can be boolean (logical) or numeric.
+
+Unfortunately, BBC BASIC does not have true boolean variables; it uses numeric variables and assigns the value 0 for FALSE and -1 for TRUE. This can lead to confusion at times. (See NOT for more details.)
+
+In the example below, the operands are boolean (logical) and the result of the tests (IF) A=2 and (IF) B=3 is either TRUE or FALSE.
+
+The result of this example will be FALSE if A=2 and B=3 or A\<\>2 and B\<\>3. In other words, the answer will only be TRUE if the results of the two tests are different.
+
+```text
+answer=(A=2 EOR B=3)
+```
+
+The brackets are not necessary, they have been included to make the example easier to follow.
+
+The last example uses EOR in a similar fashion to the numeric operators (+, -, etc).
+
+```text
+A=X EOR 11
+```
+
+Suppose X was -20, the EOR operation would be:
+
+```text
+11111111 11111111 11111111 11101100
+00000000 00000000 00000000 00001011
+11111111 11111111 11111111 11100111  = -25
+```
+
+**Syntax**
+
+```text
+<n-var>=<numeric> EOR <numeric>
+```
+
+**Associated Keywords**
+
+NOT, AND, OR

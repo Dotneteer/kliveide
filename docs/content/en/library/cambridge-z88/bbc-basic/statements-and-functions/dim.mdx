@@ -1,0 +1,67 @@
+---
+description: "There are two quite different uses for the DIM statement: the first dimensions an array and the second reserves an area of memory for special applications."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# DIM
+
+There are two quite different uses for the DIM statement: the first dimensions an array and the second reserves an area of memory for special applications.
+
+## Dimensioning Arrays [#dimensioning-arrays]
+
+The DIM statement is used to declare arrays. Arrays must be pre-declared before use and they must not be re-dimensioned. Both numeric and string arrays may be multi dimensional.
+
+```text
+DIM A(2),Ab(2,3),A$(2,3,4),A%(3,4,5,6)
+```
+
+After DIM, all elements in the array are 0/null.
+
+The subscript base is 0, so `DIM X(12)` defines an array of 13 elements.
+
+Arrays are like lists or tables. A list of names is a single dimension array. In other words, there is only one column - the names. Its single dimension in a DIM statement would be the maximum number of names you expected in the table less 1.
+
+If you wanted to describe the position of the pieces on a chess board you could use a two dimensional array. The two dimensions would represent the row (numbered 0 to 7) and the column (also numbered 0 to 7). The contents of each 'cell' of the array would indicate the presence (if any) of a piece and its value.
+
+```text
+DIM chess_board(7,7)
+```
+
+Such an array would only represent the chess board at one moment of play. If you wanted to represent a series of board positions you would need to use a three dimensional array. The third dimension would represent the 'move number'. Each move would use about 320 bytes of memory, so you can record 40 moves in about 12.5k bytes.
+
+```text
+DIM chess_game(7,7,40)
+```
+
+## Reserving an Area of Memory [#reserving-an-area-of-memory]
+
+A DIM statement is used to reserve an area of memory which the interpreter will not then use. The variable in the DIM statement is set by BBC BASIC(Z80) to the start address of this memory area. This reserved area can be used by the indirection operators, machine code, etc.
+
+The example below reserves 68 bytes of memory and sets A% equal to the address of the first byte. Thus A%?0 to A%?67 are free for use by the program (68 bytes in all):
+
+```text
+DIM A% 67
+```
+
+A 'DIM space' error will occur if a size of less than -1 is used (DIM P% -2). DIM P%-1 is a special case; it reserves zero bytes of memory. This is of more use than you might think, since it tells you the limit of the dynamic variable allocation. Thus,
+
+```text
+DIM P% -1
+PRINT HIMEM-P%
+```
+
+is the equivalent of PRINT FREE(0) in some other versions of BASIC. See also EXT\#-1.
+
+See the Assembler section for a more detailed description of the use of DIM for reserving memory for machine code programs.
+
+**Syntax**
+
+```text
+DIM <n-var>|<s-var>(<numeric>{,<numeric>})
+DIM <n-var> <numeric>
+```
+
+**Associated Keywords**
+
+CLEAR

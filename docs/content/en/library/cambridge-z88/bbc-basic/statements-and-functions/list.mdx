@@ -1,0 +1,52 @@
+---
+description: "A command which causes lines of the current program to be listed out to the screen with the automatic formatting options specified by LISTO."
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# LIST (L.)
+
+A command which causes lines of the current program to be listed out to the screen with the automatic formatting options specified by LISTO.
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>
+
+```text
+LIST
+LIST ,111
+LIST 111,
+LIST 111,222
+LIST 100
+```
+
+</Table.Td>
+<Table.Td>lists the entire program<br />lists up to line 111<br />lists from line 111 to the end<br />lists lines 111 to 222 inclusive<br />lists line 100 only</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+A hyphen is an acceptable alternative to a comma.
+
+The listing may be paused by pressing ♢ and `[SHIFT]` keys together. With the standard CLI active, the screen output will halt at the end of each page until the `[SPACE]` key is pressed.
+
+Escape will abort the listing.
+
+LIST may be included within a program, but it will exit to the command mode on completion of the listing.
+
+**Syntax**
+
+```text
+LIST
+LIST <n-const>
+LIST <n-const>,
+LIST ,<n-const>
+LIST <n-const>,<n-const>
+```
+
+**Associated Keywords**
+
+LISTO, OLD, NEW

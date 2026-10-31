@@ -1,0 +1,162 @@
+---
+description: "From within BBCBASIC(Z80), the following command line will enter the Panel popdown, turn sound off and return to BASIC. The line may be included in a BBC BASIC program or entered in the direct mode."
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# CLI Command Examples
+
+## Example 1 [#example-1]
+
+From within BBCBASIC(Z80), the following command line will enter the Panel popdown, turn sound off and return to BASIC. The line may be included in a BBC BASIC program or entered in the direct mode.
+
+```text
+*CLI #S~R~R~DN~E
+```
+
+## Example 2 [#example-2]
+
+As previously mentioned, CLI commands are not executed until control is passed to the CLI. You can demonstrate this with a short program incorporating the previous example. When you RUN the following program, you will notice that 'LINE 10' and 'LINE 30' are printed before the Panel popdown is entered.
+
+```text
+10 PRINT "LINE 10"
+20 *CLI #S~R~R~DN~E
+30 PRINT "LINE 30"
+```
+
+Changing line 20 to
+
+```text
+OSCLI("CLI #S~R~R~DN~E"):x=INKEY(0)
+```
+
+forces the execution of the CLI command before 'LINE 30' is printed.
+
+## Example 3 [#example-3]
+
+The following BBCBASIC(Z80) program is the program line editor (by Cambridge Computer Ltd) introduced in the ‘Program editor’ in the **General Information** section. It makes extensive use of CLI commands. The listing below is interspersed with comments that do not form part of the program.
+
+**You do not need to use this program when using ROM V4.3 or later. The \*EDIT command is available, replacing the need for this manual approach using the CLI.**
+
+The editor consists of 2 procedures. The first creates a CLI command file that lists the line to a file and then calls the second procedure which cleans it up and uses it as redirected input before exiting. The line to be edited is then left in the input buffer. The Z88's line editor may then be used to edit the line as if it had just been typed in.
+
+```text
+60000 END
+```
+
+Make sure that the program does not end up here accidentally and then define the first procedure.
+
+```text
+60010 DEF PROCE(B)
+60020 REM Cambridge Computer Ltd.
+```
+
+The procedure is called with the line number to edit. Make sure this is not zero.
+
+```text
+60030 IF B=0 THEN ENDPROC
+```
+
+Build a CLI command file in :RAM.0 for later execution. The file is called EE.CLI. It will contain the following lines:
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>
+
+```text
+ .>:RAM.0/E.CLI
+```
+
+```text
+.J
+```
+
+</Table.Td>
+<Table.Td>
+
+(This will send subsequent output to the file E.CLI)
+
+(\`Jam' the CLI so that nothing is mistaken as a CLI command)
+
+</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+```text
+LIST  'line number B as an ASCII string'
+PROCF
+60040 A=OPENOUT ":RAM.0/EE.CLI"
+60050 B$=":RAM.0/E.CLI"
+60060 PRINT#A,".>"+B$
+60070 PRINT#A,".J","LIST"+STR$(B),"PROCF"
+60080 CLOSE#A
+```
+
+Execute the CLI command file \`EE.CLI' and then return. The CLI command file is not actually executed by the CLI until control is passed to it. As previously explained, this is when keyboard input is expected. Consequently, the commands in the CLI command file will not be executed until BBCBASIC(Z80) returns to the immediate mode (after the ENDPROC).
+
+```text
+60090 *CLI .*:RAM.0/EE.CLI
+60100 ENDPROC
+```
+
+Having built the CLI command file EE.CLI and queued it for action by the CLI, PROCE terminates and BBCBASIC(Z80) returns to the immediate mode. When this happens, the CLI command file EE.CLI is executed and it sends:
+
+```text
+LIST nnn
+The program line 'nnn'
+```
+
+to the file E.CLI. It then causes ‘PROCF' to be executed. This is the procedure where the line to be edited is cleaned up and turned into an input file.
+
+```text
+60110 DEF PROCF
+```
+
+Force a keyboard input to signal to the CLI that the command file EE.CLI has terminated.
+
+```text
+60120 A=INKEY(0)
+```
+
+The line to be edited is the second line in the file E.CLI. Open the file, throw away the first line (LIST \`nnn'), read the line to be edited and close the file.
+
+```text
+60130 A=OPENIN B$
+60140 INPUT#A,A$,A$
+60150 CLOSE#A
+```
+
+We have the line that we want to edit in A$. Now we use it to write a file (E.CLI again) that we can use as redirected input.
+
+```text
+60160 A=OPENOUT B$
+60170 PRINT#A,".J",A$
+```
+
+Change the CR at the end of the line to a ‘null’. We are going to use the file as input and if we left the CR at the end, the line would be entered before we had a chance to edit it.
+
+```text
+60180 PTR#A=PTR#A-1
+60190 BPUT#A,0
+60200 CLOSE#A
+```
+
+Get rid of the 'gash' file EE.CLI and move the cursor left ready for editing.
+
+```text
+60210 *ERASE :RAM.0/EE.CLI
+60220 VDU 8
+```
+
+Redirect input to be taken from the file E.CLI and exit.
+
+```text
+60230 OSCLI "*CLI .<"+B$
+60240 ENDPROC
+```
+
+The line to be edited is now in the input buffer and may be edited as if it had just been typed in.

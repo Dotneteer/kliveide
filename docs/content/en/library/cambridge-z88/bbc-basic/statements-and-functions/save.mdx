@@ -1,0 +1,28 @@
+---
+description: "A statement which saves the current program area to a file, in internal (tokenised) format."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# SAVE (SA.)
+
+A statement which saves the current program area to a file, in internal (tokenised) format.
+
+```text
+SAVE "FRED.BBC"
+SAVE A$
+```
+
+You use SAVE to save your program for use at a later time. The program must be given a name (file-specifier) and this name becomes the name of the file in which your program is saved.
+
+The name (file-specifier) must follow the normal naming conventions of Z88 filing system for folders and filenames. See the Operating System Interface section for a description of a file-specifier (name).
+
+**Syntax**
+
+```text
+SAVE <str>
+```
+
+**Associated Keywords**
+
+LOAD, CHAIN

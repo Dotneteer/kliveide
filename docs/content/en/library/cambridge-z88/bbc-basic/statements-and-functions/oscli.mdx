@@ -1,0 +1,31 @@
+---
+description: "This command allows a string expression to be passed to the operating system. It overcomes the problems caused by the exclusion of variables in the star () commands. Using this statement, you can,..."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# OSCLI
+
+This command allows a string expression to be passed to the operating system. It overcomes the problems caused by the exclusion of variables in the star (\*) commands. Using this statement, you can, for instance, erase and rename files whose names you only know at run-time.
+
+```text
+command$="DELETE PHONE.DTA"
+OSCLI command$
+```
+
+```text
+command$="RENAME ADDRESS.DTA NAME.DTA"
+OSCLI command$
+```
+
+See the Operating System Interface section for more details. If the command is not recognised by the Z88’s operating system, a ‘Bad command’ error will be reported.
+
+**Syntax**
+
+```text
+OSCLI <str>
+```
+
+**Associated Keywords**
+
+All operating system (\*) commands.

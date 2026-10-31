@@ -1,0 +1,41 @@
+---
+description: "A command which deletes a group of lines from the program. Both start and end lines of the group will be deleted."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# DELETE (DEL.)
+
+A command which deletes a group of lines from the program. Both start and end lines of the group will be deleted.
+
+You can use DELETE to remove a number of lines from your program. To delete a single line, just type the line number followed by \<Enter\>.
+
+The example below deletes all the lines between line 10 and 15 (inclusive).
+
+```text
+DELETE 10,15
+```
+
+To delete up to a line from the beginning of the program, use 0 as the first line number. The following example deletes all the lines up to (and including) line 120.
+
+```text
+DELETE 0,120
+```
+
+To delete from a given line to the end of the program, use 65535 as the last line number. To delete from line 2310 to the end of the program, type:
+
+```text
+DELETE 2310,65535
+```
+
+A hyphen is an acceptable alternative to a comma.
+
+**Syntax**
+
+```text
+DELETE <n-const>,<n-const>
+```
+
+**Associated Keywords**
+
+EDIT, LIST, OLD, NEW

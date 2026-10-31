@@ -1,0 +1,38 @@
+---
+description: "This is a high priority unary operator (the same priority as unary -). It causes a bit-by-bit binary inversion of the numeric to its right. The numeric may be a constant, a variable, or a..."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# NOT
+
+This is a high priority unary operator (the same priority as unary -). It causes a bit-by-bit binary inversion of the numeric to its right. The numeric may be a constant, a variable, or a mathematical or boolean expression. Expressions must be enclosed in brackets.
+
+```text
+A=NOT 3
+flag=NOT flag
+flag=NOT(A=B)
+```
+
+NOT is most commonly used in an IF....THEN....ELSE statement to reverse the effect of the test.
+
+```text
+IF NOT(rate>5 AND TIME<100) THEN .....
+IF NOT flag THEN .....
+```
+
+BBC BASIC(Z80) does not have true boolean variables; it makes do with numeric variables. This can lead to confusion because the testable condition in an IF....THEN....ELSE statement is evaluated mathematically and can result in something other than -1 (TRUE) or 0 (FALSE).
+
+When the test in an IF....THEN....ELSE is evaluated, FALSE=0 and anything else is considered to be TRUE. If you wish to use NOT to reverse the action of an IF statement it is important to ensure that the testable condition does actually evaluate to -1 for TRUE.
+
+If the testable condition evaluates to 1, for example, the result of the test would be considered to be TRUE and the THEN part of the IF....THEN....ELSE statement would be carried out. However, using NOT in front of the testable condition would not reverse the action. NOT 1 evaluates to -2, which would also be considered to be TRUE.
+
+**Syntax**
+
+```text
+<n-var>=NOT<numeric>
+```
+
+**Associated Keywords**
+
+NONE

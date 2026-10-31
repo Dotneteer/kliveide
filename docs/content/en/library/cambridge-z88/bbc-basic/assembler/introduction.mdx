@@ -1,0 +1,121 @@
+---
+description: "BBC BASIC(Z80) includes a Z80 assembler. This assembler is similar to the 6502 assembler on the BBC Micro and it is entered in the same way. That is, '[' enters assembler mode and ']' exits..."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# Introduction
+
+BBC BASIC(Z80) includes a Z80 assembler. This assembler is similar to the 6502 assembler on the BBC Micro and it is entered in the same way. That is, '\[' enters assembler mode and '\]' exits assembler mode.
+
+This section illustrates the way the BBC BASIC(Z80) assembler functions; it does not provide sufficient information to enable you to write assembler programs that interface with the Z88 operating system or hardware. In order to successfully write assembler language programs for the Z88 you will need a considerable amount of technical information about the machine. This information is available in the [Z88 Developers’ Notes](/en/library/cambridge-z88/developers-notes), available on the **cambridgez88.jira.com** **wiki**.
+
+The Z88 is a sophisticated computer which is capable of holding several programs in memory concurrently. This makes incorrectly written assembler language programs potentially dangerous.
+
+Whilst the Z88’s operating system is quite robust, you could cause the Z88 to enter an undefined state if your program does not correctly interface with it. If this happens, you may corrupt all the data and programs in RAM and you will need to perform a soft or hard reset. A hard reset will cause all the programs and data in RAM to be lost and there is a possibility that a soft reset may leave the computer in an unstable condition which will lead to an eventual software failure.
+
+If you wish to develop assembler language programs, we suggest you do so on a computer which does not does not hold programs or data that you cannot afford to lose. It would also be wise to download your program to another computer or an EPROM before testing it. If you do not take these precautions, you may eventually lose some irreplaceable programs or data.
+
+We recommend using the Z88 emulator, [OZvm](https://cambridgez88.jira.com/wiki/spaces/OZVM/), for assembler language application testing, which also includes debugging tools such as instruction single stepping and breakpoints, memory viewing and editing.
+
+## Instruction mnemonics [#instruction-mnemonics]
+
+All standard Zilog mnemonics are accepted: 'ADD', 'ADC' and 'SBC', must be followed by 'A' or 'HL'. For example
+
+```text
+ADD A,C
+```
+
+is accepted but
+
+```text
+ADD C
+```
+
+is not. However, the brackets around the port address in 'IN' and 'OUT' are optional; thus both
+
+<strong>`OUT (5),A`</strong> and <strong>`OUT 5,A`</strong>
+
+are accepted. The instruction `'IN F,(C)`' is **not** accepted but the equivalent object code is produced from '`IN (HL),(C)`'.
+
+The pseudo-operations ‘DEFB’, ‘DEFW’ and ‘DEFM’ are included. ‘DEFM’ is like ‘EQUS’ in the 6502 version.
+
+## Assembler Statements [#assembler-statements]
+
+An assembly language statement consists of three elements; an optional label, an instruction and an operand. A comment may follow the operand field. The instruction following a label must be separated from it by at least one space. Similarly, the operand must also be separated from the instruction by a space. Statements are terminated by a colon (:) or end of line (CR).
+
+## Labels [#labels]
+
+Any BBC BASIC(Z80) numeric variable may be used as a label. These (external) labels are defined by an assignment (count=23 for instance). Internal labels are defined by preceding them with a full stop. When the assembler encounters such a label, a BASIC variable is created containing the current value of the Program Counter (P%). (The Program Counter is described later.)
+
+In the example shown later under the heading ‘The Assembly Process’, two internal labels are defined and used. Labels have the same rules as standard BBC BASIC(Z80) variable names; they should start with a letter and not start with a keyword.
+
+## Comments [#comments]
+
+You can insert comments into assembly language programs by preceding them with a semicolon (;) or a back-slash (\\). In assembly language, a comment ends at the end of the statement. Thus, the following example will work (but it's a bit untidy):
+
+```text
+[;start assembly language program
+etc
+LD A,B ;In-line comment:POP HL ;get start address
+RET NZ ;Return if finished:JR loop ;else go back
+etc
+;end assembly language program:]
+```
+
+## Byte, Word and String Constants [#byte-word-and-string-constants]
+
+You can store constants within your assembly language program using the define byte (DEFB), define word (DEFW) and define message (DEFM) pseudo-operation commands. These will create 1 byte, 2 byte and ‘string’ items respectively.
+
+### Define Byte - DEFB [#define-byte---defb]
+
+DEFB can be used to set one byte of memory to a particular value. For example,
+
+```text
+.data DEFB 15
+      DEFB 9
+```
+
+will set two consecutive bytes of memory to 15 and 9 (decimal). The address of the first byte will be stored in the variable 'data'.
+
+### Define Word - DEFW [#define-word---defw]
+
+DEFW can be used to set two bytes of memory to a particular value. The first byte is set to the least significant byte of the number and the second to the most significant byte. For example,
+
+```text
+.data DEFW &90F
+```
+
+will have the same result as the Byte Constant example.
+
+### String Constant - DEFM [#string-constant---defm]
+
+DEFM can be used to load a string of ASCII characters into memory. For example,
+
+```text
+JR continue; jump round the data
+.string DEFM "This is a test message"
+DEFB &D
+.continue; and continue the process
+```
+
+will load the string 'This is a test message' followed by a carriage-return into memory. The address of the start of the message is loaded into the variable 'string'. This is equivalent to the following program segment:
+
+```text
+JR continue;        jump round the data
+.string;        leave assembly and load the string
+]
+$P%="This is a test message" REM starting at P%
+P%=P%+LEN($P%)+1 REM adjust P% to next free byte
+[
+OPT opt; reset OPT
+.continue;        and continue the program
+```
+
+### Defined storage [#defined-storage]
+
+Unfortunately, there is no ‘define storage’ directive. A second DIM statement may be used, or, for small amounts of storage, you can use DEFM with a dummy string. For example:
+
+DEFM STRING$(100, “ “)
+
+will reserve 100 bytes of storage.

@@ -1,0 +1,46 @@
+---
+description: "A program object which must precede declaration of a user defined function (FN) or procedure (PROC). DEF must be used at the start of a program line."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# DEF
+
+A program object which must precede declaration of a user defined function (FN) or procedure (PROC). DEF must be used at the start of a program line.
+
+If DEF is encountered during execution, the rest of the line is ignored. As a consequence, single line definitions can be put anywhere in the program.
+
+Multi-line definitions must not be executed. The safest place to put multi-line definitions is at the end of the main program after the END statement.
+
+There is no speed advantage to be gained by placing function or procedure definitions at the start of the program.
+
+```text
+DEF FNMEAN ....
+DEF PROCJIM ....
+```
+
+In order to make the text more readable (always a GOOD THING) the function or procedure name may start with an underline.
+
+```text
+DEF FN_mean ....
+DEF PROC_Jim$ ....
+```
+
+Function and procedure names may end with a '$'. This is not compulsory for functions which return strings.
+
+A procedure definition is terminated by the statement ENDPROC.
+
+A function definition is terminated by a statement which starts with an equals (=) sign. The function returns the value of the expression to the right of the equals sign.
+
+For examples of function and procedure declarations, see FN and PROC. For a general explanation of functions and procedures, refer to the Procedures and Functions sub-section in the General Information section.
+
+**Syntax**
+
+```text
+DEF PROC<name>[(<s-var>|<n-var>{,<s-var>|<n-var>})]
+DEF FN<name>[(<s-var>|<n-var>{,<s-var>|<n-var>})]
+```
+
+**Associated Keywords**
+
+ENDPROC, FN, PROC

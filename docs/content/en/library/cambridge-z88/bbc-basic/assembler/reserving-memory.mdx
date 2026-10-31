@@ -1,0 +1,65 @@
+---
+description: "Machine code instructions are assembled as if they were going to be placed in memory at the addresses specified by the program counter, P%. Their actual location in memory may be determined by O%..."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# Reserving Memory
+
+## The Program Counter [#the-program-counter]
+
+Machine code instructions are assembled as if they were going to be placed in memory at the addresses specified by the program counter, P%. Their actual location in memory may be determined by O% depending on the OPTion specified (see below). You must make sure that P% (or O%) is pointing to a free area of memory before your program begins assembly. In addition, you need to reserve the area of memory that your machine code program will use so that it is not overwritten at run time. You can reserve memory by using a special version of the DIM statement or by changing HIMEM or LOMEM.
+
+## Using DIM to Reserve Memory [#using-dim-to-reserve-memory]
+
+Using the special version of the DIM statement to reserve an area of memory is the simplest way for short programs which do not have to be located at a particular memory address. (See the keyword DIM for more details.) For example,
+
+```text
+DIM code 20: REM Note the absence of brackets
+```
+
+will reserve 21 bytes of code (byte 0 to byte 20) and load the variable 'code' with the start address of the reserved area. You can then set P% (or O%) to the start of that area. The example below reserves an area of memory 100 bytes long and sets P% to the first byte of the reserved area.
+
+```text
+DIM sort% 99
+P%=sort%
+```
+
+## Moving HIMEM to Reserve Memory [#moving-himem-to-reserve-memory]
+
+If you are going to use a machine code program in a number of your BBC BASIC(Z80) programs, the simplest way is to assemble it once, save it using \*SAVE and load it from each of your programs using \*LOAD. In order for this to work, the machine code program must be loaded into the same address each time. The most convenient way to arrange this is to move HIMEM down by the length of the program and load the machine code program in to this protected area. Theoretically, you could raise LOMEM to provide a similar protected area below your BBC BASIC(Z80) program. However, altering LOMEM destroys ALL your dynamic variables and is more risky.
+
+## Length of Reserved Memory [#length-of-reserved-memory]
+
+You must reserve an area of memory which is sufficiently large for your machine code program before you assemble it, but you may have no real idea how long the program will be until after it is assembled. How then can you know how much memory to reserve? Unfortunately, the answer is that you can't. However, you can add to your program to find the length used and then change the memory reserved by the DIM statement to the correct amount.
+
+In the example below, a large amount of memory is initially reserved. To begin with, a single pass is made through the assembly code and the length needed for the code is calculated (lines 100 to 120). After a CLEAR, the correct amount of memory is reserved (line 140) and a further two passes of the assembly code are performed as usual. Your program should not, of course, subsequently try to use variables set before the clear statement. If you use a similar structure to the example and place the program lines which initiate the assembly function at the start of your program, you can place your assembly code anywhere you like and still avoid this problem.
+
+```text
+100 DIM free -1, code HIMEM-free-1000
+110 PROC_ass(0)
+120 L%=P%-code
+130 CLEAR
+140 DIM code L%
+150 PROC_ass(0)
+160 PROC_ass(2)
+- - -
+Put the rest of your program here.
+- - -
+1000 DEF PROC_ass(opt)
+10010 P%=code
+10020 [OPT opt
+
+- - -
+Assembler code program.
+- - -
+```
+
+```text
+11000 ]
+11010 ENDPROC
+```
+
+## Initial Setting of the Program Counter [#initial-setting-of-the-program-counter]
+
+The program counters, P%, and O% are initialised to zero. Using the assembler without first setting P% (and O%) is liable to corrupt the operating system.

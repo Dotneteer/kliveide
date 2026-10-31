@@ -1,0 +1,45 @@
+---
+description: "This function returns the state of the pixel at the specified location, as 0 (unlit) or 1 (lit). If the specified point is outside the graphics window (taking into account the position of the..."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# POINT
+
+This function returns the state of the pixel at the specified location, as 0 (unlit) or 1 (lit). If the specified point is outside the graphics window (taking into account the position of the graphics origin), or if MODE 0 is selected, the value -1 is returned.
+
+This statement is available when installed with Z88 Patch via CHAIN command. See “Installing Z88 Patch” section previously in this guide, on how to obtain the Z88 Patch.
+
+Available by default when BBC BASIC(Z80) is used with Z88 ROM release V4.3 and later.
+
+**Syntax**
+
+```text
+<n-var>=POINT(<numeric>,<numeric>)
+```
+
+**Associated Keywords**
+
+PLOT, DRAW, MOVE, GCOL
+
+**POS**
+
+A function returning the horizontal position of the cursor on the screen. The left hand column is 0 and the right hand column is one less than the width of the display.
+
+```text
+X=POS
+```
+
+COUNT will tell you the print head position of the printer. It is an uncertain indicator of the horizontal position of the cursor on the screen. (See the keyword COUNT for details.)
+
+See VPOS for an example of the use of POS and VPOS.
+
+**Syntax**
+
+```text
+<n-var>=POS
+```
+
+**Associated Keywords**
+
+COUNT, TAB, VPOS

@@ -1,0 +1,36 @@
+---
+description: "There is little you can do to control the growth of the stack. However, with care, you can control the growth of the heap. You can do this by limiting the number of variables you use and by good..."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# Memory Management
+
+There is little you can do to control the growth of the stack. However, with care, you can control the growth of the heap. You can do this by limiting the number of variables you use and by good string variable management.
+
+## Limiting the Number of Variables [#limiting-the-number-of-variables]
+
+Each new variable occupies room on the heap. Restricting the length of the names of variables and limiting the number of variables used will limit the size of the heap. However, of the techniques available to you, this is the least rewarding. In addition, it leads to incomprehensible programs because your variable names become meaningless. You should keep this technique in the back of your mind whilst you are programming, but only apply it rigorously if you are really stuck for space.
+
+## String Management [#string-management]
+
+### Garbage Generation [#garbage-generation]
+
+Unlike numeric variables, string variables do not have a fixed length. When you create a string variable it is added to the heap and sufficient memory is allocated for the initial value of the string. If you subsequently assign a longer string to the variable there will be insufficient room for it in its original position and the string will have to be relocated with its new value at the top of the heap. The initial area will then become 'dead' and the heap will have grown by the new length of the string. The areas of 'dead' memory are called garbage. As more and more re-assignments take place, the heap grows and eventually there is no more room. Thus, it is possible to run out of room for variables even though there should be enough space.
+
+### Memory Allocation for String Variables [#memory-allocation-for-string-variables]
+
+You can overcome the problem of 'garbage' by reserving enough memory for the longest string you will ever put into a variable before you use it. You do this simply by assigning a string of spaces to the variable. If your program needs to find an empty string the first time it is used, you can subsequently assign a null string to it. The same technique can be used for string arrays. The example below sets up a single dimensional string array with room for 20 characters in each entry, and then empties it.
+
+```text
+10 DIM names$(10)
+20 FOR i=0 TO 10
+30   name$(i)=STRING$(20," ")
+40 NEXT
+50 stop$=""
+60 FOR i=0 TO 10
+70   name$(i)=""
+80 NEXT
+```
+
+Assigning a null string to stop$ prevents the space for the last entry in the array being recovered when it is emptied.

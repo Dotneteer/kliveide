@@ -1,0 +1,199 @@
+---
+description: "The Z88 Command Line Interpreter (CLI) is very powerful. It 'sits' between the keyboard and the current application and interprets the keys that you press. In most cases, the characters for the..."
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# The Command Line Interpreter (CLI)
+
+The Z88 Command Line Interpreter (CLI) is very powerful. It 'sits' between the keyboard and the current application and interprets the keys that you press. In most cases, the characters for the keys that you press are passed directly to the application that is currently active. However, some keys, \[INDEX\] ❑ and ◇ for example, have a particular significance to the CLI and they cause subsequent key presses to be interpreted as CLI commands and actioned accordingly. For example, pressing the ❑ key followed by the **F** key will take you into the filer popdown.
+
+You can use the CLI to make changes to the way the Z88 behaves. Any such changes are confined to the application that was active at the time.
+
+The CLI takes its input from the keyboard or from a file. Thus, the CLI acts in many ways like a programming language for controlling the way the computer functions.
+
+## CLI Command Files [#cli-command-files]
+
+The CLI may receive commands from a file as well as from the keyboard (or the current input stream). For example, from within the FILER popdown, the following key sequence
+
+◇ `EXprnt.cli`
+
+will invoke (run) the CLI command file \`pmt.cli'.
+
+A CLI command file is terminated when the end of the file is reached or it is suspended (see later). Control is then returned to the CLI.
+
+You can use the command .`*filename`
+
+within one CLI command file to invoke another CLI command file. When the second CLI command file terminates, control is returned to the first CLI command file.
+
+## Cancelling a CLI File [#cancelling-a-cli-file]
+
+The only way to cancel a CLI command file whilst it is running or suspended is by pressing the \[SHIFT\] and \[ESC\] keys together. Since this sequence cannot be represented in any other way (see below), you cannot cancel a suspended CLI command file from within a program.
+
+You can cancel all CLI command files by pressing ◇\[ESC\].
+
+## Special Character Sequences [#special-character-sequences]
+
+Some of the keys on the keyboard, '❑' and '◇' for example, have no ASCII code. However, some way of representing these keys is required when input is taken from a CLI command file (or redirected). The ASCII character sequences listed below represent many of the \`non-printable' keys. Unfortunately not all key sequences may be represented in this manner. For instance, there is no way of representing \[CAPS LOCK\] key or ◇\[ESC\].
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>
+
+**Sequence**
+
+```text
+#
+|
+~A
+~C
+|[
+~E
+~S
+~I
+~M
+~H
+~X
+~U
+~D
+~L
+~R
+##
+||
+~~
+~.
+```
+
+```text
+.;
+```
+
+</Table.Td>
+<Table.Td>
+
+**Represents**
+
+Holding down the ❑ key and pressing the next key in the sequence.
+
+Holding down the ◇ key and pressing the next key in the sequence.
+
+Pressing ❑ and releasing it before pressing another key.
+
+Pressing ◇ and releasing it before pressing another key.
+
+\[ESCAPE\] key.
+
+\[ENTER\] key.
+
+\[SHIFT\]. This is only generated if \<SHIFT\> would have any effect.
+
+\[INDEX\] key.
+
+\[MENU\] key.
+
+\[HELP\] key.
+
+\[DELETE\] key.
+
+↑ (cursor up) key.
+
+↓ (cursor down) key.
+
+← (cursor left) key.
+
+→ (cursor right) key.
+
+A single '\#'.
+
+A single 'I'.
+
+A single ‘\~’.
+
+Used to generate a single ‘.’ at the beginning of a line without it being taken as the start of a CLI command.
+
+Treat the rest of the line as a remark.
+
+</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+## File Control Commands [#file-control-commands]
+
+A full stop at the beginning of a line in a CLI command file introduces the **I/O** redirection and additional file control commands as described below.
+
+## I/O Redirection [#io-redirection]
+
+The standard input and output for the Z88 initially come from and go to the keyboard and the screen. In computer jargon, they are 'bound' to the keyboard and the screen.
+
+You can change the input and output binding (redirect the I/O) with the following CLI commands:
+
+.\<filename Take input from the file (or device) 'filename'
+
+.\>filename Send output to the file (or device) 'filename'
+
+Don't forget that as far as the Z88 is concerned there is no difference between a 'real' file and a device. For example, the device :COM.0 is treated in the same way as a file by the Z88.
+
+In addition to completely redirecting the input or output, you can also copy the input or output stream to a file with the following CLI commands:
+
+.T\<filename Send a copy of the input to the file (or device) \`filename'
+
+.T\>filename Send a copy of the output to the file (or device) \`filename'
+
+The previous output redirection commands apply to the standard output. If you want to redirect the Printer output, you may so do with the following CLI commands:
+
+.=filename Redirect the pre-filter output to the file (or device) \`filename'
+
+.T=filename Send a copy of the pre-filter output to the file (or device) 'filename'
+
+## Additional CLI File Commands [#additional-cli-file-commands]
+
+The following additional commands are only effective from within a CLI file or from redirected input.
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>
+
+**Sequence**
+
+```text
+.S
+```
+
+```text
+.D
+```
+
+```text
+.J
+```
+
+```text
+.*file
+```
+
+</Table.Td>
+<Table.Td>
+
+**Effect**
+
+Suspend the current CLI, but maintain all re-bindings
+
+Delay for 'n' centiseconds. If \[ESC\] is pressed during a delay, all subsequent delays for that CLI will fail.
+
+Jammer. Ignore all special sequences for the rest of the CLI. For example, after this command, \#P will generate the characters \`\#P' and not invoke PipeDream.
+
+Invoke (run) the CLI command file 'file'.
+
+</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+## Re-binding Within a CLI Command File [#re-binding-within-a-cli-command-file]
+
+Any re-bindings are in effect only for the duration of the CLI command file. You may suspend a CLI command file and maintain the bindings with the \``.S`' command. However, once you have done so, the only way of cancelling the CLI is by pressing \[SHIFT\]/\[ESCAPE\] on the keyboard.

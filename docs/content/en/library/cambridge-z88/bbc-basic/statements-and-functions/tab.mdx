@@ -1,0 +1,33 @@
+---
+description: "There are two versions of TAB: TAB(X) and TAB(X,Y) and they are effectively two different keywords."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# TAB
+
+A keyword available in PRINT or INPUT.
+
+There are two versions of TAB: TAB(X) and TAB(X,Y) and they are effectively two different keywords.
+
+TAB(X) is a printer orientated statement. The number of printable characters since the last new-line (COUNT) is compared with X. If X is equal or greater than COUNT, sufficient spaces to make them equal are printed. These spaces will overwrite any characters which may already be on the screen. If X is less than COUNT, a new-line will be printed first.
+
+TAB(X,Y) is a screen orientated statement. It will move the cursor on the screen to character cell X,Y (column X, row Y) if possible. No characters are overwritten and COUNT is NOT updated. Consequently, a TAB(X,Y) followed by a TAB(X) will give unpredictable (at first glance) results.
+
+The leftmost column is column 0 and the top of the screen is row 0.
+
+```text
+PRINT TAB(10);A$
+PRINT TAB(X,Y);B$
+```
+
+**Syntax**
+
+```text
+PRINT TAB(<numeric>[,<numeric>])
+INPUT TAB(<numeric>[,<numeric>])
+```
+
+**Associated Keywords**
+
+POS, VPOS, PRINT, INPUT

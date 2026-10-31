@@ -1,0 +1,29 @@
+---
+description: "A function which allows a machine code routine to return a value directly."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# USR
+
+A function which allows a machine code routine to return a value directly.
+
+USR calls the machine code subroutine whose start address is its argument. The processor's A, B, C, D, E, F, H and L registers are initialised to the least significant words of A%, B%, C%, D%, E%, F%, H% and L% respectively (see also CALL).
+
+USR provides you with a way of calling a machine code routine which is designed to return one integer value. Parameters are passed via the processor's registers and the machine code routine returns a 32-bit integer result composed of the processor's HLH'L' registers. The HL register forms the most significant word of the result.
+
+```text
+X=USR(lift_down)
+```
+
+Unlike CALL, USR returns a result. Consequently, you must assign the result to a variable. It may help your understanding if you look upon CALL as the machine code equivalent to a PROCedure and USR as the equivalent to Function.
+
+**Syntax**
+
+```text
+<n-var>=USR(<numeric>)
+```
+
+**Associated Keywords**
+
+CALL

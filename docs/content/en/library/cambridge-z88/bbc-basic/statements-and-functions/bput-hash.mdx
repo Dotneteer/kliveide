@@ -1,0 +1,36 @@
+---
+description: "A statement which puts a byte to the data file whose file handle is the first argument. The second argument's least significant byte is written to the file. The file pointer is incremented after..."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# BPUT# (BP.#)
+
+A statement which puts a byte to the data file whose file handle is the first argument. The second argument's least significant byte is written to the file. The file pointer is incremented after the byte has been written.
+
+```text
+BPUT#E,32
+BPUT#staff_file,A/256
+BPUT#4,prn
+```
+
+Before you use this statement you must normally have opened a file for output using OPENOUT or OPENUP. See these keywords and the BBC BASIC(Z80) Files section for details.
+
+You can use this statement to write single bytes to a disk file. The number that is sent to the file is in the range 0 to 255. Real numbers are converted internally to integers and the top three bytes are 'masked off'. Each byte written is numeric, but you can use ASC(character$) to convert (the first character of) 'character$' to a number.
+
+The example below is a program segment that 'packs' an integer number between 0 and 65535 (&FFFF) into two bytes, least significant byte first. The file must have already been opened for output and the file handle stored in 'fnum'. The integer variable number% contains the value to be written to the file.
+
+```text
+100 BPUT#fnum,number% MOD 256
+110 BPUT#fnum,number% DIV 256
+```
+
+**Syntax**
+
+```text
+BPUT#<numeric>,<numeric>
+```
+
+**Associated Keywords**
+
+OPENIN, OPENUP, OPENOUT, CLOSE\#, PRINT\#, INPUT\#, BGET\#, EXT\#, PTR\#, EOF\#

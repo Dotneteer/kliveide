@@ -1,0 +1,757 @@
+---
+description: "There are three example random file programs. The first is very simple, but it demonstrates the principle of random access files. The second expands the first into quite a useful database program...."
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# Random (Relative) Files
+
+## Introduction [#introduction]
+
+There are three example random file programs. The first is very simple, but it demonstrates the principle of random access files. The second expands the first into quite a useful database program. The final example is an inventory program. Although it does not provide application dependent features, it would serve as it stands and it is sufficiently well structured to be expanded without too many problems.
+
+## Designing the File [#designing-the-file]
+
+Unlike other versions of BASIC, there is no formalised record structure in BBC BASIC. A file is considered to be a continuous stream of bytes (characters) and you can directly access any byte of the file. This approach has many advantages, but most files are logically considered as a sequence of records (some of which may be empty). How then do we create this structure and access our logical records?
+
+### Record Structure [#record-structure]
+
+Creating the structure is quite simple. You need to decide what information you want to hold and the order in which you want to store it. In the first example, for instance, we have two items of information (fields) per logical record; the name and the remarks. The name can be a maximum of 30 characters long and the remarks a maximum of 50 characters. So our logical record has two fields, one 30 characters long and the other 50 characters long. When the name string is written to disk it will be terminated by a CR - and so will the remarks string. So each record will be a maximum of 82 characters long.
+
+We haven't finished yet, however. We need to be able to tell whether any one record is 'live' or empty (or deleted). To do this we need an extra byte at the start of each record which we set to one value for 'empty' and another for 'live'. In all the examples we use 0 to indicate 'empty' and NOT 0 to indicate 'live'. We are writing character data to the file so we could use the first byte of the name string as the indicator because the lowest ASCII code we will be storing is 32 (space). You can't do this for mixed data files because this byte could hold a data value of zero. Because of this, we have chosen to use an additional byte for the indicator in all the examples.
+
+Our logical record thus consists of:
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>1</Table.Td>
+<Table.Td>indicator byte</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>31</Table.Td>
+<Table.Td>bytes for the name</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>51</Table.Td>
+<Table.Td>bytes for the remarks</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+Thus the maximum amount of data in each record is 83 bytes. Because we cannot tell in advance how big each record needs to be (and we may want to change it later), we must assume that ALL the records will be this length. Since most of the records will be smaller than this, we are going to waste quite a lot of space in our random access file, but this is the penalty we pay for convenience and comparative simplicity.
+
+When we write the data to the file, we could insist that each field was treated as a fixed length field by packing each string out with spaces to make it the 'correct' length. This would force each field to start at its 'proper' byte within the record. We don't need to do this, however, because we aren't going to randomly access the fields within the record; we know the order of the fields within the record and we are going to read them sequentially into appropriately named variables. We can write the fields to the file with each field following on immediately behind the previous one. All the 'spare' room is now left at the end of the record and not split up at the end of each field.
+
+### Accessing The Records [#accessing-the-records]
+
+In order to access any particular record, you need to set PTR\# to the first byte of that record. Remember, you can't tell BBC BASIC(Z80) that you want 'record 5', because it knows nothing of your file and record structure. You need to calculate the position of the first byte of 'record 5' and set PTR\# to this value.
+
+To start with, let's call the first record on the file 'record zero', the second record 'record 1', the third record 'record 2', etc. The first byte of 'record zero' is at byte zero on the file. The first byte of 'record 1' is at byte 83 on the file. The first byte of 'record 2' is at byte 166 (2\*83) on the file. And so on. So, the start point of any record can be calculated by:
+
+```text
+first_byte= 83*record_number
+```
+
+Now, we need to set PTR\# to the position of this byte in order to access the record. If the record number was held in 'recno' and the file handle in 'fnum', we could do this directly by:
+
+```text
+PTR#fnum=83*recno
+```
+
+However, we may want to do this in several places in the program so it would be better to define and use a function to set PTR\# as illustrated below.
+
+```text
+190 ...
+200 PTR#fnum=FN_ptr(recno)
+210 ...
+etc
+```
+
+```text
+900 DEF FN_ptr(record)=83*record
+```
+
+Whilst the computer is quite happy with the first record being 'record zero', us mere humans find it a little confusing. What we need is to be able to call the first record 'record 1', etc. We could do this without altering the function which calculates the start position of each record, but we would waste the space allocated to 'record 0' since we would never use it. We want to call it 'record 1' and the program wants to call it 'record 0'. We can change the function to cater for this. If we subtract 1 from the record number before we multiply it by the record length, we will get the result we want. Record 1 will start at byte zero, record 2 will start at byte 83, etc. Our function now looks like this:
+
+```text
+DEF FN_ptr(record)=83*(record-1)
+```
+
+In our example so far we have used a record length of 83. If we replace this with a variable 'rec\_len' we have a general function which we can use to calculate the start position of any record in the file in any program. (You will need to set rec\_len to the appropriate value at the start of the program.) The function now becomes:
+
+```text
+DEF FN_ptr(record)=rec_len*(record-1)
+```
+
+We use this function (or something very similar to it) in the following three example programs using random access files.
+
+## Ex 9 - Simple Random Access File [#ex-9---simple-random-access-file]
+
+```text
+ 10 REM F-RAND1
+ 20 :
+ 30 REM VERY SIMPLE RANDOM ACCESS PROGRAM
+ 40 :
+ 50 REM This program maintains a random access
+ 60 REM file of names and remarks.  There is
+ 70 REM room for a maximum of 20 entries. Each
+ 80 REM name can be up to a max of 30 chars
+ 90 REM long and each remark up to 50 chars.
+100 REM The first byte of the record is set non
+110 REM zero (in fact &FF) if there is a record
+120 REM present.  This gives a maximum record
+130 REM length of 1+31+51=83. (Including CRs)
+140 :
+150 bell$=CHR$(7)
+160 temp$=STRING$(50," ")
+170 maxrec=20
+180 rec_len=83
+190 ans$=""
+200 CLS
+210 WIDTH 0
+220 fnum=OPENUP "RANDONE"
+230 IF fnum=0 fnum=FN_setup("RANDONE")
+240 REPEAT
+250   REPEAT
+260     INPUT '"Enter record number: "ans$
+270     IF ans$="0" CLOSE#fnum:CLS:END
+280     IF ans$="" record=record+1 ELSE record=VAL(ans$)
+290     IF record<1 OR record>maxrec PRINT bell$;
+300   UNTIL record>0 AND record<=maxrec
+310   PTR#fnum=FN_ptr(record)
+320   PROC_display
+330   INPUT '"Do you wish to change this record" ,ans$
+340   PTR#fnum=FN_ptr(record)
+350   IF FN_test(ans$) PROC_modify
+360 UNTIL FALSE
+370 END
+380 :
+390 :
+400 DEF FN_test(A$) =LEFT$(A$,1)="Y" OR LEFT$(A$,1)="y"
+410 :
+420 :
+430 DEF FN_ptr(record)=rec_len*(record-1)
+440 REM This makes record 1 start at PTR# = 0
+450 :
+460 :
+470 DEF PROC_display
+480 PRINT '"Record number ";record'
+490 flag=BGET#fnum
+500 IF flag=0 PROC_clear:ENDPROC
+510 INPUT#fnum,name$,remark$
+520 PRINT name$;" ";remark$ '
+530 ENDPROC
+540 :
+550 :
+560 DEF PROC_clear
+570 PRINT "Record empty"
+580 name$=""
+590 remark$=""
+600 ENDPROC
+610 :
+620 :
+630 DEF PROC_modify
+640 PRINT '"(Enter <Enter> for no change or DELETE to delete)"'
+650 INPUT "Name ",temp$
+660 temp$=LEFT$(temp$,30)
+670 IF temp$<>"" name$=temp$
+680 INPUT "Remark ",temp$
+690 temp$=LEFT$(temp$,50)
+700 IF temp$<>"" remark$=temp$
+710 INPUT '"Confirm update record",ans$
+720 IF NOT FN_test(ans$) ENDPROC
+730 IF name$="DELETE" BPUT#fnum,0:ENDPROC
+740 BPUT#fnum,255
+750 PRINT#fnum,name$,remark$
+760 ENDPROC
+770 :
+780 :
+790 DEF FN_setup(fname$)
+800 PRINT "Setting up the database file"
+810 fnum=OPENOUT(fname$)
+820 FOR record=1 TO maxrec
+830   PTR#fnum=FN_ptr(record)
+840   BPUT#fnum,0
+850 NEXT
+860 =fnum
+```
+
+## Ex 10 - Simple Random Access Database [#ex-10---simple-random-access-database]
+
+The second program in this sub-section expands the previous program into a simple, but quite versatile, database program. A setup procedure has been added which allows you to specify the file name. If it is a new file, you are then allowed to specify the number of records and the number, name and size of the fields you wish to use. This information is stored at the start of the file. If the file already exists this data is read from the records at the beginning of the file. The function for calculating the start position of each record is modified to take into account the room used at the front of the file to store information about the database.
+
+```text
+ 10 REM F-RAN
+ 20 REM SIMPLE DATABASE PROGRAM
+ 30 REM Written by R T Russell Jan 1983
+ 40 REM Mod for BBC BASIC(Z80): D Mounter Dec 1985
+ 50 :
+ 60 REM This is a simple database program.  You
+ 70 REM are asked for the name of the file you
+ 80 REM wish to use.  If the file does not
+ 90 REM already exist, you are asked to enter
+100 REM the number and format of the records.
+110 REM If the file does already exist, the file
+120 REM specification is read from the file.
+130 :
+140 @%=&90A
+150 bell$=CHR$(7)
+160 CLS
+170 WIDTH 0
+180 INPUT '"Enter the filename of the data file: "filename$
+190 fnum=OPENUP(filename$)
+200 IF fnum=0 fnum=FN_setup(filename$) ELSE PROC_readgen
+210 PRINT
+220 :
+230 REPEAT
+240   REPEAT
+250     INPUT '"Enter record number: "ans$
+260     IF ans$="0" CLOSE#fnum:CLS:END
+270     IF ans$="" record=record+1 ELSE record=VAL(ans$)
+280     IF record<1 OR record>maxrec PRINT bell$;
+290   UNTIL record>0 AND record<=maxrec
+300   PTR#fnum=FN_ptr(record)
+310   PROC_display
+320   INPUT '"Do you wish to change this record" ,ans$
+330   PTR#fnum=FN_ptr(record)
+340   IF FN_test(ans$) PROC_modify
+350 UNTIL FALSE
+360 END
+370 :
+380 :
+390 DEF FN_test(A$) =LEFT$(A$,1)="Y" OR LEFT$(A$,1)="y"
+400 :
+410 :
+420 DEF FN_ptr(record)=base+rec_len*(record-1)
+430 :
+440 :
+450 DEF FN_setup(filename$)
+460 PRINT "New file."
+470 fnum=OPENOUT(filename$)
+480 REPEAT
+490   INPUT "Enter the number of records (max 1000): "maxrec
+500 UNTIL maxrec>0 AND maxrec<1001
+510 REPEAT
+520   INPUT "Enter number of fields per record (max 20): "fields
+530 UNTIL fields>0 AND fields<21
+540 DIM title$(fields),size(fields),A$(fields)
+550 FOR field=1 TO fields
+560   PRINT '"Enter title of field number ";field;": ";
+570   INPUT ""title$(field)
+580   PRINT
+590     REPEAT
+600     INPUT "Max size of field (characters)",size(field)
+610   UNTIL size(field)>0 AND size(field)<256
+620 NEXT field
+630 rec_len=1
+640 PRINT#fnum,maxrec,fields
+650 FOR field=1 TO fields
+660   PRINT#fnum,title$(field),size(field)
+670   rec_len=rec_len+size(field)+1
+680 NEXT field
+690 base=PTR#fnum
+700 :
+710 FOR record=1 TO maxrec
+720   PTR#fnum=FN_ptr(record)
+730   BPUT#fnum,0
+740 NEXT
+750 =fnum
+760 :
+770 :
+780 DEF PROC_readgen
+790 rec_len=1
+800 INPUT#fnum,maxrec,fields
+810 DIM title$(fields),size(fields),A$(fields)
+820 FOR field=1 TO fields
+830   INPUT#fnum,title$(field),size(field)
+ 840   rec_len=rec_len+size(field)+1
+ 850 NEXT field
+ 860 base=PTR#fnum
+ 870 ENDPROC
+ 880 :
+ 890 :
+ 900 DEF PROC_display
+ 910 PRINT '"Record number ";record'
+ 920 flag=BGET#fnum
+ 930 IF flag=0 PROC_clear:ENDPROC
+ 940 FOR field=1 TO fields
+ 950   INPUT#fnum,A$(field)
+ 960   PRINT title$(field);" ";A$(field)
+ 970 NEXT field
+ 980 ENDPROC
+ 990 :
+1000 :
+1010 DEF PROC_clear
+1020 FOR field=1 TO fields
+1030   A$(field)=""
+1040 NEXT
+1050 ENDPROC
+1060 :
+1070 :
+1080 DEF PROC_modify
+1090 PRINT '"(Enter <Enter> for no change)"'
+1100 FOR field=1 TO fields
+1110   REPEAT
+1120     PRINT title$(field);" ";
+1130     INPUT LINE ""A$
+1140     IF A$="" PRINT TAB(POS,VPOS-1)title$(field);" ";A$(field)
+1150     REM TAB(POS,VPOS-1) moves the cursor up 1 line
+1160   UNTIL LEN(A$)<=size(field)
+1170   IF A$<>"" A$(field)=A$
+1180 NEXT field
+1190 INPUT '"Confirm update record",ans$
+1200 IF NOT FN_test(ans$) ENDPROC
+1210 IF A$(1)="DELETE" BPUT#fnum,0:ENDPROC
+1220 BPUT#fnum,255
+1230 FOR field=1 TO fields
+1240   PRINT#fnum,A$(field)
+1250 NEXT field
+1260 ENDPROC
+```
+
+## Ex 11 - Random Access Inventory Program [#ex-11---random-access-inventory-program]
+
+The final example in this sub-section is a full-blown inventory program. Rather than go through all its aspects at the start, they are discussed at the appropriate point in the listing. (These comments do not have line numbers and are not, of course, part of the program.)
+
+```text
+ 10 REM F-RAND
+ 20 :
+ 30 REM Written by Doug Mounter Jan 1982
+ 40 REM Modified for BBC BASIC(Z80) Dec 1985
+ 50 :
+ 60 REM EXAMPLE OF A RANDOM ACCESS FILE
+ 70 :
+ 80 REM This is a simple inventory program.  It
+ 90 REM uses the item's part number as the key
+ 92 REM and stores:
+100 REM  The item description - char max len 30
+110 REM  The quantity in stock - numeric
+120 REM  The re-order level - numeric
+130 REM  The unit price - numeric
+140 REM In addition, the first byte of the rec
+150 REM is used as a valid data flag.  Set to 0
+160 REM if empty, D if the record has been
+170 REM deleted or V if the record is valid.
+180 REM This gives a MAX record len of 47 bytes
+190 REM (Don't forget the CR after the string)
+200 :
+210 PROC_initialise
+220 inventry=FN_open("INVENTRY")
+```
+
+The following section of code is the command loop. You are offered a choice of functions until you eventually select function 0. The more traditional ON GOSUB statement has been used for menu selection processing. The newer ON PROC statement is illustrated in the indexed file example which follows. There are some forward jumps within procedures, etc to overcome the lack of a multi line IF statement. It would have been possible to have used further procedures, but the whole thing would have become rather laboured.
+
+```text
+230 REPEAT
+240   CLS
+250   PRINT TAB(5,3);"If you want to:-"'
+260   PRINT TAB(10);"End This Session";TAB(55);"Type 0"
+270   PRINT TAB(10);"Amend or Create an Entry";TAB(55);"Type 1"
+280   PRINT TAB(10);"Disp Inventory for One Part";TAB(55);"Type 2"
+290   PRINT TAB(10);"Alter Stock  of One Part";TAB(55);"Type 3"
+300   PRINT TAB(10);"Disp Items to Reorder";TAB(55);"Type 4"
+310   PRINT TAB(10);"Recover a Deleted Item";TAB(55);"Type 5"
+320   PRINT TAB(10);"List Deleted Items";TAB(55);"Type 6"
+330   PRINT TAB(10);"Set Up a New Inventory";TAB(55);"Type 9"
+340   REPEAT
+350     PRINT TAB(5,15);bell$;
+360     PRINT "Please enter selection (0 to 6 or 9) ";
+370     function$=GET$
+380   UNTIL function$>"/" AND function$<"8" OR function$="9"
+390   function=VAL(function$)
+400   ON function GOSUB 500,670,810,1100,1350,1540,1770,1790,1840 ELSE
+410 UNTIL function=0
+420 CLS
+430 PRINT "Inventory File Closed" ''
+440 CLOSE#inventry
+450 END
+460 :
+470 :
+```
+
+This is the data entry function. You can delete or amend an entry or enter a new one. Have a look at the definition of FN\_getrec for an explanation of the ASC"V" in its parameters.
+
+```text
+480 REM AMEND/CREATE AN ENTRY
+490 :
+500 REPEAT
+510   CLS
+520   PRINT "AMEND/CREATE"
+530   partno=FN_getpartno
+540   flag=FN_getrec(partno,ASC"V")
+550   PROC_display(flag)
+560   PRINT'"Do you wish to ";
+570   IF flag PRINT "change this entry ? "; ELSE PRINT "enter data ? ";
+580   IF GET$<>"N" flag=FN_amend(partno):PROC_cteos
+590   PROC_write(partno,flag,type)
+600   PRINT bell$;"Do you wish to amend/create another record ? ";
+610 UNTIL GET$="N"
+620 RETURN
+630 :
+640 :
+```
+
+This subroutine allows you to look at a record without the ability to change or delete it.
+
+```text
+650 REM DISPLAY AN ENTRY
+660 :
+670 REPEAT
+680   CLS
+690   PRINT "DISPLAY"
+700   partno=FN_getpartno
+710   flag=FN_getrec(partno,ASC"V")
+720   PROC_display(flag)
+730   PRINT '
+740   PRINT "Do you wish to view another part?";
+750 UNTIL GET$="N"
+760 RETURN
+770 :
+780 :
+```
+
+The purpose of this subroutine is to allow you to update the stock level without having to amend the rest of the record.
+
+```text
+ 790 REM CHANGE THE STOCK LEVEL FOR ONE PART
+ 800 :
+ 810 REPEAT
+ 820   CLS
+ 830   PRINT "CHANGE STOCK"
+ 840   partno=FN_getpartno
+ 850   flag=FN_getrec(partno,ASC"V")
+ 860   REPEAT
+ 870     PROC_display(flag)
+ 880     PROC_cteos
+ 890     REPEAT
+ 900       PRINT TAB(0,12);:PROC_cteol
+ 910       INPUT "What is the change ? " temp$
+ 920       change=VAL(temp$)
+ 930     UNTIL INT(change)=change AND stock+change>=0
+ 940     IF temp$="" flag=FALSE:GOTO 1000
+ 950     stock=stock+change
+ 960     PROC_display(flag)
+ 970     PRINT'"Is this correct ? ";
+ 980     temp$=GET$
+ 990 :
+1000   UNTIL NOT flag OR temp$="Y"
+1010   PROC_write(partno,flag,ASC"V")
+1020   PRINT return$;bell$;
+1030   PRINT "Do you want any more updates ? ";
+1040 UNTIL GET$="N"
+1050 RETURN
+1060 :
+1070 :
+```
+
+This subroutine goes through the file in stock number order and lists all those items where the current stock is below the reorder level. You can interrupt the process at any time by pushing a key.
+
+```text
+1080 REM DISPLAY ITEMS BELOW REORDER LEVEL
+1090 :
+1100 partno=1
+1110 REPEAT
+1120   CLS
+1130   PRINT "ITEMS BELOW REORDER LEVEL"'
+1140   line_count=2
+1150   REPEAT
+1160     flag=FN_getrec(partno,ASC"V")
+1170     IF NOT(flag AND stock<reord) THEN 1230
+1180     PRINT "Part Number ";partno
+1190     PRINT desc$;" Stock ";stock;" Reorder Level ";reord
+1200     PRINT
+1210     line_count=line_count+3
+1220 :
+1230     partno=partno+1
+1240     temp$=INKEY$(0)
+1250   UNTIL partno>maxpartno OR line_count>20 OR temp$<>""
+1260   PRINT TAB(0,23);bell$;"Push any key to continue or E to end ";
+1270   temp$=GET$
+1280 UNTIL partno>maxpartno OR temp$="E"
+1290 partno=0
+1300 RETURN
+1310 :
+1320 :
+```
+
+Deleted entries are not actually removed from the file, just marked as deleted. This subroutine makes it possible for you to correct the mistake you made by deleting data you really wanted. If you have never used this type of program seriously, you won't believe how useful this is.
+
+```text
+1330 REM RECOVER A DELETED ENTRY
+1340 :
+1350 REPEAT
+1360   CLS
+1370   PRINT "RECOVER DELETED RECORDS"
+1380   partno=FN_getpartno
+1390   flag=FN_getrec(partno,ASC"D")
+1400   PROC_display(flag)
+1410   PRINT
+1420   IF NOT flag THEN 1470
+1430   PRINT "If you wish to recover this entry type Y ";
+1440   temp$=GET$
+1450   IF temp$="Y"PROC_write(partno,flag,ASC"V")
+1460 :
+1470   PRINT return$;bell$;"Do you wish to recover another record ? ";
+1480 UNTIL GET$="N"
+1490 RETURN
+1500 :
+1510 :
+```
+
+This subroutine lists all the deleted entries so you can check you really don't want the data.
+
+```text
+1520 REM LIST DELETED ENTRIES
+1530 :
+1540 partno=1
+1550 REPEAT
+1560   CLS
+1570   PRINT "DELETED ITEMS"'
+1580   line_count=2
+1590   REPEAT
+1600     flag=FN_getrec(partno,ASC"D")
+1610     IF NOT flag THEN 1660
+1620     PRINT "Part Number ";partno
+1630     PRINT "Description ";desc$'
+1640     line_count=line_count+3
+1650 :
+1660     partno=partno+1
+1670     temp$=INKEY$(0)
+1680   UNTIL partno>maxpartno OR line_count>20 OR temp$<>""
+1690   PRINT TAB(0,23);bell$;"Push any key to continue or E to end ";
+1700 UNTIL partno>maxpartno OR GET$="E"
+1710 partno=0
+1720 RETURN
+1730 :
+1740 :
+1750 REM DUMMY RETURNS FOR INVALID FUNCTION NUMs
+1760 :
+1770 RETURN
+1780 :
+1790 RETURN
+1800 :
+1810 :
+1820 REM REINITIALISE THE INVENTORY DATA FILE
+1830 :
+1840 CLS
+1850 PRINT TAB(0,3);bell$;"Are you sure you want to set up a new inventory?"
+1860 PRINT "You will DESTROY ALL THE DATA YOU HAVE ACCUMULATED so far."
+1870 PRINT '"It would be safer to use a new disk in drive B and start a new"
+1880 PRINT "inventory file."'
+1890 PRINT "If you are SURE you want to do it, enter YES"
+1900 PRINT "If you want to start a new inventory file, enter NEW"
+1910 INPUT "Otherwise, just hit return ",temp$
+1920 IF temp$="YES" PROC_setup(inventry)
+1930 IF temp$="NEW" function=0
+1940 RETURN
+1950 :
+1960 :
+```
+
+This is where all the variables that you usually write as CHR$(\#) go. Then you can find them if you want to change them.
+
+```text
+1970 REM INITIALISE ALL THE VARIOUS PRESETS ETC
+1980 :
+1990 DEF PROC_initialise
+2010 bell$=CHR$(7)
+2020 return$=CHR$(13)
+2030 rec_length=47
+2040 partno=0
+```
+
+If you initially set strings to the maximum length you will ever use, you will save prevent the generation of 'garbage'.
+
+```text
+2050 desc$=STRING$(30," ")
+2060 temp$=STRING$(40," ")
+2070 WIDTH 0
+```
+
+```text
+2130 REM OPEN FILE AND RETURN THE FILE HANDLE
+2140 :
+2150 REM If the file already exists, the largest permitted
+2160 REM part number is read into maxpartno.
+2170 REM If it is a new file, the file is
+2180 REM initialised and the largest part
+2190 REM number is written as the first record.
+2200 :
+2210 DEF FN_open(name$)
+2220 fnum=OPENUP(name$)
+2230 IF fnum>0 INPUT#fnum,maxpartno: =fnum
+2240 fnum=OPENOUT(name$)
+2250 CLS
+```
+
+It's a new file, so we won't go through the warning bit.
+
+```text
+2260 PROC_setup(fnum)
+2270 =fnum
+2280 :
+2290 REM SET UP THE FILE
+2300 :
+2310 REM Ask for maximum part number required,
+2320 REM write it as the first record and then
+2330 REM write 0 in to first byte of each rec.
+2340 :
+2350 DEF PROC_setup(fnum)
+2360 REPEAT
+2370   PRINT TAB(0,12);bell$;:PROC_cteos
+2380   INPUT "What is the highest part number required (Max 5000)",maxpartno
+2390 UNTIL maxpartno>0 AND maxpartno<5000 AND INT(maxpartno)=maxpartno
+2400 PTR#fnum=0
+2410 PRINT#fnum,maxpartno
+2420 FOR partno=1 TO maxpartno
+2430   PTR#fnum=FN_ptr(partno)
+2440   BPUT#fnum,0
+2450 NEXT
+2460 partno=0
+2470 ENDPROC
+2480 :
+2490 :
+```
+
+Ask for the required part number. If a null is entered, make the next part number one more than the last.
+
+```text
+2500 REM GET AND RETURN THE REQUIRED PART NUMBER
+2510 :
+2520 DEF FN_getpartno
+2530 REPEAT
+2540   PRINT TAB(0,5);bell$;:PROC_cteos
+2550   PRINT "Enter a Part Number Between 1 and ";maxpartno '
+2560   IF partno=maxpartno THEN 2590
+2570   PRINT "The Next Part Number is ";partno+1;
+2580   PRINT " Just hit RETURN to get this"'
+2590 :
+2600   INPUT "What is the Part Number You Want ", partno$
+2610   IF partno$<>"" partno=VAL(partno$):GOTO 2630
+2620   IF partno=maxpartno partno=0 ELSE partno=partno+1
+2630 :
+2640   PRINT TAB(35,9);partno;:PROC_cteol
+2650 UNTIL partno>0 AND partno<maxpartno+1 AND INT(partno)=partno
+2660 =partno
+2670 :
+2680 :
+2690 REM GET THE RECORD FOR THE PART NUMBER
+2700 :
+2710 REM Return TRUE if the record exists and
+2720 REM FALSE if not  If the record does not
+2730 REM exist, load desc$ with "No Record" The
+2740 REM remainder of the record is set to 0.
+2742 :
+2750 DEF FN_getrec(partno,type)
+2760 stock=0
+2770 reord=0
+2780 price=0
+2790 PTR#inventry=FN_ptr(partno)
+2800 test=BGET#inventry
+2810 IF test=0 desc$="No Record": =FALSE
+2820 IF test=type THEN 2850
+2830 IF type=86 desc$="Record Deleted" ELSE desc$="Record Exists"
+2840 =FALSE
+2850 :
+2860 INPUT#inventry,desc$
+2870 INPUT#inventry,stock,reord,price
+2880 =TRUE
+2890 :
+2900 :
+```
+
+Part numbers run from 1 up. The record for part number 1 starts at byte 5 of the file. The start position could have been calculated as (part-no -1) \*record\_length + 5. The expression below works out to the same thing, but it executes quicker.
+
+```text
+2910 REM CALCULATE THE VALUE OF PTR FOR THIS REC
+2920 :
+2930 DEF FN_ptr(partno)=partno*rec_length+5-rec_length
+2940 :
+2950 :
+```
+
+This function amends the record as required and returns with flag=TRUE if any amendment has taken place. It also sets the record type indicator (valid deleted or no record) to ASC"V" or ASC"D" as appropriate.
+
+```text
+2960 REM AMEND THE RECORD
+2970 :
+2980 DEF FN_amend(partno)
+2990 PRINT return$;:PROC_cteol:PRINT TAB(0,4);
+3000 PRINT "Please Complete the Details for Part Number ";partno
+3010 PRINT "Just hit Return to leave the entry as it is"'
+3020 flag=FALSE
+3030 type=ASC"V"
+3040 INPUT "Description - Max 30 Chars " temp$
+3050 IF temp$="DELETE" type=ASC"D": =TRUE
+3060 temp$=LEFT$(temp$,30)
+3070 IF temp$<>"" desc$=temp$:flag=TRUE
+3080 IF desc$="No Record" OR desc$="Record Deleted" =FALSE
+3090 INPUT "Current Stock Level " temp$
+3100 IF temp$<>"" stock=VAL(temp$):flag=TRUE
+3110 INPUT "Reorder Level " temp$
+3120 IF temp$<>"" reord=VAL(temp$):flag=TRUE
+3130 INPUT "Unit Price " temp$
+3140 IF temp$<>"" price=VAL(temp$):flag=TRUE
+3150 =flag
+3160 :
+3170 :
+```
+
+Write the record to the file if necessary (flag=TRUE)
+
+```text
+3180 REM WRITE THE RECORD
+3190 :
+3200 DEF PROC_write(partno,flag,type)
+3210 IF NOT flag ENDPROC
+3220 PTR#inventry=FN_ptr(partno)
+3230 BPUT#inventry,type
+3240 PRINT#inventry,desc$,stock,reord,price
+3250 ENDPROC
+3260 :
+3270 :
+```
+
+Print the record details to the screen. If the record is not of the required type (V or D) or it does not exist, stop after printing the description. The description holds "Record Exists" or "Record Deleted" or valid data as set by FN\_getrec.
+
+```text
+3280 REM DISPLAY THE RECORD DETAILS
+3290 :
+3300 DEF PROC_display(flag)
+3310 PRINT TAB(0,5);:PROC_cteos
+3320 PRINT "Part Number ";partno'
+3330 PRINT "Description ";desc$
+3340 IF NOT flag ENDPROC
+3350 PRINT "Current Stock Level ";stock
+3360 PRINT "Reorder Level ";reord
+3370 PRINT "Unit Price ";price
+3380 ENDPROC
+3390 :
+3400 :
+```
+
+The two following procedures rely on the screen width being 80 characters:
+
+```text
+3410 REM There are no 'native' clear to end of
+3420 REM line/screen vdu procedures.  The
+3430 REM following two procedures clear to the
+3440 REM end of the line/screen.
+3450 DEF PROC_cteol
+3460 LOCAL x,y
+3470 x=POS:y=VPOS
+3480 IF y=31 PRINT SPC(79-x); ELSE PRINT SPC(80-x);
+3490 PRINT TAB(x,y);
+3500 ENDPROC
+3510 :
+3520 :
+3530 DEF PROC_cteos
+3540 LOCAL I,x,y
+3550 x=POS:y=VPOS
+3560 IF y<31 FOR I=y TO 30:PRINT SPC(80);:NEXT
+3570 PRINT SPC(79-x);TAB(x,y);
+3580 ENDPROC
+```

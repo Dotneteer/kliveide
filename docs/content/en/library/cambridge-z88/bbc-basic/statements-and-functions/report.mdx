@@ -1,0 +1,34 @@
+---
+description: "A statement which prints out the error string associated with the last error which occurred."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# REPORT (REPO.)
+
+A statement which prints out the error string associated with the last error which occurred.
+
+You can use this statement within your own error handling routines to print out an error message for those errors you are not able to cope with.
+
+The example below is an error handling routine designed to cope only with the \<ESCAPE\> key being pressed. All other errors are reported and the program terminated.
+
+```text
+  10 ON ERROR GOTO 1000
+  20 .....
+ 970 .....
+ 980 END
+ 990 :
+1000 PRINT
+1010 IF ERR=17 THEN PRINT "<ESCAPE> ignored":GOTO 20
+1020 REPORT:PRINT " at line ";ERL
+```
+
+See the sub-section on ‘Error Handling’ and the keywords ERR, ERL and ON ERROR for more details.
+
+**Syntax**
+
+REPORT
+
+**Associated Keywords**
+
+ERR, ERL, ON ERROR

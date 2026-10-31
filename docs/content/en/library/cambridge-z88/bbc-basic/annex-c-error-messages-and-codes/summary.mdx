@@ -1,0 +1,151 @@
+---
+description: "Strictly speaking 'Bad program' does not have an error code. It leaves ERR and ERL unchanged."
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# Summary
+
+## Trappable - Program
+
+| **No** | **Error** | **No** | **Error** |
+| --- | --- | --- | --- |
+| 1 | Out of range | 2 | \* |
+| 3 | \* | 4 | Mistake |
+| 5 | Missing , | 6 | Type mismatch |
+| 7 | No FN | 8 | \* |
+| 9 | Missing " | 10 | Bad DIM |
+| 11 | DIM space | 12 | Not LOCAL |
+| 13 | No PROC | 14 | Array |
+| 15 | Subscript | 16 | Syntax error |
+| 17 | Escape | 18 | Division by zero |
+| 19 | String too long | 20 | Too big |
+| 21 | -ve root | 22 | Log range |
+| 23 | Accuracy lost | 24 | Exp range |
+| 25 | \* | 26 | No such variable |
+| 27 | Missing ) | 28 | Bad HEX |
+| 29 | No such FN/PROC | 30 | Bad call |
+| 31 | Arguments | 32 | No FOR |
+| 33 | Can't match FOR | 34 | FOR variable |
+| 35 | \* | 36 | No TO |
+| 37 | \* | 38 | No GOSUB |
+| 39 | ON syntax | 40 | ON range |
+| 41 | No such line | 42 | Out of DATA |
+| 43 | No REPEAT | 44 | \* |
+| 45 | Missing \# |   |   |
+
+\* Not applicable to BBC BASIC(Z80)
+
+## Trappable - Operating System [#trappable---operating-system]
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>**No**</Table.Td>
+<Table.Td>**Error**</Table.Td>
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>192</Table.Td>
+<Table.Td>Too many open files</Table.Td>
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>220</Table.Td>
+<Table.Td>Bad syntax</Table.Td>
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>222</Table.Td>
+<Table.Td>Channel</Table.Td>
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>252</Table.Td>
+<Table.Td>File Access errors</Table.Td>
+<Table.Td>Reported as one of the following:</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td />
+<Table.Td>Already exists</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td />
+<Table.Td>Bad filename</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td />
+<Table.Td>End of file</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td />
+<Table.Td>File Not found</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td />
+<Table.Td>File type mismatch</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td />
+<Table.Td>In use</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td />
+<Table.Td>Read Protected</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td />
+<Table.Td>Suspended</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td />
+<Table.Td>Write protected</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>253</Table.Td>
+<Table.Td>Sorry, not implemented</Table.Td>
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>254</Table.Td>
+<Table.Td>Bad command</Table.Td>
+<Table.Td />
+</Table.Tr>
+</tbody>
+</Table>
+
+## Untrappable - Error Code 0 [#untrappable---error-code-0]
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>No room</Table.Td>
+<Table.Td>RENUMBER space</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Silly</Table.Td>
+<Table.Td>LINE space</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Sorry</Table.Td>
+<Table.Td>Bad program</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Failed at nnn</Table.Td>
+<Table.Td />
+</Table.Tr>
+</tbody>
+</Table>
+
+Strictly speaking 'Bad program' does not have an error code. It leaves ERR and ERL unchanged.

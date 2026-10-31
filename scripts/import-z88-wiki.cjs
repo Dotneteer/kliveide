@@ -3,6 +3,13 @@
  * documentation site as MDX, one space per area (`SPACES` below):
  * - "UG", the Cambridge Z88 User Guide -> `docs/content/en/library/cambridge-z88/user-guide/`
  * - "DN", the Z88 Developers' Notes     -> `docs/content/en/library/cambridge-z88/developers-notes/`
+ * - "BBCREF", the BBC BASIC (Z80) Reference Guide -> `docs/content/en/library/cambridge-z88/bbc-basic/`
+ *
+ * The BBCREF space is a single wiki page that embeds a Google Doc; the manual is that document.
+ * Its import fetches the document's HTML export and turns it into the same markup the Confluence
+ * pages use (`loadGdoc` below), so one converter serves every space. The document's chapters
+ * (Heading 1) become folders and their sections (Heading 2) pages; its own table of contents,
+ * which lists printed page numbers, is dropped.
  *
  * The Library is the navbar area of the machines' own manuals, one folder per machine
  * (`content/en/library/<machine>/_meta.ts` lists its manuals). Each manual is in the site search;
@@ -31,6 +38,8 @@
 const { createRequire } = require("node:module");
 const { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } = require("node:fs");
 const { join, dirname } = require("node:path");
+const { execFileSync } = require("node:child_process");
+const { fileURLToPath, pathToFileURL } = require("node:url");
 const os = require("node:os");
 
 const repoRoot = join(__dirname, "..");
@@ -61,6 +70,43 @@ const SPACES = {
     slug: (title) => title.match(/^([A-Z]{2}_[A-Za-z0-9]+),/)?.[1] ?? title,
     intro: () =>
       `These are the **Z88 Developers' Notes**, imported from the [Cambridge Z88 wiki](${SITE}/spaces/DN/overview): how to write applications for the Z88 and its OZ operating system, its system calls, and its hardware. The pages follow the original notes' structure.`
+  },
+  BBCREF: {
+    /** The space's home page embeds the manual as a Google Doc */
+    gdoc: true,
+    path: "cambridge-z88/bbc-basic",
+    images: "z88-bbc-basic",
+    title: "BBC BASIC (Z80) Reference Guide",
+    /**
+     * "AND (A.)" -> "and", "GET/GET$" -> "get", "CHR$" -> "chr-str", "PRINT# (P.#)" -> "print-hash",
+     * "*EDIT (*E.)" -> "star-edit": a keyword's page is named by the keyword
+     */
+    slug: (title) =>
+      title
+        .replace(/\s*\([^)]*\)\s*$/, "")
+        .replace(/\/.*$/, "")
+        .replace(/^\*/, "star ")
+        .replace(/\$/g, " str")
+        .replace(/#/g, " hash"),
+    /** The document's pictures have no names or alt texts of their own */
+    alt: {
+      "image1.png": "The Z88's Index, with BBC BASIC selected in the Applications list",
+      "image2.png": "The key combinations that switch the printer on and off",
+      "image3.png": "A suspended BBC BASIC activity in the Index",
+      "image4.png": "The Index with no suspended activities",
+      "image5.png": "Two BBC BASIC activities suspended in the Index",
+      "image6.png": "BBC BASIC printing the result of VDU 1,ASC\"2\",ASC\"F\"",
+      "image7.gif": "Flowchart of the binary chop search",
+      "image8.png": "BBC BASIC's start-up screen",
+      "image9.png": "The signs of the trigonometric functions in the four quadrants",
+      "image10.png": "How printer output flows from an application through the Printer Filter to the serial port",
+      "image11.png": "BBC BASIC after VDU 1,50,42,79",
+      "image12.png": "The letters that name the box character pieces",
+      "image13.png": "BBC BASIC's start-up screen after loading the Z88 Patch",
+      "image14.gif": "R. T. Russell's logo"
+    },
+    intro: (root) =>
+      `This is the **BBC BASIC (Z80) Reference Guide** for the Cambridge Z88, second edition, imported from the [Cambridge Z88 wiki](${SITE}/spaces/BBCREF/overview), where it is published as a Google Document. It describes BBC BASIC as the Z88 runs it, including the commands the Z88 Patch adds. The pages follow the manual's chapters; every keyword has a page of its own under [Statements and functions](${root}/statements-and-functions).`
   }
 };
 
@@ -94,6 +140,7 @@ const MAX_WIDTH = 900;
 async function fetchCached(url, file, { binary = false, space = SPACE_KEY } = {}) {
   const path = join(CACHE_ROOT, space, file);
   if (!REFRESH && existsSync(path)) return binary ? readFileSync(path) : readFileSync(path, "utf8");
+  if (url.startsWith("file:")) return readFileSync(fileURLToPath(url));
   const res = await fetch(url, { redirect: "follow" });
   if (!res.ok) return undefined;
   const data = binary ? Buffer.from(await res.arrayBuffer()) : await res.text();
@@ -108,6 +155,7 @@ async function fetchJson(url, file, space = SPACE_KEY) {
 }
 
 async function listPages(spaceKey = SPACE_KEY) {
+  if (SPACES[spaceKey].gdoc) return (await loadGdoc(spaceKey)).pages;
   const space = await fetchJson(`${SITE}/rest/api/space/${spaceKey}`, "space.json", spaceKey);
   const pages = [];
   // --- The "next" links of the v2 API start at the host ("/wiki/api/v2/...")
@@ -409,6 +457,20 @@ class PageConverter {
   }
 
   mapHref(href) {
+    // --- The Google Doc wraps every outside link in a redirect
+    const redirect = href.match(/^https?:\/\/www\.google\.com\/url\?q=([^&]*)/);
+    if (redirect) href = decodeURIComponent(redirect[1]);
+    if (href.startsWith("#")) {
+      // --- A link to a heading or bookmark of the Google Doc
+      const target = GDOC_ANCHORS.get(href.slice(1));
+      const route = target && this.routeOfId(target.pageId);
+      if (route) return route + (target.hash ? `#${target.hash}` : "");
+      this.report.external.add(`unresolved anchor: ${href}`);
+      return undefined;
+    }
+    const space = href.match(/cambridgez88\.jira\.com\/wiki\/spaces\/([A-Z]+)\/?(?:overview)?$/);
+    const spaceTree = space && (space[1] === SPACE_KEY ? this.tree : this.tree.others[space[1]]);
+    if (spaceTree) return spaceTree.root.route;
     const m =
       href.match(/cambridgez88\.jira\.com\/wiki\/spaces\/[A-Z]+\/pages\/(\d+)/) ||
       href.match(/pageId=(\d+)/);
@@ -467,8 +529,9 @@ class PageConverter {
       case "a": {
         const href = attr(node, "href");
         const text = this.inline(kids(node), ctx).trim();
-        if (!href) return text;
-        return text ? `[${text}](${this.mapHref(href)})` : "";
+        const to = href && this.mapHref(href);
+        if (!to) return text;
+        return text ? `[${text}](${to})` : "";
       }
       case "ac:link": {
         const { href, fallback } = this.linkTarget(node);
@@ -844,6 +907,12 @@ class PageConverter {
     this.headingOffset = used.length ? 2 - used[0] : 1;
     return this.blocks(kids(doc));
   }
+
+  /** A Google Doc page, already split and rewritten by `loadGdoc`: its Heading 3 is the page's ## */
+  convertNodes(nodes) {
+    this.headingOffset = -1;
+    return this.blocks(nodes);
+  }
 }
 
 /**
@@ -916,6 +985,266 @@ function isInlineBlock(block) {
   return !/\n/.test(block) && !/^(<Shot|<Callout|<Table|```|#{1,6} |- |\d+\. |> |---)/.test(block);
 }
 
+
+// ------------------------------------------------------------------------------------------------
+// Google Doc spaces (BBCREF)
+
+/** "h.xxxx" (a heading or bookmark id of the Google Doc) -> { pageId, hash } */
+const GDOC_ANCHORS = new Map();
+const gdocLoads = new Map();
+
+/** A synthetic element, shaped like the ones parse5 builds */
+function el(tagName, attrs = {}, childNodes = []) {
+  const node = {
+    nodeName: tagName,
+    tagName,
+    attrs: Object.entries(attrs).map(([name, value]) => ({ name, value })),
+    childNodes
+  };
+  for (const c of childNodes) c.parentNode = node;
+  return node;
+}
+const textNode = (value) => ({ nodeName: "#text", value });
+
+/** The document's class rules -> what they mean for the converter (later rules win, as in CSS) */
+function gdocStyles(html) {
+  const css = html.match(/<style[^>]*>([\s\S]*?)<\/style>/)?.[1] ?? "";
+  const rules = new Map();
+  let order = 0;
+  for (const [, name, decl] of css.matchAll(/\.(c\d+)\{([^}]*)\}/g)) {
+    const style = { order: order++ };
+    const weight = decl.match(/font-weight:(\d+)/);
+    if (weight) style.bold = Number(weight[1]) >= 600;
+    const italic = decl.match(/font-style:(\w+)/);
+    if (italic) style.italic = italic[1] === "italic";
+    const font = decl.match(/font-family:"([^"]+)"/);
+    if (font) style.mono = /courier|mono/i.test(font[1]);
+    const valign = decl.match(/vertical-align:(\w+)/);
+    if (valign) style.valign = valign[1];
+    rules.set(name, style);
+  }
+  return (node) => {
+    const style = {};
+    const list = (attr(node, "class") ?? "").split(/\s+/).map((c) => rules.get(c)).filter(Boolean);
+    for (const r of list.sort((a, b) => a.order - b.order)) Object.assign(style, r);
+    return style;
+  };
+}
+
+/** Whether a node's visible text is all inside `wrapper` elements (and there is some) */
+function allInside(node, wrapper) {
+  let some = false;
+  const visit = (n, inside) => {
+    if (n.nodeName === "#text") {
+      if (n.value.replace(/ /g, " ").trim()) {
+        if (!inside) return false;
+        some = true;
+      }
+      return true;
+    }
+    return kids(n).every((c) => visit(c, inside || tag(c) === wrapper));
+  };
+  return kids(node).every((c) => visit(c, tag(c) === wrapper)) && some;
+}
+
+/**
+ * Rewrites the export's markup into what PageConverter reads: styled spans -> strong / em / code /
+ * sup, all-monospace paragraphs -> <pre> lines, pictures -> <ac:image>, one-column tables (the
+ * Syntax / Associated Keywords boxes) -> their content, a bold first row -> table headings.
+ */
+function gdocRewrite(node, styleOf, ctx) {
+  const name = tag(node);
+  if (node.nodeName === "#text" || node.nodeName === "#comment") return [node];
+  if (name === "hr" || name === "style" || name === "script") return [];
+  const children = () => kids(node).flatMap((c) => gdocRewrite(c, styleOf, ctx));
+  if (name === "span") {
+    const style = styleOf(node);
+    let out = children();
+    if (style.mono) out = [el("code", {}, out)];
+    if (style.valign === "super" || style.valign === "sub") out = [el(style.valign === "super" ? "sup" : "sub", {}, out)];
+    if (style.italic) out = [el("em", {}, out)];
+    if (style.bold) out = [el("strong", {}, out)];
+    return out;
+  }
+  if (name === "img") {
+    const file = (attr(node, "src") ?? "").split("/").pop();
+    const width = Number((attr(node, "style") ?? "").match(/width:\s*([\d.]+)px/)?.[1]);
+    return [
+      el("ac:image", { "ac:alt": ctx.alt[file] ?? "", ...(width ? { "ac:width": String(Math.round(width)) } : {}) }, [
+        el("ri:url", { "ri:value": pathToFileURL(join(ctx.dir, attr(node, "src"))).href })
+      ])
+    ];
+  }
+  if (name === "p") {
+    const p = el("p", {}, children());
+    // --- A paragraph in the program listing font is a listing: one <pre> per line, which the
+    // --- converter joins with the listing lines next to it into one code block
+    if (allInside(p, "code")) {
+      const lines = textOf(p).replace(/ /g, " ").split("\n");
+      if (lines.length > 1 && !lines[lines.length - 1].trim()) lines.pop();
+      return lines.map((line) => el("pre", {}, [textNode(line)]));
+    }
+    return [p];
+  }
+  if (name === "table") {
+    const rows = findAll(node, "tr");
+    const cells = (tr) => kids(tr).filter((c) => tag(c) === "td" || tag(c) === "th");
+    if (rows.every((tr) => cells(tr).length <= 1)) {
+      return rows.flatMap((tr) => cells(tr).flatMap((td) => kids(td).flatMap((c) => gdocRewrite(c, styleOf, ctx))));
+    }
+    const newRows = rows.map((tr) =>
+      el("tr", {}, cells(tr).map((td) => el("td", Object.fromEntries((td.attrs ?? []).filter((a) => /span$/.test(a.name)).map((a) => [a.name, a.value])), kids(td).flatMap((c) => gdocRewrite(c, styleOf, ctx)))))
+    );
+    const first = newRows[0];
+    if (newRows.length > 1 && kids(first).every((td) => allInside(td, "strong"))) {
+      for (const td of kids(first)) {
+        td.nodeName = td.tagName = "th";
+        const unwrap = (n) => kids(n).flatMap((c) => (tag(c) === "strong" ? unwrap(c) : [c]));
+        td.childNodes = unwrap(td);
+      }
+    }
+    return [el("table", {}, [el("tbody", {}, newRows)])];
+  }
+  const copy = el(name, Object.fromEntries((node.attrs ?? []).map((a) => [a.name, a.value])), children());
+  return [copy];
+}
+
+/** Text of a heading: its lines, each with its whitespace collapsed */
+function headingLines(node) {
+  return textOf(node)
+    .replace(/ /g, " ")
+    .split("\n")
+    .map((l) => l.replace(/\s+/g, " ").trim())
+    .filter(Boolean);
+}
+
+/** A table-of-contents line: links into the document only, ending in a printed page number */
+function isTocLine(node) {
+  if (tag(node) !== "p") return false;
+  const links = findAll(node, "a");
+  return (
+    links.length > 0 &&
+    links.every((a) => (attr(a, "href") ?? "").startsWith("#")) &&
+    /\d\s*$/.test(textOf(node).replace(/ /g, " "))
+  );
+}
+
+function anchorMacro(id) {
+  return el("ac:structured-macro", { "ac:name": "anchor" }, [el("ac:parameter", { "ac:name": "" }, [textNode(id)])]);
+}
+
+/**
+ * Fetches the Google Doc a space's home page embeds (its zipped HTML export, cached) and splits it
+ * into pages: front matter -> the area's index, Heading 1 -> a chapter, Heading 2 -> a page.
+ */
+async function loadGdoc(spaceKey) {
+  if (gdocLoads.has(spaceKey)) return gdocLoads.get(spaceKey);
+  const load = (async () => {
+    const spec = SPACES[spaceKey];
+    const space = await fetchJson(`${SITE}/rest/api/space/${spaceKey}`, "space.json", spaceKey);
+    const homeId = space._expandable.homepage.split("/").pop();
+    const home = await fetchJson(
+      `${SITE}/rest/api/content/${homeId}?expand=body.storage,version`,
+      `raw/${homeId}.json`,
+      spaceKey
+    );
+    const docId = home.body.storage.value.match(/docs\.google\.com\/document\/d\/([\w-]+)/)?.[1];
+    if (!docId) throw new Error(`The home page of ${spaceKey} embeds no Google Doc`);
+    await fetchCached(`https://docs.google.com/document/d/${docId}/export?format=zip`, "gdoc.zip", {
+      binary: true,
+      space: spaceKey
+    });
+    const dir = join(CACHE_ROOT, spaceKey, "gdoc");
+    rmSync(dir, { recursive: true, force: true });
+    mkdirSync(dir, { recursive: true });
+    execFileSync("unzip", ["-q", "-o", join(CACHE_ROOT, spaceKey, "gdoc.zip"), "-d", dir]);
+    const htmlFile = require("node:fs").readdirSync(dir).find((f) => f.endsWith(".html"));
+    const html = readFileSync(join(dir, htmlFile), "utf8");
+    const body = findAll(parse5.parse(html), "body")[0];
+    const styleOf = gdocStyles(html);
+    const ctx = { dir, alt: spec.alt ?? {} };
+
+    const root = { id: "root", title: spec.title, parentId: undefined, position: 0 };
+    const pages = [root];
+    const bodies = new Map([["root", []]]);
+    let chapter;
+    let current = root;
+    const hashes = new Map([["root", new Set()]]);
+    // --- A bookmark between two headings belongs to the page that follows it
+    let marks = [];
+    const open = (page) => {
+      for (const mark of marks) GDOC_ANCHORS.set(mark, { pageId: page.id });
+      marks = [];
+      pages.push(page);
+      bodies.set(page.id, []);
+      hashes.set(page.id, new Set());
+      current = page;
+    };
+
+    for (const raw of kids(body)) {
+      const name = tag(raw);
+      const id = attr(raw, "id");
+      if (/^h[1-6]$/.test(name)) {
+        const lines = headingLines(raw);
+        if (!lines.length) continue;
+        const level = Number(name[1]);
+        if (level === 1) {
+          chapter = { id, title: lines.join(" "), parentId: "root", position: pages.length };
+          open(chapter);
+          GDOC_ANCHORS.set(id, { pageId: id });
+          continue;
+        }
+        if (level === 2 && chapter) {
+          // --- "Summary<br>Trappable - Program": the page, then its first section
+          open({ id, title: lines[0], parentId: chapter.id, position: pages.length });
+          GDOC_ANCHORS.set(id, { pageId: id });
+          if (lines.length > 1) bodies.get(id).push(el("h3", {}, [textNode(lines.slice(1).join(" "))]));
+          continue;
+        }
+        // --- A section inside a page: a readable anchor of its own, for the links to it
+        const used = hashes.get(current.id);
+        let hash = anchorId(lines.join(" ")) || "section";
+        while (used.has(hash)) hash += "-2";
+        used.add(hash);
+        if (id) GDOC_ANCHORS.set(id, { pageId: current.id, hash });
+        const heading = el(level === 2 ? "h3" : name, {}, [
+          anchorMacro(hash),
+          ...kids(raw).flatMap((c) => gdocRewrite(c, styleOf, ctx))
+        ]);
+        bodies.get(current.id).push(heading);
+        continue;
+      }
+      if (name === "a" && attr(raw, "id") && !textOf(raw).trim()) {
+        marks.push(attr(raw, "id"));
+        continue;
+      }
+      if (current === root && isTocLine(raw)) continue;
+      for (const mark of findAll(raw, "a").filter((a) => attr(a, "id"))) {
+        GDOC_ANCHORS.set(attr(mark, "id"), { pageId: current.id });
+      }
+      let nodes = gdocRewrite(raw, styleOf, ctx);
+      // --- The front matter's titles ("Copyright", "Preface") are bold paragraphs
+      if (current === root) {
+        nodes = nodes.map((n) =>
+          tag(n) === "p" && allInside(n, "strong") && textOf(n).trim().length < 30 ? el("h3", {}, kids(n)) : n
+        );
+        // --- The heading of the dropped table of contents goes with it
+        nodes = nodes.filter((n) => !(tag(n) === "h3" && /^(table of )?contents$/i.test(textOf(n).trim())));
+      }
+      bodies.get(current.id).push(...nodes);
+    }
+    return {
+      pages,
+      bodies,
+      version: home.version.number,
+      source: `https://docs.google.com/document/d/${docId}`,
+      home: `${SITE}/spaces/${spaceKey}/pages/${homeId}`
+    };
+  })();
+  gdocLoads.set(spaceKey, load);
+  return load;
+}
+
 // ------------------------------------------------------------------------------------------------
 // Pictures
 
@@ -958,6 +1287,7 @@ async function writePicture(buffer, target) {
 function description(blocks) {
   const para = blocks.find((b) => isInlineBlock(b) && !b.startsWith("<") && b.length > 40) ?? "";
   const plain = para
+    .replace(/<br \/>/g, " ")
     .replace(/<Key k="(\w+)" \/>/g, (_, k) => ({ diamond: "◇", square: "□" })[k] ?? k.toUpperCase())
     .replace(/<\/?[A-Za-z.]+[^>]*>/g, "")
     .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
@@ -985,6 +1315,7 @@ function contentsList(node, depth = 0) {
 
 async function main() {
   const report = { external: new Set(), unknown: new Set(), missing: [] };
+  const gdoc = SPACES[SPACE_KEY].gdoc ? await loadGdoc(SPACE_KEY) : undefined;
   const pages = await listPages();
   const tree = buildTree(pages);
   // --- The other imported spaces' page trees, so links between the spaces stay on the site
@@ -1001,9 +1332,16 @@ async function main() {
   const widths = new Map();
   const files = [];
   for (const page of tree.byId.values()) {
-    const { storage, version } = await loadBody(page.id);
     const conv = new PageConverter(page, tree, report);
-    const blocks = conv.convert(storage);
+    let blocks, version;
+    if (gdoc) {
+      blocks = conv.convertNodes(gdoc.bodies.get(page.id));
+      version = gdoc.version;
+    } else {
+      const loaded = await loadBody(page.id);
+      blocks = conv.convert(loaded.storage);
+      version = loaded.version;
+    }
 
     for (const image of conv.images) {
       if (widths.has(image.target)) continue;
@@ -1025,7 +1363,9 @@ async function main() {
     const imports = [];
     if (conv.usesCallout || isRoot) imports.push("Callout");
     if (conv.usesTable) imports.push("Table");
-    const source = `${SITE}/spaces/${SPACE_KEY}/pages/${page.id}`;
+    const source = gdoc
+      ? `${gdoc.source}, embedded in ${gdoc.home}`
+      : `${SITE}/spaces/${SPACE_KEY}/pages/${page.id}`;
     const head = [
       [
         "---",
@@ -1037,10 +1377,14 @@ async function main() {
         "---"
       ].join("\n"),
       ...(imports.length ? [`import { ${imports.join(", ")} } from 'nextra/components'`] : []),
-      `{/* Imported from ${source} (version ${version}) by ${GENERATOR} */}`,
+      `{/* Imported from ${source} (${gdoc ? "wiki page " : ""}version ${version}) by ${GENERATOR} */}`,
       `# ${page.title}`
     ];
     let body = blocks;
+    // --- A Google Doc chapter whose text is all in its sections lists them
+    if (gdoc && !isRoot && page.children.length && !blocks.length) {
+      body = [contentsList(page).trimEnd()];
+    }
     if (isRoot) {
       body = [
         `<Callout type="info">\n\n${SPACES[SPACE_KEY].intro(tree.root.route)}\n\n</Callout>`,

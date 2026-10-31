@@ -65,12 +65,14 @@ React 19 + Next 16.
   `library/` (the machines' own manuals, one folder per machine, always the last tab) - plus the
   book, which is reachable by URL but deliberately not linked anywhere (decision D6). The plan is
   `.plans/DOCS_SITE_MODERNIZATION_PLAN.md`.
-- **The Library's manuals are imported, not written here.** The Cambridge Z88 User Guide and the
-  Z88 Developers' Notes (`content/en/library/cambridge-z88/{user-guide,developers-notes}/`) come
-  from the cambridgez88.jira.com Confluence spaces through
-  `node scripts/import-z88-wiki.cjs --space UG|DN` (pictures to `public/images/en/z88-*/`, key
-  legends to `<Key>`/`<Typed>` from `page-components/Z88.tsx`; links between the two spaces stay
-  on the site). A machine's guide in `guides/machines/` links to its manuals. They are English only.
+- **The Library's manuals are imported, not written here.** The Cambridge Z88 User Guide, the
+  Z88 Developers' Notes and the BBC BASIC (Z80) Reference Guide
+  (`content/en/library/cambridge-z88/{user-guide,developers-notes,bbc-basic}/`) come from the
+  cambridgez88.jira.com Confluence spaces through
+  `node scripts/import-z88-wiki.cjs --space UG|DN|BBCREF` (pictures to `public/images/en/z88-*/`, key
+  legends to `<Key>`/`<Typed>` from `page-components/Z88.tsx`; links between the spaces stay on the
+  site). BBCREF's one wiki page embeds a Google Doc: the script exports it and splits it into a page
+  per section. A machine's guide in `guides/machines/` links to its manuals. They are English only.
   Once the reviewed pages are edited by hand, do not re-run the import over them; `--out <dir>`
   writes a fresh import elsewhere to compare against.
 - **The website is translated through its own workflow**, never by hand-editing

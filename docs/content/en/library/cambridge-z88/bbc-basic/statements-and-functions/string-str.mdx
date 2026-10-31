@@ -1,0 +1,49 @@
+---
+description: "A function returning N concatenations of a string."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# STRING$
+
+A function returning N concatenations of a string.
+
+```text
+A$=STRING$(N,"hello")
+B$=STRING$(10,"-*-")
+C$=STRING$(Z%,S$)
+```
+
+You can use this function to print repeated copies of a string. It is useful for printing headings or underlinings. The last example for PRINT uses the STRING$ function to print the column numbers across the page. For example,
+
+```text
+PRINT STRING$(4,"-=*=-")
+```
+
+would print
+
+```text
+-=*=--=*=--=*=--=*=-
+```
+
+and
+
+```text
+PRINT STRING$(3,"0123456789")
+```
+
+would print
+
+```text
+012345678901234567890123456789
+```
+
+**Syntax**
+
+```text
+<s-var>=STRING$(<numeric>,<str>)
+```
+
+**Associated Keywords**
+
+None

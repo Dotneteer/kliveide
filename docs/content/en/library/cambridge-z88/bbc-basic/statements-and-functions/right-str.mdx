@@ -1,0 +1,53 @@
+---
+description: "A string function which returns the right 'num' characters of the string. If there are insufficient characters in the string then all are returned."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# RIGHT$
+
+A string function which returns the right 'num' characters of the string. If there are insufficient characters in the string then all are returned.
+
+There must not be any spaces between the RIGHT$ and the opening bracket.
+
+```text
+A$=RIGHT$(A$,num)
+A$=RIGHT$(A$,2)
+A$=RIGHT$(LEFT$(A$,3),2)
+```
+
+For example,
+
+```text
+10 name$="BBC BASIC(Z80)"
+20 FOR i=3 TO LEN(name$)
+30   PRINT RIGHT$(name$,i)
+40 NEXT
+```
+
+would print
+
+```text
+80)
+Z80)
+(Z80)
+C(Z80)
+IC(Z80)
+SIC(Z80)
+ASIC(Z80)
+BASIC(Z80)
+ BASIC(Z80)
+C BASIC(Z80)
+BC BASIC(Z80)
+BBC BASIC(Z80)
+```
+
+**Syntax**
+
+```text
+<s-var>=RIGHT$(<str>,<numeric>)
+```
+
+**Associated Keywords**
+
+LEFT$, MID$

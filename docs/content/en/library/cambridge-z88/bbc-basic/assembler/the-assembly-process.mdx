@@ -1,0 +1,143 @@
+---
+description: "The only assembly directive is OPT. As with the 6502 assembler, 'OPT' controls the way the assembler works, whether a listing is displayed and whether errors are reported. OPT should be followed..."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# The Assembly Process
+
+## OPT [#opt]
+
+The only assembly directive is OPT. As with the 6502 assembler, 'OPT' controls the way the assembler works, whether a listing is displayed and whether errors are reported. OPT should be followed by a number in the range 0 to 7. The way the assembler functions is controlled by the three bits of this number in the following manner.
+
+### Bit 0 - LSB [#bit-0---lsb]
+
+Bit 0 controls the listing. If it is set, a listing is displayed.
+
+### Bit 1 [#bit-1]
+
+Bit 1 controls the error reporting. If it is set, errors are reported.
+
+### Bit 2 [#bit-2]
+
+Bit 2 controls where the assembled code is placed. If bit 2 is set, code is placed in memory starting at the address specified by O%. However, the program counter (P%) is still used by the assembler for calculating the instruction addresses.
+
+## Assembly at a Different Address [#assembly-at-a-different-address]
+
+In general, machine code will only run properly if it is in memory at the addresses for which it was assembled. Thus, at first glance, the option of assembling it in a different area of memory is of little use. However, using this facility, it is possible to build up a library of machine code utilities for use by a number of programs. The machine code can be assembled for a particular address by one program without any constraints as to its actual location in memory and saved using \*SAVE. This code can then be loaded into its working location from a number of different programs using \*LOAD.
+
+## OPT Summary [#opt-summary]
+
+### Code Assembled Starting at P% [#code-assembled-starting-at-p]
+
+The code is assembled using the program counter (P%) to calculate the instruction addresses and the code is also placed in memory at the address specified by the program counter.
+
+OPT 0 reports no errors and gives nolisting.<br />OPT 1 reports no errors, but gives a listing.<br />OPT 2 reports errors, but gives no listing.<br />OPT 3 reports errors and gives a listing.
+
+### Code Assembled Starting at O% [#code-assembled-starting-at-o]
+
+The code is assembled using the program counter (P%) to calculate the instruction addresses. However, the assembled code is placed in memory at the address specified by O%.
+
+OPT 4 reports no errors and gives no<br />OPT 5 reports no errors, but gives a listing.<br />OPT 6 reports errors, but gives no listing.<br />OPT 7 reports errors and gives a listing.
+
+## How the Assembler Works [#how-the-assembler-works]
+
+The assembler works line by line through the machine code. When it finds a label declared it generates a BBC BASIC(Z80) variable with that name and loads it with the current value of the program counter (P%). This is fine all the while labels are declared before they are used. However, labels are often used for forward jumps and no variable with that name would exist when it was first encountered. When this happens, a 'No such variable' error occurs. If error reporting has not been disabled, this error is reported and BBC BASIC(Z80) returns to the direct mode in the normal way. If error reporting has been disabled (OPT 0, 1, 4 or 5), the current value of the program counter is used in place of the address which would have been found in the variable, and assembly continues. By the end of the assembly process the variable will exist (assuming the code is correct), but this is of little use since the assembler cannot 'back track' and correct the errors. However, if a second pass is made through the assembly code, all the labels will exist as variables and errors will not occur. The example below shows the result of two passes through a (completely futile) demonstration program. Twelve bytes of memory are reserved for the program. (If the program was run, it would 'doom-loop' from line 50 to 70 and back again.) The program disables error reporting by using OPT 1.
+
+```text
+10 DIM code 12
+20 FOR opt=1 TO 3 STEP 2
+30 P%=code
+40 [OPT opt
+50 .jim JR fred
+60 DEFW &2345
+70 .fred JR jim
+80 ]
+90 NEXT
+```
+
+This is the first pass through the assembly process (note that the 'JR fred' instruction jumps to itself):
+
+```text
+3E7B              OPT opt
+3E7B 18 FE        .jim JR fred
+3E7D 45 23        DEFW &2345
+3E7F 18 FA        .fred JR jim
+```
+
+This is the second pass through the assembly process (note that the 'JR fred' instruction now jumps to the correct address):
+
+```text
+3E7B              OPT opt
+3E7B 18 02        .jim JR fred
+3E7D 45 23        DEFW &2345
+3E7F 18 FA        .fred JR jim
+```
+
+Generally, if labels have been used, you must make two passes through the assembly language code to resolve forward references. This can be done using a FOR...NEXT loop. Normally, the first pass should be with OPT 0 (or OPT 4) and the second pass with OPT 2 (OPT 6). If you want a listing, use OPT 3 (OPT7) for the second pass. During the first pass, a table of variables giving the address of the labels is built. Labels which have not yet been included in the table (forward references) will generate the address of the current op-code. The correct address will be generated during the second pass.
+
+## Saving and Loading Machine Code Programs [#saving-and-loading-machine-code-programs]
+
+As mentioned earlier, you can use machine code routines in a number of BBC BASIC(Z80) programs by using \*SAVE and \*LOAD. The safest way to do this is to write a program which consists of only the machine code routines and enough BBC BASIC(Z80) to assemble them. They should be assembled 'out of the way' at the top of memory (each routine starting at a known address) and then \*SAVEd. (Don't forget to move HIMEM down first.) The BBC BASIC(Z80) programs that use these routines should move HIMEM down to the same value before they \*LOAD the assembly code routines into the address at which they were originally assembled. \*SAVE and \*LOAD are explained below.
+
+### <strong>\*SAVE</strong> [#save]
+
+Save an area of memory to disk. You MUST specify the start address (aaaa) and either the length of the area of memory (llll) or its end address+1 (bbbb).
+
+```text
+*SAVE ufsp aaaa +llll
+*SAVE ufsp aaaa bbbb
+OSCLI "SAVE "+<st>+" "+STR$~(<n>)+"+"+STR$~(<n>)
+*SAVE "WOMBAT" &8F00 +80
+*SAVE "WOMBAT" &8F00 &8F80
+OSCLI "SAVE "+ufn$+" "+STR$~(add)+"+"+STR$~(len)
+```
+
+### <strong>\*LOAD</strong> [#load]
+
+Load the specified file into memory at hexadecimal address 'aaaa'. The load address MUST always be specified. OSCLI may also be used to load a file. However, you must take care to provide the load address as a hexadecimal number in string format.
+
+```text
+*LOAD ufsp aaaa
+OSCLI "LOAD "+<str>+" "+STR$~<num>
+```
+
+```text
+*LOAD “:RAM.0/WOMBAT” &8F00
+OSCLI "LOAD "+f_name$+" "+STR$~(strt_address)
+```
+
+### Saving and loading machine code files with PROC\_save & PROC\_load [#saving-and-loading-machine-code-files-with-proc_save--proc_load]
+
+\*LOAD and \*SAVE commands are only available with Z88 Patch, either installed manually with CHAIN command or when you are using OZ ROM V4.3 or later. See section “[Installing Z88 Patch with Program Editor and other commands](/en/library/cambridge-z88/bbc-basic/general-information/installing-z88-patch-with-program-editor-and-other-commands)” on how to install the Z88 Patch.
+
+Use the following two procedures in your machine code programs, as an alternative to \*LOAD and \*SAVE:
+
+```text
+   10 REM Procedures to substitute for *LOAD and *SAVE
+   20 REM R.T.Russell, June 1988
+  100 DIM fname 255
+  200 END
+60000 DEF PROC_load($fname,E%):LOCAL H%,L%,D%,B%,C%:L%=fname
+60010 H%=L% DIV 256:D%=E% DIV 256:B%=255:C%=255:CALL &FEA3:ENDPROC
+60020 DEF PROC_save($fname,E%,C%):LOCAL H%,L%,D%,B%:L%=fname
+60030 H%=L% DIV 256:D%=E% DIV 256:B%=C% DIV 256:CALL &FEA6:ENDPROC
+```
+
+### Using PROC\_save [#using-proc_save]
+
+Save an area of memory to a file. You MUST specify the start address (aaaa) and the length of the area of memory (1111). Both examples below uses hexadecimal notation.
+
+```text
+PROC_save(“ufsp”, &aaaa, &1111)
+PROC_save(“WOMBAT”,&8F00,&80)
+```
+
+### Using PROC\_load [#using-proc_load]
+
+Load the specified file into memory at hexadecimal address ‘aaaa’. The load address MUST always be specified.
+
+```text
+PROC_load(“ufsp”,&aaaa)
+PROC_load(“WOMBAT”,&8F00)
+```

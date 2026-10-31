@@ -1,0 +1,130 @@
+---
+description: "The following list is a rather terse summary of the meaning of the various operators and special symbols used by BBC BASIC(Z80). It is provided for reference purposes; you will find more detailed..."
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# Operators and Special Symbols
+
+The following list is a rather terse summary of the meaning of the various operators and special symbols used by BBC BASIC(Z80). It is provided for reference purposes; you will find more detailed explanations elsewhere in this manual.
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>?</Table.Td>
+<Table.Td>A unary and binary operator giving 8 bit indirection.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>!</Table.Td>
+<Table.Td>A unary and binary operator giving 32 bit indirection.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>"</Table.Td>
+<Table.Td>A delimiting character in strings. Strings always have an even number of " in them. " may be introduced into a string by the escape convention "".</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\#</Table.Td>
+<Table.Td>Precedes reference to a file channel number (and is not optional).</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>$</Table.Td>
+<Table.Td>
+
+A character indicating that the object has something to do with a string. The syntax $\<expression\> may be used to position a string anywhere in memory, overriding the interpreter's space allocation. As a suffix on a variable name it indicates a string variable.
+
+$A="WOMBAT" Store WOMBAT at address A followed by CR.
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>%</Table.Td>
+<Table.Td>A suffix on a variable name indicating an integer variable.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>&</Table.Td>
+<Table.Td>Precedes hexadecimal constants e.g. &EF.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>'</Table.Td>
+<Table.Td>A character which causes new lines in PRINT or INPUT.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>( )</Table.Td>
+<Table.Td>Objects in parentheses have the highest priority.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\=</Table.Td>
+<Table.Td>'Becomes' for LET statement and FOR, 'result is' for FN, relation of equal to on integers, reals and strings.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\-</Table.Td>
+<Table.Td>Unary negation and binary subtraction on integers and reals.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\*</Table.Td>
+<Table.Td>Binary multiplication on integers and reals; statement indicating operating system command (\*DIR, \*OPT).</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>:</Table.Td>
+<Table.Td>Multi-statement line statement delimiter.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>;</Table.Td>
+<Table.Td>Suppresses forthcoming action in PRINT. Comment delimiter in the assembler. Delimiter in VDU and INPUT.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\+</Table.Td>
+<Table.Td>Unary plus and binary addition on integers and reals; concatenation between strings.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>,</Table.Td>
+<Table.Td>Delimiter in lists.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>.</Table.Td>
+<Table.Td>Decimal point in real constants; abbreviation symbol on keyword entry; introduce label in assembler.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\<</Table.Td>
+<Table.Td>Relation of less than on integers, reals and strings.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\></Table.Td>
+<Table.Td>Relation of greater than on integers, reals and strings.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>/</Table.Td>
+<Table.Td>Binary division on integers and reals.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\\</Table.Td>
+<Table.Td>Alternative comment delimiter in the assembler.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\<=</Table.Td>
+<Table.Td>Relation of less than or equal on integers, reals and strings.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\>=</Table.Td>
+<Table.Td>Relation of greater than or equal on integers, reals and strings.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\<\></Table.Td>
+<Table.Td>Relation of not equal on integers, reals and strings.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\[ \]</Table.Td>
+<Table.Td>Delimiters for assembler statements. Statements between these delimiters may need to be assembled twice in order to resolve any forward references. The pseudo operation OPT (initially 3) controls errors and listing.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>^</Table.Td>
+<Table.Td>Binary operation of exponentiation between integers and reals.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\~</Table.Td>
+<Table.Td>A character in the start of a print field indicating that the item is to be printed in hexadecimal. Also used with STR$ to cause conversion to a hexadecimal string.</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>

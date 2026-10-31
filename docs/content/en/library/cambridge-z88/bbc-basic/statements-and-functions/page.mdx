@@ -1,0 +1,35 @@
+---
+description: "A pseudo-variable controlling the starting address of the current user program area. It addresses the area where a program is (or will be) stored."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# PAGE (PA.)
+
+A pseudo-variable controlling the starting address of the current user program area. It addresses the area where a program is (or will be) stored.
+
+```text
+PAGE=&3100
+PRINT ~PAGE
+PAGE=TOP+&100: REM Move to start of next page.
+```
+
+PAGE is automatically initialised by BBC BASIC(Z80) to the address of the lowest available page in RAM, but you may change it.
+
+If you make PAGE less than its original value or greater than the original value of HIMEM, you will get a 'Bad program' error when you try to enter a program line and you may well crash BBC BASIC(Z80).
+
+If you make PAGE greater than HIMEM, a 'No room' error will occur if the program exits to command level.
+
+With care, several programs can be left around in RAM without the need for saving them.
+
+USE WITH CARE.
+
+**Syntax**
+
+```text
+<n-var>=PAGE
+```
+
+**Associated Keywords**
+
+TOP, LOMEM, HIMEM

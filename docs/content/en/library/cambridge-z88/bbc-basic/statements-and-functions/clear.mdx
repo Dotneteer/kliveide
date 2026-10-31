@@ -1,0 +1,21 @@
+---
+description: "A statement which clears all the dynamically declared variables, including strings. CLEAR does not affect the static variables."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# CLEAR (CL.)
+
+A statement which clears all the dynamically declared variables, including strings. CLEAR does not affect the static variables.
+
+The CLEAR command tells BBC BASIC(Z80) to 'forget' about ALL the dynamic variables used so far. This includes strings and arrays, but the static variables (@% to Z%) are not altered.
+
+You can use the indirection operators to store integers and strings at known addresses and these will not be affected by CLEAR. However, you will need to 'protect' the area of memory used. The easiest way to do this is to move HIMEM down. See CHAIN for an example.
+
+**Syntax**
+
+CLEAR
+
+**Associated Keywords**
+
+None

@@ -1,0 +1,192 @@
+---
+description: "The single line editor is active in the immediate mode, and in response to an INPUT statement in a program and during the EDIT command."
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# Editing
+
+## Introduction [#introduction]
+
+The single line editor is active in the immediate mode, and in response to an INPUT statement in a program and during the \*EDIT command.
+
+The following editing keys are available when the single line editor is active:
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>
+
+```text
+[DEL]
+```
+
+</Table.Td>
+<Table.Td>Backspace and Delete</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>⇦</Table.Td>
+<Table.Td>Cursor Left</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>⇨</Table.Td>
+<Table.Td>Cursor Right</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>♢`[DEL]`</Table.Td>
+<Table.Td>Delete line</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>♢D</Table.Td>
+<Table.Td>Delete to End of Line</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>♢G</Table.Td>
+<Table.Td>Delete Character</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>♢M</Table.Td>
+<Table.Td>\[ENTER\]</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>♢S</Table.Td>
+<Table.Td>Swap Case</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>♢T</Table.Td>
+<Table.Td>Delete Word</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>♢U</Table.Td>
+<Table.Td>Insert Character</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>♢V</Table.Td>
+<Table.Td>Insert/Overtype</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>♢ ⇦</Table.Td>
+<Table.Td>Start of Line</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>♢ ⇨</Table.Td>
+<Table.Td>End of Line</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>`[SHIFT]`⇦</Table.Td>
+<Table.Td>Previous Word</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>`[SHIFT]`⇨</Table.Td>
+<Table.Td>Next Word</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+[SHIFT][DEL]
+```
+
+</Table.Td>
+<Table.Td>Delete Character (same as ♢G)</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+## The Program Editor [#the-program-editor]
+
+As described in the [Z88 manual - section 7](https://cambridgez88.jira.com/wiki/x/RAAkAg), you can use PipeDream to edit a BBC BASIC(Z80) program. This method is, however, a little long-winded if you want to edit a couple of lines.
+
+### No Program **Editor available in Cambridge Z88 ROM releases OZ V2.2 - V4.0** [#no-program-editor-available-in-cambridge-z88-rom-releases-oz-v22---v40]
+
+The single editor is not available to BBC BASIC(Z80) when your Cambridge Z88 is shipped with ROM releases V2.2 - V4.0. Richard Russell supplied a Z88 Patch program for those ROM releases that would supply the <strong>\*EDIT</strong> command. If you have not installed the patch program, it is possible to include a line-editing procedure in your BBC BASIC(Z80) programs.
+
+The following program segment, which was developed by Cambridge Computer Ltd, provides the facilities of a line editor:
+
+```text
+60000 END
+60010 DEF PROCE(B)
+60020 REM Cambridge Computer Ltd.
+60030 IF B=0 THEN ENDPROC
+60040 A=OPENOUT":RAM.0/EE.CLI"
+60050 B$=":RAM.0/E.CLI"
+60060 PRINT#A,".>"+B$
+60070 PRINT#A,".J","LIST"+STR$(B),"PROCF"
+60080 CLOSE#A
+60090 *CLI .*:RAM.O/EE.CLI
+60100 ENDPROC
+60110 DEF PROCF
+60120 A=INKEY(0)
+60130 A=OPENIN B$
+60140 INPUT#A,A$,A$
+60150 CLOSE#A
+60160 A=OPENOUT B$
+60170 PRINT#A,".J",A$
+60180 PTR#A=PTR#A-1
+60190 BPUT#A,0
+60200 CLOSE#A
+60210 VDU 8
+60220 OSCLI"*CLI .<"+B$
+60230 ENDPROC
+```
+
+Once you have added the segment to your program, you can use it to edit program line ‘nnnn’ with the command:
+
+```text
+PROCE(nnnn)
+```
+
+The editing functions previously described are available when the line editing procedure is used.
+
+To save entering the program segment for every program you write, create a file containing the program segment using PipeDream and save it in plain text mode as EDBAS. In this case, add **.J** as the first line of the file. The start of the program segment would then look like this:
+
+```text
+.J
+60000 END
+60010 DEF PROCE(B)
+60020 REM Cambridge Computer Ltd.
+60030 IF B=0 THEN ENDPROC
+60040 A=OPENOUT":RAM.0/EE.CLI"
+etc...
+```
+
+You can append the editor to your BBC BASIC programs with the following command:
+
+```text
+        *CLI .*EDBAS
+```
+
+Your program should not, of course, use line numbers 60000 and up. If it does, they will be overwritten when you load the line editor functionality.
+
+To abort the single line editor when using PROCE(nnnn) and leave the line unchanged, press `[ESC]`.
+
+The editor generates two working files in :RAM.0 called /EE.CLI and /E.CLI. The files can be erased after use. If you have a RAM card in slot 1 or slot 2 you could alter the program to save its working files in :RAM.1 or :RAM.2 by changing lines: 60040, 60050, and 60090.
+
+### Using PipeDream as Program Editor [#using-pipedream-as-program-editor]
+
+As illustrated above, you can use PipeDream to write your BBC BASIC(Z80) programs. You should save the program files in plain text format (you will get some interesting error messages if you don’t). Don’t forget to include the CLI jammer command **.J** as the first line of the file. For complete (new) programs, you should include the BBC BASIC(Z80) command NEW as the second line of the file.
+
+This will make sure that any program in memory will be deleted before the new one is typed in. The first two lines of your PipeDream file will then look like this:
+
+```text
+.J
+NEW
+```
+
+If you saved (as plain text) the program to a file called BASPROG, you should load (type) it into BBC BASIC(Z80) with the following command:
+
+```text
+*CLI .*BASPROG
+```
+
+### Auto Numbering PipeDream files [#auto-numbering-pipedream-files]
+
+If you use PipeDream to write your programs, you can arrange for the lines to be automatically numbered by BBC BASIC(Z80) as the file is ‘loaded’. All you need to do is include the AUTO command as the third line of your program file. The first 3 lines of your PipeDream program file would now look like this:
+
+```text
+.J
+NEW
+AUTO
+```

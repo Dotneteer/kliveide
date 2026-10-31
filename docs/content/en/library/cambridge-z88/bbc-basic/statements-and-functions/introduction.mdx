@@ -1,0 +1,120 @@
+---
+description: "The commands and statements are listed alphabetically for ease of reference; they are not separated into two sections."
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# Introduction
+
+The commands and statements are listed alphabetically for ease of reference; they are not separated into two sections.
+
+All statements can also be used as direct commands.
+
+Where appropriate, the abbreviated form is shown to the right of the statement.
+
+The associated keywords are listed at the end of each explanation.
+
+If the lexical analyser tries to expand a line to more than 255 characters, a 'Line space' error will be reported.
+
+## Syntax [#syntax]
+
+Abbreviated definitions for the commands and statements in BBC BASIC(Z80) are given at the end of the explanation for each keyword. Most of us have seen formal syntax diagrams and Backus-Naur Form (BNF) definitions for languages, and many of us have found them to be somewhat confusing. Consequently, we have attempted to produce something which, whilst being reasonably precise, is readable by the majority of BBC BASIC(Z80) users. To those amongst you who would have preferred 'the real thing' - we apologise.
+
+## Symbols [#symbols]
+
+The following symbols have special meaning in the syntax definitions.
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>\{ \}</Table.Td>
+<Table.Td>The enclosed item may be repeated zero or more times.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\[ \]</Table.Td>
+<Table.Td>The items enclosed are optional, they may occur zero or one time.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\|</Table.Td>
+<Table.Td>Indicates alternatives; one of which must be used.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\<stmt\></Table.Td>
+<Table.Td>Means a BBC BASIC(Z80) statement.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\<var\></Table.Td>
+<Table.Td>Means a numeric or string variable.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\<exp\></Table.Td>
+<Table.Td>Means an expression like PI\*radius\*height+2 or name$+"FRED"+CHR$(&0D). It can also be a single variable or constant like 23 or "FRED".</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\<l-num\></Table.Td>
+<Table.Td>Means a line number in a BBC BASIC(Z80) program.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\<k-num\></Table.Td>
+<Table.Td>Means the number of one of the programmable keys.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\<n-const\></Table.Td>
+<Table.Td>Means a numeric constant like '26.4' or '256'.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\<n-var\></Table.Td>
+<Table.Td>Means a numeric variable like 'size' or 'weight'.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\<numeric\></Table.Td>
+<Table.Td>Means a \<n-const\> or a \<n-var\> or an expression combining them. For example: PI\*radius+2.66</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\<s-const\></Table.Td>
+<Table.Td>Means a string constant like "FRED".</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\<string\></Table.Td>
+<Table.Td>Means an unquoted string of characters.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\<s-var\></Table.Td>
+<Table.Td>Means a string variable like 'address$'.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\<str\></Table.Td>
+<Table.Td>Means a \<s-const\> or a \<s-var\> or an expression combining them. For example: name$+add$+"Phone".</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\<t-cond\></Table.Td>
+<Table.Td>Means a 'testable condition'. In other words, something which is either TRUE or FALSE. Since BBC BASIC does not have true Boolean variables, TRUE and FALSE are numeric (with a value of -1 and 0). Consequently, a \<numeric\> can be used anywhere a \<t-cond\> is specified.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\<name\></Table.Td>
+<Table.Td>Means a valid variable name.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\<d:\></Table.Td>
+<Table.Td>Means a device drive name. eg. :RAM.0 (See the ‘Operating System Interface’ section for details of valid devices).</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\<afsp\></Table.Td>
+<Table.Td>Means an ambiguous file specifier.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\<ufsp\></Table.Td>
+<Table.Td>Means an unambiguous file specifier.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>\<nchr\></Table.Td>
+<Table.Td>Means a character valid for use in a name. 0 to 9, A to Z, a to z and underline.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>PI</Table.Td>
+<Table.Td>The mathematical constant 𝛑 (3.14159 etc.).</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>

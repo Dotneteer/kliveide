@@ -1,0 +1,52 @@
+---
+description: "You can echo characters which are sent to the screen to the printer. Printer echo is controlled with the following key sequences."
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# Keyboard Control
+
+You can echo characters which are sent to the screen to the printer. Printer echo is controlled with the following key sequences.
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>
+
+<Shot src="z88-bbc-basic/printing/keyboard-control/image2.webp" alt="The key combinations that switch the printer on and off" width={142} />
+
+</Table.Td>
+<Table.Td>
+
+Printer echo on. All subsequent characters sent to the screen are echoed to the printer.
+
+Printer echo off.
+
+</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+This is not quite as straightforward as it at first appears. In fact, ❑+P starts a CLI command that sends a copy of characters sent to the screen to the printer as well. The key sequence ❑-P removes that CLI command.
+
+Whilst the CLI command is active, the 'CLI' indicator appears in the OZ window and page-waits do not occur during a program listing.
+
+<Shot src="z88-bbc-basic/printing/keyboard-control/image4.webp" alt="The Index with no suspended activities" width={640} />
+
+In addition to ❑-P, you can cancel the ❑+P CLI command in the normal way by pressing the \[SHIFT\]/\[ESCAPE\] or ◇\[ESCAPE\].
+
+Using printer echo is an easy way of listing a program on the printer. In the following example, the ‘+’ represents the \`=/+' key; you don't have to use the \[SHIFT\] key.
+
+```text
+LIST❑+P[ENTER]
+```
+
+……….
+
+Program listed to screen and printer.
+
+……….
+
+❑-P

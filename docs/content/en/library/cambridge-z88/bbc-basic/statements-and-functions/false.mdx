@@ -1,0 +1,50 @@
+---
+description: "BBC BASIC(Z80) does not have true Boolean variables. Instead, numeric variables are used and their value is interpreted in a 'logical' manner."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# FALSE (FA.)
+
+A function returning the value zero.
+
+```text
+10 flag=FALSE
+20 …
+150 IF flag ...
+```
+
+BBC BASIC(Z80) does not have true Boolean variables. Instead, numeric variables are used and their value is interpreted in a 'logical' manner.
+
+A value of zero is interpreted as FALSE and NOT FALSE (in other words, NOT 0) is interpreted as TRUE. In practice, any value other than zero is considered TRUE.
+
+You can use FALSE in a REPEAT....UNTIL loop to make the loop repeat forever. Consider the following example.
+
+```text
+10 terminator=10
+20 REPEAT: PRINT "An endless loop": UNTIL terminator=0
+```
+
+Since 'terminator' will never be zero, the result of the test 'terminator=0' will always be FALSE. Thus, the following example has the same effect as the previous one.
+
+```text
+10 REPEAT: PRINT "An endless loop": UNTIL FALSE
+```
+
+Similarly, since FALSE=0, the following example will also have the same effect, but its meaning is less clear.
+
+```text
+10 REPEAT: PRINT "An endless loop": UNTIL 0
+```
+
+See the keyword AND for logical tests and their results.
+
+**Syntax**
+
+```text
+<n-var>=FALSE
+```
+
+**Associated Keywords**
+
+TRUE, EOR, OR, AND, NOT

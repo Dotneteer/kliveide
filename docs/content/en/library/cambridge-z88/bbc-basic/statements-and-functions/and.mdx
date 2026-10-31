@@ -1,0 +1,71 @@
+---
+description: "The operation of integer bitwise logical AND between two items. The 2 operands are internally converted to four byte integers before the AND operation."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# AND (A.)
+
+The operation of integer bitwise logical AND between two items. The 2 operands are internally converted to four byte integers before the AND operation.
+
+```text
+answer=num1 AND num2
+char=byte AND &7F
+IF (num AND &F0)
+test=(count=3 AND total=5)
+```
+
+You can use AND as a logical operator or as a 'bit-by-bit' (bitwise) operator. The operands can be boolean (logical) or numeric.
+
+In the following example program segment, AND is used as a bitwise operator to remove the most significant bit of a byte read from a file before writing it to another file. This is useful for converting some word-processor files into standard ASCII format.
+
+```text
+210 byte=BGET#infile AND &7F
+220 BPUT#outfile,byte
+```
+
+Unfortunately, BBC BASIC does not have true boolean variables; it uses numeric variables and assigns the value 0 for FALSE and -1 for TRUE. This can lead to confusion at times. (See NOT for more details.) In the example below, the operands are boolean (logical). In other words, the result of the tests (IF) A=2 and (IF) B=3 is either TRUE or FALSE. The result of this example will be TRUE if A=2 and B=3.
+
+```text
+answer=(A=2 AND B=3)
+```
+
+The brackets are not necessary, they have been included to make the example easier to follow.
+
+The second example is similar to the first, but in the more familiar surroundings of an IF statement.
+
+```text
+IF A=2 AND B=3 THEN 110
+```
+
+or
+
+`answer= A=2 AND B=3` (without brackets this time)
+
+```text
+IF answer THEN 110
+```
+
+The final example, uses the AND in a similar fashion to the numeric operators (+, -, etc).
+
+```text
+A=X AND 11
+```
+
+Suppose X was -20, the AND operation would be:
+
+```text
+11111111 11111111 11111111 11101100
+00000000 00000000 00000000 00001011
+00000000 00000000 00000000 00001000  = 8
+```
+
+**Syntax**
+
+```text
+<n-var>=<numeric> AND <numeric>
+```
+
+**Associated Keywords**
+
+EOR, OR, FALSE, TRUE, NOT

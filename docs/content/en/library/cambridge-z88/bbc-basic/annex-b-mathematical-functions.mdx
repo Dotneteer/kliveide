@@ -1,0 +1,274 @@
+---
+description: "BBC BASIC(Z80) has more intrinsic mathematical functions than many other versions of BASIC. Those that are not provided may be calculated as shown below."
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# Annex B: Mathematical Functions
+
+BBC BASIC(Z80) has more intrinsic mathematical functions than many other versions of BASIC. Those that are not provided may be calculated as shown below.
+
+<Table>
+<thead>
+<Table.Tr>
+<Table.Th>**Function**</Table.Th>
+<Table.Th>**Calculation**</Table.Th>
+</Table.Tr>
+</thead>
+<tbody>
+<Table.Tr>
+<Table.Td colSpan={2}>**SECANT**</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td>
+
+```text
+SEC(X)=1/COS(X)
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={2}>**COSECANT**</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td>
+
+```text
+CSC(X)=1/SIN(X)
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={2}>**COTANGENT**</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td>
+
+```text
+COT(X)=1/TAN(X)
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={2}>**Inverse SECANT**</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td>
+
+```text
+ARCSEC(X)=ACS(1/X)
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={2}>**Inverse COSECANT**</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td>
+
+```text
+ARCCSC(X)=ASN(1/X)
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={2}>**Inverse COTANGENT**</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td>
+
+```text
+ARCCOT(X)=ATN(1/X)
+=PI/2-ATN(X)
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={2}>**Hyperbolic SINE**</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td>
+
+```text
+SINH(X)=(EXP(X)-EXP(-X))/2
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={2}>**Hyperbolic COSINE**</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td>
+
+```text
+COSH(X)=(EXP(X)+EXP(-X))/2
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={2}>**Hyperbolic TANGENT**</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td>
+
+```text
+TANH(X)=EXP(-X)/(EXP(X)+EXP(-X))*2+1
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={2}>**Hyperbolic SECANT**</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td>
+
+```text
+SECH(X)=2/(EXP(X)+EXP(-X))
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={2}>**Hyperbolic COSECANT**</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td>
+
+```text
+CSCH(X)=2/(EXP(X)-EXP(-X))
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={2} />
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={2}>**Hyperbolic COTANGENT**</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td>
+
+```text
+COTH(X)=EXP(-X)/(EXP(X)-EXP(-X))*2+1
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={2}>**Inverse Hyperbolic SIN**</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td>
+
+```text
+ARCSINH(X)=LN(X+SQR(X*X+1))
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={2}>**Inverse Hyperbolic COSINE**</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td>
+
+```text
+ARCCOSH(X)=LN(X+SQR(X*X-1))
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={2}>**Inverse Hyperbolic TANGENT**</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td>
+
+```text
+ARCTANH(X)=LN((1+X)/(1-X))/2
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={2}>**Inverse Hyperbolic SECANT**</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td>
+
+```text
+ARCSECH(X)=LN((SQR(-X*X+1)+1)/X)
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={2}>**Inverse Hyperbolic COSECANT**</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td>
+
+```text
+ARCCSCH(X)=LN((SGN(X)*SQR(X*X+1)+1)/X
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={2}>**Inverse Hyperbolic COTANGENT**</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td>
+
+```text
+ARCCOTH(X)=LN((X+1)/(X-1))/2
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={2}>**LOGn(X)**</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td>
+
+```text
+LOGn(X)=LN(X)/LN(n)
+=LOG(X)/LOG(n)
+```
+
+</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>

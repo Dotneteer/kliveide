@@ -1,0 +1,36 @@
+---
+description: "A pseudo-variable which contains the address of the first byte that BBC BASIC(Z80) will not use."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# HIMEM
+
+A pseudo-variable which contains the address of the first byte that BBC BASIC(Z80) will not use.
+
+HIMEM must not be changed within a subroutine, procedure, function, FOR...NEXT, REPEAT...UNTIL or GOSUB loop.
+
+```text
+HIMEM=HIMEM-40
+```
+
+BBC BASIC(Z80) uses the computer's memory to store your program and the variables that your program uses. The default value of HIMEM is the highest memory address available for use by BBC BASIC(Z80). On an expanded Z88 (one containing at least 128 Kbytes of RAM in slot 0 or 1) HIMEM is initially set to &C000. On an unexpanded Z88, it is set to &4000.
+
+In an unexpanded Z88, BBC BASIC(Z80) has a workspace of 8 Kbytes. In an expanded Z88, the workspace is increased to 40 Kbytes.
+
+If you want to use a machine code subroutine or store some data for use by a CHAINed program, you can move HIMEM down. This protects the area above HIMEM from being overwritten by BBC BASIC(Z80). See the Assembler section and the keyword CHAIN for details.
+
+If you want to change HIMEM, you should do so early in your program. Once it has been changed it will stay at its new value until set to another value. Thus, if you wish to load a machine code subroutine for use by several programs, you only have to change HIMEM and load the subroutine once.
+
+USE WITH CARE.
+
+**Syntax**
+
+```text
+HIMEM=<numeric>
+<n-var>=HIMEM
+```
+
+**Associated Keywords**
+
+LOMEM, PAGE, TOP

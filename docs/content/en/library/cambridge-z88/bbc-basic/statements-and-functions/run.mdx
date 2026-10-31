@@ -1,0 +1,37 @@
+---
+description: "RUN is a statement and so programs can re-execute themselves."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# RUN
+
+Start execution of the program.
+
+```text
+RUN
+```
+
+RUN is a statement and so programs can re-execute themselves.
+
+All variables except @% to Z% are CLEARed by RUN.
+
+If you want to start a program without clearing all the variables, you can use the statement
+
+```text
+GOTO nnnn
+```
+
+where nnnn is the number of the line at which you wish execution of the program to start.
+
+RUN "filename" can be used as an alternative to CHAIN "filename".
+
+**Syntax**
+
+```text
+RUN [<str>]
+```
+
+**Associated Keywords**
+
+NEW, OLD, LIST, CHAIN

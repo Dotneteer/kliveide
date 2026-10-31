@@ -1,0 +1,21 @@
+---
+description: "A statement causing the interpreter to return to direct mode. There can be any number (>=0) of END statements anywhere in a program. END closes all open data files."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# END
+
+A statement causing the interpreter to return to direct mode. There can be any number (\>=0) of END statements anywhere in a program. END closes all open data files.
+
+END tells BBC BASIC(Z80) that it has reached the end of the program. You don't have to use END, just 'running out of program' will have the same effect, but it's a bit messy.
+
+You can use END within, for instance, an IF...THEN...ELSE statement to stop your program if certain conditions are satisfied. You should also use END to stop BBC BASIC(Z80) 'running into' any procedure or function definitions at the end of your program.
+
+**Syntax**
+
+END
+
+**Associated Keywords**
+
+STOP

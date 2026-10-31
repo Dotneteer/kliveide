@@ -1,0 +1,32 @@
+---
+description: "A statement which writes the internal form of a value out to a data file (or device)."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# PRINT# (P.#)
+
+A statement which writes the internal form of a value out to a data file (or device).
+
+```text
+PRINT#E,A,B,C,D$,E$,F$
+PRINT#4,prn$
+```
+
+The format of the variables as written to the file differs from the format used on the BBC Micro. All numeric values are written as five bytes of binary real data (see the Annex entitled ‘Format of Program and Variables in Memory’). Strings are written as the bytes in the string (in the correct order) plus a carriage return.
+
+Before you use this statement, you must normally have opened a file using OPENOUT or OPENUP.
+
+You can use PRINT\# to write data (numbers and strings) to a data file in the 'standard' manner. If you wish to 'pack' your data in a different way, you should use BPUT\#. You can use PRINT\# and BPUT\# together to mix or modify the data format. For example, if you wish to write a 'compatible' text file, you could PRINT\# the string and BPUT\# a line-feed. This would write the string followed by a carriage-return and a line-feed to the file.
+
+Remember, with BBC BASIC(Z80) the format of the file is completely under your control.
+
+**Syntax**
+
+```text
+PRINT#<numeric>{,<numeric>|<str>}
+```
+
+**Associated Keywords**
+
+PRINT, OPENUP, OPENOUT, CLOSE\#, INPUT\#, BPUT\#, BGET\#, EXT\#, PTR\#, EOF\#

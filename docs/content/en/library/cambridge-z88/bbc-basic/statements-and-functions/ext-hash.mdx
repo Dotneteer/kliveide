@@ -1,0 +1,31 @@
+---
+description: "A function which returns the total length of the file whose file handle is its argument."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# EXT#
+
+A function which returns the total length of the file whose file handle is its argument.
+
+```text
+length=EXT#f_num
+```
+
+In the case of a sparse random-access file, the value returned is the complete file length from byte zero to the last byte written. This may well be greater than the actual amount of data in the file, but it is the amount of disk space allocated to the file by the Z88’s operating system.
+
+The file must have been opened before EXT\# can be used to find its length.
+
+EXT\#-1 returns an estimate of the amount of free memory in the Z88. See the Annex entitled ‘Format of Program and Variables in Memory’ for more details.
+
+Free memory is available to the device <strong>`:RAM.-`</strong> and to applications (such as PipeDream), but not necessarily to the RAM filing system. Consequently, you cannot reliably use EXT\#-1 to discover how much space is left in the current filing system device. (<strong>`:RAM.0`</strong> for example).
+
+**Syntax**
+
+```text
+<n-var>=EXT#(<numeric>)
+```
+
+**Associated Keywords**
+
+OPENIN, OPENUP, OPENOUT, CLOSE\#, PRINT\#, INPUT\#, BPUT\#, BGET\#, PTR\#, EOF\#

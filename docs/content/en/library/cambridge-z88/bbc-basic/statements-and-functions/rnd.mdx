@@ -1,0 +1,68 @@
+---
+description: "A function which returns a random number. The type and range of the number returned depends upon the optional parameter."
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# RND
+
+A function which returns a random number. The type and range of the number returned depends upon the optional parameter.
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>
+
+```text
+RND
+```
+
+</Table.Td>
+<Table.Td>returns a random integer 1 - &FFFFFFFF.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+RND(n)
+```
+
+</Table.Td>
+<Table.Td>returns an integer in the range 1 to n (n\>1).</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+RND(1)
+```
+
+</Table.Td>
+<Table.Td>returns a real number in the range 0.0 to .99999999.</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+If n is negative the pseudo random sequence generator is set to a number based on n and n is returned.
+
+If n is 0 the last random number is returned in RND(1) format.
+
+```text
+X=RND(1)
+X%=RND
+N=RND(6)
+```
+
+The random number generator is initialised by RUN (or CHAIN). Consequently, RND will return zero until the RUN (or CHAIN) command is first issued.
+
+**Syntax**
+
+```text
+<n-var>=RND[(<numeric>)]
+```
+
+**Associated Keywords**
+
+None

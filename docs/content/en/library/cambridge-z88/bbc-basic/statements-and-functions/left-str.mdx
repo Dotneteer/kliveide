@@ -1,0 +1,53 @@
+---
+description: "A string function which returns the left 'num' characters of the string. If there are insufficient characters in the source string, all the characters are returned."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# LEFT$
+
+A string function which returns the left 'num' characters of the string. If there are insufficient characters in the source string, all the characters are returned.
+
+There must not be any spaces between LEFT$ and the opening bracket.
+
+```text
+newstring$=LEFT$(A$,num)
+A$=LEFT$(A$,2)
+A$=LEFT$(RIGHT$(A$,3),2)
+```
+
+For example,
+
+```text
+10 name$="BBC BASIC(Z80)"
+20 FOR i=3 TO LEN(name$)
+30   PRINT LEFT$(name$,i)
+40 NEXT
+50 END
+```
+
+would print
+
+```text
+BBC
+BBCB
+BBCBA
+BBCBAS
+BBCBASI
+BBC BASIC
+BBC BASIC(
+BBC BASIC(Z
+BBC BASIC(Z8
+BBC BASIC(Z80
+BBC BASIC(Z80)
+```
+
+**Syntax**
+
+```text
+<s-var>=LEFT$(<str>,<numeric>)
+```
+
+**Associated Keywords**
+
+RIGHT$, MID$, LEN, INSTR

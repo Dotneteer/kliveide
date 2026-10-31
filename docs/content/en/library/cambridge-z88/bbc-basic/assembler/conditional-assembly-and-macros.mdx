@@ -1,0 +1,310 @@
+---
+description: "Most machine code assemblers provide conditional assembly and macro facilities. The assembler does not directly offer these facilities, but it is possible to implement them by using other features..."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# Conditional Assembly and Macros
+
+## Introduction [#introduction]
+
+Most machine code assemblers provide conditional assembly and macro facilities. The assembler does not directly offer these facilities, but it is possible to implement them by using other features of BBC BASIC(Z80).
+
+## Conditional Assembly [#conditional-assembly]
+
+You may wish to write a program which makes use of special facilities and which will be run on different types of computer. The majority of the assembly code will be the same, but some of it will be different. In the example below, different output routines are assembled depending on the value of 'flag'.
+
+```text
+DIM code 200
+FOR pass=0 TO 3 STEP 3
+  [OPT pass
+  .start     - - -
+             - - - code - - -
+             - - - :]
+  :
+  IF flag  [OPT  pass: - code for routine 1 -:]
+  IF NOT flag [OPT pass: - code for routine 2 - :]
+  :
+  [OPT pass
+  .more_code - - -
+             - - - code - - -
+             - - -:]
+NEXT
+```
+
+## Macros [#macros]
+
+Within any machine code program it is often necessary to repeat a section of code a number of times and this can become quite tedious. You can avoid this repetition by defining a macro which you use every time you want to include the code. The example below uses a macro to pass a character to the screen or printer. Conditional assembly is used within the macro to select either the screen or the auxiliary output, depending on the value of op\_flag.
+
+It is possible to suppress the listing of the code in a macro by forcing bit 0 of OPT to zero for the duration of the macro code. This can most easily be done by ANDing the value passed to OPT with 6.
+
+This is illustrated in PROC\_screen and PROC\_aux in the example below.
+
+```text
+DIM code 200
+op_flag=TRUE
+FOR pass=0 TO 3 STEP 3
+  [OPT pass
+  .start   - - -
+           - - - code - - -
+           - - -
+:
+  OPT FN_select(op_flag); Include code depending on op_flag
+:
+           - - -
+           - - - code - - -
+           - - -:]
+NEXT
+END
+:
+:
+REM Include code depending on value of op_flag
+:
+DEF FN_select(op_flag)
+IF op_flag PROC_screen ELSE PROC_print
+=pass
+REM Return original value of OPT.  This is a
+REM bit artificial, but necessary to insert
+REM some BBC BASIC code in the assembly code.
+:
+DEF PROC_screen
+[OPT pass AND 6
+RST &20: DEFB &27 ; OS_Out: A = character to send to screen
+]
+ENDPROC
+:
+DEF PROC_print
+[OPT pass AND 6
+; some code to send character to the printer
+]
+ENDPROC
+```
+
+The use of a function call to incorporate the code provides a neat way of incorporating the macro within the program and allows parameters to be passed to it. The function should return the original value of OPT.
+
+## Managing system error events on the Z88 [#managing-system-error-events-on-the-z88]
+
+### Warning [#warning]
+
+If you write an application which contains bugs or tries to circumnavigate the operating system, then it is likely that all the other applications in the Z88 will be affected.
+
+The effect may not be immediate, some indiscretions take weeks or even months to become apparent, but will usually be in the form of a system crash. You must always remember that the resources of the Z88 are not devoted exclusively to your application and therefore only use legal interfaces.
+
+All internal applications follow all the rules and use no ‘back door’ techniques.
+
+If you wish to write more than the simplest assembler code programs for the Z88, you will need a considerable amount of technical information about the machine. This information is available in the [Developers’ Notes](/en/library/cambridge-z88/developers-notes) on the **cambridgez88.jira.com** wiki.
+
+### Error handling [#error-handling]
+
+If your assembler language program makes any use at all of the Z88’s facilities, it will be possible to suspend it. Under these circumstances, it is imperative that your program includes error handling code.
+
+The following assembler language ‘wrap around’ provides the minimum acceptable error handling capability. It is also an example of how to use a macro for OZ system call API and how to open files to read date stamp properties.
+
+The ‘wrap around’ recognises and acts on the following events:
+
+- An Escape condition (the `[ESC]` key having been pressed whilst escape detection is enabled).
+- The `[INDEX]` having been pressed or another application / popdown being activated
+- The □ key having been pressed.
+- The process having been killed (normally from INDEX)
+
+You may wish to develop your own error handler, but you should always use one. If you don’t, you could run into trouble.
+
+```text
+.J
+AUTO
+```
+
+```text
+DIM code 512                   : REM space for program
+GN_Esp=&4C09                   : REM return pointer to system error message
+GN_Soe=&3C09                   : REM Write string at extended address to standard output
+GN_Nln=&2E09                   : REM carriage return, linefeed to std. output
+GN_Sop=&3A09                   : REM output string to std. output
+GN_Opf=&6009                   : REM open file
+OS_Erh=&75                     : REM install error handler
+OS_Esc=&6F                     : REM examine special condition
+GN_Err=&4A09                   : REM standard system error box
+GN_Sdo=&0E09                   : REM date and time to standard output
+OS_Dor=&87                     : REM DOR interface
+dr_rd=&09                      : REM read DOR record
+dr_fre=&05                     : REM free DOR handle
+op_dor=&06                     : REM open file for DOR access
+rc_quit=&67                    : REM KILL request error code
+rc_esc=&01                     : REM escape detection error code
+```
+
+```text
+FOR pass=0 TO 2 STEP 2
+P%=code
+[
+OPT  pass
+LD   HL,0
+ADD  HL,SP                     \ get current BASIC stack pointer
+LD   (bstk),HL                 \ preserve it
+LD   SP,(&1FFE)                \ install system (safe) stack pointer
+XOR  A
+LD   B,A
+LD   HL,errhan                 \ address of error handler
+OPT  FNsys(OS_Erh)             \ install new error handler
+LD   (obou),A                  \ save old error handler call level
+LD   (oerr),HL                 \ save old error handler address
+```
+
+```text
+\ Here is the call to your assembler language routine which should be
+\ included at the end of this code.
+CALL main                      \ call main routine
+```
+
+```text
+.exit
+LD   HL,(oerr)                 \ address of old error handler
+LD   A,(obou)                  \ old call level
+LD   B,0
+OPT  FNsys(OS_Erh)             \ restore previous error handler
+LD   SP,(bstk)                 \ restore BASIC stack pointer
+RET                            \ return to BBC BASIC interpreter
+```
+
+```text
+.errhan
+RET  Z
+CP   rc_esc                    \ ESC pressed?
+JR   NZ,err1
+OPT  FNsys(OS_Esc)             \ acknowledge ESC
+LD   A,rc_esc
+OR   A                         \ return rc_esc back to main program
+RET                            \ Fc = 0, Fz = 0
+```
+
+```text
+.err1
+CP   rc_quit                   \ KILL request?
+JR   NZ,err2
+```
+
+```text
+LD   HL,(oerr)                 \ re-install old error handler
+LD   A,(obou)                  \ old call level
+OPT  FNsys(OS_Erh)
+```
+
+```text
+LD   SP,(bstk)                 \ install BASIC stack pointer
+LD   HL,(oerr)
+```
+
+```text
+LD   A, rc_quit                \ reload A with RC_QUIT
+OR   A                         \ Fz = 0
+SCF                            \ Fc = 1
+JP   (HL)                      \ jump to BASIC's error handler
+```
+
+```text
+.err2                          \ write error message if possible
+OPT  FNsys(GN_Esp)             \ Get ext. pointer to system error message
+OPT  FNsys(GN_Soe)             \ Write error message to std. output
+OPT  FNsys(GN_Nln)             \ New line to std. output
+OR   A                         \ Fc = 0
+RET
+```
+
+```text
+.bstk DEFW 0                   \ storage for BASIC stack pointer
+.obou DEFB 0                   \ storage for old call level
+.oerr DEFW 0                   \ storage for old error handler address
+```
+
+```text
+\ ----------------------------------------------------------------------
+\ main routine starts here
+.main
+LD   HL,scratch_1              \ holds address of file to open
+LD   DE,scratch_2              \ explicit name buffer
+LD   C,40                      \ size of explicit name buffer
+LD   B,0                       \ HL string pointer is local
+LD   a, op_dor                 \ get DOR handle
+OPT  FNsys(GN_Opf)             \ open...
+JR   NC,opened_OK
+OPT  FNsys(GN_Err)             \ report error in standard window
+RET
+.opened_OK
+LD   A,dr_rd                   \ read DOR record
+LD   B,ASC"U"                  \ read update information
+LD   C,6                       \ 3 byte internal date, 3 byte int. time
+LD   DE,scratch_1              \ store returned information at (DE)
+OPT  FNsys(OS_Dor)             \ fetch update date
+LD   A,dr_fre
+OPT  FNsys(OS_Dor)             \ free DOR handle
+LD   HL,scratch_2              \ display explicit filename
+OPT  FNsys(GN_Sop)             \ to standard output
+LD   HL,tab_str
+OPT  FNsys(GN_Sop)             \ tab to column 40
+LD   HL,scratch_1
+OPT  FNsys(GN_Sdo)             \ output returned update date
+OPT  FNsys(GN_Nln)             \ display newline
+RET                            \ back to BASIC
+```
+
+```text
+.scratch_1 DEFM STRING$(40,"X")
+.scratch_2 DEFM STRING$(40,"X")
+.tab_str DEFM CHR$1+"2X"+CHR$(32+40)+CHR$0
+\ main routine ends here
+\ ----------------------------------------------------------------------
+]
+NEXT pass
+```
+
+```text
+CLS
+PRINT "Read File Update Date and Time"
+INPUT "Filename:"A$
+IF LEN(A$)>40 THEN PRINT "String too long": END
+```
+
+```text
+A$=A$+CHR$0  : REM null-terminate filename string
+$scratch_1=A$
+CALL code
+END
+:
+DEF FNsys(arg)
+IF arg>255 THEN PROC_Rst20Defw(arg) ELSE PROC_Rst20Defb(arg)
+=pass
+:
+DEF PROC_Rst20Defw(arg)
+[OPT pass
+RST &20: DEFW arg
+]
+ENDPROC
+DEF PROC_Rst20Defb(arg)
+[OPT pass
+RST &20: DEFB arg
+]
+ENDPROC
+```
+
+You can test the error handling code by replacing the above main routine with the following program as the other ‘main’ routine (also remove the filename input code after the assembler section which is no longer necessary).
+
+```text
+.main
+LD   B,10                      \ Loop 10 times
+.loop
+LD   A,B                       \ loop value
+ADD  A,ASC”0”-1                \ convert to Ascii digit
+OPT  FNsys(OS_Out)             \ display digit to std. output
+\
+.inp
+OPT  FNsys(OS_In)              \ Read a character from keyboard
+JR   C,inp                     \ if Fc = 1, read error code
+DJNZ loop
+RET
+```
+
+Try running the complete program and observe the effect of:
+
+- Suspending (eg. activate INDEX) and then either killing or reentering
+- Pressing `[ESC]`
+- Switching the Z88 off and on (both `[SHIFT]` keys)

@@ -1,0 +1,32 @@
+---
+description: "As with the BBC Micro, the VDU command may be used to send characters to the Z88 Screen Driver. Since the Z88 is very different to the BBC Micro, there are considerable differences in the action..."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# Introduction
+
+As with the BBC Micro, the VDU command may be used to send characters to the Z88 Screen Driver. Since the Z88 is very different to the BBC Micro, there are considerable differences in the action of the VDU commands.
+
+In many ways the VDU command is similar to a PRINT CHR$(num) command, but it involves less typing and a number of characters may be easily sent. It is most often used for sending characters that control the action of the Screen Driver.
+
+The VDU statement takes a list of numeric arguments (constants or variables) and sends their least significant bytes as characters to the screen.
+
+A 16 bit value (word) can be sent if the value is followed by a semi-colon. It is sent as a pair of characters, the least significant byte first.
+
+You cannot use the VDU command to send control sequences to a device (`:PRT.0`, for example).
+
+This section lists and briefly describes the control codes and their function.
+
+| **Char** | **Number** | **Meaning** |
+| --- | --- | --- |
+| NUL | 0 | Null - it does nothing |
+| SOH | 1 | Escape character for screen. Preceed special functions. See the ‘Description of Escape Sequences’ sub-section |
+| BEL | 7 | Bell - make a short ‘beep’ |
+| BS | 8 | Move the text cursor backwards one character |
+| HT | 9 | Move the text cursor forwards one character |
+| LF | 10 | Move the text cursor down one line |
+| VT | 11 | Move the text cursor up one line |
+| FF | 12 | Clear the text area - identical to CLS |
+| CR | 13 | Move the text cursor to the start of the current line |
+| DEL | 127 | Black square |

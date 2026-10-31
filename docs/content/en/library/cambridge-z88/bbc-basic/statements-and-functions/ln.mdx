@@ -1,0 +1,37 @@
+---
+description: "A function giving the natural logarithm of its argument."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# LN
+
+A function giving the natural logarithm of its argument.
+
+```text
+X=LN(Y)
+```
+
+This function gives the logarithm to the base 'e' of its argument. The 'natural' number, 'e', is approximately 2.71828183.
+
+Logarithms are 'traditionally' used for multiplication (by adding the logarithms) and division (by subtracting the logarithms). For example,
+
+```text
+10 log1=LN(2.5)
+20 log2=LN(2)
+30 log3=log1+log2
+40 answer=EXP(log3)
+50 PRINT answer
+```
+
+will calculate 2.5\*2 by adding their natural logarithms and print the answer.
+
+**Syntax**
+
+```text
+<n-var>=LN<numeric>
+```
+
+**Associated Keywords**
+
+LOG, EXP

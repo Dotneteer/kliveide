@@ -1,0 +1,61 @@
+---
+description: "A statement to input values from the console input channel (usually keyboard)."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# INPUT
+
+A statement to input values from the console input channel (usually keyboard).
+
+```text
+INPUT A,B,C,D$,"WHO ARE YOU",W$,"NAME"R$
+```
+
+If items are not immediately preceded by a printable prompt string (even if null) then a '?' will be printed as a prompt. If the variable is not separated from the prompt string by a comma, the '?' is not printed. In other words: no comma - no question mark.
+
+Items A, B, C, D$ in the above example can have their answers returned on one to four lines, separate items being separated by commas. Extra items will be ignored.
+
+Then WHO ARE YOU? is printed (the question mark comes from the comma) and W$ is input, then NAME is printed and R$ is input (no comma - no '? ').
+
+When the `[ENTER]` key is pressed to complete an entry, a new-line is generated. BBC BASIC has no facility for suppressing this new-line, but the TAB function can be used to reposition the cursor. For example,
+
+```text
+INPUT TAB(0,5) "Name ? " N$,TAB(20,5) "Age ? " A
+```
+
+will position the cursor at column 0 of line 5 and print the prompt Name ?. After the name has been entered the cursor will be positioned at column 20 on the same line and Age ? will be printed. When the age has been entered the cursor will move to the next line.
+
+The statement
+
+```text
+INPUT A
+```
+
+is exactly equivalent to
+
+```text
+INPUT A$: A=VAL(A$)
+```
+
+Leading spaces will be removed from the input line, but not trailing spaces. If the input string is not completely numeric, it will make the best it can of what it is given. If the first character is not numeric, 0 will be returned. Neither of these two cases will produce an error indication. Consequently, your program will not abort back to the command mode if a bad number is input. You may use the EVAL function to convert a string input to a numeric and report an error if the string is not a proper number or you can include your own validation checks.
+
+```text
+INPUT A$
+A=EVAL(A$)
+```
+
+Strings in quoted form are taken as they are, with a possible error occurring for a missing closing quote.
+
+A semicolon following a prompt string is an acceptable alternative to a comma.
+
+**Syntax**
+
+```text
+INPUT [TAB(X[,Y])][SPC(<numeric>)]['][<s-const>[,|;]]
+                    <n-var>|<s-var>{,<n-var>|<s-var>}
+```
+
+**Associated Keywords**
+
+INPUT LINE, INPUT\#, GET, INKEY

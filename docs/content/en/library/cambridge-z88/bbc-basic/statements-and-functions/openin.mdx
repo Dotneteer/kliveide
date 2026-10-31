@@ -1,0 +1,42 @@
+---
+description: "A function which opens a file for reading and returns the file handle of the file. This number must be used in subsequent references to the file with BGET#, INPUT#, EXT#, PTR#, EOF# or CLOSE#."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# OPENIN (OP.)
+
+A function which opens a file for reading and returns the file handle of the file. This number must be used in subsequent references to the file with BGET\#, INPUT\#, EXT\#, PTR\#, EOF\# or CLOSE\#.
+
+A returned value of zero signifies that the specified file was not found on the disk.
+
+```text
+X=OPENIN "jim"
+X=OPENIN A$
+X=OPENIN (A$)
+X=OPENIN ("FILE1")
+```
+
+The example below reads data from disk into an array. If the data file does not exist, an error message is printed and the program ends.
+
+```text
+10 DIM posn(10),name$(10)
+20 fnum=OPENIN "TOPTEN"
+30 IF fnum=0 THEN PRINT "No TOPTEN data": END
+40 FOR i=1 TO 10
+50   INPUT#fnum,posn(i),name$(i)
+60 NEXT
+70 CLOSE#fnum
+```
+
+You can also use OPENIN to access the devices <strong>`:COM.0`</strong>, etc. See the ‘Operating System Interface’ and ‘BBC BASIC(Z80) Files’ sections for more details.
+
+**Syntax**
+
+```text
+<n-var>=OPENIN(<str>)
+```
+
+**Associated Keywords**
+
+OPENOUT, OPENUP, CLOSE\#, PTR\#, PRINT\#, INPUT\#, BGET\#, BPUT\#, EOF\#

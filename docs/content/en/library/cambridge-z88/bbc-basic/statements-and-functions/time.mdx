@@ -1,0 +1,60 @@
+---
+description: "A pseudo-variable which reads and sets the elapsed time clock."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# TIME (TI.)
+
+A pseudo-variable which reads and sets the elapsed time clock.
+
+```text
+X=TIME
+TIME=100
+```
+
+You can use TIME to set and read BBC BASIC(Z80)’s internal clock. The value of the clock is returned in centi-seconds (one-hundredths of a second) and it is quite accurate. A delay loop such as
+
+```text
+REPEAT UNTIL TIME = T
+```
+
+is likely to fail. The compound condition test
+
+```text
+REPEAT UNTIL TIME >= T
+```
+
+should always be used.
+
+On starting BBC BASIC(Z80), TIME may be found to be ‘stuck’ at a large value. To cure this, it should be initialised (TIME=0), for example.
+
+The following example is a simple program to provide a 24 hour clock. Lines 20 to 40 get the correct time, lines 50 and 60 calculate the number of centi-seconds and set TIME, and lines 110 to 130 convert the value in TIME to hours, minutes and seconds. Line 90 stops the time being printed unless it has changed by at least one second.
+
+```text
+ 10 CLS
+ 20 INPUT "HOURS ",H
+ 30 INPUT "MINUTES ",M
+ 40 INPUT "SECONDS ",S
+ 50 PRINT "PUSH ANY KEY TO SET THE TIME ";:X=GET
+ 60 TIME=((H*60+M)*60+S)*100
+ 70 T=0
+ 80 REPEAT
+ 90   IF TIME DIV 100=T DIV 100 THEN 150
+100   T=TIME
+110   S=(T DIV 100) MOD 60
+120   M=(T DIV 6000) MOD 60
+130   H=(T DIV 360000) MOD 24
+140   PRINT TAB(0,23) H;":";M;":";S;
+150 UNTIL FALSE
+```
+
+**Syntax**
+
+TIME=\<numeric\>
+
+\<n-var\>=TIME
+
+**Associated Keywords**
+
+TIME$

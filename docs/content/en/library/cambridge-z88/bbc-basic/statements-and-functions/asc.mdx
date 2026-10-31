@@ -1,0 +1,92 @@
+---
+description: "A function returning the ASCII character value of the first character of the argument string. If the string is null then -1 will be returned."
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# ASC
+
+A function returning the ASCII character value of the first character of the argument string. If the string is null then -1 will be returned.
+
+A computer only understands numbers. In order to deal with characters, each character is assigned a code number. For example (in the ASCII code table) the character 'A' is given the code number 65 (decimal). A part of the computer generates special electronic signals which cause the characters to be displayed on the screen. The signals generated vary according to the code number.
+
+You could use this function to convert ASCII codes to some other coding scheme.
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>
+
+```text
+ascii_code=ASC("H")
+```
+
+</Table.Td>
+<Table.Td>Result would be 72</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+X=ASC("HELLO")
+```
+
+</Table.Td>
+<Table.Td>Result would be 72</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+name$="FRED"
+```
+
+</Table.Td>
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+ascii_code=ASC(name$)
+```
+
+</Table.Td>
+<Table.Td>Result would be 70</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+X=ASC"e"
+```
+
+</Table.Td>
+<Table.Td>Result would be 101</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+X=ASC(MID$(A$,position))
+```
+
+</Table.Td>
+<Table.Td>Result depends on A$ and position.</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+ASC is the complement of CHR$.
+
+**Syntax**
+
+```text
+<n-var>=ASC(<str>)
+```
+
+**Associated Keywords**
+
+CHR$, STR$, VAL

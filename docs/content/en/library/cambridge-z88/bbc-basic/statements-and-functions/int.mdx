@@ -1,0 +1,43 @@
+---
+description: "A function truncating a real number to the lower integer."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# INT
+
+A function truncating a real number to the lower integer.
+
+```text
+X=INT(Y)
+```
+
+```text
+INT(99.8)        =99
+INT(-12)        =-12
+INT(-12.1)        =-13
+```
+
+This function converts a real number (one with a decimal part) to the nearest integer (whole number) less than the number supplied. Thus,
+
+```text
+INT(14.56)
+```
+
+gives 14, whereas
+
+```text
+INT(-14.5)
+```
+
+gives -15.
+
+**Syntax**
+
+```text
+<n-var>=INT<numeric>
+```
+
+**Associated Keywords**
+
+None

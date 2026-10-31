@@ -1,0 +1,70 @@
+---
+description: "A function which gets a byte from the file whose file handle is its argument. The file pointer is incremented after the byte has been read."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# BGET# (B.#)
+
+A function which gets a byte from the file whose file handle is its argument. The file pointer is incremented after the byte has been read.
+
+```text
+E=BGET#n
+aux=BGET#3
+```
+
+You must normally have opened a file using OPENOUT, OPENIN or OPENUP before you use this statement. (See these keywords and the BBC BASIC(Z80) Files section for details.)
+
+You can use `BGET#` to read single bytes from a file. This enables you to read back small integers which have been 'packed' into fewer than 5 bytes (see BPUT\#). It is also very useful if you need to perform some conversion operation on a file. Each byte read is numeric, but you can use `CHR$(BGET#n)` to convert it to a string.
+
+The input file in the example below is a text file produced by a word-processor.
+
+Words to be underlined are 'bracketed' with ^S. The program produces an output file suitable for a printer which expects such words to be bracketed by ^Y. You could, of course, perform several such translations in one program.
+
+```text
+ 10 REM Open i/p and o/p files. End if error.
+ 20 infile=OPENIN "WSFILE.DOC"
+ 30 IF infile=0 THEN END
+ 40 outfile=OPENOUT "BROTH.DOC"
+ 50 IF outfile=0 THEN END
+ 60 :
+ 70 REM Process file, converting ^S to ^Y
+ 80 REPEAT
+ 90   temp=BGET#infile :REM Read byte
+100    IF temp=&13 THEN temp=&19 :REM Convert ^S
+110    BPUT#outfile,temp :REM Write byte
+120 UNTIL temp=&1A :REM ^Z
+130 CLOSE#0 :REM Close all files
+140 END
+```
+
+To make the program more useful, it could ask for the names of the input and output files at 'run time':
+
+```text
+ 10 INPUT "Enter name of INPUT file " infile$
+ 20 INPUT "Enter name of OUTPUT file " outfile$
+ 30 REM Open i/p and o/p files. End if error.
+ 40 infile=OPENIN(infile$)
+ 50 IF infile=0 THEN END
+ 60 outfile=OPENOUT(outfile$)
+ 70 IF outfile=0 THEN END
+ 80 :
+ 90 REM Process file, converting ^S to ^Y
+100 REPEAT
+110    temp=BGET#infile :REM Read byte
+120    IF temp=&13 THEN temp=&19 :REM Convert ^S
+130    BPUT#outfile,temp :REM Write byte
+140 UNTIL temp=&1A :REM ^Z
+150 CLOSE#0 :REM Close all files
+160 END
+```
+
+**Syntax**
+
+```text
+<n-var>=BGET#<numeric>
+```
+
+**Associated Keywords**
+
+OPENIN, OPENUP, OPENOUT, CLOSE\#, PRINT\#, INPUT\#, BGET\#, EXT\#, PTR\#, EOF\#

@@ -1,0 +1,44 @@
+---
+description: "A keyword used at the start of all user declared procedures. The first character of a procedure name can be an underline (or a number)."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# PROC
+
+A keyword used at the start of all user declared procedures. The first character of a procedure name can be an underline (or a number).
+
+If there are spaces between the procedure name and the opening bracket of the parameter list (if any) they must be present both in the definition and the call. It's safer not to have spaces between the procedure name and the opening bracket.
+
+A procedure may be defined with any number of parameters of any type.
+
+A procedure definition is terminated by ENDPROC.
+
+A procedure does not have to be declared before it is called.
+
+Procedures are re-entrant and the parameters (arguments) are passed by value.
+
+```text
+ 10 INPUT"Number of discs "F
+ 20 PROC_hanoi(F,1,2,3)
+ 30 END
+ 40 :
+ 50 DEF PROC_hanoi(A,B,C,D)
+ 60 IF A=0 THEN ENDPROC
+ 70 PROC_hanoi(A-1,B,D,C)
+ 80 PRINT"Move disk ";A" from ";B" to ";C
+ 90 PROC_hanoi(A-1,D,C,B)
+100 ENDPROC
+```
+
+See the ‘Procedures and Functions’ sub-section for more details.
+
+**Syntax**
+
+```text
+PROC<name>[(<exp>{,<exp>})]
+```
+
+**Associated Keywords**
+
+DEF, ENDPROC, LOCAL

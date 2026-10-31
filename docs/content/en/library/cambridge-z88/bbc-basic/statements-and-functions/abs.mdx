@@ -1,0 +1,45 @@
+---
+description: "A function giving the absolute value of its argument."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# ABS
+
+A function giving the absolute value of its argument.
+
+```text
+X = ABS(deficit)
+length = ABS(X1-X2)
+```
+
+This function converts negative numbers into positive ones. It can be used to give the difference between two numbers without regard to the sign of the answer.
+
+It is particularly useful when you want to know the difference between the two values, but you don't know which is the larger. For instance, if X=6 and Y=10 then the following examples would give the same result.
+
+```text
+difference = ABS(X-Y)
+difference = ABS(Y-X)
+```
+
+You can use this function to check that a calculated answer is within certain limits of a specified value. For example, suppose you wanted to check that 'answer' was equal to 'ideal' plus or minus (up to) 0.5. One way would be:
+
+```text
+IF answer>ideal-0.5 AND answer<ideal+0.5 THEN....
+```
+
+However, the following example would be a more elegant solution.
+
+```text
+IF ABS(answer-ideal)<0.5 THEN....
+```
+
+**Syntax**
+
+```text
+<n-var>=ABS(<numeric>)
+```
+
+**Associated Keywords**
+
+SGN

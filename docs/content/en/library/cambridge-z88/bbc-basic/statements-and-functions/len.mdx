@@ -1,0 +1,47 @@
+---
+description: "A function which returns the length of the argument string."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# LEN
+
+A function which returns the length of the argument string.
+
+```text
+X=LEN"fred"
+X=LENA$
+X=LEN(A$+B$)
+```
+
+This function 'counts' the number of characters in a string. For example,
+
+```text
+length=LEN("BBC BASIC(Z80)   ")
+```
+
+would set 'length' to 17 since the string consists of the 14 characters of ‘BBC BASIC(Z80)’ followed by three spaces.
+
+LEN is often used with a FOR....NEXT loop to 'work down' a string doing something with each letter in the string. For example, the following program looks at each character in a string and checks that it is a valid hexadecimal numeric character.
+
+```text
+ 10 valid$="0123456789ABCDEF"
+ 20 REPEAT
+ 30   INPUT "Type in a HEX number" hex$
+ 40   flag=TRUE
+ 50   FOR i=1 TO LEN(hex$)
+ 60     IF INSTR(valid$,MID$(hex$,i,1))=0 flag=FALSE
+ 80   NEXT
+ 90   IF NOT flag THEN PRINT "Bad HEX"
+100 UNTIL flag
+```
+
+**Syntax**
+
+```text
+<n-var>=LEN(<str>)
+```
+
+**Associated Keywords**
+
+LEFT$, MID$, RIGHT$, INSTR

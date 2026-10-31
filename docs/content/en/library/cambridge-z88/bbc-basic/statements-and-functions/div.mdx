@@ -1,0 +1,34 @@
+---
+description: "A binary operation giving the integer quotient of two items. The result is always an integer."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# DIV
+
+A binary operation giving the integer quotient of two items. The result is always an integer.
+
+```text
+X=A DIV B
+y=(top+bottom+1) DIV 2
+```
+
+You can use this function to give the 'whole number' part of the answer to a division. For example,
+
+```text
+21 DIV 4
+```
+
+would give 5 (with a 'remainder' of 1).
+
+Whilst it is possible to use DIV with real numbers, it is really intended for use with integers. If you do use real numbers, BBC BASIC(Z80) converts them to integers by truncation before DIViding them.
+
+**Syntax**
+
+```text
+<n-var>=<numeric> DIV <numeric>
+```
+
+**Associated Keywords**
+
+MOD

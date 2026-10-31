@@ -1,0 +1,371 @@
+---
+description: "A statement which prints characters on the screen. You can also echo the characters to the printer. Printer echo on the Z88 is controlled with the following key sequences:"
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# PRINT
+
+A statement which prints characters on the screen. You can also echo the characters to the printer. Printer echo on the Z88 is controlled with the following key sequences:
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>□ + P</Table.Td>
+<Table.Td>Printer echo On. All characters sent subsequently to the screen are echoed to the printer</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>□ - P</Table.Td>
+<Table.Td>Printer echo Off</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+## General Information [#general-information]
+
+The items following PRINT are called the print list. The print list may contain a sequence of string or numeric literals or variables. The spacing between the items printed will vary depending on the punctuation used. If the print list does not end with a semi-colon, a new-line will be printed after all the items in the print list.
+
+In the examples which follow, commas have been printed instead of spaces to help you count.
+
+The screen is divided into zones (initially) 10 characters wide. By default, numeric quantities are printed right justified in the print zone and strings are printed just as they are (with no leading spaces). Numeric quantities can be printed left justified by preceding them with a semi-colon. In the examples the zone width is indicated as z10, z4 etc.
+
+```text
+                    z10
+                    012345678901234567890123456789
+PRINT 23.162        ,,,,23.162
+PRINT "HELLO"       HELLO
+PRINT ;23.162       23.162
+```
+
+Initially numeric items are printed in decimal. If a tilde (\~) is encountered in the print list, the numeric items which follow it are printed in hexadecimal. If a comma or a semi-colon is encountered further down the print list, the format reverts to decimal.
+
+```text
+                    z10
+                    012345678901234567890123456789
+PRINT ~10 58,58     ,,,,,,,,,A,,,,,,,,3A,,,,,,,,58
+```
+
+A comma (,) causes the cursor to TAB to the beginning of the next print zone unless the cursor is already at the start of a print zone. A semi-colon causes the next and following items to be printed on the same line immediately after the previous item. This 'no-gap' printing continues until a comma (or the end of the print list) is encountered. An apostrophe (') will force a new line. TAB(X) and TAB(Y,Z) can also be used at any position in the print line to position the cursor.
+
+```text
+                    z10
+                    012345678901234567890123456789
+PRINT "HELLO",24.2  HELLO     ,,,,,,24.2
+PRINT "HELLO";24.2  HELLO24.2
+PRINT ;2 5 4.3,2    254.3     ,,,,,,,,,2
+PRINT "HELLO"'2.45  HELLO
+                    ,,,,,,2.45
+```
+
+Unlike most other versions of BASIC, a comma at the end of the print list will not suppress the new line and advance the cursor to the next zone. If you wish to split a line over two or more PRINT statements, end the previous print list with a semicolon and start the following list with a comma or end the line with a comma followed by a semicolon.
+
+```text
+                    z10
+                    012345678901234567890123456789
+PRINT "HELLO" 12;   HELLO,,,,,,,,12,,,,,,,,,,23.67
+PRINT ,23.67
+```
+
+or
+
+```text
+PRINT "HELLO" 12,;
+PRINT 23.67
+```
+
+Printing a string followed by a numeric effectively moves the start of the print zones towards the right by the length of the string. This displacement continues until a comma is encountered.
+
+```text
+                    z10
+                    012345678901234567890123456789
+PRINT "HELLO"12 34  HELLO,,,,,,,,12,,,,,,,,34
+PRINT "HELLO"12,34  HELLO,,,,,,,,12     ,,,,,,,,34
+```
+
+## Print Format Control [#print-format-control]
+
+Although PRINT USING is not implemented in BBC BASIC, similar control over the print format can be obtained. The overall width of the print zones and print field, the number of figures or decimal places and the print format may be controlled by setting the print variable, @%, to the appropriate value. The print variable (@%) comprises 4 bytes and each byte controls one aspect of the print format. @% can be set equal to a decimal integer, but it is easier to use hexadecimal, since each byte can then be considered separately.
+
+```text
+@%=&SSNNPPWW
+```
+
+| **Byte** | **Range** | **Default** | **Purpose** |
+| --- | --- | --- | --- |
+| SS | 00-01 | 00 | STR$ Format Control |
+| NN | 00-02 | 00 | Format Selection |
+| PP | ??-?? | 09 | Number of Digits Printed |
+| WW | 00-0F | 0A(10) | Zone and Print Field Width |
+
+### STR$ Format Control - SS [#str-format-control---ss]
+
+SS effects the format of the string generated by the STR$ function. If SS is 01 the string will be generated according to the format set by @%, otherwise the G9 format will be used.
+
+### Format Selection - NN [#format-selection---nn]
+
+Byte 2 selects the general format as follows:
+
+00 General Format (G).
+
+01 Exponential Format (E).
+
+02 Fixed Format (F).
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>G Format</Table.Td>
+<Table.Td>Numbers that are integers are printed as such. <br />Numbers in the range 0.1 to 1 will be printed as such. <br />Numbers less than 0.1 will be printed in E format. <br />Numbers greater than the range set by Byte 1 will be printed in E format. In which case, the number of digits printed will still be controlled by Byte 1, but according to the E format rules.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={2}>The earlier examples were all printed in G9 format.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>E Format</Table.Td>
+<Table.Td>Numbers are printed in the scientific (engineering) notation.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>F Format</Table.Td>
+<Table.Td>Numbers are printed with a fixed number of decimal places.</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+### <strong> Number of Digits - PP</strong> [#number-of-digits---pp]
+
+PP controls the number of digits printed in the selected format. The number is rounded (NOT truncated) to this size before it is printed. If PP is set outside the range allowed for by the selected format, it is taken as 9. The effect of PP differs slightly with the various formats.
+
+<Table>
+<thead>
+<Table.Tr>
+<Table.Th>**Format**</Table.Th>
+<Table.Th>**Range**</Table.Th>
+<Table.Th>**Control Function**</Table.Th>
+</Table.Tr>
+</thead>
+<tbody>
+<Table.Tr>
+<Table.Td>G</Table.Td>
+<Table.Td>01-0A</Table.Td>
+<Table.Td>
+
+The maximum number of digits which can be printed, excluding the decimal point, before changing to the E format.
+
+```text
+                    01234567890123456789
+&030A - G3z10
+(00'00'03'0A)
+PRINT 1000.31       ,,,,,,,1E3
+PRINT 1016.31       ,,,,1.02E3
+PRINT 10.56         ,,,,,,10.6
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>E</Table.Td>
+<Table.Td>01-FF</Table.Td>
+<Table.Td>
+
+The total number of digits to be printed excluding the decimal point and the digits after the E. Three characters or spaces are always printed after the E. If the number of significant figures called for is greater than 10, then trailing zeros will be printed.
+
+```text
+01030A - E3z10
+(00'01'03'0A)
+                    01234567890123456789
+PRINT 10.56         ,,1.06E1
+```
+
+```text
+&010F0A - E15z10
+(00'01'0F'0A)
+                    01234567890123456789
+PRINT 10.56         1.05600000000000E1
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>F</Table.Td>
+<Table.Td>00-0A</Table.Td>
+<Table.Td>
+
+The number of digits to be printed after the decimal point.
+
+```text
+&02020A - F2z10
+(00'02'02'0A)
+                    01234567890123456789
+PRINT 10.56         ,,,,,10.56
+PRINT 100.5864      ,,,,100.59
+PRINT .64862        ,,,,,,0.65
+```
+
+</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+### Zone Width - WW [#zone-width---ww]
+
+Byte 0 sets the width of the print zones and field.
+
+```text
+&020208 - F2z8
+(00'00'02'08)
+```
+
+followed by
+
+```text
+&020206 - F2z6
+(00'02'02'06)
+                    01234567890123456789
+PRINT 10.2,3.8      ,,,10.20,,,,3.80
+PRINT 10.2,3.8      ,10.20,,3.80
+```
+
+### Changing the Print Control Variable [#changing-the-print-control-variable]
+
+It is possible to change the print control variable (@%) within a print list by using the function:
+
+```text
+DEF FN_pformat(N):@%=N:=""
+```
+
+Functions have to return an answer, but the value returned by this function is a null string. Consequently, its only effect is to change the print control variable. Thus the PRINT statement
+
+```text
+PRINT FN_pformat(&90A) x FN_pformat(&2020A) y
+```
+
+will print x in G9z10 format and y in F2z10 format.
+
+## Examples [#examples]
+
+```text
+G9z10                    G2z10
+&00090A                  &00020A
+012345678901234          012345678901234
+1111.11111               ,,,,,1.1E3
+13.7174211               ,,,,,,,,14
+,1.5241579               ,,,,,,,1.5
+1.88167642E-2            ,,,,1.9E-2
+2.09975158E-3            ,,,,2.1E-3
+```
+
+```text
+F2z10                    E2z10
+&02020A                  &0102A
+012345678901234          012345678901234
+,,,1111.11               ,,,1.1E3
+,,,,,13.72               ,,,1.4E1
+,,,,,,1.52               ,,,1.5E0
+,,,,,,0.02               ,,,1.9E-2
+,,,,,,0.00               ,,,2.1E-3
+```
+
+The results obtained by running the following example program show the effect of changing the zone width. The results for zone widths of 5 and 10 (&0A) illustrate what happens when the zone width is too small for the number to be printed properly. The example also illustrates what happens when the number is too large for the chosen precision.
+
+```text
+ 10 test=7.8123
+ 20 FOR i=5 TO 25 STEP 5
+ 30   PRINT
+ 40   @%=&020200+i
+ 50   PRINT "@%=&000";~@%
+ 60   PRINT STRING$(3,"0123456789")
+ 70   FOR j=1 TO 10
+ 80     PRINT test^j
+ 90   NEXT
+100   PRINT '
+110 NEXT
+120 @%=&90A
+```
+
+```text
+&00020205
+012345678901234567890123456789
+ 7.81
+61.03
+476.80
+3724.91
+29100.11
+227338.75
+1776038.54
+13874945.89
+1.083952398E8
+8.46816132E8
+```
+
+```text
+&0002020A
+012345678901234567890123456789
+      7.81
+     61.03
+    476.80
+   3724.91
+  29100.11
+ 227338.75
+1776038.54
+13874945.89
+1.083952398E8
+8.46816132E8
+```
+
+```text
+&0002020F
+012345678901234567890123456789
+           7.81
+          61.03
+         476.80
+        3724.91
+       29100.11
+      227338.75
+     1776038.54
+    13874945.89
+   1.083952398E8
+    8.46816132E8
+```
+
+```text
+&00020214
+012345678901234567890123456789
+                7.81
+               61.03
+              476.80
+             3724.91
+            29100.11
+           227338.75
+          1776038.54
+         13874945.89
+       1.083952398E8
+        8.46816132E8
+```
+
+```text
+&00020219
+012345678901234567890123456789
+                     7.81
+                    61.03
+                   476.80
+                  3724.91
+                 29100.11
+                227338.75
+               1776038.54
+              13874945.89
+            1.083952398E8
+             8.46816132E8
+```
+
+**Syntax**
+
+```text
+PRINT {[TAB(<numeric>[,<numeric>])][SPC(<numeric>]
+      ['][,][;][~][<str>|<numeric>]}
+```
+
+**Associated Keywords**
+
+PRINT\#, TAB, POS, STR$, WIDTH, INPUT, VDU

@@ -1,0 +1,29 @@
+---
+description: "A function returning the line number of the line where the last error occurred."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# ERL
+
+A function returning the line number of the line where the last error occurred.
+
+```text
+X=ERL
+```
+
+If there was an error in a procedure call, the line number of the calling line would be returned, not the line number of the definition.
+
+The number returned by ERL is the line number printed out when BBC BASIC(Z80) reports an error.
+
+See the Error Handling sub-section for more information on error handling and correction.
+
+**Syntax**
+
+```text
+<n-var>=ERL
+```
+
+**Associated Keywords**
+
+ON ERROR GOTO, ON ERROR OFF, REPORT, ERR

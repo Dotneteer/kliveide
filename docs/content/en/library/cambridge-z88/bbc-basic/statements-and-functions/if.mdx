@@ -1,0 +1,53 @@
+---
+description: "A statement which sets up a test condition which can be used to control the subsequent flow of the program. It is part of the IF....THEN....ELSE structure."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# IF
+
+A statement which sets up a test condition which can be used to control the subsequent flow of the program. It is part of the IF....THEN....ELSE structure.
+
+```text
+IF length=5 THEN 110
+IF A<C OR A>D GOTO 110
+IF A>C AND C>=D THEN GOTO 110 ELSE PRINT "BBC"
+IF A>Q PRINT"IT IS GREATER":A=1:GOTO 120
+```
+
+The word THEN is optional under most circumstances.
+
+The IF statement is the primary decision making statement. The testable condition (A=B, etc) is evaluated and the answer is either TRUE or FALSE. If the answer is TRUE, the rest of the line (up to the ELSE clause if there is one) is executed. The '=' sign has two meanings. It can be used to assign a value to a variable or as part of a test. The example shows the two uses in one program line.
+
+```text
+A=B=C
+```
+
+In English this reads "A becomes equal to the result of the test B=C". Thus if B does equal C, A will be set to TRUE (-1). However, if B does not equal C, A will be set to FALSE (0). The example below is similar, but A will be set to TRUE (-1) if 'age' is less than 21.
+
+```text
+A=age<21
+```
+
+Since the IF statement evaluates the testable condition and acts on the result, you can use a previously set variable name in place of the test. The two examples below will print 'Under 21' if the value of 'age' is less than 21.
+
+```text
+IF age<21 THEN PRINT "Under 21"
+flag=age<21
+IF flag THEN PRINT "Under 21"
+```
+
+**Syntax**
+
+```text
+IF <t-cond> THEN <stmt>{:<stmt>} [ELSE <stmt>{:<stmt>}]
+IF <exp> THEN <stmt>{:<stmt>} [ELSE <stmt>{:<stmt>}]
+IF <t-cond> GOTO <l-num> [ELSE <l-num>]
+IF <exp> GOTO <l-num> [ELSE <l-num>]
+IF <t-cond> THEN <l-num> [ELSE <l-num>]
+IF <exp> THEN <l-num> [ELSE <l-num>]
+```
+
+**Associated Keywords**
+
+THEN, ELSE

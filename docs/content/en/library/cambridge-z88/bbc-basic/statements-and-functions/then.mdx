@@ -1,0 +1,41 @@
+---
+description: "An optional part of the IF... THEN ... ELSE statement. It introduces the action to be taken if the testable condition evaluates to TRUE."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# THEN (TH.)
+
+An optional part of the IF... THEN ... ELSE statement. It introduces the action to be taken if the testable condition evaluates to TRUE.
+
+```text
+IF A=B THEN 3000
+IF A=B THEN PRINT "Equal" ELSE PRINT "Help"
+```
+
+You need to use THEN if it is followed by:
+
+**A line number.**<br />`IF a=b THEN 320`
+
+**A 'star' (\*) command.**<br />`IF a=b THEN *DIR`
+
+**An assignment of a pseudo-variable.**<br />`IF a=b THEN TIME=0`
+
+or you wish to exit from a function as a result of the test. This is because BBC BASIC(Z80) can't work out what you mean in these circumstances if you leave the THEN out.
+
+```text
+IF A=B PRINT "Equal" ELSE PRINT "Help"
+DEF FN_test(num)
+IF a=b THEN =num: REM THEN required on this line
+=num/256
+```
+
+**Syntax**
+
+```text
+IF <t-cond> THEN <stmt>{:<stmt>} [ELSE <stmt>{:<stmt>}]
+```
+
+**Associated Keywords**
+
+IF, ELSE

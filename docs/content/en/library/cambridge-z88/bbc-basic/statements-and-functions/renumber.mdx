@@ -1,0 +1,66 @@
+---
+description: "A command which will renumber the lines and correct the cross references inside a program."
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# RENUMBER (REN.)
+
+A command which will renumber the lines and correct the cross references inside a program.
+
+The options are as for AUTO, but increments of greater than 255 are allowed.
+
+You can specify both the new first number (n1) and/or the step size (s). The default for both the first number and the step size is 10. The two parameters should be separated by a comma or a hyphen.
+
+RENUMBER
+
+RENUMBER n1
+
+RENUMBER n1,s
+
+RENUMBER ,s
+
+For example:
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>
+
+```text
+RENUMBER
+RENUMBER 1000
+RENUMBER 1000-5
+RENUMBER ,5
+RENUMBER -5
+```
+
+</Table.Td>
+<Table.Td>First number 10, step 10<br />First number 1000, step 10<br />First number 1000, step 5<br />First number 10, step 5<br />First number 10, step 5</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+RENUMBER produces error messages when a cross reference fails. The line number containing the failed cross-reference is renumbered and the line number in the error report is the new line number.
+
+If you renumber a line containing an ON GOTO/GOSUB statement which has a calculated line number, RENUMBER will correctly cope with line numbers before the calculated line number. However, line numbers after the calculated line number will not be changed.
+
+In the following example, the first two line numbers would be renumbered correctly, but the last two would be left unchanged.
+
+```text
+ON action GOSUB 100,200,(type*10+300),400,500
+```
+
+RENUMBER may be used in a program, but it will exit to the command mode on completion.
+
+**Syntax**
+
+```text
+RENUMBER [<n-const>[,<n-const>]]
+```
+
+**Associated Keywords**
+
+LIST

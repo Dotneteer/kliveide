@@ -1,0 +1,33 @@
+---
+description: "Part of the FOR statement, this optional section specifies step sizes other than 1."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# STEP (S.)
+
+Part of the FOR statement, this optional section specifies step sizes other than 1.
+
+```text
+FOR i=1 TO 20 STEP 5
+```
+
+The step may be positive or negative. STEP is optional; if it is omitted, a step size of +1 is assumed.
+
+You can use this optional part of the FOR...TO...STEP...NEXT structure to specify the amount by which the FOR...NEXT loop control variable is changed each time round the loop. In the example below, the loop control variable, 'cost' starts as 20, ends at 5 and is changed by -5 each time round the loop.
+
+```text
+10 FOR cost=20 TO 5 STEP -5
+20   PRINT cost,cost*1.15
+30 NEXT
+```
+
+**Syntax**
+
+```text
+FOR <n-var>=<numeric> TO <numeric> [STEP <numeric>]
+```
+
+**Associated Keywords**
+
+FOR, TO, NEXT
