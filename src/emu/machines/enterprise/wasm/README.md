@@ -11,10 +11,10 @@ The hardware facts come from the research pack `_input/enterprise128/` (`NICK_VI
 `NICK_VIDEO_BACKGROUND.md`, `DAVE_MEMORY_IO.md`, `DAVE_AUDIO_BACKGROUND.md`). The code is Klive's own;
 no emulator's code was ported (plan D1).
 
-**State (Phases 1-3, 2026-10-30):** EXOS 2.1 boots to IS-BASIC 2.1 and the picture shows it. The memory
-map, DAVE's interrupts and timers, NICK's LPT walker and pixels, VINT, vertical sync, DAVE's wait states
-and NICK's clock stretch are in. The sound is silent (Phase 4) and the keyboard has no host typer
-(Phase 5).
+**State (Phases 1-4, 2026-10-31):** EXOS 2.1 boots to IS-BASIC 2.1, the picture shows it and DAVE
+plays. The memory map, DAVE's interrupts, timers and sound generator, NICK's LPT walker and pixels,
+VINT, vertical sync, DAVE's wait states and NICK's clock stretch are in. The keyboard has no host
+typer yet (Phase 5).
 
 ## Layout
 
@@ -24,7 +24,7 @@ and NICK's clock stretch are in. The sound is silent (Phase 4) and the keyboard 
 - `ep/ep-memory.c`: the 256-segment map behind the page registers B0h-B3h.
 - `ep/ep-keyboard.c`: the 10 x 8 matrix (B5h) and the external joysticks' J column (B6h).
 - `ep/ep-dave.c`: DAVE's interrupt latches, the 1 kHz / 50 Hz / 1 Hz chain, the tone counters, BFh.
-- `ep/ep-audio.c`: the sample stream (silent until Phase 4).
+- `ep/ep-audio.c`: DAVE's sound generator, the stereo mix and the host's samples.
 - `ep/ep-nick.c`: NICK's slot stepper, the LPT walker, LD1/LD2, VINT, vertical sync, port 83h.
 - `ep/ep-ports.c`: the I/O decode.
 - `ep/ep-timing.c`: DAVE's wait states and NICK's clock stretch.
@@ -117,6 +117,30 @@ ends (ep128emu and the EXOS book's appendix), not where it starts (the NICK docu
 puts its 14-line VINT block just before vertical sync, so its interrupt comes three lines before the
 frame ends.
 
+## Sound (plan §8.2-§8.3)
+
+`ep-audio.c` steps once per DAVE tick, inside `epDaveTick`, in the order the research pack records for
+ep128emu: the polynomial counters (the noise one only if its clock fell before this tick), then the
+counters and interrupts (`ep-dave.c`), then the channels in the order noise, ch2, ch1, ch0, each using
+its partners' values as that order leaves them. So the effects that couple channels see a one-tick
+skew against the gate plan's "everything samples the last tick" (plan Q8), as ep128emu does.
+
+- Tone channels: toggle on reload, or sample the 4/5/7-bit (or swapped variable) poly; high-pass by the
+  next channel, ring (XNOR) with the partner, continuously; sync holds the flip-flop at 0 and the
+  counter at its code, and the ring still applies, so two held channels with ring make a constant 1.
+- Noise: the 31.25 kHz square (a toggle every 4 ticks, free-running) or a tone channel's falling edge
+  steps the noise poly; low-pass by ch2, high-pass by ch0, ring with ch1, in that order.
+- The polys start from all ones (plan Q7: ep128emu's state; the chip's reset state is open). The
+  variable poly is one register with switched feedback, so a length change keeps its low bits.
+- Output: per side the amplitudes of the channels that are high (0-252), or 4 x ch0's in D/A mode. A
+  one-pole low-pass at the board's 22.6 kHz runs at the tick rate; each host sample averages the
+  filtered level over its interval (samples due before a tick are emitted before it); a DC high-pass
+  stands in for the output capacitors. Gain 1.0: four channels at full amplitude swing +-0.5, one
+  channel +-0.125 (ep128emu's proportion).
+- Not modelled: the DAC's non-linearity, the 8 us output multiplex, the speaker and its mute (VC1).
+
+With sound on, the core runs about 28 x real time in the harness (IS-BASIC idling).
+
 ## Testing
 
 `test/harness/enterprise/` scripts the real core: `bootToBasic`, frames, stepping, the LPT and the
@@ -131,6 +155,9 @@ screen's text, DAVE. `test/ep-hw/`:
 - `nick-picture.test.ts`: every mode and colour mode on a worked byte, FIXBIAS, the ALT options, the
   pipeline, blanking, a mid-line border write, the colour levels, the beam, signal loss, the IS 1984
   demo's frame, and EXOS's IS-BASIC screen (a picture hash checked by eye; `EP_SHOTS_PNG=<dir>` writes
-  the PNGs).
+  the PNGs);
+- `sound.test.ts`: pitch, sync, BFh bit 1, the high-pass, ring with held channels, the polys' periods,
+  the noise clocks, distortion aliasing, the sides and D/A mode, a 1 kHz tone through to the host's
+  samples, and EXOS's keyclick.
 
 Most run on a bare machine (`bare.ts`): the CPU in segment F8h, the LPT written by the test.

@@ -33,8 +33,8 @@
 #define EP_VINT_AT_BLOCK_END 1
 
 /* The sound generator's per-tick hooks (ep-audio.c) */
-static void epAudioToneReload(uint32_t channel);
-static void epAudioTick(void);
+static void epAudioTickStart(void);
+static void epAudioTickEnd(uint32_t at, uint8_t reloaded);
 
 /* The sound registers A0h-AFh as last written (write-only; ep-audio.c reads them) */
 static uint8_t epDaveReg[16];
@@ -70,9 +70,15 @@ static inline void epIntSelectableEvent(void) {
   if (epIntEnable & 0x01u) epIntLatch |= 0x02u;
 }
 
-/* One 250 kHz tick: the timer chain and the tone counters */
-static void epDaveTick(void) {
+/*
+ * One 250 kHz tick at half-T time `at`, in ep128emu's order (DAVE_AUDIO_BACKGROUND.md §3.1): the
+ * polynomial counters step (ep-audio.c), every counter counts and the interrupt sources fire, then
+ * the channels are worked out from the counters that reloaded (ep-audio.c)
+ */
+static void epDaveTick(uint32_t at) {
   const uint8_t select = (uint8_t)((epDaveReg[7] >> 5) & 3u);
+  uint8_t reloaded = 0u;
+  epAudioTickStart();
   // --- The 1 kHz / 50 Hz / 1 Hz chain
   if (--epDiv1k == 0u) {
     epDiv1k = 250u;
@@ -95,13 +101,13 @@ static void epDaveTick(void) {
     }
     if (epToneCounter[ch] == 0u) {
       epToneCounter[ch] = (uint16_t)epToneCode(ch);
-      epAudioToneReload(ch);
+      reloaded |= (uint8_t)(1u << ch);
       if (select == 2u + ch) epIntSelectableEvent();
     } else {
       epToneCounter[ch]--;
     }
   }
-  epAudioTick();
+  epAudioTickEnd(at, reloaded);
 }
 
 /* NICK's VINT level (1 while a line with VINT set runs): INT1 latches on the edge D6 chooses */

@@ -1,8 +1,8 @@
 # Enterprise 64/128 on the WASM Core — Implementation Plan
 
-**Status:** Phases 1–3 done (2026-10-30): EXOS 2.1 boots to IS-BASIC 2.1 on the core and the picture
-shows it, with DAVE's interrupts, NICK's LPT walker and renderer, the wait states and the clock
-stretch; no sound yet (§18).
+**Status:** Phases 1–4 done (2026-10-31): EXOS 2.1 boots to IS-BASIC 2.1 on the core, the picture
+shows it and DAVE plays, with NICK's LPT walker and renderer, the wait states and the clock stretch
+(§18). Next: the keyboard and the `FILE:` device (Phase 5).
 D1–D9 accepted (§16). Still open in Phase 0: reading EP64 schematic sheet 1 for Q1 (the VINT edge).
 **Input:** the research pack `_input/enterprise128/`. Read these first:
 - `README.md`: the machine at a glance, the disagreements table and the ROM decision;
@@ -706,7 +706,7 @@ Each gets one constant or define, its default and its reason in the core README.
 | **1. Skeleton** | `ep.c` TU; segments and paging; ROM upload; ports; DAVE interrupts and timers; the half-T clock and NICK phase accumulator; NICK's slot stepper with the LPT walker and VINT but no pixels; a frame loop ending at VSYNC; loader; host; registry entry for `ep128` only; build and contract scripts. | Done 2026-10-30 (§18): `bootToBasic()` reaches IS-BASIC 2.1's "ok" (read from the LPT and video RAM); `boot.test.ts` pins EXOS's LPT; `dave.test.ts`, `nick-lpt.test.ts`. |
 | **2. Timing** | §6: DAVE waits, the NICK stretch, the phase sweep export. | Done 2026-10-30 (§18): `timing.test.ts`; the Enterprise in `debug-loop-equivalence.test.ts`. The oracle comparison with ep128emu is not done yet (it needs a manual run). |
 | **3. Picture** | §7: renderers, palette and levels, the pipeline, blanking, the TV window, beam position, VSYNC frame and field detection. | Done 2026-10-30 (§18): the IS-BASIC picture's hash (checked by eye); `nick-picture.test.ts`; Q2 settled by EXOS's text colours (RM bit 6 is ALTIND1); the IS 1984 demo's frame; the banner and IS-BASIC seen in the running app. |
-| **4. Sound** | §8.2–§8.3, stereo out. | `sound.test.ts`; the EXOS keyclick and `SOUND` statements heard in the running app; Klive's audio path carries stereo. |
+| **4. Sound** | §8.2–§8.3, stereo out. | Done 2026-10-31 (§18): `sound.test.ts` (the generator, the outputs, a 1 kHz tone through to the host's samples, EXOS's keyclick). Not heard by ear: no audio output in this environment; `SOUND` statements need the typer (Phase 5). |
 | **5. Keyboard and `FILE:`** | §9.1, §9.2: matrix, host mapping, joysticks, the `FILE:` ROM and host side; the virtual keyboard after its design is approved. | `keyboard.test.ts`, `hostfs.test.ts`; a `.com` loads with `LOAD "FILE:…"` in the running app. |
 | **6. 64K model** | `ep64`: EXOS 2.0, IS-BASIC 2.0, 64K. | `ep64.test.ts` (boot picture hash checked by eye; RAM size). |
 | **7. IDE** | Partitions, the NICK and DAVE panels, disassembler (`RST 30h`), SysVars, charset, menus, state files, history, profile, CLI; the IS-BASIC listing if §11.4 finds the table. | Debug tests, the Enterprise in every cross-core suite; `MF_EXEC_HISTORY`, `MF_PROFILE`, `MF_REVERSE_DEBUG` on. |
@@ -847,4 +847,23 @@ The core's README (`src/emu/machines/enterprise/wasm/README.md`) is the referenc
   Typing from the host did not reach EXOS: Playwright's key taps are shorter than EXOS's 50 Hz scan
   needs, and the host typer is Phase 5.
 - **Not done:** pixel-level checks of interlace (each field is shown as it comes, as planned).
+
+### Phase 4 (2026-10-31)
+
+- **The generator is `ep-audio.c`**, hooked into `epDaveTick` at its start (the polys) and its end (the
+  channels and the sides), in ep128emu's order as the pack records it (Q8 unchanged). The tone
+  counters stay in `ep-dave.c`, which tells the generator which channels reloaded.
+- **Samples are exact to their time:** the clock loop emits the samples due before each DAVE tick
+  first, so a sample never averages a level from after its end.
+- **Gain:** one channel at full amplitude is a quarter of a side's full scale (63 of 252), ±0.125 after
+  the DC filter, the proportion ep128emu gives. Four channels reach ±0.5.
+- **Checked against the pack's numbers:** the periods 15, 31, 127, 511 and 2047; 125 000 / (n + 1);
+  the noise poly at 31.25 kHz (every 8 ticks) and on a tone channel's falling edge; the EXOS book's
+  aliasing example (code 8 on the 4-bit poly repeats every 5 reloads); D/A ×4; BFh bit 1's ×2/3.
+- **EXOS drives it:** a key at IS-BASIC's prompt makes the keyboard driver's click on the left and
+  right outputs; the prompt is otherwise silent.
+- **Speed:** about 28× real time with sound on (IS-BASIC idling in the harness), against the plan's
+  10× floor (§13).
+- **Not done:** listening in the running app (no audio device here); the app's path is the generic
+  stereo one the TVC uses. `SOUND` and `ENVELOPE` from BASIC wait for the typer (Phase 5).
 

@@ -188,7 +188,9 @@ static inline void epClockAdvance(uint32_t halves) {
     epNickSlot();
   }
   while ((int32_t)(epHalfClock - epDaveNextTick) >= 0) {
-    epDaveTick();
+    /* The samples due before this tick first: they average the levels up to their own time */
+    epAudioEmitUntil(epAudioPointOf(epDaveNextTick));
+    epDaveTick(epDaveNextTick);
     epDaveNextTick += epDaveTickHalves;
   }
   epAudioAdvance();
