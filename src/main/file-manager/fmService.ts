@@ -1,8 +1,24 @@
+import fs from "fs";
 import path from "path";
 
 import { app, shell } from "electron";
 
 import { FmError, type FmDriveRef, type FmListing } from "@common/fileManager/fmTypes";
+import { MachineControllerState } from "@abstractions/MachineControllerState";
+import { MC_DISK_SUPPORT, MI_ZXNEXT } from "@common/machines/constants";
+import { hasDivMmc } from "@common/machines/divMmc";
+import { hasInterface1 } from "@common/machines/interface1";
+import { getModelConfig, machineRegistry } from "@common/machines/machine-registry";
+import {
+  MEDIA_DISK_A,
+  MEDIA_DISK_B,
+  MEDIA_MICRODRIVE_1,
+  MEDIA_MICRODRIVE_2,
+  MEDIA_SD_CARD,
+  MEDIA_TAPE
+} from "@common/structs/project-const";
+import { activeSdCardFile } from "../machine-menus/zx-next-menus";
+import { setSelectedTapeFile } from "../machine-menus/zx-specrum-menus";
 import type {
   FmConflictDecision,
   FmDeleteResult,
@@ -23,11 +39,13 @@ import {
   listHostDrives,
   listHostFolder,
   listImageFolder,
+  machineDrives,
   openImageDrives,
   projectDriveOf,
   readDriveFile,
   type FmHardDiskAccess,
-  type FmHostEnv
+  type FmHostEnv,
+  type FmMachineMedia
 } from "./fmDrives";
 import {
   cancelJob,
@@ -61,12 +79,44 @@ function remember (drives: FmDriveRef[]): FmDriveRef[] {
 const sdCardAwareAccess: FmHardDiskAccess = (filePath, op) =>
   isActiveSdCard(filePath) ? withSdCardAccess(op) : Promise.resolve().then(op);
 
-/** The drives of this computer and the open project */
-export function fmListDrives (): FmDriveRef[] {
+/** Is the machine stopped (or never started)? Only then is its storage a drive (D4) */
+export function isMachineStopped (): boolean {
+  const state = mainStore.getState().emulatorState?.machineState;
+  return state === undefined || state === MachineControllerState.Stopped || state === MachineControllerState.None;
+}
+
+/** The image files the current machine holds */
+function currentMedia (): FmMachineMedia {
+  const state = mainStore.getState();
+  const media = state.media ?? {};
+  const emu = state.emulatorState;
+  const fileOf = (v: unknown) => (typeof v === "string" ? v : (v as { diskFile?: string } | undefined)?.diskFile);
+  const out: FmMachineMedia = {};
+  if (emu?.machineId === MI_ZXNEXT || (hasDivMmc(emu?.machineId, emu?.modelId, emu?.config) && media[MEDIA_SD_CARD])) {
+    const card = activeSdCardFile();
+    if (card && fs.existsSync(card)) out.sdCard = card;
+  }
+  // --- Only the media this machine has: the settings keep another machine's disks and cartridges
+  // --- (a Next lists no Microdrive left in by a 48K with an Interface 1)
+  const mediaIds = machineRegistry.find((m) => m.machineId === emu?.machineId)?.mediaIds ?? [];
+  const disks = Number(getModelConfig(emu?.machineId, emu?.modelId)?.[MC_DISK_SUPPORT] ?? emu?.config?.[MC_DISK_SUPPORT] ?? 0);
+  if (mediaIds.includes(MEDIA_DISK_A) && disks >= 1) out.diskA = fileOf(media[MEDIA_DISK_A]);
+  if (mediaIds.includes(MEDIA_DISK_B) && disks >= 2) out.diskB = fileOf(media[MEDIA_DISK_B]);
+  if (hasInterface1(emu?.machineId, emu?.modelId, emu?.config)) {
+    out.microdrive1 = fileOf(media[MEDIA_MICRODRIVE_1]);
+    out.microdrive2 = fileOf(media[MEDIA_MICRODRIVE_2]);
+  }
+  if (mediaIds.includes(MEDIA_TAPE)) out.tape = fileOf(media[MEDIA_TAPE]);
+  return out;
+}
+
+/** The drives of this computer, the open project and the machine's storage */
+export async function fmListDrives (): Promise<FmDriveRef[]> {
   const env = hostEnv();
   const drives = listHostDrives(env);
   const folder = mainStore.getState().project?.folderPath;
   if (folder) drives.push(projectDriveOf(env, folder));
+  drives.push(...(await machineDrives(currentMedia(), isMachineStopped(), sdCardAwareAccess)));
   return remember(drives);
 }
 
@@ -76,6 +126,14 @@ export async function fmOpenImage (filePath: string): Promise<FmDriveRef[]> {
 }
 
 async function resolveDrive (driveId: string): Promise<FmDriveRef> {
+  // --- The machine's storage is looked up afresh each time: its media change, and it is a drive
+  // --- only while the machine is stopped
+  if (driveId.startsWith("machine:")) {
+    if (!isMachineStopped()) throw new FmError("machineRunning", "The machine is running.", { name: driveId });
+    const drive = (await machineDrives(currentMedia(), true, sdCardAwareAccess)).find((d) => d.id === driveId);
+    if (!drive) throw new FmError("notFound", `The drive ${driveId} is not available.`, { name: driveId });
+    return drive;
+  }
   const drive = known.get(driveId);
   if (drive) return drive;
   const env = hostEnv();
@@ -121,11 +179,17 @@ const jobDeps: FmJobDeps = {
     const { contents, ...token } = await beginDiskImageEdit(p);
     return { contents, token };
   },
-  commitImageEdit: (p, contents, token) => commitDiskImageEdit(p, contents, token as Omit<DiskImageEditStart, "contents">),
+  commitImageEdit: async (p, contents, token) => {
+    await commitDiskImageEdit(p, contents, token as Omit<DiskImageEditStart, "contents">);
+    // --- The tape in the player reads the changed file
+    const tape = mainStore.getState().media?.[MEDIA_TAPE];
+    if (typeof tape === "string" && path.resolve(tape) === path.resolve(p)) await setSelectedTapeFile(tape, false);
+  },
   cancelImageEdit: (token) => cancelDiskImageEdit(token as Omit<DiskImageEditStart, "contents">),
   hardDiskRead: sdCardAwareAccess,
   hardDiskWrite: (filePath, op) => aroundSdCard(filePath, op),
-  space: hostSpace
+  space: hostSpace,
+  allowed: (drive) => drive.group !== "machine" || isMachineStopped()
 };
 
 export async function fmPlanTransfer (request: FmTransferRequest): Promise<FmTransferPlan> {

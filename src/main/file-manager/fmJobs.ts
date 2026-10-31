@@ -53,6 +53,8 @@ export type FmJobDeps = {
   hardDiskWrite: FmHardDiskAccess;
   /** Free space on a host folder */
   space(filePath: string): { free: number; total: number } | undefined;
+  /** May the job still use this drive? A machine's storage is not, once the machine starts (D4) */
+  allowed?(drive: FmDriveRef): boolean;
 };
 
 /** Plain deps for an image no machine uses (tests, the CLI) */
@@ -286,6 +288,8 @@ async function floppyTarget (drive: FmDriveRef, deps: FmJobDeps): Promise<Target
       return new Set(diskFs.list().map((e) => e.name.toLowerCase()));
     },
     async freeBytes () {
+      // --- A tape grows as long as it needs
+      if (diskFs.system === "tape") return { free: undefined, block: 1 };
       const info = diskFs.info();
       return { free: info.freeBytes, block: info.blockSize };
     },
@@ -479,6 +483,10 @@ export async function runTransfer (
     for (const item of job.items) {
       if (job.cancelled) {
         result.cancelled = true;
+        break;
+      }
+      if (deps.allowed && (!deps.allowed(job.source) || !deps.allowed(job.target))) {
+        result.aborted = "machineRunning";
         break;
       }
       job.status = { ...job.status, current: item.targetName };

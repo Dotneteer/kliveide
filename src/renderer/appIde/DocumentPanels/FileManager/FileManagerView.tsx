@@ -6,7 +6,7 @@ import { Icon } from "@renderer/controls/Icon";
 import { SmallIconButton } from "@renderer/controls/IconButton";
 import { VirtualizedList, type VirtualizedListApi } from "@renderer/controls/VirtualizedList";
 import type { FileManagerIntent } from "./FileManagerController";
-import type { PaneSide } from "./FileManagerModel";
+import type { PaneSide, SortKey } from "./FileManagerModel";
 import type { ColumnVm, CommandKey, DriveIcon, DriveMenuVm, FileManagerVm, PaneVm, RowVm } from "./FileManagerViewModel";
 import { intentForKey } from "./fileManagerKeys";
 import styles from "./FileManagerPanel.module.scss";
@@ -24,7 +24,8 @@ const DRIVE_ICONS: Record<DriveIcon, string> = {
   home: "home",
   folder: "folder",
   project: "file-project",
-  image: "floppy"
+  image: "floppy",
+  machine: "chip"
 };
 
 export type FileManagerViewProps = {
@@ -250,7 +251,7 @@ const FilePane = ({ pane, menu, dispatch, rowHeight, onListHeight, refocus }: Fi
             className={classnames(styles.columnHead, { [styles.end]: c.align === "end" })}
             disabled={!c.sortable}
             onClick={() => {
-              dispatch({ type: "sortChosen", side, key: c.key as "name" | "size" | "modified" | "kind" });
+              dispatch({ type: "sortChosen", side, key: c.key as SortKey });
               refocus();
             }}
           >
@@ -261,7 +262,16 @@ const FilePane = ({ pane, menu, dispatch, rowHeight, onListHeight, refocus }: Fi
       </div>
 
       <div className={styles.list} ref={listHost}>
-        {pane.error ? (
+        {pane.blocked ? (
+          <div className={styles.blocked} data-testid={`fm-blocked-${side}`}>
+            <Icon iconName="chip" width={22} height={22} fill="--color-state-value" />
+            <b>{pane.blocked.title}</b>
+            <p>{pane.blocked.text}</p>
+            <button type="button" className={styles.barButton} onClick={() => dispatch({ type: "stopMachineRequested" })}>
+              {pane.blocked.stopLabel}
+            </button>
+          </div>
+        ) : pane.error ? (
           <div className={styles.message} data-testid={`fm-error-${side}`}>{pane.error}</div>
         ) : pane.loading && pane.rows.length === 0 ? (
           <div className={styles.message}>{t("panels.fileManager.loading")}</div>
@@ -366,6 +376,7 @@ const DriveMenu = ({ menu, dispatch, refocus }: DriveMenuProps) => {
                 role="menuitem"
                 key={item.id}
                 className={classnames(styles.menuItem, { [styles.menuSelected]: item.selected })}
+                disabled={item.disabled}
                 onClick={() => choose({ type: "driveChosen", side: menu.side as PaneSide, driveId: item.id })}
               >
                 <Icon iconName={DRIVE_ICONS[item.icon]} width={14} height={14} fill="--color-command-icon" />

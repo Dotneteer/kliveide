@@ -1,6 +1,6 @@
 # Klive File Manager (two-pane commander) — Implementation Plan
 
-**Status:** Phases 1–4 built (2026-10-31): the drive layer, browsing, transfer planning and the jobs (§12). Decisions D1–D10 in §3 are accepted, and with
+**Status:** Phases 1–6 built (2026-10-31): the drive layer, browsing, transfer planning, the jobs, machine storage and tapes (§12). Next: Phase 7 (viewer, drag and drop, polish) and Phase 8 (docs, release). Decisions D1–D10 in §3 are accepted, and with
 them the proposed answers to Q1–Q3 (§11); Q4 and Q5 stay open until Phase 8 and Phase 9.
 **Mockups:** `.plans/mockups/file-manager.html` (open it in a browser; it has tabs for each screen and
 a light/dark switch).
@@ -427,3 +427,43 @@ Still open:
   `.bak` a copy made appeared above the cursor and the next F5 copied the wrong file.
 - **Checked in the running IDE:** a host file copied onto a `.dsk` (dialog, notice, `.bak`), a conflict
   answered with Skip, a copy refused as the same folder, a file deleted to the Trash.
+
+### Phases 5 and 6 (2026-10-31)
+
+- **Machine storage** (`machineDrives` in `fmDrives.ts`, `currentMedia` in `fmService.ts`): the SD
+  card (the Next's, or the DivMMC's when connected), drives A:/B: (the model's `MC_DISK_SUPPORT`),
+  Microdrives 1–2 (only with the Interface 1 connected) and the tape (machines whose `mediaIds` have
+  `MEDIA_TAPE`). The media come from the app state, filtered by the machine: the settings keep
+  another machine's media, and a Next listed a 48K's Microdrive until this filter was added (found in
+  the running IDE). Ids are `machine:<slot>[#partition]`, rebuilt on every request, never cached.
+- **Stopped means `None` or `Stopped`**, as the Next and DivMMC menus already say. While the machine
+  runs, its drives are listed unavailable (the menu greys them, with "stop the machine to use it"),
+  every request on them fails with `machineRunning`, and a pane on one shows "The machine is
+  running" with a **Stop the machine** button (`em-stop`'s `issueMachineCommand("stop")`); when the
+  machine stops, the drives reopen and the pane reads its folder again.
+- **Deviation from D4/§5.3, "Start waits for a running job":** not built. Start lives in the emulator
+  window, the IDE and the menus; instead a job checks before every file that the machine is still
+  stopped (`FmJobDeps.allowed`) and stops with `machineRunning` (an image commits nothing), and
+  every write already runs through the paths that pause a running machine (`aroundSdCard`, the disk
+  edit path). The Microdrive needs nothing of its own: the controller publishes a cartridge's
+  changes when the machine pauses or stops, so the file is current once it is stopped.
+- **Not built from Phase 5's tests:** booting a Next from a card the File Manager wrote, and `LOAD`ing
+  from a +3 disk it wrote. The writes are the same code as Phase 4's image jobs, tested on real
+  images; those two runs belong to the slow tier and wait for Phase 8.
+- **Tapes** (`src/common/diskfs/tapefs.ts`, `TapeFileSystem`, system `tape`): `.tap` read and written
+  (appended as header + data blocks, delete removes both, rename rewrites the header, `move` swaps a
+  file with its neighbour), `.tzx` read from its standard-speed blocks and read only. Duplicate names
+  get `#2`; headerless blocks are `block01`… `openDiskFileSystem` opens them by extension (the Disk
+  Explorer and `disk` do not see tapes). A tape has no free space to run out of (`freeBytes`
+  undefined). Writing the tape in the player reloads it (`setSelectedTapeFile`).
+- **Tape order:** a listing marks itself `ordered`; the pane then sorts by `position` (the tape's
+  order) until a column is chosen, and returns to names when it leaves the tape.
+- **Not built from Phase 6:** "Move up/down" in a context menu (the File Manager has no context menu
+  yet; `TapeFileSystem.move` is ready for Phase 7).
+- **Proof on the machine:** `test/file-manager/fm-tape-load.test.ts` (fast core tier) copies a
+  `.bas` and a `.bin` onto an empty tape through the copy's own rules, then the real 48K ROM
+  `LOAD ""`s it: the BASIC auto-runs, loads its CODE and pokes what it read.
+- **Checked in the running IDE:** a `.tap` entered from the project (tape columns, tape order), the
+  Next's machine storage (only its SD card listed, browsed read-only). The running-machine pane was
+  checked by the controller tests, not live: starting the emulated Next would boot the author's own
+  card.

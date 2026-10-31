@@ -10,7 +10,8 @@ import { DEFAULT_TRANSFER_OPTIONS, type FmTransferOptions } from "@common/fileMa
 
 export type PaneSide = 0 | 1;
 
-export type SortKey = "name" | "size" | "modified" | "kind";
+/** `position`: the listing's own order (a tape's), which the pane keeps until a column is sorted */
+export type SortKey = "name" | "size" | "modified" | "kind" | "position";
 
 export type PaneSort = { key: SortKey; descending: boolean };
 
@@ -70,6 +71,8 @@ export type FmState = {
   notice?: FmNotice;
   /** The copy options used last, offered again */
   transferOptions: FmTransferOptions;
+  /** The machine is stopped (or never started): its storage can be used (D4) */
+  machineStopped: boolean;
 };
 
 export type FmEvent =
@@ -94,7 +97,8 @@ export type FmEvent =
   | { type: "jobFinished" }
   | { type: "noticeShown"; notice: FmNotice }
   | { type: "noticeDismissed" }
-  | { type: "transferOptionsSet"; options: FmTransferOptions };
+  | { type: "transferOptionsSet"; options: FmTransferOptions }
+  | { type: "machineStateSet"; stopped: boolean };
 
 export const DEFAULT_SORT: PaneSort = { key: "name", descending: false };
 
@@ -103,7 +107,7 @@ export function emptyPane (): PaneState {
 }
 
 export function initialState (): FmState {
-  return { panes: [emptyPane(), emptyPane()], active: 0, drives: [], openedImages: [], transferOptions: DEFAULT_TRANSFER_OPTIONS };
+  return { panes: [emptyPane(), emptyPane()], active: 0, drives: [], openedImages: [], transferOptions: DEFAULT_TRANSFER_OPTIONS, machineStopped: true };
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -140,6 +144,8 @@ export function entryComparer (sort: PaneSort): (a: FmEntry, b: FmEntry) => numb
   const sign = sort.descending ? -1 : 1;
   return (a, b) => {
     if (a.isDirectory !== b.isDirectory) return a.isDirectory ? -1 : 1;
+    // --- The listing's order: Array.prototype.sort is stable, so equal keeps it
+    if (sort.key === "position") return 0;
     let by = 0;
     if (sort.key === "size") by = a.size - b.size;
     else if (sort.key === "modified") by = (a.modified ?? 0) - (b.modified ?? 0);
@@ -219,8 +225,14 @@ export function reduce (state: FmState, event: FmEvent): FmState {
     }
     case "paneLoaded": {
       const pane = state.panes[event.side];
+      // --- A tape lists in tape order until a column is chosen; leaving it, names sort again
+      const sortFor = (current: PaneSort): PaneSort =>
+        event.listing.ordered
+          ? (current.key === DEFAULT_SORT.key && !current.descending ? { key: "position", descending: false } : current)
+          : (current.key === "position" ? DEFAULT_SORT : current);
       const loaded: PaneState = {
         ...pane,
+        sort: sortFor(pane.sort),
         drive: event.listing.drive,
         dir: event.listing.dir,
         listing: event.listing,
@@ -305,6 +317,8 @@ export function reduce (state: FmState, event: FmEvent): FmState {
       return state.notice ? { ...state, notice: undefined } : state;
     case "transferOptionsSet":
       return { ...state, transferOptions: event.options };
+    case "machineStateSet":
+      return state.machineStopped === event.stopped ? state : { ...state, machineStopped: event.stopped };
   }
 }
 
@@ -322,4 +336,9 @@ export function locationsOf (state: FmState): [PaneLocation | undefined, PaneLoc
     return pane.drive ? { driveId: pane.drive.id, dir: pane.dir } : undefined;
   };
   return [at(state.panes[0]), at(state.panes[1])];
+}
+
+/** A pane on the machine's storage while the machine runs: blocked until it stops (D4) */
+export function isBlocked (state: FmState, side: PaneSide): boolean {
+  return !state.machineStopped && state.panes[side].drive?.group === "machine";
 }

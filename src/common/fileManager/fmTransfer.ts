@@ -1,4 +1,5 @@
 import { diskFileName, hostFileToDiskFiles } from "@common/diskfs/importFiles";
+import { tapeFileBlocks } from "@common/diskfs/tapefs";
 import type { DiskFileKind, DiskFsKind } from "@common/diskfs/types";
 import type { FmDriveRef, FmSpectrumFacts } from "./fmTypes";
 
@@ -12,7 +13,7 @@ import type { FmDriveRef, FmSpectrumFacts } from "./fmTypes";
  */
 
 /** A target or source file system, as the conversion rules see it */
-export type FmFileSystem = "host" | "fat" | "+3dos" | "trdos" | "microdrive";
+export type FmFileSystem = "host" | "fat" | "+3dos" | "trdos" | "microdrive" | "tape";
 
 /** How files cross between a file store and a Spectrum catalogue (D6) */
 export type FmTransferMode = "auto" | "headers" | "raw";
@@ -59,7 +60,7 @@ export type FmOutFile = {
 };
 
 export function isCatalogue (fs: FmFileSystem): boolean {
-  return fs === "+3dos" || fs === "trdos" || fs === "microdrive";
+  return fs === "+3dos" || fs === "trdos" || fs === "microdrive" || fs === "tape";
 }
 
 /** The file system the conversion rules see on a drive */
@@ -68,6 +69,7 @@ export function fmFileSystemOf (drive: Pick<FmDriveRef, "kind" | "fileSystem">):
   if (drive.fileSystem === "+3DOS") return "+3dos";
   if (drive.fileSystem === "TR-DOS") return "trdos";
   if (drive.fileSystem === "Microdrive") return "microdrive";
+  if (drive.fileSystem === "TAP" || drive.fileSystem === "TZX") return "tape";
   return "fat";
 }
 
@@ -91,7 +93,7 @@ function becomesOf (kind: DiskFileKind, data: Uint8Array, start?: number, variab
 export function splitName (name: string, fs: FmFileSystem): { stem: string; extension: string } {
   const dot = name.lastIndexOf(".");
   if (fs === "trdos") return { stem: dot > 0 ? name.slice(0, dot) : name, extension: "" };
-  if (fs === "microdrive" || dot <= 0) return { stem: name, extension: "" };
+  if (fs === "microdrive" || fs === "tape" || dot <= 0) return { stem: name, extension: "" };
   return { stem: name.slice(0, dot), extension: name.slice(dot + 1) };
 }
 
@@ -142,7 +144,7 @@ export function convertFile (src: FmSourceFile, from: FmFileSystem, to: FmFileSy
   // --- has no extension of its own, so one from another catalogue stays part of it)
   if (isCatalogue(to)) {
     const split = splitName(src.name, from);
-    const { stem, extension } = to === "microdrive" && split.extension
+    const { stem, extension } = (to === "microdrive" || to === "tape") && split.extension
       ? { stem: `${split.stem}.${split.extension}`, extension: "" }
       : split;
     return [{
@@ -186,50 +188,18 @@ export function convertFile (src: FmSourceFile, from: FmFileSystem, to: FmFileSy
 // -------------------------------------------------------------------------------------------------
 // TAP
 
-const TAPE_TYPES: Record<string, number> = { basic: 0, numberArray: 1, charArray: 2, code: 3 };
-
 /** A one-file `.tap`: the header block and the data block, each with its length and checksum */
 export function tapOf (name: string, from: FmFileSystem, data: Uint8Array, facts: FmSpectrumFacts): Uint8Array {
-  const header = new Uint8Array(19);
-  header[0] = 0x00;
-  header[1] = TAPE_TYPES[facts.kind] ?? 3;
-  const tapeName = splitName(name, from).stem.padEnd(10, " ").slice(0, 10);
-  for (let i = 0; i < 10; i++) header[2 + i] = tapeName.charCodeAt(i) & 0xff;
-  const word = (at: number, v: number) => {
-    header[at] = v & 0xff;
-    header[at + 1] = (v >> 8) & 0xff;
-  };
-  word(12, data.length);
-  if (facts.kind === "basic") {
-    word(14, facts.start ?? 0x8000);
-    word(16, facts.variablesOffset ?? data.length);
-  } else if (facts.kind === "code") {
-    word(14, facts.start ?? 32768);
-    word(16, 32768);
-  } else {
-    const letter = (facts.variableName ?? "a").toLowerCase().charCodeAt(0) & 0x1f;
-    header[15] = (facts.kind === "charArray" ? 0xc0 : 0x80) | letter;
-    word(16, 32768);
+  const blocks = tapeFileBlocks(splitName(name, from).stem, facts.kind, data, facts.start, facts.variablesOffset, facts.variableName);
+  const out = new Uint8Array(blocks.reduce((sum, b) => sum + 2 + b.length, 0));
+  let at = 0;
+  for (const b of blocks) {
+    out[at] = b.length & 0xff;
+    out[at + 1] = (b.length >> 8) & 0xff;
+    out.set(b, at + 2);
+    at += 2 + b.length;
   }
-  header[18] = checksum(header.subarray(0, 18));
-  const body = new Uint8Array(data.length + 2);
-  body[0] = 0xff;
-  body.set(data, 1);
-  body[body.length - 1] = checksum(body.subarray(0, body.length - 1));
-  const out = new Uint8Array(2 + header.length + 2 + body.length);
-  out[0] = header.length & 0xff;
-  out[1] = header.length >> 8;
-  out.set(header, 2);
-  out[21] = body.length & 0xff;
-  out[22] = (body.length >> 8) & 0xff;
-  out.set(body, 23);
   return out;
-}
-
-function checksum (bytes: Uint8Array): number {
-  let x = 0;
-  for (const b of bytes) x ^= b;
-  return x;
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -244,7 +214,7 @@ export function storeSafeName (name: string): string {
 }
 
 /** Name lengths on the catalogues: the stem's room */
-const STEM_ROOM: Partial<Record<FmFileSystem, number>> = { "+3dos": 8, trdos: 8, microdrive: 10 };
+const STEM_ROOM: Partial<Record<FmFileSystem, number>> = { "+3dos": 8, trdos: 8, microdrive: 10, tape: 10 };
 
 /**
  * A name not in `taken` (lower-case names): on a file store `name (2).ext`, on a catalogue the stem's
@@ -253,7 +223,7 @@ const STEM_ROOM: Partial<Record<FmFileSystem, number>> = { "+3dos": 8, trdos: 8,
 export function freeName (name: string, fs: FmFileSystem, taken: ReadonlySet<string>): string {
   if (!taken.has(name.toLowerCase())) return name;
   const dot = name.lastIndexOf(".");
-  const hasExt = dot > 0 && fs !== "microdrive";
+  const hasExt = dot > 0 && fs !== "microdrive" && fs !== "tape";
   const stem = hasExt ? name.slice(0, dot) : name;
   const ext = hasExt ? name.slice(dot) : "";
   for (let n = 2; n < 10000; n++) {

@@ -2,7 +2,7 @@ import { t, translator } from "@common/i18n/i18n";
 import type { MessageKey } from "@common/i18n/keys.generated";
 import type { FmColumnSet, FmDriveRef, FmEntry, FmErrorCode, FmSpectrumFacts } from "@common/fileManager/fmTypes";
 import type { FmBecomes } from "@common/fileManager/fmTransfer";
-import { paneRows, type FmNotice, type FmState, type PaneSide, type PaneState, type SortKey } from "./FileManagerModel";
+import { isBlocked, paneRows, type FmNotice, type FmState, type PaneSide, type PaneState, type SortKey } from "./FileManagerModel";
 
 /*
  * What the File Manager shows (.plans/FILE_MANAGER_PLAN.md §4): every text and number formatted
@@ -37,7 +37,7 @@ export type CrumbTarget = { kind: "dir"; dir: string } | { kind: "leave"; return
 
 export type CrumbVm = { label: string; target: CrumbTarget; current: boolean };
 
-export type DriveIcon = "volume" | "home" | "folder" | "project" | "image";
+export type DriveIcon = "volume" | "home" | "folder" | "project" | "image" | "machine";
 
 export type PaneVm = {
   side: PaneSide;
@@ -55,6 +55,8 @@ export type PaneVm = {
   empty?: string;
   statusLeft: string;
   statusRight: string;
+  /** The pane is on a running machine's storage (D4) */
+  blocked?: { title: string; text: string; stopLabel: string };
 };
 
 export type DriveMenuItemVm = {
@@ -64,6 +66,8 @@ export type DriveMenuItemVm = {
   free?: string;
   icon: DriveIcon;
   selected: boolean;
+  /** Listed but not usable now (a running machine's storage) */
+  disabled: boolean;
 };
 
 export type DriveMenuVm = {
@@ -161,7 +165,8 @@ const COLUMN_SETS: Record<FmColumnSet, ColumnDef[]> = {
   fat: [NAME, SIZE],
   plus3dos: [NAME, KIND, SIZE, START, ATTR, USER],
   trdos: [NAME, KIND, SIZE, START],
-  microdrive: [NAME, KIND, SIZE, START]
+  microdrive: [NAME, KIND, SIZE, START],
+  tape: [NAME, KIND, SIZE, START]
 };
 
 function cellOf (key: ColumnKey, e: FmEntry): string {
@@ -180,6 +185,8 @@ function cellOf (key: ColumnKey, e: FmEntry): string {
       return attributesText(e.spectrum);
     case "user":
       return e.spectrum?.user === undefined ? "" : String(e.spectrum.user);
+    case "position":
+      return "";
   }
 }
 
@@ -198,10 +205,21 @@ export function driveIconOf (drive: FmDriveRef): DriveIcon {
       return "folder";
     case "project":
       return "project";
+    case "machine":
+      return "machine";
     default:
       return "image";
   }
 }
+
+const SLOT_KEYS: Record<NonNullable<FmDriveRef["slot"]>, MessageKey> = {
+  sdCard: "panels.fileManager.drive.sdCard",
+  diskA: "panels.fileManager.drive.diskA",
+  diskB: "panels.fileManager.drive.diskB",
+  microdrive1: "panels.fileManager.drive.microdrive1",
+  microdrive2: "panels.fileManager.drive.microdrive2",
+  tape: "panels.fileManager.drive.tape"
+};
 
 /** A drive's name as the pane and the menu show it */
 export function driveLabelOf (drive: FmDriveRef): string {
@@ -212,12 +230,19 @@ export function driveLabelOf (drive: FmDriveRef): string {
       return t("panels.fileManager.drive.project", { name: drive.name });
     case "partition":
       return t("panels.fileManager.drive.partition", { name: drive.name, index: (drive.partition ?? 0) + 1 });
+    case "machine":
+      return drive.slot ? t(SLOT_KEYS[drive.slot]) : drive.name;
     default:
       return drive.name;
   }
 }
 
 function driveDetailOf (drive: FmDriveRef): string | undefined {
+  if (drive.group === "machine") {
+    return drive.available === false
+      ? t("panels.fileManager.drive.stopToUse", { name: drive.name })
+      : t("panels.fileManager.drive.fileAndFs", { name: drive.name, fs: drive.fileSystem });
+  }
   if (drive.group === "images") return drive.fileSystem;
   if (drive.role === "volume" || drive.role === "klive" || drive.role === "kliveProjects") return drive.root;
   return undefined;
@@ -237,6 +262,7 @@ const ERROR_KEYS: Record<FmErrorCode, MessageKey> = {
   badName: "panels.fileManager.error.badName",
   sameFolder: "panels.fileManager.error.sameFolder",
   intoItself: "panels.fileManager.error.intoItself",
+  machineRunning: "panels.fileManager.error.machineRunning",
   failed: "panels.fileManager.error.failed"
 };
 
@@ -327,7 +353,14 @@ function selectPane (state: FmState, side: PaneSide): PaneVm {
     error: pane.status === "error" && pane.error ? errorText(pane.error.code, pane.error.name) : undefined,
     empty: pane.status === "ready" && entries.length === 0 ? t("panels.fileManager.emptyFolder") : undefined,
     statusLeft,
-    statusRight
+    statusRight,
+    blocked: isBlocked(state, side)
+      ? {
+        title: t("panels.fileManager.blocked.title"),
+        text: t("panels.fileManager.blocked.text"),
+        stopLabel: t("panels.fileManager.blocked.stop")
+      }
+      : undefined
   };
 }
 
@@ -347,11 +380,16 @@ function selectMenu (state: FmState): DriveMenuVm | undefined {
     detail: driveDetailOf(d),
     free: d.freeBytes === undefined ? undefined : formatSizeWithUnit(d.freeBytes),
     icon: driveIconOf(d),
-    selected: pane.drive?.id === d.id
+    selected: pane.drive?.id === d.id,
+    disabled: d.available === false
   });
   const groups = [
     { title: t("panels.fileManager.group.computer"), items: state.drives.filter((d) => d.group === "computer").map(item) },
     { title: t("panels.fileManager.group.project"), items: state.drives.filter((d) => d.group === "project").map(item) },
+    {
+      title: t(state.machineStopped ? "panels.fileManager.group.machine" : "panels.fileManager.group.machineRunning"),
+      items: state.drives.filter((d) => d.group === "machine").map(item)
+    },
     { title: t("panels.fileManager.group.images"), items: state.openedImages.map(item) }
   ].filter((g) => g.items.length > 0);
   return { side: state.menuFor, groups, openImageLabel: t("panels.fileManager.openImage") };

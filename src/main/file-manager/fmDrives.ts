@@ -9,6 +9,7 @@ import {
   FmError,
   fmColumnSetOf,
   fmImageKindOf,
+  type FmMachineSlot,
   type FmCrumb,
   type FmDriveRef,
   type FmEntry,
@@ -241,6 +242,7 @@ export async function openImageDrives (filePath: string, access: FmHardDiskAcces
     if (kind === "image") {
       const diskFs = openDiskFileSystem(readImage(root), root);
       const info = diskFs.info();
+      const tape = diskFs.system === "tape";
       return [{
         id: `image:${root}`,
         kind: "image",
@@ -249,9 +251,10 @@ export async function openImageDrives (filePath: string, access: FmHardDiskAcces
         name,
         root,
         fileSystem: info.system,
-        readOnly,
-        freeBytes: info.freeBytes,
-        totalBytes: info.totalBytes
+        // --- A .tzx is read only; a tape has no free space to run out of
+        readOnly: readOnly || (tape && info.system === "TZX"),
+        freeBytes: tape ? undefined : info.freeBytes,
+        totalBytes: tape ? undefined : info.totalBytes
       }];
     }
     return await access(root, () =>
@@ -361,14 +364,15 @@ function imageListing (drive: FmDriveRef, diskFs: DiskFileSystem, folder: string
     at = at ? `${at}/${part}` : part;
     crumbs.push({ label: part, dir: at });
   }
-  const info = withInfo ? diskFs.info() : undefined;
+  const info = withInfo && diskFs.system !== "tape" ? diskFs.info() : undefined;
   return {
     drive: info ? { ...drive, freeBytes: info.freeBytes, totalBytes: info.totalBytes } : drive,
     dir: folder,
     parentDir: folder ? folder.slice(0, Math.max(0, folder.lastIndexOf("/"))) : undefined,
     crumbs,
     columns: fmColumnSetOf(drive.fileSystem),
-    entries
+    entries,
+    ordered: diskFs.system === "tape" ? true : undefined
   };
 }
 
@@ -393,4 +397,60 @@ function imageError (err: unknown, name: string): Error {
     return new FmError("unsupported", err.message, { name });
   }
   return hostError(err, name);
+}
+
+// -------------------------------------------------------------------------------------------------
+// Machine storage (Phase 5)
+
+/** The image files the current machine holds, by slot */
+export type FmMachineMedia = Partial<Record<FmMachineSlot, string>>;
+
+const SLOT_ORDER: FmMachineSlot[] = ["sdCard", "diskA", "diskB", "microdrive1", "microdrive2", "tape"];
+
+/**
+ * The machine's storage as drives (D4): opened only while the machine is stopped; while it runs each
+ * is listed, unavailable, so the drive menu can say why it cannot be used
+ */
+export async function machineDrives (
+  media: FmMachineMedia,
+  stopped: boolean,
+  access: FmHardDiskAccess = directHardDiskAccess
+): Promise<FmDriveRef[]> {
+  const drives: FmDriveRef[] = [];
+  for (const slot of SLOT_ORDER) {
+    const file = media[slot];
+    if (!file || !fs.existsSync(file)) continue;
+    const root = path.resolve(file);
+    const name = path.basename(root);
+    const asMachine = (d: FmDriveRef, i: number, all: FmDriveRef[]): FmDriveRef => ({
+      ...d,
+      id: all.length > 1 ? `machine:${slot}#${d.partition ?? i}` : `machine:${slot}`,
+      role: "machine",
+      group: "machine",
+      slot,
+      available: true
+    });
+    if (!stopped) {
+      drives.push({
+        id: `machine:${slot}`,
+        kind: slot === "sdCard" ? "hardDisk" : "image",
+        role: "machine",
+        group: "machine",
+        name,
+        root,
+        fileSystem: "",
+        readOnly: false,
+        slot,
+        available: false
+      });
+      continue;
+    }
+    try {
+      const opened = await openImageDrives(root, access);
+      drives.push(...opened.map(asMachine));
+    } catch {
+      // --- A medium Klive cannot read as files (an unformatted card, a copy-protected disk) is left out
+    }
+  }
+  return drives;
 }

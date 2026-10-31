@@ -4513,5 +4513,68 @@
       "name": "The first one's name",
       "reason": "Why, as a sentence"
     }
+  },
+  "panels.fileManager.drive.sdCard": "SD card",
+  "@panels.fileManager.drive.sdCard": {
+    "context": "File Manager (a two-pane file manager document): the machine's own storage, shown as a drive while the machine is stopped: the machine's SD card (ZX Spectrum Next or DivMMC)."
+  },
+  "panels.fileManager.drive.diskA": "Drive A:",
+  "@panels.fileManager.drive.diskA": {
+    "context": "File Manager (a two-pane file manager document): the machine's own storage, shown as a drive while the machine is stopped: the machine's first floppy drive. 'A:' is the drive's name."
+  },
+  "panels.fileManager.drive.diskB": "Drive B:",
+  "@panels.fileManager.drive.diskB": {
+    "context": "File Manager (a two-pane file manager document): the machine's own storage, shown as a drive while the machine is stopped: the machine's second floppy drive. 'B:' is the drive's name."
+  },
+  "panels.fileManager.drive.microdrive1": "Microdrive 1",
+  "@panels.fileManager.drive.microdrive1": {
+    "context": "File Manager (a two-pane file manager document): the machine's own storage, shown as a drive while the machine is stopped: the Interface 1's first Microdrive. 'Microdrive' is a product name."
+  },
+  "panels.fileManager.drive.microdrive2": "Microdrive 2",
+  "@panels.fileManager.drive.microdrive2": {
+    "context": "File Manager (a two-pane file manager document): the machine's own storage, shown as a drive while the machine is stopped: the Interface 1's second Microdrive. 'Microdrive' is a product name."
+  },
+  "panels.fileManager.drive.tape": "Tape player",
+  "@panels.fileManager.drive.tape": {
+    "context": "File Manager (a two-pane file manager document): the machine's own storage, shown as a drive while the machine is stopped: the tape in the machine's tape player."
+  },
+  "panels.fileManager.drive.fileAndFs": "{name} · {fs}",
+  "@panels.fileManager.drive.fileAndFs": {
+    "context": "File Manager (a two-pane file manager document): the machine's own storage, shown as a drive while the machine is stopped: the drive menu's second line: the medium's file and its file system.",
+    "placeholders": {
+      "name": "The image file's name",
+      "fs": "The file system, e.g. FAT32 or +3DOS (not translated)"
+    }
+  },
+  "panels.fileManager.drive.stopToUse": "{name} · stop the machine to use it",
+  "@panels.fileManager.drive.stopToUse": {
+    "context": "File Manager (a two-pane file manager document): the machine's own storage, shown as a drive while the machine is stopped: the drive menu's second line while the machine runs; the item is disabled.",
+    "placeholders": {
+      "name": "The image file's name"
+    }
+  },
+  "panels.fileManager.group.machine": "Machine storage",
+  "@panels.fileManager.group.machine": {
+    "context": "File Manager (a two-pane file manager document): heading of the drive menu's group of the stopped machine's own SD card, disks, Microdrives and tape."
+  },
+  "panels.fileManager.group.machineRunning": "Machine storage (the machine is running)",
+  "@panels.fileManager.group.machineRunning": {
+    "context": "File Manager (a two-pane file manager document): heading of the drive menu's machine group while the machine runs; its items are disabled."
+  },
+  "panels.fileManager.blocked.title": "The machine is running",
+  "@panels.fileManager.blocked.title": {
+    "context": "File Manager (a two-pane file manager document): shown in a pane on the machine's storage while the machine runs."
+  },
+  "panels.fileManager.blocked.text": "Stop the machine to use its storage. The pane comes back to this folder when it stops.",
+  "@panels.fileManager.blocked.text": {
+    "context": "File Manager (a two-pane file manager document): shown under the title in a pane on the machine's storage while the machine runs."
+  },
+  "panels.fileManager.blocked.stop": "Stop the machine",
+  "@panels.fileManager.blocked.stop": {
+    "context": "File Manager (a two-pane file manager document): button in a pane on the machine's storage: stops the emulated machine."
+  },
+  "panels.fileManager.error.machineRunning": "The machine is running: stop it to use its storage.",
+  "@panels.fileManager.error.machineRunning": {
+    "context": "File Manager (a two-pane file manager document): an operation on the machine's storage was refused, or stopped, because the machine runs."
   }
 }

@@ -14,6 +14,7 @@ import {
   listHostDrives,
   listHostFolder,
   listImageFolder,
+  machineDrives,
   openImageDrives,
   projectDriveOf,
   readDriveFile,
@@ -50,12 +51,14 @@ describe("file names and file systems", () => {
   it("knows the images a pane enters", () => {
     expect(["a.dsk", "B.TRD", "c.scl", "d.mdr"].map(fmImageKindOf)).toEqual(["image", "image", "image", "image"]);
     expect(["a.img", "b.HDF", "c.cim"].map(fmImageKindOf)).toEqual(["hardDisk", "hardDisk", "hardDisk"]);
-    expect(["a.tap", "readme.txt", "dsk"].map(fmImageKindOf)).toEqual([undefined, undefined, undefined]);
+    // --- Tapes are entered too (Phase 6)
+    expect(["a.tap", "b.TZX"].map(fmImageKindOf)).toEqual(["image", "image"]);
+    expect(["readme.txt", "dsk"].map(fmImageKindOf)).toEqual([undefined, undefined]);
   });
 
   it("picks the columns by file system", () => {
-    expect(["", "+3DOS", "TR-DOS", "Microdrive", "FAT16", "FAT32"].map(fmColumnSetOf)).toEqual([
-      "host", "plus3dos", "trdos", "microdrive", "fat", "fat"
+    expect(["", "+3DOS", "TR-DOS", "Microdrive", "FAT16", "FAT32", "TAP", "TZX"].map(fmColumnSetOf)).toEqual([
+      "host", "plus3dos", "trdos", "microdrive", "fat", "fat", "tape", "tape"
     ]);
   });
 
@@ -262,3 +265,42 @@ describe("hard-disk images", () => {
   });
 });
 
+
+describe("machine storage (Phase 5)", () => {
+  function media () {
+    const root = tempDir();
+    const card = path.join(root, "next.img");
+    createHardDiskImage(card, { sizeMb: 32, fatType: 16, label: "NEXT" });
+    const disk = path.join(root, "boot.dsk");
+    fs.writeFileSync(disk, createBlankDsk("ss"));
+    return { card, disk, missing: path.join(root, "gone.dsk") };
+  }
+
+  it("a stopped machine's card and disks are drives, named by their place in the machine", async () => {
+    const m = media();
+    const drives = await machineDrives({ sdCard: m.card, diskA: m.disk, diskB: m.missing }, true);
+    expect(drives.map((d) => [d.id, d.slot, d.kind, d.group, d.role, d.fileSystem, d.available])).toEqual([
+      ["machine:sdCard", "sdCard", "hardDisk", "machine", "machine", "FAT16", true],
+      ["machine:diskA", "diskA", "image", "machine", "machine", "+3DOS", true]
+    ]);
+    // --- Read like any image drive
+    const listing = await listImageFolder(drives[1], "");
+    expect(listing.columns).toBe("plus3dos");
+  });
+
+  it("while the machine runs, they are listed but unavailable, and nothing is opened", async () => {
+    const m = media();
+    const drives = await machineDrives({ sdCard: m.card, diskA: m.disk }, false);
+    expect(drives.map((d) => [d.id, d.available, d.fileSystem])).toEqual([
+      ["machine:sdCard", false, ""],
+      ["machine:diskA", false, ""]
+    ]);
+  });
+
+  it("leaves out a medium it cannot read as files", async () => {
+    const root = tempDir();
+    const blank = path.join(root, "blank.img");
+    fs.writeFileSync(blank, new Uint8Array(1024 * 1024));
+    expect(await machineDrives({ sdCard: blank }, true)).toEqual([]);
+  });
+});

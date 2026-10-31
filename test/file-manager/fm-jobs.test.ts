@@ -170,6 +170,42 @@ describe("copying between drives", () => {
   });
 });
 
+describe("tapes (Phase 6)", () => {
+  async function withTape (w: World) {
+    const file = path.join(w.root, "game.tap");
+    fs.writeFileSync(file, new Uint8Array(0));
+    return (await openImageDrives(file))[0];
+  }
+
+  it("a tape is a drive with no free space to run out of", async () => {
+    const w = await world();
+    const tape = await withTape(w);
+    expect(tape).toMatchObject({ kind: "image", fileSystem: "TAP", readOnly: false, freeBytes: undefined });
+  });
+
+  it("host to tape: a .bas is tokenised, a .scr is a SCREEN$, appended in order", async () => {
+    const w = await world();
+    const tape = await withTape(w);
+    await copy(w, w.host, [path.join(w.root, "src", "loader.bas"), path.join(w.root, "src", "title.scr")], tape, "", {
+      options: { mode: "auto", autoRun: 10 }
+    });
+    const back = tapFiles(new Uint8Array(fs.readFileSync(tape.root)), "t");
+    expect(back.map((f) => [f.name, f.kind, f.start])).toEqual([["loader", "basic", 10], ["title", "code", 16384]]);
+  });
+
+  it("+3DOS to tape and tape to host keep the headers", async () => {
+    const w = await world();
+    const tape = await withTape(w);
+    await copy(w, w.dsk, ["DISK", "GAME.BIN"], tape, "");
+    const files = tapFiles(new Uint8Array(fs.readFileSync(tape.root)), "t");
+    expect(files.map((f) => [f.name, f.kind, f.start])).toEqual([["DISK", "basic", 10], ["GAME.BIN", "code", 24000]]);
+
+    const reopened = (await openImageDrives(tape.root))[0];
+    await copy(w, reopened, ["DISK", "GAME.BIN"], w.host, path.join(w.root, "out"), { options: { mode: "headers" } });
+    expect(fs.readdirSync(path.join(w.root, "out")).sort()).toEqual(["DISK.tap", "GAME.BIN.tap"]);
+  });
+});
+
 describe("what a copy refuses", () => {
   it("the folder it comes from, a folder into itself, a read-only target", async () => {
     const w = await world();
@@ -279,6 +315,16 @@ describe("moving, cancelling, a full disk", () => {
     expect(result.aborted).toBe("diskFull");
     expect(result.written).toBe(0);
     expect(fs.readFileSync(w.dsk.root)).toEqual(before);
+  });
+
+  it("stops when a machine whose storage it uses starts, keeping nothing on a disk image", async () => {
+    const w = await world();
+    const before = fs.readFileSync(w.trd.root);
+    const machineTrd = { ...w.trd, group: "machine" as const };
+    const plan = await planTransfer(request(w, w.dsk, ["DISK", "GAME.BIN"], machineTrd, ""), w.dsk, machineTrd, w.deps);
+    const result = await runTransfer(plan.id, {}, { ...w.deps, allowed: (d) => d.group !== "machine" });
+    expect(result).toMatchObject({ aborted: "machineRunning", written: 0 });
+    expect(fs.readFileSync(w.trd.root)).toEqual(before);
   });
 
   it("reports progress as it goes, and cannot run twice", async () => {

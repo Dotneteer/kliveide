@@ -1588,6 +1588,10 @@ marked rows. The rules it settled:
   `.segmented` rules rather than inventing another.
 - **A dialog with more than two answers keeps `DialogForm`'s footer strip** (same surface, seam,
   padding and corner radii) and puts the safest-to-repeat answer first; the strip wraps.
+- **A pane that cannot be used now says why and offers the way out**, in place of its rows: the
+  machine's chip in `--color-state-value` (the machine-state colour), a bold one-line title, one
+  secondary sentence, one button. A drive menu item that cannot be chosen stays listed, in
+  `--text-disabled`, with the reason as its second line.
 - **A notice after a job is a strip above the command bar**, `--accent-subtle` when all went well,
   `--status-error-subtle` when anything was skipped, failed or cancelled; it stays until dismissed or
   the next job, never a timed toast, because it is the only record of what the job did.

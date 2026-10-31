@@ -41,6 +41,7 @@ export function drive (over: Partial<FmDriveRef> & Pick<FmDriveRef, "id">): FmDr
 export const ROOT = drive({ id: "host:/", role: "root", name: "Macintosh HD", root: "/" });
 export const HOME = drive({ id: "host:/home/me", role: "home", name: "me", root: "/home/me" });
 export const PROJECT = drive({ id: "project:/home/me/game", kind: "project", role: "project", group: "project", name: "game", root: "/home/me/game" });
+export const NEXT_SD = drive({ id: "machine:sdCard", kind: "hardDisk", role: "machine", group: "machine", slot: "sdCard", name: "next.img", root: "/cards/next.img", fileSystem: "FAT32", available: true });
 export const GAME_DSK = drive({ id: "image:/home/me/game/game.dsk", kind: "image", role: "image", group: "images", name: "game.dsk", root: "/home/me/game/game.dsk", fileSystem: "+3DOS", freeBytes: 120_000 });
 
 export function file (name: string, size: number, over: Partial<FmEntry> = {}): FmEntry {
@@ -68,6 +69,10 @@ export const TREES: Record<string, Tree> = {
     ],
     "/home/me/game/tapes": [file("music.tzx", 44_031, { path: "/home/me/game/tapes/music.tzx" })]
   },
+  [NEXT_SD.id]: {
+    "": [file("GAMES", 0, { path: "GAMES", isDirectory: true })],
+    GAMES: [file("WARHAWK.NEX", 214_016, { path: "GAMES/WARHAWK.NEX" })]
+  },
   [GAME_DSK.id]: {
     "": [
       file("DISK", 214, { path: "DISK", spectrum: { kind: "basic", start: 10, user: 0, attributes: { readOnly: false, system: false, archive: false } } }),
@@ -76,10 +81,10 @@ export const TREES: Record<string, Tree> = {
   }
 };
 
-const DRIVES = [ROOT, HOME, PROJECT, GAME_DSK];
+const DRIVES = [ROOT, HOME, PROJECT, GAME_DSK, NEXT_SD];
 
 function parentOf (driveRef: FmDriveRef, dir: string): string | undefined {
-  if (driveRef.kind === "image") return undefined;
+  if (driveRef.kind === "image" || driveRef.kind === "hardDisk") return dir ? (dir.includes("/") ? dir.slice(0, dir.lastIndexOf("/")) : "") : undefined;
   if (dir === driveRef.root) return undefined;
   return dir.slice(0, dir.lastIndexOf("/")) || "/";
 }
@@ -87,10 +92,10 @@ function parentOf (driveRef: FmDriveRef, dir: string): string | undefined {
 export function fakeListing (driveId: string, dir?: string): FmListing {
   const d = DRIVES.find((x) => x.id === driveId);
   if (!d) throw new FmError("notFound", `${driveId} is gone`, { name: driveId });
-  const folder = dir ?? (d.kind === "image" ? "" : d.root);
+  const folder = dir ?? (d.kind === "image" || d.kind === "hardDisk" ? "" : d.root);
   const entries = TREES[driveId]?.[folder];
   if (!entries) throw new FmError("notFound", `${folder} does not exist.`, { name: folder });
-  const crumbs = [{ label: "", dir: d.kind === "image" ? "" : d.root }];
+  const crumbs = [{ label: "", dir: d.kind === "image" || d.kind === "hardDisk" ? "" : d.root }];
   if (folder && folder !== d.root) crumbs.push({ label: folder.slice(folder.lastIndexOf("/") + 1), dir: folder });
   return { drive: d, dir: folder, parentDir: parentOf(d, folder), crumbs, columns: fmColumnSetOf(d.fileSystem), entries };
 }
@@ -153,6 +158,7 @@ export function makePorts (over: PortOptions = {}) {
       askNewName: vi.fn(async () => over.newName)
     },
     wait: vi.fn(async () => {}),
+    machine: { stop: vi.fn(async () => {}) },
     picker: { pickFile: vi.fn(async () => over.pickFile) },
     locations: { save: vi.fn((l: [PaneLocation | undefined, PaneLocation | undefined]) => void saved.push(l)) }
   } satisfies FileManagerPorts;

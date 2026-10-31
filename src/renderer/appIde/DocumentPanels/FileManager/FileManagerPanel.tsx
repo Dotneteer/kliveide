@@ -2,6 +2,9 @@ import { useEffect, useMemo, useRef, type ComponentProps } from "react";
 
 import type { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 import { useMainApi } from "@renderer/core/MainApi";
+import { useEmuApi } from "@renderer/core/EmuApi";
+import { useSelector } from "@renderer/core/RendererProvider";
+import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { useController, useFilePickerPort, useViewModel } from "@renderer/mvc";
 import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
 import { useRowSizes } from "@renderer/theming/useRowSizes";
@@ -38,6 +41,10 @@ const FileManagerPanel = ({ documentId }: { documentId: string }) => {
   const hub = useDocumentHubService();
   const { list: rowHeight } = useRowSizes();
   const dialogs = useDialogs();
+  const emuApi = useEmuApi();
+  const machineState = useSelector((s) => s.emulatorState?.machineState);
+  const machineStopped =
+    machineState === undefined || machineState === MachineControllerState.None || machineState === MachineControllerState.Stopped;
 
   // --- Ports read the hub through a ref: the controller keeps the ports it was built with
   const hubRef = useRef(hub);
@@ -90,6 +97,7 @@ const FileManagerPanel = ({ documentId }: { documentId: string }) => {
           ))?.name
       },
       wait: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+      machine: { stop: () => emuApi.issueMachineCommand("stop") },
       picker,
       locations: {
         save: (locations) => {
@@ -110,6 +118,11 @@ const FileManagerPanel = ({ documentId }: { documentId: string }) => {
     const saved = (hubRef.current.getDocumentViewState(documentId) as FileManagerViewState)?.locations;
     void controller.dispatch({ type: "activated", locations: saved });
   }, [controller, documentId]);
+
+  // --- The machine's storage is a drive only while the machine is stopped (D4)
+  useEffect(() => {
+    void controller.dispatch({ type: "machineStateChanged", stopped: machineStopped });
+  }, [controller, machineStopped]);
 
   return <FileManagerView vm={vm} dispatch={(intent) => void controller.dispatch(intent)} rowHeight={rowHeight} />;
 };

@@ -246,3 +246,27 @@ describe("sizes", () => {
     expect([1, 2, 120_000].map(formatSizeWithUnit)).toEqual(["1 byte", "2 bytes", "120,000 bytes"]);
   });
 });
+
+describe("a tape's order", () => {
+  it("is kept until a column is sorted, and names sort again off the tape", async () => {
+    const { openFileManager: open, TREES: trees, file: f, GAME_DSK: dsk } = await import("./fakes");
+    const h = await open();
+    const original = trees[dsk.id][""];
+    trees[dsk.id][""] = [f("ZETA", 1, { path: "ZETA", spectrum: { kind: "code", start: 1 } }), f("ALPHA", 2, { path: "ALPHA", spectrum: { kind: "code", start: 2 } })];
+    const fakes = await import("./fakes");
+    const listing = fakes.fakeListing;
+    h.ports.fm.list.mockImplementation(async (id: string, dir?: string) => ({ ...listing(id, dir), ordered: id === dsk.id ? true : undefined }));
+    try {
+      await h.dispatch({ type: "rowActivated", side: 0, index: h.vm.panes[0].rows.findIndex((r) => r.cells[0] === "game.dsk") });
+      expect(h.vm.panes[0].rows.map((r) => r.cells[0])).toEqual(["..", "ZETA", "ALPHA"]);
+      expect(h.vm.panes[0].columns.find((c) => c.key === "name")?.sorted).toBeUndefined();
+      await h.dispatch({ type: "sortChosen", side: 0, key: "name" });
+      expect(h.vm.panes[0].rows.map((r) => r.cells[0])).toEqual(["..", "ALPHA", "ZETA"]);
+      await h.dispatch({ type: "sortChosen", side: 0, key: "position" });
+      await h.dispatch({ type: "upRequested", side: 0 });
+      expect(h.state.panes[0].sort).toEqual({ key: "name", descending: false });
+    } finally {
+      trees[dsk.id][""] = original;
+    }
+  });
+});

@@ -18,13 +18,17 @@ export type FmDriveRole =
   | "kliveProjects"
   | "project"
   | "image"
-  | "partition";
+  | "partition"
+  | "machine";
+
+/** Where a machine-storage drive sits in the machine (Phase 5) */
+export type FmMachineSlot = "sdCard" | "diskA" | "diskB" | "microdrive1" | "microdrive2" | "tape";
 
 /** The drive menu's groups (§4.2) */
-export type FmDriveGroup = "computer" | "project" | "images";
+export type FmDriveGroup = "computer" | "project" | "machine" | "images";
 
 /** The columns a listing shows, by its file system (§4.1) */
-export type FmColumnSet = "host" | "plus3dos" | "trdos" | "microdrive" | "fat";
+export type FmColumnSet = "host" | "plus3dos" | "trdos" | "microdrive" | "fat" | "tape";
 
 /** A drive a pane can show */
 export type FmDriveRef = {
@@ -44,6 +48,10 @@ export type FmDriveRef = {
   readOnly: boolean;
   freeBytes?: number;
   totalBytes?: number;
+  /** A machine-storage drive: its place in the machine */
+  slot?: FmMachineSlot;
+  /** False while the machine that owns the drive runs (D4) */
+  available?: boolean;
 };
 
 /** What the Spectrum's own catalogue says of a file */
@@ -89,6 +97,8 @@ export type FmListing = {
   crumbs: FmCrumb[];
   columns: FmColumnSet;
   entries: FmEntry[];
+  /** The entries' order is meaningful (a tape): the pane keeps it until a column is sorted */
+  ordered?: boolean;
 };
 
 /** Why a File Manager request failed, as an i18n-able code */
@@ -106,12 +116,13 @@ export type FmErrorCode =
   | "badName"
   | "sameFolder"
   | "intoItself"
+  | "machineRunning"
   | "failed";
 
 /** The kinds of image a pane can enter */
 export type FmImageKind = "image" | "hardDisk";
 
-const FLOPPY_IMAGE = /\.(dsk|trd|scl|mdr)$/i;
+const FLOPPY_IMAGE = /\.(dsk|trd|scl|mdr|tap|tzx)$/i;
 const HARD_DISK_IMAGE = /\.(img|hdf|cim)$/i;
 
 /** Is this file an image the File Manager opens as a drive? */
@@ -127,6 +138,7 @@ export function fmColumnSetOf (fileSystem: string): FmColumnSet {
   if (fileSystem === "TR-DOS") return "trdos";
   if (fileSystem === "Microdrive") return "microdrive";
   if (/^FAT/.test(fileSystem)) return "fat";
+  if (fileSystem === "TAP" || fileSystem === "TZX") return "tape";
   return "host";
 }
 

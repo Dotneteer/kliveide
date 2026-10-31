@@ -16,6 +16,7 @@ import {
   chosenEntries,
   entryAtCursor,
   initialState,
+  isBlocked,
   locationsOf,
   paneRows,
   reduce,
@@ -82,8 +83,14 @@ export type LocationStorePort = {
   save(locations: [PaneLocation | undefined, PaneLocation | undefined]): void;
 };
 
+/** The machine, for the blocked pane's Stop button */
+export type MachinePort = {
+  stop(): Promise<void>;
+};
+
 export type FileManagerPorts = {
   fm: FileManagerPort;
+  machine: MachinePort;
   picker: Pick<FilePickerPort, "pickFile">;
   locations: LocationStorePort;
   dialogs: FileManagerDialogPort;
@@ -114,7 +121,9 @@ export type FileManagerIntent =
   | { type: "mkdirRequested" }
   | { type: "renameRequested" }
   | { type: "jobCancelRequested" }
-  | { type: "noticeDismissed" };
+  | { type: "noticeDismissed" }
+  | { type: "machineStateChanged"; stopped: boolean }
+  | { type: "stopMachineRequested" };
 
 const IMAGE_FILTER_EXTENSIONS = ["dsk", "trd", "scl", "mdr", "img", "hdf", "cim"];
 
@@ -125,6 +134,16 @@ const WRITING_INTENTS = new Set<FileManagerIntent["type"]>([
   "renameRequested",
   "driveChosen",
   "openImageRequested"
+]);
+
+const BLOCKED_INTENTS = new Set<FileManagerIntent["type"]>([
+  "transferRequested",
+  "deleteRequested",
+  "mkdirRequested",
+  "renameRequested",
+  "rowActivated",
+  "upRequested",
+  "refreshRequested"
 ]);
 
 /** How often a running job's progress is read */
@@ -140,6 +159,8 @@ export class FileManagerController extends UiController<FmState, FileManagerInte
   protected async handle (intent: FileManagerIntent): Promise<void> {
     // --- While a job runs, only watching it, cancelling it and moving around are allowed
     if (this.state.job && WRITING_INTENTS.has(intent.type)) return;
+    // --- A pane on a running machine's storage takes no command (D4)
+    if (BLOCKED_INTENTS.has(intent.type) && isBlocked(this.state, this.state.active)) return;
     switch (intent.type) {
       case "activated":
         return this.start(intent.locations);
@@ -198,7 +219,7 @@ export class FileManagerController extends UiController<FmState, FileManagerInte
       case "driveChosen": {
         this.emit({ type: "menuClosed" });
         const drive = [...this.state.drives, ...this.state.openedImages].find((d) => d.id === intent.driveId);
-        if (drive) await this.load(intent.side, drive, undefined, { returnTo: [] });
+        if (drive && drive.available !== false) await this.load(intent.side, drive, undefined, { returnTo: [] });
         return;
       }
       case "transferRequested":
@@ -218,6 +239,11 @@ export class FileManagerController extends UiController<FmState, FileManagerInte
       }
       case "noticeDismissed":
         this.emit({ type: "noticeDismissed" });
+        return;
+      case "machineStateChanged":
+        return this.machineStateChanged(intent.stopped);
+      case "stopMachineRequested":
+        await this.ports.machine.stop();
         return;
       case "openImageRequested": {
         this.emit({ type: "menuClosed" });
@@ -524,6 +550,18 @@ export class FileManagerController extends UiController<FmState, FileManagerInte
     }
     await this.refresh(side, name);
     await this.refreshIfSame(side);
+  }
+
+  /** The machine started or stopped: its storage panes block, or come back where they were */
+  private async machineStateChanged (stopped: boolean): Promise<void> {
+    if (this.state.machineStopped === stopped) return;
+    this.emit({ type: "machineStateSet", stopped });
+    // --- The machine's drives open, or turn unavailable, in the drive menu
+    await this.loadDrives();
+    if (!stopped) return;
+    await Promise.all(([0, 1] as PaneSide[]).map((side) =>
+      this.state.panes[side].drive?.group === "machine" ? this.refresh(side) : Promise.resolve()
+    ));
   }
 
   /** Reads a pane's folder again, the cursor on `cursorName` when given */
