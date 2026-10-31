@@ -1,9 +1,20 @@
 import { vi } from "vitest";
 
 import { fmColumnSetOf, FmError, type FmDriveRef, type FmEntry, type FmListing } from "@common/fileManager/fmTypes";
+import type {
+  FmConflictDecision,
+  FmDeleteResult,
+  FmJobResult,
+  FmJobStatus,
+  FmTransferPlan,
+  FmTransferRequest
+} from "@common/fileManager/fmJobTypes";
 import {
   FileManagerController,
-  type FileManagerPorts
+  type ConflictAnswer,
+  type FileManagerPorts,
+  type TransferConfirmation,
+  type TransferDialogRequest
 } from "@renderer/appIde/DocumentPanels/FileManager/FileManagerController";
 import type { PaneLocation } from "@renderer/appIde/DocumentPanels/FileManager/FileManagerModel";
 import { harnessFor } from "../mvc/ControllerHarness";
@@ -84,8 +95,38 @@ export function fakeListing (driveId: string, dir?: string): FmListing {
   return { drive: d, dir: folder, parentDir: parentOf(d, folder), crumbs, columns: fmColumnSetOf(d.fileSystem), entries };
 }
 
-export function makePorts (over: { listDrives?: FmDriveRef[]; pickFile?: string } = {}) {
+export function fakePlan (over: Partial<FmTransferPlan> = {}): FmTransferPlan {
+  return {
+    id: "fm-job-1",
+    move: false,
+    from: "host",
+    to: "host",
+    items: [
+      { id: 0, sourcePath: "/home/me/game/a.bas", sourceName: "a.bas", relDir: "", isDirectory: false, targetName: "a.bas", size: 1204, becomes: { as: "asIs" }, conflict: false, shortened: false, part: false },
+      { id: 1, sourcePath: "/home/me/game/b.tap", sourceName: "b.tap", relDir: "", isDirectory: false, targetName: "b.tap", size: 12410, becomes: { as: "asIs" }, conflict: false, shortened: false, part: false }
+    ],
+    skippedFolders: [],
+    needBytes: 13614,
+    freeBytes: 1_000_000,
+    fits: true,
+    ...over
+  };
+}
+
+export type PortOptions = {
+  listDrives?: FmDriveRef[];
+  pickFile?: string;
+  plan?: FmTransferPlan;
+  result?: FmJobResult;
+  confirm?: Partial<TransferConfirmation> | "cancel";
+  conflictAnswers?: ConflictAnswer[];
+  deleteOk?: boolean;
+  newName?: string;
+};
+
+export function makePorts (over: PortOptions = {}) {
   const saved: [PaneLocation | undefined, PaneLocation | undefined][] = [];
+  const conflictAnswers = [...(over.conflictAnswers ?? [])];
   const ports = {
     fm: {
       listDrives: vi.fn(async () => over.listDrives ?? [ROOT, HOME, PROJECT]),
@@ -93,8 +134,25 @@ export function makePorts (over: { listDrives?: FmDriveRef[]; pickFile?: string 
         if (filePath === GAME_DSK.root) return [GAME_DSK];
         throw new FmError("unformatted", "no", { name: filePath });
       }),
-      list: vi.fn(async (driveId: string, dir?: string) => fakeListing(driveId, dir))
+      list: vi.fn(async (driveId: string, dir?: string) => fakeListing(driveId, dir)),
+      planTransfer: vi.fn(async (request: FmTransferRequest) => ({ ...(over.plan ?? fakePlan()), move: request.move })),
+      runTransfer: vi.fn(async (_id: string, _decisions: Record<number, FmConflictDecision>): Promise<FmJobResult> =>
+        over.result ?? { written: 2, skipped: 0, failed: [], cancelled: false }),
+      jobStatus: vi.fn(async (): Promise<FmJobStatus> => ({ state: "running", done: 1, total: 2, bytesDone: 0, bytesTotal: 0, current: "b.tap" })),
+      cancelJob: vi.fn(async () => {}),
+      deleteEntries: vi.fn(async (_driveId: string, paths: string[]): Promise<FmDeleteResult> => ({ deleted: paths.length, failed: [] })),
+      mkdir: vi.fn(async (_d: string, dir: string, name: string) => `${dir}/${name}`),
+      rename: vi.fn(async (_d: string, p: string, name: string) => `${p}/../${name}`)
     },
+    dialogs: {
+      confirmTransfer: vi.fn(async (request: TransferDialogRequest): Promise<TransferConfirmation | undefined> =>
+        over.confirm === "cancel" ? undefined : { plan: request.plan, options: request.options, onExisting: "ask", ...over.confirm }),
+      resolveConflict: vi.fn(async (): Promise<ConflictAnswer> => conflictAnswers.shift() ?? { kind: "skip" }),
+      confirmDelete: vi.fn(async () => over.deleteOk ?? true),
+      askFolderName: vi.fn(async () => over.newName),
+      askNewName: vi.fn(async () => over.newName)
+    },
+    wait: vi.fn(async () => {}),
     picker: { pickFile: vi.fn(async () => over.pickFile) },
     locations: { save: vi.fn((l: [PaneLocation | undefined, PaneLocation | undefined]) => void saved.push(l)) }
   } satisfies FileManagerPorts;
@@ -102,7 +160,7 @@ export function makePorts (over: { listDrives?: FmDriveRef[]; pickFile?: string 
 }
 
 export async function openFileManager (
-  over: Parameters<typeof makePorts>[0] = {},
+  over: PortOptions = {},
   locations?: [PaneLocation | undefined, PaneLocation | undefined]
 ) {
   const { ports, saved } = makePorts(over);

@@ -1,6 +1,6 @@
 # Klive File Manager (two-pane commander) — Implementation Plan
 
-**Status:** Phases 1–2 built (2026-10-31): the drive layer and read-only browsing (§12). Decisions D1–D10 in §3 are accepted, and with
+**Status:** Phases 1–4 built (2026-10-31): the drive layer, browsing, transfer planning and the jobs (§12). Decisions D1–D10 in §3 are accepted, and with
 them the proposed answers to Q1–Q3 (§11); Q4 and Q5 stay open until Phase 8 and Phase 9.
 **Mockups:** `.plans/mockups/file-manager.html` (open it in a browser; it has tabs for each screen and
 a light/dark switch).
@@ -386,3 +386,44 @@ Still open:
 - **Checked in the running IDE over CDP:** home and project panes, the drive menu, entering and
   leaving a `.dsk` and an `.img`, a FAT folder, marking, Tab, and the tab restored with its panes
   after a restart.
+
+### Phases 3 and 4 (2026-10-31)
+
+- **Conversion** (`src/common/fileManager/fmTransfer.ts`): `convertFile` holds §6's rules, `buildPlan`
+  the whole copy (folders, names, conflicts per target folder, `.tap` splits marked as parts),
+  `freeName` the conflict suggestion (`name (2).ext` on a file store, `~2` within the length on a
+  catalogue), `tapOf` a one-file `.tap`. Tested row by row in `test/file-manager/fm-transfer.test.ts`.
+- **Deviation from §6, Auto mode, catalogue to file store:** BASIC programs and arrays become a
+  one-file **`.tap`** (header kept), not detokenised `.bas` text. Klive's detokeniser lives in the
+  renderer and drops colour codes and the numbers' hidden forms; a `.tap` round-trips exactly and
+  esxDOS/NextZXOS load it. A SCREEN$ becomes `.scr`, other code its bytes (`.bin` added to a name
+  without an extension), a headerless file stays as it is. Keep headers → `.tap` for every file with
+  a header (FAT included: the `+3DOS` header option is not built). Between catalogues the header
+  always goes with the file, whatever the mode.
+- **Jobs** (`src/main/file-manager/fmJobs.ts`): `planTransfer` refuses a read-only target, the source
+  folder itself (`sameFolder`) and a folder into itself (`intoItself`), and reports `needBytes`
+  (rounded to the target's blocks) against the free space; `runTransfer` writes; `jobStatus`,
+  `cancelJob`, `deleteEntries`, `makeFolder`, `renameEntry`. A floppy or cartridge target is one edit
+  (`beginDiskImageEdit` … `commitDiskImageEdit`, its `.bak`), cancelled on a cancel or a full disk so
+  nothing is kept; a hard-disk target is written in place, each step under `aroundSdCard` (now
+  exported from `hard-disk-edit.ts`). Electron stays out (`FmJobDeps`); `fm-jobs.test.ts` copies
+  between every kind of drive on real images.
+- **Move** copies, then removes each chosen source whose every output was written, **permanently**
+  (its copy is the file now; the Trash is for Delete). A host-to-host move on one volume is not yet a
+  rename: it copies and removes. Phase 7 can add the fast path.
+- **Delete** goes to the Trash on the host (`shell.trashItem`), for good on images; a card's folder is
+  removed with what it holds. The setting to delete permanently on the host (D7) waits for Phase 7.
+- **IPC:** `fmPlanTransfer`, `fmRunTransfer` (unbounded: it lasts as long as the copy), `fmJobStatus`,
+  `fmCancelJob`, `fmDelete`, `fmMkdir`, `fmRename`. The renderer polls `fmJobStatus` every 200 ms
+  while `fmRunTransfer` runs; conflicts are answered before the run, from the plan.
+- **UI:** the copy dialog (mode only when crossing between a file store and a catalogue; code start
+  and auto-run only towards a catalogue; flatten only when folders would be skipped; the table, the
+  fit, the shortened and skipped notes; it re-plans when an option changes), the conflict dialog
+  (Replace, Copy as with a free name, Skip, Replace all, Skip all, Cancel), the delete dialog, and
+  the IDE's own New Folder and Rename dialogs. A progress strip with Cancel, a notice after each job,
+  and the command bar (F5 Copy, F6 Move, ⇧F6 Rename, F7 New folder, F8 Delete, Alt+F1 Drives).
+  Escape cancels a running job. While a job runs, commands that write are refused.
+- **A refresh keeps the cursor on its file**, not its row number: found in the running IDE, where the
+  `.bak` a copy made appeared above the cursor and the next F5 copied the wrong file.
+- **Checked in the running IDE:** a host file copied onto a `.dsk` (dialog, notice, `.bak`), a conflict
+  answered with Skip, a copy refused as the same folder, a file deleted to the Trash.

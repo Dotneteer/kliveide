@@ -24,6 +24,19 @@ describe("File Manager keys", () => {
     expect(intentForKey({ key }, ctx)).toEqual(intent);
   });
 
+  it("F5 copies, F6 moves, Shift+F6 renames, F7 makes a folder, F8 and Delete delete", () => {
+    expect(intentForKey({ key: "F5" }, ctx)).toEqual({ type: "transferRequested", move: false });
+    expect(intentForKey({ key: "F6" }, ctx)).toEqual({ type: "transferRequested", move: true });
+    expect(intentForKey({ key: "F6", shiftKey: true }, ctx)).toEqual({ type: "renameRequested" });
+    expect(intentForKey({ key: "F7" }, ctx)).toEqual({ type: "mkdirRequested" });
+    expect(intentForKey({ key: "F8" }, ctx)).toEqual({ type: "deleteRequested" });
+    expect(intentForKey({ key: "Delete" }, ctx)).toEqual({ type: "deleteRequested" });
+  });
+
+  it("Escape cancels a running job before it clears marks", () => {
+    expect(intentForKey({ key: "Escape" }, { ...ctx, jobRunning: true })).toEqual({ type: "jobCancelRequested" });
+  });
+
   it("Alt+F1 and Alt+F2 open the left and right drive menus", () => {
     expect(intentForKey({ key: "F1", altKey: true }, ctx)).toEqual({ type: "driveMenuToggled", side: 0 });
     expect(intentForKey({ key: "F2", altKey: true }, ctx)).toEqual({ type: "driveMenuToggled", side: 1 });

@@ -1,4 +1,6 @@
 import type { FmDriveRef, FmEntry, FmErrorCode, FmListing } from "@common/fileManager/fmTypes";
+import type { FmDeleteResult, FmJobResult } from "@common/fileManager/fmJobTypes";
+import { DEFAULT_TRANSFER_OPTIONS, type FmTransferOptions } from "@common/fileManager/fmTransfer";
 
 /*
  * The File Manager's model (.plans/FILE_MANAGER_PLAN.md §5.5): two panes, each on a drive and a
@@ -38,6 +40,23 @@ export type PaneState = {
   cursorName?: string;
 };
 
+/** A job under way (Phase 4) */
+export type FmJob = {
+  kind: "copy" | "move" | "delete";
+  done: number;
+  total: number;
+  current?: string;
+  /** The job's id in the main process, for cancelling it */
+  id?: string;
+  cancelling?: boolean;
+};
+
+/** What the File Manager tells after a job, as data: the view model words it */
+export type FmNotice =
+  | { kind: "transfer"; move: boolean; result: FmJobResult; skippedFolders: number }
+  | { kind: "delete"; result: FmDeleteResult }
+  | { kind: "error"; code: FmErrorCode; name?: string };
+
 export type FmState = {
   panes: readonly [PaneState, PaneState];
   active: PaneSide;
@@ -47,6 +66,10 @@ export type FmState = {
   drivesError?: PaneError;
   /** The pane whose drive menu is open */
   menuFor?: PaneSide;
+  job?: FmJob;
+  notice?: FmNotice;
+  /** The copy options used last, offered again */
+  transferOptions: FmTransferOptions;
 };
 
 export type FmEvent =
@@ -64,7 +87,14 @@ export type FmEvent =
   | { type: "sortSet"; side: PaneSide; key: SortKey }
   | { type: "hiddenToggled"; side: PaneSide }
   | { type: "menuOpened"; side: PaneSide }
-  | { type: "menuClosed" };
+  | { type: "menuClosed" }
+  | { type: "jobStarted"; job: FmJob }
+  | { type: "jobProgressed"; done: number; total: number; current?: string; id?: string }
+  | { type: "jobCancelling" }
+  | { type: "jobFinished" }
+  | { type: "noticeShown"; notice: FmNotice }
+  | { type: "noticeDismissed" }
+  | { type: "transferOptionsSet"; options: FmTransferOptions };
 
 export const DEFAULT_SORT: PaneSort = { key: "name", descending: false };
 
@@ -73,7 +103,7 @@ export function emptyPane (): PaneState {
 }
 
 export function initialState (): FmState {
-  return { panes: [emptyPane(), emptyPane()], active: 0, drives: [], openedImages: [] };
+  return { panes: [emptyPane(), emptyPane()], active: 0, drives: [], openedImages: [], transferOptions: DEFAULT_TRANSFER_OPTIONS };
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -122,6 +152,16 @@ function kindKey (e: FmEntry): string {
   if (e.spectrum) return e.spectrum.kind;
   const dot = e.name.lastIndexOf(".");
   return dot > 0 ? e.name.slice(dot + 1) : "";
+}
+
+/** The entries a command works on: the marked ones, or else the one under the cursor */
+export function chosenEntries (pane: PaneState): FmEntry[] {
+  // --- In the order the pane shows them, which is the order they are copied in
+  if (pane.marked.length) {
+    return paneRows(pane).flatMap((r) => (r.kind === "entry" && pane.marked.includes(r.entry.path) ? [r.entry] : []));
+  }
+  const at = entryAtCursor(pane);
+  return at ? [at] : [];
 }
 
 /** The entry under a pane's cursor, if the cursor is on one */
@@ -194,7 +234,11 @@ export function reduce (state: FmState, event: FmEvent): FmState {
       const named = pane.cursorName
         ? rows.findIndex((r) => r.kind === "entry" && r.entry.name === pane.cursorName)
         : -1;
-      return withPane(state, event.side, { ...loaded, cursor: named >= 0 ? named : clampCursor(loaded, pane.cursor) });
+      // --- A refresh keeps the cursor on its file, wherever new files put it, not on its row number
+      const before = pane.listing ? paneRows(pane)[pane.cursor] : undefined;
+      const same = named < 0 && before ? rows.findIndex((r) => sameRow(r, before)) : -1;
+      const cursor = named >= 0 ? named : same >= 0 ? same : clampCursor(loaded, pane.cursor);
+      return withPane(state, event.side, { ...loaded, cursor });
     }
     case "paneFailed": {
       const pane = state.panes[event.side];
@@ -245,6 +289,22 @@ export function reduce (state: FmState, event: FmEvent): FmState {
       return state.menuFor === event.side ? state : { ...state, menuFor: event.side, active: event.side };
     case "menuClosed":
       return state.menuFor === undefined ? state : { ...state, menuFor: undefined };
+    case "jobStarted":
+      return { ...state, job: event.job, notice: undefined };
+    case "jobProgressed":
+      return state.job
+        ? { ...state, job: { ...state.job, done: event.done, total: event.total, current: event.current, id: event.id ?? state.job.id } }
+        : state;
+    case "jobCancelling":
+      return state.job ? { ...state, job: { ...state.job, cancelling: true } } : state;
+    case "jobFinished":
+      return state.job ? { ...state, job: undefined } : state;
+    case "noticeShown":
+      return { ...state, notice: event.notice };
+    case "noticeDismissed":
+      return state.notice ? { ...state, notice: undefined } : state;
+    case "transferOptionsSet":
+      return { ...state, transferOptions: event.options };
   }
 }
 

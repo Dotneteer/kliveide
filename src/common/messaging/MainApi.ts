@@ -2,6 +2,14 @@ import { ProjectNodeWithChildren } from "@abstractions/ProjectNode";
 import type { HardDiskView } from "@common/diskfs/hardDisk";
 import type { DiskEdit } from "@common/diskfs/edit";
 import type { FmDriveRef, FmListing } from "@common/fileManager/fmTypes";
+import type {
+  FmConflictDecision,
+  FmDeleteResult,
+  FmJobResult,
+  FmJobStatus,
+  FmTransferPlan,
+  FmTransferRequest
+} from "@common/fileManager/fmJobTypes";
 import type { SdCardFingerprint } from "@common/machineState/machineStateTypes";
 import { buildMessagingProxy } from "./MessageProxy";
 import type { UnitTestRunRequest, UnitTestRunResponse } from "@common/unit-tests/unitTestTypes";
@@ -224,6 +232,41 @@ class MainApiImpl {
 
   /** A file's bytes on a File Manager drive (a Spectrum file's header left out) */
   async fmRead(_driveId: string, _path: string): Promise<Uint8Array> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /** Plans a File Manager copy or move: what it writes, its conflicts, whether it fits (§5.2) */
+  async fmPlanTransfer(_request: FmTransferRequest): Promise<FmTransferPlan> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /** Runs a planned copy or move; resolves when it is done or cancelled */
+  async fmRunTransfer(_id: string, _decisions: Record<number, FmConflictDecision>): Promise<FmJobResult> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /** A File Manager job's progress */
+  async fmJobStatus(_id: string): Promise<FmJobStatus | undefined> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /** Asks a running File Manager job to stop after the file it is writing */
+  async fmCancelJob(_id: string): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /** Deletes files and folders of a File Manager drive: to the Trash on this computer, for good on an image */
+  async fmDelete(_driveId: string, _paths: string[]): Promise<FmDeleteResult> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /** Makes a folder in a folder of a File Manager drive; resolves to its path */
+  async fmMkdir(_driveId: string, _dir: string, _name: string): Promise<string> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /** Renames a file or folder of a File Manager drive; resolves to its new path */
+  async fmRename(_driveId: string, _path: string, _newName: string): Promise<string> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 
@@ -1107,6 +1150,8 @@ const UNBOUNDED_MAIN_METHODS = [
   "ejectMediaFile",
   // --- File pickers, confirmations and dialogs of their own
   "runUiAction",
+  // --- A File Manager copy runs as long as its files take (`.plans/FILE_MANAGER_PLAN.md` §5.2)
+  "fmRunTransfer",
   // --- The app is terminating; a response may legitimately never arrive
   "exitApp",
   // --- Compilation time scales with the project and the external toolchain

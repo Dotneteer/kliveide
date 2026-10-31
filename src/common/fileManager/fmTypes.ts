@@ -50,6 +50,8 @@ export type FmDriveRef = {
 export type FmSpectrumFacts = {
   kind: DiskFileKind;
   start?: number;
+  /** BASIC: where the variables start (the program's length) */
+  variablesOffset?: number;
   user?: number;
   variableName?: string;
   attributes?: DiskFileAttributes;
@@ -97,6 +99,13 @@ export type FmErrorCode =
   | "unsupported"
   | "unformatted"
   | "noProject"
+  | "exists"
+  | "readOnly"
+  | "diskFull"
+  | "directoryFull"
+  | "badName"
+  | "sameFolder"
+  | "intoItself"
   | "failed";
 
 /** The kinds of image a pane can enter */

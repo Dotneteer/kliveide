@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { GAME_DSK, HOME, PROJECT, ROOT, openFileManager } from "./fakes";
+import { GAME_DSK, HOME, PROJECT, ROOT, TREES, file, openFileManager } from "./fakes";
 
 /*
  * The File Manager browsing (.plans/FILE_MANAGER_PLAN.md, Phase 2), driven through its controller
@@ -157,6 +157,20 @@ describe("cursor, marks and order", () => {
     expect(h.state.panes[0].marked).toHaveLength(2);
     await h.dispatch({ type: "marksCleared", side: 0 });
     expect(h.vm.panes[0].statusLeft).toBe("4 items");
+  });
+
+  it("a refresh keeps the cursor on its file when new files come before it", async () => {
+    const h = await openFileManager();
+    await h.dispatch({ type: "cursorMoved", side: 0, to: names(h, 0).indexOf("b.tap") });
+    // --- A new listing, as the main process sends one, never the old array changed
+    const original = TREES[PROJECT.id]["/home/me/game"];
+    TREES[PROJECT.id]["/home/me/game"] = [...original, file("a.bak", 1, { path: "/home/me/game/a.bak" })];
+    try {
+      await h.dispatch({ type: "refreshRequested", side: 0 });
+      expect(names(h, 0)[h.vm.panes[0].cursor]).toBe("b.tap");
+    } finally {
+      TREES[PROJECT.id]["/home/me/game"] = original;
+    }
   });
 
   it("marks every file, never a folder", async () => {

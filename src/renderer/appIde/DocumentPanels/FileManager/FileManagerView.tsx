@@ -7,7 +7,7 @@ import { SmallIconButton } from "@renderer/controls/IconButton";
 import { VirtualizedList, type VirtualizedListApi } from "@renderer/controls/VirtualizedList";
 import type { FileManagerIntent } from "./FileManagerController";
 import type { PaneSide } from "./FileManagerModel";
-import type { ColumnVm, DriveIcon, DriveMenuVm, FileManagerVm, PaneVm, RowVm } from "./FileManagerViewModel";
+import type { ColumnVm, CommandKey, DriveIcon, DriveMenuVm, FileManagerVm, PaneVm, RowVm } from "./FileManagerViewModel";
 import { intentForKey } from "./fileManagerKeys";
 import styles from "./FileManagerPanel.module.scss";
 
@@ -34,6 +34,7 @@ export type FileManagerViewProps = {
 };
 
 export const FileManagerView = ({ vm, dispatch, rowHeight }: FileManagerViewProps) => {
+  const t = useT();
   const rootRef = useRef<HTMLDivElement>(null);
   const listHeights = useRef<[number, number]>([0, 0]);
   const active = vm.panes[0].active ? 0 : 1;
@@ -45,7 +46,8 @@ export const FileManagerView = ({ vm, dispatch, rowHeight }: FileManagerViewProp
       cursor: pane.cursor,
       rowCount: pane.rows.length,
       pageSize: Math.max(1, Math.floor(listHeights.current[active] / rowHeight)),
-      menuOpen: !!vm.menu
+      menuOpen: !!vm.menu,
+      jobRunning: !!vm.job
     });
     if (!intent) return;
     e.preventDefault();
@@ -80,9 +82,73 @@ export const FileManagerView = ({ vm, dispatch, rowHeight }: FileManagerViewProp
           />
         ))}
       </div>
+      {vm.job && (
+        <div className={styles.progress} data-testid="fm-progress">
+          <span className={styles.progressText}>{vm.job.text}</span>
+          {vm.job.canCancel && (
+            <button type="button" className={styles.barButton} onClick={() => dispatch({ type: "jobCancelRequested" })}>
+              {t("common.button.cancel")}
+            </button>
+          )}
+          <div className={styles.progressBar}>
+            <i style={{ width: `${Math.round(vm.job.progress * 100)}%` }} />
+          </div>
+        </div>
+      )}
+      {vm.notice && !vm.job && (
+        <div className={vm.notice.tone === "error" ? styles.noticeError : styles.notice} data-testid="fm-notice" role="status">
+          <span className={styles.noticeText}>{vm.notice.text}</span>
+          <button
+            type="button"
+            className={styles.barButton}
+            title={t("common.button.close")}
+            onClick={() => {
+              dispatch({ type: "noticeDismissed" });
+              rootRef.current?.focus({ preventScroll: true });
+            }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
+      <div className={styles.commandBar} role="toolbar">
+        {vm.commands.map((c) => (
+          <button
+            type="button"
+            key={c.key}
+            className={styles.command}
+            disabled={!c.enabled}
+            onClick={() => {
+              dispatch(commandIntent(c.key, active));
+              rootRef.current?.focus({ preventScroll: true });
+            }}
+            data-testid={`fm-command-${c.key}`}
+          >
+            <kbd className={styles.keyHint}>{c.keyHint}</kbd>
+            <span className={styles.commandLabel}>{c.label}</span>
+          </button>
+        ))}
+      </div>
     </div>
   );
 };
+
+function commandIntent (key: CommandKey, side: PaneSide): FileManagerIntent {
+  switch (key) {
+    case "copy":
+      return { type: "transferRequested", move: false };
+    case "move":
+      return { type: "transferRequested", move: true };
+    case "rename":
+      return { type: "renameRequested" };
+    case "mkdir":
+      return { type: "mkdirRequested" };
+    case "delete":
+      return { type: "deleteRequested" };
+    case "drives":
+      return { type: "driveMenuToggled", side };
+  }
+}
 
 type FilePaneProps = {
   pane: PaneVm;

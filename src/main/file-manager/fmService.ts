@@ -1,15 +1,25 @@
 import path from "path";
 
-import { app } from "electron";
+import { app, shell } from "electron";
 
 import { FmError, type FmDriveRef, type FmListing } from "@common/fileManager/fmTypes";
+import type {
+  FmConflictDecision,
+  FmDeleteResult,
+  FmJobResult,
+  FmJobStatus,
+  FmTransferPlan,
+  FmTransferRequest
+} from "@common/fileManager/fmJobTypes";
+import { beginDiskImageEdit, cancelDiskImageEdit, commitDiskImageEdit, type DiskImageEditStart } from "../disk-image-edit";
 import { getProjectDirectoryContentFilter } from "../directory-content";
-import { isActiveSdCard } from "../hard-disk-edit";
+import { aroundSdCard, isActiveSdCard } from "../hard-disk-edit";
 import { mainStore } from "../main-store";
 import { getKliveHomeBase } from "../portable";
 import { withSdCardAccess } from "../sd-card-access";
 import {
   defaultHostEnv,
+  hostSpace,
   listHostDrives,
   listHostFolder,
   listImageFolder,
@@ -19,6 +29,16 @@ import {
   type FmHardDiskAccess,
   type FmHostEnv
 } from "./fmDrives";
+import {
+  cancelJob,
+  deleteEntries,
+  jobStatus,
+  makeFolder,
+  planTransfer,
+  renameEntry,
+  runTransfer,
+  type FmJobDeps
+} from "./fmJobs";
 
 /*
  * The File Manager's requests as `MainApi` serves them (.plans/FILE_MANAGER_PLAN.md §5.1, D2). The
@@ -89,4 +109,51 @@ export async function fmList (driveId: string, dir?: string): Promise<FmListing>
 /** A file's bytes */
 export async function fmRead (driveId: string, filePath: string): Promise<Uint8Array> {
   return readDriveFile(await resolveDrive(driveId), filePath, sdCardAwareAccess);
+}
+
+// -------------------------------------------------------------------------------------------------
+// Jobs (Phase 4)
+
+/** The running app's side of a job: the Trash, the disk-edit path, the SD card's lock */
+const jobDeps: FmJobDeps = {
+  trash: (p) => shell.trashItem(p),
+  beginImageEdit: async (p) => {
+    const { contents, ...token } = await beginDiskImageEdit(p);
+    return { contents, token };
+  },
+  commitImageEdit: (p, contents, token) => commitDiskImageEdit(p, contents, token as Omit<DiskImageEditStart, "contents">),
+  cancelImageEdit: (token) => cancelDiskImageEdit(token as Omit<DiskImageEditStart, "contents">),
+  hardDiskRead: sdCardAwareAccess,
+  hardDiskWrite: (filePath, op) => aroundSdCard(filePath, op),
+  space: hostSpace
+};
+
+export async function fmPlanTransfer (request: FmTransferRequest): Promise<FmTransferPlan> {
+  const source = await resolveDrive(request.sourceDriveId);
+  const target = await resolveDrive(request.targetDriveId);
+  return planTransfer(request, source, target, jobDeps);
+}
+
+export function fmRunTransfer (id: string, decisions: Record<number, FmConflictDecision>): Promise<FmJobResult> {
+  return runTransfer(id, decisions, jobDeps);
+}
+
+export function fmJobStatus (id: string): FmJobStatus | undefined {
+  return jobStatus(id);
+}
+
+export function fmCancelJob (id: string): void {
+  cancelJob(id);
+}
+
+export async function fmDelete (driveId: string, paths: string[]): Promise<FmDeleteResult> {
+  return deleteEntries(await resolveDrive(driveId), paths, jobDeps);
+}
+
+export async function fmMkdir (driveId: string, dir: string, name: string): Promise<string> {
+  return makeFolder(await resolveDrive(driveId), dir, name, jobDeps);
+}
+
+export async function fmRename (driveId: string, entryPath: string, newName: string): Promise<string> {
+  return renameEntry(await resolveDrive(driveId), entryPath, newName, jobDeps);
 }

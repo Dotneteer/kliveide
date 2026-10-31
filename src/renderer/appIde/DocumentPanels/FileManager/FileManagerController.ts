@@ -2,8 +2,18 @@ import { t } from "@common/i18n/i18n";
 import { LatestRun, UiController } from "@renderer/mvc";
 import type { FilePickerPort } from "@renderer/mvc";
 import { fmErrorCodeOf, type FmDriveRef, type FmListing } from "@common/fileManager/fmTypes";
+import type {
+  FmConflictDecision,
+  FmDeleteResult,
+  FmJobResult,
+  FmJobStatus,
+  FmTransferPlan,
+  FmTransferRequest
+} from "@common/fileManager/fmJobTypes";
+import { freeName, type FmPlanItem, type FmTransferOptions } from "@common/fileManager/fmTransfer";
 import {
   canGoUp,
+  chosenEntries,
   entryAtCursor,
   initialState,
   locationsOf,
@@ -28,6 +38,43 @@ export type FileManagerPort = {
   listDrives(): Promise<FmDriveRef[]>;
   openImage(filePath: string): Promise<FmDriveRef[]>;
   list(driveId: string, dir?: string): Promise<FmListing>;
+  planTransfer(request: FmTransferRequest): Promise<FmTransferPlan>;
+  runTransfer(id: string, decisions: Record<number, FmConflictDecision>): Promise<FmJobResult>;
+  jobStatus(id: string): Promise<FmJobStatus | undefined>;
+  cancelJob(id: string): Promise<void>;
+  deleteEntries(driveId: string, paths: string[]): Promise<FmDeleteResult>;
+  mkdir(driveId: string, dir: string, name: string): Promise<string>;
+  rename(driveId: string, path: string, newName: string): Promise<string>;
+};
+
+/** What the copy dialog hands back: the plan to run (re-planned as its options changed) */
+export type TransferConfirmation = {
+  plan: FmTransferPlan;
+  options: FmTransferOptions;
+  onExisting: "ask" | "replace" | "skip";
+};
+
+export type TransferDialogRequest = {
+  plan: FmTransferPlan;
+  options: FmTransferOptions;
+  sourceLabel: string;
+  targetLabel: string;
+  /** Plans again with other options; an error is wordable */
+  replan(options: FmTransferOptions): Promise<FmTransferPlan>;
+};
+
+/** The answer to one conflict, for it alone or for every one left */
+export type ConflictAnswer =
+  | { kind: "replace" | "skip" | "replaceAll" | "skipAll" | "cancel" }
+  | { kind: "rename"; name: string };
+
+/** The dialogs a command asks through */
+export type FileManagerDialogPort = {
+  confirmTransfer(request: TransferDialogRequest): Promise<TransferConfirmation | undefined>;
+  resolveConflict(request: { item: FmPlanItem; suggestion: string; remaining: number }): Promise<ConflictAnswer>;
+  confirmDelete(request: { names: string[]; permanent: boolean }): Promise<boolean>;
+  askFolderName(request: { where: string; existing: string[] }): Promise<string | undefined>;
+  askNewName(request: { oldName: string }): Promise<string | undefined>;
 };
 
 /** Where the document keeps its panes' places */
@@ -39,6 +86,9 @@ export type FileManagerPorts = {
   fm: FileManagerPort;
   picker: Pick<FilePickerPort, "pickFile">;
   locations: LocationStorePort;
+  dialogs: FileManagerDialogPort;
+  /** Waits between two looks at a running job's progress */
+  wait(ms: number): Promise<void>;
 };
 
 export type FileManagerIntent =
@@ -58,9 +108,27 @@ export type FileManagerIntent =
   | { type: "driveMenuToggled"; side: PaneSide }
   | { type: "driveMenuClosed" }
   | { type: "driveChosen"; side: PaneSide; driveId: string }
-  | { type: "openImageRequested"; side: PaneSide };
+  | { type: "openImageRequested"; side: PaneSide }
+  | { type: "transferRequested"; move: boolean }
+  | { type: "deleteRequested" }
+  | { type: "mkdirRequested" }
+  | { type: "renameRequested" }
+  | { type: "jobCancelRequested" }
+  | { type: "noticeDismissed" };
 
 const IMAGE_FILTER_EXTENSIONS = ["dsk", "trd", "scl", "mdr", "img", "hdf", "cim"];
+
+const WRITING_INTENTS = new Set<FileManagerIntent["type"]>([
+  "transferRequested",
+  "deleteRequested",
+  "mkdirRequested",
+  "renameRequested",
+  "driveChosen",
+  "openImageRequested"
+]);
+
+/** How often a running job's progress is read */
+export const PROGRESS_INTERVAL_MS = 200;
 
 export class FileManagerController extends UiController<FmState, FileManagerIntent, FmEvent, FileManagerVm> {
   private readonly runs: [LatestRun, LatestRun] = [new LatestRun(), new LatestRun()];
@@ -70,6 +138,8 @@ export class FileManagerController extends UiController<FmState, FileManagerInte
   }
 
   protected async handle (intent: FileManagerIntent): Promise<void> {
+    // --- While a job runs, only watching it, cancelling it and moving around are allowed
+    if (this.state.job && WRITING_INTENTS.has(intent.type)) return;
     switch (intent.type) {
       case "activated":
         return this.start(intent.locations);
@@ -131,6 +201,24 @@ export class FileManagerController extends UiController<FmState, FileManagerInte
         if (drive) await this.load(intent.side, drive, undefined, { returnTo: [] });
         return;
       }
+      case "transferRequested":
+        return this.transfer(intent.move);
+      case "deleteRequested":
+        return this.deleteChosen();
+      case "mkdirRequested":
+        return this.makeFolder();
+      case "renameRequested":
+        return this.renameAtCursor();
+      case "jobCancelRequested": {
+        const job = this.state.job;
+        if (!job?.id || job.cancelling) return;
+        this.emit({ type: "jobCancelling" });
+        await this.ports.fm.cancelJob(job.id);
+        return;
+      }
+      case "noticeDismissed":
+        this.emit({ type: "noticeDismissed" });
+        return;
       case "openImageRequested": {
         this.emit({ type: "menuClosed" });
         const file = await this.ports.picker.pickFile([{ name: t("panels.fileManager.imageFilter"), extensions: IMAGE_FILTER_EXTENSIONS }], "fileManager.openImage");
@@ -274,6 +362,182 @@ export class FileManagerController extends UiController<FmState, FileManagerInte
     if (target.kind === "leave") return this.leave(side, target.returnIndex);
     const pane = this.state.panes[side];
     if (pane.drive && target.dir !== pane.dir) await this.load(side, pane.drive, target.dir);
+  }
+
+  // -----------------------------------------------------------------------------------------------
+  // Jobs (Phase 4)
+
+  private async transfer (move: boolean): Promise<void> {
+    const side = this.state.active;
+    const other: PaneSide = side === 0 ? 1 : 0;
+    const source = this.state.panes[side];
+    const target = this.state.panes[other];
+    const chosen = chosenEntries(source);
+    if (!source.drive || !target.drive || chosen.length === 0) return;
+    const request = (options: FmTransferOptions): FmTransferRequest => ({
+      sourceDriveId: source.drive!.id,
+      paths: chosen.map((e) => e.path),
+      targetDriveId: target.drive!.id,
+      targetDir: target.dir ?? "",
+      move,
+      options
+    });
+
+    let plan: FmTransferPlan;
+    try {
+      plan = await this.ports.fm.planTransfer(request(this.state.transferOptions));
+    } catch (err) {
+      this.emit({ type: "noticeShown", notice: { kind: "error", code: fmErrorCodeOf(err), name: chosen[0]?.name } });
+      return;
+    }
+    const confirmed = await this.ports.dialogs.confirmTransfer({
+      plan,
+      options: this.state.transferOptions,
+      sourceLabel: chosen.length === 1 ? chosen[0].name : String(chosen.length),
+      targetLabel: target.dir || target.drive.name,
+      replan: (options) => this.ports.fm.planTransfer(request(options))
+    });
+    if (!confirmed) return;
+    this.emit({ type: "transferOptionsSet", options: confirmed.options });
+    plan = confirmed.plan;
+
+    const decisions = await this.decide(plan, confirmed.onExisting, target.listing?.entries.map((e) => e.name) ?? []);
+    if (!decisions) return;
+
+    this.emit({ type: "jobStarted", job: { kind: move ? "move" : "copy", done: 0, total: plan.items.length, id: plan.id } });
+    let result: FmJobResult | undefined;
+    let failure: unknown;
+    const run = this.ports.fm.runTransfer(plan.id, decisions).then(
+      (r) => (result = r),
+      (err) => (failure = err ?? new Error("failed"))
+    );
+    while (!result && !failure) {
+      await Promise.race([run, this.ports.wait(PROGRESS_INTERVAL_MS)]);
+      if (result || failure) break;
+      const status = await this.ports.fm.jobStatus(plan.id).catch((): undefined => undefined);
+      if (status) this.emit({ type: "jobProgressed", done: status.done, total: status.total, current: status.current });
+    }
+    this.emit({ type: "jobFinished" });
+    this.emit({
+      type: "noticeShown",
+      notice: result
+        ? { kind: "transfer", move, result, skippedFolders: plan.skippedFolders.length }
+        : { kind: "error", code: fmErrorCodeOf(failure), name: target.drive.name }
+    });
+    this.emit({ type: "marksCleared", side });
+    await Promise.all([this.refresh(side), this.refresh(other)]);
+  }
+
+  /** The answers to a plan's conflicts; undefined when the user cancelled */
+  private async decide (
+    plan: FmTransferPlan,
+    onExisting: TransferConfirmation["onExisting"],
+    targetNames: string[]
+  ): Promise<Record<number, FmConflictDecision> | undefined> {
+    const decisions: Record<number, FmConflictDecision> = {};
+    const conflicts = plan.items.filter((i) => i.conflict);
+    let all: "replace" | "skip" | undefined = onExisting === "ask" ? undefined : onExisting;
+    const taken = new Set([...targetNames, ...plan.items.map((i) => i.targetName)].map((n) => n.toLowerCase()));
+    for (let i = 0; i < conflicts.length; i++) {
+      const item = conflicts[i];
+      if (all) {
+        decisions[item.id] = { kind: all };
+        continue;
+      }
+      const suggestion = freeName(item.targetName, plan.to, taken);
+      const answer = await this.ports.dialogs.resolveConflict({ item, suggestion, remaining: conflicts.length - i - 1 });
+      switch (answer.kind) {
+        case "cancel":
+          return undefined;
+        case "rename":
+          taken.add(answer.name.toLowerCase());
+          decisions[item.id] = { kind: "rename", name: answer.name };
+          break;
+        case "replaceAll":
+          all = "replace";
+          decisions[item.id] = { kind: "replace" };
+          break;
+        case "skipAll":
+          all = "skip";
+          decisions[item.id] = { kind: "skip" };
+          break;
+        default:
+          decisions[item.id] = { kind: answer.kind };
+      }
+    }
+    return decisions;
+  }
+
+  private async deleteChosen (): Promise<void> {
+    const side = this.state.active;
+    const pane = this.state.panes[side];
+    const chosen = chosenEntries(pane);
+    if (!pane.drive || chosen.length === 0) return;
+    const permanent = pane.drive.kind !== "host" && pane.drive.kind !== "project";
+    const ok = await this.ports.dialogs.confirmDelete({ names: chosen.map((e) => e.name), permanent });
+    if (!ok) return;
+    this.emit({ type: "jobStarted", job: { kind: "delete", done: 0, total: chosen.length } });
+    try {
+      const result = await this.ports.fm.deleteEntries(pane.drive.id, chosen.map((e) => e.path));
+      this.emit({ type: "jobFinished" });
+      if (result.failed.length) this.emit({ type: "noticeShown", notice: { kind: "delete", result } });
+    } catch (err) {
+      this.emit({ type: "jobFinished" });
+      this.emit({ type: "noticeShown", notice: { kind: "error", code: fmErrorCodeOf(err), name: pane.drive.name } });
+    }
+    this.emit({ type: "marksCleared", side });
+    await this.refresh(side);
+    await this.refreshIfSame(side);
+  }
+
+  private async makeFolder (): Promise<void> {
+    const side = this.state.active;
+    const pane = this.state.panes[side];
+    if (!pane.drive || !pane.listing) return;
+    const name = await this.ports.dialogs.askFolderName({
+      where: pane.dir || pane.drive.name,
+      existing: pane.listing.entries.map((e) => e.name)
+    });
+    if (!name) return;
+    try {
+      await this.ports.fm.mkdir(pane.drive.id, pane.dir ?? "", name);
+    } catch (err) {
+      this.emit({ type: "noticeShown", notice: { kind: "error", code: fmErrorCodeOf(err), name } });
+      return;
+    }
+    await this.refresh(side, name);
+    await this.refreshIfSame(side);
+  }
+
+  private async renameAtCursor (): Promise<void> {
+    const side = this.state.active;
+    const pane = this.state.panes[side];
+    const entry = entryAtCursor(pane);
+    if (!pane.drive || !entry) return;
+    const name = await this.ports.dialogs.askNewName({ oldName: entry.name });
+    if (!name || name === entry.name) return;
+    try {
+      await this.ports.fm.rename(pane.drive.id, entry.path, name);
+    } catch (err) {
+      this.emit({ type: "noticeShown", notice: { kind: "error", code: fmErrorCodeOf(err), name } });
+      return;
+    }
+    await this.refresh(side, name);
+    await this.refreshIfSame(side);
+  }
+
+  /** Reads a pane's folder again, the cursor on `cursorName` when given */
+  private async refresh (side: PaneSide, cursorName?: string): Promise<void> {
+    const pane = this.state.panes[side];
+    if (pane.drive) await this.load(side, pane.drive, pane.dir, { cursorName });
+  }
+
+  /** The other pane, when it shows the same folder, sees the change too */
+  private async refreshIfSame (side: PaneSide): Promise<void> {
+    const other: PaneSide = side === 0 ? 1 : 0;
+    const a = this.state.panes[side];
+    const b = this.state.panes[other];
+    if (a.drive && b.drive && a.drive.id === b.drive.id && a.dir === b.dir) await this.refresh(other);
   }
 
   private saveLocations (): void {

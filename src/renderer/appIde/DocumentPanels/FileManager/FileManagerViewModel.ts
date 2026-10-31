@@ -1,7 +1,8 @@
 import { t, translator } from "@common/i18n/i18n";
 import type { MessageKey } from "@common/i18n/keys.generated";
 import type { FmColumnSet, FmDriveRef, FmEntry, FmErrorCode, FmSpectrumFacts } from "@common/fileManager/fmTypes";
-import { paneRows, type FmState, type PaneSide, type PaneState, type SortKey } from "./FileManagerModel";
+import type { FmBecomes } from "@common/fileManager/fmTransfer";
+import { paneRows, type FmNotice, type FmState, type PaneSide, type PaneState, type SortKey } from "./FileManagerModel";
 
 /*
  * What the File Manager shows (.plans/FILE_MANAGER_PLAN.md §4): every text and number formatted
@@ -71,10 +72,26 @@ export type DriveMenuVm = {
   openImageLabel: string;
 };
 
+export type JobVm = {
+  text: string;
+  /** 0..1 */
+  progress: number;
+  canCancel: boolean;
+};
+
+export type NoticeVm = { tone: "info" | "error"; text: string };
+
+export type CommandKey = "copy" | "move" | "rename" | "mkdir" | "delete" | "drives";
+
+export type CommandVm = { key: CommandKey; label: string; keyHint: string; enabled: boolean };
+
 export type FileManagerVm = {
   panes: [PaneVm, PaneVm];
   menu?: DriveMenuVm;
   drivesError?: string;
+  job?: JobVm;
+  notice?: NoticeVm;
+  commands: CommandVm[];
 };
 
 // -------------------------------------------------------------------------------------------------
@@ -213,6 +230,13 @@ const ERROR_KEYS: Record<FmErrorCode, MessageKey> = {
   unsupported: "panels.fileManager.error.unsupported",
   unformatted: "panels.fileManager.error.unformatted",
   noProject: "panels.fileManager.error.noProject",
+  exists: "panels.fileManager.error.exists",
+  readOnly: "panels.fileManager.error.readOnly",
+  diskFull: "panels.fileManager.error.diskFull",
+  directoryFull: "panels.fileManager.error.directoryFull",
+  badName: "panels.fileManager.error.badName",
+  sameFolder: "panels.fileManager.error.sameFolder",
+  intoItself: "panels.fileManager.error.intoItself",
   failed: "panels.fileManager.error.failed"
 };
 
@@ -333,10 +357,95 @@ function selectMenu (state: FmState): DriveMenuVm | undefined {
   return { side: state.menuFor, groups, openImageLabel: t("panels.fileManager.openImage") };
 }
 
+/** A job's notice, in whole sentences */
+export function noticeText (notice: FmNotice): NoticeVm {
+  if (notice.kind === "error") return { tone: "error", text: errorText(notice.code, notice.name) };
+  if (notice.kind === "delete") {
+    const first = notice.result.failed[0];
+    return {
+      tone: "error",
+      text: t("panels.fileManager.notice.deleteFailed", {
+        count: notice.result.failed.length,
+        name: first?.name ?? "",
+        reason: first ? errorText(first.code, first.name) : ""
+      })
+    };
+  }
+  const r = notice.result;
+  const sentences: string[] = [];
+  if (r.aborted) {
+    sentences.push(errorText(r.aborted));
+    sentences.push(t(r.written === 0 ? "panels.fileManager.notice.nothingWritten" : "panels.fileManager.notice.partlyWritten", { count: r.written }));
+  } else {
+    sentences.push(t(notice.move ? "panels.fileManager.notice.moved" : "panels.fileManager.notice.copied", { count: r.written }));
+  }
+  if (r.cancelled) sentences.push(t("panels.fileManager.notice.cancelled"));
+  if (r.skipped) sentences.push(t("panels.fileManager.notice.skipped", { count: r.skipped }));
+  if (notice.skippedFolders) sentences.push(t("panels.fileManager.notice.skippedFolders", { count: notice.skippedFolders }));
+  if (r.failed.length && !r.aborted) {
+    const first = r.failed[0];
+    sentences.push(t("panels.fileManager.notice.failed", { count: r.failed.length, name: first.name, reason: errorText(first.code, first.name) }));
+  }
+  if (r.removeFailed) sentences.push(t("panels.fileManager.notice.removeFailed", { count: r.removeFailed }));
+  const trouble = r.cancelled || !!r.aborted || r.failed.length > 0 || !!r.removeFailed;
+  return { tone: trouble ? "error" : "info", text: sentences.join(" ") };
+}
+
+const COMMANDS: { key: CommandKey; label: MessageKey; keyHint: string; writes: boolean }[] = [
+  { key: "copy", label: "panels.fileManager.command.copy", keyHint: "F5", writes: true },
+  { key: "move", label: "panels.fileManager.command.move", keyHint: "F6", writes: true },
+  { key: "rename", label: "panels.fileManager.command.rename", keyHint: "⇧F6", writes: true },
+  { key: "mkdir", label: "panels.fileManager.command.mkdir", keyHint: "F7", writes: true },
+  { key: "delete", label: "panels.fileManager.command.delete", keyHint: "F8", writes: true },
+  { key: "drives", label: "panels.fileManager.command.drives", keyHint: "Alt+F1", writes: false }
+];
+
+function selectJob (state: FmState): JobVm | undefined {
+  const job = state.job;
+  if (!job) return undefined;
+  const key: MessageKey = job.cancelling
+    ? "panels.fileManager.job.cancelling"
+    : job.kind === "delete"
+      ? "panels.fileManager.job.deleting"
+      : job.kind === "move"
+        ? "panels.fileManager.job.moving"
+        : "panels.fileManager.job.copying";
+  return {
+    text: t(key, { name: job.current ?? "", done: job.done, total: job.total }),
+    progress: job.total ? Math.min(1, job.done / job.total) : 0,
+    canCancel: job.kind !== "delete" && !!job.id && !job.cancelling
+  };
+}
+
 export function selectViewModel (state: FmState): FileManagerVm {
+  const busy = !!state.job;
   return {
     panes: [selectPane(state, 0), selectPane(state, 1)],
     menu: selectMenu(state),
-    drivesError: state.drivesError ? errorText(state.drivesError.code, state.drivesError.name) : undefined
+    drivesError: state.drivesError ? errorText(state.drivesError.code, state.drivesError.name) : undefined,
+    job: selectJob(state),
+    notice: state.notice ? noticeText(state.notice) : undefined,
+    commands: COMMANDS.map((c) => ({ key: c.key, label: t(c.label), keyHint: c.keyHint, enabled: !(busy && c.writes) }))
   };
+}
+
+/** What a file becomes on its target, for the copy dialog */
+export function becomesText (b: FmBecomes): string {
+  switch (b.as) {
+    case "asIs":
+      return t("panels.fileManager.becomes.asIs");
+    case "bytes":
+      return t("panels.fileManager.becomes.bytes");
+    case "tap":
+      return t("panels.fileManager.becomes.tap");
+    case "screen":
+      return t("panels.fileManager.becomes.screen");
+    case "basic":
+      return b.line === undefined ? t("panels.fileManager.becomes.basic") : t("panels.fileManager.becomes.basicLine", { line: b.line });
+    case "code":
+      return t("panels.fileManager.becomes.code", { start: b.start });
+    case "numberArray":
+    case "charArray":
+      return t(b.as === "numberArray" ? "panels.fileManager.becomes.numberArray" : "panels.fileManager.becomes.charArray", { name: b.variableName ?? "" });
+  }
 }

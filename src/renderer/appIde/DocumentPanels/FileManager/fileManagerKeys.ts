@@ -2,9 +2,8 @@ import type { FileManagerIntent } from "./FileManagerController";
 import type { PaneSide } from "./FileManagerModel";
 
 /*
- * The File Manager's keys (.plans/FILE_MANAGER_PLAN.md D8, the browsing ones of Phase 2): a key
- * press to an intent, pure, so the keyboard is tested without a DOM. The keys that change files
- * (F5-F8) come with the jobs of Phase 4.
+ * The File Manager's keys (.plans/FILE_MANAGER_PLAN.md D8): a key press to an intent, pure, so the
+ * keyboard is tested without a DOM. F3 and F4 come with the viewer (Phase 7).
  */
 
 export type KeyPress = {
@@ -22,6 +21,8 @@ export type KeyContext = {
   /** Rows that fit the pane, for Page Up/Down */
   pageSize: number;
   menuOpen: boolean;
+  /** A job runs: Escape cancels it */
+  jobRunning?: boolean;
 };
 
 /** The intent a key press means, or undefined when the File Manager leaves it alone */
@@ -45,7 +46,19 @@ export function intentForKey (press: KeyPress, ctx: KeyContext): FileManagerInte
   }
   if (!plain) return undefined;
 
+  if (press.key === "Escape" && ctx.jobRunning) return { type: "jobCancelRequested" };
+  if (press.shiftKey && press.key === "F6") return { type: "renameRequested" };
+
   switch (press.key) {
+    case "F5":
+      return { type: "transferRequested", move: false };
+    case "F6":
+      return { type: "transferRequested", move: true };
+    case "F7":
+      return { type: "mkdirRequested" };
+    case "F8":
+    case "Delete":
+      return { type: "deleteRequested" };
     case "ArrowUp":
       return { type: "cursorMoved", side, to: cursor - 1 };
     case "ArrowDown":

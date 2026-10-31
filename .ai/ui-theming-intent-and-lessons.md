@@ -1579,6 +1579,18 @@ marked rows. The rules it settled:
   (`flex-shrink: 0`, capped at 60 %), the ones before it ellipsize first.
 - **A status line's right-hand fact is not clipped**: it is `flex: 0 0 auto`, and the left text has
   `min-width: 0` so it is the one that shortens.
+- **A table that previews what an operation will do colours only the cells that need a decision**:
+  a name changed to fit in `--status-warning`, a name that already exists in `--status-error`, every
+  other cell a neutral data value. The same two facts are also said once in a sentence under the
+  table, so colour is never the only carrier.
+- **A segmented choice is buttons in one bordered strip**, the chosen one `--accent-solid` on
+  `--text-on-accent`; there is no shared control for it yet, so copy the File Manager dialog's
+  `.segmented` rules rather than inventing another.
+- **A dialog with more than two answers keeps `DialogForm`'s footer strip** (same surface, seam,
+  padding and corner radii) and puts the safest-to-repeat answer first; the strip wraps.
+- **A notice after a job is a strip above the command bar**, `--accent-subtle` when all went well,
+  `--status-error-subtle` when anything was skipped, failed or cancelled; it stays until dismissed or
+  the next job, never a timed toast, because it is the only record of what the job did.
 
 ## Token Architecture
 

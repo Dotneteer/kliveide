@@ -358,3 +358,124 @@
   font-family: var(--monospace-font);
   white-space: nowrap;
 }
+
+/* --- A job's progress, above the command bar */
+.progress {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-0_5) var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  border-top: 1px solid var(--border-default);
+  background: var(--surface-raised);
+  font-family: var(--main-font-family);
+}
+
+.progressText {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.progressBar {
+  grid-column: 1 / -1;
+  height: var(--space-1);
+  border-radius: var(--radius-sm);
+  background: var(--border-subtle);
+  overflow: hidden;
+}
+
+.progressBar > i {
+  display: block;
+  height: 100%;
+  background: var(--accent-solid);
+}
+
+/* --- What a job did, until dismissed or the next job */
+.notice,
+.noticeError {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  border-top: 1px solid var(--border-default);
+  color: var(--text-primary);
+  font-family: var(--main-font-family);
+}
+
+.notice {
+  background: var(--accent-subtle);
+}
+
+.noticeError {
+  background: var(--status-error-subtle);
+}
+
+.noticeText {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.barButton {
+  flex: 0 0 auto;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  font: inherit;
+  cursor: pointer;
+}
+
+.barButton:hover {
+  background: var(--surface-hover);
+}
+
+/* --- The command bar: the function keys as buttons, for keyboards without them (D8) */
+.commandBar {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  border-top: 1px solid var(--border-default);
+  background: var(--surface-header);
+  font-family: var(--main-font-family);
+}
+
+.command {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  min-width: 0;
+  padding: var(--space-1) var(--space-1);
+  border: 0;
+  border-right: 1px solid var(--border-subtle);
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.command:last-child {
+  border-right: 0;
+}
+
+.command:hover:not(:disabled) {
+  background: var(--surface-hover);
+}
+
+.command:disabled {
+  color: var(--text-disabled);
+  cursor: default;
+}
+
+.keyHint {
+  color: var(--text-tertiary);
+  font-family: var(--monospace-font);
+}
+
+.commandLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

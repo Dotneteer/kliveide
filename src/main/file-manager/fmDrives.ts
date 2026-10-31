@@ -74,7 +74,7 @@ export function defaultHostEnv (homeDir: string, kliveBase = homeDir): FmHostEnv
   };
 }
 
-function hostSpace (p: string): { free: number; total: number } | undefined {
+export function hostSpace (p: string): { free: number; total: number } | undefined {
   try {
     const s = fs.statfsSync(p);
     return { free: s.bavail * s.bsize, total: s.blocks * s.bsize };
@@ -341,7 +341,14 @@ function imageListing (drive: FmDriveRef, diskFs: DiskFileSystem, folder: string
       };
       if (f.hidden) entry.hidden = true;
       if (diskFs.system !== "fat") {
-        entry.spectrum = { kind: f.kind, start: f.start, user: f.user, variableName: f.variableName, attributes: f.attributes };
+        entry.spectrum = {
+          kind: f.kind,
+          start: f.start,
+          variablesOffset: f.variablesOffset,
+          user: f.user,
+          variableName: f.variableName,
+          attributes: f.attributes
+        };
       } else {
         const imageKind = f.isDirectory ? undefined : fmImageKindOf(label);
         if (imageKind) entry.imageKind = imageKind;

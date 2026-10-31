@@ -4055,5 +4055,463 @@
     "placeholders": {
       "name": "The folder or drive"
     }
+  },
+  "panels.fileManager.becomes.asIs": "as it is",
+  "@panels.fileManager.becomes.asIs": {
+    "context": "File Manager (a two-pane file manager document): copy/move dialog: 'Becomes' column: the file is copied unchanged."
+  },
+  "panels.fileManager.becomes.bytes": "bytes",
+  "@panels.fileManager.becomes.bytes": {
+    "context": "File Manager (a two-pane file manager document): copy/move dialog: 'Becomes' column: only the file's bytes are kept, its ZX Spectrum header is dropped."
+  },
+  "panels.fileManager.becomes.tap": ".tap with its header",
+  "@panels.fileManager.becomes.tap": {
+    "context": "File Manager (a two-pane file manager document): copy/move dialog: 'Becomes' column: the file is written as a one-file tape image that keeps its ZX Spectrum header. '.tap' is a file extension, not translated."
+  },
+  "panels.fileManager.becomes.screen": "SCREEN$",
+  "@panels.fileManager.becomes.screen": {
+    "context": "File Manager (a two-pane file manager document): copy/move dialog: 'Becomes' column: a ZX Spectrum screen picture. SCREEN$ is a BASIC keyword, not translated."
+  },
+  "panels.fileManager.becomes.basic": "BASIC",
+  "@panels.fileManager.becomes.basic": {
+    "context": "File Manager (a two-pane file manager document): copy/move dialog: 'Becomes' column: a BASIC program. Not translated."
+  },
+  "panels.fileManager.becomes.basicLine": "BASIC, LINE {line}",
+  "@panels.fileManager.becomes.basicLine": {
+    "context": "File Manager (a two-pane file manager document): copy/move dialog: 'Becomes' column: a BASIC program that runs from a line when loaded. BASIC and LINE are keywords, not translated.",
+    "placeholders": {
+      "line": "The auto-run line number"
+    }
+  },
+  "panels.fileManager.becomes.code": "CODE {start}",
+  "@panels.fileManager.becomes.code": {
+    "context": "File Manager (a two-pane file manager document): copy/move dialog: 'Becomes' column: machine code loaded at an address. CODE is a BASIC keyword, not translated.",
+    "placeholders": {
+      "start": "The load address, in decimal"
+    }
+  },
+  "panels.fileManager.becomes.numberArray": "number array {name}()",
+  "@panels.fileManager.becomes.numberArray": {
+    "context": "File Manager (a two-pane file manager document): copy/move dialog: 'Becomes' column: a BASIC number array.",
+    "placeholders": {
+      "name": "The array's one-letter name"
+    }
+  },
+  "panels.fileManager.becomes.charArray": "character array {name}$()",
+  "@panels.fileManager.becomes.charArray": {
+    "context": "File Manager (a two-pane file manager document): copy/move dialog: 'Becomes' column: a BASIC character array.",
+    "placeholders": {
+      "name": "The array's one-letter name"
+    }
+  },
+  "panels.fileManager.becomes.folder": "folder",
+  "@panels.fileManager.becomes.folder": {
+    "context": "File Manager (a two-pane file manager document): copy/move dialog: 'Becomes' column: a folder is made on the target."
+  },
+  "panels.fileManager.command.copy": "Copy",
+  "@panels.fileManager.command.copy": {
+    "context": "File Manager (a two-pane file manager document): command bar button and dialog button (F5): copies the chosen files to the other pane's folder. Narrow button."
+  },
+  "panels.fileManager.command.move": "Move",
+  "@panels.fileManager.command.move": {
+    "context": "File Manager (a two-pane file manager document): command bar button and dialog button (F6): moves the chosen files to the other pane's folder. Narrow button."
+  },
+  "panels.fileManager.command.rename": "Rename",
+  "@panels.fileManager.command.rename": {
+    "context": "File Manager (a two-pane file manager document): command bar button (Shift+F6): renames the file under the cursor. Narrow button."
+  },
+  "panels.fileManager.command.mkdir": "New folder",
+  "@panels.fileManager.command.mkdir": {
+    "context": "File Manager (a two-pane file manager document): command bar button (F7): makes a folder in the active pane's folder. Narrow button."
+  },
+  "panels.fileManager.command.delete": "Delete",
+  "@panels.fileManager.command.delete": {
+    "context": "File Manager (a two-pane file manager document): command bar button (F8) and the delete dialog's button. Narrow button."
+  },
+  "panels.fileManager.command.drives": "Drives",
+  "@panels.fileManager.command.drives": {
+    "context": "File Manager (a two-pane file manager document): command bar button (Alt+F1): opens the active pane's drive menu. Narrow button."
+  },
+  "panels.fileManager.dialog.copyTitle": "Copy",
+  "@panels.fileManager.dialog.copyTitle": {
+    "context": "File Manager (a two-pane file manager document): copy/move dialog: the dialog's title when copying."
+  },
+  "panels.fileManager.dialog.moveTitle": "Move",
+  "@panels.fileManager.dialog.moveTitle": {
+    "context": "File Manager (a two-pane file manager document): copy/move dialog: the dialog's title when moving."
+  },
+  "panels.fileManager.dialog.copyOne": "Copy {name} to {target}",
+  "@panels.fileManager.dialog.copyOne": {
+    "context": "File Manager (a two-pane file manager document): copy/move dialog: the dialog's first line for one file or folder.",
+    "placeholders": {
+      "name": "The file's or folder's name",
+      "target": "The target folder or drive"
+    }
+  },
+  "panels.fileManager.dialog.moveOne": "Move {name} to {target}",
+  "@panels.fileManager.dialog.moveOne": {
+    "context": "File Manager (a two-pane file manager document): copy/move dialog: the dialog's first line when moving one file or folder.",
+    "placeholders": {
+      "name": "The file's or folder's name",
+      "target": "The target folder or drive"
+    }
+  },
+  "panels.fileManager.dialog.copyMany": "Copy {count} items to {target}",
+  "@panels.fileManager.dialog.copyMany": {
+    "context": "File Manager (a two-pane file manager document): copy/move dialog: the dialog's first line for several chosen files and folders.",
+    "placeholders": {
+      "count": "How many items were chosen",
+      "target": "The target folder or drive"
+    }
+  },
+  "panels.fileManager.dialog.moveMany": "Move {count} items to {target}",
+  "@panels.fileManager.dialog.moveMany": {
+    "context": "File Manager (a two-pane file manager document): copy/move dialog: the dialog's first line when moving several chosen files and folders.",
+    "placeholders": {
+      "count": "How many items were chosen",
+      "target": "The target folder or drive"
+    }
+  },
+  "panels.fileManager.dialog.mode": "Files become",
+  "@panels.fileManager.dialog.mode": {
+    "context": "File Manager (a two-pane file manager document): copy/move dialog: label of the choice of how files cross between this computer and a ZX Spectrum disk."
+  },
+  "panels.fileManager.dialog.modeAuto": "Auto",
+  "@panels.fileManager.dialog.modeAuto": {
+    "context": "File Manager (a two-pane file manager document): copy/move dialog: choice: convert each file the way that suits it best."
+  },
+  "panels.fileManager.dialog.modeHeaders": "Keep headers",
+  "@panels.fileManager.dialog.modeHeaders": {
+    "context": "File Manager (a two-pane file manager document): copy/move dialog: choice: keep each file's ZX Spectrum header (as a .tap file)."
+  },
+  "panels.fileManager.dialog.modeRaw": "Raw bytes",
+  "@panels.fileManager.dialog.modeRaw": {
+    "context": "File Manager (a two-pane file manager document): copy/move dialog: choice: copy only the bytes, with no header."
+  },
+  "panels.fileManager.dialog.modeAutoHint": "Programs and arrays keep their header in a .tap, screens become .scr, code its bytes; .tap, .scr and .bas files are split, placed and tokenised on a disk.",
+  "@panels.fileManager.dialog.modeAutoHint": {
+    "context": "File Manager (a two-pane file manager document): copy/move dialog: explains the Auto choice."
+  },
+  "panels.fileManager.dialog.modeHeadersHint": "Every file with a header is written as a one-file .tap, which keeps its start address and auto-run line.",
+  "@panels.fileManager.dialog.modeHeadersHint": {
+    "context": "File Manager (a two-pane file manager document): copy/move dialog: explains the Keep headers choice."
+  },
+  "panels.fileManager.dialog.modeRawHint": "Only the bytes are copied. On a disk each file becomes CODE at the start address below.",
+  "@panels.fileManager.dialog.modeRawHint": {
+    "context": "File Manager (a two-pane file manager document): copy/move dialog: explains the Raw bytes choice."
+  },
+  "panels.fileManager.dialog.codeStart": "Headerless code at",
+  "@panels.fileManager.dialog.codeStart": {
+    "context": "File Manager (a two-pane file manager document): copy/move dialog: label of the load address given to files without a ZX Spectrum header."
+  },
+  "panels.fileManager.dialog.autoRun": "BASIC auto-run line",
+  "@panels.fileManager.dialog.autoRun": {
+    "context": "File Manager (a two-pane file manager document): copy/move dialog: label of the line a tokenised .bas program runs from; empty for none."
+  },
+  "panels.fileManager.dialog.badAddress": "An address from 0 to 65535",
+  "@panels.fileManager.dialog.badAddress": {
+    "context": "File Manager (a two-pane file manager document): copy/move dialog: error under the address field."
+  },
+  "panels.fileManager.dialog.badLine": "A line from 0 to 9999",
+  "@panels.fileManager.dialog.badLine": {
+    "context": "File Manager (a two-pane file manager document): copy/move dialog: error under the auto-run line field."
+  },
+  "panels.fileManager.dialog.flatten": "Copy the files of folders too (the disk has no folders)",
+  "@panels.fileManager.dialog.flatten": {
+    "context": "File Manager (a two-pane file manager document): copy/move dialog: check box: put the files of the chosen folders onto a disk that has no folders."
+  },
+  "panels.fileManager.dialog.colSource": "Source",
+  "@panels.fileManager.dialog.colSource": {
+    "context": "File Manager (a two-pane file manager document): copy/move dialog: table column header: the file being copied."
+  },
+  "panels.fileManager.dialog.colTarget": "On the target",
+  "@panels.fileManager.dialog.colTarget": {
+    "context": "File Manager (a two-pane file manager document): copy/move dialog: table column header: the name the file gets on the target."
+  },
+  "panels.fileManager.dialog.colBecomes": "Becomes",
+  "@panels.fileManager.dialog.colBecomes": {
+    "context": "File Manager (a two-pane file manager document): copy/move dialog: table column header: what the file becomes on the target."
+  },
+  "panels.fileManager.dialog.more": "and {count} more",
+  "@panels.fileManager.dialog.more": {
+    "context": "File Manager (a two-pane file manager document): the end of a shortened list.",
+    "placeholders": {
+      "count": "How many items are not listed"
+    }
+  },
+  "panels.fileManager.dialog.onExisting": "{count, plural, one {# file is} other {# files are}} already there",
+  "@panels.fileManager.dialog.onExisting": {
+    "context": "File Manager (a two-pane file manager document): copy/move dialog: label of the choice of what to do with files that already exist on the target.",
+    "placeholders": {
+      "count": "How many files already exist"
+    }
+  },
+  "panels.fileManager.dialog.ask": "Ask",
+  "@panels.fileManager.dialog.ask": {
+    "context": "File Manager (a two-pane file manager document): copy/move dialog: choice: ask for each file that already exists."
+  },
+  "panels.fileManager.dialog.replace": "Replace",
+  "@panels.fileManager.dialog.replace": {
+    "context": "File Manager (a two-pane file manager document): choice and button: write over the file that is already there."
+  },
+  "panels.fileManager.dialog.skip": "Skip",
+  "@panels.fileManager.dialog.skip": {
+    "context": "File Manager (a two-pane file manager document): choice and button: leave the existing file and do not copy this one."
+  },
+  "panels.fileManager.dialog.replaceAll": "Replace all",
+  "@panels.fileManager.dialog.replaceAll": {
+    "context": "File Manager (a two-pane file manager document): conflict dialog button: replace this file and every other one that exists."
+  },
+  "panels.fileManager.dialog.skipAll": "Skip all",
+  "@panels.fileManager.dialog.skipAll": {
+    "context": "File Manager (a two-pane file manager document): conflict dialog button: skip this file and every other one that exists."
+  },
+  "panels.fileManager.dialog.rename": "Copy as",
+  "@panels.fileManager.dialog.rename": {
+    "context": "File Manager (a two-pane file manager document): conflict dialog button: copy the file under the name typed in the field."
+  },
+  "panels.fileManager.dialog.fits": "{size} to write, {free} free.",
+  "@panels.fileManager.dialog.fits": {
+    "context": "File Manager (a two-pane file manager document): copy/move dialog: the files fit on the target.",
+    "placeholders": {
+      "size": "What the files take, with its unit",
+      "free": "The target's free space, with its unit"
+    }
+  },
+  "panels.fileManager.dialog.size": "{size} to write.",
+  "@panels.fileManager.dialog.size": {
+    "context": "File Manager (a two-pane file manager document): copy/move dialog: the size of the files when the target's free space is unknown.",
+    "placeholders": {
+      "size": "What the files take, with its unit"
+    }
+  },
+  "panels.fileManager.dialog.noRoom": "{size} do not fit in the {free} free. Nothing is written.",
+  "@panels.fileManager.dialog.noRoom": {
+    "context": "File Manager (a two-pane file manager document): copy/move dialog: the files do not fit; the Copy button is disabled.",
+    "placeholders": {
+      "size": "What the files take, with its unit",
+      "free": "The target's free space, with its unit"
+    }
+  },
+  "panels.fileManager.dialog.shortened": "{count, plural, one {# name is} other {# names are}} shortened to fit the disk.",
+  "@panels.fileManager.dialog.shortened": {
+    "context": "File Manager (a two-pane file manager document): copy/move dialog: warning: some names were changed to fit the target's name rules.",
+    "placeholders": {
+      "count": "How many names changed"
+    }
+  },
+  "panels.fileManager.dialog.skippedFolders": "{count, plural, one {# folder is} other {# folders are}} skipped: the disk has no folders.",
+  "@panels.fileManager.dialog.skippedFolders": {
+    "context": "File Manager (a two-pane file manager document): copy/move dialog: warning: folders cannot be copied to a ZX Spectrum disk.",
+    "placeholders": {
+      "count": "How many folders"
+    }
+  },
+  "panels.fileManager.dialog.imageOnce": "The disk image is written once, after the last file; its .bak keeps the previous version.",
+  "@panels.fileManager.dialog.imageOnce": {
+    "context": "File Manager (a two-pane file manager document): copy/move dialog: note when the target is a disk image file. '.bak' is a file extension."
+  },
+  "panels.fileManager.dialog.conflictTitle": "Already there",
+  "@panels.fileManager.dialog.conflictTitle": {
+    "context": "File Manager (a two-pane file manager document): title of the dialog asking what to do with a file that already exists."
+  },
+  "panels.fileManager.dialog.exists": "{name} is already in the target folder.",
+  "@panels.fileManager.dialog.exists": {
+    "context": "File Manager (a two-pane file manager document): conflict dialog: the question's first line.",
+    "placeholders": {
+      "name": "The file's name"
+    }
+  },
+  "panels.fileManager.dialog.orName": "Or copy it as",
+  "@panels.fileManager.dialog.orName": {
+    "context": "File Manager (a two-pane file manager document): conflict dialog: label of the field with a free name for the file."
+  },
+  "panels.fileManager.dialog.badName": "Type a name without / or \\",
+  "@panels.fileManager.dialog.badName": {
+    "context": "File Manager (a two-pane file manager document): conflict dialog: error under the name field."
+  },
+  "panels.fileManager.dialog.remaining": "{count, plural, one {# more file is} other {# more files are}} already there.",
+  "@panels.fileManager.dialog.remaining": {
+    "context": "File Manager (a two-pane file manager document): conflict dialog: how many conflicts follow this one.",
+    "placeholders": {
+      "count": "How many more conflicts"
+    }
+  },
+  "panels.fileManager.dialog.deleteTitle": "Delete",
+  "@panels.fileManager.dialog.deleteTitle": {
+    "context": "File Manager (a two-pane file manager document): title of the delete confirmation dialog."
+  },
+  "panels.fileManager.dialog.deleteOne": "Delete {name}?",
+  "@panels.fileManager.dialog.deleteOne": {
+    "context": "File Manager (a two-pane file manager document): delete dialog: the question for one file or folder.",
+    "placeholders": {
+      "name": "The file's or folder's name"
+    }
+  },
+  "panels.fileManager.dialog.deleteMany": "Delete these {count} items?",
+  "@panels.fileManager.dialog.deleteMany": {
+    "context": "File Manager (a two-pane file manager document): delete dialog: the question for several items, listed below it.",
+    "placeholders": {
+      "count": "How many items"
+    }
+  },
+  "panels.fileManager.dialog.deleteTrash": "{count, plural, one {It is moved to the system's trash, where you can restore it.} other {They are moved to the system's trash, where you can restore them.}}",
+  "@panels.fileManager.dialog.deleteTrash": {
+    "context": "File Manager (a two-pane file manager document): delete dialog: on this computer, deleted files can be restored.",
+    "placeholders": {
+      "count": "How many items are deleted"
+    }
+  },
+  "panels.fileManager.dialog.deletePermanent": "{count, plural, one {It is deleted from the disk image for good.} other {They are deleted from the disk image for good.}}",
+  "@panels.fileManager.dialog.deletePermanent": {
+    "context": "File Manager (a two-pane file manager document): delete dialog: on a disk image there is no trash.",
+    "placeholders": {
+      "count": "How many items are deleted"
+    }
+  },
+  "panels.fileManager.dialog.mkdirTitle": "New folder",
+  "@panels.fileManager.dialog.mkdirTitle": {
+    "context": "File Manager (a two-pane file manager document): title of the dialog asking for a new folder's name."
+  },
+  "panels.fileManager.dialog.renameTitle": "Rename",
+  "@panels.fileManager.dialog.renameTitle": {
+    "context": "File Manager (a two-pane file manager document): title of the dialog asking for a file's new name."
+  },
+  "panels.fileManager.error.exists": "{name} is already there.",
+  "@panels.fileManager.error.exists": {
+    "context": "File Manager (a two-pane file manager document): a file or folder of that name exists.",
+    "placeholders": {
+      "name": "The name"
+    }
+  },
+  "panels.fileManager.error.readOnly": "{name} cannot be written.",
+  "@panels.fileManager.error.readOnly": {
+    "context": "File Manager (a two-pane file manager document): the drive or file is read-only.",
+    "placeholders": {
+      "name": "The drive or file"
+    }
+  },
+  "panels.fileManager.error.diskFull": "The disk is full.",
+  "@panels.fileManager.error.diskFull": {
+    "context": "File Manager (a two-pane file manager document): a copy stopped because the target has no room."
+  },
+  "panels.fileManager.error.directoryFull": "The disk's catalogue is full.",
+  "@panels.fileManager.error.directoryFull": {
+    "context": "File Manager (a two-pane file manager document): a copy stopped because the target's directory has no free entry."
+  },
+  "panels.fileManager.error.badName": "{name} is not a name the disk takes.",
+  "@panels.fileManager.error.badName": {
+    "context": "File Manager (a two-pane file manager document): the target file system refused a name.",
+    "placeholders": {
+      "name": "The name"
+    }
+  },
+  "panels.fileManager.error.sameFolder": "The files are already in that folder.",
+  "@panels.fileManager.error.sameFolder": {
+    "context": "File Manager (a two-pane file manager document): a copy whose target is the folder it comes from."
+  },
+  "panels.fileManager.error.intoItself": "{name} cannot be copied into itself.",
+  "@panels.fileManager.error.intoItself": {
+    "context": "File Manager (a two-pane file manager document): a folder copied into one of its own folders.",
+    "placeholders": {
+      "name": "The folder's name"
+    }
+  },
+  "panels.fileManager.job.copying": "Copying {name} · {done} of {total}",
+  "@panels.fileManager.job.copying": {
+    "context": "File Manager (a two-pane file manager document): progress line while copying.",
+    "placeholders": {
+      "name": "The file being written",
+      "done": "Items done",
+      "total": "All items"
+    }
+  },
+  "panels.fileManager.job.moving": "Moving {name} · {done} of {total}",
+  "@panels.fileManager.job.moving": {
+    "context": "File Manager (a two-pane file manager document): progress line while moving.",
+    "placeholders": {
+      "name": "The file being written",
+      "done": "Items done",
+      "total": "All items"
+    }
+  },
+  "panels.fileManager.job.deleting": "Deleting {total} items…",
+  "@panels.fileManager.job.deleting": {
+    "context": "File Manager (a two-pane file manager document): progress line while deleting.",
+    "placeholders": {
+      "total": "How many items"
+    }
+  },
+  "panels.fileManager.job.cancelling": "Stopping after the current file…",
+  "@panels.fileManager.job.cancelling": {
+    "context": "File Manager (a two-pane file manager document): progress line after Cancel was pressed."
+  },
+  "panels.fileManager.notice.copied": "{count, plural, =0 {No file copied.} one {# file copied.} other {# files copied.}}",
+  "@panels.fileManager.notice.copied": {
+    "context": "File Manager (a two-pane file manager document): after a copy.",
+    "placeholders": {
+      "count": "How many files were written"
+    }
+  },
+  "panels.fileManager.notice.moved": "{count, plural, =0 {No file moved.} one {# file moved.} other {# files moved.}}",
+  "@panels.fileManager.notice.moved": {
+    "context": "File Manager (a two-pane file manager document): after a move.",
+    "placeholders": {
+      "count": "How many files were written"
+    }
+  },
+  "panels.fileManager.notice.nothingWritten": "Nothing was written.",
+  "@panels.fileManager.notice.nothingWritten": {
+    "context": "File Manager (a two-pane file manager document): after a copy to a disk image stopped: the image is unchanged."
+  },
+  "panels.fileManager.notice.partlyWritten": "{count, plural, one {# file was} other {# files were}} written before it stopped.",
+  "@panels.fileManager.notice.partlyWritten": {
+    "context": "File Manager (a two-pane file manager document): after a copy that stopped part way.",
+    "placeholders": {
+      "count": "How many files were written"
+    }
+  },
+  "panels.fileManager.notice.cancelled": "Cancelled.",
+  "@panels.fileManager.notice.cancelled": {
+    "context": "File Manager (a two-pane file manager document): the copy was cancelled."
+  },
+  "panels.fileManager.notice.skipped": "{count, plural, one {# skipped.} other {# skipped.}}",
+  "@panels.fileManager.notice.skipped": {
+    "context": "File Manager (a two-pane file manager document): files left out because they already existed.",
+    "placeholders": {
+      "count": "How many files"
+    }
+  },
+  "panels.fileManager.notice.skippedFolders": "{count, plural, one {# folder skipped.} other {# folders skipped.}}",
+  "@panels.fileManager.notice.skippedFolders": {
+    "context": "File Manager (a two-pane file manager document): folders that cannot go on a disk without folders.",
+    "placeholders": {
+      "count": "How many folders"
+    }
+  },
+  "panels.fileManager.notice.failed": "{count, plural, one {# failed} other {# failed}}: {name}: {reason}",
+  "@panels.fileManager.notice.failed": {
+    "context": "File Manager (a two-pane file manager document): files that could not be written; the first is named.",
+    "placeholders": {
+      "count": "How many failed",
+      "name": "The first one's name",
+      "reason": "Why, as a sentence"
+    }
+  },
+  "panels.fileManager.notice.removeFailed": "{count, plural, one {# source could not be removed.} other {# sources could not be removed.}}",
+  "@panels.fileManager.notice.removeFailed": {
+    "context": "File Manager (a two-pane file manager document): a move copied files but could not delete some originals.",
+    "placeholders": {
+      "count": "How many"
+    }
+  },
+  "panels.fileManager.notice.deleteFailed": "{count, plural, one {# item} other {# items}} could not be deleted: {name}: {reason}",
+  "@panels.fileManager.notice.deleteFailed": {
+    "context": "File Manager (a two-pane file manager document): after deleting, when some items stayed.",
+    "placeholders": {
+      "count": "How many",
+      "name": "The first one's name",
+      "reason": "Why, as a sentence"
+    }
   }
 }

@@ -1,0 +1,163 @@
+/*
+ * The File Manager's dialogs (.plans/FILE_MANAGER_PLAN.md §4.3, §4.4). The copy dialog's table is a
+ * data table: neutral values, a shortened name in the warning colour, a name that is already there
+ * in the error colour. Segmented choices take the accent when on.
+ */
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2_5);
+  min-width: 0;
+}
+
+.lead {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  line-height: 1.35;
+}
+
+.field {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.label {
+  color: var(--text-secondary);
+}
+
+.numbers {
+  display: flex;
+  gap: var(--space-6);
+  flex-wrap: wrap;
+}
+
+.hint {
+  color: var(--text-tertiary);
+}
+
+.note {
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--status-warning-subtle);
+  color: var(--text-primary);
+}
+
+.ok {
+  color: var(--text-secondary);
+}
+
+.error {
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--status-error-subtle);
+  color: var(--text-primary);
+}
+
+/* --- Segmented choice */
+.segmented {
+  display: inline-flex;
+  flex-wrap: wrap;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.segment {
+  padding: var(--space-0_5) var(--space-2_5);
+  border: 0;
+  border-right: 1px solid var(--border-default);
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  font: inherit;
+  cursor: pointer;
+}
+
+.segment:last-child {
+  border-right: 0;
+}
+
+.segment:hover {
+  background: var(--surface-hover);
+}
+
+.segmentOn,
+.segmentOn:hover {
+  background: var(--accent-solid);
+  color: var(--text-on-accent);
+}
+
+/* --- What each file becomes */
+.tableWrap {
+  max-height: calc(var(--row-size-list) * 10);
+  overflow: auto;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--surface-canvas);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--monospace-font);
+}
+
+.table th {
+  position: sticky;
+  top: 0;
+  padding: var(--space-0_5) var(--space-2);
+  background: var(--surface-header);
+  color: var(--data-label);
+  font-family: var(--main-font-family);
+  font-weight: 600;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.table td {
+  padding: var(--space-0_5) var(--space-2);
+  border-top: 1px solid var(--border-subtle);
+  color: var(--data-value);
+  white-space: nowrap;
+}
+
+.table .end {
+  text-align: right;
+}
+
+.table .renamed {
+  color: var(--status-warning);
+}
+
+.table .conflict {
+  color: var(--status-error);
+}
+
+.more {
+  padding: var(--space-0_5) var(--space-2);
+  color: var(--text-tertiary);
+}
+
+.names {
+  margin: 0;
+  padding-left: var(--space-5);
+  max-height: calc(var(--row-size-list) * 8);
+  overflow: auto;
+  font-family: var(--monospace-font);
+}
+
+/* --- The conflict dialog's own footer: the same strip as DialogForm's, more buttons */
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin: var(--space-2) calc(-1 * var(--space-4)) calc(-1 * var(--space-4));
+  padding: var(--space-2) var(--space-4);
+  border-top: var(--border-modal-section);
+  background: var(--bgcolor-modal-footer);
+  border-bottom-left-radius: var(--radius-modal);
+  border-bottom-right-radius: var(--radius-modal);
+}
