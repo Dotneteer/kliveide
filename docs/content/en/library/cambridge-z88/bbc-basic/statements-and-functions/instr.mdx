@@ -1,0 +1,43 @@
+---
+description: "A function which returns the position of a sub-string within a string, optionally starting the search at a specified place in the string. The leftmost character position is 1. If the sub-string is..."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# INSTR
+
+A function which returns the position of a sub-string within a string, optionally starting the search at a specified place in the string. The leftmost character position is 1. If the sub-string is not found, 0 is returned.
+
+The first string is searched for any occurrence of the second string.
+
+There must not be any spaces between INSTR and the opening bracket.
+
+```text
+X=INSTR(A$,B$)
+position=INSTR(word$,guess$)
+Y=INSTR(A$,B$,Z%) :REM START AT POSITION Z%
+```
+
+You can use this function for validation purposes. If you wished to test A$ to see if was one of the set 'FRED BERT JIM JOHN', you could use the following:
+
+```text
+set$="FRED BERT JIM JOHN"
+IF INSTR(set$,A$) PROC_valid ELSE PROC_invalid
+```
+
+The character used to separate the items in the set must be excluded from the characters possible in A$. One way to do this is to make the separator an unusual character, say CHR$(127).
+
+```text
+z$=CHR$(127)
+set$="FRED"+z$+"BERT"+z$+"JIM"+z$+"JOHN"
+```
+
+**Syntax**
+
+```text
+<n-var>=INSTR(<str>,<str>[,<numeric>])
+```
+
+**Associated Keywords**
+
+LEFT$, MID$, RIGHT$, LEN

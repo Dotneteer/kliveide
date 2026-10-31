@@ -1,0 +1,156 @@
+---
+description: "Most versions of BASIC allow access to the computer's memory with the PEEK function and the POKE command. Such access, which is limited to one byte at a time, is sufficient for setting and reading..."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# Indirection
+
+## Introduction [#introduction]
+
+Most versions of BASIC allow access to the computer's memory with the PEEK function and the POKE command. Such access, which is limited to one byte at a time, is sufficient for setting and reading screen locations or 'flags', but it is difficult to use for building more complicated data structures. The indirection operators provided in BBC BASIC(Z80) enable you to read and write to memory in a far more flexible way. They provide a simple equivalent of PEEK and POKE, but they come into their own when used to pass data between CHAINed programs, build complicated data structures or for use with machine code programs.
+
+## The indirection operators [#the-indirection-operators]
+
+There are three indirection operators:
+
+| **Name** | **Symbol** | **Purpose** | **No. of Bytes Affected** |
+| --- | --- | --- | --- |
+| Query | ? | Byte Indirection Operator | 1 |
+| Exclamation | ! | Word Indirection Operator | 4 |
+| Dollar | $ | String Indirection Operator | 1 to 256 |
+
+The examples that follow assume that a DIM statement has been used to reserve an area of memory and store the address of the first byte of the memory in a variable called ‘mem’. See the keyword DIM for more details. Or example:
+
+```text
+DIM mem 20
+```
+
+If you know what you are doing, you can use the indirection operators to access the Z88’s system memory. However, because of the sophistication of the operating system, **THIS CAN BE DISASTROUS**.
+
+## Query [#query]
+
+### Byte Access [#byte-access]
+
+The query operator accesses individual bytes of memory. ?M means 'the contents of' memory location 'M'. The first example below write &23 to memory location `mem`, the second example sets ‘number’ to the contents of that memory location and the third example print the contents of that memory location.
+
+```text
+?mem=&23
+number=?mem
+PRINT ?mem
+```
+
+Thus, '?' provides a direct replacement for PEEK and POKE.
+
+?A=B is equivalent to POKE A,B
+
+B=?A is equivalent to B=PEEK(A)
+
+### Query as a Byte Variable [#query-as-a-byte-variable]
+
+A byte variable, '?count' for instance, may be used as the control variable in a FOR...NEXT loop and only one byte of memory will be used.
+
+```text
+DIM count% 0
+FOR ?count%=0 TO 20
+  - - -
+  - - -
+NEXT
+```
+
+## Exclamation [#exclamation]
+
+The query (?) indirection operator works on one byte of memory. The word indirection operator (!) works on 4 bytes (an integer word) of memory. Thus,
+
+```text
+!M=&12345678
+```
+
+would load
+
+&78 into address M
+
+&56 into address M+1
+
+&34 into address M+2
+
+&12 into address M+3.
+
+and
+
+`PRINT ~!M` (print !M in hex format)
+
+would give
+
+<strong>12345678<br /></strong>
+
+## Dollar [#dollar]
+
+The string indirection operator ($) writes a string followed by a carriage-return (&0D) into memory starting at the specified address. Do not confuse M$ with $M. The former is the familiar string variable whilst the latter means 'the string starting at memory location M'. For example,
+
+```text
+$M="ABCDEF"
+```
+
+would load the ASCII characters A to F into addresses M to M+5 and &0D into address M+6, and
+
+PRINT $M
+
+would print<br /> ABCDEF
+
+## Use as Binary Operators [#use-as-binary-operators]
+
+All the examples so far have used only one operand with the byte and word indirection operators. Provided the left-hand operand is a variable (such as 'memory') and not a constant, '?' and '!' can also be used as binary operators. (In other words, they can be used with two operands.) For instance, M?3 means 'the contents of memory location M plus 3' and M!3 means 'the contents of the 4 bytes starting at M plus 3'. In the following example, the contents of memory location ‘mem’ plus 5 is first set to &50 and then printed.
+
+```text
+DIM memory 20
+memory?5=&50
+PRINT memory?5
+```
+
+Thus,
+
+`A?I=B` is equivalent to POKE A+I,B
+
+`B=A?I` is equivalent to B=PEEK(A+I)
+
+The two examples below show how two operands can be used with the byte indirection operator (?) to examine the contents of memory. The first example displays the contents of 12 bytes of memory from location ‘mem’. The second example displays the memory contents for a real numeric variable. (See the Annex entitled Format of Program and Variables in Memory.)
+
+```text
+10 DIM memory 20
+20 FOR offset=0 TO 12
+30   PRINT ~memory+offset, ~memory?offset
+40 NEXT
+```
+
+Line 30 prints the memory address and the contents in hexadecimal format.
+
+```text
+ 10 NUMBER=0
+ 20 DIM A% -1
+ 30 REPEAT
+ 40   INPUT"NUMBER PLEASE "NUMBER
+ 50   PRINT "& ";
+ 60   FOR I%=2 TO 5
+ 70     NUM$=STR$~(A%?-I%)
+ 80     IF LEN(NUM$)=1 NUM$="0"+NUM$
+ 90     PRINT NUM$;" ";
+100   NEXT
+110   N%=A%?-1
+120   NUM$=STR$~(N%)
+130   IF LEN(NUM$)=1 NUM$="0"+NUM$
+140   PRINT " & "+NUM$''
+150 UNTIL NUMBER=0
+```
+
+See the Annex entitled Format of Program and Variables In Memory for an explanation of this program.
+
+## <strong> Power of Indirection Operators</strong> [#power-of-indirection-operators]
+
+Indirection operators can be used to create special data structures, and as such they are an extremely powerful feature. For example, a structure consisting of a 10 character string, an 8 bit number and a reference to a similar structure can be constructed.
+
+If M is the address of the start of the structure then:
+
+$M is the string<br />M?11 is the 8 bit number<br />M!12 is the address of the related structure
+
+Linked lists and tree structures can easily be created and manipulated in memory using this facility.

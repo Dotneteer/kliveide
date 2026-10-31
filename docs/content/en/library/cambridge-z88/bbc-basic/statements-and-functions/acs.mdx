@@ -1,0 +1,41 @@
+---
+description: "A function giving the arc cosine of its argument in radians. The permitted range of the argument is -1 to +1."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# ACS
+
+A function giving the arc cosine of its argument in radians. The permitted range of the argument is -1 to +1.
+
+If you know the cosine of the angle, this function will tell you the angle (in radians). Unfortunately, you cannot do this with complete certainty because two angles within the range +/- PI (+/- 180 degrees) can have the same cosine. This means that one cosine has two associated angles.
+
+The following diagram illustrates the problem:
+
+<Shot src="z88-bbc-basic/statements-and-functions/acs/image9.webp" alt="The signs of the trigonometric functions in the four quadrants" width={352} />
+
+Within the four quadrants, there are two angles which have the same cosine, two with the same sine and two with the same tangent. When you are working back from the cosine, sine or tangent you don't know which of the two possible angles is correct.
+
+By convention, ACS gives a result in the top two quadrants (0 to PI - 0 to 180 degrees) and ASN and ATN in the right-hand two quadrants (-PI/2 to +PI/2 - -90 to + 90 degrees).
+
+In the example below, 'radian\_angle' becomes equal to the angle (in radians) whose cosine is 'y'.
+
+```text
+radian_angle=ACS(y)
+```
+
+You can convert the answer to degrees by using the DEG function (or multiplying by 180/PI).
+
+```text
+degree_angle=DEG(ACS(y))
+```
+
+**Syntax**
+
+```text
+<n-var>=ACS(<numeric>)
+```
+
+**Associated Keywords**
+
+ASN, ATN, SIN, COS, TAN, RAD, DEG

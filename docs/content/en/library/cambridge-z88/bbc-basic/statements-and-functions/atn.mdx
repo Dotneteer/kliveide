@@ -1,0 +1,37 @@
+---
+description: "A function giving the arc tangent of its argument in radians. The permitted range of the argument is from - to + infinity."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# ATN
+
+A function giving the arc tangent of its argument in radians. The permitted range of the argument is from - to + infinity.
+
+By convention, the result will be in the range -PI/2 to +PI/2 (-90 to +90 degrees).
+
+If you know the tangent of the angle, this function will tell you the angle (in radians).
+
+As the magnitude of the argument (tangent) becomes very large (approaches + or - infinity) the accuracy diminishes.
+
+In the example below, 'radian\_angle' becomes equal to the angle (in radians) whose tangent is 'y'.
+
+```text
+radian_angle=ATN(y)
+```
+
+You can convert the answer to degrees by using the DEG function. (The DEG function is equivalent to multiplying by 180/PI.) The example below is similar to the first one, but the angle is in degrees.
+
+```text
+degree_angle=DEG(ATN(y))
+```
+
+**Syntax**
+
+```text
+<n-var>=ATN(<numeric>)
+```
+
+**Associated Keywords**
+
+ACS, ASN, SIN, COS, TAN, RAD, DEG

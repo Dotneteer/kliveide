@@ -1,0 +1,92 @@
+---
+description: "An assembler pseudo operation controlling the method of assembly. (See the Assembler section for more details.) OPT is followed by an expression with the following meanings:"
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# OPT
+
+An assembler pseudo operation controlling the method of assembly. (See the Assembler section for more details.) OPT is followed by an expression with the following meanings:
+
+## Code Assembled Starting at P% [#code-assembled-starting-at-p]
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>**Value**</Table.Td>
+<Table.Td>**Action**</Table.Td>
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>0</Table.Td>
+<Table.Td>assembler errors suppressed;</Table.Td>
+<Table.Td>no listing.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>1</Table.Td>
+<Table.Td>assembler errors suppressed;</Table.Td>
+<Table.Td>listing.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>2</Table.Td>
+<Table.Td>assembler errors reported;</Table.Td>
+<Table.Td>no listing.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>3</Table.Td>
+<Table.Td>assembler errors reported;</Table.Td>
+<Table.Td>listing (default).</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+## <strong> Code Assembled Starting at O%</strong> [#code-assembled-starting-at-o]
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>**Value**</Table.Td>
+<Table.Td>**Action**</Table.Td>
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>4</Table.Td>
+<Table.Td>assembler errors suppressed;</Table.Td>
+<Table.Td>no listing.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>5</Table.Td>
+<Table.Td>assembler errors suppressed;</Table.Td>
+<Table.Td>listing.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>6</Table.Td>
+<Table.Td>assembler errors reported;</Table.Td>
+<Table.Td>no listing.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>7</Table.Td>
+<Table.Td>assembler errors reported;</Table.Td>
+<Table.Td>listing.</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+The possible assembler errors are:
+
+```text
+Out of range - error code 40.
+No such variable - error code 26.
+```
+
+**Syntax**
+
+```text
+OPT <numeric>
+```
+
+**Associated Keywords**
+
+None

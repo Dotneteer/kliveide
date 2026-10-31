@@ -1,0 +1,38 @@
+---
+description: "A statement controlling error trapping. If an ON ERROR statement has been encountered, BBC BASIC(Z80) will transfer control to it (without taking any reporting action) when an error is detected...."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# ON ERROR
+
+A statement controlling error trapping. If an ON ERROR statement has been encountered, BBC BASIC(Z80) will transfer control to it (without taking any reporting action) when an error is detected. This allows error reporting/recovery to be controlled by the program. However, the program control stack is still cleared when the error is detected and it is not possible to RETURN to the point where the error occurred.
+
+ON ERROR OFF returns the control of error handling to BBC BASIC(Z80).
+
+```text
+ON ERROR PRINT"Suicide":END
+ON ERROR GOTO 100
+ON ERROR OFF
+```
+
+If there is an error in your error handling routine, your program will enter a loop. Unless you take the precautions described below, the only way to escape from this is with a soft or hard reset. You can avoid having to perform a reset by including a line such as:
+
+```text
+dummy = INKEY(0)
+```
+
+at the beginning of your error handling routine. You can then exit from BBC BASIC(Z80) by pressing the `[INDEX]` key and ♢KILL the offending instantiation of BBC BASIC(Z80).
+
+Error handling is explained more fully in the General Information section.
+
+**Syntax**
+
+```text
+ON ERROR <stmt>{:<stmt>}
+ON ERROR OFF
+```
+
+**Associated Keywords**
+
+ON, GOTO, GOSUB, PROC

@@ -1,0 +1,45 @@
+---
+description: "A function which returns a string of length 1 containing the ASCII character specified by the least significant byte of the numeric argument."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# CHR$
+
+A function which returns a string of length 1 containing the ASCII character specified by the least significant byte of the numeric argument.
+
+```text
+A$=CHR$(72)
+B$=CHR$(12)
+C$=CHR$(A/200)
+```
+
+CHR$ generates an ASCII character (symbol, letter, number character, control character, etc) from the number given. The number specifies the position of the generated character in the ASCII table (See Annex A). For example:
+
+```text
+char$=CHR$(65)
+```
+
+will set char$ equal to the character 'A'. You can use CHR$ to send a special character to the terminal or printer. (Generally, VDU is better for sending characters to the screen.) For example,
+
+```text
+CHR$(7)
+```
+
+will generate the ASCII character ^G. So,
+
+```text
+PRINT "ERROR"+CHR$(7)
+```
+
+will print the message 'ERROR' and sound the PC's 'bell'. CHR$ is the complement of ASC.
+
+**Syntax**
+
+```text
+<s-var>=CHR$(<numeric>)
+```
+
+**Associated Keywords**
+
+ASC, STR$, VAL, VDU

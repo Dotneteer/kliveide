@@ -1,0 +1,58 @@
+---
+description: "A function and compatible string function that reads the next character from the keyboard buffer (it waits for the character)."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# GET/GET$
+
+A function and compatible string function that reads the next character from the keyboard buffer (it waits for the character).
+
+```text
+N=GET
+N$=GET$
+```
+
+GET and GET$ wait for a 'key' (character) to be present in the keyboard buffer and then return the ASCII number of the key (see Annex A) or a string containing the character of the key. If there are any characters in the keyboard buffer when a GET is issued, then a character will be returned immediately. See the keyword INKEY for a way of emptying the keyboard buffer before issuing a GET.
+
+GET and GET$ do not echo the pressed key to the screen. If you want to display the character for the pressed key, you must PRINT it.
+
+You can use GET and GET$ whenever you want your program to wait for a reply before continuing. For example, you may wish to display several screens of instructions and allow the user to decide when he has read each screen.
+
+```text
+REM First screen of instructions
+CLS
+PRINT .......
+PRINT .......
+PRINT "Press any key to continue ";
+temp=GET
+REM Second screen of instructions
+CLS
+PRINT ....... etc
+```
+
+The values returned by the cursor and other ‘special’ keys are listed below. Many of the keys return 2 bytes, a zero byte followed by another value.
+
+**Keys Normal with with with<br /> Codes \[SHIFT\]** ♢ □
+
+`[ENTER]` 13 0,209 0,193 0,177<br />`[TAB]` 9 0,210 0,194 0,178<br />`[DEL]` 127 0,211 0,195 0,179<br />⇦ 0,252 0,248 0,244 0,240<br />⇨ 0,253 0,249 0,245 0,241<br />⇩ 0,254 0,250 0,246 0,242<br />⇧ 0,255 0,251 0,247 0,243<br />£ 163 126 (-) 30 158<br />= 61 43 0,0 Nothing<br />`[SPACE]` 32 32 160 32<br />**‘** 39 35 (“) 96 Nothing
+
+GET can also be used to input data from an I/O port. Full 16-bit port addressing is available :
+
+```text
+N=GET(X) :REM input from port X
+```
+
+This is an addition to the original language specification.
+
+**Syntax**
+
+```text
+<n-var>=GET
+<n-var>=GET(<numeric>)
+<s-var>=GET$
+```
+
+**Associated Keywords**
+
+PUT, INKEY, INKEY$

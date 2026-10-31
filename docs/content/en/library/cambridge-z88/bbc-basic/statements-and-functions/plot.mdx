@@ -1,0 +1,96 @@
+---
+description: "PLOT is a multi-purpose drawing statement. Three numbers follow the PLOT statement: the first specifies the type of point, line, or triangle to be drawn; the second and third give the X and Y..."
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# PLOT (PL.)
+
+PLOT is a multi-purpose drawing statement. Three numbers follow the PLOT statement: the first specifies the type of point, line, or triangle to be drawn; the second and third give the X and Y coordinates to be used.
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>n</Table.Td>
+<Table.Td>action</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>-1</Table.Td>
+<Table.Td>Move the graphics origin to x,y.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>0</Table.Td>
+<Table.Td>Move the graphics cursor relative to the last point.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>1</Table.Td>
+<Table.Td>Draw a line, in 'black', relative to the last point.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>2</Table.Td>
+<Table.Td>Draw a line, in 'inverse', relative to the last point.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>3</Table.Td>
+<Table.Td>Draw a line, in 'white', relative to the last point.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>4</Table.Td>
+<Table.Td>Move the graphics cursor to the absolute position x,y.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>5</Table.Td>
+<Table.Td>Draw a line, in 'black', to the absolute position x,y.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>6</Table.Td>
+<Table.Td>Draw a line, in 'inverse', to the absolute position x,y.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>7</Table.Td>
+<Table.Td>Draw a line, in 'white', to the absolute position x,y.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>8-15</Table.Td>
+<Table.Td>As 0-7, but plot the last point on the line twice (i.e. in the 'inverting' modes omit the last point).</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>16-31</Table.Td>
+<Table.Td>As 0-15, but draw the line dotted.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>32-63</Table.Td>
+<Table.Td>As 0-31, but plot the first point on the line twice (i.e. in the 'inverting' modes omit the first point).</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>64-71</Table.Td>
+<Table.Td>As 0-7, but plot a single point at x,y.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>72-79</Table.Td>
+<Table.Td>Draw a horizontal line left and right from the point x,y until the first 'lit' pixel is encountered, or the edge of the window. This can be used to fill shapes.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>80-87</Table.Td>
+<Table.Td>Plot and fill a triangle defined by the two previously visited points and the point x,y.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>88-95</Table.Td>
+<Table.Td>Draw a horizontal line to the right of the point x,y until the first 'unlit' pixel is encountered, or the edge of the window. This can be used to 'undraw' things.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>96-103</Table.Td>
+<Table.Td>Plot and fill a rectangle whose opposite corners are defined by the last visited point and the point x,y.</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+This statement is available when installed with Z88 Patch via CHAIN command. See “Installing Z88 Patch” section previously in this guide, on how to obtain the Z88 Patch.
+
+Available by default when BBC BASIC(Z80) is used with Z88 ROM release V4.3 and later.
+
+<strong>Syntax<br /></strong>`PLOT <numeric>,<numeric>,<numeric>`
+
+<strong>Associated Keywords<br /></strong>MODE, CLG, MOVE, DRAW, POINT, VDU, GCOL

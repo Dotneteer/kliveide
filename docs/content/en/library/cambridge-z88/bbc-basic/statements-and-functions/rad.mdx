@@ -1,0 +1,30 @@
+---
+description: "A function which converts degrees to radians."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# RAD
+
+A function which converts degrees to radians.
+
+```text
+X=RAD(Y)
+X=SIN RAD(90)
+```
+
+Unlike humans, BBC BASIC(Z80) wants angles expressed in radians. You can use this function to convert an angle expressed in degrees to radians before using one of the angle functions (SIN, COS, etc).
+
+Using RAD is equivalent to multiplying the degree value by PI/180, but the result is calculated internally to a greater accuracy.
+
+See COS, SIN and TAN for further examples of the use of RAD.
+
+**Syntax**
+
+```text
+<n-var>=RAD<numeric>
+```
+
+**Associated Keywords**
+
+DEG

@@ -1,0 +1,33 @@
+---
+description: "A statement which transfers program control to a line with a specified or calculated line number."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# GOTO (G.)
+
+A statement which transfers program control to a line with a specified or calculated line number.
+
+```text
+GOTO 100
+GOTO (X*10)
+```
+
+You may not GOTO a line which is outside the current FOR...NEXT, REPEAT...UNTIL or GOSUB loop.
+
+If a calculated value is used, the program should not be RENUMBERed. A calculated value must be placed in brackets.
+
+The GOTO statement makes BBC BASIC(Z80) jump to a specified line number rather than continuing with the next statement in the program.
+
+You should use GOTO with care. Uninhibited use will make your programs almost impossible to understand (and hence, debug). If you use REPEAT....UNTIL and FOR....NEXT loops you will not need to use many GOTO statements.
+
+**Syntax**
+
+```text
+GOTO <l-num>
+GOTO (<numeric>)
+```
+
+**Associated Keywords**
+
+GOSUB, ON

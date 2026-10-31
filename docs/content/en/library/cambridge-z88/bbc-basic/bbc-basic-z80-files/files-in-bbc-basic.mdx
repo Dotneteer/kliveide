@@ -1,0 +1,58 @@
+---
+description: "Conventional serial disk file procedures are little different from file procedures for cassette based computers. With serial files the records need only be as large as the data to be stored and..."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# Files in BBC BASIC(Z80)
+
+## Introduction [#introduction]
+
+Conventional serial disk file procedures are little different from file procedures for cassette based computers. With serial files the records need only be as large as the data to be stored and there are no empty records. (The data item FRED only occupies 4 bytes whereas ERMINTRUDE occupies 10 bytes.) Consequently serial files are the most space efficient way to hold data on a disk (or any other storage media).
+
+Serial files cannot be used to access particular records from within the file quickly and easily. In order to do this with the minimum access time, random access files are necessary. However, a random file generally occupies more space on the disk than a serial file holding the same amount of data because the records must be a fixed length and some of the records will be empty.
+
+Most versions of BASIC only offer serial and random files, but because of the way that disk files are handled by BBC BASIC (both on the BBC computer and the Z88 using BBC BASIC(Z80)), it is possible to construct indexed, and even linked, files as well. Indexed files take a little longer to access than random files and it is necessary to have a separate index file, but they are generally the best space/speed compromise for files holding a large amount of data.
+
+## How Data is Read/Written [#how-data-is-readwritten]
+
+As far as the programmer is concerned, data can be written to and read from a file a data item or a character (byte) at a time. In fact, there is a buffer between the program and the operating system, but this should only concern you when you are organising your program for maximum file access efficiency.
+
+Because of the character by character action of the write/read process, it is possible (in fact, necessary) to keep track of your position within the file. BBC BASIC does this for you automatically and provides a pointer PTR (a pseudo-variable) which holds the position of the NEXT character (byte) to be written/read. Every time a character is written/read PTR is incremented by 1, but it is possible to set PTR to any number you like. This ability to 'jump around' the file enables you to construct both random (relative) and indexed files.
+
+BBC BASIC provides the facility for completely free-format binary data files. Any file which can be read by the computer, from any source and in any data format, can be processed using the BGET, BPUT and PTR functions.
+
+## How Data is Stored [#how-data-is-stored]
+
+Data files written by the PRINT\# statement and read by the INPUT\# statement have different format to files produced by similar statements on the BBC Micro. This only becomes significant when calculating record sizes for random access files. Record sizing is discussed at the ‘Random (Relative) Files’ sub-section.
+
+### Numeric Data [#numeric-data]
+
+In order to make the most efficient use of disk space and to preserve accuracy, numerics are stored in a data file in binary format, not as strings of characters. To prevent confusion when numerics are being read from a file, both integers and reals occupy 5 bytes (40 bits). If they were stored as character strings they could occupy up to 10 bytes. For compatibility with other BASICs, you can store numerics as strings by using the STR$ function.
+
+### How Strings are Stored [#how-strings-are-stored]
+
+Strings are stored in a data file as the ASCII bytes of the string followed by a carriage-return. A string, therefore, occupies one more byte than the length of the string. If no carriage-return (CR) is found within 256 characters when reading a string value, a null string is returned.
+
+If you need a line feed as well, it's no problem to add it using the Byte-Put function BPUT\#. Similarly, extraneous characters included in files produced by other programs can be read and, if necessary, discarded using BGET\#.
+
+## How Files are Referred To [#how-files-are-referred-to]
+
+We refer to a file (or device) by its name. Unfortunately, this is too complicated for the Z88’s Operating System. Consequently, the only time OZ refers to a file by its name is when it opens the file. From then on, it refers to the file by the number it allocated to it when it was opened. This number is called the 'file handle'.
+
+## The Z88 FIling System [#the-z88-filing-system]
+
+The Z88 has a uniform device independent I/O system. Although procedures do exist that will explicitly send data directly to, for example, the serial port, it is more logical to think of these devices as ‘files’ and use the standard file I/O interface.
+
+For example, to send data to the communications port (serial port without the printer filter), you can open a file to :COM.0 and PRINT to it just as if you were PRINTing to a file.
+
+```text
+10 com=OPENOUT(“:COM.0”)
+20 PRINT#com,”This is going to the comms device”
+30 BPUT#com,10: REM Send the linefeed
+40 CLOSE#com
+```
+
+Remember, you need to explicitly send the line-feed. See the ‘Operating System Interface’ and ‘Printing’ sections for more details.
+
+Logically, you can only write to and read from the I/O devices in a sequential manner. It makes no sense, for example, to try to set the file pointer with PTR\#.

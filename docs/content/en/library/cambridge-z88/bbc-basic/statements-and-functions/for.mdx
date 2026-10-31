@@ -1,0 +1,66 @@
+---
+description: "A statement initialising a FOR...NEXT loop. The loop is executed at least once."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# FOR (F.)
+
+A statement initialising a FOR...NEXT loop. The loop is executed at least once.
+
+```text
+FOR temperature%=0 TO 9
+FOR A(2,3,1)=9 TO 1 STEP -0.3
+```
+
+The FOR...NEXT loop is a way of repeating a section of program a set number of times. For example, the two programs below perform identically, but the second is easier to understand.
+
+```text
+10 start=4: end=20: step=2
+20 counter=start
+30 PRINT counter," ",counter^2
+40 counter=counter+step
+50 IF counter<=end THEN 30
+60 ...
+```
+
+```text
+10 start=4: end=20: step=2
+20 FOR counter=start TO end STEP step
+30   PRINT counter," ",counter^2
+40 NEXT
+50 ...
+```
+
+You can GOTO anywhere within one FOR...NEXT loop, but not outside it. This means you can't exit the loop with a GOTO. You can force a premature end to the loop by setting the control variable to a value equal to or greater than the end value (assuming a positive STEP).
+
+```text
+110 FOR I=1 TO 20
+120   X=A^I
+130   IF X>1000 THEN I=20: GOTO 150
+140   PRINT I,X
+150 NEXT
+```
+
+It is not necessary to declare the loop variable as an integer type in order to take advantage of fast integer arithmetic. If it is an integer, then fast integer arithmetic is used automatically. See Annex E for an explanation of how BBC BASIC(Z80) recognises an integer value of a real variable.
+
+Any numeric assignable item may be used as a control variable. In particular, a byte variable (?X) may act as the control variable and only one byte of memory will be used. See the Indirection sub-section for details of the indirection operators.
+
+```text
+DIM X 0
+FOR ?X=0 TO 16: PRINT ~?X: NEXT
+DIM X 3
+FOR !X=0 TO 16 STEP 4: PRINT ~!X: NEXT
+```
+
+Because a single stack is used, you cannot use a FOR...NEXT loop to set array elements to LOCAL in a procedure or function.
+
+**Syntax**
+
+```text
+FOR <n-var>=<numeric> TO <numeric> [STEP <numeric>]
+```
+
+**Associated Keywords**
+
+TO, STEP, NEXT

@@ -1,0 +1,396 @@
+---
+description: "The commands and statements used in file manipulation are described below. They are not in alphabetical order, but in the order you are likely to want to use them. Whilst these notes repeat much..."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# File Access Commands
+
+## Introduction [#introduction]
+
+The commands and statements used in file manipulation are described below. They are not in alphabetical order, but in the order you are likely to want to use them. Whilst these notes repeat much of the material covered in the Statements and Functions section, additional information has been added and they are presented in a more readable order.
+
+## Filenames [#filenames]
+
+Please refer to your ‘Z88 Users’ Guide’ for a full explanation of device, directory and filenames. The explanation below is only intended as a brief reference guide.
+
+The Z88’s operating system allows a composite file name in the following format:
+
+```text
+:DEVICENAME/PATHNAME/FILENAME.EXTENSION
+```
+
+The **devicename** is the name of a RAM memory or a physical device. This can be:
+
+`:RAM.0` Files stored in RAM in slot 0 (internal memory)
+
+`:RAM.1` Files stored in RAM in slot 1 (external memory)
+
+`:RAM.2` Files stored in RAM in slot 2 (external memory)
+
+`:RAM.3` Files stored in RAM in slot 3 (external memory)
+
+`:RAM.-` Files stored in any RAM (:RAM.0 - :RAM.3).
+
+Used by the CLI for temporary files. Lost on Reset
+
+`:SCR.0` Screen
+
+`:ROM.0-3` Application names available in internal ROM or external application cards,
+
+such as EPROM or Flash cards.
+
+`:EPR.0-3` Files stored on external EPROM or Flash Cards, formatted via Filer.
+
+This device is only available in OZ V5.0 or later.
+
+`:PRT.0` Printer. (Serial port via the printer driver so that any special codes and
+
+escape sequences are interpreted)
+
+`:COM.0` Communications (serial) port, but NOT via the printer driver.
+
+`:INP.0` Standard input
+
+`:OUT.0` Standard output.
+
+`:NUL.0` Null. (Absorbs output and acts like an empty file on input.
+
+The final .0 of a device name may be omitted if the device is unique. For example, :COM.0 may be abbreviated to :COM.
+
+There is a bug in all ROM versions before V4.0, in the Filer popdown, that will cause the Z88 to crash if you use `:RAM.-` device to store files - and then perform a soft reset whilst any files are still present in the device. You can avoid this problem by deleting any files in :RAM.- before issuing a soft reset.
+
+The **pathname** is the name of the directory or the path to the directory in which the file will be found or created.
+
+The filename can be up to 12 characters long, and the extension up to 3 characters.
+
+## Organisation of Examples [#organisation-of-examples]
+
+Simple examples are given throughout this section with the explanation of the various commands. The following sections contain examples of complete programs for serial files, random files and, finally, indexed files. If you have problems understanding the action of any of the commands you may find the examples helpful. The best way to learn is to do - so have a go.
+
+## Program File Manipulation [#program-file-manipulation]
+
+### SAVE [#save]
+
+Save the current program to a file, in internal (tokenised) format. The filename can be a variable or a string.
+
+```text
+SAVE filename
+SAVE "FRED"
+```
+
+```text
+A$="COMPOUND"
+SAVE A$
+```
+
+The first example will save the program to a file named FRED. The second will save COMPOUND.
+
+You can specify a device name and a path as well as the file name. The following example will save the current program to a file called “TEST” in a directory called PROGS which is in a directory called BBCBASIC on device :RAM.0.
+
+```text
+SAVE “:RAM.0/BBCBASIC/PROGS/TEST”
+```
+
+### LOAD [#load]
+
+Load the program 'filename' into the program area. The old program is deleted (as if a NEW command had been given prior to the LOAD) and all the dynamic variables are cleared. The program must be in tokenised format. File names must conform to the Z88 file format.
+
+```text
+LOAD filename
+LOAD "FRED"
+```
+
+```text
+A$="HEATING"
+LOAD A$
+```
+
+As with SAVE, you can specify a device name and path. The example below loads the program saved previously as an example of the SAVE command.
+
+```text
+LOAD ":RAM.0/BBCBASIC/PROGS/TEST"
+```
+
+### CHAIN [#chain]
+
+LOAD and RUN the program 'filename'. All the dynamic variables are cleared. The program must be in tokenised format.
+
+```text
+CHAIN filename
+CHAIN "GAME1"
+```
+
+```text
+A$="PART2"
+CHAIN A$
+```
+
+As with SAVE and LOAD, you can specify a device name and/or a path.
+
+### <strong>\*DELETE</strong> [#delete]
+
+Delete the file 'filename'. Since variables are not allowed as arguments to \* commands, the filename must be a constant.
+
+```text
+*DELETE filename
+```
+
+```text
+*DELETE FRED
+*DELETE PHONE.DTA
+```
+
+To delete a file whose name is known only at run-time, use the OSCLI command. It's a bit clumsy, but a lot better than the original specification for BBC BASIC allowed. This time all of the command, including the ERA, must be supplied as the argument for the OSCLI command. You can use OSCLI for erasing a file whose name is a constant, but you must include all of the command line - in quotes this time.
+
+```text
+fname$="FRED"
+OSCLI "DELETE "+fname$
+```
+
+```text
+fname$="PHONE.DTA"
+command$="DELETE "
+OSCLI command$+fname$
+```
+
+```text
+OSCLI "DELETE FRED"
+```
+
+You can include a device name and/or path in both the \*DELETE and \*OSCLI command formats.
+
+### <strong>\*RENAME</strong> [#rename]
+
+Rename 'file1' to be called 'file2'.
+
+```text
+*RENAME file2=file1
+*RENAME FRED2=FRED1
+*RENAME PHONE.DTA=PHONE
+```
+
+Once again, if you want to rename files whose names are only known at run-time, you must use the OSCLI command.
+
+fname1$="FRED1"
+
+fname2$="FRED2"
+
+OSCLI "RENAME "+fname2$+"="+fname1$
+
+If you attempt to rename an open file, an ‘in use’ error will be reported.
+
+## Files and Devices [#files-and-devices]
+
+### Introduction [#introduction-2]
+
+The statements and functions used for data files are:
+
+```text
+OPENIN
+OPENUP
+OPENOUT
+EXT#
+PTR#
+INPUT#      BGET#
+PRINT#      BPUT#
+CLOSE#      END
+EOF#
+```
+
+### Opening Files [#opening-files]
+
+You cannot use a file until you have told the system it exists. In order to do this you must OPEN the file for use. Other versions of BASIC allow you to choose the file number. In order to improve efficiency, BBC BASIC(Z80) chooses the number for you.
+
+When you open the file, a file handle (an integer number) is returned by the interpreter and you will need to store it for future use. (The open commands are, in fact, functions which open the appropriate file and return its file handle.)
+
+You use the file handle for all subsequent access to the file. (With the exception of the STAR commands outlined previously.)
+
+If the system has been unable to open the file, the handle returned will be 0. This will occur if you try to open a non-existent file in the input mode (OPENIN or OPENUP).
+
+The BBC BASIC(Z80) for the Z88 imposes a limit on the number of files you can have open at any one time. The limit is 10 for BBC BASIC(Z80) and more than 90 for the whole filing system (other application instantiations opening files), depending on which ROM version you are using on your Z88. If you attempt to have more files open at one time than allowed for BBC BASIC(Z80), the file will not be created and you will get a ‘Too many files open’ error. If you try to exceed the limit for the filing system, you will get a ‘No Room’ error.
+
+### File Opening Functions [#file-opening-functions]
+
+The three functions which open files are OPENIN, OPENUP and OPENOUT. OPENOUT should be used to create new files, or overwrite old ones. OPENIN should be used for input only and OPENUP should be used for input/output.
+
+### OPENOUT [#openout]
+
+Open the file 'filename' for output and return the file handle allocated. The use of OPENOUT destroys the contents of the file if it previously existed. (The directory is updated with the length of the new file you have just written when you close the file.)
+
+```text
+x=OPENOUT filename
+x=OPENOUT devicename
+```
+
+```text
+file_num=OPENOUT "PHONENUMS"
+file_num=OPENOUT ":COM"
+```
+
+You always need to store the file handle because it must be used for all the other file commands and functions. If you choose a variable with the same name as the file, you will make programs which use a number of files easier to understand.
+
+```text
+phonenums=OPENOUT "PHONENUMS"
+opfile=OPENOUT opfile$
+```
+
+### OPENIN [#openin]
+
+Open the file 'filename' for input only. Unlike the Z80 version of BBC BASIC, you cannot write to a file opened with OPENIN.
+
+```text
+x=OPENIN filename
+x=OPENIN devicename
+```
+
+```text
+address=OPENIN "ADDRESS"
+check_file=OPENIN check_file$
+comms=OPENIN “:COM”
+```
+
+You will be unable to open for input (file handle returned = 0) if the file does not already exist.
+
+If you try to write to a file opened for input you will get a ‘Write protected’ error (252).
+
+### OPENUP [#openup]
+
+Open the file 'filename' for update (input or output) without destroying the contents of the file. The file may be read from or written to. When the file is closed, the directory is updated to show the maximum used length of the file. None of the previously written data is lost unless it has been overwritten. Consequently, you would use OPENUP for reading serial and random files, adding to the end of serial files or writing to random files.
+
+```text
+x=OPENUP filename
+x=OPENUP devicename
+```
+
+```text
+address=OPENUP "ADDRESS"
+check_file=OPENUP check_file$
+comms=OPENUP “:COM”
+```
+
+You will be unable to open for update (file handle returned = 0) if the file does not already exist.
+
+### CLOSE\# [#close]
+
+Close the file opened as 'fnum'. CLOSE\#0, END or 'dropping off the end' of a program will close all files.
+
+```text
+CLOSE#fnum
+```
+
+### INPUT\# [#input]
+
+Read from the file opened as 'fnum' into the variable 'var'. Several variables can be read using the same INPUT\# statement.
+
+INPUT\#fnum,var
+
+```text
+data=OPENIN "DATA"
+:
+INPUT#data,name$,age,height,sex$
+:
+READ# can be used as an alternative to INPUT#
+```
+
+### PRINT\# [#print]
+
+Write the variable 'var' to the file opened as 'fnum'. Several variables can be written using the same PRINT\# statement.
+
+```text
+PRINT#fnum,var
+```
+
+String variables are written as the character bytes in the string plus a carriage-return. Numeric variables are written as 5 bytes of binary data.
+
+```text
+data=OPENOUT "DATA"
+:
+PRINT#data,name$,age,height,sex$
+```
+
+### EXT\# [#ext]
+
+Return the total length of the file opened as 'fnum'.
+
+```text
+EXT#fnum
+```
+
+In the case of a sparse random-access file the value returned is the length of the file to the last byte actually written to the file. Although much of the file may well be unused, writing this 'last byte' reserved physical space in RAM for a file of this length. Thus it is possible to write a single byte to a file and get a 'No Room' error.
+
+### PTR\# [#ptr]
+
+A pseudo-variable which points to the position within the file from where the next byte to be read will be taken or where the next byte to be written will be put.
+
+```text
+PTR#fnum
+```
+
+When the file is OPENED, PTR\# is set to zero. However, you can set PTR\# to any value you like. (Even beyond the end of the file - so take care).
+
+Reading or writing, using INPUT\# and PRINT\#, (and BGET\# and BPUT\# - explained later), takes place at the current position of the pointer. The pointer is automatically updated following a read or write operation.
+
+A file opened with OPENUP may be extended by setting PTR\# to its end (PTR\# = EXT\#), and then writing the new data to it. You must remember to CLOSE such a file in order to update its directory entry with its new length. A couple of examples of this are included in the sections on serial and indexed files.
+
+PTR\#-1 Returns the number of file handles still available for the entire Z88 (not just BBC BASIC(Z80)) and the ROM release number.
+
+If you are going to display this information, you will need to do so in hexadecimal because the one (4 byte) number contains two items of information. For example:
+
+```text
+PRINT ~PTR#-1
+        5A0004
+```
+
+The last 3 digits (least significant 2 bytes) are the ROM release number. The first 2 digits (most significant 2 bytes) are the number of files handles still available for use by the filing system (&5A=90).
+
+### EOF\# [#eof]
+
+A function which will return -1 (TRUE) if the data file whose file handle is the argument is at (or beyond) its end. In other words, when PTR\# points beyond the current end of the file.
+
+```text
+eof=EOF#fnum
+```
+
+Attempting to read beyond the current end of file will not give rise to an error. Either zero or a null string will be returned depending on the type of variable read.
+
+EOF\# is only really of use when dealing with serial (sequential) files. It indicates that PTR\# is greater than the recorded length of the file (found by using EXT\#). When reading a serial file, EOF\# would go true when the last byte of the file had been read.
+
+EOF\# is only true if PTR\# is set beyond the last byte written to in the file. It will NOT be true if an attempt has been made to read from an empty area of a sparse random access file. Reading from an empty area of a sparse file will return garbage. Because of this, it is difficult to tell which records of an uninitialised random access file have had data written to them and which are empty. These files need to be initialised and the unused records marked as empty.
+
+Writing to a byte beyond the current end of file updates the file length immediately, whether the record is physically written to the disk at that time or not.
+
+EOF\#-1 returns TRUE for an expanded Z88 and FALSE for an unexpanded Z88 (32K in slot 0).
+
+### BGET\# [#bget]
+
+A function which reads a byte of data from the file opened as 'fnum', from the position pointed to by PTR\#fnum. PTR\#fnum is incremented by 1 following the read. A positive integer between 0 and 255 is returned (as you might expect). This can be converted into a string variable using the CHR$ function.
+
+```text
+BGET#fnum
+```
+
+```text
+byte=BGET#fnum
+char$=CHR$(byte)
+```
+
+or, more expediently
+
+```text
+char$=CHR$(BGET#fnum)
+```
+
+### BPUT\# [#bput]
+
+Write the least significant byte of the variable 'var' to the file opened as 'fnum', at the position pointed to by PTR\#fnum. PTR\#fnum is incremented by 1 following the write.
+
+```text
+BPUT#fnum,var
+```
+
+```text
+BPUT#fnum,&1B
+BPUT#fnum,house_num
+BPUT#fnum,ASC "E"
+```

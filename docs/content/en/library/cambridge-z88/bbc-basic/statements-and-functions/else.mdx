@@ -1,0 +1,52 @@
+---
+description: "A statement delimiter which provides an alternative course of action in IF...THEN, ON...GOSUB, ON...GOTO and ON...PROC statements. In an IF statement, if the test is FALSE, the statements after..."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# ELSE (EL.)
+
+A statement delimiter which provides an alternative course of action in IF...THEN, ON...GOSUB, ON...GOTO and ON...PROC statements. In an IF statement, if the test is FALSE, the statements after ELSE will be executed. This makes the following work:
+
+```text
+IF A=B THEN B=C ELSE B=D
+IF A=B THEN B=C:PRINT"WWW" ELSE B=D:PRINT"QQQ"
+IF A=B THEN B=C ELSE IF A=C THEN...............
+```
+
+In a multi statement line containing more than one IF, the statement(s) after the ELSE delimiter will be actioned if ANY of the tests fail. For instance, the example below would print the error message 'er$' if 'x' did not equal 3 OR if 'a' did not equal 'b'.
+
+```text
+IF x=3 THEN IF a=b THEN PRINT a$ ELSE PRINT er$
+```
+
+If you want to 'nest' the tests, you should use a procedure call. The following example would print 'Bad' ONLY if x was equal to 3 AND 'a' was not equal to 'b'.
+
+```text
+IF x=3 THEN PROC_ab_test
+....
+DEF PROC_ab_test
+IF a=b THEN PRINT a$ ELSE PRINT er$
+ENDPROC
+```
+
+You can use ELSE with ON...GOSUB, ON...GOTO and ON...PROC statements to prevent an out of range control variable causing an 'ON range' error.
+
+```text
+ON action GOTO 100, 200, 300 ELSE PRINT "Error"
+ON number GOSUB 100,200,300 ELSE PRINT "Error"
+ON value PROCa,PROCb,PROCc ELSE PRINT "Error"
+```
+
+**Syntax**
+
+```text
+IF <t-cond> THEN <stmt> ELSE <stmt>
+ON <n-var> GOTO <l-num>{,<l-num>} ELSE <stmt>
+ON <n-var> GOSUB <l-num>{,<l-num>} ELSE <stmt>
+ON <n-var> PROC<name>{,PROC<name>} ELSE <stmt>
+```
+
+**Associated Keywords**
+
+IF, THEN, ON

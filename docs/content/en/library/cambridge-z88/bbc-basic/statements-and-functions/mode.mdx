@@ -1,0 +1,35 @@
+---
+description: "The MODE statement allows selection of the normal text-only mode (MODE 0) or a text-and- graphics mode (MODE 1). In MODE 1 the display is split into two parts: a text-window on the left and a..."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# MODE (MO.)
+
+The MODE statement allows selection of the normal text-only mode (MODE 0) or a text-and- graphics mode (MODE 1). In MODE 1 the display is split into two parts: a text-window on the left and a graphics-window on the right. The text window consists of 8 rows of 50 characters, and the graphics window is 64 pixels high by 256 pixels wide; you cannot (normally) mix text and graphics in the same window.
+
+Points in the graphics window are addressed as x,y coordinates from 0,0 (the bottom-left corner) to 255,63 (the top-right corner), although the origin can be moved using the PLOT -1 statement (q.v.).
+
+Although MODE 1 sets up the window positions and sizes as described, it is possible to change these using the VDU statement. However the method of doing this is outside the scope of this reference guide. It is not advisable to cause the text and graphics windows to overlap, although this may occasionally be useful.
+
+MODE clears the display (both text and graphics windows), moves the text cursor to 0,0 (the top left of the text window), resets the graphics origin and moves the graphics cursor to 0,0 (the bottom left of the graphics window).
+
+In MODE 0 (the normal 94-column text mode) the other graphics statements have no effect.
+
+MODE cannot be used within a PROCedure, function, FOR..NEXT or REPEAT.. UNTIL loop. Doing so will result in the 'Bad MODE' error (code 153).
+
+MODE 1 changes the value of HIMEM address 2 Kbytes lower and MODE 0 changes the value of HIMEM address 2 Kbytes higher (allocating and releasing a graphics buffer).
+
+This statement is available when installed with Z88 Patch via CHAIN command. See “Installing Z88 Patch” section previously in this guide, on how to obtain the Z88 Patch.
+
+Available by default when BBC BASIC(Z80) is used with Z88 ROM release V4.3 and later.
+
+**Syntax**
+
+```text
+MODE (<numeric>)
+```
+
+**Associated Keywords**
+
+CLS,CLG

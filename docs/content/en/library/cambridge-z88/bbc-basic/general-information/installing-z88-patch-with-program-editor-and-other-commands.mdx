@@ -1,0 +1,59 @@
+---
+description: "The version of BBC BASIC resident in the Cambridge Computer Z88 ROM releases V2.2 - V4.0 is deficient in a few respects, especially in the lack of any editing facilities or support for graphics..."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# Installing Z88 Patch with Program Editor and other commands
+
+The version of BBC BASIC resident in the Cambridge Computer Z88 ROM releases V2.2 - V4.0 is deficient in a few respects, especially in the lack of any editing facilities or support for graphics operations. The purpose of the BASIC Patch program is to provide some of these capabilities.
+
+The patch provides \*EDIT (Program Editor), MODE, CLG, DRAW, MOVE, PLOT commands and POINT() function; their syntax is compatible with other versions of BBC BASIC. Their syntax and functionality is described in the command reference section later in this manual.
+
+The patch needs an expanded machine (at least 128 Kbytes of RAM installed in slot 1). If this is not the case, or if the available memory has been deliberately reduced by changing HIMEM, the message "No RAM" will be displayed when the program is CHAINed. The patch only works with Operating System (“OZ”) versions V2.2-V3.0 and V4.0 (it will not work with foreign language versions V3.12 to V3.26 ROM’s, because of a software bug in these machines).
+
+The patch program is installed with a simple CHAIN command, and thereafter remains resident until the machine is reset or BASIC is KILLed. It occupies two kilobytes of memory, and results in the value of PAGE being raised to &2B00; when the graphics operations are used a further 2K is used for the display buffer.
+
+Download the Z88 Patch ZIP file from R.T. Russell’s BBC BASIC website here: [http://www.bbcbasic.co.uk/bbcbasic/z88patch.html](http://www.bbcbasic.co.uk/bbcbasic/z88patch.html), then follow these steps:
+
+- Extract Zip file contents and upload the Z88PATCH.BBC program to your Z88, for example to :RAM.0.
+- Instantiate or activate a BBC BASIC(Z80) application with □B
+- Enter the following command:
+
+```text
+CH.”:RAM.0/Z88PATCH.BBC”
+```
+
+- The patch will be installed in the BBC BASIC(Z80) application
+
+<Shot src="z88-bbc-basic/general-information/installing-z88-patch-with-program-editor-and-other-commands/image13.webp" alt="BBC BASIC's start-up screen after loading the Z88 Patch" width={640} />
+
+Installation of the BASIC Patch has a number of "side effects" of which you should be aware:
+
+1. Changing HIMEM will have the effect of disabling the patch. If HIMEM has been changed it must be set back to &C000 before re-CHAINing the patch program (or alternatively KILL and restart BASIC from the INDEX). Changing HIMEM is not recommended in any case, since setting it to an unsuitable value will "crash" the machine (even without the patch).
+
+2. The "Silly", "RENUMBER space" and "LINE space" errors will not appear; instead the "No room" message will be produced in each case.
+
+3. You are advised to select MODE 0 before entering Pipedream, since it seems to get confused by the presence of the graphics window.
+
+4. Since Cambridge Computer provided no "legal" method of installing a patch such as this, a rather "dirty" method has had to be adopted. This has some unfortunate, but unavoidable, consequences:
+
+1. The RUN and CHAIN commands may occasionally fail to work properly (on average fewer than 1 in 1000 times). If this happens no harm will be done; simply issue the command again.
+
+2. If you reply to the INPUT statement with a very long string (more than 252 characters) the machine will crash, so you must avoid doing so.
+
+1. Using graphics statements in an ON ERROR routine may give anomalous results. For example:
+
+```text
+10 ON ERROR MODE 0 : REPORT : END
+20 MODE 1
+30 REPEAT
+40   DRAW RND(256)-1,RND(64)-1
+50 UNTIL FALSE
+```
+
+The above program can be aborted only by pressing `[ESC]`. The intention is that this will cause the display to clear and the message "Escape" to be displayed. In practice, the message actually displayed will be "Sorry, not implemented" since, although the Patch is active, the MODE statement still affects REPORT, ERR and ERL.
+
+The Patch commands are integrated in OZ V4.3 and later releases, without the above mentioned “side effects”. PAGE address is not affected (remains at &2300). Later Z88 ROM versions, provided by the Open Source Z88 Development Project, can be accessed here (contains release notes and download links):
+
+[https://cambridgez88.jira.com/wiki/spaces/OZ/](https://cambridgez88.jira.com/wiki/spaces/OZ/)

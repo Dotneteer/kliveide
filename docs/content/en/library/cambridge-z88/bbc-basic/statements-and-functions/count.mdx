@@ -1,0 +1,41 @@
+---
+description: "A function returning the number of characters sent to the output stream (VDU or printer) since the last new line."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# COUNT (COU.)
+
+A function returning the number of characters sent to the output stream (VDU or printer) since the last new line.
+
+```text
+char_count=COUNT
+```
+
+Characters with an ASCII value of less than 13 (carriage return/new-line/enter) have no effect on COUNT.
+
+Because control characters above 13 are included in COUNT, you cannot reliably use it to find the position of the cursor on the screen. If you need to know the cursor's horizontal position use the POS function.
+
+Count is NOT set to zero if the output stream is changed using the \*OPT command.
+
+The example below prints strings from the string array 'words$'. The strings are printed on the same line until the line length exceeds 65. When the line length is in excess of 65, a new-line is printed.
+
+```text
+90 ....
+100 PRINT
+110 FOR i=1 TO 1000
+120 PRINT words$(i);
+130 IF COUNT>65 THEN PRINT
+140 NEXT
+150 ....
+```
+
+**Syntax**
+
+```text
+<n-var>=COUNT
+```
+
+**Associated Keywords**
+
+POS

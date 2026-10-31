@@ -1,0 +1,520 @@
+---
+description: "The section on serial files is split into three parts. The first deals with character data files. These are the simplest type of files to use and the examples are correspondingly short. The second..."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# Serial Files
+
+## Introduction [#introduction]
+
+The section on serial files is split into three parts. The first deals with character data files. These are the simplest type of files to use and the examples are correspondingly short. The second part looks at mixed numeric/character data files. The final part describes conversion between BBC BASIC(Z80) format files and the file formats required/produced by other systems.
+
+## Character Data Files [#character-data-files]
+
+The first three examples are programs to write data in character format to a serial file and to read the data back. All the data is in character format and, since the files will not be read by other versions of BASIC, no extra control characters have been added.
+
+You may notice that we have cheated a little in that a procedure is called to close the files and end the program without returning. This saves using a GOTO, but leaves the return address on the stack. However, ending a program clears the stack and no harm is done. You should not use this sort of trick anywhere else in a program. If you do you will quickly use up memory.
+
+### Ex 1 - Writing Serial Character Data [#ex-1---writing-serial-character-data]
+
+```text
+ 10 REM F-WSER1
+ 20 :
+ 30 REM WRITING TO A SERIAL CHARACTER DATA FILE
+ 40 :
+ 50 REM This program opens a data file and writes
+ 60 REM serial character data to it.  The use of
+ 70 REM OPENOUT ensures that, even if the file
+ 80 REM existed before, it is cleared before
+ 90 REM being written to.
+100 :
+110 phonenos=OPENOUT "PHONENOS"
+120 PRINT "File Name PHONENOS Opened as Handle ";phonenos
+130 PRINT
+140 REPEAT
+150   INPUT "Name ? " name$
+160   IF name$="" THEN PROC_end
+170   INPUT "Phone Number ? " phone$
+180   PRINT
+190   PRINT#phonenos,name$,phone$
+200 UNTIL FALSE
+210 :
+220 DEF PROC_end
+230 CLOSE#phonenos
+240 END
+```
+
+### Ex 2 - Reading Serial Character Data [#ex-2---reading-serial-character-data]
+
+```text
+ 10 REM F-RSER1
+ 20 :
+ 30 REM EXAMPLE OF READING A SERIAL CHARACTER FILE
+ 40 :
+ 50 REM This program opens a previously written
+ 60 REM serial file and reads it.
+ 70 :
+ 80 :
+ 90 phonenos=OPENIN "PHONENOS"
+100 PRINT "File Name PHONENOS Opened as Handle ";phonenos
+110 PRINT
+120 REPEAT
+130   INPUT#phonenos,name$,phone$
+140   PRINT name$,phone$
+150 UNTIL EOF#phonenos
+160 :
+170 CLOSE#phonenos
+180 END
+```
+
+### Ex 3 - Writing 'AT END' of Character Files [#ex-3---writing-at-end-of-character-files]
+
+The next example extends the write program from Example 1. This new program opens the file, sets PTR\# to the end (line 380) and then adds data to it. A procedure is used to open the file. This has the advantage of making the program more understandable by putting the detailed 'open at end' coding out of the main flow of the program.
+
+```text
+ 10 REM F-WESER1
+ 20 :
+ 30 REM EXAMPLE OF WRITING TO THE END OF A SERIAL DATA FILE
+ 40 :
+ 50 REM The program opens a file and sets PTR
+ 60 REM to the end before writing data to it.
+ 70 :
+ 80 REM A function is used to open the file.
+ 90 :
+100 :
+110 phonenos=FN_openend("PHONENOS")
+120 PRINT "File Name PHONENOS Opened as Handle ";phonenos
+130 PRINT
+140 REPEAT
+150   INPUT "Name ? " name$
+160   IF name$="" THEN PROC_end
+170   INPUT "Phone Number ? " phone$
+180   PRINT
+190   PRINT#phonenos,name$,phone$
+200 UNTIL FALSE
+210 :
+220 DEF PROC_end
+230 CLOSE#phonenos
+240 END
+250 :
+260 :
+270 REM Open the file 'AT END'.
+280 :
+290 REM If the file does not already exist, it
+300 REM is created with OPENOUT.  PTR# is left
+310 REM at zero and the handle is returned.  If
+320 REM the file exists, PTR# is set to the end
+330 REM and the file handle returned.
+340 DEF FN_openend(name$)
+350 LOCAL fnum
+360 fnum=OPENUP(name$)
+370 IF fnum=0 THEN fnum=OPENOUT(name$): =fnum
+380 PTR#fnum=EXT#fnum
+390 =fnum
+```
+
+## Mixed Numeric/Character Data Files [#mixed-numericcharacter-data-files]
+
+The second three examples are also programs which write data to a file and read it back, but this time the data is mixed. They are simply extensions of the previous examples which illustrate the handling of mixed data.
+
+### Ex 4 - Writing a Mixed Data File [#ex-4---writing-a-mixed-data-file]
+
+```text
+ 10 REM F-WSER2
+ 20 :
+ 30 REM EXAMPLE OF WRITING TO A MIXED NUMERIC/CHAR DATA FILE
+ 40 :
+ 50 REM This program opens a file and writes
+ 60 REM numeric and char data to it.  The use
+ 70 REM of OPENOUT ensures that, even if the
+ 80 REM file exists, it is cleared before
+ 90 REM being written to.  Functions
+100 REM are used to accept and validate
+110 REM the data before writing it to the file.
+120 :
+130 :
+140 stats=OPENOUT("STATS")
+150 PRINT "File Name STATS Opened as Handle ";stats
+160 PRINT
+170 REPEAT
+180   name$=FN_name
+190   IF name$="" THEN PROC_end
+200   age=FN_age
+210   height=FN_height
+220   sex$=FN_sex
+230   PRINT
+240   PRINT#stats,name$,age,height,sex$
+250 UNTIL FALSE
+260 :
+270 DEF PROC_end
+280 PRINT "The file is ";EXT#stats;" bytes long"
+290 CLOSE#stats
+300 END
+310 :
+320 :
+330 REM Accept a name from the keyboard and make
+340 REM sure it consists only of spaces and
+350 REM upper or lower case characters. Leading
+360 REM spaces are ignored on input.
+370 :
+380 DEF FN_name
+390 LOCAL name$,FLAG,n
+400 REPEAT
+410   FLAG=TRUE
+420   INPUT "Name ? " name$
+430   IF name$="" THEN 490
+440   FOR I=1 TO LEN(name$)
+450     n=ASC(MID$(name$,I,1))
+460     IF NOT(n=32 OR n>64 AND n<91 OR n>96 AND n<123) THEN FLAG=FALSE
+470   NEXT
+480   IF NOT FLAG THEN PRINT "No funny characters please !!!"
+490 UNTIL FLAG
+500 =name$
+510 :
+520 :
+530 REM Accept the age from the keyboard and
+540 REM round to one place of decimals.  Ages
+550 REM of 0 or less, or 150 or more are
+560 REM considered to be in error.
+570 DEF FN_age
+580 LOCAL age
+590 REPEAT
+600   INPUT "What age ? " age
+610   IF age<=0 OR age >=150 THEN PRINT "No impossible ages please !!!"
+620 UNTIL age>0 AND age<150
+630 =INT(age*10+.5)/10
+640 :
+650 :
+660 REM Accept the height in centimetres from
+670 REM the keyboard and round to an integer.
+680 REM Heights of 50 or less and 230 or more
+690 REM are considered to be in error.
+700 DEF FN_height
+710 LOCAL height
+720 REPEAT
+730   INPUT "Height in centimetres ? " height
+740   IF height<=50 OR height>=230 THEN PRINT "Very funny !!!"
+750 UNTIL height>50 AND height<230
+760 =INT(height+.5)
+770 :
+780 :
+790 REM Accept the sex from the keyboard.  Only
+800 REM words beginning with upper or lower case
+810 REM M or F are OK.  The returned string is
+820 REM truncated to 1 character.
+830 DEF FN_sex
+840 LOCAL sex$,FLAG
+850 REPEAT
+860   FLAG=TRUE
+870   INPUT "Male or Female - M or F ? " sex$
+880   IF sex$<>"" THEN sex$=CHR$(ASC(MID$(sex$,1,1)) AND 95)
+890   IF sex$<>"M" AND sex$<>"F" THEN FLAG=FALSE
+900   IF NOT FLAG THEN PRINT "No more sex(es) please !!!"
+910 UNTIL FLAG
+920 =sex$
+```
+
+### Ex 5 - Reading a Mixed Data File [#ex-5---reading-a-mixed-data-file]
+
+```text
+ 10 REM F-RSER2
+ 20 :
+ 30 REM EXAMPLE OF READING FROM A MIXED NUMERIC/CHAR DATA FILE
+ 40 :
+ 50 REM This program opens a file and reads
+ 60 REM numeric and character data from it.
+ 70 :
+ 80 :
+ 90 stats=OPENIN("STATS")
+100 PRINT "File Name STATS Opened as Handle ";stats
+110 PRINT
+120 REPEAT
+130   INPUT#stats,name$,age,height,sex$
+140   PRINT "Name ";name$
+150   PRINT "Age ";age
+160   PRINT "Height in centimetres ";height
+170   IF sex$="M" THEN PRINT "Male" ELSE PRINT "Female"
+180   PRINT
+190 UNTIL EOF#stats
+200 :
+210 CLOSE#stats
+220 END
+```
+
+### Ex 6 - Writing 'AT END' of Mixed Files [#ex-6---writing-at-end-of-mixed-files]
+
+This example is similar to Example 3, but for a mixed data file.
+
+```text
+  10 REM F-WESER2
+  20 :
+  30 REM EXAMPLE OF WRITING AT THE END OF A
+  40 REM MIXED NUMERIC/CHAR DATA FILE
+  50 :
+  60 REM This program opens a file, sets PTR
+  70 REM to its end and then writes numeric and
+  80 REM character data to it.
+  90 :
+ 100 REM Functions are used to accept and
+ 110 REM validate the data before writing it to
+ 120 REM the file.
+ 130 :
+ 140 stats=FN_open("STATS")
+ 150 PRINT "File Name STATS Opened as Handle ";stats
+ 160 PRINT
+ 170 REPEAT
+ 180   name$=FN_name
+ 190   IF name$="" THEN PROC_end
+ 200   age=FN_age
+ 210   height=FN_height
+ 220   sex$=FN_sex
+ 230   PRINT
+ 240   PRINT#stats,name$,age,height,sex$
+ 250 UNTIL FALSE
+ 260 :
+ 270 DEF PROC_end
+ 280 PRINT "The file is ";EXT#stats;" bytes long"
+ 290 CLOSE#stats
+ 300 END
+ 310 :
+ 320 :
+ 330 REM Open the file.  If it exists, set PTR#
+ 340 REM to the end and return the handle.  If
+ 350 REM it does not exist, open it, leave PTR#
+ 360 REM as it is and return the file handle.
+ 370 DEF FN_open(name$)
+ 380 LOCAL fnum
+ 390 fnum=OPENUP(name$)
+ 400 IF fnum=0 THEN fnum=OPENOUT(name$): =fnum
+ 410 PTR#fnum=EXT#fnum
+ 420 =fnum
+ 430 :
+ 440 :
+ 450 REM Accept a name from the keyboard and make
+ 460 REM sure it consists of spaces and upper or
+ 470 REM lower case characters.  Leading spaces
+ 480 REM are automatically ignored on input.
+ 490 DEF FN_name
+ 500 LOCAL name$,FLAG,n
+ 510 REPEAT
+ 520   FLAG=TRUE
+ 530   INPUT "Name ? " name$
+ 540   IF name$="" THEN 600
+ 550   FOR I=1 TO LEN(name$)
+ 560     n=ASC(MID$(name$,I,1))
+ 570     IF NOT(n=32 OR n>64 AND n<91 OR n>96 AND n<123) THEN FLAG=FALSE
+ 580  NEXT
+ 590   IF NOT FLAG THEN PRINT "No funny characters please !!!"
+ 600 UNTIL FLAG
+ 610 =name$
+ 620 :
+ 630 :
+ 640 REM Accept the age from the keyboard and
+ 650 REM round to one place of decimals. Ages of
+ 660 REM 0 or less or 150 or more are in error.
+ 670 :
+ 680 DEF FN_age
+ 690 LOCAL age
+ 700 REPEAT
+ 710   INPUT "What age ? " age
+ 720   IF age<=0 OR age >=150 THEN PRINT "No impossible ages please !!!"
+ 730 UNTIL age>0 AND age<150
+ 740 =INT(age*10+.5)/10
+ 750 :
+ 760 :
+ 770 REM Accept the height in centimetres from
+ 780 REM the keyboard and round to an integer.
+ 790 REM Heights of 50 or less or 230 or more
+ 800 REM are in error.
+ 810 DEF FN_height
+ 820 LOCAL height
+ 830 REPEAT
+ 840   INPUT "Height in centimetres ? " height
+ 850   IF height<=50 OR height>=230 THEN PRINT "Very funny !!!"
+ 860 UNTIL height>50 AND height<230
+ 870 =INT(height+.5)
+ 880 :
+ 890 :
+ 900 REM Accept the sex from the keyboard.  Only
+ 910 REM words beginning with upper or lower
+ 920 REM case M or F are valid.  The returned
+ 930 REM string is truncated to 1 character.
+ 940 DEF FN_sex
+ 950 LOCAL sex$,FLAG
+ 960 REPEAT
+ 970   FLAG=TRUE
+ 980   INPUT "Male or Female - M or F ? " sex$
+ 990   IF sex$<>"" THEN sex$=CHR$(ASC(MID$(sex$,1,1)) AND 95)
+1000   IF sex$<>"M" AND sex$<>"F" THEN FLAG=FALSE
+1010   IF NOT FLAG THEN PRINT "No more sex(es) please !!!"
+1020 UNTIL FLAG
+1030 =sex$
+```
+
+## Compatible Data Files [#compatible-data-files]
+
+The next example tackles the problem of writing files which will be compatible with other versions of BASIC. The most common format for serial files is as follows:
+
+- Data is written to the file as ASCII characters.
+- Data items are separated by commas.
+- Records are terminated by the two characters CR and LF.
+- The file is terminated by a Control Z (&1A).
+
+The example program accepts data from the keyboard and writes it to a file in the above format.
+
+### Ex 7 - Writing a Compatible Data File [#ex-7---writing-a-compatible-data-file]
+
+```text
+  10 REM F-WSTD
+  20 :
+  30 REM EXAMPLE OF WRITING A COMPATIBLE FILE
+  40 :
+  50 REM This program opens a file and writes
+  60 REM numeric and character data to it in a
+  70 REM compatible format.  Numerics are changed
+  80 REM to strings before they are written and
+  90 REM the data items are separated by commas.
+ 100 REM Each record is terminated by CR LF and
+ 110 REM the file is terminated by a Control Z.
+ 120 :
+ 130 REM Functions are used to accept and
+ 140 REM validate the data before writing it to
+ 150 REM the file.
+ 160 :
+ 170 record$=STRING$(100," "): REM Reserve room for the longest
+ 180 name$=STRING$(20," "): REM record necessary.
+ 190 : REM It saves on string space.
+ 200 compat=OPENOUT("COMPAT")
+ 210 PRINT "File Name COMPAT Opened as Handle ";compat
+ 220 PRINT
+ 230 REPEAT
+ 240   name$=FN_name
+ 250   IF name$="" THEN PROC_end
+ 260   age=FN_age
+ 270   height=FN_height
+ 280   sex$=FN_sex
+ 290   PRINT
+ 300   record$=name$+","+STR$(age)+","+STR$(height)+","+sex$
+ 310   PRINT#compat,record$
+ 320   BPUT#compat,&0A
+ 330 UNTIL FALSE
+ 340 :
+ 350 DEF PROC_end
+ 360 BPUT#compat,&1A
+ 370 CLOSE#compat
+ 380 END
+ 390 :
+ 400 :
+ 410 REM Accept a name from the keyboard and make
+ 420 REM sure it consists only of spaces and
+ 430 REM upper or lower case characters. Leading
+ 440 REM spaces are ignored on input.
+ 450 :
+ 460 DEF FN_name
+ 470 LOCAL name$,FLAG,n
+ 480 REPEAT
+ 490   FLAG=TRUE
+ 500   INPUT "Name ? " name$
+ 510   IF name$="" THEN 570
+ 520   FOR I=1 TO LEN(name$)
+ 530     n=ASC(MID$(name$,I,1))
+ 540     IF NOT(n=32 OR n>64 AND n<91 OR n>96 AND n<123) THEN FLAG=TRUE
+ 550   NEXT
+ 560   IF NOT FLAG THEN PRINT "No funny characters please !!!"
+ 570 UNTIL FLAG
+ 580 =name$
+ 590 :
+ 600 :
+ 610 REM Accept the age from the keyboard and
+ 620 REM round to one place of decimals.  Ages
+ 630 REM of 0 or less or 150 or more are
+ 640 REM considered to be in error.
+ 650 DEF FN_age
+ 660 LOCAL age
+ 670 REPEAT
+ 680   INPUT "What age ? " age
+ 690   IF age<=0 OR age >=150 THEN PRINT "No impossible ages please !!!"
+ 700 UNTIL age>0 AND age<150
+ 710 =INT(age*10+.5)/10
+ 720 :
+ 730 :
+ 740 REM Accept the height in centimetres from
+ 750 REM the keyboard and round to an integer.
+ 760 REM Heights of 50 or less and 230 or more
+ 770 REM are considered to be in error.
+ 780 DEF FN_height
+ 790 LOCAL height
+ 800 REPEAT
+ 810   INPUT "Height in centimetres ? " height
+ 820   IF height<=50 OR height>=230 THEN PRINT "Very funny !!!"
+ 830 UNTIL height>50 AND height<230
+ 840 =INT(height+.5)
+ 850 :
+ 860 :
+ 870 REM Accept the sex from the keyboard. Only
+ 880 REM words beginning with upper or lower
+ 890 REM case M or F are valid.  The returned
+ 900 REM string is truncated to 1 character.
+ 910 DEF FN_sex
+ 920 LOCAL sex$,FLAG
+ 930 REPEAT
+ 940   FLAG=TRUE
+ 950   INPUT "Male or Female - M or F ? " sex$
+ 960   IF sex$<>"" THEN sex$=CHR$(ASC(MID$(sex$,1,1)) AND 95)
+ 970   IF sex$<>"M" AND sex$<>"F" THEN FLAG=FALSE
+ 980   IF NOT FLAG THEN PRINT "No more sex(es) please !!!"
+ 990 UNTIL FLAG
+1000 =sex$
+```
+
+### Ex 8 - Reading a Compatible Data File [#ex-8---reading-a-compatible-data-file]
+
+The last example in this section reads a file written in the above format and strips off the extraneous characters. The file is read character by character and the appropriate action taken. This is a simple example of how BBC BASIC(Z80) can be used to manipulate any file by processing it on a character by character basis.
+
+```text
+ 10 REM F-RSTD
+ 20 :
+ 30 REM EXAMPLE OF READING A COMPATIBLE FILE
+ 40 :
+ 50 REM This program opens a data file and reads
+ 60 REM numeric and character data from it.  The
+ 70 REM data is read a byte at a time and the
+ 80 REM appropriate action taken depending on
+ 90 REM whether it is a character, a comma, or
+100 REM a control char.
+110 compat=OPENUP("COMPAT")
+120 PRINT "File Name COMPAT Opened as Handle ";compat
+130 PRINT
+140 REPEAT
+150   name$=FN_read
+160   PRINT "Name ";name$
+170   age=VAL(FN_read)
+180   PRINT "Age ";age
+190   height=VAL(FN_read)
+200   PRINT "Height in centimetres ";height
+210   sex$=FN_read
+220   IF sex$="M" THEN PRINT "Male" ELSE PRINT "Female"
+230   PRINT
+240 UNTIL FALSE
+250 :
+260 :
+270 REM Read a data item from the file.  Treat
+280 REM commas and CRs as data item terminators
+290 REM and Control Z as the file terminator.
+300 REM Since we are not interested in reading a
+310 REM record at a time, the record terminator
+320 REM CR LF is of no special interest to us.
+330 REM We use the CR, along with commas, as a
+332 REM data item separator and discard the LF.
+334 :
+340 DEF FN_read
+350 LOCAL data$,byte$,byte
+360 data$=""
+370 REPEAT
+380   byte=BGET#compat
+390   IF byte=&1A OR EOF#compat THEN CLOSE#compat: END
+400   IF NOT(byte=&0A OR byte=&0D OR byte=&2C) THEN data$=data$+CHR$(byte)
+410 UNTIL byte=&0D OR byte=&2C
+420 =data$
+```

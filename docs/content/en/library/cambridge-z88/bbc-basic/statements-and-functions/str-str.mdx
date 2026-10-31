@@ -1,0 +1,30 @@
+---
+description: "A string function which returns the string form of the numeric argument as it would have been printed."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# STR$
+
+A string function which returns the string form of the numeric argument as it would have been printed.
+
+If the most significant byte of @% is not zero, STR$ uses the current @% description when generating the string. If it is zero (the initial value) then the G9 format (see PRINT) is used.
+
+If STR$ is followed by \~ (tilde) then a hexadecimal conversion is carried out.
+
+```text
+A$=STR$(PI)
+B$=STR$~(100) :REM B$ will be "64"
+```
+
+The opposite function to STR$ is performed by the VAL function.
+
+**Syntax**
+
+```text
+<s-var>=STR$[~](<numeric>)
+```
+
+**Associated Keywords**
+
+VAL, PRINT

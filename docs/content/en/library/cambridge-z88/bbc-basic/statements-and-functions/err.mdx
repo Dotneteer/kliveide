@@ -1,0 +1,27 @@
+---
+description: "A function returning the error code number of the last error which occurred (see the Annex entitled Error Messages and Codes)."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# ERR
+
+A function returning the error code number of the last error which occurred (see the Annex entitled Error Messages and Codes).
+
+```text
+X=ERR
+```
+
+Once you have assumed responsibility for error handling using the ON ERROR statement, you can use this function to discover which error occurred.
+
+See the Error Handling sub-section for more information on error handling and correction.
+
+**Syntax**
+
+```text
+<n-var>=ERR
+```
+
+**Associated Keywords**
+
+ON ERROR GOTO, ON ERROR OFF, ERL, REPORT

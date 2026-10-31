@@ -1,0 +1,30 @@
+---
+description: "A function which converts radians to degrees."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# DEG
+
+A function which converts radians to degrees.
+
+```text
+degree_angle=DEG(PI/2)
+X=DEG(ATN(1))
+```
+
+You can use this function to convert an angle expressed in radians to degrees. One radian is approximately 57 degrees (actually 180/PI). PI/2 radians is 90 degrees and PI radians is 180 degrees.
+
+Using DEG is equivalent to multiplying the radian value by 180/PI, but the result is calculated internally to a greater accuracy.
+
+See ACS, ASN and ATN for further examples of the use of DEG.
+
+**Syntax**
+
+```text
+<n-var>=DEG(<numeric>)
+```
+
+**Associated Keywords**
+
+RAD, SIN, COS, TAN, ACS, ASN, ATN, PI

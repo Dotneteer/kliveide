@@ -1,0 +1,225 @@
+---
+description: "Once you have written your program and removed all the syntax errors, you might think that your program is error free. Unfortunately life is not so simple, you have only passed the first hurdle...."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# Error Handling
+
+## Introduction [#introduction]
+
+### Types of Errors [#types-of-errors]
+
+Once you have written your program and removed all the syntax errors, you might think that your program is error free. Unfortunately life is not so simple, you have only passed the first hurdle. There are two kinds of errors which you could still encounter; errors of logic and run-time errors. Errors of logic are where BBC BASIC(Z80) understands exactly what you said, but what you said is not what you meant. Run-time errors are where something occurs during the running of the program which BBC BASIC(Z80) is unable to cope with. For example,
+
+```text
+answer=A/B
+```
+
+is quite correct and it will work for all values of A. But if B is zero, the answer is 'infinity'. BBC BASIC(Z80) has no way of dealing with 'infinity' and it will report a 'Division by zero' error.
+
+### Trapping Errors [#trapping-errors]
+
+There is no way that BBC BASIC(Z80) can trap errors of logic, since it has no way of understanding what you really meant it to do. However, you can generally predict which of the run-time errors are likely to occur and include a special 'error handling' routine in your program to recover from them.
+
+### Reasons for Trapping Errors [#reasons-for-trapping-errors]
+
+Why would you want to take over responsibility for handling run-time errors? When BBC BASIC(Z80) detects a run-time error, it reports it and RETURNS TO THE COMMAND MODE. When you write a program for yourself, you know what you want it to do and you also know what it can't do. If, by accident, you try to make it do something which could give rise to an error, you accept the fact that BBC BASIC(Z80) might terminate the program and return to the command mode. However, when somebody else uses your program they are not blessed with your insight and they may find the program 'crashing out' to the command mode without knowing what they have done wrong. Such programs are called 'fragile'. You can protect your user from much frustration if you predict what these problems are likely to be and include an error handling routine. In the example below, a '-ve root' error would occur if the number input was negative and BBC BASIC(Z80) would return to the command mode.
+
+```text
+10 REPEAT
+20   INPUT "Type in a number " num
+30   PRINT num," ",SQR(num)
+40   PRINT
+50 UNTIL FALSE:REM  Loop until the ESCape
+60 :REM key is pressed
+```
+
+Example run:
+
+RUN
+
+Type in a number **5**
+
+5 2.23606798
+
+Type in a number **23**
+
+23 4.79583152
+
+Type in a number **2**
+
+2 1.41421356
+
+Type in a number **-2**
+
+-2
+
+-ve root at line 30
+
+## Error Trapping Commands [#error-trapping-commands]
+
+The **ON ERROR** command directs BBC BASIC(Z80) to execute the statement(s) following ON ERROR when a trappable error occurs:
+
+```text
+ON ERROR PRINT '"Oh No!":END
+```
+
+If an error was detected in a program after this line had been encountered, the message 'Oh No!' would be printed and the program terminated. If, as in this example, the ON ERROR line contains the END statement or transfers control elsewhere (e.g. using GOTO) then the position of the line within the program is unimportant *so long as it is encountered before the error occurs*. If there is no transfer of control, execution following the error continues as usual on the succeeding line, so in this case the position of the ON ERROR line can matter.
+
+As explained in the Program Flow Control sub-section, every time BBC BASIC(Z80) encounters a FOR, REPEAT, GOSUB, FN or PROC statement it 'pushes' the return address on to a 'stack' and every time it encounters a NEXT, UNTIL, RETURN statement or the end of a function or procedure it 'pops' the latest return address of the stack and goes back there. The program stack is where BBC BASIC(Z80) records where it is within the structure of your program.
+
+When an error is detected by BBC BASIC(Z80), the stack is cleared. Thus, you cannot just take any necessary action depending on the error and return to where you were because BBC BASIC(Z80) no longer knows where you were.
+
+If an error occurs within a procedure or function, the value of any PRIVATE variables will be the last value they were set to within the procedure or function which gave rise to the error.
+
+## Error Reporting [#error-reporting]
+
+There are two functions, ERR and ERL, and one statement, REPORT, which may be used to investigate and report on errors. Using these, you can trap out errors, check that you can deal with them and abort the program run if you cannot.
+
+### ERR [#err]
+
+ERR returns the error number (see the Annex entitled Error Messages and Codes).
+
+### ERL [#erl]
+
+ERL returns the line number where the error occurred. If an error occurs in a procedure or function call, ERL will return the number of the calling line, not the number of the line in which the procedure/function is defined. If an error in a DATA statement causes a READ to fail, ERL will return the number of the line containing the READ statement, not the number of the line containing the DATA.
+
+### REPORT [#report]
+
+REPORT prints out the error string associated with the last error which occurred.
+
+## Problems with Error Trapping [#problems-with-error-trapping]
+
+If there is an error in your ON ERROR statement, BBC BASIC(Z80) will go into an infinite loop. \[ESC\] (which generates error code 27) will not break you out of this loop. On most (single tasking) computers like the BBC Micro, you can escape from such a loop by pressing \<BREAK\> or turning the computer off.
+
+Because the Z88 is a sophisticated computer which is capable of holding several programs in memory concurrently, this option has complications.
+
+If there is an error in the error handling part of your program, you will end up in a ‘doom loop’. Unless you take special precautions, you will need to perform a soft or hard reset to escape from this situation. A hard reset will cause all the programs and data in RAM to be lost and a soft reset may possibly leave the computer in an unstable condition which will lead to an eventual software failure.
+
+To overcome this problem, you should **ALWAYS** include a line similar to
+
+```text
+dummy = INKEY(0)
+```
+
+as the **FIRST** line of any error handling routine. If you do so, you will be able to escape to the INDEX from a ‘doom loop’ by pressing the `[INDEX]` key. If you try to return to your BBC BASIC(Z80) program, you will find yourself in the same situation as when you left it. All you can do is to ♢`KILL` the offending BBC BASIC(Z80) instantiation. You will lose your program, but everything else will be intact. For example:
+
+```text
+10 ON ERROR GOTO 1000
+20 FOR i= 1 TO 20
+30 etc…
+```
+
+```text
+1000 dummy = INKEY(0)
+1010 PRINT “Error!”
+1020 etc..
+```
+
+## Error Trapping Examples [#error-trapping-examples]
+
+The example below does not try to deal with errors, it just uses ERR, ERL and REPORT to tell the user about the error. It’s only advantage over BBC BASIC(Z80)'s normal error handling is that it gives the error number; it would probably not be used in practice. As you can see from the second run, pressing `[ESC]` is treated as an error (number 17).
+
+```text
+  5 ON ERROR GOTO 100
+ 10 REPEAT
+ 20   INPUT "Type a number " num
+ 30   PRINT num," ",SQR(num)
+ 40   PRINT
+ 50 UNTIL FALSE
+ 60 :
+ 70 :
+100 dummy = INKEY(0)
+110 PRINT
+120 PRINT "Error No ";ERR
+130 REPORT:PRINT " at line ";ERL
+140 END
+```
+
+Example run:
+
+RUN
+
+Type a number **1**
+
+1
+
+Type a number **-2**
+
+-2
+
+Error No 21
+
+-ve root at line 30
+
+RUN
+
+Type a number <strong>\[Esc\]</strong>
+
+Error No 17
+
+Escape at line 20
+
+The example below has been further expanded to include error trapping. The only 'predictable' error is that the user will try a negative number. Any other error is unacceptable, so it is reported and the program aborted. Consequently, when `[ESC]` is used to abort the program, it is reported as an error. However, a further test for ERR=17 could be included so that the program would halt on ESCAPE without an error being reported.
+
+```text
+  5 ON ERROR GOTO 100
+ 10 REPEAT
+ 20  INPUT "Type a number " num
+ 30   PRINT num," ",SQR(num)
+ 40  PRINT
+ 50 UNTIL FALSE
+ 60 :
+ 70 :
+100 dummy = INKEY(0)
+110 PRINT
+120 IF ERR=21 THEN PRINT "No negatives":GOTO 10
+130 REPORT:PRINT " at line ";ERL
+140 END
+```
+
+RUN
+
+Type a number **5**
+
+5 2.23606798
+
+Type a number **2**
+
+2 1.41421356
+
+Type a number **-1**
+
+-1
+
+No negatives
+
+Type a number **4**
+
+4 2
+
+Type a number <strong>\[Esc\]</strong>
+
+Escape at line 20
+
+The above example is very simple and was chosen for clarity. In practice, it would be better to test for a negative number before using SQR rather than trap the '-ve root' error.
+
+A more realistic example is the evaluation of a user-supplied HEX number, where trapping 'Bad hex' would be much easier than testing the input string beforehand.
+
+```text
+ 10 ON ERROR GOTO 100
+ 20 REPEAT
+ 30   INPUT "Type a HEX number " input$
+ 40   num=EVAL("&"+input$)
+ 50   PRINT input$,num
+ 60   PRINT
+ 70 UNTIL FALSE
+ 80 :
+ 90 :
+100 dummy = INKEY(0)
+110 PRINT
+120 IF ERR=28 THEN PRINT "Not hex":GOTO 20
+130 REPORT:PRINT " at line ";ERL
+140 END
+```

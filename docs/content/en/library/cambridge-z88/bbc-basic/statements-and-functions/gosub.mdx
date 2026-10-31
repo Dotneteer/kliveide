@@ -1,0 +1,33 @@
+---
+description: "A statement which calls a section of a program (which is a subroutine) at a specified line number. One subroutine may call another subroutine (or itself)."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# GOSUB
+
+A statement which calls a section of a program (which is a subroutine) at a specified line number. One subroutine may call another subroutine (or itself).
+
+```text
+GOSUB 400
+GOSUB (4*answer+6)
+```
+
+The only limit placed on the depth of nesting is the room available for the stack.
+
+You may calculate the line number. However, if you do, the program should not be RENUMBERed. A calculated value must be placed in brackets.
+
+Very often you need to use the same group of program instructions at several different places within your program. It is tedious and wasteful to repeat this group of instructions every time you wish to use them. You can separate this group of instructions into a small sub-program. This sub-program is called a subroutine. The subroutine can be 'called' by the main program every time it is needed by using the GOSUB statement. At the end of the subroutine, the RETURN statement causes the program to return to the statement after the GOSUB statement.
+
+Subroutines are similar to PROCedures, but they are called by line number not by name. This can make the program difficult to read because you have no idea what the subroutine does until you have followed it through. You will probably find that PROCedures offer you all the facilities of subroutines and, by choosing their names carefully, you can make your programs much more readable.
+
+**Syntax**
+
+```text
+GOSUB <l-num>
+GOSUB (<numeric>)
+```
+
+**Associated Keywords**
+
+RETURN, ON, PROC

@@ -1,0 +1,43 @@
+---
+description: "Does nothing. In other words, it is ignored."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# Description of VDU Codes
+
+## VDU 0 [#vdu-0]
+
+Does nothing. In other words, it is ignored.
+
+## VDU 1 [#vdu-1]
+
+This is the ‘Escape’ code which introduces numerous screen printing and control sequences which are described in the ‘Description of Escape Sequences’ sub-section.
+
+## VDU 7 [#vdu-7]
+
+VDU 7 causes a short ‘beep’ from the speaker.
+
+## VDU 8 [#vdu-8]
+
+VDU 8 moves the cursor one character to the left. If the cursor was at the start of a line, it moves to the end of the previous line (right edge of the text window). If it was also at the top line of the text window, and scroll is enabled, the window contents scrolls down. If a window has been defined, the cursor is constrained to remain within the window.
+
+## VDU 9 [#vdu-9]
+
+VDU 9 moves the cursor down one line. If the cursor was on the bottom line of the window and scroll is enabled, the window contents scrolls up. If a window has been defined, the cursor is constrained to remain within the window.
+
+## VDU 10 [#vdu-10]
+
+VDU 10 moves the cursor down one line. If the cursor was on the bottom line of the window and scroll is enabled, the window contents scrolls up. If a window has been defined, the cursor is constrained to remain within the window.
+
+## VDU 12 [#vdu-12]
+
+VDU 12 clears the text window and moves the cursor to the top left corner of the window; it is identical to CLS command.
+
+## VDU 13 [#vdu-13]
+
+VDU 13 moves the cursor to the left edge of the window, but does not move it vertically. If a window has been defined, the cursor is constrained to remain within the window.
+
+## VDU 127 [#vdu-127]
+
+Prints a black square.

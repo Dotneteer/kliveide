@@ -1,0 +1,35 @@
+---
+description: "A function returning the vertical cursor position. The top of the screen is line 0."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# VPOS
+
+A function returning the vertical cursor position. The top of the screen is line 0.
+
+```text
+Y=VPOS
+```
+
+You can use VPOS in conjunction with POS to return to the present position on the screen after printing a message somewhere else. The example below is a procedure for printing a 'status' message at line 23. The cursor is returned to its previous position after the message has been printed.
+
+```text
+1000 DEF PROC_message(message$)
+1010 LOCAL x,y
+1020 x=POS
+1030 y=VPOS
+1040 PRINT TAB(0,23) CHR$(7);message$;
+1050 PRINT TAB(x,y);
+1060 ENDPROC
+```
+
+**Syntax**
+
+```text
+<n-var>=VPOS
+```
+
+**Associated Keywords**
+
+POS

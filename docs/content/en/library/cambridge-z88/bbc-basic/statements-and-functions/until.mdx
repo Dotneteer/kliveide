@@ -1,0 +1,46 @@
+---
+description: "The part of the REPEAT ... UNTIL structure which signifies its end."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# UNTIL (U.)
+
+The part of the REPEAT ... UNTIL structure which signifies its end.
+
+You can use a REPEAT...UNTIL loop to repeat a set of program instructions until some condition is met.
+
+If the condition associated with the UNTIL statement is never met, the loop will execute for ever. (At least, until `[Esc]` is pressed or some other error occurs.)
+
+The following example will continually ask for a number and print its square. The only way to stop it is by pressing `[Esc]` or forcing a 'Too big' error.
+
+```text
+10 z=1
+20 REPEAT
+30   INPUT "Enter a number " num
+40   PRINT "The square of ";num;" is ";num*num
+50 UNTIL z=0
+```
+
+Since the result of the test z=0 is ALWAYS FALSE, we can replace z=0 with FALSE. The program now becomes:
+
+```text
+20 REPEAT
+30   INPUT "Enter a number " num
+40   PRINT "The square of ";num;" is ";num*num
+50 UNTIL FALSE
+```
+
+This is a much neater way of unconditionally looping than using a GOTO statement. The program executes at least as fast and the section of program within the loop is highlighted by the indentation.
+
+See the keyword REPEAT for more details on REPEAT...UNTIL loops. See the Variables sub-section for more details on Boolean variables and the keyword AND for logical tests and their results.
+
+**Syntax**
+
+```text
+UNTIL <t-cond>
+```
+
+**Associated Keywords**
+
+REPEAT

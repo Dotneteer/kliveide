@@ -1,0 +1,32 @@
+---
+description: "A statement which takes a list of numeric arguments and sends their least-significant bytes as characters to the display."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# VDU (V.)
+
+A statement which takes a list of numeric arguments and sends their least-significant bytes as characters to the display.
+
+A 16-bit value can be sent if the value is followed by a '**;**'. It is sent as a pair of characters, least significant byte first.
+
+```text
+VDU 8,8 :REM cursor left two places.
+VDU &0A0D;&0A0D; :REM CRLF twice
+```
+
+The bytes sent using the VDU statement do not contribute to the value of COUNT, but may well change POS and VPOS.
+
+You can use VDU to send characters direct to the current output stream without having to use a PRINT statement. It offers a convenient way of sending a number of control characters to the screen.
+
+It also differs from PRINT CHR$(n) in that you cannot use it to end codes or characters to the printer.
+
+**Syntax**
+
+```text
+VDU <numeric>{,|;<numeric>}[;]
+```
+
+**Associated Keywords**
+
+CHR$

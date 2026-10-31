@@ -1,0 +1,42 @@
+---
+description: "You can use PI to calculate the circumference and area of a circle. The example below calculates the circumference and area of a circle of a given radius."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# PI
+
+A function returning 3.14159265.
+
+```text
+X=PI
+```
+
+You can use PI to calculate the circumference and area of a circle. The example below calculates the circumference and area of a circle of a given radius.
+
+```text
+10 CLS
+20 INPUT "What is the radius of the circle ",rad
+30 PRINT "The circumference is: ";2*PI*rad
+40 PRINT "The area is: ";PI*rad*rad
+50 END
+```
+
+PI can also be used to convert degrees to radians and radians to degrees.
+
+```text
+radians=PI/180*degrees
+degrees=180/PI*radians
+```
+
+However, BBC BASIC(Z80) has two functions (RAD and DEG) which perform these conversions to a higher accuracy.
+
+**Syntax**
+
+```text
+<n-var>=PI
+```
+
+**Associated Keywords**
+
+RAD, DEG

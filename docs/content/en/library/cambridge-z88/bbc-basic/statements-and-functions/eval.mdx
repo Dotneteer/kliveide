@@ -1,0 +1,70 @@
+---
+description: "A function which applies the interpreter's expression evaluation program to the characters held in the argument string."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# EVAL (EV.)
+
+A function which applies the interpreter's expression evaluation program to the characters held in the argument string.
+
+```text
+X=EVAL("X^Q+Y^P")
+X=EVAL"A$+B$"
+X$=EVAL(A$)
+```
+
+In effect, you pass the string to BBC BASIC(Z80)'s evaluation program and say 'work this out'.
+
+You can use this function to accept and evaluate an expression, such as a mathematical equation, whilst the program is running. You could, for instance, use it in a 'calculator' program to accept and evaluate the calculation you wished to perform. Another use would be in a graph plotting program to accept the mathematical equation you wished to plot.
+
+The example below is a 'bare bones' calculator program which evaluates the expression typed in by the user.
+
+```text
+10 PRINT "This program evaluates the expression"
+20 PRINT "you type in and prints the answer"
+30 REPEAT
+40   INPUT "Enter an expression" exp$
+50   IF exp$<>"END" PRINT EVAL exp$
+60 UNTIL exp$="END"
+70 END
+```
+
+You can only use EVAL to work out functions (like SIN, COS, etc). It won't execute statements like MODE 0, PRINT, etc.
+
+In the following example, EVAL would print ‘Hello world!’ if you entered ‘FN\_FRED’ in response to the prompt. The program will continue until an error occurs (pressing `[ESC]` for example).
+
+```text
+10 REPEAT
+20   INPUT “Enter an expression: “,a$
+30   PRINT EVAL a$
+40 UNTIL FALSE
+50:
+60 DEF FN _FRED
+70 PRINT “Hello World!”
+80 =-1
+```
+
+Example run (user entry in **bold**):
+
+<strong>\>RUN</strong>`[ENTER]`<br />`Enter an expression:` <strong>`2*5`</strong>`[ENTER]`
+
+```text
+        10
+Enter an expression: FN_FRED[ENTER]
+        Hello World!
+Enter an expression: JIM[ENTER]
+No such variable at line 20
+>
+```
+
+**Syntax**
+
+```text
+<n-var>=EVAL(<str>)
+<s-var>=EVAL(<str>)
+```
+
+**Associated Keywords**
+
+STR$, VAL

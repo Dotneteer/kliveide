@@ -1,0 +1,120 @@
+---
+description: "The program is stored in memory in the format shown below. The first program line commences at PAGE."
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# Program Storage in Memory
+
+The program is stored in memory in the format shown below. The first program line commences at PAGE.
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>L.length</Table.Td>
+<Table.Td>LSB</Table.Td>
+<Table.Td>MSB</Table.Td>
+<Table.Td>token</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td />
+<Table.Td>**:**</Table.Td>
+<Table.Td>token</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td>&0D</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td rowSpan={2} />
+<Table.Td colSpan={2} rowSpan={2}>Line No</Table.Td>
+<Table.Td colSpan={6}>Reserved Word Tokens</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={8}>Program Line</Table.Td>
+<Table.Td>CR</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>L.length</Table.Td>
+<Table.Td>LSB</Table.Td>
+<Table.Td>MSB</Table.Td>
+<Table.Td>token</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td />
+<Table.Td>**:**</Table.Td>
+<Table.Td>token</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td>&0D</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td rowSpan={2} />
+<Table.Td colSpan={2} rowSpan={2}>Line No</Table.Td>
+<Table.Td colSpan={6}>Reserved Word Tokens</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={8}>Program Line</Table.Td>
+<Table.Td>CR</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>L.length</Table.Td>
+<Table.Td>LSB</Table.Td>
+<Table.Td>MSB</Table.Td>
+<Table.Td>token</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td />
+<Table.Td>**:**</Table.Td>
+<Table.Td>token</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td>&0D</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td rowSpan={2} />
+<Table.Td colSpan={2} rowSpan={2}>Line No</Table.Td>
+<Table.Td colSpan={6}>Reserved Word Tokens</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={8}>Program Line</Table.Td>
+<Table.Td>CR</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+## Line Length [#line-length]
+
+The line length includes the line length byte. The address of the start of the next line is found by adding the line length to the address of the start of the current line. The end of the program is indicated by a line length of zero and a line number of &FFFF.
+
+## Line Number [#line-number]
+
+The line number is stored in two bytes, LSB first. The end of the program is indicated by a line number of &FFFF and a line length of zero.
+
+## Statements [#statements]
+
+With the exception of the symbols '\*', '=' and '\[' and the optional reserved word LET, each statement in the line commences with the appropriate reserved word token. Reserved words are tokenised wherever they occur. A token is indicated by bit 7 of the byte being set. Statements within a line are separated by colons.
+
+## Line Terminator [#line-terminator]
+
+Each program line (except the last) is terminated by a carriage-return (&0D).

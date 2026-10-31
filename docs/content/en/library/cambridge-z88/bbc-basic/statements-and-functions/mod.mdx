@@ -1,0 +1,52 @@
+---
+description: "A binary operation giving the signed remainder of the integer division."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# MOD
+
+A binary operation giving the signed remainder of the integer division.
+
+```text
+X=A MOD B
+```
+
+MOD is defined such that,
+
+```text
+A MOD B = A - ( A DIV B ) * B.
+```
+
+If you are doing integer division (DIV) of whole numbers it is often desirable to know the remainder. (A 'teach children to divide' program for instance.) For example, 23 divided by 3 is 7, remainder 2. Thus,
+
+```text
+10 PRINT 23 DIV 3
+20 PRINT 23 MOD 3
+```
+
+would print
+
+```text
+7
+2
+```
+
+You can use real numbers in these calculations, but they are truncated to their integer part before BBC BASIC(Z80) calculates the result. Thus,
+
+```text
+10 PRINT 23.1 DIV 3.9
+20 PRINT 23.1 MOD 3.9
+```
+
+would give exactly the same results as the previous example.
+
+**Syntax**
+
+```text
+<n-var>=<numeric> MOD <numeric>
+```
+
+**Associated Keywords**
+
+DIV

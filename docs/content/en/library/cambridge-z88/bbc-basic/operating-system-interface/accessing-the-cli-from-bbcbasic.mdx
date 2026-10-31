@@ -1,0 +1,54 @@
+---
+description: "You can access the CLI from within BBCBASIC(Z80) by using the CLI or OSCLI commands. The following examples perform identically and cause a 10 second delay."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# Accessing The CLI From BBCBASIC(Z80)
+
+You can access the CLI from within BBCBASIC(Z80) by using the \*CLI or OSCLI commands. The following examples perform identically and cause a 10 second delay.
+
+```text
+*CLI .D 1000
+```
+
+Or
+
+```text
+OSCLI("CLI .D 1000")
+```
+
+You can invoke a CLI file from within BBCBASIC(Z80) using either the \*CLI or OSCLI commands. For example
+
+```text
+*CLI .*filename
+```
+
+Or
+
+```text
+OSCLI("CLI .*filename")
+```
+
+will invoke the CLI command file 'filename'.
+
+The advantage of using the OSCLI command is that you can use a variable for the file name and the command does not need to be the last (or only) one on a line. For example, the following command will invoke the CLI command file whose name is held in the variable \`fname$’.
+
+OSCLI("CLI .\*"+fname$)
+
+A command passed to the CLI is not executed until the CLI gains control, and this only happens when input is expected from the keyboard (or redirected input file). This is no problem if you are in BBCBASIC(Z80)'s immediate mode where the computer is waiting for you to type something. However, if you are in a program, the commands queued to the CLI will not be actioned until the program pauses for input, or ends and exits to immediate mode. You can force the CLI to look for input by appending an INKEY(0) command to the end of your OSCLI command line. For example, the following command will invoke the CLI command file \`prntr.cli' and execute it, instigating the redirection which it sets up.
+
+```text
+OSCLI("CLI .*prntr.cli"):dummy=INKEY(0)
+```
+
+The file 'prntr.cli may be created using PipeDream and saved as a plain text file with the name \`prntr.cli. The file contains the following commands, for example.
+
+```text
+#+P
+.S
+```
+
+The use of this file is explained more fully in the 'Printing' section of the manual.
+
+Don't forget that the only way to remove a suspended CLI is by pressing \[SHIFT\]/\[ESC\] on the keyboard. You cannot issue a command from within a program that will remove it. For this reason, you should avoid the use of suspended CLI files wherever possible.

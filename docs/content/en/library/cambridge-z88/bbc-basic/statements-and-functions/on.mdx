@@ -1,0 +1,84 @@
+---
+description: "A statement controlling a multi-way switch. The line numbers in the list may be constants or calculated and the 'unwanted' ones are skipped without calculation. The ON statement is used in..."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# ON
+
+A statement controlling a multi-way switch. The line numbers in the list may be constants or calculated and the 'unwanted' ones are skipped without calculation. The ON statement is used in conjunction with four other key-words: GOTO, GOSUB, PROC and ERROR. (ON ERROR is explained separately.)
+
+```text
+ON option GOTO 1000,2000,3000,4000
+ON action GOSUB 100,3000,200,5000,30
+ON choice PROC_add,PROC_find,PROC_delete
+```
+
+The ON statement alters the path through your program by transferring control to one of a selection of line numbers depending on the value of a variable. For example,
+
+```text
+200 ON number GOTO 1000,2000,500,100
+```
+
+would send your program to line 1000 if 'number' was 1, to line 2000 if 'number' was 2, to line 500 if 'number' was 3 and to line 100 if 'number' was 4.
+
+Exceptions may be trapped using the ELSE statement delimiter.
+
+```text
+ON action GOTO 100,300,120 ELSE PRINT"Illegal"
+```
+
+If there is no statement after the ELSE, the program will 'drop through' to the following line if an exception occurs. In the following two examples, the program would drop through to the error handling part of the program if 'choice' or 'B-46' was less than one or more than 3.
+
+```text
+ON choice PROC_add,PROC_find(a$),PROC_delete ELSE
+        PRINT "Illegal Choice - Try again"
+ON B-46 GOSUB 100,200,(C/200) ELSE PRINT "ERROR"
+```
+
+You can use ON...GOTO, ON...GOSUB, and ON...PROC to execute the appropriate part of your program as the result of a menu selection. The following skeleton example offers a menu with three choices.
+
+```text
+ 20 CLS
+ 30 PRINT "SELECT THE ACTION YOU WISH TO TAKE"
+ 40 PRINT "1 OPEN A NEW DATA FILE"
+ 50 PRINT "2 ADD DATA TO THE FILE"
+ 60 PRINT "3 CLOSE THE FILE AND END"''
+ 70 REPEAT
+ 80   INPUT TAB(10,20)"WHAT DO YOU WANT ? "choice
+ 90 UNTIL choice>0 AND choice<4
+100 ON choice PROC_open,PROC_add,PROC_close ELSE
+110 .....etc
+```
+
+## Limitations [#limitations]
+
+If a statement terminator (: or the token for ELSE) appears within the line, the interpreter assumes that the ON... statement is terminated. For example, you cannot pass a colon as a literal string parameter in an ON...PROC command. The program line
+
+```text
+ON entry PROC_start,PROC_add(":"),PROC_end
+```
+
+would be interpreted as
+
+```text
+ON entry PROC_start,PROC_add(":"),PROC_end
+```
+
+and give rise to an interesting crop of error messages.
+
+**Syntax**
+
+```text
+ON <numeric> GOTO <l-num>{,<l-num>}
+             [ELSE <stmt>{:<stmt>}]
+ON <numeric> GOSUB <l-num>{,<l-num>}
+             [ELSE <stmt>{:<stmt>}]
+ON <numeric> PROC<name>[(<exp>{,<exp>})]
+             {,PROC<name>[(<exp>{,<exp>})]}
+             [ELSE <stmt>{:<stmt>}]
+```
+
+**Associated Keywords**
+
+ON ERROR, ON ERROR LOCAL, GOTO, GOSUB, PROC

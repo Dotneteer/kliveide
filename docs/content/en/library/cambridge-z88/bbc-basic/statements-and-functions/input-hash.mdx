@@ -1,0 +1,32 @@
+---
+description: "A statement which reads data in internal format from a file and puts them in the specified variables."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# INPUT#
+
+A statement which reads data in internal format from a file and puts them in the specified variables.
+
+```text
+INPUT #E,A,B,C,D$,E$,F$
+INPUT #3,aux$
+```
+
+It is possible to read past the end-of-file without an error being reported. You should always include some form of check for the end of the file.
+
+READ\# can be used as an alternative to INPUT\#.
+
+Whilst BBC BASIC(Z80) stores numbers in internal format, text is stored in the usual way as a string of characters followed by a carriage-return. Consequently, you can use the INPUT\# command to read text from, say, a PipeDream file.
+
+See the ‘BBC BASIC(Z80) Files’ section for more details and numerous examples of the use of INPUT\#.
+
+**Syntax**
+
+```text
+INPUT #<numeric>,<n-var>|<s-var>{,<n-var>|<s-var>}
+```
+
+**Associated Keywords**
+
+INPUT, OPENIN, OPENUP, OPENOUT, CLOSE\#, PRINT\#, BPUT\#, BGET\#, EXT\#, PTR\#, EOF\#

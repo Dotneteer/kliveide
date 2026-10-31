@@ -1,0 +1,34 @@
+---
+description: "A command which loads a new program from a file and CLEARs the variables of the old program. The program file must be in 'internal' (tokenised) format."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# LOAD (LO.)
+
+A command which loads a new program from a file and CLEARs the variables of the old program. The program file must be in 'internal' (tokenised) format.
+
+```text
+LOAD "PROG1"
+LOAD A$
+```
+
+File names must conform to the standard Z88 format. If no device and/or path are given, the current device and/or path are assumed. See the ‘Operating System Interface’ section for a more detailed description of valid file names.
+
+You use LOAD to bring a program in a file into memory. The keyword LOAD should be followed by the name of the program file. If the program file is in the current directory, only the file name needs to be given. If the program is not in the current directory, its full device, path and file name must be specified. For example:
+
+```text
+LOAD ":RAM.0/bbcprogs/demo"
+```
+
+would load the program 'demo' from the directory 'bbcprogs' on device <strong>`:RAM.0`</strong> .
+
+**Syntax**
+
+```text
+LOAD <str>
+```
+
+**Associated Keywords**
+
+SAVE, CHAIN

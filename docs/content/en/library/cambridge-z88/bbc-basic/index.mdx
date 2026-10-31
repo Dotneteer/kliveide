@@ -1,0 +1,246 @@
+---
+description: "The BBC BASIC(Z80) Reference Manual for Cambridge Z88"
+---
+
+import { Callout } from 'nextra/components'
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# BBC BASIC (Z80) Reference Guide
+
+<Callout type="info">
+
+This is the **BBC BASIC (Z80) Reference Guide** for the Cambridge Z88, second edition, imported from the [Cambridge Z88 wiki](https://cambridgez88.jira.com/wiki/spaces/BBCREF/overview), where it is published as a Google Document. It describes BBC BASIC as the Z88 runs it, including the commands the Z88 Patch adds. The pages follow the manual's chapters; every keyword has a page of its own under [Statements and functions](/en/library/cambridge-z88/bbc-basic/statements-and-functions).
+
+</Callout>
+
+<Shot src="z88-bbc-basic/welcome/image14.webp" alt="R. T. Russell's logo" width={190} />
+
+Richard. T. Russell & Douglas J. Mounter
+
+**The <br />BBC BASIC(Z80)<br />Reference Manual<br />for Cambridge Z88**
+
+Second edition
+
+## Copyright
+
+BBC BASIC(Z80) is the copyright © 1982, 1984-2006 of R.T. Russell.
+
+The BBC BASIC(Z80) Reference Manual, first edition, 1 February 1989, is the copyright © 1983, 1984, 1985. and 1989 of M-TEC Computer Services (UK).
+
+This BBC BASIC(Z80) Reference Manual, second edition is copyright © 2019 of cambridgez88.jira.com (general improvements and fixes of first edition, added information of latest version of BBC BASIC(Z80) for Cambridge Z88 using extended commands of the Z88 Patch).
+
+## Disclaimer
+
+The authors have made every reasonable effort to check the information in this manual and they believe it to be correct. However, they will not in any event be liable for any loss, including consequential loss, caused by an error, defect or inaccuracy in this information, including, but not limited to, loss of profit or loss of contracts.
+
+## Credits
+
+Our thanks to Richard Russell, Matthew Soar and Cambridge Computer Ltd for providing technical information and help in preparing this manual.
+
+## Preface
+
+You are reading the second edition of this manual. It happened because Richard Russell decided to release the source code of the BBC BASIC(Z80) for CP/M in June 2019 and a few months later also the source code of the [Z88 Patch under the same Zlib license](http://www.bbcbasic.co.uk/bbcbasic/z88patch.html).
+
+It allowed us, the team of [cambridgez88.jira.com](https://cambridgez88.jira.com/wiki/), to finally release the source code of BBC BASIC(Z80) port for the Cambridge Z88 that also contained the integration of the Z88 Patch, released to the project in 2006 by Richard Russell as a “ROMable” binary. Previously, the patch was only available as a binary add-on program for OZ releases V2.2 UK - V4.0 UK. The integrated patch allowed [OZ V4.3](https://cambridgez88.jira.com/wiki/x/FoDC) and newer releases to enjoy the improved BBC BASIC application. Respecting copyright, we preserved the reverse-engineered and optimised version source code privately. This source code, however, lacked all the deeper understanding and comments of the original work.
+
+All original source code labels and comments from the ZLib licensed files have now been applied to our reverse-engineered and optimized version of BBC BASIC(Z80) for Cambridge Z88.
+
+You can find the source code here: [https://bitbucket.org/cambridge/oz/src/develop/apps/bbcbasic/](https://bitbucket.org/cambridge/oz/src/develop/apps/bbcbasic/)
+
+The original Z88 User Guide contained introductory information about the BBC BASIC(Z80) V3.0 available for the Cambridge Z88. Many years have passed since the first edition of this manual was released by M-TEC, It is no longer available in print or purchase. The Z88 Patch contained an introduction readme text file, referencing the added star commands.
+
+We decided to do the effort and preserve the legacy of BBC BASIC for Z88, by making this guide available with ALL the updated information from the patch and new improvements of OZ. This guide is based on mainly the online CP/M Z80 guide also using the extended random files examples, typed in from the original contents of the M-TEC first edition. It was then improved, spell-checked, clearer layout, improved Z88-specific descriptions (ie. screenshot for clarity) and added with the Z88 Patch command reference. All the original text from the M-TEC first edition has been checked against this second edition. It is targeted to be the complementary guide for BBC BASIC(Z80) on Cambridge Z88 ROM V4.7 and later releases.
+
+Screenshots, code examples and Z88 Patch have been validated on [OZvm - the Cambridge Z88 emulator](https://cambridgez88.jira.com/wiki/spaces/OZVM/).
+
+On behalf of the [cambridgez88.jira.com](https://cambridgez88.jira.com/wiki/) team, thank you Richard, for the generous decision to make the source code of BBC BASIC(Z80) and Z88 Patch available for everybody.
+
+Gunther Strube, Vic Gerhardi and Jamie Bradbury<br />October 2019 - May 2020
+
+## Contents
+
+- [Introduction](/en/library/cambridge-z88/bbc-basic/introduction)
+  - [Before You Start](/en/library/cambridge-z88/bbc-basic/introduction/before-you-start)
+  - [Running BBC BASIC(Z80)](/en/library/cambridge-z88/bbc-basic/introduction/running-bbc-basic)
+- [General information](/en/library/cambridge-z88/bbc-basic/general-information)
+  - [Introduction](/en/library/cambridge-z88/bbc-basic/general-information/introduction)
+  - [Editing](/en/library/cambridge-z88/bbc-basic/general-information/editing)
+  - [Installing Z88 Patch with Program Editor and other commands](/en/library/cambridge-z88/bbc-basic/general-information/installing-z88-patch-with-program-editor-and-other-commands)
+  - [Expression Priority](/en/library/cambridge-z88/bbc-basic/general-information/expression-priority)
+  - [Variables](/en/library/cambridge-z88/bbc-basic/general-information/variables)
+  - [Program Flow Control](/en/library/cambridge-z88/bbc-basic/general-information/program-flow-control)
+  - [Indirection](/en/library/cambridge-z88/bbc-basic/general-information/indirection)
+  - [Operators and Special Symbols](/en/library/cambridge-z88/bbc-basic/general-information/operators-and-special-symbols)
+  - [Keywords](/en/library/cambridge-z88/bbc-basic/general-information/keywords)
+  - [Error Handling](/en/library/cambridge-z88/bbc-basic/general-information/error-handling)
+  - [Procedures and Functions](/en/library/cambridge-z88/bbc-basic/general-information/procedures-and-functions)
+- [Assembler](/en/library/cambridge-z88/bbc-basic/assembler)
+  - [Introduction](/en/library/cambridge-z88/bbc-basic/assembler/introduction)
+  - [Reserving Memory](/en/library/cambridge-z88/bbc-basic/assembler/reserving-memory)
+  - [The Assembly Process](/en/library/cambridge-z88/bbc-basic/assembler/the-assembly-process)
+  - [Conditional Assembly and Macros](/en/library/cambridge-z88/bbc-basic/assembler/conditional-assembly-and-macros)
+- [Statements and functions](/en/library/cambridge-z88/bbc-basic/statements-and-functions)
+  - [Introduction](/en/library/cambridge-z88/bbc-basic/statements-and-functions/introduction)
+  - [ABS](/en/library/cambridge-z88/bbc-basic/statements-and-functions/abs)
+  - [ACS](/en/library/cambridge-z88/bbc-basic/statements-and-functions/acs)
+  - [ADVAL](/en/library/cambridge-z88/bbc-basic/statements-and-functions/adval)
+  - [AND (A.)](/en/library/cambridge-z88/bbc-basic/statements-and-functions/and)
+  - [ASC](/en/library/cambridge-z88/bbc-basic/statements-and-functions/asc)
+  - [ASN](/en/library/cambridge-z88/bbc-basic/statements-and-functions/asn)
+  - [ATN](/en/library/cambridge-z88/bbc-basic/statements-and-functions/atn)
+  - [AUTO (AU.)](/en/library/cambridge-z88/bbc-basic/statements-and-functions/auto)
+  - [BGET\# (B.\#)](/en/library/cambridge-z88/bbc-basic/statements-and-functions/bget-hash)
+  - [BPUT\# (BP.\#)](/en/library/cambridge-z88/bbc-basic/statements-and-functions/bput-hash)
+  - [CALL (CA.)](/en/library/cambridge-z88/bbc-basic/statements-and-functions/call)
+  - [CHAIN (CH.)](/en/library/cambridge-z88/bbc-basic/statements-and-functions/chain)
+  - [CHR$](/en/library/cambridge-z88/bbc-basic/statements-and-functions/chr-str)
+  - [CLEAR (CL.)](/en/library/cambridge-z88/bbc-basic/statements-and-functions/clear)
+  - [CLOSE\# (CLO.\#)](/en/library/cambridge-z88/bbc-basic/statements-and-functions/close-hash)
+  - [CLG](/en/library/cambridge-z88/bbc-basic/statements-and-functions/clg)
+  - [CLS](/en/library/cambridge-z88/bbc-basic/statements-and-functions/cls)
+  - [COLOUR](/en/library/cambridge-z88/bbc-basic/statements-and-functions/colour)
+  - [COS](/en/library/cambridge-z88/bbc-basic/statements-and-functions/cos)
+  - [COUNT (COU.)](/en/library/cambridge-z88/bbc-basic/statements-and-functions/count)
+  - [DATA (D.)](/en/library/cambridge-z88/bbc-basic/statements-and-functions/data)
+  - [DEF](/en/library/cambridge-z88/bbc-basic/statements-and-functions/def)
+  - [DEG](/en/library/cambridge-z88/bbc-basic/statements-and-functions/deg)
+  - [DELETE (DEL.)](/en/library/cambridge-z88/bbc-basic/statements-and-functions/delete)
+  - [DIM](/en/library/cambridge-z88/bbc-basic/statements-and-functions/dim)
+  - [DIV](/en/library/cambridge-z88/bbc-basic/statements-and-functions/div)
+  - [DRAW](/en/library/cambridge-z88/bbc-basic/statements-and-functions/draw)
+  - [\*EDIT (\*E.)](/en/library/cambridge-z88/bbc-basic/statements-and-functions/star-edit)
+  - [ELSE (EL.)](/en/library/cambridge-z88/bbc-basic/statements-and-functions/else)
+  - [END](/en/library/cambridge-z88/bbc-basic/statements-and-functions/end)
+  - [ENDPROC](/en/library/cambridge-z88/bbc-basic/statements-and-functions/endproc)
+  - [ENVELOPE](/en/library/cambridge-z88/bbc-basic/statements-and-functions/envelope)
+  - [EOF\#](/en/library/cambridge-z88/bbc-basic/statements-and-functions/eof-hash)
+  - [EOR](/en/library/cambridge-z88/bbc-basic/statements-and-functions/eor)
+  - [ERL](/en/library/cambridge-z88/bbc-basic/statements-and-functions/erl)
+  - [ERR](/en/library/cambridge-z88/bbc-basic/statements-and-functions/err)
+  - [EVAL (EV.)](/en/library/cambridge-z88/bbc-basic/statements-and-functions/eval)
+  - [EXP](/en/library/cambridge-z88/bbc-basic/statements-and-functions/exp)
+  - [EXT\#](/en/library/cambridge-z88/bbc-basic/statements-and-functions/ext-hash)
+  - [FALSE (FA.)](/en/library/cambridge-z88/bbc-basic/statements-and-functions/false)
+  - [FN](/en/library/cambridge-z88/bbc-basic/statements-and-functions/fn)
+  - [FOR (F.)](/en/library/cambridge-z88/bbc-basic/statements-and-functions/for)
+  - [GCOL (GC.)](/en/library/cambridge-z88/bbc-basic/statements-and-functions/gcol)
+  - [GET/GET$](/en/library/cambridge-z88/bbc-basic/statements-and-functions/get)
+  - [GOSUB](/en/library/cambridge-z88/bbc-basic/statements-and-functions/gosub)
+  - [GOTO (G.)](/en/library/cambridge-z88/bbc-basic/statements-and-functions/goto)
+  - [HIMEM](/en/library/cambridge-z88/bbc-basic/statements-and-functions/himem)
+  - [IF](/en/library/cambridge-z88/bbc-basic/statements-and-functions/if)
+  - [INKEY/INKEY$](/en/library/cambridge-z88/bbc-basic/statements-and-functions/inkey)
+  - [INPUT](/en/library/cambridge-z88/bbc-basic/statements-and-functions/input)
+  - [INPUT LINE](/en/library/cambridge-z88/bbc-basic/statements-and-functions/input-line)
+  - [INPUT\#](/en/library/cambridge-z88/bbc-basic/statements-and-functions/input-hash)
+  - [INSTR](/en/library/cambridge-z88/bbc-basic/statements-and-functions/instr)
+  - [INT](/en/library/cambridge-z88/bbc-basic/statements-and-functions/int)
+  - [LEFT$](/en/library/cambridge-z88/bbc-basic/statements-and-functions/left-str)
+  - [LEN](/en/library/cambridge-z88/bbc-basic/statements-and-functions/len)
+  - [LET](/en/library/cambridge-z88/bbc-basic/statements-and-functions/let)
+  - [LIST (L.)](/en/library/cambridge-z88/bbc-basic/statements-and-functions/list)
+  - [LISTO](/en/library/cambridge-z88/bbc-basic/statements-and-functions/listo)
+  - [LN](/en/library/cambridge-z88/bbc-basic/statements-and-functions/ln)
+  - [LOAD (LO.)](/en/library/cambridge-z88/bbc-basic/statements-and-functions/load)
+  - [LOCAL](/en/library/cambridge-z88/bbc-basic/statements-and-functions/local)
+  - [LOG](/en/library/cambridge-z88/bbc-basic/statements-and-functions/log)
+  - [LOMEM](/en/library/cambridge-z88/bbc-basic/statements-and-functions/lomem)
+  - [MOD](/en/library/cambridge-z88/bbc-basic/statements-and-functions/mod)
+  - [MODE (MO.)](/en/library/cambridge-z88/bbc-basic/statements-and-functions/mode)
+  - [MOVE](/en/library/cambridge-z88/bbc-basic/statements-and-functions/move)
+  - [NEXT (N.)](/en/library/cambridge-z88/bbc-basic/statements-and-functions/next)
+  - [NOT](/en/library/cambridge-z88/bbc-basic/statements-and-functions/not)
+  - [OLD](/en/library/cambridge-z88/bbc-basic/statements-and-functions/old)
+  - [ON](/en/library/cambridge-z88/bbc-basic/statements-and-functions/on)
+  - [ON ERROR](/en/library/cambridge-z88/bbc-basic/statements-and-functions/on-error)
+  - [OPENIN (OP.)](/en/library/cambridge-z88/bbc-basic/statements-and-functions/openin)
+  - [OPENOUT](/en/library/cambridge-z88/bbc-basic/statements-and-functions/openout)
+  - [OPENUP](/en/library/cambridge-z88/bbc-basic/statements-and-functions/openup)
+  - [OPT](/en/library/cambridge-z88/bbc-basic/statements-and-functions/opt)
+  - [OR](/en/library/cambridge-z88/bbc-basic/statements-and-functions/or)
+  - [OSCLI](/en/library/cambridge-z88/bbc-basic/statements-and-functions/oscli)
+  - [PAGE (PA.)](/en/library/cambridge-z88/bbc-basic/statements-and-functions/page)
+  - [PI](/en/library/cambridge-z88/bbc-basic/statements-and-functions/pi)
+  - [PLOT (PL.)](/en/library/cambridge-z88/bbc-basic/statements-and-functions/plot)
+  - [POINT](/en/library/cambridge-z88/bbc-basic/statements-and-functions/point)
+  - [PRINT](/en/library/cambridge-z88/bbc-basic/statements-and-functions/print)
+  - [PRINT\# (P.\#)](/en/library/cambridge-z88/bbc-basic/statements-and-functions/print-hash)
+  - [PROC](/en/library/cambridge-z88/bbc-basic/statements-and-functions/proc)
+  - [PTR\#](/en/library/cambridge-z88/bbc-basic/statements-and-functions/ptr-hash)
+  - [PUT](/en/library/cambridge-z88/bbc-basic/statements-and-functions/put)
+  - [RAD](/en/library/cambridge-z88/bbc-basic/statements-and-functions/rad)
+  - [READ](/en/library/cambridge-z88/bbc-basic/statements-and-functions/read)
+  - [REM](/en/library/cambridge-z88/bbc-basic/statements-and-functions/rem)
+  - [RENUMBER (REN.)](/en/library/cambridge-z88/bbc-basic/statements-and-functions/renumber)
+  - [REPEAT (REP.)](/en/library/cambridge-z88/bbc-basic/statements-and-functions/repeat)
+  - [REPORT (REPO.)](/en/library/cambridge-z88/bbc-basic/statements-and-functions/report)
+  - [RESTORE (RES.)](/en/library/cambridge-z88/bbc-basic/statements-and-functions/restore)
+  - [RETURN (R.)](/en/library/cambridge-z88/bbc-basic/statements-and-functions/return)
+  - [RIGHT$](/en/library/cambridge-z88/bbc-basic/statements-and-functions/right-str)
+  - [RND](/en/library/cambridge-z88/bbc-basic/statements-and-functions/rnd)
+  - [RUN](/en/library/cambridge-z88/bbc-basic/statements-and-functions/run)
+  - [SAVE (SA.)](/en/library/cambridge-z88/bbc-basic/statements-and-functions/save)
+  - [SGN](/en/library/cambridge-z88/bbc-basic/statements-and-functions/sgn)
+  - [SIN](/en/library/cambridge-z88/bbc-basic/statements-and-functions/sin)
+  - [SOUND](/en/library/cambridge-z88/bbc-basic/statements-and-functions/sound)
+  - [SPC](/en/library/cambridge-z88/bbc-basic/statements-and-functions/spc)
+  - [SQR](/en/library/cambridge-z88/bbc-basic/statements-and-functions/sqr)
+  - [STEP (S.)](/en/library/cambridge-z88/bbc-basic/statements-and-functions/step)
+  - [STOP](/en/library/cambridge-z88/bbc-basic/statements-and-functions/stop)
+  - [STR$](/en/library/cambridge-z88/bbc-basic/statements-and-functions/str-str)
+  - [STRING$](/en/library/cambridge-z88/bbc-basic/statements-and-functions/string-str)
+  - [TAB](/en/library/cambridge-z88/bbc-basic/statements-and-functions/tab)
+  - [TAN (T.)](/en/library/cambridge-z88/bbc-basic/statements-and-functions/tan)
+  - [THEN (TH.)](/en/library/cambridge-z88/bbc-basic/statements-and-functions/then)
+  - [TIME (TI.)](/en/library/cambridge-z88/bbc-basic/statements-and-functions/time)
+  - [TIME$](/en/library/cambridge-z88/bbc-basic/statements-and-functions/time-str)
+  - [TO](/en/library/cambridge-z88/bbc-basic/statements-and-functions/to)
+  - [TOP](/en/library/cambridge-z88/bbc-basic/statements-and-functions/top)
+  - [TRACE (TR.)](/en/library/cambridge-z88/bbc-basic/statements-and-functions/trace)
+  - [TRUE](/en/library/cambridge-z88/bbc-basic/statements-and-functions/true)
+  - [UNTIL (U.)](/en/library/cambridge-z88/bbc-basic/statements-and-functions/until)
+  - [USR](/en/library/cambridge-z88/bbc-basic/statements-and-functions/usr)
+  - [VAL](/en/library/cambridge-z88/bbc-basic/statements-and-functions/val)
+  - [VDU (V.)](/en/library/cambridge-z88/bbc-basic/statements-and-functions/vdu)
+  - [VPOS](/en/library/cambridge-z88/bbc-basic/statements-and-functions/vpos)
+  - [WIDTH (W.)](/en/library/cambridge-z88/bbc-basic/statements-and-functions/width)
+- [The Screen Driver](/en/library/cambridge-z88/bbc-basic/the-screen-driver)
+  - [Introduction](/en/library/cambridge-z88/bbc-basic/the-screen-driver/introduction)
+  - [Escape Sequences](/en/library/cambridge-z88/bbc-basic/the-screen-driver/escape-sequences)
+  - [Description of VDU Codes](/en/library/cambridge-z88/bbc-basic/the-screen-driver/description-of-vdu-codes)
+  - [Description of Escape Sequences](/en/library/cambridge-z88/bbc-basic/the-screen-driver/description-of-escape-sequences)
+- [Operating System Interface](/en/library/cambridge-z88/bbc-basic/operating-system-interface)
+  - [Introduction](/en/library/cambridge-z88/bbc-basic/operating-system-interface/introduction)
+  - [File Specifiers](/en/library/cambridge-z88/bbc-basic/operating-system-interface/file-specifiers)
+  - [Symbols](/en/library/cambridge-z88/bbc-basic/operating-system-interface/symbols)
+  - [Accessing Star Commands](/en/library/cambridge-z88/bbc-basic/operating-system-interface/accessing-star-commands)
+  - [Star Commands](/en/library/cambridge-z88/bbc-basic/operating-system-interface/star-commands)
+  - [The Command Line Interpreter (CLI)](/en/library/cambridge-z88/bbc-basic/operating-system-interface/the-command-line-interpreter)
+  - [Accessing The CLI From BBCBASIC(Z80)](/en/library/cambridge-z88/bbc-basic/operating-system-interface/accessing-the-cli-from-bbcbasic)
+  - [CLI Command Examples](/en/library/cambridge-z88/bbc-basic/operating-system-interface/cli-command-examples)
+- [Printing](/en/library/cambridge-z88/bbc-basic/printing)
+  - [Introduction](/en/library/cambridge-z88/bbc-basic/printing/introduction)
+  - [Keyboard Control](/en/library/cambridge-z88/bbc-basic/printing/keyboard-control)
+  - [From Within a Program](/en/library/cambridge-z88/bbc-basic/printing/from-within-a-program)
+  - [The Printer Filter](/en/library/cambridge-z88/bbc-basic/printing/the-printer-filter)
+  - [The Serial Port](/en/library/cambridge-z88/bbc-basic/printing/the-serial-port)
+- [BBC BASIC(Z80) Files](/en/library/cambridge-z88/bbc-basic/bbc-basic-z80-files)
+  - [Introduction](/en/library/cambridge-z88/bbc-basic/bbc-basic-z80-files/introduction)
+  - [The Structure of Files](/en/library/cambridge-z88/bbc-basic/bbc-basic-z80-files/the-structure-of-files)
+  - [Files in BBC BASIC(Z80)](/en/library/cambridge-z88/bbc-basic/bbc-basic-z80-files/files-in-bbc-basic)
+  - [File Access Commands](/en/library/cambridge-z88/bbc-basic/bbc-basic-z80-files/file-access-commands)
+  - [Serial Files](/en/library/cambridge-z88/bbc-basic/bbc-basic-z80-files/serial-files)
+  - [Random (Relative) Files](/en/library/cambridge-z88/bbc-basic/bbc-basic-z80-files/random-relative-files)
+  - [Indexed Data Files](/en/library/cambridge-z88/bbc-basic/bbc-basic-z80-files/indexed-data-files)
+  - [The Binary Chop](/en/library/cambridge-z88/bbc-basic/bbc-basic-z80-files/the-binary-chop)
+- [Annex A: Table of ASCII Codes](/en/library/cambridge-z88/bbc-basic/annex-a-table-of-ascii-codes)
+- [Annex B: Mathematical Functions](/en/library/cambridge-z88/bbc-basic/annex-b-mathematical-functions)
+- [Annex C: Error Messages and Codes](/en/library/cambridge-z88/bbc-basic/annex-c-error-messages-and-codes)
+  - [Summary](/en/library/cambridge-z88/bbc-basic/annex-c-error-messages-and-codes/summary)
+  - [Details](/en/library/cambridge-z88/bbc-basic/annex-c-error-messages-and-codes/details)
+- [Annex D: Format of Program and Variables in Memory](/en/library/cambridge-z88/bbc-basic/annex-d-format-of-program-and-variables-in-memory)
+  - [Memory Map](/en/library/cambridge-z88/bbc-basic/annex-d-format-of-program-and-variables-in-memory/memory-map)
+  - [Memory Management](/en/library/cambridge-z88/bbc-basic/annex-d-format-of-program-and-variables-in-memory/memory-management)
+  - [Program Storage in Memory](/en/library/cambridge-z88/bbc-basic/annex-d-format-of-program-and-variables-in-memory/program-storage-in-memory)
+  - [Variable Storage in Memory](/en/library/cambridge-z88/bbc-basic/annex-d-format-of-program-and-variables-in-memory/variable-storage-in-memory)

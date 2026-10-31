@@ -1,0 +1,101 @@
+---
+description: "Pass the following string to the Command Line Interpreter (CLI) for action. The use of the CLI is explained later in this section.."
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# Star Commands
+
+## <strong>\*CLI</strong> [#cli]
+
+Pass the following string to the Command Line Interpreter (CLI) for action. The use of the CLI is explained later in this section..
+
+```text
+*CLI string
+```
+
+`*CLI .D 1000` (Delay for 10 seconds)
+
+See the 'Command Line Interpreter' sub-section for more details.
+
+## <strong>\*DELETE</strong> [#delete]
+
+Delete the specified file.
+
+```text
+*DELETE ufsp
+*DELETE GAME1
+```
+
+This command will delete only one file at a time; wild-cards are not permitted in the file specifier. If you wish to delete more than one file, you should use the 'Erase' function of the 'Filer'.
+
+## <strong>\*ERASE</strong> [#erase]
+
+This command is synonymous with `*DELETE.`
+
+## <strong>\*NAME</strong> [#name]
+
+Assign a 'name' to the current instantiation of BBCBASIC(Z80).
+
+```text
+*NAME string
+```
+
+The list of suspended activities shown when the Z88's index is selected has space for 'Your Reference' for each of the suspended activities. This reference may be up to 15 characters long. The \*NAME command allows you to specify the reference for the current instantiation of BBCBASIC(Z80). If the reference exceeds 15 characters, it is truncated. For example:
+
+```text
+*NAME This is the first instantiation
+```
+
+would appear in the list of suspended activities as:
+
+<Shot src="z88-bbc-basic/operating-system-interface/star-commands/image3.webp" alt="A suspended BBC BASIC activity in the Index" width={342} />
+
+## <strong>\*SPOOL and \*EXEC</strong> [#spool-and-exec]
+
+\*SPOOL and \*EXEC are not available on the Z88. However, you can perform similar functions using the CLI as shown below. (The '+'represents the '=/+' key - you don't have to use the \[SHIFT\] key.)
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>
+
+<strong>\>LIST ☐ +S \[ENTER\]</strong>
+
+**…………**
+
+**…………**
+
+**…………**
+
+<strong>\>☐ -S</strong>
+
+</Table.Td>
+<Table.Td>The equivalent of \*SPOOL. It produces a text file of the program called S.SGN in :RAM.- . Remember to delete it when you have finished with it.</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+Use PipeDream to add '.J' as the first line. Remember to load and save the file in plain text mode. You can now use the command
+
+```text
+>*CLI .*:RAM.-/S.SGN[ENTER]
+```
+
+to '\*EXEC' the file back into BBCBASIC(Z80)
+
+You can use this technique to produce a text file for extensive editing in PipeDream.
+
+## <strong>\*RENAME</strong> [#rename]
+
+Rename a file. OSCLI can also be used to rename a file. Using OSCLI has the advantage that the file names may be string variables.
+
+```text
+*RENAME ufspold ufspnew
+OSCLI "RENAME "+string+" "+string
+*RENAME OLDFILE NEWFILE
+*OSCLI("RENAME "+f_name1$+" "+f_namel$+".BAK")
+*OSCLI(“RENAME "+fname1$+" "+fname2$)
+```

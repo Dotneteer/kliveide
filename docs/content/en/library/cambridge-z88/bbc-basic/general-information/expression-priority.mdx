@@ -1,0 +1,36 @@
+---
+description: "The various mathematical and logical operators have a priority order. The computer will evaluate an expression taking this priority order into account. Operators with the same priority will be..."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# Expression Priority
+
+## Order of Evaluation [#order-of-evaluation]
+
+The various mathematical and logical operators have a priority order. The computer will evaluate an expression taking this priority order into account. Operators with the same priority will be evaluated from left to right. For example, in a line containing multiplication and subtraction, ALL the multiplications would be performed before any of the subtractions were carried out. The various operators are listed below in priority order.
+
+```text
+variables  functions  ()  !  ?  &  unary+-  NOT
+^
+*  /  MOD  DIV
++  -
+=  <>  <=  >=  >  <
+AND
+EOR  OR
+```
+
+## Examples [#examples]
+
+The following are some examples of the way expression priority can be used. It often makes things easier for us humans to understand if you include the brackets whether the computer needs them or not.
+
+```text
+IF A=2 AND B=3 THEN
+IF ((A=2)AND(B=3))THEN
+IF A=1 OR C=2 AND B=3 THEN
+IF((A=1)OR((C=2)AND(B=3)))THEN
+IF NOT(A=1 AND B=2) THEN
+IF(NOT((A=1)AND(B=2)))THEN
+N=A+B/C-D N=A+(B/C)-D
+N=A/B+C/D N=(A/B)+(C/D)
+```

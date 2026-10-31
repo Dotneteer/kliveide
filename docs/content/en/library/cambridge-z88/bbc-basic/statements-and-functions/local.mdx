@@ -1,0 +1,31 @@
+---
+description: "A statement to declare variables for local use inside a function (FN) or procedure (PROC). A null list of variables is not permitted."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# LOCAL
+
+A statement to declare variables for local use inside a function (FN) or procedure (PROC). A null list of variables is not permitted.
+
+```text
+LOCAL A$,X,Y%
+```
+
+LOCAL saves the values of its arguments in such a way that they will be restored at '=' or ENDPROC.
+
+If a function or a procedure is used recursively, the LOCAL variables will be preserved at each level.
+
+The LOCAL variables are initialised to zero/null.
+
+See the keyword ON ERROR LOCAL for details of local error trapping.
+
+**Syntax**
+
+```text
+LOCAL <n-var>|<s-var>{,<n-var>|<s-var>}
+```
+
+**Associated Keywords**
+
+DEF, ENDPROC, FN, PROC

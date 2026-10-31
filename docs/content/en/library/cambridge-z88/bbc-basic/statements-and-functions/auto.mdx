@@ -1,0 +1,85 @@
+---
+description: "A command allowing the user to enter lines without first typing in the number of the line. The line numbers are preceded by the usual prompt (>)."
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# AUTO (AU.)
+
+A command allowing the user to enter lines without first typing in the number of the line. The line numbers are preceded by the usual prompt (\>).
+
+You can use this command to tell the computer to type the line numbers automatically for you when you are entering a program (or part of a program).
+
+If AUTO is used on its own, the line numbers will start at 10 and go up by 10 for each line. However, you can specify the start number and the value by which the line numbers will increment. The step size can be in the range 1 to 255.
+
+You cannot use the AUTO command within a program or a multi-statement command line.
+
+You can leave the AUTO mode by pressing the escape key.
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td colSpan={2}>
+
+```text
+AUTO start_number,step_size
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+AUTO
+```
+
+</Table.Td>
+<Table.Td>offers line numbers 10, 20, 30 ...</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+AUTO 100
+```
+
+</Table.Td>
+<Table.Td>starts at 100 with step 10</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+AUTO 100,1
+```
+
+</Table.Td>
+<Table.Td>starts at 100 with step 1</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+AUTO ,2
+```
+
+</Table.Td>
+<Table.Td>starts at 10 with step 2</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+A hyphen is an acceptable alternative to a comma.
+
+**Syntax**
+
+```text
+AUTO [<n-const> [,<n-const>]]
+```
+
+**Associated Keywords**
+
+None

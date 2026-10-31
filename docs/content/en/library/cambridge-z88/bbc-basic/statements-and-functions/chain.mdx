@@ -1,0 +1,47 @@
+---
+description: "A statement which loads and runs the program whose name is specified in the argument."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# CHAIN (CH.)
+
+A statement which loads and runs the program whose name is specified in the argument.
+
+```text
+CHAIN "GAME1"
+CHAIN A$
+```
+
+The program file must be in tokenised format.
+
+All but the static variables @% to Z% are CLEARed.
+
+CHAIN sets ON ERROR OFF before chaining the specified program.
+
+RUN may be used as an alternative to CHAIN.
+
+You can use CHAIN (or RUN) to link program modules together. This allows you to write modular programs which would, if written in one piece, be too large for the memory available.
+
+Passing data between CHAINed programs can be a bit of a problem because COMMON variables cannot be declared and all but the static variables are cleared by CHAIN.
+
+If you wish to pass large amounts of data between CHAINed programs, you should use a data file. However, if the amount of data to be passed is small and you do not wish to suffer the time penalty of using a data file, you can pass data to the CHAINed program by using the indirection operators to store them at known addresses. The safest way to do this is to move HIMEM down and store common data at the top of memory.
+
+The following sample program segment moves HIMEM down 100 bytes and stores the input and output file names in the memory above HIMEM. There is, of course, still plenty of room for other data in this area.
+
+```text
+100 HIMEM=HIMEM-100
+110 $HIMEM=in_file$
+120 $(HIMEM+13)=out_file$
+130 CHAIN "NEXTPROG"
+```
+
+**Syntax**
+
+```text
+CHAIN <str>
+```
+
+**Associated Keywords**
+
+LOAD, RUN, SAVE

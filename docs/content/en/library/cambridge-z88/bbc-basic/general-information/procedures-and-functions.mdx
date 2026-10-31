@@ -1,0 +1,188 @@
+---
+description: "Procedures and functions are similar to subroutines in that they are 'bits' of program which performs a discrete function. Like subroutines, they can be performed (called) from several places in..."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# Procedures and Functions
+
+## Introduction [#introduction]
+
+Procedures and functions are similar to subroutines in that they are 'bits' of program which performs a discrete function. Like subroutines, they can be performed (called) from several places in the program. However, they have two great advantages over subroutines: you can refer to them by name and the variables used within them can be made private to the procedure or function.
+
+Arguably, the major advantage of procedures and functions is that they can be referred to by name. Consider the two similar program lines below.
+
+```text
+100 IF name$="ZZ" THEN GOSUB 500 ELSE GOSUB 800
+100 IF name$="ZZ" THEN PROC_end ELSE PROC_print
+```
+
+The first statement gives no indication of what the subroutines at 500 and 800 actually do. The second, however, tells you what to expect from the two procedures. This enhanced readability stems from the choice of meaningful names for the two procedures.
+
+A function often carries out a number of actions, but it always produces a single result. For instance, the 'built in' function INT returns the integer part of its argument.
+
+```text
+age=INT(months/12)
+```
+
+A procedure on the other hand, is specifically intended to carry out a number of actions, some of which may affect program variables, but it does not directly return a result.
+
+Whilst BBC BASIC(Z80) has a large number of predefined functions (INT and LEN for example) it is very useful to be able to define your own to do something special. Suppose you had written a function called FN\_discount to calculate the discount price from the normal retail price. You could write something similar to the following example anywhere in your program where you wished this calculation to be carried out.
+
+```text
+discount_price=FN_discount(retail_price)
+```
+
+It may seem hardly worth while defining a function to do something this simple. However, functions and procedures are not confined to single line definitions and they are very useful for improving the structure and readability of your program.
+
+## Names [#names]
+
+The names of procedures and functions MUST start with PROC or FN and, like variable names, they cannot contain spaces. (A space tells BBC BASIC(Z80) that it has reached the end of the word.) This restriction can give rise to some pretty unreadable names. However, the underline character can be used to advantage. Consider the procedure and function names below and decide which is easier to read.
+
+```text
+PROCPRINTDETAILS                FNDISCOUNT
+PROC_print_details                FN_discount
+```
+
+Function and procedure names may end with a '$'. However, this is not compulsory for functions which return strings.
+
+## Functions and Procedure Definitions [#functions-and-procedure-definitions]
+
+### Starting a Definition [#starting-a-definition]
+
+Functions and procedure definitions are 'signalled' to BBC BASIC(Z80) by preceding the function or procedure name with the keyword DEF. DEF must be at the beginning of the line. If the computer encounters DEF during execution of the program, the rest of the line is ignored. Consequently, you can put single line definitions anywhere in your program.
+
+### The Function/Procedure Body [#the-functionprocedure-body]
+
+The 'body' of a procedure or function must not be executed directly - it must be performed (called) by another part of the program. Since BBC BASIC(Z80) only skips the rest of the line when it encounters DEF, there is a danger that the remaining lines of a multi-line definition might be executed directly. You can avoid this by putting multi-line definitions at the end of the main program text after the END statement. Procedures and functions do not need to be declared before they are used and there is no speed advantage to be gained by placing them at the start of the program.
+
+### Ending a Definition [#ending-a-definition]
+
+The end of a procedure definition is indicated by the keyword ENDPROC. The end of a function definition is signalled by using a statement which starts with an equals (=) sign. The function returns the value of the expression to the right of the equals sign.
+
+### Single Line Functions/Procedures [#single-line-functionsprocedures]
+
+For single line definitions, the start and end are signalled on the same line. The first example below defines a function which returns the average of two numbers. The second defines a procedure which clears from the current cursor position to the end of line on a 40 column screen.
+
+```text
+500 DEF FN_average(n1,n2)=(n1+n2)/2
+120 DEF PROC_clear:PRINT SPC(40-POS);:ENDPROC
+```
+
+### Extending the Language [#extending-the-language]
+
+You can define a whole library of procedures and functions and include them in your programs. By doing this you can effectively extend the scope of the language. For instance, BBC BASIC(Z80) does not have a 'clear to end of screen' command. Some computers will perform this function on receipt of a sequence of control characters and in this case you can use VDU or CHR$ to send the appropriate codes. However, many computers do not have this facility and a procedure to clear to the end of the screen would be useful. The example below is a procedure to clear to the end of screen on a computer with a 94 by 8 display. In order to prevent the display from scrolling, you must not write to the last column of the last row. The three variables used (i, x, and y) are declared as LOCAL to the procedure (see later).
+
+```text
+100 DEF PROC_clear_to_end
+110 LOCAL i,x,y
+120 x=POS:y=VPOS
+130 REM If not last line, print lines of spaces which
+140 REM will wrap around and end up on last line
+150 IF y<7 FOR i=y TO 6:PRINT SPC(94);:NEXT
+160 REM Print spaces to end-1 of last line.
+170 PRINT SPC(93-x);
+180 PRINT TAB(x,y);
+190 ENDPROC
+```
+
+## Passing Parameters [#passing-parameters]
+
+When you define a procedure or a function, you list the parameters to be passed to it in brackets. For instance, the discount example expected one parameter (the retail price) to be passed to it. You can write the definition to accept any number of parameters. For example, we may wish to pass both the retail price and the discount percentage. The function definition would then look something like this:
+
+```text
+DEF FN_discount(price,pcent)=price*(1-pcent/100)
+```
+
+In this case, to use the function we would need to pass two parameters.
+
+```text
+90 ....
+100 retail_price=26.55
+110 discount_price=FN_discount(retail_price,25)
+120 ....
+```
+
+or
+
+```text
+90 ....
+100 price=26.55
+110 discount=25
+120 price=FN_discount(price,discount)
+130 ....
+```
+
+or
+
+```text
+90 ....
+100 price=FN_discount(26.55,25)
+110 ....
+```
+
+### Formal and Actual Parameters [#formal-and-actual-parameters]
+
+The value of the first parameter in the line using the procedure or function is passed to the first variable named in the parameter list in the definition, the second to the second, and so on. This is termed 'passing by value'. The parameters declared in the definition are called 'formal parameters' and the values passed in the lines which perform (call) the procedure or function are called 'actual parameters'. There must be as many actual parameters passed as there are formal parameters declared in the definition. You can pass a mix of string and numeric parameters to the same procedure or function and a function can return either a string or numeric value, irrespective of the type of parameters passed to it. However, you must make sure that the parameter types match up. The first example below is correct; the second would give rise to an 'Arguments at line 10' error message and the third would cause a 'Type mismatch at line 10' error to be reported.
+
+**Correct**
+
+```text
+10 PROC_printit(1,"FRED",2)
+20 END
+30 :
+40 DEF PROC_printit(num1,name$,num2)
+50 PRINT num1,name$,num2
+60 ENDPROC
+```
+
+**Arguments Error**
+
+```text
+10 PROC_printit(1,"FRED",2,4)
+20 END
+30 :
+40 DEF PROC_printit(num1,name$,num2)
+50 PRINT num1,name$,num2
+60 ENDPROC
+```
+
+**Type Mismatch**
+
+```text
+10 PROC_printit(1,"FRED","JIM")
+20 END
+30 :
+40 DEF PROC_printit(num1,name$,num2)
+50 PRINT num1,name$,num2
+60 ENDPROC
+```
+
+## Local Variables [#local-variables]
+
+You can use the statement LOCAL to define variables which are only known locally to individual procedures and functions. In addition, formal parameters are local to the procedure or function declaring them. These variables are only known locally to the defining procedure or function. They are not known to the rest of the program and they can only be changed from within the procedure or function where they are defined. Consequently, you can have two variables of the same name, say FLAG, in various parts of your program, and change the value of one without changing the other. This technique is used extensively in the example file handling programs in this manual.
+
+Declaring variables as local, creates them locally and initialises them to zero/null.
+
+Variables which are not formal variables or declared as LOCAL are known to the whole program, including all the procedures and functions. Such variables are called GLOBAL.
+
+### Re-entrant Functions/Procedures [#re-entrant-functionsprocedures]
+
+Because the formal parameters which receive the passed parameters are local, all procedures and functions can be re- entrant. That is, they can call themselves. But for this feature, the short example program below would be very difficult to code. It is the often used example of a factorial number routine. (The factorial of a number n is n \* n-1 \* n-2 \*....\* 1. Factorial 6, for instance, is 6\*5\*4\*3\*2\*1).
+
+```text
+ 10 REPEAT
+ 20   INPUT "Enter an INTEGER less than 35 "num
+ 30 UNTIL INT(num)=num AND num<35
+ 40 fact=FN_fact_num(num)
+ 50 PRINT num,fact
+ 60 END
+ 70:
+ 80 DEF FN_fact_num(n)
+ 90 IF n=1 OR n=0 THEN =1
+100 REM Return with 1 if n= 0 or 1
+110 =n*FN_fact_num(n-1)
+120 REM Else go round again
+```
+
+Since 'n' is the input variable to the function FN\_fact\_num, it is local to each and every use of the function. The function keeps calling itself until it returns the answer 1. It then works its way back through all the calls until it has completed the final multiplication, when it returns the answer. The limit of 35 on the input number prevents the answer being too big for the computer to handle.

@@ -1,0 +1,27 @@
+---
+description: "A statement which prints a number of spaces to the screen (or currently selected console output stream). The argument specifies the number of spaces (up to 255) to be printed."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# SPC
+
+A statement which prints a number of spaces to the screen (or currently selected console output stream). The argument specifies the number of spaces (up to 255) to be printed.
+
+SPC can only be used within a PRINT or INPUT statement.
+
+```text
+PRINT DATE;SPC(6);SALARY
+INPUT SPC(10) "What is your name ",name$
+```
+
+**Syntax**
+
+```text
+PRINT SPC(<numeric>)
+INPUT SPC(<numeric>)
+```
+
+**Associated Keywords**
+
+TAB, PRINT, INPUT

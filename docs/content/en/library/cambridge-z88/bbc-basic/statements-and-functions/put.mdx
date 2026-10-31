@@ -1,0 +1,29 @@
+---
+description: "A statement to output data to an output port. Full 16bit addressing is available."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# PUT
+
+A statement to output data to an output port. Full 16bit addressing is available.
+
+```text
+PUT A,N :REM output N to port A.
+```
+
+This instruction gives direct access from BBC BASIC(Z80) to the computer's I/O hardware. Typically, you can use it to directly access I/O ports.
+
+It is strongly recommended that you do not try to control the Z88’s hardware with this command - a mistake can be disastrous. However, if you insist on directly accessing the Z88’s hardware, you will need to study the Z88 Developers’ Notes ‘Manipulating the Blink Registers’ section. This guide is available online via [cambridgez88.jira.com/wiki/spaces/DN](/en/library/cambridge-z88/developers-notes).
+
+This command is an addition to the original language specification and it cannot be guaranteed to remain unchanged in future releases.
+
+**Syntax**
+
+```text
+PUT <numeric>,<numeric>
+```
+
+**Associated Keywords**
+
+GET

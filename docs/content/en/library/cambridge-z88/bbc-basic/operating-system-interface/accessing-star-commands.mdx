@@ -1,0 +1,22 @@
+---
+description: "The star commands may be accessed directly or via the OSCLI statement. The 2 examples below both delete the file 'WOMBAT'."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# Accessing Star Commands
+
+The star commands may be accessed directly or via the OSCLI statement. The 2 examples below both delete the file 'WOMBAT'.
+
+```text
+*DELETE WOMBAT
+OSCLI("DELETE WOMBAT")
+```
+
+## Syntax [#syntax]
+
+A star command must be the last (or only) command on a program line and its argument may not be a variable. If you need to use one of these commands with a variable as the argument, use the OSCLI statement. Examples of the use of the OSCLI statement are given later.
+
+## **Case Conversion** [#case-conversion]
+
+Star commands and their associated qualifiers are converted from lower-case to upper-case if necessary. For example, \*delete wombat is converted to \*DELETE WOMBAT. This is in keeping with the general Z88 philosophy and the BBC Micro's machine operating system (MOS).

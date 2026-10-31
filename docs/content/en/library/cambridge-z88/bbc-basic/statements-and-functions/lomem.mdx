@@ -1,0 +1,98 @@
+---
+description: "A pseudo-variable which controls where in memory the dynamic data structures are to be placed. The default is TOP, the first free address after the end of the program."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# LOMEM
+
+A pseudo-variable which controls where in memory the dynamic data structures are to be placed. The default is TOP, the first free address after the end of the program.
+
+```text
+LOMEM=LOMEM+100
+PRINT ~LOMEM :REM The ~ makes it print in HEX.
+```
+
+Normally, dynamic variables are stored in memory immediately after your program. (See the Annex entitled ‘Format of Program and Variables in Memory’.) You can change the address where BBC BASIC(Z80) starts to store these variables by changing LOMEM.
+
+USE WITH CARE.
+
+Changing LOMEM in the middle of a program causes BBC BASIC(Z80) to lose track of all the variables you are using.
+
+**Syntax**
+
+```text
+LOMEM=<numeric>
+<n-var>=LOMEM
+```
+
+**Associated Keywords**
+
+HIMEM, TOP, PAGE
+
+**MID$**
+
+A string function which returns 'num' characters of the string starting from character 'start\_posn'. If 'num' is not present or if there are insufficient characters in the string, then all the characters from 'start\_posn' onwards are returned.
+
+```text
+C$=MID$(A$,start_posn,num)
+C$=MID$(A$,Z)
+```
+
+You can use this function to select any part of a string. For instance, if
+
+```text
+name$="BBC BASIC(Z80)"
+```
+
+then
+
+```text
+part$=MID$(name$,4,5)
+```
+
+would assign ‘BASIC’ to part$. If the last number is omitted or there are insufficient characters to the right of the specified position, MID$ returns with the right hand part of the string starting at the specified position. Thus,
+
+```text
+part$=MID$(name$,9)
+```
+
+would assign ‘(Z80)’ to part$.
+
+For example,
+
+```text
+10 name$="BBC BASIC(Z80)"
+20 FOR i=1 TO LEN(name$)
+30   PRINT MID$(name$,i,10)
+40 NEXT
+```
+
+would print
+
+```text
+BBC BASIC(
+BC BASIC(Z
+C BASIC(Z8
+ BASIC(Z80
+BASIC(Z80)
+ASIC(Z80)
+SIC(Z80)
+IC(Z80)
+C(Z80)
+(Z80)
+Z80)
+80)
+0)
+)
+```
+
+**Syntax**
+
+```text
+<s-var>=MID$(<str>,<numeric>[,<numeric>])
+```
+
+**Associated Keywords**
+
+LEFT$, RIGHT$, LEN, INSTR

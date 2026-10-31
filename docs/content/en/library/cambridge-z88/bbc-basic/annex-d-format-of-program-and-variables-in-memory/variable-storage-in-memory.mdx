@@ -1,0 +1,617 @@
+---
+description: "Variables are held within memory as linked lists (chains). The first variable in each chain is accessed via an index which is maintained by BBC BASIC(Z80). There is an entry in the index for each..."
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# Variable Storage in Memory
+
+Variables are held within memory as linked lists (chains). The first variable in each chain is accessed via an index which is maintained by BBC BASIC(Z80). There is an entry in the index for each of the characters permitted as the first letter of a variable name. Each entry in the index has a word (two bytes) address field which points to the first variable in the linked list with a name starting with its associated character. If there are no variables with this character as the first character in the name, the pointer word is zero. The first word of all variables holds the address of the next variable in the chain. The address word of the last variable in the chain is zero. All addresses are held in the standard Z80 format - LSB first.
+
+The first variable created for each starting character is accessed via the index and subsequently created variables are accessed via the index and the chain. Consequently, there is some speed advantage to be gained by arranging for all your variables to start with a different character. Unfortunately, this can lead to some pretty unreadable names and programs.
+
+## Integer Variables [#integer-variables]
+
+Integers are held in two's complement format. They occupy 4 bytes, with the LSB first. Bit 7 of the MSB is the sign bit. To make up the complete variable, the address word, the name and a separator (zero) byte are added to the number. The format of the memory occupied by an integer variable called 'NUMBER%' is shown below. Note that since the first character of the name is found via the index, it is not stored with the variable.
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>LSB</Table.Td>
+<Table.Td>MSB</Table.Td>
+<Table.Td>U</Table.Td>
+<Table.Td>M</Table.Td>
+<Table.Td>B</Table.Td>
+<Table.Td>E</Table.Td>
+<Table.Td>R</Table.Td>
+<Table.Td>%</Table.Td>
+<Table.Td>0</Table.Td>
+<Table.Td>LSB</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td>MSB</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={2}>Address of next var. starting with the same letter</Table.Td>
+<Table.Td colSpan={6}>Rest of Name</Table.Td>
+<Table.Td>Zero</Table.Td>
+<Table.Td colSpan={4}>Number</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+The smallest amount of space is taken up by a variable with a single letter name. The static integer variables, which are not included in the variable chains, use the names A% to Z%. Thus, the only single character names available for dynamic integer variables are a% to z% plus \_% and <strong>\`</strong>% (CHR$(96)). As shown below, integer variables with these names will occupy 8 bytes.
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>LSB</Table.Td>
+<Table.Td>MSB</Table.Td>
+<Table.Td>%</Table.Td>
+<Table.Td>0</Table.Td>
+<Table.Td>LSB</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td>MSB</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={2}>Addr. of next variable..</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td colSpan={4}>Number</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+## Real Variables [#real-variables]
+
+Real numbers are held in binary floating point format. The mantissa is held as a 4 byte binary fraction in sign and magnitude format. Bit 7 of the MSB of the mantissa is the sign bit. When working out the value of the mantissa, this bit is assumed to be 1 (a decimal value of 0.5). The exponent is held as a single byte in 'excess 127' format. In other words, if the actual exponent is zero, the value of stored in the exponent byte is 127. To make up the complete variable, the address word, the name and a separator (zero) byte are added to the number. The format of the memory occupied by a real variable called 'NUMBER' is shown below.
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>LSB</Table.Td>
+<Table.Td>MSB</Table.Td>
+<Table.Td>U</Table.Td>
+<Table.Td>M</Table.Td>
+<Table.Td>B</Table.Td>
+<Table.Td>E</Table.Td>
+<Table.Td>R</Table.Td>
+<Table.Td>0</Table.Td>
+<Table.Td>LSB</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td>MSB</Table.Td>
+<Table.Td>EXP</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={2}>Addr. of...</Table.Td>
+<Table.Td colSpan={5}>Rest of Name</Table.Td>
+<Table.Td />
+<Table.Td colSpan={4}>Mantissa (number)</Table.Td>
+<Table.Td />
+</Table.Tr>
+</tbody>
+</Table>
+
+As with integer variables, variables with single character names occupy the least memory. (However, the names A to Z are available for dynamic real variables.) Whilst a real variable requires an extra byte to store the number, the '%' character is not needed in the name. Thus, integer and real variables with the same name occupy the same amount of memory. However, this does not hold for arrays, since the name is only stored once.
+
+In the following examples, the bytes are shown in the more human-readable manner with the MSB on the left.
+
+The value 5.5 would be stored as shown below.
+
+<Table>
+<thead>
+<Table.Tr>
+<Table.Th colSpan={4}>**Mantissa**</Table.Th>
+<Table.Th>**Exponent**</Table.Th>
+</Table.Tr>
+</thead>
+<tbody>
+<Table.Tr>
+<Table.Td>.0011 0000</Table.Td>
+<Table.Td>0000 0000</Table.Td>
+<Table.Td>0000 0000</Table.Td>
+<Table.Td>0000 0000</Table.Td>
+<Table.Td>1000 0010</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Sign Bit</Table.Td>
+<Table.Td colSpan={4} />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>&30</Table.Td>
+<Table.Td>00</Table.Td>
+<Table.Td>00</Table.Td>
+<Table.Td>00</Table.Td>
+<Table.Td>&82</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+Because the sign bit is assumed to be 1, this would become:
+
+<Table>
+<thead>
+<Table.Tr>
+<Table.Th colSpan={4}>**Mantissa**</Table.Th>
+<Table.Th>**Exponent**</Table.Th>
+</Table.Tr>
+</thead>
+<tbody>
+<Table.Tr>
+<Table.Td>.1011 0000</Table.Td>
+<Table.Td>0000 0000</Table.Td>
+<Table.Td>0000 0000</Table.Td>
+<Table.Td>0000 0000</Table.Td>
+<Table.Td>1000 0010</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>&B0</Table.Td>
+<Table.Td>00</Table.Td>
+<Table.Td>00</Table.Td>
+<Table.Td>00</Table.Td>
+<Table.Td>&82</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+The equivalent in decimal is:
+
+```text
+    (0.5+0.125+0.0625) * 2^(130-127)
+=   0.6875 * 2^3
+=   0.6875 * 8
+=   5.5
+```
+
+BBC BASIC(Z80) stores integer values in real variables in a special way which allows the faster integer arithmetic routines to be used if appropriate. The presence of an integer value in a real variable is indicated by the stored exponent being zero. Thus, if the stored exponent is zero, the real variable is being used to hold an integer and the 4 byte mantissa holds the number in normal integer format.
+
+Depending on how it is put there, an integer value can be stored in a real variable in one of two ways. For example,
+
+```text
+number=5
+```
+
+will set the exponent to zero and store the integer &00 00 00 05 in the mantissa. On the other hand,
+
+```text
+number=5.0
+```
+
+will set the exponent to &82 and the mantissa to &20 00 00 00.
+
+The two ways of storing an integer value are illustrated in the following four examples.
+
+<Table>
+<thead>
+<Table.Tr>
+<Table.Th colSpan={7}>**Example 1**</Table.Th>
+</Table.Tr>
+</thead>
+<tbody>
+<Table.Tr>
+<Table.Td>number=5</Table.Td>
+<Table.Td>
+
+```text
+& 00
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+00
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+00
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+00
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+05
+```
+
+</Table.Td>
+<Table.Td>Integer 5</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={7}>**Example 2**</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>number=5.0</Table.Td>
+<Table.Td>
+
+```text
+& 82
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+20
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+00
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+00
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+00
+```
+
+</Table.Td>
+<Table.Td>Real 5.0</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={7}>This is treated as</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td>
+
+```text
+& 82
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+A0
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+00
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+00
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+00
+```
+
+</Table.Td>
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+```text
+=
+=
+=
+```
+
+</Table.Td>
+<Table.Td colSpan={6}>
+
+```text
+(0.5+0.125)*2^(130-127)
+0.625*8
+5
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={7}>because the sign bit is assumed to be 1.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={7}>**Example 3**</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>number=-5</Table.Td>
+<Table.Td>
+
+```text
+& 00
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+FF
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+FF
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+FF
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+FB
+```
+
+</Table.Td>
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={7}>The 2's complement gives</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td />
+<Table.Td>
+
+```text
+& 00
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+00
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+00
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+00
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+05
+```
+
+</Table.Td>
+<Table.Td>Integer -5</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={7}>**Example 4**</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>number=-5.0</Table.Td>
+<Table.Td>
+
+```text
+& 82
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+A0
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+00
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+00
+```
+
+</Table.Td>
+<Table.Td>
+
+```text
+00
+```
+
+</Table.Td>
+<Table.Td>Real -5.0</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={7}>(The sign bit is already 1)</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>
+
+\=
+
+\=
+
+Magnitude =
+
+</Table.Td>
+<Table.Td colSpan={6}>
+
+```text
+(0.5+0.125)*2^(130-127)
+0.625*8
+5
+```
+
+</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+If all this seems a little complicated, try using the program below to accept a number from the keyboard and display the way it is stored in memory. The program displays the 4 bytes of the mantissa in 'human readable order' followed by the exponent byte. Look at what happens when you input first 5 and then 5.0 and you will see how this corresponds to the explanation given above. Then try -5 and -5.0 and then some other numbers. (The program is an example of the use of the byte indirection operator. See the Indirection section for details.)
+
+The layout of the variable 'NMBR' in memory is shown below.
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>LSB</Table.Td>
+<Table.Td>MSB</Table.Td>
+<Table.Td>M</Table.Td>
+<Table.Td>B</Table.Td>
+<Table.Td>R</Table.Td>
+<Table.Td>0</Table.Td>
+<Table.Td>LSB</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td>MSB</Table.Td>
+<Table.Td>EXP</Table.Td>
+<Table.Td>\|</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={2} rowSpan={4} />
+<Table.Td colSpan={5}>A%-5 points here ⇧⇧⇧</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td />
+<Table.Td />
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={8}>A%-2 points here ⇧⇧⇧</Table.Td>
+<Table.Td />
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={9}>A%-1 points here ⇧⇧⇧</Table.Td>
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={10}>A% points here ⇧⇧⇧</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+```text
+ 10 NUMBER=0
+ 20 DIM A% -1
+ 30 REPEAT
+ 40   INPUT"NUMBER PLEASE "NUMBER
+ 50   PRINT "& ";
+ 60   :
+ 70   REM Step through mantissa from MSB to LSB
+ 80   FOR I%=2 TO 5
+ 90     REM Look at value at address A%-I%
+100     NUM$=STR$~(A%?-I%)
+110     IF LEN(NUM$)=1 NUM$="0"+NUM$
+120     PRINT NUM$;" ";
+130   NEXT
+140   :
+150   REM Look at exponent at address A%-1
+160   N%=A%?-1
+170   NUM$=STR$~(N%)
+180   IF LEN(NUM$)=1 NUM$="0"+NUM$
+190   PRINT " & "+NUM$''
+200 UNTIL NUMBER=0
+```
+
+## String Variables [#string-variables]
+
+String variables are stored as a string of characters. Since the current length of the string is stored in memory an explicit terminator for the string in unnecessary. As with numeric variables, the first word of the complete variable is the address of the next variable starting with the same character. However, since BBC BASIC(Z80) needs information about the length of the string and the address in memory where it starts, the overheads for a string are more than for a numeric. The format of a string variable called 'NAME$' is shown below.
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>LSB</Table.Td>
+<Table.Td>MSB</Table.Td>
+<Table.Td>A</Table.Td>
+<Table.Td>M</Table.Td>
+<Table.Td>E</Table.Td>
+<Table.Td>$</Table.Td>
+<Table.Td>0</Table.Td>
+<Table.Td>len</Table.Td>
+<Table.Td>max</Table.Td>
+<Table.Td>LSB</Table.Td>
+<Table.Td>MSB</Table.Td>
+<Table.Td />
+<Table.Td />
+<Table.Td />
+</Table.Tr>
+<Table.Tr>
+<Table.Td colSpan={2}>Address of next var. starting with the same letter</Table.Td>
+<Table.Td colSpan={4}>Rest of Name</Table.Td>
+<Table.Td>Zero</Table.Td>
+<Table.Td>Cur.<br />len.<br />of<br />str.</Table.Td>
+<Table.Td>Max.<br />(org)<br />len.<br />of<br />str.</Table.Td>
+<Table.Td colSpan={2}>Addr. of start of string</Table.Td>
+<Table.Td colSpan={3}>String</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+When a string variable is first created in memory, the characters of the string follow immediately after the two bytes containing the start address of the string and the current and maximum lengths are the same. While the current length of the string does not exceed its length when created, the characters of the string will follow the address bytes. When the string variable is set to a string which is longer than its original length, there will be insufficient room in the original position for the characters of the string. When this happens, the string will be placed on the top of the heap and the new start address will be loaded into the two address bytes. The original string space will remain, but it will be unusable. This unusable string space is called 'garbage'. See the Variables sub-section for ways to avoid creating garbage.
+
+Because the original length and the current length of the string are each stored in a single byte in memory, the maximum length of a string held in a string variable is 255 characters.
+
+## Fixed Strings [#fixed-strings]
+
+You can place a string starting at a given location in memory using the indirection operator '$'.
+
+For example,
+
+```text
+$&8000="This is a string"
+```
+
+would place &54 (T) at address &8000, &68 (h) at address &8001, etc. Because the string is placed at a predetermined location in memory it is called a 'fixed' string. Fixed strings are not included in the variable chains and they do not have the overheads associated with a string variable. However, since the length of the string is not stored, an explicit terminator (&0D) is used. Consequently, in the above example, byte &8010 would be set to &0D.
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>BBC BASIC(Z80) Reference Manual for Z88, 2nd edition</Table.Td>
+<Table.Td />
+</Table.Tr>
+</tbody>
+</Table>

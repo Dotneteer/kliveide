@@ -1,0 +1,217 @@
+---
+description: "All output explicitly sent to the printer device :PRT.0 goes via the ‘Printer Filter'. This filter examines every character to see if it has some special meaning or if it is to be translated into..."
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# The Printer Filter
+
+All output explicitly sent to the printer device :PRT.0 goes via the ‘Printer Filter'. This filter examines every character to see if it has some special meaning or if it is to be translated into another character or sequence of characters. The code translation and command codes may be edited using the 'Printer Editor' (❑E) as described in your Z88 Users' Guide.
+
+Most printers have a set of control codes that switch the printer into similar modes. However, whilst most printers provide a number of similar modes, the codes used are often different. The 'Printer Filter' provides a universal set of print format controls which may be used irrespective of the printer in use. Provided you use the 'Printer Editor' (❑E) to configure the Print Filter for your printer, your programs will work in exactly the same way irrespective of the printer in use.
+
+The 'Printer Filter On' and 'Printer Filter Off' Escape sequences also turn the printing on and off. So remember to use them before and after printing.
+
+The tables in the following sub-sections include program segments that will send the appropriate codes to the printer file. These assume that the printer file handle is in the variable \`pf' and that ENQ$ is CHR$(5).
+
+## Printer Control Codes [#printer-control-codes]
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>
+
+**Escape Sequence**
+
+```text
+PRINT#pf,ENQ$+"["
+BPUT#pf,5:BPUT#pf,91
+```
+
+```text
+PRINT#pf,ENQ$+"]"
+BPUT#pf,5:BPUT#pf,93
+```
+
+```text
+PRINT#pf,ENQ$+"2P"+CHR$(32+n)
+BPUT#pf,5:BPUT#pf,50:BPUT#pf,80:BPUT#pf,32+n
+```
+
+```text
+PRINT#pf,ENQ$+"2H"+CHR$(32+n)
+BPUT#pf,5:BPUT#pf,50:BPUT#pf,72:BPUT#pf,32+n
+```
+
+```text
+PRINT#pf,ENQ$+"5S" BPUTfpf,5:BPUT#pf,83
+```
+
+```text
+PRINT#pf,ENQW53$"+CHRS(x)+CHRS(y)
+BPUT#pf,5:BPUT#pf,51:BPUT#pf,36:BPUT#pf,x:BPUT#pf,y
+```
+
+</Table.Td>
+<Table.Td>
+
+**Meaning**
+
+Printer ON.
+
+Printer OFF.
+
+Set page length to 'n' lines.
+
+Microspace 'n' units of 1/120 inch.
+
+Reset attributes that would be reset by a new-line.
+
+Send the hex values 'x' and 'y' to the printer.
+
+</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+## **Attributes** [#attributes]
+
+The following codes toggle printer attributes such as bold print, underline, etc. These toggles can be automatically reset at the next carriage-return by setting the 'Off at CR' option in the Printer Editor to 'Yes'. By default, all the attribute toggles with the exception of ‘Alternate Font' (\`A') and 'User Defined' (\`E') are automatically reset when a carriage-return is sent.
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>
+
+**Escape Sequence**
+
+```text
+PRINT#pf,ENQ$+"U"
+BPUT#pf,5:BPUT#pf,85
+```
+
+```text
+PRINT#pf,ENQ$+"B"
+BPUT#pf,5:BPUT#pf,66
+```
+
+```text
+PRINT#pf,ENQ$+"X"
+BPUT#pf,5:BPUT#pf88
+```
+
+```text
+PRINT#pf,ENQ$+"I"
+BPUT#pf,5:BPUT#pf,73
+```
+
+```text
+PRINT#pf,ENQ$+"L"
+BPUT#pf,5:BPUT#pf,76
+```
+
+```text
+PRINT#pf,ENQ$+"R"
+BPUT#pf5:13PUT#pf,82
+```
+
+</Table.Td>
+<Table.Td>
+
+**Meaning**
+
+Underline
+
+Bold
+
+Extended sequence
+
+Italics
+
+Subscript
+
+Superscript
+
+</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>
+
+**Escape Sequence**
+
+```text
+PRINT#pf,ENQ$+"A" BPUT#pf,5:BPUT#pf,65
+PRINT#pf,ENQ$+"E" BPUT#pf,5:BPUT#pf,69
+```
+
+</Table.Td>
+<Table.Td>
+
+**Meaning**
+
+Alternate font
+
+User defined
+
+</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+Unless you have used the Printer Editor to set 'Off at CR' to 'No', you should use the \`BPUT\#' version of the commands. If you use the 'PRINT\#' version of the commands, the terminating CR will undo its effect (excepting Printer On/Off and Alternate and User Defined fonts).
+
+Unlike the screen control codes, the printer control codes cannot be strung together or explicitly set by preceding them with a '+' or ‘-’. Neither is there a 'reset all toggles' command.
+
+## **Untrapped Characters** [#untrapped-characters]
+
+The following control characters are not treated as commands by the Print Filter. Like the normal printable characters (Space to Delete &20 to &7F) they may be translated, but they are otherwise sent directly to the printer.
+
+| **Name** | **Hex Value** |
+| --- | --- |
+| NUL | &00 |
+| BEL | &07 |
+| BS | &08 |
+| HT | &09 |
+| LF | &10 |
+| VT | &OB |
+| FF | &OC |
+| CR | &OD |
+
+## **Printer Redirection** [#printer-redirection]
+
+The 'Operating System Interface' section of the manual describes how input and output may be redirected. The diagram below may help you to visualise how and where redirection takes place. It also illustrates how the Printer Editor and the PANEL affect the output.
+
+<Shot src="z88-bbc-basic/printing/the-printer-filter/image10.webp" alt="How printer output flows from an application through the Printer Filter to the serial port" width={441} />
+
+Since you cannot issue CLI 'dot' commands from the keyboard, you will need to write a CLI command file using PipeDream in order to redirect the printer input or output. The CLI command file shown below would redirect printer output to a file called \`pfile'.
+
+.=pfile <br />.S
+
+If this file had been saved (in ‘plain text’ format) as ‘predif, you could initiate printer output redirection by issuing the command
+
+```text
+♢EXpredir
+```
+
+from the filer (❑F), or
+
+```text
+*CLI .*predir
+```
+
+in the immediate mode from within BBCBASIC(Z80).
+
+If you wished to issue the command from within a BBCBASIC(Z80) program, you would need the following program line.
+
+```text
+OSCLI("CLI .*predir"):x=INKEY(0)
+```
+
+See the 'Operating System Interface' section of the manual for an explanation of CLI command files.

@@ -1,0 +1,35 @@
+---
+description: "A function giving the base-10 logarithm of its argument."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# LOG
+
+A function giving the base-10 logarithm of its argument.
+
+```text
+X = LOG(Y)
+```
+
+This function calculates the common (base 10) logarithm of its argument. Inverse logarithms (anti-logs) can be calculated by raising 10 to the power of the logarithm. For example, if x=LOG(y) then y=10^x.
+
+Logarithms are 'traditionally' used for multiplication (by adding the logarithms) and division (by subtracting the logarithms). For example,
+
+```text
+10 log1=LOG(2.5)
+20 log2=LOG(2)
+30 log3=log1+log2
+40 answer=10^log3
+50 PRINT answer
+```
+
+**Syntax**
+
+```text
+<n-var>=LOG<numeric>
+```
+
+**Associated Keywords**
+
+LN, EXP

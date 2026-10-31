@@ -1,0 +1,141 @@
+---
+description: "BBC BASIC(Z80) runs under the Z88’s operating system. When a Z88 has 128Kbytes or more in slot 0 or slot 1, it becomes an expanded machine. The difference between an expanded and non-expanded Z88..."
+---
+
+import { Table } from 'nextra/components'
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# Memory Map
+
+BBC BASIC(Z80) runs under the Z88’s operating system. When a Z88 has 128Kbytes or more in slot 0 or slot 1, it becomes an expanded machine. The difference between an expanded and non-expanded Z88 are listed below.
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td />
+<Table.Td>**Non-expanded**</Table.Td>
+<Table.Td>**Expanded**</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Memory available for variables and program</Table.Td>
+<Table.Td>&1D00</Table.Td>
+<Table.Td>&9D00</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Maximum map width</Table.Td>
+<Table.Td>80 pixels</Table.Td>
+<Table.Td>256 pixels</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>User characters</Table.Td>
+<Table.Td>16 (see below)</Table.Td>
+<Table.Td>64</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>Value of EOF\#-1</Table.Td>
+<Table.Td>0 (FALSE)</Table.Td>
+<Table.Td>-1 (TRUE)</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
+
+For Z88 ROMs V2.2 - V4.0: If you wish to add 128Kbytes or more memory to your Z88 without turning it into an expanded machine, put the memory card in slot 2.
+
+An unexpanded Z88 can use 64 user defined characters, but if an 80 pixel map is used, the last 48 of these will be overwritten by map information when PipeDream is used. Reducing the map width to 64 pixels, or not using the map at all, allows for free use of all 64-characters.
+
+The PTR\#, EXT\#, and EOF\# file attributes functions may be used to discover information about your Z88.
+
+| **Attribute** | **Information** |
+| --- | --- |
+| PTR\#-1 | High word = No. of free handles in the system.<br />Low word = ROM version code<br />Because 2 values are packed into one number, you need to display the value returned by PTR\#-1 in hexadecimal. For example:<br /><br />`PRINT ~PTR#-1` |
+| EXT\#-1 | Estimate of free memory. See later under ‘Memory for Files and Applications’ |
+| EOF\#-1 | TRUE (-1) = expanded<br />FALSE (0) = unexpanded |
+
+## Memory for Files and Applications [#memory-for-files-and-applications]
+
+The memory in each card slot is available to the Filer and to applications (and the special device `:RAM.-`) and this memory is allocated on a ‘first come, first served’ basis. However, because of the differences in the way memory is managed by the Filer and applications, the Filer generally has access to slightly less memory than either the applications or the device `:RAM.-`.
+
+The free memory value returned by EXT\#-1 is the memory available to applications or the device `:RAM.-`. Consequently, the memory available for files (other than `:RAM.-`) is generally somewhat less than the value returned by EXT\#-1.
+
+A file is limited by the size of the device in which it is held (`:RAM.1`, `:RAM.2`, etc). The device `:RAM.-` can use all the free memory anywhere in the system. Consequently, it can be larger than any one physical device and it is useful for very large files. However, there is a bug in versions of the Z88 operating system up to V4.0 which will cause the system to fail if you perform a soft reset whilst any files exist in `:RAM.-`. Ensure that you delete all files in `:RAM.-` as soon as you have finished with them and do not perform a soft reset whilst any files exist in this device.
+
+## Auto-boot CLI File and Z88 ROM’s up to V4.0 [#auto-boot-cli-file-and-z88-roms-up-to-v40]
+
+If there is an EPROM or FLASH card which contains a file called ‘boot.cli’ in slot 3 when the Z88 is reset, the file will be loaded into `:RAM.-` and executed as a CLI command file. Make sure you have deleted this file from `:RAM.-` when you have finished with it.
+
+## BBC BASIC(Z80) Program [#bbc-basicz80-program]
+
+By default, your program will start on the page boundary immediately following the interpreter's data area and the 'dynamic data structures' will immediately follow your program. The total group of the dynamic data structures is called the 'heap'. The base of the program control stack is located at HIMEM. HIMEM is at &C000 on an expanded Z88 and at &4000 if the Z88 is unexpanded.
+
+As your program runs, the heap expands upwards towards the stack and the stack expands downwards towards the heap. If the two should meet, you get a 'No room' error. Fortunately, there is a limit to the amount by which the stack and the heap expands.
+
+In general, the heap only expands whilst new variables are being declared. However, bad management of string variables can also cause the heap to expand.
+
+In addition to running your program, the stack is also used 'internally' by the BBC BASIC(Z80) interpreter. Its size fluctuates but, in general, it expands every time you increase the depth of nesting of your program structure and every time you increase the number of local variables in use.
+
+## The Memory Map [#the-memory-map]
+
+In its Z88 incarnation, BASIC occupies a memory map of the following form:
+
+`&C000 - &FFFF` BBC BASIC interpreter application (16K)<br />`&4000 - &BFFF` (additional 32K of program/workspace, expanded Z88)<br />`&2000 - &3FFF` BASIC program/workspace<br />`&0000 - &1FFF` Operating system use (and application stack)
+
+BASIC's program/workspace is arranged in the following manner:
+
+```text
+                +-------------------+   &FFFF
+                | BBC BASIC(Z80)    |
+                .                   .
+                .                   .
+HIMEM           +-------------------+   &BFFF or &3FFF
+                | Stack             |
+                +-------------------+   Current limit of the stack
+                .                   .   (Stack expands downwards)
+                . Unused memory     .
+                .                   .
+                +-------------------+   Current limit of the heap
+                | Heap              |   (Heap expands upwards)
+LOMEM           +-------------------+
+                .                   .
+                .                   .
+TOP             +-------------------+
+                | Program           |
+PAGE            +-------------------+   &2300
+                | Workspace for     |
+                | interpreter       |
+                +-------------------+   &2000
+                | Operating system  |
+                | system usage      |
+                +-------------------+   &0000
+```
+
+The function of HIMEM, LOMEM, TOP and PAGE are briefly discussed below. You will find more complete definitions elsewhere in this manual. You can directly set HIMEM, LOMEM and PAGE. However, for most of your programs you won't need to alter any of them. You will probably only need to change HIMEM if you want to put some machine code sub-routines at the top of memory.
+
+<Table>
+<tbody>
+<Table.Tr>
+<Table.Td>HIMEM</Table.Td>
+<Table.Td>The first address at the top of memory which is not available for use by BBC BASIC(Z80). The base of the program stack is set at HIMEM. (The first 'thing' stored on the stack goes at HIMEM-1.)</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>LOMEM</Table.Td>
+<Table.Td>The start address for the heap. The first of the dynamic data structures starts at LOMEM.</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>TOP</Table.Td>
+<Table.Td>
+
+The first free location after the end of your program. Unless you have set LOMEM yourself, LOMEM=TOP. You cannot directly set TOP. It alters as you enter your program. The current length of your program is given by:
+
+```text
+PRINT TOP-PAGE
+```
+
+</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>PAGE</Table.Td>
+<Table.Td>The address of the start of your program. You can place several programs in memory and switch between them by using PAGE. Don't forget to control LOMEM as well. If you don't, the heap for one program might overwrite another program.</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>

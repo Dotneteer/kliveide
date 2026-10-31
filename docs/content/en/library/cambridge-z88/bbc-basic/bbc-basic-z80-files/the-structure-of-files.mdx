@@ -1,0 +1,49 @@
+---
+description: "If you understand the way files work, skip the next two paragraphs. If you understand random and indexed files, skip the following two paragraphs as well."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# The Structure of Files
+
+If you understand the way files work, skip the next two paragraphs. If you understand random and indexed files, skip the following two paragraphs as well.
+
+## Basics [#basics]
+
+Many people are confused by the jargon that is often used to describe the process of storing and retrieving information. This is unfortunate, because the individual elements are very simple and the most complicated procedures are only a collection of simple bits and pieces.
+
+All computers are able to store and retrieve information from a non-volatile medium. In other words, you don't lose the information when the power gets turned off. Remember, pressing both `[SHIFT]` keys does not actually turn your Z88 off; removing the batteries would. Audio cassettes are used for small micro computers, diskettes for medium sized systems and magnetic tape and large disks for big machines. Some computers, like the Z88, are designed so that the contents of RAM are not lost when the machine is ‘shut down’ (pressing both `[SHIFT]` keys). These computers can use RAM instead of tape or disk as a non-volatile medium. RAM has several advantages of disks. File access is very much quicker and there aren’t any disks to lose; spill coffee over, etc.
+
+In order to be able to find the information you want, the information has to be organised in some way. All the information on one general subject is gathered together into a FILE. Within the file, information on individual items are grouped together into RECORDS.
+
+## Serial (Sequential) Files [#serial-sequential-files]
+
+Look upon the cassette or diskette or the Z88’s RAM as a drawer in a filing cabinet. The drawer is full of folders called FILES and each file holds a number of enclosures called RECORDS. Sometimes the files are in order in the drawer, sometimes not. If you want a particular file, you start at the beginning of the drawer and search your way through until you find the file you want. Then you search your way through the records in the file until you find the record you want.
+
+This is very similar to the way a cassette is searched for a particular file. You put the cassette in the recorder, type in the name of the file you want and push play. You then go and make a cup of tea whilst the computer reads through all the files until it comes to the one you want. Because the cassette is read serially from start to end, it's very difficult to do it any other way.
+
+Life is easier with a computer that uses diskettes or RAM. There is an index which tells the computer where to look for each of the files and the serial search for the file is not necessary. However, once you have found the file, you still need to read through it to find the record you want.
+
+There are a number of ways to overcome this problem. We will consider the two simplest; random access (or relative) files and indexed files.
+
+## Random Access Files [#random-access-files]
+
+The easiest way to find the record you want is to identify each record with a number, like an account number. You can then ask for, say, the 23rd record. This is similar to turning to page 23 in the account book. This works very well at first. Every time you get a new customer you start a new page. Most of the pages have a lot of empty space, but you must have the same amount of space available for each account, otherwise your numbering system won't work. So, even at the start, there are a lot of gaps.
+
+What happens when you close an account? You can't tear out the page because that would upset the numbering system. All you can do is draw a line through it - in effect, turn it into a blank page. Before long, quite a number of pages will be 'blank' and a growing proportion of your book is wasted.
+
+With other forms of 'numbering', say by the letters of the alphabet, you could still not guarantee to fill all the pages. You would have to provide room for the Zs, but you may never get one. When you started entering data, most of the pages would be blank and the book would only gradually fill up.
+
+The same happens with this sort of file stored in the Z88’s RAM. A random file which has a lot of empty space in it is described as sparse. Most random files start this way and most never get more than about ¾ full. Count the number of empty 'slots' in your address book and see what proportion this is of the total available.
+
+## Indexed Files [#indexed-files]
+
+Suppose we want to hold our address book on the computer. We need a number of records each holding the name, address, telephone number, etc of one person. In our address book, we have one or two pages per letter of the alphabet and a number of 'slots' on each page. With this arrangement, the names are in alphabetical order of their first letter. This is very similar to the way the accounts book was organised except that we don't know the page number for each name.
+
+If we had an index at the front of the book we could scan the index for the name and then turn to the appropriate page. We would still be wasting a lot of space because some names, addresses etc are longer than others and our 'slots' must be large enough to hold the longest.
+
+Suppose we numbered all the character positions in the book and we could easily move to any character position. We could write all the names, addresses, etc, one after the other and our index would tell us the character position for the start of each name and address. There would be no wasted space and we would still be able to turn directly to the required name.
+
+What would happen when we wanted to cancel an entry? We would just delete the name from the index. The entry would stay in its original place in the book, but we would never refer to it. Similarly, if someone changed their address, we would just write the name and the new address immediately after the last entry in the book and change the start position in the index. Every couple of years we would rewrite the address book, leaving out those items not referenced in the index and up-date the index (or write another one).
+
+This is not a practical way to run a paper and pencil address book because it's not possible to turn directly to the 3423rd character in a book, and the saving in space would not be worth the tedium involved. However, with BBC BASIC you can turn to a particular character in a file and the tedium only takes a couple of seconds, so it's well worth doing.

@@ -1,0 +1,32 @@
+---
+description: "This command allows you to edit a specified program line. It results in the line being displayed with the cursor positioned at the end, and you can then edit the line using any of the usual..."
+---
+
+{/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
+
+# *EDIT (*E.)
+
+This command allows you to edit a specified program line. It results in the line being displayed with the cursor positioned at the end, and you can then edit the line using any of the usual line-editing features on the Z88.
+
+To enter the edited line into the program press ENTER; to abandon the edit and leave the line unchanged press ESC.
+
+You can also use \*EDIT to concatenate two or more program lines, by specifying the first line and last line separated by commas (e.g. \*EDIT 10,30). This process will stop when the concatenated line length exceeds 255. You will have to edit out the line numbers of the second and subsequent lines (and delete the old lines afterwards).
+
+\*EDIT may be abbreviated to \*E. (the dot is required).
+
+This statement is available when installed with Z88 Patch via CHAIN command.
+
+See “Installing Z88 Patch” section previously in this guide, on how to obtain the Z88 Patch.
+
+Available by default when BBC BASIC(Z80) is used with Z88 ROM release V4.3 and later.
+
+**Syntax**
+
+```text
+*EDIT <l-num>
+*EDIT <l-num>,<l-num>
+```
+
+**Associated Keywords**
+
+DELETE, LIST, OLD, NEW
