@@ -8,7 +8,7 @@ import { Table } from 'nextra/components'
 
 # The Command Line Interpreter (CLI)
 
-The Z88 Command Line Interpreter (CLI) is very powerful. It 'sits' between the keyboard and the current application and interprets the keys that you press. In most cases, the characters for the keys that you press are passed directly to the application that is currently active. However, some keys, \[INDEX\] ❑ and ◇ for example, have a particular significance to the CLI and they cause subsequent key presses to be interpreted as CLI commands and actioned accordingly. For example, pressing the ❑ key followed by the **F** key will take you into the filer popdown.
+The Z88 Command Line Interpreter (CLI) is very powerful. It 'sits' between the keyboard and the current application and interprets the keys that you press. In most cases, the characters for the keys that you press are passed directly to the application that is currently active. However, some keys, <Key k="index" /> <Key k="square" /> and <Key k="diamond" /> for example, have a particular significance to the CLI and they cause subsequent key presses to be interpreted as CLI commands and actioned accordingly. For example, pressing the <Key k="square" /> key followed by the **F** key will take you into the filer popdown.
 
 You can use the CLI to make changes to the way the Z88 behaves. Any such changes are confined to the application that was active at the time.
 
@@ -18,7 +18,7 @@ The CLI takes its input from the keyboard or from a file. Thus, the CLI acts in 
 
 The CLI may receive commands from a file as well as from the keyboard (or the current input stream). For example, from within the FILER popdown, the following key sequence
 
-◇ `EXprnt.cli`
+<Key k="diamond" /><Typed>EXprnt.cli</Typed>
 
 will invoke (run) the CLI command file \`pmt.cli'.
 
@@ -30,13 +30,13 @@ within one CLI command file to invoke another CLI command file. When the second 
 
 ## Cancelling a CLI File [#cancelling-a-cli-file]
 
-The only way to cancel a CLI command file whilst it is running or suspended is by pressing the \[SHIFT\] and \[ESC\] keys together. Since this sequence cannot be represented in any other way (see below), you cannot cancel a suspended CLI command file from within a program.
+The only way to cancel a CLI command file whilst it is running or suspended is by pressing the <Key k="shift" /> and <Key k="esc" /> keys together. Since this sequence cannot be represented in any other way (see below), you cannot cancel a suspended CLI command file from within a program.
 
-You can cancel all CLI command files by pressing ◇\[ESC\].
+You can cancel all CLI command files by pressing <Key k="diamond" /><Key k="esc" />.
 
 ## Special Character Sequences [#special-character-sequences]
 
-Some of the keys on the keyboard, '❑' and '◇' for example, have no ASCII code. However, some way of representing these keys is required when input is taken from a CLI command file (or redirected). The ASCII character sequences listed below represent many of the \`non-printable' keys. Unfortunately not all key sequences may be represented in this manner. For instance, there is no way of representing \[CAPS LOCK\] key or ◇\[ESC\].
+Some of the keys on the keyboard, <Key k="square" /> and <Key k="diamond" /> for example, have no ASCII code. However, some way of representing these keys is required when input is taken from a CLI command file (or redirected). The ASCII character sequences listed below represent many of the \`non-printable' keys. Unfortunately not all key sequences may be represented in this manner. For instance, there is no way of representing <Key k="capslock" /> key or <Key k="diamond" /><Key k="esc" />.
 
 <Table>
 <tbody>
@@ -76,27 +76,27 @@ Some of the keys on the keyboard, '❑' and '◇' for example, have no ASCII cod
 
 **Represents**
 
-Holding down the ❑ key and pressing the next key in the sequence.
+Holding down the <Key k="square" /> key and pressing the next key in the sequence.
 
-Holding down the ◇ key and pressing the next key in the sequence.
+Holding down the <Key k="diamond" /> key and pressing the next key in the sequence.
 
-Pressing ❑ and releasing it before pressing another key.
+Pressing <Key k="square" /> and releasing it before pressing another key.
 
-Pressing ◇ and releasing it before pressing another key.
+Pressing <Key k="diamond" /> and releasing it before pressing another key.
 
-\[ESCAPE\] key.
+<Key k="esc" /> key.
 
-\[ENTER\] key.
+<Key k="enter" /> key.
 
-\[SHIFT\]. This is only generated if \<SHIFT\> would have any effect.
+<Key k="shift" />. This is only generated if <Key k="shift" /> would have any effect.
 
-\[INDEX\] key.
+<Key k="index" /> key.
 
-\[MENU\] key.
+<Key k="menu" /> key.
 
-\[HELP\] key.
+<Key k="help" /> key.
 
-\[DELETE\] key.
+<Key k="del" /> key.
 
 ↑ (cursor up) key.
 
@@ -183,7 +183,7 @@ The following additional commands are only effective from within a CLI file or f
 
 Suspend the current CLI, but maintain all re-bindings
 
-Delay for 'n' centiseconds. If \[ESC\] is pressed during a delay, all subsequent delays for that CLI will fail.
+Delay for 'n' centiseconds. If <Key k="esc" /> is pressed during a delay, all subsequent delays for that CLI will fail.
 
 Jammer. Ignore all special sequences for the rest of the CLI. For example, after this command, \#P will generate the characters \`\#P' and not invoke PipeDream.
 
@@ -196,4 +196,4 @@ Invoke (run) the CLI command file 'file'.
 
 ## Re-binding Within a CLI Command File [#re-binding-within-a-cli-command-file]
 
-Any re-bindings are in effect only for the duration of the CLI command file. You may suspend a CLI command file and maintain the bindings with the \``.S`' command. However, once you have done so, the only way of cancelling the CLI is by pressing \[SHIFT\]/\[ESCAPE\] on the keyboard.
+Any re-bindings are in effect only for the duration of the CLI command file. You may suspend a CLI command file and maintain the bindings with the \``.S`' command. However, once you have done so, the only way of cancelling the CLI is by pressing <Key k="shift" />/<Key k="esc" /> on the keyboard.

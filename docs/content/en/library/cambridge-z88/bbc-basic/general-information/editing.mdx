@@ -17,80 +17,68 @@ The following editing keys are available when the single line editor is active:
 <Table>
 <tbody>
 <Table.Tr>
-<Table.Td>
-
-```text
-[DEL]
-```
-
-</Table.Td>
+<Table.Td><Key k="del" /></Table.Td>
 <Table.Td>Backspace and Delete</Table.Td>
 </Table.Tr>
 <Table.Tr>
-<Table.Td>⇦</Table.Td>
+<Table.Td><Key k="left" /></Table.Td>
 <Table.Td>Cursor Left</Table.Td>
 </Table.Tr>
 <Table.Tr>
-<Table.Td>⇨</Table.Td>
+<Table.Td><Key k="right" /></Table.Td>
 <Table.Td>Cursor Right</Table.Td>
 </Table.Tr>
 <Table.Tr>
-<Table.Td>♢`[DEL]`</Table.Td>
+<Table.Td><Key k="diamond" /><Key k="del" /></Table.Td>
 <Table.Td>Delete line</Table.Td>
 </Table.Tr>
 <Table.Tr>
-<Table.Td>♢D</Table.Td>
+<Table.Td><Key k="diamond" />D</Table.Td>
 <Table.Td>Delete to End of Line</Table.Td>
 </Table.Tr>
 <Table.Tr>
-<Table.Td>♢G</Table.Td>
+<Table.Td><Key k="diamond" />G</Table.Td>
 <Table.Td>Delete Character</Table.Td>
 </Table.Tr>
 <Table.Tr>
-<Table.Td>♢M</Table.Td>
-<Table.Td>\[ENTER\]</Table.Td>
+<Table.Td><Key k="diamond" />M</Table.Td>
+<Table.Td><Key k="enter" /></Table.Td>
 </Table.Tr>
 <Table.Tr>
-<Table.Td>♢S</Table.Td>
+<Table.Td><Key k="diamond" />S</Table.Td>
 <Table.Td>Swap Case</Table.Td>
 </Table.Tr>
 <Table.Tr>
-<Table.Td>♢T</Table.Td>
+<Table.Td><Key k="diamond" />T</Table.Td>
 <Table.Td>Delete Word</Table.Td>
 </Table.Tr>
 <Table.Tr>
-<Table.Td>♢U</Table.Td>
+<Table.Td><Key k="diamond" />U</Table.Td>
 <Table.Td>Insert Character</Table.Td>
 </Table.Tr>
 <Table.Tr>
-<Table.Td>♢V</Table.Td>
+<Table.Td><Key k="diamond" />V</Table.Td>
 <Table.Td>Insert/Overtype</Table.Td>
 </Table.Tr>
 <Table.Tr>
-<Table.Td>♢ ⇦</Table.Td>
+<Table.Td><Key k="diamond" /><Key k="left" /></Table.Td>
 <Table.Td>Start of Line</Table.Td>
 </Table.Tr>
 <Table.Tr>
-<Table.Td>♢ ⇨</Table.Td>
+<Table.Td><Key k="diamond" /><Key k="right" /></Table.Td>
 <Table.Td>End of Line</Table.Td>
 </Table.Tr>
 <Table.Tr>
-<Table.Td>`[SHIFT]`⇦</Table.Td>
+<Table.Td><Key k="shift" /><Key k="left" /></Table.Td>
 <Table.Td>Previous Word</Table.Td>
 </Table.Tr>
 <Table.Tr>
-<Table.Td>`[SHIFT]`⇨</Table.Td>
+<Table.Td><Key k="shift" /><Key k="right" /></Table.Td>
 <Table.Td>Next Word</Table.Td>
 </Table.Tr>
 <Table.Tr>
-<Table.Td>
-
-```text
-[SHIFT][DEL]
-```
-
-</Table.Td>
-<Table.Td>Delete Character (same as ♢G)</Table.Td>
+<Table.Td><Key k="shift" /><Key k="del" /></Table.Td>
+<Table.Td>Delete Character (same as <Key k="diamond" />G)</Table.Td>
 </Table.Tr>
 </tbody>
 </Table>
@@ -160,7 +148,7 @@ You can append the editor to your BBC BASIC programs with the following command:
 
 Your program should not, of course, use line numbers 60000 and up. If it does, they will be overwritten when you load the line editor functionality.
 
-To abort the single line editor when using PROCE(nnnn) and leave the line unchanged, press `[ESC]`.
+To abort the single line editor when using PROCE(nnnn) and leave the line unchanged, press <Key k="esc" />.
 
 The editor generates two working files in :RAM.0 called /EE.CLI and /E.CLI. The files can be erased after use. If you have a RAM card in slot 1 or slot 2 you could alter the program to save its working files in :RAM.1 or :RAM.2 by changing lines: 60040, 60050, and 60090.
 

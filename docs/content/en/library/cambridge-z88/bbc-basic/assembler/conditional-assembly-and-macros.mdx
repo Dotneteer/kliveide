@@ -102,9 +102,9 @@ The following assembler language ‘wrap around’ provides the minimum acceptab
 
 The ‘wrap around’ recognises and acts on the following events:
 
-- An Escape condition (the `[ESC]` key having been pressed whilst escape detection is enabled).
-- The `[INDEX]` having been pressed or another application / popdown being activated
-- The □ key having been pressed.
+- An Escape condition (the <Key k="esc" /> key having been pressed whilst escape detection is enabled).
+- The <Key k="index" /> having been pressed or another application / popdown being activated
+- The <Key k="square" /> key having been pressed.
 - The process having been killed (normally from INDEX)
 
 You may wish to develop your own error handler, but you should always use one. If you don’t, you could run into trouble.
@@ -306,5 +306,5 @@ RET
 Try running the complete program and observe the effect of:
 
 - Suspending (eg. activate INDEX) and then either killing or reentering
-- Pressing `[ESC]`
-- Switching the Z88 off and on (both `[SHIFT]` keys)
+- Pressing <Key k="esc" />
+- Switching the Z88 off and on (both <Key k="shift" /> keys)

@@ -29,19 +29,17 @@ Printer echo off.
 </tbody>
 </Table>
 
-This is not quite as straightforward as it at first appears. In fact, ❑+P starts a CLI command that sends a copy of characters sent to the screen to the printer as well. The key sequence ❑-P removes that CLI command.
+This is not quite as straightforward as it at first appears. In fact, <Key k="square" />+P starts a CLI command that sends a copy of characters sent to the screen to the printer as well. The key sequence <Key k="square" />-P removes that CLI command.
 
 Whilst the CLI command is active, the 'CLI' indicator appears in the OZ window and page-waits do not occur during a program listing.
 
 <Shot src="z88-bbc-basic/printing/keyboard-control/image4.webp" alt="The Index with no suspended activities" width={640} />
 
-In addition to ❑-P, you can cancel the ❑+P CLI command in the normal way by pressing the \[SHIFT\]/\[ESCAPE\] or ◇\[ESCAPE\].
+In addition to <Key k="square" />-P, you can cancel the <Key k="square" />+P CLI command in the normal way by pressing the <Key k="shift" />/<Key k="esc" /> or <Key k="diamond" /><Key k="esc" />.
 
-Using printer echo is an easy way of listing a program on the printer. In the following example, the ‘+’ represents the \`=/+' key; you don't have to use the \[SHIFT\] key.
+Using printer echo is an easy way of listing a program on the printer. In the following example, the ‘+’ represents the \`=/+' key; you don't have to use the <Key k="shift" /> key.
 
-```text
-LIST❑+P[ENTER]
-```
+<Typed>LIST</Typed><Key k="square" /><Typed>+P</Typed><Key k="enter" />
 
 ……….
 
@@ -49,4 +47,4 @@ Program listed to screen and printer.
 
 ……….
 
-❑-P
+<Key k="square" />-P

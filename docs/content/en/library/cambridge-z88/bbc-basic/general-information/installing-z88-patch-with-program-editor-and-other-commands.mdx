@@ -17,7 +17,7 @@ The patch program is installed with a simple CHAIN command, and thereafter remai
 Download the Z88 Patch ZIP file from R.T. Russell’s BBC BASIC website here: [http://www.bbcbasic.co.uk/bbcbasic/z88patch.html](http://www.bbcbasic.co.uk/bbcbasic/z88patch.html), then follow these steps:
 
 - Extract Zip file contents and upload the Z88PATCH.BBC program to your Z88, for example to :RAM.0.
-- Instantiate or activate a BBC BASIC(Z80) application with □B
+- Instantiate or activate a BBC BASIC(Z80) application with <Key k="square" />B
 - Enter the following command:
 
 ```text
@@ -52,7 +52,7 @@ Installation of the BASIC Patch has a number of "side effects" of which you shou
 50 UNTIL FALSE
 ```
 
-The above program can be aborted only by pressing `[ESC]`. The intention is that this will cause the display to clear and the message "Escape" to be displayed. In practice, the message actually displayed will be "Sorry, not implemented" since, although the Patch is active, the MODE statement still affects REPORT, ERR and ERL.
+The above program can be aborted only by pressing <Key k="esc" />. The intention is that this will cause the display to clear and the message "Escape" to be displayed. In practice, the message actually displayed will be "Sorry, not implemented" since, although the Patch is active, the MODE statement still affects REPORT, ERR and ERL.
 
 The Patch commands are integrated in OZ V4.3 and later releases, without the above mentioned “side effects”. PAGE address is not affected (remains at &2300). Later Z88 ROM versions, provided by the Open Source Z88 Development Project, can be accessed here (contains release notes and download links):
 
