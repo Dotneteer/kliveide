@@ -1,0 +1,250 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T2352,---
+description: "Copy, move, rename and delete files between this computer, the project, disk images, SD card and +3e hard disk images, tapes and the stopped machine's own storage in Klive's two-pane File Manager."
+---
+
+import { Callout, Steps } from 'nextra/components'
+
+# The File Manager
+
+The **File Manager** shows two folders side by side, each on a drive of its own, in the style of
+two-pane file managers such as Total Commander. A drive can be a disk of this computer, the open
+project, a disk image, an SD card image, a tape, or the machine's own SD card, disks and tape while
+the machine is stopped. Copying between them converts each file to what the other side keeps, so a
+`.tap` on this computer lands on a +3 disk as its programs and code.
+
+<Shot
+  src="guides/media/file-manager/panes.webp"
+  alt="The File Manager: on the left the project's assets folder with loader.bas and title.scr marked; on the right a +3 disk image entered like a folder, its files with their type, size, start address, attributes and user area"
+  caption="Two files of the project marked on the left, a +3 disk on the right"
+  width={900}
+/>
+
+## Opening the File Manager
+
+Choose **File › File Manager...**, or type `fm` (`show-file-manager`) at the command prompt. It opens
+as a document tab, and it opens again where you left it: each pane remembers its drive and folder.
+
+## Moving around
+
+Click a pane to make it active, or press <kbd>Tab</kbd>. The active pane's header has an accent rule.
+
+| Key | Does |
+| --- | --- |
+| <kbd>↑</kbd> <kbd>↓</kbd> <kbd>Page Up</kbd> <kbd>Page Down</kbd> <kbd>Home</kbd> <kbd>End</kbd> | Move the cursor. |
+| <kbd>Enter</kbd>, or a double-click | Open the folder, or enter the disk image or tape under the cursor. |
+| <kbd>Backspace</kbd> | Go to the folder above, or out of an image. |
+| <kbd>Alt</kbd>+<kbd>F1</kbd>, <kbd>Alt</kbd>+<kbd>F2</kbd> | Open the left or the right pane's drive menu. |
+| <kbd>Ctrl</kbd>+<kbd>R</kbd> | Read the folder again. |
+| <kbd>Ctrl</kbd>+<kbd>H</kbd> | Show or hide hidden files. |
+
+Click a column header to sort by it, and again to reverse the order. The path above the list goes to
+any folder on it when you click it.
+
+### Drives
+
+The drive menu lists, in groups:
+
+- **This computer**: its disks, your home folder, and Klive's `Klive` and `KliveProjects` folders.
+- **Project**: the open project.
+- **Machine storage**: the current machine's SD card (ZX Spectrum Next, or a DivMMC), drives A: and
+  B:, Microdrives 1 and 2 (with an Interface 1), and the tape in the tape player. These are drives
+  only while the machine is stopped.
+- **Disk images**: the images opened this session. **Open image as drive...** opens another one.
+
+A disk image (`.dsk`, `.trd`, `.scl`, `.mdr`, and the MGT +D/DISCiPLE's `.mgt`), an SD card or hard
+disk image (`.img`, `.hdf`, `.cim`) or a tape (`.tap`, `.tzx`) is also entered like a folder from the
+pane that lists it. A hard disk image is one drive for each of its partitions: each FAT partition, and
+each +3DOS partition of a ZX Spectrum +3e disk (IDEDOS), named after the partition.
+
+## Choosing files
+
+A command works on the marked files, or on the file under the cursor when none is marked.
+
+- <kbd>Insert</kbd> or <kbd>Space</kbd> marks the file under the cursor and moves down.
+- <kbd>Ctrl</kbd>+click (<kbd>⌘</kbd>+click on macOS) marks a file.
+- <kbd>+</kbd> marks the files whose names match a mask such as `*.tap;*.tzx`, <kbd>-</kbd> unmarks
+  them, and <kbd>Ctrl</kbd>+<kbd>A</kbd> marks every file.
+- <kbd>Esc</kbd> clears the marks.
+
+The status line under each pane counts the marked files and their size.
+
+## Copying and moving
+
+<Steps>
+
+### Choose the files
+
+Open the folder that holds them in one pane, and the folder or disk they go to in the other. Mark
+the files, or put the cursor on one.
+
+### Press F5 to copy, or F6 to move
+
+The copy dialog lists what each file becomes on the other side and the name it gets there, and says
+whether everything fits.
+
+<Shot
+  src="guides/media/file-manager/copy.webp"
+  alt="The copy dialog: Files become Auto, Keep headers or Raw bytes; headerless code at 32768; a table showing loader.bas becoming the BASIC program LOADER and title.scr becoming TITLE.SCR, a SCREEN$; 8,192 bytes to write and 158,720 bytes free"
+  caption="Copying a .bas and a .scr onto a +3 disk"
+  width={640}
+/>
+
+### Choose how files cross, and copy
+
+Between this computer and a ZX Spectrum disk, cartridge or tape, **Files become** decides what
+happens to each file (see the table below). Press **Copy** (or **Move**).
+
+</Steps>
+
+You can also drag files from one pane to the other (hold <kbd>Shift</kbd> to move), or drop files on
+a pane from the Project Explorer or from your system's file manager.
+
+A progress line shows the file being written, with **Cancel** (or <kbd>Esc</kbd>). When the copy ends,
+a line above the buttons says what it did: how many files it wrote, and any it skipped or could not
+write, and why.
+
+<Callout type="info">
+A disk image, cartridge or tape is written once, after the last file. A cancelled copy, or one that
+fills the disk, leaves the image as it was, and the first change of a session keeps a `.bak` of the
+image beside it.
+</Callout>
+
+### What a file becomes
+
+| From | To | Auto | Keep headers | Raw bytes |
+| --- | --- | --- | --- | --- |
+| This computer or an SD card | A disk, cartridge or tape | A `.tap` gives its files; a `.scr` becomes a `SCREEN$` at 16384; a `.bas` is tokenised (with the auto-run line you give); anything else becomes `CODE` at the address you give | As Auto | Every file becomes `CODE` at the address you give |
+| A disk, cartridge or tape | This computer or an SD card | A program or an array becomes a one-file `.tap` that keeps its header; a `SCREEN$` becomes a `.scr`; code becomes its bytes | Every file with a header becomes a one-file `.tap` | The bytes, without the header |
+| A disk, cartridge or tape | Another one | The header goes with the file | The header goes with the file | The header goes with the file |
+| This computer | An SD card, and back | The file as it is | The file as it is | The file as it is |
+
+Names are made to fit the target: eight characters, a dot and three on a +3 disk, eight and a type
+letter on TR-DOS, ten on a Microdrive, an MGT disk or a tape. The copy dialog shows every name that changed.
+Folders are copied with what they hold where the target has folders; a disk without folders takes
+their files only when you tick **Copy the files of folders too**.
+
+### Files that are already there
+
+When a file of the same name is on the target, the copy asks what to do with it: **Replace** it,
+**Copy as** another name (a free one is suggested), or **Skip** it. **Replace all** and **Skip all**
+answer the rest. The copy dialog can answer them all before you start.
+
+## Other commands
+
+| Key | Command |
+| --- | --- |
+| <kbd>F3</kbd> | **View**: a BASIC program as its listing, a screen as its picture, text as text, anything else as bytes. **Open as memory** opens the bytes in a memory view with disassembly. <kbd>F3</kbd> or <kbd>Esc</kbd> closes it. |
+| <kbd>F4</kbd> | **Edit**: opens a project file in its editor or viewer. |
+| <kbd>Shift</kbd>+<kbd>F6</kbd> | **Rename** the file under the cursor. |
+| <kbd>F7</kbd> | **New folder** (on this computer and on SD cards). |
+| <kbd>F8</kbd> or <kbd>Delete</kbd> | **Delete**. On this computer files go to the system's trash; on an image they are deleted for good. |
+| <kbd>Alt</kbd>+<kbd>↑</kbd> <kbd>Alt</kbd>+<kbd>↓</kbd> | On a tape, move the file one place earlier or later. |
+
+The buttons along the bottom do the same, for keyboards without function keys. Right-click a file
+for the same commands, and **Reveal in the system's file manager** for a file of this computer.
+
+<Shot
+  src="guides/media/file-manager/viewer.webp"
+  alt="The viewer over the right pane: the BASIC program DISK on a +3 disk, its facts (BASIC, 120 bytes, LINE 10) and its four-line listing, with Listing, Bytes, Open as memory and Close"
+  caption="F3 on a BASIC program"
+  width={520}
+/>
+
+## The machine's own storage
+
+The machine's SD card, disks, cartridges and tape are drives only while the machine is stopped, so
+nothing the File Manager writes meets a running program. While the machine runs, they are greyed in
+the drive menu, and a pane on one says that the machine is running, with a **Stop the machine**
+button. Once the machine stops, the pane reads its folder again. If the machine starts during a copy,
+the copy stops before its next file.
+
+## Settings
+
+**Settings › General › File Manager** has two switches:
+
+- **Show hidden files in new panes**.
+- **Delete this computer's files permanently**, instead of moving them to the system's trash.
+
+## Related
+
+- [Disk images and the Disk Explorer](/en/guides/media/disk-explorer/)
+- [Tapes](/en/guides/media/tapes/)
+- [The Project Explorer](/en/guides/projects/project-explorer/)
+- [The ZX Spectrum Next SD card](/en/guides/next/sd-card/)
+- [The Interface 1 and Microdrives](/en/guides/media/microdrives/)a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Opening the File Manager","id":"opening-the-file-manager","depth":2},{"value":"Moving around","id":"moving-around","depth":2},{"value":"Drives","id":"drives","depth":3},{"value":"Choosing files","id":"choosing-files","depth":2},{"value":"Copying and moving","id":"copying-and-moving","depth":2},{"value":"Choose the files","id":"choose-the-files","depth":3},{"value":"Press F5 to copy, or F6 to move","id":"press-f5-to-copy-or-f6-to-move","depth":3},{"value":"Choose how files cross, and copy","id":"choose-how-files-cross-and-copy","depth":3},{"value":"What a file becomes","id":"what-a-file-becomes","depth":3},{"value":"Files that are already there","id":"files-that-are-already-there","depth":3},{"value":"Other commands","id":"other-commands","depth":2},{"value":"The machine’s own storage","id":"the-machines-own-storage","depth":2},{"value":"Settings","id":"settings","depth":2},{"value":"Related","id":"related","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"Copy, move, rename and delete files between this computer, the project, disk images, SD card and +3e hard disk images, tapes and the stopped machine's own storage in Klive's two-pane File Manager.","title":"The File Manager","filePath":"content/en/guides/media/file-manager.mdx","timestamp":1793369525000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"guides/media/file-manager","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"The File Manager - Klive IDE"}],["$","meta","1",{"name":"description","content":"Copy, move, rename and delete files between this computer, the project, disk images, SD card and +3e hard disk images, tapes and the stopped machine's own storage in Klive's two-pane File Manager."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/guides/media/file-manager/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"48qnWim6EDNI_gUqjlP5w"}
+20:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+44:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["The File Manager","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ",["$","strong",null,{"children":"File Manager"}]," shows two folders side by side, each on a drive of its own, in the style of\ntwo-pane file managers such as Total Commander. A drive can be a disk of this computer, the open\nproject, a disk image, an SD card image, a tape, or the machine’s own SD card, disks and tape while\nthe machine is stopped. Copying between them converts each file to what the other side keeps, so a\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".tap"}]," on this computer lands on a +3 disk as its programs and code."]}],"\n",["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"900px"},"children":[["$","figcaption",null,{"className":"Shot_label__LxtzD","children":["$undefined",["$","span",null,{"children":"Two files of the project marked on the left, a +3 disk on the right"}]]}],["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/guides/media/file-manager/panes.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/guides/media/file-manager/panes.webp","alt":"The File Manager: on the left the project's assets folder with loader.bas and title.scr marked; on the right a +3 disk image entered like a folder, its files with their type, size, start address, attributes and user area","loading":"lazy","decoding":"async"}],[]]}]]}],"\n",["$","h2",null,{"id":"opening-the-file-manager","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Opening the File Manager",["$","$L20",null,{"id":"opening-the-file-manager"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Choose ",["$","strong",null,{"children":"File › File Manager…"}],", or type ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"fm"}]," (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"show-file-manager"}],") at the command prompt. It opens\nas a document tab, and it opens again where you left it: each pane remembers its drive and folder."]}],"\n",["$","h2",null,{"id":"moving-around","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Moving around",["$","$L20",null,{"id":"moving-around"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Click a pane to make it active, or press ",["$","kbd",null,{"children":"Tab"}],". The active pane’s header has an accent rule."]}],"\n",["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"Key","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Does","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":[["$","kbd",null,{"children":"↑"}]," ",["$","kbd",null,{"children":"↓"}]," ",["$","kbd",null,{"children":"Page Up"}]," ",["$","kbd",null,{"children":"Page Down"}]," ",["$","kbd",null,{"children":"Home"}]," ",["$","kbd",null,{"children":"End"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Move the cursor.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],"$L21","$L22","$L23","$L24","$L25"]}]]}],"\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41","\n","$L42","\n","$L43"]]}]
+15:["$","$L44",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@45"}]}]
+1f:true
+4a:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+9:300
+21:["$","tr",null,{"children":[["$","td",null,{"children":[["$","kbd",null,{"children":"Enter"}],", or a double-click"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Open the folder, or enter the disk image or tape under the cursor.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+22:["$","tr",null,{"children":[["$","td",null,{"children":["$","kbd",null,{"children":"Backspace"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Go to the folder above, or out of an image.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+23:["$","tr",null,{"children":[["$","td",null,{"children":[["$","kbd",null,{"children":"Alt"}],"+",["$","kbd",null,{"children":"F1"}],", ",["$","kbd",null,{"children":"Alt"}],"+",["$","kbd",null,{"children":"F2"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Open the left or the right pane’s drive menu.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+24:["$","tr",null,{"children":[["$","td",null,{"children":[["$","kbd",null,{"children":"Ctrl"}],"+",["$","kbd",null,{"children":"R"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Read the folder again.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+25:["$","tr",null,{"children":[["$","td",null,{"children":[["$","kbd",null,{"children":"Ctrl"}],"+",["$","kbd",null,{"children":"H"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Show or hide hidden files.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+26:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Click a column header to sort by it, and again to reverse the order. The path above the list goes to\nany folder on it when you click it."}]
+27:["$","h3",null,{"id":"drives","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Drives",["$","$L20",null,{"id":"drives"}]]}]
+28:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The drive menu lists, in groups:"}]
+29:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"This computer"}],": its disks, your home folder, and Klive’s ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Klive"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"KliveProjects"}]," folders."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Project"}],": the open project."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Machine storage"}],": the current machine’s SD card (ZX Spectrum Next, or a DivMMC), drives A: and\nB:, Microdrives 1 and 2 (with an Interface 1), and the tape in the tape player. These are drives\nonly while the machine is stopped."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Disk images"}],": the images opened this session. ",["$","strong",null,{"children":"Open image as drive…"}]," opens another one."]}],"\n"]}]
+2a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A disk image (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".dsk"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".trd"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".scl"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".mdr"}],", and the MGT +D/DISCiPLE’s ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".mgt"}],"), an SD card or hard\ndisk image (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".img"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".hdf"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".cim"}],") or a tape (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".tap"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".tzx"}],") is also entered like a folder from the\npane that lists it. A hard disk image is one drive for each of its partitions: each FAT partition, and\neach +3DOS partition of a ZX Spectrum +3e disk (IDEDOS), named after the partition."]}]
+2b:["$","h2",null,{"id":"choosing-files","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Choosing files",["$","$L20",null,{"id":"choosing-files"}]]}]
+2c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A command works on the marked files, or on the file under the cursor when none is marked."}]
+2d:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","kbd",null,{"children":"Insert"}]," or ",["$","kbd",null,{"children":"Space"}]," marks the file under the cursor and moves down."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","kbd",null,{"children":"Ctrl"}],"+click (",["$","kbd",null,{"children":"⌘"}],"+click on macOS) marks a file."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","kbd",null,{"children":"+"}]," marks the files whose names match a mask such as ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"*.tap;*.tzx"}],", ",["$","kbd",null,{"children":"-"}]," unmarks\nthem, and ",["$","kbd",null,{"children":"Ctrl"}],"+",["$","kbd",null,{"children":"A"}]," marks every file."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","kbd",null,{"children":"Esc"}]," clears the marks."]}],"\n"]}]
+2e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The status line under each pane counts the marked files and their size."}]
+2f:["$","h2",null,{"id":"copying-and-moving","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Copying and moving",["$","$L20",null,{"id":"copying-and-moving"}]]}]
+30:["$","div",null,{"className":"nextra-steps x:ms-4 x:mb-12 x:border-s x:border-gray-200 x:ps-6 x:dark:border-neutral-800","style":{"--counter-id":"_S_1_"},"children":[["$","h3",null,{"id":"choose-the-files","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Choose the files",["$","$L20",null,{"id":"choose-the-files"}]]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Open the folder that holds them in one pane, and the folder or disk they go to in the other. Mark\nthe files, or put the cursor on one."}],["$","h3",null,{"id":"press-f5-to-copy-or-f6-to-move","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Press F5 to copy, or F6 to move",["$","$L20",null,{"id":"press-f5-to-copy-or-f6-to-move"}]]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The copy dialog lists what each file becomes on the other side and the name it gets there, and says\nwhether everything fits."}],["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":[["$","figcaption",null,{"className":"Shot_label__LxtzD","children":["$undefined",["$","span",null,{"children":"Copying a .bas and a .scr onto a +3 disk"}]]}],["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/guides/media/file-manager/copy.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/guides/media/file-manager/copy.webp","alt":"The copy dialog: Files become Auto, Keep headers or Raw bytes; headerless code at 32768; a table showing loader.bas becoming the BASIC program LOADER and title.scr becoming TITLE.SCR, a SCREEN$; 8,192 bytes to write and 158,720 bytes free","loading":"lazy","decoding":"async"}],[]]}]]}],["$","h3",null,{"id":"choose-how-files-cross-and-copy","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Choose how files cross, and copy",["$","$L20",null,{"id":"choose-how-files-cross-and-copy"}]]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Between this computer and a ZX Spectrum disk, cartridge or tape, ",["$","strong",null,{"children":"Files become"}]," decides what\nhappens to each file (see the table below). Press ",["$","strong",null,{"children":"Copy"}]," (or ",["$","strong",null,{"children":"Move"}],")."]}]]}]
+31:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["You can also drag files from one pane to the other (hold ",["$","kbd",null,{"children":"Shift"}]," to move), or drop files on\na pane from the Project Explorer or from your system’s file manager."]}]
+32:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A progress line shows the file being written, with ",["$","strong",null,{"children":"Cancel"}]," (or ",["$","kbd",null,{"children":"Esc"}],"). When the copy ends,\na line above the buttons says what it did: how many files it wrote, and any it skipped or could not\nwrite, and why."]}]
+33:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":["$","svg",null,{"viewBox":"0 0 16 16","fill":"currentColor","height":".8em","className":"x:mt-[.3em]","children":["$","path",null,{"d":"M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"}]}]}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A disk image, cartridge or tape is written once, after the last file. A cancelled copy, or one that\nfills the disk, leaves the image as it was, and the first change of a session keeps a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".bak"}]," of the\nimage beside it."]}]}]]}]
+34:["$","h3",null,{"id":"what-a-file-becomes","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["What a file becomes",["$","$L20",null,{"id":"what-a-file-becomes"}]]}]
+35:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"From","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"To","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Auto","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Keep headers","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Raw bytes","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":"This computer or an SD card","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"A disk, cartridge or tape","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["A ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".tap"}]," gives its files; a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".scr"}]," becomes a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"SCREEN$"}]," at 16384; a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".bas"}]," is tokenised (with the auto-run line you give); anything else becomes ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"CODE"}]," at the address you give"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"As Auto","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["Every file becomes ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"CODE"}]," at the address you give"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"A disk, cartridge or tape","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"This computer or an SD card","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["A program or an array becomes a one-file ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".tap"}]," that keeps its header; a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"SCREEN$"}]," becomes a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".scr"}],"; code becomes its bytes"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["Every file with a header becomes a one-file ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".tap"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The bytes, without the header","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"A disk, cartridge or tape","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Another one","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],"$L46","$L47","$L48"],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],"$L49"]}]]}]
+36:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Names are made to fit the target: eight characters, a dot and three on a +3 disk, eight and a type\nletter on TR-DOS, ten on a Microdrive, an MGT disk or a tape. The copy dialog shows every name that changed.\nFolders are copied with what they hold where the target has folders; a disk without folders takes\ntheir files only when you tick ",["$","strong",null,{"children":"Copy the files of folders too"}],"."]}]
+37:["$","h3",null,{"id":"files-that-are-already-there","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Files that are already there",["$","$L20",null,{"id":"files-that-are-already-there"}]]}]
+38:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["When a file of the same name is on the target, the copy asks what to do with it: ",["$","strong",null,{"children":"Replace"}]," it,\n",["$","strong",null,{"children":"Copy as"}]," another name (a free one is suggested), or ",["$","strong",null,{"children":"Skip"}]," it. ",["$","strong",null,{"children":"Replace all"}]," and ",["$","strong",null,{"children":"Skip all"}],"\nanswer the rest. The copy dialog can answer them all before you start."]}]
+39:["$","h2",null,{"id":"other-commands","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Other commands",["$","$L20",null,{"id":"other-commands"}]]}]
+3a:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"Key","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Command","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":["$","kbd",null,{"children":"F3"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","strong",null,{"children":"View"}],": a BASIC program as its listing, a screen as its picture, text as text, anything else as bytes. ",["$","strong",null,{"children":"Open as memory"}]," opens the bytes in a memory view with disassembly. ",["$","kbd",null,{"children":"F3"}]," or ",["$","kbd",null,{"children":"Esc"}]," closes it."],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","kbd",null,{"children":"F4"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","strong",null,{"children":"Edit"}],": opens a project file in its editor or viewer."],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":[["$","kbd",null,{"children":"Shift"}],"+",["$","kbd",null,{"children":"F6"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","strong",null,{"children":"Rename"}]," the file under the cursor."],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","kbd",null,{"children":"F7"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","strong",null,{"children":"New folder"}]," (on this computer and on SD cards)."],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":[["$","kbd",null,{"children":"F8"}]," or ",["$","kbd",null,{"children":"Delete"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","strong",null,{"children":"Delete"}],". On this computer files go to the system’s trash; on an image they are deleted for good."],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":[["$","kbd",null,{"children":"Alt"}],"+",["$","kbd",null,{"children":"↑"}]," ",["$","kbd",null,{"children":"Alt"}],"+",["$","kbd",null,{"children":"↓"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"On a tape, move the file one place earlier or later.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}]]}]
+3b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The buttons along the bottom do the same, for keyboards without function keys. Right-click a file\nfor the same commands, and ",["$","strong",null,{"children":"Reveal in the system’s file manager"}]," for a file of this computer."]}]
+3c:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"520px"},"children":[["$","figcaption",null,{"className":"Shot_label__LxtzD","children":["$undefined",["$","span",null,{"children":"F3 on a BASIC program"}]]}],["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/guides/media/file-manager/viewer.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/guides/media/file-manager/viewer.webp","alt":"The viewer over the right pane: the BASIC program DISK on a +3 disk, its facts (BASIC, 120 bytes, LINE 10) and its four-line listing, with Listing, Bytes, Open as memory and Close","loading":"lazy","decoding":"async"}],[]]}]]}]
+3d:["$","h2",null,{"id":"the-machines-own-storage","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The machine’s own storage",["$","$L20",null,{"id":"the-machines-own-storage"}]]}]
+3e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The machine’s SD card, disks, cartridges and tape are drives only while the machine is stopped, so\nnothing the File Manager writes meets a running program. While the machine runs, they are greyed in\nthe drive menu, and a pane on one says that the machine is running, with a ",["$","strong",null,{"children":"Stop the machine"}],"\nbutton. Once the machine stops, the pane reads its folder again. If the machine starts during a copy,\nthe copy stops before its next file."]}]
+3f:["$","h2",null,{"id":"settings","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Settings",["$","$L20",null,{"id":"settings"}]]}]
+40:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Settings › General › File Manager"}]," has two switches:"]}]
+41:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Show hidden files in new panes"}],"."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Delete this computer’s files permanently"}],", instead of moving them to the system’s trash."]}],"\n"]}]
+42:["$","h2",null,{"id":"related","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Related",["$","$L20",null,{"id":"related"}]]}]
+43:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L4a",null,{"href":"/en/guides/media/disk-explorer/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Disk images and the Disk Explorer"}]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L4a",null,{"href":"/en/guides/media/tapes/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Tapes"}]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L4a",null,{"href":"/en/guides/projects/project-explorer/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"The Project Explorer"}]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L4a",null,{"href":"/en/guides/next/sd-card/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"The ZX Spectrum Next SD card"}]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L4a",null,{"href":"/en/guides/media/microdrives/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"The Interface 1 and Microdrives"}]}],"\n"]}]
+45:null
+9:C
+46:["$","td",null,{"children":"The header goes with the file","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
+47:["$","td",null,{"children":"The header goes with the file","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
+48:["$","td",null,{"children":"The header goes with the file","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
+49:["$","tr",null,{"children":[["$","td",null,{"children":"This computer","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"An SD card, and back","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The file as it is","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The file as it is","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The file as it is","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"
