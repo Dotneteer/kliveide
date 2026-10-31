@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Klive File Manager</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* The two-pane File Manager (.plans/FILE_MANAGER_PLAN.md). Tokens follow mockups/new-project-dialog.html.
+   Six screens: the main view, the drive menu, the copy dialog with conversion, a conflict during a job,
+   an image entered as a folder with the machine running, and the F3 viewer. */
+:root {
+  --page: #e9ebee; --panel: #f7f8f9; --chrome: #f1f2f4; --canvas: #ffffff; --raised: #ffffff;
+  --hover: #e8eaee; --selected: #e2e6ec; --border-subtle: #e5e7ea; --border: #d5d8dd; --border-strong: #b9bec6;
+  --text: #1b1d21; --text-2: #565c65; --text-3: #6b717a; --text-dis: #9aa0a8;
+  --accent: #0A6FB8; --on-accent: #ffffff; --accent-wash: #0A6FB81c; --mark: #B5530A; --state: #7A4FB0;
+  --ok: #2E7D32; --warn: #8A6A00; --warn-wash: #fff8e1; --warn-border: #e8d48a;
+  --font-ui: "IBM Plex Sans", -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page: #0e0f11; --panel: #17191c; --chrome: #1b1d21; --canvas: #141517; --raised: #202329;
+  --hover: #24272e; --selected: #2a2e36; --border-subtle: #24272b; --border: #2e3238; --border-strong: #3d424a;
+  --text: #e4e6ea; --text-2: #949aa4; --text-3: #7f8690; --text-dis: #5a606a;
+  --accent: #45A5E6; --on-accent: #0e0f11; --accent-wash: #45A5E624; --mark: #F0A050; --state: #B69AE8;
+  --ok: #6BC46F; --warn: #FFC933; --warn-wash: #2a2618; --warn-border: #5a4d22;
+  color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --page: #0e0f11; --panel: #17191c; --chrome: #1b1d21; --canvas: #141517; --raised: #202329;
+  --hover: #24272e; --selected: #2a2e36; --border-subtle: #24272b; --border: #2e3238; --border-strong: #3d424a;
+  --text: #e4e6ea; --text-2: #949aa4; --text-3: #7f8690; --text-dis: #5a606a;
+  --accent: #45A5E6; --on-accent: #0e0f11; --accent-wash: #45A5E624; --mark: #F0A050; --state: #B69AE8;
+  --ok: #6BC46F; --warn: #FFC933; --warn-wash: #2a2618; --warn-border: #5a4d22;
+  color-scheme: dark; }
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--page); color: var(--text); font: 13px/1.4 var(--font-ui); padding: 24px 16px 48px; }
+.wrap { max-width: 1180px; margin: 0 auto; display: grid; gap: 16px; }
+header.page h1 { font-size: 18px; font-weight: 600; margin: 0 0 4px; }
+header.page p { margin: 0; color: var(--text-2); max-width: 90ch; }
+.tabs { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; }
+.tab { border: 1px solid var(--border); background: var(--raised); color: var(--text-2); border-radius: 4px; padding: 5px 12px; font: 13px var(--font-ui); cursor: pointer; }
+.tab[aria-selected="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 500; }
+.theme { margin-left: auto; }
+.note { color: var(--text-2); max-width: 100ch; margin: 0; }
+.note b { color: var(--text); }
+.screen[hidden] { display: none; }
+.mono { font-family: var(--font-mono); }
+
+/* --- The IDE document frame */
+.doc { position: relative; background: var(--panel); border: 1px solid var(--border-strong); border-radius: 6px; overflow: hidden; box-shadow: 0 8px 28px #0003; }
+.doctabs { display: flex; background: var(--chrome); border-bottom: 1px solid var(--border); font-size: 12px; overflow: hidden; }
+.doctabs span { padding: 6px 14px; border-right: 1px solid var(--border); color: var(--text-3); white-space: nowrap; }
+.doctabs span.on { background: var(--panel); color: var(--text); border-bottom: 2px solid var(--accent); margin-bottom: -1px; }
+.panes { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); min-height: 360px; }
+@media (max-width: 760px) { .panes { grid-template-columns: minmax(0, 1fr); } }
+.pane { display: grid; grid-template-rows: auto auto 1fr auto; min-width: 0; position: relative; }
+.pane + .pane { border-left: 1px solid var(--border); }
+@media (max-width: 760px) { .pane + .pane { border-left: 0; border-top: 1px solid var(--border); } }
+
+.phead { display: flex; align-items: center; gap: 6px; padding: 5px 8px; background: var(--chrome); border-bottom: 1px solid var(--border); border-top: 2px solid transparent; min-width: 0; }
+.pane.active .phead { border-top-color: var(--accent); }
+.drive { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--border-strong); background: var(--raised); color: var(--text); border-radius: 4px; padding: 2px 8px; font: 12.5px var(--font-ui); cursor: pointer; white-space: nowrap; }
+.drive .ico { width: 14px; text-align: center; color: var(--text-2); }
+.drive .caret { color: var(--text-3); font-size: 10px; }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--state); display: inline-block; }
+.crumbs { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 12px var(--font-mono); color: var(--text-2); }
+.crumbs b { color: var(--text); font-weight: 500; }
+.crumbs i { font-style: normal; color: var(--text-3); padding: 0 3px; }
+.crumbs .img { color: var(--accent); }
+.iconbtn { color: var(--text-3); padding: 0 4px; cursor: pointer; }
+
+.cols, .row { display: grid; gap: 8px; padding: 0 10px; align-items: center; }
+.cols { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--text-3); font-weight: 600; height: 24px; border-bottom: 1px solid var(--border-subtle); background: var(--panel); }
+.cols .sorted::after { content: " ▲"; font-size: 9px; }
+.host .cols, .host .row { grid-template-columns: minmax(0, 1fr) 9ch 16ch; }
+.p3 .cols, .p3 .row { grid-template-columns: minmax(0, 1fr) 7ch 7ch 6ch 5ch 4ch; }
+.fat .cols, .fat .row { grid-template-columns: minmax(0, 1fr) 9ch 16ch; }
+.list { background: var(--canvas); overflow: hidden; }
+.row { height: 22px; font: 12.5px var(--font-mono); color: var(--text); white-space: nowrap; }
+.row > * { overflow: hidden; text-overflow: ellipsis; }
+.row .n { display: flex; gap: 6px; align-items: center; min-width: 0; }
+.row .n span:last-child { overflow: hidden; text-overflow: ellipsis; }
+.row .r { text-align: right; }
+.row .d { color: var(--text-2); }
+.row.dir .n { font-weight: 500; }
+.row .fi { width: 14px; text-align: center; color: var(--text-3); flex: none; }
+.row.dir .fi { color: var(--accent); }
+.row.marked { color: var(--mark); font-weight: 500; }
+.row.cursor { background: var(--selected); box-shadow: inset 0 0 0 1px var(--border-strong); }
+.pane.active .row.cursor { background: var(--accent-wash); box-shadow: inset 0 0 0 1px var(--accent); }
+.row:hover { background: var(--hover); }
+.kind { font-size: 11px; color: var(--text-2); }
+
+.pstat { display: flex; gap: 10px; padding: 4px 10px; border-top: 1px solid var(--border); background: var(--chrome); font-size: 11.5px; color: var(--text-2); white-space: nowrap; overflow: hidden; }
+.pstat .sp { margin-left: auto; }
+.fkeys { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); border-top: 1px solid var(--border); background: var(--chrome); }
+@media (max-width: 760px) { .fkeys { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.fkeys button { border: 0; border-right: 1px solid var(--border); background: transparent; color: var(--text); font: 12px var(--font-ui); padding: 6px 4px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fkeys button:hover { background: var(--hover); }
+.fkeys kbd { font: 10.5px var(--font-mono); color: var(--text-3); margin-right: 4px; }
+
+/* --- Popups and dialogs drawn over the document */
+.menu { position: absolute; z-index: 5; width: 330px; max-width: calc(100% - 16px); background: var(--raised); border: 1px solid var(--border-strong); border-radius: 5px; box-shadow: 0 10px 30px #0005; padding: 4px 0; font-size: 12.5px; }
+.menu h5 { margin: 6px 0 2px; padding: 0 12px; font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-3); font-weight: 600; }
+.menu .it { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; gap: 6px; padding: 4px 12px; align-items: center; cursor: pointer; }
+.menu .it:hover { background: var(--hover); }
+.menu .it.sel { background: var(--accent); color: var(--on-accent); }
+.menu .it.sel .free, .menu .it.sel .sub { color: var(--on-accent); }
+.menu .it.dis { color: var(--text-dis); cursor: default; }
+.menu .it.dis:hover { background: transparent; }
+.menu .free { font: 11px var(--font-mono); color: var(--text-3); }
+.menu .sub { display: block; font-size: 11px; color: var(--text-3); }
+.menu hr { border: 0; border-top: 1px solid var(--border-subtle); margin: 4px 0; }
+
+.scrim { position: absolute; inset: 0; background: #0003; z-index: 4; display: grid; place-items: center; padding: 16px; }
+.dlg { background: var(--panel); border: 1px solid var(--border-strong); border-radius: 6px; box-shadow: 0 12px 40px #0005; width: 640px; max-width: 100%; overflow: hidden; }
+.dlg.small { width: 480px; }
+.dlg-head { background: var(--chrome); border-bottom: 1px solid var(--border); padding: 8px 12px; display: flex; font-weight: 600; }
+.dlg-head .x { margin-left: auto; color: var(--text-3); }
+.dlg-body { padding: 12px 14px; display: grid; gap: 10px; }
+.dlg-foot { background: var(--chrome); border-top: 1px solid var(--border); padding: 8px 12px; display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+.btn { border: 1px solid var(--border-strong); background: var(--raised); color: var(--text); border-radius: 4px; padding: 4px 12px; font: 12.5px var(--font-ui); cursor: pointer; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 500; }
+.btn.left { margin-right: auto; }
+.field { display: grid; grid-template-columns: 15ch minmax(0, 1fr); gap: 8px; align-items: center; }
+@media (max-width: 560px) { .field { grid-template-columns: minmax(0, 1fr); gap: 3px; } }
+.field > label { color: var(--text-2); }
+.input { background: var(--canvas); border: 1px solid var(--border); border-radius: 4px; padding: 4px 8px; font: 12.5px var(--font-mono); color: var(--text); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.seg { display: inline-flex; border: 1px solid var(--border-strong); border-radius: 4px; overflow: hidden; flex-wrap: wrap; }
+.seg span { padding: 3px 10px; font-size: 12px; border-right: 1px solid var(--border); cursor: pointer; }
+.seg span:last-child { border-right: 0; }
+.seg span.on { background: var(--accent); color: var(--on-accent); }
+table.conv { width: 100%; border-collapse: collapse; font: 12px var(--font-mono); }
+table.conv th { text-align: left; font: 600 10.5px var(--font-ui); text-transform: uppercase; letter-spacing: .05em; color: var(--text-3); padding: 4px 6px; border-bottom: 1px solid var(--border); }
+table.conv td { padding: 3px 6px; border-bottom: 1px solid var(--border-subtle); white-space: nowrap; }
+table.conv td.ren { color: var(--warn); }
+.convwrap { border: 1px solid var(--border); border-radius: 4px; background: var(--canvas); overflow-x: auto; }
+.banner { border: 1px solid var(--warn-border); background: var(--warn-wash); border-radius: 4px; padding: 6px 10px; font-size: 12px; }
+.okline { color: var(--ok); font-size: 12px; }
+.cmp { display: grid; grid-template-columns: 9ch minmax(0, 1fr) 9ch 16ch; gap: 4px 10px; font: 12px var(--font-mono); }
+.cmp .h { font: 600 10.5px var(--font-ui); text-transform: uppercase; color: var(--text-3); }
+.cmp .newer { color: var(--ok); }
+
+.progress { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; padding: 6px 10px; border-top: 1px solid var(--border); background: var(--raised); font-size: 12px; align-items: center; }
+.bar { grid-column: 1 / -1; height: 4px; background: var(--border-subtle); border-radius: 2px; overflow: hidden; }
+.bar i { display: block; height: 100%; width: 58%; background: var(--accent); }
+
+.blocked { position: absolute; inset: 0; z-index: 3; display: grid; place-items: center; background: color-mix(in srgb, var(--canvas) 82%, transparent); text-align: center; padding: 16px; }
+.blocked div { max-width: 36ch; display: grid; gap: 8px; justify-items: center; }
+.blocked .big { font-size: 22px; color: var(--state); }
+.blocked p { margin: 0; color: var(--text-2); }
+
+.viewer { display: grid; grid-template-rows: auto 1fr; background: var(--canvas); }
+.vhead { display: flex; gap: 10px; align-items: center; padding: 5px 10px; background: var(--chrome); border-bottom: 1px solid var(--border); font-size: 12px; flex-wrap: wrap; }
+.vhead .seg { margin-left: auto; }
+.listing { font: 12.5px/1.55 var(--font-mono); padding: 10px 14px; margin: 0; white-space: pre; overflow: auto; }
+.listing .ln { color: var(--text-3); }
+.listing .kw { color: var(--accent); }
+.listing .st { color: var(--mark); }
+.annot { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+.annot div { background: var(--panel); border: 1px solid var(--border); border-radius: 5px; padding: 8px 10px; color: var(--text-2); font-size: 12px; }
+.annot b { color: var(--text); display: block; margin-bottom: 2px; font-size: 12.5px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="page">
+    <h1>Klive File Manager: mockups</h1>
+    <p>A two-pane file manager in the style of Total Commander, opened as an IDE document. Each pane shows one drive: a folder on this computer, the project, a disk image, an SD card image, a tape, or the stopped machine's own storage. Plan: <span class="mono">.plans/FILE_MANAGER_PLAN.md</span>.</p>
+  </header>
+
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" aria-selected="true" data-s="main">1 · Main view</button>
+    <button class="tab" role="tab" aria-selected="false" data-s="drives">2 · Drive menu</button>
+    <button class="tab" role="tab" aria-selected="false" data-s="copy">3 · Copy with conversion</button>
+    <button class="tab" role="tab" aria-selected="false" data-s="conflict">4 · Conflict and progress</button>
+    <button class="tab" role="tab" aria-selected="false" data-s="running">5 · Image entered, machine running</button>
+    <button class="tab" role="tab" aria-selected="false" data-s="viewer">6 · Viewer (F3)</button>
+    <button class="tab theme" id="theme">Light / dark</button>
+  </div>
+
+  <!-- ============================================================ 1 MAIN -->
+  <section class="screen" data-s="main">
+    <p class="note">The left pane is the <b>project</b> on the host; the right pane is the <b>stopped ZX Spectrum Next's SD card</b> (machine storage, the purple dot). Two files are marked (orange) for copying; the cursor is on the active pane's row. Columns follow the drive's file system.</p>
+    <div class="doc">
+      <div class="doctabs"><span>code.kz80.asm</span><span class="on">File Manager</span><span>game.dsk</span></div>
+      <div class="panes">
+        <div class="pane host active">
+          <div class="phead"><span class="drive"><span class="ico">⌂</span>Project: MyGame<span class="caret">▾</span></span><span class="crumbs"><b>MyGame</b><i>›</i>tapes</span><span class="iconbtn">⟳</span></div>
+          <div class="cols"><span class="sorted">Name</span><span class="r">Size</span><span>Modified</span></div>
+          <div class="list">
+            <div class="row dir"><span class="n"><span class="fi">↰</span><span>..</span></span><span class="r">&lt;UP&gt;</span><span class="d"></span></div>
+            <div class="row dir"><span class="n"><span class="fi">▸</span><span>old</span></span><span class="r">&lt;DIR&gt;</span><span class="d">2026-10-12 09:40</span></div>
+            <div class="row marked"><span class="n"><span class="fi">▪</span><span>game.tap</span></span><span class="r">12,410</span><span class="d">2026-10-30 21:14</span></div>
+            <div class="row marked cursor"><span class="n"><span class="fi">▪</span><span>loader.bas</span></span><span class="r">1,204</span><span class="d">2026-10-30 21:10</span></div>
+            <div class="row"><span class="n"><span class="fi">▪</span><span>title.scr</span></span><span class="r">6,912</span><span class="d">2026-10-29 18:02</span></div>
+            <div class="row"><span class="n"><span class="fi">◫</span><span>game.dsk</span></span><span class="r">194,816</span><span class="d">2026-10-31 08:55</span></div>
+            <div class="row"><span class="n"><span class="fi">◫</span><span>sdcard.img</span></span><span class="r">268 MB</span><span class="d">2026-10-28 22:30</span></div>
+            <div class="row"><span class="n"><span class="fi">▪</span><span>music.tzx</span></span><span class="r">44,031</span><span class="d">2026-09-02 16:11</span></div>
+          </div>
+          <div class="pstat"><span>2 of 7 marked, 13,614 bytes</span><span class="sp">APFS · 412 GB free</span></div>
+        </div>
+        <div class="pane fat">
+          <div class="phead"><span class="drive"><span class="dot"></span>Next SD card<span class="caret">▾</span></span><span class="crumbs">/<b>GAMES</b><i>›</i>MYGAME</span><span class="iconbtn">⟳</span></div>
+          <div class="cols"><span class="sorted">Name</span><span class="r">Size</span><span>Modified</span></div>
+          <div class="list">
+            <div class="row dir"><span class="n"><span class="fi">↰</span><span>..</span></span><span class="r">&lt;UP&gt;</span><span class="d"></span></div>
+            <div class="row dir"><span class="n"><span class="fi">▸</span><span>GFX</span></span><span class="r">&lt;DIR&gt;</span><span class="d">2026-10-20 10:02</span></div>
+            <div class="row cursor"><span class="n"><span class="fi">▪</span><span>MYGAME.NEX</span></span><span class="r">48,640</span><span class="d">2026-10-30 21:15</span></div>
+            <div class="row"><span class="n"><span class="fi">▪</span><span>readme.txt</span></span><span class="r">812</span><span class="d">2026-10-20 10:05</span></div>
+          </div>
+          <div class="pstat"><span>3 items</span><span class="sp">FAT32 · 1.6 GB free</span></div>
+        </div>
+      </div>
+      <div class="fkeys">
+        <button><kbd>F3</kbd>View</button><button><kbd>F4</kbd>Edit</button><button><kbd>F5</kbd>Copy</button><button><kbd>F6</kbd>Move</button>
+        <button><kbd>⇧F6</kbd>Rename</button><button><kbd>F7</kbd>New folder</button><button><kbd>F8</kbd>Delete</button><button><kbd>Alt+F1</kbd>Drives</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 2 DRIVES -->
+  <section class="screen" data-s="drives" hidden>
+    <p class="note">Alt+F2 (or a click on the right pane's drive button) opens the drive menu. <b>Machine storage</b> lists only media the current machine has in; it is greyed while the machine runs. A hard-disk image with two FAT partitions shows one entry each.</p>
+    <div class="doc">
+      <div class="doctabs"><span class="on">File Manager</span></div>
+      <div class="panes">
+        <div class="pane host">
+          <div class="phead"><span class="drive"><span class="ico">⌂</span>Project: MyGame<span class="caret">▾</span></span><span class="crumbs"><b>MyGame</b><i>›</i>tapes</span></div>
+          <div class="cols"><span>Name</span><span class="r">Size</span><span>Modified</span></div>
+          <div class="list">
+            <div class="row dir"><span class="n"><span class="fi">↰</span><span>..</span></span><span class="r">&lt;UP&gt;</span><span></span></div>
+            <div class="row cursor"><span class="n"><span class="fi">▪</span><span>game.tap</span></span><span class="r">12,410</span><span class="d">2026-10-30 21:14</span></div>
+            <div class="row"><span class="n"><span class="fi">▪</span><span>loader.bas</span></span><span class="r">1,204</span><span class="d">2026-10-30 21:10</span></div>
+          </div>
+          <div class="pstat"><span>7 items</span><span class="sp">APFS · 412 GB free</span></div>
+        </div>
+        <div class="pane fat active">
+          <div class="phead"><span class="drive" style="border-color:var(--accent)"><span class="dot"></span>Next SD card<span class="caret">▴</span></span><span class="crumbs">/<b>GAMES</b></span></div>
+          <div class="cols"><span>Name</span><span class="r">Size</span><span>Modified</span></div>
+          <div class="list" style="min-height:520px"></div>
+          <div class="pstat"><span>&nbsp;</span></div>
+        </div>
+      </div>
+      <div class="menu" style="top:64px; right:12px">
+        <h5>This computer</h5>
+        <div class="it"><span>🖴</span><span>Macintosh HD</span><span class="free">412 GB</span></div>
+        <div class="it"><span>🖴</span><span>SD-CARD (USB)<span class="sub">/Volumes/SD-CARD · FAT32</span></span><span class="free">7.1 GB</span></div>
+        <div class="it"><span>⌂</span><span>Home</span><span class="free"></span></div>
+        <div class="it"><span>⌂</span><span>KliveProjects</span><span class="free"></span></div>
+        <hr>
+        <h5>Project</h5>
+        <div class="it"><span>⌂</span><span>MyGame</span><span class="free"></span></div>
+        <hr>
+        <h5>Machine storage · ZX Spectrum Next (stopped)</h5>
+        <div class="it sel"><span><span class="dot" style="background:var(--on-accent)"></span></span><span>SD card<span class="sub">cspect-next-2gb.img · FAT32</span></span><span class="free">1.6 GB</span></div>
+        <div class="it"><span>▭</span><span>Tape player<span class="sub">game.tap · TAP</span></span><span class="free"></span></div>
+        <hr>
+        <h5>Disk images</h5>
+        <div class="it"><span>◫</span><span>game.dsk<span class="sub">+3DOS · 173K</span></span><span class="free">121 KB</span></div>
+        <div class="it"><span>◫</span><span>sdcard.img, partition 1<span class="sub">FAT16 · 64 MB</span></span><span class="free">60 MB</span></div>
+        <div class="it"><span>◫</span><span>sdcard.img, partition 2<span class="sub">FAT32 · 200 MB</span></span><span class="free">188 MB</span></div>
+        <div class="it"><span>＋</span><span>Open image as drive…</span><span class="free"></span></div>
+      </div>
+    </div>
+    <p class="note">With a ZX Spectrum +3 or a Pentagon instead, the Machine storage group shows <b>Drive A:</b>/<b>B:</b> (+3DOS) or <b>Drive A:–D:</b> (TR-DOS); with an Interface 1, <b>Microdrive 1–8</b>; with a DivMMC, its <b>esxDOS card</b>.</p>
+  </section>
+
+  <!-- ============================================================ 3 COPY -->
+  <section class="screen" data-s="copy" hidden>
+    <p class="note">F5 from the project to a <b>+3DOS disk image</b>. The file systems differ, so the dialog previews what each file becomes and the name it gets. Free space is checked before anything is written.</p>
+    <div class="doc">
+      <div class="doctabs"><span class="on">File Manager</span></div>
+      <div class="panes" style="min-height:470px">
+        <div class="pane host active"><div class="phead"><span class="drive"><span class="ico">⌂</span>Project: MyGame<span class="caret">▾</span></span></div></div>
+        <div class="pane p3"><div class="phead"><span class="drive"><span class="ico">◫</span>game.dsk<span class="caret">▾</span></span></div></div>
+      </div>
+      <div class="scrim">
+        <div class="dlg">
+          <div class="dlg-head">Copy 3 files<span class="x">✕</span></div>
+          <div class="dlg-body">
+            <div class="field"><label>To</label><div class="input">game.dsk › (+3DOS, user 0)</div></div>
+            <div class="field"><label>Mode</label><div><span class="seg"><span class="on">Auto</span><span>Keep headers</span><span>Raw bytes</span></span></div></div>
+            <div class="field"><label>Headerless code at</label><div class="input" style="width:12ch">32768</div></div>
+            <div class="field"><label>BASIC auto-run</label><div class="input" style="width:12ch">10</div></div>
+            <div class="convwrap">
+              <table class="conv">
+                <tr><th>Source</th><th>On the disk</th><th>Becomes</th><th style="text-align:right">Bytes</th></tr>
+                <tr><td>game.tap</td><td>GAME</td><td>BASIC, LINE 10</td><td style="text-align:right">310</td></tr>
+                <tr><td>&nbsp;&nbsp;└ (block 2)</td><td>GAMECODE</td><td>CODE 24000</td><td style="text-align:right">11,900</td></tr>
+                <tr><td>loader.bas</td><td>LOADER.BAS</td><td>BASIC, LINE 10</td><td style="text-align:right">1,180</td></tr>
+                <tr><td>my_long_title.scr</td><td class="ren">MY_LONG_.SCR</td><td>CODE 16384 (SCREEN$)</td><td style="text-align:right">6,912</td></tr>
+              </table>
+            </div>
+            <div class="field"><label>If a file exists</label><div><span class="seg"><span class="on">Ask</span><span>Replace</span><span>Skip</span></span></div></div>
+            <div class="okline">✓ 20,302 bytes fit: 121 KB free, 61 of 64 directory entries free.</div>
+            <div class="banner">1 name is shortened to fit +3DOS (8 characters, a dot, 3). The disk is written once, after the last file; a <span class="mono">.bak</span> keeps the previous image.</div>
+          </div>
+          <div class="dlg-foot"><button class="btn left">Show as list only</button><button class="btn">Cancel</button><button class="btn primary">Copy</button></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 4 CONFLICT -->
+  <section class="screen" data-s="conflict" hidden>
+    <p class="note">A copy job to the Next's SD card meets a file that exists. The job waits for the answer; the progress strip above the button bar shows where it is and can cancel it.</p>
+    <div class="doc">
+      <div class="doctabs"><span class="on">File Manager</span></div>
+      <div class="panes" style="min-height:380px">
+        <div class="pane host active"><div class="phead"><span class="drive"><span class="ico">🖴</span>Macintosh HD<span class="caret">▾</span></span><span class="crumbs">~/Downloads/<b>next-games</b></span></div></div>
+        <div class="pane fat"><div class="phead"><span class="drive"><span class="dot"></span>Next SD card<span class="caret">▾</span></span><span class="crumbs">/<b>GAMES</b></span></div></div>
+      </div>
+      <div class="scrim" style="bottom:66px">
+        <div class="dlg small">
+          <div class="dlg-head">This file is already there<span class="x">✕</span></div>
+          <div class="dlg-body">
+            <div><span class="mono">/GAMES/WARHAWK.NEX</span> exists on Next SD card.</div>
+            <div class="cmp">
+              <span class="h"></span><span class="h">Name</span><span class="h" style="text-align:right">Size</span><span class="h">Modified</span>
+              <span>Existing</span><span>WARHAWK.NEX</span><span style="text-align:right">212,480</span><span>2025-04-02 19:12</span>
+              <span>New</span><span>warhawk.nex</span><span style="text-align:right">214,016</span><span class="newer">2026-10-30 08:41</span>
+            </div>
+            <div class="field"><label>Or name it</label><div class="input">WARHAWK (2).NEX</div></div>
+          </div>
+          <div class="dlg-foot"><button class="btn left">Cancel job</button><button class="btn">Skip all</button><button class="btn">Skip</button><button class="btn">Rename</button><button class="btn">Replace all</button><button class="btn primary">Replace</button></div>
+        </div>
+      </div>
+      <div class="progress"><span>Copying <span class="mono">warhawk.nex</span> · file 14 of 24 · 2.1 of 3.6 MB</span><button class="btn">Cancel</button><div class="bar"><i></i></div></div>
+      <div class="fkeys">
+        <button><kbd>F3</kbd>View</button><button><kbd>F4</kbd>Edit</button><button><kbd>F5</kbd>Copy</button><button><kbd>F6</kbd>Move</button>
+        <button><kbd>⇧F6</kbd>Rename</button><button><kbd>F7</kbd>New folder</button><button><kbd>F8</kbd>Delete</button><button><kbd>Alt+F1</kbd>Drives</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 5 RUNNING -->
+  <section class="screen" data-s="running" hidden>
+    <p class="note">Left: <b>game.dsk entered from the project like a folder</b> (Enter on the file; Backspace at its root leaves it). The +3DOS columns appear: type, start, attributes, user. Right: the Next's SD card while the <b>machine is running</b>; machine storage is a drive only while the machine is stopped.</p>
+    <div class="doc">
+      <div class="doctabs"><span class="on">File Manager</span></div>
+      <div class="panes">
+        <div class="pane p3 active">
+          <div class="phead"><span class="drive"><span class="ico">⌂</span>Project: MyGame<span class="caret">▾</span></span><span class="crumbs">MyGame<i>›</i><span class="img">game.dsk</span><i>›</i></span><span class="iconbtn">⟳</span></div>
+          <div class="cols"><span class="sorted">Name</span><span>Type</span><span class="r">Size</span><span class="r">Start</span><span>Attr.</span><span class="r">User</span></div>
+          <div class="list">
+            <div class="row dir"><span class="n"><span class="fi">↰</span><span>..</span></span><span class="kind">project</span><span></span><span></span><span></span><span></span></div>
+            <div class="row cursor"><span class="n"><span class="fi">▪</span><span>DISK</span></span><span class="kind">BASIC</span><span class="r">214</span><span class="r">10</span><span>---</span><span class="r">0</span></div>
+            <div class="row"><span class="n"><span class="fi">▪</span><span>GAME.BIN</span></span><span class="kind">CODE</span><span class="r">11,900</span><span class="r">24000</span><span>--A</span><span class="r">0</span></div>
+            <div class="row"><span class="n"><span class="fi">▪</span><span>TITLE.SCR</span></span><span class="kind">CODE</span><span class="r">6,912</span><span class="r">16384</span><span>--A</span><span class="r">0</span></div>
+            <div class="row"><span class="n"><span class="fi">▪</span><span>HISCORE.DAT</span></span><span class="kind">num()</span><span class="r">62</span><span class="r">a</span><span>R-A</span><span class="r">0</span></div>
+            <div class="row"><span class="n"><span class="fi">▪</span><span>NOTES.TXT</span></span><span class="kind">raw</span><span class="r">1,408</span><span class="r"></span><span>---</span><span class="r">3</span></div>
+          </div>
+          <div class="pstat"><span>5 files</span><span class="sp">+3DOS · +3 (173K) · 121 KB free · 59 entries free</span></div>
+        </div>
+        <div class="pane fat">
+          <div class="phead"><span class="drive"><span class="dot"></span>Next SD card<span class="caret">▾</span></span><span class="crumbs">/<b>GAMES</b></span><span class="iconbtn">⟳</span></div>
+          <div class="cols"><span>Name</span><span class="r">Size</span><span>Modified</span></div>
+          <div class="list"></div>
+          <div class="pstat"><span>Unavailable while the machine runs</span></div>
+          <div class="blocked"><div><span class="big">▶</span><b>The ZX Spectrum Next is running</b><p>Stop the machine to use its storage. The pane comes back here, at <span class="mono">/GAMES</span>.</p><button class="btn">Stop the machine</button></div></div>
+        </div>
+      </div>
+      <div class="fkeys">
+        <button><kbd>F3</kbd>View</button><button><kbd>F4</kbd>Edit</button><button><kbd>F5</kbd>Copy</button><button><kbd>F6</kbd>Move</button>
+        <button><kbd>⇧F6</kbd>Rename</button><button><kbd>F7</kbd>New folder</button><button><kbd>F8</kbd>Delete</button><button><kbd>Alt+F1</kbd>Drives</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 6 VIEWER -->
+  <section class="screen" data-s="viewer" hidden>
+    <p class="note">F3 on <span class="mono">DISK</span> in game.dsk: the Disk Explorer's preview code shows the BASIC listing. A screen file shows as the picture, others as hex. Esc returns to the pane.</p>
+    <div class="doc">
+      <div class="doctabs"><span class="on">File Manager</span></div>
+      <div class="panes">
+        <div class="pane viewer active">
+          <div class="vhead"><b>DISK</b><span style="color:var(--text-2)">game.dsk · BASIC · 214 bytes · LINE 10</span><span class="seg"><span class="on">Listing</span><span>Hex</span></span><button class="btn">Open in Disk Explorer</button></div>
+<pre class="listing"><span class="ln">  10</span> <span class="kw">BORDER</span> 0: <span class="kw">PAPER</span> 0: <span class="kw">INK</span> 7: <span class="kw">CLS</span>
+<span class="ln">  20</span> <span class="kw">LOAD</span> <span class="st">"TITLE.SCR"</span> <span class="kw">SCREEN$</span>
+<span class="ln">  30</span> <span class="kw">LOAD</span> <span class="st">"GAME.BIN"</span> <span class="kw">CODE</span> 24000
+<span class="ln">  40</span> <span class="kw">RANDOMIZE USR</span> 24000</pre>
+        </div>
+        <div class="pane host">
+          <div class="phead"><span class="drive"><span class="ico">⌂</span>Project: MyGame<span class="caret">▾</span></span><span class="crumbs"><b>MyGame</b><i>›</i>tapes</span></div>
+          <div class="cols"><span>Name</span><span class="r">Size</span><span>Modified</span></div>
+          <div class="list">
+            <div class="row"><span class="n"><span class="fi">▪</span><span>game.tap</span></span><span class="r">12,410</span><span class="d">2026-10-30 21:14</span></div>
+            <div class="row"><span class="n"><span class="fi">▪</span><span>loader.bas</span></span><span class="r">1,204</span><span class="d">2026-10-30 21:10</span></div>
+          </div>
+          <div class="pstat"><span>7 items</span><span class="sp">APFS · 412 GB free</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="annot">
+    <div><b>Keys (Total Commander)</b>Tab switches pane · Insert/Space marks · +/− mark by mask · Enter opens a folder or enters an image · Backspace goes up · Alt+F1/F2 drive menus · Ctrl+R refreshes.</div>
+    <div><b>Drives</b>This computer, Project, Machine storage (stopped machine only), Disk images (.dsk .trd .scl .mdr .img .hdf .cim, one drive per FAT partition) and tapes (.tap, .tzx read-only).</div>
+    <div><b>Safety</b>Plan before write: names, conflicts and free space are checked first. An image is written once per job; a cancelled job leaves it unchanged. Host deletes go to the trash.</div>
+  </div>
+</div>
+<script>
+(function () {
+  var tabs = document.querySelectorAll(".tab[data-s]");
+  var screens = document.querySelectorAll(".screen");
+  function show (id) {
+    tabs.forEach(function (t) { t.setAttribute("aria-selected", t.dataset.s === id ? "true" : "false"); });
+    screens.forEach(function (s) { s.hidden = s.dataset.s !== id; });
+    try { localStorage.setItem("fm-mock-tab", id); } catch (e) {}
+  }
+  tabs.forEach(function (t) { t.addEventListener("click", function () { show(t.dataset.s); }); });
+  var saved = null;
+  try { saved = localStorage.getItem("fm-mock-tab"); } catch (e) {}
+  if (saved && document.querySelector('.screen[data-s="' + saved + '"]')) show(saved);
+  document.getElementById("theme").addEventListener("click", function () {
+    var root = document.documentElement;
+    var dark = root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+    root.dataset.theme = dark ? "light" : "dark";
+  });
+})();
+</script>
+</body>
+</html>
