@@ -12,4 +12,4 @@
 3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/user-guide/getting-started/basic-concepts/soft-and-hard-reset","s":[]},"h":65600,"c":"$Q4"}]]
 2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
 1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
-0:{"b":"GGxGPXJhfqySSpQ02meyb","t":{"t":{"s":"","h":131152,"c":"$Q1"}}}
+0:{"b":"qoekeITGfa5CRp6VdrSf8","t":{"t":{"s":"","h":131152,"c":"$Q1"}}}

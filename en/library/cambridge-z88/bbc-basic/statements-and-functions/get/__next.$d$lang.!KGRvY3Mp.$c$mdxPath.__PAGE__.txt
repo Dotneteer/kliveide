@@ -8,18 +8,20 @@ e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js
 f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
 10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
 11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
-24:"ViewportBoundary"
-25:I[484,[],"$24"]
-26:"MetadataBoundary"
-27:I[484,[],"$26"]
-28:"$Sreact.suspense"
-29:I[6869,[],"IconMark"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
 8:X
 8:C
 9:X
-12:T93d,---
+12:Tfd4,---
 description: "A function and compatible string function that reads the next character from the keyboard buffer (it waits for the character)."
 ---
+
+import { Table } from 'nextra/components'
 
 {/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
 
@@ -52,9 +54,96 @@ PRINT ....... etc
 
 The values returned by the cursor and other ‘special’ keys are listed below. Many of the keys return 2 bytes, a zero byte followed by another value.
 
-**Keys Normal with with with<br /> Codes \[SHIFT\]** ♢ □
-
-`[ENTER]` 13 0,209 0,193 0,177<br />`[TAB]` 9 0,210 0,194 0,178<br />`[DEL]` 127 0,211 0,195 0,179<br />⇦ 0,252 0,248 0,244 0,240<br />⇨ 0,253 0,249 0,245 0,241<br />⇩ 0,254 0,250 0,246 0,242<br />⇧ 0,255 0,251 0,247 0,243<br />£ 163 126 (-) 30 158<br />= 61 43 0,0 Nothing<br />`[SPACE]` 32 32 160 32<br />**‘** 39 35 (“) 96 Nothing
+<Table>
+<thead>
+<Table.Tr>
+<Table.Th>Keys</Table.Th>
+<Table.Th>Normal codes</Table.Th>
+<Table.Th>With <Key k="shift" /></Table.Th>
+<Table.Th>With <Key k="diamond" /></Table.Th>
+<Table.Th>With <Key k="square" /></Table.Th>
+</Table.Tr>
+</thead>
+<tbody>
+<Table.Tr>
+<Table.Td><Key k="enter" /></Table.Td>
+<Table.Td>13</Table.Td>
+<Table.Td>0,209</Table.Td>
+<Table.Td>0,193</Table.Td>
+<Table.Td>0,177</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td><Key k="tab" /></Table.Td>
+<Table.Td>9</Table.Td>
+<Table.Td>0,210</Table.Td>
+<Table.Td>0,194</Table.Td>
+<Table.Td>0,178</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td><Key k="del" /></Table.Td>
+<Table.Td>127</Table.Td>
+<Table.Td>0,211</Table.Td>
+<Table.Td>0,195</Table.Td>
+<Table.Td>0,179</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td><Key k="left" /></Table.Td>
+<Table.Td>0,252</Table.Td>
+<Table.Td>0,248</Table.Td>
+<Table.Td>0,244</Table.Td>
+<Table.Td>0,240</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td><Key k="right" /></Table.Td>
+<Table.Td>0,253</Table.Td>
+<Table.Td>0,249</Table.Td>
+<Table.Td>0,245</Table.Td>
+<Table.Td>0,241</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td><Key k="down" /></Table.Td>
+<Table.Td>0,254</Table.Td>
+<Table.Td>0,250</Table.Td>
+<Table.Td>0,246</Table.Td>
+<Table.Td>0,242</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td><Key k="up" /></Table.Td>
+<Table.Td>0,255</Table.Td>
+<Table.Td>0,251</Table.Td>
+<Table.Td>0,247</Table.Td>
+<Table.Td>0,243</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>£</Table.Td>
+<Table.Td>163</Table.Td>
+<Table.Td>126 (-)</Table.Td>
+<Table.Td>30</Table.Td>
+<Table.Td>158</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>=</Table.Td>
+<Table.Td>61</Table.Td>
+<Table.Td>43</Table.Td>
+<Table.Td>0,0</Table.Td>
+<Table.Td>Nothing</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td><Key k="space" /></Table.Td>
+<Table.Td>32</Table.Td>
+<Table.Td>32</Table.Td>
+<Table.Td>160</Table.Td>
+<Table.Td>32</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>‘</Table.Td>
+<Table.Td>39</Table.Td>
+<Table.Td>35 (“)</Table.Td>
+<Table.Td>96</Table.Td>
+<Table.Td>Nothing</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
 
 GET can also be used to input data from an I/O port. Full 16-bit port addressing is available :
 
@@ -74,36 +163,48 @@ This is an addition to the original language specification.
 
 **Associated Keywords**
 
-PUT, INKEY, INKEY$a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"A function and compatible string function that reads the next character from the keyboard buffer (it waits for the character).","title":"GET/GET$","filePath":"content/en/library/cambridge-z88/bbc-basic/statements-and-functions/get.mdx","timestamp":1793369525000},"sourceCode":"$12","children":[["$","div",null,{"id":"nextra-skip-nav"}],["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["GET/GET$","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A function and compatible string function that reads the next character from the keyboard buffer (it waits for the character)."}],"\n","$L13","\n","$L14","\n","$L15","\n","$L16","\n","$L17","\n","$L18","\n","$L19","\n","$L1a","\n","$L1b","\n","$L1c","\n","$L1d","\n","$L1e","\n","$L1f","\n","$L20","\n","$L21"]]}]]}]]}]}],null,"$L22"]}],"p":"$@23","v":null,"s":"$9"}}]]
+PUT, INKEY, INKEY$a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"A function and compatible string function that reads the next character from the keyboard buffer (it waits for the character).","title":"GET/GET$","filePath":"content/en/library/cambridge-z88/bbc-basic/statements-and-functions/get.mdx","timestamp":1793369525000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
 3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/bbc-basic/statements-and-functions/get","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
 2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
 1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
-0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L25",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L27",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$28",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"GET/GET$ - Klive IDE"}],["$","meta","1",{"name":"description","content":"A function and compatible string function that reads the next character from the keyboard buffer (it waits for the character)."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/bbc-basic/statements-and-functions/get/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L29","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@2a","v":null,"s":"$9"}},"a":"$@2b","u":"$@2c","b":"GGxGPXJhfqySSpQ02meyb"}
-2d:"ToggleWordWrapButton"
-2e:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$2d"]
-2f:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
-30:I[484,[],"OutletBoundary"]
-13:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L2e",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L2f",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"N=GET"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"N$=GET$"}]}]]}]]}]]}]
-14:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"GET and GET$ wait for a ‘key’ (character) to be present in the keyboard buffer and then return the ASCII number of the key (see Annex A) or a string containing the character of the key. If there are any characters in the keyboard buffer when a GET is issued, then a character will be returned immediately. See the keyword INKEY for a way of emptying the keyboard buffer before issuing a GET."}]
-15:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"GET and GET$ do not echo the pressed key to the screen. If you want to display the character for the pressed key, you must PRINT it."}]
-16:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You can use GET and GET$ whenever you want your program to wait for a reply before continuing. For example, you may wish to display several screens of instructions and allow the user to decide when he has read each screen."}]
-17:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L2e",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L2f",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"REM First screen of instructions"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"CLS"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"PRINT ......."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"PRINT ......."}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"PRINT \"Press any key to continue \";"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"temp=GET"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"REM Second screen of instructions"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"CLS"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"PRINT ....... etc"}]}]]}]]}]]}]
-18:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The values returned by the cursor and other ‘special’ keys are listed below. Many of the keys return 2 bytes, a zero byte followed by another value."}]
-19:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":["Keys Normal with with with",["$","br",null,{}]," Codes [SHIFT]"]}]," ♢ □"]}]
-1a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"[ENTER]"}]," 13 0,209 0,193 0,177",["$","br",null,{}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"[TAB]"}]," 9 0,210 0,194 0,178",["$","br",null,{}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"[DEL]"}]," 127 0,211 0,195 0,179",["$","br",null,{}],"⇦ 0,252 0,248 0,244 0,240",["$","br",null,{}],"⇨ 0,253 0,249 0,245 0,241",["$","br",null,{}],"⇩ 0,254 0,250 0,246 0,242",["$","br",null,{}],"⇧ 0,255 0,251 0,247 0,243",["$","br",null,{}],"£ 163 126 (-) 30 158",["$","br",null,{}],"= 61 43 0,0 Nothing",["$","br",null,{}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":"[SPACE]"}]," 32 32 160 32",["$","br",null,{}],["$","strong",null,{"children":"‘"}]," 39 35 (“) 96 Nothing"]}]
-1b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"GET can also be used to input data from an I/O port. Full 16-bit port addressing is available :"}]
-1c:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L2e",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L2f",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"N=GET(X) :REM input from port X"}]}]}]]}]]}]
-1d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This is an addition to the original language specification."}]
-1e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Syntax"}]}]
-1f:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L2e",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L2f",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"<n-var>=GET"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"<n-var>=GET(<numeric>)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"<s-var>=GET$"}]}]]}]]}]]}]
-20:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Associated Keywords"}]}]
-21:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"PUT, INKEY, INKEY$"}]
-22:["$","$L30",null,{"children":["$","$28",null,{"name":"Next.MetadataOutlet","children":"$@31"}]}]
-2c:true
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"GET/GET$ - Klive IDE"}],["$","meta","1",{"name":"description","content":"A function and compatible string function that reads the next character from the keyboard buffer (it waits for the character)."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/bbc-basic/statements-and-functions/get/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"qoekeITGfa5CRp6VdrSf8"}
+20:"ToggleWordWrapButton"
+21:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$20"]
+22:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+32:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["GET/GET$","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A function and compatible string function that reads the next character from the keyboard buffer (it waits for the character)."}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L21",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L22",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"N=GET"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"N$=GET$"}]}]]}]]}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"GET and GET$ wait for a ‘key’ (character) to be present in the keyboard buffer and then return the ASCII number of the key (see Annex A) or a string containing the character of the key. If there are any characters in the keyboard buffer when a GET is issued, then a character will be returned immediately. See the keyword INKEY for a way of emptying the keyboard buffer before issuing a GET."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"GET and GET$ do not echo the pressed key to the screen. If you want to display the character for the pressed key, you must PRINT it."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You can use GET and GET$ whenever you want your program to wait for a reply before continuing. For example, you may wish to display several screens of instructions and allow the user to decide when he has read each screen."}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L21",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L22",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"REM First screen of instructions"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"CLS"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"PRINT ......."}]}],"\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28"]}]]}]]}],"\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31"]]}]
+15:["$","$L32",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@33"}]}]
+1f:true
 9:300
-31:null
+23:["$","span",null,{"children":["$","span",null,{"children":"PRINT ......."}]}]
+24:["$","span",null,{"children":["$","span",null,{"children":"PRINT \"Press any key to continue \";"}]}]
+25:["$","span",null,{"children":["$","span",null,{"children":"temp=GET"}]}]
+26:["$","span",null,{"children":["$","span",null,{"children":"REM Second screen of instructions"}]}]
+27:["$","span",null,{"children":["$","span",null,{"children":"CLS"}]}]
+28:["$","span",null,{"children":["$","span",null,{"children":"PRINT ....... etc"}]}]
+29:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The values returned by the cursor and other ‘special’ keys are listed below. Many of the keys return 2 bytes, a zero byte followed by another value."}]
+2a:["$","table",null,{"children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"Keys","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Normal codes","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":["With ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Shift","children":"SHIFT"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":["With ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":["With ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"13","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"0,209","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"0,193","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"0,177","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Tab","children":"TAB"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"9","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"0,210","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"0,194","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"0,178","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Delete","children":"DEL"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"127","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"0,211","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"0,195","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"0,179","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor left","children":"←"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"0,252","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],"$L34","$L35","$L36"],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],"$L37","$L38","$L39","$L3a","$L3b","$L3c","$L3d"]}]],"className":"x:block x:overflow-x-auto"}]
+2b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"GET can also be used to input data from an I/O port. Full 16-bit port addressing is available :"}]
+2c:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L21",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L22",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"N=GET(X) :REM input from port X"}]}]}]]}]]}]
+2d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This is an addition to the original language specification."}]
+2e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Syntax"}]}]
+2f:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L21",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L22",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"<n-var>=GET"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"<n-var>=GET(<numeric>)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"<s-var>=GET$"}]}]]}]]}]]}]
+30:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Associated Keywords"}]}]
+31:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"PUT, INKEY, INKEY$"}]
+33:null
 9:C
-2b:0
+34:["$","td",null,{"children":"0,248","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
+35:["$","td",null,{"children":"0,244","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
+36:["$","td",null,{"children":"0,240","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
+37:["$","tr",null,{"children":[["$","td",null,{"children":["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor right","children":"→"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"0,253","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"0,249","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"0,245","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"0,241","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+38:["$","tr",null,{"children":[["$","td",null,{"children":["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor down","children":"↓"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"0,254","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"0,250","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"0,246","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"0,242","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+39:["$","tr",null,{"children":[["$","td",null,{"children":["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Cursor up","children":"↑"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"0,255","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"0,251","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"0,247","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"0,243","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+3a:["$","tr",null,{"children":[["$","td",null,{"children":"£","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"163","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"126 (-)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"30","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"158","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+3b:["$","tr",null,{"children":[["$","td",null,{"children":"=","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"61","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"43","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"0,0","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Nothing","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+3c:["$","tr",null,{"children":[["$","td",null,{"children":["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Space","children":"SPACE"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"32","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"32","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"160","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"32","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+3d:["$","tr",null,{"children":[["$","td",null,{"children":"‘","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"39","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"35 (“)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"96","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Nothing","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+1e:0
 7:"$undefined"
-2a:"$undefined"
-23:"$undefined"
+1d:"$undefined"
+16:"$undefined"

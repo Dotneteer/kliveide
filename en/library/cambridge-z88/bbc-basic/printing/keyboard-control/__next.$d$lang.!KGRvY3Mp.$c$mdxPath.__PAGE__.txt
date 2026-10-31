@@ -8,16 +8,16 @@ e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js
 f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
 10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
 11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
-20:"ViewportBoundary"
-21:I[484,[],"$20"]
-22:"MetadataBoundary"
-23:I[484,[],"$22"]
-24:"$Sreact.suspense"
-25:I[6869,[],"IconMark"]
+24:"ViewportBoundary"
+25:I[484,[],"$24"]
+26:"MetadataBoundary"
+27:I[484,[],"$26"]
+28:"$Sreact.suspense"
+29:I[6869,[],"IconMark"]
 8:X
 8:C
 9:X
-12:T725,---
+12:T7c5,---
 description: "You can echo characters which are sent to the screen to the printer. Printer echo is controlled with the following key sequences."
 ---
 
@@ -48,19 +48,17 @@ Printer echo off.
 </tbody>
 </Table>
 
-This is not quite as straightforward as it at first appears. In fact, ❑+P starts a CLI command that sends a copy of characters sent to the screen to the printer as well. The key sequence ❑-P removes that CLI command.
+This is not quite as straightforward as it at first appears. In fact, <Key k="square" />+P starts a CLI command that sends a copy of characters sent to the screen to the printer as well. The key sequence <Key k="square" />-P removes that CLI command.
 
 Whilst the CLI command is active, the 'CLI' indicator appears in the OZ window and page-waits do not occur during a program listing.
 
 <Shot src="z88-bbc-basic/printing/keyboard-control/image4.webp" alt="The Index with no suspended activities" width={640} />
 
-In addition to ❑-P, you can cancel the ❑+P CLI command in the normal way by pressing the \[SHIFT\]/\[ESCAPE\] or ◇\[ESCAPE\].
+In addition to <Key k="square" />-P, you can cancel the <Key k="square" />+P CLI command in the normal way by pressing the <Key k="shift" />/<Key k="esc" /> or <Key k="diamond" /><Key k="esc" />.
 
-Using printer echo is an easy way of listing a program on the printer. In the following example, the ‘+’ represents the \`=/+' key; you don't have to use the \[SHIFT\] key.
+Using printer echo is an easy way of listing a program on the printer. In the following example, the ‘+’ represents the \`=/+' key; you don't have to use the <Key k="shift" /> key.
 
-```text
-LIST❑+P[ENTER]
-```
+<Typed>LIST</Typed><Key k="square" /><Typed>+P</Typed><Key k="enter" />
 
 ……….
 
@@ -68,32 +66,33 @@ Program listed to screen and printer.
 
 ……….
 
-❑-Pa:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"You can echo characters which are sent to the screen to the printer. Printer echo is controlled with the following key sequences.","title":"Keyboard Control","filePath":"content/en/library/cambridge-z88/bbc-basic/printing/keyboard-control.mdx","timestamp":1793369525000},"sourceCode":"$12","children":[["$","div",null,{"id":"nextra-skip-nav"}],["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Keyboard Control","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You can echo characters which are sent to the screen to the printer. Printer echo is controlled with the following key sequences."}],"\n",["$","table",null,{"children":["$","tbody",null,{"children":["$","tr",null,{"children":[["$","td",null,{"children":["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"142px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-bbc-basic/printing/keyboard-control/image2.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-bbc-basic/printing/keyboard-control/image2.webp","alt":"The key combinations that switch the printer on and off","loading":"lazy","decoding":"async","width":205,"height":199}],[]]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],"$L13"],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],"className":"x:block x:overflow-x-auto"}],"\n","$L14","\n","$L15","\n","$L16","\n","$L17","\n","$L18","\n","$L19","\n","$L1a","\n","$L1b","\n","$L1c","\n","$L1d"]]}]]}]]}]}],null,"$L1e"]}],"p":"$@1f","v":null,"s":"$9"}}]]
+<Key k="square" />-Pa:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"You can echo characters which are sent to the screen to the printer. Printer echo is controlled with the following key sequences.","title":"Keyboard Control","filePath":"content/en/library/cambridge-z88/bbc-basic/printing/keyboard-control.mdx","timestamp":1793369525000},"sourceCode":"$12","children":[["$","div",null,{"id":"nextra-skip-nav"}],["$","main",null,{"data-pagefind-body":true,"children":[false,["\n",["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Keyboard Control","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You can echo characters which are sent to the screen to the printer. Printer echo is controlled with the following key sequences."}],"\n",["$","table",null,{"children":["$","tbody",null,{"children":["$","tr",null,{"children":[["$","td",null,{"children":["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"142px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-bbc-basic/printing/keyboard-control/image2.webp","target":"_blank","rel":"noopener noreferrer","children":["$L13",[]]}]]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],"$L14"],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],"className":"x:block x:overflow-x-auto"}],"\n","$L15","\n","$L16","\n","$L17","\n","$L18","\n","$L19","\n","$L1a","\n","$L1b","\n","$L1c","\n","$L1d","\n","$L1e","\n","$L1f","\n","$L20","\n","$L21"]]}]]}]]}]}],null,"$L22"]}],"p":"$@23","v":null,"s":"$9"}}]]
 3:[["children",{"s":{"n":"mdxPath","t":"c","k":"library/cambridge-z88/bbc-basic/printing/keyboard-control","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
 2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
 1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
-0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L21",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L23",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$24",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Keyboard Control - Klive IDE"}],["$","meta","1",{"name":"description","content":"You can echo characters which are sent to the screen to the printer. Printer echo is controlled with the following key sequences."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/bbc-basic/printing/keyboard-control/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L25","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@26","v":null,"s":"$9"}},"a":"$@27","u":"$@28","b":"GGxGPXJhfqySSpQ02meyb"}
-29:"ToggleWordWrapButton"
-2a:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$29"]
-2b:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
-2c:I[484,[],"OutletBoundary"]
-13:["$","td",null,{"children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Printer echo on. All subsequent characters sent to the screen are echoed to the printer."}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Printer echo off."}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
-14:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This is not quite as straightforward as it at first appears. In fact, ❑+P starts a CLI command that sends a copy of characters sent to the screen to the printer as well. The key sequence ❑-P removes that CLI command."}]
-15:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Whilst the CLI command is active, the ‘CLI’ indicator appears in the OZ window and page-waits do not occur during a program listing."}]
-16:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-bbc-basic/printing/keyboard-control/image4.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-bbc-basic/printing/keyboard-control/image4.webp","alt":"The Index with no suspended activities","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
-17:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"In addition to ❑-P, you can cancel the ❑+P CLI command in the normal way by pressing the [SHIFT]/[ESCAPE] or ◇[ESCAPE]."}]
-18:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Using printer echo is an easy way of listing a program on the printer. In the following example, the ‘+’ represents the `=/+’ key; you don’t have to use the [SHIFT] key."}]
-19:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L2a",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L2b",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"LIST❑+P[ENTER]"}]}]}]]}]]}]
-1a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"………."}]
-1b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Program listed to screen and printer."}]
-1c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"………."}]
-1d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"❑-P"}]
-1e:["$","$L2c",null,{"children":["$","$24",null,{"name":"Next.MetadataOutlet","children":"$@2d"}]}]
-28:true
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L25",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L27",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$28",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Keyboard Control - Klive IDE"}],["$","meta","1",{"name":"description","content":"You can echo characters which are sent to the screen to the printer. Printer echo is controlled with the following key sequences."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/library/cambridge-z88/bbc-basic/printing/keyboard-control/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L29","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@2a","v":null,"s":"$9"}},"a":"$@2b","u":"$@2c","b":"qoekeITGfa5CRp6VdrSf8"}
+2d:I[484,[],"OutletBoundary"]
+13:["$","img",null,{"src":"/images/en/z88-bbc-basic/printing/keyboard-control/image2.webp","alt":"The key combinations that switch the printer on and off","loading":"lazy","decoding":"async","width":205,"height":199}]
+14:["$","td",null,{"children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Printer echo on. All subsequent characters sent to the screen are echoed to the printer."}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Printer echo off."}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
+15:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["This is not quite as straightforward as it at first appears. In fact, ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],"+P starts a CLI command that sends a copy of characters sent to the screen to the printer as well. The key sequence ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],"-P removes that CLI command."]}]
+16:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Whilst the CLI command is active, the ‘CLI’ indicator appears in the OZ window and page-waits do not occur during a program listing."}]
+17:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"640px"},"children":["$undefined",["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/z88-bbc-basic/printing/keyboard-control/image4.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/z88-bbc-basic/printing/keyboard-control/image4.webp","alt":"The Index with no suspended activities","loading":"lazy","decoding":"async","width":640,"height":64}],[]]}]]}]
+18:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["In addition to ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],"-P, you can cancel the ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],"+P CLI command in the normal way by pressing the ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Shift","children":"SHIFT"}],"/",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Escape","children":"ESC"}]," or ",["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Diamond","children":"◇"}],["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Escape","children":"ESC"}],"."]}]
+19:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Using printer echo is an easy way of listing a program on the printer. In the following example, the ‘+’ represents the `=/+’ key; you don’t have to use the ",["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Shift","children":"SHIFT"}]," key."]}]
+1a:["$","span",null,{"className":"Z88_typed___J27m","children":"LIST"}]
+1b:["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}]
+1c:["$","span",null,{"className":"Z88_typed___J27m","children":"+P"}]
+1d:["$","kbd",null,{"className":"Z88_key__DMNGV","title":"Enter","children":"ENTER"}]
+1e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"………."}]
+1f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Program listed to screen and printer."}]
+20:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"………."}]
+21:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","kbd",null,{"className":"Z88_key__DMNGV Z88_symbol__NtFzy","title":"Square","children":"□"}],"-P"]}]
+22:["$","$L2d",null,{"children":["$","$28",null,{"name":"Next.MetadataOutlet","children":"$@2e"}]}]
+2c:true
 9:300
-2d:null
+2e:null
 9:C
-27:0
+2b:0
 7:"$undefined"
-26:"$undefined"
-1f:"$undefined"
+2a:"$undefined"
+23:"$undefined"
