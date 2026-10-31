@@ -1,0 +1,110 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:Tcc5,---
+description: "The ZX Spectrum Next models Klive emulates: a board and an FPGA core version, each with its own NextZXOS, SD card and hardware, and how to choose one."
+---
+
+import { Callout } from 'nextra/components'
+
+# ZX Spectrum Next Models
+
+A real ZX Spectrum Next is a board running an FPGA core, and the core is updated over the years: a
+newer core fixes and changes hardware behaviour, and the NextZXOS release made for it expects it.
+Klive emulates each pairing it supports as a separate model of the Next. This page lists the models
+and what differs between them.
+
+*Applies to: ZX Spectrum Next.*
+
+## The models
+
+| Model | Board | Core | NextZXOS | Default SD card |
+|---|---|---|---|---|
+| ZX Spectrum Next (KS2, core 3.02.01) | KS2 (issue 4) | 3.02.01 | 2.08 | `ks2.cim` |
+| ZX Spectrum Next (KS2, core 3.02.04) | KS2 (issue 4) | 3.02.04 | 2.10 | `ks2-30204.cim` |
+
+Each model has its own:
+
+- **Emulated hardware.** The core version decides how the hardware behaves; NextReg `$01` and `$0E`
+  report it, and a NEX file that asks for a newer core than the model's is flagged in the NEX viewer.
+- **ROMs.** The model boots the ROMs of its NextZXOS release.
+- **SD card.** Each model has its own default card with its NextZXOS release on it
+  ([The Next's SD card](/en/guides/next/sd-card)).
+- **Next Registers descriptions.** The Next Registers panel describes the registers as the model's
+  core has them.
+
+## Choosing a model
+
+Pick the model in **Machine › Select Machine...** (or **New Project**). A project remembers its model.
+A new Next project starts on KS2 with core 3.02.04, the newest core Klive emulates, unless a Next
+model is running or is in your favourites. Projects saved before Klive had several Next models open on
+KS2 with core 3.02.01, the Next that those versions of Klive emulated.
+
+Choose the model that matches the core your program targets, or the one your own Next runs. To try a
+program on both, switch the model and run it again.
+
+<Callout type="info">
+A machine state file or a debug recording belongs to the model it was saved on: another Next model
+refuses it, and says which model saved it.
+</Callout>
+
+## What changed in core 3.02.04
+
+The KS2 / 3.02.04 model emulates these hardware changes; the 3.02.01 model keeps the older behaviour:
+
+| Area | Core 3.02.04 |
+|---|---|
+| Sprites | No early end of a line's sprite rendering: more sprites fit on a line (the last one may be cut part-way), and port `$303B` bit 1 is set only when the line runs out of time. |
+| CTC | A counter reloads its time constant as it would reach zero; a control word with D2 set while a channel waits for its trigger makes it wait for a new time constant. |
+| EAR input | The input's relaxation is symmetric, and a tape loads in real time with the issue 2 keyboard setting. |
+| NextReg `$0A` | Bit 5 swaps SD cards 0 and 1 (written in config mode, with bit 2 set). |
+| NextReg `$81` | Bit 3 is stored and readable; port `$1FFD` bit 3 drives a disk motor latch, which the Multiface +3 reads back. |
+| NextReg `$A0` | Bit 1 is writable, reads back and survives a soft reset. |
+| Mega Drive pad | A+B+C+START works as the reset button. |
+
+The [Next Registers panel](/en/guides/next/next-registers) shows each register as the model's core
+describes it.a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"The models","id":"the-models","depth":2},{"value":"Choosing a model","id":"choosing-a-model","depth":2},{"value":"What changed in core 3.02.04","id":"what-changed-in-core-30204","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"The ZX Spectrum Next models Klive emulates: a board and an FPGA core version, each with its own NextZXOS, SD card and hardware, and how to choose one.","title":"ZX Spectrum Next Models","filePath":"content/en/guides/next/next-models.mdx","timestamp":1793369525000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"guides/next/next-models","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"ZX Spectrum Next Models - Klive IDE"}],["$","meta","1",{"name":"description","content":"The ZX Spectrum Next models Klive emulates: a board and an FPGA core version, each with its own NextZXOS, SD card and hardware, and how to choose one."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/guides/next/next-models/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"G9TSW-xqsX2WpvAnk8xxM"}
+20:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+2a:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["ZX Spectrum Next Models","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A real ZX Spectrum Next is a board running an FPGA core, and the core is updated over the years: a\nnewer core fixes and changes hardware behaviour, and the NextZXOS release made for it expects it.\nKlive emulates each pairing it supports as a separate model of the Next. This page lists the models\nand what differs between them."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","em",null,{"children":"Applies to: ZX Spectrum Next."}]}],"\n",["$","h2",null,{"id":"the-models","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The models",["$","$L20",null,{"id":"the-models"}]]}],"\n",["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"Model","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Board","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Core","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"NextZXOS","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Default SD card","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":"ZX Spectrum Next (KS2, core 3.02.01)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"KS2 (issue 4)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"3.02.01","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"2.08","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"ks2.cim"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"ZX Spectrum Next (KS2, core 3.02.04)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"KS2 (issue 4)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"3.02.04","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"2.10","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"ks2-30204.cim"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Each model has its own:"}],"\n","$L21","\n","$L22","\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29"]]}]
+15:["$","$L2a",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@2b"}]}]
+1f:true
+2c:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+9:300
+21:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Emulated hardware."}]," The core version decides how the hardware behaves; NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$01"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$0E"}],"\nreport it, and a NEX file that asks for a newer core than the model’s is flagged in the NEX viewer."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"ROMs."}]," The model boots the ROMs of its NextZXOS release."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"SD card."}]," Each model has its own default card with its NextZXOS release on it\n(",["$","$L2c",null,{"href":"/en/guides/next/sd-card","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"The Next’s SD card"}],")."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Next Registers descriptions."}]," The Next Registers panel describes the registers as the model’s\ncore has them."]}],"\n"]}]
+22:["$","h2",null,{"id":"choosing-a-model","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Choosing a model",["$","$L20",null,{"id":"choosing-a-model"}]]}]
+23:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Pick the model in ",["$","strong",null,{"children":"Machine › Select Machine…"}]," (or ",["$","strong",null,{"children":"New Project"}],"). A project remembers its model.\nA new Next project starts on KS2 with core 3.02.04, the newest core Klive emulates, unless a Next\nmodel is running or is in your favourites. Projects saved before Klive had several Next models open on\nKS2 with core 3.02.01, the Next that those versions of Klive emulated."]}]
+24:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Choose the model that matches the core your program targets, or the one your own Next runs. To try a\nprogram on both, switch the model and run it again."}]
+25:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":["$","svg",null,{"viewBox":"0 0 16 16","fill":"currentColor","height":".8em","className":"x:mt-[.3em]","children":["$","path",null,{"d":"M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"}]}]}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A machine state file or a debug recording belongs to the model it was saved on: another Next model\nrefuses it, and says which model saved it."}]}]]}]
+26:["$","h2",null,{"id":"what-changed-in-core-30204","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["What changed in core 3.02.04",["$","$L20",null,{"id":"what-changed-in-core-30204"}]]}]
+27:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The KS2 / 3.02.04 model emulates these hardware changes; the 3.02.01 model keeps the older behaviour:"}]
+28:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"Area","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Core 3.02.04","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":"Sprites","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["No early end of a line’s sprite rendering: more sprites fit on a line (the last one may be cut part-way), and port ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$303B"}]," bit 1 is set only when the line runs out of time."],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"CTC","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"A counter reloads its time constant as it would reach zero; a control word with D2 set while a channel waits for its trigger makes it wait for a new time constant.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"EAR input","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The input’s relaxation is symmetric, and a tape loads in real time with the issue 2 keyboard setting.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$0A"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Bit 5 swaps SD cards 0 and 1 (written in config mode, with bit 2 set).","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$81"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["Bit 3 is stored and readable; port ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$1FFD"}]," bit 3 drives a disk motor latch, which the Multiface +3 reads back."],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$A0"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Bit 1 is writable, reads back and survives a soft reset.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],"$L2d"]}]]}]
+29:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ",["$","$L2c",null,{"href":"/en/guides/next/next-registers","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Next Registers panel"}]," shows each register as the model’s core\ndescribes it."]}]
+2b:null
+9:C
+2d:["$","tr",null,{"children":[["$","td",null,{"children":"Mega Drive pad","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"A+B+C+START works as the reset button.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"
