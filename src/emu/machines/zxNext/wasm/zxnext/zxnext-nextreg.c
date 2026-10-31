@@ -59,7 +59,7 @@ static void zxnextNextRegHardReset(void) {
   zxnextNextRegs[0x05] = 0x41;
   zxnextNextRegs[0x06] = 0x80;
   zxnextNextRegs[0x08] = 0x1a;
-  zxnextNextRegs[0x0e] = 0x00;
+  zxnextNextRegs[0x0e] = 0x01; /* g_sub_version: .01 (zxnext_top_issue4.vhd g_sub_version = X"01") */
   zxnextNextRegs[0x0f] = 0x02; /* g_board_issue: an Issue 4 board, as the $11 and $F0 rules assume */
   zxnextNextRegs[0x10] = 0x01; /* ~1127: nr_10_coreid := "00001", no reset branch */
   zxnextNextRegs[0x0a] = 0x01;

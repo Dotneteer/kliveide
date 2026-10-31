@@ -8,7 +8,7 @@
  */
 export const CORE_VERSION_MAJOR = 3;
 export const CORE_VERSION_MINOR = 2;
-export const CORE_VERSION_SUB_MINOR = 0;
+export const CORE_VERSION_SUB_MINOR = 1;
 
 /** The same three, as the tuple `validateNexHeader` compares against. */
 export const EMULATED_CORE_VERSION: [number, number, number] = [
