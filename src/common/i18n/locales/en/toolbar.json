@@ -59,6 +59,37 @@
     "context": "Tooltip of the small drop-down arrow next to the emulator toolbar's sound button; it opens the list of volume levels.",
     "maxChars": 16
   },
+  "toolbar.viewOptions": "View options",
+  "@toolbar.viewOptions": {
+    "context": "Tooltip of the emulator toolbar button that opens a menu of display switches: keep the window on top, the instant screen, the beam position, the virtual keyboard.",
+    "maxChars": 24
+  },
+  "toolbar.view.stayOnTop": "Keep the emulator on top",
+  "@toolbar.view.stayOnTop": {
+    "context": "Item of the emulator toolbar's View options menu (and of its More menu): an on/off switch that keeps the emulator window above other windows. The menu marks it while on."
+  },
+  "toolbar.view.instantScreen": "Show the instant screen",
+  "@toolbar.view.instantScreen": {
+    "context": "Item of the emulator toolbar's View options menu (and of its More menu): an on/off switch. While the machine is paused, the screen shows the screen memory as it is now. The menu marks it while on."
+  },
+  "toolbar.view.beamPosition": "Show the beam position while paused",
+  "@toolbar.view.beamPosition": {
+    "context": "Item of the emulator toolbar's View options menu (and of its More menu): an on/off switch that marks where the video beam was when the machine paused. The menu marks it while on."
+  },
+  "toolbar.view.keyboard": "Show the virtual keyboard",
+  "@toolbar.view.keyboard": {
+    "context": "Item of the emulator toolbar's View options menu (and of its More menu): an on/off switch that shows the on-screen keyboard of the emulated machine under the screen. The menu marks it while on."
+  },
+  "toolbar.more": "More",
+  "@toolbar.more": {
+    "context": "Tooltip of the button at the right end of a toolbar that is too narrow for all its buttons; it opens a menu with the commands of the buttons that did not fit.",
+    "maxChars": 16
+  },
+  "toolbar.machineSettings": "Machine settings",
+  "@toolbar.machineSettings": {
+    "context": "Tooltip of the emulator toolbar button that opens the Machine page of the Settings dialog: the running machine's own options (ROMs, screen and sound options).",
+    "maxChars": 24
+  },
   "toolbar.fastLoad": "Fast LOAD mode",
   "@toolbar.fastLoad": {
     "context": "Tooltip of the emulator toolbar toggle button for fast tape loading. LOAD is the ZX Spectrum BASIC keyword and stays in English capitals.",

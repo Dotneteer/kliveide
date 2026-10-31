@@ -114,7 +114,8 @@ export const EmuStatusBar = ({ show, showPerformanceInfo = true }: EmuStatusBarP
       onContextMenu={(e) => {
         e.preventDefault();
         // --- Anchored to the bar, not the click: the menu opens upward, inside the window
-        barMenuApi.showAt(e.currentTarget);
+        // --- The bar is not a trigger: a press on it closes the menu, a right-click reopens it
+        barMenuApi.showAt(e.currentTarget, { toggle: false });
       }}
     >
       <div className={styles.sectionWrapper}>

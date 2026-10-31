@@ -3056,6 +3056,8 @@ export type MessageKey =
   | "menu.if1.saveAs"
   | "menu.if1.writeProtect"
   | "menu.joystick.configureBindings"
+  | "menu.machine.configure"
+  | "menu.machine.configureUnknown"
   | "menu.machine.continueVideo"
   | "menu.machine.device.cartridge"
   | "menu.machine.device.disks"
@@ -6575,6 +6577,8 @@ export type MessageKey =
   | "toolbar.history.stepForward"
   | "toolbar.instantScreen"
   | "toolbar.keyboard"
+  | "toolbar.machineSettings"
+  | "toolbar.more"
   | "toolbar.mouse.capture"
   | "toolbar.mouse.captured"
   | "toolbar.mouse.disabled"
@@ -6617,4 +6621,9 @@ export type MessageKey =
   | "toolbar.stepMode.source"
   | "toolbar.stepMode.z80"
   | "toolbar.stop"
-  | "toolbar.syncBreakpoints";
+  | "toolbar.syncBreakpoints"
+  | "toolbar.view.beamPosition"
+  | "toolbar.view.instantScreen"
+  | "toolbar.view.keyboard"
+  | "toolbar.view.stayOnTop"
+  | "toolbar.viewOptions";

@@ -63,8 +63,19 @@ describe("the Settings dialog — pages", () => {
     expect(h.vm.machineNote).toMatch(/Cambridge Z88/);
   });
 
+  it("keeps the options of only some machines on the Machine page, not on Emulator", () => {
+    const sp48 = open("machine", { emulatorState: { machineId: "sp48" } });
+    expect(rowIds(sp48)).toEqual(["sp48Rom", "esxDosRom", "ulaSnow", "ulaLateTiming"]);
+    expect(sp48.vm.sections[0].groups.map((g) => g.title)).toEqual(["ROM", "Screen"]);
+    expect(rowIds(open("machine", { emulatorState: { machineId: "zxnext" } }))).toEqual(["nextAudioOutput"]);
+    expect(rowIds(open("machine", { emulatorState: { machineId: "zx81" } }))).toEqual(["tvNoise"]);
+    const emulator = rowIds(open("emulator", { emulatorState: { machineId: "sp48" } }));
+    expect(emulator).not.toContain("ulaSnow");
+    expect(emulator).not.toContain("ulaLateTiming");
+  });
+
   it("says so when the running machine has no options of its own", () => {
-    const h = open("machine", { emulatorState: { machineId: "zxnext" } });
+    const h = open("machine", { emulatorState: { machineId: "c64" } });
     expect(rowIds(h)).toEqual([]);
     expect(h.vm.emptyMessage).toMatch(/has no options of its own/);
   });

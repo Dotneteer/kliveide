@@ -46,6 +46,7 @@ The emulator toolbar has these buttons, from left to right. Point at a button to
 | **Run Machine** (F5) | Starts the machine. Its arrow (**Choose start mode**) switches the button to **Debug Machine** (<kbd>Ctrl</kbd>+<kbd>F5</kbd>), which starts it with breakpoints armed. While paused, it continues. |
 | **Pause**, **Stop**, **Restart** | <kbd>Shift</kbd>+<kbd>F5</kbd>, <kbd>F4</kbd>, <kbd>Shift</kbd>+<kbd>F4</kbd>. |
 | **Step Into**, **Step Over**, **Step Out** | Step a paused machine. See [Running and debugging](/en/guides/debugging/run-debug/). |
+| **Machine settings** (sliders) | Opens the **Machine** page of the Settings dialog: the options of the running machine only, such as its ROMs. Also **Machine › Configure** *machine*. See [Settings](/en/guides/customizing/settings/#machine). |
 | **Stay on top** (pin) | Keeps the emulator window above other windows (see below). |
 | **Turn on/off instant screen** | Shows the screen memory as it is now while paused. See [The paused screen](/en/guides/debugging/paused-screen/). |
 | **Show/Hide the beam position while paused** | Marks where the beam was. Machines with a raster beam only. |
@@ -54,6 +55,19 @@ The emulator toolbar has these buttons, from left to right. Point at a button to
 | **Mute sound** / **Unmute sound** | Its arrow (**Sound level**) picks **Mute**, **Low**, **Medium**, **High** or **Highest**. |
 | **Fast LOAD mode** (rocket), **Rewind the tape** | Machines with a tape. See [Tapes](/en/guides/media/tapes/). |
 | **Start video recording** | Its arrow (**Recordings**) starts the IDE + Emulator recording and opens the recording settings. See [Recording the screen](/en/guides/emulator/screen-recording/). |
+
+### A narrow window
+
+When the window is too narrow for every button, the toolbar makes room in two steps:
+
+1. The display buttons (stay on top, instant screen, beam position, keyboard) fold into one
+   **View options** button (a screen with a gear). It opens a menu with the same switches; a switch that is on
+   has a blue frame around its icon, as on the toolbar.
+2. If that is not enough, whole groups move into the **More** menu (`>>`) at the right end: first
+   the tape buttons, then recording, the machine settings, the mouse, the display switches and
+   sound. The reverse-debugging buttons go last. Run, pause, stop and the step buttons always stay.
+
+Widen the window and the buttons come back in the reverse order.
 
 ## The status bar
 

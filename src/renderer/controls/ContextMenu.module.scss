@@ -40,7 +40,15 @@
     user-select: none;
     cursor: pointer;
 
-    @include focus-ring(-2px);
+    /*
+     * The keyboard focus ring goes around the label, not the row: a switch's icon already has the
+     * toolbar's selection border, and a row ring around it read as a double border. It shows only
+     * after the user moved through the menu by keyboard (`.keyboardNav`, see `ContextMenu.tsx`).
+     */
+    &:focus-visible {
+      outline: none;
+    }
+
 
     &.selected {
       background-color: var(--bgcolor-context-item-pointed);
@@ -66,14 +74,43 @@
     }
   }
 
+  &.keyboardNav .menuItem:focus-visible .menuItemText {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 1px;
+    border-radius: var(--radius-sm);
+  }
+
   .menuItemIcon {
     display: flex;
     flex: 0 0 auto;
     align-items: center;
   }
 
+  /*
+   * A switch's icon: the toolbar button's selection border (`IconButton.module.scss`), drawn
+   * transparent while off so the icon does not move when it turns on.
+   */
+  .toggleIcon {
+    padding: 1px;
+    border: 2px solid transparent;
+    border-radius: var(--radius-sm);
+    margin: -3px 0;
+  }
+
+  .toggledOn {
+    border-color: var(--color-toolbarbutton-selected);
+  }
+
+  .noIcon {
+    display: block;
+    width: 16px;
+    height: 16px;
+  }
+
+  // --- Hugs its text, so the focus ring wraps the label only; the trailing marker keeps the right edge
   .menuItemText {
-    flex: 1 1 auto;
+    flex: 0 1 auto;
+    min-width: 0;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -84,7 +121,8 @@
     display: flex;
     flex: 0 0 auto;
     align-items: center;
-    margin-left: var(--space-3);
+    margin-left: auto;
+    padding-left: var(--space-3);
     color: var(--data-secondary);
   }
 

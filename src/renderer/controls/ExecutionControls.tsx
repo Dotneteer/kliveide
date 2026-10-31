@@ -2,6 +2,7 @@ import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { useGlobalSetting, useSelector } from "@renderer/core/RendererProvider";
 import { IconButton } from "./IconButton";
 import { ToolbarSeparator } from "./ToolbarSeparator";
+import { ToolbarGroup } from "./ToolbarOverflow";
 import { ToolbarSplitButton, type ToolbarSplitButtonOption } from "./ToolbarSplitButton";
 import { useCallback, useEffect, useState } from "react";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
@@ -424,8 +425,38 @@ export const ExecutionControls = ({ ide, kliveProjectLoaded }: Props) => {
         </>
       )}
       {recordsHistory && (
-        <>
-          <ToolbarSeparator />
+        // --- Reverse debugging: the last group to leave a narrow toolbar (ToolbarOverflow.tsx)
+        <ToolbarGroup
+          id="history"
+          priority={70}
+          separator
+          overflowItems={[
+            {
+              id: "stepBack",
+              text: t("toolbar.history.stepBack", { shortcut: reverseKeys?.stepBack ?? "" }),
+              iconName: "step-back",
+              iconFill: "--color-toolbarbutton-blue",
+              disabled: !canStep,
+              clicked: () => runHistoryCommand("step-back")
+            },
+            {
+              id: "stepForward",
+              text: t("toolbar.history.stepForward", { shortcut: reverseKeys?.stepForward ?? "" }),
+              iconName: "step-forward-history",
+              iconFill: "--color-toolbarbutton-blue",
+              disabled: !(canStep && !!historyPosition),
+              clicked: () => runHistoryCommand("step-forward")
+            },
+            {
+              id: "present",
+              text: t("toolbar.history.present"),
+              iconName: "history-present",
+              iconFill: "--color-toolbarbutton-blue",
+              disabled: !(canStep && !!historyPosition),
+              clicked: () => runHistoryCommand("history-present")
+            }
+          ]}
+        >
           <IconButton
             iconName="step-back"
             iconSize={SECONDARY_ICON_SIZE}
@@ -456,7 +487,7 @@ export const ExecutionControls = ({ ide, kliveProjectLoaded }: Props) => {
             enable={canStep && !!historyPosition}
             clicked={() => runHistoryCommand("history-present")}
           />
-        </>
+        </ToolbarGroup>
       )}
     </>
   );

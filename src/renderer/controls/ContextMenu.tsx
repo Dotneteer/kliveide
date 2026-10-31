@@ -18,6 +18,8 @@ export type ContextMenuState = {
   contextRef?: HTMLElement;
   contextX: number;
   contextY: number;
+  /** Opened by `showAt` from a trigger: a second press on the trigger closes the menu */
+  anchored?: boolean;
 };
 
 type Props = {
@@ -60,14 +62,27 @@ export const ContextMenu = ({
     (): HTMLElement[] =>
       popperElement
         ? Array.from(
-            popperElement.querySelectorAll<HTMLElement>('[role="menuitem"]:not([disabled])')
+            popperElement.querySelectorAll<HTMLElement>(
+              '[role="menuitem"]:not([disabled]), [role="menuitemcheckbox"]:not([disabled])'
+            )
           )
         : [],
     [popperElement]
   );
 
+  /*
+   * The focus ring shows only once the user moves through the menu with the keyboard. Opening the
+   * menu focuses its first row (so the first arrow key works), and Chromium treats that programmatic
+   * focus as `:focus-visible` even after a mouse click, which put a ring on a row nobody chose.
+   */
+  const [keyboardNav, setKeyboardNav] = useState(false);
+  useEffect(() => {
+    if (!state.contextVisible) setKeyboardNav(false);
+  }, [state.contextVisible]);
+
   const onKeyDown = useCallback(
     (e: ReactKeyboardEvent) => {
+      if (["ArrowDown", "ArrowUp", "Home", "End", "Tab"].includes(e.code)) setKeyboardNav(true);
       const list = items();
       if (!list.length) return;
       const current = list.indexOf(document.activeElement as HTMLElement);
@@ -103,7 +118,11 @@ export const ContextMenu = ({
 
   useEffect(() => {
     const handleOutsideClick = (event: globalThis.MouseEvent) => {
-      if (popperElement && !popperElement.contains(event.target as Node)) {
+      const target = event.target as Node;
+      // --- A press on the trigger is the trigger's own: its click toggles the menu (`showAt`).
+      // --- Closing here too would let that click reopen the menu at once.
+      if (state.anchored && state.contextRef?.contains(target)) return;
+      if (popperElement && !popperElement.contains(target)) {
         onClickOutside?.();
       }
     };
@@ -123,7 +142,7 @@ export const ContextMenu = ({
       document.removeEventListener("mousedown", handleOutsideClick);
       document.removeEventListener("keydown", handleEscape);
     };
-  }, [state.contextVisible, popperElement, onClickOutside]);
+  }, [state.contextVisible, state.anchored, state.contextRef, popperElement, onClickOutside]);
 
   return (
     <>
@@ -133,7 +152,9 @@ export const ContextMenu = ({
             ref={setPopperElement}
             tabIndex={-1}
             role="menu"
-            className={localStyles.contextMenu}
+            className={classnames(localStyles.contextMenu, {
+              [localStyles.keyboardNav]: keyboardNav
+            })}
             style={{ ...styles.popper, zIndex: 9999 }}
             onKeyDown={onKeyDown}
             {...attributes.popper}
@@ -159,6 +180,16 @@ type ContextMenuItemProps = {
   trailing?: ReactNode;
   /** Renders the row as the current selection. */
   selected?: boolean;
+  /**
+   * Makes the row an on/off switch (`menuitemcheckbox`). While on, its icon gets the toolbar's
+   * selection border, so a toolbar button folded into a menu keeps the look it had on the strip.
+   */
+  toggled?: boolean;
+  /**
+   * Draws the icon in the switch's (empty) frame, so a plain command's icon lines up with the
+   * switches' icons in the same menu; without an `iconName` it keeps the frame's room empty.
+   */
+  framedIcon?: boolean;
 };
 
 export const ContextMenuItem = ({
@@ -169,12 +200,16 @@ export const ContextMenuItem = ({
   iconName,
   iconFill,
   trailing,
-  selected
+  selected,
+  toggled,
+  framedIcon
 }: ContextMenuItemProps) => {
+  const isSwitch = toggled !== undefined;
   return (
     <button
       type="button"
-      role="menuitem"
+      role={isSwitch ? "menuitemcheckbox" : "menuitem"}
+      aria-checked={isSwitch ? toggled : undefined}
       disabled={disabled}
       aria-current={selected || undefined}
       className={classnames(localStyles.menuItem, {
@@ -192,9 +227,18 @@ export const ContextMenuItem = ({
         if (!disabled) clicked?.();
       }}
     >
-      {iconName && (
-        <span className={localStyles.menuItemIcon}>
-          <Icon iconName={iconName} width={16} height={16} fill={iconFill} />
+      {(iconName || framedIcon) && (
+        <span
+          className={classnames(localStyles.menuItemIcon, {
+            [localStyles.toggleIcon]: isSwitch || framedIcon,
+            [localStyles.toggledOn]: toggled
+          })}
+        >
+          {iconName ? (
+            <Icon iconName={iconName} width={16} height={16} fill={iconFill} />
+          ) : (
+            <span className={localStyles.noIcon} />
+          )}
         </span>
       )}
       <span className={localStyles.menuItemText}>{text}</span>
@@ -215,9 +259,12 @@ export interface IContextMenuApi {
    * A context menu is opened by pointer, but a menu hung off a *button* has no click coordinates to
    * anchor to — and shared controls like `SmallIconButton` deliberately do not hand their event to
    * the caller. Anchoring to the element is also what makes the menu appear in the same place
-   * whether it was opened by mouse or by keyboard.
+   * whether it was opened by mouse or by keyboard. Calling it again with the same element while the
+   * menu is open closes it, so the trigger toggles its menu. `toggle: false` is for an anchor that is
+   * not a trigger (a whole strip a right-click opens the menu on): a press on it closes the menu
+   * like a press anywhere else, and the next right-click opens it again.
    */
-  showAt(element: HTMLElement | null | undefined): void;
+  showAt(element: HTMLElement | null | undefined, options?: { toggle?: boolean }): void;
   conceal(): void;
 }
 
@@ -239,17 +286,19 @@ export const useContextMenuState = (): [ContextMenuState, IContextMenuApi] => {
           contextVisible: true,
           contextRef: t,
           contextX: rc ? e.clientX - rc.left : 0,
-          contextY: rc ? e.clientY - rc.bottom : 0
+          contextY: rc ? e.clientY - rc.bottom : 0,
+          anchored: false
         });
       },
-      showAt: (element) => {
+      // --- Toggles: the trigger that opened the menu closes it again
+      showAt: (element, options) => {
         if (!element) return;
-        setState({
-          contextVisible: true,
-          contextRef: element,
-          contextX: 0,
-          contextY: 0
-        });
+        const toggle = options?.toggle ?? true;
+        setState((prev) =>
+          toggle && prev.contextVisible && prev.contextRef === element
+            ? { ...prev, contextVisible: false }
+            : { contextVisible: true, contextRef: element, contextX: 0, contextY: 0, anchored: toggle }
+        );
       },
       conceal: () => {
         setState((prev) => ({

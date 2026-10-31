@@ -1,4 +1,4 @@
-import { MutableRefObject } from "react";
+import { MutableRefObject, useCallback, useRef } from "react";
 import type { MouseEvent } from "react";
 import { useGlobalSetting, useSelector } from "@renderer/core/RendererProvider";
 import { useMainApi } from "@renderer/core/MainApi";
@@ -14,6 +14,7 @@ import type { RecordingManager } from "@renderer/appEmu/recording/RecordingManag
 import { SECONDARY_ICON_SIZE, TOOLBAR_BUTTON_SIZE } from "./toolbar-constants";
 import { NavigationControls } from "@renderer/features/navigation/NavigationControls";
 import { useT } from "@common/i18n/useT";
+import { ToolbarOverflowButton, ToolbarOverflowProvider } from "./ToolbarOverflow";
 
 type Props = {
   ide: boolean;
@@ -47,10 +48,17 @@ export const Toolbar = ({ ide, kliveProjectLoaded, recordingManagerRef }: Props)
   const isMemoryOpen = activeDocumentHub?.isOpen(MEMORY_PANEL_ID) ?? false;
   const isDisassemblyOpen = activeDocumentHub?.isOpen(DISASSEMBLY_PANEL_ID) ?? false;
 
+  // --- The strip is the wrapper's only child: `HStack` does not forward a ref
+  const stripRef = useRef<HTMLElement | null>(null);
+  const setWrapper = useCallback((el: HTMLDivElement | null) => {
+    stripRef.current = (el?.firstElementChild as HTMLElement | null) ?? null;
+  }, []);
+
   return (
     // `display: contents` adds no box, so the wrapper cannot disturb the strip's layout; it exists
-    // only because `HStack` does not forward mouse handlers.
-    <div style={{ display: "contents" }} onMouseDown={keepFocusOffToolbarButtons}>
+    // only because `HStack` does not forward mouse handlers or a ref.
+    <div ref={setWrapper} style={{ display: "contents" }} onMouseDown={keepFocusOffToolbarButtons}>
+      <ToolbarOverflowProvider stripRef={stripRef}>
       <HStack
         height="--strip-toolbar"
         backgroundColor="--bgcolor-toolbar"
@@ -117,7 +125,10 @@ export const Toolbar = ({ ide, kliveProjectLoaded, recordingManagerRef }: Props)
             />
           </>
         )}
+        {/* Groups with no room left, as a menu (`ToolbarOverflow.tsx`) */}
+        <ToolbarOverflowButton />
       </HStack>
+      </ToolbarOverflowProvider>
     </div>
   );
 };

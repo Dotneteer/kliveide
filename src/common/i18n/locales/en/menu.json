@@ -250,6 +250,17 @@
   "@menu.view.toggleDevTools": {
     "context": "View menu, shown only when developer tools are allowed: opens or closes Chromium's developer tools."
   },
+  "menu.machine.configure": "Configure {machine}...",
+  "@menu.machine.configure": {
+    "context": "Machine menu, first item: opens the Machine page of the Settings dialog, which holds the running machine's own options (ROMs, screen and sound options). The trailing '...' means the item opens a dialog; keep it.",
+    "placeholders": {
+      "machine": "Name of the running machine, shown verbatim, e.g. 'ZX Spectrum 48K'"
+    }
+  },
+  "menu.machine.configureUnknown": "Configure Machine...",
+  "@menu.machine.configureUnknown": {
+    "context": "Machine menu, first item, when the running machine's name is unknown: opens the Machine page of the Settings dialog. The trailing '...' means the item opens a dialog; keep it."
+  },
   "menu.machine.machineType": "Machine Type",
   "@menu.machine.machineType": {
     "context": "Machine menu: submenu listing the favourite emulated machines (ZX Spectrum 48K, ZX Spectrum Next...)."

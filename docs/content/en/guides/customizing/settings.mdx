@@ -26,6 +26,8 @@ lists its pages, and explains the theme and accent.
 
 Some menus also have an item that opens the dialog on the page you need:
 
+- **Machine › Configure** *machine*... (the first item; *machine* is the running machine's name)
+  and the emulator toolbar's **Machine settings** button open the **Machine** page.
 - **Machine › Input › Input Settings...** opens the **Input** page.
 - **Machine › Record › Recording Settings...** opens the **Recording** page.
 - **Debug › Debugger Settings...** opens the **Debugging** page.
@@ -88,16 +90,12 @@ See [Editing Code](/en/guides/editing/editor/).
 | --- | --- |
 | Zoom steps | The zoom steps of the emulator screen. |
 | Scanline effect | Draws CRT-style scanlines over the picture. |
-| Show TV noise without sync | ZX80 and ZX81 only. While the machine sends no usable sync (a ZX81 running a program in FAST mode, a ZX80 computing), shows the noise a real television showed instead of a black screen. Only the display changes, not the machine. |
-| Show the snow effect | ZX Spectrum 16K, 48K and 128K. With the I register in contended memory, the CPU's memory refresh disturbs the ULA's screen reads and the picture shows "snow", as on the real machine. On by default. Also **Machine › ZX Spectrum 48K / 128K › Snow Effect**. |
-| Late ULA timing | ZX Spectrum 16K, 48K and 128K. Runs the ULA one T-state later against the interrupt, as many real machines do: contention, the screen reads, the border and the floating bus all move by one T-state. Off by default (the documented timings). Also **Machine › ZX Spectrum 48K / 128K › Late ULA Timing**. An `.szx` snapshot sets it to the timing its machine ran. |
 | Show the instant screen | See [The paused screen](/en/guides/debugging/paused-screen/). Also a button in the emulator toolbar. |
 | Show the beam position while paused | See [The paused screen](/en/guides/debugging/paused-screen/). Also a button in the emulator toolbar. |
 | Keep the emulator on top | On by default. See [Keeping the emulator on top](/en/guides/emulator/emulator-window/#keeping-the-emulator-on-top). Also the pin on the emulator toolbar. |
 | Show performance info | Shows the emulator's performance figures in its status bar. |
 | Show media information | Shows the media strip (tapes, disks, cartridges) in the emulator's status bar. |
 | Show the Layers strip | Shows the ZX Spectrum Next's [Layers strip](/en/guides/next/layers) under the screen. |
-| ZX Spectrum Next sound output | ZX Spectrum Next only. Which of the Next's outputs Klive plays: the audio jack (the default), the internal speaker or HDMI, each as the real machine builds it. Also **Machine › Sound › Output**. See [The Mixer: One Sum, Three Outputs](/en/under-the-hood/emulator-internals/next-audio/mixer/#how-klive-does-it). |
 | Fast load | Loads tapes at once instead of in real time. Also **Machine › Tape › Fast load** and the rocket button on the emulator toolbar. See [Tapes](/en/guides/media/tapes/#fast-load). |
 
 <Callout type="info" emoji="💡">
@@ -128,6 +126,7 @@ are on; the five **Coverage and profiling** rows appear on machines with [code c
 ### Machine
 
 This page shows the options of the **running machine** only; switch machines to see another's.
+Options that apply to only some machines are here, not on the Emulator page.
 
 | Option | Machine | What it does |
 | --- | --- | --- |
@@ -139,6 +138,10 @@ This page shows the options of the **running machine** only; switch machines to 
 | Timex ROM | Timex models | Names your copy of that model's ROM. |
 | Keyboard layout | Cambridge Z88 | The Z88's keyboard layout. |
 | LCD resolution | Cambridge Z88 | The size of the Z88's screen. Changing it restarts the machine. See [The Cambridge Z88](/en/guides/machines/cambridge-z88/). |
+| Show TV noise without sync | ZX80, ZX81 | While the machine sends no usable sync (a ZX81 running a program in FAST mode, a ZX80 computing), shows the noise a real television showed instead of a black screen. Only the display changes, not the machine. |
+| Show the snow effect | ZX Spectrum 16K, 48K, 128K | With the I register in contended memory, the CPU's memory refresh disturbs the ULA's screen reads and the picture shows "snow", as on the real machine. On by default. Also **Machine › ZX Spectrum 48K / 128K › Snow Effect**. |
+| Late ULA timing | ZX Spectrum 16K, 48K, 128K | Runs the ULA one T-state later against the interrupt, as many real machines do: contention, the screen reads, the border and the floating bus all move by one T-state. Off by default (the documented timings). Also **Machine › ZX Spectrum 48K / 128K › Late ULA Timing**. An `.szx` snapshot sets it to the timing its machine ran. |
+| ZX Spectrum Next sound output | ZX Spectrum Next | Which of the Next's outputs Klive plays: the audio jack (the default), the internal speaker or HDMI, each as the real machine builds it. Also **Machine › Sound › Output**. See [The Mixer: One Sum, Three Outputs](/en/under-the-hood/emulator-internals/next-audio/mixer/#how-klive-does-it). |
 
 The ROM files have **Browse...** and **Forget** (or **Reset**) buttons; [Custom ROMs](/en/guides/emulator/custom-roms/)
 explains each.

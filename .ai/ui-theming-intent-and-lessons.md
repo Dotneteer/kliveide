@@ -2426,6 +2426,38 @@ Two smaller things from the same pass:
   addresses?") ran off the right of a narrow window. The neighbouring switches are all short
   questions — "Use decimal numbers?", "Disassemble RAM?" — and matching that length is the rule.
 
+## The Main Toolbar Folds, Then Overflows; It Never Wraps
+
+The window toolbars (`controls/Toolbar.tsx`) are the exception to the wrapping rule above: the
+emulator window computes its size from the toolbar's height, so a second line would move the screen.
+When the strip is short of room (`controls/ToolbarOverflow.tsx`):
+
+- **Fold only under pressure.** A `ToolbarGroup` with a `collapse` button (the display switches:
+  stay on top, instant screen, beam position, keyboard) keeps its own buttons while they fit and
+  folds into the one button only when the strip overflows. That button is Lucide `monitor-cog`, the
+  author's pick over `eye`, `toggle-right`, `app-window`, `scan-eye`, `layout-panel-top` and
+  `tv-minimal` (too close to the instant screen's monitor). The author rejected an always-folded
+  "View options" dropdown: switches that fit stay one click away and show their state.
+- **Then overflow, by priority.** Every foldable group folds before any group leaves; then the
+  lowest-`priority` group moves to the **More** (`chevrons-right`) menu at the right end. They come
+  back in reverse. Execution controls are never in a group, so they never leave.
+- **A group carries its own leading separator** (`separator`), so a group that leaves takes its
+  divider with it.
+- **A toolbar command in a menu looks like its button**: the button's own icon, and a switch that
+  is on gets the toolbar's selection border around the icon (`ContextMenuItem toggled`,
+  `--color-toolbarbutton-selected`), never the row highlight, which the author rejected. Every row of
+  such a menu gets the icon frame (`framedIcon`), an empty one when it has no icon, so the labels
+  start in one column; a disabled row's icon takes `--text-disabled` like a disabled button's.
+- **A menu row's keyboard focus ring wraps its label, not the row** (`ContextMenu.module.scss`): a
+  row ring around a switch's bordered icon read as a double border. The label hugs its text
+  (`flex: 0 1 auto`) and a trailing marker pushes itself right with `margin-left: auto`.
+  **And it shows only after keyboard navigation in the menu** (an arrow, Home, End or Tab sets
+  `.keyboardNav` on the menu): opening a menu focuses its first row, and Chromium counts that
+  programmatic focus as `:focus-visible` even after a mouse click, so `:focus-visible` alone put a
+  ring on a row the user never chose.
+- **Check it by narrowing the strip in the page** (`strip.style.width = "520px"`, as in Operational
+  Knowledge); the groups' `data-toolbar-level` attributes say which are full (0), folded (1) or out (2).
+
 ## A Menu-Like List With A Header
 
 The navigation history popover (`features/navigation/NavigationHistoryPopover.tsx`) is the pattern for
@@ -2497,10 +2529,25 @@ keeps the command as the keyboard path.
   browser's own scrollbar is the one surface in the app that is not themed. Give the pane a
   non-scrolling cell (`display: flex; flex-direction: column; min-height: 0; overflow: hidden`)
   for the `ScrollViewer` to fill, and keep the padding on the content inside it, not on the cell.
+- **An option that applies to only some machines lives on the Machine page**, whatever it is about
+  (screen, sound, ROM): the Emulator page holds what every machine shares. The Machine page is the
+  one place for "configure this machine", reached by **Machine › Configure** *machine*... (the menu's
+  first item) and the emulator toolbar's `sliders-horizontal` button (not `settings`, which is the
+  activity bar's whole-dialog gear). That item is why the Machine menu may have thirteen first-level
+  items; every other menu keeps the redesign's twelve.
+- **The selected page's indicator follows the page list's direction**: a 2px accent bar on the
+  left while the list is a column, under the label once a narrow window (`max-width: 700px`) wraps
+  the list into a row of tabs. A left bar on a horizontal tab reads as a stray mark.
 - **"Was: <old menu path>" shows only while searching**, in `--accent-text`: it is how a user who
   remembers the old place finds the new one, and noise on a page they navigated to.
 - **Accent choices are swatches, not a list**, painted from `ACCENTS[id].solid[tone]` — palette data,
   not a literal — with the selected one ringed in `--text-primary`.
+- **A dropdown's trigger toggles its menu**: a second press on the button that opened it closes
+  it. `useContextMenuState().showAt` does this for every `ContextMenu` opened from a trigger (the
+  menu's outside-press watch ignores a press on the trigger, or the click would reopen it at once);
+  `showAt(el, { toggle: false })` is for an anchor that is not a trigger, such as a whole strip a
+  right-click opens the menu on. `ToolbarSplitButton` and the navigation history popover toggle on
+  their own.
 - **A strip's own parts are toggled from that strip's context menu** (the emulator status bar:
   performance info, media strip, Layers strip). **Anchor such a menu to the strip** with
   `showAt(e.currentTarget)` and a `top-*` placement. A menu positioned at the click (`show(e)`)
