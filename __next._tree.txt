@@ -8,4 +8,4 @@
 :HL["/_next/static/css/6925df92a3a8be26.css","style"]
 2:[["children",{"s":"__PAGE__","h":160}]]
 1:[["children",{"s":"(root)","h":112,"c":"$Q2"}]]
-0:{"b":"2pSOKTxQtW5iv0ZGXWze0","t":{"t":{"s":"","h":80,"c":"$Q1"}}}
+0:{"b":"MpWQI3v1Ts3C_K9S3EF5v","t":{"t":{"s":"","h":80,"c":"$Q1"}}}
