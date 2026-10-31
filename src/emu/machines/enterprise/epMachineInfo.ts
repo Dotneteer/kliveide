@@ -56,6 +56,11 @@ export const EP_MODELS: MachineModel[] = [
     modelId: "ep128",
     displayName: "Enterprise 128",
     config: { [MC_EP_MODEL]: "128" }
+  },
+  {
+    modelId: "ep64",
+    displayName: "Enterprise 64",
+    config: { [MC_EP_MODEL]: "64" }
   }
 ];
 

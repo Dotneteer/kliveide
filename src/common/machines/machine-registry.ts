@@ -722,7 +722,7 @@ export const machineRegistry: MachineInfo[] = [
     }
   },
   {
-    // --- `.plans/ENTERPRISE_PLAN.md`: the 128 (and, from Phase 6, the 64) as models (D2). The IDE's
+    // --- `.plans/ENTERPRISE_PLAN.md`: the 128 and the 64 as models (D2). The IDE's
     // --- surfaces arrive phase by phase: the picture (3), sound (4), keyboard and FILE: (5), the
     // --- debugger's partitions, history and profile (7), Run and tapes (8), EXDOS (9).
     machineId: MI_ENTERPRISE,

@@ -1,8 +1,9 @@
 # Enterprise 64/128 on the WASM Core — Implementation Plan
 
-**Status:** Phases 1–5 done (2026-10-31): EXOS 2.1 boots to IS-BASIC 2.1 on the core, the picture
-shows it, DAVE plays, the host and virtual keyboards and the joysticks work, and Klive's `FILE:` device
-loads and saves host files (§18). Next: the Enterprise 64 model (Phase 6).
+**Status:** Phases 1–6 done (2026-10-31): EXOS 2.1 boots to IS-BASIC 2.1 on the core (and EXOS 2.0 to
+IS-BASIC 2.0 on the 64), the picture shows it, DAVE plays, the host and virtual keyboards and the
+joysticks work, and Klive's `FILE:` device loads and saves host files (§18). Next: the debugger and IDE
+surfaces (Phase 7).
 D1–D9 accepted (§16). Still open in Phase 0: reading EP64 schematic sheet 1 for Q1 (the VINT edge).
 **Input:** the research pack `_input/enterprise128/`. Read these first:
 - `README.md`: the machine at a glance, the disagreements table and the ROM decision;
@@ -708,7 +709,7 @@ Each gets one constant or define, its default and its reason in the core README.
 | **3. Picture** | §7: renderers, palette and levels, the pipeline, blanking, the TV window, beam position, VSYNC frame and field detection. | Done 2026-10-30 (§18): the IS-BASIC picture's hash (checked by eye); `nick-picture.test.ts`; Q2 settled by EXOS's text colours (RM bit 6 is ALTIND1); the IS 1984 demo's frame; the banner and IS-BASIC seen in the running app. |
 | **4. Sound** | §8.2–§8.3, stereo out. | Done 2026-10-31 (§18): `sound.test.ts` (the generator, the outputs, a 1 kHz tone through to the host's samples, EXOS's keyclick). Not heard by ear: no audio output in this environment; `SOUND` statements need the typer (Phase 5). |
 | **5. Keyboard and `FILE:`** | §9.1, §9.2: matrix, host mapping, joysticks, the `FILE:` ROM and host side; the virtual keyboard after its design is approved. | Done 2026-10-31 (§18): `keyboard.test.ts`, `hostfs.test.ts`, `ep-fileio-rom.test.ts`, `test/controls/EpKeyboard.test.tsx`; in the running app, host typing, `SAVE "FILE:…"` to the `FILEIO` folder, and the virtual keyboard's space bar past the banner. |
-| **6. 64K model** | `ep64`: EXOS 2.0, IS-BASIC 2.0, 64K. | `ep64.test.ts` (boot picture hash checked by eye; RAM size). |
+| **6. 64K model** | `ep64`: EXOS 2.0, IS-BASIC 2.0, 64K. | Done 2026-10-31 (§18): `ep64.test.ts` (EXOS 2.0's RAM test, 65536 bytes, F8h–FBh empty, the IS-BASIC 2.0 picture hash checked by eye); in the running app, the 64 boots to IS-BASIC 2.0. |
 | **7. IDE** | Partitions, the NICK and DAVE panels, disassembler (`RST 30h`), SysVars, charset, menus, state files, history, profile, CLI; the IS-BASIC listing if §11.4 finds the table. | Debug tests, the Enterprise in every cross-core suite; `MF_EXEC_HISTORY`, `MF_PROFILE`, `MF_REVERSE_DEBUG` on. |
 | **8. Assembler and tape** | §12 (`.model ENTERPRISE`, Run/Debug through `FILE:`, `.com` export, project template), §9.3 (tape formats, playing, turbo, SAVE). | `code-injection.test.ts`, `project-templates.test.ts` (runs checked by eye), `tape.test.ts`; `klive run` and `klive test` on the Enterprise. |
 | **9. EXDOS** | §10: the WD1770 variant (its own commit, Beta 128 and TVC byte-identical), the card, disks. | `exdos.test.ts`; EXDOS lists a disk in the running app. |
@@ -905,3 +906,19 @@ The core's README (`src/emu/machines/enterprise/wasm/README.md`) is the referenc
   built-in stick's fire. Colours are tokens sampled from the photo (`keyEp` and the rest in
   `palette.ts`), except the strip, drawn lighter so its labels can be read.
 
+### Phase 6 (2026-10-31)
+
+- **The 64 is a model, not new code.** The core already took the RAM size (`epConfigure`'s `is128`:
+  FCh–FFh or F8h–FFh), the ROM table already had EXOS 2.0 and IS-BASIC 2.0 (`EpRoms.ts`, set `"20"`),
+  and `resolveEpHardware` already chose them for `MC_EP_MODEL = "64"`. Phase 6 added the `ep64` entry to
+  `EP_MODELS` and its hardware sheet (`hardware-specs.ts`: EXOS 2.0 and IS-BASIC 2.0, 64K).
+- **Observed:** EXOS 2.0 tests FEh, FDh and FCh (the 128's EXOS 2.1 goes on to F8h). `screenText()` reads "ERROR" beside
+  every segment on both models while they are tested and both boot with all their RAM; what that word
+  is on the visible picture was not checked, the banner says
+  "1984 Intelligent Software Ltd", and IS-BASIC 2.0 reports "65536 bytes in system" and
+  "50583 bytes unused" with Klive's `FILE:` ROM fitted.
+- **Tests:** `test/ep-hw/ep64.test.ts` (the RAM test, the byte counts, F8h–FBh reading FFh, the picture
+  pinned by SHA-1 after it was checked by eye); the machine-select dialog's test now expects the
+  Enterprise as a two-model section.
+- **In the running app** (the doc-shots driver, a throwaway home): the 64 starts, a click on the
+  virtual space bar passes the banner, and IS-BASIC 2.0 shows its 65536 bytes.

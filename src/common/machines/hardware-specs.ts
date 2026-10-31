@@ -598,7 +598,9 @@ export const HARDWARE_SPECS: Readonly<Record<string, MachineSpecs>> = {
       sound: [tx("hardware.sound.enterprise")],
       media: [],
       input: [{ label: KEYBOARD, value: tx("hardware.keyboard.enterprise") }]
-    }
+    },
+    // --- The 64: EXOS 2.0 and IS-BASIC 2.0 in 64K (FCh-FFh, all of it video RAM)
+    models: { ep64: { rom: epRoms("20"), ramKb: 64 } }
   },
   [MI_ZX80]: {
     base: {
