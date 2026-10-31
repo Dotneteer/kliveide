@@ -13,9 +13,19 @@
  *          7 the tape data comparator (both 1 with no input)
  *   B7     write: serial/net data and status out
  *   BF     write: the system register (ep-dave.c)
+ *   BC     write: a request from Klive's FILE: ROM to the host (below); no real hardware decodes it
+ *          (B8h-BEh are inside DAVE's range and unused)
  *
  * Reads of write-only and undefined ports return FFh (plan Q12).
  */
+
+/*
+ * Klive's FILE: device (plan §9.2): its ROM writes a call number to port BCh. The CPU then waits -
+ * no instruction runs, time passes - until the host has done the call and says so. 1: a new request
+ * the host has not seen (the frame loop returns for it), 2: the host is working on it.
+ */
+static uint8_t epHostFsState;
+static uint8_t epHostFsFunction;
 
 /* B5h, B6h (printer data) and B7h as last written */
 static uint8_t epPortB5;
@@ -23,6 +33,7 @@ static uint8_t epPortB6;
 static uint8_t epPortB7;
 
 static void epResetPorts(void) {
+  epHostFsState = 0u;
   epPortB5 = 0u;
   epPortB6 = 0u;
   epPortB7 = 0u;
@@ -84,10 +95,23 @@ static void epCpuWritePort(uint16_t address, uint8_t value) {
     case 0xbfu:
       epDaveWriteBf(value);
       break;
+    case 0xbcu:
+      epHostFsFunction = value;
+      epHostFsState = 1u;
+      break;
     default:
       break;
   }
 }
+
+/* The FILE: request: bits 7-0 the call, bits 15-8 the state (0 none, 1 new, 2 taken) */
+uint32_t epHostFsGetRequest(void) { return ((uint32_t)epHostFsState << 8) | epHostFsFunction; }
+/* The host has seen the request and works on it: the CPU keeps waiting, frames run on */
+void epHostFsTake(void) {
+  if (epHostFsState == 1u) epHostFsState = 2u;
+}
+/* The host has done the request: the CPU goes on */
+void epHostFsDone(void) { epHostFsState = 0u; }
 
 uint32_t epReadPort(uint32_t address) { return epCpuReadPort((uint16_t)address); }
 void epWritePort(uint32_t address, uint32_t value) { epCpuWritePort((uint16_t)address, (uint8_t)value); }

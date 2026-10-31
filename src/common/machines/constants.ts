@@ -109,6 +109,8 @@ export const MC_EP_MODEL = "epModel";
 export const MC_EP_CARTRIDGE = "epCartridge";
 /** Enterprise only: NICK's colour levels: "resistor" (absent: the board's DAC) or "linear" (the guide's formula) */
 export const MC_EP_PALETTE = "epPalette";
+/** Enterprise only: Klive's FILE: device ROM at segment 10h (absent or true: fitted) */
+export const MC_EP_HOSTFS = "epHostFs";
 /**
  * The 48K, the 128K (its own timing, not the Pentagon's or the Scorpion's) and the +2A/+3/+2E/+3E: a
  * DivMMC is connected (`.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md` C5). It boots the esxDOS ROM the

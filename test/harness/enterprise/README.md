@@ -19,7 +19,11 @@ expect(s.screenText()).toContain("IS-BASIC");
 - **Running:** `runFrames(n)`, `runUntil(predicate)`, `runTo(address)`, `step(n)` (instructions).
 - **EXOS:** `bootToBasic()` (about 440 frames on the 128: the RAM test, the banner, a key, IS-BASIC),
   `isShowingBanner()`, `isAtBasicPrompt()`.
-- **Keys:** `keyDown`, `keyUp`, `pressKey(code, { hold, gap })` with `EpKeyCode` codes (`row * 8 + column`).
+- **Keys:** `keyDown`, `keyUp`, `pressKey(code, { hold, gap })` with `EpKeyCode` codes (`row * 8 + column`),
+  and `typeKeys(text)` through the machine's typer.
+- **FILE:** `files` is the device's folder, in memory (`files.files.set("GAME.COM", bytes)`).
+  `runFramesWithHost(n)` and `typeWithHost(text)` answer the calls that need it (opening a file,
+  closing a written one) as the IDE's controller does; plain `runFrames` leaves the CPU waiting.
 - **Memory:** `peek`/`poke` (through the paging), `physical(address)` (the 4 MB space), `vram(address)`
   and `pokeVram` (NICK's 64K, without a CPU cycle).
 - **NICK:** `nick()` (ports, LPT base and pointer, the current LPB, LD1/LD2, slot, line, display and sync),

@@ -10,7 +10,11 @@ import { EmulatedKeyStroke, tactsPast, toTactCounter } from "@emu/structs/Emulat
 import { Z80MachineBase } from "../Z80MachineBase";
 import { EpKeyCode } from "./EpKeyCode";
 import { epKeyMappings } from "./EpKeyMappings";
+import { epStrokesForText } from "./EpTyper";
 import { EP_CLOCK, EP_TACTS_IN_FRAME, resolveEpHardware, type EpHardware } from "./epMachineInfo";
+
+/** The frames the typer waits after ENTER, for the line to be stored (`typeText`) */
+const ENTER_SETTLE_FRAMES = 6;
 
 /**
  * The host side of an Enterprise 64/128 whose hardware is emulated in the WASM core: the clock and
@@ -131,6 +135,26 @@ export abstract class EpWasmHost extends Z80MachineBase {
 
   getKeyQueueLength(): number {
     return this.emulatedKeyStrokes.length;
+  }
+
+  /**
+   * Types a string as keystrokes (`EpTyper.ts`), starting `delayFrames` from now: each held 3 frames
+   * and released for 3. EXOS scans the keyboard in its video interrupt, 50 times a second; 3 + 3
+   * frames types every key reliably (`test/ep-hw/keyboard.test.ts`). After ENTER the typer waits
+   * `ENTER_SETTLE_FRAMES` more, so the line is stored before the next one starts.
+   * @throws when the keyboard cannot type a character
+   */
+  typeText(text: string, delayFrames = 0): void {
+    const frameTacts = this.tactsInFrame * this.clockMultiplier;
+    // --- Edges half a frame before the frame they belong to: a frame starts a few T-states after
+    // --- its nominal boundary, so an edge on the boundary could fall a frame early or late
+    const at = (frames: number) => toTactCounter(this.tacts + Math.round((frames - 0.5) * frameTacts));
+    let offset = delayFrames;
+    for (const stroke of epStrokesForText(text)) {
+      const [primary, secondary] = stroke.keys.map((name) => EpKeyCode[name]);
+      this.emulatedKeyStrokes.push(new EmulatedKeyStroke(at(offset), at(offset + 3), primary, secondary));
+      offset += 6 + (stroke.keys.includes("Enter") ? ENTER_SETTLE_FRAMES : 0);
+    }
   }
 
   // ==========================================================================================

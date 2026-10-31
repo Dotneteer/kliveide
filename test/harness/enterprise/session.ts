@@ -8,6 +8,7 @@ import { connectConditionSupport } from "@emu/machines/conditionStore";
 import { DebugSupport } from "@emu/machines/DebugSupport";
 import { EpWasmV2Machine } from "@emu/machines/enterprise/EpWasmV2Machine";
 import { EP_PHYS_VRAM } from "@emu/machines/enterprise/epMachineInfo";
+import { EpMemoryFileStore } from "@emu/machines/enterprise/EpHostFs";
 
 import { buildEpWasm, productionOutput } from "../../../scripts/build-ep-wasm.cjs";
 
@@ -88,8 +89,12 @@ export async function createEpSession(options: EpSessionOptions = {}): Promise<E
  */
 export class EpTestSession {
   frames = 0;
+  /** The FILE: device's files: an in-memory folder (`files.set("GAME.COM", bytes)` puts one in) */
+  readonly files = new EpMemoryFileStore();
 
-  constructor(readonly machine: EpWasmV2Machine) {}
+  constructor(readonly machine: EpWasmV2Machine) {
+    machine.hostFileStore = this.files;
+  }
 
   get wasm() {
     return this.machine.wasmV2Runtime!.exports;
@@ -106,6 +111,25 @@ export class EpTestSession {
       this.frames++;
     }
     return this;
+  }
+
+  /**
+   * Runs frames as the IDE's controller does: after each, a FILE: call waiting for the file store is
+   * answered (`processFrameCommand`) before the next
+   */
+  async runFramesWithHost(n: number): Promise<this> {
+    for (let i = 0; i < n; i++) {
+      this.runFrames(1);
+      if (this.machine.getFrameCommand()) await this.machine.processFrameCommand(undefined as never);
+    }
+    return this;
+  }
+
+  /** Types text, then runs `settle` frames answering FILE: calls (`runFramesWithHost`) */
+  async typeWithHost(text: string, { settle = 50 }: { settle?: number } = {}): Promise<this> {
+    this.machine.typeText(text);
+    for (let i = 0; i < 14 * text.length + 50 && this.machine.getKeyQueueLength() > 0; i++) await this.runFramesWithHost(1);
+    return this.runFramesWithHost(settle);
   }
 
   /** Runs until `predicate` holds after a frame; throws after `maxFrames` */
@@ -186,6 +210,16 @@ export class EpTestSession {
   keyUp(...codes: number[]): this {
     codes.forEach((c) => this.machine.setKeyStatus(c, false));
     return this;
+  }
+
+  /**
+   * Types text through the machine's typer (`EpTyper.ts`: each key held 3 frames, released 3) and
+   * runs until the queue is empty, then `settle` frames more
+   */
+  typeKeys(text: string, { settle = 10 }: { settle?: number } = {}): this {
+    this.machine.typeText(text);
+    this.runUntil(() => this.machine.getKeyQueueLength() === 0, { maxFrames: 14 * text.length + 50 }, "typing");
+    return this.runFrames(settle);
   }
 
   /** Presses a chord of `EpKeyCode` keys for `hold` frames, then releases it for `gap` frames */

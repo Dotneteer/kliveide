@@ -11,10 +11,10 @@ The hardware facts come from the research pack `_input/enterprise128/` (`NICK_VI
 `NICK_VIDEO_BACKGROUND.md`, `DAVE_MEMORY_IO.md`, `DAVE_AUDIO_BACKGROUND.md`). The code is Klive's own;
 no emulator's code was ported (plan D1).
 
-**State (Phases 1-4, 2026-10-31):** EXOS 2.1 boots to IS-BASIC 2.1, the picture shows it and DAVE
-plays. The memory map, DAVE's interrupts, timers and sound generator, NICK's LPT walker and pixels,
-VINT, vertical sync, DAVE's wait states and NICK's clock stretch are in. The keyboard has no host
-typer yet (Phase 5).
+**State (Phases 1-5, 2026-10-31):** EXOS 2.1 boots to IS-BASIC 2.1, the picture shows it and DAVE
+plays; the host keyboard, the joysticks and Klive's `FILE:` device work. The memory map, DAVE's
+interrupts, timers and sound generator, NICK's LPT walker and pixels, VINT, vertical sync, DAVE's wait
+states and NICK's clock stretch are in. The virtual keyboard waits for its design (plan §9.1).
 
 ## Layout
 
@@ -141,6 +141,33 @@ skew against the gate plan's "everything samples the last tick" (plan Q8), as ep
 
 With sound on, the core runs about 28 x real time in the harness (IS-BASIC idling).
 
+## The keyboard and the joysticks (plan §9.1)
+
+`ep-keyboard.c` holds the 10 x 8 matrix (B5h) and the external joysticks' J column: B6h bit 0 is low
+while the selected row's contact is closed, rows 0-4 joystick 1 (fire, up, down, left, right), rows
+5-9 joystick 2. The host side maps host keys by position (`EpKeyMappings.ts`), types text
+(`EpTyper.ts`, read off the running ROM: 3 frames held, 3 released) and drives the joysticks from the
+emulator panel's bindings (`setJoystickState`). IS-BASIC's `JOY(1)` reads the external stick.
+
+## Klive's FILE: device (plan §9.2)
+
+An EXOS extension ROM in segment 10h (`../fileio/ep-klive-fileio.asm`, Klive's own) adds the device
+`FILE:`. Each device call pushes AF and writes the call's number to port **BCh**, which no real
+hardware decodes (B8h-BEh are inside DAVE's range and unused). The core then holds the CPU - no
+instruction runs, time passes - until the host has answered (`epHostFsState`: 1 new, the frame loop
+and the debug loop return for it; 2 taken; 0 done). The host (`../EpHostFs.ts`) takes the channel from
+the stack, puts the status back there and the other results in B, C and DE.
+
+An open file is a byte array on the host side, so reads, writes and seeks are answered inside the
+frame. Opening a file, closing a written one and destroying one need the file store - the main
+process in the app (`EpMainFileStore.ts`: the folder `EP_FILEIO_FOLDER` names, else `FILEIO` in the
+Klive home folder), a map in the tests - and run as the controller's frame command, while the CPU
+keeps waiting. With the ROM fitted, EXOS keeps 19 bytes of system RAM for the device (IS-BASIC reports
+116102 bytes unused instead of 116121).
+
+A new application (`$$APP`, a `.com`) loaded through `FILE:` starts at 0100h; like any EXOS
+application it must set up its own stack before it enables interrupts (the kernel spec §9.3).
+
 ## Testing
 
 `test/harness/enterprise/` scripts the real core: `bootToBasic`, frames, stepping, the LPT and the
@@ -158,6 +185,11 @@ screen's text, DAVE. `test/ep-hw/`:
   the PNGs);
 - `sound.test.ts`: pitch, sync, BFh bit 1, the high-pass, ring with held channels, the polys' periods,
   the noise clocks, distortion aliasing, the sides and D/A mode, a 1 kHz tone through to the host's
-  samples, and EXOS's keyclick.
+  samples, and EXOS's keyclick;
+- `keyboard.test.ts`: every typed character back from the screen, a program typed and run, the host
+  mapping's targets, the external joysticks through B6h and IS-BASIC's `JOY(1)`;
+- `hostfs.test.ts`: the ROM in segment 10h, IS-BASIC's `SAVE`/`LOAD` through `FILE:`, a `.com` loaded
+  and started, and a missing file. (`test/machines/ep-fileio-rom.test.ts` checks the ROM image against
+  its source.)
 
 Most run on a bare machine (`bare.ts`): the CPU in segment F8h, the LPT written by the test.

@@ -114,6 +114,9 @@ const productionExports = [
   "epGetTactsInCurrentFrame",
   "epGetTactsInFrame",
   "epHardReset",
+  "epHostFsDone",
+  "epHostFsGetRequest",
+  "epHostFsTake",
   "epKeyboardLinesPtr",
   "epMemoryPtr",
   "epNickGetDataBus",
@@ -144,6 +147,7 @@ const productionExports = [
   "epSetTacts",
   "epSetTargetClockMultiplier",
   "epWriteMemory",
+  "epWritePhysical",
   "epWritePort"
 ];
 

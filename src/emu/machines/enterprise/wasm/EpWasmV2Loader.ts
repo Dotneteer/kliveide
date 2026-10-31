@@ -149,6 +149,9 @@ export const epWasmV2RequiredExports = [
   "epGetTactsInCurrentFrame",
   "epGetTactsInFrame",
   "epHardReset",
+  "epHostFsDone",
+  "epHostFsGetRequest",
+  "epHostFsTake",
   "epKeyboardLinesPtr",
   "epMemoryPtr",
   "epNickGetDataBus",
@@ -196,6 +199,7 @@ export const epWasmV2RequiredExports = [
   "epSetTacts",
   "epSetTargetClockMultiplier",
   "epWriteMemory",
+  "epWritePhysical",
   "epWritePort",
   // --- Last: the breakpoint condition evaluator, identical in every Z80 core
   ...CONDITION_CORE_EXPORTS,

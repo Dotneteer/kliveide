@@ -2,6 +2,8 @@ export const FAST_LOAD = "FastLoad";
 export const REWIND_REQUESTED = "RewindRequested";
 export const TAPE_SAVER = "TapeSaver";
 export const SAVED_TO_TAPE = "SavedToTape";
+/** The Enterprise's FILE: device folder (an absolute host path; unset: `FILEIO` in the Klive home folder) */
+export const EP_FILEIO_FOLDER = "EpFileIoFolder";
 export const TAPE_MODE = "TapeMode";
 export const DISK_A_WP = "DiskAWp";
 export const DISK_B_WP = "DiskBWp";

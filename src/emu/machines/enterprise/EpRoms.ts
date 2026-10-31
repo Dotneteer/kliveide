@@ -43,6 +43,12 @@ export const EP_EXDOS_ROM_IMAGE: EpRomImage = {
   banner: "EXDOS version 1.3"
 };
 
+/**
+ * Klive's FILE: device ROM, segment 10h (`fileio/ep-klive-fileio.asm`, Klive's own code; the image is
+ * checked against its source by `test/machines/ep-fileio-rom.test.ts`)
+ */
+export const EP_FILEIO_ROM_NAME = "ep-klive-fileio";
+
 /** Every bundled image */
 export const EP_ROM_IMAGES: readonly EpRomImage[] = [
   EP_ROM_SETS["20"].exos,

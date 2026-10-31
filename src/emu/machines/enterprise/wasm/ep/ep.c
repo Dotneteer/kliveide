@@ -254,6 +254,11 @@ uint32_t epExecuteInstruction(void) {
     z80ClearBusEvents();
     epOpStartAddress = cpu.pc;
   }
+  /* The CPU waits for the host's answer to a FILE: request (ep-ports.c): time passes, nothing runs */
+  if (epHostFsState != 0u) {
+    epAdvanceTacts(4u);
+    return epFrameCompleted;
+  }
   do {
     cpu.sigInt = epDaveIntLine();
     z80ExecuteCpuCycle();
@@ -264,6 +269,8 @@ uint32_t epExecuteInstruction(void) {
 /* The debugger's breakpoint flags and in-core loop, `epExecuteUntilStop` (z80-debug-loop.c) */
 #define Z80_DEBUG_LOOP_PREFIX ep
 #define Z80_DEBUG_LOOP_FRAME_COMPLETED epFrameCompleted
+/* The loop returns for a new FILE: request, as the frame loop does */
+#define Z80_DEBUG_LOOP_STOP() (epHostFsState == 1u)
 #include "../../../../z80/wasm/z80-debug-loop.c"
 
 /* The last frame's length in T-states, or the nominal one while the LPT gives nothing sensible */
@@ -278,6 +285,8 @@ uint32_t epExecuteFrame(void) {
     epCaptureBusEvents = done + EP_CAPTURE_WINDOW >= frameLength ? 1u : 0u;
     epExecuteInstruction();
     if (z80HistoryStopNow() != 0u) break;
+    /* A new FILE: request: the host answers it before the frame goes on */
+    if (epHostFsState == 1u) break;
   } while (!epFrameCompleted);
   epCaptureBusEvents = 1u;
   if (epFrameCompleted) {

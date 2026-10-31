@@ -1,6 +1,6 @@
 import type { MachineConfigSet, MachineModel } from "@common/machines/info-types";
 
-import { MC_EP_CARTRIDGE, MC_EP_MODEL, MC_EP_PALETTE } from "@common/machines/constants";
+import { MC_EP_CARTRIDGE, MC_EP_HOSTFS, MC_EP_MODEL, MC_EP_PALETTE } from "@common/machines/constants";
 import type { EpRomSetId } from "./EpRoms";
 
 /**
@@ -67,6 +67,8 @@ export type EpHardware = {
   cartridge: boolean;
   /** The guide's linear colour levels instead of the board's resistor DAC (`MC_EP_PALETTE`) */
   linearPalette: boolean;
+  /** Klive's FILE: device ROM at segment 10h (`MC_EP_HOSTFS`) */
+  hostFs: boolean;
   romSet: EpRomSetId;
 };
 
@@ -76,6 +78,7 @@ export function resolveEpHardware(config: MachineConfigSet | undefined): EpHardw
     is128,
     cartridge: config?.[MC_EP_CARTRIDGE] !== false,
     linearPalette: config?.[MC_EP_PALETTE] === "linear",
+    hostFs: config?.[MC_EP_HOSTFS] !== false,
     romSet: is128 ? "21" : "20"
   };
 }

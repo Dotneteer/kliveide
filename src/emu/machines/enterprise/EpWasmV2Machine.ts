@@ -26,11 +26,14 @@ import { captureWasmImage, restoreWasmImage, type MachineStateParts } from "../s
 import { fillCoreBytes, writeCoreBytes } from "@emu/machines/reverse/coreMemoryWrites";
 import { loadEpWasmV2 } from "./wasm/EpWasmV2Loader";
 import { EpWasmHost } from "./EpWasmHost";
-import { EP_ROM_SETS } from "./EpRoms";
+import { EP_FILEIO_ROM_NAME, EP_ROM_SETS } from "./EpRoms";
+import { EpHostFs, type EpHostFileStore, type EpHostFsAsync } from "./EpHostFs";
+import { EpMainFileStore } from "./EpMainFileStore";
 import {
   EP_PHYS_UNMAPPED,
   EP_PIXEL_ASPECT,
   EP_ROM_CART,
+  EP_ROM_FILEIO,
   EP_SCREEN_HEIGHT,
   EP_SCREEN_WIDTH,
   EP_SEGMENT_SIZE,
@@ -40,8 +43,17 @@ import {
   EP_TV_FIRST_SLOT
 } from "./epMachineInfo";
 import { beamAt, drawnUpTo, type BeamPosition, type BeamTiming } from "@common/utils/beamGeometry";
+import {
+  JOY_B,
+  JOY_DOWN,
+  JOY_LEFT,
+  JOY_RIGHT,
+  JOY_UP,
+  type JoystickConnector
+} from "@emu/machines/zxNext/IZxNextHostInputMachine";
 import type { AudioSample } from "@emu/abstractions/IAudioDevice";
-import { AUDIO_SAMPLE_RATE } from "../machine-props";
+import { AUDIO_SAMPLE_RATE, EP_FILEIO_FOLDER } from "../machine-props";
+import type { MessengerBase as Messenger } from "@common/messaging/MessengerBase";
 
 /** The DC filter's cut-off, as the other cores' (`AudioDeviceBase.DC_FILTER_CUTOFF_HZ`); the core has no `exp` */
 const DC_FILTER_CUTOFF_HZ = 1.4;
@@ -401,8 +413,12 @@ export class EpWasmV2Machine extends EpWasmHost implements IExecutionHistorySour
       writeCoreBytes(runtime, runtime.cartRom, basic.subarray(0, romSet.basic.size));
     }
     fillCoreBytes(runtime, runtime.fileIoRom, 0xff);
+    if (hw.hostFs) {
+      const fileIo = await this.loadRomFromResource(EP_FILEIO_ROM_NAME);
+      writeCoreBytes(runtime, runtime.fileIoRom, fileIo.subarray(0, 0x4000));
+    }
     fillCoreBytes(runtime, runtime.exdosRom, 0xff);
-    runtime.exports.epConfigure(hw.is128 ? 1 : 0, hw.cartridge ? EP_ROM_CART : 0);
+    runtime.exports.epConfigure(hw.is128 ? 1 : 0, (hw.cartridge ? EP_ROM_CART : 0) | (hw.hostFs ? EP_ROM_FILEIO : 0));
     runtime.exports.epNickSetLinearPalette(hw.linearPalette ? 1 : 0);
     const words = runtime.exports.epGetScreenWidth() * runtime.exports.epGetScreenHeight();
     this.screenPixels = runtime.pixelBuffer.subarray(0, words);
@@ -492,7 +508,10 @@ export class EpWasmV2Machine extends EpWasmHost implements IExecutionHistorySour
       return this.executeDebugLoop(runtime);
     }
     this.emulateKeystroke();
-    runtime.exports.epExecuteFrame();
+    // --- A FILE: request returns the frame loop early: answered at once, the frame goes on
+    do {
+      runtime.exports.epExecuteFrame();
+    } while (runtime.exports.epGetFrameCompleted() === 0 && this.serviceHostFs(runtime));
     this.syncFrameCounters(runtime);
     this.frameCompleted = runtime.exports.epGetFrameCompleted() !== 0;
     this.executionContext.lastTerminationReason = FrameTerminationMode.Normal;
@@ -538,9 +557,18 @@ export class EpWasmV2Machine extends EpWasmHost implements IExecutionHistorySour
         return undefined;
       },
       // --- The instruction export returns whether the frame completed
-      executeInstruction: () => wasm.epExecuteInstruction() !== 0,
-      // --- The core's own loop runs to the next place the stop policy may stop at (z80-debug-loop.c)
-      executeUntilStop: (extraStop, mask, accessMask) => wasm.epExecuteUntilStop(extraStop, mask, accessMask),
+      executeInstruction: () => {
+        const completed = wasm.epExecuteInstruction() !== 0;
+        this.serviceHostFs(runtime);
+        return completed;
+      },
+      // --- The core's own loop runs to the next place the stop policy may stop at (z80-debug-loop.c);
+      // --- it returns early for a FILE: request, answered here
+      executeUntilStop: (extraStop, mask, accessMask) => {
+        const executed = wasm.epExecuteUntilStop(extraStop, mask, accessMask);
+        this.serviceHostFs(runtime);
+        return executed;
+      },
       lastOpStart: () => wasm.epGetDebugOpStart(),
       pushBreakpointFlags: (flags) => runtime.breakpointFlags.set(flags),
       conditionPlan: () => runtime.condPlan,
@@ -620,6 +648,86 @@ export class EpWasmV2Machine extends EpWasmHost implements IExecutionHistorySour
 
   override doWriteMemory(address: number, value: number): void {
     this.requireWasmV2Runtime().exports.epWriteMemory(address & 0xffff, value & 0xff);
+  }
+
+  // ==========================================================================================
+  // The external joysticks (`.plans/ENTERPRISE_PLAN.md` §9.1)
+
+  /** Each connector's J-column contacts, as rows 0-4 (`left`, joystick 1) and 5-9 (`right`, joystick 2) */
+  private joystickRows: Record<JoystickConnector, number> = { left: 0, right: 0 };
+
+  /**
+   * The joysticks, driven by the host's joystick bindings (`useEmulatorJoystick`). The CONTROL
+   * connectors share the keyboard's row lines: a closed contact pulls B6h bit 0 (the J column) low
+   * while its row is selected. Rows 0-4 are joystick 1's fire, up, down, left and right; 5-9 joystick 2's.
+   */
+  setJoystickState(side: JoystickConnector, bits: number): void {
+    const rows =
+      (bits & JOY_B ? 0x01 : 0) | (bits & JOY_UP ? 0x02 : 0) | (bits & JOY_DOWN ? 0x04 : 0) | (bits & JOY_LEFT ? 0x08 : 0) | (bits & JOY_RIGHT ? 0x10 : 0);
+    this.joystickRows[side] = rows;
+    this.wasmV2Runtime?.exports.epSetJoystickJ(this.joystickRows.left | (this.joystickRows.right << 5));
+  }
+
+  // ==========================================================================================
+  // Klive's FILE: device (`.plans/ENTERPRISE_PLAN.md` §9.2, `EpHostFs.ts`)
+
+  /** The device's channels */
+  readonly hostFs = new EpHostFs();
+  /** Where its files live: set by the tests; the app's is the main process (`EpMainFileStore`) */
+  hostFileStore?: EpHostFileStore;
+  /** A call waiting for the file store: the frame command the controller runs */
+  private hostFsPending?: EpHostFsAsync;
+
+  override getFrameCommand(): any {
+    return this.hostFsPending ? { command: "ep-hostfs" } : undefined;
+  }
+
+  override setFrameCommand(command: any): void {
+    if (!command) this.hostFsPending = undefined;
+  }
+
+  /** Runs the call that needs the file store, then lets the waiting CPU go on */
+  override async processFrameCommand(messenger?: Messenger): Promise<void> {
+    const pending = this.hostFsPending;
+    const runtime = this.wasmV2Runtime;
+    if (!pending || !runtime) return;
+    this.hostFsPending = undefined;
+    const store = this.hostFileStore ?? (messenger ? new EpMainFileStore(messenger, this.getMachineProperty(EP_FILEIO_FOLDER)) : undefined);
+    try {
+      if (store) await pending(store);
+    } catch (err) {
+      console.log("Enterprise FILE: device error", err);
+    }
+    runtime.exports.epHostFsDone();
+  }
+
+  /**
+   * Answers a new FILE: request, if there is one: at once when it needs no file store (returns true,
+   * the CPU goes on), or later as a frame command (the CPU waits). Returns whether one was answered.
+   */
+  private serviceHostFs(runtime: EpWasmV2Runtime): boolean {
+    const w = runtime.exports;
+    const request = w.epHostFsGetRequest();
+    if (request >> 8 !== 1) return false;
+    w.epHostFsTake();
+    const pending = this.hostFs.service({
+      call: request & 0xff,
+      getBc: () => w.epGetCpuBc(),
+      setBc: (v) => w.epSetCpuBc(v & 0xffff),
+      getDe: () => w.epGetCpuDe(),
+      setDe: (v) => w.epSetCpuDe(v & 0xffff),
+      getSp: () => w.epGetCpuSp(),
+      read: (a) => w.epReadMemory(a & 0xffff),
+      write: (a, v) => w.epWriteMemory(a & 0xffff, v & 0xff),
+      readPhysical: (a) => w.epReadPhysical(a),
+      writePhysical: (a, v) => w.epWritePhysical(a, v & 0xff)
+    });
+    if (pending) {
+      this.hostFsPending = pending;
+      return false;
+    }
+    w.epHostFsDone();
+    return true;
   }
 
   // ==========================================================================================
@@ -821,6 +929,8 @@ export class EpWasmV2Machine extends EpWasmHost implements IExecutionHistorySour
     const runtime = this.requireWasmV2Runtime();
     const w = runtime.exports;
     this.emulatedKeyStrokes.length = 0;
+    this.hostFs.reset();
+    this.hostFsPending = undefined;
     this.frameCompleted = w.epGetFrameCompleted() !== 0;
     this.syncCpuFromWasmV2(runtime);
   }

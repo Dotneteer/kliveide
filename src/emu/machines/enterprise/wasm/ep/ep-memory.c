@@ -110,3 +110,8 @@ uint32_t epGetIs128(void) { return epIs128; }
 uint32_t epReadPhysical(uint32_t address) {
   return epMemory[epSegmentBase[(address >> 14) & 0xffu] + (address & 0x3fffu)];
 }
+/* Writes a byte of the physical space where RAM is fitted (the host's FILE: device writes user memory) */
+void epWritePhysical(uint32_t address, uint32_t value) {
+  const uint32_t segment = (address >> 14) & 0xffu;
+  if (epSegmentIsRam[segment]) epMemory[epSegmentBase[segment] + (address & 0x3fffu)] = (uint8_t)value;
+}

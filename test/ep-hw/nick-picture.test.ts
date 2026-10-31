@@ -226,8 +226,12 @@ describe("the TV", () => {
 });
 
 describe("EXOS's screen", () => {
-  /** The IS-BASIC picture after boot, checked by eye: the status line "IS-BASIC  program 0" in red and cyan, then "131072 bytes in system", "116121 bytes unused" and "ok" in green on black */
-  const BASIC_PICTURE_SHA1 = "d99cc31df57130b0a6600782e7870d06de7662c0";
+  /**
+   * The IS-BASIC picture after boot, checked by eye: the status line "IS-BASIC  program 0" in red and
+   * cyan, then "131072 bytes in system", "116102 bytes unused" and "ok" in green on black. (116121
+   * without Klive's FILE: ROM: EXOS keeps 19 bytes of system RAM for its device.)
+   */
+  const BASIC_PICTURE_SHA1 = "ef4980f0405b180b7f51ae6b2c26129963110f11";
 
   it("draws IS-BASIC's screen, the picture checked by eye", async () => {
     const s = await createEpSession();

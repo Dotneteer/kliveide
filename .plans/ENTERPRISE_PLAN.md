@@ -1,8 +1,8 @@
 # Enterprise 64/128 on the WASM Core — Implementation Plan
 
-**Status:** Phases 1–4 done (2026-10-31): EXOS 2.1 boots to IS-BASIC 2.1 on the core, the picture
-shows it and DAVE plays, with NICK's LPT walker and renderer, the wait states and the clock stretch
-(§18). Next: the keyboard and the `FILE:` device (Phase 5).
+**Status:** Phases 1–5 done (2026-10-31) but for Phase 5's virtual keyboard, which waits for its
+design: EXOS 2.1 boots to IS-BASIC 2.1 on the core, the picture shows it, DAVE plays, the host
+keyboard and joysticks work, and Klive's `FILE:` device loads and saves host files (§18).
 D1–D9 accepted (§16). Still open in Phase 0: reading EP64 schematic sheet 1 for Q1 (the VINT edge).
 **Input:** the research pack `_input/enterprise128/`. Read these first:
 - `README.md`: the machine at a glance, the disagreements table and the ROM decision;
@@ -707,7 +707,7 @@ Each gets one constant or define, its default and its reason in the core README.
 | **2. Timing** | §6: DAVE waits, the NICK stretch, the phase sweep export. | Done 2026-10-30 (§18): `timing.test.ts`; the Enterprise in `debug-loop-equivalence.test.ts`. The oracle comparison with ep128emu is not done yet (it needs a manual run). |
 | **3. Picture** | §7: renderers, palette and levels, the pipeline, blanking, the TV window, beam position, VSYNC frame and field detection. | Done 2026-10-30 (§18): the IS-BASIC picture's hash (checked by eye); `nick-picture.test.ts`; Q2 settled by EXOS's text colours (RM bit 6 is ALTIND1); the IS 1984 demo's frame; the banner and IS-BASIC seen in the running app. |
 | **4. Sound** | §8.2–§8.3, stereo out. | Done 2026-10-31 (§18): `sound.test.ts` (the generator, the outputs, a 1 kHz tone through to the host's samples, EXOS's keyclick). Not heard by ear: no audio output in this environment; `SOUND` statements need the typer (Phase 5). |
-| **5. Keyboard and `FILE:`** | §9.1, §9.2: matrix, host mapping, joysticks, the `FILE:` ROM and host side; the virtual keyboard after its design is approved. | `keyboard.test.ts`, `hostfs.test.ts`; a `.com` loads with `LOAD "FILE:…"` in the running app. |
+| **5. Keyboard and `FILE:`** | §9.1, §9.2: matrix, host mapping, joysticks, the `FILE:` ROM and host side; the virtual keyboard after its design is approved. | Done 2026-10-31 (§18) but for the virtual keyboard: `keyboard.test.ts`, `hostfs.test.ts`, `ep-fileio-rom.test.ts`; in the running app, host typing and `SAVE "FILE:…"` to the `FILEIO` folder. |
 | **6. 64K model** | `ep64`: EXOS 2.0, IS-BASIC 2.0, 64K. | `ep64.test.ts` (boot picture hash checked by eye; RAM size). |
 | **7. IDE** | Partitions, the NICK and DAVE panels, disassembler (`RST 30h`), SysVars, charset, menus, state files, history, profile, CLI; the IS-BASIC listing if §11.4 finds the table. | Debug tests, the Enterprise in every cross-core suite; `MF_EXEC_HISTORY`, `MF_PROFILE`, `MF_REVERSE_DEBUG` on. |
 | **8. Assembler and tape** | §12 (`.model ENTERPRISE`, Run/Debug through `FILE:`, `.com` export, project template), §9.3 (tape formats, playing, turbo, SAVE). | `code-injection.test.ts`, `project-templates.test.ts` (runs checked by eye), `tape.test.ts`; `klive run` and `klive test` on the Enterprise. |
@@ -866,4 +866,33 @@ The core's README (`src/emu/machines/enterprise/wasm/README.md`) is the referenc
   10× floor (§13).
 - **Not done:** listening in the running app (no audio device here); the app's path is the generic
   stereo one the TVC uses. `SOUND` and `ENVELOPE` from BASIC wait for the typer (Phase 5).
+
+### Phase 5 (2026-10-31)
+
+- **The typer** (`EpTyper.ts`) was read off the running ROM: every key and SHIFT with every key typed
+  at IS-BASIC's prompt and read back from the screen. 3 frames held and 3 released types every key;
+  6 more frames after ENTER let the line be stored.
+- **Joysticks:** the emulator panel's joystick bindings reach the CONTROL connectors through
+  `setJoystickState` (the Timex's contract). IS-BASIC's `JOY(1)` reads the external stick.
+- **`FILE:` (D8), with one deviation:** the trap is a **port** (BCh), not an address. A port needs no
+  opcode hook, no list of trap addresses and no check of the paging; it is still invisible to real
+  software (B8h–BEh are DAVE's and unused). The ROM pushes AF, writes the call number, pops AF and
+  returns; the host puts its results in the stack's A and in B, C, DE. The CPU waits in the core while
+  the host works, and the frame and debug loops return for a new request
+  (`Z80_DEBUG_LOOP_STOP`), as the Next's SD card does.
+- **The ROM is Klive's own**, assembled by Klive's assembler; a unit test pins the shipped image to its
+  source (`EP_FILEIO_ROM_WRITE=1` rewrites it). CLK's ROM was read for EXOS's header and descriptor
+  layout, which the EXOS book (§6.2–§6.3, §9) confirms; no code was taken.
+- **Files** are byte arrays on the host side while open; only open, a written file's close and destroy
+  reach the store (the main process, `EpMainFileStore.ts`) as frame commands. The folder is
+  `EP_FILEIO_FOLDER` (unset: `FILEIO` in the Klive home folder); Phase 8's Run sets it.
+- **A finding worth keeping:** a `$$APP` must load SP before it enables interrupts (the kernel spec
+  §9.3). EXOS starts it on EXOS's own system stack, so a module that does not crashes at its first
+  interrupt. Klive's Run (Phase 8) must make sure the code it starts does this, or do it for it.
+- **The IS-BASIC golden changed:** with the ROM fitted EXOS keeps 19 bytes for the device ("116102
+  bytes unused"); the picture was checked again by eye.
+- **In the running app** (the doc-shots driver, a throwaway home): host keys typed
+  `10 PRINT "HELLO"`, and `SAVE "FILE:HELLO.BAS"` wrote a 47-byte file into `Klive/FILEIO`.
+- **Not done:** the virtual keyboard. Its design needs the real keyboard's layout (a photograph) and the
+  project author's approval, as the TVC's did (§9.1).
 
