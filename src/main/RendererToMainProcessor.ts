@@ -49,6 +49,20 @@ import {
 } from "@state/actions";
 import { createCompilerRegistry } from "./compiler-integration/compiler-registry";
 import { getDirectoryContent, getProjectDirectoryContentFilter } from "./directory-content";
+import {
+  fmCancelJob,
+  fmDelete,
+  fmJobStatus,
+  fmList,
+  fmListDrives,
+  fmMkdir,
+  fmMoveOnTape,
+  fmOpenImage,
+  fmPlanTransfer,
+  fmRead,
+  fmRename,
+  fmRunTransfer
+} from "./file-manager/fmService";
 import { KLIVE_GITHUB_PAGES } from "./menus/help-menu";
 import { checkZ88SlotFile } from "./machine-menus/z88-menus";
 import { displaySaveFileDialog } from "./save-file-dialog";
@@ -68,6 +82,7 @@ import { beginDiskImageEdit, cancelDiskImageEdit, commitDiskImageEdit } from "./
 import { createHardDiskImage, hardDiskFileClusters, queryHardDisk, readHardDiskFile } from "./hard-disk-images";
 import { copyFolderToHardDiskSafely, editHardDiskSafely } from "./hard-disk-edit";
 import type { DiskEdit } from "@common/diskfs/edit";
+import type { FmConflictDecision, FmTransferRequest } from "@common/fileManager/fmJobTypes";
 import type { DiskImageEditStart } from "@common/messaging/MainApi";
 import { mainScriptManager } from "./ksx-runner/MainScriptManager";
 import { collectedBuildTasks } from "./build";
@@ -388,6 +403,109 @@ class MainMessageProcessor {
     if (typeof filePath !== "string" || typeof hostFolder !== "string") throw new Error("An image and a folder are required");
     // --- Input validated
     return copyFolderToHardDiskSafely(filePath, hostFolder, targetDir, partition);
+  }
+
+  fmListDrives() {
+    return fmListDrives();
+  }
+
+  fmOpenImage(filePath: string) {
+    // Input validation
+    if (typeof filePath !== "string" || !filePath) throw new Error("An image path is required");
+    // --- Input validated
+    return fmOpenImage(filePath);
+  }
+
+  fmList(driveId: string, dir?: string) {
+    // Input validation
+    if (typeof driveId !== "string" || !driveId) throw new Error("A drive is required");
+    if (dir !== undefined && dir !== null && typeof dir !== "string") throw new Error("The folder must be a string");
+    // --- Input validated
+    return fmList(driveId, dir ?? undefined);
+  }
+
+  fmRead(driveId: string, filePath: string) {
+    // Input validation
+    if (typeof driveId !== "string" || !driveId || typeof filePath !== "string" || !filePath) {
+      throw new Error("A drive and a file are required");
+    }
+    // --- Input validated
+    return fmRead(driveId, filePath);
+  }
+
+  fmPlanTransfer(request: FmTransferRequest) {
+    // Input validation
+    if (
+      !request ||
+      typeof request.sourceDriveId !== "string" ||
+      typeof request.targetDriveId !== "string" ||
+      typeof request.targetDir !== "string" ||
+      !Array.isArray(request.paths) ||
+      !request.paths.every((p) => typeof p === "string") ||
+      !request.options ||
+      !["auto", "headers", "raw"].includes(request.options.mode)
+    ) {
+      throw new Error("A copy needs a source drive, paths, a target drive and folder, and options");
+    }
+    // --- Input validated
+    return fmPlanTransfer({ ...request, move: !!request.move });
+  }
+
+  fmRunTransfer(id: string, decisions: Record<number, FmConflictDecision>) {
+    // Input validation
+    if (typeof id !== "string" || !id || (decisions && typeof decisions !== "object")) throw new Error("A planned job is required");
+    // --- Input validated
+    return fmRunTransfer(id, decisions ?? {});
+  }
+
+  fmJobStatus(id: string) {
+    // Input validation
+    if (typeof id !== "string") throw new Error("A job id is required");
+    // --- Input validated
+    return fmJobStatus(id);
+  }
+
+  fmCancelJob(id: string) {
+    // Input validation
+    if (typeof id !== "string") throw new Error("A job id is required");
+    // --- Input validated
+    fmCancelJob(id);
+  }
+
+  fmDelete(driveId: string, paths: string[]) {
+    // Input validation
+    if (typeof driveId !== "string" || !Array.isArray(paths) || !paths.every((p) => typeof p === "string" && p)) {
+      throw new Error("A drive and the paths to delete are required");
+    }
+    // --- Input validated
+    return fmDelete(driveId, paths);
+  }
+
+  fmMkdir(driveId: string, dir: string, name: string) {
+    // Input validation
+    if (typeof driveId !== "string" || typeof dir !== "string" || typeof name !== "string") {
+      throw new Error("A drive, a folder and a name are required");
+    }
+    // --- Input validated
+    return fmMkdir(driveId, dir, name);
+  }
+
+  fmRename(driveId: string, entryPath: string, newName: string) {
+    // Input validation
+    if (typeof driveId !== "string" || typeof entryPath !== "string" || !entryPath || typeof newName !== "string") {
+      throw new Error("A drive, a path and a new name are required");
+    }
+    // --- Input validated
+    return fmRename(driveId, entryPath, newName);
+  }
+
+  fmMoveOnTape(driveId: string, name: string, by: -1 | 1) {
+    // Input validation
+    if (typeof driveId !== "string" || typeof name !== "string" || !name || (by !== -1 && by !== 1)) {
+      throw new Error("A tape drive, a file and a direction (-1 or 1) are required");
+    }
+    // --- Input validated
+    return fmMoveOnTape(driveId, name, by);
   }
 
   createHardDiskImage(filePath: string, options: { sizeMb: number; fatType: 16 | 32; label?: string; partitioned?: boolean }) {

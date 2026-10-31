@@ -24,6 +24,9 @@ export const PROFILER_EDITOR = "Profiler";
 // --- The graphics finder over the paused machine (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §5.3)
 export const GRAPHICS_PANEL_ID = "$graphics";
 export const GRAPHICS_EDITOR = "GraphicsFinder";
+// --- The two-pane File Manager (`.plans/FILE_MANAGER_PLAN.md`, D1)
+export const FILE_MANAGER_PANEL_ID = "$fileManager";
+export const FILE_MANAGER_EDITOR = "FileManager";
 export const UNKNOWN_EDITOR = "Unknown";
 export const COMMAND_RESULT_EDITOR = "CommandResult";
 export const STATIC_MEMORY_DUMP_VIEWER = "StaticMemoryDumpViewer";

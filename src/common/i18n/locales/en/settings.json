@@ -1049,5 +1049,21 @@
   "settings.emulator.nextAudioOutput.description": "The Next sends its sound to three outputs, each built differently; Klive plays the one chosen here",
   "@settings.emulator.nextAudioOutput.description": {
     "context": "Help text under the setting 'ZX Spectrum Next sound output' (Settings dialog, Machine page). Wraps over several lines."
+  },
+  "settings.group.fileManager": "File Manager",
+  "@settings.group.fileManager": {
+    "context": "Settings dialog, General page: heading of the group of File Manager (two-pane file manager) options."
+  },
+  "settings.general.fileManagerShowHidden.title": "Show hidden files in new panes",
+  "@settings.general.fileManagerShowHidden.title": {
+    "context": "Settings dialog, General page, 'File Manager' group: label of an on/off switch. Hidden files are those whose names start with a dot."
+  },
+  "settings.general.fileManagerDeletePermanently.title": "Delete this computer's files permanently",
+  "@settings.general.fileManagerDeletePermanently.title": {
+    "context": "Settings dialog, General page, 'File Manager' group: label of an on/off switch. Off: deleted files go to the system's trash."
+  },
+  "settings.general.fileManagerDeletePermanently.description": "Off: deleted files go to the system's trash, where they can be restored. Files on disk images are always deleted for good.",
+  "@settings.general.fileManagerDeletePermanently.description": {
+    "context": "Settings dialog: help text under the 'Delete this computer's files permanently' switch."
   }
 }

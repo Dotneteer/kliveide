@@ -24,7 +24,8 @@ export function isActiveSdCard (filePath: string): boolean {
   return !!card && path.resolve(card) === path.resolve(filePath);
 }
 
-async function aroundSdCard<T> (filePath: string, op: () => T): Promise<T> {
+/** Runs `op` on an image, under the SD card's lock and with a running machine paused when it is the machine's card */
+export async function aroundSdCard<T> (filePath: string, op: () => T): Promise<T> {
   if (!isActiveSdCard(filePath)) return op();
   const emulator = mainStore.getState().emulatorState;
   const running = emulator?.machineState === MachineControllerState.Running;

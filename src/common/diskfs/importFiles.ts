@@ -59,8 +59,8 @@ export function hostFileToDiskFiles (fileName: string, bytes: Uint8Array, option
 /** A name that fits the file system */
 export function diskFileName (name: string, extension: string, kind: DiskFileKind, system: DiskFsKind): string {
   if (system === "fat") return extension ? `${name}.${extension}` : name;
-  // --- A Microdrive name: 1-10 characters, as typed; the extension has no place in it
-  if (system === "microdrive") return (name.trim() || "file").slice(0, 10);
+  // --- A Microdrive, tape or MGT name: 1-10 characters, as typed; the extension has no place in it
+  if (system === "microdrive" || system === "tape" || system === "mgt") return (name.trim() || "file").slice(0, 10);
   if (system === "trdos") {
     const base = (name.trim() || "file").slice(0, 8);
     const type = kind === "basic" ? "B" : kind === "code" ? "C" : kind === "raw" ? "#" : "D";

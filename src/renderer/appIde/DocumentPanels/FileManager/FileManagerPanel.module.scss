@@ -1,0 +1,635 @@
+/*
+ * The File Manager (.plans/FILE_MANAGER_PLAN.md §4.1): two panes side by side. The active pane's
+ * header carries an accent rule and its cursor row the accent wash; the other pane's cursor is a
+ * neutral selection. Marked files take the secondary accent, so a mark and the cursor stay apart on
+ * the same row. Neutral data colours otherwise. Column widths in ch, rows at --row-size-list.
+ */
+
+.fileManager {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  outline: none;
+  font-size: var(--panel-font-size);
+}
+
+.banner {
+  margin: var(--space-1) var(--space-2) 0;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--status-error-subtle);
+  color: var(--text-primary);
+}
+
+.panes {
+  flex: 1 1 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  min-height: 0;
+}
+
+.pane {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  min-width: 0;
+  min-height: 0;
+  background: var(--surface-panel);
+}
+
+.pane + .pane {
+  border-left: 1px solid var(--border-default);
+}
+
+/* --- Header: drive button, path, buttons */
+.paneHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+  padding: var(--space-0_5) var(--space-1);
+  background: var(--surface-header);
+  border-bottom: 1px solid var(--border-default);
+  border-top: 2px solid transparent;
+}
+
+.active .paneHeader {
+  border-top-color: var(--accent-solid);
+}
+
+.driveButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex: 0 0 auto;
+  max-width: 30ch;
+  padding: 0 var(--space-1_5);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  font: inherit;
+  font-family: var(--main-font-family);
+  line-height: var(--row-size-list);
+  cursor: pointer;
+}
+
+.driveButton:hover {
+  background: var(--surface-hover);
+}
+
+.driveLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.caret {
+  color: var(--text-tertiary);
+}
+
+.lock {
+  display: inline-flex;
+}
+
+.crumbs {
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  font-family: var(--monospace-font);
+}
+
+.crumbItem {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+}
+
+/* --- The folder shown keeps its name; the steps before it give way first */
+.crumbItem:last-child {
+  flex-shrink: 0;
+  max-width: 60%;
+}
+
+.crumbSep {
+  padding: 0 var(--space-0_5);
+  color: var(--text-tertiary);
+}
+
+.crumb {
+  padding: 0 var(--space-0_5);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--data-secondary);
+  font: inherit;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.crumb:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.crumbCurrent {
+  color: var(--data-value);
+}
+
+/* --- Column headers */
+.columns {
+  display: grid;
+  /* --- The same font as the rows, so the ch widths of the grid line up with theirs */
+  font-family: var(--monospace-font);
+  gap: var(--space-1_5);
+  padding: 0 var(--space-2);
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--surface-panel);
+}
+
+.columnHead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-0_5);
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--data-label);
+  font: inherit;
+  font-family: var(--main-font-family);
+  line-height: var(--row-size-list);
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.columnHead:disabled {
+  cursor: default;
+}
+
+.columnHead.end {
+  justify-content: flex-end;
+}
+
+.sortMark {
+  color: var(--text-tertiary);
+}
+
+/* --- The rows */
+.list {
+  position: relative;
+  min-height: 0;
+  background: var(--surface-canvas);
+}
+
+.row {
+  display: grid;
+  gap: var(--space-1_5);
+  align-items: center;
+  height: var(--row-size-list);
+  padding: 0 var(--space-2);
+  color: var(--data-value);
+  font-family: var(--monospace-font);
+  white-space: nowrap;
+  cursor: default;
+}
+
+.row:hover {
+  background: var(--surface-hover);
+}
+
+.cursor,
+.cursor:hover {
+  background: var(--surface-selected);
+}
+
+.cursorActive,
+.cursorActive:hover {
+  background: var(--accent-subtle);
+  box-shadow: inset 0 0 0 1px var(--accent-border);
+}
+
+.marked {
+  color: var(--accent-secondary-text);
+  font-weight: 600;
+}
+
+.directory .cell:first-child {
+  font-weight: 600;
+}
+
+.cell {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.cell.end {
+  justify-content: flex-end;
+}
+
+.cellText {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.message {
+  padding: var(--space-3);
+  color: var(--text-secondary);
+}
+
+/* --- The status line */
+.status {
+  display: flex;
+  gap: var(--space-2);
+  padding: var(--space-0_5) var(--space-2);
+  border-top: 1px solid var(--border-default);
+  background: var(--surface-header);
+  color: var(--data-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.statusLeft {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.statusRight {
+  margin-left: auto;
+  flex: 0 0 auto;
+}
+
+/* --- The drive menu */
+.menuBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+}
+
+.menu {
+  position: absolute;
+  top: 0;
+  left: var(--space-1);
+  z-index: 2;
+  width: 44ch;
+  max-width: calc(100% - var(--space-2));
+  max-height: 100%;
+  overflow: auto;
+  padding: var(--space-1) 0;
+  border: 1px solid var(--border-context-menu);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-context-menu);
+  font-family: var(--main-font-family);
+}
+
+.menuGroup + .menuGroup {
+  margin-top: var(--space-1);
+  padding-top: var(--space-1);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.menuTitle {
+  padding: 0 var(--space-3);
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.menuItem {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-0_5) var(--space-3);
+  border: 0;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.menuItem:hover {
+  background: var(--surface-hover);
+}
+
+.menuItem:disabled,
+.menuItem:disabled:hover {
+  background: transparent;
+  color: var(--text-disabled);
+  cursor: default;
+}
+
+.menuSelected,
+.menuSelected:hover {
+  background: var(--accent-solid);
+  color: var(--text-on-accent);
+}
+
+.menuLabel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.menuDetail {
+  color: var(--text-tertiary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.menuSelected .menuDetail,
+.menuSelected .menuFree {
+  color: var(--text-on-accent);
+}
+
+.menuFree {
+  color: var(--text-tertiary);
+  font-family: var(--monospace-font);
+  white-space: nowrap;
+}
+
+/* --- A job's progress, above the command bar */
+.progress {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-0_5) var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  border-top: 1px solid var(--border-default);
+  background: var(--surface-raised);
+  font-family: var(--main-font-family);
+}
+
+.progressText {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.progressBar {
+  grid-column: 1 / -1;
+  height: var(--space-1);
+  border-radius: var(--radius-sm);
+  background: var(--border-subtle);
+  overflow: hidden;
+}
+
+.progressBar > i {
+  display: block;
+  height: 100%;
+  background: var(--accent-solid);
+}
+
+/* --- What a job did, until dismissed or the next job */
+.notice,
+.noticeError {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  border-top: 1px solid var(--border-default);
+  color: var(--text-primary);
+  font-family: var(--main-font-family);
+}
+
+.notice {
+  background: var(--accent-subtle);
+}
+
+.noticeError {
+  background: var(--status-error-subtle);
+}
+
+.noticeText {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.barButton {
+  flex: 0 0 auto;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  font: inherit;
+  cursor: pointer;
+}
+
+.barButton:hover {
+  background: var(--surface-hover);
+}
+
+/* --- The command bar: the function keys as buttons, for keyboards without them (D8) */
+.commandBar {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  border-top: 1px solid var(--border-default);
+  background: var(--surface-header);
+  font-family: var(--main-font-family);
+}
+
+.command {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  min-width: 0;
+  padding: var(--space-1) var(--space-1);
+  border: 0;
+  border-right: 1px solid var(--border-subtle);
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.command:last-child {
+  border-right: 0;
+}
+
+.command:hover:not(:disabled) {
+  background: var(--surface-hover);
+}
+
+.command:disabled {
+  color: var(--text-disabled);
+  cursor: default;
+}
+
+.keyHint {
+  color: var(--text-tertiary);
+  font-family: var(--monospace-font);
+}
+
+.commandLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* --- A pane on a running machine's storage (D4): the machine's state colour, a way to stop it */
+.blocked {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  height: 100%;
+  padding: var(--space-4);
+  text-align: center;
+  font-family: var(--main-font-family);
+  color: var(--text-primary);
+}
+
+.blocked p {
+  margin: 0;
+  max-width: 40ch;
+  color: var(--text-secondary);
+}
+
+/* --- A drop on a pane: the pane is the target */
+.dropping .list {
+  outline: 2px dashed var(--accent-border);
+  outline-offset: -2px;
+}
+
+/* --- The right-click menu, at the pointer */
+.contextMenu {
+  position: absolute;
+  z-index: 2;
+  min-width: 28ch;
+  padding: var(--space-1) 0;
+  border: 1px solid var(--border-context-menu);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-context-menu);
+  font-family: var(--main-font-family);
+}
+
+.contextItem {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-4);
+  width: 100%;
+  padding: var(--space-0_5) var(--space-3);
+  border: 0;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.contextItem:hover:not(:disabled) {
+  background: var(--surface-hover);
+}
+
+.contextItem:disabled {
+  color: var(--text-disabled);
+  cursor: default;
+}
+
+/* --- F3's viewer, in place of the rows */
+.viewer {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  height: 100%;
+  min-height: 0;
+}
+
+.viewerHead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  padding: var(--space-1) var(--space-2);
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--surface-header);
+  font-family: var(--main-font-family);
+}
+
+.viewerTitle {
+  font-family: var(--monospace-font);
+}
+
+.viewerFacts {
+  color: var(--data-secondary);
+}
+
+.viewerActions {
+  display: inline-flex;
+  gap: var(--space-1);
+  margin-left: auto;
+}
+
+.toggle {
+  display: inline-flex;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.toggleItem,
+.toggleOn {
+  padding: 0 var(--space-2);
+  border: 0;
+  font: inherit;
+  cursor: pointer;
+}
+
+.toggleItem {
+  background: var(--surface-raised);
+  color: var(--text-primary);
+}
+
+.toggleOn {
+  background: var(--accent-solid);
+  color: var(--text-on-accent);
+}
+
+.viewerBody {
+  min-height: 0;
+  overflow: auto;
+}
+
+.viewerBasic,
+.viewerText {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  font-family: var(--monospace-font);
+  color: var(--data-value);
+}
+
+.viewerText {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.viewerScreen {
+  padding: var(--space-3);
+}
+
+/* --- The viewer has no columns */
+.columnsHidden {
+  display: none;
+}

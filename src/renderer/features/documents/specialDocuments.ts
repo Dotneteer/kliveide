@@ -20,7 +20,9 @@ import {
   PROFILER_EDITOR,
   PROFILER_PANEL_ID,
   GRAPHICS_EDITOR,
-  GRAPHICS_PANEL_ID
+  GRAPHICS_PANEL_ID,
+  FILE_MANAGER_EDITOR,
+  FILE_MANAGER_PANEL_ID
 } from "@common/state/common-ids";
 import type { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
 import { withTexts } from "@common/i18n/labels";
@@ -36,7 +38,8 @@ export type SpecialDocumentId =
   | typeof LAYERS_PANEL_ID
   | typeof HISTORY_PANEL_ID
   | typeof PROFILER_PANEL_ID
-  | typeof GRAPHICS_PANEL_ID;
+  | typeof GRAPHICS_PANEL_ID
+  | typeof FILE_MANAGER_PANEL_ID;
 
 export type SpecialDocumentDefinition = Pick<
   ProjectDocumentState,
@@ -118,7 +121,14 @@ const specialDocumentDefinitions: Record<SpecialDocumentId, SpecialDocumentDefin
     type: GRAPHICS_EDITOR,
     iconName: "sprite",
     workspaceRestorable: true
-  }, { name: "panels.document.graphics" })
+  }, { name: "panels.document.graphics" }),
+  // --- The two-pane File Manager (`.plans/FILE_MANAGER_PLAN.md`, D1)
+  [FILE_MANAGER_PANEL_ID]: withTexts({
+    id: FILE_MANAGER_PANEL_ID,
+    type: FILE_MANAGER_EDITOR,
+    iconName: "columns-2",
+    workspaceRestorable: true
+  }, { name: "panels.document.fileManager" })
 };
 
 export function isSpecialDocumentId(id: string): id is SpecialDocumentId {

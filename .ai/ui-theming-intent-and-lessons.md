@@ -1558,6 +1558,51 @@ Any state the main process publishes for a renderer must be **re-published when 
 loads**: an action dispatched in main before a window's store exists never reaches it (the item
 was missing until the first client connected).
 
+## Two Panes Of One List: Focus Takes The Accent, Marks The Secondary Accent
+
+The File Manager (`DocumentPanels/FileManager/`) shows two lists side by side, each with a cursor and
+marked rows. The rules it settled:
+
+- **Only the focused pane wears the accent.** Its header gets a 2px `--accent-solid` top rule and its
+  cursor row the `--accent-subtle` wash with an `--accent-border` ring; the other pane keeps its
+  cursor as a neutral `--surface-selected` row, so the eye finds the pane the keys go to at once.
+- **A mark is a text colour, not a background**: `--accent-secondary-text`, semibold. Mark and cursor
+  must read apart on the same row, which a second wash cannot do.
+- **A grid of `ch` columns sizes its tracks in the grid container's font.** The header row and the
+  data rows must therefore set the same `font-family` on the grid element (the header's labels may
+  use the UI font inside their cells), or the `ch` tracks of the two rows differ and the columns
+  drift apart.
+- **The one flexible column gets a floor**: `minmax(12ch, 1fr)`, never `minmax(0, 1fr)`. A half-width
+  pane with five fixed `ch` columns otherwise gives the name column zero width and still overflows.
+  Keep the fixed columns to what their values need (`9ch` for a size, `4ch` for `RSA` or a user number).
+- **A path of clickable steps lets the earlier steps give way**: the last step keeps its name
+  (`flex-shrink: 0`, capped at 60 %), the ones before it ellipsize first.
+- **A status line's right-hand fact is not clipped**: it is `flex: 0 0 auto`, and the left text has
+  `min-width: 0` so it is the one that shortens.
+- **A table that previews what an operation will do colours only the cells that need a decision**:
+  a name changed to fit in `--status-warning`, a name that already exists in `--status-error`, every
+  other cell a neutral data value. The same two facts are also said once in a sentence under the
+  table, so colour is never the only carrier.
+- **A segmented choice is buttons in one bordered strip**, the chosen one `--accent-solid` on
+  `--text-on-accent`; there is no shared control for it yet, so copy the File Manager dialog's
+  `.segmented` rules rather than inventing another.
+- **A dialog with more than two answers keeps `DialogForm`'s footer strip** (same surface, seam,
+  padding and corner radii) and puts the safest-to-repeat answer first; the strip wraps.
+- **A pane that cannot be used now says why and offers the way out**, in place of its rows: the
+  machine's chip in `--color-state-value` (the machine-state colour), a bold one-line title, one
+  secondary sentence, one button. A drive menu item that cannot be chosen stays listed, in
+  `--text-disabled`, with the reason as its second line.
+- **A viewer that replaces a list keeps the list's frame**: the pane's header and status line stay,
+  the column headers go (`display: none`, not hidden space), and the viewer's own strip sits on
+  `--surface-header` like a panel header. Its Listing/Bytes choice is the segmented strip, not tabs.
+- **A pane that accepts a drop says so with the drop outline** the Disk Explorer uses
+  (`--accent-border`, dashed, inset), and nothing else changes colour.
+- **A right-click menu lists its command's key on the right** in `--text-tertiary` monospace, and a
+  command the row does not allow stays listed, disabled, so the menu's shape never changes.
+- **A notice after a job is a strip above the command bar**, `--accent-subtle` when all went well,
+  `--status-error-subtle` when anything was skipped, failed or cancelled; it stays until dismissed or
+  the next job, never a timed toast, because it is the only record of what the job did.
+
 ## Token Architecture
 
 Four layers, in `src/renderer/theming/tokens/`:

@@ -151,6 +151,7 @@ describe("the application menu", () => {
       "New Project...",
       "Open Folder...",
       "Open File...",
+      "File Manager...",
       "Save Snapshot...",
       "Save Machine State...",
       "Quick Save State",

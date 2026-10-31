@@ -176,6 +176,7 @@
 /en/guides/machines/zx81-zx80/index.html
 /en/guides/media/disk-explorer/index.html
 /en/guides/media/disks-tutorial/index.html
+/en/guides/media/file-manager/index.html
 /en/guides/media/machine-state/index.html
 /en/guides/media/microdrives/index.html
 /en/guides/media/rzx-recordings/index.html
@@ -188,6 +189,7 @@
 /en/guides/next/layers/index.html
 /en/guides/next/nex-files/index.html
 /en/guides/next/next-breakpoints/index.html
+/en/guides/next/next-models/index.html
 /en/guides/next/next-registers/index.html
 /en/guides/next/picture-troubleshooting/index.html
 /en/guides/next/sd-card/index.html

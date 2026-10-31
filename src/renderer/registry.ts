@@ -38,6 +38,7 @@ import {
   HISTORY_EDITOR,
   PROFILER_EDITOR,
   GRAPHICS_EDITOR,
+  FILE_MANAGER_EDITOR,
   SPRITES_EDITOR,
   TILEMAP_EDITOR,
   LAYER2_EDITOR,
@@ -62,6 +63,7 @@ import { createBasicPanel } from "./appIde/DocumentPanels/BasicPanel";
 import { createCopperListPanel } from "./appIde/DocumentPanels/CopperListPanel";
 import { createExecutionHistoryPanel } from "./appIde/DocumentPanels/ExecutionHistoryPanel";
 import { createProfilerPanel } from "./appIde/DocumentPanels/ProfilerPanel";
+import { createFileManagerPanel } from "./appIde/DocumentPanels/FileManager/FileManagerPanel";
 import { createGraphicsPanel } from "./features/graphics/GraphicsPanel";
 import { createSpriteInspectorPanel } from "./appIde/DocumentPanels/SpriteInspector/SpriteInspectorPanel";
 import { createTilemapInspectorPanel } from "./appIde/DocumentPanels/TilemapInspector/TilemapInspectorPanel";
@@ -514,6 +516,12 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
     id: PROFILER_EDITOR,
     renderer: createProfilerPanel,
     icon: "gauge"
+  },
+  {
+    // --- The two-pane File Manager (`.plans/FILE_MANAGER_PLAN.md`, D1)
+    id: FILE_MANAGER_EDITOR,
+    renderer: createFileManagerPanel,
+    icon: "columns-2"
   },
   {
     id: GRAPHICS_EDITOR,

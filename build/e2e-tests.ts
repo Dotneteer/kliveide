@@ -17,6 +17,8 @@
 
 /** Tests whose subject is a machine core: its CPU, devices, loaders, debug loop and flows. */
 export const E2E_CORE_TESTS: string[] = [
+  // --- A tape the File Manager writes, loaded by the 48K ROM (`.plans/FILE_MANAGER_PLAN.md`, Phase 6)
+  "test/file-manager/fm-tape-load.test.ts",
   // --- Whole folders: every test in them runs a core or checks a core's sources/build
   "test/wasm/**/*.test.ts",
   "test/zxnext-hw/**/*.test.ts",
