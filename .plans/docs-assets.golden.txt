@@ -135,6 +135,9 @@
 /images/en/guides/machines/videoton-tvc/tvc-video-panel.webp
 /images/en/guides/machines/zx81-zx80/p-file-listing.webp
 /images/en/guides/machines/zx81-zx80/p-file-viewer.webp
+/images/en/guides/media/file-manager/copy.webp
+/images/en/guides/media/file-manager/panes.webp
+/images/en/guides/media/file-manager/viewer.webp
 /images/en/guides/media/microdrives/cat.webp
 /images/en/guides/media/microdrives/media-strip.webp
 /images/en/guides/media/rzx-recordings/rzx-viewer.webp

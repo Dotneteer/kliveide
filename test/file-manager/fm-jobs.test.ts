@@ -20,6 +20,7 @@ import {
   directJobDeps,
   jobStatus,
   makeFolder,
+  moveOnTape,
   planTransfer,
   renameEntry,
   runTransfer,
@@ -277,6 +278,17 @@ describe("moving, cancelling, a full disk", () => {
     expect(w.trashed).toEqual([]);
   });
 
+  it("a move on one volume is a rename: nothing is copied or trashed", async () => {
+    const w = await world();
+    const inode = fs.statSync(path.join(w.root, "src", "title.scr")).ino;
+    const { result } = await copy(w, w.host, [path.join(w.root, "src", "title.scr"), path.join(w.root, "src", "gfx")], w.host, path.join(w.root, "out"), { move: true });
+    expect(result).toMatchObject({ written: 2, removeFailed: 0 });
+    expect(fs.statSync(path.join(w.root, "out", "title.scr")).ino).toBe(inode);
+    expect(fs.existsSync(path.join(w.root, "out", "gfx", "font.bin"))).toBe(true);
+    expect(fs.existsSync(path.join(w.root, "src", "gfx"))).toBe(false);
+    expect(w.trashed).toEqual([]);
+  });
+
   it("a move off a disk image deletes the files from it", async () => {
     const w = await world();
     await copy(w, w.dsk, ["GAME.BIN"], w.card, "", { move: true });
@@ -334,6 +346,19 @@ describe("moving, cancelling, a full disk", () => {
     await runTransfer(plan.id, {}, w.deps);
     expect(jobStatus(plan.id)).toMatchObject({ state: "done", done: 2, total: 2 });
     await expect(runTransfer(plan.id, {}, w.deps)).rejects.toThrow(/\[fm:failed\]/);
+  });
+});
+
+describe("tape order (Phase 7)", () => {
+  it("moves a file along a tape in one edit", async () => {
+    const w = await world();
+    const file = path.join(w.root, "order.tap");
+    fs.writeFileSync(file, new Uint8Array(0));
+    const tape = (await openImageDrives(file))[0];
+    await copy(w, w.dsk, ["DISK", "GAME.BIN", "TITLE"], tape, "");
+    await moveOnTape(tape, "TITLE", -1, w.deps);
+    expect(tapFiles(new Uint8Array(fs.readFileSync(file)), "t").map((f) => f.name)).toEqual(["DISK", "TITLE", "GAME.BIN"]);
+    await expect(moveOnTape(w.dsk, "DISK", 1, w.deps)).rejects.toThrow(/\[fm:unsupported\]/);
   });
 });
 

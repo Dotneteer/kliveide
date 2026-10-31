@@ -56,6 +56,7 @@ import {
   fmList,
   fmListDrives,
   fmMkdir,
+  fmMoveOnTape,
   fmOpenImage,
   fmPlanTransfer,
   fmRead,
@@ -496,6 +497,15 @@ class MainMessageProcessor {
     }
     // --- Input validated
     return fmRename(driveId, entryPath, newName);
+  }
+
+  fmMoveOnTape(driveId: string, name: string, by: -1 | 1) {
+    // Input validation
+    if (typeof driveId !== "string" || typeof name !== "string" || !name || (by !== -1 && by !== 1)) {
+      throw new Error("A tape drive, a file and a direction (-1 or 1) are required");
+    }
+    // --- Input validated
+    return fmMoveOnTape(driveId, name, by);
   }
 
   createHardDiskImage(filePath: string, options: { sizeMb: number; fatType: 16 | 32; label?: string; partitioned?: boolean }) {

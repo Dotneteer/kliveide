@@ -12,7 +12,11 @@ import { useDialogs } from "@renderer/controls/overlay/DialogProvider";
 import { t } from "@common/i18n/i18n";
 import { NewItemDialog, type NewItemDialogResult } from "@renderer/appIde/dialogs/NewItemDialog";
 import { RenameDialog, type RenameDialogResult } from "@renderer/appIde/dialogs/RenameDialog";
-import { FmConflictDialog, FmDeleteDialog, FmTransferDialog } from "./FileManagerDialogs";
+import { FmConflictDialog, FmDeleteDialog, FmMaskDialog, FmTransferDialog } from "./FileManagerDialogs";
+import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
+import { useGlobalSetting } from "@renderer/core/RendererProvider";
+import { openStaticMemoryDump } from "@renderer/features/memory/StaticMemoryDump";
+import { SETTING_FM_DELETE_PERMANENTLY, SETTING_FM_SHOW_HIDDEN } from "@common/settings/setting-const";
 import {
   FileManagerController,
   type ConflictAnswer,
@@ -42,6 +46,11 @@ const FileManagerPanel = ({ documentId }: { documentId: string }) => {
   const { list: rowHeight } = useRowSizes();
   const dialogs = useDialogs();
   const emuApi = useEmuApi();
+  const { ideCommandsService } = useAppServices();
+  const showHidden = !!useGlobalSetting(SETTING_FM_SHOW_HIDDEN);
+  const deletePermanently = !!useGlobalSetting(SETTING_FM_DELETE_PERMANENTLY);
+  // --- The setting applies to the panes a document opens with; read once, when it opens
+  const showHiddenRef = useRef(showHidden);
   const machineState = useSelector((s) => s.emulatorState?.machineState);
   const machineStopped =
     machineState === undefined || machineState === MachineControllerState.None || machineState === MachineControllerState.Stopped;
@@ -62,7 +71,23 @@ const FileManagerPanel = ({ documentId }: { documentId: string }) => {
         cancelJob: (id) => mainApi.fmCancelJob(id),
         deleteEntries: (driveId, paths) => mainApi.fmDelete(driveId, paths),
         mkdir: (driveId, dir, name) => mainApi.fmMkdir(driveId, dir, name),
-        rename: (driveId, path, newName) => mainApi.fmRename(driveId, path, newName)
+        rename: (driveId, path, newName) => mainApi.fmRename(driveId, path, newName),
+        read: (driveId, path) => mainApi.fmRead(driveId, path),
+        moveOnTape: (driveId, name, by) => mainApi.fmMoveOnTape(driveId, name, by)
+      },
+      shell: {
+        edit: async (filePath) => {
+          // --- `nav` opens a project file in the editor or viewer its type has; it fails outside the project
+          const result = await ideCommandsService.executeCommand(`nav "${filePath}"`);
+          return !!result?.success;
+        },
+        reveal: (filePath) => mainApi.showItemInFolder(filePath),
+        openMemory: (title, data, start) =>
+          openStaticMemoryDump(hubRef.current, `fileManager:${title}`, title, data, {
+            disassemblyEnabled: true,
+            disassOffset: start ?? 0,
+            viewMode: "memory"
+          })
       },
       dialogs: {
         confirmTransfer: (request) =>
@@ -94,7 +119,13 @@ const FileManagerPanel = ({ documentId }: { documentId: string }) => {
             RenameDialog,
             { oldPath: oldName },
             { title: t("panels.fileManager.dialog.renameTitle"), width: 420, iconName: "pencil" }
-          ))?.name
+          ))?.name,
+        askMask: ({ mark }) =>
+          dialogs.open<string, Omit<ComponentProps<typeof FmMaskDialog>, "controls">>(
+            FmMaskDialog,
+            { mark },
+            { title: t(mark ? "panels.fileManager.mask.markTitle" : "panels.fileManager.mask.unmarkTitle"), width: 380 }
+          )
       },
       wait: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
       machine: { stop: () => emuApi.issueMachineCommand("stop") },
@@ -116,8 +147,12 @@ const FileManagerPanel = ({ documentId }: { documentId: string }) => {
 
   useEffect(() => {
     const saved = (hubRef.current.getDocumentViewState(documentId) as FileManagerViewState)?.locations;
-    void controller.dispatch({ type: "activated", locations: saved });
+    void controller.dispatch({ type: "activated", locations: saved, showHidden: showHiddenRef.current });
   }, [controller, documentId]);
+
+  useEffect(() => {
+    void controller.dispatch({ type: "deleteModeChanged", permanently: deletePermanently });
+  }, [controller, deletePermanently]);
 
   // --- The machine's storage is a drive only while the machine is stopped (D4)
   useEffect(() => {

@@ -168,13 +168,13 @@ describe("delete, new folder, rename", () => {
     const h = await openFileManager();
     await cursorOn(h, "b.tap");
     await h.dispatch({ type: "deleteRequested" });
-    expect(h.ports.dialogs.confirmDelete).toHaveBeenCalledWith({ names: ["b.tap"], permanent: false });
+    expect(h.ports.dialogs.confirmDelete).toHaveBeenCalledWith({ names: ["b.tap"], mode: "trash" });
     expect(h.ports.fm.deleteEntries).toHaveBeenCalledWith(PROJECT.id, ["/home/me/game/b.tap"]);
 
     await h.dispatch({ type: "rowActivated", side: 0, index: names(h, 0).indexOf("game.dsk") });
     await h.dispatch({ type: "cursorMoved", side: 0, to: 1 });
     await h.dispatch({ type: "deleteRequested" });
-    expect(h.ports.dialogs.confirmDelete).toHaveBeenLastCalledWith({ names: ["DISK"], permanent: true });
+    expect(h.ports.dialogs.confirmDelete).toHaveBeenLastCalledWith({ names: ["DISK"], mode: "image" });
     expect(h.ports.fm.deleteEntries).toHaveBeenLastCalledWith(GAME_DSK.id, ["DISK"]);
   });
 

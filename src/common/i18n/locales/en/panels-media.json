@@ -4576,5 +4576,101 @@
   "panels.fileManager.error.machineRunning": "The machine is running: stop it to use its storage.",
   "@panels.fileManager.error.machineRunning": {
     "context": "File Manager (a two-pane file manager document): an operation on the machine's storage was refused, or stopped, because the machine runs."
+  },
+  "panels.fileManager.viewer.start": "start {start}",
+  "@panels.fileManager.viewer.start": {
+    "context": "File Manager (a two-pane file manager document): the viewer (F3) over a pane: facts line: a code file's load address.",
+    "placeholders": {
+      "start": "The address, in decimal"
+    }
+  },
+  "panels.fileManager.viewer.line": "LINE {line}",
+  "@panels.fileManager.viewer.line": {
+    "context": "File Manager (a two-pane file manager document): the viewer (F3) over a pane: facts line: the line a BASIC program runs from. LINE is a BASIC keyword, not translated.",
+    "placeholders": {
+      "line": "The line number"
+    }
+  },
+  "panels.fileManager.viewer.listing": "Listing",
+  "@panels.fileManager.viewer.listing": {
+    "context": "File Manager (a two-pane file manager document): the viewer (F3) over a pane: toggle button: show the BASIC program as a listing."
+  },
+  "panels.fileManager.viewer.picture": "Picture",
+  "@panels.fileManager.viewer.picture": {
+    "context": "File Manager (a two-pane file manager document): the viewer (F3) over a pane: toggle button: show a screen file as the picture."
+  },
+  "panels.fileManager.viewer.text": "Text",
+  "@panels.fileManager.viewer.text": {
+    "context": "File Manager (a two-pane file manager document): the viewer (F3) over a pane: toggle button: show the file as text."
+  },
+  "panels.fileManager.viewer.hex": "Bytes",
+  "@panels.fileManager.viewer.hex": {
+    "context": "File Manager (a two-pane file manager document): the viewer (F3) over a pane: toggle button: show the file's bytes."
+  },
+  "panels.fileManager.viewer.memory": "Open as memory",
+  "@panels.fileManager.viewer.memory": {
+    "context": "File Manager (a two-pane file manager document): the viewer (F3) over a pane: button: opens the file's bytes in a memory document (with disassembly)."
+  },
+  "panels.fileManager.viewer.close": "Close",
+  "@panels.fileManager.viewer.close": {
+    "context": "File Manager (a two-pane file manager document): the viewer (F3) over a pane: button: closes the viewer (also Esc or F3)."
+  },
+  "panels.fileManager.context.view": "View",
+  "@panels.fileManager.context.view": {
+    "context": "File Manager (a two-pane file manager document): right-click menu item (F3): views the file."
+  },
+  "panels.fileManager.context.edit": "Edit",
+  "@panels.fileManager.context.edit": {
+    "context": "File Manager (a two-pane file manager document): right-click menu item (F4): opens a project file in its editor."
+  },
+  "panels.fileManager.context.moveUp": "Move up the tape",
+  "@panels.fileManager.context.moveUp": {
+    "context": "File Manager (a two-pane file manager document): right-click menu item on a tape file: moves it one place earlier on the tape."
+  },
+  "panels.fileManager.context.moveDown": "Move down the tape",
+  "@panels.fileManager.context.moveDown": {
+    "context": "File Manager (a two-pane file manager document): right-click menu item on a tape file: moves it one place later on the tape."
+  },
+  "panels.fileManager.context.reveal": "Reveal in the system's file manager",
+  "@panels.fileManager.context.reveal": {
+    "context": "File Manager (a two-pane file manager document): right-click menu item: shows the file in Finder or File Explorer."
+  },
+  "panels.fileManager.mask.markTitle": "Mark files",
+  "@panels.fileManager.mask.markTitle": {
+    "context": "File Manager (a two-pane file manager document): title of the dialog that marks the files whose names match a mask (the + key)."
+  },
+  "panels.fileManager.mask.unmarkTitle": "Unmark files",
+  "@panels.fileManager.mask.unmarkTitle": {
+    "context": "File Manager (a two-pane file manager document): title of the dialog that unmarks the files whose names match a mask (the - key)."
+  },
+  "panels.fileManager.mask.label": "Names like",
+  "@panels.fileManager.mask.label": {
+    "context": "File Manager (a two-pane file manager document): label of the mask field, e.g. *.tap."
+  },
+  "panels.fileManager.mask.hint": "* stands for any characters, ? for one; separate masks with ; (e.g. *.tap;*.tzx).",
+  "@panels.fileManager.mask.hint": {
+    "context": "File Manager (a two-pane file manager document): help under the mask field."
+  },
+  "panels.fileManager.mask.mark": "Mark",
+  "@panels.fileManager.mask.mark": {
+    "context": "File Manager (a two-pane file manager document): the mark dialog's button."
+  },
+  "panels.fileManager.mask.unmark": "Unmark",
+  "@panels.fileManager.mask.unmark": {
+    "context": "File Manager (a two-pane file manager document): the unmark dialog's button."
+  },
+  "panels.fileManager.dialog.deleteForGood": "{count, plural, one {It is deleted for good: it does not go to the trash.} other {They are deleted for good: they do not go to the trash.}}",
+  "@panels.fileManager.dialog.deleteForGood": {
+    "context": "File Manager (a two-pane file manager document): delete dialog: Settings say this computer's files are deleted permanently.",
+    "placeholders": {
+      "count": "How many items are deleted"
+    }
+  },
+  "panels.fileManager.error.notProjectFile": "{name} is not a project file: only the open project's files open in the editor.",
+  "@panels.fileManager.error.notProjectFile": {
+    "context": "File Manager (a two-pane file manager document): F4 (Edit) on a file outside the open project.",
+    "placeholders": {
+      "name": "The file's name"
+    }
   }
 }

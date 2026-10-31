@@ -23,6 +23,16 @@ export type PaneLocation = { driveId: string; dir?: string };
 
 export type PaneError = { code: FmErrorCode; name?: string };
 
+/** F3's viewer over a pane (Phase 7) */
+export type FmViewer = {
+  entry: FmEntry;
+  status: "loading" | "ready" | "error";
+  data?: Uint8Array;
+  /** Bytes, whatever the file is */
+  hex: boolean;
+  error?: PaneError;
+};
+
 export type PaneState = {
   drive?: FmDriveRef;
   dir?: string;
@@ -39,6 +49,7 @@ export type PaneState = {
   returnTo: readonly ReturnPoint[];
   /** Put the cursor on this entry once the listing arrives */
   cursorName?: string;
+  viewer?: FmViewer;
 };
 
 /** A job under way (Phase 4) */
@@ -73,6 +84,8 @@ export type FmState = {
   transferOptions: FmTransferOptions;
   /** The machine is stopped (or never started): its storage can be used (D4) */
   machineStopped: boolean;
+  /** Settings › File Manager: this computer's files are deleted for good, not to the trash */
+  deletePermanently: boolean;
 };
 
 export type FmEvent =
@@ -98,7 +111,15 @@ export type FmEvent =
   | { type: "noticeShown"; notice: FmNotice }
   | { type: "noticeDismissed" }
   | { type: "transferOptionsSet"; options: FmTransferOptions }
-  | { type: "machineStateSet"; stopped: boolean };
+  | { type: "machineStateSet"; stopped: boolean }
+  | { type: "viewerOpened"; side: PaneSide; entry: FmEntry }
+  | { type: "viewerLoaded"; side: PaneSide; data: Uint8Array }
+  | { type: "viewerFailed"; side: PaneSide; error: PaneError }
+  | { type: "viewerClosed"; side: PaneSide }
+  | { type: "viewerHexToggled"; side: PaneSide }
+  | { type: "marksSet"; side: PaneSide; paths: string[] }
+  | { type: "hiddenDefaultSet"; showHidden: boolean }
+  | { type: "deleteModeSet"; permanently: boolean };
 
 export const DEFAULT_SORT: PaneSort = { key: "name", descending: false };
 
@@ -107,7 +128,7 @@ export function emptyPane (): PaneState {
 }
 
 export function initialState (): FmState {
-  return { panes: [emptyPane(), emptyPane()], active: 0, drives: [], openedImages: [], transferOptions: DEFAULT_TRANSFER_OPTIONS, machineStopped: true };
+  return { panes: [emptyPane(), emptyPane()], active: 0, drives: [], openedImages: [], transferOptions: DEFAULT_TRANSFER_OPTIONS, machineStopped: true, deletePermanently: false };
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -216,6 +237,7 @@ export function reduce (state: FmState, event: FmEvent): FmState {
         status: "loading",
         error: undefined,
         cursorName: event.cursorName,
+        viewer: sameFolder ? pane.viewer : undefined,
         marked: sameFolder ? pane.marked : [],
         returnTo: event.returnTo ?? pane.returnTo,
         // --- A new folder starts at the top; a refresh keeps the cursor where it was
@@ -319,6 +341,40 @@ export function reduce (state: FmState, event: FmEvent): FmState {
       return { ...state, transferOptions: event.options };
     case "machineStateSet":
       return state.machineStopped === event.stopped ? state : { ...state, machineStopped: event.stopped };
+    case "viewerOpened": {
+      const pane = state.panes[event.side];
+      return withPane(state, event.side, { ...pane, viewer: { entry: event.entry, status: "loading", hex: false } });
+    }
+    case "viewerLoaded": {
+      const pane = state.panes[event.side];
+      return pane.viewer ? withPane(state, event.side, { ...pane, viewer: { ...pane.viewer, status: "ready", data: event.data } }) : state;
+    }
+    case "viewerFailed": {
+      const pane = state.panes[event.side];
+      return pane.viewer ? withPane(state, event.side, { ...pane, viewer: { ...pane.viewer, status: "error", error: event.error } }) : state;
+    }
+    case "viewerClosed": {
+      const pane = state.panes[event.side];
+      return pane.viewer ? withPane(state, event.side, { ...pane, viewer: undefined }) : state;
+    }
+    case "viewerHexToggled": {
+      const pane = state.panes[event.side];
+      return pane.viewer ? withPane(state, event.side, { ...pane, viewer: { ...pane.viewer, hex: !pane.viewer.hex } }) : state;
+    }
+    case "marksSet": {
+      const pane = state.panes[event.side];
+      return withPane(state, event.side, { ...pane, marked: event.paths });
+    }
+    case "deleteModeSet":
+      return state.deletePermanently === event.permanently ? state : { ...state, deletePermanently: event.permanently };
+    case "hiddenDefaultSet":
+      return {
+        ...state,
+        panes: [
+          { ...state.panes[0], showHidden: event.showHidden },
+          { ...state.panes[1], showHidden: event.showHidden }
+        ]
+      };
   }
 }
 
@@ -341,4 +397,28 @@ export function locationsOf (state: FmState): [PaneLocation | undefined, PaneLoc
 /** A pane on the machine's storage while the machine runs: blocked until it stops (D4) */
 export function isBlocked (state: FmState, side: PaneSide): boolean {
   return !state.machineStopped && state.panes[side].drive?.group === "machine";
+}
+
+/**
+ * Does a name match a mask (select by mask, Phase 7)? `*` and `?` as wildcards, several masks
+ * separated by `;` or `,`, case-insensitive; `*.*` takes every name, a dot or none.
+ */
+export function maskMatches (mask: string, name: string): boolean {
+  return mask
+    .split(/[;,]/)
+    .map((m) => m.trim())
+    .filter(Boolean)
+    .some((m) => {
+      if (m === "*.*" || m === "*") return true;
+      const pattern = m.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*").replace(/\?/g, ".");
+      return new RegExp(`^${pattern}$`, "i").test(name);
+    });
+}
+
+/** The files of a pane a mask marks (`mark`) or unmarks: the new set of marks */
+export function marksByMask (pane: PaneState, mask: string, mark: boolean): string[] {
+  const files = paneRows(pane).flatMap((r) => (r.kind === "entry" && !r.entry.isDirectory ? [r.entry] : []));
+  const hits = new Set(files.filter((e) => maskMatches(mask, e.name)).map((e) => e.path));
+  if (mark) return [...pane.marked, ...[...hits].filter((p) => !pane.marked.includes(p))];
+  return pane.marked.filter((p) => !hits.has(p));
 }

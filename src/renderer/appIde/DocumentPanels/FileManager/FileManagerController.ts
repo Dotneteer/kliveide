@@ -18,6 +18,7 @@ import {
   initialState,
   isBlocked,
   locationsOf,
+  marksByMask,
   paneRows,
   reduce,
   type FmEvent,
@@ -46,7 +47,22 @@ export type FileManagerPort = {
   deleteEntries(driveId: string, paths: string[]): Promise<FmDeleteResult>;
   mkdir(driveId: string, dir: string, name: string): Promise<string>;
   rename(driveId: string, path: string, newName: string): Promise<string>;
+  read(driveId: string, path: string): Promise<Uint8Array>;
+  moveOnTape(driveId: string, name: string, by: -1 | 1): Promise<void>;
 };
+
+/** The IDE around the File Manager (Phase 7) */
+export type ShellPort = {
+  /** Opens a project file in its editor or viewer; false when it is not a project file */
+  edit(filePath: string): Promise<boolean>;
+  /** Shows a file of this computer in the system's file manager */
+  reveal(filePath: string): Promise<void>;
+  /** Opens bytes as a memory document */
+  openMemory(title: string, data: Uint8Array, start?: number): Promise<void>;
+};
+
+/** Files dropped on a pane: from the other pane, or this computer's paths (Project Explorer, OS) */
+export type DropSource = { kind: "pane"; driveId: string; paths: string[] } | { kind: "host"; paths: string[] };
 
 /** What the copy dialog hands back: the plan to run (re-planned as its options changed) */
 export type TransferConfirmation = {
@@ -69,13 +85,17 @@ export type ConflictAnswer =
   | { kind: "replace" | "skip" | "replaceAll" | "skipAll" | "cancel" }
   | { kind: "rename"; name: string };
 
+export type DeleteMode = "trash" | "permanent" | "image";
+
 /** The dialogs a command asks through */
 export type FileManagerDialogPort = {
   confirmTransfer(request: TransferDialogRequest): Promise<TransferConfirmation | undefined>;
   resolveConflict(request: { item: FmPlanItem; suggestion: string; remaining: number }): Promise<ConflictAnswer>;
-  confirmDelete(request: { names: string[]; permanent: boolean }): Promise<boolean>;
+  /** `trash`: this computer's trash; `permanent`: for good (Settings); `image`: off a disk image */
+  confirmDelete(request: { names: string[]; mode: DeleteMode }): Promise<boolean>;
   askFolderName(request: { where: string; existing: string[] }): Promise<string | undefined>;
   askNewName(request: { oldName: string }): Promise<string | undefined>;
+  askMask(request: { mark: boolean }): Promise<string | undefined>;
 };
 
 /** Where the document keeps its panes' places */
@@ -91,6 +111,7 @@ export type MachinePort = {
 export type FileManagerPorts = {
   fm: FileManagerPort;
   machine: MachinePort;
+  shell: ShellPort;
   picker: Pick<FilePickerPort, "pickFile">;
   locations: LocationStorePort;
   dialogs: FileManagerDialogPort;
@@ -99,7 +120,7 @@ export type FileManagerPorts = {
 };
 
 export type FileManagerIntent =
-  | { type: "activated"; locations?: [PaneLocation | undefined, PaneLocation | undefined] }
+  | { type: "activated"; locations?: [PaneLocation | undefined, PaneLocation | undefined]; showHidden?: boolean }
   | { type: "paneFocused"; side: PaneSide }
   | { type: "paneSwitched" }
   | { type: "cursorMoved"; side: PaneSide; to: number }
@@ -123,12 +144,24 @@ export type FileManagerIntent =
   | { type: "jobCancelRequested" }
   | { type: "noticeDismissed" }
   | { type: "machineStateChanged"; stopped: boolean }
-  | { type: "stopMachineRequested" };
+  | { type: "stopMachineRequested" }
+  | { type: "viewRequested" }
+  | { type: "viewerClosed" }
+  | { type: "viewerHexToggled" }
+  | { type: "viewerMemoryRequested" }
+  | { type: "editRequested" }
+  | { type: "maskRequested"; mark: boolean }
+  | { type: "tapeMoveRequested"; by: -1 | 1 }
+  | { type: "revealRequested" }
+  | { type: "dropReceived"; side: PaneSide; source: DropSource; move: boolean }
+  | { type: "deleteModeChanged"; permanently: boolean };
 
 const IMAGE_FILTER_EXTENSIONS = ["dsk", "trd", "scl", "mdr", "img", "hdf", "cim"];
 
 const WRITING_INTENTS = new Set<FileManagerIntent["type"]>([
   "transferRequested",
+  "dropReceived",
+  "tapeMoveRequested",
   "deleteRequested",
   "mkdirRequested",
   "renameRequested",
@@ -138,6 +171,9 @@ const WRITING_INTENTS = new Set<FileManagerIntent["type"]>([
 
 const BLOCKED_INTENTS = new Set<FileManagerIntent["type"]>([
   "transferRequested",
+  "viewRequested",
+  "editRequested",
+  "tapeMoveRequested",
   "deleteRequested",
   "mkdirRequested",
   "renameRequested",
@@ -163,6 +199,7 @@ export class FileManagerController extends UiController<FmState, FileManagerInte
     if (BLOCKED_INTENTS.has(intent.type) && isBlocked(this.state, this.state.active)) return;
     switch (intent.type) {
       case "activated":
+        if (intent.showHidden !== undefined) this.emit({ type: "hiddenDefaultSet", showHidden: intent.showHidden });
         return this.start(intent.locations);
       case "paneFocused":
         this.emit({ type: "activeSet", side: intent.side });
@@ -244,6 +281,41 @@ export class FileManagerController extends UiController<FmState, FileManagerInte
         return this.machineStateChanged(intent.stopped);
       case "stopMachineRequested":
         await this.ports.machine.stop();
+        return;
+      case "viewRequested":
+        return this.view();
+      case "viewerClosed":
+        this.emit({ type: "viewerClosed", side: this.state.active });
+        return;
+      case "viewerHexToggled":
+        this.emit({ type: "viewerHexToggled", side: this.state.active });
+        return;
+      case "viewerMemoryRequested": {
+        const viewer = this.state.panes[this.state.active].viewer;
+        if (viewer?.data) await this.ports.shell.openMemory(viewer.entry.name, viewer.data, viewer.entry.spectrum?.start);
+        return;
+      }
+      case "editRequested":
+        return this.edit();
+      case "maskRequested": {
+        const side = this.state.active;
+        const mask = await this.ports.dialogs.askMask({ mark: intent.mark });
+        if (!mask) return;
+        this.emit({ type: "marksSet", side, paths: marksByMask(this.state.panes[side], mask, intent.mark) });
+        return;
+      }
+      case "tapeMoveRequested":
+        return this.moveOnTape(intent.by);
+      case "revealRequested": {
+        const pane = this.state.panes[this.state.active];
+        const entry = entryAtCursor(pane);
+        if (entry && (pane.drive?.kind === "host" || pane.drive?.kind === "project")) await this.ports.shell.reveal(entry.path);
+        return;
+      }
+      case "dropReceived":
+        return this.drop(intent.side, intent.source, intent.move);
+      case "deleteModeChanged":
+        this.emit({ type: "deleteModeSet", permanently: intent.permanently });
         return;
       case "openImageRequested": {
         this.emit({ type: "menuClosed" });
@@ -397,12 +469,45 @@ export class FileManagerController extends UiController<FmState, FileManagerInte
     const side = this.state.active;
     const other: PaneSide = side === 0 ? 1 : 0;
     const source = this.state.panes[side];
-    const target = this.state.panes[other];
     const chosen = chosenEntries(source);
-    if (!source.drive || !target.drive || chosen.length === 0) return;
+    if (!source.drive || chosen.length === 0) return;
+    await this.transferFiles(move, source.drive.id, chosen.map((e) => e.path), chosen.length === 1 ? chosen[0].name : String(chosen.length), other, side);
+  }
+
+  /** Files dropped on a pane: from the other pane, or this computer's paths */
+  private async drop (side: PaneSide, dropped: DropSource, move: boolean): Promise<void> {
+    if (isBlocked(this.state, side) || dropped.paths.length === 0) return;
+    this.emit({ type: "activeSet", side });
+    let driveId: string | undefined;
+    if (dropped.kind === "pane") {
+      driveId = dropped.driveId;
+    } else {
+      // --- A path of this computer is on the host drive whose top holds it (the longest such top)
+      const hosts = this.state.drives.filter((d) => d.kind === "host" && d.role !== "home" && dropped.paths.every((p) => isInsideRoot(p, d.root)));
+      driveId = hosts.sort((a, b) => b.root.length - a.root.length)[0]?.id;
+    }
+    if (!driveId) return;
+    const name = dropped.paths.length === 1 ? dropped.paths[0].replace(/^.*[\\/]/, "") : String(dropped.paths.length);
+    const sourceSide = ([0, 1] as PaneSide[]).find((s) => s !== side && this.state.panes[s].drive?.id === driveId);
+    await this.transferFiles(move, driveId, dropped.paths, name, side, sourceSide);
+  }
+
+  private async transferFiles (
+    move: boolean,
+    sourceDriveId: string,
+    paths: string[],
+    sourceLabel: string,
+    targetSide: PaneSide,
+    sourceSide?: PaneSide
+  ): Promise<void> {
+    const side = sourceSide;
+    const other = targetSide;
+    const target = this.state.panes[other];
+    if (!target.drive) return;
+    const chosen = paths.map((p) => ({ name: p.replace(/^.*[\\/]/, ""), path: p }));
     const request = (options: FmTransferOptions): FmTransferRequest => ({
-      sourceDriveId: source.drive!.id,
-      paths: chosen.map((e) => e.path),
+      sourceDriveId,
+      paths,
       targetDriveId: target.drive!.id,
       targetDir: target.dir ?? "",
       move,
@@ -419,7 +524,7 @@ export class FileManagerController extends UiController<FmState, FileManagerInte
     const confirmed = await this.ports.dialogs.confirmTransfer({
       plan,
       options: this.state.transferOptions,
-      sourceLabel: chosen.length === 1 ? chosen[0].name : String(chosen.length),
+      sourceLabel,
       targetLabel: target.dir || target.drive.name,
       replan: (options) => this.ports.fm.planTransfer(request(options))
     });
@@ -450,8 +555,8 @@ export class FileManagerController extends UiController<FmState, FileManagerInte
         ? { kind: "transfer", move, result, skippedFolders: plan.skippedFolders.length }
         : { kind: "error", code: fmErrorCodeOf(failure), name: target.drive.name }
     });
-    this.emit({ type: "marksCleared", side });
-    await Promise.all([this.refresh(side), this.refresh(other)]);
+    if (side !== undefined) this.emit({ type: "marksCleared", side });
+    await Promise.all(([0, 1] as PaneSide[]).map((s) => this.refresh(s)));
   }
 
   /** The answers to a plan's conflicts; undefined when the user cancelled */
@@ -499,8 +604,9 @@ export class FileManagerController extends UiController<FmState, FileManagerInte
     const pane = this.state.panes[side];
     const chosen = chosenEntries(pane);
     if (!pane.drive || chosen.length === 0) return;
-    const permanent = pane.drive.kind !== "host" && pane.drive.kind !== "project";
-    const ok = await this.ports.dialogs.confirmDelete({ names: chosen.map((e) => e.name), permanent });
+    const onHost = pane.drive.kind === "host" || pane.drive.kind === "project";
+    const mode: DeleteMode = !onHost ? "image" : this.state.deletePermanently ? "permanent" : "trash";
+    const ok = await this.ports.dialogs.confirmDelete({ names: chosen.map((e) => e.name), mode });
     if (!ok) return;
     this.emit({ type: "jobStarted", job: { kind: "delete", done: 0, total: chosen.length } });
     try {
@@ -552,6 +658,49 @@ export class FileManagerController extends UiController<FmState, FileManagerInte
     await this.refreshIfSame(side);
   }
 
+  /** F3: the file under the cursor in the pane's viewer */
+  private async view (): Promise<void> {
+    const side = this.state.active;
+    const pane = this.state.panes[side];
+    if (pane.viewer) {
+      this.emit({ type: "viewerClosed", side });
+      return;
+    }
+    const entry = entryAtCursor(pane);
+    if (!pane.drive || !entry || entry.isDirectory) return;
+    this.emit({ type: "viewerOpened", side, entry });
+    try {
+      const data = await this.ports.fm.read(pane.drive.id, entry.path);
+      this.emit({ type: "viewerLoaded", side, data });
+    } catch (err) {
+      this.emit({ type: "viewerFailed", side, error: { code: fmErrorCodeOf(err), name: entry.name } });
+    }
+  }
+
+  /** F4: a project file in its editor */
+  private async edit (): Promise<void> {
+    const pane = this.state.panes[this.state.active];
+    const entry = entryAtCursor(pane);
+    if (!pane.drive || !entry || entry.isDirectory) return;
+    const opened = (pane.drive.kind === "host" || pane.drive.kind === "project") && (await this.ports.shell.edit(entry.path));
+    if (!opened) this.emit({ type: "noticeShown", notice: { kind: "error", code: "notProjectFile", name: entry.name } });
+  }
+
+  /** A file one place along a tape */
+  private async moveOnTape (by: -1 | 1): Promise<void> {
+    const side = this.state.active;
+    const pane = this.state.panes[side];
+    const entry = entryAtCursor(pane);
+    if (!pane.drive || !entry || pane.listing?.columns !== "tape") return;
+    try {
+      await this.ports.fm.moveOnTape(pane.drive.id, entry.path, by);
+    } catch (err) {
+      this.emit({ type: "noticeShown", notice: { kind: "error", code: fmErrorCodeOf(err), name: entry.name } });
+      return;
+    }
+    await this.refresh(side, entry.name);
+  }
+
   /** The machine started or stopped: its storage panes block, or come back where they were */
   private async machineStateChanged (stopped: boolean): Promise<void> {
     if (this.state.machineStopped === stopped) return;
@@ -581,4 +730,11 @@ export class FileManagerController extends UiController<FmState, FileManagerInte
   private saveLocations (): void {
     this.ports.locations.save(locationsOf(this.state));
   }
+}
+
+function isInsideRoot (filePath: string, root: string): boolean {
+  const norm = (p: string) => p.replace(/\\/g, "/").replace(/\/+$/, "");
+  const r = norm(root);
+  const p = norm(filePath);
+  return r === "" || p === r || p.startsWith(`${r}/`);
 }

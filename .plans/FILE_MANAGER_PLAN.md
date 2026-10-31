@@ -1,6 +1,6 @@
 # Klive File Manager (two-pane commander) — Implementation Plan
 
-**Status:** Phases 1–6 built (2026-10-31): the drive layer, browsing, transfer planning, the jobs, machine storage and tapes (§12). Next: Phase 7 (viewer, drag and drop, polish) and Phase 8 (docs, release). Decisions D1–D10 in §3 are accepted, and with
+**Status:** Phases 1–8 built (2026-10-31): the first release is complete (§12). Phase 9 (more file systems) stays for later, with Q4 and Q5.
 them the proposed answers to Q1–Q3 (§11); Q4 and Q5 stay open until Phase 8 and Phase 9.
 **Mockups:** `.plans/mockups/file-manager.html` (open it in a browser; it has tabs for each screen and
 a light/dark switch).
@@ -467,3 +467,38 @@ Still open:
   Next's machine storage (only its SD card listed, browsed read-only). The running-machine pane was
   checked by the controller tests, not live: starting the emulated Next would boot the author's own
   card.
+
+### Phases 7 and 8 (2026-10-31)
+
+- **Viewer (F3)** (`FileManagerViewer.tsx`): over the active pane, a BASIC program as its listing
+  (the BASIC view's decoder), a SCREEN$ (or a 6,912-byte `.scr`) as its picture, text (no zero bytes,
+  98 % printable) as text, anything else as bytes; a Listing/Bytes toggle and **Open as memory**
+  (the static memory document, with disassembly from the file's start). Esc or F3 closes it; a new
+  folder closes it.
+- **Edit (F4)** runs `nav` on the file: a project file opens in its editor or viewer (a `.dsk` in the
+  Disk Explorer). Anything else says it is not a project file.
+- **Right-click menu**: View, Edit, Copy, Move, Rename, Delete, Move up/down the tape (on a tape),
+  Reveal in the system's file manager (this computer's files), each with its key and enabled by
+  what the row allows.
+- **Marking by mask**: `+` and `-` with `*`, `?` and `;`; `*.*` takes every name.
+- **Tape order**: Alt+↑ and Alt+↓ (and the menu) move a file along a tape in one edit
+  (`fmMoveOnTape`), the cursor following it.
+- **Drag and drop**: rows drag to the other pane (copy; Shift moves) under their own MIME type, and
+  this computer's rows also carry the Project Explorer's, so the Disk Explorer takes them. A pane
+  takes files from the Project Explorer and the OS; they are copied from the host drive whose top
+  holds them.
+- **A move on one volume is a rename** (`renameOnVolume`): no copy, no removal, unless a name is
+  already there.
+- **Settings › General › File Manager**: *Show hidden files in new panes*, *Delete this computer's
+  files permanently* (D7). The delete dialog says which of three things happens: the trash, for
+  good by the setting, or for good off an image.
+- **Smaller changes found while checking:** a FAT card's dot files (`.DS_Store`) are hidden like the
+  host's; the project's top in the path is its name, not its full path (a path in a shot showed the
+  author's home folder); the column headers go when the viewer opens.
+- **Docs**: `docs/content/en/guides/media/file-manager.mdx` (Media group), linked from the Disk
+  Explorer, Project Explorer and Next SD card guides. Its three shots come from
+  `scripts/doc-shots/recipes/guides-file-manager.cjs`, on a fixture project and the sample `.dsk`, so
+  no shot shows this computer's own drives. The changeset is `.changes/file-manager-two-pane-file-60d9.md`.
+- **Not built in the first release:** a CLI (Q4), the +3DOS 128-byte header on FAT under Keep headers,
+  Start waiting for a running job (§12, Phases 5–6), and the two slow machine tests of Phase 5 (a Next
+  booting a card the File Manager wrote, a +3 `LOAD`ing a disk it wrote).

@@ -33,6 +33,8 @@ import { aroundSdCard, isActiveSdCard } from "../hard-disk-edit";
 import { mainStore } from "../main-store";
 import { getKliveHomeBase } from "../portable";
 import { withSdCardAccess } from "../sd-card-access";
+import { getSettingValue } from "../settings-utils";
+import { SETTING_FM_DELETE_PERMANENTLY } from "@common/settings/setting-const";
 import {
   defaultHostEnv,
   hostSpace,
@@ -52,6 +54,7 @@ import {
   deleteEntries,
   jobStatus,
   makeFolder,
+  moveOnTape,
   planTransfer,
   renameEntry,
   runTransfer,
@@ -211,7 +214,13 @@ export function fmCancelJob (id: string): void {
 }
 
 export async function fmDelete (driveId: string, paths: string[]): Promise<FmDeleteResult> {
-  return deleteEntries(await resolveDrive(driveId), paths, jobDeps);
+  // --- To the Trash on this computer unless the user chose otherwise in Settings (D7)
+  const permanent = !!getSettingValue(SETTING_FM_DELETE_PERMANENTLY);
+  return deleteEntries(await resolveDrive(driveId), paths, jobDeps, { permanent });
+}
+
+export async function fmMoveOnTape (driveId: string, name: string, by: -1 | 1): Promise<void> {
+  await moveOnTape(await resolveDrive(driveId), name, by, jobDeps);
 }
 
 export async function fmMkdir (driveId: string, dir: string, name: string): Promise<string> {

@@ -117,6 +117,7 @@ export type FmErrorCode =
   | "sameFolder"
   | "intoItself"
   | "machineRunning"
+  | "notProjectFile"
   | "failed";
 
 /** The kinds of image a pane can enter */

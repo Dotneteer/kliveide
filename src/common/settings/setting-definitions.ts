@@ -75,6 +75,8 @@ import {
   SETTING_IDE_SIDEBAR_WIDTH,
   SETTING_IDE_SYNC_BREAKPOINTS,
   SETTING_IDE_BP_GROUP_BY_KIND,
+  SETTING_FM_SHOW_HIDDEN,
+  SETTING_FM_DELETE_PERMANENTLY,
   SETTING_IDE_TOOLPANEL_HEIGHT,
   SETTING_IDE_TOOLS_ON_TOP,
   SETTING_EDITOR_AUTOCOMPLETE,
@@ -628,6 +630,24 @@ const settingDefinitions: Setting[] = [
     id: SETTING_IDE_MAXIMIZE_TOOLS,
     title: "Maximize Commands and Output",
     description: "Maximizes the command and output panels in the IDE view.",
+    type: "boolean",
+    defaultValue: false,
+    saveWithIde: true,
+    boundTo: "ide"
+  },
+  {
+    id: SETTING_FM_SHOW_HIDDEN,
+    title: "File Manager: Show Hidden Files",
+    description: "Show hidden files (names starting with a dot) in new File Manager panes.",
+    type: "boolean",
+    defaultValue: false,
+    saveWithIde: true,
+    boundTo: "ide"
+  },
+  {
+    id: SETTING_FM_DELETE_PERMANENTLY,
+    title: "File Manager: Delete Permanently",
+    description: "Delete this computer's files for good instead of moving them to the trash.",
     type: "boolean",
     defaultValue: false,
     saveWithIde: true,

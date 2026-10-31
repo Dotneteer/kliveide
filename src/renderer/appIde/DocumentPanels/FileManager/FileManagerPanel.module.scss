@@ -506,3 +506,130 @@
   max-width: 40ch;
   color: var(--text-secondary);
 }
+
+/* --- A drop on a pane: the pane is the target */
+.dropping .list {
+  outline: 2px dashed var(--accent-border);
+  outline-offset: -2px;
+}
+
+/* --- The right-click menu, at the pointer */
+.contextMenu {
+  position: absolute;
+  z-index: 2;
+  min-width: 28ch;
+  padding: var(--space-1) 0;
+  border: 1px solid var(--border-context-menu);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-context-menu);
+  font-family: var(--main-font-family);
+}
+
+.contextItem {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-4);
+  width: 100%;
+  padding: var(--space-0_5) var(--space-3);
+  border: 0;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.contextItem:hover:not(:disabled) {
+  background: var(--surface-hover);
+}
+
+.contextItem:disabled {
+  color: var(--text-disabled);
+  cursor: default;
+}
+
+/* --- F3's viewer, in place of the rows */
+.viewer {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  height: 100%;
+  min-height: 0;
+}
+
+.viewerHead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  padding: var(--space-1) var(--space-2);
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--surface-header);
+  font-family: var(--main-font-family);
+}
+
+.viewerTitle {
+  font-family: var(--monospace-font);
+}
+
+.viewerFacts {
+  color: var(--data-secondary);
+}
+
+.viewerActions {
+  display: inline-flex;
+  gap: var(--space-1);
+  margin-left: auto;
+}
+
+.toggle {
+  display: inline-flex;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.toggleItem,
+.toggleOn {
+  padding: 0 var(--space-2);
+  border: 0;
+  font: inherit;
+  cursor: pointer;
+}
+
+.toggleItem {
+  background: var(--surface-raised);
+  color: var(--text-primary);
+}
+
+.toggleOn {
+  background: var(--accent-solid);
+  color: var(--text-on-accent);
+}
+
+.viewerBody {
+  min-height: 0;
+  overflow: auto;
+}
+
+.viewerBasic,
+.viewerText {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  font-family: var(--monospace-font);
+  color: var(--data-value);
+}
+
+.viewerText {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.viewerScreen {
+  padding: var(--space-3);
+}
+
+/* --- The viewer has no columns */
+.columnsHidden {
+  display: none;
+}

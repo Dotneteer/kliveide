@@ -10,7 +10,7 @@ import { Checkbox } from "@renderer/controls/Checkbox";
 import { DialogForm } from "@renderer/controls/DialogForm";
 import { TextInput } from "@renderer/controls/TextInput";
 import type { DialogComponentProps } from "@renderer/controls/overlay/DialogProvider";
-import type { ConflictAnswer, TransferConfirmation, TransferDialogRequest } from "./FileManagerController";
+import type { ConflictAnswer, DeleteMode, TransferConfirmation, TransferDialogRequest } from "./FileManagerController";
 import { becomesText, errorText, formatSizeWithUnit } from "./FileManagerViewModel";
 import styles from "./FileManagerDialogs.module.scss";
 
@@ -250,9 +250,15 @@ export const FmConflictDialog = ({ item, suggestion, remaining, controls }: Conf
 
 // -------------------------------------------------------------------------------------------------
 
-type DeleteProps = DialogComponentProps<true> & { names: string[]; permanent: boolean };
+type DeleteProps = DialogComponentProps<true> & { names: string[]; mode: DeleteMode };
 
-export const FmDeleteDialog = ({ names, permanent, controls }: DeleteProps) => {
+const DELETE_NOTES = {
+  trash: "panels.fileManager.dialog.deleteTrash",
+  permanent: "panels.fileManager.dialog.deleteForGood",
+  image: "panels.fileManager.dialog.deletePermanent"
+} as const;
+
+export const FmDeleteDialog = ({ names, mode, controls }: DeleteProps) => {
   const t = useT();
   return (
     <DialogForm
@@ -273,9 +279,33 @@ export const FmDeleteDialog = ({ names, permanent, controls }: DeleteProps) => {
             {names.length > 12 && <li>{t("panels.fileManager.dialog.more", { count: names.length - 12 })}</li>}
           </ul>
         )}
-        <div className={permanent ? styles.note : styles.hint}>
-          {t(permanent ? "panels.fileManager.dialog.deletePermanent" : "panels.fileManager.dialog.deleteTrash", { count: names.length })}
-        </div>
+        <div className={mode === "trash" ? styles.hint : styles.note}>{t(DELETE_NOTES[mode], { count: names.length })}</div>
+      </div>
+    </DialogForm>
+  );
+};
+
+// -------------------------------------------------------------------------------------------------
+
+type MaskProps = DialogComponentProps<string> & { mark: boolean };
+
+/** `+` and `-`: the files whose names match a mask are marked or unmarked (Phase 7) */
+export const FmMaskDialog = ({ mark, controls }: MaskProps) => {
+  const t = useT();
+  const [mask, setMask] = useState("*.*");
+  return (
+    <DialogForm
+      submitLabel={t(mark ? "panels.fileManager.mask.mark" : "panels.fileManager.mask.unmark")}
+      submitDisabled={!mask.trim()}
+      onSubmit={() => controls.close(mask.trim())}
+      onCancel={controls.cancel}
+    >
+      <div className={styles.body} data-testid="fm-mask-dialog">
+        <label className={styles.field}>
+          <span className={styles.label}>{t("panels.fileManager.mask.label")}</span>
+          <TextInput value={mask} autoFocus onChange={setMask} />
+        </label>
+        <div className={styles.hint}>{t("panels.fileManager.mask.hint")}</div>
       </div>
     </DialogForm>
   );

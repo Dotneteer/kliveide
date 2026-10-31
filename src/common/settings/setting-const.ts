@@ -73,6 +73,9 @@ export const SETTING_EMU_KEYBOARD_LAYOUT = "emuOptions.keyboardLayout";
 export const SETTING_EMU_KEYBOARD_HEIGHT = "emuOptions.keyboardPanelHeight";
 export const SETTING_EMU_KEYBOARD_HEIGHTS = "emuOptions.keyboardPanelHeights";
 export const SETTING_IDE_SHOW_TOOLBAR = "ideViewOptions.showToolbar";
+// --- The File Manager (`.plans/FILE_MANAGER_PLAN.md` D7, Phase 7)
+export const SETTING_FM_SHOW_HIDDEN = "ideViewOptions.fileManagerShowHidden";
+export const SETTING_FM_DELETE_PERMANENTLY = "ideViewOptions.fileManagerDeletePermanently";
 export const SETTING_IDE_SHOW_STATUS_BAR = "ideViewOptions.showStatusBar";
 export const SETTING_IDE_SHOW_SIDEBAR = "ideViewOptions.showSidebar";
 export const SETTING_IDE_SIDEBAR_TO_RIGHT = "ideViewOptions.sideBarToRight";

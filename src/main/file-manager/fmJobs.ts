@@ -3,6 +3,7 @@ import path from "path";
 
 import { diskImageBytes, openDiskFileSystem } from "@common/diskfs/open";
 import { FatFileSystem } from "@common/diskfs/fat";
+import { TapeFileSystem } from "@common/diskfs/tapefs";
 import { DiskFsError, type DiskFileSystem } from "@common/diskfs/types";
 import {
   buildPlan,
@@ -479,8 +480,19 @@ export async function runTransfer (
     throw asFmError(err, job.target.name);
   }
 
+  // --- A move on this computer within one volume is a rename: nothing is copied, nothing removed
+  const renamed = job.request.move && isHost(job.source) && isHost(job.target) ? renameOnVolume(job) : new Set<string>();
+  const renamedItem = (item: FmPlanItem) =>
+    [...renamed].some((p) => item.sourcePath === p || isUnder(job.source, item.sourcePath, p));
+
   try {
     for (const item of job.items) {
+      if (renamedItem(item)) {
+        written.add(item.id);
+        result.written += item.isDirectory ? 0 : 1;
+        advance(job, item);
+        continue;
+      }
       if (job.cancelled) {
         result.cancelled = true;
         break;
@@ -535,7 +547,7 @@ export async function runTransfer (
     }
 
     if (job.request.move && !result.cancelled && !result.aborted) {
-      result.removeFailed = await removeMoved(job, written, deps);
+      result.removeFailed = await removeMoved(job, written, deps, renamed);
     }
   } catch (err) {
     await target.cancel().catch(() => {});
@@ -554,9 +566,31 @@ function advance (job: Job, item: FmPlanItem): void {
   };
 }
 
+/**
+ * Moves the chosen sources that can simply be renamed into the target folder: on the same volume, with
+ * nothing of the same name there (a conflict goes the long way, through its decision)
+ */
+function renameOnVolume (job: Job): Set<string> {
+  const done = new Set<string>();
+  for (const p of job.request.paths) {
+    const own = job.items.filter((i) => i.sourcePath === p || isUnder(job.source, i.sourcePath, p));
+    if (own.some((i) => i.conflict)) continue;
+    const target = path.join(job.request.targetDir, path.basename(p));
+    if (fs.existsSync(target)) continue;
+    try {
+      fs.renameSync(p, target);
+      done.add(p);
+    } catch {
+      // --- Another volume (EXDEV) or a refusal: copy and remove instead
+    }
+  }
+  return done;
+}
+
 /** A move removes each chosen source once everything it became was written */
-async function removeMoved (job: Job, written: Set<number>, deps: FmJobDeps): Promise<number> {
+async function removeMoved (job: Job, written: Set<number>, deps: FmJobDeps, renamed: Set<string>): Promise<number> {
   const done = job.request.paths.filter((p) => {
+    if (renamed.has(p)) return false;
     const own = job.items.filter((i) => i.sourcePath === p || isUnder(job.source, i.sourcePath, p));
     return own.length > 0 && own.every((i) => written.has(i.id));
   });
@@ -723,4 +757,19 @@ function isInside (child: string, parent: string): boolean {
 function isUnder (drive: FmDriveRef, p: string, parent: string): boolean {
   if (isHost(drive)) return isInside(path.resolve(p), path.resolve(parent)) && path.resolve(p) !== path.resolve(parent);
   return p.toLowerCase().startsWith(`${parent.toLowerCase()}/`);
+}
+
+/** Moves a file one place along a tape (Phase 7) */
+export async function moveOnTape (drive: FmDriveRef, name: string, by: -1 | 1, deps: FmJobDeps): Promise<void> {
+  if (drive.readOnly) throw new FmError("readOnly", `${drive.name} cannot be written.`, { name: drive.name });
+  const { contents, token } = await deps.beginImageEdit(drive.root);
+  try {
+    const diskFs = openDiskFileSystem(contents, drive.root);
+    if (!(diskFs instanceof TapeFileSystem)) throw new FmError("unsupported", `${drive.name} is not a tape.`, { name: drive.name });
+    diskFs.move(name, by);
+    await deps.commitImageEdit(drive.root, diskImageBytes(diskFs, drive.root), token);
+  } catch (err) {
+    await deps.cancelImageEdit(token);
+    throw asFmError(err, name);
+  }
 }

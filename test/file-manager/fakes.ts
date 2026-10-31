@@ -127,6 +127,9 @@ export type PortOptions = {
   conflictAnswers?: ConflictAnswer[];
   deleteOk?: boolean;
   newName?: string;
+  mask?: string;
+  fileData?: Uint8Array;
+  editOk?: boolean;
 };
 
 export function makePorts (over: PortOptions = {}) {
@@ -147,7 +150,14 @@ export function makePorts (over: PortOptions = {}) {
       cancelJob: vi.fn(async () => {}),
       deleteEntries: vi.fn(async (_driveId: string, paths: string[]): Promise<FmDeleteResult> => ({ deleted: paths.length, failed: [] })),
       mkdir: vi.fn(async (_d: string, dir: string, name: string) => `${dir}/${name}`),
-      rename: vi.fn(async (_d: string, p: string, name: string) => `${p}/../${name}`)
+      rename: vi.fn(async (_d: string, p: string, name: string) => `${p}/../${name}`),
+      read: vi.fn(async (_d: string, _p: string) => over.fileData ?? new TextEncoder().encode("hello")),
+      moveOnTape: vi.fn(async (_d: string, _n: string, _by: -1 | 1) => {})
+    },
+    shell: {
+      edit: vi.fn(async (_p: string) => over.editOk ?? true),
+      reveal: vi.fn(async (_p: string) => {}),
+      openMemory: vi.fn(async (_t: string, _d: Uint8Array, _s?: number) => {})
     },
     dialogs: {
       confirmTransfer: vi.fn(async (request: TransferDialogRequest): Promise<TransferConfirmation | undefined> =>
@@ -155,7 +165,8 @@ export function makePorts (over: PortOptions = {}) {
       resolveConflict: vi.fn(async (): Promise<ConflictAnswer> => conflictAnswers.shift() ?? { kind: "skip" }),
       confirmDelete: vi.fn(async () => over.deleteOk ?? true),
       askFolderName: vi.fn(async () => over.newName),
-      askNewName: vi.fn(async () => over.newName)
+      askNewName: vi.fn(async () => over.newName),
+      askMask: vi.fn(async () => over.mask)
     },
     wait: vi.fn(async () => {}),
     machine: { stop: vi.fn(async () => {}) },

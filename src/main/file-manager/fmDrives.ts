@@ -342,7 +342,8 @@ function imageListing (drive: FmDriveRef, diskFs: DiskFileSystem, folder: string
         isDirectory: !!f.isDirectory,
         size: f.size
       };
-      if (f.hidden) entry.hidden = true;
+      // --- A FAT card keeps the hidden attribute, and the dot files a Mac or Linux leaves behind
+      if (f.hidden || (diskFs.system === "fat" && label.startsWith("."))) entry.hidden = true;
       if (diskFs.system !== "fat") {
         entry.spectrum = {
           kind: f.kind,

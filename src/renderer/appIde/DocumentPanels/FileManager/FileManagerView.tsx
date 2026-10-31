@@ -1,4 +1,4 @@
-import { useEffect, useRef, type KeyboardEvent, type MouseEvent } from "react";
+import { useEffect, useRef, useState, type DragEvent, type KeyboardEvent, type MouseEvent } from "react";
 import classnames from "classnames";
 
 import { useT } from "@common/i18n/useT";
@@ -7,7 +7,12 @@ import { SmallIconButton } from "@renderer/controls/IconButton";
 import { VirtualizedList, type VirtualizedListApi } from "@renderer/controls/VirtualizedList";
 import type { FileManagerIntent } from "./FileManagerController";
 import type { PaneSide, SortKey } from "./FileManagerModel";
-import type { ColumnVm, CommandKey, DriveIcon, DriveMenuVm, FileManagerVm, PaneVm, RowVm } from "./FileManagerViewModel";
+import type { ColumnVm, CommandKey, ContextKey, DriveIcon, DriveMenuVm, FileManagerVm, PaneVm, RowVm } from "./FileManagerViewModel";
+import { FileManagerViewer } from "./FileManagerViewer";
+import { PROJECT_FILE_DRAG_MIME, carriesFiles, droppedFilePaths } from "@renderer/features/explorer/projectFileDrag";
+
+/** A drag of rows out of a pane: the drive and the paths, for the other pane */
+const FM_DRAG_MIME = "application/x-klive-file-manager";
 import { intentForKey } from "./fileManagerKeys";
 import styles from "./FileManagerPanel.module.scss";
 
@@ -48,7 +53,8 @@ export const FileManagerView = ({ vm, dispatch, rowHeight }: FileManagerViewProp
       rowCount: pane.rows.length,
       pageSize: Math.max(1, Math.floor(listHeights.current[active] / rowHeight)),
       menuOpen: !!vm.menu,
-      jobRunning: !!vm.job
+      jobRunning: !!vm.job,
+      viewerOpen: !!pane.viewer
     });
     if (!intent) return;
     e.preventDefault();
@@ -134,6 +140,57 @@ export const FileManagerView = ({ vm, dispatch, rowHeight }: FileManagerViewProp
   );
 };
 
+function contextIntent (key: ContextKey): FileManagerIntent {
+  switch (key) {
+    case "view":
+      return { type: "viewRequested" };
+    case "edit":
+      return { type: "editRequested" };
+    case "copy":
+      return { type: "transferRequested", move: false };
+    case "move":
+      return { type: "transferRequested", move: true };
+    case "rename":
+      return { type: "renameRequested" };
+    case "delete":
+      return { type: "deleteRequested" };
+    case "moveUp":
+      return { type: "tapeMoveRequested", by: -1 };
+    case "moveDown":
+      return { type: "tapeMoveRequested", by: 1 };
+    case "reveal":
+      return { type: "revealRequested" };
+  }
+}
+
+type ContextMenuProps = {
+  at: { x: number; y: number };
+  items: PaneVm["context"];
+  onClose: () => void;
+  onChoose: (key: ContextKey) => void;
+};
+
+const ContextMenu = ({ at, items, onClose, onChoose }: ContextMenuProps) => (
+  <>
+    <div className={styles.menuBackdrop} onMouseDown={onClose} onContextMenu={(e) => { e.preventDefault(); onClose(); }} />
+    <div className={styles.contextMenu} style={{ left: at.x, top: at.y }} role="menu" data-testid="fm-context-menu">
+      {items.map((item) => (
+        <button
+          type="button"
+          role="menuitem"
+          key={item.key}
+          className={styles.contextItem}
+          disabled={!item.enabled}
+          onClick={() => onChoose(item.key)}
+        >
+          <span>{item.label}</span>
+          <kbd className={styles.keyHint}>{item.keyHint}</kbd>
+        </button>
+      ))}
+    </div>
+  </>
+);
+
 function commandIntent (key: CommandKey, side: PaneSide): FileManagerIntent {
   switch (key) {
     case "copy":
@@ -181,14 +238,44 @@ const FilePane = ({ pane, menu, dispatch, rowHeight, onListHeight, refocus }: Fi
   }, [onListHeight]);
 
   const template = gridTemplate(pane.columns);
+  const [menuAt, setMenuAt] = useState<{ x: number; y: number } | undefined>();
+  const [dropping, setDropping] = useState(false);
+
+  const onDragOver = (e: DragEvent) => {
+    if (pane.blocked || !pane.drive) return;
+    const ours = e.dataTransfer.types.includes(FM_DRAG_MIME);
+    if (!ours && !carriesFiles(e.dataTransfer)) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = e.shiftKey ? "move" : "copy";
+    setDropping(true);
+  };
+  const onDrop = (e: DragEvent) => {
+    setDropping(false);
+    if (pane.blocked || !pane.drive) return;
+    e.preventDefault();
+    const ours = e.dataTransfer.getData(FM_DRAG_MIME);
+    if (ours) {
+      const dragged = JSON.parse(ours) as { side: PaneSide; driveId: string; paths: string[] };
+      // --- Dropped back on the pane it came from: nothing to do
+      if (dragged.side === side) return;
+      dispatch({ type: "dropReceived", side, source: { kind: "pane", driveId: dragged.driveId, paths: dragged.paths }, move: e.shiftKey });
+    } else {
+      const paths = droppedFilePaths(e.dataTransfer);
+      if (paths.length) dispatch({ type: "dropReceived", side, source: { kind: "host", paths }, move: false });
+    }
+    refocus();
+  };
 
   return (
     <section
-      className={classnames(styles.pane, { [styles.active]: pane.active })}
+      className={classnames(styles.pane, { [styles.active]: pane.active, [styles.dropping]: dropping })}
       data-testid={`fm-pane-${side}`}
       onMouseDown={() => {
         if (!pane.active) dispatch({ type: "paneFocused", side });
       }}
+      onDragOver={onDragOver}
+      onDragLeave={() => setDropping(false)}
+      onDrop={onDrop}
     >
       <header className={styles.paneHeader}>
         <button
@@ -243,7 +330,7 @@ const FilePane = ({ pane, menu, dispatch, rowHeight, onListHeight, refocus }: Fi
         />
       </header>
 
-      <div className={styles.columns} style={{ gridTemplateColumns: template }} role="row">
+      <div className={classnames(styles.columns, { [styles.columnsHidden]: !!pane.viewer })} style={{ gridTemplateColumns: template }} role="row">
         {pane.columns.map((c) => (
           <button
             type="button"
@@ -262,7 +349,9 @@ const FilePane = ({ pane, menu, dispatch, rowHeight, onListHeight, refocus }: Fi
       </div>
 
       <div className={styles.list} ref={listHost}>
-        {pane.blocked ? (
+        {pane.viewer && !pane.blocked ? (
+          <FileManagerViewer viewer={pane.viewer} dispatch={dispatch} refocus={refocus} />
+        ) : pane.blocked ? (
           <div className={styles.blocked} data-testid={`fm-blocked-${side}`}>
             <Icon iconName="chip" width={22} height={22} fill="--color-state-value" />
             <b>{pane.blocked.title}</b>
@@ -294,8 +383,41 @@ const FilePane = ({ pane, menu, dispatch, rowHeight, onListHeight, refocus }: Fi
                   dispatch({ type: "cursorMoved", side, to: index });
                   dispatch({ type: "markToggled", side });
                 }}
+                onContext={(e) => {
+                  e.preventDefault();
+                  dispatch({ type: "cursorMoved", side, to: index });
+                  const box = listHost.current?.getBoundingClientRect();
+                  setMenuAt({ x: e.clientX - (box?.left ?? 0), y: e.clientY - (box?.top ?? 0) });
+                }}
+                onDragStart={(e) => {
+                  if (row.isUp || !pane.drive) return e.preventDefault();
+                  // --- The marked rows when the dragged one is marked, otherwise the dragged row
+                  const paths = row.marked ? pane.rows.filter((r) => r.marked).map((r) => r.key) : [row.key];
+                  e.dataTransfer.setData(FM_DRAG_MIME, JSON.stringify({ side, driveId: pane.drive.id, paths }));
+                  // --- This computer's files can go on to the Project Explorer's and the Disk Explorer's drops
+                  if (pane.drive.onHost) {
+                    e.dataTransfer.setData(PROJECT_FILE_DRAG_MIME, paths.join("\n"));
+                  }
+                  e.dataTransfer.effectAllowed = "copyMove";
+                }}
+                draggable={!row.isUp && !pane.blocked}
               />
             )}
+          />
+        )}
+        {menuAt && (
+          <ContextMenu
+            at={menuAt}
+            items={pane.context}
+            onClose={() => {
+              setMenuAt(undefined);
+              refocus();
+            }}
+            onChoose={(key) => {
+              setMenuAt(undefined);
+              dispatch(contextIntent(key));
+              refocus();
+            }}
           />
         )}
         {menu && <DriveMenu menu={menu} dispatch={dispatch} refocus={refocus} />}
@@ -322,10 +444,16 @@ type FileRowProps = {
   onClick: () => void;
   onOpen: () => void;
   onMark: () => void;
+  onContext: (e: MouseEvent) => void;
+  onDragStart: (e: DragEvent) => void;
+  draggable: boolean;
 };
 
-const FileRow = ({ row, template, columns, activePane, onClick, onOpen, onMark }: FileRowProps) => (
+const FileRow = ({ row, template, columns, activePane, onClick, onOpen, onMark, onContext, onDragStart, draggable }: FileRowProps) => (
   <div
+    draggable={draggable}
+    onDragStart={onDragStart}
+    onContextMenu={onContext}
     className={classnames(styles.row, {
       [styles.cursor]: row.cursor,
       [styles.cursorActive]: row.cursor && activePane,

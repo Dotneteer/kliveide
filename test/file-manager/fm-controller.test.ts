@@ -50,7 +50,7 @@ describe("moving around", () => {
     const h = await openFileManager();
     await h.dispatch({ type: "rowActivated", side: 0, index: 0 });
     expect(h.state.panes[0].dir).toBe("/home/me/game/tapes");
-    expect(h.vm.panes[0].crumbs.map((c) => c.label)).toEqual(["/home/me/game", "tapes"]);
+    expect(h.vm.panes[0].crumbs.map((c) => c.label)).toEqual(["game", "tapes"]);
     expect(h.vm.panes[0].rows[0]).toMatchObject({ isUp: true, cells: ["..", "<UP>", ""] });
 
     await h.dispatch({ type: "upRequested", side: 0 });

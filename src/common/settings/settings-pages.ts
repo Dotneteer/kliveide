@@ -120,6 +120,8 @@ import {
   SETTING_IDE_SIDEBAR_TO_RIGHT,
   SETTING_IDE_SYNC_BREAKPOINTS,
   SETTING_IDE_TOOLS_ON_TOP,
+  SETTING_FM_SHOW_HIDDEN,
+  SETTING_FM_DELETE_PERMANENTLY,
   SETTING_PANEL_FONT_FAMILY,
   SETTING_PANEL_FONT_SIZE
 } from "./setting-const";
@@ -368,6 +370,24 @@ export const SETTINGS_ROWS: SettingsRow[] = [
   },
 
   // --- Language (`.plans/LOCALIZATION_PLAN.md` §7)
+  // --- The File Manager (`.plans/FILE_MANAGER_PLAN.md` D7)
+  {
+    id: "fileManagerShowHidden",
+    page: "general",
+    groupKey: "settings.group.fileManager",
+    titleKey: "settings.general.fileManagerShowHidden.title",
+    editor: "switch",
+    source: setting(SETTING_FM_SHOW_HIDDEN)
+  },
+  {
+    id: "fileManagerDeletePermanently",
+    page: "general",
+    groupKey: "settings.group.fileManager",
+    titleKey: "settings.general.fileManagerDeletePermanently.title",
+    descriptionKey: "settings.general.fileManagerDeletePermanently.description",
+    editor: "switch",
+    source: setting(SETTING_FM_DELETE_PERMANENTLY)
+  },
   {
     id: "displayLanguage",
     page: "language",

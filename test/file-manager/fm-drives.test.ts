@@ -240,6 +240,15 @@ describe("hard-disk images", () => {
     expect(await readDriveFile(drive, "GAMES/Manic Miner.tap")).toEqual(bytes(4000));
   });
 
+  it("treats a card's dot files as hidden, as a Mac or Linux leaves them", async () => {
+    const file = card();
+    editHardDisk(file, { kind: "add", files: [{ name: ".DS_Store", kind: "raw", data: bytes(10) }] });
+    const [drive] = await openImageDrives(file);
+    const top = await listImageFolder(drive, "");
+    expect(top.entries.find((e) => e.name === ".DS_Store")?.hidden).toBe(true);
+    expect(top.entries.find((e) => e.name === "GAMES")?.hidden).toBeUndefined();
+  });
+
   it("goes through the access it is given (the SD card's lock)", async () => {
     const file = card();
     const seen: string[] = [];

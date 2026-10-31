@@ -270,6 +270,11 @@ class MainApiImpl {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 
+  /** Moves a file one place earlier (-1) or later (1) on a tape drive */
+  async fmMoveOnTape(_driveId: string, _name: string, _by: -1 | 1): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
   /** Creates a formatted hard-disk image (`.img`, `.hdf` or `.cim` by the name's extension) */
   async createHardDiskImage(
     _filePath: string,

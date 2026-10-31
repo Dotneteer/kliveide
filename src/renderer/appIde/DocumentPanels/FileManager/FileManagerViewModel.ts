@@ -42,7 +42,7 @@ export type DriveIcon = "volume" | "home" | "folder" | "project" | "image" | "ma
 export type PaneVm = {
   side: PaneSide;
   active: boolean;
-  drive?: { label: string; icon: DriveIcon; readOnly: boolean };
+  drive?: { id: string; label: string; icon: DriveIcon; readOnly: boolean; onHost: boolean };
   crumbs: CrumbVm[];
   /** The pane's place in one line, for a tooltip */
   pathText: string;
@@ -57,7 +57,35 @@ export type PaneVm = {
   statusRight: string;
   /** The pane is on a running machine's storage (D4) */
   blocked?: { title: string; text: string; stopLabel: string };
+  viewer?: ViewerVm;
+  /** The right-click menu's commands, for the row under the cursor */
+  context: ContextItemVm[];
 };
+
+/** How F3's viewer shows a file */
+export type ViewerKind = "basic" | "screen" | "text" | "hex";
+
+export type ViewerVm = {
+  title: string;
+  facts: string;
+  kind: ViewerKind;
+  loading: boolean;
+  error?: string;
+  data?: Uint8Array;
+  /** BASIC: where the program ends (the variables follow) */
+  basicEnd?: number;
+  hexLabel: string;
+  listingLabel: string;
+  memoryLabel: string;
+  closeLabel: string;
+  hex: boolean;
+  /** The file has a listing, a picture or text to show besides its bytes */
+  hasListing: boolean;
+};
+
+export type ContextKey = "view" | "edit" | "copy" | "move" | "rename" | "delete" | "moveUp" | "moveDown" | "reveal";
+
+export type ContextItemVm = { key: ContextKey; label: string; keyHint: string; enabled: boolean };
 
 export type DriveMenuItemVm = {
   id: string;
@@ -263,6 +291,7 @@ const ERROR_KEYS: Record<FmErrorCode, MessageKey> = {
   sameFolder: "panels.fileManager.error.sameFolder",
   intoItself: "panels.fileManager.error.intoItself",
   machineRunning: "panels.fileManager.error.machineRunning",
+  notProjectFile: "panels.fileManager.error.notProjectFile",
   failed: "panels.fileManager.error.failed"
 };
 
@@ -343,7 +372,15 @@ function selectPane (state: FmState, side: PaneSide): PaneVm {
   return {
     side,
     active: state.active === side,
-    drive: pane.drive ? { label: driveLabel, icon: driveIconOf(pane.drive), readOnly: pane.drive.readOnly } : undefined,
+    drive: pane.drive
+      ? {
+        id: pane.drive.id,
+        label: driveLabel,
+        icon: driveIconOf(pane.drive),
+        readOnly: pane.drive.readOnly,
+        onHost: pane.drive.kind === "host" || pane.drive.kind === "project"
+      }
+      : undefined,
     crumbs: allCrumbs,
     pathText: [...pane.returnTo.map((r) => r.drive.root), pane.dir ?? ""].filter(Boolean).join(" › "),
     columns,
@@ -354,6 +391,8 @@ function selectPane (state: FmState, side: PaneSide): PaneVm {
     empty: pane.status === "ready" && entries.length === 0 ? t("panels.fileManager.emptyFolder") : undefined,
     statusLeft,
     statusRight,
+    viewer: pane.viewer ? selectViewer(pane) : undefined,
+    context: selectContext(state, pane),
     blocked: isBlocked(state, side)
       ? {
         title: t("panels.fileManager.blocked.title"),
@@ -368,7 +407,9 @@ function selectPane (state: FmState, side: PaneSide): PaneVm {
 function topCrumbLabel (pane: PaneState, driveLabel: string): string {
   const drive = pane.drive;
   if (!drive) return driveLabel;
-  return drive.kind === "host" || drive.kind === "project" ? drive.root : drive.name;
+  // --- A volume or folder of this computer shows where it is; the project, by its name (the drive
+  // --- button says it is the project, and its path is the same on every screen it is shown)
+  return drive.kind === "host" ? drive.root : drive.name;
 }
 
 function selectMenu (state: FmState): DriveMenuVm | undefined {
@@ -486,4 +527,98 @@ export function becomesText (b: FmBecomes): string {
     case "charArray":
       return t(b.as === "numberArray" ? "panels.fileManager.becomes.numberArray" : "panels.fileManager.becomes.charArray", { name: b.variableName ?? "" });
   }
+}
+
+// -------------------------------------------------------------------------------------------------
+// The viewer (Phase 7)
+
+const SCREEN_SIZE = 6912;
+
+/** What a file's bytes are best shown as */
+export function viewerKindOf (entry: FmEntry, data: Uint8Array): ViewerKind {
+  const kind = entry.spectrum?.kind;
+  if (kind === "basic") return "basic";
+  if (data.length === SCREEN_SIZE && (entry.spectrum?.start === 16384 || /\.scr$/i.test(entry.name))) return "screen";
+  if (kind && kind !== "raw") return "hex";
+  return looksLikeText(data) ? "text" : "hex";
+}
+
+/** No zero bytes, and nearly all printable or white space, in the first 4K */
+export function looksLikeText (data: Uint8Array): boolean {
+  if (data.length === 0) return false;
+  const sample = data.subarray(0, 4096);
+  let odd = 0;
+  for (const b of sample) {
+    if (b === 0) return false;
+    if (b < 9 || (b > 13 && b < 32) || b === 127) odd++;
+  }
+  return odd / sample.length < 0.02;
+}
+
+function selectViewer (pane: PaneState): ViewerVm {
+  const v = pane.viewer!;
+  const e = v.entry;
+  const natural = v.data ? viewerKindOf(e, v.data) : "hex";
+  const facts = [
+    e.spectrum ? t(KIND_KEYS[e.spectrum.kind]) : "",
+    formatSizeWithUnit(v.data?.length ?? e.size),
+    e.spectrum?.start !== undefined && e.spectrum.kind !== "basic" ? t("panels.fileManager.viewer.start", { start: e.spectrum.start }) : "",
+    e.spectrum?.kind === "basic" && e.spectrum.start !== undefined ? t("panels.fileManager.viewer.line", { line: e.spectrum.start }) : ""
+  ].filter(Boolean).join(" · ");
+  return {
+    title: e.name,
+    facts,
+    kind: v.hex ? "hex" : natural,
+    loading: v.status === "loading",
+    error: v.status === "error" && v.error ? errorText(v.error.code, v.error.name) : undefined,
+    data: v.data,
+    basicEnd: e.spectrum?.variablesOffset,
+    hexLabel: t("panels.fileManager.viewer.hex"),
+    listingLabel: t(natural === "screen" ? "panels.fileManager.viewer.picture" : natural === "text" ? "panels.fileManager.viewer.text" : "panels.fileManager.viewer.listing"),
+    memoryLabel: t("panels.fileManager.viewer.memory"),
+    closeLabel: t("panels.fileManager.viewer.close"),
+    hex: v.hex,
+    hasListing: natural !== "hex"
+  };
+}
+
+// -------------------------------------------------------------------------------------------------
+// The right-click menu (Phase 7)
+
+const CONTEXT: { key: ContextKey; label: MessageKey; keyHint: string }[] = [
+  { key: "view", label: "panels.fileManager.context.view", keyHint: "F3" },
+  { key: "edit", label: "panels.fileManager.context.edit", keyHint: "F4" },
+  { key: "copy", label: "panels.fileManager.command.copy", keyHint: "F5" },
+  { key: "move", label: "panels.fileManager.command.move", keyHint: "F6" },
+  { key: "rename", label: "panels.fileManager.command.rename", keyHint: "⇧F6" },
+  { key: "delete", label: "panels.fileManager.command.delete", keyHint: "F8" },
+  { key: "moveUp", label: "panels.fileManager.context.moveUp", keyHint: "Alt+↑" },
+  { key: "moveDown", label: "panels.fileManager.context.moveDown", keyHint: "Alt+↓" },
+  { key: "reveal", label: "panels.fileManager.context.reveal", keyHint: "" }
+];
+
+function selectContext (state: FmState, pane: PaneState): ContextItemVm[] {
+  const row = paneRows(pane)[pane.cursor];
+  const entry = row?.kind === "entry" ? row.entry : undefined;
+  const onHost = pane.drive?.kind === "host" || pane.drive?.kind === "project";
+  const tape = pane.listing?.columns === "tape";
+  const writable = !!pane.drive && !pane.drive.readOnly && !state.job;
+  const file = !!entry && !entry.isDirectory;
+  const enabled: Record<ContextKey, boolean> = {
+    view: file,
+    edit: file && onHost,
+    copy: !!entry && !state.job,
+    move: !!entry && writable,
+    rename: !!entry && writable,
+    delete: !!entry && writable,
+    moveUp: tape && file && writable && pane.cursor > 0 && paneRows(pane)[pane.cursor - 1]?.kind === "entry",
+    moveDown: tape && file && writable && pane.cursor < paneRows(pane).length - 1,
+    reveal: !!entry && onHost
+  };
+  return CONTEXT.filter((c) => (c.key === "moveUp" || c.key === "moveDown" ? tape : c.key === "reveal" ? onHost : true)).map((c) => ({
+    key: c.key,
+    label: t(c.label),
+    keyHint: c.keyHint,
+    enabled: enabled[c.key]
+  }));
 }

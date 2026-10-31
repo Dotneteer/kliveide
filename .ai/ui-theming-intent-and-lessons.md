@@ -1592,6 +1592,13 @@ marked rows. The rules it settled:
   machine's chip in `--color-state-value` (the machine-state colour), a bold one-line title, one
   secondary sentence, one button. A drive menu item that cannot be chosen stays listed, in
   `--text-disabled`, with the reason as its second line.
+- **A viewer that replaces a list keeps the list's frame**: the pane's header and status line stay,
+  the column headers go (`display: none`, not hidden space), and the viewer's own strip sits on
+  `--surface-header` like a panel header. Its Listing/Bytes choice is the segmented strip, not tabs.
+- **A pane that accepts a drop says so with the drop outline** the Disk Explorer uses
+  (`--accent-border`, dashed, inset), and nothing else changes colour.
+- **A right-click menu lists its command's key on the right** in `--text-tertiary` monospace, and a
+  command the row does not allow stays listed, disabled, so the menu's shape never changes.
 - **A notice after a job is a strip above the command bar**, `--accent-subtle` when all went well,
   `--status-error-subtle` when anything was skipped, failed or cancelled; it stays until dismissed or
   the next job, never a timed toast, because it is the only record of what the job did.
