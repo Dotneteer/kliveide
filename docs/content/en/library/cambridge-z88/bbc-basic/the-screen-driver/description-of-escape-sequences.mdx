@@ -692,7 +692,7 @@ VDU 1,138,ASC"=",char_code,r0,r1,r2,r3,r4,r5,r6,r7
 VDU 1,138,61,char_code,r0,r1,r2,r3,r4,r5,r6,r7
 ```
 
-The character code, char code, must be between 64 (\`@') and 127 (\[DEL\]).
+The character code, char code, must be between 64 (\`@') and 127 (DEL).
 
 The parameters ‘r0' to 'r7' are the numeric values of the top to bottom rows of the character with bit-7 set. Their values must, therefore, lie between 128 (bit-7 set to 1) and 191 (bit-7 and bits 1 to 5 set to 1). Bit-5 is the left-hand bit and bit-0 the right. The standard characters have their left-hand column (bit-5) blank. If user-defined characters are to be mixed with standard characters, they should follow this convention.
 

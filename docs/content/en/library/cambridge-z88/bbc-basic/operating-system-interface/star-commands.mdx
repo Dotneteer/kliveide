@@ -55,14 +55,14 @@ would appear in the list of suspended activities as:
 
 ## <strong>\*SPOOL and \*EXEC</strong> [#spool-and-exec]
 
-\*SPOOL and \*EXEC are not available on the Z88. However, you can perform similar functions using the CLI as shown below. (The '+'represents the '=/+' key - you don't have to use the \[SHIFT\] key.)
+\*SPOOL and \*EXEC are not available on the Z88. However, you can perform similar functions using the CLI as shown below. (The '+'represents the '=/+' key - you don't have to use the <Key k="shift" /> key.)
 
 <Table>
 <tbody>
 <Table.Tr>
 <Table.Td>
 
-<strong>\>LIST ☐ +S \[ENTER\]</strong>
+<strong>\>LIST <Key k="square" />+S <Key k="enter" /></strong>
 
 **…………**
 
@@ -70,7 +70,7 @@ would appear in the list of suspended activities as:
 
 **…………**
 
-<strong>\>☐ -S</strong>
+<strong>\><Key k="square" />-S</strong>
 
 </Table.Td>
 <Table.Td>The equivalent of \*SPOOL. It produces a text file of the program called S.SGN in :RAM.- . Remember to delete it when you have finished with it.</Table.Td>
@@ -80,9 +80,7 @@ would appear in the list of suspended activities as:
 
 Use PipeDream to add '.J' as the first line. Remember to load and save the file in plain text mode. You can now use the command
 
-```text
->*CLI .*:RAM.-/S.SGN[ENTER]
-```
+`>`<Typed>\*CLI .\*:RAM.-/S.SGN</Typed><Key k="enter" />
 
 to '\*EXEC' the file back into BBCBASIC(Z80)
 

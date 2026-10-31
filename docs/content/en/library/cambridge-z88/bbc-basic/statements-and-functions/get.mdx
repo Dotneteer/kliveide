@@ -2,6 +2,8 @@
 description: "A function and compatible string function that reads the next character from the keyboard buffer (it waits for the character)."
 ---
 
+import { Table } from 'nextra/components'
+
 {/* Imported from https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI, embedded in https://cambridgez88.jira.com/wiki/spaces/BBCREF/pages/604733548 (wiki page version 7) by scripts/import-z88-wiki.cjs */}
 
 # GET/GET$
@@ -33,9 +35,96 @@ PRINT ....... etc
 
 The values returned by the cursor and other ‘special’ keys are listed below. Many of the keys return 2 bytes, a zero byte followed by another value.
 
-**Keys Normal with with with<br /> Codes \[SHIFT\]** ♢ □
-
-`[ENTER]` 13 0,209 0,193 0,177<br />`[TAB]` 9 0,210 0,194 0,178<br />`[DEL]` 127 0,211 0,195 0,179<br />⇦ 0,252 0,248 0,244 0,240<br />⇨ 0,253 0,249 0,245 0,241<br />⇩ 0,254 0,250 0,246 0,242<br />⇧ 0,255 0,251 0,247 0,243<br />£ 163 126 (-) 30 158<br />= 61 43 0,0 Nothing<br />`[SPACE]` 32 32 160 32<br />**‘** 39 35 (“) 96 Nothing
+<Table>
+<thead>
+<Table.Tr>
+<Table.Th>Keys</Table.Th>
+<Table.Th>Normal codes</Table.Th>
+<Table.Th>With <Key k="shift" /></Table.Th>
+<Table.Th>With <Key k="diamond" /></Table.Th>
+<Table.Th>With <Key k="square" /></Table.Th>
+</Table.Tr>
+</thead>
+<tbody>
+<Table.Tr>
+<Table.Td><Key k="enter" /></Table.Td>
+<Table.Td>13</Table.Td>
+<Table.Td>0,209</Table.Td>
+<Table.Td>0,193</Table.Td>
+<Table.Td>0,177</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td><Key k="tab" /></Table.Td>
+<Table.Td>9</Table.Td>
+<Table.Td>0,210</Table.Td>
+<Table.Td>0,194</Table.Td>
+<Table.Td>0,178</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td><Key k="del" /></Table.Td>
+<Table.Td>127</Table.Td>
+<Table.Td>0,211</Table.Td>
+<Table.Td>0,195</Table.Td>
+<Table.Td>0,179</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td><Key k="left" /></Table.Td>
+<Table.Td>0,252</Table.Td>
+<Table.Td>0,248</Table.Td>
+<Table.Td>0,244</Table.Td>
+<Table.Td>0,240</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td><Key k="right" /></Table.Td>
+<Table.Td>0,253</Table.Td>
+<Table.Td>0,249</Table.Td>
+<Table.Td>0,245</Table.Td>
+<Table.Td>0,241</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td><Key k="down" /></Table.Td>
+<Table.Td>0,254</Table.Td>
+<Table.Td>0,250</Table.Td>
+<Table.Td>0,246</Table.Td>
+<Table.Td>0,242</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td><Key k="up" /></Table.Td>
+<Table.Td>0,255</Table.Td>
+<Table.Td>0,251</Table.Td>
+<Table.Td>0,247</Table.Td>
+<Table.Td>0,243</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>£</Table.Td>
+<Table.Td>163</Table.Td>
+<Table.Td>126 (-)</Table.Td>
+<Table.Td>30</Table.Td>
+<Table.Td>158</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>=</Table.Td>
+<Table.Td>61</Table.Td>
+<Table.Td>43</Table.Td>
+<Table.Td>0,0</Table.Td>
+<Table.Td>Nothing</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td><Key k="space" /></Table.Td>
+<Table.Td>32</Table.Td>
+<Table.Td>32</Table.Td>
+<Table.Td>160</Table.Td>
+<Table.Td>32</Table.Td>
+</Table.Tr>
+<Table.Tr>
+<Table.Td>‘</Table.Td>
+<Table.Td>39</Table.Td>
+<Table.Td>35 (“)</Table.Td>
+<Table.Td>96</Table.Td>
+<Table.Td>Nothing</Table.Td>
+</Table.Tr>
+</tbody>
+</Table>
 
 GET can also be used to input data from an I/O port. Full 16-bit port addressing is available :
 

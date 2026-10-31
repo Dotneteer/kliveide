@@ -14,7 +14,7 @@ The use of the Command Line Interpreter is explained in Section Seven of your Z8
 
 Using CLI commands to send data to the printer has the advantage that the screen format is duplicated on the printer and all BBCBASIC(Z80)'s print format controls work. You do not, however, have access to the special print controls provided by the Z88's Printer Filter and you are left with a suspended CLI command file (explained in the 'Operating System Interface' section). Consequently, this is the least favoured method unless you especially want to echo screen output to the printer.
 
-It is possible to emulate pressing the key sequences ❑+P and ❑-P from within BBCBASIC(Z80) by sending these key sequences to the CLI. At first glance, the following program line should work. Remember that the \`\#' symbol is interpreted as ❑ by the CLI.
+It is possible to emulate pressing the key sequences <Key k="square" />+P and <Key k="square" />-P from within BBCBASIC(Z80) by sending these key sequences to the CLI. At first glance, the following program line should work. Remember that the \`\#' symbol is interpreted as <Key k="square" /> by the CLI.
 
 ```text
 *CLI #+P
@@ -49,9 +49,9 @@ OSCLI("CLI .*:RAM.0/pon.cli"):dummy=INKEY(0)
 
 All subsequent PRINT statements will print to the screen and the printer.
 
-The first line of the CLI file turns printer echo on by sending the command ❑+P to the CLI. In order to stop the printer echo being turned off at the end of the CLI command file, the CLI is suspended with the ‘.S' command on the next line. Without the INKEY(0) command at the end of the program line, print echo would not be turned on until the program attempted to read from the keyboard or the program terminated and BBCBASIC(Z80) returned to the immediate mode.
+The first line of the CLI file turns printer echo on by sending the command <Key k="square" />+P to the CLI. In order to stop the printer echo being turned off at the end of the CLI command file, the CLI is suspended with the ‘.S' command on the next line. Without the INKEY(0) command at the end of the program line, print echo would not be turned on until the program attempted to read from the keyboard or the program terminated and BBCBASIC(Z80) returned to the immediate mode.
 
-Remember, you cannot cancel a suspended CLI command file from within a program. The only way is to press the \[SHIFT\]/\[ESC\] or ◇\[ESC\] keys on the keyboard. Consequently, you should avoid using this method of sending characters to the printer unless you really need to.
+Remember, you cannot cancel a suspended CLI command file from within a program. The only way is to press the <Key k="shift" />/<Key k="esc" /> or <Key k="diamond" /><Key k="esc" /> keys on the keyboard. Consequently, you should avoid using this method of sending characters to the printer unless you really need to.
 
 The use of CLI command files is explained more fully in the ‘Operating System Interface' section of the manual.
 
@@ -63,7 +63,7 @@ OSCLI ("CLI #-P"):dummy=INKEY(0)
 
 Subsequent PRINT statements will now only print to the screen.
 
-This line sends ❑-P to the CLI and turns printer echo off. Unfortunately, this leaves the CLI suspended and there is no way to reactivate it from within your program. You can, however, reactivate the CLI manually by pressing \[SHIFT\]/\[ESCAPE\] when your program has terminated. You may not initially notice the effect of having a suspended CLI command file. However, when you list a program you will find that the listing no longer pauses automatically after every page.
+This line sends <Key k="square" />-P to the CLI and turns printer echo off. Unfortunately, this leaves the CLI suspended and there is no way to reactivate it from within your program. You can, however, reactivate the CLI manually by pressing <Key k="shift" />/<Key k="esc" /> when your program has terminated. You may not initially notice the effect of having a suspended CLI command file. However, when you list a program you will find that the listing no longer pauses automatically after every page.
 
 ## Using PRINT\# [#using-print]
 

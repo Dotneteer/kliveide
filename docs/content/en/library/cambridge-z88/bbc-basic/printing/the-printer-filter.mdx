@@ -8,9 +8,9 @@ import { Table } from 'nextra/components'
 
 # The Printer Filter
 
-All output explicitly sent to the printer device :PRT.0 goes via the ‘Printer Filter'. This filter examines every character to see if it has some special meaning or if it is to be translated into another character or sequence of characters. The code translation and command codes may be edited using the 'Printer Editor' (❑E) as described in your Z88 Users' Guide.
+All output explicitly sent to the printer device :PRT.0 goes via the ‘Printer Filter'. This filter examines every character to see if it has some special meaning or if it is to be translated into another character or sequence of characters. The code translation and command codes may be edited using the 'Printer Editor' (<Key k="square" />E) as described in your Z88 Users' Guide.
 
-Most printers have a set of control codes that switch the printer into similar modes. However, whilst most printers provide a number of similar modes, the codes used are often different. The 'Printer Filter' provides a universal set of print format controls which may be used irrespective of the printer in use. Provided you use the 'Printer Editor' (❑E) to configure the Print Filter for your printer, your programs will work in exactly the same way irrespective of the printer in use.
+Most printers have a set of control codes that switch the printer into similar modes. However, whilst most printers provide a number of similar modes, the codes used are often different. The 'Printer Filter' provides a universal set of print format controls which may be used irrespective of the printer in use. Provided you use the 'Printer Editor' (<Key k="square" />E) to configure the Print Filter for your printer, your programs will work in exactly the same way irrespective of the printer in use.
 
 The 'Printer Filter On' and 'Printer Filter Off' Escape sequences also turn the printing on and off. So remember to use them before and after printing.
 
@@ -196,11 +196,9 @@ Since you cannot issue CLI 'dot' commands from the keyboard, you will need to wr
 
 If this file had been saved (in ‘plain text’ format) as ‘predif, you could initiate printer output redirection by issuing the command
 
-```text
-♢EXpredir
-```
+<Key k="diamond" /><Typed>EXpredir</Typed>
 
-from the filer (❑F), or
+from the filer (<Key k="square" />F), or
 
 ```text
 *CLI .*predir

@@ -91,7 +91,7 @@ REPORT prints out the error string associated with the last error which occurred
 
 ## Problems with Error Trapping [#problems-with-error-trapping]
 
-If there is an error in your ON ERROR statement, BBC BASIC(Z80) will go into an infinite loop. \[ESC\] (which generates error code 27) will not break you out of this loop. On most (single tasking) computers like the BBC Micro, you can escape from such a loop by pressing \<BREAK\> or turning the computer off.
+If there is an error in your ON ERROR statement, BBC BASIC(Z80) will go into an infinite loop. <Key k="esc" /> (which generates error code 27) will not break you out of this loop. On most (single tasking) computers like the BBC Micro, you can escape from such a loop by pressing \<BREAK\> or turning the computer off.
 
 Because the Z88 is a sophisticated computer which is capable of holding several programs in memory concurrently, this option has complications.
 
@@ -103,7 +103,7 @@ To overcome this problem, you should **ALWAYS** include a line similar to
 dummy = INKEY(0)
 ```
 
-as the **FIRST** line of any error handling routine. If you do so, you will be able to escape to the INDEX from a ‘doom loop’ by pressing the `[INDEX]` key. If you try to return to your BBC BASIC(Z80) program, you will find yourself in the same situation as when you left it. All you can do is to ♢`KILL` the offending BBC BASIC(Z80) instantiation. You will lose your program, but everything else will be intact. For example:
+as the **FIRST** line of any error handling routine. If you do so, you will be able to escape to the INDEX from a ‘doom loop’ by pressing the <Key k="index" /> key. If you try to return to your BBC BASIC(Z80) program, you will find yourself in the same situation as when you left it. All you can do is to <Key k="diamond" />`KILL` the offending BBC BASIC(Z80) instantiation. You will lose your program, but everything else will be intact. For example:
 
 ```text
 10 ON ERROR GOTO 1000
@@ -119,7 +119,7 @@ as the **FIRST** line of any error handling routine. If you do so, you will be a
 
 ## Error Trapping Examples [#error-trapping-examples]
 
-The example below does not try to deal with errors, it just uses ERR, ERL and REPORT to tell the user about the error. It’s only advantage over BBC BASIC(Z80)'s normal error handling is that it gives the error number; it would probably not be used in practice. As you can see from the second run, pressing `[ESC]` is treated as an error (number 17).
+The example below does not try to deal with errors, it just uses ERR, ERL and REPORT to tell the user about the error. It’s only advantage over BBC BASIC(Z80)'s normal error handling is that it gives the error number; it would probably not be used in practice. As you can see from the second run, pressing <Key k="esc" /> is treated as an error (number 17).
 
 ```text
   5 ON ERROR GOTO 100
@@ -155,13 +155,13 @@ Error No 21
 
 RUN
 
-Type a number <strong>\[Esc\]</strong>
+Type a number <Key k="esc" />
 
 Error No 17
 
 Escape at line 20
 
-The example below has been further expanded to include error trapping. The only 'predictable' error is that the user will try a negative number. Any other error is unacceptable, so it is reported and the program aborted. Consequently, when `[ESC]` is used to abort the program, it is reported as an error. However, a further test for ERR=17 could be included so that the program would halt on ESCAPE without an error being reported.
+The example below has been further expanded to include error trapping. The only 'predictable' error is that the user will try a negative number. Any other error is unacceptable, so it is reported and the program aborted. Consequently, when <Key k="esc" /> is used to abort the program, it is reported as an error. However, a further test for ERR=17 could be included so that the program would halt on ESCAPE without an error being reported.
 
 ```text
   5 ON ERROR GOTO 100
@@ -199,7 +199,7 @@ Type a number **4**
 
 4 2
 
-Type a number <strong>\[Esc\]</strong>
+Type a number <Key k="esc" />
 
 Escape at line 20
 

@@ -32,7 +32,7 @@ The example below is a 'bare bones' calculator program which evaluates the expre
 
 You can only use EVAL to work out functions (like SIN, COS, etc). It won't execute statements like MODE 0, PRINT, etc.
 
-In the following example, EVAL would print ‘Hello world!’ if you entered ‘FN\_FRED’ in response to the prompt. The program will continue until an error occurs (pressing `[ESC]` for example).
+In the following example, EVAL would print ‘Hello world!’ if you entered ‘FN\_FRED’ in response to the prompt. The program will continue until an error occurs (pressing <Key k="esc" /> for example).
 
 ```text
 10 REPEAT
@@ -47,16 +47,7 @@ In the following example, EVAL would print ‘Hello world!’ if you entered ‘
 
 Example run (user entry in **bold**):
 
-<strong>\>RUN</strong>`[ENTER]`<br />`Enter an expression:` <strong>`2*5`</strong>`[ENTER]`
-
-```text
-        10
-Enter an expression: FN_FRED[ENTER]
-        Hello World!
-Enter an expression: JIM[ENTER]
-No such variable at line 20
->
-```
+<strong>\>RUN</strong><Key k="enter" /><br />`Enter an expression:` <strong>`2*5`</strong><Key k="enter" /><br />`10`<br />`Enter an expression:` <strong>`FN_FRED`</strong><Key k="enter" /><br />`Hello World!`<br />`Enter an expression:` <strong>`JIM`</strong><Key k="enter" /><br />`No such variable at line 20`<br />`>`
 
 **Syntax**
 
