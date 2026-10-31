@@ -870,6 +870,26 @@
     "context": "Checkbox in the Videoton TVC's Machine menu: plugs the HBF floppy disk interface card (with its VT-DOS ROM) into the machine, which restarts it. HBF and VT-DOS are product names.",
     "maxChars": 40
   },
+  "menu.ep.cartridge": "IS-BASIC Cartridge",
+  "@menu.ep.cartridge": {
+    "context": "Checkbox in the Enterprise 64/128's Machine menu: puts the IS-BASIC cartridge into the machine's cartridge slot (without it the machine starts its built-in word processor); changing it restarts the machine. IS-BASIC is a product name.",
+    "maxChars": 40
+  },
+  "menu.ep.hostFs": "FILE: Device (Host Folder)",
+  "@menu.ep.hostFs": {
+    "context": "Checkbox in the Enterprise 64/128's Machine menu: fits Klive's FILE: device, which lets the emulated machine load and save files in a folder on the user's computer (BASIC's LOAD \"FILE:name\"); changing it restarts the machine. FILE: is the device name the user types and stays untranslated.",
+    "maxChars": 40
+  },
+  "menu.ep.openFileFolder": "Open FILE: Folder",
+  "@menu.ep.openFileFolder": {
+    "context": "Menu item in the Enterprise 64/128's Machine menu: opens, in the computer's file manager, the folder whose files the emulated machine's FILE: device reads and writes. FILE: is a device name and stays untranslated.",
+    "maxChars": 40
+  },
+  "menu.ep.linearPalette": "Linear Palette Levels",
+  "@menu.ep.linearPalette": {
+    "context": "Checkbox in the Enterprise 64/128's Machine menu: draws the machine's colours with evenly spaced brightness levels instead of the levels the real circuit board's resistors produce; changing it restarts the machine.",
+    "maxChars": 40
+  },
   "menu.if1.connect": "Interface 1",
   "@menu.if1.connect": {
     "context": "Checkbox, the first item of Machine › Microdrives on the ZX Spectrum 48K and 128K: connects the ZX Interface 1 (Sinclair's add-on that drives Microdrives), which restarts the machine. A product name; usually left untranslated.",

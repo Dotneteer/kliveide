@@ -1,9 +1,10 @@
 # Enterprise 64/128 on the WASM Core — Implementation Plan
 
-**Status:** Phases 1–6 done (2026-10-31): EXOS 2.1 boots to IS-BASIC 2.1 on the core (and EXOS 2.0 to
+**Status:** Phases 1–7 done (2026-10-31): EXOS 2.1 boots to IS-BASIC 2.1 on the core (and EXOS 2.0 to
 IS-BASIC 2.0 on the 64), the picture shows it, DAVE plays, the host and virtual keyboards and the
-joysticks work, and Klive's `FILE:` device loads and saves host files (§18). Next: the debugger and IDE
-surfaces (Phase 7).
+joysticks work, Klive's `FILE:` device loads and saves host files, and the IDE's debugger surfaces
+(history, profile, reverse debugging, state files, the NICK and DAVE panels, EXOS calls and variables,
+the IS-BASIC listing) cover the Enterprise (§18). Next: the assembler, Run and tapes (Phase 8).
 D1–D9 accepted (§16). Still open in Phase 0: reading EP64 schematic sheet 1 for Q1 (the VINT edge).
 **Input:** the research pack `_input/enterprise128/`. Read these first:
 - `README.md`: the machine at a glance, the disagreements table and the ROM decision;
@@ -710,7 +711,7 @@ Each gets one constant or define, its default and its reason in the core README.
 | **4. Sound** | §8.2–§8.3, stereo out. | Done 2026-10-31 (§18): `sound.test.ts` (the generator, the outputs, a 1 kHz tone through to the host's samples, EXOS's keyclick). Not heard by ear: no audio output in this environment; `SOUND` statements need the typer (Phase 5). |
 | **5. Keyboard and `FILE:`** | §9.1, §9.2: matrix, host mapping, joysticks, the `FILE:` ROM and host side; the virtual keyboard after its design is approved. | Done 2026-10-31 (§18): `keyboard.test.ts`, `hostfs.test.ts`, `ep-fileio-rom.test.ts`, `test/controls/EpKeyboard.test.tsx`; in the running app, host typing, `SAVE "FILE:…"` to the `FILEIO` folder, and the virtual keyboard's space bar past the banner. |
 | **6. 64K model** | `ep64`: EXOS 2.0, IS-BASIC 2.0, 64K. | Done 2026-10-31 (§18): `ep64.test.ts` (EXOS 2.0's RAM test, 65536 bytes, F8h–FBh empty, the IS-BASIC 2.0 picture hash checked by eye); in the running app, the 64 boots to IS-BASIC 2.0. |
-| **7. IDE** | Partitions, the NICK and DAVE panels, disassembler (`RST 30h`), SysVars, charset, menus, state files, history, profile, CLI; the IS-BASIC listing if §11.4 finds the table. | Debug tests, the Enterprise in every cross-core suite; `MF_EXEC_HISTORY`, `MF_PROFILE`, `MF_REVERSE_DEBUG` on. |
+| **7. IDE** | Partitions, the NICK and DAVE panels, disassembler (`RST 30h`), SysVars, charset, menus, state files, history, profile, CLI; the IS-BASIC listing if §11.4 finds the table. | Done 2026-10-31 (§18): history, profile, charset, debug-state, IS-BASIC token and listing tests; the Enterprise in the export contract, journal replay, state determinism, debug recordings and hardware specs suites; `MF_EXEC_HISTORY`, `MF_PROFILE`, `MF_REVERSE_DEBUG` on; the panels, the listing, the menu and the memory view seen in the running app. The CLI moves to Phase 8 with Run. |
 | **8. Assembler and tape** | §12 (`.model ENTERPRISE`, Run/Debug through `FILE:`, `.com` export, project template), §9.3 (tape formats, playing, turbo, SAVE). | `code-injection.test.ts`, `project-templates.test.ts` (runs checked by eye), `tape.test.ts`; `klive run` and `klive test` on the Enterprise. |
 | **9. EXDOS** | §10: the WD1770 variant (its own commit, Beta 128 and TVC byte-identical), the card, disks. | `exdos.test.ts`; EXDOS lists a disk in the running app. |
 | **10. Ship** | Notices (`THIRD_PARTY_NOTICES.md`: CLK files if any were ported; the ROM readme), docs pages, an `AGENTS.md` section, the landing page's machine table (`docs/landing/LandingPage.tsx`, gated by release version), `README.md`'s machine list, the lessons in `.ai/wasm-migration-intent-and-lessons.md`, one `feature` changeset. `npm run test:slow` before release. | Gates and `doc:build` + `doc:check` green; both models, Run, tape and EXDOS checked in the built app. |
@@ -922,3 +923,50 @@ The core's README (`src/emu/machines/enterprise/wasm/README.md`) is the referenc
   Enterprise as a two-model section.
 - **In the running app** (the doc-shots driver, a throwaway home): the 64 starts, a click on the
   virtual space bar passes the banner, and IS-BASIC 2.0 shows its 65536 bytes.
+
+### Phase 7 (2026-10-31)
+
+- **Debugger features on** (`machine-registry.ts`): `MF_EXEC_HISTORY`, `MF_PROFILE`, `MF_REVERSE_DEBUG`,
+  and `MF_BANK: 256` for the memory panel's segment matrix. The history context decoder
+  (`common/history/contexts/epContext.ts`: B0h–B3h, the model, BFh) and the profile layout
+  (`common/profile/layouts/ep.ts`: a byte's offset is its offset in `epMemory`) name segments by their
+  DAVE number; `test/wasm/history/history-ep.test.ts` and `test/ep-hw/profile.test.ts` check them.
+- **A core fix the journal-replay test found:** the last frame's length (`epLastFrameTacts`) was set
+  only by `epExecuteFrame`, so a debugger run left it stale and a replay reached another image. It is
+  now set in `epFrameEnds`, which every path passes. The new exports are classified in
+  `exportContract.ts` (`ReadPhysical` and `HostFsGetRequest` pure; the NICK seed, the palette and the
+  FILE: answers journaled).
+- **Cross-core suites:** the export contract, journal replay (inputs: memory, NICK's border and
+  FIXBIAS, DAVE's sound registers, the keyboard row), state determinism, debug recordings and the
+  hardware specs all run the Enterprise. State files: `STATE_MACHINES` in both places.
+- **Partitions:** labels stay the hex segment numbers (the identity breakpoints and the disassembly
+  use); `getPartitionDescriptions`/`getPartitionGroups` (`epMachineInfo.ts`) describe and group them
+  (EXOS ROM, cartridge, expansion ROM, RAM, video RAM, empty) by the model and the configuration.
+  `getCurrentPartitions` now reports one entry per 8K slot, as the IDE's slot paging counts.
+  `epBankSpace` (`bankSpace.ts`) gives bank breakpoints and annotations the 256 segments.
+- **Character set** (`EpChars`): read from EXOS 2.1's font in video RAM, not from a table. ASCII but
+  £ at 23h (# at 01h), accented letters, arrows and symbols below 20h; `test/ep-hw/charset.test.ts`
+  pins four glyphs.
+- **EXOS calls and variables:** `ep-disassembler.ts` lists the byte after `RST 30h` as data with the
+  function's name (31 functions, codes 0–11 and 16–34, from the EXOS specification's function table);
+  `EpSysVars.ts` lists 13 system-segment variables (BFEDh–BFFFh, LP_POINTER at BFF4h). The
+  specification puts CRDISP_FLAG at both BFEEh and BFEFh; EXOS 2.1 reads BFEFh, which is recorded. The
+  values are EXOS's while page 2 shows segment FFh.
+- **NICK and DAVE panels** (Debug activity, `EpNickPanel.tsx`, `EpDavePanel.tsx`, decoding in
+  `EpDebugState.ts`, which the harness shares): NICK's ports, the beam, the current LPB decoded with
+  its palette, and the LPT list; DAVE's paging, interrupt enables, latches and pins, BFh, and each sound
+  channel decoded. Both show the history banner when the cursor is in the past.
+- **IS-BASIC listing (§11.4: found).** Observed on the running ROM and recorded in
+  `common/enterprise/basicTokens.ts`: a line is its length, the line number, an indent byte and items
+  ending in 00h; statements are 60h and a token (93 words, the ROM's own keyword table at offset
+  35A7h); names, strings, numbers and operators each have a range of first bytes. The current program
+  starts at the word at 021Ah and ends at 0236h (segment F8h in page 0). `epBasicListing.ts` feeds the
+  BASIC Listing view, characters through `EpChars`. Only program 0 is visible through the CPU's
+  paging; the other programs' segment is paged in only while IS-BASIC works on them.
+- **Machine menu** (`ep-menus.ts`): the IS-BASIC cartridge, the FILE: device and "Open FILE: Folder",
+  and linear palette levels; each switch restarts the machine.
+- **In the running app** (the doc-shots driver): the NICK and DAVE panels at IS-BASIC's prompt (EXOS's
+  34-block LPT), the menu's four items, a typed program in the BASIC Listing view with IS-BASIC's
+  indentation, and the memory panel on segment F8h.
+- **Not done here:** `klive run`/`klive test` and the headless factory move to Phase 8 with Run; ROM
+  page documents get no EXOS variable names (an EXOS kind in `romSysVars.ts`, if ROM annotations come).

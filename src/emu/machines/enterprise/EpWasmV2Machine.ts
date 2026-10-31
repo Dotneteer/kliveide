@@ -30,6 +30,12 @@ import { EP_FILEIO_ROM_NAME, EP_ROM_SETS } from "./EpRoms";
 import { EpHostFs, type EpHostFileStore, type EpHostFsAsync } from "./EpHostFs";
 import { EpMainFileStore } from "./EpMainFileStore";
 import {
+  readEpDaveDebugState,
+  readEpNickDebugState,
+  type EpDaveDebugState,
+  type EpNickDebugState
+} from "./EpDebugState";
+import {
   EP_PHYS_UNMAPPED,
   EP_PIXEL_ASPECT,
   EP_ROM_CART,
@@ -40,7 +46,9 @@ import {
   EP_TACTS_PER_LINE,
   EP_TACTS_PER_SLOT,
   EP_TV_FIRST_LINE,
-  EP_TV_FIRST_SLOT
+  EP_TV_FIRST_SLOT,
+  epPartitionDescriptions,
+  epPartitionGroups
 } from "./epMachineInfo";
 import { beamAt, drawnUpTo, type BeamPosition, type BeamTiming } from "@common/utils/beamGeometry";
 import {
@@ -731,14 +739,14 @@ export class EpWasmV2Machine extends EpWasmHost implements IExecutionHistorySour
   }
 
   // ==========================================================================================
-  // Partitions (`.plans/ENTERPRISE_PLAN.md` §11): the 256 segments, numbered as DAVE numbers them.
-  // Phase 7 adds their labels, descriptions and groups.
+  // Partitions (`.plans/ENTERPRISE_PLAN.md` §11): the 256 segments, numbered as DAVE numbers them and
+  // labelled by that number in hex; the chooser describes and groups them (`epMachineInfo.ts`).
 
-  /** The segment each 16K page shows */
+  /** The segment each 8K slot shows (a 16K page's register, twice), as the IDE's slot paging counts */
   override getCurrentPartitions(): number[] {
     const wasm = this.wasmV2Runtime?.exports;
     if (!wasm) return [];
-    return [0, 1, 2, 3].map((page) => wasm.epGetPageRegister(page));
+    return [0, 1, 2, 3, 4, 5, 6, 7].map((slot) => wasm.epGetPageRegister(slot >> 1));
   }
 
   override getCurrentPartitionLabels(): string[] {
@@ -751,6 +759,14 @@ export class EpWasmV2Machine extends EpWasmHost implements IExecutionHistorySour
     const labels: Record<number, string> = {};
     for (let segment = 0; segment < 256; segment++) labels[segment] = segment.toString(16).toUpperCase().padStart(2, "0");
     return labels;
+  }
+
+  override getPartitionDescriptions(): Record<number, string> {
+    return epPartitionDescriptions(this.hardware);
+  }
+
+  override getPartitionGroups(): Record<number, string> {
+    return epPartitionGroups(this.hardware);
   }
 
   override parsePartitionLabel(label: string): number | undefined {
@@ -938,6 +954,20 @@ export class EpWasmV2Machine extends EpWasmHost implements IExecutionHistorySour
   /** Nothing is pushed into the core lazily (it has no clock multiplier), so there is nothing to forget */
   invalidateHostSync(): void {}
 
+
+  // ==========================================================================================
+  // The NICK and DAVE panels (`.plans/ENTERPRISE_PLAN.md` §11, `EpDebugState.ts`)
+
+  /** NICK's ports, counters, current LPB and LPT, for the NICK panel */
+  getEpNickState(): EpNickDebugState {
+    const runtime = this.requireWasmV2Runtime();
+    return readEpNickDebugState(runtime.exports, runtime.memory);
+  }
+
+  /** DAVE's page registers, interrupts, BFh and sound registers, for the DAVE panel */
+  getEpDaveState(): EpDaveDebugState {
+    return readEpDaveDebugState(this.requireWasmV2Runtime().exports, this.getPartitionLabels());
+  }
 
   // ==========================================================================================
   // Helpers

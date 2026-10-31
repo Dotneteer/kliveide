@@ -16,12 +16,13 @@ import { decodeBasicProgram } from "./basicListing";
 import { decodeZx8081Program, type Zx8081BasicKind, zx8081ProgramArea } from "./zx8081BasicListing";
 import { decodeHt1080zProgram, ht1080zProgramArea } from "./ht1080zBasicListing";
 import { decodeTvcProgram } from "./tvcBasicListing";
+import { decodeEpBasicListing } from "./epBasicListing";
 import {
   MC_HT_MODEL,
   MC_TVC_MODEL,
   MC_ZX80_ROM8K,
   MI_HT1080Z,
-  MI_TVC,
+  MI_TVC, MI_ENTERPRISE,
   MI_ZX80,
   MI_ZX81
 } from "@common/machines/constants";
@@ -84,8 +85,12 @@ const BasicPanel = ({ document, viewState }: DocumentProps<BasicViewState>) => {
   );
   const tvcModelRef = useRef(tvcModel);
   tvcModelRef.current = tvcModel;
+  // --- The Enterprise's IS-BASIC (`epBasicListing.ts`)
+  const epBasic = useSelector((s) => s.emulatorState?.machineId === MI_ENTERPRISE);
+  const epBasicRef = useRef(epBasic);
+  epBasicRef.current = epBasic;
   // --- Machines whose listing is shown in the monospace font, never a Sinclair one
-  const ownFont = !!htModel || !!tvcModel;
+  const ownFont = !!htModel || !!tvcModel || epBasic;
   const charSetRef = useRef(machineCharSet);
   charSetRef.current = machineCharSet;
 
@@ -113,7 +118,13 @@ const BasicPanel = ({ document, viewState }: DocumentProps<BasicViewState>) => {
     const getWord = (address: number) => getMemoryWord(memory.current, address);
     const kind = zx8081KindRef.current;
     let lines: BasicLine[];
-    if (tvcModelRef.current && charSetRef.current) {
+    if (epBasicRef.current && charSetRef.current) {
+      ({ lines } = decodeEpBasicListing(memory.current, {
+        charSet: charSetRef.current,
+        showCodes: useCodes.current,
+        buffer: programBuffer.current
+      }));
+    } else if (tvcModelRef.current && charSetRef.current) {
       ({ lines } = decodeTvcProgram(memory.current, {
         charSet: charSetRef.current,
         basic22: tvcModelRef.current === "64p",
@@ -212,7 +223,7 @@ const BasicPanel = ({ document, viewState }: DocumentProps<BasicViewState>) => {
   // --- Whenever the state of view options change, or the machine does
   useEffect(() => {
     refreshBasicView();
-  }, [autoRefresh, showCodes, showSpectrumFont, zx8081Kind, htModel, tvcModel]);
+  }, [autoRefresh, showCodes, showSpectrumFont, zx8081Kind, htModel, tvcModel, epBasic]);
 
   // --- Take care of refreshing the screen
   useEmuStateListener(emuApi, async () => {

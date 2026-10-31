@@ -40,6 +40,8 @@ export const ANNOTATION_MACHINE_MAX_BANK: Record<AnnotationMachine, number> = {
   zx80: 3,
   ht1080z: 3,
   tvc: 7,
+  // --- The Enterprise: segments by their own number (EXOS 00h-01h ... RAM F8h-FFh)
+  ep: 255,
   rom: 7
 };
 

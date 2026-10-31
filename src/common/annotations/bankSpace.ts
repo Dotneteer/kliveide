@@ -5,6 +5,8 @@ import {
   MI_HT1080Z,
   MI_TVC,
   MC_TVC_MODEL,
+  MI_ENTERPRISE,
+  MC_EP_MODEL,
   MI_SCORPION,
   MI_SPECTRUM_128,
   MI_SPECTRUM_3E,
@@ -46,6 +48,10 @@ import {
  *   and so its own sidecar (`TVC_ROM_PAGES`): SYS's low half (-1) and high half (-9), and EXTH (-3, the
  *   high half of EXT; the card window below it is no ROM page). CART (-2) and the HBF card's pages stay
  *   the machine's partitions.
+ * - `ep`: the Enterprise 64/128's 256 segments, numbered as DAVE numbers them (`.plans/ENTERPRISE_PLAN.md`
+ *   §11): any 16K page can show any segment, so every segment is a bank, its number the partition. The
+ *   ROM segments (EXOS 00h-01h, the cartridge 04h, the FILE: ROM 10h, EXDOS 20h-21h) are ROM pages under
+ *   their own segment numbers; the 64's missing F8h-FBh are not RAM.
  */
 
 /** Which bank space a machine's annotations are numbered in. Not a machine model. */
@@ -60,6 +66,7 @@ export type AnnotationMachine =
   | "zx80"
   | "ht1080z"
   | "tvc"
+  | "ep"
   | "rom";
 
 /** One partition index per 8K slot, as `resolveMem64kPartitions` / `getCurrentPartitions` give it. */
@@ -462,6 +469,43 @@ export function tvcBankSpace(plus: boolean): BankSpace {
 }
 
 // ------------------------------------------------------------------------------------------------
+// The Enterprise 64/128: 256 segments, any of them in any 16K page
+
+/** The segments that hold ROM (EXOS, the cartridge, Klive's FILE: ROM, EXDOS) */
+export const EP_ROM_SEGMENTS: readonly number[] = [0x00, 0x01, 0x04, 0x10, 0x20, 0x21];
+
+/** The Enterprise bank space: the 128's RAM is F8h-FFh, the 64's FCh-FFh */
+export function epBankSpace(is128: boolean): BankSpace {
+  const ramBanks = is128 ? [0xf8, 0xf9, 0xfa, 0xfb, 0xfc, 0xfd, 0xfe, 0xff] : [0xfc, 0xfd, 0xfe, 0xff];
+  return {
+    id: "ep",
+    bankSize: BANK_SIZE,
+    maxBank: 0xff,
+    ramBanks,
+    extendedSet: false,
+    bankBreakpoints: true,
+    siteAt(address, slots) {
+      const partition = slotPartition(slots, address);
+      if (partition === undefined) return undefined;
+      const offset = address & 0x3fff;
+      if (EP_ROM_SEGMENTS.includes(partition)) return { kind: "rom", partition, offset };
+      return { kind: "bank", bank: partition, offset };
+    },
+    addressesOf(site, slots) {
+      const result: number[] = [];
+      for (let slot16 = 0; slot16 < 4; slot16++) {
+        if (slots?.[slot16 * 2] === site.bank) result.push(slot16 * 0x4000 + site.offset);
+      }
+      return result;
+    },
+    partitionOf: (site) => site.bank,
+    candidateAddresses: (site) => [0, 1, 2, 3].map((slot16) => slot16 * 0x4000 + site.offset),
+    // --- EXOS's system segment (FFh) at $8000, where its variables sit at BFxxh; any other segment at $C000
+    defaultOffsetIndex: (bank) => (bank === 0xff ? 2 : 3)
+  };
+}
+
+// ------------------------------------------------------------------------------------------------
 // Choosing one
 
 /** The ZX80/ZX81 model a machine configuration describes (`resolveZx8081Hardware`'s rule). */
@@ -507,6 +551,8 @@ export function bankSpaceFor(
       return ht1080zBankSpace(Number(config?.[MC_MEM_SIZE] ?? 16) >= 48 ? 48 : 16);
     case MI_TVC:
       return tvcBankSpace(config?.[MC_TVC_MODEL] === "64p");
+    case MI_ENTERPRISE:
+      return epBankSpace(config?.[MC_EP_MODEL] !== "64");
     default:
       return undefined;
   }
@@ -535,6 +581,8 @@ export function bankSpaceForAnnotationMachine(machine: AnnotationMachine): BankS
       return ht1080zBankSpace(48);
     case "tvc":
       return tvcBankSpace(true);
+    case "ep":
+      return epBankSpace(true);
     default:
       return undefined;
   }

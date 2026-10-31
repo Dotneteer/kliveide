@@ -48,6 +48,20 @@
       "step": "The history step, e.g. '−12' (a minus sign and a count of steps back)"
     }
   },
+  "panels.side.historyPresent.epNick": "NICK shows the present, not history step {step}",
+  "@panels.side.historyPresent.epNick": {
+    "context": "Warning band at the top of the NICK panel (the Enterprise 64/128's video chip: its ports and display list) while the debugger's history cursor is in the past. NICK is a chip name.",
+    "placeholders": {
+      "step": "The history step, e.g. '−12' (a minus sign and a count of steps back)"
+    }
+  },
+  "panels.side.historyPresent.epDave": "DAVE shows the present, not history step {step}",
+  "@panels.side.historyPresent.epDave": {
+    "context": "Warning band at the top of the DAVE panel (the Enterprise 64/128's memory paging, interrupt and sound chip) while the debugger's history cursor is in the past. DAVE is a chip name.",
+    "placeholders": {
+      "step": "The history step, e.g. '−12' (a minus sign and a count of steps back)"
+    }
+  },
   "panels.side.historyPresent.listedBytes": "The listed bytes show the present, not history step {step}",
   "@panels.side.historyPresent.listedBytes": {
     "context": "Warning band at the top of the Disassembly view while the debugger's history cursor is in the past: the disassembled bytes are the current memory.",
@@ -3750,5 +3764,452 @@
   "panels.side.tvcVideo.displayBank": "The video bank the picture shows (64K+)",
   "@panels.side.tvcVideo.displayBank": {
     "context": "Tooltip of the TVC Video panel's VB value: which of the four video RAM banks the video circuit reads."
+  },
+  "panels.side.epNick.title": "NICK",
+  "@panels.side.epNick.title": {
+    "context": "Title of the Debug side-bar panel showing the Enterprise 64/128's NICK video chip. 'NICK' is the chip's name, keep it."
+  },
+  "panels.side.epNick.port80": "FIXBIAS (port 80h): palette entries 8-15 are FIXBIAS × 8 + 0-7 (bits 4-0)",
+  "@panels.side.epNick.port80": {
+    "context": "Tooltip of the P80 value in the NICK panel (the Enterprise 64/128's video chip, NICK). Keep the hardware names (NICK, LPT, LPB, LD1, LD2, FIXBIAS...) as they are."
+  },
+  "panels.side.epNick.port81": "BORDER (port 81h): the colour outside the margins",
+  "@panels.side.epNick.port81": {
+    "context": "Tooltip of the P81 value in the NICK panel (the Enterprise 64/128's video chip, NICK). Keep the hardware names (NICK, LPT, LPB, LD1, LD2, FIXBIAS...) as they are."
+  },
+  "panels.side.epNick.port82": "LPL (port 82h): LPT address bits 11-4",
+  "@panels.side.epNick.port82": {
+    "context": "Tooltip of the P82 value in the NICK panel (the Enterprise 64/128's video chip, NICK). LPT = Line Parameter Table. Keep the hardware names (NICK, LPT, LPB, LD1, LD2, FIXBIAS...) as they are."
+  },
+  "panels.side.epNick.port83": "LPH (port 83h): LPT address bits 15-12; bit 6 clock, bit 7 reload (both active low)",
+  "@panels.side.epNick.port83": {
+    "context": "Tooltip of the P83 value in the NICK panel (the Enterprise 64/128's video chip, NICK). LPT = Line Parameter Table. Keep the hardware names (NICK, LPT, LPB, LD1, LD2, FIXBIAS...) as they are."
+  },
+  "panels.side.epNick.lptBase": "The Line Parameter Table's base address in NICK's 64K",
+  "@panels.side.epNick.lptBase": {
+    "context": "Tooltip of the LPT value in the NICK panel (the Enterprise 64/128's video chip, NICK). Keep the hardware names (NICK, LPT, LPB, LD1, LD2, FIXBIAS...) as they are."
+  },
+  "panels.side.epNick.lptAddress": "The LPT pointer: the address of the LPB (Line Parameter Block) NICK shows",
+  "@panels.side.epNick.lptAddress": {
+    "context": "Tooltip of the LPB value in the NICK panel (the Enterprise 64/128's video chip, NICK). Keep the hardware names (NICK, LPT, LPB, LD1, LD2, FIXBIAS...) as they are."
+  },
+  "panels.side.epNick.line": "Lines since vertical sync started (the beam's line)",
+  "@panels.side.epNick.line": {
+    "context": "Tooltip of the LINE value in the NICK panel (the Enterprise 64/128's video chip, NICK)."
+  },
+  "panels.side.epNick.slot": "The slot that runs next (0-56; a line has 57 slots)",
+  "@panels.side.epNick.slot": {
+    "context": "Tooltip of the SLOT value in the NICK panel (the Enterprise 64/128's video chip, NICK). A slot is NICK's unit of time within a line."
+  },
+  "panels.side.epNick.linesLeft": "Lines left in the current block (0: the next line starts a new block)",
+  "@panels.side.epNick.linesLeft": {
+    "context": "Tooltip of the LEFT value in the NICK panel (the Enterprise 64/128's video chip, NICK). A block is one Line Parameter Block's band of lines."
+  },
+  "panels.side.epNick.displayOn": "Display on: the beam is inside the margins",
+  "@panels.side.epNick.displayOn": {
+    "context": "Tooltip of the DISP flag in the NICK panel (the Enterprise 64/128's video chip, NICK)."
+  },
+  "panels.side.epNick.vsyncOn": "Vertical sync on",
+  "@panels.side.epNick.vsyncOn": {
+    "context": "Tooltip of the VSYN flag in the NICK panel (the Enterprise 64/128's video chip, NICK)."
+  },
+  "panels.side.epNick.mode": "The video mode latched at the left margin",
+  "@panels.side.epNick.mode": {
+    "context": "Tooltip of the MODE value (the live one, not the LPB's) in the NICK panel (the Enterprise 64/128's video chip, NICK)."
+  },
+  "panels.side.epNick.dataBus": "The last byte NICK fetched (the floating video bus a port read returns)",
+  "@panels.side.epNick.dataBus": {
+    "context": "Tooltip of the BUS value in the NICK panel (the Enterprise 64/128's video chip, NICK)."
+  },
+  "panels.side.epNick.ld1Live": "LD1: line data pointer 1, as NICK counts it now",
+  "@panels.side.epNick.ld1Live": {
+    "context": "Tooltip of the live LD1 value in the NICK panel (the Enterprise 64/128's video chip, NICK). Keep the hardware names (NICK, LPT, LPB, LD1, LD2, FIXBIAS...) as they are."
+  },
+  "panels.side.epNick.ld2Live": "LD2: line data pointer 2, as NICK counts it now",
+  "@panels.side.epNick.ld2Live": {
+    "context": "Tooltip of the live LD2 value in the NICK panel (the Enterprise 64/128's video chip, NICK). Keep the hardware names (NICK, LPT, LPB, LD1, LD2, FIXBIAS...) as they are."
+  },
+  "panels.side.epNick.fixBiasColours": "Palette entries 8-15 (FIXBIAS × 8 + 0-7)",
+  "@panels.side.epNick.fixBiasColours": {
+    "context": "Tooltip of the row of eight colour swatches in the NICK panel (the Enterprise 64/128's video chip, NICK). Keep the hardware names (NICK, LPT, LPB, LD1, LD2, FIXBIAS...) as they are."
+  },
+  "panels.side.epNick.borderColour": "The border colour (port 81h)",
+  "@panels.side.epNick.borderColour": {
+    "context": "Tooltip of the border colour swatch in the NICK panel (the Enterprise 64/128's video chip, NICK)."
+  },
+  "panels.side.epNick.colour": "Colour byte {value}",
+  "@panels.side.epNick.colour": {
+    "context": "Tooltip of one colour swatch in the NICK panel (the Enterprise 64/128's video chip, NICK): the colour byte NICK outputs (G0 R0 B0 G1 R1 B1 G2 R2).",
+    "placeholders": {
+      "value": "The colour byte in hex, e.g. '$1C'"
+    }
+  },
+  "panels.side.epNick.currentLpb": "Current LPB at {address}",
+  "@panels.side.epNick.currentLpb": {
+    "context": "Section heading in the NICK panel (the Enterprise 64/128's video chip, NICK) over the decoded Line Parameter Block NICK is showing. Keep the hardware names (NICK, LPT, LPB, LD1, LD2, FIXBIAS...) as they are.",
+    "placeholders": {
+      "address": "The LPB's address in hex, e.g. '$FF00'"
+    }
+  },
+  "panels.side.epNick.lpt": "LPT: {count, plural, one {# block} other {# blocks}}",
+  "@panels.side.epNick.lpt": {
+    "context": "Section heading in the NICK panel (the Enterprise 64/128's video chip, NICK) over the list of Line Parameter Blocks, from the table's base to the RELOAD block. Keep the hardware names (NICK, LPT, LPB, LD1, LD2, FIXBIAS...) as they are.",
+    "placeholders": {
+      "count": "How many blocks the list shows"
+    }
+  },
+  "panels.side.epNick.lines": "Lines in the block (256 - SC)",
+  "@panels.side.epNick.lines": {
+    "context": "Tooltip of the LINES value of a decoded LPB in the NICK panel (the Enterprise 64/128's video chip, NICK). SC is the LPB's first byte. Keep the hardware names (NICK, LPT, LPB, LD1, LD2, FIXBIAS...) as they are."
+  },
+  "panels.side.epNick.lpbMode": "Video mode (MB bits 3-1)",
+  "@panels.side.epNick.lpbMode": {
+    "context": "Tooltip of the MODE value of a decoded LPB in the NICK panel (the Enterprise 64/128's video chip, NICK). MB is the LPB's mode byte."
+  },
+  "panels.side.epNick.colours": "Colours (MB bits 6-5): 2, 4, 16 or 256",
+  "@panels.side.epNick.colours": {
+    "context": "Tooltip of the COLS value of a decoded LPB in the NICK panel (the Enterprise 64/128's video chip, NICK). MB is the LPB's mode byte."
+  },
+  "panels.side.epNick.vres": "VRES (MB bit 4): LD1 loads on the block's first line only",
+  "@panels.side.epNick.vres": {
+    "context": "Tooltip of the VRES flag of a decoded LPB in the NICK panel (the Enterprise 64/128's video chip, NICK). Keep the hardware names (NICK, LPT, LPB, LD1, LD2, FIXBIAS...) as they are."
+  },
+  "panels.side.epNick.vint": "VINT (MB bit 7): the block raises the video interrupt",
+  "@panels.side.epNick.vint": {
+    "context": "Tooltip of the VINT flag of a decoded LPB in the NICK panel (the Enterprise 64/128's video chip, NICK). Keep the hardware names (NICK, LPT, LPB, LD1, LD2, FIXBIAS...) as they are."
+  },
+  "panels.side.epNick.reload": "RELOAD (MB bit 0): the LPT starts again from its base after this block",
+  "@panels.side.epNick.reload": {
+    "context": "Tooltip of the RELOAD flag of a decoded LPB in the NICK panel (the Enterprise 64/128's video chip, NICK). Keep the hardware names (NICK, LPT, LPB, LD1, LD2, FIXBIAS...) as they are."
+  },
+  "panels.side.epNick.lm": "Left margin (LM bits 5-0, a slot number)",
+  "@panels.side.epNick.lm": {
+    "context": "Tooltip of the LM value of a decoded LPB in the NICK panel (the Enterprise 64/128's video chip, NICK)."
+  },
+  "panels.side.epNick.rm": "Right margin (RM bits 5-0, a slot number)",
+  "@panels.side.epNick.rm": {
+    "context": "Tooltip of the RM value of a decoded LPB in the NICK panel (the Enterprise 64/128's video chip, NICK)."
+  },
+  "panels.side.epNick.msbAlt": "MSBALT (LM bit 7): a bitmap byte's bit 7 adds 2 to the palette index",
+  "@panels.side.epNick.msbAlt": {
+    "context": "Tooltip of a flag of a decoded LPB in the NICK panel (the Enterprise 64/128's video chip, NICK). Keep the hardware names (NICK, LPT, LPB, LD1, LD2, FIXBIAS...) as they are."
+  },
+  "panels.side.epNick.lsbAlt": "LSBALT (LM bit 6): a bitmap byte's bit 0 adds 4 to the palette index",
+  "@panels.side.epNick.lsbAlt": {
+    "context": "Tooltip of a flag of a decoded LPB in the NICK panel (the Enterprise 64/128's video chip, NICK). Keep the hardware names (NICK, LPT, LPB, LD1, LD2, FIXBIAS...) as they are."
+  },
+  "panels.side.epNick.altInd1": "ALTIND1 (RM bit 6): a character code's bit 7 adds 2 to the palette index",
+  "@panels.side.epNick.altInd1": {
+    "context": "Tooltip of a flag of a decoded LPB in the NICK panel (the Enterprise 64/128's video chip, NICK). Keep the hardware names (NICK, LPT, LPB, LD1, LD2, FIXBIAS...) as they are."
+  },
+  "panels.side.epNick.altInd0": "ALTIND0 (RM bit 7): a character code's bit 6 adds 4 to the palette index",
+  "@panels.side.epNick.altInd0": {
+    "context": "Tooltip of a flag of a decoded LPB in the NICK panel (the Enterprise 64/128's video chip, NICK). Keep the hardware names (NICK, LPT, LPB, LD1, LD2, FIXBIAS...) as they are."
+  },
+  "panels.side.epNick.ld1": "LD1: line data pointer 1 as the LPB sets it",
+  "@panels.side.epNick.ld1": {
+    "context": "Tooltip of the LD1 value of a decoded LPB in the NICK panel (the Enterprise 64/128's video chip, NICK). Keep the hardware names (NICK, LPT, LPB, LD1, LD2, FIXBIAS...) as they are."
+  },
+  "panels.side.epNick.ld2": "LD2: line data pointer 2 as the LPB sets it",
+  "@panels.side.epNick.ld2": {
+    "context": "Tooltip of the LD2 value of a decoded LPB in the NICK panel (the Enterprise 64/128's video chip, NICK). Keep the hardware names (NICK, LPT, LPB, LD1, LD2, FIXBIAS...) as they are."
+  },
+  "panels.side.epNick.palette": "COL0-COL7: palette entries 0-7",
+  "@panels.side.epNick.palette": {
+    "context": "Tooltip of the row of eight colour swatches of a decoded LPB in the NICK panel (the Enterprise 64/128's video chip, NICK). Keep the hardware names (NICK, LPT, LPB, LD1, LD2, FIXBIAS...) as they are."
+  },
+  "panels.side.epNick.lptHeader.address": "LPB",
+  "@panels.side.epNick.lptHeader.address": {
+    "context": "Column heading of the LPT list in the NICK panel (the Enterprise 64/128's video chip, NICK): the block's address. Hardware name, keep it."
+  },
+  "panels.side.epNick.lptHeader.lines": "Lines",
+  "@panels.side.epNick.lptHeader.lines": {
+    "context": "Column heading of the LPT list in the NICK panel (the Enterprise 64/128's video chip, NICK): how many lines the block shows. Short, about 5 characters."
+  },
+  "panels.side.epNick.lptHeader.mode": "Mode",
+  "@panels.side.epNick.lptHeader.mode": {
+    "context": "Column heading of the LPT list in the NICK panel (the Enterprise 64/128's video chip, NICK): the block's video mode. Short, about 6 characters."
+  },
+  "panels.side.epNick.lptHeader.flags": "Flags",
+  "@panels.side.epNick.lptHeader.flags": {
+    "context": "Column heading of the LPT list in the NICK panel (the Enterprise 64/128's video chip, NICK): the block's V (VRES), I (VINT) and R (RELOAD) flags. Short, about 5 characters."
+  },
+  "panels.side.epNick.lptHeader.palette": "Palette",
+  "@panels.side.epNick.lptHeader.palette": {
+    "context": "Column heading of the LPT list in the NICK panel (the Enterprise 64/128's video chip, NICK): the block's eight colours."
+  },
+  "panels.side.epNick.lptRow": "LPB at {address}: {lines} lines, {mode}, {colours} colours, margins {lm}-{rm}, LD1 {ld1}, LD2 {ld2}",
+  "@panels.side.epNick.lptRow": {
+    "context": "Tooltip of one row of the LPT list in the NICK panel (the Enterprise 64/128's video chip, NICK). Keep the hardware names (NICK, LPT, LPB, LD1, LD2, FIXBIAS...) as they are.",
+    "placeholders": {
+      "address": "The block's address in hex",
+      "lines": "Its line count",
+      "mode": "Its video mode's name, e.g. 'CH128' (not translated)",
+      "colours": "2, 4, 16 or 256",
+      "lm": "The left margin",
+      "rm": "The right margin",
+      "ld1": "LD1 in hex",
+      "ld2": "LD2 in hex"
+    }
+  },
+  "panels.side.epNick.current": "The block NICK shows now",
+  "@panels.side.epNick.current": {
+    "context": "Tooltip of the marker of the current row in the LPT list in the NICK panel (the Enterprise 64/128's video chip, NICK)."
+  },
+  "panels.side.epNick.notAvailable": "NICK state not available",
+  "@panels.side.epNick.notAvailable": {
+    "context": "Empty-state text of the NICK panel (the Enterprise 64/128's video chip, NICK) before the machine has run."
+  },
+  "panels.side.epDave.title": "DAVE",
+  "@panels.side.epDave.title": {
+    "context": "Title of the Debug side-bar panel showing the Enterprise 64/128's DAVE chip. 'DAVE' is the chip's name, keep it."
+  },
+  "panels.side.epDave.notAvailable": "DAVE state not available",
+  "@panels.side.epDave.notAvailable": {
+    "context": "Empty-state text of the DAVE panel (the Enterprise 64/128's DAVE chip: memory paging, interrupts and sound) before the machine has run."
+  },
+  "panels.side.epDave.paging": "Paging",
+  "@panels.side.epDave.paging": {
+    "context": "Section heading in the DAVE panel (the Enterprise 64/128's DAVE chip: memory paging, interrupts and sound) over the four page registers B0h-B3h."
+  },
+  "panels.side.epDave.page": "Page {page} (port {port}): the segment shown at {range}",
+  "@panels.side.epDave.page": {
+    "context": "Tooltip of a page register (B0-B3) in the DAVE panel (the Enterprise 64/128's DAVE chip: memory paging, interrupts and sound).",
+    "placeholders": {
+      "page": "The page's number, 0-3",
+      "port": "The port, e.g. 'B0h'",
+      "range": "The Z80 addresses of the page, e.g. '0000h-3FFFh'"
+    }
+  },
+  "panels.side.epDave.interrupts": "Interrupts",
+  "@panels.side.epDave.interrupts": {
+    "context": "Section heading in the DAVE panel (the Enterprise 64/128's DAVE chip: memory paging, interrupts and sound) over the interrupt sources (port B4h)."
+  },
+  "panels.side.epDave.intSelectable": "The selectable source (A7h bits 6-5): {source}",
+  "@panels.side.epDave.intSelectable": {
+    "context": "Tooltip of the SEL interrupt row in the DAVE panel (the Enterprise 64/128's DAVE chip: memory paging, interrupts and sound).",
+    "placeholders": {
+      "source": "The chosen source, one of the intSource texts"
+    }
+  },
+  "panels.side.epDave.int1Hz": "The 1 Hz timer",
+  "@panels.side.epDave.int1Hz": {
+    "context": "Tooltip of the 1HZ interrupt row in the DAVE panel (the Enterprise 64/128's DAVE chip: memory paging, interrupts and sound)."
+  },
+  "panels.side.epDave.intInt1": "INT1: NICK's video interrupt (VINT)",
+  "@panels.side.epDave.intInt1": {
+    "context": "Tooltip of the INT1 interrupt row in the DAVE panel (the Enterprise 64/128's DAVE chip: memory paging, interrupts and sound). Keep the hardware names (DAVE, BFh, B4h...) as they are."
+  },
+  "panels.side.epDave.intInt2": "INT2: the serial/network status input",
+  "@panels.side.epDave.intInt2": {
+    "context": "Tooltip of the INT2 interrupt row in the DAVE panel (the Enterprise 64/128's DAVE chip: memory paging, interrupts and sound)."
+  },
+  "panels.side.epDave.intSource.k1": "1 kHz",
+  "@panels.side.epDave.intSource.k1": {
+    "context": "The 1 kHz timer as the selectable interrupt source in the DAVE panel (the Enterprise 64/128's DAVE chip: memory paging, interrupts and sound)."
+  },
+  "panels.side.epDave.intSource.hz50": "50 Hz",
+  "@panels.side.epDave.intSource.hz50": {
+    "context": "The 50 Hz timer as the selectable interrupt source in the DAVE panel (the Enterprise 64/128's DAVE chip: memory paging, interrupts and sound)."
+  },
+  "panels.side.epDave.intSource.tone0": "Tone channel 0",
+  "@panels.side.epDave.intSource.tone0": {
+    "context": "Tone channel 0 as the selectable interrupt source in the DAVE panel (the Enterprise 64/128's DAVE chip: memory paging, interrupts and sound)."
+  },
+  "panels.side.epDave.intSource.tone1": "Tone channel 1",
+  "@panels.side.epDave.intSource.tone1": {
+    "context": "Tone channel 1 as the selectable interrupt source in the DAVE panel (the Enterprise 64/128's DAVE chip: memory paging, interrupts and sound)."
+  },
+  "panels.side.epDave.intSourceLabel": "The selectable interrupt source (A7h bits 6-5)",
+  "@panels.side.epDave.intSourceLabel": {
+    "context": "Tooltip of the SRC value in the DAVE panel (the Enterprise 64/128's DAVE chip: memory paging, interrupts and sound)."
+  },
+  "panels.side.epDave.enabled": "Enabled (B4h write, bits 0/2/4/6)",
+  "@panels.side.epDave.enabled": {
+    "context": "Tooltip of an interrupt row's EN flag in the DAVE panel (the Enterprise 64/128's DAVE chip: memory paging, interrupts and sound). Keep the hardware names (DAVE, BFh, B4h...) as they are."
+  },
+  "panels.side.epDave.latched": "Latched: the interrupt is pending (B4h bits 1/3/5/7)",
+  "@panels.side.epDave.latched": {
+    "context": "Tooltip of an interrupt row's LAT flag in the DAVE panel (the Enterprise 64/128's DAVE chip: memory paging, interrupts and sound). Keep the hardware names (DAVE, BFh, B4h...) as they are."
+  },
+  "panels.side.epDave.level": "The source's level as B4h reads it (the timer's square wave or the input pin)",
+  "@panels.side.epDave.level": {
+    "context": "Tooltip of an interrupt row's PIN flag in the DAVE panel (the Enterprise 64/128's DAVE chip: memory paging, interrupts and sound). Keep the hardware names (DAVE, BFh, B4h...) as they are."
+  },
+  "panels.side.epDave.b4": "Port B4h as read: levels in bits 0/2/4/6, latches in bits 1/3/5/7",
+  "@panels.side.epDave.b4": {
+    "context": "Tooltip of the B4 value in the DAVE panel (the Enterprise 64/128's DAVE chip: memory paging, interrupts and sound). Keep the hardware names (DAVE, BFh, B4h...) as they are."
+  },
+  "panels.side.epDave.system": "System (BFh)",
+  "@panels.side.epDave.system": {
+    "context": "Section heading in the DAVE panel (the Enterprise 64/128's DAVE chip: memory paging, interrupts and sound) over port BFh, the system configuration register. Keep the hardware names (DAVE, BFh, B4h...) as they are."
+  },
+  "panels.side.epDave.bf": "Port BFh as last written: bit 0 RAM size, bit 1 clock, bits 3-2 wait mode",
+  "@panels.side.epDave.bf": {
+    "context": "Tooltip of the BF value in the DAVE panel (the Enterprise 64/128's DAVE chip: memory paging, interrupts and sound). Keep the hardware names (DAVE, BFh, B4h...) as they are."
+  },
+  "panels.side.epDave.wait": "Wait states (BFh bits 3-2)",
+  "@panels.side.epDave.wait": {
+    "context": "Tooltip of the WAIT value in the DAVE panel (the Enterprise 64/128's DAVE chip: memory paging, interrupts and sound). Keep the hardware names (DAVE, BFh, B4h...) as they are."
+  },
+  "panels.side.epDave.waitAll": "All memory",
+  "@panels.side.epDave.waitAll": {
+    "context": "WAIT value in the DAVE panel (the Enterprise 64/128's DAVE chip: memory paging, interrupts and sound): DAVE adds a wait state to every memory access (except video RAM). Short, about 10 characters."
+  },
+  "panels.side.epDave.waitM1": "M1 only",
+  "@panels.side.epDave.waitM1": {
+    "context": "WAIT value in the DAVE panel (the Enterprise 64/128's DAVE chip: memory paging, interrupts and sound): DAVE adds a wait state to opcode fetches (the Z80's M1 cycle) only. 'M1' is a Z80 term, keep it."
+  },
+  "panels.side.epDave.waitNone": "None",
+  "@panels.side.epDave.waitNone": {
+    "context": "WAIT value in the DAVE panel (the Enterprise 64/128's DAVE chip: memory paging, interrupts and sound): no wait states."
+  },
+  "panels.side.epDave.clock": "DAVE's input clock (BFh bit 1)",
+  "@panels.side.epDave.clock": {
+    "context": "Tooltip of the CLK value in the DAVE panel (the Enterprise 64/128's DAVE chip: memory paging, interrupts and sound). Keep the hardware names (DAVE, BFh, B4h...) as they are."
+  },
+  "panels.side.epDave.ram": "On-board RAM (BFh bit 0): with 16K only segment FFh is video RAM",
+  "@panels.side.epDave.ram": {
+    "context": "Tooltip of the RAM value in the DAVE panel (the Enterprise 64/128's DAVE chip: memory paging, interrupts and sound). Keep the hardware names (DAVE, BFh, B4h...) as they are."
+  },
+  "panels.side.epDave.tick": "DAVE's sound and timer tick (250 kHz, or 166.67 kHz with BFh bit 1)",
+  "@panels.side.epDave.tick": {
+    "context": "Tooltip of the TICK value in the DAVE panel (the Enterprise 64/128's DAVE chip: memory paging, interrupts and sound). Keep the hardware names (DAVE, BFh, B4h...) as they are."
+  },
+  "panels.side.epDave.hz": "{value} Hz",
+  "@panels.side.epDave.hz": {
+    "context": "A frequency in hertz in the DAVE panel (the Enterprise 64/128's DAVE chip: memory paging, interrupts and sound).",
+    "placeholders": {
+      "value": "The number, e.g. '440.5'"
+    }
+  },
+  "panels.side.epDave.mhz": "{value} MHz",
+  "@panels.side.epDave.mhz": {
+    "context": "A frequency in megahertz in the DAVE panel (the Enterprise 64/128's DAVE chip: memory paging, interrupts and sound).",
+    "placeholders": {
+      "value": "The number, e.g. '8'"
+    }
+  },
+  "panels.side.epDave.channel": "Tone channel {index}",
+  "@panels.side.epDave.channel": {
+    "context": "Section heading in the DAVE panel (the Enterprise 64/128's DAVE chip: memory paging, interrupts and sound) over one tone channel.",
+    "placeholders": {
+      "index": "The channel's number, 0-2"
+    }
+  },
+  "panels.side.epDave.code": "The 12-bit frequency code n ({low} and {high} bits 3-0)",
+  "@panels.side.epDave.code": {
+    "context": "Tooltip of a tone channel's CODE value in the DAVE panel (the Enterprise 64/128's DAVE chip: memory paging, interrupts and sound).",
+    "placeholders": {
+      "low": "The port of the low byte, e.g. 'A0h'",
+      "high": "The port of the high bits, e.g. 'A1h'"
+    }
+  },
+  "panels.side.epDave.frequency": "The pure tone's frequency: the tick / 2 / (n + 1)",
+  "@panels.side.epDave.frequency": {
+    "context": "Tooltip of a tone channel's FREQ value in the DAVE panel (the Enterprise 64/128's DAVE chip: memory paging, interrupts and sound)."
+  },
+  "panels.side.epDave.distortion": "Distortion (bits 5-4): the polynomial counter the tone samples",
+  "@panels.side.epDave.distortion": {
+    "context": "Tooltip of a tone channel's DIST value in the DAVE panel (the Enterprise 64/128's DAVE chip: memory paging, interrupts and sound)."
+  },
+  "panels.side.epDave.distNone": "None",
+  "@panels.side.epDave.distNone": {
+    "context": "DIST value in the DAVE panel (the Enterprise 64/128's DAVE chip: memory paging, interrupts and sound): a pure square wave, no distortion."
+  },
+  "panels.side.epDave.distPoly": "{bits}-bit poly",
+  "@panels.side.epDave.distPoly": {
+    "context": "DIST value in the DAVE panel (the Enterprise 64/128's DAVE chip: memory paging, interrupts and sound): the tone samples a polynomial counter (a noise generator) of this many bits. Short, about 10 characters.",
+    "placeholders": {
+      "bits": "4, 5, 7, 9, 11, 15 or 17"
+    }
+  },
+  "panels.side.epDave.highPass": "High-pass filter (bit 6), clocked by the next channel",
+  "@panels.side.epDave.highPass": {
+    "context": "Tooltip of a channel's HP flag in the DAVE panel (the Enterprise 64/128's DAVE chip: memory paging, interrupts and sound)."
+  },
+  "panels.side.epDave.ring": "Ring modulation (bit 7) with the partner channel",
+  "@panels.side.epDave.ring": {
+    "context": "Tooltip of a channel's RING flag in the DAVE panel (the Enterprise 64/128's DAVE chip: memory paging, interrupts and sound)."
+  },
+  "panels.side.epDave.sync": "Sync (A7h): the channel is held at its code, its output 0",
+  "@panels.side.epDave.sync": {
+    "context": "Tooltip of a tone channel's SYNC flag in the DAVE panel (the Enterprise 64/128's DAVE chip: memory paging, interrupts and sound)."
+  },
+  "panels.side.epDave.left": "Left volume (0-63)",
+  "@panels.side.epDave.left": {
+    "context": "Tooltip of a channel's L value in the DAVE panel (the Enterprise 64/128's DAVE chip: memory paging, interrupts and sound)."
+  },
+  "panels.side.epDave.right": "Right volume (0-63)",
+  "@panels.side.epDave.right": {
+    "context": "Tooltip of a channel's R value in the DAVE panel (the Enterprise 64/128's DAVE chip: memory paging, interrupts and sound)."
+  },
+  "panels.side.epDave.noise": "Noise (A6h)",
+  "@panels.side.epDave.noise": {
+    "context": "Section heading in the DAVE panel (the Enterprise 64/128's DAVE chip: memory paging, interrupts and sound) over the noise channel, port A6h."
+  },
+  "panels.side.epDave.noiseClock": "The noise clock (A6h bits 1-0)",
+  "@panels.side.epDave.noiseClock": {
+    "context": "Tooltip of the noise channel's CLK value in the DAVE panel (the Enterprise 64/128's DAVE chip: memory paging, interrupts and sound)."
+  },
+  "panels.side.epDave.noiseClockChannel": "Channel {index}",
+  "@panels.side.epDave.noiseClockChannel": {
+    "context": "Noise CLK value in the DAVE panel (the Enterprise 64/128's DAVE chip: memory paging, interrupts and sound): the noise is clocked by a tone channel's output.",
+    "placeholders": {
+      "index": "The channel's number, 0-2"
+    }
+  },
+  "panels.side.epDave.khz": "{value} kHz",
+  "@panels.side.epDave.khz": {
+    "context": "A frequency in kilohertz in the DAVE panel (the Enterprise 64/128's DAVE chip: memory paging, interrupts and sound).",
+    "placeholders": {
+      "value": "The number, e.g. '31.25'"
+    }
+  },
+  "panels.side.epDave.polyBits": "The variable polynomial counter's length (A6h bits 3-2)",
+  "@panels.side.epDave.polyBits": {
+    "context": "Tooltip of the noise channel's POLY value in the DAVE panel (the Enterprise 64/128's DAVE chip: memory paging, interrupts and sound)."
+  },
+  "panels.side.epDave.bits": "{bits}-bit",
+  "@panels.side.epDave.bits": {
+    "context": "POLY value in the DAVE panel (the Enterprise 64/128's DAVE chip: memory paging, interrupts and sound): the noise counter's length.",
+    "placeholders": {
+      "bits": "9, 11, 15 or 17"
+    }
+  },
+  "panels.side.epDave.swap": "Swap (A6h bit 4): the tones use the variable poly, the noise the 7-bit one",
+  "@panels.side.epDave.swap": {
+    "context": "Tooltip of the noise channel's SWAP flag in the DAVE panel (the Enterprise 64/128's DAVE chip: memory paging, interrupts and sound)."
+  },
+  "panels.side.epDave.lowPass": "Low-pass filter (A6h bit 5), clocked by channel 2",
+  "@panels.side.epDave.lowPass": {
+    "context": "Tooltip of the noise channel's LP flag in the DAVE panel (the Enterprise 64/128's DAVE chip: memory paging, interrupts and sound)."
+  },
+  "panels.side.epDave.noiseHighPass": "High-pass filter (A6h bit 6), clocked by channel 0",
+  "@panels.side.epDave.noiseHighPass": {
+    "context": "Tooltip of the noise channel's HP flag in the DAVE panel (the Enterprise 64/128's DAVE chip: memory paging, interrupts and sound)."
+  },
+  "panels.side.epDave.noiseRing": "Ring modulation (A6h bit 7) with channel 1",
+  "@panels.side.epDave.noiseRing": {
+    "context": "Tooltip of the noise channel's RING flag in the DAVE panel (the Enterprise 64/128's DAVE chip: memory paging, interrupts and sound)."
+  },
+  "panels.side.epDave.dac": "D/A and registers",
+  "@panels.side.epDave.dac": {
+    "context": "Section heading in the DAVE panel (the Enterprise 64/128's DAVE chip: memory paging, interrupts and sound) over the D/A mode bits and the raw sound registers."
+  },
+  "panels.side.epDave.dacLeft": "Left D/A (A7h bit 3): the left side outputs A8h × 4",
+  "@panels.side.epDave.dacLeft": {
+    "context": "Tooltip of the DAL flag in the DAVE panel (the Enterprise 64/128's DAVE chip: memory paging, interrupts and sound)."
+  },
+  "panels.side.epDave.dacRight": "Right D/A (A7h bit 4): the right side outputs ACh × 4",
+  "@panels.side.epDave.dacRight": {
+    "context": "Tooltip of the DAR flag in the DAVE panel (the Enterprise 64/128's DAVE chip: memory paging, interrupts and sound)."
+  },
+  "panels.side.epDave.register": "Sound register {port} as last written",
+  "@panels.side.epDave.register": {
+    "context": "Tooltip of a raw sound register value (A0-AF) in the DAVE panel (the Enterprise 64/128's DAVE chip: memory paging, interrupts and sound).",
+    "placeholders": {
+      "port": "The port, e.g. 'A7h'"
+    }
   }
 }

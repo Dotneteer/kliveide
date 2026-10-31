@@ -25,6 +25,7 @@ import { createZ88Session } from "../../harness/z88";
 import { createZx81Session } from "../../harness/zx81";
 import { createHtSession } from "../../harness/ht1080z";
 import { createTvcSession } from "../../harness/tvc";
+import { createEpSession } from "../../harness/enterprise";
 import { createSession as createNextSession } from "../../harness/zxnext";
 import { BANK, buildSzx, state128, state48, szxBlock } from "../../spectrum/snapshot/builders";
 import { expectSameBytes } from "../../expectBytes";
@@ -179,6 +180,16 @@ describe("machine state: save, load into another machine, run = keep running", (
     const b = await createTvcSession({ model: "tvc64p" });
     a.bootToBasic();
     // --- A program that prints (the stretched video RAM writes) and scrolls
+    a.typeKeys("10 FOR I=1 TO 99:PRINT I;:NEXT:GOTO 10\nRUN\n");
+    a.runFrames(7).step(333);
+    proveDeterminism(a as unknown as Driver, b as unknown as Driver, 30);
+  });
+
+  it("Enterprise 128", async () => {
+    const a = await createEpSession();
+    const b = await createEpSession();
+    a.bootToBasic();
+    // --- A program that prints (NICK's stretched video RAM writes), scrolls and sounds DAVE
     a.typeKeys("10 FOR I=1 TO 99:PRINT I;:NEXT:GOTO 10\nRUN\n");
     a.runFrames(7).step(333);
     proveDeterminism(a as unknown as Driver, b as unknown as Driver, 30);

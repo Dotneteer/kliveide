@@ -788,6 +788,11 @@ enough to look like "it just feels off" and large enough to be visible.
   round glyph. Same idea aligns the flag strip to the value column: `.flagLetter` is
   `calc(var(--measure-label) - 1ch)`, because a `3ch` flag column centres its content 1.5ch in while
   a value cell's first character centres 0.5ch in.
+- **Several flags of one thing are a small table, not a row of `FlagValue`s.** Each `FlagValue`
+  carries a full label and value column (`--measure-label` + `--measure-value`, 17ch), so three on a
+  row overflow the sidebar. The DAVE panel's interrupt sources (EN/LAT/PIN per source) use a heading
+  row of `DataLabel`s and `BitValue` dots, each in one narrow `ch` column centred under its heading
+  (`EpChipPanels.module.scss`'s `.intFlag`).
 
 ## CSS Grid: What Sizes A Track
 

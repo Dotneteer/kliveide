@@ -86,6 +86,8 @@ import { OpenEditorsBadge } from "@renderer/features/openEditors/OpenEditorsBadg
 import { SysVarsPanel } from "./appIde/SideBarPanels/SysVarsPanel";
 import { UlaPanel } from "./appIde/SideBarPanels/UlaPanel";
 import { TvcVideoPanel } from "./appIde/SideBarPanels/TvcVideoPanel";
+import { EpNickPanel } from "./appIde/SideBarPanels/EpNickPanel";
+import { EpDavePanel } from "./appIde/SideBarPanels/EpDavePanel";
 import {
   CommandPanel,
   CommandPanelHeader
@@ -112,6 +114,7 @@ import {
   MF_ULA,
   MF_VIC,
   MF_Z80,
+  MI_ENTERPRISE,
   MI_TVC,
   MI_ZXNEXT
 } from "@common/machines/constants";
@@ -318,6 +321,22 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     initialSize: 500,
     restrictTo: [MI_TVC]
   }, { title: "panels.sideBar.tvcVideo" }),
+  withTexts({
+    // --- The Enterprise's NICK: ports, counters, the current LPB and the LPT (`.plans/ENTERPRISE_PLAN.md` §11)
+    id: "epNickPanel",
+    hostActivity: ACTIVITY_DEBUG_ID,
+    renderer: EpNickPanel,
+    initialSize: 500,
+    restrictTo: [MI_ENTERPRISE]
+  }, { title: "panels.side.epNick.title" }),
+  withTexts({
+    // --- The Enterprise's DAVE: paging, interrupts, BFh and sound (`.plans/ENTERPRISE_PLAN.md` §11)
+    id: "epDavePanel",
+    hostActivity: ACTIVITY_DEBUG_ID,
+    renderer: EpDavePanel,
+    initialSize: 500,
+    restrictTo: [MI_ENTERPRISE]
+  }, { title: "panels.side.epDave.title" }),
   {
     id: "vicPanel",
     title: "VIC",

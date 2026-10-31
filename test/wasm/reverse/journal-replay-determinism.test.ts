@@ -39,6 +39,8 @@ import { createHtSession } from "../../harness/ht1080z";
 import { Ht1080zKeyCode } from "@emu/machines/ht1080z/Ht1080zKeyCode";
 import { createTvcSession } from "../../harness/tvc";
 import { TvcKeyCode } from "@emu/machines/tvc/TvcKeyCode";
+import { createEpSession } from "../../harness/enterprise";
+import { EpKeyCode } from "@emu/machines/enterprise/EpKeyCode";
 import { ReverseRig, seededRandom, type SpikeCoreId } from "../../harness/reverseSupport";
 import { expectSameBytes } from "../../expectBytes";
 
@@ -532,6 +534,44 @@ async function tvcMachine(): Promise<Driver> {
 }
 
 /**
+ * The Enterprise 128 at IS-BASIC's prompt (`.plans/ENTERPRISE_PLAN.md` §11): the video and 1 Hz
+ * interrupts, DAVE's waits and NICK's stretch. Inputs besides keys: memory edits, NICK's border and
+ * FIXBIAS ports, DAVE's sound registers and the keyboard row select.
+ */
+async function epMachine(): Promise<Driver> {
+  const s = (await createEpSession()).bootToBasic();
+  return {
+    rig: new ReverseRig("ep", s.machine),
+    executeFrame: () => s.machine.executeMachineFrame(),
+    key: (key, down) => (down ? s.keyDown(EpKeyCode[key]) : s.keyUp(EpKeyCode[key])),
+    input: (n) => {
+      switch (n & 7) {
+        case 0:
+        case 1:
+          s.poke(0x6000 + ((n >> 3) & 0xff), n >> 11);
+          return;
+        case 2:
+          s.machine.doWritePort(0x81, (n >> 3) & 0xff);
+          return;
+        case 3:
+          s.machine.doWritePort(0x80, (n >> 3) & 0x1f);
+          return;
+        case 4:
+        case 5:
+          s.machine.doWritePort(0xa0 + ((n >> 3) & 7), (n >> 6) & 0xff);
+          return;
+        default:
+          s.machine.doReadPort(0xb5);
+          return;
+      }
+    },
+    setStepMode: (mode) => (s.machine.executionContext.debugStepMode = mode),
+    saveState: () => s.machine.saveMachineState(),
+    loadState: (parts) => s.machine.loadMachineState(parts)
+  };
+}
+
+/**
  * The Timex TC2048 at the BASIC editor (the 48K's frame loop with the SCLD): inputs besides keys are
  * memory edits, the clock multiplier, and the screen-mode port $FF - standard, second screen, hi-colour,
  * hi-res and its ink colours.
@@ -570,6 +610,7 @@ const SP128_KEYS = ["N6", "N7", "Enter", "Space", "CShift", "SShift", "A", "P"];
 const NEXT_KEYS = ["A", "Q", "1", "ENTER", "SPACE", "CAPS", "SYM", "P"];
 const HT1080Z_KEYS = ["A", "P", "N1", "Enter", "Space", "Shift", "Break", "Clear"];
 const TVC_KEYS = ["A", "P", "N1", "Return", "Space", "Shift", "Esc", "Up"];
+const EP_KEYS = ["A", "P", "N1", "Enter", "Space", "LShift", "Esc", "Up"];
 
 /** Two seeds per variant in CI; `KLIVE_REVERSE_SEEDS=1-40` runs more locally */
 const SEEDS = (() => {
@@ -597,7 +638,8 @@ const cores: [SpikeCoreId, MachineFactory, string[], string?][] = [
   // --- The ZX80 runs on the same core with its own ROM and display timing
   ["zx8081", zx8081Machine(MI_ZX80), ZX8081_KEYS, "zx80"],
   ["ht1080z", ht1080zMachine, HT1080Z_KEYS],
-  ["tvc", tvcMachine, TVC_KEYS]
+  ["tvc", tvcMachine, TVC_KEYS],
+  ["ep", epMachine, EP_KEYS]
 ];
 
 /** The cores whose layout stamp names frame-boundary scratch (T5): only they get the scratch proof */

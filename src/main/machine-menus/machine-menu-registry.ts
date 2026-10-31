@@ -11,13 +11,15 @@ import {
   MI_TIMEX,
   MI_SCORPION,
   MI_HT1080Z,
-  MI_TVC
+  MI_TVC,
+  MI_ENTERPRISE
 } from "@common/machines/constants";
 import { zx8081TapeMenuRenderer } from "./zx8081-menus";
 import { tapeMenuRenderer, spectrumIdeRenderer, diskMenuRenderer, ulaHardwareRenderer } from "./zx-specrum-menus";
 import { z88ResetRenderer } from "./z88-menus";
 import { ht1080zHardwareRenderer, ht1080zTapeMenuRenderer } from "./ht1080z-menus";
 import { tvcDiskMenuRenderer, tvcTapeMenuRenderer } from "./tvc-menus";
+import { epHardwareRenderer } from "./ep-menus";
 import {
   hotkeyMenuRenderer,
   soundOutputMenuRenderer,
@@ -57,6 +59,12 @@ export const machineMenuRegistry: Record<string, MachineMenuInfo> = {
   [MI_TVC]: {
     devices: { tape: tvcTapeMenuRenderer, disks: tvcDiskMenuRenderer },
     // --- The BASIC Listing view lists TVC BASIC 1.2 and 2.2 programs (`tvcBasicListing.ts`)
+    viewItems: spectrumIdeRenderer
+  },
+  [MI_ENTERPRISE]: {
+    // --- The cartridge, Klive's FILE: device and its folder, the palette (`ep-menus.ts`); tape and EXDOS
+    // --- come with plan Phases 8 and 9
+    hardwareItems: epHardwareRenderer,
     viewItems: spectrumIdeRenderer
   },
   [MI_HT1080Z]: {

@@ -87,3 +87,67 @@ export function resolveEpHardware(config: MachineConfigSet | undefined): EpHardw
     romSet: is128 ? "21" : "20"
   };
 }
+
+/** What a segment holds on a machine with this hardware: its group in the memory panel's chooser */
+export type EpSegmentKind = "exos" | "cartridge" | "expansion" | "ram" | "video" | "empty";
+
+export function epSegmentKind(hw: Pick<EpHardware, "is128" | "cartridge" | "hostFs">, segment: number): EpSegmentKind {
+  const s = segment & 0xff;
+  if (s <= 0x01) return "exos";
+  if (s === 0x04) return hw.cartridge ? "cartridge" : "empty";
+  if (s === 0x10) return hw.hostFs ? "expansion" : "empty";
+  if (s >= 0xfc) return "video";
+  if (s >= 0xf8) return hw.is128 ? "ram" : "empty";
+  return "empty";
+}
+
+const SEGMENT_GROUPS: Record<EpSegmentKind, string> = {
+  exos: "EXOS ROM",
+  cartridge: "Cartridge",
+  expansion: "Expansion ROM",
+  ram: "RAM",
+  video: "Video RAM",
+  empty: "Empty"
+};
+
+function hex2(value: number): string {
+  return value.toString(16).toUpperCase().padStart(2, "0");
+}
+
+/**
+ * The 256 segments' descriptions (the memory panel's chooser; the label, the hex number, stays the
+ * identity): EXOS 0/1, IS-BASIC, Klive's FILE: ROM, the RAM and the video RAM that NICK shares
+ */
+export function epPartitionDescriptions(hw: Pick<EpHardware, "is128" | "cartridge" | "hostFs">): Record<number, string> {
+  const result: Record<number, string> = {};
+  for (let s = 0; s < 256; s++) {
+    const n = hex2(s);
+    switch (epSegmentKind(hw, s)) {
+      case "exos":
+        result[s] = `EXOS ${s} (${n}h)`;
+        break;
+      case "cartridge":
+        result[s] = `IS-BASIC (${n}h)`;
+        break;
+      case "expansion":
+        result[s] = `FILE: device ROM (${n}h)`;
+        break;
+      case "ram":
+        result[s] = `RAM ${n}h`;
+        break;
+      case "video":
+        result[s] = `Video RAM ${n}h`;
+        break;
+      default:
+        result[s] = `Segment ${n}h (empty)`;
+    }
+  }
+  return result;
+}
+
+/** The caption each segment sits under in a chooser */
+export function epPartitionGroups(hw: Pick<EpHardware, "is128" | "cartridge" | "hostFs">): Record<number, string> {
+  const result: Record<number, string> = {};
+  for (let s = 0; s < 256; s++) result[s] = SEGMENT_GROUPS[epSegmentKind(hw, s)];
+  return result;
+}

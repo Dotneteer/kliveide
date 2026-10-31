@@ -13,7 +13,7 @@ import { readWasmLayout, type WasmLayout } from "@emu/machines/state/wasmLayout"
 import { captureWasmImage } from "@emu/machines/state/wasmStateImage";
 
 /** The cores a rig drives (the export contract's ids) */
-export type SpikeCoreId = "sp48" | "zxnext" | "timex" | "sp128" | "spp3e" | "z88" | "zx8081" | "ht1080z" | "tvc";
+export type SpikeCoreId = "sp48" | "zxnext" | "timex" | "sp128" | "spp3e" | "z88" | "zx8081" | "ht1080z" | "tvc" | "ep";
 
 /** What the rig needs of a machine: its WASM runtime */
 type RuntimeOwner = {
@@ -30,7 +30,8 @@ const FRAME_PREFIX: Record<SpikeCoreId, string> = {
   z88: "z88",
   zx8081: "zx8081",
   ht1080z: "ht1080z",
-  tvc: "tvc"
+  tvc: "tvc",
+  ep: "ep"
 };
 const FRAME_EXPORT = (id: SpikeCoreId) => `${FRAME_PREFIX[id]}ExecuteFrame`;
 const FRAME_COMPLETED_EXPORT = (id: SpikeCoreId) => `${FRAME_PREFIX[id]}GetFrameCompleted`;

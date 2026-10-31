@@ -9,6 +9,15 @@ import { DebugSupport } from "@emu/machines/DebugSupport";
 import { EpWasmV2Machine } from "@emu/machines/enterprise/EpWasmV2Machine";
 import { EP_PHYS_VRAM } from "@emu/machines/enterprise/epMachineInfo";
 import { EpMemoryFileStore } from "@emu/machines/enterprise/EpHostFs";
+import {
+  readEpDaveCore,
+  readEpLpbAt,
+  readEpLpt,
+  readEpNickCore,
+  type EpDaveCore,
+  type EpLpb,
+  type EpNickCore
+} from "@emu/machines/enterprise/EpDebugState";
 
 import { buildEpWasm, productionOutput } from "../../../scripts/build-ep-wasm.cjs";
 
@@ -21,39 +30,9 @@ export type EpSessionOptions = {
   model?: string;
 };
 
-/** NICK as the harness reads it */
-export type EpNickState = {
-  ports: number[];
-  lptBase: number;
-  lptAddress: number;
-  /** The current LPB's bytes */
-  lpb: number[];
-  ld1: number;
-  ld2: number;
-  linesLeft: number;
-  slot: number;
-  line: number;
-  displayOn: boolean;
-  vsyncOn: boolean;
-  mode: number;
-  dataBus: number;
-};
-
-/** One Line Parameter Block, decoded (`NICK_VIDEO.md` §3.2) */
-export type EpLpb = {
-  address: number;
-  lines: number;
-  mode: number;
-  colours: number;
-  vres: boolean;
-  vint: boolean;
-  reload: boolean;
-  lm: number;
-  rm: number;
-  ld1: number;
-  ld2: number;
-  palette: number[];
-};
+/** NICK as the harness reads it (the IDE's NICK panel reads it the same way, `EpDebugState.ts`) */
+export type EpNickState = EpNickCore;
+export type { EpLpb };
 
 class HarnessEpMachine extends EpWasmV2Machine {
   constructor(modelId: string) {
@@ -263,55 +242,17 @@ export class EpTestSession {
   // NICK and DAVE
 
   nick(): EpNickState {
-    const w = this.wasm;
-    const state = w.epNickGetState();
-    return {
-      ports: [0, 1, 2, 3].map((i) => w.epNickGetPort(i)),
-      lptBase: w.epNickGetLptBase(),
-      lptAddress: w.epNickGetLptAddress(),
-      lpb: Array.from({ length: 16 }, (_, i) => w.epNickGetLpbByte(i)),
-      ld1: w.epNickGetLd1(),
-      ld2: w.epNickGetLd2(),
-      linesLeft: w.epNickGetLinesLeft(),
-      slot: w.epNickGetSlot(),
-      line: w.epNickGetLine(),
-      displayOn: (state & 1) !== 0,
-      vsyncOn: (state & 2) !== 0,
-      mode: (state >> 4) & 7,
-      dataBus: w.epNickGetDataBus()
-    };
+    return readEpNickCore(this.wasm);
   }
 
   /** An LPB in video RAM, decoded */
   lpbAt(address: number): EpLpb {
-    const b = Array.from({ length: 16 }, (_, i) => this.vram(address + i));
-    return {
-      address,
-      lines: 256 - b[0],
-      mode: (b[1] >> 1) & 7,
-      colours: (b[1] >> 5) & 3,
-      vres: (b[1] & 0x10) !== 0,
-      vint: (b[1] & 0x80) !== 0,
-      reload: (b[1] & 0x01) !== 0,
-      lm: b[2] & 0x3f,
-      rm: b[3] & 0x3f,
-      ld1: b[4] | (b[5] << 8),
-      ld2: b[6] | (b[7] << 8),
-      palette: b.slice(8)
-    };
+    return readEpLpbAt((a) => this.vram(a), address);
   }
 
   /** The LPT from its base to the RELOAD block (at most 64 blocks) */
   lpt(): EpLpb[] {
-    const blocks: EpLpb[] = [];
-    let address = this.wasm.epNickGetLptBase();
-    for (let i = 0; i < 64; i++) {
-      const block = this.lpbAt(address);
-      blocks.push(block);
-      if (block.reload) break;
-      address = (address + 16) & 0xffff;
-    }
-    return blocks;
+    return readEpLpt((a) => this.vram(a), this.wasm.epNickGetLptBase());
   }
 
   /**
@@ -334,15 +275,8 @@ export class EpTestSession {
     return rows.join("\n");
   }
 
-  dave(): { b4: number; enable: number; latch: number; bf: number; registers: number[] } {
-    const w = this.wasm;
-    return {
-      b4: w.epGetB4(),
-      enable: w.epGetIntEnable(),
-      latch: w.epGetIntLatch(),
-      bf: w.epGetBf(),
-      registers: Array.from({ length: 16 }, (_, i) => w.epGetDaveRegister(i))
-    };
+  dave(): EpDaveCore {
+    return readEpDaveCore(this.wasm);
   }
 
   /** The published picture, as a copy (0xAABBGGRR words, 736 x 288) */

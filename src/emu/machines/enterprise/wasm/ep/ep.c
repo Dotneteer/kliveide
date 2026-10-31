@@ -214,8 +214,19 @@ static void EP_NOINLINE epAdvanceTacts(uint32_t value) {
   epCheckFrameCap();
 }
 
+/*
+ * The last frame's length in T-states, or the nominal one while the LPT gives nothing sensible. Set
+ * where a frame ends, so the debugger's instruction-by-instruction runs keep it as the frame loop does
+ * (a replay must reach the image a straight run reaches).
+ */
+static uint32_t epLastFrameTacts = EP_NOMINAL_FRAME_TACTS;
+
 /* A frame ends at `newStart` (half-T units) */
-static void epFrameEnds(uint32_t newStart) { epAudioEndFrame(newStart); }
+static void epFrameEnds(uint32_t newStart) {
+  const uint32_t halves = newStart - epFrameStartHalf;
+  if (halves >= EP_MIN_FRAME_HALVES && halves <= EP_MAX_FRAME_HALVES) epLastFrameTacts = halves >> 1;
+  epAudioEndFrame(newStart);
+}
 
 /* NICK's report that vertical sync started (ep-nick.c): the frame ends here */
 static void epVsyncStarted(void) {
@@ -273,13 +284,9 @@ uint32_t epExecuteInstruction(void) {
 #define Z80_DEBUG_LOOP_STOP() (epHostFsState == 1u)
 #include "../../../../z80/wasm/z80-debug-loop.c"
 
-/* The last frame's length in T-states, or the nominal one while the LPT gives nothing sensible */
-static uint32_t epLastFrameTacts = EP_NOMINAL_FRAME_TACTS;
-
 /* Runs until the current frame completes (a frame stopped midway is finished) */
 uint32_t epExecuteFrame(void) {
   const uint32_t frameLength = epLastFrameTacts;
-  const uint32_t start = epFrameStartHalf;
   do {
     const uint32_t done = epFrameTacts();
     epCaptureBusEvents = done + EP_CAPTURE_WINDOW >= frameLength ? 1u : 0u;
@@ -289,10 +296,6 @@ uint32_t epExecuteFrame(void) {
     if (epHostFsState == 1u) break;
   } while (!epFrameCompleted);
   epCaptureBusEvents = 1u;
-  if (epFrameCompleted) {
-    const uint32_t tacts = (epFrameStartHalf - start) >> 1;
-    if (tacts * 2u >= EP_MIN_FRAME_HALVES && tacts * 2u <= EP_MAX_FRAME_HALVES) epLastFrameTacts = tacts;
-  }
   return 0u;
 }
 

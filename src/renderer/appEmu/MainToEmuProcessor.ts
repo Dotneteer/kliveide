@@ -54,6 +54,7 @@ import { BreakpointInfo, type BreakpointScope } from "@abstractions/BreakpointIn
 import { MachineCommand } from "@abstractions/MachineCommand";
 import type { SourceLevelDebugInfo } from "@abstractions/CompilerInfo";
 import type { SourceStepKind } from "@emu/machines/SourceStepDecision";
+import type { EpDaveDebugState, EpNickDebugState } from "@emu/machines/enterprise/EpDebugState";
 import {
   CpuState,
   CpuStateChunk,
@@ -952,6 +953,36 @@ class EmuMessageProcessor {
       throw new Error("The TVC video circuit is not available");
     }
     return machine.getTvcVideoState();
+  }
+
+  /**
+   * Gets the Enterprise 64/128's NICK state.
+   */
+  getEpNickState() {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    const machine = controller.machine as Partial<{ getEpNickState(): EpNickDebugState }>;
+    if (typeof machine.getEpNickState !== "function") {
+      throw new Error("The Enterprise NICK chip is not available");
+    }
+    return machine.getEpNickState();
+  }
+
+  /**
+   * Gets the Enterprise 64/128's DAVE state.
+   */
+  getEpDaveState() {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    const machine = controller.machine as Partial<{ getEpDaveState(): EpDaveDebugState }>;
+    if (typeof machine.getEpDaveState !== "function") {
+      throw new Error("The Enterprise DAVE chip is not available");
+    }
+    return machine.getEpDaveState();
   }
 
   /**

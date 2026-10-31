@@ -1,4 +1,6 @@
 import type { KeyMapping } from "@abstractions/KeyMapping";
+import type { SysVar } from "@abstractions/SysVar";
+import { epSysVars } from "./EpSysVars";
 import type { CodeToInject } from "@abstractions/CodeToInject";
 import type { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
 import type { KeyCodeSet } from "@emu/abstractions/IGenericKeyboardDevice";
@@ -75,6 +77,11 @@ export abstract class EpWasmHost extends Z80MachineBase {
   override getCallInstructionLength(): number {
     if (this.doReadMemory(this.pc) === 0xf7) return 2;
     return super.getCallInstructionLength();
+  }
+
+  /** EXOS's variables in the system segment (`EpSysVars.ts`): right while page 2 shows segment FFh */
+  override get sysVars(): SysVar[] {
+    return epSysVars;
   }
 
   get isOsInitialized(): boolean {

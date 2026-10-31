@@ -23,6 +23,7 @@ import { IMemorySection } from "@abstractions/MemorySection";
 import type { SourceLevelDebugInfo } from "@abstractions/CompilerInfo";
 import type { SourceActivationInfo, SourceStopInfo } from "@abstractions/SourceDebugInfo";
 import type { SourceStepKind } from "@emu/machines/SourceStepDecision";
+import type { EpDaveDebugState, EpNickDebugState } from "@emu/machines/enterprise/EpDebugState";
 import type { ExecutionHistoryInfo, ExecutionHistoryPage } from "@common/history/historyTypes";
 import type {
   ProfileEdges,
@@ -436,6 +437,20 @@ class EmuApiImpl {
    * Gets the Videoton TVC's video circuit state.
    */
   async getTvcVideoState(): Promise<TvcVideoState> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Gets the Enterprise 64/128's NICK state (ports, counters, current LPB, LPT).
+   */
+  async getEpNickState(): Promise<EpNickDebugState> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Gets the Enterprise 64/128's DAVE state (paging, interrupts, BFh, sound).
+   */
+  async getEpDaveState(): Promise<EpDaveDebugState> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 
