@@ -596,15 +596,7 @@ async function createAppWindows() {
       emuWindow?.close();
     } else {
       // --- Do not allow the IDE close, instead, hide it.
-      ideWindow.hide();
-      if (appSettings.windowStates) {
-        // --- Make sure to save the last IDE settings
-        appSettings.windowStates.showIdeOnStartup = false;
-        saveAppSettings();
-      }
-
-      // --- IDE id hidden, so it's not focused
-      mainStore.dispatch(ideFocusedAction(false));
+      hideIdeWindow();
     }
   });
 
@@ -861,4 +853,21 @@ export function showIdeWindow(): void {
   appSettings.windowStates ??= {};
   appSettings.windowStates.showIdeOnStartup = true;
   saveAppSettings();
+}
+
+/**
+ * Hides the IDE window (it is never closed while the app runs) and remembers to keep it hidden at
+ * the next start. Closing the IDE window and unchecking View › Show IDE both come here.
+ */
+export function hideIdeWindow(): void {
+  if (!ideWindow || ideWindow.isDestroyed()) return;
+  ideWindow.hide();
+  if (appSettings.windowStates) {
+    // --- Make sure to save the last IDE settings
+    appSettings.windowStates.showIdeOnStartup = false;
+    saveAppSettings();
+  }
+
+  // --- IDE is hidden, so it's not focused
+  mainStore.dispatch(ideFocusedAction(false));
 }

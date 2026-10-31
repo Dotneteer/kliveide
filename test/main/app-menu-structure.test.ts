@@ -43,6 +43,7 @@ vi.mock("@main/index", () => ({
   isIdeWindowFocused: () => !env.emuFocused,
   isIdeWindowVisible: () => env.ideVisible,
   showIdeWindow: vi.fn(),
+  hideIdeWindow: vi.fn(),
   focusEmuWindow: vi.fn(),
   getAppWindows: () => ({})
 }));
@@ -57,6 +58,7 @@ vi.mock("@main/recording/window-recording/windowRecordingController", () => ({
 }));
 
 import { createMenuContext, createMenuTemplate, disableAllMenuItems, EDIT_MENU_ID } from "@main/app-menu";
+import { hideIdeWindow, showIdeWindow } from "@main/index";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { machineRegistry } from "@common/machines/machine-registry";
 import { MC_DISK_SUPPORT } from "@common/machines/constants";
@@ -353,6 +355,29 @@ describe("the application menu", () => {
     expect(ideView).toContain("Sidebar");
     expect(ideView).toContain("Command and Output");
     expect(ideView).not.toContain("Virtual Keyboard");
+  });
+
+  it("makes View › Show IDE a checkbox that shows or hides the IDE window", () => {
+    const click = (item: MenuItemConstructorOptions) =>
+      (item.click as unknown as () => void)();
+    try {
+      env.ideVisible = true;
+      const shown = menu(buildMenu("sp48"), "View").find((i) => i.id === "show_ide_window")!;
+      expect(shown).toMatchObject({ label: "Show IDE", type: "checkbox", checked: true });
+      expect(shown.visible).not.toBe(false);
+      click(shown);
+      expect(hideIdeWindow).toHaveBeenCalledTimes(1);
+
+      env.ideVisible = false;
+      const hidden = menu(buildMenu("sp48"), "View").find((i) => i.id === "show_ide_window")!;
+      expect(hidden).toMatchObject({ type: "checkbox", checked: false });
+      click(hidden);
+      expect(showIdeWindow).toHaveBeenCalledTimes(1);
+    } finally {
+      env.ideVisible = true;
+      vi.mocked(hideIdeWindow).mockClear();
+      vi.mocked(showIdeWindow).mockClear();
+    }
   });
 
   it("keeps navigation in View for both windows, as its shortcuts work from the emulator", () => {
