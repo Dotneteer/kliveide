@@ -120,12 +120,15 @@ class EmuApiImpl {
    * @param _contents The tape file contents as Uint8Array.
    * @param _confirm Optional flag to show confirmation.
    * @param _suppressError Optional flag to suppress errors.
+   * @param _restoring The tape comes back from the last session at startup: a tape of another
+   * machine waits for it without saying so (errors are still reported unless suppressed)
    */
   async setTapeFile(
     _file: string,
     _contents: Uint8Array,
     _confirm?: boolean,
-    _suppressError?: boolean
+    _suppressError?: boolean,
+    _restoring?: boolean
   ): Promise<void> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }

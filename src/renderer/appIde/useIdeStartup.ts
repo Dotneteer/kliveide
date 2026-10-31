@@ -103,6 +103,8 @@ export function useIdeStartup({
       // --- the IDE window's heavier startup - e.g. initializing Monaco - can lag behind EMU's).
       // --- Going straight to main sidesteps that race: this call always gets a real answer.
       const mainApi = createMainApi(messenger);
+      // --- `--machine` / `--start`: the project's own machine would replace the one asked for
+      if (await mainApi.skipsLastProjectReopen()) return;
       const settings = await mainApi.getAppSettings();
       if (cancelled) return;
 

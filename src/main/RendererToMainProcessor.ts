@@ -29,6 +29,7 @@ import {
   resolveSavedFilePath,
   saveKliveProject
 } from "./projects";
+import { getLaunchSwitches, skipsLastProjectReopen } from "./launch-switches";
 import { AppSettings, KLIVE_HOME_FOLDER } from "./settings";
 import { getKliveHomeBase } from "./portable";
 import { mainStore } from "./main-store";
@@ -1327,6 +1328,13 @@ class MainMessageProcessor {
    */
   async getAppSettings(): Promise<AppSettings> {
     return appSettings;
+  }
+
+  /**
+   * Whether the IDE leaves the last project closed at startup (`--machine`, `--start`).
+   */
+  async skipsLastProjectReopen(): Promise<boolean> {
+    return skipsLastProjectReopen(getLaunchSwitches());
   }
 
   /**

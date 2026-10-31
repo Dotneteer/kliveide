@@ -305,7 +305,8 @@ class EmuMessageProcessor {
     file: string,
     contents: Uint8Array,
     confirm?: boolean,
-    suppressError?: boolean
+    suppressError?: boolean,
+    restoring?: boolean
   ) {
     // --- New media act on the present: a muted journal in the past would drop them (REVERSE_DEBUGGING_PLAN D12)
     this.machineService.getMachineController()?.clearHistoryCursor?.();
@@ -371,8 +372,9 @@ class EmuMessageProcessor {
     if (casFormat && CAS_MACHINES[casFormat] !== runningMachineId) {
       pendingCasTape = { file, contents, format: casFormat };
       mediaStore.addMedia({ id: MEDIA_TAPE, mediaFile: file, mediaContents: undefined });
-      // --- With no machine yet, a machine is being set up: no reason to tell
-      if (runningMachineId && !suppressError) {
+      // --- With no machine yet, a machine is being set up, and a tape restored from the last session
+      // --- was not set by the user now: no reason to tell
+      if (runningMachineId && !suppressError && !restoring) {
         const owner = CAS_MACHINES[casFormat];
         await createMainApi(this.mainMessenger).displayMessageBox(
           "info",

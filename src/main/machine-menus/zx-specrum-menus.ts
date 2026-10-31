@@ -293,11 +293,14 @@ export const spectrumIdeRenderer: MachineMenuRenderer = () => {
  * @param filename The tape's full path
  * @param showErrors Report a failure in a message box (the menu); the IDE's `tape-load` command
  * passes false and reports the returned message itself
+ * @param restoring Startup is restoring the last session's tape: a tape of another machine (a TVC
+ * or HT-1080Z .cas) waits for it without a message box; errors are still reported
  * @returns The failure's message, or undefined when the tape was inserted
  */
 export async function setSelectedTapeFile(
   filename: string,
-  showErrors = true
+  showErrors = true,
+  restoring = false
 ): Promise<string | undefined> {
   // --- Read the file
   const tapeFileFolder = path.dirname(filename);
@@ -311,7 +314,7 @@ export async function setSelectedTapeFile(
 
   try {
     const contents = fs.readFileSync(filename);
-    await getEmuApi().setTapeFile(filename, new Uint8Array(contents));
+    await getEmuApi().setTapeFile(filename, new Uint8Array(contents), undefined, undefined, restoring || undefined);
     await logEmuEvent(`Tape file set to ${filename}`);
     return undefined;
   } catch (err) {
