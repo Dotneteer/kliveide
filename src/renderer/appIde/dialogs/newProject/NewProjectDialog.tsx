@@ -69,11 +69,11 @@ export const NewProjectDialog = ({ onClose, onCreate }: Props) => {
             request.templateId
           ),
         openFolder: (path) => mainApi.openFolder(path),
-        ensureProjectLoaded: async () => {
-          await ensureProjectLoaded(projectService);
+        ensureProjectLoaded: async (path) => {
+          await ensureProjectLoaded(projectService, path);
         },
-        ensureWorkspaceLoaded: async () => {
-          await ensureWorkspaceLoaded(store);
+        ensureWorkspaceLoaded: async (path) => {
+          await ensureWorkspaceLoaded(store, path);
         },
         loadBuildRoots: async () => {
           // --- Waits for the main process to forward them, then reads what

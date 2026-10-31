@@ -75,6 +75,9 @@ class ProjectService implements IProjectService {
       const oldFolderPath = this._oldState?.project?.folderPath;
       this._oldState = newState;
       if (oldFolderPath !== newFolderPath) {
+        // --- The tree is the previous folder's: nothing may find files in it any more. The explorer
+        // --- sets the new folder's tree once it has read it.
+        this._tree = undefined;
         if (newFolderPath) {
           this._projectOpened.fire();
         } else {

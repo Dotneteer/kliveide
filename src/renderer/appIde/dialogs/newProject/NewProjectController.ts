@@ -194,13 +194,13 @@ export class NewProjectController extends UiController<
       }
 
       await this.step(
-        this.ports.service.ensureProjectLoaded(),
+        this.ports.service.ensureProjectLoaded(path),
         "dialog.newProject.timeout.loadProject"
       );
       if (!token.isCurrent()) return;
 
       await this.step(
-        this.ports.service.ensureWorkspaceLoaded(),
+        this.ports.service.ensureWorkspaceLoaded(path),
         "dialog.newProject.timeout.loadWorkspace"
       );
       if (!token.isCurrent()) return;

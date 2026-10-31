@@ -18,8 +18,10 @@ export type NewProjectServicePort = {
   // --- Resolves to a message when the folder could not be opened, rather than
   // --- rejecting; that is the shape the main process reports in.
   openFolder(path: string): Promise<string | undefined>;
-  ensureProjectLoaded(): Promise<void>;
-  ensureWorkspaceLoaded(): Promise<void>;
+  // --- Both wait for the project at `path`: until the main process's folder change arrives, the
+  // --- previous project's tree and workspace are still loaded
+  ensureProjectLoaded(path: string): Promise<void>;
+  ensureWorkspaceLoaded(path: string): Promise<void>;
   loadBuildRoots(): Promise<string[]>;
   navigateTo(path: string): void;
   notify(type: "info" | "error", title: string, message: string): Promise<void>;
