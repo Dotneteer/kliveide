@@ -37,8 +37,9 @@ export type WorkingCopyTarget = {
 
 /** The target of a ROM partition the IDE has loaded. */
 export function workingCopyTargetOf(info: RomPartitionInfo): WorkingCopyTarget {
+  // --- The file name, not the path under `roms/` a Next set's sidecar has (`zxnext/<set>/enNextZX.rom.dis`)
   const romName = info.shippedSidecar
-    ? info.shippedSidecar.replace(/\.dis$/i, "")
+    ? (info.shippedSidecar.split("/").pop() ?? info.shippedSidecar).replace(/\.dis$/i, "")
     : (info.source.path?.split(/[\\/]/).pop() ?? `${info.source.crc32}.rom`);
   return {
     workingPath: info.workingPath,

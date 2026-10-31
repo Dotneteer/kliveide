@@ -1,0 +1,24 @@
+Carried by scripts/rom-annotations-carry.cjs (byte signature), for hand review.
+From: zxnext/nextzxos-2.08/enNextLG.rom.dis
+To:   zxnext/nextzxos-2.10/enNextLG.rom.dis  (level 0)
+
+== Page 2 (43fc1f2f -> fcabc6c7)
+   labels 1/2, line annotations 1/2, data regions 19/22 carried
+
+-- Labels not carried (1)
+$20BF  MSG_VERSION
+        its data region (bytes/text $20BF-$20E3) was not carried
+
+-- Line annotations not carried (1)
+$20BF  "Version mismatch:", ENTER, "0208 enNextLG.rom", ENTER, $FF (CHECK_VERSION).
+        its data region (bytes/text $20BF-$20E3) was not carried
+
+-- Data regions not carried (their bytes are code regions now) (3)
+$2034  bytes $2034-$204F
+        end $204F conflict ($2084, $2071)
+$2050  bytes $2050-$2051
+        start conflict ($2085, $2072)
+$20BF  bytes/text $20BF-$20E3
+        end $20E3 conflict ($212B, $2118)
+
+Page 2 measured: level 0, 28 unlabelled target(s), 0 label(s) without a synopsis, 0 misplaced

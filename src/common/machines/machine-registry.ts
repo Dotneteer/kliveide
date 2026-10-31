@@ -65,6 +65,13 @@ import {
   type CustomDisassemblerFactory
 } from "@renderer/appIde/disassemblers/z80-disassembler/rom-gated-disassembler";
 import { ZX80_MODELS, ZX81_MODELS } from "@emu/machines/zx8081/zx8081MachineInfo";
+import {
+  IMPLICIT_NEXT_PROFILE_ID,
+  NEW_PROJECT_NEXT_PROFILE_ID,
+  NEXT_PROFILE_ALIASES,
+  NEXT_PROFILE_IDS,
+  nextModelDisplayName
+} from "@emu/machines/zxNext/nextProfiles";
 import { HT1080Z_MODELS } from "@emu/machines/ht1080z/ht1080zMachineInfo";
 import { TVC_MODELS } from "@emu/machines/tvc/tvcMachineInfo";
 import { EP_MODELS } from "@emu/machines/enterprise/epMachineInfo";
@@ -455,13 +462,8 @@ export const machineRegistry: MachineInfo[] = [
       // --- Code coverage and the heat map (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D15)
       [MF_PROFILE]: true
     },
-    models: [
-      {
-        modelId: "standard",
-        displayName: "ZX Spectrum Next",
-        config: {}
-      }
-    ],
+    // --- One model per Next profile: a board and a core version (`.plans/ZXNEXT_CORE_VERSIONS_PLAN.md` D1)
+    models: NEXT_PROFILE_IDS.map((modelId) => ({ modelId, displayName: nextModelDisplayName(modelId), config: {} })),
     mediaIds: [MEDIA_TAPE],
     toolInfo: {
       [CT_DISASSEMBLER]: (
@@ -833,9 +835,10 @@ export function getMachineName(machineId: string, modelId?: string): string {
  * configuration is ignored.
  *
  * The ZX Spectrum Next's "compatibility" model selected the TypeScript emulator, which was removed
- * once the WASM core reached parity (`.plans/ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md`, D4). A
- * project or a last session saved with it opens on the one remaining Next model rather than failing
- * to find its machine.
+ * once the WASM core reached parity (`.plans/ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md`, D4), and
+ * "standard" was its one model before each Next model became a profile (a board and a core version,
+ * `.plans/ZXNEXT_CORE_VERSIONS_PLAN.md` D1). Both open on the model they were made with, KS2 with
+ * core 3.02.01.
  */
 export const modelIdAliases: Readonly<Record<string, Readonly<Record<string, string>>>> = {
   [MI_Z88]: Object.fromEntries(
@@ -844,7 +847,7 @@ export const modelIdAliases: Readonly<Record<string, Readonly<Record<string, str
       [`${m.modelId}-ts`, m.modelId]
     ])
   ),
-  [MI_ZXNEXT]: { compatibility: "standard" }
+  [MI_ZXNEXT]: NEXT_PROFILE_ALIASES
 };
 
 /**
@@ -856,8 +859,27 @@ export const implicitModelIds: Readonly<Record<string, string>> = {
   [MI_SPECTRUM_128]: "sp128",
   // --- The Timex machine and the Scorpion: a model-less reference (`newp timex`) means the first model
   [MI_TIMEX]: "tc2048",
-  [MI_SCORPION]: "zs256"
+  [MI_SCORPION]: "zs256",
+  // --- The ZX Spectrum Next gained models when its core versions did: a model-less reference means
+  // --- the model every earlier Klive emulated
+  [MI_ZXNEXT]: IMPLICIT_NEXT_PROFILE_ID
 };
+
+/**
+ * The model a new project starts on when nothing else picks one (no running model of the type, no
+ * favourite), for machines whose newest model is not their first. The Next's first model is the one
+ * old projects mean; new work starts on the newest core (`.plans/ZXNEXT_CORE_VERSIONS_PLAN.md` D7).
+ */
+export const newProjectModelIds: Readonly<Record<string, string>> = {
+  [MI_ZXNEXT]: NEW_PROJECT_NEXT_PROFILE_ID
+};
+
+/** The model a new project of a machine starts on: `newProjectModelIds`, else its first model */
+export function newProjectModelOf(machineId: string): string | undefined {
+  const models = machineRegistry.find((m) => m.machineId === machineId)?.models;
+  const preferred = newProjectModelIds[machineId];
+  return models?.some((m) => m.modelId === preferred) ? preferred : models?.[0]?.modelId;
+}
 
 /**
  * The model a model id means now: its alias target, or the id itself; for a missing id, the model a

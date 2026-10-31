@@ -9,7 +9,7 @@ import { MC_DISK_SUPPORT, MC_SCORPION, MC_SP128_TIMING } from "@common/machines/
  * `sp128ApplyTiming` (sp128.c); `test/machines/sp128-timings.test.ts` keeps the two equal.
  *
  * The Pentagon numbers come from the ZX Spectrum Next's own Pentagon mode in the FPGA sources
- * (`_input/next-fpga/src/video/zxula_timing.vhd`, `zxnext.vhd`), the reference the Next core already
+ * (`vendor/next-fpga/3.02.01/src/video/zxula_timing.vhd`, `zxnext.vhd`), the reference the Next core already
  * follows; sp128.c's comments carry the derivation.
  */
 

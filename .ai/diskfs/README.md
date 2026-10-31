@@ -1,7 +1,7 @@
 # Disk images, FAT and the DivMMC: facts for AI assistants
 
 The plan (`DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md`) is done and retired; its record is in git history. Provenance (D8):
-FAT from Microsoft's FAT specification, the DivMMC from the Next FPGA's VHDL (`_input/next-fpga/`),
+FAT from Microsoft's FAT specification, the DivMMC from the Next FPGA's VHDL (`vendor/next-fpga/3.02.01/`),
 the SD card from the SD Physical Layer specification. Never GPL code (cpmtools, hdfmonkey, Fuse,
 ZEsarUX).
 

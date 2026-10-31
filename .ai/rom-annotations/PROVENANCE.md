@@ -2259,3 +2259,36 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
 - **Level:** 2, measured and recorded (287 labels, 39 regions, 1,977 instructions; 3 targets inside an
   instruction, each explained). Checked in the running IDE: `bp-set $F000`, `em-debug`, then `dis` at $F000,
   $F3D8 and $FFF0 show EXTH's labels (EXTH_BOOT, CASX_CHAR, EXTH_TO_SYS).
+
+### 2026-10-31 — ZX Spectrum Next: the nextzxos-2.10 sidecars carried from nextzxos-2.08 (D8)
+
+- **What:** `src/public/roms/zxnext/nextzxos-2.10/{enNextZX,enNxtmmc,enNextMf,enAltZX,enNextLG}.rom.dis`, carried
+  from the same files of the `nextzxos-2.08` set (`.plans/ZXNEXT_CORE_VERSIONS_PLAN.md` D8). Every 2.10 page CRC
+  differs from 2.08's, so nothing was reused as is. Nothing new was written: every entry is one of Klive's own
+  2.08 entries, moved. **Sources:** Klive's 2.08 sidecars and the two sets' ROM bytes, nothing else (no
+  disassembly, name list or other annotation of NextZXOS 2.10 was opened).
+- **How:** `npm run rom:annotations:carry -- <fromSidecar> <toRom>` (`scripts/rom-annotations-carry.cjs`, its
+  header has the rules). Each annotated offset (label, line annotation, data region start and end) is re-anchored
+  by a byte signature of the 2.08 page that occurs once in the 2.10 page: forward, centred and backward windows
+  of 8-128 bytes, cut at instruction boundaries, with the address operands of CALL/JP/LD/PUSH nn and of a
+  restart's inline word that point into the page as wildcards; shapes must agree; a place found by fewer than 16
+  fixed bytes must lie between its strongly placed neighbours; an ambiguous one is placed only when the strong
+  anchors on both sides moved by the same distance. Labels and comments in a data region go only where that
+  region went; labels not on a 2.10 instruction start are dropped. Code regions are rebuilt as the gaps.
+  Cross-checked against an independent byte alignment (difflib) of each page: no disagreement except one label
+  (enAltZX page 1 PATH_REASON), where the alignment was wrong and the signature right (checked by the bytes).
+- **Provenance:** every carried entry is `derived`, and each file's `carriedFrom` names the 2.08 sidecar it came
+  from. `manual` 2.08 entries are `derived` here too (their source is the 2.08 sidecar). `enNextLG.rom.dis`
+  still describes page 2 only and now inherits `zxnext/nextzxos-2.10/enNextZX.rom.dis` page 2.
+- **Counts (carried / 2.08 entries):** enNextZX labels 3,714/4,015, line annotations 16,424/17,921, data regions
+  227/269; enNxtmmc 607/617, 2,587/2,623, 10/13; enNextMf 421/424, 1,989/1,997, 34/34; enAltZX 929/1,123,
+  4,510/5,625, 48/53; enNextLG 1/2, 1/2, 19/22 (MSG_VERSION's text region changed, so its label and synopsis,
+  which quote "0208", were not carried).
+- **Review lists:** `.ai/rom-annotations/carry-review/nextzxos-2.10/<file>.rom.review.txt`: every entry not
+  carried (missing, ambiguous, conflict, out of order, outside its region, off an instruction start) and every
+  carried comment to check (it names a ROM address that moved or was not placed, or the data under it changed:
+  enNextZX 860, enNxtmmc 79, enNextMf 91, enAltZX 185).
+- **Level:** 0 for every file, measured: the 2.10 pages have unlabelled targets (enNextZX 27/110/28/24, enNxtmmc
+  6, enNextMf 3, enAltZX 228/291, enNextLG 28 with the inherited entries). The labels kept all have synopses.
+  Next: an authoring session per file works through its review list and the `skeleton` to-do list, from the 2.10
+  bytes, under D4 as for any other page.

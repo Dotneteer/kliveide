@@ -422,7 +422,11 @@ static uint32_t zxnextMemoryGetPortDffdReadback(void) {
 static void zxnextMemorySetPort1ffd(uint32_t value) {
   if (!zxnextMemoryPagingEnabled()) return;
   uint32_t specialOld = memPort1ffd & 0x01u;
-  memPort1ffd = (uint8_t)value;
+#if ZXNEXT_CORE_VERSION >= 30204
+  memPort1ffd = (uint8_t)(value & 0x07u); /* port_1ffd_reg(2 downto 0) (zxnext.vhd@3.02.04 ~976, ~4216) */
+#else
+  memPort1ffd = (uint8_t)value; /* the whole byte (zxnext.vhd@3.02.01 ~875, ~3721) */
+#endif
   zxnextMemoryReloadMmu(1u, specialOld);
 }
 

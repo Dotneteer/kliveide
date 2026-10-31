@@ -1,12 +1,11 @@
-import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-import { createSession, type NextTestSession } from "../../harness/zxnext";
+import { createSession, type NextTestSession, readNextRom } from "../../harness/zxnext";
 
 /*
  * NextReg $02 - resets, reset type, software NMIs, I/O trap flag (catalogue RST-001 - RST-006).
  *
- * Hardware (`_input/next-fpga/src/zxnext.vhd`, `_input/next-fpga/nextreg.txt` "0x02"):
+ * Hardware (`vendor/next-fpga/3.02.01/src/zxnext.vhd`, `vendor/next-fpga/3.02.01/nextreg.txt` "0x02"):
  * - ~6316-6317: a $02 write with bit 0 is a soft reset, with bit 1 a hard reset ("hard reset has
  *   precedence"). The soft reset asserts `reset`: PC restarts at 0, RAM is untouched.
  * - ~1691: every soft reset shifts `nr_02_reset_type` to '0' & rt(2) & (rt(1) or rt(0)); the read
@@ -101,7 +100,7 @@ describe("NextReg 0x02 resets", () => {
    * its RAM at $2000-$3FFF, above the Next ROM - and RETN pages it out (`cpu_retn_seen`).
    */
   it("RST-005: the Multiface NMI pages the Multiface ROM in at $0066; RETN pages it out", async () => {
-    const mfRom = readFileSync("src/public/roms/enNextMf.rom");
+    const mfRom = readNextRom("enNextMf.rom");
     const s = await program(`        nextreg $06,$08\n        nextreg $02,$08`);
     const rom = Array.from(s.peekBytes(0x0000, 16));
     s.runTo(0x0066, { maxFrames: 2 }).step(1);

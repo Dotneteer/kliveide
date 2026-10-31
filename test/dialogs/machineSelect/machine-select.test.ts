@@ -62,8 +62,9 @@ describe("Select Machine dialog", () => {
     const h = open();
     const sections = h.vm.sections.filter((s) => s.kind !== "favorites");
     expect(sections.map((s) => s.id)).toEqual(machineRegistry.map((m) => m.machineId));
-    // --- The Enterprise has two models, the 128 and the 64 (`.plans/ENTERPRISE_PLAN.md` Phase 6)
-    expect(sections.filter((s) => s.kind === "leaf").map((s) => s.id)).toEqual(["zxnext", "scorpion"]);
+    // --- The Enterprise has two models, the 128 and the 64 (`.plans/ENTERPRISE_PLAN.md` Phase 6), and the
+    // --- Next one per board and core version (`.plans/ZXNEXT_CORE_VERSIONS_PLAN.md` D1)
+    expect(sections.filter((s) => s.kind === "leaf").map((s) => s.id)).toEqual(["scorpion"]);
     const ep = sections.find((s) => s.id === "ep")!;
     expect(ep.kind === "machine" && ep.rows.map((r) => r.name)).toEqual(["Enterprise 128", "Enterprise 64"]);
     const z88 = sections.find((s) => s.id === "z88")!;
@@ -94,7 +95,7 @@ describe("Select Machine dialog", () => {
     const h = open().do({ type: "filterChanged", text: "ntsc" });
     expect(h.vm.sections.some((s) => s.kind === "favorites")).toBe(false);
     const keys = h.vm.sections.flatMap((s) => (s.kind === "leaf" ? [s.row.key] : s.kind === "machine" ? s.rows.map((r) => r.key) : []));
-    expect(keys).toEqual(["sp48/ntsc", "zxnext/standard", "timex/ts2068", "zx81/zx81-16k-us", "zx81/zx81-1k-us", "c64/ntsc"]);
+    expect(keys).toEqual(["sp48/ntsc", "zxnext/ks2-30201", "zxnext/ks2-30204", "timex/ts2068", "zx81/zx81-16k-us", "zx81/zx81-1k-us", "c64/ntsc"]);
     expect(h.vm.sections.every((s) => s.kind === "leaf" || s.open)).toBe(true);
 
     h.do({ type: "filterChanged", text: "z88 128k" });
@@ -122,7 +123,7 @@ describe("Select Machine dialog", () => {
 
   it("reorders favourites with the buttons and by dropping, keeping separators with their item", () => {
     const h = open();
-    expect(favKeys(h)).toEqual(["sp48/pal", "sp128/sp128", "spp3e/fdd1 |", "zxnext/standard |", "z88/OZ50", "zx81/zx81-16k"]);
+    expect(favKeys(h)).toEqual(["sp48/pal", "sp128/sp128", "spp3e/fdd1 |", "zxnext/ks2-30204 |", "z88/OZ50", "zx81/zx81-16k"]);
     h.do({ type: "favoriteMoved", key: "sp48/pal", delta: -1 });
     expect(favKeys(h)[0]).toBe("sp48/pal");
     h.do({ type: "favoriteMoved", key: "spp3e/fdd1", delta: -1 });
@@ -132,10 +133,10 @@ describe("Select Machine dialog", () => {
   });
 
   it("drops the separator of whatever ends up last, and cannot add one there", () => {
-    const h = open().do({ type: "favoriteMoved", key: "zxnext/standard", delta: 2 });
-    expect(favKeys(h).at(-1)).toBe("zxnext/standard");
+    const h = open().do({ type: "favoriteMoved", key: "zxnext/ks2-30204", delta: 2 });
+    expect(favKeys(h).at(-1)).toBe("zxnext/ks2-30204");
     const before = favKeys(h);
-    h.do({ type: "separatorToggled", key: "zxnext/standard" });
+    h.do({ type: "separatorToggled", key: "zxnext/ks2-30204" });
     expect(favKeys(h)).toEqual(before);
     const fav = h.vm.sections[0];
     expect(fav.kind === "favorites" && fav.rows.at(-1)!.canToggleSeparator).toBe(false);
@@ -203,7 +204,7 @@ describe("Select Machine dialog", () => {
     expect(group("timing")["Frame rate"]).toBe("59.65 Hz");
     expect(sheet.screen).toMatchObject({ rasterWidth: 352, rasterHeight: 240, caption: "352 × 240 with border" });
 
-    h.do({ type: "modelSelected", key: "zxnext/standard" });
+    h.do({ type: "modelSelected", key: "zxnext/ks2-30201" });
     const next = h.vm.sheet!;
     const timing = Object.fromEntries(next.groups.find((g) => g.id === "timing")!.rows.map((r) => [r.label, r.value]));
     expect(timing["Frame rate"]).toBe("50 or 60 Hz");

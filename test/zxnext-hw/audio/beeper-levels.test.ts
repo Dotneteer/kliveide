@@ -9,7 +9,7 @@ import { edgeStep, side, swing } from "./_audio-helpers";
  * AY / DAC levels. Ports the hardware-visible parts of test/audio/BeeperFpga.step22,
  * BeeperMameCompat, AudioMixerDevice.step8 and AudioMixing.step17.
  *
- * Hardware (`_input/next-fpga/src`):
+ * Hardware (`vendor/next-fpga/3.02.01/src`):
  * - zxnext.vhd ~3585-3596: `port_fe_reg <= cpu_do(4 downto 0)` on a write to an even port (~2538:
  *   A0 = 0); EAR = bit 4, MIC = bit 3; bits 2-0 are the border only (~3601), bits 7-5 are not stored.
  * - zxnext.vhd ~6449-6450: the mixer's MIC is `port_fe_mic xor i_AUDIO_EAR xor pi_fe_ear` (no tape

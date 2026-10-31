@@ -46,7 +46,7 @@ import {
 import { getEmuApi } from "@messaging/MainToEmuMessenger";
 import { setMachineType } from "./registeredMachines";
 import { getIdeApi } from "@messaging/MainToIdeMessenger";
-import { getModelConfig } from "@common/machines/machine-registry";
+import { getModelConfig, newProjectModelIds } from "@common/machines/machine-registry";
 import { fileChangeWatcher } from "./file-watcher";
 import { processBuildFile } from "./build";
 import { KliveGlobalSettings } from "@common/settings/setting-definitions";
@@ -114,8 +114,11 @@ export async function createKliveProject(
     const projectStructure = getKliveProjectStructureFromState([]);
     const project = { ...projectStructure, ...mergedProps };
     project.machineType = machineId;
-    project.modelId = modelId;
-    project.config = getModelConfig(machineId, modelId);
+    // --- A new project without a model starts on the machine's new-project model (the Next's
+    // --- newest core), so it never falls back to the model old model-less projects mean
+    const newModelId = modelId ?? newProjectModelIds[machineId];
+    project.modelId = newModelId;
+    project.config = getModelConfig(machineId, newModelId);
     fs.writeFileSync(projectFile, JSON.stringify(project, null, 2));
   } catch (err) {
     return {

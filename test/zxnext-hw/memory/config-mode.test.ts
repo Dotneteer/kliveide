@@ -6,7 +6,7 @@ import { romBytes } from "./_memory-helpers";
 /*
  * Config mode: NextReg $04 maps a 16K SRAM bank at $0000-$3FFF (catalogue MEM-026).
  *
- * Hardware (`_input/next-fpga/src/zxnext.vhd`):
+ * Hardware (`vendor/next-fpga/3.02.01/src/zxnext.vhd`):
  * - ~5125-5132: $03 low bits 111 enter config mode, any other non-zero type leaves it; `$04` stores
  *   bits 6-0 (`nr_04_romram_bank`) - written at any time.
  * - ~2980-3014: in $0000-$3FFF, after the Multiface and an MMU page below $E0, config mode maps SRAM

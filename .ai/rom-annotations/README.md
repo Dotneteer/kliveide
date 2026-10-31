@@ -1,6 +1,7 @@
 # Authoring the Shipped ROM Annotations
 
-Read this before adding or changing anything in `src/public/roms/*.rom.dis`. The shipped
+Read this before adding or changing any `.rom.dis` under `src/public/roms/` (the Next's are in
+`src/public/roms/zxnext/<setId>/`). The shipped
 sidecars' `authoring` key points here. The plan is
 `.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md` (§5, §6); the user-facing model is
 `.docs/annotations.md` ("ROM Annotations"); the provenance rule and the session log are
@@ -106,7 +107,14 @@ npm run rom:annotations -- level           # each page's level and what keeps it
 npm run rom:annotations -- skeleton sp48.rom.dis
 npm run rom:annotations -- bind sp48.rom.dis sp128-1.rom
 npm run rom:annotations -- coverage        # writes .rom-annotations/coverage-sp48.json
+npm run rom:annotations:carry -- zxnext/nextzxos-2.08/enNextZX.rom.dis zxnext/nextzxos-2.10/enNextZX.rom
 ```
+
+`rom:annotations:carry` (D8 of `.plans/ZXNEXT_CORE_VERSIONS_PLAN.md`) moves a sidecar's entries to a newer
+ROM whose bytes moved, by byte signature; the carried entries are `derived` and the file's `carriedFrom` names
+the old sidecar. It writes a review list of everything it could not place and every carried comment to check
+(the 2.10 set's are in `carry-review/nextzxos-2.10/`). A carried file is a starting point: its `level` is
+measured again, and the review list is worked through from the new bytes like any other authoring session.
 
 Always run the formatter before committing: the files are diffed one entry per line.
 
@@ -129,13 +137,16 @@ instead of by editing JSON:
 1. `rom-ann-new sp48.rom` copies `src/public/roms/sp48.rom.dis` unchanged into
    `<Klive home>/RomAnnotations/sp48.rom.dis` — the **working copy** — and opens it in the
    ROM annotation editor. From then on it replaces the shipped file everywhere in the IDE.
+   A Next ROM is named by its path: `rom-ann-new zxnext/nextzxos-2.08/enNextZX.rom -page 0`. The
+   `nextzxos-2.08` set's working copies stay flat (`RomAnnotations/enNextZX.rom.dis`); another set's
+   are `RomAnnotations/zxnext/<setId>/<file>.dis` (`src/common/roms/romSidecarPaths.ts`).
 2. Open a page's **Disassembly** and annotate it with the NEX viewer's dialogs and shortcuts.
    Set **New entries** to `manual` before adding an interface fact or a conventional name, and
    back to `observed` after; `rom-ann-provenance` corrects an entry afterwards. A changed entry
    keeps its provenance. The pages list's **To label** column counts the level 1 to-do list, and its **next $xxxx** link
    walks it.
 3. The **Ready** chip (and `rom-ann-check`) runs every check `shippedRomSidecars.test.ts` makes. **Export as source…** (and `rom-ann-export`) proves the annotations still describe every byte: the file reassembles to the ROM.
-   When it says *Ready to ship*, copy the working copy over the file in `src/public/roms/`
+   When it says *Ready to ship*, copy the working copy over the file in `src/public/roms/` (or its set folder)
    **unchanged** and run `npm run rom:annotations -- --check`; it must report nothing to format.
 4. Log the session in `PROVENANCE.md` as for any other authoring session.
 

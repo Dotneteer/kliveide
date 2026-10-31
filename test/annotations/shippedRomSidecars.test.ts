@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, sep } from "node:path";
 
 import { parseAnnotations, isValidLabelName } from "@renderer/appIde/annotations/programAnnotations";
 import { romDecoderFor } from "@renderer/appIde/annotations/romDecoder";
@@ -14,6 +14,7 @@ import {
 } from "@common/roms/romAnnotationTools";
 import { knownRomPageKind, romPageIdentity } from "@common/roms/romIdentity";
 import { withInheritedEntries } from "@renderer/appIde/annotations/romInheritance";
+import { canonicalShippedSidecar } from "@common/roms/romSidecarPaths";
 
 /*
  * Every shipped ROM sidecar (`src/public/roms/*.rom.dis`), checked as §7 of
@@ -22,8 +23,14 @@ import { withInheritedEntries } from "@renderer/appIde/annotations/romInheritanc
  */
 
 const ROMS = join(__dirname, "../../src/public/roms");
-const sidecars = readdirSync(ROMS).filter((name) => name.endsWith(".rom.dis")).sort();
-const romOf = (sidecar: string) => new Uint8Array(readFileSync(join(ROMS, sidecar.replace(/\.dis$/, ""))));
+// --- By their paths under src/public/roms: the Next's are in zxnext/<setId>/
+const sidecars = readdirSync(ROMS, { recursive: true })
+  .map((name) => String(name).split(sep).join("/"))
+  .filter((name) => name.endsWith(".rom.dis"))
+  .sort();
+// --- An `inherits` may name a Next sidecar by its bare, pre-set-folder name (`romSidecarPaths.ts`)
+const romOf = (sidecar: string) =>
+  new Uint8Array(readFileSync(join(ROMS, canonicalShippedSidecar(sidecar).replace(/\.dis$/, ""))));
 
 describe("the shipped ROM sidecars", () => {
   it("exist", () => {
@@ -75,7 +82,7 @@ describe("the shipped ROM sidecars", () => {
         parseAnnotations(text).annotations!,
         pageOf,
         async (sidecar, page) => ({
-          annotations: parseAnnotations(readFileSync(join(ROMS, sidecar), "utf8")).annotations!,
+          annotations: parseAnnotations(readFileSync(join(ROMS, canonicalShippedSidecar(sidecar)), "utf8")).annotations!,
           bytes: romOf(sidecar).subarray(page * 0x4000, (page + 1) * 0x4000)
         })
       );
@@ -108,9 +115,13 @@ describe("buildRomIndex", () => {
   it("indexes only the pages a sidecar describes", () => {
     // --- enNextLG.rom.dis describes page 2 only; its file's other pages are enNextZX.rom's bytes
     const index = JSON.parse(readFileSync(join(ROMS, "rom-annotations.index.json"), "utf8"));
-    expect(index["43fc1f2f"]).toEqual({ sidecar: "enNextLG.rom.dis", page: 2 });
-    expect(index["95ba84d4"]).toEqual({ sidecar: "enNextZX.rom.dis", page: 0 });
-    expect(index["92d23960"]).toEqual({ sidecar: "enNextZX.rom.dis", page: 3 });
+    expect(index["43fc1f2f"]).toEqual({ sidecar: "zxnext/nextzxos-2.08/enNextLG.rom.dis", page: 2 });
+    expect(index["95ba84d4"]).toEqual({ sidecar: "zxnext/nextzxos-2.08/enNextZX.rom.dis", page: 0 });
+    expect(index["92d23960"]).toEqual({ sidecar: "zxnext/nextzxos-2.08/enNextZX.rom.dis", page: 3 });
+    // --- The same for the nextzxos-2.10 set
+    expect(index["fcabc6c7"]).toEqual({ sidecar: "zxnext/nextzxos-2.10/enNextLG.rom.dis", page: 2 });
+    expect(index["2f430534"]).toEqual({ sidecar: "zxnext/nextzxos-2.10/enNextZX.rom.dis", page: 0 });
+    expect(index["9ced2dbc"]).toEqual({ sidecar: "zxnext/nextzxos-2.10/enNextZX.rom.dis", page: 3 });
   });
 });
 

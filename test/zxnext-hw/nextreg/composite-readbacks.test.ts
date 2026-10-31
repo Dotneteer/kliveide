@@ -4,7 +4,7 @@ import { createSession } from "../../harness/zxnext";
 
 /*
  * NextRegs whose readback is assembled from other state (catalogue NR-014 - NR-018).
- * Hardware references are `_input/next-fpga/src/zxnext.vhd` unless noted.
+ * Hardware references are `vendor/next-fpga/3.02.01/src/zxnext.vhd` unless noted.
  */
 
 const hex = (v: number) => `$${v.toString(16).padStart(2, "0")}`;

@@ -5,7 +5,7 @@ import { createSession, type NextTestSession } from "../../harness/zxnext";
 /*
  * The expansion bus registers with nothing plugged into the bus (catalogue BUS-001 - BUS-005).
  *
- * Hardware (`_input/next-fpga/src/zxnext.vhd`, `_input/next-fpga/nextreg.txt`):
+ * Hardware (`vendor/next-fpga/3.02.01/src/zxnext.vhd`, `vendor/next-fpga/3.02.01/nextreg.txt`):
  * - ~2138-2151: `$80` (`nr_80_expbus`, power-on X"00", ~352) is written whole; a reset copies bits 3-0
  *   into 7-4 and keeps 3-0. ~6069 reads it back whole.
  * - ~5468-5472, ~6072: `$81` stores bits 6-4 (ULA override, NMI debounce off, clock propagate); bits

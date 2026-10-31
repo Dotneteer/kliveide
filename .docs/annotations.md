@@ -283,7 +283,7 @@ A popped-out **NEX bank** offers a third view, *Sprites*, beside Memory and
 Disassembly (a plain dump does not). It shows the bank as a sheet of 16×16 ZX
 Spectrum Next sprite patterns with an inspector for the selected one.
 
-- **Layout follows the hardware** (`_input/next-fpga/src/video/sprites.vhd`), not
+- **Layout follows the hardware** (`vendor/next-fpga/3.02.01/src/video/sprites.vhd`), not
   Klive's emulator: an 8-bit pattern is 256 bytes, one byte per pixel; a 4-bit
   pattern is 128 bytes, two pixels per byte, high nibble for even x. 4-bit pixels
   take `paletteOffset << 4 | nibble`; transparency compares the whole byte (8-bit)

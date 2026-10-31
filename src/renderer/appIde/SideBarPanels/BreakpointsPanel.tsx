@@ -88,7 +88,8 @@ import {
   decodeCopperWord,
   formatCopperInstruction
 } from "@common/zxnext/copper/copperDecoder";
-import { NEXT_REG_DESCRIPTORS } from "@emu/machines/zxNext/nextRegDescriptors";
+// --- Register names: the union of every core's set (`.plans/ZXNEXT_CORE_VERSIONS_PLAN.md` D5)
+import { nextRegUnion } from "@emu/machines/zxNext/nextRegSets";
 import { formatHitSpec } from "@common/utils/breakpoint-filters";
 import { logGroupOf } from "@common/utils/breakpoint-condition/logpoint-template";
 import {
@@ -144,7 +145,7 @@ const spriteAttrText = (t: TFunction, bp: BreakpointInfo): string => {
 /** A Next Register's documented name, for the row and the tooltip. */
 const nextRegName = (t: TFunction, reg: number | undefined): string => {
   if (reg === undefined) return "";
-  const described = NEXT_REG_DESCRIPTORS.find((d) => d.id === reg);
+  const described = nextRegUnion().find((d) => d.id === reg);
   return described ? described.description : t("panels.side.breakpoints.undocumentedRegister");
 };
 

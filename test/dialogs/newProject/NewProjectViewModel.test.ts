@@ -19,7 +19,7 @@ describe("NewProjectViewModel — dropdowns", () => {
   });
 
   it("disables, rather than hides, the model of a one-model type", () => {
-    const vm = selectViewModel(aState({ machineId: "zxnext", modelId: undefined }));
+    const vm = selectViewModel(aState({ machineId: "scorpion", modelId: undefined }));
 
     expect(vm.model.options.length).toBe(1);
     expect(vm.model.enabled).toBe(false);

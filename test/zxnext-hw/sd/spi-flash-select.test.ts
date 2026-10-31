@@ -6,7 +6,7 @@ import type { ZxNextWasmV2Machine } from "@emu/machines/zxNext/ZxNextWasmV2Machi
 /*
  * B2 - which SPI slave a write of $7F to port $E7 selects.
  *
- * Hardware (`_input/next-fpga/src/zxnext.vhd` ~3316): `port_e7_reg <= X"7F"` (FPGA flash) only when
+ * Hardware (`vendor/next-fpga/3.02.01/src/zxnext.vhd` ~3316): `port_e7_reg <= X"7F"` (FPGA flash) only when
  * `nr_03_config_mode = '1' or nr_02_reset_type(2) = '1'`; otherwise every slave is deselected ($FF).
  * - `nr_02_reset_type` is "100" at power-on and shifts on every soft reset (~1692: `'0' & rt(2) &
  *   (rt(1) or rt(0))`), so bit 2 is set only until the first soft reset. Writes to $02 do not change it.

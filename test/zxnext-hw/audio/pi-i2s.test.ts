@@ -6,7 +6,7 @@ import { TonePiI2sSource } from "@emu/machines/zxNext/piI2s/PiI2sSource";
 /*
  * Raspberry Pi I2S audio input (catalogue I2S-001 - I2S-010; `.plans/PI_I2S_AUDIO_PLAN.md`).
  *
- * Hardware (`_input/next-fpga/src`):
+ * Hardware (`vendor/next-fpga/3.02.01/src`):
  * - zxnext.vhd ~2239-2246: NR $A2 bit 7 / 6 enable left / right (pi_i2s_en = either), bits 3 / 2 mute,
  *   bit 0 routes to EAR. ~6415: the i2s entity is held in reset while both enables are 0.
  * - i2s/i2s_receive.vhd: the top 13 bits of each word, latched at the WS edge that ends it (WS rising:

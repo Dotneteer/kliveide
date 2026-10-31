@@ -23,7 +23,7 @@
 
 /*
  * Z80_T80N: the ZX Spectrum Next's CPU is the T80N of the FPGA core
- * (_input/next-fpga/src/cpu/t80n*.vhd, core 3.02.01), not a Zilog die, and some of its flags and one
+ * (vendor/next-fpga/3.02.01/src/cpu/t80n*.vhd, core 3.02.01), not a Zilog die, and some of its flags and one
  * instruction differ from a Zilog Z80. The Next core defines Z80_T80N before including this file
  * (src/emu/machines/zxNext/wasm/zxnext/zxnext-cpu.c); every other
  * core builds this file without it and keeps the Zilog behaviour (ZEXALL, the Spectrum suites).

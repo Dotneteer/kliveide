@@ -127,6 +127,9 @@ static inline void zxnextCpuTactPlusNTicks(uint32_t value, uint32_t extraTicks) 
     zxnextPsgOnFrameWrap(ZXNEXT_TACTS_IN_FRAME);
     frameTacts28 -= ZXNEXT_TACTS_IN_FRAME;
     zxnextAudioMixerOnFrameWrap();
+#if ZXNEXT_CORE_VERSION >= 30204
+    zxnextInputOnFrameWrap(ZXNEXT_TACTS_IN_FRAME); /* the MD pad reset (zxnext-input.c) */
+#endif
     zxnextCpuMarkFrameCompleted();
   }
   currentFrameTact = frameTacts28 >> 2;
@@ -197,6 +200,9 @@ static inline void zxnextCpuTactPlusDmaTicks(uint32_t ticks) {
     zxnextPsgOnFrameWrap(ZXNEXT_TACTS_IN_FRAME);
     frameTacts28 -= ZXNEXT_TACTS_IN_FRAME;
     zxnextAudioMixerOnFrameWrap();
+#if ZXNEXT_CORE_VERSION >= 30204
+    zxnextInputOnFrameWrap(ZXNEXT_TACTS_IN_FRAME); /* the MD pad reset (zxnext-input.c) */
+#endif
     zxnextCpuMarkFrameCompleted();
   }
   currentFrameTact = frameTacts28 >> 2;

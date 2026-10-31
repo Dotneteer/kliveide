@@ -6,7 +6,7 @@ import { createSession, type NextTestSession } from "../../harness/zxnext";
  * Board registers: Pi GPIO, Pi peripherals, ESP GPIO, XDEV / XADC and the core boot register
  * (catalogue GPIO-001 - GPIO-007).
  *
- * Hardware (`_input/next-fpga/src/zxnext.vhd`, `_input/next-fpga/nextreg.txt`):
+ * Hardware (`vendor/next-fpga/3.02.01/src/zxnext.vhd`, `vendor/next-fpga/3.02.01/nextreg.txt`):
  * - ~5512-5522, ~6110-6120: `$90` stores bits 7-2 (GPIO 1-0 cannot be outputs), `$91`/`$92` whole
  *   bytes, `$93` bits 3-0. ~5053-5056: a reset clears them; power-on 0 (~1230-1233).
  * - ~5524-5534: `$98`-`$9B` write the pins' output latches; ~5048-5051: a reset sets them to $FF, $01,

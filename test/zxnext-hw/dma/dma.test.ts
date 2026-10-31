@@ -8,7 +8,7 @@ import { colours, hex8, writePalette } from "../ula/_ula-helpers";
 /*
  * zxnDMA / Z80 DMA (catalogue DMA-001 - DMA-023).
  *
- * Hardware (`_input/next-fpga/src`):
+ * Hardware (`vendor/next-fpga/3.02.01/src`):
  * - zxnext.vhd ~1729-1776: the DMA is clocked by `i_CLK_CPU` (the CPU clock, 3.5-28 MHz) with
  *   `turbo_i => cpu_speed`. `dma_mode` is latched from `port_0b_lsb` on every DMA port read or write:
  *   the last access through $0B makes it a Z80 DMA, through $6B a zxnDMA (it matters where the byte

@@ -15,6 +15,22 @@ static uint8_t zxnextExpansionNmiPending;
 static uint8_t zxnextExpansionIntPending;
 static uint8_t zxnextExpansionRomcsSignal;
 static uint8_t zxnextExpansionIorqulaSignal;
+#if ZXNEXT_CORE_VERSION >= 30204
+/* $81 bit 3, +3 FDC signals on the expansion bus (zxnext.vhd@3.02.04 ~1323, write ~6004, read ~6660),
+   and the disk motor latch it enables (`port_1ffd_mtr_n`, ~4235-4253). Only an issue 5 board drives
+   pins from them (~1818-1837); every board stores the bit and the latch, and the Multiface +3 reads the
+   latch back with $1FFD (~4804). 3.02.01 has neither (zxnext.vhd@3.02.01 ~5469-5472, ~4292). */
+static uint8_t zxnextExpansionFdc;
+static uint8_t zxnextExpansionMotorOn;
+
+/* A $1FFD-decoded write (A15-12 = 0001, A1-0 = 01, no DAC conflict): bit 3 latches the motor, with the
+   port enable and the $7FFD lock ignored (~4243-4248: `port_xffd`, not `port_1ffd_wr`) */
+static void zxnextExpansionWriteMotor(uint32_t value) {
+  if (zxnextExpansionFdc) zxnextExpansionMotorOn = (value & 0x08u) != 0u;
+}
+
+static uint32_t zxnextExpansionMotor(void) { return zxnextExpansionMotorOn; }
+#endif
 
 static inline void zxnextExpansionRequestSpeedUpdate(void) {
   cpuEffectiveSpeed = zxnextExpansionEnabled ? 0u : cpuProgrammedSpeed;
@@ -36,6 +52,10 @@ void zxnextExpansionHardReset(void) {
   zxnextExpansionUlaOverrideEnabled = 0;
   zxnextExpansionNmiDebounceDisabled = 0;
   zxnextExpansionClockAlwaysOn = 0;
+#if ZXNEXT_CORE_VERSION >= 30204
+  zxnextExpansionFdc = 0; /* hard reset = 0 (nextreg.txt@3.02.04 $81); the motor is off on any reset */
+  zxnextExpansionMotorOn = 0;
+#endif
   for (uint32_t i = 0; i < 4; i++) zxnextExpansionBusPortEnables[i] = 0xffu;
   zxnextExpansionIoPropagate = 0;
   zxnextExpansionNmiPending = 0;
@@ -49,6 +69,9 @@ void zxnextExpansionHardReset(void) {
  * ($86-$89) to 1s when the reset type ($89 bit 7) is 0 - the opposite sense to $85. $81 and $8A have no
  * reset branch. */
 void zxnextExpansionReset(void) {
+#if ZXNEXT_CORE_VERSION >= 30204
+  zxnextExpansionMotorOn = 0; /* ~4239-4241: reset turns the disk motor off; $81 has no reset branch */
+#endif
   if ((zxnextExpansionBusPortEnables[3] & 0x80u) == 0u) {
     zxnextExpansionBusPortEnables[0] = zxnextExpansionBusPortEnables[1] = zxnextExpansionBusPortEnables[2] = 0xffu;
     zxnextExpansionBusPortEnables[3] = 0x0fu;
@@ -82,6 +105,10 @@ void zxnextExpansionSetNextReg(uint32_t reg, uint32_t value) {
       zxnextExpansionUlaOverrideEnabled = (byteValue & 0x40u) != 0;
       zxnextExpansionNmiDebounceDisabled = (byteValue & 0x20u) != 0;
       zxnextExpansionClockAlwaysOn = (byteValue & 0x10u) != 0;
+#if ZXNEXT_CORE_VERSION >= 30204
+      zxnextExpansionFdc = (byteValue & 0x08u) != 0;
+      if (!zxnextExpansionFdc) zxnextExpansionMotorOn = 0; /* ~4243-4245: motor off while bit 3 = 0 */
+#endif
       zxnextExpansionRequestSpeedUpdate();
       break;
     case 0x86u:
@@ -108,6 +135,9 @@ uint32_t zxnextExpansionGetNextReg(uint32_t reg) {
       return (zxnextExpansionRomcsAsserted ? 0x80u : 0u) |
         (zxnextExpansionUlaOverrideEnabled ? 0x40u : 0u) |
         (zxnextExpansionNmiDebounceDisabled ? 0x20u : 0u) |
+#if ZXNEXT_CORE_VERSION >= 30204
+        (zxnextExpansionFdc ? 0x08u : 0u) |
+#endif
         (zxnextExpansionClockAlwaysOn ? 0x10u : 0u);
     case 0x86u:
     case 0x87u:

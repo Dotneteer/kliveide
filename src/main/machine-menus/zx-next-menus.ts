@@ -24,10 +24,43 @@ import { englishLabel } from "@common/i18n/labels";
 import { ensureSdCardBackupIfEnabled } from "./sd-card-backup";
 import { withSdCardAccess } from "../sd-card-access";
 import { t } from "@common/i18n/i18n";
+import { NEXT_PROFILE_IDS, nextProfileOf, romSetOf } from "@emu/machines/zxNext/nextProfiles";
 
 export const SD_CARD_FILE_FOLDER = "sdCardFileFolder";
-export const DEFAULT_SD_CARD_FILE = "ks2.cim";
-export const SOURCE_SD_CARD_FILE = "mmc/ks2-base.cim";
+
+/**
+ * The active Next model's default SD card (`.plans/ZXNEXT_CORE_VERSIONS_PLAN.md` D7): each model has
+ * its own working copy in the Klive home folder (`ks2.cim` for KS2 with core 3.02.01, the file every
+ * earlier Klive wrote) and its ROM set's base image, so switching models never boots NextZXOS from a
+ * card of another release. A user-selected card (`MEDIA_SD_CARD`) still overrides it.
+ */
+export function defaultSdCardOf(modelId: string | undefined = mainStore.getState().emulatorState?.modelId): {
+  /** The working copy's full path */
+  workingCopy: string;
+  /** The base image's full path, which a new or reset working copy is copied from */
+  baseImage: string;
+} {
+  const profile = nextProfileOf(modelId);
+  return {
+    workingCopy: path.join(getKliveHomeBase(), KLIVE_HOME_FOLDER, profile.sdWorkingCopy),
+    baseImage: path.join(process.env.PUBLIC ?? "", romSetOf(profile).sdBaseImage.file)
+  };
+}
+
+/** Whether a card is the default working copy of a Next model other than `modelId` */
+function isAnotherModelsDefaultSdCard(file: string | undefined, modelId: string | undefined): boolean {
+  if (!file) return false;
+  const active = defaultSdCardOf(modelId).workingCopy;
+  return NEXT_PROFILE_IDS.some((id) => {
+    const workingCopy = defaultSdCardOf(id).workingCopy;
+    return workingCopy !== active && path.resolve(workingCopy) === path.resolve(file);
+  });
+}
+
+/** The active Next model's default SD card working copy (full path) */
+export function getDefaultSdCardPath(): string {
+  return defaultSdCardOf().workingCopy;
+}
 
 /**
  * Machine › SD Card
@@ -210,9 +243,9 @@ export const hotkeyMenuRenderer: MachineMenuRenderer = () => {
   return items;
 };
 
-export async function initializeZxSpectrumNext(): Promise<void> {
+export async function initializeZxSpectrumNext(modelId?: string): Promise<void> {
   // --- This is where the SD Card file is stored
-  const sdCardPath = path.join(getKliveHomeBase(), KLIVE_HOME_FOLDER, DEFAULT_SD_CARD_FILE);
+  const { workingCopy: sdCardPath, baseImage: sourceSdCardPath } = defaultSdCardOf(modelId);
   if (!fs.existsSync(sdCardPath)) {
     // --- Create the folder if it does not exist
     fs.mkdirSync(path.dirname(sdCardPath), { recursive: true });
@@ -224,7 +257,6 @@ export async function initializeZxSpectrumNext(): Promise<void> {
   }
 
   // --- Copy the SD Card file from the source
-  const sourceSdCardPath = path.join(process.env.PUBLIC, SOURCE_SD_CARD_FILE);
   if (fs.existsSync(sourceSdCardPath) && fs.statSync(sourceSdCardPath).isFile()) {
     fs.copyFileSync(sourceSdCardPath, sdCardPath);
     // --- Create initial backup after copying
@@ -232,10 +264,15 @@ export async function initializeZxSpectrumNext(): Promise<void> {
   }
 }
 
-export async function setupZxSpectrumNext(): Promise<void> {
-  // --- Check, if the SD Card is set at all
+export async function setupZxSpectrumNext(modelId?: string): Promise<void> {
+  const targetModel = modelId ?? mainStore.getState().emulatorState?.modelId;
+  // --- The model being switched to has its own default card (D7): make its working copy on first use
+  await initializeZxSpectrumNext(targetModel);
+  // --- Check, if the SD Card is set at all. Another model's default card counts as no choice:
+  // --- switching models switches default cards
   const appState = mainStore.getState();
-  const sdCardFile = appState.media?.[MEDIA_SD_CARD];
+  const selected = appState.media?.[MEDIA_SD_CARD];
+  const sdCardFile = isAnotherModelsDefaultSdCard(selected, targetModel) ? undefined : selected;
   if (sdCardFile) {
     // --- Use the file stored in settings
     await logSdCardEvent(sdCardFile);
@@ -243,7 +280,7 @@ export async function setupZxSpectrumNext(): Promise<void> {
     await ensureSdCardBackupIfEnabled(sdCardFile);
   } else {
     // --- Set the default SD Card file
-    const defaultSdCard = getDefaultSdCardFile();
+    const defaultSdCard = defaultSdCardOf(targetModel).workingCopy;
     mainStore.dispatch(setMediaAction(MEDIA_SD_CARD, defaultSdCard));
     await logSdCardEvent(defaultSdCard);
     // --- Ensure backup on startup
@@ -252,7 +289,7 @@ export async function setupZxSpectrumNext(): Promise<void> {
 }
 
 function getDefaultSdCardFile(): string {
-  return path.join(getKliveHomeBase(), KLIVE_HOME_FOLDER, DEFAULT_SD_CARD_FILE);
+  return getDefaultSdCardPath();
 }
 
 async function logSdCardEvent(filename: string): Promise<void> {
@@ -260,7 +297,7 @@ async function logSdCardEvent(filename: string): Promise<void> {
 }
 
 async function resetToDefaultSdCardFile(): Promise<void> {
-  const sdCardPath = path.join(getKliveHomeBase(), KLIVE_HOME_FOLDER, DEFAULT_SD_CARD_FILE);
+  const { workingCopy: sdCardPath, baseImage: sourceSdCardPath } = defaultSdCardOf();
 
   // --- Rewriting the image must not overlap with emulated sector I/O or a file copy, all of
   // --- which work on the very same file.
@@ -278,7 +315,6 @@ async function resetToDefaultSdCardFile(): Promise<void> {
     }
 
     // --- Copy the SD Card file from the source
-    const sourceSdCardPath = path.join(process.env.PUBLIC, SOURCE_SD_CARD_FILE);
     if (fs.existsSync(sourceSdCardPath) && fs.statSync(sourceSdCardPath).isFile()) {
       fs.copyFileSync(sourceSdCardPath, sdCardPath);
     }

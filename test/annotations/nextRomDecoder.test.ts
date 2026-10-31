@@ -7,7 +7,7 @@ import { romDecoderFor } from "@renderer/appIde/annotations/romDecoder";
  * The Next's ROM pages use the Z80N's extra opcodes, so their listing decodes them; other ROMs do not.
  * NextZXOS's ROM 3 (enNextZX.rom page 3) has `NEXTREG $51,$FF` ($ED $91 $51 $FF) at $090C.
  */
-const ROM3 = new Uint8Array(readFileSync(join(__dirname, "../../src/public/roms/enNextZX.rom"))).subarray(0xc000, 0x10000);
+const ROM3 = new Uint8Array(readFileSync(join(__dirname, "../../src/public/roms/zxnext/nextzxos-2.08/enNextZX.rom"))).subarray(0xc000, 0x10000);
 
 describe("the Next's ROM decoding", () => {
   it("decodes NEXTREG n,n as one four-byte instruction on a next-basic page", async () => {
@@ -25,7 +25,7 @@ describe("the Next's ROM decoding", () => {
  * NextZXOS's pages 0-2 follow restarts and ROM-to-ROM stub calls with inline data, each page in its own
  * way (`nextzxos-disassembler.ts`): the listing must step over it.
  */
-const ROM = new Uint8Array(readFileSync(join(__dirname, "../../src/public/roms/enNextZX.rom")));
+const ROM = new Uint8Array(readFileSync(join(__dirname, "../../src/public/roms/zxnext/nextzxos-2.08/enNextZX.rom")));
 const page = (n: number) => ROM.subarray(n * 0x4000, (n + 1) * 0x4000);
 const starts = async (kind: "next-os0" | "next-os1" | "next-os2", n: number, from: number, to: number) =>
   (await romDecoderFor(kind)(page(n), from, to)).map((i) => [i.offset, i.length]);
@@ -64,7 +64,7 @@ describe("NextZXOS's inline data", () => {
 });
 
 describe("the DivMMC and Multiface ROMs' inline data", () => {
-  const rom = (file: string) => new Uint8Array(readFileSync(join(__dirname, `../../src/public/roms/${file}`)));
+  const rom = (file: string) => new Uint8Array(readFileSync(join(__dirname, `../../src/public/roms/zxnext/nextzxos-2.08/${file}`)));
   const at = async (kind: "next-divmmc" | "next-multiface", file: string, from: number, to: number) =>
     (await romDecoderFor(kind)(rom(file), from, to)).map((i) => [i.offset, i.length]);
 
@@ -96,7 +96,7 @@ describe("the DivMMC and Multiface ROMs' inline data", () => {
 });
 
 describe("the alternate ROM's inline data", () => {
-  const alt = new Uint8Array(readFileSync(join(__dirname, "../../src/public/roms/enAltZX.rom")));
+  const alt = new Uint8Array(readFileSync(join(__dirname, "../../src/public/roms/zxnext/nextzxos-2.08/enAltZX.rom")));
   const at = async (kind: "next-alt0" | "next-alt1", page: number, from: number, to: number) =>
     (await romDecoderFor(kind)(alt.subarray(page * 0x4000, (page + 1) * 0x4000), from, to)).map((i) => [i.offset, i.length]);
 

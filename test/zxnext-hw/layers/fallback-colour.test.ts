@@ -7,7 +7,7 @@ import { colours, parkedSession } from "../ula/_ula-helpers";
  * The $4A fallback colour's 9th bit (ported from test/zxnext/UlaDisableFallback.test.ts, whose TS half
  * read a device cache field and whose WASM half poked the core directly).
  *
- * Hardware (`_input/next-fpga/src/zxnext.vhd`):
+ * Hardware (`vendor/next-fpga/3.02.01/src/zxnext.vhd`):
  * - ~7160: `rgb_out_2 <= fallback_rgb_2 & (fallback_rgb_2(1) or fallback_rgb_2(0))` - the 8-bit $4A
  *   value becomes RRRGGGBB plus a low blue bit that is B1 OR B0 (blue 10 -> 101, not 100 or 110).
  * - ~7046-7049: with $68 bit 7 the ULA (border included) is transparent; with no other layer enabled

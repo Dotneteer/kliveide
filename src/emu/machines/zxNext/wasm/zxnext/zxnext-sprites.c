@@ -197,7 +197,7 @@ static void zxnextSpritesWritePort57(uint32_t value) {
  *
  * Both pattern memories hold every variant precomputed, indexed by the *screen* pixel (row << 4 | col
  * within the 16x16 cell), so the renderer reads straight through. The mapping is the inverse of the
- * FPGA's read address (`_input/next-fpga/src/video/sprites.vhd`, `spr_pattern_addr_start`/`_delta`):
+ * FPGA's read address (`vendor/next-fpga/3.02.01/src/video/sprites.vhd`, `spr_pattern_addr_start`/`_delta`):
  *
  *   no rotate:  pattern row = ymirror ? 15 - sy : sy,   pattern col = xmirror ? 15 - sx : sx
  *   rotate:     pattern row = xmirror ? sx : 15 - sx,   pattern col = ymirror ? 15 - sy : sy

@@ -5,7 +5,7 @@ import { createSession, displayFileAddress, type NextTestSession, type Probe } f
 /*
  * B7 - ULANext and ULA+ palette indexing of ink, paper and border.
  *
- * Hardware (`_input/next-fpga/src/video/zxula.vhd` ~484-553, "Standard ULA, ULAnext, ULA+"):
+ * Hardware (`vendor/next-fpga/3.02.01/src/video/zxula.vhd` ~484-553, "Standard ULA, ULAnext, ULA+"):
  * - ULANext (NextReg $43 bit 0), format f = NextReg $42:
  *   ink    = attr and f
  *   paper  = "1" & attr(7:1) for f=$01, "10" & attr(7:2) for $03, ..., "1000000" & attr(7) for $7F,

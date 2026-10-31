@@ -201,6 +201,9 @@ static void zxnextPortsWrite(uint32_t address, uint32_t value) {
   } else if ((normalized & 0xf003u) == 0xd001u) {
     if (zxnextPortsGroupEnabled(0, 2)) zxnextMemorySetPortDffd(byteValue);
   } else if ((normalized & 0xf003u) == 0x1001u) {
+#if ZXNEXT_CORE_VERSION >= 30204
+    zxnextExpansionWriteMotor(byteValue); /* the +3 disk motor latch (zxnext-expansion.c) */
+#endif
     if (zxnextPortsGroupEnabled(0, 3)) zxnextMemorySetPort1ffd(byteValue);
   } else if ((normalized & 0xf0ffu) == 0xe0f7u) {
     /* $EFF7 (zxnext.vhd ~2560): A15-12 = 1110, low byte $F7; internal port enable bit 26 = $85 bit 2 */
@@ -208,7 +211,11 @@ static void zxnextPortsWrite(uint32_t address, uint32_t value) {
   } else if ((normalized & 0x00ffu) == 0x00e3u) {
     if (zxnextPortsGroupEnabled(1, 0)) zxDivMmcSetPortE3(byteValue);
   } else if ((normalized & 0x00ffu) == 0x00e7u) {
+#if ZXNEXT_CORE_VERSION >= 30204
+    if (zxnextPortsGroupEnabled(1, 3)) zxnextSdSpiCsWrite(byteValue); /* $0A bit 5 swap (zxnext-sd.c) */
+#else
     if (zxnextPortsGroupEnabled(1, 3)) zxSdSpiCsWrite(byteValue);
+#endif
   } else if ((normalized & 0x00ffu) == 0x00ebu) {
     if (zxnextPortsGroupEnabled(1, 3)) zxSdWriteMmcData(byteValue);
   } else if ((normalized & 0x00ffu) == 0x00ffu) {

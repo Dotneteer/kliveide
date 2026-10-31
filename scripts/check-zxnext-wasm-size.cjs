@@ -1,5 +1,5 @@
 const { statSync } = require("node:fs");
-const { buildZxNextWasm, output } = require("./build-zxnext-wasm.cjs");
+const { buildZxNextWasm, output, ZXNEXT_ARTIFACTS, artifactOutput } = require("./build-zxnext-wasm.cjs");
 
 const DEFAULT_MAX_BYTES = 700_000;
 
@@ -33,9 +33,20 @@ function checkZxNextWasmSize({
   return report;
 }
 
+/** Every artifact of the list, each within the limit (`zxnext-artifacts.cjs`) */
+function checkAllZxNextWasmSizes(options = {}) {
+  return ZXNEXT_ARTIFACTS.map((entry) =>
+    checkZxNextWasmSize({
+      ...options,
+      artifact: artifactOutput(entry),
+      build: (buildOptions) => buildZxNextWasm({ ...buildOptions, artifact: entry })
+    })
+  );
+}
+
 if (require.main === module) {
   try {
-    const report = checkZxNextWasmSize();
+    const report = checkAllZxNextWasmSizes();
     console.log(JSON.stringify(report, null, 2));
   } catch (error) {
     console.error(error);
@@ -44,6 +55,7 @@ if (require.main === module) {
 }
 
 module.exports = {
+  checkAllZxNextWasmSizes,
   DEFAULT_MAX_BYTES,
   checkZxNextWasmSize,
   parseMaxBytes

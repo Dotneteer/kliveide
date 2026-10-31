@@ -10,7 +10,7 @@ import { createSession, type NextTestSession } from "../../harness/zxnext";
  * `nextreg/read-mux.test.ts`, `nextreg/soft-reset.test.ts`, `ula/timex-port.test.ts` (port $FF bit 6),
  * `uart/uart.test.ts` ($C6/$CA/$CE) and `dma/dma.test.ts` (DMA-018, $CC bit 0).
  *
- * Hardware (`_input/next-fpga/src`):
+ * Hardware (`vendor/next-fpga/3.02.01/src`):
  * - device/im2_peripheral.vhd: `int_status <= int_req or unq or (int_status and not clear)` latches every
  *   request edge, enabled or not; `im2_int_req` (the pending request) is set only by an *enabled* (or
  *   unqualified) request in hardware IM2 mode and cleared only by the RETI ending its service;

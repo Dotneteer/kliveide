@@ -5,7 +5,7 @@ import { createSession } from "../../harness/zxnext";
 /*
  * NextReg values across a reset (catalogue NR-012 / NR-013).
  *
- * Hardware (`_input/next-fpga/src/zxnext.vhd`): the FPGA's `reset` is asserted by both a soft and a
+ * Hardware (`vendor/next-fpga/3.02.01/src/zxnext.vhd`): the FPGA's `reset` is asserted by both a soft and a
  * hard reset. Registers fall into two groups:
  *
  * - RESET: assigned in an `if reset = '1'` branch - the big NextReg process (~4907-5083), the MMU

@@ -7,7 +7,7 @@ import { colours, hex8, PAPER_LEFT, PAPER_TOP, parkedSession, writePalette } fro
 /*
  * What the palettes do to the picture (catalogue PAL-009, PAL-010, PAL-014 - PAL-016).
  *
- * Hardware (`_input/next-fpga/src/zxnext.vhd`):
+ * Hardware (`vendor/next-fpga/3.02.01/src/zxnext.vhd`):
  * - ~6771-6774, ~6927, ~6979: the displayed palettes are $43 bit 1 (ULA and LoRes), bit 2 (Layer 2),
  *   bit 3 (sprites) and $6B bit 4 (tilemap); they are part of the pixel address and have nothing to do
  *   with the write select in $43 bits 6-4.

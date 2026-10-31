@@ -6,7 +6,7 @@ import { delay } from "../_timing-helpers";
 /*
  * Maskable interrupts (catalogue INT-001 - INT-005, INT-007 - INT-015, INT-017, INT-018, INT-020, INT-023).
  *
- * Hardware (`_input/next-fpga/src`):
+ * Hardware (`vendor/next-fpga/3.02.01/src`):
  * - zxnext.vhd ~1884-1955: 14 im2_peripheral devices in one daisy chain, priority = index = vector bits
  *   4-1: 0 line, 1 UART0 RX, 2 UART1 RX, 3-10 CTC 0-7, 11 ULA, 12 UART0 TX, 13 UART1 TX. Hardware IM2
  *   vector = $C0 bits 7-5 & index & '0'. `$20` writes are unqualified requests (bit 7 line, 6 ULA, 3-0

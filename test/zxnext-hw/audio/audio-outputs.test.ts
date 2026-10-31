@@ -7,7 +7,7 @@ import { ay, edgeStep, side } from "./_audio-helpers";
  * The Next's three sound outputs, as Klive plays the one chosen (`audioOutput`, the IDE's Sound Output
  * setting; catalogue OUT-001 - OUT-005).
  *
- * Hardware (`_input/next-fpga/src`):
+ * Hardware (`vendor/next-fpga/3.02.01/src`):
  * - audio/audio_mixer.vhd: the 13-bit sum per side, EAR 512 + MIC 128 + AY + DAC side x 4 + Pi.
  * - zxnext_top_issue4.vhd ~1279/1299: the jack's converters take `zxn_audio_L(11 downto 0)`: a sum of
  *   4,096 or more wraps. ~1313-1320: the speaker takes L(11..0) + R(11..0), or with the beeper diverted

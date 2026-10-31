@@ -1,0 +1,19 @@
+--- a/nextreg.txt
++++ b/nextreg.txt
+@@ -694,6 +694,7 @@ Writable in config mode only.
+   bit 5 = Eliminate the attribute entry in the tilemap (soft reset = 0)
+   bit 4 = Palette select (soft reset = 0)
+   bit 3 = Select textmode (soft reset = 0)
++  
+   bit 2 = Reserved, must be 0
+   bit 1 = Activate 512 tile mode (soft reset = 0)
+   bit 0 = Force tilemap on top of ULA (soft reset = 0)
+@@ -887,7 +888,7 @@ Writable in config mode only.
+ 0x8F (143) => Memory Mapping Mode
+ (R/W) (hard reset = 0)
+   bits 7:2 = Reserved, must be zero
+-  bits 1:0 = Mapping mode applied
++  bits 1:0 = Mapping mode applied0
+     00 = Standard ZX 128k +3
+     01 = Reserved
+     10 = Pentagon 512K

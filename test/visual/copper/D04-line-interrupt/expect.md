@@ -11,4 +11,4 @@ handler needs about 80 T-states, so the red edge is within a row of 192 (rows 19
 
 **Geometry:** copper line L = buffer row 48+L; paper x = buffer x 96+2x (see C00).
 
-Source: _input/next-fpga/src: copper.vhd, video/zxula_timing.vhd, zxnext.vhd.
+Source: vendor/next-fpga/3.02.01/src: copper.vhd, video/zxula_timing.vhd, zxnext.vhd.

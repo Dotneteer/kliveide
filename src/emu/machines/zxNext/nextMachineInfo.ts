@@ -12,15 +12,16 @@ import { IMemorySection, MemorySectionType } from "@abstractions/MemorySection";
 import { SpectrumKeyCode } from "@emu/machines/zxSpectrum/SpectrumKeyCode";
 import { convertAsciiStringToNextKeyCodes } from "./nextKeyCodes";
 import { extendedInstructionLenghts } from "./z80nInstructionLengths";
+import { NEXT_ROM_SETS, type NextRomFacts } from "@common/zxnext/romSets";
+import { nextProfileOf } from "./nextProfiles";
 
 /* Local, so this neutral module does not depend on the renderer's command services */
 const toHexa2 = (value: number) => (value & 0xff).toString(16).toUpperCase().padStart(2, "0");
 const toHexa4 = (value: number) => (value & 0xffff).toString(16).toUpperCase().padStart(4, "0");
 
-export const ZXNEXT_MAIN_WAITING_LOOP = 0x1202;
-
 /*
- * The bounds of NextZXOS's key-wait loop in ROM 0:
+ * The code-injection flow waits in NextZXOS's key-wait loop in ROM 0. Its addresses are facts about
+ * the ROM set (`nextRomSets.json`, `.plans/ZXNEXT_CORE_VERSIONS_PLAN.md` D6); in NextZXOS 2.08:
  *
  *   $1202: HALT
  *   $1203: LD HL,$5C3B      ; FLAGS
@@ -28,14 +29,12 @@ export const ZXNEXT_MAIN_WAITING_LOOP = 0x1202;
  *   $1208: JR Z,$11F4       ; no - keep waiting
  *   $120A: RES 5,(HL)       ; consume it
  *
- * with an outer `JR $11E5` at $1200. The OS parks here whenever it wants a key - during boot, at the
- * boot menu, at the BASIC prompt, inside the Calculator. That is precisely why reaching
- * `ZXNEXT_MAIN_WAITING_LOOP` once proves nothing about *which* program is waiting, and why the flow
- * below waits for the machine to settle in this range instead.
+ * with an outer `JR $11E5` at $1200 (`keyWaitLoop` is $11E5-$120B, `mainWaitingLoop` the HALT). The
+ * OS parks here whenever it wants a key - during boot, at the boot menu, at the BASIC prompt, inside
+ * the Calculator. That is precisely why reaching the HALT once proves nothing about *which* program
+ * is waiting, and why the flow below waits for the machine to settle in this range instead.
  * See `.plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.14.
  */
-const ZXNEXT_KEY_WAIT_LOOP_FROM = 0x11e5;
-const ZXNEXT_KEY_WAIT_LOOP_TO = 0x120b;
 const SP_KEY_WAIT = 250;
 const SP_KEY_WAIT_SHORT = 50;
 
@@ -218,10 +217,20 @@ export function nextDisassemblySections(options: Record<string, any>): IMemorySe
 }
 
 /**
- * Gets the main execution point information of the machine
- * @param _model Machine model to use for code execution
+ * The code-injection flow: boot NextZXOS, then type `.nexload <file>` at its prompt
+ * @param hasAutoExect Whether the SD card has an `autoexec.1st` (one more key to skip it)
+ * @param additionalInfo The NEX file to load
+ * @param facts The ROM set's facts: where its key-wait loop is
+ * @param bootCheckpoint The cold boot's checkpoint name: one per model, as each boots its own ROMs
  */
-export function buildNextCodeInjectionFlow(hasAutoExect: boolean, additionalInfo: any): CodeInjectionFlow {
+export function buildNextCodeInjectionFlow(
+  hasAutoExect: boolean,
+  additionalInfo: any,
+  facts: NextRomFacts = NEXT_ROM_SETS[nextProfileOf().romSet].facts,
+  bootCheckpoint = "zxnext-boot"
+): CodeInjectionFlow {
+  const ZXNEXT_MAIN_WAITING_LOOP = facts.mainWaitingLoop;
+  const [ZXNEXT_KEY_WAIT_LOOP_FROM, ZXNEXT_KEY_WAIT_LOOP_TO] = facts.keyWaitLoop;
   // --- Create QueueKey steps for the prompt
   const prompt = `.nexload ${additionalInfo}\n`;
   const promtKeys = convertAsciiStringToNextKeyCodes(prompt);
@@ -259,7 +268,7 @@ export function buildNextCodeInjectionFlow(hasAutoExect: boolean, additionalInfo
       type: "ReachExecPoint",
       rom: 0,
       execPoint: ZXNEXT_MAIN_WAITING_LOOP,
-      checkpoint: "zxnext-boot",
+      checkpoint: bootCheckpoint,
       message: `Main execution cycle point reached (ROM0/$${toHexa4(ZXNEXT_MAIN_WAITING_LOOP)})`
     },
     {

@@ -1,7 +1,6 @@
-import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-import { createSession, type NextTestSession } from "../../harness/zxnext";
+import { createSession, type NextTestSession, readNextRom } from "../../harness/zxnext";
 
 /*
  * Multiface NMI state, page-in rules and memory priority (catalogue MF-008 - MF-012). Ported from the
@@ -10,7 +9,7 @@ import { createSession, type NextTestSession } from "../../harness/zxnext";
  * "D5: enable gating") and `test/zxnext/MultifaceMemory.test.ts` (write priority over DivMMC); the rest
  * of those files is covered by `multiface.test.ts`.
  *
- * Hardware (`_input/next-fpga/src`):
+ * Hardware (`vendor/next-fpga/3.02.01/src`):
  * - device/multiface.vhd
  *   - `nmi_active` (= `nmi_disable_o`, zxnext.vhd's `mf_nmi_hold`): set by the button, cleared by RETN
  *     and by *any* write to the enable or disable port, in every mode (MF+3 also by a disable-port
@@ -30,7 +29,7 @@ import { createSession, type NextTestSession } from "../../harness/zxnext";
  * - zxnext.vhd ~4287-4299: MF+3 enable-port reads by A15-A12, $7xxx = $7FFD, $Exxx $EFF7 bits 3-2.
  */
 
-const MF_ROM = readFileSync("src/public/roms/enNextMf.rom");
+const MF_ROM = readNextRom("enNextMf.rom");
 
 /** [enable port, disable port] per $0A type. */
 const PORTS: Record<number, [number, number]> = { 0: [0x3f, 0xbf], 1: [0xbf, 0x3f], 2: [0x9f, 0x1f], 3: [0x9f, 0x1f] };

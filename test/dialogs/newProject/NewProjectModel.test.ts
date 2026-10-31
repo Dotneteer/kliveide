@@ -52,7 +52,9 @@ describe("NewProjectModel — machine types and models", () => {
   });
 
   it("offers a one-model type its single model", () => {
-    expect(modelOptionsOf(aState({ machineId: "zxnext" })).length).toBe(1);
+    expect(modelOptionsOf(aState({ machineId: "scorpion" })).length).toBe(1);
+    // --- The Next has a model per board and core version (`.plans/ZXNEXT_CORE_VERSIONS_PLAN.md` D1)
+    expect(modelOptionsOf(aState({ machineId: "zxnext" })).length).toBe(2);
   });
 
   it("offers only the types that have templates, once that is known", () => {
@@ -292,5 +294,14 @@ describe("NewProjectModel — environment", () => {
     expect(reduce(state, { type: "envReplaced", env: { validation: state.env.validation } })).toBe(
       state
     );
+  });
+});
+
+describe("NewProjectModel — the Next's new-project model", () => {
+  it("starts a new Next project on the newest core, not on the model old projects mean", () => {
+    expect(defaultModelOf("zxnext", { favorites: [] })).toBe("ks2-30204");
+    // --- The running model and a favourite still win
+    expect(defaultModelOf("zxnext", { favorites: [], running: { machineId: "zxnext", modelId: "ks2-30201" } })).toBe("ks2-30201");
+    expect(defaultModelOf("zxnext", { favorites: [{ machineId: "zxnext", modelId: "ks2-30201" }] })).toBe("ks2-30201");
   });
 });

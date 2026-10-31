@@ -61,7 +61,7 @@ Rollout completion on 2026-08-22: the normal ZX Spectrum Next factory default
 is now WASM. (Superseded 2026-09-20: the TypeScript Next backend, its
 "ZX Spectrum Next Compatibility" model and the `zxnextImplementation` switch are
 gone. There is one Next machine, and the reference for its behaviour is the VHDL
-in `_input/next-fpga/`, not another emulator.)
+in `vendor/next-fpga/3.02.01/`, not another emulator.)
 
 ULA audit correction on 2026-08-22: the WASM backend still has open ULA/screen
 blockers. The TypeScript renderer performs tact-by-tact composed rendering and

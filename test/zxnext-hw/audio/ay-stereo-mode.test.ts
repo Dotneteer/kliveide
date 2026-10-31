@@ -5,7 +5,7 @@ import { createSession, type AudioSample } from "../../harness/zxnext";
 /*
  * AY-012 - NextReg $08 bit 5 selects the stereo arrangement of every PSG.
  *
- * Hardware (`_input/next-fpga/src/audio/turbosound.vhd` ~184-201, per PSG):
+ * Hardware (`vendor/next-fpga/3.02.01/src/audio/turbosound.vhd` ~184-201, per PSG):
  *   psg_L_mux <= psg_C when stereo_mode_i = '1' ... else psg_B;
  *   psg_L     <= psg_A + psg_L_mux;      psg_R <= psg_C + psg_B;
  * so with bit 5 = 0 (ABC) the left side is A + B and the right side B + C - channel B is the centre,

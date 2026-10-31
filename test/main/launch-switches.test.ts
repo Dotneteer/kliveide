@@ -55,7 +55,7 @@ describe("resolveLaunchMachine", () => {
   it("matches IDs without regard to case and returns the registry's spelling", () => {
     expect(resolveLaunchMachine({ machineId: "ZXNEXT" }, {}).machine).toMatchObject({
       machineId: MI_ZXNEXT,
-      modelId: "standard"
+      modelId: "ks2-30201"
     });
   });
 
@@ -74,8 +74,9 @@ describe("resolveLaunchMachine", () => {
 
   it("resolves a retired model id to its replacement", () => {
     expect(resolveLaunchMachine({ machineId: "zxnext", modelId: "compatibility" }, {}).machine?.modelId).toBe(
-      "standard"
+      "ks2-30201"
     );
+    expect(resolveLaunchMachine({ machineId: "zxnext", modelId: "standard" }, {}).machine?.modelId).toBe("ks2-30201");
   });
 
   it("uses the model a model-less reference means when none is given", () => {

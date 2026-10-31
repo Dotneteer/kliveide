@@ -1,4 +1,5 @@
 #include "zxnext-nextreg.h"
+#include "zxnext-profile.h"
 #include "zxnext-memory.h"
 #include "zxnext-interrupts.h"
 #include "zxnext-divmmc.h"
@@ -54,13 +55,13 @@ static void zxnextNextRegHardReset(void) {
   cpuTactScale = 8;
   zxnextCpuScalePending = 0u;
   zxnextNextRegs[0x00] = 0x08;
-  zxnextNextRegs[0x01] = 0x32;
+  zxnextNextRegs[0x01] = ZXNEXT_NR_01_VALUE; /* g_version (zxnext_top_issue4.vhd, zxnext-profile.h) */
   zxnextNextRegs[0x03] = 0x33; /* +3 display timing and machine type (post-firmware) */
   zxnextNextRegs[0x05] = 0x41;
   zxnextNextRegs[0x06] = 0x80;
   zxnextNextRegs[0x08] = 0x1a;
-  zxnextNextRegs[0x0e] = 0x00;
-  zxnextNextRegs[0x0f] = 0x02; /* g_board_issue: an Issue 4 board, as the $11 and $F0 rules assume */
+  zxnextNextRegs[0x0e] = ZXNEXT_CORE_VERSION_SUB_MINOR; /* g_sub_version (zxnext-profile.h) */
+  zxnextNextRegs[0x0f] = ZXNEXT_BOARD_ISSUE; /* g_board_issue (zxnext-profile.h): Issue 4, as the $11 and $F0 rules assume */
   zxnextNextRegs[0x10] = 0x01; /* ~1127: nr_10_coreid := "00001", no reset branch */
   zxnextNextRegs[0x0a] = 0x01;
   zxnextNextRegs[0x12] = 0x08;
@@ -143,7 +144,13 @@ static void zxnextNextRegApplyResetBranch(void) {
   zxnextNextRegs[0x91] = 0x00;
   zxnextNextRegs[0x92] = 0x00;
   zxnextNextRegs[0x93] = 0x00;
+#if ZXNEXT_CORE_VERSION >= 30204
+  /* bit 1 (Pi SPI slave) is not in the reset branch (zxnext.vhd@3.02.04 ~5586-5587: bits 7-2 and 0);
+     a hard reset has cleared it with every register above. 3.02.01 clears all (~5058). */
+  zxnextNextRegs[0xa0] &= 0x02u;
+#else
   zxnextNextRegs[0xa0] = 0x00;
+#endif
   zxnextNextRegs[0xa2] = 0x00;
   zxnextNextRegs[0xa8] = 0x00;
   /* ~5048-5051, ~5063: the Pi GPIO and ESP GPIO0 output latches */
@@ -290,7 +297,11 @@ static uint32_t zxnextNextRegReadZeroMask(uint32_t reg) {
     case 0x07u: return 0xccu;
     case 0x08u: return 0x00u;
     case 0x09u: return 0x08u;
+#if ZXNEXT_CORE_VERSION >= 30204
+    case 0x0au: return 0x04u; /* bit 5 = nr_0a_sd_swap (zxnext.vhd@3.02.04 ~6446); 3.02.01 '0' (~5858) */
+#else
     case 0x0au: return 0x24u;
+#endif
     case 0x0bu: return 0x4eu;
     case 0x0eu: return 0x00u;
     case 0x0fu: return 0xf0u;
@@ -354,7 +365,11 @@ static uint32_t zxnextNextRegReadZeroMask(uint32_t reg) {
     case 0x71u: return 0xfeu;
     case 0x7fu: return 0x00u;
     case 0x80u: return 0x00u;
+#if ZXNEXT_CORE_VERSION >= 30204
+    case 0x81u: return 0x07u; /* bit 3 = nr_81_expbus_fdc (zxnext.vhd@3.02.04 ~6660); 3.02.01 '0' */
+#else
     case 0x81u: return 0x0fu;
+#endif
     case 0x82u: return 0x00u;
     case 0x83u: return 0x00u;
     case 0x84u: return 0x00u;
@@ -375,7 +390,13 @@ static uint32_t zxnextNextRegReadZeroMask(uint32_t reg) {
     case 0x99u: return 0x00u;
     case 0x9au: return 0x00u;
     case 0x9bu: return 0xf0u;
+#if ZXNEXT_CORE_VERSION >= 30204
+    /* "00" & bits 5-3 & '0' & (bit 1 and g_option(4)) & bit 0 (zxnext.vhd@3.02.04 ~6723); g_option(4)
+       = 1 on KS2 (zxnext_top_issue4.vhd@3.02.04 ~40, X"FFF2"). 3.02.01: bits 2-1 read 0 (~6135). */
+    case 0xa0u: return 0xc4u;
+#else
     case 0xa0u: return 0xc6u;
+#endif
     case 0xa2u: return 0x20u;
     case 0xa8u: return 0xfeu;
     case 0xa9u: return 0xfau;
@@ -559,6 +580,13 @@ static void zxnextNextRegSetDirect(uint32_t reg, uint32_t value) {
   }
   /* $0A bits 7-6 (Multiface type) change only in config mode (~5170) */
   if (normalized == 0x0au && !zxnextConfigMode) value = (value & 0x3fu) | (zxnextNextRegs[0x0au] & 0xc0u);
+#if ZXNEXT_CORE_VERSION >= 30204
+  /* $0A bit 5 (swap SD0/SD1) is written only in config mode and with bit 2 of the value set
+     (zxnext.vhd@3.02.04 ~5702-5704); it has no reset branch, so a soft reset keeps it (~1224 := '0').
+     3.02.01 has no such bit (zxnext.vhd@3.02.01 ~5169-5175). */
+  if (normalized == 0x0au && !(zxnextConfigMode && (value & 0x04u) != 0u))
+    value = (value & ~0x20u) | (zxnextNextRegs[0x0au] & 0x20u);
+#endif
   /* $06 bit 2 (PS/2 mode) changes only in config mode (~5145) */
   if (normalized == 0x06u && !zxnextConfigMode) value = (value & 0xfbu) | (zxnextNextRegs[0x06u] & 0x04u);
   if (normalized == 0x09u) {

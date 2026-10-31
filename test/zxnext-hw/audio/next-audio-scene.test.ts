@@ -18,7 +18,7 @@ import { ay, edgeStep, frequency, MASTER_CLOCK, relativeError, side, swing } fro
  * These are Klive's mixed output (both sides, 16-bit, the beeper DC-filtered and the DACs and the Pi
  * taken about their rest levels), not the hardware's unsigned sum; the captions say so.
  *
- * Hardware (`_input/next-fpga/src`):
+ * Hardware (`vendor/next-fpga/3.02.01/src`):
  * - audio/audio_mixer.vhd: per side EAR 512 and MIC 128 while high, the AY sum (one full YM channel is
  *   255), each DAC side (A + B or C + D) x 4, the Pi I2S word (0-1023) x 1.
  * - zxnext_top_issue4.vhd ~1042: the PSG clock enable is 28 MHz / 16 = 1.75 MHz; ym2149.vhd divides it

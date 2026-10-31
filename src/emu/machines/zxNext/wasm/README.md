@@ -22,7 +22,7 @@ Z80Cpu -> Z80MachineBase -> ZxNextWasmHost -> ZxNextWasmV2Machine
   frame units for the pacing, the key-stroke queue, code injection, partition names, sysvars.
 - Machine facts that are not emulation live in neutral modules next to it - `nextMachineInfo.ts`
   (partition naming, disassembly sections, the NextZXOS code-injection flow, step-over lengths),
-  `nextMemoryLayout.ts`, `nextRegDescriptors.ts`, `nextCoreVersion.ts`, `nextRtc.ts`,
+  `nextMemoryLayout.ts`, `nextRegDescriptors.ts`, `nextProfiles.ts`, `nextRtc.ts`,
   `nextKeyCodes.ts`, `nextColorTables.ts`, `z80nInstructionLengths.ts`.
 - The IDE reads machine state only through `IZxNextIdeMachine`, which `MainToEmuProcessor` talks to;
   host input (joysticks, the Kempston mouse) goes in through `IZxNextHostInputMachine`.
@@ -40,8 +40,15 @@ and the last stop reason.
 
 ## Maintenance Policy
 
-ZX Spectrum Next emulator behaviour is implemented in C, against the FPGA sources in
-`_input/next-fpga/` — the VHDL is the reference, and a claim in a test is expected to cite it.
+ZX Spectrum Next emulator behaviour is implemented in C, against the FPGA sources of each Next
+model's core version — the VHDL of the profile's version is the reference, and a claim in a test is
+expected to cite it. The VHDL is fetched, never committed: `npm run next-fpga:fetch` puts each pinned
+version (`vendor/next-fpga/sources.json`) in `vendor/next-fpga/<version>/`, with Klive's own comments
+applied (`vendor/next-fpga/comments/`). A citation names the version (`zxnext.vhd@3.02.04 ~5186`);
+an unversioned one means 3.02.01. One C tree builds one artifact per model's hardware
+(`zxnext-profile.h`, `scripts/zxnext-artifacts.cjs`); a behaviour a later core changed is guarded
+with `#if ZXNEXT_CORE_VERSION >= 30204`, and the 3.02.01 artifact's boot traces and goldens prove
+the guard leaked nowhere (`.plans/ZXNEXT_CORE_VERSIONS_PLAN.md`).
 TypeScript changes are for behaviour that is host-owned rather than machine-owned: IDE and UI
 policy, Electron resource lookup, host file and media persistence, test-harness setup. Those may
 call into WASM; they are not a reason to move machine-owned behaviour back out of it.

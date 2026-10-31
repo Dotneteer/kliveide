@@ -1,0 +1,276 @@
+Carried by scripts/rom-annotations-carry.cjs (byte signature), for hand review.
+From: zxnext/nextzxos-2.08/enNxtmmc.rom.dis
+To:   zxnext/nextzxos-2.10/enNxtmmc.rom.dis  (level 0)
+
+== Page 0 (5a443736 -> 4084326b)
+   labels 607/617, line annotations 2587/2623, data regions 10/13 carried
+
+-- Labels not carried (10)
+$0000  RESET_ENTRY
+        missing
+$0004  DV_MARK
+        missing
+$04C6  AUTOMAP_04C6
+        conflict ($04C6, $04D7)
+$0F2B  LFN_CHAR_HIGH
+        missing
+$13F5  HANDLE_SIZE_SET
+        missing
+$16A3  FILE_HEADER_REF
+        conflict ($0467, $16C4)
+$1F4F  SDTOK_EXIT
+        missing
+$1F50  SD_BLOCK_READ
+        missing
+$1F55  SDBR_FAIL
+        missing
+$1FD0  SDBW_EXIT
+        missing
+
+-- Line annotations not carried (36)
+$0000  RST $00, reset: interrupts off, then RESET_GO, which pages the DivMMC memory out and goes 
+        missing
+$0001  On to the page-out
+        missing
+$0004  Four bytes nothing in this ROM runs or reads: 'D', 'V', $08, $02.
+        missing
+$0466  Go
+        conflict ($0477, $0466)
+$04C6  The automap point $04C6 (NextReg $BB bit 2, ROM 3 paged in, delayed; zxnext.vhd): $00 byte
+        conflict ($04C6, $04D7)
+$0A9F  And $55 before it?
+        missing
+$0AA3  No: no partition table
+        missing
+$0AB6  Yes: next
+        missing
+$0AB8  Its first sector
+        missing
+$0ABA  At IX+1
+        missing
+$0ABE  Its size
+        missing
+$0BAF  Its carry is not passed on to HL
+        missing
+$0F2B  $7F and up give '_'.
+        missing
+$13F5  Sets the size of handle A to DE:HL (the vector at $0163); nothing else changes. Exit: IY, 
+        missing
+$13F8  Its size
+        missing
+$1432  Yes: carry
+        missing
+$16A3  Vector $013F (ROM 2's DOS_REF_HEAD): file A's +3DOS header. Exit: Fc=1, HL = the handle's 
+        conflict ($0467, $16C4)
+$16A6  BC = header buffer address
+        order ($046A)
+$16A8  IX = it
+        order ($046C)
+$16AB  HL = the handle's header bytes
+        order ($046F)
+$16AE  File has a +3DOS header?
+        order ($0472)
+$16B2  Success
+        order ($0476)
+$1B62  $7F or above?
+        missing
+$1CA5  $7F or more?
+        missing
+$1E93  Return in the automap-off area
+        conflict ($00D2, $1EA3)
+$1E96  $00 filler up to $1EA4.
+        its data region (bytes/fill $1E96-$1EA4) was not carried
+$1F4A  Below $FE: an error token
+        missing
+$1F4C  Try again?
+        missing
+$1F4F  The result.
+        missing
+$1F50  Reads one 512-byte block from address HLDE of card Z (0) / NZ (1) to IX: command $51 (CMD1
+        missing
+$1F55  Failure: A = 0.
+        missing
+$1F57  Command refused?
+        missing
+$1F59  Data token?
+        missing
+$1F5E  No: Fc=0
+        missing
+$1FD0  Deselect and return.
+        missing
+$1FE6  $00 filler up to $1FF2.
+        ambiguous ($00D5, $00D6, $00D7, $00D8, ...)
+
+-- Data regions not carried (their bytes are code regions now) (3)
+$0004  bytes $0004-$0007
+        start missing
+$1E96  bytes/fill $1E96-$1EA4
+        end $1EA4 conflict ($1EAE, $00E3)
+$1FE6  bytes/fill $1FE6-$1FF2
+        start ambiguous ($00D5, $00D6, $00D7, $00D8, ...)
+
+-- Data regions carried with another length (1)
+$0467  bytes/fill $0467-$04C5
+        carried, 95 -> 78 bytes: check its comment
+
+-- Carried comments to check: a ROM address they name moved or was not placed, or their data changed (79)
+$006A (was $006A)  RST $00's way on: $0001 pushed, then PAGE_OUT_RET ($1E90) pages the DivMMC memory out and 
+        $0001 -> missing, $1E90 -> $1EA0
+$0082 (was $0082)  MMU 6 and 7 ($C000-$FFFF) = 16K bank 7 (8K pages 14 and 15). Called from $15FE and $160C. 
+        $15FE -> $161F, $160C -> $162D
+$0087 (was $0087)  MMU 6 and 7 ($C000-$FFFF) = 16K bank C (8K pages 2 x C and 2 x C + 1). Called from $1566 a
+        $1566 -> $1587, $1622 -> $1643
+$00F2 (was $00F2)  BC = 0, then $204F in DivMMC RAM bank 1 is called (CALL_IN_BANK). Called from $18E1.
+        $18E1 -> $18F1
+$00FC (was $00FC)  The text "FAT", its last letter with bit 7 set, and a $00. CARD_CAPACITY ($0EDF) loads IX 
+        $0EDF -> $0EF8
+$0103 (was $0103)  IDE_DRIVE: $0EDA for unit A.
+        $0EDA -> $0EF3
+$0106 (was $0106)  IDE_CAPACITY: $0EDF (CARD_CAPACITY) for unit A.
+        $0EDF -> $0EF8
+$0109 (was $0109)  IDE_PARTITION_FIND: $0D50 for unit A.
+        $0D50 -> $0D69
+$010C (was $010C)  IDE_PARTITON_READ (so spelt in the document): $0D01 for unit A.
+        $0D01 -> $0D1A
+$010F (was $010F)  $0DA5 for unit A (MAP_DRIVE, for IDE_DOS_MAP).
+        $0DA5 -> $0DBE
+$011B (was $011B)  DOS_FLUSH: $0E8F for drive A.
+        $0E8F -> $0EA8
+$011E (was $011E)  IDE_DOS_MAPPING: $0E58 for drive A.
+        $0E58 -> $0E71
+$0121 (was $0121)  $0E0E for drive A (UNMAP_DRIVE, for IDE_DOS_UNMAP).
+        $0E0E -> $0E27
+$0127 (was $0127)  $12A0 for drive A (DEFAULT_DRIVE, with B = 1).
+        $12A0 -> $12B9
+$0136 (was $0136)  $175C for drive A (OPEN_FILE's last step).
+        $175C -> $176C
+$0139 (was $0139)  Straight to $1C91
+        $1C91 -> $1CA1
+$013C (was $013C)  Straight to $1D20
+        $1D20 -> $1D30
+$013F (was $013F)  DOS_REF_HEAD: $16A3 for file A.
+        $16A3 -> conflict
+$0142 (was $0142)  DOS_READ: $1559 for file A.
+        $1559 -> $157A
+$0145 (was $0145)  DOS_WRITE: $1615 for file A.
+        $1615 -> $1636
+$0148 (was $0148)  DOS_BYTE_READ: $1517 for file A.
+        $1517 -> $1538
+$014B (was $014B)  DOS_BYTE_WRITE: $153D for file A.
+        $153D -> $155E
+$014E (was $014E)  DOS_GET_POSITION: $1669 for file A.
+        $1669 -> $168A
+$0151 (was $0151)  DOS_SET_POSITION: $1672 for file A.
+        $1672 -> $1693
+$0154 (was $0154)  DOS_GET_EOF: $1681 for file A.
+        $1681 -> $16A2
+$0157 (was $0157)  DOS_SET_ACCESS: $170A for file A.
+        $170A -> $171A
+$015A (was $015A)  $16B4 for file A (CLOSE_FILE, for DOS_CLOSE).
+        $16B4 -> $16C4
+$015D (was $015D)  $16FF for file A (ABANDON_FILE, for DOS_ABANDON).
+        $16FF -> $170F
+$0160 (was $0160)  $16BC for file A.
+        $16BC -> $16CC
+$0163 (was $0163)  $13F5 for file A.
+        $13F5 -> missing
+$0181 (was $0181)  IDE_PATH: to $1DA8.
+        $1DA8 -> $1DB8
+$01F0 (was $01F0)  Calls the word of the CALL_TABLE entry at IX (at IX+1), HL and AF as given: this ROM's tab
+        $19EB -> $19FB, $1A12 -> $1A22, $1B9A -> $1BAA, $1BA4 -> $1BB4, $1BB2 -> $1BC2, $1C76 -> $1C86, $1DDC -> $1DEC
+$0204 (was $0204)  A = the drive table's byte ($2310) for drive A (its low 4 bits). HL kept. Called from DRIV
+        $1DAA -> $1DBA
+$020F (was $020F)  DRIVE_CALL_1BA8, then: a failure is passed on; success with S set is passed on; otherwise 
+        $1BA8 -> $1BB8
+$0218 (was $0218)  Calls $1BA8 for drive A in the bank its drive table byte gives (CALL_BANK_A_W), with A = t
+        $1BA8 -> $1BB8
+$021D (was $021D)  $1BA8 in its bank
+        $1BA8 -> $1BB8
+$0223 (was $0223)  DOS_OPEN's work: opens file number B on drive A, if it is free (bit 7 set in its file tabl
+        $1C7B -> $1C8B, $175C -> $176C
+$025B (was $025B)  $1C7B in the drive's bank, registers kept.
+        $1C7B -> $1C8B
+$0262 (was $0262)  $1C7B in the drive's bank
+        $1C7B -> $1C8B
+$03F8 (was $03F8)  Calls the routine at HL in NextZXOS ROM 2: 1. $3CFC pushed as the way back (ROM 2's DIVMMC
+        $0EE3 -> $0EFC, $17DE -> $17EE
+$040D (was $040D)  CALL $040D + a word: $2006 = A, then the word's address is called with port $E3 = bank A (
+        $1DAD -> $1DBD
+$041F (was $041F)  CALL $041F + a byte + a word: calls the word's address with port $E3 = the byte (the bank,
+        $1E36 -> $1E46
+$0577 (was $0577)  Moves a position on by one sector: the count at IY + BC (sectors done in the current clust
+        $1138 -> $1151, $1425 -> $1447, $1472 -> $1493
+$05AA (was $05AA)  Carry set when DEBC is no more than the highest cluster (IX+$22-$25). From $0C60 too.
+        $0C60 -> $0C79
+$05BF (was $05BF)  Takes a free cluster on volume IX: 1. From the one after the last taken (IX+$2F) on, clust
+        $0EAC -> $0EC5, $1497 -> $14B8
+$0628 (was $0628)  CLUSTER_ALLOC's step 3: the new cluster's FAT entry = $0FFFFFFF, then $0EAC.
+        $0EAC -> $0EC5
+$063A (was $063A)  Then $0EAC
+        $0EAC -> $0EC5
+$063E (was $063E)  Adds a cluster after cluster DEBC on volume IX: CLUSTER_ALLOC, then the FAT entry of DEBC 
+        $11DA -> $11F3, $14CF -> $14F0
+$0657 (was $0657)  Frees the chain from cluster DEBC on volume IX, not called from this ROM: each cluster's F
+        $1FD2 -> $1FDF, $0EAC -> $0EC5
+$0680 (was $0680)  CHAIN_FREE's end: IY back, $0EAC, FLUSH_BUFFERS.
+        $0EAC -> $0EC5
+$0682 (was $0682)  $0EAC
+        $0EAC -> $0EC5
+$0688 (was $0688)  Fills cluster DEBC of volume IX with zeros: a buffer for its first sector (CLUSTER_BUF_NEW
+        $1EC4 -> $1ECE, $11DD -> $11F6
+$06EE (was $06EE)  A buffer holding sector A of cluster DEBC on volume IX: CLUSTER_SECTOR, then BUF_READ. Cal
+        $1168 -> $1181, $1CE4 -> $1CF4
+$0703 (was $0703)  Copies BC bytes from HL to DE as LDIR does, but when DE is below $4000 each write is made 
+        $1E86 -> $1E96
+$0769 (was $0769)  Copies BC bytes from HL to DE as LDIR does, but when HL is below $4000 each byte is read w
+        $1E05 -> $1E15
+$0832 (was $0832)  A buffer holding sector BCDE of volume IX: BUF_FIND, and when the sector was not there it 
+        $1EA5 -> $1EAF
+$0853 (was $0853)  BUF_WRITE for the most recently used buffer. Called from $16FA and $193A.
+        $16FA -> $170A, $193A -> $194A
+$0856 (was $0856)  Writes buffer A to its sector on its volume (the record's IX) with $1EC4 and marks the rec
+        $1EC4 -> $1ECE
+$08CE (was $08CE)  BUF_DIRTY, then FLUSH_BUFFERS. Called from $18DD.
+        $18DD -> $18ED
+$09C9 (was $09C9)  DOS_FREE_SPACE's work for drive A: the free cluster count (IX+$2B, counted afresh by $0C98
+        $0C98 -> $0CB1
+$0A0A (was $0A0A)  IY = drive A's directory record (DRIVE_REC_WORD), IX = the volume block whose address is i
+        $12B3 -> $12CC
+$0A1A (was $0A1A)  DRIVE_SELECT, then drive A's 15-byte record copied to $2E50, and IY = $2E50. Called from $
+        $12A5 -> $12BE
+$0A3F (was $0A3F)  Device B's block at IX: IX+$10 = B; ROM2_SD_SIZE ($0EE3, NextZXOS ROM 2's SD card size rou
+        $0EE3 -> $0EFC
+$0A5D (was $0A5D)  Finds FAT partition C (0 the first) on device A for the volume block at IX. Called from $0
+        $0D09 -> $0D22, $0DED -> $0E06, $1EA5 -> $1EAF, $0B14 -> $0B2E, $0EE9 -> $0F02, $1200 -> $1219
+$0B00 (was $0AE6)  MOUNT_PARTITION's step 4: $1200 called with the label at DE.
+        $1200 -> $1219
+$0B01 (was $0AE7)  $1200
+        $1200 -> $1219
+$0CB1 (was $0C98)  Counts the free clusters of the volume at IX by reading every sector of the first FAT: a F
+        $1FD2 -> $1FDF
+$0EA8 (was $0E8F)  DOS_FLUSH (the vector at $011B): each open file handle (byte $0F not 0) is brought up to d
+        $16BF -> $16CF
+$0EFC (was $0EE3)  Runs ROM 2's $17DE (SD_CAPACITY: the size of SD card C from its CSD register) through $03F
+        $17DE -> $17EE
+$0F4F (was $0F36)  Puts B characters of the name at DE as 16-bit units at HL (a long-name entry's part): the 
+        $0000 -> missing
+$0F58 (was $0F3F)  $0000
+        $0000 -> missing
+$1083 (was $106A)  The 11-byte short name at HL as text at DE: the base without its trailing spaces, '.', the
+        $1C62 -> $1C72
+$1355 (was $133C)  HANDLE_SELECT for handle B (from $1760).
+        $1760 -> $1770
+$136E (was $1355)  Is the file at directory record IY in use? (From $171D.) 1. An open handle (+$0F not 0) wh
+        $171D -> $172D, $1EC8 -> $1ED2
+$157A (was $1559)  Reads DE bytes from handle A's pointer to HL (the vector at $0142; ROM 2's READ_BLOCK). 1.
+        $1EA5 -> $1EAF
+$161C (was $15FB)  All done: bank 7 back if one was paged; carry set. Also from $1665.
+        $1665 -> $1686
+$16CF (was $16BF)  FILE_SYNC for the handle at IY (also from $0E9F).
+        $0E9F -> $0EB8
+$1DB8 (was $1DA8)  Vector $0181 (ROM 2's PATH_CALL, DE = $FF00): drive A's current path. B = 0 changes it to 
+        $1DB3 -> $1DC3
+$1DBD (was $1DAD)  Call $1DB3 in that RAM bank
+        $1DB3 -> $1DC3
+
+Page 0 measured: level 0, 6 unlabelled target(s), 0 label(s) without a synopsis, 0 misplaced

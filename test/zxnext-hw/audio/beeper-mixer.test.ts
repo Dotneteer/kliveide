@@ -7,7 +7,7 @@ import { ay, edgeStep, frequency, relativeError, side, swing } from "./_audio-he
  * Beeper, MIC and the audio mixer (catalogue BEEP-001 - BEEP-004, BEEP-007, BEEP-008; BEEP-005/006 need
  * EAR input injection, which the harness cannot do yet).
  *
- * Hardware (`_input/next-fpga/src`):
+ * Hardware (`vendor/next-fpga/3.02.01/src`):
  * - zxnext.vhd ~3595: `port_fe_ear` = $FE bit 4, `port_fe_mic` = $FE bit 3. ~6449: the mixer's MIC input is
  *   port_fe_mic xor the tape EAR input; ~6450 `beep_spkr_excl` = $06 bit 6 and $08 bit 4.
  * - audio/audio_mixer.vhd: pcm = ear + mic + ay + dac + i2s per side, with ear = 512 and mic = 128 while

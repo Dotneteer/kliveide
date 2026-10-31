@@ -21,7 +21,8 @@ const crypto = require("crypto");
 const { spawn, execFileSync } = require("child_process");
 
 const ROOT = path.resolve(__dirname, "../../..");
-const CPU = path.join(ROOT, "_input/next-fpga/src/cpu");
+// --- The 3.02.01 reference, fetched (`npm run next-fpga:fetch`, `.plans/ZXNEXT_CORE_VERSIONS_PLAN.md` D4)
+const CPU = path.dirname(require(path.join(ROOT, "scripts/next-fpga-path.cjs")).nextFpgaPath("3.02.01", "src/cpu/t80n.vhd"));
 const CPU_FILES = ["t80n_pack.vhd", "t80n_alu.vhd", "t80n_mcode.vhd", "t80n.vhd", "t80na.vhd"].map((f) => path.join(CPU, f));
 const TB = path.join(__dirname, "cpu_tb.vhd");
 const GEN = path.join(__dirname, "generate-cases.cjs");

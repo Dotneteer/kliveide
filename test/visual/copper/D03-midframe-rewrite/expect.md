@@ -13,4 +13,4 @@ reached an instruction the copper had already executed in this frame.
 A copper program is RAM read at execution time (copper.vhd fetch from list address), so a write
 takes effect only for instructions not yet executed. **Geometry:** copper line L = buffer row 48+L; paper x = buffer x 96+2x (see C00).
 
-Source: _input/next-fpga/src: copper.vhd, video/zxula_timing.vhd, zxnext.vhd.
+Source: vendor/next-fpga/3.02.01/src: copper.vhd, video/zxula_timing.vhd, zxnext.vhd.

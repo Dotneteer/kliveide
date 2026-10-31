@@ -6,4 +6,4 @@ mode 00.
 **Must not see:** green or red anywhere. Mode 00 keeps the copper stopped (copper.vhd: execution only
 when copper_en /= "00").
 
-Source: _input/next-fpga/src: copper.vhd (WAIT/MOVE), video/zxula_timing.vhd (cvc, hc_ula), zxnext.vhd (NextRegs, palette, mixer).
+Source: vendor/next-fpga/3.02.01/src: copper.vhd (WAIT/MOVE), video/zxula_timing.vhd (cvc, hc_ula), zxnext.vhd (NextRegs, palette, mixer).

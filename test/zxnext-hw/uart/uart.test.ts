@@ -6,7 +6,7 @@ import { delay } from "../_timing-helpers";
 /*
  * The two UARTs (catalogue UART-001 - UART-010).
  *
- * Hardware (`_input/next-fpga/src`):
+ * Hardware (`vendor/next-fpga/3.02.01/src`):
  * - zxnext.vhd ~2595: the UART ports are A15-A11 = 00010, A10 xor (A9 and A8), low byte $3B, gated by
  *   internal port enable bit 12 ($83 bit 4); A9-A8 pick the register: 00 $143B RX, 01 $153B select,
  *   10 $163B frame, 11 $133B TX/status. ~3364: the UART's i_reset_hard is '0' ("hard_reset done by core

@@ -6,7 +6,7 @@ import { hex, results, romBytes, runCode } from "./_memory-helpers";
  * Layer 2 memory paging through port $123B, and the priority of the $0000-$3FFF overlays (catalogue
  * MEM-017 - MEM-021).
  *
- * Hardware (`_input/next-fpga/src/zxnext.vhd`):
+ * Hardware (`vendor/next-fpga/3.02.01/src/zxnext.vhd`):
  * - ~3884-3905: a $123B write with bit 4 = 0 sets bit 0 write mapping, bit 1 display enable, bit 2
  *   read mapping, bit 3 shadow bank ($13 instead of $12), bits 7-6 segment; with bit 4 = 1 it only
  *   stores the bank offset from bits 2-0. ~3913: $123B reads segment & "00" & shadow & read & enable

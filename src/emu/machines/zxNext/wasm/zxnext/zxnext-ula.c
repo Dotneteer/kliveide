@@ -171,9 +171,15 @@ static inline uint32_t zxnextUlaReadPortFe(uint32_t address) {
      an analogue line that takes time to fall); the Next does not, so no decay is modelled here. */
   uint8_t bit6 = 0u;
   if (earBit) bit6 = 0x40u;
+#if ZXNEXT_CORE_VERSION >= 30204
+  /* zxnext.vhd@3.02.04 ~3951: bit 6 = i_AUDIO_EAR or port_fe_ear; the Pi's EAR bit and the issue 2 MIC
+     bit are inside i_AUDIO_EAR (the symmetric relaxation, zxnext-tape.c) */
+  if (zxnextTapeGetInput()) bit6 = 0x40u;
+#else
   if (micBit && ((zxnextNextRegs[0x08u] & 0x01u) != 0u)) bit6 = 0x40u;
   /* zxnext.vhd ~3456: (i_AUDIO_EAR xor pi_fe_ear) or ...: the conditioned tape input (zxnext-tape.c) */
   if (zxnextTapeGetInput() ^ zxnextPiI2sGetFeEar()) bit6 = 0x40u;
+#endif
   return (portValue & 0xbfu) | bit6;
 }
 
@@ -600,7 +606,7 @@ static uint32_t zxnextUlaSignExtendScale9(uint32_t value8, uint32_t scale) {
  * (`zxnextResolveSpritesForIde`), so reading the sprite table never writes machine state
  * (`.plans/SPRITE_INSPECTOR_PLAN.md` trap T3).
  *
- * Follows `_input/next-fpga/src/video/sprites.vhd` ("sort out relative sprite characteristics" and
+ * Follows `vendor/next-fpga/3.02.01/src/video/sprites.vhd` ("sort out relative sprite characteristics" and
  * the anchor latch in `S_QUALIFY`):
  *
  * - A sprite is **relative** when it has five attribute bytes and attr4 bits 7:6 are `01`. Every
@@ -742,7 +748,7 @@ static void zxnextUlaRenderSpritesScreen(void) { zxnextUlaProcessSprites(1u, 0u)
  *   when it runs off the right of the 320-dot line without wrapping (`drawn` below);
  * - it is refused, and so is every sprite after it, when its decision falls while the wide counter
  *   (511 + clock / 4) is in the last 4, 8, 16 or 32 dots before 320 - its own width's drawing time
- *   (spr_cur_notime, with the X wrap of the sprite being decided);
+ *   (spr_cur_notime, with the X wrap of the sprite being decided) - 3.02.01 only, see below;
  * - the next swap, totalHc * 4 + 1 clocks later, stops the engine wherever it is, part-way through a
  *   sprite too. Both time-outs set $303B bit 1.
  */
@@ -756,7 +762,9 @@ static uint8_t zxnextUlaSpriteLineCutPixels[ZXNEXT_SPRITE_SPACE_HEIGHT];
  * time cost more than the rest of the emulation together - ScrollNutter ran at ~30 ms a frame.
  */
 static uint32_t zxnextUlaComputeSpriteLineCuts(uint32_t lastVisible, uint32_t renderedRowsOnly) {
+#if ZXNEXT_CORE_VERSION < 30204
   static const uint32_t wrapMasks[4] = {0x1cu, 0x18u, 0x10u, 0x00u};
+#endif
   uint32_t lineClocks = zxnextTimingTotalHc * 4u + 1u;
   uint32_t overtime = 0u;
   for (uint32_t v = 0u; v < ZXNEXT_SPRITE_SPACE_HEIGHT; v++) {
@@ -774,12 +782,17 @@ static uint32_t zxnextUlaComputeSpriteLineCuts(uint32_t lastVisible, uint32_t re
         clock++;
         continue;
       }
+#if ZXNEXT_CORE_VERSION < 30204
+      /* 3.02.01 only: spr_cur_notime (video/sprites.vhd@3.02.01 ~825-827, ~853-855, ~989). 3.02.04
+         removed it (video/sprites.vhd@3.02.04 ~844-848): the engine runs on to the line-buffer swap,
+         which alone sets $303B bit 1 (~977). */
       uint32_t whc = (511u + (clock >> 2u)) & 0x1ffu;
       uint32_t mask = wrapMasks[r->scaleX & 3u];
       if (whc >= 288u && whc < 320u && (whc & 0x20u) != 0u && (whc & 0x1fu & mask) == mask) {
         cut = i;
         break;
       }
+#endif
       // --- The positions walked: the width, unless the sprite runs off the right without wrapping.
       uint32_t width = 16u << r->scaleX;
       uint32_t x = r->x;

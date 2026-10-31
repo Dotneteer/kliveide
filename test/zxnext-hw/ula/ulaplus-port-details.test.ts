@@ -6,7 +6,7 @@ import { createSession, type NextTestSession } from "../../harness/zxnext";
  * ULA+ port details ported from the "ULA+ Ports" part of test/zxnext/NextComposedScreenDevice.test.ts
  * (the ones not already in ulaplus-ports.test.ts / ulaplus.test.ts).
  *
- * Hardware (`_input/next-fpga/src/zxnext.vhd`):
+ * Hardware (`vendor/next-fpga/3.02.01/src/zxnext.vhd`):
  * - ~4504-4517: a $BF3B write stores the mode group (bits 7-6); only group "00" also stores the index.
  * - ~4523-4531: `port_ff3b_ulap_en` changes only on a $FF3B write in group "01" (or a NextReg $68
  *   write); writes in groups "10" / "11" do nothing.

@@ -6,7 +6,7 @@ import { colours, DISTINCT_32, fillScreen, hex8, PAPER_LEFT, PAPER_TOP, parkedSe
 /*
  * Timex screen modes, port $FF bits 5-0 (catalogue TMX-001 - TMX-005, TMX-010, TMX-011, TMX-013).
  *
- * Hardware (`_input/next-fpga/src/video/zxula.vhd`):
+ * Hardware (`vendor/next-fpga/3.02.01/src/video/zxula.vhd`):
  * - ~191: screen_mode = port $FF bits 2-0 (forced to 000 while the 128K shadow screen is displayed).
  * - ~230-250: the pixel byte address is  screen_mode(0) & pixel offset  ($4000, or $6000 with bit 0);
  *   the attribute byte address is  '1' & pixel offset  ($6000 + pixel offset: 8x1 HiColor attributes)

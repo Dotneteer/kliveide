@@ -7,7 +7,7 @@ import { MASTER_CLOCK } from "./_audio-helpers";
  * 8-bit DACs - Soundrive, Covox, Specdrum (catalogue DAC-002 - DAC-012; DAC-001 is `dac-enable.test.ts`,
  * DAC-013 is DMA-020).
  *
- * Hardware (`_input/next-fpga/src`):
+ * Hardware (`vendor/next-fpga/3.02.01/src`):
  * - zxnext.vhd ~2385-2391, ~2614-2620: the DAC ports decode the low byte only. Channel A: $1F (Soundrive 1,
  *   enable bit 17), $F1 (Soundrive 2, bit 18), $3F (Profi Covox, bit 19), and the mono A+D ports $FB
  *   (Pentagon, bit 21 and only while bit 18 is off) and $DF (Specdrum, bit 23). B: $0F (bit 17 or 20), $F3

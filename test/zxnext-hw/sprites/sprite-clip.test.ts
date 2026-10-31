@@ -8,7 +8,7 @@ import { hex8, parkedSession, writePalette } from "../ula/_ula-helpers";
  * (D2), which read SpriteDevice boundary fields; SPR-011 - SPR-013 in sprites.test.ts check whole random
  * scenes against the window, these pin the exact edges and the corner cases.
  *
- * `_input/next-fpga/src/video/sprites.vhd` ~1061-1085:
+ * `vendor/next-fpga/3.02.01/src/video/sprites.vhd` ~1061-1085:
  * - over the border ($15 bit 1), no border clip ($15 bit 5 = 0): x 0-319, y 0-255 (~1063-1066);
  * - over the border with border clip: x1*2 .. x2*2+1, y1 .. y2 (~1068-1071);
  * - not over the border: each value + 32 (bits 7-5 + 1, ~1074-1077) whatever $15 bit 5 says, and

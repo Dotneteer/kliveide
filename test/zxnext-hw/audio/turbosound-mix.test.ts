@@ -9,7 +9,7 @@ import { VOL_TABLE_YM, ay, magnitude, side, swing, toneHz } from "./_audio-helpe
  * TurboSoundTesting.step15, PsgEnvStereo.step56, AudioControlDevice.step9 and FinalIntegration.step20
  * that `ay-psg.test.ts` (AY-009 - AY-016) and `ay-stereo-mode.test.ts` (AY-012) do not already hold.
  *
- * Hardware (`_input/next-fpga/src/audio/turbosound.vhd`):
+ * Hardware (`vendor/next-fpga/3.02.01/src/audio/turbosound.vhd`):
  * - ~129-135: only while TurboSound is on ($08 bit 1, `turbosound_en_i`) does a $FFFD write %1pp111cc
  *   select chip cc and set *that chip's* pan to pp; the other chips keep theirs. Reset: pan "11".
  * - ~186-192 (chip 0; ~241-247, ~296-302 for 1, 2): L_mux = C when ACB ($08 bit 5) or mono else B;

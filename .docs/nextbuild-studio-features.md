@@ -430,7 +430,7 @@ range-breakpoint opcodes, is in [§17.1](#171-what-are-cspect-breakpoint-opcodes
   compiler traps, inline-asm calling convention, CODEBANK, Layer 2 layouts, interrupts, testing
   with the Python `z80` package), `nextbuild.md` (v9.1-level CLI reference), `launch_cspect.md`,
   and the official `nextreg.txt` / `ports.txt` references (Klive has near-identical copies in
-  `_input/next-fpga/`).
+  `vendor/next-fpga/3.02.01/`).
 - Product page lists an "AI Code Assistant" without detail **(uncertain)**. Copilot does not work
   on the old VS Code base; Claude, Codex, Kilo and OpenCode extensions from Open VSX do.
 - No MCP server or tool integration.

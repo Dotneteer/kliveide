@@ -2,7 +2,8 @@ import type { EmuApi } from "@common/messaging/EmuApi";
 import type { MainApi } from "@common/messaging/MainApi";
 
 import { romPageIdentity, type RomPageKind, knownRomPageKind } from "@common/roms/romIdentity";
-import { readShippedIndex, SHIPPED_ROM_FOLDER, WORKING_ROM_FOLDER } from "./romAnnotationLoader";
+import { managedSidecarOf } from "@common/roms/romSidecarPaths";
+import { readShippedIndex, SHIPPED_ROM_FOLDER } from "./romAnnotationLoader";
 
 /*
  * Matching a selected ROM sidecar to the ROM it describes (`.plans/ROM_ANNOTATION_EDITING_PLAN.md`
@@ -49,21 +50,12 @@ function pageOf(bytes: Uint8Array, page: number): Uint8Array | undefined {
 }
 
 /**
- * Whether a sidecar path is in the working-copy folder or the shipped one, not beside a ROM.
- *
- * The shipped folder is `roms/` relative to the public folder, `src/public/roms` in a checkout or
- * `resources/roms` when packaged — not any folder that happens to be called `roms`, which is where
- * plenty of people keep their own ROM files.
+ * Whether a sidecar path is in the working-copy folder or the shipped one, not beside a ROM
+ * (`managedSidecarOf`: `src/public/roms` in a checkout or `resources/roms` when packaged, not any
+ * folder that happens to be called `roms`).
  */
 function isManagedLocation(path: string): boolean {
-  if (path.startsWith(`${SHIPPED_ROM_FOLDER}/`)) return true;
-  const parts = path.split(/[\\/]/);
-  const folder = parts[parts.length - 2];
-  const parent = parts[parts.length - 3];
-  return (
-    folder === WORKING_ROM_FOLDER ||
-    (folder === SHIPPED_ROM_FOLDER && (parent === "public" || parent === "resources"))
-  );
+  return managedSidecarOf(path) !== undefined;
 }
 
 /**
@@ -86,7 +78,8 @@ export async function matchRomPages(
     }
     return pending;
   };
-  const romName = fileNameOf(sidecarPath).replace(/\.dis$/i, "");
+  // --- A shipped sidecar or a working copy of one names its ROM by its path under `roms/`
+  const romName = (managedSidecarOf(sidecarPath)?.sidecar ?? fileNameOf(sidecarPath)).replace(/\.dis$/i, "");
   const index = await readShippedIndex(deps.files);
   let machine: Promise<Record<number, { bytes?: Uint8Array; path?: string }>> | undefined;
 

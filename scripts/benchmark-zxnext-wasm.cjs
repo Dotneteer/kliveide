@@ -415,13 +415,17 @@ function installNodeDomShims() {
   };
 }
 
+/** The implicit Next model's ROM set (`src/common/zxnext/romSets.ts`) */
 function readZxNextBootRomImages() {
-  const romRoot = resolve(root, "src/public/roms");
+  const { NEXT_ROM_FILES, nextRomPath } = require(resolve(root, "src/common/zxnext/romSets.ts"));
+  const { nextProfileOf } = require(resolve(root, "src/emu/machines/zxNext/nextProfiles.ts"));
+  const setId = nextProfileOf().romSet;
+  const read = (file) => readFileSync(resolve(root, "src/public", nextRomPath(setId, file)));
   return {
-    nextRom: readFileSync(resolve(romRoot, "enNextZX.rom")),
-    divMmcRom: readFileSync(resolve(romRoot, "enNxtmmc.rom")),
-    multifaceRom: readFileSync(resolve(romRoot, "enNextMf.rom")),
-    altRom: readFileSync(resolve(romRoot, "enAltZX.rom"))
+    nextRom: read(NEXT_ROM_FILES.nextRom),
+    divMmcRom: read(NEXT_ROM_FILES.divMmcRom),
+    multifaceRom: read(NEXT_ROM_FILES.multifaceRom),
+    altRom: read(NEXT_ROM_FILES.altRom)
   };
 }
 

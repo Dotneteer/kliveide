@@ -6,7 +6,7 @@ import { delay } from "../_timing-helpers";
 /*
  * Z80 CTC (catalogue CTC-001 - CTC-014).
  *
- * Hardware (`_input/next-fpga/src`):
+ * Hardware (`vendor/next-fpga/3.02.01/src`):
  * - zxnext.vhd ~2646: ports `$183B`-`$1F3B` (A15-A11 = 00011, low byte $3B), gated by internal port
  *   enable bit 27 (`$85` bit 3, ~2398). A10-A8 select the channel (~4056).
  * - zxnext.vhd ~4044-4073: four channels (`NUM_CTC => 4`) clocked by `i_CLK_28`; channels 4-7 have

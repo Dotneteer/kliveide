@@ -52,18 +52,22 @@ function registerTsRuntime() {
 
 registerTsRuntime();
 const { checkRomSidecar } = require(join(root, "src/renderer/appIde/annotations/romSidecarCheck.ts"));
+const { canonicalShippedSidecar, workingCopyRelativePath } = require(join(root, "src/common/roms/romSidecarPaths.ts"));
+const ROMS = join(root, "src/public/roms");
+// --- A shipped ROM by its path under src/public/roms; a bare Next name (enNextZX.rom) is nextzxos-2.08's
+const shippedRom = (name) => join(ROMS, canonicalShippedSidecar(`${name}.dis`).replace(/\.dis$/i, ""));
 (async () => {
   const text = readFileSync(process.argv[2], "utf8");
   const romFile = JSON.parse(text).source?.fileName ?? "zx81.rom"; // the ROM the sidecar names
-  const rom = new Uint8Array(readFileSync(join(root, "src/public/roms", romFile)));
+  const rom = new Uint8Array(readFileSync(shippedRom(romFile)));
   // --- Inherited sidecars as the IDE reads them: the working copy when there is one, else the shipped
   // --- file; the bytes of the shipped ROM each was written for
   const { parseAnnotations } = require(join(root, "src/renderer/appIde/annotations/programAnnotations.ts"));
-  const home = join(require("node:os").homedir(), "Klive/RomAnnotations");
+  const home = join(require("node:os").homedir(), "Klive");
   const inherited = async (sidecar, page) => {
-    const working = join(home, sidecar);
-    const file = existsSync(working) ? working : join(root, "src/public/roms", sidecar);
-    const described = new Uint8Array(readFileSync(join(root, "src/public/roms", sidecar.replace(/\.dis$/i, ""))));
+    const working = join(home, workingCopyRelativePath(sidecar));
+    const file = existsSync(working) ? working : join(ROMS, canonicalShippedSidecar(sidecar));
+    const described = new Uint8Array(readFileSync(shippedRom(sidecar.replace(/\.dis$/i, ""))));
     return {
       annotations: parseAnnotations(readFileSync(file, "utf8")).annotations,
       bytes: described.subarray(page * 0x4000, (page + 1) * 0x4000)

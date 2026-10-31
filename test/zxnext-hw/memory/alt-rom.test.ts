@@ -6,7 +6,7 @@ import { hex, NEXT_ROM, results, romBytes, runCode } from "./_memory-helpers";
 /*
  * NextReg $8C Alt ROM and the ROM contents (catalogue MEM-016, MEM-022).
  *
- * Hardware (`_input/next-fpga/src/zxnext.vhd`):
+ * Hardware (`vendor/next-fpga/3.02.01/src/zxnext.vhd`):
  * - ~2207-2221: $8C is stored whole and read back whole (~6101); every reset copies bits 3-0 into
  *   bits 7-4. Bit 7 enables the Alt ROM, bit 6 makes it the write target, bits 5/4 lock the ROM.
  * - ~2940-2962, +3 machine type: with bit 5 or 4 set the ROM number is bits 5-4 (whether or not the

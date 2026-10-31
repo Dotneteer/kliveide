@@ -5,7 +5,7 @@ import { createSession } from "../../harness/zxnext";
 /*
  * RST-013 - a soft reset keeps RAM and resets the paging.
  *
- * Hardware (`_input/next-fpga/src/zxnext.vhd`): `reset` resets the MMU (~4590), port_7ffd_reg,
+ * Hardware (`vendor/next-fpga/3.02.01/src/zxnext.vhd`): `reset` resets the MMU (~4590), port_7ffd_reg,
  * port_dffd_reg and port_1ffd_reg (~3645-3710); SRAM contents are not touched by any reset branch.
  */
 describe("soft reset and memory", () => {

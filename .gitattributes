@@ -1,5 +1,8 @@
 *.pdf binary
 src/common/i18n/*.generated.ts text eol=lf
 src/public/roms/*.rom.dis text eol=lf
+src/public/roms/**/*.rom.dis text eol=lf
 src/public/roms/rom-annotations.index.json text eol=lf
 vendor/spectrum-tests/** -text
+# Klive's VHDL comment patches must keep LF: they are applied byte for byte to the fetched trees
+vendor/next-fpga/comments/**/*.patch text eol=lf

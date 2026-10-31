@@ -1,0 +1,144 @@
+{
+  "nextzxos-2.08": {
+    "nextZxOs": "2.08",
+    "source": {
+      "project": "thesmog358/tbblue",
+      "ref": "KS2",
+      "commit": "9a3c3c7b489603b475753b723b543e078d59bb4c",
+      "dir": "machines/next"
+    },
+    "fetched": "2026-10-31",
+    "files": {
+      "enNextZX.rom": {
+        "size": 65536,
+        "sha256": "dd901acd306794ad34f3131ad1df54b6f4de5527ad1b2aa42f82e417f93f17a5",
+        "pages": [
+          "95ba84d4",
+          "74dbb504",
+          "cafb1e32",
+          "92d23960"
+        ]
+      },
+      "enNxtmmc.rom": {
+        "size": 8192,
+        "sha256": "ded2038d78f57b4fd7e05df0330064f661c221f7b06d8cd2bddee1ff6062f019",
+        "pages": [
+          "5a443736"
+        ]
+      },
+      "enNextMf.rom": {
+        "size": 8192,
+        "sha256": "8e7b335ea6cdfa261aa486daed1731faaf4fbf74d6e27766472475fd828427f9",
+        "pages": [
+          "36db4453"
+        ]
+      },
+      "enAltZX.rom": {
+        "size": 32768,
+        "sha256": "37710607f009c9f9bafab43f5cd5705fa9dbdfce42f93dcce3c3caa4244b23d6",
+        "pages": [
+          "574ec214",
+          "74bc5674"
+        ]
+      },
+      "enNextLG.rom": {
+        "size": 65536,
+        "sha256": "fe45a4f44dba435ee97c8ca218bed6b3141a08615273914447797556928bbc4f",
+        "pages": [
+          "95ba84d4",
+          "74dbb504",
+          "43fc1f2f",
+          "92d23960"
+        ]
+      }
+    },
+    "sdBaseImage": {
+      "file": "mmc/ks2-base.cim",
+      "sha256": "66138b425599135f5aeafe5af6ba15f261e4218e5bb29a3d524f474009edab2a"
+    },
+    "facts": {
+      "keyWaitLoop": [
+        "0x11e5",
+        "0x120b"
+      ],
+      "mainWaitingLoop": "0x1202",
+      "ldBytes": {
+        "loadBytes": "0x056c",
+        "loadBytesInvalidHeader": "0x05b6",
+        "loadBytesResume": "0x05e2",
+        "saveBytes": "0x04c2"
+      }
+    }
+  },
+  "nextzxos-2.10": {
+    "nextZxOs": "2.10",
+    "source": {
+      "project": "thesmog358/tbblue",
+      "ref": "KS3",
+      "commit": "b7cc7d348052bc99e45622e27dbe6f56f753317e",
+      "dir": "machines/next"
+    },
+    "fetched": "2026-10-31",
+    "files": {
+      "enNextZX.rom": {
+        "size": 65536,
+        "sha256": "e93f444fe91e4eb3bfae6188ac2954de005b9430bf5623b7c17b92f9dbffe8d5",
+        "pages": [
+          "2f430534",
+          "6162fd76",
+          "8263c4ba",
+          "9ced2dbc"
+        ]
+      },
+      "enNxtmmc.rom": {
+        "size": 8192,
+        "sha256": "cd70804e1dfb927afb6a9d3fcae37a3b9613f2a2e420bddf9b4587bd8ebca697",
+        "pages": [
+          "4084326b"
+        ]
+      },
+      "enNextMf.rom": {
+        "size": 8192,
+        "sha256": "e0cb1c8edb6036f889b93a4350755f79779fab7a580eea5349e002a9063ca000",
+        "pages": [
+          "112dcf94"
+        ]
+      },
+      "enAltZX.rom": {
+        "size": 32768,
+        "sha256": "ce159c420e19cedaf45329d9ac9758a5848c52a8b7354698524b5a54fda647b8",
+        "pages": [
+          "fa6cf261",
+          "c511d3a4"
+        ]
+      },
+      "enNextLG.rom": {
+        "size": 65536,
+        "sha256": "7e063f0472dc6104e59cdffdecd8aa326a2f8725b11ec02ed40c042bacae4d58",
+        "pages": [
+          "2f430534",
+          "6162fd76",
+          "fcabc6c7",
+          "9ced2dbc"
+        ]
+      }
+    },
+    "sdBaseImage": {
+      "file": "mmc/nextzxos-2.10-base.cim",
+      "sha256": "6395f56d899afddd959fdd8dd02aef4a0b50804a0306ac1bfb423680571fa518"
+    },
+    "facts": {
+      "keyWaitLoop": [
+        "0x0c98",
+        "0x0cbe"
+      ],
+      "mainWaitingLoop": "0x0cb5",
+      "ldBytes": {
+        "loadBytes": "0x056c",
+        "loadBytesInvalidHeader": "0x05b6",
+        "loadBytesResume": "0x05e2",
+        "saveBytes": "0x04c2"
+      }
+    }
+  }
+}

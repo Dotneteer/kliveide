@@ -10,4 +10,4 @@ a repeated or skipped colour, a band edge anywhere but row 144.
 
 **Geometry:** copper line L = buffer row 48+L; paper x = buffer x 96+2x (see C00).
 
-Source: _input/next-fpga/src: copper.vhd, video/zxula_timing.vhd, zxnext.vhd.
+Source: vendor/next-fpga/3.02.01/src: copper.vhd, video/zxula_timing.vhd, zxnext.vhd.

@@ -24,7 +24,7 @@ export const DEFAULT_MACHINE_FAVORITES: readonly MachineFavorite[] = Object.free
   { machineId: MI_SPECTRUM_48, modelId: "pal" },
   { machineId: MI_SPECTRUM_128, modelId: "sp128" },
   { machineId: MI_SPECTRUM_3E, modelId: "fdd1", separatorAfter: true },
-  { machineId: MI_ZXNEXT, modelId: "standard", separatorAfter: true },
+  { machineId: MI_ZXNEXT, modelId: "ks2-30204", separatorAfter: true },
   { machineId: MI_Z88, modelId: "OZ50" },
   { machineId: MI_ZX81, modelId: "zx81-16k" }
 ]);

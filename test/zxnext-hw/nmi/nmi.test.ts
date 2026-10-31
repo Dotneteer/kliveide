@@ -1,13 +1,12 @@
-import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-import { createSession, type NextTestSession } from "../../harness/zxnext";
+import { createSession, type NextTestSession, readNextRom } from "../../harness/zxnext";
 
 /*
  * NMI sources and the stackless NMI (catalogue NMI-003 - NMI-007; NMI-001/002 are RST-005/004 in
  * `reset/reset-register.test.ts`).
  *
- * Hardware (`_input/next-fpga/src/zxnext.vhd`, `nextreg.txt`):
+ * Hardware (`vendor/next-fpga/3.02.01/src/zxnext.vhd`, `nextreg.txt`):
  * - ~2045-2047: an NMI cause is asserted only while its enable is set: the M1 button (F9, `hotkey_m1`)
  *   and `$02` bit 3 need `$06` bit 3, the DRIVE button (F10) and `$02` bit 2 need `$06` bit 4. Buttons
  *   (~6294, `hotkeys_0 and not hotkeys_1`) and `$02` writes (~3812) are one-cycle pulses: a cause that
@@ -118,7 +117,7 @@ describe("NMI", () => {
   // -------------------------------------------------------------------------------------------------
 
   it("NMI-003: F9 raises a Multiface NMI when $06 bit 3 is set; the $02 flags stay clear", async () => {
-    const mfRom = readFileSync("src/public/roms/enNextMf.rom");
+    const mfRom = readNextRom("enNextMf.rom");
     const s = await createSession();
     await s.loadCode(" .org $8000\n jr $");
     s.setNextReg(0x06, 0x08).runFrames(1);

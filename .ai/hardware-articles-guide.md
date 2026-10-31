@@ -14,7 +14,7 @@ to and replace what it supersedes.
 
 - **The hardware's view**: how the machine does it, and why it is built that way. Not the programmer's
   how-to (that is the book or the Guides); link there instead of repeating it.
-- **Every fact is checked against the reference** (for the Next, the VHDL in `_input/next-fpga/` and its
+- **Every fact is checked against the reference** (for the Next, the VHDL in `vendor/next-fpga/3.02.01/` and its
   `nextreg.txt` / `ports.txt`) before it is written, never from memory or a forum post. Recompute every
   number (clock counts, addresses, encodings) with a script rather than in your head.
 - **The article never names its reference.** No VHDL, file names, signal or process names, line numbers,

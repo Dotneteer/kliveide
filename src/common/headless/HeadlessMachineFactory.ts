@@ -1,7 +1,7 @@
 import type { MachineConfigSet, MachineModel } from "@common/machines/info-types";
 import type { IFileProvider } from "@renderer/core/IFileProvider";
 
-import { machineRegistry } from "@common/machines/machine-registry";
+import { machineRegistry, resolveModelId } from "@common/machines/machine-registry";
 import { MI_HT1080Z, MI_TVC, MI_ENTERPRISE, MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_SPECTRUM_48, MI_ZX80, MI_ZX81 } from "@common/machines/constants";
 import { artifactNameOf, headlessUnsupportedMessage } from "./headlessMachines";
 import { FILE_PROVIDER } from "@emu/machines/machine-props";
@@ -53,7 +53,8 @@ export type HeadlessMachineSpec = {
 /** The registry model of a machine: the one named, or the first */
 export function modelOf(machineId: string, modelId: string | undefined): MachineModel | undefined {
   const models = machineRegistry.find((m) => m.machineId === machineId)?.models;
-  return models?.find((m) => m.modelId === modelId) ?? models?.[0];
+  const resolved = modelId === undefined ? undefined : resolveModelId(machineId, modelId);
+  return models?.find((m) => m.modelId === resolved) ?? models?.[0];
 }
 
 /**
@@ -63,7 +64,7 @@ export function modelOf(machineId: string, modelId: string | undefined): Machine
 export async function createHeadlessMachine(spec: HeadlessMachineSpec): Promise<HeadlessMachine> {
   const unsupported = headlessUnsupportedMessage(spec.machineId);
   if (unsupported) throw new Error(unsupported);
-  const artifactName = artifactNameOf(spec.machineId);
+  const artifactName = artifactNameOf(spec.machineId, spec.modelId);
   const loader = {
     artifactName: `headless-${artifactName}`,
     readArtifact: async (): Promise<BufferSource> => (await spec.readArtifact(artifactName)) as Uint8Array<ArrayBuffer>

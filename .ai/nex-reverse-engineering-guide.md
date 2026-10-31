@@ -55,8 +55,8 @@ read and when you write. This is the single most common way to corrupt a sidecar
 |---|---|
 | The NEX | `_experiments/testprojects/disann/ScrollNutter.nex` |
 | Its sidecar | `_experiments/testprojects/disann/ScrollNutter.nex.dis` |
-| Next register reference | `_input/next-fpga/nextreg.txt` |
-| I/O port reference | `_input/next-fpga/ports.txt` |
+| Next register reference | `vendor/next-fpga/3.02.01/nextreg.txt` |
+| I/O port reference | `vendor/next-fpga/3.02.01/ports.txt` |
 
 The sidecar path is always the NEX path with `.dis` appended — `Game.nex` → `Game.nex.dis`
 (`getNexAnnotationPath`). It is JSON.
@@ -355,8 +355,8 @@ does. They are the official TBBlue / ZX Spectrum Next FPGA documentation, tracke
 
 | File | Covers |
 |---|---|
-| `_input/next-fpga/nextreg.txt` | The Next register space — 138 registers, `0x00`–`0xFF`, bit by bit |
-| `_input/next-fpga/ports.txt` | Peripheral I/O ports — address decoding, then per-port bit detail |
+| `vendor/next-fpga/3.02.01/nextreg.txt` | The Next register space — 138 registers, `0x00`–`0xFF`, bit by bit |
+| `vendor/next-fpga/3.02.01/ports.txt` | Peripheral I/O ports — address decoding, then per-port bit detail |
 
 **Use them.** The disassembler's generated comment gives you the register's *name* only — `nextreg
 $43,$10` renders as `; Palette Control`. That tells you which register, never what the value means.
@@ -370,7 +370,7 @@ Entries are separated by blank lines and start with `0xNN (dd) => Name`, followe
 Look one up — prints the whole entry, and works regardless of which register number comes next:
 
 ```bash
-awk '/^0x43 /{f=1;print;next} /^0x[0-9A-Fa-f][0-9A-Fa-f] /{f=0} f' _input/next-fpga/nextreg.txt
+awk '/^0x43 /{f=1;print;next} /^0x[0-9A-Fa-f][0-9A-Fa-f] /{f=0} f' vendor/next-fpga/3.02.01/nextreg.txt
 ```
 
 **Worked example — this validates annotations already in ScrollNutter's sidecar.** The palette
@@ -404,13 +404,13 @@ Two halves, and the first is easy to miss:
 Look up one port's detail:
 
 ```bash
-awk '/^0x123B /{f=1;print;next} /^0x[0-9A-Fa-f]+ /{f=0} /^==/{f=0} f' _input/next-fpga/ports.txt
+awk '/^0x123B /{f=1;print;next} /^0x[0-9A-Fa-f]+ /{f=0} /^==/{f=0} f' vendor/next-fpga/3.02.01/ports.txt
 ```
 
 Grep the decode table instead when you have a value rather than a name:
 
 ```bash
-grep -i "0x243b" _input/next-fpga/ports.txt
+grep -i "0x243b" vendor/next-fpga/3.02.01/ports.txt
 ```
 
 Worth knowing: `0x243B` selects a Next register and `0x253B` reads/writes it, so `out ($243B),a` /
@@ -490,7 +490,7 @@ in turn, each with its own AY selected, is a TurboSound pair: the same tune arra
 two modules differ in length.
 
 **Copper instructions and tables.** `nextreg.txt` documents the copper *registers* (`$60`–`$64`)
-but not the instruction format; that is in `_input/next-fpga/src/device/copper.vhd`. An instruction is
+but not the instruction format; that is in `vendor/next-fpga/3.02.01/src/device/copper.vhd`. An instruction is
 two bytes, most significant first:
 
 ```
@@ -541,7 +541,7 @@ register name — the generated comment already carries the name and your `comme
 - Good: `Select Layer 2 first palette for writing`
 - Redundant: `Palette Control` (that is what it already said)
 
-`_input/next-fpga/src/` also holds the core's VHDL. Read it only when the text files are genuinely
+`vendor/next-fpga/3.02.01/src/` also holds the core's VHDL. Read it only when the text files are genuinely
 ambiguous; it is the last word, but it is a slow one.
 
 ---
@@ -552,7 +552,7 @@ ambiguous; it is the last word, but it is a slow one.
    a label, look it up in `globalLabels` / the bank's `localLabels` first.
 2. **Listing.** Run the recipe over a generous window around the target. Read it before theorising.
 3. **Understand.** Follow `call`/`jp` targets. Decode every `nextreg` write and `out` against
-   `_input/next-fpga/nextreg.txt` and `ports.txt` — the generated comment names the register but
+   `vendor/next-fpga/3.02.01/nextreg.txt` and `ports.txt` — the generated comment names the register but
    never says what the value means (see
    [Decoding ports and Next registers](#decoding-ports-and-next-registers)). Watch for tail calls
    (`jp` into a routine) — they are common here and they change what `ret` means.
@@ -845,10 +845,10 @@ Read these rather than trusting this summary when precision matters:
 
 | Topic | File |
 |---|---|
-| **Next register bit meanings** | `_input/next-fpga/nextreg.txt` |
-| **I/O port decoding and bit meanings** | `_input/next-fpga/ports.txt` |
-| Next core VHDL (last resort) | `_input/next-fpga/src/` |
-| Copper instruction format | `_input/next-fpga/src/device/copper.vhd` |
+| **Next register bit meanings** | `vendor/next-fpga/3.02.01/nextreg.txt` |
+| **I/O port decoding and bit meanings** | `vendor/next-fpga/3.02.01/ports.txt` |
+| Next core VHDL (last resort) | `vendor/next-fpga/3.02.01/src/` |
+| Copper instruction format | `vendor/next-fpga/3.02.01/src/device/copper.vhd` |
 | Schema, validation, normalization, label rules | `src/renderer/appIde/DocumentPanels/Next/nexAnnotations.ts` |
 | NEX container parsing, bank order, flags | `src/renderer/appIde/DocumentPanels/Next/nexFileLoader.ts` |
 | Annotated listing generation | `src/renderer/appIde/DocumentPanels/Next/nexAnnotatedDisassembly.ts` |

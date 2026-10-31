@@ -47,7 +47,8 @@ vi.mock("@common/machines/machine-registry", () => ({
   getModelConfig: vi.fn((machineId: string, modelId?: string) => ({
     machineId,
     modelId
-  }))
+  })),
+  newProjectModelIds: { zxnext: "ks2-30204" }
 }));
 
 vi.mock("@main/build", () => ({

@@ -7,7 +7,7 @@ import { createSession, type NextTestSession } from "../../harness/zxnext";
  * of test/zxnext/MemoryDevice.test.ts; test/zxnext-hw/speed/cpu-speed.test.ts SPD-002 measures the
  * SRAM / bank 7 difference over a whole frame, this measures single instructions).
  *
- * Hardware (`_input/next-fpga/src/zxnext.vhd`):
+ * Hardware (`vendor/next-fpga/3.02.01/src/zxnext.vhd`):
  * - ~3168-3178: `sram_wait_n <= '0'` when `(sram_req_t = '1' or cpu_bank5_sched = '1') and
  *   cpu_rd_n = '0' and cpu_speed = "11"`: one wait state on every CPU *read* at 28 MHz (opcode fetches
  *   included) from SRAM or from bank 5's BRAM; none on writes (cpu_rd_n = 1), none at lower speeds.

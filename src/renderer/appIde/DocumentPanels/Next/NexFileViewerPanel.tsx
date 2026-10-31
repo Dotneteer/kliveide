@@ -29,8 +29,8 @@ import {
   validateNexHeader,
   type NexIssue
 } from "./nexValidation";
-import { EMULATED_CORE_VERSION } from "@emu/machines/zxNext/nextCoreVersion";
-import { MF_BANK } from "@common/machines/constants";
+import { coreVersionOf, nextProfileOf } from "@emu/machines/zxNext/nextProfiles";
+import { MF_BANK, MI_ZXNEXT } from "@common/machines/constants";
 import { useNexBankBreakpointCounts } from "./useNexBankBreakpoints";
 import type { NexFileContents, NexHeader } from "./nexFileLoader";
 import { AppServices } from "@renderer/abstractions/AppServices";
@@ -168,6 +168,8 @@ const NexFileViewerContents = ({
   const openRecorded = (open: () => Promise<void>) =>
     navigationHistoryService.recordJump("nexBank", open);
   const projectFolder = useSelector((s) => s.project?.folderPath);
+  const emulatedMachineId = useSelector((s) => s.emulatorState?.machineId);
+  const emulatedModelId = useSelector((s) => s.emulatorState?.modelId);
   const loadedBanks = useMemo(() => fi.bankData.map(([bank]) => bank), [fi.bankData]);
   // --- One listing for every bank row: a NEX can carry a hundred banks, and each asking the
   // --- emulator for itself would be a hundred IPC calls per breakpoint change.
@@ -384,10 +386,13 @@ const NexFileViewerContents = ({
    * `validateNexHeader` treats as "skip that check" rather than as zero banks.
    */
   const machineFeatures = appServices.machineService?.getMachineInfo()?.machine?.features;
+  // --- The Next model the file would run on: the selected one, or the implicit one when another
+  // --- machine is selected (`.plans/ZXNEXT_CORE_VERSIONS_PLAN.md` P6)
+  const nextProfile = nextProfileOf(emulatedMachineId === MI_ZXNEXT ? emulatedModelId : undefined);
   // --- Not memoized: a handful of comparisons, and its messages are in the display language, so a
   // --- language change (which re-renders through `useT`) must rewrite them.
   const validationIssues = validateNexHeader(h, {
-    coreVersion: EMULATED_CORE_VERSION,
+    coreVersion: coreVersionOf(nextProfile),
     bankCount: (machineFeatures?.[MF_BANK] ?? 0) / 2 || undefined
   });
 

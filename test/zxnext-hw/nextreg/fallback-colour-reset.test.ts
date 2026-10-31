@@ -5,7 +5,7 @@ import { createSession } from "../../harness/zxnext";
 /*
  * B3 - NextReg $4A (fallback colour) reset value.
  *
- * Hardware (`_input/next-fpga/src/zxnext.vhd` ~4990): the reset branch sets
+ * Hardware (`vendor/next-fpga/3.02.01/src/zxnext.vhd` ~4990): the reset branch sets
  * `nr_4a_fallback_rgb <= X"E3"` (the `X"00"` line above it is commented out). The fallback colour is
  * what shows where no layer is opaque, e.g. with the ULA disabled by $68 bit 7.
  */

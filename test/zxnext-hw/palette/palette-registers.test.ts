@@ -6,7 +6,7 @@ import { parkedSession } from "../ula/_ula-helpers";
 /*
  * Palette registers $40-$44 (catalogue PAL-001 - PAL-008, PAL-012, PAL-013).
  *
- * Hardware (`_input/next-fpga/src/zxnext.vhd`):
+ * Hardware (`vendor/next-fpga/3.02.01/src/zxnext.vhd`):
  * - ~5351-5381 (the NextReg write process):
  *     $40: nr_palette_idx <= value, nr_palette_sub_idx <= 0.
  *     $41: nr_palette_idx + 1 unless $43 bit 7, sub_idx <= 0.

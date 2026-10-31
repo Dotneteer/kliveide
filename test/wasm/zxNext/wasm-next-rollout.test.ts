@@ -1,5 +1,6 @@
 import packageJson from "../../../package.json";
 
+import { NEXT_PROFILE_IDS } from "@emu/machines/zxNext/nextProfiles";
 import { describe, expect, it } from "vitest";
 
 import { MI_ZXNEXT } from "@common/machines/constants";
@@ -29,22 +30,23 @@ describe("ZX Spectrum Next WASM rollout", () => {
 
   it("routes renderer registry creation through the ZX Next factory and model configs", () => {
     const renderer = machineRendererRegistry.find(entry => entry.machineId === MI_ZXNEXT);
-    const model = getZxNextModels().find(model => model.modelId === "standard")!;
+    const model = getZxNextModels().find(model => model.modelId === "ks2-30201")!;
 
     const machine = renderer!.factory(undefined as any, model, model.config);
 
     expect(machine).toBeInstanceOf(ZxNextWasmV2Machine);
   });
 
-  it("offers one Next model, and maps the retired compatibility id onto it", () => {
+  it("offers one model per Next profile, and maps the retired ids onto KS2 / core 3.02.01", () => {
     const models = getZxNextModels();
 
-    expect(models.map(model => model.modelId)).toEqual(["standard"]);
-    expect(models.map(model => model.displayName)).toEqual(["ZX Spectrum Next"]);
+    expect(models.map(model => model.modelId)).toEqual(NEXT_PROFILE_IDS);
+    expect(models[0].displayName).toBe("ZX Spectrum Next (KS2, core 3.02.01)");
     // --- D4: a project or a last session saved with the TypeScript model opens on the WASM one
-    // --- instead of naming a machine the registry cannot find.
-    expect(resolveModelId(MI_ZXNEXT, "compatibility")).toBe("standard");
-    expect(resolveModelId(MI_ZXNEXT, "standard")).toBe("standard");
+    // --- instead of naming a machine the registry cannot find; `standard` was the one model before
+    // --- profiles (`.plans/ZXNEXT_CORE_VERSIONS_PLAN.md` D1)
+    expect(resolveModelId(MI_ZXNEXT, "compatibility")).toBe("ks2-30201");
+    expect(resolveModelId(MI_ZXNEXT, "standard")).toBe("ks2-30201");
     for (const model of models) {
       expect(model.displayName).not.toMatch(/typescript/i);
       expect(model.displayName).not.toMatch(/wasm/i);
@@ -84,18 +86,19 @@ describe("ZX Spectrum Next: the retired \"compatibility\" model id", () => {
    * TypeScript emulator is gone, but settings files and `klive.project` files on disk still name
    * it. Opening one must land on the remaining Next model, never throw at startup.
    */
-  it("names the one remaining Next model", () => {
-    expect(resolveModelId(MI_ZXNEXT, "compatibility")).toBe("standard");
-    expect(getMachineName(MI_ZXNEXT, "compatibility")).toBe("ZX Spectrum Next");
+  it("names the model it was made with", () => {
+    expect(resolveModelId(MI_ZXNEXT, "compatibility")).toBe("ks2-30201");
+    expect(getMachineName(MI_ZXNEXT, "compatibility")).toMatch(/^ZX Spectrum Next/);
   });
 
   it("leaves other ids and other machines alone", () => {
-    expect(resolveModelId(MI_ZXNEXT, "standard")).toBe("standard");
-    expect(resolveModelId(MI_ZXNEXT, undefined)).toBeUndefined();
+    expect(resolveModelId(MI_ZXNEXT, "standard")).toBe("ks2-30201");
+    // --- A model-less Next reference means the model every earlier Klive emulated
+    expect(resolveModelId(MI_ZXNEXT, undefined)).toBe("ks2-30201");
     expect(resolveModelId("sp48", "compatibility")).toBe("compatibility");
   });
 
-  it("a project saved with it opens on the standard model, keeping its configuration", async () => {
+  it("a project saved with it opens on KS2 / core 3.02.01, keeping its configuration", async () => {
     const store = createAppStore("emu");
     const service = createMachineService(store, new ResolvingMessenger(), "emu");
     // --- A config as a project saved before the removal would carry it
@@ -119,7 +122,7 @@ describe("ZX Spectrum Next: the retired \"compatibility\" model id", () => {
     } finally {
       entry.factory = originalFactory;
     }
-    expect(created[0]).toEqual(["standard", saved]);
+    expect(created[0]).toEqual(["ks2-30201", saved]);
   });
 });
 

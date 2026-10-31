@@ -7,7 +7,7 @@ import {
 } from "@emu/machines/zxNext/wasm/ZxNextWasmV2Loader";
 
 /*
- * ZX Spectrum Next sprites against the FPGA (`_input/next-fpga/src/video/sprites.vhd`), as scenarios
+ * ZX Spectrum Next sprites against the FPGA (`vendor/next-fpga/3.02.01/src/video/sprites.vhd`), as scenarios
  * a sprite engine can be run through: the WASM engine in `test/wasm/zxNext/wasm-next-sprites-fpga`.
  * (A TypeScript engine was the second consumer until that backend was removed, which is why the
  * scenarios are still written against an engine abstraction.)

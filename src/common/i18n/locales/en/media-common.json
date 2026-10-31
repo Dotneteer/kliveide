@@ -921,6 +921,14 @@
       "block": "Block number (1-based)"
     }
   },
+  "media.state.otherNextModel": "The state was saved on the {saved}, not on the {model}",
+  "@media.state.otherNextModel": {
+    "context": "Why a saved ZX Spectrum Next state does not fit the selected Next model (each model, a board and a core version, has its own emulated hardware); shown inside messages that add a sentence after it, so no final full stop.",
+    "placeholders": {
+      "saved": "Model name, e.g. 'ZX Spectrum Next (KS2, core 3.02.01)' (not translated)",
+      "model": "Model name of the selected machine (not translated)"
+    }
+  },
   "media.state.otherCore": "The state belongs to the {saved} core, not the {core} core",
   "@media.state.otherCore": {
     "context": "Why a saved machine state does not fit this Klive build; shown inside media/emu messages that add a sentence after it, so no final full stop.",

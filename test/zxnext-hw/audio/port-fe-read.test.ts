@@ -7,7 +7,7 @@ import { createSession, type NextTestSession } from "../../harness/zxnext";
  * issue 2 keyboard, the MIC bit (the audio series' beeper article, plan
  * `.plans/NEXT_AUDIO_ARTICLES_PLAN.md` §4).
  *
- * Hardware (`_input/next-fpga/src`):
+ * Hardware (`vendor/next-fpga/3.02.01/src`):
  * - zxnext.vhd ~3456: port_fe_dat_0 = '1' & ((i_AUDIO_EAR xor pi_fe_ear) or (port_fe_ear or
  *   (port_fe_mic and nr_08_keyboard_issue2))) & '1' & i_KBD_COL - bits 7 and 5 read 1, bit 6 is a plain
  *   OR of the bits, sampled at the read. Nothing remembers an earlier EAR level: unlike the 48K's ULA,

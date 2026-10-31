@@ -2,7 +2,7 @@
 ; Shared macros for the copper visual tests. Include at the TOP (macros must
 ; be defined before use); emits no code. Routines: copper-routines.z80asm.
 ;
-; Encodings (hardware: _input/next-fpga/src/.../copper.vhd):
+; Encodings (hardware: vendor/next-fpga/3.02.01/src/.../copper.vhd):
 ;   WAIT  1 HHHHHH LLLLLLLLL  fires when cvc = L and hc_ula >= H*8+12  (paper x >= 8H)
 ;   MOVE  0 RRRRRRR VVVVVVVV  writes V to NextReg R ($00-$7F); R = 0 is a NOP
 ; The list is big-endian: high byte first.

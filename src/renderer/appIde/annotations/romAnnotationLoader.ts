@@ -7,6 +7,12 @@ import {
   isShippedRomPath,
   type RomSource
 } from "@common/roms/romIdentity";
+import {
+  WORKING_ROM_FOLDER,
+  canonicalShippedSidecar,
+  sidecarFileName,
+  workingCopyRelativePath
+} from "@common/roms/romSidecarPaths";
 import { loadAnnotationSidecar } from "./annotationSidecar";
 import { peekAnnotationSession } from "./annotationSession";
 import { annotationMachineOf, parseAnnotations, type ProgramAnnotations } from "./programAnnotations";
@@ -21,7 +27,8 @@ import { inheritsOf, type InheritedSidecarSource } from "./romInheritance";
  * **One sidecar is in effect for a page**, chosen in this order:
  *
  * 1. **a working copy** — `<Klive home>/RomAnnotations/<sidecar>` for a ROM Klive ships (named
- *    exactly like the shipped file, so it can be copied into `src/public/roms/` unchanged), or
+ *    exactly like the shipped file, so it can be copied into `src/public/roms/` unchanged; where a
+ *    Next ROM set's go is `workingCopyRelativePath` in `@common/roms/romSidecarPaths`), or
  *    `<path>.dis` beside a custom ROM file. It is the only editable one, and it *replaces* the shipped
  *    sidecar rather than being laid over it. It applies only when its `pages` name this page's CRC.
  * 2. **the shipped sidecar**, found by CRC in the shipped index, read-only.
@@ -37,7 +44,10 @@ export const SHIPPED_ROM_INDEX = "roms/rom-annotations.index.json";
 /** The shipped sidecar every 48K BASIC page falls back to (Q7). */
 export const SP48_SIDECAR = "sp48.rom.dis";
 
-/** The shipped index: a page CRC to the sidecar and page that describe it. */
+/**
+ * The shipped index: a page CRC to the sidecar and page that describe it. A sidecar is named by its
+ * path relative to `src/public/roms` (`sp48.rom.dis`, `zxnext/nextzxos-2.08/enNextZX.rom.dis`).
+ */
 export type ShippedRomIndex = Record<string, { sidecar: string; page: number }>;
 
 /** What the IDE knows about one ROM partition. */
@@ -70,13 +80,8 @@ export type RomLoaderDeps = {
   machineId: string | undefined;
 };
 
-/** The folder of the working copies, in the Klive home folder. */
-export const WORKING_ROM_FOLDER = "RomAnnotations";
-
-/** A working copy in the Klive home folder, by its file name (`sp48.rom.dis`). */
-export function workingCopyRelativePath(sidecar: string): string {
-  return `${WORKING_ROM_FOLDER}/${sidecar}`;
-}
+// --- The working-copy folder and its naming rule live in `@common/roms/romSidecarPaths`
+export { WORKING_ROM_FOLDER, workingCopyRelativePath };
 
 /**
  * The additive overlay earlier builds wrote, by CRC (`RomAnnotations/<crc32>.rom.dis`). Read once,
@@ -110,6 +115,7 @@ function readShippedSidecar(
   files: RomLoaderFiles,
   sidecar: string
 ): Promise<ProgramAnnotations | undefined> {
+  sidecar = canonicalShippedSidecar(sidecar);
   let pending = shippedSidecars.get(sidecar);
   if (!pending) {
     pending = files
@@ -132,7 +138,7 @@ function readShippedRomPage(
   sidecar: string,
   page: number
 ): Promise<Uint8Array | undefined> {
-  const romFile = sidecar.replace(/\.dis$/i, "");
+  const romFile = canonicalShippedSidecar(sidecar).replace(/\.dis$/i, "");
   let pending = shippedRomBytes.get(romFile);
   if (!pending) {
     pending = files.readBinaryFile(`${SHIPPED_ROM_FOLDER}/${romFile}`).catch(() => undefined);
@@ -226,6 +232,7 @@ async function effectiveSidecar(
   deps: Pick<RomLoaderDeps, "files" | "projectService">,
   sidecar: string
 ): Promise<{ annotations: ProgramAnnotations; path: string; working: boolean } | undefined> {
+  sidecar = canonicalShippedSidecar(sidecar);
   const workingPath = await deps.files.resolveKliveHomePath(workingCopyRelativePath(sidecar));
   const working = await readRomSidecarFile(deps.projectService, workingPath);
   if (working) return { annotations: working, path: workingPath, working: true };
@@ -286,9 +293,9 @@ async function boundLayer(
   };
 }
 
-/** What a tooltip says a name came from: "ROM: sp48.rom (working copy)", "ROM: sp48.rom". */
+/** What a tooltip says a name came from: "ROM: sp48.rom (working copy)", "ROM: enNextZX.rom". */
 function originOf(sidecar: string, working: boolean): string {
-  return `ROM: ${fileNameOf(sidecar).replace(/\.dis$/i, "")}${working ? " (working copy)" : ""}`;
+  return `ROM: ${sidecarFileName(sidecar).replace(/\.dis$/i, "")}${working ? " (working copy)" : ""}`;
 }
 
 /** Every ROM partition's layers, for the machine running now. */

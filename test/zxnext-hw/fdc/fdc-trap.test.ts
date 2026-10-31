@@ -6,7 +6,7 @@ import { createSession, type NextTestSession } from "../../harness/zxnext";
  * The +3 FDC ports and their I/O trap (catalogue FDC-001 - FDC-004; the trap's NMI, $DA and $02 bit 4
  * are RST-006 in reset/reset-register.test.ts).
  *
- * Hardware (`_input/next-fpga/src/zxnext.vhd`):
+ * Hardware (`vendor/next-fpga/3.02.01/src/zxnext.vhd`):
  * - ~5615, ~6211, ~5085: $D8 bit 0 (nr_d8_io_trap_fdc_en) reads back as "0000000" & bit 0; a reset
  *   clears it.
  * - ~2554-2558: $2FFD / $3FFD are A15-14 = 00, A13-12 = 10 / 11, A1-0 = 01 - and decoded only while

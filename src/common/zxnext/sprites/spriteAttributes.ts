@@ -9,7 +9,7 @@
  * by the core, which resolves into a buffer that `decodeResolvedSprites` reads (D4). A second
  * implementation here would drift.
  *
- * The bit layout follows `_input/next-fpga/src/video/sprites.vhd` and the C engine
+ * The bit layout follows `vendor/next-fpga/3.02.01/src/video/sprites.vhd` and the C engine
  * (`zxnext-sprites.c`, `zxnextUlaResolveSpritesInto` in `zxnext-ula.c`):
  *
  * - attr0: X bits 7..0 (anchor) or a signed X offset (relative)

@@ -69,8 +69,8 @@ describe("hardware specs", () => {
     expect(get("zx81", "zx81-16k-us").timing.frameHz).toBeCloseTo(60, 1);
     expect(get("zx80", "zx80-8krom-16k").rom[0].id).toBe("zx81");
     expect(get("zx80", "zx80-16k").rom[0]).toEqual({ id: "zx80", kb: 4 });
-    expect(get("zxnext", "standard").clockMultiplier).toBe(false);
-    expect(get("zxnext", "standard").timing.frameHz).toBeUndefined();
+    expect(get("zxnext", "ks2-30201").clockMultiplier).toBe(false);
+    expect(get("zxnext", "ks2-30201").timing.frameHz).toBeUndefined();
     expect(get("sp48", "pal").clockMultiplier).toBe(true);
   });
 
@@ -114,7 +114,7 @@ describe("hardware specs in another language", () => {
     expect(get("spp3e", "nofdd").mediaChips).toEqual(["Tape"]);
     expect(get("spp3e", "fdd2").mediaChips).toEqual(["Tape", "Floppy disk drives A and B"]);
     expect(get("timex", "tc2068").mediaChips).toEqual(["Tape", "Cartridge"]);
-    expect(get("zxnext", "standard").mediaChips).toEqual(["SD card"]);
+    expect(get("zxnext", "ks2-30201").mediaChips).toEqual(["SD card"]);
   });
 
   it("translates every plain-word text in the pseudo-locale", () => {

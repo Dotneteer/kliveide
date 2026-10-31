@@ -1,4 +1,5 @@
 export default {
+  "next-models": "ZX Spectrum Next models",
   "nex-files": "Running and inspecting NEX files",
   "next-registers": "Next Registers, memory mapping and palettes",
   "next-breakpoints": "Next breakpoints",

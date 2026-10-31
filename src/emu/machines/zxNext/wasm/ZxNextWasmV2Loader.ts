@@ -1,3 +1,4 @@
+import { nextProfileOf } from "../nextProfiles";
 import { WASM_CORE_CONDITION_PLAN_WORDS } from "@emu/machines/wasmDebugLoopLayout";
 import { CONDITION_CORE_EXPORTS, type ConditionCoreExports } from "@emu/machines/conditionStore";
 import { Z80_HISTORY_CORE_EXPORTS, type Z80HistoryCoreExports } from "@emu/machines/history/WasmHistoryReader";
@@ -5,7 +6,8 @@ import { WASM_ACCESS_LOG_CAPACITY } from "../../wasmAccessLog";
 import { OFFS_ERR_PAGE } from "../nextMemoryLayout";
 import { ZXNEXT_FRAME_TRACE_CAPACITY, ZXNEXT_FRAME_TRACE_HEADER_SIZE, ZXNEXT_FRAME_TRACE_RECORD_SIZE } from "./frameTraceLayout";
 
-export const ZXNEXT_WASM_V2_ARTIFACT_NAME = "zx-spectrum-next.wasm";
+/** The implicit Next model's artifact, when the caller names none (`nextProfiles.ts`, D3) */
+const DEFAULT_ARTIFACT_NAME = nextProfileOf().wasmArtifact;
 export const ZXNEXT_WASM_V2_MEMORY_SIZE = OFFS_ERR_PAGE + 0x2000;
 export const ZXNEXT_WASM_V2_FLAT_MEMORY_SIZE = 0x10000;
 export const ZXNEXT_WASM_V2_KEYBOARD_LINE_COUNT = 8;
@@ -191,6 +193,7 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & ConditionCoreExports & Z
   zxnextTapeGetLoadStartCount: ZxNextWasmV2ExportFunction;
   zxnextTapeGetSaveStartCount: ZxNextWasmV2ExportFunction;
   zxnextTapeGetInputBit: ZxNextWasmV2ExportFunction;
+  zxnextTapeSetRomRoutines: ZxNextWasmV2ExportFunction;
   zxnextTapeSaveDataPtr: ZxNextWasmV2ExportFunction;
   zxnextTapeGetSaveDataCapacity: ZxNextWasmV2ExportFunction;
   zxnextTapeGetSavedBlockCount: ZxNextWasmV2ExportFunction;
@@ -666,6 +669,7 @@ const requiredV2Exports = [
   "zxnextTapeGetLoadStartCount",
   "zxnextTapeGetSaveStartCount",
   "zxnextTapeGetInputBit",
+  "zxnextTapeSetRomRoutines",
   "zxnextTapeSaveDataPtr",
   "zxnextTapeGetSaveDataCapacity",
   "zxnextTapeGetSavedBlockCount",
@@ -916,7 +920,7 @@ export function resetZxNextWasmV2ModuleCache(): void {
 }
 
 export async function loadZxNextWasmV2(options: ZxNextWasmV2LoaderOptions = {}): Promise<ZxNextWasmV2Runtime> {
-  const artifactName = options.artifactName ?? ZXNEXT_WASM_V2_ARTIFACT_NAME;
+  const artifactName = options.artifactName ?? DEFAULT_ARTIFACT_NAME;
   const module = await getCompiledV2Module(artifactName, options);
   const instantiate = options.instantiate ?? defaultInstantiateV2;
   const instance = await instantiate(module);
@@ -934,7 +938,7 @@ export async function loadZxNextWasmV2(options: ZxNextWasmV2LoaderOptions = {}):
 
 export function validateZxNextWasmV2Exports(
   exports: Partial<ZxNextWasmV2Exports>,
-  artifactName = ZXNEXT_WASM_V2_ARTIFACT_NAME
+  artifactName = DEFAULT_ARTIFACT_NAME
 ): void {
   for (const exportName of requiredV2Exports) {
     if (exportName === "memory") {
@@ -952,7 +956,7 @@ export function validateZxNextWasmV2Exports(
 
 export function createZxNextWasmV2Views(
   exports: ZxNextWasmV2Exports,
-  artifactName = ZXNEXT_WASM_V2_ARTIFACT_NAME
+  artifactName = DEFAULT_ARTIFACT_NAME
 ): Omit<ZxNextWasmV2Runtime, "artifactName" | "module" | "instance" | "exports"> {
   const memoryBuffer = exports.memory.buffer;
   const memorySize = exports.zxnextGetMemorySize();

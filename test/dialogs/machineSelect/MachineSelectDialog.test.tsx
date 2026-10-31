@@ -81,15 +81,16 @@ describe("MachineSelectDialog — wiring", () => {
     const onResult = vi.fn();
     renderWithProviders(<MachineSelectDialog data={data} onResult={onResult} onClose={vi.fn()} />);
 
-    fireEvent.doubleClick(screen.getByTestId("machine-row-zxnext/standard"));
-    expect(onResult).toHaveBeenCalledWith({ switchTo: { machineId: "zxnext", modelId: "standard" } });
+    fireEvent.click(screen.getByTestId("section-zxnext"));
+    fireEvent.doubleClick(screen.getByTestId("machine-row-zxnext/ks2-30201"));
+    expect(onResult).toHaveBeenCalledWith({ switchTo: { machineId: "zxnext", modelId: "ks2-30201" } });
   });
 
   it("restores the default favourites", () => {
     renderWithProviders(<MachineSelectDialog data={data} onResult={vi.fn()} onClose={vi.fn()} />);
 
     fireEvent.click(screen.getByTestId("restore-default-favorites"));
-    expect(screen.getByTestId("favorite-row-zxnext/standard")).toBeInTheDocument();
+    expect(screen.getByTestId("favorite-row-zxnext/ks2-30204")).toBeInTheDocument();
     expect(screen.getByText("Unsaved menu changes")).toBeInTheDocument();
   });
 
@@ -122,7 +123,8 @@ describe("MachineSelectDialog — wiring", () => {
     expect(rasterRatio()).toBeCloseTo((560 * 0.56) / 288, 3);
 
     // --- The Next's 720 x 288 output buffer counts half-pixels, its 256 x 192 paper whole ones
-    fireEvent.click(screen.getByTestId("machine-row-zxnext/standard"));
+    fireEvent.click(screen.getByTestId("section-zxnext"));
+    fireEvent.click(screen.getByTestId("machine-row-zxnext/ks2-30201"));
     expect(rasterRatio()).toBeCloseTo(360 / 288, 3);
     const [raster, paper] = Array.from(
       screen.getByTestId("hardware-sheet").querySelectorAll("figure svg rect")
