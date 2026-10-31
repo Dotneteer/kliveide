@@ -2085,5 +2085,20 @@
       "name": "The source: a file name",
       "rate": "Samples per second, e.g. 44100"
     }
+  },
+  "commands.tapeLoad.guard.tvcTape": "requires a Videoton TVC machine",
+  "@commands.tapeLoad.guard.tvcTape": {
+    "context": "Why a Videoton TVC tape (.cas) cannot be loaded now: shown in brackets after a disabled button's tooltip. Videoton TVC is a machine name. Starts in lower case in English because it continues the tooltip."
+  },
+  "commands.tapeLoad.refusedTvcTape": "Loading a Videoton TVC tape requires the Videoton TVC; the current machine is {machine}.",
+  "@commands.tapeLoad.refusedTvcTape": {
+    "context": "Validation error of 'tape-load' for a .cas file in the Videoton TVC's format when another machine is running. Videoton TVC is a machine name: keep it.",
+    "placeholders": {
+      "machine": "The name of the current machine"
+    }
+  },
+  "commands.tapeLoad.refusedTvcTapeNoMachine": "Loading a Videoton TVC tape requires the Videoton TVC; no machine is selected.",
+  "@commands.tapeLoad.refusedTvcTapeNoMachine": {
+    "context": "Validation error of 'tape-load' for a .cas file in the Videoton TVC's format when no machine is selected. Videoton TVC is a machine name: keep it."
   }
 }

@@ -75,17 +75,28 @@ export function tvcTapeNameOf(fileName: string): string {
 }
 
 /**
+ * The payload's length in a `.cas`: the record counts' (2-5) when the file holds that many bytes, else
+ * the application header's (82h-83h) when it does - some homebrew writers fill the record counts wrongly.
+ * @returns the length, or undefined when the file is shorter than both say
+ */
+export function tvcCasPayloadLength(bytes: ArrayLike<number>): number | undefined {
+  if (bytes.length < TVC_CAS_HEADER_LENGTH) return undefined;
+  const total = (bytes[2] | (bytes[3] << 8)) * 128 + (bytes[4] | (bytes[5] << 8));
+  if (total >= TVC_CAS_HEADER_LENGTH && total <= bytes.length) return total - TVC_CAS_HEADER_LENGTH;
+  const byHeader = bytes[0x82] | (bytes[0x83] << 8);
+  if (TVC_CAS_HEADER_LENGTH + byHeader <= bytes.length) return byHeader;
+  return undefined;
+}
+
+/**
  * Reads a `.cas` file.
  * @throws TvcCasFileError when it is not one
  */
 export function parseTvcCasFile(bytes: Uint8Array, fileName: string): TvcTapeFile {
   if (bytes.length === 0 || bytes[0] !== 0x11) throw new TvcCasFileError("notCas");
   if (bytes.length < TVC_CAS_HEADER_LENGTH) throw new TvcCasFileError("tooShort");
-  const records = bytes[2] | (bytes[3] << 8);
-  const rest = bytes[4] | (bytes[5] << 8);
-  const total = records * 128 + rest;
-  const payloadLength = Math.max(0, total - TVC_CAS_HEADER_LENGTH);
-  if (bytes.length < TVC_CAS_HEADER_LENGTH + payloadLength) throw new TvcCasFileError("lengthMismatch");
+  const payloadLength = tvcCasPayloadLength(bytes);
+  if (payloadLength === undefined) throw new TvcCasFileError("lengthMismatch");
   const payload = bytes.slice(TVC_CAS_HEADER_LENGTH, TVC_CAS_HEADER_LENGTH + payloadLength);
   if (Math.ceil(payload.length / SECTOR_SIZE) > 255) throw new TvcCasFileError("tooManySectors");
   const name = tvcTapeNameOf(fileName);

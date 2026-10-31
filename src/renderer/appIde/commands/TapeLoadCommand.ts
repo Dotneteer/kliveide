@@ -13,6 +13,7 @@ import { MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_SPECTRUM_48, MI_TIMEX, MI_SCORPION,
 import { isZx8081ProgramFileName, parseZxProgramFile } from "@emu/machines/zx8081/ZxPFile";
 import { ht1080zTapeErrorKey, isHt1080zTapeFor, parseHt1080zTapeFile } from "@emu/machines/ht1080z/Ht1080zTapeFile";
 import { isTvcCasFileName, parseTvcCasFile } from "@emu/machines/tvc/TvcCasFile";
+import { detectCasFormat, type CasFormat } from "@emu/machines/casFormat";
 import { isEpTapeFileName, parseEpTapeFile } from "@emu/machines/enterprise/EpTapeFile";
 import { analyzeHt1080zFile } from "../DocumentPanels/Ht1080zTape/ht1080zTapeView";
 import { machineRegistry } from "@common/machines/machine-registry";
@@ -61,6 +62,25 @@ export function htTapeLoadGuard(state: { emulatorState?: { machineId?: string } 
 export function casTapeLoadGuard(state: { emulatorState?: { machineId?: string } }): string | undefined {
   const machineId = state.emulatorState?.machineId;
   return machineId === MI_HT1080Z || machineId === MI_TVC ? undefined : t("commands.tapeLoad.guard.casTape");
+}
+
+/**
+ * Why a Videoton TVC tape (a `.cas` in the TVC's format) cannot be loaded into the current machine, or
+ * undefined when it can.
+ * @param state The IDE's state (the part read here)
+ */
+export function tvcTapeLoadGuard(state: { emulatorState?: { machineId?: string } }): string | undefined {
+  return state.emulatorState?.machineId === MI_TVC ? undefined : t("commands.tapeLoad.guard.tvcTape");
+}
+
+/**
+ * The guard for a `.cas` whose format was read from its bytes (`detectCasFormat`): only the machine
+ * whose tape it is loads it; while the format is not known yet, either machine does.
+ */
+export function casFormatLoadGuard(
+  format: CasFormat | undefined
+): (state: { emulatorState?: { machineId?: string } }) => string | undefined {
+  return format === "tvc" ? tvcTapeLoadGuard : format === "ht1080z" ? htTapeLoadGuard : casTapeLoadGuard;
 }
 
 /** The machines a ZX80/ZX81 program file (`.p`, `.81`, `.o`, `.80`) loads into */
@@ -116,6 +136,17 @@ export function tapeLoadGuard(state: {
     : t("commands.tapeLoad.guard.tape");
 }
 
+/** The format of a `.cas` named by a `tape-load` argument, or undefined for another file or one not read */
+async function readCasFormat(context: IdeCommandContext, file: string | undefined): Promise<CasFormat | undefined> {
+  const path = file?.trim();
+  if (!path || !/\.cas$/i.test(path)) return undefined;
+  try {
+    return detectCasFormat(await context.mainApi.readBinaryFile(resolveTapePath(path, context.store.getState().project?.folderPath)));
+  } catch {
+    return undefined;
+  }
+}
+
 /**
  * Loads a `.tap` or `.tzx` file into the ZX Spectrum's tape deck (`.plans/TAPE_VIEWER_PLAN.md`
  * §4.6).
@@ -161,6 +192,22 @@ export class TapeLoadCommand extends IdeCommandBase<TapeLoadCommandArgs> {
       } catch {
         basBytes = undefined;
       }
+    }
+    // --- A .cas is the HT-1080Z's or the TVC's tape, in two formats: the bytes say whose, and only that
+    // --- machine loads it
+    const casFormat = await readCasFormat(context, args.file);
+    if (casFormat && casFormat !== (currentMachine === MI_TVC ? "tvc" : currentMachine === MI_HT1080Z ? "ht1080z" : undefined)) {
+      const name = machineRegistry.find((m) => m.machineId === currentMachine)?.displayName ?? currentMachine;
+      const key =
+        casFormat === "tvc"
+          ? name
+            ? "commands.tapeLoad.refusedTvcTape"
+            : "commands.tapeLoad.refusedTvcTapeNoMachine"
+          : name
+            ? "commands.tapeLoad.refusedHtTape"
+            : "commands.tapeLoad.refusedHtTapeNoMachine";
+      messages.push(validationError(t(key, { machine: name })));
+      return messages;
     }
     // --- A .cas on the Videoton TVC is the TVC's tape: it goes in the deck, and -r/-d boot BASIC and
     // --- type LOAD (`TvcWasmV2Machine.getTapeLoadFlow`). It names no start address for -e.

@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { buildHt1080zCmd } from "@common/ht1080z/cmdFile";
 import { basToBasicTape } from "@emu/machines/ht1080z/Ht1080zTapeFile";
+import { buildTvcCasFile } from "@emu/machines/tvc/TvcCasFile";
 
 /*
  * The HT-1080Z tape file viewer (`.plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D5): a `.cas`, a `.cmd` and a
@@ -221,5 +222,42 @@ describe("Ht1080zTapeViewerPanel", () => {
   it("explains why a text .bas cannot be shown", async () => {
     await renderViewer("game.bas", new TextEncoder().encode('10 PRINT "HI"\n'));
     expect(await screen.findByText(/BASIC source text, not a tokenised HT-1080Z program/)).toBeInTheDocument();
+  });
+});
+
+/** 10 PRINT 42 as TVC BASIC stores it, the closing 00h, and three bytes of code */
+const TVC_CAS = buildTvcCasFile(Uint8Array.from([0x08, 0x0a, 0x00, 0xdd, 0x20, 0x34, 0x32, 0xff, 0x00, 0x3e, 0x01, 0xc9]), 0x01, true);
+
+describe("Ht1080zTapeViewerPanel - a Videoton TVC .cas", () => {
+  it("recognises the TVC's format whatever machine runs, and shows its parts and listing", async () => {
+    await renderViewer("hello.cas", TVC_CAS, {}, { machineId: "sp48" });
+    const summary = await screen.findByLabelText("File summary");
+    expect(within(summary).getByText("CAS · Videoton TVC tape")).toBeInTheDocument();
+    expect(within(summary).getByText("Program (01h)")).toBeInTheDocument();
+    expect(within(summary).getByText("Runs after loading")).toBeInTheDocument();
+    expect(screen.queryByText(/No HT-1080Z file follows the sync byte/)).toBeNull();
+
+    const list = screen.getByRole("listbox", { name: "Part list" });
+    expect(within(list).getAllByRole("option")).toHaveLength(4);
+    expect(within(list).getByText('LOAD "HELLO"')).toBeInTheDocument();
+    expect(screen.getByTestId("ht-memory-map")).toBeInTheDocument();
+
+    // --- The program is selected first and listed
+    const details = screen.getByRole("complementary", { name: "#2 details" });
+    expect(within(details).getByTestId("tvc-tape-listing").textContent).toMatch(/^10\s*PRINT\s42/);
+  });
+
+  it("pops the program out as a TVC listing", async () => {
+    const { openDocument } = await renderViewer("hello.cas", TVC_CAS);
+    fireEvent.click(await screen.findByRole("button", { name: "Pop out the listing" }));
+    await waitFor(() => expect(openDocument).toHaveBeenCalled());
+    const [doc, state] = openDocument.mock.calls[0] as unknown as [any, any];
+    expect(doc.type).toBe("TapeBlockViewer");
+    expect(state).toMatchObject({ view: "basic", format: "tvc", basicEnd: 9 });
+  });
+
+  it("explains a .cas in neither format", async () => {
+    await renderViewer("notes.cas", new TextEncoder().encode("hello"));
+    expect(await screen.findByText(/neither a Videoton TVC tape/)).toBeInTheDocument();
   });
 });

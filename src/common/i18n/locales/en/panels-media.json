@@ -3677,5 +3677,172 @@
     "placeholders": {
       "source": "The file's name or project path"
     }
+  },
+  "panels.tvcTape.error.notCas": "This file is not a Videoton TVC tape: it is shorter than the 144-byte header or does not start with 11h.",
+  "@panels.tvcTape.error.notCas": {
+    "context": "Videoton TVC tape file viewer (a document showing a Videoton TVC .cas tape file: a 144-byte header and the program; the Videoton TVC is a Hungarian home computer). Shown in place of the viewer when the .cas file is not a TVC tape."
+  },
+  "panels.tvcTape.error.unknownCas": "This .cas file is neither a Videoton TVC tape (it does not start with 11h) nor an HT-1080Z tape (no zero-byte leader and A5h sync byte was found).",
+  "@panels.tvcTape.error.unknownCas": {
+    "context": "Videoton TVC tape file viewer (a document showing a Videoton TVC .cas tape file: a 144-byte header and the program; the Videoton TVC is a Hungarian home computer). Shown in place of the viewer when a .cas file is in neither machine's format. HT-1080Z and Videoton TVC are machine names."
+  },
+  "panels.tvcTape.format": "CAS · Videoton TVC tape",
+  "@panels.tvcTape.format": {
+    "context": "Videoton TVC tape file viewer (a document showing a Videoton TVC .cas tape file: a 144-byte header and the program; the Videoton TVC is a Hungarian home computer). Value of the Format fact in the summary. Videoton TVC is a machine name."
+  },
+  "panels.tvcTape.group": "TVC tape \"{name}\"",
+  "@panels.tvcTape.group": {
+    "context": "Videoton TVC tape file viewer (a document showing a Videoton TVC .cas tape file: a 144-byte header and the program; the Videoton TVC is a Hungarian home computer). Title of the group of parts in the list.",
+    "placeholders": {
+      "name": "The name the tape gets: the file name's stem in upper case"
+    }
+  },
+  "panels.tvcTape.chip.fileHeader": "File header",
+  "@panels.tvcTape.chip.fileHeader": {
+    "context": "Videoton TVC tape file viewer (a document showing a Videoton TVC .cas tape file: a 144-byte header and the program; the Videoton TVC is a Hungarian home computer). Short tag on a list row: the part is the file's 128-byte header (identifier and record counts)."
+  },
+  "panels.tvcTape.chip.payload": "Payload",
+  "@panels.tvcTape.chip.payload": {
+    "context": "Videoton TVC tape file viewer (a document showing a Videoton TVC .cas tape file: a 144-byte header and the program; the Videoton TVC is a Hungarian home computer). Short tag on a list row: the part is the file's payload, what loads into memory."
+  },
+  "panels.tvcTape.row.fileHeader": "{count, plural, one {# byte} other {# bytes}} in the file",
+  "@panels.tvcTape.row.fileHeader": {
+    "context": "Videoton TVC tape file viewer (a document showing a Videoton TVC .cas tape file: a 144-byte header and the program; the Videoton TVC is a Hungarian home computer). Text of the file header part's row in the list.",
+    "placeholders": {
+      "count": "The file's size in bytes"
+    }
+  },
+  "panels.tvcTape.problemBanner": "This file is cut off: it holds fewer bytes than its header declares, so it cannot be loaded.",
+  "@panels.tvcTape.problemBanner": {
+    "context": "Videoton TVC tape file viewer (a document showing a Videoton TVC .cas tape file: a 144-byte header and the program; the Videoton TVC is a Hungarian home computer). Banner above the parts list when the file is shorter than its header says."
+  },
+  "panels.tvcTape.recordCountsBanner": "The record counts at the start of the file give a payload of {records, number} bytes, more than the file holds; Klive uses the {header, number} bytes the application header declares.",
+  "@panels.tvcTape.recordCountsBanner": {
+    "context": "Videoton TVC tape file viewer (a document showing a Videoton TVC .cas tape file: a 144-byte header and the program; the Videoton TVC is a Hungarian home computer). Banner above the parts list when the file's record counts (bytes 2-5) are wrong but the payload length at 82h-83h fits the file.",
+    "placeholders": {
+      "records": "The payload length the record counts give",
+      "header": "The payload length the application header gives"
+    }
+  },
+  "panels.tvcTape.fact.fileType": "File type",
+  "@panels.tvcTape.fact.fileType": {
+    "context": "Videoton TVC tape file viewer (a document showing a Videoton TVC .cas tape file: a 144-byte header and the program; the Videoton TVC is a Hungarian home computer). Label of a fact in the summary: the file type byte of the header."
+  },
+  "panels.tvcTape.fact.fileTypeProgram": "Program (01h)",
+  "@panels.tvcTape.fact.fileTypeProgram": {
+    "context": "Videoton TVC tape file viewer (a document showing a Videoton TVC .cas tape file: a 144-byte header and the program; the Videoton TVC is a Hungarian home computer). Value of the File type fact: a program file, the type BASIC's SAVE writes."
+  },
+  "panels.tvcTape.fact.fileTypeOther": "{value}h",
+  "@panels.tvcTape.fact.fileTypeOther": {
+    "context": "Videoton TVC tape file viewer (a document showing a Videoton TVC .cas tape file: a 144-byte header and the program; the Videoton TVC is a Hungarian home computer). Value of the File type fact for a type other than a program file: the byte in hex.",
+    "placeholders": {
+      "value": "The file type byte in hex, two digits"
+    }
+  },
+  "panels.tvcTape.fact.payload": "Payload",
+  "@panels.tvcTape.fact.payload": {
+    "context": "Videoton TVC tape file viewer (a document showing a Videoton TVC .cas tape file: a 144-byte header and the program; the Videoton TVC is a Hungarian home computer). Label of a fact in the summary: how many bytes the file loads."
+  },
+  "panels.tvcTape.fact.autostart": "Autostart",
+  "@panels.tvcTape.fact.autostart": {
+    "context": "Videoton TVC tape file viewer (a document showing a Videoton TVC .cas tape file: a 144-byte header and the program; the Videoton TVC is a Hungarian home computer). Label of a fact in the summary: whether the program runs as soon as LOAD has read it."
+  },
+  "panels.tvcTape.fact.autostartOn": "Runs after loading",
+  "@panels.tvcTape.fact.autostartOn": {
+    "context": "Videoton TVC tape file viewer (a document showing a Videoton TVC .cas tape file: a 144-byte header and the program; the Videoton TVC is a Hungarian home computer). Value of the Autostart fact when the autostart flag is set."
+  },
+  "panels.tvcTape.fact.autostartOff": "Off",
+  "@panels.tvcTape.fact.autostartOff": {
+    "context": "Videoton TVC tape file viewer (a document showing a Videoton TVC .cas tape file: a 144-byte header and the program; the Videoton TVC is a Hungarian home computer). Value of the Autostart fact when the autostart flag is clear."
+  },
+  "panels.tvcTape.problem.truncated": "Cut off: {count, plural, one {# byte} other {# bytes}} of the {declared, number} declared.",
+  "@panels.tvcTape.problem.truncated": {
+    "context": "Videoton TVC tape file viewer (a document showing a Videoton TVC .cas tape file: a 144-byte header and the program; the Videoton TVC is a Hungarian home computer). Value of the Problem fact of a payload the file has fewer bytes of than declared.",
+    "placeholders": {
+      "count": "The bytes the file holds",
+      "declared": "The bytes the header declares"
+    }
+  },
+  "panels.tvcTape.detail.afterProgram": "The bytes after the program's closing 00h load right behind it, at the addresses shown: typically the machine code the BASIC line calls.",
+  "@panels.tvcTape.detail.afterProgram": {
+    "context": "Videoton TVC tape file viewer (a document showing a Videoton TVC .cas tape file: a 144-byte header and the program; the Videoton TVC is a Hungarian home computer). Hint under the details of the part after the BASIC program."
+  },
+  "panels.tvcTape.field.identifier": "Identifier",
+  "@panels.tvcTape.field.identifier": {
+    "context": "Videoton TVC tape file viewer (a document showing a Videoton TVC .cas tape file: a 144-byte header and the program; the Videoton TVC is a Hungarian home computer). Name of a byte field in the header's byte anatomy: the file identifier byte."
+  },
+  "panels.tvcTape.field.identifierValue": "{value}h: a TVC tape file",
+  "@panels.tvcTape.field.identifierValue": {
+    "context": "Videoton TVC tape file viewer (a document showing a Videoton TVC .cas tape file: a 144-byte header and the program; the Videoton TVC is a Hungarian home computer). Value of the Identifier field.",
+    "placeholders": {
+      "value": "The byte in hex, two digits"
+    }
+  },
+  "panels.tvcTape.field.unused": "Unused",
+  "@panels.tvcTape.field.unused": {
+    "context": "Videoton TVC tape file viewer (a document showing a Videoton TVC .cas tape file: a 144-byte header and the program; the Videoton TVC is a Hungarian home computer). Name of a byte field in the header's byte anatomy: bytes the format does not use."
+  },
+  "panels.tvcTape.field.records": "Records",
+  "@panels.tvcTape.field.records": {
+    "context": "Videoton TVC tape file viewer (a document showing a Videoton TVC .cas tape file: a 144-byte header and the program; the Videoton TVC is a Hungarian home computer). Name of a byte field in the header's byte anatomy: the number of whole 128-byte records in the file."
+  },
+  "panels.tvcTape.field.recordsValue": "{count, plural, one {# whole 128-byte record} other {# whole 128-byte records}}",
+  "@panels.tvcTape.field.recordsValue": {
+    "context": "Videoton TVC tape file viewer (a document showing a Videoton TVC .cas tape file: a 144-byte header and the program; the Videoton TVC is a Hungarian home computer). Value of the Records field.",
+    "placeholders": {
+      "count": "The number of records"
+    }
+  },
+  "panels.tvcTape.field.lastRecord": "Last record",
+  "@panels.tvcTape.field.lastRecord": {
+    "context": "Videoton TVC tape file viewer (a document showing a Videoton TVC .cas tape file: a 144-byte header and the program; the Videoton TVC is a Hungarian home computer). Name of a byte field in the header's byte anatomy: the bytes in the last, partial record."
+  },
+  "panels.tvcTape.field.lastRecordValue": "{count, plural, one {# byte} other {# bytes}} in the last record",
+  "@panels.tvcTape.field.lastRecordValue": {
+    "context": "Videoton TVC tape file viewer (a document showing a Videoton TVC .cas tape file: a 144-byte header and the program; the Videoton TVC is a Hungarian home computer). Value of the Last record field.",
+    "placeholders": {
+      "count": "The bytes in the last record"
+    }
+  },
+  "panels.tvcTape.field.fileType": "File type",
+  "@panels.tvcTape.field.fileType": {
+    "context": "Videoton TVC tape file viewer (a document showing a Videoton TVC .cas tape file: a 144-byte header and the program; the Videoton TVC is a Hungarian home computer). Name of a byte field in the application header's byte anatomy."
+  },
+  "panels.tvcTape.field.fileTypeProgram": "{value}h: a program file (what BASIC's SAVE writes)",
+  "@panels.tvcTape.field.fileTypeProgram": {
+    "context": "Videoton TVC tape file viewer (a document showing a Videoton TVC .cas tape file: a 144-byte header and the program; the Videoton TVC is a Hungarian home computer). Value of the File type field for a program file.",
+    "placeholders": {
+      "value": "The byte in hex, two digits"
+    }
+  },
+  "panels.tvcTape.field.fileTypeOther": "{value}h",
+  "@panels.tvcTape.field.fileTypeOther": {
+    "context": "Videoton TVC tape file viewer (a document showing a Videoton TVC .cas tape file: a 144-byte header and the program; the Videoton TVC is a Hungarian home computer). Value of the File type field for another type.",
+    "placeholders": {
+      "value": "The byte in hex, two digits"
+    }
+  },
+  "panels.tvcTape.field.length": "Payload length",
+  "@panels.tvcTape.field.length": {
+    "context": "Videoton TVC tape file viewer (a document showing a Videoton TVC .cas tape file: a 144-byte header and the program; the Videoton TVC is a Hungarian home computer). Name of a byte field in the application header's byte anatomy: the length of what loads."
+  },
+  "panels.tvcTape.field.autostart": "Autostart",
+  "@panels.tvcTape.field.autostart": {
+    "context": "Videoton TVC tape file viewer (a document showing a Videoton TVC .cas tape file: a 144-byte header and the program; the Videoton TVC is a Hungarian home computer). Name of a byte field in the application header's byte anatomy."
+  },
+  "panels.tvcTape.field.autostartOn": "{value}h: runs after loading",
+  "@panels.tvcTape.field.autostartOn": {
+    "context": "Videoton TVC tape file viewer (a document showing a Videoton TVC .cas tape file: a 144-byte header and the program; the Videoton TVC is a Hungarian home computer). Value of the Autostart field when it is set.",
+    "placeholders": {
+      "value": "The byte in hex, two digits"
+    }
+  },
+  "panels.tvcTape.field.autostartOff": "00h: off",
+  "@panels.tvcTape.field.autostartOff": {
+    "context": "Videoton TVC tape file viewer (a document showing a Videoton TVC .cas tape file: a 144-byte header and the program; the Videoton TVC is a Hungarian home computer). Value of the Autostart field when it is clear."
+  },
+  "panels.tvcTape.field.reserved": "Reserved",
+  "@panels.tvcTape.field.reserved": {
+    "context": "Videoton TVC tape file viewer (a document showing a Videoton TVC .cas tape file: a 144-byte header and the program; the Videoton TVC is a Hungarian home computer). Name of a byte field in the application header's byte anatomy: the bytes after the autostart flag."
   }
 }

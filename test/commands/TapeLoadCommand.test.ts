@@ -4,12 +4,15 @@ import { describe, expect, it, vi } from "vitest";
 
 import {
   MI_C64,
+  MI_HT1080Z,
   MI_SPECTRUM_128,
   MI_SPECTRUM_3E,
   MI_SPECTRUM_48,
+  MI_TVC,
   MI_Z88,
   MI_ZXNEXT
 } from "@common/machines/constants";
+import { buildTvcCasFile } from "@emu/machines/tvc/TvcCasFile";
 import {
   isTapeFilePath,
   resolveTapePath,
@@ -99,6 +102,27 @@ describe("tape-load command", () => {
     ]);
     expect(await validate({ file: "/p/game.p" })).toEqual([
       expect.stringMatching(/^Loading a tape requires a ZX80 or ZX81 machine/)
+    ]);
+  });
+
+  it("reads whose tape a .cas is, and refuses it on the other machine", async () => {
+    const tvc = buildTvcCasFile(Uint8Array.from([0x08, 0x0a, 0x00, 0xdd, 0x20, 0x34, 0x32, 0xff, 0x00]), 0x01, true);
+    const galaxy = new Uint8Array(readFileSync(join(__dirname, "../testfiles/ht1080z/galaxy.cas")));
+    const validateWith = async (bytes: Uint8Array, machineId: string) => {
+      const { context } = contextFor(machineId, bytes);
+      const messages = await new TapeLoadCommand().validateCommandArgs(context, { file: "/p/game.cas", "-r": true } as any);
+      return messages.filter((m) => m.type === ValidationMessageType.Error).map((m) => m.message);
+    };
+    expect(await validateWith(tvc, MI_TVC)).toEqual([]);
+    expect(await validateWith(galaxy, MI_HT1080Z)).toEqual([]);
+    expect(await validateWith(tvc, MI_HT1080Z)).toEqual([
+      expect.stringMatching(/^Loading a Videoton TVC tape requires the Videoton TVC; the current machine is /)
+    ]);
+    expect(await validateWith(tvc, MI_SPECTRUM_48)).toEqual([
+      "Loading a Videoton TVC tape requires the Videoton TVC; the current machine is ZX Spectrum 48K."
+    ]);
+    expect(await validateWith(galaxy, MI_TVC)).toEqual([
+      expect.stringMatching(/^Loading an HT-1080Z tape requires the HT-1080Z; the current machine is /)
     ]);
   });
 

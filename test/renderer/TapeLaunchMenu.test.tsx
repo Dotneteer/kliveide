@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { buildTvcCasFile } from "@emu/machines/tvc/TvcCasFile";
 
 import {
   MI_HT1080Z,
@@ -200,5 +201,30 @@ describe("Tape launch - HT-1080Z tapes (.cas, .cmd)", () => {
     const buttons = screen.getAllByRole("button");
     expect(buttons).toHaveLength(3);
     for (const button of buttons) expect(button).toBeEnabled();
+  });
+
+  it.each([
+    ["an HT-1080Z", "galaxy", MI_TVC, /\(requires an HT-1080Z machine\)/],
+    ["a TVC", "tvc", MI_HT1080Z, /\(requires a Videoton TVC machine\)/],
+    ["a TVC", "tvc", MI_SPECTRUM_48, /\(requires a Videoton TVC machine\)/]
+  ])("reads whose tape a .cas is: %s tape is disabled on %s", async (_kind, file, machineId, reason) => {
+    const bytes =
+      file === "tvc"
+        ? buildTvcCasFile(Uint8Array.from([0x08, 0x0a, 0x00, 0xdd, 0x20, 0x34, 0x32, 0xff, 0x00]), 0x01, true)
+        : new Uint8Array(readFileSync(join(__dirname, "../testfiles/ht1080z/galaxy.cas")));
+    const { htTapeLaunchCommandBarRenderer } = await loadModule(machineId, true, bytes);
+    render(<>{htTapeLaunchCommandBarRenderer(CAS)}</>);
+    await waitFor(() => expect(screen.getAllByRole("button")[0].getAttribute("aria-label")).toMatch(reason));
+    const buttons = screen.getAllByRole("button");
+    expect(buttons).toHaveLength(3);
+    for (const button of buttons) expect(button).toBeDisabled();
+  });
+
+  it("enables a TVC tape on the TVC", async () => {
+    const tvc = buildTvcCasFile(Uint8Array.from([0x08, 0x0a, 0x00, 0xdd, 0x20, 0x34, 0x32, 0xff, 0x00]), 0x01, true);
+    const { htTapeLaunchCommandBarRenderer } = await loadModule(MI_TVC, true, tvc);
+    render(<>{htTapeLaunchCommandBarRenderer(CAS)}</>);
+    await new Promise((r) => setTimeout(r, 20));
+    for (const button of screen.getAllByRole("button")) expect(button).toBeEnabled();
   });
 });

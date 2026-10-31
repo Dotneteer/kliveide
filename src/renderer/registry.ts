@@ -892,9 +892,9 @@ export const fileTypeRegistry: FileTypeEditor[] = [
   {
     matchType: "ends",
     pattern: ".cas",
-    // --- An HT-1080Z tape (`.plans/HT1080Z_PLAN.md` §9): its parts in the HT tape viewer
-    // --- (`.plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D5), Run/Insert/Debug - which load a Videoton TVC
-    // --- tape on the TVC too (`.plans/VIDEOTON_TVC_PLAN.md` Phase 7)
+    // --- An HT-1080Z tape (`.plans/HT1080Z_PLAN.md` §9) or a Videoton TVC one (`.plans/VIDEOTON_TVC_PLAN.md`
+    // --- Phase 7): the viewer reads which from the bytes (`detectCasFormat`) and shows either, and
+    // --- Run/Insert/Debug are enabled on that machine only
     ignoreCase: true,
     editor: HT1080Z_TAPE_VIEWER,
     icon: "@file-tap-tzx",
