@@ -1,8 +1,8 @@
 # Enterprise 64/128 on the WASM Core — Implementation Plan
 
-**Status:** Phases 1–5 done (2026-10-31) but for Phase 5's virtual keyboard, which waits for its
-design: EXOS 2.1 boots to IS-BASIC 2.1 on the core, the picture shows it, DAVE plays, the host
-keyboard and joysticks work, and Klive's `FILE:` device loads and saves host files (§18).
+**Status:** Phases 1–5 done (2026-10-31): EXOS 2.1 boots to IS-BASIC 2.1 on the core, the picture
+shows it, DAVE plays, the host and virtual keyboards and the joysticks work, and Klive's `FILE:` device
+loads and saves host files (§18). Next: the Enterprise 64 model (Phase 6).
 D1–D9 accepted (§16). Still open in Phase 0: reading EP64 schematic sheet 1 for Q1 (the VINT edge).
 **Input:** the research pack `_input/enterprise128/`. Read these first:
 - `README.md`: the machine at a glance, the disagreements table and the ROM decision;
@@ -707,7 +707,7 @@ Each gets one constant or define, its default and its reason in the core README.
 | **2. Timing** | §6: DAVE waits, the NICK stretch, the phase sweep export. | Done 2026-10-30 (§18): `timing.test.ts`; the Enterprise in `debug-loop-equivalence.test.ts`. The oracle comparison with ep128emu is not done yet (it needs a manual run). |
 | **3. Picture** | §7: renderers, palette and levels, the pipeline, blanking, the TV window, beam position, VSYNC frame and field detection. | Done 2026-10-30 (§18): the IS-BASIC picture's hash (checked by eye); `nick-picture.test.ts`; Q2 settled by EXOS's text colours (RM bit 6 is ALTIND1); the IS 1984 demo's frame; the banner and IS-BASIC seen in the running app. |
 | **4. Sound** | §8.2–§8.3, stereo out. | Done 2026-10-31 (§18): `sound.test.ts` (the generator, the outputs, a 1 kHz tone through to the host's samples, EXOS's keyclick). Not heard by ear: no audio output in this environment; `SOUND` statements need the typer (Phase 5). |
-| **5. Keyboard and `FILE:`** | §9.1, §9.2: matrix, host mapping, joysticks, the `FILE:` ROM and host side; the virtual keyboard after its design is approved. | Done 2026-10-31 (§18) but for the virtual keyboard: `keyboard.test.ts`, `hostfs.test.ts`, `ep-fileio-rom.test.ts`; in the running app, host typing and `SAVE "FILE:…"` to the `FILEIO` folder. |
+| **5. Keyboard and `FILE:`** | §9.1, §9.2: matrix, host mapping, joysticks, the `FILE:` ROM and host side; the virtual keyboard after its design is approved. | Done 2026-10-31 (§18): `keyboard.test.ts`, `hostfs.test.ts`, `ep-fileio-rom.test.ts`, `test/controls/EpKeyboard.test.tsx`; in the running app, host typing, `SAVE "FILE:…"` to the `FILEIO` folder, and the virtual keyboard's space bar past the banner. |
 | **6. 64K model** | `ep64`: EXOS 2.0, IS-BASIC 2.0, 64K. | `ep64.test.ts` (boot picture hash checked by eye; RAM size). |
 | **7. IDE** | Partitions, the NICK and DAVE panels, disassembler (`RST 30h`), SysVars, charset, menus, state files, history, profile, CLI; the IS-BASIC listing if §11.4 finds the table. | Debug tests, the Enterprise in every cross-core suite; `MF_EXEC_HISTORY`, `MF_PROFILE`, `MF_REVERSE_DEBUG` on. |
 | **8. Assembler and tape** | §12 (`.model ENTERPRISE`, Run/Debug through `FILE:`, `.com` export, project template), §9.3 (tape formats, playing, turbo, SAVE). | `code-injection.test.ts`, `project-templates.test.ts` (runs checked by eye), `tape.test.ts`; `klive run` and `klive test` on the Enterprise. |
@@ -893,6 +893,15 @@ The core's README (`src/emu/machines/enterprise/wasm/README.md`) is the referenc
   bytes unused"); the picture was checked again by eye.
 - **In the running app** (the doc-shots driver, a throwaway home): host keys typed
   `10 PRINT "HELLO"`, and `SAVE "FILE:HELLO.BAS"` wrote a 47-byte file into `Klive/FILEIO`.
-- **Not done:** the virtual keyboard. Its design needs the real keyboard's layout (a photograph) and the
-  project author's approval, as the TVC's did (§9.1).
+- **The virtual keyboard** (`src/renderer/appEmu/Keyboard/EpKeyboard.tsx`, added the same day) is drawn
+  from the photo the project author supplied (https://frescho.hu/wp-content/gallery/enterprise-128/IMG_2033.JPG):
+  the word processor's label strip, blue F1–F8, green control keys, a red STOP, the L-shaped ENTER and
+  the joystick. After the project author's review it was redrawn from an approved mockup: the caps print
+  exactly the photo's (German-layout) legends on the matrix key at each place, so the cap printed Z is
+  the UK matrix's Y; a sans-serif face; every key one unit high but ENTER, a flat base with a centred
+  raised cap; PAUSE and STOP on the function row after a gap; ERASE, DEL and INS together at the end of
+  the number row (ERASE with ⌫, DEL with ⌦); a readable label strip. The cap the photo prints PAUSE is
+  HOLD in EXOS's documents. The joystick's directions are row 7's cursor keys and its knob is SPACE, the
+  built-in stick's fire. Colours are tokens sampled from the photo (`keyEp` and the rest in
+  `palette.ts`), except the strip, drawn lighter so its labels can be read.
 

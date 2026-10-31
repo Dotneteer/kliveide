@@ -342,7 +342,33 @@ export const DEVICE = {
   legendTvcFnInk: "#ece8e1",
   tvcCase: "#8f8581",
   tvcWell: "#3b3633",
-  tvcKnob: "#1e1d1d"
+  tvcKnob: "#1e1d1d",
+  /*
+   * The Enterprise 128's keyboard: dark grey character keys, green control keys, blue function keys
+   * and a red STOP, all with light legends, in a dark grey case; a light strip above the function
+   * keys carries the word processor's labels; the joystick is black (sampled from a photo of an
+   * Enterprise 128, https://frescho.hu/wp-content/gallery/enterprise-128/IMG_2033.JPG, taking the
+   * shaded middle of each face: the studio light brightens the top of every key).
+   */
+  keyEp: "#57565d",
+  keyEpEdge: "#3a393f",
+  keyEpFn: "#4f8f78",
+  keyEpFnEdge: "#356352",
+  keyEpF: "#5068b8",
+  keyEpFEdge: "#384b8c",
+  keyEpStop: "#bd4b49",
+  keyEpStopEdge: "#8a3332",
+  legendEpInk: "#e8e8ec",
+  epCase: "#5f5e64",
+  epWell: "#2c2c30",
+  /*
+   * The strip is drawn lighter and its ink near-black, not as sampled (#c4c2c4 on #4b4a50): at the
+   * panel's size the photo's grey-on-grey labels could not be read (the project author's review)
+   */
+  epStrip: "#d6d4d6",
+  epStripRule: "#a9a7aa",
+  legendEpStripInk: "#1f1f23",
+  epKnob: "#1e201f"
 } as const;
 
 /**
